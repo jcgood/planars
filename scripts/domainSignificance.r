@@ -1,3 +1,10 @@
+p_load(ggsci,
+       tidyverse)
+
+domains <- read_tsv("../planars/domains_nyan1308.tsv")
+tests <- filter(domains) # vacuous at the moment
+
+
 leftedges = tests$Left_Edge
 leftedgedf = as.data.frame(leftedges)
 leftedgeCounts = count(leftedgedf, leftedges)
