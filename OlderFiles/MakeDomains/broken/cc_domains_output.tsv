@@ -1,0 +1,7 @@
+Test_Labels	Domain_Type	Left_Edge	Right_Edge	Size
+FreeOccurrence-Minimal-AFF/IMP_2sg	morphosyntactic	8	16	9
+FreeOccurrence-Maximal-AFF/IMP_2sg	morphosyntactic	7	16	10
+FreeOccurrence-Minimal-AFF/IMP_2pl	morphosyntactic	8	17	10
+FreeOccurrence-Maximal-AFF/IMP_2pl	morphosyntactic	7	17	11
+FreeOccurrence-Maximal-AFF/2pOBJ	morphosyntactic	5	17	13
+FreeOccurrence-Maximal-AFF/elsewhere	morphosyntactic	5	16	12

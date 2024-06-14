@@ -1,0 +1,20 @@
+Language_ID	Language_Name	Planar_ID	Planar_Type	Position_ID	Position	Position_Type	Elements
+nyan1308	Chichewa	nyan1308_verbal	verbal	nyan1308_v_1	1	slot	Q
+nyan1308	Chichewa	nyan1308_verbal	verbal	nyan1308_v_2	2	zone	Presubj
+nyan1308	Chichewa	nyan1308_verbal	verbal	nyan1308_v_3	3	slot	Subj
+nyan1308	Chichewa	nyan1308_verbal	verbal	nyan1308_v_4	4	slot	Neg
+nyan1308	Chichewa	nyan1308_verbal	verbal	nyan1308_v_5	5	slot	Sm
+nyan1308	Chichewa	nyan1308_verbal	verbal	nyan1308_v_6	6	zone	Tamp
+nyan1308	Chichewa	nyan1308_verbal	verbal	nyan1308_v_7	7	slot	Om
+nyan1308	Chichewa	nyan1308_verbal	verbal	nyan1308_v_8	8	slot	Root
+nyan1308	Chichewa	nyan1308_verbal	verbal	nyan1308_v_9	9	slot	Unprod Ext
+nyan1308	Chichewa	nyan1308_verbal	verbal	nyan1308_v_10	10	slot	Stat
+nyan1308	Chichewa	nyan1308_verbal	verbal	nyan1308_v_11	11	slot	Caus
+nyan1308	Chichewa	nyan1308_verbal	verbal	nyan1308_v_12	12	slot	App
+nyan1308	Chichewa	nyan1308_verbal	verbal	nyan1308_v_13	13	slot	Recip
+nyan1308	Chichewa	nyan1308_verbal	verbal	nyan1308_v_14	14	slot	Pass
+nyan1308	Chichewa	nyan1308_verbal	verbal	nyan1308_v_15	15	slot	Final
+nyan1308	Chichewa	nyan1308_verbal	verbal	nyan1308_v_16	16	slot	Postfinal2p
+nyan1308	Chichewa	nyan1308_verbal	verbal	nyan1308_v_17	17	zone	Postfinalenc
+nyan1308	Chichewa	nyan1308_verbal	verbal	nyan1308_v_18	18	slot	Obj
+nyan1308	Chichewa	nyan1308_verbal	verbal	nyan1308_v_19	19	zone	Postobj
