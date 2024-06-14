@@ -32,7 +32,7 @@ stan1293	verbal	30	Slot	INFL -ed, -s, -ing	3	They revisit[ed] the problem.
 stan1294	verbal	31	Slot	tough-adjectives	small	It is [tough] for them to solve the problem.	
 stan1293	verbal	32	Slot	Ad-S	open	It is tough [probably] for them to solve the problem.	
 stan1293	verbal	33	Slot	COMP for	1	It is tough [for] them to solve the problem.	
-stan1293	verbal	34	Zone	NP, VERBPART, CP	open	It is tough for [them] to solve them to solve the problem. They picked [the ball up]. They said [that X].	“obj”
+stan1293	verbal	34	Zone	NP, VERBPART, CP	open	It is tough for [them] to solve them to solve the problem. They picked [the ball up]. They said [that X].	
 stan1293	verbal	35	Slot	COMP: to	1	It is tough for them [to] solve the problem.	
 stan1293	verbal	36	Slot	Ad-VP	open	It is tough for them to [intentionally] solve the problem.	
 stan1293	verbal	37	Slot	Ad-V	open	It is tough for them to [completely] solve the problem.	
@@ -40,7 +40,7 @@ stan1293	verbal	38	Slot	PROD PFX re-, un-, etc.	small	It is tough from them to [
 stan1293	verbal	39	Slot	LATIN PFX ex-, in-, etc.	small	It is tough for them to [ad]mit the problem.	
 stan1293	verbal	40	Slot	Verb root	open	It is tough for them to ad[mit] the problem.	
 stan1293	verbal	41	Slot	Ad-V	open	It is tough for them to destroy [completely] the city.	
-stan1293	verbal	42	Zone	NP, VERBPART	open	It is tough for them to pick [the ball up].	“obj”
+stan1293	verbal	42	Zone	NP, VERBPART	open	It is tough for them to pick [the ball up].	
 stan1293	verbal	43	Slot	Ad-VP	open	It is tough for them to pick up the ball [intentionally].	
 stan1293	verbal	44	Zone	PP and similar	open	It is tough for them to pick up the ball [inside in the room.]	
 stan1293	verbal	45	Zone	Ad-S, S-Adv	open	It is tough for them to pick up the ball in the room [tomorrow probably when they don’t even know what they are doing].	
