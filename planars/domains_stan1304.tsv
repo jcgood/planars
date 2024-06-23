@@ -1,2 +1,8 @@
-Test_Labels	Domain_Type	Left_Edge	Right_Edge	Size
-FreeOccurrence-Minimal	
+Test_Labels	Domain_Type	Typological property	Fracture-MinMax	Fracture-generalized	Fracture-special	Left_Edge	Right_Edge	Size	Example	Note
+FreeOccurrence	Discourse	Imperative	Minimal			29	29	1	\LR[stop]!	
+FreeOccurrence	Discourse	Imperative	Maximal			29	34	6	\L[carry] \R[on]!	There’s a generalization I didn’t realize – all phasal verbs in English cannot take prefixes? Is this true?
+FreeOccurrence_1?	Discourse	Declarative-Interrogative	Minimal			5	29	25	\L[she] read \R[s]	
+FreeOccurrence_2?	Discourse	Declarative-Interrogative	Minimal			5	30	26	L\[we] R\[read]	
+FreeOccurrence	Discourse	Declarative-Interrogative	Maximal			5	34	30	\L[she] climb-s R\[up]	
+Noninterruption	Morphosyntactic					27	30	4	They are {completely} \L[re]admitting the patient again. *They are  \L[re] {completely} admitting the patient again. It is becom \R[ing] {very tough} to solve the problem.	
+Nonpermutability	Morphosyntactic	No-intonation-break	Minimal			27	31		It is becom \R[ing] {tough}. *It is tough becoming.  *It tough is  becoming. *tough it is becoming.	
