@@ -8,12 +8,13 @@ import os
 from collections import defaultdict
    
 # Storage folders
-planarFolder = "../planars/"
+planarFolder = "../planar_tables/"
 domainFile = "domains_nyan1293_test.tsv"
 
 domains = defaultdict(list) # trying this to avoid try/except
 trees = [ ]
 domainsCollapsed = [ ]
+treereductions = [ ]
 
 def main():
 
@@ -37,6 +38,8 @@ def main():
 		domains[size].append(domain) # Defaultdict makes this easier, use in future
 		
 		span = [left, right]
+		
+		# Using this to get a list of all domains for later use in tree analysis
 		if span in domainsCollapsed: pass
 		else: domainsCollapsed.append(span)
 	
@@ -77,8 +80,39 @@ def main():
 	
 	treeCount = 1
 	for tree in sorted(prunedtrees, key=len, reverse=True):
-		print(treeCount, tree[1:], sep="\t") # remove 'root'
+		#print(treeCount, tree[1:], sep="\t") # remove 'root'
 		treeCount += 1	
+
+
+
+	# Trying to find minimum tree set that covers all domains
+	print(domainsCollapsed)
+	destroyDomains = domainsCollapsed.copy()
+	getTopReducers(prunedtrees, destroyDomains, [])
+		
+	print("Reduced trees that still cover all domains.")
+	for treereduction in sorted(treereductions, key=len):
+		print(len(treereduction), treereduction, sep="\t")
+		pass
+			
+
+#	destroyDomains = domainsCollapsed.copy()
+#	for tree in sorted(prunedtrees, key=len, reverse=True):
+#		
+#		# Get rid of 'root' place holder node
+#		derootedTree = tree[1:]
+#
+#		if destroyDomains == []:
+#			break
+#		else:
+#			reducingTree = False
+#			for span in derootedTree:
+#				if span in destroyDomains: destroyDomains.remove(span)
+#				reducingTree = True
+#			if reducingTree:
+#				print(derootedTree)
+#				pass
+
 
 
 # Workhorse function
@@ -228,6 +262,60 @@ def getEnclosingParent(size, span, tree):
 			else: return(getEnclosingParent(size+1, span, tree))
 		else:
 			return(getEnclosingParent(size+1, span, tree))
+
+# Workhorse function to find minimum covering
+# This really confused me because of the way lists are handled in Python.
+# Once I copied them more often, it worked better.
+def getTopReducers(reducingtrees, reducingdomains, reducedTreeSet):
+
+	# Exit condition; all domains accounted for
+	if reducingdomains == []:
+		if reducedTreeSet in treereductions: pass
+		else:
+			# Python list assignment eludes me. I need copies or things break
+			storedReducedTree = reducedTreeSet.copy()
+			treereductions.append(storedReducedTree)
+		return
+
+	# For each tree in the set, find out how much it reduces the currently non-accounted-for domains
+	reductions = defaultdict(list)
+	for reducingtree in reducingtrees:		
+		reducingtree = reducingtree[1:] # remove 'root'
+		reduceddomains = reducingdomains.copy()		
+		for reducingtreeDomain in reducingtree:
+			if reducingtreeDomain in reduceddomains: reduceddomains.remove(reducingtreeDomain)
+		reduction = len(reducingdomains) - len(reduceddomains)
+		reductions[reduction].append(reducingtree)
+		#print("Here is a reduction count:", reduction, reducingtree)
+		
+	# Get the trees that do the maximal reduction for this domain set
+	maxReduction = max(reductions.keys())
+	maxReducedTrees = reductions[maxReduction]
+	#print("Number of maximal reduction trees:", len(maxReducedTrees))
+	#print("Maximal reduction trees:", maxReducedTrees)
+
+	# I learned that I really don't understand how Python handles variables.
+	# Since everything is a reference, the algorithm kept adding elements to
+	# the same list and the list identity did not reset with each function call
+	# So, I need a copy here to keep that from happening.
+	
+	# Run through the maximum reducing trees, work out their reductions
+	# Recursively call function
+	workingTreeSet = reducedTreeSet.copy()
+	for maxReducedTree in maxReducedTrees:
+
+		#print("This is a maximum reducing tree:", maxReducedTree)
+
+		workingTreeSet.append(maxReducedTree)
+
+		reduceddomains = reducingdomains.copy()
+
+		for maxTreeDomain in maxReducedTree:
+			if maxTreeDomain in reduceddomains: reduceddomains.remove(maxTreeDomain)
+		
+		#print("Domains left", reduceddomains)
+		#print("Reduced tree set", reducedTreeSet)
+		getTopReducers(reducingtrees,reduceddomains,workingTreeSet)
 
 
 main()
