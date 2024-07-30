@@ -11,7 +11,7 @@ p_load(ggmap,
        viridis)
 
 # read in database
-domains <- read_tsv(here("domains.tsv")) %>%
+domains <- read_tsv(here("/Users/jcgood/gitrepos/planars/OlderFiles/ConstituencyConvergenceDBScripts/domains.tsv")) %>%
   modify_if(is.character, as.factor)
 
 # list all abstract types
@@ -20,7 +20,7 @@ levels(domains$Abstract_Type)
 
 # create map of sample languages of volume
 # read in metadata file
-metadata <- read_tsv(here("input/metadata.tsv"))
+metadata <- read_tsv(here("/Users/jcgood/gitrepos/planars/OlderFiles/ConstituencyConvergenceDBScripts/input/metadata.tsv"))
 # subset for languages of volume 1 and Chacobo and Siksika
 metadata_sub <- metadata %>%
   filter(Contribution=="Vol1"|Language_ID=="siks1238"|Language_ID=="chac1251")

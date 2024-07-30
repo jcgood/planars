@@ -79,20 +79,25 @@ def main():
 	
 	
 	treeCount = 1
+	print("Maximal trees")
 	for tree in sorted(prunedtrees, key=len, reverse=True):
-		#print(treeCount, tree[1:], sep="\t") # remove 'root'
+		print(treeCount, tree[1:], sep="\t") # remove 'root'
 		treeCount += 1	
+		print("")
 
 
 
 	# Trying to find minimum tree set that covers all domains
+	print("Domains collapsed into unique domains")
 	print(domainsCollapsed)
+	print("\n")
 	destroyDomains = domainsCollapsed.copy()
 	getTopReducers(prunedtrees, destroyDomains, [])
 		
 	print("Reduced trees that still cover all domains.")
 	for treereduction in sorted(treereductions, key=len):
 		print(len(treereduction), treereduction, sep="\t")
+		print("\n")
 		pass
 			
 
