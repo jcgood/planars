@@ -42,7 +42,8 @@ stan1293	verbal	39	Slot	PROD PFX re-, un-, etc.	small	It is tough from them to [
 stan1293	verbal	40	Slot	LATIN PFX ex-, in-, etc.	small	It is tough for them to [ad]mit the problem.	
 stan1293	verbal	41	Slot	Verb root	open	It is tough for them to ad[mit] the problem.	
 stan1293	verbal	42	Slot	Ad-V	open	It is tough for them to destroy [completely] the city.	
-stan1293	verbal	43	Zone	NP, VERBPART	open	It is tough for them to pick [the ball up].	
+stan1293	verbal	43	Zone	NP{P,T}, VERBPART	open	It is tough for them to pick [the ball up].	
+stan1294	verbal	43.5	Slot	NP{R}	open	Leo sold indulgences to [the pilgrims]	
 stan1293	verbal	44	Slot	Ad-VP	open	It is tough for them to pick up the ball [intentionally].	
 stan1293	verbal	45	Zone	PP and similar	open	It is tough for them to pick up the ball [inside in the room.]	
 stan1293	verbal	46	Zone	Ad-S, S-Adv	open	It is tough for them to pick up the ball in the room [tomorrow probably when they don’t even know what they are doing].	
