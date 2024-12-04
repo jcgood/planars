@@ -3,7 +3,7 @@ stan1293	verbal	1	Zone	CONNECTORS/ADVERBS	open	[Then] they went home
 stan1293	verbal	2	Slot	QWORDS/TOPICALIZATIONS	open	Then [what] did he do?	
 stan1293	verbal	3	Slot	AUX	small	What [did] he do?	
 stan1293	verbal	4	Slot	AUXINFLECTION	small	What ha[s] he done?	I’d actually be tempted to make inflection on auxiliaries a biuniqueness issue.
-stan1293	verbal	5	Slot	SUBJ	open	What has [he] done?	
+stan1293	verbal	5	Slot	NP{S}	open	What has [he] done?	
 stan1293	verbal	6	Slot	Ad-S	open	What has he [probably] intentionally done?	
 stan1293	verbal	7	Slot	Ad-VP	open	What has he probably [intentionally] done?	
 stan1293	verbal	8	Slot	MODAL	closed	They [would] have done it.	
