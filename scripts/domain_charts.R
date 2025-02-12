@@ -9,8 +9,8 @@ p_load(ggsci,
 # read in output files and metadata
 
 #metadata <- read_tsv("metadata.tsv") # to be added later
-domains <- read_tsv("../planars/domains_nyan1308.tsv")
-planar <- read_tsv("../planars/planar_nyan1308.tsv")
+domains <- read_tsv("../planar_tables/domains_nyan1308.tsv")
+#planar <- read_tsv("../planars/planar_nyan1308.tsv")
 
 # set up function for setting up dataframe for plotting
 df.plot <- function(d){

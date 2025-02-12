@@ -1,6 +1,15 @@
-# Takes three sets of doculects and returns those at the intersection of all three sets
-# and set1 and set2 and set2 and set3. Outputs stabilities alongside those, too
-# Used now for Abar, Buu, and Munfabli
+# Morph	Position(s)	Construction	Widescope	Filled-in-both-conjuncts
+# re-	27	and-conjunction	no	yes
+# again	7, 11, 16, 21, 25, 37	and-conjunction	yes	yes
+# ed, ing, etc.	30	and-conjunction	no	yes
+# BASE	29			
+# 				
+# 1. Take all morphs that have Widescope "no" (NARROWSCOPE)				
+# 2. Define BASE				
+# 3. Make group STRING which starts as BASE				
+# 4. Add morpheme to STRING fro NARROWSCOPE when morpheme is +1 and -1 position of BASE				
+# 5. Repeat 4 until STRING does not change				
+# 6. This gets the MIN domain				
 
 
 import pandas
@@ -8,9 +17,33 @@ import os
 from collections import defaultdict
    
 # Storage folders
-planarFolder = "../domains/"
-domainFile = "domains_nyan1293_test.tsv"
+domainFolder = "../domains/"
+diagnosticFile = "construction_domains.txt"
 
+diagnostics = defaultdict(list) # trying this to avoid try/except
+
+def get_diagnostics(file):
+
+	# Just what are we coding in this file?
+	diagnosticRecords = pandas.read_csv(file,sep="\t")
+	
+	headers = list(diagnosticRecords.columns.values)
+	diagnostics = headers[3:] # The first headers are known, the rest are diagnostics
+	
+	for index, row in diagnosticRecords.iterrows():
+		signSet = row["SignSet"]
+		positions = row["Positions"]
+		construction = row["Construction"] # This is wrong. We don't want to have to specify this again and again
+		print(signSet, positions, construction)
+		
+	for diagnostic in diagnostics:
+		diagnosticValue = row[diagnostic]
+		print(diagnostic + ": " + diagnosticValue)
+		
+
+get_diagnostics(domainFolder + os.sep + diagnosticFile)
+
+"""
 domains = defaultdict(list) # trying this to avoid try/except
 trees = [ ]
 domainsCollapsed = [ ]
@@ -324,3 +357,4 @@ def getTopReducers(reducingtrees, reducingdomains, reducedTreeSet):
 
 
 main()
+"""

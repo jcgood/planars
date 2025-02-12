@@ -1,7 +1,9 @@
+if (!require("pacman")) install.packages("pacman")
+library(pacman)
 p_load(ggsci,
        tidyverse)
 
-domains <- read_tsv("../planars/domains_nyan1308.tsv")
+domains <- read_tsv("../planar_tables/domains_nyan1308.tsv")
 tests <- filter(domains) # vacuous at the moment
 
 
@@ -11,6 +13,8 @@ leftedgeCounts = count(leftedgedf, leftedges)
 lmin = min(leftedgeCounts$leftedges)
 lmax = max(leftedgeCounts$leftedges)
 
+# Adds in zeroes for edges in range of left edges where there happen to
+# be no diagnostics. This is position 9 for Chichewa/
 for(n in lmin:lmax) {
 	if (n %in% leftedgeCounts$leftedges) { }
 	else(leftedgeCounts[nrow(leftedgeCounts) + 1,] = c(n,0))
@@ -37,6 +41,8 @@ rightprob = rep(1/norightpositions, norightpositions)
 
 rightchisq = chisq.test(rightedgeCounts$n, p=rightprob)
 
+# I don't recall the motivation for this. It tests the distribution of left edges
+# by the size of each test. Maybe it was an attempt at quantal patterning?
 totalPositions = max(tests$Right_Edge)
 for(n in 2:(totalPositions-1)) {
 	
@@ -54,7 +60,8 @@ for(n in 2:(totalPositions-1)) {
 			else(nleftedgeCounts[nrow(nleftedgeCounts) + 1,] = c(m,0))
 			}
 
-		#print(nleftedgeCounts)
+		print(n)
+		print(nleftedgeCounts)
 	
 		nleftpositions = totalPositions - (n-1)
 		nprob = rep(1/nleftpositions, nleftpositions)
