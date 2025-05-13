@@ -3,7 +3,7 @@ stan1293	verbal	1	Zone	CONNECTORS/ADVERBS	open	[Then] they went home
 stan1293	verbal	2	Slot	QWORDS/TOPICALIZATIONS	open	Then [what] did he do?	
 stan1293	verbal	3	Slot	AUX	small	What [did] he do?	
 stan1293	verbal	4	Slot	AUXINFLECTION	small	What ha[s] he done?	I’d actually be tempted to make inflection on auxiliaries a biuniqueness issue.
-stan1293	verbal	5	Slot	SUBJ	open	What has [he] done?	
+stan1293	verbal	5	Slot	NP{S}	open	What has [he] done?	
 stan1293	verbal	6	Slot	Ad-S	open	What has he [probably] intentionally done?	
 stan1293	verbal	7	Slot	Ad-VP	open	What has he probably [intentionally] done?	
 stan1293	verbal	8	Slot	MODAL	closed	They [would] have done it.	
@@ -25,7 +25,7 @@ stan1293	verbal	23	Slot	Ad-S	open	They are [probably] going.
 stan1293	verbal	24	Slot	NEG	1	They are probably [not] going.	
 stan1293	verbal	25	Slot	Ad-VP	open	They are probably not [intentionally] going.	
 stan1293	verbal	26	Slot	Ad-V	open	They are probably not intentionally [completely] destroying the city.	
-stan1293	verbal	26.5	Slot	incorporated noun (or slot 26?)?	I berry picked yesterday.	
+stan1293	verbal	26.5	Slot	incorporated noun (or slot 26?)?	open	I berry picked yesterday.	
 stan1293	verbal	27	Slot	PROD PFX re-, un-, etc.	small	They [re]visited the problem.	
 stan1293	verbal	28	Slot	LATIN PFX ex-, in-, etc.	small	They re[ad]mitted the patient.	
 stan1293	verbal	29	Slot	Verb root	open	They re[visit]ed the problem.	Adam has three slots using the Item-Arrangement model, I’d go with deviations from biuniqueness
@@ -47,3 +47,4 @@ stan1294	verbal	43.5	Slot	NP{R}	open	Leo sold indulgences to [the pilgrims]
 stan1293	verbal	44	Slot	Ad-VP	open	It is tough for them to pick up the ball [intentionally].	
 stan1293	verbal	45	Zone	PP and similar	open	It is tough for them to pick up the ball [inside in the room.]	
 stan1293	verbal	46	Zone	Ad-S, S-Adv	open	It is tough for them to pick up the ball in the room [tomorrow probably when they don’t even know what they are doing].	
+stan1293	verbal	47	Zone	Coordinator	open	This is added for flapping in coordination contexts: 'I saw a ca[FLAP}, and it went out.'	We conceptualize this posotion as including the coordinator and the following clause
