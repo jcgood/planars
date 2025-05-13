@@ -96,6 +96,14 @@ def main():
 		treeCount += 1
 	print("")
 	
+	layoutCount = 1
+	print("treelayout <- c(")
+	while layoutCount < treeCount:
+		print("area(t = 1, l = 1, b = 5, r = 1),")
+		layoutCount += 1
+	print("area(t = 1, l = 1, b = 5, r = 1))")
+	
+	
 # layout <- c(
 # area(t = 2, l = 1, b = 5, r = 4),
 # area(t = 1, l = 3, b = 3, r = 5)
