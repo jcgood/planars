@@ -6,7 +6,7 @@
 import pandas
 import os
 from collections import defaultdict
-   
+
 # Storage folders
 planarFolder = "../domains/"
 domainFile = "domains_nyan1293_test.tsv"
@@ -47,15 +47,13 @@ def main():
 	minDomain = min(domains.keys())
 	traverse(maxDomain, "root", ["root"], minDomain)
 
-
 	treeCount = 1
 	for tree in trees:
 		#print(treeCount, tree)
 		treeCount += 1
-
 	
 	# The algorithm produces subset trees of larger trees for reasons that I have not
-	# worked out. This is intended to remove those (not yet working)
+	# worked out. This is intended to remove those
 	# I'm going to try to keep looping until trees stop being excluded since there
 	# are subsets in subsets in subsets
 	excludedtrees = [ ]
@@ -85,6 +83,25 @@ def main():
 		treeCount += 1	
 		print("")
 
+	
+	treeCount = 1
+	print("Maximal newicks")
+	for tree in sorted(prunedtrees, key=len, reverse=True):
+		tree = tree[1:] # remove 'root'
+		newicktree = newick(tree)
+		rtree = "tree" + str(treeCount) + " = read.tree(text=\"" + newicktree + ";\")"
+		print(rtree)
+		rplot = "treeplot" + str(treeCount)  + " = ggtree(tree" + str(treeCount) + ", layout='slanted', ladderize = FALSE, alpha=.05) + layout_dendrogram() + geom_tiplab() + theme(panel.background = element_blank(), plot.background = element_blank())"
+		print(rplot)
+		treeCount += 1
+	print("")
+	
+# layout <- c(
+# area(t = 2, l = 1, b = 5, r = 4),
+# area(t = 1, l = 3, b = 3, r = 5)
+# )
+# p1 + p2 +
+# plot_layout(design = layout)
 
 
 	# Trying to find minimum tree set that covers all domains
@@ -97,6 +114,9 @@ def main():
 	print("Reduced trees that still cover all domains.")
 	for treereduction in sorted(treereductions, key=len):
 		print(len(treereduction), treereduction, sep="\t")
+		#for tree in treereduction:
+		#	newicktree = newick(tree)
+		#	print(newicktree)
 		print("\n")
 		pass
 			
@@ -142,7 +162,7 @@ def traverse(size, parentSpan, tree, minDomain):
 		#print("Saving Tree condition 1:", "\n", tree)
 		return
 				
-	# If we escape the exit condition find next domain size that has spans
+	# If we escape the exit condition, find next domain size that has spans
 	domain, size = getNextDomain(size, parentSpan, tree, minDomain)
 
 	# If the getNextDomain returns False (because it reached the minDomain internally)
@@ -157,6 +177,9 @@ def traverse(size, parentSpan, tree, minDomain):
 	# Go through each test in domain size, they may have different spans
 	seenSpans = [ ]
 	for test in domain:
+		
+		# To do: See note above, maybe here I need to see if the tests in the domain
+		# nest or not and, if not, have a new condition
 		
 		left = test["left"]
 		right = test["right"]
@@ -321,6 +344,55 @@ def getTopReducers(reducingtrees, reducingdomains, reducedTreeSet):
 		#print("Domains left", reduceddomains)
 		#print("Reduced tree set", reducedTreeSet)
 		getTopReducers(reducingtrees,reduceddomains,workingTreeSet)
+
+def newick(tree):
+	
+	maximal = tree[0] # First element should be maximal span
+	revtree = list(reversed(tree))
+	
+	prevleftedge = 0 # placeholder
+	prevrightedge = 0
+	justlabeledanode = False # needed to get commas to come out right
+	seenpositions = [ ]
+	newicktree = "("
+	for span in revtree:
+
+
+		leftedge, rightedge = span
+		spanpositions = range(leftedge, rightedge + 1) # second element of range is stop condition, not included
+
+		leftappend =  ""
+		rightappend = ""
+		for spanposition in spanpositions:
+			if spanposition in seenpositions:
+				pass
+			else:
+				if spanposition <= prevleftedge:
+					leftappend = leftappend + str(spanposition) + ", "
+					seenpositions.append(spanposition)
+				elif spanposition >= prevrightedge: # need to handle the comma interfix problem
+					if justlabeledanode:
+						rightappend = rightappend + ", " + str(spanposition)
+						justlabeledanode = False # hack to get punctuation right			
+					elif rightappend == "":
+						rightappend = rightappend + str(spanposition)
+					else:
+						rightappend = rightappend + ", " + str(spanposition)
+					seenpositions.append(spanposition)
+				else: print("Span position not written yet, but probable should have been.")
+
+		prevleftedge = leftedge
+		prevrighedge = rightedge
+
+		newicktree = "(" + leftappend + newicktree + rightappend + ") " + str(leftedge) + "-"+ str(rightedge)
+		justlabeledanode = True
+				
+	
+	newicktree = newicktree +  ")"
+	
+	return(newicktree)
+
+
 
 
 main()

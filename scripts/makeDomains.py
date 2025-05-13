@@ -12,6 +12,12 @@
 # 6. This gets the MIN domain				
 
 
+# files/tables
+# planar structure
+# elements (generate from planar structure; look for accidental overlaps)
+# tests
+# testClasses
+
 import pandas
 import os
 from collections import defaultdict
@@ -20,6 +26,15 @@ from collections import defaultdict
 domainFolder = "../domains/"
 diagnosticFile = "construction_domains.txt"
 
+
+
+# Make a dictionary of how element fillers map to positions
+def filler_positions(file):
+	pass
+		
+# Mostly messing around
+
+# This probably belongs in the function, but not testing now
 diagnostics = defaultdict(list) # trying this to avoid try/except
 
 def get_diagnostics(file):

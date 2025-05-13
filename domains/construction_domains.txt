@@ -1,0 +1,4 @@
+SignSet	Positions	Construction	D1.Widescope	D2.Filled-in-both-conjuncts
+re-	27	and-conjunction	no	yes
+again	7, 11, 16, 21, 25, 37	and-conjunction	yes	yes
+ed, ing, etc.	30	and-conjunction	no	yes

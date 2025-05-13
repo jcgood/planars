@@ -1,0 +1,2 @@
+TestClass	Features
+subspanRepetition	WidescopeRight,WidescopeLeft,FilledBothConjuncts
