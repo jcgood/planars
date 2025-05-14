@@ -91,26 +91,30 @@ def main():
 		newicktree = newick(tree)
 		rtree = "tree" + str(treeCount) + " = read.tree(text=\"" + newicktree + ";\")"
 		print(rtree)
-		rplot = "treeplot" + str(treeCount)  + " = ggtree(tree" + str(treeCount) + ", layout='slanted', ladderize = FALSE, alpha=.05) + layout_dendrogram() + geom_tiplab() + theme(panel.background = element_blank(), plot.background = element_blank())"
+		if treeCount == 1: # only print labels once
+			rplot = "treeplot" + str(treeCount)  + " = ggtree(tree" + str(treeCount) + ", layout='slanted', ladderize = FALSE, alpha=.05) + layout_dendrogram() + geom_tiplab(angle=0, offset=-.5, hjust=1) + theme(panel.background = element_blank(), plot.background = element_blank())"
+		else:
+			rplot = "treeplot" + str(treeCount)  + " = ggtree(tree" + str(treeCount) + ", layout='slanted', ladderize = FALSE, alpha=.05) + layout_dendrogram() + theme(panel.background = element_blank(), plot.background = element_blank())"			
 		print(rplot)
 		treeCount += 1
 	print("")
 	
-	layoutCount = 1
+	layoutCount = 2 # account for different last line
 	print("treelayout <- c(")
 	while layoutCount < treeCount:
 		print("area(t = 1, l = 1, b = 5, r = 1),")
 		layoutCount += 1
 	print("area(t = 1, l = 1, b = 5, r = 1))")
+	print("")
 	
+	plotCount = 1 # account for different last line
+	while plotCount < treeCount:
+		print("treeplot" + str(plotCount) + "+")
+		plotCount += 1
+	print("plot_layout(design = treelayout)")
+	print("")
 	
-# layout <- c(
-# area(t = 2, l = 1, b = 5, r = 4),
-# area(t = 1, l = 3, b = 3, r = 5)
-# )
-# p1 + p2 +
-# plot_layout(design = layout)
-
+	# to self, what am I visualizing here precisely? What are these trees?	
 
 	# Trying to find minimum tree set that covers all domains
 	print("Domains collapsed into unique domains")
