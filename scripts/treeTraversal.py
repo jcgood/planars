@@ -1,15 +1,11 @@
-# Takes three sets of doculects and returns those at the intersection of all three sets
-# and set1 and set2 and set2 and set3. Outputs stabilities alongside those, too
-# Used now for Abar, Buu, and Munfabli
-
-
 import pandas
 import os
 from collections import defaultdict
 
 # Storage folders
 planarFolder = "../domains/"
-domainFile = "domains_nyan1293_test.tsv"
+#domainFile = "domains_nyan1293_test.tsv"
+domainFile = "domains_nyan1308.tsv"
 
 domains = defaultdict(list) # trying this to avoid try/except
 trees = [ ]
@@ -83,18 +79,27 @@ def main():
 		treeCount += 1	
 		print("")
 
-	
+	totalTrees = treeCount - 1 # counter had been set to 1 to avoid zero numbering
+	alphaval = str(round(1/totalTrees, 3))
 	treeCount = 1
 	print("Maximal newicks")
+	print("library(ape)")
+	print("library(ggplot2)")
+	print("library(ggtree)")
+	print("library(patchwork)")
+	
 	for tree in sorted(prunedtrees, key=len, reverse=True):
 		tree = tree[1:] # remove 'root'
 		newicktree = newick(tree)
 		rtree = "tree" + str(treeCount) + " = read.tree(text=\"" + newicktree + ";\")"
 		print(rtree)
-		if treeCount == 1: # only print labels once
-			rplot = "treeplot" + str(treeCount)  + " = ggtree(tree" + str(treeCount) + ", layout='slanted', ladderize = FALSE, alpha=.05) + layout_dendrogram() + geom_tiplab(angle=0, offset=-.5, hjust=1) + theme(panel.background = element_blank(), plot.background = element_blank())"
-		else:
-			rplot = "treeplot" + str(treeCount)  + " = ggtree(tree" + str(treeCount) + ", layout='slanted', ladderize = FALSE, alpha=.05) + layout_dendrogram() + theme(panel.background = element_blank(), plot.background = element_blank())"			
+		rplot = ( "treeplot" + str(treeCount) +
+				  " = ggtree(tree" + str(treeCount) +
+				  ", layout='slanted', ladderize = FALSE, alpha=" + alphaval + ")" +
+				  " + layout_dendrogram()" +
+				  " + geom_tiplab(angle=0, offset=-.25, hjust=.5, alpha=" + alphaval + ")" + 
+				  " + theme(panel.background = element_blank(), " +
+				  " plot.background = element_blank())" )
 		print(rplot)
 		treeCount += 1
 	print("")
@@ -150,6 +155,7 @@ def main():
 #				print(derootedTree)
 #				pass
 
+# to do: something wrong in the minimal coverage sets, not removed duplicates
 
 
 # Workhorse function
@@ -340,12 +346,17 @@ def getTopReducers(reducingtrees, reducingdomains, reducedTreeSet):
 	# So, I need a copy here to keep that from happening.
 	
 	# Run through the maximum reducing trees, work out their reductions
-	# Recursively call function
-	workingTreeSet = reducedTreeSet.copy()
+	# Recursively call function	
+	# Multiple trees might reduce to the same degree
+	# We need to run through each of them recursively as we build the tree lists
+	#print("Starting")
 	for maxReducedTree in maxReducedTrees:
 
-		#print("This is a maximum reducing tree:", maxReducedTree)
+		print("This is a maximum reducing tree:", maxReducedTree)
 
+		# Move the copy in here. I think that's the right thing to do.
+		# Need to check new output carefully.
+		workingTreeSet = reducedTreeSet.copy()
 		workingTreeSet.append(maxReducedTree)
 
 		reduceddomains = reducingdomains.copy()
@@ -356,6 +367,8 @@ def getTopReducers(reducingtrees, reducingdomains, reducedTreeSet):
 		#print("Domains left", reduceddomains)
 		#print("Reduced tree set", reducedTreeSet)
 		getTopReducers(reducingtrees,reduceddomains,workingTreeSet)
+	#print("Finishing")
+
 
 def newick(tree):
 	
