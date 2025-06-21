@@ -5,10 +5,10 @@ from collections import defaultdict
 # Storage folders
 planarFolder = "../domains/"
 #domainFile = "domains_nyan1293_test.tsv"
-#domainFile = "domains_nyan1308.tsv"
+domainFile = "domains_nyan1308.tsv"
 #domainFile = "domains_chac.tsv"
 #domainFile = "domains_yupik.tsv"
-domainFile = "domains_mart.tsv"
+#domainFile = "domains_mart.tsv"
 
 domains = defaultdict(list) # trying this to avoid try/except
 trees = [ ]
