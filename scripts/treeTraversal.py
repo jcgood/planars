@@ -5,12 +5,16 @@ from collections import defaultdict
 # Storage folders
 planarFolder = "../domains/"
 #domainFile = "domains_nyan1293_test.tsv"
-domainFile = "domains_nyan1308.tsv"
+#domainFile = "domains_nyan1308.tsv"
+#domainFile = "domains_chac.tsv"
+#domainFile = "domains_yupik.tsv"
+domainFile = "domains_mart.tsv"
 
 domains = defaultdict(list) # trying this to avoid try/except
 trees = [ ]
 domainsCollapsed = [ ]
 treereductions = [ ]
+domainStrength = defaultdict(int) # store tests for a domain
 
 def main():
 
@@ -31,13 +35,24 @@ def main():
 					"size" : size, # redundant, but why not?
 					}
 		
-		domains[size].append(domain) # Defaultdict makes this easier, use in future
+		# Filter domains of size 1
+		if size > 1: domains[size].append(domain) # Defaultdict makes this easier, use in future
+		
+		# store domain strength counts
+		spanID = (left, right) # store as tuple
+		domainStrength[spanID] += 1 # default dict as int defaults to 0
+
+			
+		# mapping based on order, not keys in R even though I can name a number
+		# must only do domains in the tree
 		
 		span = [left, right]
-		
+				
 		# Using this to get a list of all domains for later use in tree analysis
 		if span in domainsCollapsed: pass
 		else: domainsCollapsed.append(span)
+		
+	totalTests = sum(domainStrength.values())
 	
 	maxDomain = max(domains.keys())
 	minDomain = min(domains.keys())
@@ -87,21 +102,72 @@ def main():
 	print("library(ggplot2)")
 	print("library(ggtree)")
 	print("library(patchwork)")
+	print("")
 	
 	for tree in sorted(prunedtrees, key=len, reverse=True):
+
 		tree = tree[1:] # remove 'root'
+
 		newicktree = newick(tree)
-		rtree = "tree" + str(treeCount) + " = read.tree(text=\"" + newicktree + ";\")"
+		
+		treeNo = "tree" + str(treeCount)
+		rtree = treeNo + " = read.tree(text=\"" + newicktree + ";\")"
 		print(rtree)
-		rplot = ( "treeplot" + str(treeCount) +
-				  " = ggtree(tree" + str(treeCount) +
+
+		# After a lot of experimentation, to get the thickness to work, I need the
+		# category labels to be in alphabetical order matching the strength map list
+		# so I need to turn numbers into letters. That's done with chr 
+		labelstart = 97 # 97 corresponds to "a"
+
+		# code courtesy of copilot, turn domains into list
+		domains_toR = [f"{chr(labelstart+i)} = c({x}, {y})" for i, (x, y) in enumerate(tree)]
+		domainsC = "list(" + ", ".join(domains_toR) + ")" # these are R factors
+		groupedTree =  treeNo + "grouped = groupOTU(" + treeNo + ", " + domainsC + ")"
+
+		print(groupedTree)
+
+		# Get weighting mapping from domains
+		# list needs to follow order of the spans in the grouping above
+		strengthR = "strengthMap" +  str(treeCount) + " = c( .5, "
+		for span in tree:
+			strengthKey = tuple(span)
+			strength = domainStrength[strengthKey]
+			strengthR += str(strength) + ", "
+		strengthR = strengthR[:-2] # remove trailing comma
+		strengthR += ")"
+		print(strengthR)
+		
+		treeplotNo = "treeplot" + str(treeCount)
+
+		rplot = ( treeplotNo +
+				  " = ggtree(" + treeNo + "grouped" +
+				  ", aes(size=(" + "strengthMap" +  str(treeCount) + "[group])), " +
 				  ", layout='slanted', ladderize = FALSE, alpha=" + alphaval + ")" +
 				  " + layout_dendrogram()" +
-				  " + geom_tiplab(angle=0, offset=-.25, hjust=.5, alpha=" + alphaval + ")" + 
+				  " + geom_tiplab(size=5, angle=0, offset=-.5, hjust=.5, alpha=" + alphaval + ")" + 
 				  " + theme(panel.background = element_blank(), " +
-				  " plot.background = element_blank())" )
+				  " plot.background = element_blank())" +
+				  " + theme(legend.position=\"none\")" +
+				  " + scale_size_identity()"
+				  )
 		print(rplot)
+				
+		# label the nodes with this to check the domains
+		#+geom_text2(aes(label = label, size=6), hjust = -0.3)
+				
+		# Two issues: The tip labels drawing gives an error of some kind. can fix by specifying a size
+		# Related? Doesn't work because some domains share an edge, and this breaks it.
+		# I can't do domains. I need to do edges?
+		
+		# first fix: add size to tiplabels
+		# add in a line for the zero conditon weight at beginning of mapping
+		# look at open tree in R. 4-17 looks odd. bad algorithm for tree? Bad Newick?
+		
+		#ggtree(px, aes(size=unname(mp[group])), ladderize=FALSE, layout="slanted") + geom_tiplab(color="black", size=3, offset=-1) + layout_dendrogram() + scale_size_identity()
+		
 		treeCount += 1
+		print("")
+
 	print("")
 	
 	layoutCount = 2 # account for different last line
@@ -168,10 +234,10 @@ def traverse(size, parentSpan, tree, minDomain):
 	# Probably, it means a condition on the splitting in a for loop below for
 	# When a span size has multiple domains
 
-	#print("This is the current tree:", tree)
+	# print("This is the current tree:", tree)
 
 	# Exit condition
-	if size == minDomain:
+	if size < minDomain:
 		# The algorithm generates duplicate trees (for reasons I did not work out)
 		# So, we filter on that here
 		if tree in trees:
@@ -217,7 +283,7 @@ def traverse(size, parentSpan, tree, minDomain):
 		# from the lowest enclosing parent. Depending on the state of the tree, this
 		# can produce extra trees
 		else:
-			#print("The test span is not contained in the parent", parentSpan, testSpan)
+			print("The test span is not contained in the parent", parentSpan, testSpan)
 			# Go back up to rebuild new tree from here
 			
 			enclosingSpan = getEnclosingParent(size,testSpan,tree)
@@ -279,7 +345,6 @@ def contains(parentSpan,childSpan):
 def getNextDomain(size, parentSpan, tree, minDomain):
 
 	domain = domains[size]
-
 	if domain:
 		return(domain, size)
 	elif size <= minDomain:
@@ -313,6 +378,17 @@ def getEnclosingParent(size, span, tree):
 # This really confused me because of the way lists are handled in Python.
 # Once I copied them more often, it worked better.
 def getTopReducers(reducingtrees, reducingdomains, reducedTreeSet):
+
+	#print(reducingdomains)
+
+	# For some of Adam's project, there are domains where left=right
+	# These broke the logic. I need to account for that.
+	# This is inefficient since we should do this at the start instead of every time
+	# This may be redundant since I'm not filtering sooner
+	for reducingdomain in reducingdomains:
+		[left, right] = reducingdomain
+		if left == right:
+			reducingdomains.remove(reducingdomain)
 
 	# Exit condition; all domains accounted for
 	if reducingdomains == []:
@@ -352,7 +428,7 @@ def getTopReducers(reducingtrees, reducingdomains, reducedTreeSet):
 	#print("Starting")
 	for maxReducedTree in maxReducedTrees:
 
-		print("This is a maximum reducing tree:", maxReducedTree)
+		#print("This is a maximum reducing tree:", maxReducedTree)
 
 		# Move the copy in here. I think that's the right thing to do.
 		# Need to check new output carefully.
@@ -373,13 +449,14 @@ def getTopReducers(reducingtrees, reducingdomains, reducedTreeSet):
 def newick(tree):
 	
 	maximal = tree[0] # First element should be maximal span
-	revtree = list(reversed(tree))
+	revtree = list(reversed(tree)) # reorder smallest to largest
 	
 	prevleftedge = 0 # placeholder
 	prevrightedge = 0
 	justlabeledanode = False # needed to get commas to come out right
 	seenpositions = [ ]
-	newicktree = "("
+	#newicktree = "("
+	newicktree = ""
 	for span in revtree:
 
 
@@ -413,8 +490,9 @@ def newick(tree):
 		justlabeledanode = True
 				
 	
-	newicktree = newicktree +  ")"
+	#newicktree = newicktree +  ")"
 	
+	#print("NN", newicktree)
 	return(newicktree)
 
 
