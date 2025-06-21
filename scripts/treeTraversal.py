@@ -36,7 +36,14 @@ def main():
 					}
 		
 		# Filter domains of size 1
-		if size > 1: domains[size].append(domain) # Defaultdict makes this easier, use in future
+		#if size > 1: domains[size].append(domain) # Defaultdict makes this easier, use in future
+		
+		if size > 1:
+			#if type_ == "phonological": # filter by type, it breaks without a full domain
+			# if doing this, also need to make domains just for this type or minimal tree algorithm breaks
+			# to self: trees reduce significantly when we don't mix morphosyntax and phonology
+				domains[size].append(domain) # Defaultdict makes this easier, use in future
+		
 		
 		# store domain strength counts
 		spanID = (left, right) # store as tuple
@@ -283,7 +290,7 @@ def traverse(size, parentSpan, tree, minDomain):
 		# from the lowest enclosing parent. Depending on the state of the tree, this
 		# can produce extra trees
 		else:
-			print("The test span is not contained in the parent", parentSpan, testSpan)
+			# print("The test span is not contained in the parent", parentSpan, testSpan)
 			# Go back up to rebuild new tree from here
 			
 			enclosingSpan = getEnclosingParent(size,testSpan,tree)
