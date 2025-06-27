@@ -240,6 +240,7 @@ def traverse(size, parentSpan, tree, minDomain):
 	# in a larger parent (e.g., add another two element domain to Chichewa)
 	# Probably, it means a condition on the splitting in a for loop below for
 	# When a span size has multiple domains
+	# Is this why Chacobo breaks?
 
 	# print("This is the current tree:", tree)
 
@@ -250,7 +251,7 @@ def traverse(size, parentSpan, tree, minDomain):
 		if tree in trees:
 			pass
 		else: trees.append(tree)
-		#print("Saving Tree condition 1:", "\n", tree)
+		print("Saving Tree condition 1:", "\n", tree)
 		return
 				
 	# If we escape the exit condition, find next domain size that has spans
@@ -262,7 +263,7 @@ def traverse(size, parentSpan, tree, minDomain):
 		if tree in trees:
 			pass
 		else: trees.append(tree)
-		#print("Saving Tree condition 2:",  "\n", tree)
+		print("Saving Tree condition 2:",  "\n", tree)
 		return
 	
 	# Go through each test in domain size, they may have different spans
@@ -311,7 +312,7 @@ def traverse(size, parentSpan, tree, minDomain):
 	# There may just be one span, but, if not, here the function can be called
 	# multiple times to do a tree search		
 	if seenSpans:
-		#print("Processing subspans:", seenSpans)
+		print("Processing subspans:", seenSpans)
 		for span in seenSpans:
 			newtree = tree.copy()
 			newtree.append(span)
@@ -325,7 +326,7 @@ def traverse(size, parentSpan, tree, minDomain):
 	# parent span. So, we need to skip this level and see what else might be there
 	# that this parent encloses
 	else:		
-		#print("I didn't contain anything here:", parentSpan, size)
+		print("I didn't contain anything here:", parentSpan, size)
 		traverse(size-2, parentSpan, tree, minDomain)
 
 
@@ -353,8 +354,10 @@ def getNextDomain(size, parentSpan, tree, minDomain):
 
 	domain = domains[size]
 	if domain:
+		print("DS:", minDomain, size)
 		return(domain, size)
 	elif size <= minDomain:
+		print("DSmin:", size)
 		return(False,False)
 	else:
 		return(getNextDomain(size-1, parentSpan, tree, minDomain))
