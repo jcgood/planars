@@ -1,4 +1,8 @@
 SignSet	Positions	Construction	D1.Widescope	D2.Filled-in-both-conjuncts
+VerbalRoot	29	PlanarBase	NA	NA
 re-	27	and-conjunction	no	yes
+re-	27	ciscategorial-V	no	no
 again	7, 11, 16, 21, 25, 37	and-conjunction	yes	yes
+againX	4, 11, 16, 21, 25, 29	ciscategorial-V	yes	yes
 ed, ing, etc.	30	and-conjunction	no	yes
+ed, ing, etc.	30	ciscategorial-V	yes	yes

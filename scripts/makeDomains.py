@@ -12,6 +12,17 @@
 # 6. This gets the MIN domain				
 
 
+# Transcategorial/ciscategorial facture has a different, span-based logic
+	# Min-Max and contiguity
+	# transcategorial requires knowledge of n-combines, v-combines
+	# columns vs rows, and figure it out
+	# coord fracture needs both rows, yes and no.
+	# non-interruptability...can fracture
+	# try a phonology one
+		# post-aspiration
+		# Some prefixes are "N/A"
+		# Then, if not N/A, then process yes/no
+
 # files/tables
 # planar structure
 # elements (generate from planar structure; look for accidental overlaps)

@@ -6,9 +6,10 @@ from collections import defaultdict
 planarFolder = "../domains/"
 #domainFile = "domains_nyan1293_test.tsv"
 #domainFile = "domains_nyan1308.tsv"
-domainFile = "domains_chac.tsv"
+#domainFile = "domains_chac.tsv"
 #domainFile = "domains_yupik.tsv"
 #domainFile = "domains_mart.tsv"
+domainFile = "catalanPlus.tsv"
 
 domains = defaultdict(list) # trying this to avoid try/except
 trees = [ ]
@@ -354,10 +355,10 @@ def getNextDomain(size, parentSpan, tree, minDomain):
 
 	domain = domains[size]
 	if domain:
-		print("DS:", minDomain, size)
+		#print("DS:", minDomain, size)
 		return(domain, size)
 	elif size <= minDomain:
-		print("DSmin:", size)
+		#print("DSmin:", size)
 		return(False,False)
 	else:
 		return(getNextDomain(size-1, parentSpan, tree, minDomain))

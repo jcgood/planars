@@ -1,0 +1,14 @@
+Test_Labels	Domain_Type	Left_Edge	Right_Edge	Size
+mart1259_v_ciscategorial.selection_maximal	morphosyntactic	2	26	25
+mart1259_v_ciscategorial.selection_minimal	morphosyntactic	17	18	2
+mart1259_v_deviations_suppletion_patient.pronouns	indeterminate	18	20	3
+mart1259_v_deviations_suppletion_recipient.pronouns	indeterminate	18	19	2
+mart1259_v_free.occurrence_maximal	indeterminate	17	20	4
+mart1259_v_free.occurrence_minimal	indeterminate	18	18	1
+mart1259_v_noninterruption	morphosyntactic	17	20	4
+mart1259_v_nonpermutability_declarative.and.interrogative	morphosyntactic	4	25	22
+mart1259_v_nonpermutability_rigid	morphosyntactic	17	20	4
+mart1259_v_nonpermutability_rigid_interrogative	morphosyntactic	3	25	23
+mart1259_v_recursion.based_complement.clause	morphosyntactic	4	27	24
+mart1259_v_suprasegmental_accent	phonological	17	20	4
+mart1259_all	all	1	27	28
