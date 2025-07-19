@@ -14,9 +14,11 @@ Ciscategorial-Minimal	morphosyntactic	10	18	9
 SubspanRepetition-Coordination-Maximal	morphosyntactic	1	22	22
 SubspanRepetition-Coordination-Minimal	morphosyntactic	10	17	8
 SubspanRepetition-Reduplication	length	10	17	8
-Segmental-VowelHarmony	phonological	10	14	5
-Segmental-muContraction-Maximal	phonological	5	17	13
-Segmental-muContraction-Minimal	phonological	9	17	9
+BiuniquenessDeviation-2pl	morphosyntactic	9	18	10
+BiuniquenessDeviation-TAMP	morphosyntactic	5	17	13
+BiuniquenessDeviation-Valency	morphosyntactic	13	15	3
+Segmental-VowelHarmony	phonological	10	16	7
+Segmental-muContraction	phonological	6	17	12
 Segmental-HiatusResolution-Glide	phonological	6	8	3
 Segmental-HiatusResolution-Deletion	phonological	6	8	3
 Segmental-GlideInsertion	phonological	6	10	5
@@ -49,9 +51,6 @@ TonePatternNeg-noOM	tonosegmental	5	17	13
 XTonePatternRel2	tonosegmental	6	17	12
 XTonePatternRel3	tonosegmental	5	17	13
 TonePatternHighToneExtension	tonosegmental	12	17	6
-BiuniquenessDeviation-2pl	morphosyntactic	9	18	10
-BiuniquenessDeviation-TAMP	morphosyntactic	5	17	13
-BiuniquenessDeviation-Valency	morphosyntactic	13	15	3
 Intonation-DeclarativeContentQuestion	tonosegmental	2	22	21
 Intonation-YesNoQuestion-Minimal	tonosegmental	2	22	21
 Intonation-YesNoQuestion-Maximal	tonosegmental	1	22	22
