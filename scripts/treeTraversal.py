@@ -5,11 +5,11 @@ from collections import defaultdict
 # Storage folders
 planarFolder = "../domains/"
 #domainFile = "domains_nyan1293_test.tsv"
-#domainFile = "domains_nyan1308.tsv"
+domainFile = "domains_nyan1308.tsv"
 #domainFile = "domains_chac.tsv"
 #domainFile = "domains_yupik.tsv"
 #domainFile = "domains_mart.tsv"
-domainFile = "catalanPlus.tsv"
+#domainFile = "catalanPlus.tsv"
 
 domains = defaultdict(list) # trying this to avoid try/except
 trees = [ ]
@@ -29,6 +29,12 @@ def main():
 		right = row["Right_Edge"]
 		size = row["Size"]
 		
+		# data integrity check
+		calculatedSize = right - left + 1
+		if size != calculatedSize:
+			print("Mismatch between stored size and calculated size", row)
+			quit()
+		
 		domain = {	"label" : label, 
 					"type" 	: type_,
 					"left" 	: left,
@@ -43,6 +49,7 @@ def main():
 			#if type_ == "phonological": # filter by type, it breaks without a full domain
 			# if doing this, also need to make domains just for this type or minimal tree algorithm breaks
 			# to self: trees reduce significantly when we don't mix morphosyntax and phonology
+			# There's a "top-reducers" recursion problem when I just do phonological or morphosyntactic
 				domains[size].append(domain) # Defaultdict makes this easier, use in future
 		
 		
@@ -103,14 +110,16 @@ def main():
 		print("")
 
 	totalTrees = treeCount - 1 # counter had been set to 1 to avoid zero numbering
-	alphaval = str(round(1/totalTrees, 3))
+	alphaval = str(round(1/totalTrees, 6))
 	treeCount = 1
-	print("Maximal newicks")
-	print("library(ape)")
-	print("library(ggplot2)")
-	print("library(ggtree)")
-	print("library(patchwork)")
-	print("")
+
+	rout = open('constituencyforest-all.r', 'w')
+	#print("Maximal newicks", file=rout)
+	print("library(ape)", file=rout)
+	print("library(ggplot2)", file=rout)
+	print("library(ggtree)", file=rout)
+	print("library(patchwork)", file=rout)
+	print("", file=rout)
 	
 	for tree in sorted(prunedtrees, key=len, reverse=True):
 
@@ -120,36 +129,39 @@ def main():
 		
 		treeNo = "tree" + str(treeCount)
 		rtree = treeNo + " = read.tree(text=\"" + newicktree + ";\")"
-		print(rtree)
+		print(rtree, file=rout)
 
 		# After a lot of experimentation, to get the thickness to work, I need the
 		# category labels to be in alphabetical order matching the strength map list
 		# so I need to turn numbers into letters. That's done with chr 
 		labelstart = 97 # 97 corresponds to "a"
+		
+		# reorder the spans by their weight (to get the r drawing system to work out)
+		sortedSpans = sorted(tree, key = lambda e: domainStrength[tuple(e)])			
 
 		# code courtesy of copilot, turn domains into list
-		domains_toR = [f"{chr(labelstart+i)} = c({x}, {y})" for i, (x, y) in enumerate(tree)]
+		domains_toR = [f"{chr(labelstart+i)} = c({x}, {y})" for i, (x, y) in enumerate(sortedSpans)]
 		domainsC = "list(" + ", ".join(domains_toR) + ")" # these are R factors
 		groupedTree =  treeNo + "grouped = groupOTU(" + treeNo + ", " + domainsC + ")"
 
-		print(groupedTree)
+		print(groupedTree, file=rout)
 
 		# Get weighting mapping from domains
 		# list needs to follow order of the spans in the grouping above
-		strengthR = "strengthMap" +  str(treeCount) + " = c( .5, "
-		for span in tree:
+		strengthR = "strengthMap" +  str(treeCount) + " = c( .5, " # why do I need the initial .5?; seems to be for ungrouped things
+		for span in sortedSpans:
 			strengthKey = tuple(span)
 			strength = domainStrength[strengthKey]
 			strengthR += str(strength) + ", "
 		strengthR = strengthR[:-2] # remove trailing comma
 		strengthR += ")"
-		print(strengthR)
+		print(strengthR, file=rout)
 		
 		treeplotNo = "treeplot" + str(treeCount)
 
 		rplot = ( treeplotNo +
 				  " = ggtree(" + treeNo + "grouped" +
-				  ", aes(size=(" + "strengthMap" +  str(treeCount) + "[group])), " +
+				  ", aes(size=(" + "strengthMap" +  str(treeCount) + "[group]))" +
 				  ", layout='slanted', ladderize = FALSE, alpha=" + alphaval + ")" +
 				  " + layout_dendrogram()" +
 				  " + geom_tiplab(size=5, angle=0, offset=-.5, hjust=.5, alpha=" + alphaval + ")" + 
@@ -158,7 +170,7 @@ def main():
 				  " + theme(legend.position=\"none\")" +
 				  " + scale_size_identity()"
 				  )
-		print(rplot)
+		print(rplot, file=rout)
 				
 		# label the nodes with this to check the domains
 		#+geom_text2(aes(label = label, size=6), hjust = -0.3)
@@ -174,24 +186,25 @@ def main():
 		#ggtree(px, aes(size=unname(mp[group])), ladderize=FALSE, layout="slanted") + geom_tiplab(color="black", size=3, offset=-1) + layout_dendrogram() + scale_size_identity()
 		
 		treeCount += 1
-		print("")
+		print("", file=rout)
 
-	print("")
+	print("", file=rout)
 	
 	layoutCount = 2 # account for different last line
-	print("treelayout <- c(")
+	print("treelayout <- c(", file=rout)
 	while layoutCount < treeCount:
-		print("area(t = 1, l = 1, b = 5, r = 1),")
+		print("area(t = 1, l = 1, b = 5, r = 1),", file=rout)
 		layoutCount += 1
-	print("area(t = 1, l = 1, b = 5, r = 1))")
-	print("")
+	print("area(t = 1, l = 1, b = 5, r = 1))", file=rout)
+	print("", file=rout)
 	
 	plotCount = 1 # account for different last line
+	print("print(", file=rout)
 	while plotCount < treeCount:
-		print("treeplot" + str(plotCount) + "+")
+		print("treeplot" + str(plotCount) + "+", file=rout)
 		plotCount += 1
-	print("plot_layout(design = treelayout)")
-	print("")
+	print("plot_layout(design = treelayout))", file=rout)
+	rout.close()
 	
 	# to self, what am I visualizing here precisely? What are these trees?	
 
@@ -252,7 +265,7 @@ def traverse(size, parentSpan, tree, minDomain):
 		if tree in trees:
 			pass
 		else: trees.append(tree)
-		print("Saving Tree condition 1:", "\n", tree)
+		#print("Saving Tree condition 1:", "\n", tree)
 		return
 				
 	# If we escape the exit condition, find next domain size that has spans
@@ -264,7 +277,7 @@ def traverse(size, parentSpan, tree, minDomain):
 		if tree in trees:
 			pass
 		else: trees.append(tree)
-		print("Saving Tree condition 2:",  "\n", tree)
+		#print("Saving Tree condition 2:",  "\n", tree)
 		return
 	
 	# Go through each test in domain size, they may have different spans
@@ -313,7 +326,7 @@ def traverse(size, parentSpan, tree, minDomain):
 	# There may just be one span, but, if not, here the function can be called
 	# multiple times to do a tree search		
 	if seenSpans:
-		print("Processing subspans:", seenSpans)
+		#print("Processing subspans:", seenSpans)
 		for span in seenSpans:
 			newtree = tree.copy()
 			newtree.append(span)
@@ -327,7 +340,7 @@ def traverse(size, parentSpan, tree, minDomain):
 	# parent span. So, we need to skip this level and see what else might be there
 	# that this parent encloses
 	else:		
-		print("I didn't contain anything here:", parentSpan, size)
+		#print("I didn't contain anything here:", parentSpan, size)
 		traverse(size-2, parentSpan, tree, minDomain)
 
 
@@ -393,6 +406,7 @@ def getTopReducers(reducingtrees, reducingdomains, reducedTreeSet):
 	#print(reducingdomains)
 
 	# For some of Adam's project, there are domains where left=right
+	# Also breaks on Chichewa for just phonological or just morsyntactic, but I don't know why yet, maybe same issue?
 	# These broke the logic. I need to account for that.
 	# This is inefficient since we should do this at the start instead of every time
 	# This may be redundant since I'm not filtering sooner
