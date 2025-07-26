@@ -7,7 +7,7 @@ FreeOccurrence-Maximal-AFF/2pOBJ	length	6	18	13
 FreeOccurrence-Maximal/elsewhere	length	5	17	13
 NonInterruptibility	morphosyntactic	5	19	15
 NonPermutability-Strict	morphosyntactic	5	13	9
-NonPermutability-Scopal	morphosyntactic	5	21	16
+NonPermutability-Scopal	morphosyntactic	5	21	17
 Ciscategorial-Maximal	morphosyntactic	5	18	14
 Ciscategorial-Minimal	morphosyntactic	10	18	9
 SubspanRepetition-Coordination-Maximal	morphosyntactic	1	22	22
@@ -30,11 +30,16 @@ Accent-PenultimateLengthening-Maximal-Subj	phonological	3	21	19
 Tonal-ToneDoubling-Minimal	phonological 	9	17	9
 Tonal-ToneDoubling-Maximal-NoSubj	phonological	5	21	17
 Tonal-ToneDoubling-Maximal-Subj	phonological	3	21	19
+Tonal-FinalRetraction-Minimal	phonological	10	17	8
+Tonal-FinalRetraction-Maximal-NoSubj	phonological	5	21	17
+Tonal-FinalRetraction-Maximal-Subj	phonological	3	21	19
+Tonal-Plateauing-Minimal	phonological	10	17	8
+Tonal-Plateauing-Maximal-NoSubj	phonological	5	21	17
+Tonal-Plateauing-Maximal-Subj	phonological	3	21	19
 Tonal-RootExtensionHighTone-IMP	phonological	10	17	8
-Tonal-EncliticToneShift	phonological	5	19	15
+Tonal-EncliticToneShift	phonological	17	19	3
 Tonal-MeeussensRule	phonological	9	17	9
 Tonal-Plateauing	phonological	5	19	15
-Tonal-FinalRetraction	phonological	5	19	15
 TonePattern2-OM	tonosegmental	9	17	9
 TonePattern2-noOM	tonosegmental	10	17	8
 TonePattern3	tonosegmental	8	17	10
