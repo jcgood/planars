@@ -56,7 +56,6 @@ TonePatternNeg3-PAST	tonosegmental	5	17	13
 TonePatternNeg3-PERM	tonosegmental	5	17	13
 TonePatternNeg-OM	tonosegmental	5	17	13
 TonePatternNeg-noOM	tonosegmental	5	17	13
-TonePatternHighToneExtension	tonosegmental	12	17	6
 Intonation-DeclarativeContentQuestion	tonosegmental	2	22	21
 Intonation-YesNoQuestion-Minimal	tonosegmental	2	22	21
 Intonation-YesNoQuestion-Maximal	tonosegmental	1	22	22
