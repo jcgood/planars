@@ -45,12 +45,14 @@ def main():
 		# Filter domains of size 1
 		#if size > 1: domains[size].append(domain) # Defaultdict makes this easier, use in future
 		
+		color = "black"
 		if size > 1:
-			#if type_ == "phonological": # filter by type, it breaks without a full domain
+			#if type_ == "morphosyntactic" or type_ == "length" or type_ == "intonational" or type_ == "tonosegmental": # filter by type, it breaks without a full domain
 			# if doing this, also need to make domains just for this type or minimal tree algorithm breaks
 			# to self: trees reduce significantly when we don't mix morphosyntax and phonology
 			# There's a "top-reducers" recursion problem when I just do phonological or morphosyntactic
 				domains[size].append(domain) # Defaultdict makes this easier, use in future
+			#	color = "red"
 		
 		
 		# store domain strength counts
@@ -121,6 +123,32 @@ def main():
 	print("library(patchwork)", file=rout)
 	print("", file=rout)
 	
+	# to label the planar positions
+	print("posLabel = list(\"1\" = \"QM\",", file=rout)
+	print("\"2\" = \"PreSbj\",", file=rout)
+	print("\"3\" = \"Sbj\",", file=rout)
+	print("\"4\" = \"PostSbj\",", file=rout)
+	print("\"5\" = \"Neg1\",", file=rout)
+	print("\"6\" = \"SM\",", file=rout)
+	print("\"7\" = \"Neg2\",", file=rout)
+	print("\"8\" = \"TAM\",", file=rout)
+	print("\"9\" = \"OM\",", file=rout)
+	print("\"10\" = \"Root\",", file=rout)
+	print("\"11\" = \"Ext\",", file=rout)
+	print("\"12\" = \"STAT\",", file=rout)
+	print("\"13\" = \"CAUS\",", file=rout)
+	print("\"14\" = \"APPL\",", file=rout)
+	print("\"15\" = \"REC\",", file=rout)
+	print("\"16\" = \"PASS\",", file=rout)
+	print("\"17\" = \"FV\",", file=rout)
+	print("\"18\" = \"2P\",", file=rout)
+	print("\"19\" = \"Enc\",", file=rout)
+	print("\"20\" = \"Obj1\",", file=rout)
+	print("\"21\" = \"Obj2\",", file=rout)
+	print("\"22\" = \"PostObj\")", file=rout)
+
+	print("", file=rout)
+	
 	for tree in sorted(prunedtrees, key=len, reverse=True):
 
 		tree = tree[1:] # remove 'root'
@@ -160,16 +188,27 @@ def main():
 		treeplotNo = "treeplot" + str(treeCount)
 
 		rplot = ( treeplotNo +
-				  " = ggtree(" + treeNo + "grouped" +
-				  ", aes(size=(" + "strengthMap" +  str(treeCount) + "[group]))" +
-				  ", layout='slanted', ladderize = FALSE, alpha=" + alphaval + ")" +
-				  " + layout_dendrogram()" +
-				  " + geom_tiplab(size=5, angle=0, offset=-.5, hjust=.5, alpha=" + alphaval + ")" + 
-				  " + theme(panel.background = element_blank(), " +
-				  " plot.background = element_blank())" +
-				  " + theme(legend.position=\"none\")" +
-				  " + scale_size_identity()"
+				  " = ggtree(" + treeNo + "grouped,\n" +
+				  "\taes(size=(" + "strengthMap" +  str(treeCount) + "[group])),\n" +
+				  "\tlayout='slanted', ladderize = FALSE, alpha=" + alphaval + ", color=\"" + color + "\") +\n" +
+				  "\tlayout_dendrogram() +\n"
 				  )
+		
+		if treeCount == 1: # different logic for first one to only draw labels once for cleaner output
+			rplot += ( "\tgeom_tiplab(geom=\"label\", size=5, angle=0, offset=-1, hjust=.5, alpha=1" + ",\n" +
+					   "\taes(label=paste(label, posLabel[label], sep=\"\\n\")), lineheight = 1) +\n"
+					 )
+		else: # Still need transparent labels to get alignment to work
+			rplot += ( "\tgeom_tiplab(geom=\"label\", size=5, angle=0, offset=-1, hjust=.5, alpha=0" + ",\n" +
+					   "\taes(label=paste(label, posLabel[label], sep=\"\\n\")), color=\"transparent\", lineheight = 1) +\n"
+					 )
+
+		rplot += ( "\ttheme(panel.background = element_blank(),\n" +
+				   "\tplot.background = element_blank()) +\n" +
+				   "\t\ttheme(legend.position=\"none\") +\n" +
+				   "\t\tscale_size_identity()"
+				  )
+				  
 		print(rplot, file=rout)
 				
 		# label the nodes with this to check the domains
