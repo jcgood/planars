@@ -3,7 +3,7 @@ library(pacman)
 p_load(ggsci,
        tidyverse)
 
-domains <- read_tsv("../planar_tables/domains_nyan1308.tsv")
+domains <- read_tsv("/Users/jcgood/gitrepos/planars/domains/domains_nyan1308.tsv")
 tests <- filter(domains) # vacuous at the moment
 
 

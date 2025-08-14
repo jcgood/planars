@@ -1,8 +1,8 @@
-Test_Labels	Domain_Type	Left_Edge	Right_Edge	Size
-FreeOccurrence-Minimal-AFF/IMP_2sg	length	10	17	8
-FreeOccurrence-Maximal-AFF/IMP_2sg	length	9	17	9
-FreeOccurrence-Minimal-AFF/IMP_2pl	length	10	18	9
-FreeOccurrence-Maximal-AFF/IMP_2pl	length	9	18	10
+Test_Labels	Domain_Type	Left_Edge	Right_Edge	Size	Notes
+FreeOccurrence-Minimal-AFF/IMP2s	length	10	17	8
+FreeOccurrence-Maximal-AFF/IMP2s	length	9	17	9
+FreeOccurrence-Minimal-AFF/IMP2p	length	10	18	9
+FreeOccurrence-Maximal-AFF/IMP2p	length	9	18	10
 FreeOccurrence-Maximal-AFF/2pOBJ	length	6	18	13
 FreeOccurrence-Maximal/elsewhere	length	5	17	13
 NonInterruptibility	morphosyntactic	5	19	15
@@ -54,38 +54,40 @@ TonePattern5-noOM-Other	tonosegmental	8	16	9
 TonePattern5-OM	tonosegmental	8	16	9
 TonePattern6-RP-noOM-MonoSyll	tonosegmental	6	17	12
 TonePattern6-RP-noOM-Other	tonosegmental	6	16	11
+TonePattern6-RP-OM	tonosegmental	6	16	11
 TonePattern6-HAB-noOM-MonoSyll	tonosegmental	6	17	12
 TonePattern6-HAB-noOM-Other	tonosegmental	6	16	11
-TonePattern6-RP-OM-MonoSyll	tonosegmental	6	16	11
-TonePattern6-HAB-OM-Other	tonosegmental	6	16	11
-TonePattern6-RP-OM	tonosegmental	6	16	11
 TonePattern6-HAB-OM	tonosegmental	6	16	11
 TonePattern7-noOM	tonosegmental	6	8	3
 TonePattern7-OM-MonoSyll	tonosegmental	6	17	12
 TonePattern7-OM-Other	tonosegmental	6	10	5
-TonePattern8-noOM-SEQ-MonoSyll	tonosegmental	6	17	12
-TonePattern8-noOM-SEQ-DiSyll	tonosegmental	6	17	12
-TonePattern8-noOM-SEQ-Other	tonosegmental	6	16	11
+#TonePattern8-noOM-SEQ-MonoSyll	tonosegmental	6	17	12	Sequential clauses are subordinate, skipping
+#TonePattern8-noOM-SEQ-DiSyll	tonosegmental	6	17	12
+#TonePattern8-noOM-SEQ-Other	tonosegmental	6	16	11
 TonePattern8-noOM-JST-MonoSyll	tonosegmental	6	17	12
 TonePattern8-noOM-JST-DiSyll	tonosegmental	6	17	12
 TonePattern8-noOM-JST-Other	tonosegmental	6	16	11
-TonePattern8-OM-SEQ-MonoSyll	tonosegmental	6	17	12
-TonePattern8-OM-SEQ-DiTriSyll	tonosegmental	6	17	12
-TonePattern8-OM-SEQ-Other	tonosegmental	6	16	11
+#TonePattern8-OM-SEQ-MonoSyll	tonosegmental	6	17	12
+#TonePattern8-OM-SEQ-DiTriSyll	tonosegmental	6	17	12
+#TonePattern8-OM-SEQ-Other	tonosegmental	6	16	11
 TonePattern8-OM-JST-MonoSyll	tonosegmental	6	17	12
 TonePattern8-OM-JST-DiTriSyll	tonosegmental	6	17	12
 TonePattern8-OM-JST-Other	tonosegmental	6	16	11
-NegTonePattern2-Neg2-Imperative-MonoSyll	tonosegmental	6	17	12
-NegTonePattern2-Neg2-Imperative-Other	tonosegmental	6	16	11
-NegTonePattern2-Neg2-SeqPFV-MonoSyll	tonosegmental	6	17	12
+NegTonePattern2-Neg2-IMP-NoOM-MonoSyll	tonosegmental	6	17	12	Treating ó as underlyingly high
+NegTonePattern2-Neg2-IMP-Other	tonosegmental	6	16	11
+NegTonePattern2-Neg2-SeqPFV-NoOM-MonoSyll	tonosegmental	6	17	12	Negative sequential appears to have main clause usage; assigns high tone to SM
 NegTonePattern2-Neg2-SeqPFV-Other	tonosegmental	6	17	12
-NegTonePattern2-Neg2-Other	tonosegmental	7	17	11
-NegTonePattern2-Neg1-NearFutDistFut	tonosegmental	5	17	13
-NegTonePattern3-PfvSimPST	tonosegmental	6	17	12
-NegTonePattern3-PfvSimPST-MonoSyll	tonosegmental	6	17	12
-NegTonePattern3-PERM	tonosegmental	5	17	13
-NegTonePattern4-OM	tonosegmental	8	17	10
+NegTonePattern2-Neg1-NoOM-MonoSyll	tonosegmental	5	17	13	include Neg1 since low tone, unlike NegTP 1
+NegTonePattern2-Neg1-Other	tonosegmental	5	17	13	To FV because of neutralization of high-toned roots
+NegTonePattern3-PfvSimPST-NoOM-MonoSyll	tonosegmental	6	17	12
+NegTonePattern3-PfvSimPST-Other	tonosegmental	6	17	12
+NegTonePattern3-PERM-NoOM-MonoSyll	tonosegmental	5	17	13
+NegTonePattern3-PERM-NoOM-DiSyll	tonosegmental	5	17	13
+NegTonePattern3-PERM-NoOM-Other	tonosegmental	5	17	13
+NegTonePattern3-PERM-OM-MonoSyll	tonosegmental	5	17	13
+NegTonePattern3-PERM-OM-Other	tonosegmental	5	17	13
 NegTonePattern4-noOM	tonosegmental	8	17	10
+NegTonePattern4-OM	tonosegmental	8	17	10
 Intonation-DeclarativeContentQuestion	intonational	2	22	21
 Intonation-YesNoQuestion-Minimal	intonational	2	22	21
 Intonation-YesNoQuestion-Maximal	intonational	1	22	22

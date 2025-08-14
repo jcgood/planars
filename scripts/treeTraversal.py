@@ -17,7 +17,7 @@ domainsCollapsed = [ ]
 treereductions = [ ]
 domainStrength = defaultdict(int) # store tests for a domain
 
-def main():
+def main(subset=None, color="black", tpfx=""):
 
 	domainRows = pandas.read_csv(planarFolder + os.sep + domainFile,sep="\t")
 	
@@ -28,6 +28,11 @@ def main():
 		left = row["Left_Edge"]
 		right = row["Right_Edge"]
 		size = row["Size"]
+		
+		# See if line is commented out
+		#if label.startswith("#"):
+		#	print(label)
+		#	continue
 		
 		# data integrity check
 		calculatedSize = right - left + 1
@@ -45,13 +50,20 @@ def main():
 		# Filter domains of size 1
 		#if size > 1: domains[size].append(domain) # Defaultdict makes this easier, use in future
 		
-		color = "black"
 		if size > 1:
+
+			if subset is None:
+				domains[size].append(domain) # Defaultdict makes this easier, use in future
+
+			elif type_ in subset:
+				domains[size].append(domain) # Defaultdict makes this easier, use in future
+		
+
 			#if type_ == "morphosyntactic" or type_ == "length" or type_ == "intonational" or type_ == "tonosegmental": # filter by type, it breaks without a full domain
 			# if doing this, also need to make domains just for this type or minimal tree algorithm breaks
 			# to self: trees reduce significantly when we don't mix morphosyntax and phonology
 			# There's a "top-reducers" recursion problem when I just do phonological or morphosyntactic
-				domains[size].append(domain) # Defaultdict makes this easier, use in future
+			#else:
 			#	color = "red"
 		
 		
@@ -115,7 +127,7 @@ def main():
 	alphaval = str(round(1/totalTrees, 6))
 	treeCount = 1
 
-	rout = open('constituencyforest-all.r', 'w')
+	rout = open(tpfx + 'constituencyforest-all.r', 'w')
 	#print("Maximal newicks", file=rout)
 	print("library(ape)", file=rout)
 	print("library(ggplot2)", file=rout)
@@ -155,7 +167,7 @@ def main():
 
 		newicktree = newick(tree)
 		
-		treeNo = "tree" + str(treeCount)
+		treeNo = tpfx + "tree" + str(treeCount)
 		rtree = treeNo + " = read.tree(text=\"" + newicktree + ";\")"
 		print(rtree, file=rout)
 
@@ -185,7 +197,7 @@ def main():
 		strengthR += ")"
 		print(strengthR, file=rout)
 		
-		treeplotNo = "treeplot" + str(treeCount)
+		treeplotNo = tpfx + "treeplot" + str(treeCount)
 
 		rplot = ( treeplotNo +
 				  " = ggtree(" + treeNo + "grouped,\n" +
@@ -240,7 +252,7 @@ def main():
 	plotCount = 1 # account for different last line
 	print("print(", file=rout)
 	while plotCount < treeCount:
-		print("treeplot" + str(plotCount) + "+", file=rout)
+		print(tpfx + "treeplot" + str(plotCount) + "+", file=rout)
 		plotCount += 1
 	print("plot_layout(design = treelayout))", file=rout)
 	rout.close()
@@ -562,4 +574,4 @@ def newick(tree):
 
 
 
-main()
+main(["tonosegmental", "intonational"], "green", "tonoseg")
