@@ -88,6 +88,15 @@ NegTonePattern3-PERM-OM-MonoSyll	tonosegmental	5	17	13
 NegTonePattern3-PERM-OM-Other	tonosegmental	5	17	13
 NegTonePattern4-noOM	tonosegmental	8	17	10
 NegTonePattern4-OM	tonosegmental	8	17	10
-Intonation-DeclarativeContentQuestion	intonational	2	22	21
-Intonation-YesNoQuestion-Minimal	intonational	2	22	21
-Intonation-YesNoQuestion-Maximal	intonational	1	22	22
+PitchRange-Declarative-Minimal	intonational	6	17	12	making assumptions about min/max for intonational
+PitchRange-Declarative-Maximal	intonational	2	22	21
+PitchRange-Question-Minimal	intonational	6	17	12
+PitchRange-Question-Maximal	intonational	2	22	21
+Downdrift-DeclarativeContentQ-Minimal	6	17	12
+Downdrift-DeclarativeContentQ-Maximal	2	22	21
+Downdrift-YesNoQ-Minimal	6	17	12
+Downdrift-YesNoQ-Maximal	2	22	21
+FinalPitch-Declarative-Minimal	intonational	6	17	12
+FinalPitch-Declarative-Maximal	intonational	2	22	21
+FinalPitch-YesNoQ-Minimal	intonational	6	17	12
+FinalPitch-YesNoQ-Maximal	intonational	2	22	21
