@@ -124,7 +124,7 @@ def main(subset=None, color="black", tpfx=""):
 		print("")
 
 	totalTrees = treeCount - 1 # counter had been set to 1 to avoid zero numbering
-	alphaval = str(round(1/totalTrees, 6))
+	alphaval = str(round(1 - .01**(1/totalTrees), 6)) # alpha is not additive, hacking a way to get something close to black
 	treeCount = 1
 
 	rout = open(tpfx + 'constituencyforest-all.r', 'w')
@@ -160,6 +160,8 @@ def main(subset=None, color="black", tpfx=""):
 	print("\"22\" = \"PostObj\")", file=rout)
 
 	print("", file=rout)
+	print("alphaval = " + alphaval, file=rout)
+	print("", file=rout)
 	
 	for tree in sorted(prunedtrees, key=len, reverse=True):
 
@@ -191,7 +193,7 @@ def main(subset=None, color="black", tpfx=""):
 		strengthR = "strengthMap" +  str(treeCount) + " = c( .5, " # why do I need the initial .5?; seems to be for ungrouped things
 		for span in sortedSpans:
 			strengthKey = tuple(span)
-			strength = domainStrength[strengthKey]
+			strength = domainStrength[strengthKey]**(1/2) # square root to reduce distances
 			strengthR += str(strength) + ", "
 		strengthR = strengthR[:-2] # remove trailing comma
 		strengthR += ")"
@@ -202,7 +204,7 @@ def main(subset=None, color="black", tpfx=""):
 		rplot = ( treeplotNo +
 				  " = ggtree(" + treeNo + "grouped,\n" +
 				  "\taes(size=(" + "strengthMap" +  str(treeCount) + "[group])),\n" +
-				  "\tlayout='slanted', ladderize = FALSE, alpha=" + alphaval + ", color=\"" + color + "\") +\n" +
+				  "\tlayout='slanted', ladderize = FALSE, alpha=" + "alphaval" + ", color=\"" + color + "\") +\n" +
 				  "\tlayout_dendrogram() +\n"
 				  )
 		
@@ -572,6 +574,10 @@ def newick(tree):
 	return(newicktree)
 
 
-
-
-main(["tonosegmental", "intonational"], "green", "tonoseg")
+# played with colors for layering, and these work well, RGB at same intensity
+# alpha will need adjusted
+# to do: automate the layering? Or, maybe that's too hard
+main(["phonological"], "#4477AA", "phon")
+#main(["morphosyntactic"], "#EE6677", "morsyn")
+#main(["tonosegmental", "intonational"], "#228833", "tonoseg")
+#main()
