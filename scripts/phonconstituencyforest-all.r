@@ -26,14 +26,14 @@ posLabel = list("1" = "QM",
 "21" = "Obj2",
 "22" = "PostObj")
 
-alphaval = 0.3
+alphaval = 0.601893
 
 phontree1 = read.tree(text="(1, 2, (3, 4, (5, (((6, 7, 8) 6-8, 9, 10) 6-10, 11, 12, 13, 14, 15, 16, 17) 6-17, 18, 19, 20, 21) 5-21) 3-21, 22) 1-22;")
 phontree1grouped = groupOTU(phontree1, list(a = c(6, 10), b = c(6, 8), c = c(3, 21), d = c(5, 21), e = c(1, 22), f = c(6, 17)))
-strengthMap1 = c( .5, 1.7320508075688772, 1.7320508075688772, 2.0, 2.23606797749979, 2.449489742783178, 4.795831523312719)
+strengthMap1 = c( .5, 1.732051, 1.732051, 2.0, 2.236068, 2.44949, 4.795832)
 phontreeplot1 = ggtree(phontree1grouped,
 	aes(size=(strengthMap1[group])),
-	layout='slanted', ladderize = FALSE, alpha=alphaval, color="4477AA") +
+	layout='slanted', ladderize = FALSE, alpha=alphaval, color="#4477AA") +
 	layout_dendrogram() +
 	geom_tiplab(geom="label", size=5, angle=0, offset=-1, hjust=.5, alpha=1,
 	aes(label=paste(label, posLabel[label], sep="\n")), lineheight = 1) +
@@ -44,10 +44,10 @@ phontreeplot1 = ggtree(phontree1grouped,
 
 phontree2 = read.tree(text="(1, 2, (3, 4, (5, (6, 7, 8, 9, ((10, 11, 12, 13, 14, 15, 16) 10-16, 17) 10-17) 6-17, 18, 19, 20, 21) 5-21) 3-21, 22) 1-22;")
 phontree2grouped = groupOTU(phontree2, list(a = c(10, 16), b = c(3, 21), c = c(5, 21), d = c(1, 22), e = c(10, 17), f = c(6, 17)))
-strengthMap2 = c( .5, 1.0, 2.0, 2.23606797749979, 2.449489742783178, 2.449489742783178, 4.795831523312719)
+strengthMap2 = c( .5, 1.0, 2.0, 2.236068, 2.44949, 2.44949, 4.795832)
 phontreeplot2 = ggtree(phontree2grouped,
 	aes(size=(strengthMap2[group])),
-	layout='slanted', ladderize = FALSE, alpha=alphaval, color="4477AA") +
+	layout='slanted', ladderize = FALSE, alpha=alphaval, color="#4477AA") +
 	layout_dendrogram() +
 	geom_tiplab(geom="label", size=5, angle=0, offset=-1, hjust=.5, alpha=0,
 	aes(label=paste(label, posLabel[label], sep="\n")), color="transparent", lineheight = 1) +
@@ -58,10 +58,10 @@ phontreeplot2 = ggtree(phontree2grouped,
 
 phontree3 = read.tree(text="(1, 2, (3, 4, (5, (6, 7, 8, 9, (10, 11, 12, 13) 10-13, 14, 15, 16, 17) 6-17, 18, 19, 20, 21) 5-21) 3-21, 22) 1-22;")
 phontree3grouped = groupOTU(phontree3, list(a = c(10, 13), b = c(3, 21), c = c(5, 21), d = c(1, 22), e = c(6, 17)))
-strengthMap3 = c( .5, 1.0, 2.0, 2.23606797749979, 2.449489742783178, 4.795831523312719)
+strengthMap3 = c( .5, 1.0, 2.0, 2.236068, 2.44949, 4.795832)
 phontreeplot3 = ggtree(phontree3grouped,
 	aes(size=(strengthMap3[group])),
-	layout='slanted', ladderize = FALSE, alpha=alphaval, color="4477AA") +
+	layout='slanted', ladderize = FALSE, alpha=alphaval, color="#4477AA") +
 	layout_dendrogram() +
 	geom_tiplab(geom="label", size=5, angle=0, offset=-1, hjust=.5, alpha=0,
 	aes(label=paste(label, posLabel[label], sep="\n")), color="transparent", lineheight = 1) +
@@ -72,10 +72,10 @@ phontreeplot3 = ggtree(phontree3grouped,
 
 phontree4 = read.tree(text="(1, 2, (3, 4, ((5, 6) 5-6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21) 5-21) 3-21, 22) 1-22;")
 phontree4grouped = groupOTU(phontree4, list(a = c(5, 6), b = c(3, 21), c = c(5, 21), d = c(1, 22)))
-strengthMap4 = c( .5, 1.0, 2.0, 2.23606797749979, 2.449489742783178)
+strengthMap4 = c( .5, 1.0, 2.0, 2.236068, 2.44949)
 phontreeplot4 = ggtree(phontree4grouped,
 	aes(size=(strengthMap4[group])),
-	layout='slanted', ladderize = FALSE, alpha=alphaval, color="4477AA") +
+	layout='slanted', ladderize = FALSE, alpha=alphaval, color="#4477AA") +
 	layout_dendrogram() +
 	geom_tiplab(geom="label", size=5, angle=0, offset=-1, hjust=.5, alpha=0,
 	aes(label=paste(label, posLabel[label], sep="\n")), color="transparent", lineheight = 1) +
@@ -86,10 +86,10 @@ phontreeplot4 = ggtree(phontree4grouped,
 
 phontree5 = read.tree(text="(1, 2, (3, 4, (5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, (17, 18, 19) 17-19, 20, 21) 5-21) 3-21, 22) 1-22;")
 phontree5grouped = groupOTU(phontree5, list(a = c(17, 19), b = c(3, 21), c = c(5, 21), d = c(1, 22)))
-strengthMap5 = c( .5, 1.0, 2.0, 2.23606797749979, 2.449489742783178)
+strengthMap5 = c( .5, 1.0, 2.0, 2.236068, 2.44949)
 phontreeplot5 = ggtree(phontree5grouped,
 	aes(size=(strengthMap5[group])),
-	layout='slanted', ladderize = FALSE, alpha=alphaval, color="4477AA") +
+	layout='slanted', ladderize = FALSE, alpha=alphaval, color="#4477AA") +
 	layout_dendrogram() +
 	geom_tiplab(geom="label", size=5, angle=0, offset=-1, hjust=.5, alpha=0,
 	aes(label=paste(label, posLabel[label], sep="\n")), color="transparent", lineheight = 1) +

@@ -117,11 +117,64 @@ def main(subset=None, color="black", tpfx=""):
 	
 	
 	treeCount = 1
-	print("Maximal trees")
+	print("Maximal trees with enumeration")
 	for tree in sorted(prunedtrees, key=len, reverse=True):
 		print(treeCount, tree[1:], sep="\t") # remove 'root'
 		treeCount += 1	
 		print("")
+
+	spanCounts = defaultdict(int)
+	positionCounts = {i: 0 for i in range(1, 23)} # adjust for number positions
+	print("Span counts for maximal trees ")
+	for tree in sorted(prunedtrees, key=len, reverse=True):
+		tree = tree[1:] # remove 'root'
+		for span in tree:
+			spanCounts[tuple(span)] += 1
+			spanStart, spanFinish = span
+			positionCounts[spanStart] += 1
+			positionCounts[spanFinish] += 1
+			
+	print(spanCounts)
+			
+	
+	# Convert to LaTeX table for spans
+	latex_lines = [
+		r"\begin{tabular}{ll}",
+		r"\Hline",
+		r"\textsc{span} & \textsc{count} \\",
+		r"\Hline"
+		]
+	
+	sortedSpans = sorted(spanCounts.items(), key=lambda item: item[1], reverse=True)
+	for spantuple, spancount in sortedSpans:
+		span = f"{spantuple[0]}--{spantuple[1]}"
+		latex_lines.append(f"{span} & {spancount} \\\\")
+	
+	latex_lines.append(r"\end{tabular}")
+
+	# Join and print the LaTeX table
+	latex_table = "\n".join(latex_lines)
+	print(latex_table)
+
+
+	# Convert to LaTeX table now for positions
+	latex_lines = [
+		r"\begin{tabular}{ll}",
+		r"\Hline",
+		r"\textsc{position} & \textsc{count} \\",
+		r"\Hline"
+		]
+
+	sortedPositions = sorted(positionCounts.items(), key=lambda item: item[1], reverse=True)
+	for position, positioncount in sortedPositions: 
+		latex_lines.append(f"{position} & {positioncount} \\\\")
+	
+	latex_lines.append(r"\end{tabular}")
+
+	# Join and print the LaTeX table
+	latex_table = "\n".join(latex_lines)
+	print(latex_table)
+
 
 	totalTrees = treeCount - 1 # counter had been set to 1 to avoid zero numbering
 	alphaval = str(round(1 - .01**(1/totalTrees), 6)) # alpha is not additive, hacking a way to get something close to black
@@ -193,7 +246,7 @@ def main(subset=None, color="black", tpfx=""):
 		strengthR = "strengthMap" +  str(treeCount) + " = c( .5, " # why do I need the initial .5?; seems to be for ungrouped things
 		for span in sortedSpans:
 			strengthKey = tuple(span)
-			strength = domainStrength[strengthKey]**(1/2) # square root to reduce distances
+			strength = round(domainStrength[strengthKey]**(1/2), 6) # square root to reduce distances
 			strengthR += str(strength) + ", "
 		strengthR = strengthR[:-2] # remove trailing comma
 		strengthR += ")"
@@ -577,7 +630,7 @@ def newick(tree):
 # played with colors for layering, and these work well, RGB at same intensity
 # alpha will need adjusted
 # to do: automate the layering? Or, maybe that's too hard
-main(["phonological"], "#4477AA", "phon")
+#main(["phonological"], "#4477AA", "phon")
 #main(["morphosyntactic"], "#EE6677", "morsyn")
 #main(["tonosegmental", "intonational"], "#228833", "tonoseg")
-#main()
+main()
