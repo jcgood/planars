@@ -213,7 +213,7 @@ def main(subset=None, color="black", tpfx=""):
 	print("\"22\" = \"PostObj\")", file=rout)
 
 	print("", file=rout)
-	print("alphaval = " + alphaval, file=rout)
+	print("alphaval = " + alphaval + "/2", file=rout) # division by two is trial and error
 	print("", file=rout)
 	
 	for tree in sorted(prunedtrees, key=len, reverse=True):
@@ -305,11 +305,12 @@ def main(subset=None, color="black", tpfx=""):
 	print("", file=rout)
 	
 	plotCount = 1 # account for different last line
-	print("print(", file=rout)
+	print("forest = (", file=rout)
 	while plotCount < treeCount:
 		print(tpfx + "treeplot" + str(plotCount) + "+", file=rout)
 		plotCount += 1
 	print("plot_layout(design = treelayout))", file=rout)
+	print("print(forest)", file=rout)
 	rout.close()
 	
 	# to self, what am I visualizing here precisely? What are these trees?	

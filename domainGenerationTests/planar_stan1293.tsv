@@ -1,0 +1,12 @@
+Planar_Type	Position_Type	Position_Name	Elements	Class_Type
+verbal	Zone	LeftEdge	ADV	open
+verbal	Slot	LeftFocus	Q/TOP	open
+verbal	Slot	Subject	NP{S}	open
+verbal	Slot	Neg1Pos	not	list
+verbal	Slot	VerbalProdPfx	"re-, un-, over-, under-"	list
+verbal	Slot	VerbalLatPfx	"ex-, in-"	list
+verbal	Slot	VerbRoot	Vroot	open
+verbal	Slot	VerbInflSfx	"-ed, -s, -ing"	list
+verbal	Slot	Neg2Pos	not	list
+verbal	Zone	Object	NP{P}	open
+verbal	Zone	RightEdge	ADV	open

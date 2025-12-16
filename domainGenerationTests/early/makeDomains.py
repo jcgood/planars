@@ -50,7 +50,7 @@ def get_diagnostics(file):
 	diagnostics = defaultdict(list) # trying this to avoid try/except
 
 	# Just what are we coding in this file?
-	diagnosticRecords = pandas.read_csv(file,sep="\t")
+	diagnosticRecords = pandas.read_csv(file, sep="\t")
 	
 	headers = list(diagnosticRecords.columns.values)
 	diagnostics = headers[3:] # The first headers are known, the rest are diagnostics
