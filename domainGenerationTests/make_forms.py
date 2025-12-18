@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 import pandas as pd
-
+import csv
 
 DATA_DIR = ""
 
@@ -139,7 +139,19 @@ def generate_test_files(
 
         out_rows = []
         for pos, element_plain, pos_name in items_sorted:
-            out_rows.append([element_plain, pos_name, pos, *([""] * len(param_names))])
+
+			# Clean up an issue with Excel and an element that begins with a hyphen
+            if element_plain.startswith("-")or element_plain.endswith("-"):
+            	element_plain = f'[{element_plain}]'
+                
+
+            # Add NA to keystone rows entirely
+            if pos_name.strip() == "Keystone":
+                out_rows.append([element_plain, pos_name, pos, *(["NA"] * 
+                                len(param_names))])
+
+			
+            else: out_rows.append([element_plain, pos_name, pos, *([""] * len(param_names))])
 
         out_df = pd.DataFrame(
             out_rows,
@@ -147,12 +159,15 @@ def generate_test_files(
         )
 
         out_path = _resolve_path(f"{test_type}_{lang_id}_blank.tsv")
-        out_df.to_csv(out_path, sep="\t", index=False)
+        out_df.to_csv(out_path, sep="\t", index=False, quoting=csv.QUOTE_NONE,)
         written.append(out_path)
 
     return written
 
-
+# we need to add validation to the parameters: e.g., yes-no, ...
+# in cis, v-combines is redundant for now, but maybe needed for a project also doing NPs?
+# root can't combine with itself, remove from list, use keystone category
+# need to think about fractures
 
 
 if __name__ == "__main__":
