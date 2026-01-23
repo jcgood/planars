@@ -26,7 +26,7 @@ stan1293	verbal	24	Slot	NEG	1	They are probably [not] going.
 stan1293	verbal	25	Slot	Ad-VP	open	They are probably not [intentionally] going.	
 stan1293	verbal	26	Slot	Ad-V	open	They are probably not intentionally [completely] destroying the city.	
 stan1293	verbal	26.5	Slot	incorporated noun (or slot 26?)?	open	I berry picked yesterday.	
-stan1293	verbal	27	Slot	PROD PFX re-, un-, etc.	small	They [re]visited the problem.	
+stan1293	verbal	27	Zone	PROD PFX re-, un-, etc.	small	They [re]visited the problem.	
 stan1293	verbal	28	Slot	LATIN PFX ex-, in-, etc.	small	They re[ad]mitted the patient.	
 stan1293	verbal	29	Slot	Verb root	open	They re[visit]ed the problem.	Adam has three slots using the Item-Arrangement model, I’d go with deviations from biuniqueness
 stan1293	verbal	30	Slot	INFL -ed, -s, -ing	3	They revisit[ed] the problem.	
