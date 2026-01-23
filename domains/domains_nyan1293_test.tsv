@@ -21,7 +21,7 @@ Segmental-muContraction-Maximal	phonological	4	15	12
 Segmental-muContraction-Minimal	phonological	7	15	9
 Segmental-HiatusResolution-Glide	phonological	5	6	2
 Segmental-HiatusResolution-Deletion	phonological	5	6	2
-Segmental-GlideInsertion	phonological	5	8	4
+Segmental-GlideInsertation	phonological	5	8	4
 Segmental-Assimilation	phonological	5	8	4
 Prosodic-PenultimateLengthening-OM	phonological	8	17	10
 Prosodic-PenultimateLengthening-noOM	phonological	8	18	11
