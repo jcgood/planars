@@ -151,7 +151,7 @@ def derive_v_ciscategorial_fractures(filled_tsv: str) -> Dict[str, object]:
 
 if __name__ == "__main__":
     # Example run:
-    result = derive_v_ciscategorial_fractures("ciscategorial_stan1293_filled.tsv")
+    result = derive_v_ciscategorial_fractures("ciscategorial_stan1293_general_filled.tsv")
 
     print("Keystone position:", result["keystone_position"])
     print("Partial v-ciscategorial positions:", result["partial_positions"])

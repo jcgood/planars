@@ -1,4 +1,4 @@
-Element	Position_Name	Position_Number	widescope_right	widescope_left	repeated
+Element	Position_Name	Position_Number	widescope_right	widescope_left	fillable_botheither_conjunct
 also	v:leftedge	1			
 and	v:leftedge	1			
 CONJUNCT	v:leftedge	1			
