@@ -1,126 +1,127 @@
-Element	Position_Name	Position_Number	widescope_right	widescope_left	fillable_botheither_conjunct
-also	v:leftedge	1			
-and	v:leftedge	1			
-CONJUNCT	v:leftedge	1			
-then	v:leftedge	1			
-QWORDS, NP{S,A,P}	v:frontedXP	2			
-be	v:frontedauxiliary	3			
-can	v:frontedauxiliary	3			
-could	v:frontedauxiliary	3			
-do	v:frontedauxiliary	3			
-have	v:frontedauxiliary	3			
-may	v:frontedauxiliary	3			
-might	v:frontedauxiliary	3			
-must	v:frontedauxiliary	3			
-ought	v:frontedauxiliary	3			
-shall	v:frontedauxiliary	3			
-should	v:frontedauxiliary	3			
-will	v:frontedauxiliary	3			
-would	v:frontedauxiliary	3			
-[-n]	v:frontedauxiliaryinflection	4			
-[-s]	v:frontedauxiliaryinflection	4			
-[-v]	v:frontedauxiliaryinflection	4			
-NP{S,A}	v:npsubj1	5			
-S-ADVERBS	v:ad-S1	6			
-AD-VP	v:ad-VP1	7			
-can	v:modal1	8			
-could	v:modal1	8			
-may	v:modal1	8			
-might	v:modal1	8			
-must	v:modal1	8			
-shall	v:modal1	8			
-should	v:modal1	8			
-will	v:modal1	8			
-would	v:modal1	8			
-AD-S	v:sd-S2	9			
-not	v:neg1	10			
-AD-VP	v:ad-VP2	11			
-ha	v:perfect	12			
-[-s]	v:perfectinflection	13			
-[-ve]	v:perfectinflection	13			
-AD-S	v:ad-S3	14			
-not	v:neg2	15			
-AD-VP	v:ad-VP3	16			
-AD-V	v:ad-V1	17			
-[be-]	v:passive	18			
-AD-S	v:ad-S4	19			
-not	v:neg3	20			
-AD-VP	v:ad-VP4	21			
-be	v:progressive	22			
-AD-S	v:ad-S5	23			
-not	v:neg4	24			
-AD-VP	v:ad-VP5	25			
-AD-V	v:ad-V2	26			
-air	v:nominal	27			
-baby	v:nominal	27			
-breast	v:nominal	27			
-caretaker	v:nominal	27			
-child	v:nominal	27			
-cross	v:nominal	27			
-dog	v:nominal	27			
-eye	v:nominal	27			
-fact	v:nominal	27			
-grounds	v:nominal	27			
-hand	v:nominal	27			
-house	v:nominal	27			
-lip	v:nominal	27			
-name	v:nominal	27			
-nanny	v:nominal	27			
-pet	v:nominal	27			
-pressure	v:nominal	27			
-rough	v:nominal	27			
-sound	v:nominal	27			
-spell	v:nominal	27			
-spin	v:nominal	27			
-stone	v:nominal	27			
-strong	v:nominal	27			
-[de-]	v:productiveprefix	28			
-[dis-]	v:productiveprefix	28			
-[mis-]	v:productiveprefix	28			
-[out-]	v:productiveprefix	28			
-[over-]	v:productiveprefix	28			
-[post-]	v:productiveprefix	28			
-[pre-]	v:productiveprefix	28			
-[re-]	v:productiveprefix	28			
-[un-]	v:productiveprefix	28			
-[under-]	v:productiveprefix	28			
-[ab-]	v:latinprefix	29			
-[ad-]	v:latinprefix	29			
-[ante-]	v:latinprefix	29			
-[be-]	v:latinprefix	29			
-[cata-]	v:latinprefix	29			
-[circum-]	v:latinprefix	29			
-[co-]	v:latinprefix	29			
-[contra-]	v:latinprefix	29			
-[dia-]	v:latinprefix	29			
-[dis-]	v:latinprefix	29			
-[down-]	v:latinprefix	29			
-[en-]	v:latinprefix	29			
-[epi-]	v:latinprefix	29			
-[eu-]	v:latinprefix	29			
-[ex-]	v:latinprefix	29			
-[fore-]	v:latinprefix	29			
-[inter-]	v:latinprefix	29			
-[intra-]	v:latinprefix	29			
-[mis-]	v:latinprefix	29			
-[ob-]	v:latinprefix	29			
-[para-]	v:latinprefix	29			
-[per-]	v:latinprefix	29			
-[pro-]	v:latinprefix	29			
-[se-]	v:latinprefix	29			
-[sub-]	v:latinprefix	29			
-[sup-]	v:latinprefix	29			
-[sur-]	v:latinprefix	29			
-[syn-]	v:latinprefix	29			
-[tele-]	v:latinprefix	29			
-[up-]	v:latinprefix	29			
-ROOT	v:verbroot	30			
-[-ed]	v:verbinflection	31			
-[-ing]	v:verbinflection	31			
-[-s]	v:verbinflection	31			
-Ad-V	v:ad-V3	32			
-NP{P,T}, VERBPART	v:NP{P,T}	33			
-NP{R}	v:NP{R}	34			
-Ad-VP	v:ad-VP6	35			
-PP	v:PP	36			
-AD-S	v:rightedge	37			
+Element	Position_Name	Position_Number	widescope_right	widescope_left	fillable_botheither_conjunct				
+also	v:leftedge	1	n	n	y				
+and	v:leftedge	1	?	?	?				
+CONJUNCT	v:leftedge	1	n	n	y				
+then	v:leftedge	1	n	n	y				
+QWORDS, NP{S,A,P}	v:frontedXP	2	y	n	y	Who talked to Martin and who let Martin speak?	*talked to Martin and who let him speak?	Who talked to Martin and let him speak?	
+be	v:frontedauxiliary	3	y-e:NP{S,A}	n	y	Did Martin borrow and read the book?	*Martin borrow and did he read the book?	Did Martin borrow and did Martin read the book?	You can do wide scope but not without elided the SUBJ
+can	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
+could	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
+do	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
+have	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
+may	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
+might	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
+must	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
+ought	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
+shall	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
+should	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
+will	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
+would	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
+[-n]	v:frontedauxiliaryinflection	4	n	n	y				
+[-s]	v:frontedauxiliaryinflection	4	n	n	y				
+[-v]	v:frontedauxiliaryinflection	4	n	n	y				
+NP{S,A}	v:npsubj1	5	y	n	y				
+AD-S	v:ad-S1	6	y	n	y	Martin apparently wrote a treatise and ate sausage			
+AD-VP	v:ad-VP1	7	y	n	y	Martin carefully read the bible and commented on it			
+can	v:modal1	8	y	n	y	Martin can read the bible and write in the vernacular		Martin can read the bible and can write in the vernacular	
+could	v:modal1	8	y	n	y				
+may	v:modal1	8	y	n	y				
+might	v:modal1	8	y	n	y				
+must	v:modal1	8	y	n	y				
+shall	v:modal1	8	y	n	y				
+should	v:modal1	8	y	n	y				
+will	v:modal1	8	y	n	y				
+would	v:modal1	8	y	n	y				
+AD-S	v:ad-S2	9	y	n	y	Martin would presumably eat stew and drink beer			
+not	v:neg1	10	y	n	y	Martin might not eat stew and drink beer			
+AD-VP	v:ad-VP2	11	y	n	y				
+ha	v:perfect	12	y	n	y	Martin has eaten stew and drank beer			
+[-s]	v:perfectinflection	13	n	n	y				
+[-ve]	v:perfectinflection	13	n	n	y				
+AD-S	v:ad-S3	14	y	n	y				
+not	v:neg2	15	y	n	y				
+AD-VP	v:ad-VP3	16	y	n	y				
+AD-V	v:ad-V1	17	y	n	y				
+[be-]	v:passive	18	y	n	y				
+AD-S	v:ad-S4	19	y	n	y				
+not	v:neg3	20	y	n	y				
+AD-VP	v:ad-VP4	21	y	n	y				
+be	v:progressive	22	y	n	y				
+AD-S	v:ad-S5	23	y	n	y				
+not	v:neg4	24	y	n	y				
+AD-VP	v:ad-VP5	25	y	n	y				
+AD-V	v:ad-V2	26	y	n	y				
+air	v:nominal	27	n	n	y				
+baby	v:nominal	27	n	n	y				
+breast	v:nominal	27	n	n	y				
+caretaker	v:nominal	27	n	n	y				
+child	v:nominal	27	n	n	y				
+cross	v:nominal	27	n	n	y				
+dog	v:nominal	27	n	n	y				
+eye	v:nominal	27	n	n	y				
+fact	v:nominal	27	n	n	y				
+grounds	v:nominal	27	n	n	y				
+hand	v:nominal	27	n	n	y				
+house	v:nominal	27	n	n	y				
+lip	v:nominal	27	n	n	y				
+name	v:nominal	27	n	n	y				
+nanny	v:nominal	27	n	n	y				
+pet	v:nominal	27	n	n	y				
+pressure	v:nominal	27	n	n	y				
+rough	v:nominal	27	n	n	y				
+sound	v:nominal	27	n	n	y				
+spell	v:nominal	27	n	n	y				
+spin	v:nominal	27	n	n	y				
+stone	v:nominal	27	n	n	y				
+strong	v:nominal	27	n	n	y				
+[de-]	v:productiveprefix	28	n	n	y				
+[dis-]	v:productiveprefix	28	n	n	y				
+[mis-]	v:productiveprefix	28	n	n	y				
+[out-]	v:productiveprefix	28	y	n	y				
+[over-]	v:productiveprefix	28	y	n	y				
+[post-]	v:productiveprefix	28	y	n	y				
+[pre-]	v:productiveprefix	28	n	n	y				
+[re-]	v:productiveprefix	28	n	n	y				
+[un-]	v:productiveprefix	28	n	n	y				
+[under-]	v:productiveprefix	28	y	n	y	under pay and cook, *undermine and lie		Not totally sure	
+[ab-]	v:latinprefix	29	n	n	y				
+[ad-]	v:latinprefix	29	n	n	y				
+[ante-]	v:latinprefix	29	n	n	y				
+[be-]	v:latinprefix	29	n	n	y				
+[cata-]	v:latinprefix	29	n	n	y				
+[circum-]	v:latinprefix	29	n	n	y				
+[co-]	v:latinprefix	29	n	n	y				
+[contra-]	v:latinprefix	29	n	n	y	*contradict and vene			
+[dia-]	v:latinprefix	29	n	n	y				
+[dis-]	v:latinprefix	29	n	n	y				
+[down-]	v:latinprefix	29	n	n	y	*downplay and size			
+[en-]	v:latinprefix	29	n	n	y				
+[epi-]	v:latinprefix	29	n	n	y				
+[eu-]	v:latinprefix	29	n	n	y				
+[ex-]	v:latinprefix	29	n	n	y				
+[fore-]	v:latinprefix	29	n	n	y				
+[inter-]	v:latinprefix	29	n	n	y				
+[intra-]	v:latinprefix	29	n	n	y				
+[mis-]	v:latinprefix	29	n	n	y				
+[ob-]	v:latinprefix	29	n	n	y				
+[para-]	v:latinprefix	29	n	n	y				
+[per-]	v:latinprefix	29	n	n	y				
+[pro-]	v:latinprefix	29	n	n	y				
+[se-]	v:latinprefix	29	n	n	y				
+[sub-]	v:latinprefix	29	n	n	y				
+[sup-]	v:latinprefix	29	n	n	y				
+[sur-]	v:latinprefix	29	n	n	y				
+[syn-]	v:latinprefix	29	n	n	y				
+[tele-]	v:latinprefix	29	n	n	y				
+[up-]	v:latinprefix	29	n	n	y				
+ROOT	v:verbroot	30	n	n	y				
+[-ed]	v:verbinflection	31	n	n	y				
+[-ing]	v:verbinflection	31	n	n	y				
+[-s]	v:verbinflection	31	n	n	y				
+AD-V	v:ad-V3	32	n	n	y				
+VERBPART	v:NP{P,T}	33	n	n	y	cleaned up the kitchen and used the soap		cleaned up the kitchen and used up the soap	
+NP{P,T}	v:NP{P,T}	33	y	y	y				
+NP{R}	v:NP{R}	34	n	n	y				
+AD-VP	v:ad-VP6	35	n	n	y				
+PP	v:PP	36	y	y	y				
+AD-S	v:rightedge	37	n	n	y				
