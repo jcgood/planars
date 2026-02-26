@@ -1,7 +1,7 @@
 # --- CONFIG ----------------------------------------------------------
 
 # Set this to your folder; or leave "" to use the script's folder (see note below)
-DATA_DIR <- "C:/Users/Adan Tallman/Desktop/DomainGenerationTests"
+DATA_DIR <- "D:/planars/01_planar_input"
 
 # --- HELPERS ---------------------------------------------------------
 
@@ -23,6 +23,7 @@ infer_language_id_from_planar_filename <- function(planar_filename) {
     stop(sprintf("Expected planar filename to start with '%s', got '%s'", prefix, planar_filename))
   }
   lang_id <- trimws(substr(stem, nchar(prefix) + 1, nchar(stem)))
+  lang_id <- sub("-[0-9]{8}$", "", lang_id)
   if (!nzchar(lang_id)) stop(sprintf("Could not infer language id from '%s'", planar_filename))
   lang_id
 }
@@ -210,7 +211,7 @@ generate_test_files <- function(test_type, element_index_df) {
 
 # --- RUN -------------------------------------------------------------
 
-element_index <- build_element_index("planar_stan1293.tsv")
+element_index <- build_element_index("planar_stan1293-20260209.tsv")
 written <- generate_test_files("ciscategorial", element_index)
 
 for (p in written) {
