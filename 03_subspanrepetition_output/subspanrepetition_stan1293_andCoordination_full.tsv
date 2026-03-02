@@ -4,19 +4,19 @@ and	v:leftedge	1	?	?	?
 CONJUNCT	v:leftedge	1	n	n	y				
 then	v:leftedge	1	n	n	y				
 QWORDS, NP{S,A,P}	v:frontedXP	2	y	n	y	Who talked to Martin and who let Martin speak?	*talked to Martin and who let him speak?	Who talked to Martin and let him speak?	
-be	v:frontedauxiliary	3	y-e:NP{S,A}	n	y	Did Martin borrow and read the book?	*Martin borrow and did he read the book?	Did Martin borrow and did Martin read the book?	You can do wide scope but not without elided the SUBJ
-can	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
-could	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
-do	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
-have	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
-may	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
-might	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
-must	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
-ought	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
-shall	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
-should	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
-will	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
-would	v:frontedauxiliary	3	y-e:NP{S,A}	n	y				
+be	v:frontedauxiliary	3	y	n	y	Did Martin borrow and read the book?	*Did Martin borrow and he read the book?	Did Martin borrow and did Martin read the book?	You can do wide scope but not without elided the SUBJ
+can	v:frontedauxiliary	3	y	n	y		Could Martin borrow the book and Leo ban it		
+could	v:frontedauxiliary	3	y	n	y				
+do	v:frontedauxiliary	3	y	n	y				
+have	v:frontedauxiliary	3	y	n	y				
+may	v:frontedauxiliary	3	y	n	y				
+might	v:frontedauxiliary	3	y	n	y				
+must	v:frontedauxiliary	3	y	n	y				
+ought	v:frontedauxiliary	3	y	n	y				
+shall	v:frontedauxiliary	3	y	n	y				
+should	v:frontedauxiliary	3	y	n	y				
+will	v:frontedauxiliary	3	y	n	y				
+would	v:frontedauxiliary	3	y	n	y				
 [-n]	v:frontedauxiliaryinflection	4	n	n	y				
 [-s]	v:frontedauxiliaryinflection	4	n	n	y				
 [-v]	v:frontedauxiliaryinflection	4	n	n	y				
