@@ -34,6 +34,31 @@ def _infer_language_id_from_planar_filename(planar_filename: str) -> str:
 ElementIndex = Dict[str, Tuple[int, str, str, str]]
 
 
+def _split_elements(elements_raw: str) -> List[str]:
+    """Split a comma-separated elements string, ignoring commas inside braces.
+
+    E.g. 'QWORDS, NP{S,A,P}' -> ['QWORDS', 'NP{S,A,P}']
+    """
+    parts: List[str] = []
+    current: List[str] = []
+    depth = 0
+    for ch in elements_raw:
+        if ch == "{":
+            depth += 1
+            current.append(ch)
+        elif ch == "}":
+            depth -= 1
+            current.append(ch)
+        elif ch == "," and depth == 0:
+            parts.append("".join(current).strip())
+            current = []
+        else:
+            current.append(ch)
+    if current:
+        parts.append("".join(current).strip())
+    return [p for p in parts if p]
+
+
 def build_element_index(planar_filename: str) -> ElementIndex:
     """
     Build mapping with *unique keys* per element occurrence:
@@ -68,6 +93,10 @@ def build_element_index(planar_filename: str) -> ElementIndex:
         element_to_info[key] = (pos, position_name, lang_id, element_plain)
 
     for _, row in df.iterrows():
+        row_lang = (row.get("Language_ID", "") or "").strip()
+        if row_lang != lang_id:
+            continue
+
         class_type = (row.get("Class_Type", "") or "").strip().lower()
         elements_raw = (row.get("Elements", "") or "").strip()
         position_name = (row.get("Position_Name", "") or "").strip()
@@ -84,10 +113,11 @@ def build_element_index(planar_filename: str) -> ElementIndex:
             continue
 
         if class_type == "open":
-            add_element(elements_raw, pos, position_name)
+            for element_plain in _split_elements(elements_raw):
+                add_element(element_plain, pos, position_name)
 
         elif class_type == "list":
-            for element_plain in elements_raw.split(","):
+            for element_plain in _split_elements(elements_raw):
                 add_element(element_plain, pos, position_name)
 
         else:

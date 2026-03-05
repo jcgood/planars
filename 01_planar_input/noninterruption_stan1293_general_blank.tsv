@@ -3,7 +3,8 @@ also	v:leftedge	1
 and	v:leftedge	1		
 CONJUNCT	v:leftedge	1		
 then	v:leftedge	1		
-QWORDS, NP{S,A,P}	v:frontedXP	2		
+NP{S,A,P}	v:frontedXP	2		
+QWORDS	v:frontedXP	2		
 be	v:frontedauxiliary	3		
 can	v:frontedauxiliary	3		
 could	v:frontedauxiliary	3		
@@ -119,8 +120,9 @@ ROOT	v:verbroot	30
 [-ing]	v:verbinflection	31		
 [-s]	v:verbinflection	31		
 Ad-V	v:ad-V3	32		
-NP{P,T}, VERBPART	v:NP{P,T}	33		
-NP{R}	v:NP{R}	34		
+NP{P,T}	v:obj-part	33		
+VERBPART	v:obj-part	33		
+NP{R}	v:rec	34		
 Ad-VP	v:ad-VP6	35		
 PP	v:PP	36		
 AD-S	v:rightedge	37		
