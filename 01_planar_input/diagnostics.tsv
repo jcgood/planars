@@ -2,3 +2,4 @@ Class	Language	Constructions	Parameters
 ciscategorial	stan1293	general	V-combines, N-combines, A-combines
 subspanrepetition	stan1293	andCoordination, control, thatCOMP, asyndeticPart	widescope_right, widescope_left, fillable_botheither_conjunct
 noninterruption	stan1293	general	free, multiple
+stress	stan1293	general	stressable, independence, left-interaction, right-interaction
