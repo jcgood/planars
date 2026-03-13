@@ -18,9 +18,9 @@ shall	v:frontedauxiliary	3	y	y	n
 should	v:frontedauxiliary	3	y	y	n		
 will	v:frontedauxiliary	3	both	y	n		
 would	v:frontedauxiliary	3	both	y	n		
-[-n]	v:frontedauxiliaryinflection	4	n	n	?		Interesting ... shouldn’t these be NA for variable 3, since they don’t have the phon. structure to have stress to begin with?
-[-s]	v:frontedauxiliaryinflection	4	n	n	?		
-[-v]	v:frontedauxiliaryinflection	4	n	n	?		
+[-n]	v:frontedauxiliaryinflection	4	n	n	n		Interesting ... shouldn’t these be NA for variable 3, since they don’t have the phon. structure to have stress to begin with?
+[-s]	v:frontedauxiliaryinflection	4	n	n	n		
+[-v]	v:frontedauxiliaryinflection	4	n	n	n		
 NP{S,A}	v:npsubj1	5	y	y	n		
 S-ADVERBS	v:ad-S1	6	y	y	n		
 AD-VP	v:ad-VP1	7	y	y	n		
@@ -75,7 +75,7 @@ spell	v:nominal	27	y	n	n	y
 spin	v:nominal	27	y	n	n	y	
 stone	v:nominal	27	y	n	n	y	
 strong	v:nominal	27	y	n	n	y	
-[de-]	v:productiveprefix	28	both	n	n	y	
+[de-]	v:productiveprefix	28	both	n	n	n	
 [dis-]	v:productiveprefix	28	n	n	n		
 [mis-]	v:productiveprefix	28	n	n	n		
 [out-]	v:productiveprefix	28	n	n	n		
@@ -85,7 +85,7 @@ strong	v:nominal	27	y	n	n	y
 [re-]	v:productiveprefix	28	n	n	n		
 [un-]	v:productiveprefix	28	n	n	n		
 [under-]	v:productiveprefix	28	n	n	n		
-[ab-]	v:latinprefix	29	n	n	n		
+[ab-]	v:latinprefix	29	n	n	n	y	
 [ad-]	v:latinprefix	29	n	n	n		
 [ante-]	v:latinprefix	29	n	n	n		
 [be-]	v:latinprefix	29	n	n	n		
