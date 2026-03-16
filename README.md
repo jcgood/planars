@@ -29,33 +29,30 @@ Install dependencies: `pip install -r requirements.txt`
 
 ## Workflow
 
-### 1. Generate blank annotation forms
-
-```bash
-cd 01_planar_input
-python make_forms.py
-```
-
-Reads `planar_<lang>.tsv` (the planar structure) and `diagnostics.tsv` (which analyses to run and their parameters), and writes one blank TSV per analysis/construction combination.
-
-### 2. Annotate
-
-**Option A — TSV files directly:** Fill in values for each element/parameter cell. Keystone rows (`v:verbroot`) are pre-filled with `NA` and should not be changed.
-
-**Option B — Google Sheets:** Generate annotation forms as shared Google Sheets, fill them in collaboratively, then import back to TSVs.
+### 1. Generate annotation forms
 
 ```bash
 python generate_sheets.py   # creates one Sheet per analysis class in Google Drive
-# (specialist fills in values)
-python import_sheets.py     # downloads filled sheets → TSVs in numbered output folders
-python import_sheets.py --force  # overwrite existing files
 ```
+
+Creates one Google Sheets file per analysis class with one tab per construction. Each tab has per-parameter dropdown validation and a free-text Comments column. Google Sheets is the definitive copy of annotation forms.
 
 Authentication uses OAuth2. On first run a browser window opens for authorization; the token is cached at `~/.config/gspread/authorized_user.json`. OAuth credentials must be at `~/.config/planars/oauth_credentials.json` (override with `PLANARS_OAUTH_CREDENTIALS`).
 
-If any validation warnings are found during import (blank cells, unexpected values), they are written to `import_errors/{lang}_{timestamp}.txt` as well as printed to the terminal.
+### 2. Annotate
 
-### 3. Run analyses
+Specialists fill in values in the shared Google Sheets. Keystone rows (`v:verbroot`) are pre-filled with `NA` and should not be changed.
+
+### 3. Import
+
+```bash
+python import_sheets.py          # downloads filled sheets → TSVs in numbered output folders
+python import_sheets.py --force  # overwrite existing files
+```
+
+Skips existing files by default. If any validation warnings are found (blank cells, unexpected values), they are written to `import_errors/{lang}_{timestamp}.txt` as well as printed to the terminal.
+
+### 4. Run analyses
 
 From the repo root:
 
@@ -65,11 +62,14 @@ python -m planars subspanrepetition <path/to/filled.tsv>
 python -m planars noninterruption   <path/to/filled.tsv>
 ```
 
-Or from within a numbered folder using the default filled file:
+## Maintaining sheets
 
 ```bash
-cd 02_ciscategorial_output && python ciscategorial.py
+python update_sheets.py           # dry run — show what would change
+python update_sheets.py --apply   # add missing columns/rows to existing sheets
 ```
+
+Use `update_sheets.py` when the schema changes (e.g. a new trailing column is added) or when new elements are added to the planar structure. Does not handle position renumbering — see [issue #5](https://github.com/jcgood/planars/issues/5).
 
 ## Analyses
 
@@ -98,15 +98,17 @@ planars/                      Core library
   subspanrepetition.py        } Analysis modules
   noninterruption.py          }
   cli.py                      Command-line entry point
-01_planar_input/              Planar structure, diagnostics, form generator
+01_planar_input/              Planar structure, diagnostics, make_forms.py utilities
 02_ciscategorial_output/      Ciscategorial data files
 03_subspanrepetition_output/  Subspan repetition data files
 04_noninterruption/           Non-interruption data files
 05_stress/                    Stress data files
 tests/snapshots/              Regression test baselines
 codebook.yaml                 Parameter and term definitions
-generate_sheets.py            Google Sheets form generator
-import_sheets.py              Google Sheets importer
+generate_sheets.py            Create annotation forms in Google Drive
+update_sheets.py              Add missing columns/rows to existing sheets
+import_sheets.py              Download filled sheets to TSVs
+populate_sheets.py            One-time upload of legacy TSV data to sheets
 ```
 
 ## Regression testing
