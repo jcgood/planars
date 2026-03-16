@@ -12,6 +12,10 @@ python generate_sheets.py
 python update_sheets.py
 python update_sheets.py --apply   # apply changes
 
+# Restructure sheets after planar structure changes (archive old, regenerate with carry-over)
+python restructure_sheets.py
+python restructure_sheets.py --apply   # archive old sheets and regenerate
+
 # Import filled sheets back to TSVs (skips existing files by default)
 python import_sheets.py
 python import_sheets.py --force   # overwrite existing files

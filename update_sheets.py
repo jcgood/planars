@@ -10,8 +10,8 @@ Operations performed per tab:
   2. Add missing rows for elements present in the current planar structure
      but absent from the sheet tab
 
-Does NOT renumber positions or restructure existing content — see issue #5
-for that more complex operation.
+Does NOT renumber positions or restructure existing content — use
+restructure_sheets.py for that (archives old sheet, regenerates with carry-over).
 
 Authentication: same OAuth2 setup as generate_sheets.py.
 """
