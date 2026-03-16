@@ -1,0 +1,259 @@
+#!/usr/bin/env python3
+"""Update existing Google Sheets: add missing columns and missing rows.
+
+Run from the repo root:
+    python update_sheets.py           # dry run — show what would change
+    python update_sheets.py --apply   # apply changes to sheets
+
+Operations performed per tab:
+  1. Add missing trailing columns (e.g. Comments) after existing param columns
+  2. Add missing rows for elements present in the current planar structure
+     but absent from the sheet tab
+
+Does NOT renumber positions or restructure existing content — see issue #5
+for that more complex operation.
+
+Authentication: same OAuth2 setup as generate_sheets.py.
+"""
+from __future__ import annotations
+
+import json
+import os
+import sys
+from pathlib import Path
+from typing import Dict, List, Optional, Set, Tuple
+
+ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT / "01_planar_input"))
+
+import gspread
+
+import make_forms as _mf
+from make_forms import build_element_index, _infer_language_id_from_planar_filename
+
+MANIFEST_PATH = ROOT / "sheets_manifest.json"
+PLANAR_DIR = ROOT / "01_planar_input"
+_DEFAULT_OAUTH_PATH = Path.home() / ".config" / "planars" / "oauth_credentials.json"
+_STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
+_TRAILING_COLS = ["Comments"]
+
+
+# ---------------------------------------------------------------------------
+# Auth
+# ---------------------------------------------------------------------------
+
+def _get_client() -> gspread.Client:
+    creds_path = Path(
+        os.environ.get("PLANARS_OAUTH_CREDENTIALS", str(_DEFAULT_OAUTH_PATH))
+    )
+    if not creds_path.exists():
+        raise FileNotFoundError(
+            f"OAuth credentials file not found: {creds_path}\n"
+            "See generate_sheets.py for setup instructions."
+        )
+    return gspread.oauth(
+        credentials_filename=str(creds_path),
+        scopes=[
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive.file",
+        ],
+    )
+
+
+# ---------------------------------------------------------------------------
+# Element index helpers
+# ---------------------------------------------------------------------------
+
+def _sheet_element_keys(rows: List[List[str]], header: List[str]) -> Set[Tuple[str, str]]:
+    """Return set of (element, position_number) keys present in a sheet tab."""
+    try:
+        el_idx = header.index("Element")
+        pos_idx = header.index("Position_Number")
+    except ValueError:
+        return set()
+    return {
+        (row[el_idx].strip(), row[pos_idx].strip())
+        for row in rows[1:]
+        if len(row) > max(el_idx, pos_idx)
+    }
+
+
+def _planar_rows_for_lang(element_index, lang_id: str) -> List[Tuple[int, str, str]]:
+    """Return sorted (pos, element, pos_name) tuples for a language."""
+    items = [
+        (pos, element, pos_name)
+        for _, (pos, pos_name, lang, element) in element_index.items()
+        if lang == lang_id
+    ]
+    return sorted(items, key=lambda t: (t[0], t[1].lower(), t[1]))
+
+
+# ---------------------------------------------------------------------------
+# Per-tab update logic
+# ---------------------------------------------------------------------------
+
+def _compute_tab_updates(
+    ws: gspread.Worksheet,
+    element_index,
+    lang_id: str,
+    param_names: List[str],
+) -> Tuple[List[str], List[List[str]]]:
+    """Compute missing columns and missing rows for a sheet tab.
+
+    Returns:
+        missing_cols: list of column names to add
+        missing_rows: list of new rows to append (as lists of strings)
+    """
+    rows = ws.get_all_values()
+    header = rows[0] if rows else []
+
+    # --- Missing trailing columns ---
+    missing_cols = [c for c in _TRAILING_COLS if c not in header]
+
+    # --- Missing rows ---
+    existing_keys = _sheet_element_keys(rows, header)
+    planar_rows = _planar_rows_for_lang(element_index, lang_id)
+
+    num_param_cols = len(param_names)
+    num_trailing = len(_TRAILING_COLS)
+    total_data_cols = 3 + num_param_cols + num_trailing  # Element, Pos_Name, Pos_Num, params, trailing
+
+    missing_rows = []
+    for pos, element, pos_name in planar_rows:
+        element = element.strip()
+        if element.startswith("-") or element.endswith("-"):
+            element = f"[{element}]"
+        key = (element, str(pos))
+        if key not in existing_keys:
+            is_keystone = pos_name.strip().lower() == "v:verbroot"
+            param_vals = ["NA"] * num_param_cols if is_keystone else [""] * num_param_cols
+            row = [element, pos_name, str(pos)] + param_vals + [""] * num_trailing
+            missing_rows.append(row)
+
+    return missing_cols, missing_rows
+
+
+def _apply_tab_updates(
+    ws: gspread.Worksheet,
+    missing_cols: List[str],
+    missing_rows: List[List[str]],
+    num_data_rows_current: int,
+    param_names: List[str],
+    spreadsheet: gspread.Spreadsheet,
+) -> None:
+    """Apply column and row additions to a sheet tab."""
+    rows = ws.get_all_values()
+    header = rows[0] if rows else []
+    sheet_id = ws.id
+
+    requests = []
+
+    # Add missing columns: expand grid if needed, then write header cell
+    for col_name in missing_cols:
+        new_col_idx = len(header)  # 0-based
+        header.append(col_name)
+
+        # Expand grid to fit the new column
+        ws.resize(rows=ws.row_count, cols=new_col_idx + 1)
+
+        # Header cell
+        ws.update_cell(1, new_col_idx + 1, col_name)
+
+    # Add missing rows via append
+    if missing_rows:
+        ws.append_rows(missing_rows, value_input_option="RAW")
+
+    # Re-apply dropdown validation to cover newly appended rows
+    if missing_rows and param_names:
+        from generate_sheets import _format_and_validate
+        # We only need to extend validation to new rows; re-applying to all is safe
+        total_rows = num_data_rows_current + len(missing_rows)
+        # Build per-col values: y/n for all params (trailing cols get no validation)
+        per_col_values = [["y", "n"]] * len(param_names)
+        _format_and_validate(ws, total_rows, per_col_values)
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+def main() -> None:
+    apply = "--apply" in sys.argv
+
+    if not MANIFEST_PATH.exists():
+        raise SystemExit(
+            f"sheets_manifest.json not found at {MANIFEST_PATH}.\n"
+            "Run generate_sheets.py first."
+        )
+
+    manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+
+    # Load planar structure
+    planar_files = sorted(PLANAR_DIR.glob("planar_*.tsv"))
+    if not planar_files:
+        raise SystemExit("No planar_*.tsv found in 01_planar_input/")
+    planar_file = planar_files[0]
+    lang_id = _infer_language_id_from_planar_filename(planar_file.name)
+
+    _mf.DATA_DIR = str(PLANAR_DIR)
+    element_index = build_element_index(planar_file.name)
+
+    print(f"{'DRY RUN — ' if not apply else ''}Language: {lang_id}")
+    if not apply:
+        print("(run with --apply to make changes)\n")
+
+    print("Connecting to Google...")
+    gc = _get_client()
+
+    any_changes = False
+
+    for manifest_lang, lang_data in manifest.items():
+        for class_name, sheet_info in lang_data["sheets"].items():
+            print(f"\n  {class_name}")
+            ss = gc.open_by_key(sheet_info["spreadsheet_id"])
+
+            construction_params = sheet_info.get("construction_params", {})
+
+            for construction in sheet_info["constructions"]:
+                try:
+                    ws = ss.worksheet(construction)
+                except gspread.WorksheetNotFound:
+                    print(f"    [{construction}] tab not found, skipping")
+                    continue
+
+                param_names = construction_params.get(construction, {}).get("param_names", [])
+                rows = ws.get_all_values()
+                num_data_rows = max(0, len(rows) - 1)
+
+                missing_cols, missing_rows = _compute_tab_updates(
+                    ws, element_index, lang_id, param_names
+                )
+
+                if not missing_cols and not missing_rows:
+                    print(f"    [{construction}] up to date")
+                    continue
+
+                any_changes = True
+                if missing_cols:
+                    print(f"    [{construction}] add column(s): {missing_cols}")
+                if missing_rows:
+                    elements = [r[0] for r in missing_rows]
+                    print(f"    [{construction}] add {len(missing_rows)} row(s): {elements}")
+
+                if apply:
+                    _apply_tab_updates(
+                        ws, missing_cols, missing_rows,
+                        num_data_rows, param_names, ss,
+                    )
+                    print(f"    [{construction}] done")
+
+    if not any_changes:
+        print("\nAll sheets are up to date.")
+    elif not apply:
+        print("\nRun with --apply to make these changes.")
+    else:
+        print("\nDone.")
+
+
+if __name__ == "__main__":
+    main()

@@ -45,6 +45,9 @@ from make_forms import (
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
 PLANAR_DIR = ROOT / "01_planar_input"
 
+# Columns appended after param columns on every tab; no dropdown validation
+_TRAILING_COLS = ["Comments"]
+
 _DEFAULT_OAUTH_PATH = Path.home() / ".config" / "planars" / "oauth_credentials.json"
 
 
@@ -225,8 +228,10 @@ def _populate_tab(
             title=tab_name, rows=len(rows) + 2, cols=len(param_names) + 3
         )
 
-    header = ["Element", "Position_Name", "Position_Number"] + param_names
-    all_rows = [header] + [[str(v) for v in row] for row in rows]
+    all_cols = param_names + _TRAILING_COLS
+    header = ["Element", "Position_Name", "Position_Number"] + all_cols
+    # Pad data rows with empty trailing columns
+    all_rows = [header] + [[str(v) for v in row] + [""] * len(_TRAILING_COLS) for row in rows]
     ws.update(all_rows, "A1")
     per_col_values = [param_values.get(p, ["y", "n"]) for p in param_names]
     _format_and_validate(ws, len(rows), per_col_values)

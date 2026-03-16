@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-import csv
 import pandas as pd
 
 DATA_DIR = ""
@@ -223,84 +222,3 @@ def _read_diagnostics_for_language(
     return out
 
 
-def generate_test_file(
-    class_name: str,
-    construction: str,
-    planar_filename: str,
-    element_index: ElementIndex,
-    param_names: List[str],
-) -> Path:
-    """
-    Writes `{Class}_{Language}_{Construction}_blank.tsv`.
-
-    Output columns:
-      Element, Position_Name, Position_Number, <param headers...>
-
-    Rows are ordered by Position_Number, then Element (alphabetical).
-    """
-    lang_id = _infer_language_id_from_planar_filename(planar_filename)
-
-    if not param_names:
-        raise ValueError("No parameter names found.")
-
-    # Collect items for this language
-    items: List[Tuple[int, str, str]] = []
-    for _, (pos, pos_name, lang, element_plain) in element_index.items():
-        if lang == lang_id:
-            items.append((pos, element_plain, pos_name))
-
-    items_sorted = sorted(items, key=lambda t: (t[0], t[1].lower(), t[1]))
-
-    out_rows: List[List[object]] = []
-    for pos, element_plain, pos_name in items_sorted:
-        # Clean up an issue with Excel and elements that begin or end with a hyphen
-        element_plain = element_plain.strip()
-        if element_plain.startswith("-") or element_plain.endswith("-"):
-            element_plain = f"[{element_plain}]"
-
-        if pos_name.strip() == "Keystone":
-            out_rows.append([element_plain, pos_name, pos, *(["NA"] * len(param_names))])
-        else:
-            out_rows.append([element_plain, pos_name, pos, *([""] * len(param_names))])
-
-    out_df = pd.DataFrame(
-        out_rows,
-        columns=["Element", "Position_Name", "Position_Number", *param_names],
-    )
-
-    out_path = _resolve_path(f"{class_name}_{lang_id}_{construction}_blank.tsv")
-    out_df.to_csv(out_path, sep="\t", index=False, quoting=csv.QUOTE_NONE)
-    return out_path
-
-
-def generate_all_from_diagnostics(planar_filename: str) -> List[Path]:
-    """Generate one blank form per (Class, Construction) for the planar language."""
-    lang_id = _infer_language_id_from_planar_filename(planar_filename)
-    element_index = build_element_index(planar_filename)
-
-    specs = _read_diagnostics_for_language(lang_id)
-
-    out_paths: List[Path] = []
-    for class_name, construction, params, _ in specs:
-        out_paths.append(
-            generate_test_file(
-                class_name=class_name,
-                construction=construction,
-                planar_filename=planar_filename,
-                element_index=element_index,
-                param_names=params,
-            )
-        )
-    return out_paths
-
-
-if __name__ == "__main__":
-    # Default: use the first planar_*.tsv file in the directory
-    base = Path(__file__).resolve().parent
-    planar_files = sorted(base.glob("planar_*.tsv"))
-    if not planar_files:
-        raise SystemExit("No planar_*.tsv found in script directory.")
-
-    generated = generate_all_from_diagnostics(planar_files[0].name)
-    for p in generated:
-        print("Wrote:", p.name)
