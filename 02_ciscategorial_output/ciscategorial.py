@@ -150,13 +150,21 @@ def derive_v_ciscategorial_fractures(filled_tsv: str) -> Dict[str, object]:
 
 
 if __name__ == "__main__":
-    # Example run:
     result = derive_v_ciscategorial_fractures("ciscategorial_stan1293_general_filled.tsv")
 
-    print("Keystone position:", result["keystone_position"])
-    print("Partial v-ciscategorial positions:", result["partial_positions"])
-    print("Full v-ciscategorial positions:", result["full_positions"])
-    print("Strict+Complete span:", result["strict_complete_v_fracture"])
-    print("Loose+Complete span:", result["loose_complete_v_fracture"])
-    print("Strict+Partial span:", result["strict_partial_v_fracture"])
-    print("Loose+Partial span:", result["loose_partial_v_fracture"])
+    pos_to_name = result["position_number_to_name"]
+
+    def fmt(span):
+        l, r = span
+        return f"positions {l}–{r}  ({pos_to_name.get(l, '?')} → {pos_to_name.get(r, '?')})"
+
+    print("Keystone position:", result["keystone_position"],
+          f"({pos_to_name.get(result['keystone_position'], '?')})")
+    print()
+    print("V-ciscategorial complete positions:", result["full_positions"])
+    print("V-ciscategorial partial positions: ", result["partial_positions"])
+    print()
+    print("Strict complete v-ciscategorial span:", fmt(result["strict_complete_v_fracture"]))
+    print("Loose complete v-ciscategorial span: ", fmt(result["loose_complete_v_fracture"]))
+    print("Strict partial v-ciscategorial span: ", fmt(result["strict_partial_v_fracture"]))
+    print("Loose partial v-ciscategorial span:  ", fmt(result["loose_partial_v_fracture"]))

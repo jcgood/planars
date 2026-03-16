@@ -161,7 +161,14 @@ def derive_subspanrepetition_spans(filled_tsv: str) -> Dict[str, object]:
 if __name__ == "__main__":
     result = derive_subspanrepetition_spans("subspanrepetition_test.tsv")
 
-    print("Keystone position:", result["keystone_position"])
+    pos_to_name = result["position_number_to_name"]
+
+    def fmt(span):
+        l, r = span
+        return f"positions {l}–{r}  ({pos_to_name.get(l, '?')} → {pos_to_name.get(r, '?')})"
+
+    print("Keystone position:", result["keystone_position"],
+          f"({pos_to_name.get(result['keystone_position'], '?')})")
     for k in [
         "maximum_fillable",
         "maximum_widescope_left",
@@ -169,8 +176,12 @@ if __name__ == "__main__":
         "maximum_narrowscope_left",
         "maximum_narrowscope_right",
     ]:
-        print("\n==", k, "==")
-        print("Strict+Complete:", result[f"strict_complete_{k}_span"])
-        print("Loose+Complete:", result[f"loose_complete_{k}_span"])
-        print("Strict+Partial:", result[f"strict_partial_{k}_span"])
-        print("Loose+Partial:", result[f"loose_partial_{k}_span"])
+        print()
+        print(f"== {k} ==")
+        print(f"{k} complete positions:", result[f"{k}_complete_positions"])
+        print(f"{k} partial positions: ", result[f"{k}_partial_positions"])
+        print()
+        print(f"Strict complete {k} span:", fmt(result[f"strict_complete_{k}_span"]))
+        print(f"Loose complete {k} span: ", fmt(result[f"loose_complete_{k}_span"]))
+        print(f"Strict partial {k} span: ", fmt(result[f"strict_partial_{k}_span"]))
+        print(f"Loose partial {k} span:  ", fmt(result[f"loose_partial_{k}_span"]))
