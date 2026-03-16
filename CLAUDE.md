@@ -62,6 +62,16 @@ The numbered folders (`02`–`04`) contain only data files and thin wrapper scri
 
 `generate_snapshots.py` and `check_snapshots.py` at the repo root drive regression testing. Snapshots live in `tests/snapshots/`.
 
+## diagnostics.tsv format
+
+Parameters default to `y/n` dropdowns. To specify custom values use brace syntax:
+
+```
+stressable{y/n/both}, independence, left-interaction, right-interaction
+```
+
+`make_forms.py` parses this into `(param_names, param_values)`. `generate_sheets.py` applies per-column dropdown validation. `import_sheets.py` validates each parameter against its allowed set (always also accepts `na` and `?`).
+
 ## Codebook
 
 `codebook.yaml` at the repo root is the source of truth for parameter definitions, valid values, analytical terms (keystone, partial, complete, strict, loose), and qualification rules per analysis. Parameter definitions marked `[PLACEHOLDER]` are pending linguistic descriptions from the user.
