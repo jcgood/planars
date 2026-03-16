@@ -1,4 +1,4 @@
-Element	Position_Name	Position_Number	stressable	independence	left-interaction	right-interaction	
+Element	Position_Name	Position_Number	stressable	independence	left-interaction	right-interaction	Comments
 also	v:leftedge	1	y	y	n		
 and	v:leftedge	1	both	y	n		
 CONJUNCT	v:leftedge	1	y	y	n		
@@ -115,7 +115,7 @@ strong	v:nominal	27	y	n	n	y
 [syn-]	v:latinprefix	29	n	n	n		
 [tele-]	v:latinprefix	29	n	n	n		
 [up-]	v:latinprefix	29	n	n	n		
-ROOT	v:verbroot	30	y	?	y		
+ROOT	v:verbroot	30	y	?	y	na	
 [-ed]	v:verbinflection	31	n	n			
 [-ing]	v:verbinflection	31	n	n			
 [-s]	v:verbinflection	31	n	n			
