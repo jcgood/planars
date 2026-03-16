@@ -1,0 +1,188 @@
+# Planars Codebook
+# Source of truth for parameters, values, and analytical terms.
+# Edit definitions directly here; a rendering script will be added to produce human-readable output.
+
+# ---------------------------------------------------------------------------
+# STRUCTURAL COLUMNS
+# Present in every filled TSV.
+# ---------------------------------------------------------------------------
+
+structural_columns:
+
+  - name: Element
+    description: >
+      A form or form-type that occupies a position in the planar structure.
+      Elements with leading or trailing hyphens are wrapped in brackets (e.g. [-ed])
+      to prevent misinterpretation by spreadsheet software.
+
+  - name: Position_Name
+    description: >
+      The label for the position in the planar structure. Positions in the verbal
+      domain are prefixed with "v:". The special value "v:verbroot" marks the
+      keystone position (see Terms).
+
+  - name: Position_Number
+    description: >
+      Integer index of the position in the planar structure. Lower numbers are
+      further left; higher numbers are further right. The keystone (v:verbroot)
+      anchors all span computations.
+
+# ---------------------------------------------------------------------------
+# PARAMETERS BY ANALYSIS
+# ---------------------------------------------------------------------------
+
+analyses:
+
+  - name: ciscategorial
+    description: >
+      Tests which elements combine with the verb root in a ciscategorial
+      (same-category) relationship, as opposed to other combinatorial types.
+    parameters:
+
+      - name: V-combines
+        values: [y, n]
+        description: >
+          [PLACEHOLDER] Whether the element enters into a V-combining (verb-combining)
+          relationship with the verbal head.
+
+      - name: N-combines
+        values: [y, n]
+        description: >
+          [PLACEHOLDER] Whether the element enters into an N-combining (noun-combining)
+          relationship.
+
+      - name: A-combines
+        values: [y, n]
+        description: >
+          [PLACEHOLDER] Whether the element enters into an A-combining (adjective-combining)
+          relationship.
+
+    qualification_rule: >
+      An element is v-ciscategorial if V-combines=y AND all other combine parameters=n.
+      A position is complete if ALL its elements are v-ciscategorial.
+      A position is partial if AT LEAST ONE element is v-ciscategorial.
+
+  - name: subspanrepetition
+    description: >
+      Tests the scope and fillability of elements in subspan repetition constructions
+      (e.g. coordination, complementation).
+    parameters:
+
+      - name: widescope_left
+        values: [y, n]
+        description: >
+          [PLACEHOLDER] Whether the element takes wide scope to the left of the keystone
+          in a subspan repetition construction.
+
+      - name: widescope_right
+        values: [y, n]
+        description: >
+          [PLACEHOLDER] Whether the element takes wide scope to the right of the keystone
+          in a subspan repetition construction.
+
+      - name: fillable_botheither_conjunct
+        values: [y, n]
+        description: >
+          [PLACEHOLDER] Whether the element is fillable in both, either, or a single
+          conjunct of the subspan repetition construction.
+
+    qualification_rule: >
+      Five span categories are derived:
+        maximum_fillable:         fillable_botheither_conjunct=y
+        maximum_widescope_left:   widescope_left=y
+        maximum_widescope_right:  widescope_right=y
+        maximum_narrowscope_left:  widescope_left=n
+        maximum_narrowscope_right: widescope_right=n
+      Each category produces complete and partial position sets and four spans.
+
+  - name: noninterruption
+    description: >
+      Tests morphosyntactic freedom and multiplicity of elements to derive
+      non-interruption domains.
+    parameters:
+
+      - name: free
+        values: [y, n]
+        description: >
+          [PLACEHOLDER] Whether the element is morphosyntactically free (y) or bound (n).
+
+      - name: multiple
+        values: [y, n]
+        description: >
+          [PLACEHOLDER] Whether the element can occur multiply (more than once) within
+          the domain. Only relevant when free=y.
+
+    qualification_rule: >
+      Two domain types:
+        no-free: element qualifies if free=n (bound).
+        single-free: element qualifies if free=n OR (free=y AND multiple=n).
+      Each domain type produces complete and partial position sets and two strict spans.
+
+# ---------------------------------------------------------------------------
+# SHARED PARAMETER VALUES
+# ---------------------------------------------------------------------------
+
+shared_values:
+
+  - value: "y"
+    meaning: Yes — the parameter holds for this element in this construction.
+
+  - value: "n"
+    meaning: No — the parameter does not hold for this element in this construction.
+
+  - value: "NA"
+    meaning: >
+      Not applicable. Used only for keystone rows (v:verbroot), which are
+      excluded from all span computations.
+
+  - value: "?"
+    meaning: >
+      Unknown or not yet annotated. Treated as missing data; rows with "?"
+      will cause validation errors if passed to an analysis function.
+
+# ---------------------------------------------------------------------------
+# TERMS
+# ---------------------------------------------------------------------------
+
+terms:
+
+  - term: keystone
+    definition: >
+      The position identified by Position_Name == "v:verbroot". It anchors all
+      span computations — spans expand outward from the keystone. The keystone
+      row itself is excluded from qualification tests.
+
+  - term: partial position
+    definition: >
+      A position in which AT LEAST ONE element satisfies the qualification rule
+      for a given analysis. Partial positions define the widest possible span.
+
+  - term: complete position
+    definition: >
+      A position in which ALL elements satisfy the qualification rule for a given
+      analysis. Complete positions define a more conservative span.
+
+  - term: strict span
+    definition: >
+      The contiguous range of qualifying positions anchored at the keystone.
+      Expansion stops at the first gap (non-qualifying position) on either side.
+
+  - term: loose span
+    definition: >
+      The range from the farthest qualifying position on the left to the farthest
+      on the right of the keystone, regardless of gaps. Always >= the strict span.
+
+  - term: planar structure
+    definition: >
+      An ordered sequence of positions representing the morphosyntactic template
+      of a language's verbal (or nominal) domain. Defined in planar_<lang>.tsv.
+
+  - term: position
+    definition: >
+      A slot in the planar structure. Each position has a name, a number, and
+      one or more elements that can fill it.
+
+  - term: element
+    definition: >
+      A form or form-type that fills a position. Multiple elements can occupy
+      the same position; each is annotated independently.
