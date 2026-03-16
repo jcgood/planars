@@ -146,8 +146,51 @@ def _parse_csv_list(value: str) -> List[str]:
     return [v.strip() for v in (value or "").split(",") if v.strip()]
 
 
-def _read_diagnostics_for_language(language_id: str) -> List[Tuple[str, str, List[str]]]:
-    """Read diagnostics.tsv and return (class_name, construction, parameters) rows for a language."""
+_DEFAULT_PARAM_VALUES = ["y", "n"]
+
+
+def _parse_param_spec(spec: str) -> Tuple[str, List[str]]:
+    """Parse a parameter specification into (name, allowed_values).
+
+    Examples:
+        'free'              -> ('free', ['y', 'n'])
+        'stressable{y/n/both}' -> ('stressable', ['y', 'n', 'both'])
+    """
+    spec = spec.strip()
+    if "{" in spec:
+        if not spec.endswith("}"):
+            raise ValueError(f"Malformed parameter spec (missing closing brace): '{spec}'")
+        name, _, values_str = spec[:-1].partition("{")
+        values = [v.strip() for v in values_str.split("/") if v.strip()]
+        if not values:
+            raise ValueError(f"Parameter spec has empty value list: '{spec}'")
+        return name.strip(), values
+    return spec, list(_DEFAULT_PARAM_VALUES)
+
+
+def _parse_param_specs(value: str) -> Tuple[List[str], Dict[str, List[str]]]:
+    """Parse a comma-separated parameter specs string.
+
+    Returns (param_names, param_values) where param_values maps each name
+    to its allowed values list.
+    """
+    param_names: List[str] = []
+    param_values: Dict[str, List[str]] = {}
+    for spec in _parse_csv_list(value):
+        name, values = _parse_param_spec(spec)
+        param_names.append(name)
+        param_values[name] = values
+    return param_names, param_values
+
+
+def _read_diagnostics_for_language(
+    language_id: str,
+) -> List[Tuple[str, str, List[str], Dict[str, List[str]]]]:
+    """Read diagnostics.tsv and return rows for a language.
+
+    Each row is (class_name, construction, param_names, param_values) where
+    param_values maps each parameter name to its list of allowed values.
+    """
     diag_path = _resolve_diagnostics_path()
     df = pd.read_csv(diag_path, sep="\t", header=0, dtype=str, keep_default_na=False)
 
@@ -156,7 +199,7 @@ def _read_diagnostics_for_language(language_id: str) -> List[Tuple[str, str, Lis
     if missing:
         raise ValueError(f"Diagnostics file missing required columns: {sorted(missing)}")
 
-    out: List[Tuple[str, str, List[str]]] = []
+    out: List[Tuple[str, str, List[str], Dict[str, List[str]]]] = []
 
     for _, row in df.iterrows():
         lang = (row.get("Language", "") or "").strip()
@@ -165,18 +208,17 @@ def _read_diagnostics_for_language(language_id: str) -> List[Tuple[str, str, Lis
 
         class_name = (row.get("Class", "") or "").strip()
         constructions = _parse_csv_list(row.get("Constructions", ""))
-        params = _parse_csv_list(row.get("Parameters", ""))
+        param_names, param_values = _parse_param_specs(row.get("Parameters", ""))
 
         if not class_name:
             raise ValueError("Diagnostics file has a row with empty Class.")
         if not constructions:
-            # Nothing to generate for this row
             continue
-        if not params:
+        if not param_names:
             raise ValueError(f"Diagnostics row for class '{class_name}' has no Parameters.")
 
         for construction in constructions:
-            out.append((class_name, construction, params))
+            out.append((class_name, construction, param_names, param_values))
 
     return out
 
@@ -239,7 +281,7 @@ def generate_all_from_diagnostics(planar_filename: str) -> List[Path]:
     specs = _read_diagnostics_for_language(lang_id)
 
     out_paths: List[Path] = []
-    for class_name, construction, params in specs:
+    for class_name, construction, params, _ in specs:
         out_paths.append(
             generate_test_file(
                 class_name=class_name,

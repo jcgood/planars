@@ -29,7 +29,7 @@ MANIFEST_PATH = ROOT / "sheets_manifest.json"
 _DEFAULT_OAUTH_PATH = Path.home() / ".config" / "planars" / "oauth_credentials.json"
 
 _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
-_EXPECTED_VALUES = {"y", "n", "na", "?"}
+_DEFAULT_EXPECTED = {"y", "n", "na", "?"}
 
 
 # ---------------------------------------------------------------------------
@@ -77,6 +77,7 @@ def _validate_tab(
     rows: List[List[str]],
     expected_params: List[str],
     tab_name: str,
+    param_values: Dict[str, List[str]] = None,
 ) -> Tuple[List[Dict], List[str]]:
     """Validate sheet rows and return (records, warnings).
 
@@ -121,6 +122,12 @@ def _validate_tab(
             val = record.get(param, "").strip().lower()
             record[param] = val  # normalize in-place
 
+            allowed = (
+                {v.lower() for v in (param_values or {}).get(param, [])} | {"na", "?"}
+                if param_values and param in param_values
+                else _DEFAULT_EXPECTED
+            )
+
             if is_keystone:
                 # Keystone rows should be NA; fill if blank
                 if val == "":
@@ -131,10 +138,10 @@ def _validate_tab(
                         f"{tab_name} row {row_num} '{record.get('Element', '?')}': "
                         f"blank value in '{param}'"
                     )
-                elif val not in _EXPECTED_VALUES:
+                elif val not in allowed:
                     warnings.append(
                         f"{tab_name} row {row_num} '{record.get('Element', '?')}': "
-                        f"unexpected value '{val}' in '{param}'"
+                        f"unexpected value '{val}' in '{param}' (allowed: {sorted(allowed)})"
                     )
 
         records.append(record)
@@ -200,7 +207,11 @@ def main() -> None:
                 )
                 header = rows[0] if rows else []
 
-                records, warnings = _validate_tab(rows, expected_params, construction)
+                # Per-param allowed values from manifest (if present)
+                construction_params = sheet_info.get("construction_params", {})
+                param_values = construction_params.get(construction, {}).get("param_values")
+
+                records, warnings = _validate_tab(rows, expected_params, construction, param_values)
 
                 for w in warnings:
                     print(f"    WARNING: {w}")

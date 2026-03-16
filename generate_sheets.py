@@ -150,9 +150,9 @@ def _build_rows(
 def _format_and_validate(
     worksheet: gspread.Worksheet,
     num_data_rows: int,
-    num_param_cols: int,
+    param_values: List[List[str]],
 ) -> None:
-    """Freeze and bold the header row; apply y/n dropdown to parameter columns."""
+    """Freeze and bold the header row; apply per-column dropdown validation."""
     sheet_id = worksheet.id
     requests = [
         # Freeze header row
@@ -179,30 +179,29 @@ def _format_and_validate(
                 "fields": "userEnteredFormat.textFormat.bold",
             }
         },
-        # y/n dropdown on parameter columns (non-strict so NA in keystone rows is tolerated)
-        {
+    ]
+    # One validation request per param column (non-strict so NA in keystone rows is tolerated)
+    for col_offset, values in enumerate(param_values):
+        col_idx = 3 + col_offset
+        requests.append({
             "setDataValidation": {
                 "range": {
                     "sheetId": sheet_id,
                     "startRowIndex": 1,
                     "endRowIndex": 1 + num_data_rows,
-                    "startColumnIndex": 3,
-                    "endColumnIndex": 3 + num_param_cols,
+                    "startColumnIndex": col_idx,
+                    "endColumnIndex": col_idx + 1,
                 },
                 "rule": {
                     "condition": {
                         "type": "ONE_OF_LIST",
-                        "values": [
-                            {"userEnteredValue": "y"},
-                            {"userEnteredValue": "n"},
-                        ],
+                        "values": [{"userEnteredValue": v} for v in values],
                     },
                     "showCustomUi": True,
                     "strict": False,
                 },
             }
-        },
-    ]
+        })
     worksheet.spreadsheet.batch_update({"requests": requests})
 
 
@@ -214,6 +213,7 @@ def _populate_tab(
     spreadsheet: gspread.Spreadsheet,
     tab_name: str,
     param_names: List[str],
+    param_values: Dict[str, List[str]],
     rows: List[List[object]],
 ) -> gspread.Worksheet:
     """Create or clear a worksheet tab and populate it with data."""
@@ -228,7 +228,8 @@ def _populate_tab(
     header = ["Element", "Position_Name", "Position_Number"] + param_names
     all_rows = [header] + [[str(v) for v in row] for row in rows]
     ws.update(all_rows, "A1")
-    _format_and_validate(ws, len(rows), len(param_names))
+    per_col_values = [param_values.get(p, ["y", "n"]) for p in param_names]
+    _format_and_validate(ws, len(rows), per_col_values)
     return ws
 
 
@@ -242,7 +243,7 @@ def _create_analysis_sheet(
     folder_id: str,
     lang_id: str,
     class_name: str,
-    constructions: List[Tuple[str, List[str]]],
+    constructions: List[Tuple[str, List[str], Dict[str, List[str]]]],
     element_index,
 ) -> Dict:
     """Create a Google Sheet for one analysis class with one tab per construction."""
@@ -256,9 +257,9 @@ def _create_analysis_sheet(
     default_ws = spreadsheet.sheet1
     tab_names = []
 
-    for construction, param_names in constructions:
+    for construction, param_names, param_values in constructions:
         rows = _build_rows(element_index, lang_id, param_names)
-        _populate_tab(spreadsheet, construction, param_names, rows)
+        _populate_tab(spreadsheet, construction, param_names, param_values, rows)
         tab_names.append(construction)
         print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
 
@@ -266,10 +267,17 @@ def _create_analysis_sheet(
     if default_ws.title not in tab_names:
         spreadsheet.del_worksheet(default_ws)
 
+    # Build per-construction param_values map for the manifest
+    construction_params = {
+        construction: {"param_names": pn, "param_values": pv}
+        for construction, pn, pv in constructions
+    }
+
     return {
         "spreadsheet_id": spreadsheet.id,
         "url": spreadsheet.url,
         "constructions": tab_names,
+        "construction_params": construction_params,
     }
 
 
@@ -293,10 +301,10 @@ def main() -> None:
     element_index = build_element_index(planar_file.name)
     specs = _read_diagnostics_for_language(lang_id)
 
-    # Group specs by class_name -> [(construction, param_names), ...]
-    classes: Dict[str, List[Tuple[str, List[str]]]] = {}
-    for class_name, construction, param_names in specs:
-        classes.setdefault(class_name, []).append((construction, param_names))
+    # Group specs by class_name -> [(construction, param_names, param_values), ...]
+    classes: Dict[str, List[Tuple[str, List[str], Dict[str, List[str]]]]] = {}
+    for class_name, construction, param_names, param_values in specs:
+        classes.setdefault(class_name, []).append((construction, param_names, param_values))
 
     print(f"Classes:     {list(classes.keys())}")
 
