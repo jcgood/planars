@@ -53,6 +53,17 @@ Each analysis module exposes two public functions: `derive_*()` returns a result
 
 `generate_snapshots.py` and `check_snapshots.py` at the repo root drive regression testing. Snapshots live in `tests/snapshots/`.
 
+## NonCollaborative/
+
+Personal working area not part of the shared analysis pipeline:
+
+- `make_file.R` — R equivalent of `make_forms.py`
+- `domains/` — domain TSV files for various languages (Chac, Mart, Nyan, Quech, Yupik, etc.)
+- `domainGenerationTests/` — earlier prototypes of the analysis scripts
+- `planar_tables/` — CSV/TSV versions of the planar structure for stan1293
+- `scripts/` — active R and Python scripts for visualization and analysis (constituency forests, domain charts, tree traversal, etc.)
+- `OlderFiles/` — archive of older scripts and data, including prior versions of planar_tables and scripts
+
 ## Key conventions
 
 - File naming: `{Class}_{Language}_{Construction}_blank.tsv` → `..._filled.tsv` (or `..._fill.tsv`, `..._full.tsv`).
