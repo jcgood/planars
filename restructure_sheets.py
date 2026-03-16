@@ -8,6 +8,13 @@ Run from the repo root:
     python restructure_sheets.py           # dry run — show what would change
     python restructure_sheets.py --apply   # archive old sheets and regenerate
 
+    # Map renamed positions so their annotations are carried over instead of dropped:
+    python restructure_sheets.py --rename-map "old name:new name"
+    python restructure_sheets.py --rename-map old:new1 --rename-map old2:new2 --apply
+
+    --rename-map takes "old_pos_name:new_pos_name" and can be repeated.
+    Without it, a renamed position is treated as a drop + new blank row.
+
 What this does per spreadsheet:
   1. Downloads current annotations from each tab
   2. [--apply] Moves the spreadsheet to archive/v{N}/ in Drive
@@ -24,7 +31,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "01_planar_input"))
@@ -114,6 +121,26 @@ def _download_tab_annotations(
 
 
 # ---------------------------------------------------------------------------
+# Rename-aware carry-over lookup
+# ---------------------------------------------------------------------------
+
+def _lookup_existing(
+    element: str,
+    pos_name: str,
+    existing: Dict[Tuple[str, str], Dict[str, str]],
+    old_for_new: Dict[str, str],
+) -> Optional[Dict[str, str]]:
+    """Look up an annotation by (element, pos_name), falling back to rename alias."""
+    values = existing.get((element, pos_name))
+    if values is not None:
+        return values
+    old_name = old_for_new.get(pos_name)
+    if old_name:
+        return existing.get((element, old_name))
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Drive helpers
 # ---------------------------------------------------------------------------
 
@@ -157,32 +184,38 @@ def _write_tab_with_carryover(
     param_values: Dict[str, List[str]],
     rows: List[List[object]],
     existing: Dict[Tuple[str, str], Dict[str, str]],
+    rename_map: Dict[str, str],
 ) -> Tuple[int, int, int]:
     """Create/clear a tab and populate it, carrying over matching annotations.
 
-    Matching is by (Element, Position_Name).
+    Matching is by (Element, Position_Name), with optional rename_map (old→new)
+    to carry over annotations from renamed positions.
 
     Returns:
         (carried_count, new_count, dropped_count)
     """
+    old_for_new = {v: k for k, v in rename_map.items()}
     all_cols = param_names + _TRAILING_COLS
     header = ["Element", "Position_Name", "Position_Number"] + all_cols
 
     carried = 0
     new = 0
+    reachable_old_keys: set = set()
     all_rows = [header]
 
     for row in rows:
         element = str(row[0])
         pos_name = str(row[1])
         pos_num = str(row[2])
-        key = (element, pos_name)
         is_keystone = pos_name.strip().lower() == "v:verbroot"
 
-        if key in existing:
-            old_values = existing[key]
+        old_values = _lookup_existing(element, pos_name, existing, old_for_new)
+        if old_values is not None:
             param_vals = [old_values.get(p, "") for p in param_names]
             trailing_vals = [old_values.get(c, "") for c in _TRAILING_COLS]
+            # Track which old key was consumed (direct or via rename)
+            old_name = old_for_new.get(pos_name)
+            reachable_old_keys.add((element, old_name if old_name and (element, old_name) in existing else pos_name))
             carried += 1
         else:
             param_vals = ["NA"] * len(param_names) if is_keystone else [""] * len(param_names)
@@ -191,8 +224,7 @@ def _write_tab_with_carryover(
 
         all_rows.append([element, pos_name, pos_num] + param_vals + trailing_vals)
 
-    new_keys = {(str(r[0]), str(r[1])) for r in rows}
-    dropped = sum(1 for k in existing if k not in new_keys)
+    dropped = sum(1 for k in existing if k not in reachable_old_keys)
 
     try:
         ws = spreadsheet.worksheet(tab_name)
@@ -216,12 +248,22 @@ def _write_tab_with_carryover(
 def _compute_stats(
     rows: List[List[object]],
     existing: Dict[Tuple[str, str], Dict[str, str]],
+    rename_map: Dict[str, str],
 ) -> Tuple[int, int, List[Tuple[str, str]]]:
     """Return (carried_count, new_count, dropped_keys) without touching any sheet."""
-    new_keys = {(str(r[0]), str(r[1])) for r in rows}
-    carried = sum(1 for k in existing if k in new_keys)
-    new = sum(1 for r in rows if (str(r[0]), str(r[1])) not in existing)
-    dropped = [k for k in existing if k not in new_keys]
+    old_for_new = {v: k for k, v in rename_map.items()}
+    reachable_old_keys: set = set()
+    new = 0
+    for r in rows:
+        element, pos_name = str(r[0]), str(r[1])
+        old_values = _lookup_existing(element, pos_name, existing, old_for_new)
+        if old_values is not None:
+            old_name = old_for_new.get(pos_name)
+            reachable_old_keys.add((element, old_name if old_name and (element, old_name) in existing else pos_name))
+        else:
+            new += 1
+    carried = len(reachable_old_keys)
+    dropped = [k for k in existing if k not in reachable_old_keys]
     return carried, new, dropped
 
 
@@ -229,8 +271,26 @@ def _compute_stats(
 # Main
 # ---------------------------------------------------------------------------
 
+def _parse_rename_map(argv: List[str]) -> Dict[str, str]:
+    """Parse all --rename-map old:new arguments into {old: new}."""
+    rename_map: Dict[str, str] = {}
+    i = 0
+    while i < len(argv):
+        if argv[i] == "--rename-map" and i + 1 < len(argv):
+            pair = argv[i + 1]
+            if ":" not in pair:
+                raise SystemExit(f"--rename-map requires 'old:new' format, got: {pair!r}")
+            old, new = pair.split(":", 1)
+            rename_map[old.strip()] = new.strip()
+            i += 2
+        else:
+            i += 1
+    return rename_map
+
+
 def main() -> None:
     apply = "--apply" in sys.argv
+    rename_map = _parse_rename_map(sys.argv[1:])
 
     if not MANIFEST_PATH.exists():
         raise SystemExit(
@@ -255,6 +315,9 @@ def main() -> None:
         classes.setdefault(class_name, []).append((construction, param_names, param_values))
 
     print(f"{'DRY RUN — ' if not apply else ''}Language: {lang_id}")
+    if rename_map:
+        for old, new in rename_map.items():
+            print(f"  rename: {old!r} -> {new!r}")
     if not apply:
         print("(run with --apply to archive old sheets and regenerate)\n")
 
@@ -293,7 +356,7 @@ def main() -> None:
         for construction, param_names, param_values in constructions_list:
             rows = _build_rows(element_index, lang_id, param_names)
             existing = all_annotations.get(construction, {})
-            carried, new_count, dropped = _compute_stats(rows, existing)
+            carried, new_count, dropped = _compute_stats(rows, existing, rename_map)
             parts = [f"carry over {carried}", f"new blank {new_count}"]
             if dropped:
                 dropped_labels = [f"{el}@{pn}" for el, pn in dropped]
@@ -330,7 +393,7 @@ def main() -> None:
             rows = _build_rows(element_index, lang_id, param_names)
             existing = all_annotations.get(construction, {})
             carried, new_count, dropped_count = _write_tab_with_carryover(
-                new_ss, construction, param_names, param_values, rows, existing
+                new_ss, construction, param_names, param_values, rows, existing, rename_map
             )
             tab_names.append(construction)
             new_construction_params[construction] = {
