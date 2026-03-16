@@ -107,17 +107,27 @@ def _upload_tsv_to_tab(ws: gspread.Worksheet, tsv_path: Path) -> int:
     """Replace parameter values in a sheet tab with data from a TSV.
 
     Matches rows by (Element, Position_Number). Returns count of rows updated.
+    Unnamed trailing columns are concatenated with ' | ' into the Comments column.
     """
     # Read TSV into a lookup: (element, pos_num) -> {param: value}
     tsv_data: Dict[Tuple[str, str], Dict[str, str]] = {}
     with tsv_path.open(encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter="\t")
+        reader = csv.reader(f, delimiter="\t")
+        header = next(reader, [])
+        named_cols = [c for c in header if c and c not in _STRUCTURAL_COLS]
+        unnamed_indices = [i for i, c in enumerate(header) if not c]
         for row in reader:
-            key = (row.get("Element", "").strip(), str(row.get("Position_Number", "")).strip())
-            tsv_data[key] = {
-                k: v for k, v in row.items()
-                if k and k not in _STRUCTURAL_COLS
-            }
+            while len(row) < len(header):
+                row.append("")
+            element = row[header.index("Element")].strip() if "Element" in header else ""
+            pos_num = str(row[header.index("Position_Number")]).strip() if "Position_Number" in header else ""
+            key = (element, pos_num)
+            record = {c: row[header.index(c)].strip() for c in named_cols if c in header}
+            # Concatenate unnamed trailing columns into Comments
+            unnamed_vals = [row[i].strip() for i in unnamed_indices if i < len(row) and row[i].strip()]
+            if unnamed_vals:
+                record["Comments"] = " | ".join(unnamed_vals)
+            tsv_data[key] = record
 
     # Read current sheet
     sheet_rows = ws.get_all_values()
