@@ -13,22 +13,14 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(ROOT / "02_ciscategorial_output"))
-sys.path.insert(0, str(ROOT / "03_subspanrepetition_output"))
-sys.path.insert(0, str(ROOT / "04_noninterruption"))
 
-import ciscategorial as _cisc
-import subspanrepetition as _subspan
-import noninterruption as _nonint
-
-# Re-use generation logic
 from generate_snapshots import TASKS, SNAPSHOTS_DIR, tsv_to_title
 
 
 def main() -> None:
     failures: list[str] = []
 
-    for tsv_path, fmt_fn, derive_fn in TASKS:
+    for tsv_path, derive_fn, fmt_fn in TASKS:
         out_path = SNAPSHOTS_DIR / (tsv_path.stem + ".txt")
 
         if not out_path.exists():
@@ -37,7 +29,7 @@ def main() -> None:
             continue
 
         title = tsv_to_title(tsv_path.name)
-        body = fmt_fn(derive_fn(tsv_path.name))
+        body = fmt_fn(derive_fn(tsv_path))
         current = f"{title}\n{'=' * len(title)}\n\n{body}\n"
         committed = out_path.read_text(encoding="utf-8")
 

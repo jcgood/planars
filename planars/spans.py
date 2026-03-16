@@ -1,8 +1,13 @@
 from __future__ import annotations
 
-from typing import Set, Tuple
+from typing import Dict, Set, Tuple
 
 import pandas as pd
+
+
+def fmt_span(span: Tuple[int, int], pos_to_name: Dict[int, str]) -> str:
+    l, r = span
+    return f"positions {l}\u2013{r}  ({pos_to_name.get(l, '?')} \u2192 {pos_to_name.get(r, '?')})"
 
 
 def strict_span(qual_positions: Set[int], keystone_pos: int) -> Tuple[int, int]:
