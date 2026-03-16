@@ -57,24 +57,30 @@ def _get_client() -> gspread.Client:
 # TSV candidate search
 # ---------------------------------------------------------------------------
 
-def _count_blank_params(path: Path) -> int:
-    """Count blank parameter cells (cols 4+) in a TSV, excluding header."""
-    blanks = 0
+def _count_param_cells(path: Path) -> Tuple[int, int]:
+    """Return (unannotated_count, total_count) for parameter cells (cols 4+), excluding header.
+
+    Cells that are blank or 'na' (keystone auto-fill) are counted as unannotated.
+    """
+    unannotated = 0
+    total = 0
     with path.open(encoding="utf-8") as f:
         reader = csv.reader(f, delimiter="\t")
         header = next(reader, [])
         param_indices = [i for i, c in enumerate(header) if c and c not in _STRUCTURAL_COLS]
         for row in reader:
             for i in param_indices:
-                if i >= len(row) or row[i].strip() == "":
-                    blanks += 1
-    return blanks
+                total += 1
+                val = row[i].strip().lower() if i < len(row) else ""
+                if val in ("", "na"):
+                    unannotated += 1
+    return unannotated, total
 
 
-def _find_best_tsv(class_name: str, lang_id: str, construction: str) -> Optional[Tuple[Path, int]]:
+def _find_best_tsv(class_name: str, lang_id: str, construction: str) -> Optional[Tuple[Path, int, int]]:
     """Find the TSV candidate with the fewest blank parameter cells.
 
-    Returns (path, blank_count) or None if no candidates found.
+    Returns (path, blank_count, total_count) or None if no candidates found.
     """
     candidates = []
     for folder in sorted(ROOT.iterdir()):
@@ -88,7 +94,7 @@ def _find_best_tsv(class_name: str, lang_id: str, construction: str) -> Optional
     if not candidates:
         return None
 
-    scored = [(p, _count_blank_params(p)) for p in candidates]
+    scored = [(p, *_count_param_cells(p)) for p in candidates]
     scored.sort(key=lambda t: t[1])
     return scored[0]
 
@@ -179,18 +185,21 @@ def main() -> None:
                     print(f"    [{construction}] no TSV found, skipping")
                     continue
 
-                tsv_path, blank_count = result
-                total_param_cells = blank_count  # approximate; just for display
+                tsv_path, blank_count, total_count = result
+
+                if blank_count == total_count:
+                    print(f"    [{construction}] {tsv_path.name} is fully blank — no annotation data to upload, skipping")
+                    continue
 
                 if blank_count > 0:
-                    print(f"    [{construction}] {tsv_path.name} ({blank_count} blank param cells)")
+                    print(f"    [{construction}] {tsv_path.name} ({blank_count}/{total_count} param cells blank)")
                 else:
                     print(f"    [{construction}] {tsv_path.name} (complete)")
 
                 try:
                     ws = ss.worksheet(construction)
                 except gspread.WorksheetNotFound:
-                    print(f"    [{construction}] tab not found in sheet, skipping")
+                    print(f"    [{construction}] WARNING: tab '{construction}' not found in sheet — check that the tab was not left as 'Sheet1' or renamed")
                     continue
 
                 updated = _upload_tsv_to_tab(ws, tsv_path)
