@@ -31,6 +31,7 @@ ERROR_DIR = ROOT / "import_errors"
 _DEFAULT_OAUTH_PATH = Path.home() / ".config" / "planars" / "oauth_credentials.json"
 
 _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
+_TRAILING_COLS = {"Comments"}   # free-text; never validated for blank or allowed values
 _DEFAULT_EXPECTED = {"y", "n", "na", "?"}
 
 
@@ -108,7 +109,7 @@ def _validate_tab(
         )
 
     col_index = {name: i for i, name in enumerate(header)}
-    param_cols = [c for c in header if c not in _STRUCTURAL_COLS]
+    param_cols = [c for c in header if c not in _STRUCTURAL_COLS and c not in _TRAILING_COLS]
 
     records = []
     for row_num, row in enumerate(data_rows, start=2):  # 2 = first data row in sheet
