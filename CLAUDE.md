@@ -98,9 +98,11 @@ Feature requests and bugs are tracked on GitHub Issues: https://github.com/jcgoo
 
 ## Key conventions
 
-- File naming: `{Class}_{Language}_{Construction}_blank.tsv` → `..._filled.tsv` (or `..._fill.tsv`, `..._full.tsv`).
+- File naming: imported TSVs use `{Class}_{Language}_{Construction}_filled.tsv`. Legacy files may use `_fill.tsv` or `_full.tsv`.
 - Language ID is inferred from the planar filename: `planar_stan1293-20260209.tsv` → `stan1293`.
 - Elements with leading/trailing hyphens are wrapped in `[brackets]` to avoid Excel parsing issues.
 - Analysis functions take a `Path` object; path resolution happens at the call site (CLI or wrapper scripts), not inside the library.
-- Keystone rows always have `Position_Name == 'v:verbroot'` and receive `NA` parameter values in blank forms.
+- Keystone rows always have `Position_Name == 'v:verbroot'` and receive `NA` parameter values.
 - Result dicts use `complete_positions` / `partial_positions` and `*_span` key suffixes consistently across all modules.
+- `_TRAILING_COLS = ["Comments"]` is defined in both `generate_sheets.py` and `update_sheets.py`. Add new trailing columns there to propagate them to all new and existing sheets.
+- `populate_sheets.py` is a one-time utility for uploading legacy TSV data. Unnamed trailing columns in legacy TSVs are concatenated with ` | ` into Comments.
