@@ -21,12 +21,12 @@ python import_sheets.py
 python import_sheets.py --force   # overwrite existing files
 
 # Run a single analysis via the CLI (from repo root)
-python -m planars ciscategorial 02_ciscategorial_output/ciscategorial_stan1293_general_filled.tsv
-python -m planars subspanrepetition 03_subspanrepetition_output/subspanrepetition_stan1293_andCoordination_full.tsv
+python -m planars ciscategorial 02_ciscategorial/ciscategorial_stan1293_general_filled.tsv
+python -m planars subspanrepetition 03_subspanrepetition/subspanrepetition_stan1293_andCoordination_filled.tsv
 python -m planars noninterruption 04_noninterruption/noninterruption_stan1293_general_fill.tsv
 
 # Or run a module directly from its own folder (uses default filled file)
-cd 02_ciscategorial_output && python ciscategorial.py
+cd 02_ciscategorial && python ciscategorial.py
 
 # Regression testing
 python generate_snapshots.py   # regenerate baseline snapshots

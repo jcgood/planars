@@ -23,8 +23,8 @@ _FILLED_RE = re.compile(r"_(fill(?:ed)?|full|test)\.tsv$", re.IGNORECASE)
 _CAMEL_RE = re.compile(r"(?<=[a-z])(?=[A-Z])")
 
 _FOLDER_MAP = [
-    (ROOT / "02_ciscategorial_output",    _cisc.derive_v_ciscategorial_fractures,  _cisc.format_result),
-    (ROOT / "03_subspanrepetition_output", _subspan.derive_subspanrepetition_spans, _subspan.format_result),
+    (ROOT / "02_ciscategorial",    _cisc.derive_v_ciscategorial_fractures,  _cisc.format_result),
+    (ROOT / "03_subspanrepetition", _subspan.derive_subspanrepetition_spans, _subspan.format_result),
     (ROOT / "04_noninterruption",          _nonint.derive_noninterruption_domains,  _nonint.format_result),
 ]
 
