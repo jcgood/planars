@@ -55,6 +55,12 @@ The numbered folders (`02`–`04`) contain only data files and thin wrapper scri
 
 `generate_snapshots.py` and `check_snapshots.py` at the repo root drive regression testing. Snapshots live in `tests/snapshots/`.
 
+## Codebook
+
+`codebook.yaml` at the repo root is the source of truth for parameter definitions, valid values, analytical terms (keystone, partial, complete, strict, loose), and qualification rules per analysis. Parameter definitions marked `[PLACEHOLDER]` are pending linguistic descriptions from the user.
+
+A rendering script (`render_codebook.py`) will be added later to produce human-readable output from this file.
+
 ## NonCollaborative/
 
 Personal working area not part of the shared analysis pipeline:
