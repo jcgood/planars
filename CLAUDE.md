@@ -13,7 +13,7 @@ python -m planars ciscategorial 02_ciscategorial_output/ciscategorial_stan1293_g
 python -m planars subspanrepetition 03_subspanrepetition_output/subspanrepetition_stan1293_andCoordination_full.tsv
 python -m planars noninterruption 04_noninterruption/noninterruption_stan1293_general_fill.tsv
 
-# Or run a module directly from its own folder
+# Or run a module directly from its own folder (uses default filled file)
 cd 02_ciscategorial_output && python ciscategorial.py
 
 # Regression testing
@@ -31,7 +31,7 @@ This is a linguistic typology analysis project for morphosyntactic domain deriva
 
 2. **Manual annotation**: Linguists fill in y/n values in the blank TSVs for each element/position row.
 
-3. **Analysis modules** (folders `02`–`04`): Each reads a filled TSV and derives spans. All share the same core span logic in `planars/spans.py`:
+3. **Analysis** (`planars/`): Each analysis module reads a filled TSV and derives spans. All share the same core logic:
    - **Keystone position**: Identified by `Position_Name == 'v:verbroot'`; anchors all span computations.
    - **Partial positions**: ≥1 element in the position qualifies.
    - **Complete positions**: ALL elements in the position qualify.
@@ -45,11 +45,13 @@ This is a linguistic typology analysis project for morphosyntactic domain deriva
 
 ## Package structure
 
-`planars/` is a shared library:
-- `spans.py`: `strict_span`, `loose_span`, `position_sets_from_element_mask` — imported by all analysis modules.
+`planars/` is the core library:
+- `io.py`: `load_filled_tsv()` — shared TSV loader used by all analysis modules. Reads, normalizes columns, locates the keystone row, validates no blank parameter values, returns `(data_df, keystone_pos, pos_to_name, param_cols)`.
+- `spans.py`: `strict_span`, `loose_span`, `position_sets_from_element_mask`, `fmt_span` — shared span math and formatting helper.
+- `ciscategorial.py`, `subspanrepetition.py`, `noninterruption.py`: each exposes `derive_*()` (takes a `Path`, returns a result dict) and `format_result()` (takes a result dict, returns a formatted string).
 - `cli.py` + `__main__.py`: CLI entry point (`python -m planars <analysis> <tsv>`).
 
-Each analysis module exposes two public functions: `derive_*()` returns a result dict, and `format_result()` returns a formatted string for display or snapshot comparison.
+The numbered folders (`02`–`04`) contain only data files and thin wrapper scripts that resolve local paths and call the library.
 
 `generate_snapshots.py` and `check_snapshots.py` at the repo root drive regression testing. Snapshots live in `tests/snapshots/`.
 
@@ -69,5 +71,6 @@ Personal working area not part of the shared analysis pipeline:
 - File naming: `{Class}_{Language}_{Construction}_blank.tsv` → `..._filled.tsv` (or `..._fill.tsv`, `..._full.tsv`).
 - Language ID is inferred from the planar filename: `planar_stan1293-20260209.tsv` → `stan1293`.
 - Elements with leading/trailing hyphens are wrapped in `[brackets]` to avoid Excel parsing issues.
-- `DATA_DIR = ""` at the top of each analysis module controls file resolution; when empty, files resolve relative to the module's own directory. The CLI sets this before calling analysis functions.
+- Analysis functions take a `Path` object; path resolution happens at the call site (CLI or wrapper scripts), not inside the library.
 - Keystone rows always have `Position_Name == 'v:verbroot'` and receive `NA` parameter values in blank forms.
+- Result dicts use `complete_positions` / `partial_positions` and `*_span` key suffixes consistently across all modules.
