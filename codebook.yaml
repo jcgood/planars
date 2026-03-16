@@ -1,7 +1,8 @@
 # Planars Codebook
 # Source of truth for parameters, values, and analytical terms.
-# Definitions draw on the theoretical framework in Lander et al. (2024),
-# "Morphosyntactic Constituency" (Language Science Press, doi:10.5281/zenodo.XXXXXXX),
+# Definitions draw on the theoretical framework in:
+# Tallman, Auderset & Uchihara (eds.) (2024), "Constituency and convergence in the Americas",
+# Topics in Phonological Diversity 1, Language Science Press. doi:10.5281/zenodo.10559861
 # but this toolkit reflects ongoing research that extends beyond that work.
 # Edit definitions directly here; a rendering script will be added to produce human-readable output.
 

@@ -15,6 +15,10 @@ Four span types are computed for each analysis:
 
 See `codebook.yaml` for definitions of all parameters, values, and terms.
 
+This toolkit builds on the theoretical framework developed in:
+
+> Tallman, Adam J. R., Sandra Auderset, and Hiroto Uchihara (eds.). 2024. *Constituency and convergence in the Americas*. Topics in Phonological Diversity 1. Berlin: Language Science Press. doi:[10.5281/zenodo.10559861](https://doi.org/10.5281/zenodo.10559861)
+
 ## Requirements
 
 - Python 3.9+
