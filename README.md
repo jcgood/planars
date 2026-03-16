@@ -53,6 +53,8 @@ python import_sheets.py --force  # overwrite existing files
 
 Authentication uses OAuth2. On first run a browser window opens for authorization; the token is cached at `~/.config/gspread/authorized_user.json`. OAuth credentials must be at `~/.config/planars/oauth_credentials.json` (override with `PLANARS_OAUTH_CREDENTIALS`).
 
+If any validation warnings are found during import (blank cells, unexpected values), they are written to `import_errors/{lang}_{timestamp}.txt` as well as printed to the terminal.
+
 ### 3. Run analyses
 
 From the repo root:
