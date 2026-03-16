@@ -89,6 +89,10 @@ Personal working area not part of the shared analysis pipeline:
 - `scripts/` — active R and Python scripts for visualization and analysis (constituency forests, domain charts, tree traversal, etc.)
 - `OlderFiles/` — archive of older scripts and data, including prior versions of planar_tables and scripts
 
+## Issue tracking
+
+Feature requests and bugs are tracked on GitHub Issues: https://github.com/jcgood/planars/issues
+
 ## Key conventions
 
 - File naming: `{Class}_{Language}_{Construction}_blank.tsv` → `..._filled.tsv` (or `..._fill.tsv`, `..._full.tsv`).
