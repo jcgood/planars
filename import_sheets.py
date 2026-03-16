@@ -17,8 +17,9 @@ import csv
 import json
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "01_planar_input"))
@@ -26,6 +27,7 @@ sys.path.insert(0, str(ROOT / "01_planar_input"))
 import gspread
 
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
+ERROR_DIR = ROOT / "import_errors"
 _DEFAULT_OAUTH_PATH = Path.home() / ".config" / "planars" / "oauth_credentials.json"
 
 _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
@@ -167,8 +169,17 @@ def _write_tsv(path: Path, header: List[str], records: List[Dict]) -> None:
 # Main
 # ---------------------------------------------------------------------------
 
+def _write_error_report(lang_id: str, lines: List[str], timestamp: str) -> Path:
+    """Write warning lines to import_errors/{lang_id}_{timestamp}.txt."""
+    ERROR_DIR.mkdir(exist_ok=True)
+    report_path = ERROR_DIR / f"{lang_id}_{timestamp}.txt"
+    report_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return report_path
+
+
 def main() -> None:
     force = "--force" in sys.argv
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     if not MANIFEST_PATH.exists():
         raise SystemExit(
@@ -186,6 +197,7 @@ def main() -> None:
 
     for lang_id, lang_data in manifest.items():
         print(f"\nLanguage: {lang_id}")
+        lang_warning_lines: List[str] = []
 
         for class_name, sheet_info in lang_data["sheets"].items():
             print(f"\n  {class_name}")
@@ -196,7 +208,10 @@ def main() -> None:
                 try:
                     ws = ss.worksheet(construction)
                 except gspread.WorksheetNotFound:
-                    print(f"    [{construction}] WARNING: tab not found in sheet, skipping")
+                    msg = f"[{class_name}/{construction}] tab not found in sheet, skipping"
+                    print(f"    WARNING: {msg}")
+                    lang_warning_lines.append(f"WARNING: {msg}")
+                    total_warnings += 1
                     continue
 
                 rows = ws.get_all_values()
@@ -215,6 +230,7 @@ def main() -> None:
 
                 for w in warnings:
                     print(f"    WARNING: {w}")
+                    lang_warning_lines.append(f"[{class_name}/{construction}] {w}")
                 total_warnings += len(warnings)
 
                 out_name = f"{class_name}_{lang_id}_{construction}_filled.tsv"
@@ -236,6 +252,10 @@ def main() -> None:
                     status += f", {blank_count} blank param cells"
                 print(f"    [{construction}] {status} → {out_folder.name}/{out_name}")
                 total_files += 1
+
+        if lang_warning_lines:
+            report_path = _write_error_report(lang_id, lang_warning_lines, timestamp)
+            print(f"\n  Error report: {report_path.relative_to(ROOT)}")
 
     print(f"\nDone. {total_files} file(s) written, {total_warnings} warning(s).")
 

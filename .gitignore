@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 .venv/
 sheets_manifest.json
+import_errors/
