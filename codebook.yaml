@@ -1,5 +1,8 @@
 # Planars Codebook
 # Source of truth for parameters, values, and analytical terms.
+# Definitions draw on the theoretical framework in Lander et al. (2024),
+# "Morphosyntactic Constituency" (Language Science Press, doi:10.5281/zenodo.XXXXXXX),
+# but this toolkit reflects ongoing research that extends beyond that work.
 # Edit definitions directly here; a rendering script will be added to produce human-readable output.
 
 # ---------------------------------------------------------------------------
@@ -11,7 +14,8 @@ structural_columns:
 
   - name: Element
     description: >
-      A form or form-type that occupies a position in the planar structure.
+      A terminal component of a planar structure: a morph, another planar structure,
+      or a well-defined subspan of a planar structure. Elements occupy positions.
       Elements with leading or trailing hyphens are wrapped in brackets (e.g. [-ed])
       to prevent misinterpretation by spreadsheet software.
 
@@ -35,88 +39,99 @@ analyses:
 
   - name: ciscategorial
     description: >
-      Tests which elements combine with the verb root in a ciscategorial
-      (same-category) relationship, as opposed to other combinatorial types.
+      Tests which elements in the planar structure combine with only one part-of-speech
+      category (ciscategorial selection). A ciscategorial domain is a contiguous subspan
+      of positions whose elements can semantically combine with only one category class
+      (V, N, or A). Elements that combine with multiple categories are transcategorial.
     parameters:
 
       - name: V-combines
         values: [y, n]
         description: >
-          [PLACEHOLDER] Whether the element enters into a V-combining (verb-combining)
-          relationship with the verbal head.
+          Whether the element can semantically combine with a verbal head (verb root).
+          An element that combines only with V (V-combines=y, N-combines=n, A-combines=n)
+          is v-ciscategorial.
 
       - name: N-combines
         values: [y, n]
         description: >
-          [PLACEHOLDER] Whether the element enters into an N-combining (noun-combining)
-          relationship.
+          Whether the element can semantically combine with a nominal head (noun root).
 
       - name: A-combines
         values: [y, n]
         description: >
-          [PLACEHOLDER] Whether the element enters into an A-combining (adjective-combining)
-          relationship.
+          Whether the element can semantically combine with an adjectival head.
 
     qualification_rule: >
-      An element is v-ciscategorial if V-combines=y AND all other combine parameters=n.
+      An element is v-ciscategorial if V-combines=y AND N-combines=n AND A-combines=n
+      (and any further combine parameters are also n).
       A position is complete if ALL its elements are v-ciscategorial.
       A position is partial if AT LEAST ONE element is v-ciscategorial.
 
   - name: subspanrepetition
     description: >
-      Tests the scope and fillability of elements in subspan repetition constructions
-      (e.g. coordination, complementation).
+      Tests which positions participate in subspan repetition — a construction in which
+      a contiguous subspan of the planar structure occurs more than once (e.g. coordination,
+      complementation, serial verb constructions). Fractured by scope (widescope vs.
+      narrowscope) and fillability.
     parameters:
 
       - name: widescope_left
         values: [y, n]
         description: >
-          [PLACEHOLDER] Whether the element takes wide scope to the left of the keystone
-          in a subspan repetition construction.
+          Whether the element takes wide scope to the left in a subspan repetition
+          construction — i.e., it appears in one conjunct but has semantic scope over
+          multiple conjoined spans to its left. Elements with wide scope are outside
+          the minimal (narrowscope) subspan repetition domain.
 
       - name: widescope_right
         values: [y, n]
         description: >
-          [PLACEHOLDER] Whether the element takes wide scope to the right of the keystone
-          in a subspan repetition construction.
+          Whether the element takes wide scope to the right in a subspan repetition
+          construction. See widescope_left.
 
       - name: fillable_botheither_conjunct
         values: [y, n]
         description: >
-          [PLACEHOLDER] Whether the element is fillable in both, either, or a single
-          conjunct of the subspan repetition construction.
+          [PLACEHOLDER] Whether the element is fillable in both conjuncts, either
+          conjunct, or a single conjunct of the subspan repetition construction.
 
     qualification_rule: >
       Five span categories are derived:
-        maximum_fillable:         fillable_botheither_conjunct=y
-        maximum_widescope_left:   widescope_left=y
-        maximum_widescope_right:  widescope_right=y
-        maximum_narrowscope_left:  widescope_left=n
-        maximum_narrowscope_right: widescope_right=n
-      Each category produces complete and partial position sets and four spans.
+        maximum_fillable:          fillable_botheither_conjunct=y
+        maximum_widescope_left:    widescope_left=y
+        maximum_widescope_right:   widescope_right=y
+        maximum_narrowscope_left:  widescope_left=n  (element lacks wide scope left)
+        maximum_narrowscope_right: widescope_right=n (element lacks wide scope right)
+      Each category produces complete and partial position sets and four spans
+      (strict/loose x complete/partial).
 
   - name: noninterruption
     description: >
-      Tests morphosyntactic freedom and multiplicity of elements to derive
-      non-interruption domains.
+      Tests morphosyntactic non-interruption: a span that cannot be interrupted by
+      free or multiply-occurring free elements. Two domain types are derived based
+      on what counts as an interruptor.
     parameters:
 
       - name: free
         values: [y, n]
         description: >
-          [PLACEHOLDER] Whether the element is morphosyntactically free (y) or bound (n).
+          Whether the element is morphosyntactically free — i.e., it can occur as a
+          standalone utterance independently of the verbal head. Bound elements (free=n)
+          cannot occur independently.
 
       - name: multiple
         values: [y, n]
         description: >
-          [PLACEHOLDER] Whether the element can occur multiply (more than once) within
-          the domain. Only relevant when free=y.
+          Whether the element can occur more than once within the domain (multiply-occurring).
+          Only meaningful when free=y. A singly-occurring free element (free=y, multiple=n)
+          does not interrupt the single-free domain.
 
     qualification_rule: >
-      Two domain types:
-        no-free: element qualifies if free=n (bound).
-        single-free: element qualifies if free=n OR (free=y AND multiple=n).
-      Each domain type produces complete and partial position sets and two strict spans.
+      Two domain types, each with complete and partial position sets:
+        no-free domain:     element qualifies if free=n (bound).
+        single-free domain: element qualifies if free=n OR (free=y AND multiple=n).
+      Only strict spans are computed for non-interruption (no loose span).
 
 # ---------------------------------------------------------------------------
 # SHARED PARAMETER VALUES
@@ -146,16 +161,38 @@ shared_values:
 
 terms:
 
+  - term: planar structure
+    definition: >
+      A maximally flat hypothesis space for coding the results of constituency tests.
+      Contains an ordered sequence of positions fit out by elements, scoping over a
+      whole sentence without regard to orthographic word boundaries. Languages have
+      a separate planar structure for each part-of-speech distinction (verbal, nominal,
+      adjectival, etc.).
+
+  - term: position
+    definition: >
+      A non-terminal slot in the planar structure. Positions are of two types:
+      slots (where only one element can occur at a time) and zones (where multiple
+      elements can occur in any order). Each position has a name and an integer index.
+
+  - term: element
+    definition: >
+      A terminal component that fills a position: a morph, another planar structure,
+      or a well-defined subspan of a planar structure. Multiple elements can occupy
+      the same position; each is annotated independently.
+
   - term: keystone
     definition: >
-      The position identified by Position_Name == "v:verbroot". It anchors all
-      span computations — spans expand outward from the keystone. The keystone
-      row itself is excluded from qualification tests.
+      The semantic head of the planar structure — in a verbal planar structure, the
+      verb root. Identified by Position_Name == "v:verbroot". Every planar structure
+      has exactly one keystone position. It anchors all span computations but is
+      excluded from qualification tests.
 
   - term: partial position
     definition: >
       A position in which AT LEAST ONE element satisfies the qualification rule
-      for a given analysis. Partial positions define the widest possible span.
+      for a given analysis. Partial positions define the widest possible span
+      under that analysis.
 
   - term: complete position
     definition: >
@@ -166,23 +203,46 @@ terms:
     definition: >
       The contiguous range of qualifying positions anchored at the keystone.
       Expansion stops at the first gap (non-qualifying position) on either side.
+      Analogous to a minimal domain derived by positive evidence only.
 
   - term: loose span
     definition: >
       The range from the farthest qualifying position on the left to the farthest
-      on the right of the keystone, regardless of gaps. Always >= the strict span.
+      on the right of the keystone, regardless of intervening gaps. Always >= the
+      strict span. Analogous to a maximal domain.
 
-  - term: planar structure
+  - term: ciscategorial
     definition: >
-      An ordered sequence of positions representing the morphosyntactic template
-      of a language's verbal (or nominal) domain. Defined in planar_<lang>.tsv.
+      Describes an element or position that combines with only one part-of-speech
+      category (V, N, or A). Contrasts with transcategorial, which applies to
+      elements that can combine with multiple categories.
 
-  - term: position
+  - term: transcategorial
     definition: >
-      A slot in the planar structure. Each position has a name, a number, and
-      one or more elements that can fill it.
+      Describes an element that can semantically combine with more than one
+      part-of-speech category. Transcategorial elements are excluded from
+      ciscategorial domains.
 
-  - term: element
+  - term: subspan repetition
     definition: >
-      A form or form-type that fills a position. Multiple elements can occupy
-      the same position; each is annotated independently.
+      A construction in which a contiguous subspan of the planar structure occurs
+      more than once (e.g. coordination, complementation, serial verb constructions).
+      Fractured into minimal (narrowscope) and maximal (widescope) versions.
+
+  - term: wide scope
+    definition: >
+      A property of an element in a subspan repetition construction whereby the
+      element appears in one conjunct but has semantic scope over multiple conjoined
+      spans. Wide-scope elements are outside the minimal subspan repetition domain.
+
+  - term: narrow scope
+    definition: >
+      A property of an element confined to a single conjunct in a subspan repetition
+      construction, with no scope over repeated spans. Narrowscope elements define
+      the minimal subspan repetition domain.
+
+  - term: non-interruption domain
+    definition: >
+      A span that cannot be interrupted by a free or multiply-occurring free element.
+      Two versions are distinguished: the no-free domain (interrupted only by bound
+      elements) and the single-free domain (allows singly-occurring free elements).
