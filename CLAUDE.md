@@ -67,6 +67,7 @@ This is a linguistic typology analysis project for morphosyntactic domain deriva
 - `io.py`: `load_filled_tsv()` — shared TSV loader used by all analysis modules. Reads, normalizes columns, locates the keystone row, validates no blank parameter values, returns `(data_df, keystone_pos, pos_to_name, param_cols)`.
 - `spans.py`: `strict_span`, `loose_span`, `position_sets_from_element_mask`, `fmt_span` — shared span math and formatting helper.
 - `ciscategorial.py`, `subspanrepetition.py`, `noninterruption.py`: each exposes `derive_*()` (takes a `Path`, returns a result dict) and `format_result()` (takes a result dict, returns a formatted string).
+- `charts.py`: `collect_all_spans(repo_root)` — runs all analyses over all filled TSVs and returns a `(DataFrame, keystone_pos, pos_to_name)` tuple. `domain_chart(df, keystone_pos, pos_to_name)` — returns an interactive Plotly figure of all spans as horizontal segments.
 - `cli.py` + `__main__.py`: CLI entry point (`python -m planars <analysis> <tsv>`).
 
 The numbered folders (`02`–`04`) contain only data files and thin wrapper scripts that resolve local paths and call the library.

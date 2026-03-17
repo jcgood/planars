@@ -247,3 +247,51 @@ terms:
       A span that cannot be interrupted by a free or multiply-occurring free element.
       Two versions are distinguished: the no-free domain (interrupted only by bound
       elements) and the single-free domain (allows singly-occurring free elements).
+
+# ---------------------------------------------------------------------------
+# CHART LABEL GLOSSARY
+# Short labels used in domain_chart() output (planars/charts.py).
+# These are subject to revision pending input from collaborators.
+# ---------------------------------------------------------------------------
+
+chart_labels:
+
+  ciscategorial:
+    - label: "cisc strict complete"
+      meaning: Strict span over complete positions for the v-ciscategorial analysis.
+    - label: "cisc loose complete"
+      meaning: Loose span over complete positions for the v-ciscategorial analysis.
+    - label: "cisc strict partial"
+      meaning: Strict span over partial positions for the v-ciscategorial analysis.
+    - label: "cisc loose partial"
+      meaning: Loose span over partial positions for the v-ciscategorial analysis.
+
+  subspanrepetition:
+    prefixes:
+      fill:  maximum_fillable — positions where fillable_botheither_conjunct=y
+      ws-L:  maximum_widescope_left — positions where widescope_left=y
+      ws-R:  maximum_widescope_right — positions where widescope_right=y
+      ns-L:  maximum_narrowscope_left — positions where widescope_left=n
+      ns-R:  maximum_narrowscope_right — positions where widescope_right=n
+    suffixes:
+      "strict complete": Strict span over complete positions.
+      "loose complete":  Loose span over complete positions.
+      "strict partial":  Strict span over partial positions.
+      "loose partial":   Loose span over partial positions.
+    note: >
+      Labels are formed by combining a prefix and a suffix, e.g. "fill strict complete",
+      "ws-L loose partial". This yields 20 labels (5 prefixes × 4 suffixes).
+
+  noninterruption:
+    - label: "no-free complete"
+      meaning: Strict span over complete positions for the no-free domain (free=n).
+    - label: "no-free partial"
+      meaning: Strict span over partial positions for the no-free domain (free=n).
+    - label: "1-free complete"
+      meaning: >
+        Strict span over complete positions for the single-free domain
+        (free=n OR (free=y AND multiple=n)).
+    - label: "1-free partial"
+      meaning: >
+        Strict span over partial positions for the single-free domain
+        (free=n OR (free=y AND multiple=n)).

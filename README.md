@@ -93,6 +93,21 @@ Open `notebooks/span_results.ipynb`. Make sure the kernel in the top-right says 
 | `noninterruption` | `free`, `multiple` | 4 strict spans (2 domain types × complete/partial) |
 | `stress` | `stressable`, `independence`, `left-interaction`, `right-interaction` | TBD |
 
+## Charting
+
+`planars.charts` provides two functions for visualizing span results:
+
+```python
+from planars.charts import collect_all_spans, domain_chart
+
+df, keystone_pos, pos_to_name = collect_all_spans(repo_root)
+fig = domain_chart(df, keystone_pos, pos_to_name)
+fig.show()   # interactive Plotly figure
+fig.write_image("domains.pdf")  # or save to file
+```
+
+`collect_all_spans` runs all analyses over all filled TSVs and returns a DataFrame with columns `Test_Labels`, `Analysis`, `Left_Edge`, `Right_Edge`, `Size`. `domain_chart` renders this as a horizontal segment chart with one row per span, colored by analysis type, with the keystone marked by a dotted line.
+
 ## diagnostics.tsv
 
 Controls which analyses and constructions are generated for each language. Parameters default to `y/n` dropdowns; custom values use brace syntax:
