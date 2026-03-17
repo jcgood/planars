@@ -117,24 +117,28 @@ fig.show()   # interactive Plotly figure
 fig.write_image("domains.pdf")  # or save to file
 ```
 
-`collect_all_spans` runs all analyses over all filled TSVs in `coded_data/` and returns a DataFrame with columns `Test_Labels`, `Analysis`, `Left_Edge`, `Right_Edge`, `Size`. `collect_all_spans_from_sheets(gc, manifest)` does the same but reads directly from Google Sheets (used by Colab notebooks). `domain_chart` renders this as a horizontal segment chart with one row per span, colored by analysis type, with the keystone marked by a dotted line.
+`collect_all_spans` runs all analyses over all filled TSVs in `coded_data/` and returns `(df, lang_meta)`. The DataFrame has columns `Language`, `Test_Labels`, `Analysis`, `Left_Edge`, `Right_Edge`, `Size`. `lang_meta` is a dict keyed by language ID, each entry holding that language's `keystone_pos` and `pos_to_name` — languages have independent planar structures and are never mixed. `collect_all_spans_from_sheets(gc, manifest)` does the same but reads directly from Google Sheets. `domain_chart(df, keystone_pos, pos_to_name)` renders a single-language DataFrame as a horizontal segment chart. `charts_by_language(df, lang_meta)` produces one chart per language and returns `dict[lang_id, Figure]`.
 
 ### Colab notebooks
 
-Two notebooks support browser-only use without installing anything locally.
+Two Colab notebooks support browser-only use without installing anything locally. They serve different audiences:
 
-**Quick view (`sync_colab.ipynb`) — simplest option**
+**Contributor notebook (`sync_colab.ipynb`) — for annotators**
+
+Intended for language contributors (e.g. John) working on a single language. Shows a domain chart for that language only.
 
 1. Go to [colab.research.google.com](https://colab.research.google.com)
 2. Choose **File → Open notebook → Upload** and upload `notebooks/sync_colab.ipynb` from this repo
-3. In the first cell, set `DRIVE_FOLDER_PATH` to the path of your planars folder in Google Drive (e.g. `/content/drive/MyDrive/planars — stan1293`)
+3. In the first cell, set `DRIVE_FOLDER_PATH` to your planars Drive folder (e.g. `/content/drive/MyDrive/planars — stan1293`)
 4. Choose **Runtime → Run all**
 5. When prompted, sign in with your Google account and click through the permissions
 6. The domain chart appears at the bottom of the page
 
-**Step-by-step (`span_results_colab.ipynb`) — full reports + chart**
+**Director notebook (`span_results_colab.ipynb`) — for project directors**
 
-Same steps as above but using `notebooks/span_results_colab.ipynb`. Cells are split into Setup, Configure, Load manifest, per-analysis report sections (one per analysis class), and Domain chart. Run individual sections to inspect one analysis at a time, or use **Runtime → Run all** for the complete output. Each report section prints the same per-construction text as the local `span_results.ipynb`.
+Shows full per-construction text reports and one domain chart per language across all languages in the manifest. Intended for project directors reviewing the full dataset.
+
+Same upload steps as above. Cells are split into Setup, Configure, Load manifest, per-analysis report sections, and Domain chart. Run individual sections to inspect one analysis at a time, or use **Runtime → Run all** for the complete output.
 
 ## diagnostics.tsv
 

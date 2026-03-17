@@ -62,48 +62,53 @@ _ASPIRATION_SPANS = [
 
 # --- Span extraction ---
 
-def _rows_from_cisc(result):
+def _rows_from_cisc(result, lang_id):
     rows = []
     for key, label in _CISC_SPANS:
         l, r = result[key]
-        rows.append({"Test_Labels": label, "Analysis": "ciscategorial",
+        rows.append({"Language": lang_id, "Test_Labels": label,
+                     "Analysis": "ciscategorial",
                      "Left_Edge": l, "Right_Edge": r, "Size": r - l + 1})
     return rows
 
 
-def _rows_from_subspan(result):
+def _rows_from_subspan(result, lang_id):
     rows = []
     for cat, short in _SUBSPAN_CATS.items():
         for variant, vlabel in _SUBSPAN_VARIANTS:
             l, r = result[f"{variant}_{cat}_span"]
-            rows.append({"Test_Labels": f"{short} {vlabel}", "Analysis": "subspanrepetition",
+            rows.append({"Language": lang_id, "Test_Labels": f"{short} {vlabel}",
+                         "Analysis": "subspanrepetition",
                          "Left_Edge": l, "Right_Edge": r, "Size": r - l + 1})
     return rows
 
 
-def _rows_from_nonint(result):
+def _rows_from_nonint(result, lang_id):
     rows = []
     for key, label in _NONINT_SPANS:
         l, r = result[key]
-        rows.append({"Test_Labels": label, "Analysis": "noninterruption",
+        rows.append({"Language": lang_id, "Test_Labels": label,
+                     "Analysis": "noninterruption",
                      "Left_Edge": l, "Right_Edge": r, "Size": r - l + 1})
     return rows
 
 
-def _rows_from_stress(result):
+def _rows_from_stress(result, lang_id):
     rows = []
     for key, label in _STRESS_SPANS:
         l, r = result[key]
-        rows.append({"Test_Labels": label, "Analysis": "stress",
+        rows.append({"Language": lang_id, "Test_Labels": label,
+                     "Analysis": "stress",
                      "Left_Edge": l, "Right_Edge": r, "Size": r - l + 1})
     return rows
 
 
-def _rows_from_aspiration(result):
+def _rows_from_aspiration(result, lang_id):
     rows = []
     for key, label in _ASPIRATION_SPANS:
         l, r = result[key]
-        rows.append({"Test_Labels": label, "Analysis": "aspiration",
+        rows.append({"Language": lang_id, "Test_Labels": label,
+                     "Analysis": "aspiration",
                      "Left_Edge": l, "Right_Edge": r, "Size": r - l + 1})
     return rows
 
@@ -122,27 +127,37 @@ _CLASS_HANDLERS = {
 # --- Main collection ---
 
 def collect_all_spans(repo_root):
-    """Run all analyses over coded_data/ and return (DataFrame, keystone_pos, pos_to_name)."""
+    """Run all analyses over coded_data/ and return (DataFrame, lang_meta).
+
+    DataFrame columns: Language, Test_Labels, Analysis, Left_Edge, Right_Edge, Size.
+
+    lang_meta is a dict keyed by language ID:
+        {lang_id: {"keystone_pos": int, "pos_to_name": {int: str}}}
+
+    Each language has its own planar structure and position numbering.
+    """
     rows = []
-    keystone_pos = None
-    pos_to_name = None
+    lang_meta = {}
 
     coded_data = repo_root / "coded_data"
     for lang_dir in sorted(coded_data.iterdir()):
         if not lang_dir.is_dir():
             continue
+        lang_id = lang_dir.name
         for class_name, (derive_fn, row_fn) in _CLASS_HANDLERS.items():
             class_dir = lang_dir / class_name
             if not class_dir.exists():
                 continue
             for tsv in sorted(class_dir.glob("*_filled.tsv")):
                 result = derive_fn(tsv, strict=False)
-                rows.extend(row_fn(result))
-                if keystone_pos is None:
-                    keystone_pos = result["keystone_position"]
-                    pos_to_name = result["position_number_to_name"]
+                rows.extend(row_fn(result, lang_id))
+                if lang_id not in lang_meta:
+                    lang_meta[lang_id] = {
+                        "keystone_pos": result["keystone_position"],
+                        "pos_to_name":  result["position_number_to_name"],
+                    }
 
-    return pd.DataFrame(rows), keystone_pos, pos_to_name
+    return pd.DataFrame(rows), lang_meta
 
 
 def collect_all_spans_from_sheets(gc, manifest):
@@ -151,14 +166,14 @@ def collect_all_spans_from_sheets(gc, manifest):
     gc:       authenticated gspread.Client
     manifest: dict in the same format as sheets_manifest.json
 
-    Returns (DataFrame, keystone_pos, pos_to_name) — same as collect_all_spans.
-    Intended for Colab workflows where Drive is mounted and TSVs are not needed.
+    Returns (DataFrame, lang_meta) — same structure as collect_all_spans.
+    Each language in the manifest has its own entry in lang_meta with its
+    own keystone_pos and pos_to_name. Intended for Colab workflows.
     """
     from planars.io import load_filled_sheet
 
     rows = []
-    keystone_pos = None
-    pos_to_name = None
+    lang_meta = {}
 
     for lang_id, lang_data in manifest.items():
         for class_name, (derive_fn, row_fn) in _CLASS_HANDLERS.items():
@@ -182,18 +197,24 @@ def collect_all_spans_from_sheets(gc, manifest):
                 )
                 loaded = load_filled_sheet(ws, required_params=required, strict=False)
                 result = derive_fn(_data=loaded, strict=False)
-                rows.extend(row_fn(result))
-                if keystone_pos is None:
-                    keystone_pos = result["keystone_position"]
-                    pos_to_name = result["position_number_to_name"]
+                rows.extend(row_fn(result, lang_id))
+                if lang_id not in lang_meta:
+                    lang_meta[lang_id] = {
+                        "keystone_pos": result["keystone_position"],
+                        "pos_to_name":  result["position_number_to_name"],
+                    }
 
-    return pd.DataFrame(rows), keystone_pos, pos_to_name
+    return pd.DataFrame(rows), lang_meta
 
 
 # --- Chart ---
 
 def domain_chart(df, keystone_pos, pos_to_name):
-    """Horizontal segment chart of all spans, ordered by size then left edge."""
+    """Horizontal segment chart of spans for one language.
+
+    df must already be filtered to a single language.
+    keystone_pos and pos_to_name come from lang_meta[lang_id].
+    """
     df = df.copy().sort_values(["Size", "Left_Edge"], ascending=[False, True])
     df = df.reset_index(drop=True)
 
@@ -223,7 +244,6 @@ def domain_chart(df, keystone_pos, pos_to_name):
             ),
         ))
 
-    # Dotted vertical line at keystone
     fig.add_vline(x=keystone_pos, line_dash="dot", line_color="gray", line_width=1)
 
     positions = sorted(pos_to_name.keys())
@@ -256,3 +276,19 @@ def domain_chart(df, keystone_pos, pos_to_name):
     )
 
     return fig
+
+
+def charts_by_language(df, lang_meta):
+    """Produce one domain_chart per language.
+
+    Returns dict[lang_id, Figure]. Each chart uses that language's own
+    position numbering and pos_to_name — languages are never mixed.
+    """
+    return {
+        lang_id: domain_chart(
+            df[df["Language"] == lang_id],
+            meta["keystone_pos"],
+            meta["pos_to_name"],
+        )
+        for lang_id, meta in lang_meta.items()
+    }

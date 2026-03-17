@@ -21,13 +21,14 @@ def show_results(folder, derive_fn, fmt_fn, pattern="*_filled.tsv"):
         print(f"  No filled TSVs found in {folder}/")
         return
     for tsv in tsv_files:
+        lang_id = tsv.parent.parent.name
         print(f"{'─' * 60}")
-        print(f"  {tsv.name}")
+        print(f"  {folder}  [{lang_id}]  —  {tsv.stem.replace('_filled', '')}")
         print(f"{'─' * 60}")
         result = derive_fn(tsv, strict=False)
         print(fmt_fn(result))
         print()
 
-from planars.charts import collect_all_spans, domain_chart
+from planars.charts import collect_all_spans, domain_chart, charts_by_language
 
 print(f"Ready. Repo root: {REPO_ROOT}")
