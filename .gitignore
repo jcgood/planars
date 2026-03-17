@@ -6,3 +6,6 @@ __pycache__/
 .venv/
 sheets_manifest.json
 import_errors/
+*.egg-info/
+notebooks/.ipynb_checkpoints/
+notebooks/.virtual_documents/
