@@ -1,0 +1,38 @@
+Language_ID	Planar_Type	Position	Position_Type	Position_Name	Elements	Class_Type	Example	Notes
+synth0001	verbal	1	Zone	v:leftedge	"and, also, then, CONJUNCT"	list	[Then] they went home	
+synth0001	verbal	2	Slot	v:frontedXP	"QWORDS, NP{S,A,P}"	open	Then [what] did he do?	
+synth0001	verbal	3	Slot	v:frontedauxiliary	"be, have, do, can, could, may, might, must, shall, should, will, would, ought"	list	What [did] he do?	"We have to investigate “ought to” constructions, because they can do inversion but "
+synth0001	verbal	4	Slot	v:frontedauxiliaryinflection	"-n, -s, -v "	list	What ha[s] he done?	I’d actually be tempted to make inflection on auxiliaries a biuniqueness issue.
+synth0001	verbal	5	Slot	v:npsubj1	"NP{S,A}"	open	What has [he] done?	
+synth0001	verbal	6	Slot	v:ad-S1	AD-S	open	What has he [probably] intentionally done?	
+synth0001	verbal	7	Slot	v:ad-VP1	AD-VP	open	What has he probably [intentionally] done?	
+synth0001	verbal	8	Slot	v:modal1	"can, could, may, might, must, shall, should, will, would"	list	They [would] have done it.	
+synth0001	verbal	9	Slot	v:sd-S2	AD-S	open	They would [probably] intentionally have done it.	
+synth0001	verbal	10	Slot	v:neg1	not	list	They would probably [not] intentionally have done it.	
+synth0001	verbal	11	Slot	v:ad-VP2	AD-VP	open	They would probably [intentionally] have done it.	
+synth0001	verbal	12	Slot	v:perfect	ha	list	He [ha]s done it. 	
+synth0001	verbal	13	Slot	v:perfectinflection	"-ve, -s"	list	He ha[s] done it.	
+synth0001	verbal	14	Slot	v:ad-S3	AD-S	open	He has [probably] not done it.	
+synth0001	verbal	15	Slot	v:neg2	not	list	He has probably [not] done it.	
+synth0001	verbal	16	Slot	v:ad-VP3	AD-VP	open	He has probably not [intentionally] done it.	
+synth0001	verbal	17	Slot	v:ad-V1	AD-V	open	He has probably not intentionally [completely] destroyed the city.	
+synth0001	verbal	18	Slot	v:passive	be-	list	The city [was] destroyed by him.	Are the forms of “be” biuniqueness or constituency?
+synth0001	verbal	19	Slot	v:ad-S4	AD-S	open	The city was [probably] destroyed by him.	
+synth0001	verbal	20	Slot	v:neg3	not	list	The city was probably [not] destroyed by him.	
+synth0001	verbal	21	Slot	v:ad-VP4	AD-VP	open	The city was probably not [intentionally] destroyed by him.	
+synth0001	verbal	22	Slot	v:progressive	be	list	They [are] going.	
+synth0001	verbal	23	Slot	v:ad-S5	AD-S	open	They are [probably] going.	
+synth0001	verbal	24	Slot	v:neg4	not	list	They are probably [not] going.	
+synth0001	verbal	25	Slot	v:ad-VP5	AD-VP	open	They are probably not [intentionally] going.	
+synth0001	verbal	26	Slot	v:ad-V2	AD-V	open	They are probably not intentionally [completely] destroying the city.	
+synth0001	verbal	27	Slot	v:nominal	"baby, house, pet, dog, child, nanny, grounds, care, hand, breast, lip, eye, name, sound, fact, spell, cross, strong, rough, stone, air, spin, pressure"	list	I berry picked yesterday.	
+synth0001	verbal	28	Zone	v:productiveprefix	"re-, un-, dis-, mis-, over-, under-, de-, out-, pre-, post-"	list	They [re]visited the problem.	
+synth0001	verbal	29	Slot	v:latinprefix	"dis-, mis-, up-, down-, fore-, co-, en-, ex-, sub-, pro-, per-, sur-, contra-, ab-, ad-, ob-, sup-, cata-, dia-, epi-, para-, se-, tele-, ante-, circum-, eu-, inter-, intra-, syn-, be-, "	list	They re[ad]mitted the patient.	
+synth0001	verbal	30	Slot	v:verbroot	KEYSTONE	open	They re[visit]ed the problem.	"Adam has three slots using the Item-Arrangement model, I’d go with deviations from biuniqueness"
+synth0001	verbal	31	Slot	v:verbinflection	"-ed, -s, -ing"	list	They revisit[ed] the problem.	
+synth0001	verbal	32	Slot	v:ad-V3	Ad-V	open	It is tough for them to destroy [completely] the city.	
+synth0001	verbal	33	Zone	v:obj-part	"NP{P,T}, PRON{P,T}, VERBPART"	open	It is tough for them to pick [the ball up].	
+synth0001	verbal	34	Slot	v:rec	NP{R}	open	Leo sold indulgences to [the pilgrims]	
+synth0001	verbal	35	Slot	v:ad-VP6	Ad-VP	open	It is tough for them to pick up the ball [intentionally].	
+synth0001	verbal	36	Zone	v:PP	PP	open	It is tough for them to pick up the ball [inside in the room.]	
+synth0001	verbal	37	Zone	v:rightedge	AD-S	open	It is tough for them to pick up the ball in the room [tomorrow probably when they don’t even know what they are doing].	
