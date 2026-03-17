@@ -30,6 +30,25 @@ def _parse_filled_df(
     for c in param_cols:
         df[c] = df[c].astype(str).str.strip().str.lower()
 
+    # Validate Position_Name ↔ Position_Number is a consistent 1-to-1 mapping.
+    # A mismatch means the sheet was generated from a different version of the
+    # planar structure (e.g. a position was inserted or renumbered).
+    name_to_num_count = df.groupby("Position_Name")["Position_Number"].nunique()
+    num_to_name_count = df.groupby("Position_Number")["Position_Name"].nunique()
+    bad_names = name_to_num_count[name_to_num_count > 1].index.tolist()
+    bad_nums  = num_to_name_count[num_to_name_count > 1].index.tolist()
+    if bad_names or bad_nums:
+        msgs = []
+        if bad_names:
+            msgs.append(f"Position_Name(s) with multiple Position_Numbers: {bad_names}")
+        if bad_nums:
+            msgs.append(f"Position_Number(s) with multiple Position_Names: {bad_nums}")
+        raise ValueError(
+            "Inconsistent Position_Name ↔ Position_Number mapping "
+            "(sheet may be out of sync with the planar structure — "
+            "run restructure_sheets.py):\n  " + "\n  ".join(msgs)
+        )
+
     keystone_mask = df["Position_Name"].str.lower() == "v:verbroot"
     if not keystone_mask.any():
         raise ValueError("No keystone row found (Position_Name == 'v:verbroot').")

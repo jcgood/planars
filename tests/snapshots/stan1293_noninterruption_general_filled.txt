@@ -1,10 +1,6 @@
 English Noninterruption General
 ===============================
 
-NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
-  free: ['Ad-V', 'Ad-VP']
-  multiple: ['Ad-V', 'Ad-VP']
-
 Keystone position: 30 (v:verbroot)
 
 No-free complete positions:      [3, 4, 8, 10, 12, 13, 15, 18, 20, 22, 24, 31]

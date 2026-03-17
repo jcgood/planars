@@ -64,6 +64,66 @@ def _planar_rows_for_lang(element_index, lang_id: str) -> List[Tuple[int, str, s
 
 
 # ---------------------------------------------------------------------------
+# Structural drift detection
+# ---------------------------------------------------------------------------
+
+def _build_planar_pos_map(element_index, lang_id: str) -> Dict[str, int]:
+    """Build {position_name: position_number} from the element index."""
+    result = {}
+    for _, (pos, pos_name, lang, _) in element_index.items():
+        if lang == lang_id:
+            result[pos_name] = pos
+    return result
+
+
+def _check_structural_drift(
+    rows: List[List[str]],
+    planar_pos_map: Dict[str, int],
+) -> List[str]:
+    """Compare sheet position names/numbers against the current planar structure.
+
+    Returns a list of warning strings (empty if no drift detected).
+    Drift means a position was inserted, deleted, or renumbered in the planar
+    file since the sheet was generated.
+    """
+    if len(rows) < 2:
+        return []
+    header = rows[0]
+    try:
+        name_idx = header.index("Position_Name")
+        num_idx  = header.index("Position_Number")
+    except ValueError:
+        return []
+
+    sheet_pos_map: Dict[str, int] = {}
+    for row in rows[1:]:
+        if len(row) <= max(name_idx, num_idx):
+            continue
+        name    = row[name_idx].strip()
+        num_str = row[num_idx].strip()
+        if name and num_str:
+            try:
+                sheet_pos_map[name] = int(num_str)
+            except ValueError:
+                pass
+
+    warnings = []
+    for pos_name, sheet_num in sheet_pos_map.items():
+        if pos_name.lower() == "v:verbroot":
+            continue
+        if pos_name not in planar_pos_map:
+            warnings.append(
+                f"    '{pos_name}' (pos {sheet_num} in sheet) no longer exists in planar structure"
+            )
+        elif planar_pos_map[pos_name] != sheet_num:
+            warnings.append(
+                f"    '{pos_name}': sheet has pos {sheet_num}, "
+                f"planar has pos {planar_pos_map[pos_name]}"
+            )
+    return warnings
+
+
+# ---------------------------------------------------------------------------
 # Per-tab update logic
 # ---------------------------------------------------------------------------
 
@@ -193,12 +253,14 @@ def main() -> None:
 
     _mf.DATA_DIR = str(planar_file.parent)
     element_index = build_element_index(planar_file.name)
+    planar_pos_map = _build_planar_pos_map(element_index, lang_id)
 
     print(f"{'DRY RUN — ' if not apply else ''}Language: {lang_id}")
     if not apply:
         print("(run with --apply to make changes)\n")
 
     any_changes = False
+    any_drift = False
 
     for manifest_lang, lang_data in manifest.items():
         for class_name, sheet_info in lang_data["sheets"].items():
@@ -217,6 +279,16 @@ def main() -> None:
                 param_names = construction_params.get(construction, {}).get("param_names", [])
                 rows = ws.get_all_values()
                 num_data_rows = max(0, len(rows) - 1)
+
+                # Check for structural drift before anything else
+                drift_warnings = _check_structural_drift(rows, planar_pos_map)
+                if drift_warnings:
+                    any_drift = True
+                    print(f"    [{construction}] WARNING: planar structure has changed:")
+                    for w in drift_warnings:
+                        print(w)
+                    print(f"    → Run restructure_sheets.py --apply to rebuild this sheet.")
+                    continue
 
                 missing_cols, missing_rows = _compute_tab_updates(
                     ws, element_index, lang_id, param_names
@@ -244,7 +316,10 @@ def main() -> None:
                     )
                     print(f"    [{construction}] done")
 
-    if not any_changes:
+    if any_drift:
+        print("\nSome sheets are out of sync with the planar structure.")
+        print("Run: python restructure_sheets.py --apply")
+    elif not any_changes:
         print("\nAll sheets are up to date.")
     elif not apply:
         print("\nRun with --apply to make these changes.")

@@ -2,19 +2,19 @@ English Subspanrepetition Control
 =================================
 
 NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
-  fillable_botheither_conjunct: ['NP{S,A,P}', 'QWORDS', 'S-ADVERBS', 'NP{P,T}', 'VERBPART']
-  widescope_left: ['NP{S,A,P}', 'QWORDS', 'S-ADVERBS', 'NP{P,T}', 'VERBPART']
-  widescope_right: ['NP{S,A,P}', 'QWORDS', 'S-ADVERBS', 'NP{P,T}', 'VERBPART']
+  fillable_botheither_conjunct: ['S-ADVERBS']
+  widescope_left: ['S-ADVERBS']
+  widescope_right: ['S-ADVERBS']
 
 Keystone position: 30 (v:verbroot)
 
 == maximum_fillable ==
-maximum_fillable complete positions: [7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 34, 35, 36, 37]
-maximum_fillable partial positions:  [7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 34, 35, 36, 37]
+maximum_fillable complete positions: [7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 33, 34, 35, 36, 37]
+maximum_fillable partial positions:  [7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 33, 34, 35, 36, 37]
 
-Strict complete maximum_fillable span: positions 9–32  (v:sd-S2 → v:ad-V3)
+Strict complete maximum_fillable span: positions 9–37  (v:sd-S2 → v:rightedge)
 Loose complete maximum_fillable span:  positions 7–37  (v:ad-VP1 → v:rightedge)
-Strict partial maximum_fillable span:  positions 9–32  (v:sd-S2 → v:ad-V3)
+Strict partial maximum_fillable span:  positions 9–37  (v:sd-S2 → v:rightedge)
 Loose partial maximum_fillable span:   positions 7–37  (v:ad-VP1 → v:rightedge)
 
 == maximum_widescope_left ==
@@ -27,28 +27,28 @@ Strict partial maximum_widescope_left span:  positions 30–30  (v:verbroot → 
 Loose partial maximum_widescope_left span:   positions 30–30  (v:verbroot → v:verbroot)
 
 == maximum_widescope_right ==
-maximum_widescope_right complete positions: [5, 7, 8, 9]
-maximum_widescope_right partial positions:  [5, 7, 8, 9]
+maximum_widescope_right complete positions: [2, 5, 7, 8, 9]
+maximum_widescope_right partial positions:  [2, 5, 7, 8, 9]
 
 Strict complete maximum_widescope_right span: positions 30–30  (v:verbroot → v:verbroot)
-Loose complete maximum_widescope_right span:  positions 5–30  (v:npsubj1 → v:verbroot)
+Loose complete maximum_widescope_right span:  positions 2–30  (v:frontedXP → v:verbroot)
 Strict partial maximum_widescope_right span:  positions 30–30  (v:verbroot → v:verbroot)
-Loose partial maximum_widescope_right span:   positions 5–30  (v:npsubj1 → v:verbroot)
+Loose partial maximum_widescope_right span:   positions 2–30  (v:frontedXP → v:verbroot)
 
 == maximum_narrowscope_left ==
-maximum_narrowscope_left complete positions: [1, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 34, 35, 36, 37]
-maximum_narrowscope_left partial positions:  [1, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 34, 35, 36, 37]
+maximum_narrowscope_left complete positions: [1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 33, 34, 35, 36, 37]
+maximum_narrowscope_left partial positions:  [1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 33, 34, 35, 36, 37]
 
-Strict complete maximum_narrowscope_left span: positions 19–32  (v:ad-S4 → v:ad-V3)
+Strict complete maximum_narrowscope_left span: positions 19–37  (v:ad-S4 → v:rightedge)
 Loose complete maximum_narrowscope_left span:  positions 1–37  (v:leftedge → v:rightedge)
-Strict partial maximum_narrowscope_left span:  positions 19–32  (v:ad-S4 → v:ad-V3)
+Strict partial maximum_narrowscope_left span:  positions 19–37  (v:ad-S4 → v:rightedge)
 Loose partial maximum_narrowscope_left span:   positions 1–37  (v:leftedge → v:rightedge)
 
 == maximum_narrowscope_right ==
-maximum_narrowscope_right complete positions: [1, 3, 4, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 34, 35, 36, 37]
-maximum_narrowscope_right partial positions:  [1, 3, 4, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 34, 35, 36, 37]
+maximum_narrowscope_right complete positions: [1, 3, 4, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 33, 34, 35, 36, 37]
+maximum_narrowscope_right partial positions:  [1, 3, 4, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 33, 34, 35, 36, 37]
 
-Strict complete maximum_narrowscope_right span: positions 19–32  (v:ad-S4 → v:ad-V3)
+Strict complete maximum_narrowscope_right span: positions 19–37  (v:ad-S4 → v:rightedge)
 Loose complete maximum_narrowscope_right span:  positions 1–37  (v:leftedge → v:rightedge)
-Strict partial maximum_narrowscope_right span:  positions 19–32  (v:ad-S4 → v:ad-V3)
+Strict partial maximum_narrowscope_right span:  positions 19–37  (v:ad-S4 → v:rightedge)
 Loose partial maximum_narrowscope_right span:   positions 1–37  (v:leftedge → v:rightedge)
