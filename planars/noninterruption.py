@@ -31,9 +31,9 @@ def derive_noninterruption_domains(
     missing_data, and positions and spans for each of the four combinations.
     """
     if _data is not None:
-        data_df, keystone_pos, pos_to_name, _ = _data
+        data_df, keystone_pos, pos_to_name, _, _ = _data
     else:
-        data_df, keystone_pos, pos_to_name, _ = load_filled_tsv(tsv_path, _REQUIRED_PARAMS, strict=strict)
+        data_df, keystone_pos, pos_to_name, _, _ = load_filled_tsv(tsv_path, _REQUIRED_PARAMS, strict=strict)
 
     missing_data = {}
     if not strict:

@@ -32,9 +32,9 @@ def derive_v_ciscategorial_fractures(
       - missing_data: {col: [elements]} for blank annotation cells (empty if none)
     """
     if _data is not None:
-        data_df, keystone_pos, pos_to_name, param_cols = _data
+        data_df, keystone_pos, pos_to_name, param_cols, _ = _data
     else:
-        data_df, keystone_pos, pos_to_name, param_cols = load_filled_tsv(
+        data_df, keystone_pos, pos_to_name, param_cols, _ = load_filled_tsv(
             tsv_path, required_params={"V-combines"}, strict=strict
         )
 

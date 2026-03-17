@@ -64,12 +64,12 @@ This is a linguistic typology analysis project for morphosyntactic domain deriva
    - `ciscategorial.py`: A position qualifies if elements have `V-combines=y` and all other params `=n`. Returns 4 spans (strict/loose × complete/partial).
    - `subspanrepetition.py`: 5 span categories (fillable, widescope_left/right, narrowscope_left/right), each with 4 spans = 20 total.
    - `noninterruption.py`: Two domain types (no-free: `free=n`; single-free: `free=n` or `free=y,multiple=n`), each with complete/partial = 4 strict spans.
-   - `stress.py`, `aspiration.py`: Provisional — qualification rule is `stressable ∈ {y, both}`. Returns 4 spans (strict/loose × complete/partial). See `codebook.yaml` `[NEEDS REVIEW]` entries for the open questions.
+   - `stress.py`, `aspiration.py`: Use `blocked_span` — expand from keystone outward, stopping just before the first position where the blocking condition holds for any element (including the keystone itself). Two domain types, each returning 1 span = 2 spans total. Minimal: blocked by `stressable ∈ {y, both} AND independence=y`. Maximal: blocked by `obligatory=y AND independence=y`. See `codebook.yaml` `[NEEDS REVIEW]` entries for open questions on `left-interaction`, `right-interaction`, and meso/interaction domains.
 
 ## Package structure
 
 `planars/` is the core library:
-- `io.py`: `load_filled_tsv()` — shared TSV loader. `load_filled_sheet(ws, required_params)` — same but reads from a gspread Worksheet. Both share `_parse_filled_df` and return `(data_df, keystone_pos, pos_to_name, param_cols)`.
+- `io.py`: `load_filled_tsv()` — shared TSV loader. `load_filled_sheet(ws, required_params)` — same but reads from a gspread Worksheet. Both share `_parse_filled_df` and return `(data_df, keystone_pos, pos_to_name, param_cols, keystone_df)`. `keystone_df` carries the keystone rows separately so analyses that need blocking checks against the ROOT (stress, aspiration) can include it without adding the keystone to the position expansion set.
 - `spans.py`: `strict_span`, `loose_span`, `position_sets_from_element_mask`, `fmt_span` — shared span math and formatting helper.
 - `ciscategorial.py`, `subspanrepetition.py`, `noninterruption.py`, `stress.py`, `aspiration.py`: each exposes `derive_*()` (takes an optional `Path` or `_data` kwarg, returns a result dict) and `format_result()` (takes a result dict, returns a formatted string).
 - `charts.py`: `collect_all_spans(repo_root)` — runs all analyses over all filled TSVs in `coded_data/`. `collect_all_spans_from_sheets(gc, manifest)` — same but reads directly from Google Sheets (used by Colab notebooks). `domain_chart(df, keystone_pos, pos_to_name)` — returns an interactive Plotly figure.
@@ -118,7 +118,7 @@ Feature requests and bugs are tracked on GitHub Issues: https://github.com/jcgoo
 - Language ID is inferred from the planar filename: `planar_stan1293-20260209.tsv` → `stan1293`.
 - Elements with leading/trailing hyphens are wrapped in `[brackets]` to avoid Excel parsing issues.
 - Analysis functions take a `Path` object; path resolution happens at the call site (CLI or wrapper scripts), not inside the library.
-- Keystone rows always have `Position_Name == 'v:verbroot'` and receive `NA` parameter values.
+- Keystone rows have `Position_Name == 'v:verbroot'`. In filled TSVs they carry actual parameter values (not `NA`) so they can participate in blocking condition checks (stress, aspiration). They are excluded from span expansion — `data_df` never contains the keystone; it is returned separately as `keystone_df`.
 - Result dicts use `complete_positions` / `partial_positions` and `*_span` key suffixes consistently across all modules.
 - `_TRAILING_COLS = ["Comments"]` is defined in both `generate_sheets.py` and `update_sheets.py`. Add new trailing columns there to propagate them to all new and existing sheets.
 - `populate_sheets.py` is a one-time utility for uploading legacy TSV data. Unnamed trailing columns in legacy TSVs are concatenated with ` | ` into Comments.

@@ -99,10 +99,10 @@ Open `notebooks/span_results.ipynb`. Make sure the kernel in the top-right says 
 | `ciscategorial` | `V-combines`, `N-combines`, `A-combines` | 4 (strict/loose × complete/partial) |
 | `subspanrepetition` | `widescope_left`, `widescope_right`, `fillable_botheither_conjunct` | 20 (5 categories × 4) |
 | `noninterruption` | `free`, `multiple` | 4 strict spans (2 domain types × complete/partial) |
-| `stress` | `stressable`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 4 (provisional — qualification rule under review) |
-| `aspiration` | `stressable`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 4 (provisional — qualification rule under review) |
+| `stress` | `stressable`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 2 (minimal and maximal) |
+| `aspiration` | `stressable`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 2 (minimal and maximal) |
 
-See `codebook.yaml` for qualification rules. Stress and aspiration entries are marked `[NEEDS REVIEW]`.
+Stress and aspiration use `blocked_span`: expand from the keystone outward, stopping just before the first blocking position. The keystone itself can trigger a blocking condition. No complete/partial distinction — a single span per domain type. See `codebook.yaml` for qualification rules; stress and aspiration entries are marked `[NEEDS REVIEW]` for `left-interaction` and `right-interaction` parameters.
 
 ## Charting
 

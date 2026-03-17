@@ -58,6 +58,7 @@ def _parse_filled_df(
         raise ValueError(f"Expected exactly 1 keystone position, found: {keystone_positions}")
     keystone_pos = keystone_positions[0]
 
+    keystone_df = df.loc[keystone_mask].copy()
     data_df = df.loc[~keystone_mask].copy()
 
     for c in required_params:
@@ -72,14 +73,14 @@ def _parse_filled_df(
           .to_dict()
     )
 
-    return data_df, keystone_pos, pos_to_name, param_cols
+    return data_df, keystone_pos, pos_to_name, param_cols, keystone_df
 
 
 def load_filled_tsv(
     path: Path,
     required_params: Set[str],
     strict: bool = True,
-) -> Tuple[pd.DataFrame, int, Dict[int, str], List[str]]:
+) -> Tuple[pd.DataFrame, int, Dict[int, str], List[str], pd.DataFrame]:
     """Load and validate a filled analysis TSV.
 
     Reads the file, normalizes column types, locates the keystone row
@@ -96,6 +97,7 @@ def load_filled_tsv(
         keystone_pos: integer Position_Number of the keystone
         pos_to_name:  dict mapping Position_Number -> Position_Name
         param_cols:   list of all non-structural column names
+        keystone_df:  DataFrame of keystone rows (for blocking checks)
     """
     df = pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False)
     return _parse_filled_df(df, required_params, strict)
@@ -105,14 +107,15 @@ def load_filled_sheet(
     ws,
     required_params: Set[str],
     strict: bool = True,
-) -> Tuple[pd.DataFrame, int, Dict[int, str], List[str]]:
+) -> Tuple[pd.DataFrame, int, Dict[int, str], List[str], pd.DataFrame]:
     """Load and validate a filled annotation from a gspread Worksheet.
 
     Reads all values from the worksheet and applies the same normalization
     and validation as load_filled_tsv. Intended for Colab workflows where
     data is read directly from Google Sheets without a local TSV intermediary.
 
-    Returns the same (data_df, keystone_pos, pos_to_name, param_cols) tuple.
+    Returns the same 5-tuple as load_filled_tsv:
+    (data_df, keystone_pos, pos_to_name, param_cols, keystone_df).
     """
     rows = ws.get_all_values()
     if not rows:

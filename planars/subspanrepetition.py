@@ -37,9 +37,9 @@ def derive_subspanrepetition_spans(
     strict/loose x complete/partial spans.
     """
     if _data is not None:
-        data_df, keystone_pos, pos_to_name, _ = _data
+        data_df, keystone_pos, pos_to_name, _, _ = _data
     else:
-        data_df, keystone_pos, pos_to_name, _ = load_filled_tsv(tsv_path, _REQUIRED_PARAMS, strict=strict)
+        data_df, keystone_pos, pos_to_name, _, _ = load_filled_tsv(tsv_path, _REQUIRED_PARAMS, strict=strict)
 
     missing_data = {}
     if not strict:

@@ -180,7 +180,9 @@ analyses:
       Two domain types, each producing a single span (no complete/partial
       distinction). Both use blocked_span: expand from ROOT in each direction,
       stopping just before the first position where the blocking condition holds
-      for any element. The blocking position is excluded.
+      for any element. The blocking position is excluded. The keystone (v:verbroot)
+      participates in blocking checks — its parameter values can trigger a domain
+      boundary — but is never itself added to the expansion set.
 
       Minimal stress domain — blocked by: stressable ∈ {y, both} AND independence = y.
         An independently-stressable element begins a new stress domain; the minimal
@@ -228,9 +230,10 @@ analyses:
 
     qualification_rule: >
       Mirrors the stress domain logic. Two domain types (minimal, maximal) using
-      blocked_span with the same blocking conditions as stress. If aspiration
-      requires different domain logic once data is collected, update this entry
-      and aspiration.py accordingly.
+      blocked_span with the same blocking conditions as stress. The keystone
+      participates in blocking checks (same as stress). If aspiration requires
+      different domain logic once data is collected, update this entry and
+      aspiration.py accordingly.
 
 # ---------------------------------------------------------------------------
 # SHARED PARAMETER VALUES
@@ -395,17 +398,22 @@ chart_labels:
         (free=n OR (free=y AND multiple=n)).
 
   stress:
+    note: >
+      Two labels (no complete/partial distinction). The keystone can trigger
+      a blocking condition but is not itself a span endpoint.
     - label: "stress minimal"
       meaning: >
         Span from ROOT outward, stopping just before the first position where any
-        element has stressable ∈ {y, both} AND independence = y (that position
-        begins a new independent stress domain).
+        element (including the keystone) has stressable ∈ {y, both} AND independence = y
+        (that position begins a new independent stress domain).
     - label: "stress maximal"
       meaning: >
         Span from ROOT outward, stopping just before the first position where any
-        element has obligatory = y AND independence = y (a hard stress domain boundary).
+        element (including the keystone) has obligatory = y AND independence = y
+        (a hard stress domain boundary).
 
   aspiration:
+    note: Two labels — mirrors stress label structure.
     - label: "asp minimal"
       meaning: Minimal aspiration domain — mirrors stress minimal logic.
     - label: "asp maximal"

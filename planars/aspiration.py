@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
+import pandas as pd
+
 from planars.io import load_filled_tsv
 from planars.spans import blocked_span, fmt_span
 
@@ -26,9 +28,9 @@ def derive_aspiration_domains(
     position where any element has obligatory = y AND independence = y.
     """
     if _data is not None:
-        data_df, keystone_pos, pos_to_name, _ = _data
+        data_df, keystone_pos, pos_to_name, _, keystone_df = _data
     else:
-        data_df, keystone_pos, pos_to_name, _ = load_filled_tsv(
+        data_df, keystone_pos, pos_to_name, _, keystone_df = load_filled_tsv(
             tsv_path, _REQUIRED_PARAMS, strict=strict
         )
 
@@ -41,20 +43,23 @@ def derive_aspiration_domains(
 
     all_positions = set(data_df["Position_Number"].unique().tolist())
 
+    # Include keystone rows in blocking checks (mirrors stress.py logic).
+    blocking_df = pd.concat([data_df, keystone_df], ignore_index=True)
+
     minimal_block_mask = (
-        data_df["stressable"].isin({"y", "both"}) &
-        (data_df["independence"] == "y")
+        blocking_df["stressable"].isin({"y", "both"}) &
+        (blocking_df["independence"] == "y")
     )
     minimal_blocked = set(
-        data_df.loc[minimal_block_mask, "Position_Number"].unique().tolist()
+        blocking_df.loc[minimal_block_mask, "Position_Number"].unique().tolist()
     )
 
     maximal_block_mask = (
-        (data_df["obligatory"] == "y") &
-        (data_df["independence"] == "y")
+        (blocking_df["obligatory"] == "y") &
+        (blocking_df["independence"] == "y")
     )
     maximal_blocked = set(
-        data_df.loc[maximal_block_mask, "Position_Number"].unique().tolist()
+        blocking_df.loc[maximal_block_mask, "Position_Number"].unique().tolist()
     )
 
     return {
