@@ -119,10 +119,10 @@ ROOT	v:verbroot	30	n	n	na
 [-ed]	v:verbinflection	31	n	n	
 [-ing]	v:verbinflection	31	n	n	
 [-s]	v:verbinflection	31	n	n	
-Ad-V	v:ad-V3	32			
+Ad-V	v:ad-V3	32	y	y	
 NP{P,T}	v:obj-part	33	y	y	
 VERBPART	v:obj-part	33	n	n	
 NP{R}	v:rec	34	y	y	
-Ad-VP	v:ad-VP6	35			
+Ad-VP	v:ad-VP6	35	y	y	
 PP	v:PP	36	y	y	
 AD-S	v:rightedge	37	y	y	

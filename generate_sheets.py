@@ -2,10 +2,14 @@
 """Generate Google Sheets annotation forms from planar structure and diagnostics.
 
 Run from the repo root:
-    python generate_sheets.py
+    python generate_sheets.py           # create sheets for new classes only
+    python generate_sheets.py --force   # regenerate all (creates duplicates; delete old manually)
 
-Creates one Google Sheets file per analysis class (ciscategorial, subspanrepetition, etc.),
-with one tab per construction variant. Outputs sheets_manifest.json with URLs.
+On the first run, creates one Google Sheet per analysis class with one tab per construction.
+On subsequent runs, only creates sheets for classes not yet in the Drive manifest (e.g. a
+newly added aspiration class). Existing sheets are left untouched.
+
+To sync param column changes to existing sheets: python sync_params.py --apply
 
 Requires:
     pip install gspread google-auth google-api-python-client
@@ -363,15 +367,6 @@ def _create_analysis_sheet(
 def main() -> None:
     force = "--force" in sys.argv
 
-    if MANIFEST_PATH.exists() and not force:
-        raise SystemExit(
-            f"sheets_manifest.json already exists — sheets have already been generated.\n"
-            f"  To update existing sheets:    python update_sheets.py --apply\n"
-            f"  To restructure after changes: python restructure_sheets.py --apply\n"
-            f"  To regenerate from scratch:   python generate_sheets.py --force\n"
-            f"  (--force will create duplicate sheets in Drive; delete the old ones manually)"
-        )
-
     # Find planar file
     planar_files = sorted(CODED_DATA.glob("*/planar_input/planar_*.tsv"))
     if not planar_files:
@@ -389,38 +384,71 @@ def main() -> None:
     specs = _read_diagnostics_for_language(lang_id)
 
     # Group specs by class_name -> [(construction, param_names, param_values), ...]
-    classes: Dict[str, List[Tuple[str, List[str], Dict[str, List[str]]]]] = {}
+    all_classes: Dict[str, List[Tuple[str, List[str], Dict[str, List[str]]]]] = {}
     for class_name, construction, param_names, param_values in specs:
-        classes.setdefault(class_name, []).append((construction, param_names, param_values))
+        all_classes.setdefault(class_name, []).append((construction, param_names, param_values))
 
-    print(f"Classes:     {list(classes.keys())}")
+    print(f"Classes:     {list(all_classes.keys())}")
 
     # Connect to Google
     print("\nConnecting to Google APIs...")
     gc, drive = _get_clients()
 
-    # Create language folder
+    # Determine which classes already have sheets (unless --force)
+    existing_lang_data: Dict = {}
+    if not force:
+        config = _load_drive_config()
+        if config and lang_id in config:
+            try:
+                existing_lang_data = _download_manifest_from_drive(
+                    drive, config[lang_id]["manifest_file_id"]
+                )
+                existing_sheets = existing_lang_data.get("sheets", {})
+                new_class_names = [c for c in all_classes if c not in existing_sheets]
+                if not new_class_names:
+                    print(
+                        "\nAll classes already have sheets in the Drive manifest.\n"
+                        "  To sync param columns:      python sync_params.py --apply\n"
+                        "  To update rows/columns:     python update_sheets.py --apply\n"
+                        "  To regenerate from scratch: python generate_sheets.py --force"
+                    )
+                    return
+                print(f"Existing:    {list(existing_sheets.keys())}")
+                print(f"New:         {new_class_names}")
+            except Exception as exc:
+                print(f"Warning: could not load existing manifest ({exc}). Creating all classes.")
+                existing_lang_data = {}
+
+    classes_to_create = {
+        k: v for k, v in all_classes.items()
+        if k not in existing_lang_data.get("sheets", {})
+    } if not force else dict(all_classes)
+
+    # Create language folder (finds existing folder if already present)
     folder_name = f"planars \u2014 {lang_id}"
     folder_id = _get_or_create_folder(drive, folder_name)
     _share_anyone_with_link(drive, folder_id)
     folder_url = f"https://drive.google.com/drive/folders/{folder_id}"
     print(f"Folder:      {folder_url}\n")
 
-    # Create one sheet per analysis class
-    manifest = {lang_id: {"folder_url": folder_url, "sheets": {}}}
-    for class_name, constructions in classes.items():
+    # Build manifest starting from existing data (or fresh)
+    lang_data: Dict = existing_lang_data or {"folder_url": folder_url, "sheets": {}}
+
+    # Create one sheet per new analysis class
+    for class_name, constructions in classes_to_create.items():
         sheet_info = _create_analysis_sheet(
             gc, drive, folder_id, lang_id, class_name, constructions, element_index
         )
-        manifest[lang_id]["sheets"][class_name] = sheet_info
+        lang_data["sheets"][class_name] = sheet_info
         print(f"    URL: {sheet_info['url']}\n")
+
+    manifest = {lang_id: lang_data}
 
     # Write local manifest (gitignored, kept for reference)
     MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     print(f"Local manifest written to: {MANIFEST_PATH.name}")
 
     # Upload manifest to Drive and update drive_config.json
-    lang_data = manifest[lang_id]
     config = _load_drive_config()
     existing_file_id = config.get(lang_id, {}).get("manifest_file_id")
     manifest_file_id = _upload_manifest_to_drive(

@@ -131,7 +131,7 @@ def _write_tsv(path: Path, header: List[str], records: List[Dict]) -> None:
     with path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
             f, fieldnames=header, delimiter="\t",
-            extrasaction="ignore", quoting=csv.QUOTE_NONE,
+            extrasaction="ignore", quoting=csv.QUOTE_MINIMAL,
         )
         writer.writeheader()
         writer.writerows(records)

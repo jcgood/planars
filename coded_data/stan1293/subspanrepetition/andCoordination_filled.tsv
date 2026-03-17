@@ -3,8 +3,8 @@ also	v:leftedge	1	n	n	y
 and	v:leftedge	1	?	?	?	
 CONJUNCT	v:leftedge	1	n	n	y	
 then	v:leftedge	1	n	n	y	
-NP{S,A,P}	v:frontedXP	2				
-QWORDS	v:frontedXP	2				
+NP{S,A,P}	v:frontedXP	2	y	n	y	
+QWORDS	v:frontedXP	2	y	n	y	
 be	v:frontedauxiliary	3	y	n	y	did martin borrow and read the book? | *did martin borrow and he read the book? | did martin borrow and did martin read the book? | you can do wide scope but not without elided the subj
 can	v:frontedauxiliary	3	y	n	y	could martin borrow the book and leo ban it
 could	v:frontedauxiliary	3	y	n	y	
@@ -22,7 +22,7 @@ would	v:frontedauxiliary	3	y	n	y
 [-s]	v:frontedauxiliaryinflection	4	n	n	y	
 [-v]	v:frontedauxiliaryinflection	4	n	n	y	
 NP{S,A}	v:npsubj1	5	y	n	y	
-S-ADVERBS	v:ad-S1	6				
+S-ADVERBS	v:ad-S1	6	y	n	y	Should be AD-S throughout, just do a replacement operation throughout all the tables and fix in the planar structure.
 AD-VP	v:ad-VP1	7	y	n	y	martin carefully read the bible and commented on it
 can	v:modal1	8	y	n	y	martin can read the bible and write in the vernacular | martin can read the bible and can write in the vernacular
 could	v:modal1	8	y	n	y	
@@ -119,10 +119,10 @@ ROOT	v:verbroot	30	n	n	y	na
 [-ed]	v:verbinflection	31	n	n	y	
 [-ing]	v:verbinflection	31	n	n	y	
 [-s]	v:verbinflection	31	n	n	y	
-Ad-V	v:ad-V3	32				
+Ad-V	v:ad-V3	32	y	n	y	
 NP{P,T}	v:obj-part	33	y	y	y	
 VERBPART	v:obj-part	33	n	n	y	cleaned up the kitchen and used the soap | cleaned up the kitchen and used up the soap
 NP{R}	v:rec	34	n	n	y	
-Ad-VP	v:ad-VP6	35				
+Ad-VP	v:ad-VP6	35	y	n	n	
 PP	v:PP	36	y	y	y	
 AD-S	v:rightedge	37	n	n	y	

@@ -3,26 +3,26 @@ also	v:leftedge	1	y	n	n
 and	v:leftedge	1	y	n	n	
 CONJUNCT	v:leftedge	1	y	n	n	
 then	v:leftedge	1	y	n	n	
-NP{S,A,P}	v:frontedXP	2				
-QWORDS	v:frontedXP	2				
-be	v:frontedauxiliary	3	n	n	n	
-can	v:frontedauxiliary	3	n	n	n	
-could	v:frontedauxiliary	3	n	n	n	
-do	v:frontedauxiliary	3	n	n	n	
-have	v:frontedauxiliary	3	n	n	n	
-may	v:frontedauxiliary	3	n	n	n	
-might	v:frontedauxiliary	3	n	n	n	
-must	v:frontedauxiliary	3	n	n	n	
-ought	v:frontedauxiliary	3	n	n	n	
-shall	v:frontedauxiliary	3	n	n	n	
-should	v:frontedauxiliary	3	n	n	n	
-will	v:frontedauxiliary	3	n	n	n	
-would	v:frontedauxiliary	3	n	n	n	
-[-n]	v:frontedauxiliaryinflection	4	n	n	n	
-[-s]	v:frontedauxiliaryinflection	4	n	n	n	
-[-v]	v:frontedauxiliaryinflection	4	n	n	n	
+NP{S,A,P}	v:frontedXP	2	n	n	y	
+QWORDS	v:frontedXP	2	n	n	y	
+be	v:frontedauxiliary	3	n	n	y	
+can	v:frontedauxiliary	3	n	n	y	
+could	v:frontedauxiliary	3	n	n	y	
+do	v:frontedauxiliary	3	n	n	y	
+have	v:frontedauxiliary	3	n	n	y	
+may	v:frontedauxiliary	3	n	n	y	
+might	v:frontedauxiliary	3	n	n	y	
+must	v:frontedauxiliary	3	n	n	y	
+ought	v:frontedauxiliary	3	n	n	y	
+shall	v:frontedauxiliary	3	n	n	y	
+should	v:frontedauxiliary	3	n	n	y	
+will	v:frontedauxiliary	3	n	n	y	
+would	v:frontedauxiliary	3	n	n	y	
+[-n]	v:frontedauxiliaryinflection	4	n	n	y	
+[-s]	v:frontedauxiliaryinflection	4	n	n	y	
+[-v]	v:frontedauxiliaryinflection	4	n	n	y	
 NP{S,A}	v:npsubj1	5	n	n	y	
-S-ADVERBS	v:ad-S1	6				
+S-ADVERBS	v:ad-S1	6	n	n	y	
 AD-VP	v:ad-VP1	7	n	n	y	
 can	v:modal1	8	n	n	y	
 could	v:modal1	8	n	n	y	

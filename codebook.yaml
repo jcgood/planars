@@ -134,6 +134,100 @@ analyses:
         single-free domain: element qualifies if free=n OR (free=y AND multiple=n).
       Only strict spans are computed for non-interruption (no loose span).
 
+  - name: stress
+    description: >
+      [NEEDS REVIEW] Tests which positions fall within the prosodic stress domain
+      of the verbal planar structure. Parameters capture whether elements can bear
+      stress, whether stress is obligatory, whether stress is independent of
+      neighboring elements, and whether there are left- or right-ward stress
+      interactions.
+    parameters:
+
+      - name: stressable
+        values: [y, n, both]
+        description: >
+          [NEEDS REVIEW] Whether the element can carry primary stress.
+          y = always stressable; n = never stressable; both = variably stressable
+          depending on context.
+
+      - name: obligatory
+        values: [y, n]
+        description: >
+          [NEEDS REVIEW] Whether stress is obligatory on this element (i.e., the
+          element must bear stress when present).
+
+      - name: independence
+        values: [y, n]
+        description: >
+          [NEEDS REVIEW] Whether the element's stress is independent of neighboring
+          elements — i.e., it does not participate in stress interactions with
+          adjacent positions.
+
+      - name: left-interaction
+        values: [y, n]
+        description: >
+          [NEEDS REVIEW] Whether the element's stress interacts with elements to
+          its left (e.g., attracts or repels stress from the left neighbor).
+
+      - name: right-interaction
+        values: [y, n]
+        description: >
+          [NEEDS REVIEW] Whether the element's stress interacts with elements to
+          its right.
+
+    qualification_rule: >
+      [NEEDS REVIEW] Current implementation uses stressable ∈ {y, both} as the
+      qualification criterion (provisional). The intended domain logic — including
+      whether and how obligatory, independence, left-interaction, and
+      right-interaction factor into domain membership or produce distinct domain
+      types — has not yet been specified. Please describe:
+        1. What makes a position qualify (which param values, in which combination)?
+        2. How many domain types should be derived (one, or multiple like noninterruption)?
+        3. Should loose spans be computed (as in ciscategorial) or strict only (as in
+           noninterruption)?
+
+  - name: aspiration
+    description: >
+      [NEEDS REVIEW] Tests which positions fall within the aspiration domain of
+      the verbal planar structure. Shares parameter structure with stress.
+    parameters:
+
+      - name: stressable
+        values: [y, n, both]
+        description: >
+          [NEEDS REVIEW] Whether the element can carry aspiration. Reuses the
+          stressable parameter name from the stress analysis; values have the
+          same interpretation in the context of aspiration.
+
+      - name: obligatory
+        values: [y, n]
+        description: >
+          [NEEDS REVIEW] Whether aspiration is obligatory on this element.
+
+      - name: independence
+        values: [y, n]
+        description: >
+          [NEEDS REVIEW] Whether the element's aspiration is independent of
+          neighboring elements.
+
+      - name: left-interaction
+        values: [y, n]
+        description: >
+          [NEEDS REVIEW] Whether the element's aspiration interacts with elements
+          to its left.
+
+      - name: right-interaction
+        values: [y, n]
+        description: >
+          [NEEDS REVIEW] Whether the element's aspiration interacts with elements
+          to its right.
+
+    qualification_rule: >
+      [NEEDS REVIEW] Mirrors the provisional stress qualification rule
+      (stressable ∈ {y, both}). Same open questions apply — see stress entry above.
+      If aspiration and stress share domain logic, the two modules can be unified;
+      if they differ, specify the aspiration-specific rule here.
+
 # ---------------------------------------------------------------------------
 # SHARED PARAMETER VALUES
 # ---------------------------------------------------------------------------

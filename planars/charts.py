@@ -6,6 +6,8 @@ import plotly.graph_objects as go
 from planars import ciscategorial as _cisc
 from planars import subspanrepetition as _subspan
 from planars import noninterruption as _nonint
+from planars import stress as _stress
+from planars import aspiration as _aspiration
 
 
 # --- Colors (one per analysis type) ---
@@ -14,6 +16,8 @@ _COLORS = {
     "ciscategorial":    "#BC3C29",
     "subspanrepetition": "#0072B5",
     "noninterruption":  "#20845E",
+    "stress":           "#E18727",
+    "aspiration":       "#7876B1",
 }
 
 # --- Span label mappings ---
@@ -46,6 +50,20 @@ _NONINT_SPANS = [
     ("single_free_partial_span", "1-free partial"),
 ]
 
+_STRESS_SPANS = [
+    ("strict_complete_span", "stress strict complete"),
+    ("loose_complete_span",  "stress loose complete"),
+    ("strict_partial_span",  "stress strict partial"),
+    ("loose_partial_span",   "stress loose partial"),
+]
+
+_ASPIRATION_SPANS = [
+    ("strict_complete_span", "asp strict complete"),
+    ("loose_complete_span",  "asp loose complete"),
+    ("strict_partial_span",  "asp strict partial"),
+    ("loose_partial_span",   "asp loose partial"),
+]
+
 # --- Span extraction ---
 
 def _rows_from_cisc(result):
@@ -76,12 +94,32 @@ def _rows_from_nonint(result):
     return rows
 
 
+def _rows_from_stress(result):
+    rows = []
+    for key, label in _STRESS_SPANS:
+        l, r = result[key]
+        rows.append({"Test_Labels": label, "Analysis": "stress",
+                     "Left_Edge": l, "Right_Edge": r, "Size": r - l + 1})
+    return rows
+
+
+def _rows_from_aspiration(result):
+    rows = []
+    for key, label in _ASPIRATION_SPANS:
+        l, r = result[key]
+        rows.append({"Test_Labels": label, "Analysis": "aspiration",
+                     "Left_Edge": l, "Right_Edge": r, "Size": r - l + 1})
+    return rows
+
+
 # --- Analysis class registry ---
 
 _CLASS_HANDLERS = {
     "ciscategorial":     (_cisc.derive_v_ciscategorial_fractures,  _rows_from_cisc),
     "subspanrepetition": (_subspan.derive_subspanrepetition_spans, _rows_from_subspan),
     "noninterruption":   (_nonint.derive_noninterruption_domains,  _rows_from_nonint),
+    "stress":            (_stress.derive_stress_domains,           _rows_from_stress),
+    "aspiration":        (_aspiration.derive_aspiration_domains,   _rows_from_aspiration),
 }
 
 

@@ -3,8 +3,8 @@ also	v:leftedge	1	y	n	n
 and	v:leftedge	1	y	y	y	
 CONJUNCT	v:leftedge	1	y	n	n	
 then	v:leftedge	1	y	y	n	
-NP{S,A,P}	v:frontedXP	2				
-QWORDS	v:frontedXP	2				
+NP{S,A,P}	v:frontedXP	2	y	y	n	
+QWORDS	v:frontedXP	2	y	n	n	"Arguably, ""which"" and ""what"" actually do N-combine, so this needs to be split up I guess."
 be	v:frontedauxiliary	3	y	n	n	
 can	v:frontedauxiliary	3	y	n	n	
 could	v:frontedauxiliary	3	y	n	n	
@@ -55,7 +55,7 @@ AD-V	v:ad-V2	26	y	n	n
 air	v:nominal	27	y	y	n	
 baby	v:nominal	27	y	y	n	
 breast	v:nominal	27	y	y	n	
-caretaker	v:nominal	27				
+caretaker	v:nominal	27	y	y	n	"This seems to be a mistake, I think the ""prefix"" must just be ""care""?"
 child	v:nominal	27	y	y	n	
 cross	v:nominal	27	y	y	n	
 dog	v:nominal	27	y	y	n	
@@ -120,8 +120,8 @@ ROOT	v:verbroot	30	y	n	n
 [-ing]	v:verbinflection	31	y	n	n	
 [-s]	v:verbinflection	31	y	n	n	
 Ad-V	v:ad-V3	32	y	n	n	
-NP{P,T}	v:obj-part	33				
-VERBPART	v:obj-part	33				
+NP{P,T}	v:obj-part	33	y	y	n	
+VERBPART	v:obj-part	33	y	n	n	
 NP{R}	v:rec	34	y	n	n	
 Ad-VP	v:ad-VP6	35	y	n	n	
 PP	v:PP	36	y	y	n	

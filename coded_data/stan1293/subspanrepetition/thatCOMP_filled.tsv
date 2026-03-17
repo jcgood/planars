@@ -3,8 +3,8 @@ also	v:leftedge	1	n	n	n	martin believed that then ...
 and	v:leftedge	1	n	n	n	
 CONJUNCT	v:leftedge	1	n	n	n	
 then	v:leftedge	1	n	n	n	
-NP{S,A,P}	v:frontedXP	2				
-QWORDS	v:frontedXP	2				
+NP{S,A,P}	v:frontedXP	2	n	n	n	
+QWORDS	v:frontedXP	2	n	n	n	
 be	v:frontedauxiliary	3	n	n	n	
 can	v:frontedauxiliary	3	n	n	n	
 could	v:frontedauxiliary	3	n	n	n	
@@ -120,8 +120,8 @@ ROOT	v:verbroot	30	n	n	y	na
 [-ing]	v:verbinflection	31	n	n	y	
 [-s]	v:verbinflection	31	n	n	y	
 Ad-V	v:ad-V3	32	n	n	y	
-NP{P,T}	v:obj-part	33				
-VERBPART	v:obj-part	33				
+NP{P,T}	v:obj-part	33	n	n	y	
+VERBPART	v:obj-part	33	n	n	y	
 NP{R}	v:rec	34	n	n	y	
 Ad-VP	v:ad-VP6	35	n	n	y	
 PP	v:PP	36	y	y	y	actually this is very ambiguous, whether its left or right scope
