@@ -121,10 +121,20 @@ fig.write_image("domains.pdf")  # or save to file
 
 ### Colab notebooks
 
-Two notebooks in `notebooks/` support browser-only use without a local install:
+Two notebooks support browser-only use without installing anything locally.
 
-- **`sync_colab.ipynb`** — for non-technical collaborators: set `DRIVE_FOLDER_PATH` and run all cells to view the domain chart
-- **`span_results_colab.ipynb`** — for contributors: step-by-step cells for setup, manifest loading, and charting
+**Quick view (`sync_colab.ipynb`) — simplest option**
+
+1. Go to [colab.research.google.com](https://colab.research.google.com)
+2. Choose **File → Open notebook → Upload** and upload `notebooks/sync_colab.ipynb` from this repo
+3. In the first cell, set `DRIVE_FOLDER_PATH` to the path of your planars folder in Google Drive (e.g. `/content/drive/MyDrive/planars — stan1293`)
+4. Choose **Runtime → Run all**
+5. When prompted, sign in with your Google account and click through the permissions
+6. The domain chart appears at the bottom of the page
+
+**Step-by-step (`span_results_colab.ipynb`) — easier to troubleshoot**
+
+Same steps as above but using `notebooks/span_results_colab.ipynb`. Cells are split into Setup, Configure, Load manifest, and Show chart — run them one at a time if something goes wrong.
 
 ## diagnostics.tsv
 
