@@ -30,7 +30,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(ROOT / "01_planar_input"))
+sys.path.insert(0, str(ROOT))
 
 import gspread
 from googleapiclient.discovery import build as google_build
@@ -43,7 +43,7 @@ from make_forms import (
 )
 
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
-PLANAR_DIR = ROOT / "01_planar_input"
+CODED_DATA = ROOT / "coded_data"
 
 # Columns appended after param columns on every tab; no dropdown validation
 _TRAILING_COLS = ["Comments"]
@@ -303,17 +303,18 @@ def main() -> None:
         )
 
     # Find planar file
-    planar_files = sorted(PLANAR_DIR.glob("planar_*.tsv"))
+    planar_files = sorted(CODED_DATA.glob("*/planar_input/planar_*.tsv"))
     if not planar_files:
-        raise SystemExit("No planar_*.tsv found in 01_planar_input/")
+        raise SystemExit("No planar_*.tsv found in coded_data/*/planar_input/")
     planar_file = planar_files[0]
+    planar_dir = planar_file.parent
     lang_id = _infer_language_id_from_planar_filename(planar_file.name)
 
     print(f"Language:    {lang_id}")
     print(f"Planar file: {planar_file.name}")
 
-    # Set DATA_DIR so make_forms resolves files relative to 01_planar_input/
-    _mf.DATA_DIR = str(PLANAR_DIR)
+    # Set DATA_DIR so make_forms resolves files relative to the planar_input folder
+    _mf.DATA_DIR = str(planar_dir)
     element_index = build_element_index(planar_file.name)
     specs = _read_diagnostics_for_language(lang_id)
 

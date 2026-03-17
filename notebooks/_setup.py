@@ -2,7 +2,7 @@ from pathlib import Path
 
 def _find_repo_root():
     for p in [Path().resolve(), *Path().resolve().parents]:
-        if (p / "planars").is_dir() and (p / "01_planar_input").is_dir():
+        if (p / "planars").is_dir() and (p / "coded_data").is_dir():
             return p
     raise RuntimeError(
         "Could not find the planars repo root. "

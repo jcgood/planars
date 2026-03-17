@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
 ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(ROOT / "01_planar_input"))
+sys.path.insert(0, str(ROOT))
 
 import gspread
 
@@ -32,7 +32,7 @@ import make_forms as _mf
 from make_forms import build_element_index, _infer_language_id_from_planar_filename
 
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
-PLANAR_DIR = ROOT / "01_planar_input"
+CODED_DATA = ROOT / "coded_data"
 _DEFAULT_OAUTH_PATH = Path.home() / ".config" / "planars" / "oauth_credentials.json"
 _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
 _TRAILING_COLS = ["Comments"]
@@ -215,13 +215,13 @@ def main() -> None:
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
 
     # Load planar structure
-    planar_files = sorted(PLANAR_DIR.glob("planar_*.tsv"))
+    planar_files = sorted(CODED_DATA.glob("*/planar_input/planar_*.tsv"))
     if not planar_files:
-        raise SystemExit("No planar_*.tsv found in 01_planar_input/")
+        raise SystemExit("No planar_*.tsv found in coded_data/*/planar_input/")
     planar_file = planar_files[0]
     lang_id = _infer_language_id_from_planar_filename(planar_file.name)
 
-    _mf.DATA_DIR = str(PLANAR_DIR)
+    _mf.DATA_DIR = str(planar_file.parent)
     element_index = build_element_index(planar_file.name)
 
     print(f"{'DRY RUN — ' if not apply else ''}Language: {lang_id}")

@@ -34,7 +34,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(ROOT / "01_planar_input"))
+sys.path.insert(0, str(ROOT))
 
 import gspread
 from googleapiclient.discovery import build as google_build
@@ -54,7 +54,7 @@ from generate_sheets import (
 )
 
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
-PLANAR_DIR = ROOT / "01_planar_input"
+CODED_DATA = ROOT / "coded_data"
 _DEFAULT_OAUTH_PATH = Path.home() / ".config" / "planars" / "oauth_credentials.json"
 _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
 
@@ -300,13 +300,13 @@ def main() -> None:
 
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
 
-    planar_files = sorted(PLANAR_DIR.glob("planar_*.tsv"))
+    planar_files = sorted(CODED_DATA.glob("*/planar_input/planar_*.tsv"))
     if not planar_files:
-        raise SystemExit("No planar_*.tsv found in 01_planar_input/")
+        raise SystemExit("No planar_*.tsv found in coded_data/*/planar_input/")
     planar_file = planar_files[0]
     lang_id = _infer_language_id_from_planar_filename(planar_file.name)
 
-    _mf.DATA_DIR = str(PLANAR_DIR)
+    _mf.DATA_DIR = str(planar_file.parent)
     element_index = build_element_index(planar_file.name)
     specs = _read_diagnostics_for_language(lang_id)
 
