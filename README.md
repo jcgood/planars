@@ -132,9 +132,9 @@ Two notebooks support browser-only use without installing anything locally.
 5. When prompted, sign in with your Google account and click through the permissions
 6. The domain chart appears at the bottom of the page
 
-**Step-by-step (`span_results_colab.ipynb`) — easier to troubleshoot**
+**Step-by-step (`span_results_colab.ipynb`) — full reports + chart**
 
-Same steps as above but using `notebooks/span_results_colab.ipynb`. Cells are split into Setup, Configure, Load manifest, and Show chart — run them one at a time if something goes wrong.
+Same steps as above but using `notebooks/span_results_colab.ipynb`. Cells are split into Setup, Configure, Load manifest, per-analysis report sections (one per analysis class), and Domain chart. Run individual sections to inspect one analysis at a time, or use **Runtime → Run all** for the complete output. Each report section prints the same per-construction text as the local `span_results.ipynb`.
 
 ## diagnostics.tsv
 
