@@ -1,4 +1,4 @@
-"""Chart helpers for span results notebook."""
+"""Domain chart functions for span visualization."""
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 from planars import ciscategorial as _cisc
 from planars import subspanrepetition as _subspan
 from planars import noninterruption as _nonint
+
 
 # --- Colors (one per analysis type) ---
 
