@@ -16,7 +16,7 @@ from planars import subspanrepetition as _subspan
 from planars import noninterruption as _nonint
 
 def show_results(folder, derive_fn, fmt_fn, pattern="*_filled.tsv"):
-    tsv_files = sorted((REPO_ROOT / folder).glob(pattern))
+    tsv_files = sorted((REPO_ROOT / "coded_data").glob(f"*/{folder}/{pattern}"))
     if not tsv_files:
         print(f"  No filled TSVs found in {folder}/")
         return

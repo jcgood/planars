@@ -76,34 +76,37 @@ def _rows_from_nonint(result):
     return rows
 
 
+# --- Analysis class registry ---
+
+_CLASS_HANDLERS = {
+    "ciscategorial":     (_cisc.derive_v_ciscategorial_fractures,  _rows_from_cisc),
+    "subspanrepetition": (_subspan.derive_subspanrepetition_spans, _rows_from_subspan),
+    "noninterruption":   (_nonint.derive_noninterruption_domains,  _rows_from_nonint),
+}
+
+
 # --- Main collection ---
 
 def collect_all_spans(repo_root):
-    """Run all analyses and return (DataFrame, keystone_pos, pos_to_name)."""
+    """Run all analyses over coded_data/ and return (DataFrame, keystone_pos, pos_to_name)."""
     rows = []
     keystone_pos = None
     pos_to_name = None
 
-    for tsv in sorted((repo_root / "02_ciscategorial").glob("*_filled.tsv")):
-        result = _cisc.derive_v_ciscategorial_fractures(tsv, strict=False)
-        rows.extend(_rows_from_cisc(result))
-        if keystone_pos is None:
-            keystone_pos = result["keystone_position"]
-            pos_to_name = result["position_number_to_name"]
-
-    for tsv in sorted((repo_root / "03_subspanrepetition").glob("*_filled.tsv")):
-        result = _subspan.derive_subspanrepetition_spans(tsv, strict=False)
-        rows.extend(_rows_from_subspan(result))
-        if keystone_pos is None:
-            keystone_pos = result["keystone_position"]
-            pos_to_name = result["position_number_to_name"]
-
-    for tsv in sorted((repo_root / "04_noninterruption").glob("*_filled.tsv")):
-        result = _nonint.derive_noninterruption_domains(tsv, strict=False)
-        rows.extend(_rows_from_nonint(result))
-        if keystone_pos is None:
-            keystone_pos = result["keystone_position"]
-            pos_to_name = result["position_number_to_name"]
+    coded_data = repo_root / "coded_data"
+    for lang_dir in sorted(coded_data.iterdir()):
+        if not lang_dir.is_dir():
+            continue
+        for class_name, (derive_fn, row_fn) in _CLASS_HANDLERS.items():
+            class_dir = lang_dir / class_name
+            if not class_dir.exists():
+                continue
+            for tsv in sorted(class_dir.glob("*_filled.tsv")):
+                result = derive_fn(tsv, strict=False)
+                rows.extend(row_fn(result))
+                if keystone_pos is None:
+                    keystone_pos = result["keystone_position"]
+                    pos_to_name = result["position_number_to_name"]
 
     return pd.DataFrame(rows), keystone_pos, pos_to_name
 

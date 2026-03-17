@@ -35,7 +35,7 @@ def derive_subspanrepetition_spans(tsv_path: Path, strict: bool = True) -> Dict[
 
     missing_data = {}
     if not strict:
-        for c in _REQUIRED_PARAMS:
+        for c in sorted(_REQUIRED_PARAMS):
             blank_els = data_df.loc[data_df[c] == "", "Element"].tolist()
             if blank_els:
                 missing_data[c] = blank_els

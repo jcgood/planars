@@ -58,18 +58,14 @@ def _get_client() -> gspread.Client:
 
 
 # ---------------------------------------------------------------------------
-# Output folder
+# Output path
 # ---------------------------------------------------------------------------
 
-def _find_output_folder(class_name: str) -> Path:
-    """Find the numbered output folder for a class, or create one."""
-    matches = sorted(p for p in ROOT.iterdir() if p.is_dir() and class_name in p.name)
-    if matches:
-        return matches[0]
-    folder = ROOT / f"{class_name}_output"
-    folder.mkdir(exist_ok=True)
-    print(f"    Created output folder: {folder.name}/")
-    return folder
+def _get_output_path(lang_id: str, class_name: str, construction: str) -> Path:
+    """Return the output TSV path under coded_data/, creating directories as needed."""
+    folder = ROOT / "coded_data" / lang_id / class_name
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder / f"{construction}_filled.tsv"
 
 
 # ---------------------------------------------------------------------------
@@ -203,7 +199,6 @@ def main() -> None:
         for class_name, sheet_info in lang_data["sheets"].items():
             print(f"\n  {class_name}")
             ss = gc.open_by_key(sheet_info["spreadsheet_id"])
-            out_folder = _find_output_folder(class_name)
 
             for construction in sheet_info["constructions"]:
                 try:
@@ -234,11 +229,11 @@ def main() -> None:
                     lang_warning_lines.append(f"[{class_name}/{construction}] {w}")
                 total_warnings += len(warnings)
 
-                out_name = f"{class_name}_{lang_id}_{construction}_filled.tsv"
-                out_path = out_folder / out_name
+                out_path = _get_output_path(lang_id, class_name, construction)
+                out_name = out_path.name
 
                 if out_path.exists() and not force:
-                    print(f"    [{construction}] SKIPPED (file exists, use --force to overwrite) → {out_folder.name}/{out_name}")
+                    print(f"    [{construction}] SKIPPED (file exists, use --force to overwrite) → coded_data/{lang_id}/{class_name}/{out_name}")
                     continue
 
                 _write_tsv(out_path, header, records)
@@ -251,7 +246,7 @@ def main() -> None:
                 status = f"{len(records)} rows"
                 if blank_count:
                     status += f", {blank_count} blank param cells"
-                print(f"    [{construction}] {status} → {out_folder.name}/{out_name}")
+                print(f"    [{construction}] {status} → coded_data/{lang_id}/{class_name}/{out_name}")
                 total_files += 1
 
         if lang_warning_lines:

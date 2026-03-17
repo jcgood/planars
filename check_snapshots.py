@@ -14,22 +14,22 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 
-from generate_snapshots import TASKS, SNAPSHOTS_DIR, tsv_to_title
+from generate_snapshots import TASKS, SNAPSHOTS_DIR, tsv_to_title, snapshot_stem
 
 
 def main() -> None:
     failures: list[str] = []
 
     for tsv_path, derive_fn, fmt_fn in TASKS:
-        out_path = SNAPSHOTS_DIR / (tsv_path.stem + ".txt")
+        out_path = SNAPSHOTS_DIR / (snapshot_stem(tsv_path) + ".txt")
 
         if not out_path.exists():
             print(f"MISSING  {out_path.relative_to(ROOT)}")
             failures.append(tsv_path.name)
             continue
 
-        title = tsv_to_title(tsv_path.name)
-        body = fmt_fn(derive_fn(tsv_path))
+        title = tsv_to_title(tsv_path)
+        body = fmt_fn(derive_fn(tsv_path, strict=False))
         current = f"{title}\n{'=' * len(title)}\n\n{body}\n"
         committed = out_path.read_text(encoding="utf-8")
 
