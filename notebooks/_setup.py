@@ -28,4 +28,6 @@ def show_results(folder, derive_fn, fmt_fn, pattern="*_filled.tsv"):
         print(fmt_fn(result))
         print()
 
+from _charts import collect_all_spans, domain_chart
+
 print(f"Ready. Repo root: {REPO_ROOT}")
