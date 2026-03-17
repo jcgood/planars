@@ -1,128 +1,109 @@
 Element	Position_Name	Position_Number	stressable	obligatory	independence	left-interaction	right-interaction	Comments
-also	v:leftedge	1	n	y	n	n	n	
-and	v:leftedge	1	both	n	y	n	y	
-CONJUNCT	v:leftedge	1	y	n	y	n	n	
-then	v:leftedge	1	y	y	n	n	n	
-NP{S,A,P}	v:frontedXP	2	y	n	n	n	y	
-QWORDS	v:frontedXP	2	n	n	y	n	y	
-be	v:frontedauxiliary	3	both	n	y	n	y	
-can	v:frontedauxiliary	3	y	n	y	n	n	
-could	v:frontedauxiliary	3	y	n	y	n	n	
-do	v:frontedauxiliary	3	both	y	n	n	y	
-have	v:frontedauxiliary	3	both	y	n	y	n	
-may	v:frontedauxiliary	3	y	n	n	n	n	
+also	v:leftedge	1	n	n	y	n	n	
+and	v:leftedge	1	both	n	y	n	n	
+CONJUNCT	v:leftedge	1	y	y	y	n	n	
+then	v:leftedge	1	y	n	y	n	n	
+NP{S,A,P}	v:frontedXP	2	y	n	y	n	n	
+QWORDS	v:frontedXP	2	y	n	y	y	n	
+be	v:frontedauxiliary	3	both	y	y	n	n	
+can	v:frontedauxiliary	3	n	n	n	y	n	
+could	v:frontedauxiliary	3	y	n	y	n	y	
+do	v:frontedauxiliary	3	both	n	n	n	n	
+have	v:frontedauxiliary	3	both	n	y	n	n	
+may	v:frontedauxiliary	3	y	y	n	n	n	
 might	v:frontedauxiliary	3	y	n	y	n	n	
-must	v:frontedauxiliary	3	y	n	y	n	n	
-ought	v:frontedauxiliary	3	y	n	n	y	n	
-shall	v:frontedauxiliary	3	y	n	y	y	n	
-should	v:frontedauxiliary	3	y	n	y	n	y	
+must	v:frontedauxiliary	3	y	n	y	n	y	
+ought	v:frontedauxiliary	3	n	y	y	n	y	
+shall	v:frontedauxiliary	3	n	n	y	n	n	
+should	v:frontedauxiliary	3	y	y	n	y	y	
 will	v:frontedauxiliary	3	both	y	y	n	n	
-would	v:frontedauxiliary	3	both	y	y	n	n	
-[-n]	v:frontedauxiliaryinflection	4	n	n	n	n	y	Interesting ... shouldn’t these be NA for variable 3, since they don’t have the phon. structure to have stress to begin with?
-[-s]	v:frontedauxiliaryinflection	4	n	n	n	n	y	
-[-v]	v:frontedauxiliaryinflection	4	n	n	n	y	n	
-NP{S,A}	v:npsubj1	5	y	n	y	n	n	
-S-ADVERBS	v:ad-S1	6	y	n	y	n	n	
-AD-VP	v:ad-VP1	7	y	n	y	n	n	
-can	v:modal1	8	y	n	y	n	y	
-could	v:modal1	8	y	n	y	n	y	
-may	v:modal1	8	y	n	y	n	y	
-might	v:modal1	8	y	n	n	y	n	
-must	v:modal1	8	y	y	y	n	n	
-shall	v:modal1	8	n	n	y	n	n	
-should	v:modal1	8	y	n	y	y	n	
-will	v:modal1	8	both	n	y	n	n	
-would	v:modal1	8	both	n	y	n	n	
-AD-S	v:sd-S2	9	y	n	y	n	n	
-not	v:neg1	10	both	n	y	n	y	
-AD-VP	v:ad-VP2	11	y	n	y	n	n	
-ha	v:perfect	12	both	n	n	n	n	But interestingly, this part is just completely deleted.
-[-s]	v:perfectinflection	13	y	n	n	n	n	
-[-ve]	v:perfectinflection	13	n	n	y	n	n	
-AD-S	v:ad-S3	14	y	y	y	n	n	
-not	v:neg2	15	both	n	y	n	n	
-AD-VP	v:ad-VP3	16	y	n	y	y	n	
-AD-V	v:ad-V1	17	y	n	y	n	n	
-[be-]	v:passive	18	both	n	y	n	n	
-AD-S	v:ad-S4	19	y	n	y	y	y	
-not	v:neg3	20	both	n	y	n	n	
-AD-VP	v:ad-VP4	21	y	y	y	n	n	
-be	v:progressive	22	both	n	y	y	n	
-AD-S	v:ad-S5	23	y	n	n	n	n	
-not	v:neg4	24	both	n	n	y	n	
-AD-VP	v:ad-VP5	25	y	y	y	y	n	
-AD-V	v:ad-V2	26	y	n	n	n	n	
-air	v:nominal	27	y	y	n	n	y	
-baby	v:nominal	27	y	n	n	n	n	
-breast	v:nominal	27	y	n	y	n	y	
-caretaker	v:nominal	27	y	n	n	n	y	
-child	v:nominal	27	y	n	n	y	y	
-cross	v:nominal	27	y	n	n	n	y	
-dog	v:nominal	27	y	n	n	n	y	
-eye	v:nominal	27	y	n	n	n	y	
-fact	v:nominal	27	y	n	n	n	n	
-grounds	v:nominal	27	y	n	y	y	y	
-hand	v:nominal	27	y	n	n	n	y	
-house	v:nominal	27	y	n	n	n	y	
-lip	v:nominal	27	n	n	y	n	y	
-name	v:nominal	27	y	n	n	n	y	
-nanny	v:nominal	27	y	y	n	n	y	
-pet	v:nominal	27	y	n	n	n	n	
-pressure	v:nominal	27	n	y	n	n	y	
-rough	v:nominal	27	n	y	n	n	y	
-sound	v:nominal	27	y	y	n	n	y	
-spell	v:nominal	27	n	n	y	n	y	
-spin	v:nominal	27	y	n	n	n	n	
-stone	v:nominal	27	y	y	n	n	y	
-strong	v:nominal	27	n	n	n	n	y	
-[de-]	v:productiveprefix	28	y	n	n	n	n	
-[dis-]	v:productiveprefix	28	n	y	y	n	n	
-[mis-]	v:productiveprefix	28	n	n	n	y	n	
-[out-]	v:productiveprefix	28	y	y	n	y	n	
-[over-]	v:productiveprefix	28	y	y	n	n	y	
-[post-]	v:productiveprefix	28	n	y	n	y	y	
-[pre-]	v:productiveprefix	28	y	y	n	n	y	
-[re-]	v:productiveprefix	28	n	y	n	y	y	
-[un-]	v:productiveprefix	28	n	n	n	n	n	
-[under-]	v:productiveprefix	28	both	n	y	y	n	
-[ab-]	v:latinprefix	29	n	n	n	n	y	
-[ad-]	v:latinprefix	29	n	y	n	n	n	
-[ante-]	v:latinprefix	29	y	n	y	y	n	
-[be-]	v:latinprefix	29	y	n	n	n	n	
-[cata-]	v:latinprefix	29	y	n	n	n	y	
-[circum-]	v:latinprefix	29	y	n	n	n	n	
-[co-]	v:latinprefix	29	n	n	y	n	n	
-[contra-]	v:latinprefix	29	y	y	n	n	n	
-[dia-]	v:latinprefix	29	both	y	n	y	y	diagnose vs. diagram
-[dis-]	v:latinprefix	29	y	y	n	n	n	
-[down-]	v:latinprefix	29	y	n	n	y	n	
-[en-]	v:latinprefix	29	both	n	n	n	y	enter vs. enrich
-[epi-]	v:latinprefix	29	y	n	n	n	y	I couldn’t find cases where the prefix did not have primary stress, but I feel like there should be?
-[eu-]	v:latinprefix	29	y	y	y	n	n	yes, but I wonder if it counts because its only with -ize derived forms
-[ex-]	v:latinprefix	29	both	n	n	n	y	exit vs. expel
-[fore-]	v:latinprefix	29	both	n	n	n	y	foresee vs. foreground
-[inter-]	v:latinprefix	29	both	y	n	n	y	interrogate vs. intervene
-[intra-]	v:latinprefix	29	y	n	n	n	y	
-[mis-]	v:latinprefix	29	both	n	n	n	n	misuse vs. misfire
-[ob-]	v:latinprefix	29	both	n	y	n	n	
-[para-]	v:latinprefix	29	y	n	n	n	n	
-[per-]	v:latinprefix	29	both	n	y	y	n	perform, permit vs. percolate
-[pro-]	v:latinprefix	29	both	n	n	n	y	program, protest vs. produce (and every other example, I think)
-[se-]	v:latinprefix	29	both	n	n	n	y	seperate vs. secede
-[sub-]	v:latinprefix	29	both	y	n	n	y	sublet, sublease vs. submerge, subside
-[sup-]	v:latinprefix	29	both	n	n	y	y	supplicate vs. supply
-[sur-]	v:latinprefix	29	both	n	y	n	n	survey vs. survive
-[syn-]	v:latinprefix	29	both	y	n	n	n	syllabify vs. synthesize (most follow initial pattern)
-[tele-]	v:latinprefix	29	y	y	n	n	n	
-[up-]	v:latinprefix	29	both	n	n	y	y	upset, uplift, uproot vs. upload, update
-ROOT	v:verbroot	30	n	n	n	y	n	
-[-ed]	v:verbinflection	31	n	y	n	y	y	
-[-ing]	v:verbinflection	31	n	y	n	n	n	
-[-s]	v:verbinflection	31	y	y	y	n	n	
-Ad-V	v:ad-V3	32	y	n	y	n	y	
-NP{P,T}	v:obj-part	33	y	y	y	n	n	
-VERBPART	v:obj-part	33	n	n	n	y	y	
-NP{R}	v:rec	34	n	n	y	n	y	
-Ad-VP	v:ad-VP6	35	y	n	y	n	n	
-PP	v:PP	36	y	n	y	n	n	
-AD-S	v:rightedge	37	y	y	n	n	n	
+would	v:frontedauxiliary	3	both	n	y	y	n	
+[-n]	v:frontedauxiliaryinflection	4	n	n	n	n	n	Interesting ... shouldn’t these be NA for variable 3, since they don’t have the phon. structure to have stress to begin with?
+[-s]	v:frontedauxiliaryinflection	4	y	y	n	n	n	
+[-v]	v:frontedauxiliaryinflection	4	n	y	n	y	y	
+NP{S,A}	v:npsubj1	5	y	n	y	y	n	
+AD-VP	v:ad-VP1	6	y	n	n	n	n	
+can	v:modal1	7	y	n	y	n	n	
+could	v:modal1	7	y	n	y	y	y	
+may	v:modal1	7	y	y	n	y	y	
+might	v:modal1	7	y	n	y	y	n	
+must	v:modal1	7	y	n	y	n	n	
+shall	v:modal1	7	y	n	y	n	n	
+should	v:modal1	7	y	n	y	y	y	
+will	v:modal1	7	both	n	y	n	n	
+would	v:modal1	7	both	y	y	n	n	
+AD-S	v:sd-S2	8	y	n	n	y	n	
+AD-VP	v:ad-VP2	9	y	n	n	n	n	
+ha	v:perfect	10	both	n	y	n	n	But interestingly, this part is just completely deleted.
+AD-S	v:ad-S3	11	y	y	y	n	n	
+not	v:neg2	12	both	n	n	n	n	
+AD-VP	v:ad-VP3	13	y	y	y	n	n	
+AD-V	v:ad-V1	14	y	n	y	n	n	
+[be-]	v:passive	15	both	n	y	n	n	
+AD-S	v:ad-S4	16	y	n	y	n	n	
+AD-VP	v:ad-VP4	17	y	n	y	y	n	
+be	v:progressive	18	both	n	y	n	y	
+not	v:neg4	19	both	n	y	n	n	
+AD-VP	v:ad-VP5	20	n	n	y	y	y	
+air	v:nominal	21	y	n	y	n	y	
+baby	v:nominal	21	y	y	n	n	y	
+breast	v:nominal	21	y	n	n	n	n	
+caretaker	v:nominal	21	y	n	n	n	y	
+child	v:nominal	21	y	n	n	n	y	
+cross	v:nominal	21	y	n	n	n	y	
+dog	v:nominal	21	y	n	y	n	y	
+eye	v:nominal	21	y	n	n	n	n	
+fact	v:nominal	21	y	n	y	n	n	
+grounds	v:nominal	21	y	n	n	n	y	
+hand	v:nominal	21	y	n	n	y	y	
+house	v:nominal	21	y	n	n	n	y	
+lip	v:nominal	21	y	n	n	n	n	
+name	v:nominal	21	y	n	n	n	y	
+nanny	v:nominal	21	y	n	n	n	y	
+pet	v:nominal	21	y	n	n	y	n	
+pressure	v:nominal	21	y	n	n	n	y	
+rough	v:nominal	21	n	n	n	n	y	
+sound	v:nominal	21	y	y	n	n	y	
+spell	v:nominal	21	n	n	n	n	n	
+spin	v:nominal	21	n	n	n	y	y	
+stone	v:nominal	21	n	n	n	n	n	
+strong	v:nominal	21	y	n	n	y	y	
+[ab-]	v:latinprefix	22	y	n	n	n	y	
+[ad-]	v:latinprefix	22	n	y	n	n	y	
+[ante-]	v:latinprefix	22	y	n	n	n	n	
+[be-]	v:latinprefix	22	n	n	n	n	n	
+[cata-]	v:latinprefix	22	n	n	n	n	n	
+[circum-]	v:latinprefix	22	y	n	n	n	n	
+[co-]	v:latinprefix	22	y	n	n	n	n	
+[contra-]	v:latinprefix	22	y	n	n	n	n	
+[dia-]	v:latinprefix	22	both	n	y	n	y	diagnose vs. diagram
+[dis-]	v:latinprefix	22	y	y	n	n	n	
+[down-]	v:latinprefix	22	y	n	n	n	n	
+[en-]	v:latinprefix	22	both	n	n	n	n	enter vs. enrich
+[epi-]	v:latinprefix	22	y	y	n	n	n	I couldn’t find cases where the prefix did not have primary stress, but I feel like there should be?
+[eu-]	v:latinprefix	22	y	n	n	n	n	yes, but I wonder if it counts because its only with -ize derived forms
+[ex-]	v:latinprefix	22	both	y	n	n	y	exit vs. expel
+[fore-]	v:latinprefix	22	both	n	n	n	y	foresee vs. foreground
+[inter-]	v:latinprefix	22	both	y	y	y	y	interrogate vs. intervene
+[intra-]	v:latinprefix	22	n	n	y	y	n	
+[mis-]	v:latinprefix	22	both	n	n	n	n	misuse vs. misfire
+[ob-]	v:latinprefix	22	both	n	n	n	n	
+[para-]	v:latinprefix	22	y	y	n	n	n	
+[per-]	v:latinprefix	22	both	n	n	n	n	perform, permit vs. percolate
+[pro-]	v:latinprefix	22	both	n	y	n	y	program, protest vs. produce (and every other example, I think)
+[se-]	v:latinprefix	22	both	n	y	n	y	seperate vs. secede
+[sub-]	v:latinprefix	22	both	n	n	y	y	sublet, sublease vs. submerge, subside
+[sup-]	v:latinprefix	22	both	n	n	n	y	supplicate vs. supply
+[sur-]	v:latinprefix	22	both	y	y	n	y	survey vs. survive
+[syn-]	v:latinprefix	22	both	n	n	n	n	syllabify vs. synthesize (most follow initial pattern)
+[tele-]	v:latinprefix	22	y	y	y	n	y	
+[up-]	v:latinprefix	22	both	n	y	y	y	upset, uplift, uproot vs. upload, update
+ROOT	v:verbroot	23	y	n	n	n	n	
+[-ed]	v:verbinflection	24	y	n	n	y	n	
+[-ing]	v:verbinflection	24	y	n	n	y	n	
+[-s]	v:verbinflection	24	y	n	n	n	n	
+NP{P,T}	v:obj-part	25	y	n	y	y	n	
+VERBPART	v:obj-part	25	n	y	n	n	n	
+Ad-VP	v:ad-VP6	26	y	n	n	n	n	
+PP	v:PP	27	y	n	y	y	y	
+AD-S	v:rightedge	28	y	y	y	n	n	

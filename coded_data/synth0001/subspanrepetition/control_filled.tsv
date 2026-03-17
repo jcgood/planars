@@ -1,128 +1,109 @@
 Element	Position_Name	Position_Number	widescope_right	widescope_left	fillable_botheither_conjunct	Comments
-also	v:leftedge	1	n	n	y	*also martin also tried to unify the reform movement
-and	v:leftedge	1	n	y	n	
-CONJUNCT	v:leftedge	1	y	n	n	
+also	v:leftedge	1	n	n	n	*also martin also tried to unify the reform movement
+and	v:leftedge	1	n	n	n	
+CONJUNCT	v:leftedge	1	n	n	y	
 then	v:leftedge	1	n	n	n	
 NP{S,A,P}	v:frontedXP	2	y	n	n	
-QWORDS	v:frontedXP	2	y	n	n	
-be	v:frontedauxiliary	3	n	y	n	did martin try to unify the reformation
-can	v:frontedauxiliary	3	n	n	n	
-could	v:frontedauxiliary	3	n	n	n	
-do	v:frontedauxiliary	3	n	n	n	
-have	v:frontedauxiliary	3	n	y	y	
-may	v:frontedauxiliary	3	y	n	n	
-might	v:frontedauxiliary	3	n	y	n	
-must	v:frontedauxiliary	3	y	n	n	
-ought	v:frontedauxiliary	3	n	n	y	
+QWORDS	v:frontedXP	2	y	y	n	
+be	v:frontedauxiliary	3	n	n	y	did martin try to unify the reformation
+can	v:frontedauxiliary	3	n	y	n	
+could	v:frontedauxiliary	3	y	y	n	
+do	v:frontedauxiliary	3	y	n	n	
+have	v:frontedauxiliary	3	n	n	n	
+may	v:frontedauxiliary	3	n	y	y	
+might	v:frontedauxiliary	3	y	n	n	
+must	v:frontedauxiliary	3	n	n	y	
+ought	v:frontedauxiliary	3	n	n	n	
 shall	v:frontedauxiliary	3	n	n	n	
-should	v:frontedauxiliary	3	n	n	n	
-will	v:frontedauxiliary	3	n	y	n	
-would	v:frontedauxiliary	3	n	y	n	
-[-n]	v:frontedauxiliaryinflection	4	n	y	n	
-[-s]	v:frontedauxiliaryinflection	4	y	n	n	
-[-v]	v:frontedauxiliaryinflection	4	n	n	n	
+should	v:frontedauxiliary	3	n	n	y	
+will	v:frontedauxiliary	3	y	n	y	
+would	v:frontedauxiliary	3	n	n	n	
+[-n]	v:frontedauxiliaryinflection	4	y	n	n	
+[-s]	v:frontedauxiliaryinflection	4	n	n	n	
+[-v]	v:frontedauxiliaryinflection	4	n	y	n	
 NP{S,A}	v:npsubj1	5	y	n	n	
-S-ADVERBS	v:ad-S1	6				
-AD-VP	v:ad-VP1	7	y	y	y	martin quickly wanted to eat a sausage
-can	v:modal1	8	y	n	n	martin can try to eat a sausage | martin can persuade you to go
-could	v:modal1	8	y	n	n	
-may	v:modal1	8	n	y	n	
-might	v:modal1	8	y	n	n	
-must	v:modal1	8	n	n	n	
-shall	v:modal1	8	y	n	n	
-should	v:modal1	8	y	n	n	
-will	v:modal1	8	y	n	n	
-would	v:modal1	8	n	n	y	
-AD-S	v:sd-S2	9	y	n	y	martin would presumably try to eat sausage
-not	v:neg1	10	n	n	n	martin would not try to not eat sausage
-AD-VP	v:ad-VP2	11	y	n	y	
-ha	v:perfect	12	n	n	y	martin has persuaded andreas to have arrived early
-[-s]	v:perfectinflection	13	n	y	y	
-[-ve]	v:perfectinflection	13	y	n	y	
-AD-S	v:ad-S3	14	n	n	y	martin had unfortunately persuaded andres to have arrived early
-not	v:neg2	15	n	n	n	
-AD-VP	v:ad-VP3	16	n	y	y	
-AD-V	v:ad-V1	17	n	n	n	
-[be-]	v:passive	18	?	?	y	martin was persuaded to
-AD-S	v:ad-S4	19	n	n	y	
-not	v:neg3	20	y	y	n	
-AD-VP	v:ad-VP4	21	y	n	y	
-be	v:progressive	22	n	n	y	martin is persuading andres to read his book
-AD-S	v:ad-S5	23	n	n	y	
-not	v:neg4	24	y	n	y	
-AD-VP	v:ad-VP5	25	n	n	y	
-AD-V	v:ad-V2	26	y	n	y	
-air	v:nominal	27	y	y	n	
-baby	v:nominal	27	n	n	y	
-breast	v:nominal	27	n	n	n	
-caretaker	v:nominal	27	n	y	n	
-child	v:nominal	27	n	n	y	
-cross	v:nominal	27	y	y	y	
-dog	v:nominal	27	n	n	n	
-eye	v:nominal	27	n	n	y	
-fact	v:nominal	27	n	n	y	
-grounds	v:nominal	27	n	y	n	
-hand	v:nominal	27	y	n	y	
-house	v:nominal	27	n	n	y	
-lip	v:nominal	27	y	n	y	
-name	v:nominal	27	n	n	n	
-nanny	v:nominal	27	n	n	y	
-pet	v:nominal	27	n	n	y	
-pressure	v:nominal	27	n	y	y	
-rough	v:nominal	27	n	n	y	
-sound	v:nominal	27	n	n	y	
-spell	v:nominal	27	n	y	y	
-spin	v:nominal	27	n	n	n	
-stone	v:nominal	27	y	n	y	
-strong	v:nominal	27	n	n	n	
-[de-]	v:productiveprefix	28	y	n	y	
-[dis-]	v:productiveprefix	28	n	y	n	
-[mis-]	v:productiveprefix	28	n	n	y	
-[out-]	v:productiveprefix	28	y	n	n	
-[over-]	v:productiveprefix	28	n	n	y	
-[post-]	v:productiveprefix	28	n	n	n	
-[pre-]	v:productiveprefix	28	n	n	y	
-[re-]	v:productiveprefix	28	n	y	y	
-[un-]	v:productiveprefix	28	y	n	y	
-[under-]	v:productiveprefix	28	y	n	y	
-[ab-]	v:latinprefix	29	n	y	y	
-[ad-]	v:latinprefix	29	y	n	y	
-[ante-]	v:latinprefix	29	y	y	y	
-[be-]	v:latinprefix	29	n	n	y	
-[cata-]	v:latinprefix	29	n	n	y	
-[circum-]	v:latinprefix	29	n	n	y	
-[co-]	v:latinprefix	29	y	n	y	
-[contra-]	v:latinprefix	29	y	n	y	
-[dia-]	v:latinprefix	29	n	n	y	
-[dis-]	v:latinprefix	29	n	n	n	
-[down-]	v:latinprefix	29	n	n	y	
-[en-]	v:latinprefix	29	y	n	y	
-[epi-]	v:latinprefix	29	n	n	y	
-[eu-]	v:latinprefix	29	n	n	y	
-[ex-]	v:latinprefix	29	n	n	y	
-[fore-]	v:latinprefix	29	n	n	y	
-[inter-]	v:latinprefix	29	n	n	n	
-[intra-]	v:latinprefix	29	n	n	y	
-[mis-]	v:latinprefix	29	y	n	y	
-[ob-]	v:latinprefix	29	n	n	y	
-[para-]	v:latinprefix	29	n	n	y	
-[per-]	v:latinprefix	29	n	n	y	
-[pro-]	v:latinprefix	29	n	y	y	
-[se-]	v:latinprefix	29	n	n	y	
-[sub-]	v:latinprefix	29	y	n	y	
-[sup-]	v:latinprefix	29	n	n	y	
-[sur-]	v:latinprefix	29	n	y	y	
-[syn-]	v:latinprefix	29	n	n	y	
-[tele-]	v:latinprefix	29	n	n	y	
-[up-]	v:latinprefix	29	n	n	y	
-ROOT	v:verbroot	30	n	y	n	na
-[-ed]	v:verbinflection	31	n	n	n	
-[-ing]	v:verbinflection	31	n	y	y	
-[-s]	v:verbinflection	31	n	y	y	
-Ad-V	v:ad-V3	32	n	n	y	
-NP{P,T}	v:obj-part	33	n	n	y	
-VERBPART	v:obj-part	33	y	n	y	
-NP{R}	v:rec	34	n	y	y	
-Ad-VP	v:ad-VP6	35	y	y	n	
-PP	v:PP	36	n	n	n	
-AD-S	v:rightedge	37	n	y	y	
+AD-VP	v:ad-VP1	6	y	n	y	martin quickly wanted to eat a sausage
+can	v:modal1	7	y	n	n	martin can try to eat a sausage | martin can persuade you to go
+could	v:modal1	7	y	n	n	
+may	v:modal1	7	n	n	n	
+might	v:modal1	7	y	y	n	
+must	v:modal1	7	y	y	n	
+shall	v:modal1	7	y	n	y	
+should	v:modal1	7	y	n	y	
+will	v:modal1	7	y	y	n	
+would	v:modal1	7	y	n	n	
+AD-S	v:sd-S2	8	y	n	n	martin would presumably try to eat sausage
+AD-VP	v:ad-VP2	9	n	n	y	
+ha	v:perfect	10	n	y	y	martin has persuaded andreas to have arrived early
+AD-S	v:ad-S3	11	n	n	y	martin had unfortunately persuaded andres to have arrived early
+not	v:neg2	12	n	y	y	
+AD-VP	v:ad-VP3	13	y	n	y	
+AD-V	v:ad-V1	14	n	n	y	
+[be-]	v:passive	15	?	?	y	martin was persuaded to
+AD-S	v:ad-S4	16	n	n	n	
+AD-VP	v:ad-VP4	17	n	y	y	
+be	v:progressive	18	n	n	y	martin is persuading andres to read his book
+not	v:neg4	19	n	n	y	
+AD-VP	v:ad-VP5	20	n	y	n	
+air	v:nominal	21	y	n	y	
+baby	v:nominal	21	y	n	y	
+breast	v:nominal	21	n	n	n	
+caretaker	v:nominal	21	n	n	y	
+child	v:nominal	21	n	y	y	
+cross	v:nominal	21	y	y	y	
+dog	v:nominal	21	y	n	n	
+eye	v:nominal	21	n	n	y	
+fact	v:nominal	21	n	y	y	
+grounds	v:nominal	21	n	y	n	
+hand	v:nominal	21	n	n	y	
+house	v:nominal	21	n	n	y	
+lip	v:nominal	21	y	n	y	
+name	v:nominal	21	n	y	n	
+nanny	v:nominal	21	y	n	y	
+pet	v:nominal	21	n	n	y	
+pressure	v:nominal	21	n	n	n	
+rough	v:nominal	21	y	n	y	
+sound	v:nominal	21	y	n	y	
+spell	v:nominal	21	y	n	n	
+spin	v:nominal	21	n	n	y	
+stone	v:nominal	21	y	n	y	
+strong	v:nominal	21	y	y	y	
+[ab-]	v:latinprefix	22	y	n	y	
+[ad-]	v:latinprefix	22	n	n	y	
+[ante-]	v:latinprefix	22	y	n	y	
+[be-]	v:latinprefix	22	n	n	y	
+[cata-]	v:latinprefix	22	n	n	n	
+[circum-]	v:latinprefix	22	n	y	y	
+[co-]	v:latinprefix	22	n	y	y	
+[contra-]	v:latinprefix	22	y	n	y	
+[dia-]	v:latinprefix	22	n	n	y	
+[dis-]	v:latinprefix	22	n	n	y	
+[down-]	v:latinprefix	22	n	n	y	
+[en-]	v:latinprefix	22	n	n	y	
+[epi-]	v:latinprefix	22	n	n	n	
+[eu-]	v:latinprefix	22	n	n	y	
+[ex-]	v:latinprefix	22	y	y	n	
+[fore-]	v:latinprefix	22	n	n	y	
+[inter-]	v:latinprefix	22	n	n	n	
+[intra-]	v:latinprefix	22	n	n	y	
+[mis-]	v:latinprefix	22	n	y	y	
+[ob-]	v:latinprefix	22	n	n	y	
+[para-]	v:latinprefix	22	y	y	n	
+[per-]	v:latinprefix	22	y	n	y	
+[pro-]	v:latinprefix	22	y	n	y	
+[se-]	v:latinprefix	22	y	y	y	
+[sub-]	v:latinprefix	22	y	n	y	
+[sup-]	v:latinprefix	22	n	n	y	
+[sur-]	v:latinprefix	22	n	n	y	
+[syn-]	v:latinprefix	22	n	y	y	
+[tele-]	v:latinprefix	22	y	n	n	
+[up-]	v:latinprefix	22	n	n	y	
+ROOT	v:verbroot	23	n	n	y	na
+[-ed]	v:verbinflection	24	n	n	y	
+[-ing]	v:verbinflection	24	n	n	y	
+[-s]	v:verbinflection	24	y	n	y	
+NP{P,T}	v:obj-part	25	n	n	y	
+VERBPART	v:obj-part	25	n	n	y	
+Ad-VP	v:ad-VP6	26	n	n	y	
+PP	v:PP	27	y	y	n	
+AD-S	v:rightedge	28	n	n	y	
