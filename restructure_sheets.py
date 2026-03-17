@@ -28,7 +28,6 @@ Authentication: same OAuth2 setup as generate_sheets.py.
 from __future__ import annotations
 
 import json
-import os
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -37,7 +36,6 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
 import gspread
-from googleapiclient.discovery import build as google_build
 
 import make_forms as _mf
 from make_forms import (
@@ -46,6 +44,7 @@ from make_forms import (
     _read_diagnostics_for_language,
 )
 from generate_sheets import (
+    _get_clients,
     _build_rows,
     _format_and_validate,
     _move_to_folder,
@@ -60,30 +59,6 @@ from generate_sheets import (
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
 CODED_DATA = ROOT / "coded_data"
 _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
-
-
-# ---------------------------------------------------------------------------
-# Auth
-# ---------------------------------------------------------------------------
-
-def _get_clients():
-    creds_path = Path(
-        os.environ.get("PLANARS_OAUTH_CREDENTIALS", str(_DEFAULT_OAUTH_PATH))
-    )
-    if not creds_path.exists():
-        raise FileNotFoundError(
-            f"OAuth credentials file not found: {creds_path}\n"
-            "See generate_sheets.py for setup instructions."
-        )
-    gc = gspread.oauth(
-        credentials_filename=str(creds_path),
-        scopes=[
-            "https://www.googleapis.com/auth/spreadsheets",
-            "https://www.googleapis.com/auth/drive.file",
-        ],
-    )
-    drive = google_build("drive", "v3", credentials=gc.http_client.auth)
-    return gc, drive
 
 
 # ---------------------------------------------------------------------------
