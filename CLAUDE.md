@@ -33,9 +33,14 @@ python generate_snapshots.py   # regenerate baseline snapshots
 python check_snapshots.py      # verify current output matches snapshots
 ```
 
-Dependencies: `pandas`, `gspread`, `google-auth`, `google-api-python-client`, `ipykernel` (see `requirements.txt`). Virtual environment at `.venv/`; activate with `source .venv/bin/activate`. No build system or linter is configured.
-
-JupyterLab is installed system-wide (`jupyter lab` to launch). The venv is registered as a kernel named `planars` — select it in the top-right of any notebook. To re-register after recreating the venv: `source .venv/bin/activate && python -m ipykernel install --user --name planars --display-name planars`.
+**Setup** (first time or after recreating the venv):
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt          # includes jupyterlab
+python -m ipykernel install --user --name planars --display-name planars
+```
+The `-e .` line in `requirements.txt` installs the `planars` package in editable mode so notebooks can `import planars` directly. To re-register the kernel after recreating the venv, run the `ipykernel install` command again.
 
 ## Architecture and data flow
 
