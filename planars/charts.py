@@ -111,6 +111,51 @@ def collect_all_spans(repo_root):
     return pd.DataFrame(rows), keystone_pos, pos_to_name
 
 
+def collect_all_spans_from_sheets(gc, manifest):
+    """Run all analyses directly from Google Sheets (no local TSVs).
+
+    gc:       authenticated gspread.Client
+    manifest: dict in the same format as sheets_manifest.json
+
+    Returns (DataFrame, keystone_pos, pos_to_name) — same as collect_all_spans.
+    Intended for Colab workflows where Drive is mounted and TSVs are not needed.
+    """
+    from planars.io import load_filled_sheet
+
+    rows = []
+    keystone_pos = None
+    pos_to_name = None
+
+    for lang_id, lang_data in manifest.items():
+        for class_name, (derive_fn, row_fn) in _CLASS_HANDLERS.items():
+            sheet_info = lang_data.get("sheets", {}).get(class_name)
+            if not sheet_info:
+                continue
+            try:
+                ss = gc.open_by_key(sheet_info["spreadsheet_id"])
+            except Exception as e:
+                print(f"  WARNING: could not open {class_name} sheet for {lang_id}: {e}")
+                continue
+            construction_params = sheet_info.get("construction_params", {})
+            for construction in sheet_info["constructions"]:
+                try:
+                    ws = ss.worksheet(construction)
+                except Exception:
+                    print(f"  WARNING: tab '{construction}' not found in {class_name} sheet")
+                    continue
+                required = set(
+                    construction_params.get(construction, {}).get("param_names", [])
+                )
+                loaded = load_filled_sheet(ws, required_params=required, strict=False)
+                result = derive_fn(_data=loaded, strict=False)
+                rows.extend(row_fn(result))
+                if keystone_pos is None:
+                    keystone_pos = result["keystone_position"]
+                    pos_to_name = result["position_number_to_name"]
+
+    return pd.DataFrame(rows), keystone_pos, pos_to_name
+
+
 # --- Chart ---
 
 def domain_chart(df, keystone_pos, pos_to_name):

@@ -17,8 +17,6 @@ Authentication: same OAuth2 setup as generate_sheets.py.
 """
 from __future__ import annotations
 
-import json
-import os
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
@@ -30,34 +28,11 @@ import gspread
 
 import make_forms as _mf
 from make_forms import build_element_index, _infer_language_id_from_planar_filename
+from generate_sheets import _get_clients, _load_manifest_from_drive
 
-MANIFEST_PATH = ROOT / "sheets_manifest.json"
 CODED_DATA = ROOT / "coded_data"
-_DEFAULT_OAUTH_PATH = Path.home() / ".config" / "planars" / "oauth_credentials.json"
 _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
 _TRAILING_COLS = ["Comments"]
-
-
-# ---------------------------------------------------------------------------
-# Auth
-# ---------------------------------------------------------------------------
-
-def _get_client() -> gspread.Client:
-    creds_path = Path(
-        os.environ.get("PLANARS_OAUTH_CREDENTIALS", str(_DEFAULT_OAUTH_PATH))
-    )
-    if not creds_path.exists():
-        raise FileNotFoundError(
-            f"OAuth credentials file not found: {creds_path}\n"
-            "See generate_sheets.py for setup instructions."
-        )
-    return gspread.oauth(
-        credentials_filename=str(creds_path),
-        scopes=[
-            "https://www.googleapis.com/auth/spreadsheets",
-            "https://www.googleapis.com/auth/drive.file",
-        ],
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -206,13 +181,8 @@ def _apply_tab_updates(
 def main() -> None:
     apply = "--apply" in sys.argv
 
-    if not MANIFEST_PATH.exists():
-        raise SystemExit(
-            f"sheets_manifest.json not found at {MANIFEST_PATH}.\n"
-            "Run generate_sheets.py first."
-        )
-
-    manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    gc, drive = _get_clients()
+    manifest = _load_manifest_from_drive(drive)
 
     # Load planar structure
     planar_files = sorted(CODED_DATA.glob("*/planar_input/planar_*.tsv"))
@@ -227,9 +197,6 @@ def main() -> None:
     print(f"{'DRY RUN — ' if not apply else ''}Language: {lang_id}")
     if not apply:
         print("(run with --apply to make changes)\n")
-
-    print("Connecting to Google...")
-    gc = _get_client()
 
     any_changes = False
 

@@ -1,37 +1,19 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import pandas as pd
 
 _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
 
 
-def load_filled_tsv(
-    path: Path,
+def _parse_filled_df(
+    df: pd.DataFrame,
     required_params: Set[str],
-    strict: bool = True,
+    strict: bool,
 ) -> Tuple[pd.DataFrame, int, Dict[int, str], List[str]]:
-    """Load and validate a filled analysis TSV.
-
-    Reads the file, normalizes column types, locates the keystone row
-    (Position_Name == 'v:verbroot'), and optionally validates that no
-    parameter cells are blank in non-keystone rows.
-
-    All non-structural columns are normalized (stripped, lowercased).
-    required_params are checked for existence. When strict=True (default),
-    blank values in required_params raise ValueError. When strict=False,
-    blanks are left as empty strings for the caller to handle.
-
-    Returns:
-        data_df:      DataFrame of non-keystone rows
-        keystone_pos: integer Position_Number of the keystone
-        pos_to_name:  dict mapping Position_Number -> Position_Name
-        param_cols:   list of all non-structural column names
-    """
-    df = pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False)
-
+    """Core parsing logic shared by load_filled_tsv and load_filled_sheet."""
     missing = (required_params | _STRUCTURAL_COLS) - set(df.columns)
     if missing:
         raise ValueError(f"Missing required column(s): {sorted(missing)}")
@@ -72,3 +54,50 @@ def load_filled_tsv(
     )
 
     return data_df, keystone_pos, pos_to_name, param_cols
+
+
+def load_filled_tsv(
+    path: Path,
+    required_params: Set[str],
+    strict: bool = True,
+) -> Tuple[pd.DataFrame, int, Dict[int, str], List[str]]:
+    """Load and validate a filled analysis TSV.
+
+    Reads the file, normalizes column types, locates the keystone row
+    (Position_Name == 'v:verbroot'), and optionally validates that no
+    parameter cells are blank in non-keystone rows.
+
+    All non-structural columns are normalized (stripped, lowercased).
+    required_params are checked for existence. When strict=True (default),
+    blank values in required_params raise ValueError. When strict=False,
+    blanks are left as empty strings for the caller to handle.
+
+    Returns:
+        data_df:      DataFrame of non-keystone rows
+        keystone_pos: integer Position_Number of the keystone
+        pos_to_name:  dict mapping Position_Number -> Position_Name
+        param_cols:   list of all non-structural column names
+    """
+    df = pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False)
+    return _parse_filled_df(df, required_params, strict)
+
+
+def load_filled_sheet(
+    ws,
+    required_params: Set[str],
+    strict: bool = True,
+) -> Tuple[pd.DataFrame, int, Dict[int, str], List[str]]:
+    """Load and validate a filled annotation from a gspread Worksheet.
+
+    Reads all values from the worksheet and applies the same normalization
+    and validation as load_filled_tsv. Intended for Colab workflows where
+    data is read directly from Google Sheets without a local TSV intermediary.
+
+    Returns the same (data_df, keystone_pos, pos_to_name, param_cols) tuple.
+    """
+    rows = ws.get_all_values()
+    if not rows:
+        raise ValueError(f"Sheet '{ws.title}' is empty.")
+    header, data_rows = rows[0], rows[1:]
+    df = pd.DataFrame(data_rows, columns=header)
+    return _parse_filled_df(df, required_params, strict)

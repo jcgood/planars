@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional, Tuple
+
+import pandas as pd
 
 from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, loose_span
@@ -9,7 +11,12 @@ from planars.spans import fmt_span, strict_span, loose_span
 _TRAILING_COLS = {"Comments"}
 
 
-def derive_v_ciscategorial_fractures(tsv_path: Path, strict: bool = True) -> Dict[str, object]:
+def derive_v_ciscategorial_fractures(
+    tsv_path: Optional[Path] = None,
+    strict: bool = True,
+    *,
+    _data: Optional[Tuple] = None,
+) -> Dict[str, object]:
     """Derive v-ciscategorial fracture spans from a filled ciscategorial TSV.
 
     A position qualifies if elements have V-combines=y and all other params=n.
@@ -24,9 +31,12 @@ def derive_v_ciscategorial_fractures(tsv_path: Path, strict: bool = True) -> Dic
       - element_table: DataFrame with is_v_ciscategorial flag
       - missing_data: {col: [elements]} for blank annotation cells (empty if none)
     """
-    data_df, keystone_pos, pos_to_name, param_cols = load_filled_tsv(
-        tsv_path, required_params={"V-combines"}, strict=strict
-    )
+    if _data is not None:
+        data_df, keystone_pos, pos_to_name, param_cols = _data
+    else:
+        data_df, keystone_pos, pos_to_name, param_cols = load_filled_tsv(
+            tsv_path, required_params={"V-combines"}, strict=strict
+        )
 
     if "V-combines" not in param_cols:
         raise ValueError(f"Expected a parameter column named 'V-combines'. Found: {param_cols}")

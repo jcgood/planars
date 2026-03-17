@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional, Tuple
 
 from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, loose_span, position_sets_from_element_mask
@@ -17,7 +17,12 @@ _CATEGORIES = {
 }
 
 
-def derive_subspanrepetition_spans(tsv_path: Path, strict: bool = True) -> Dict[str, object]:
+def derive_subspanrepetition_spans(
+    tsv_path: Optional[Path] = None,
+    strict: bool = True,
+    *,
+    _data: Optional[Tuple] = None,
+) -> Dict[str, object]:
     """Derive subspan repetition spans from a filled subspanrepetition TSV.
 
     Span categories (each with strict/loose x complete/partial = 20 spans total):
@@ -31,7 +36,10 @@ def derive_subspanrepetition_spans(tsv_path: Path, strict: bool = True) -> Dict[
     missing_data, and for each category: complete_positions, partial_positions,
     strict/loose x complete/partial spans.
     """
-    data_df, keystone_pos, pos_to_name, _ = load_filled_tsv(tsv_path, _REQUIRED_PARAMS, strict=strict)
+    if _data is not None:
+        data_df, keystone_pos, pos_to_name, _ = _data
+    else:
+        data_df, keystone_pos, pos_to_name, _ = load_filled_tsv(tsv_path, _REQUIRED_PARAMS, strict=strict)
 
     missing_data = {}
     if not strict:

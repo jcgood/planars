@@ -34,6 +34,7 @@ sys.path.insert(0, str(ROOT))
 
 import gspread
 from googleapiclient.discovery import build as google_build
+from googleapiclient.http import MediaIoBaseDownload, MediaIoBaseUpload
 
 import make_forms as _mf
 from make_forms import (
@@ -43,6 +44,7 @@ from make_forms import (
 )
 
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
+DRIVE_CONFIG_PATH = ROOT / "drive_config.json"
 CODED_DATA = ROOT / "coded_data"
 
 # Columns appended after param columns on every tab; no dropdown validation
@@ -76,6 +78,74 @@ def _get_clients():
     # Reuse the refreshed credentials from gspread for the Drive API client
     drive = google_build("drive", "v3", credentials=gc.http_client.auth)
     return gc, drive
+
+
+# ---------------------------------------------------------------------------
+# Drive config (local bootstrap)
+# ---------------------------------------------------------------------------
+
+def _load_drive_config() -> Dict:
+    """Load drive_config.json if it exists, otherwise return empty dict."""
+    if DRIVE_CONFIG_PATH.exists():
+        return json.loads(DRIVE_CONFIG_PATH.read_text(encoding="utf-8"))
+    return {}
+
+
+def _save_drive_config(config: Dict) -> None:
+    DRIVE_CONFIG_PATH.write_text(json.dumps(config, indent=2), encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# Drive manifest upload/download
+# ---------------------------------------------------------------------------
+
+def _upload_manifest_to_drive(
+    drive, lang_data: Dict, folder_id: str, lang_id: str, existing_file_id: str = None
+) -> str:
+    """Upload manifest_{lang_id}.json to the Drive folder. Returns file ID."""
+    import io
+    content = json.dumps(lang_data, indent=2).encode("utf-8")
+    media = MediaIoBaseUpload(io.BytesIO(content), mimetype="application/json")
+    file_name = f"manifest_{lang_id}.json"
+    if existing_file_id:
+        drive.files().update(fileId=existing_file_id, media_body=media).execute()
+        return existing_file_id
+    result = drive.files().create(
+        body={"name": file_name, "parents": [folder_id]},
+        media_body=media,
+        fields="id",
+    ).execute()
+    return result["id"]
+
+
+def _download_manifest_from_drive(drive, file_id: str) -> Dict:
+    """Download and parse a manifest JSON file from Drive."""
+    import io
+    request = drive.files().get_media(fileId=file_id)
+    buffer = io.BytesIO()
+    downloader = MediaIoBaseDownload(buffer, request)
+    done = False
+    while not done:
+        _, done = downloader.next_chunk()
+    return json.loads(buffer.getvalue().decode("utf-8"))
+
+
+def _load_manifest_from_drive(drive) -> Dict:
+    """Load the full manifest (all languages) from Drive using drive_config.json."""
+    config = _load_drive_config()
+    if not config:
+        raise SystemExit(
+            "drive_config.json not found.\n"
+            "Run: python generate_sheets.py --push-manifest\n"
+            "to upload the existing sheets_manifest.json to Drive."
+        )
+    manifest = {}
+    for lang_id, lang_config in config.items():
+        file_id = lang_config.get("manifest_file_id")
+        if not file_id:
+            raise SystemExit(f"No manifest_file_id in drive_config.json for '{lang_id}'.")
+        manifest[lang_id] = _download_manifest_from_drive(drive, file_id)
+    return manifest
 
 
 # ---------------------------------------------------------------------------
@@ -345,12 +415,61 @@ def main() -> None:
         manifest[lang_id]["sheets"][class_name] = sheet_info
         print(f"    URL: {sheet_info['url']}\n")
 
-    # Write manifest
+    # Write local manifest (gitignored, kept for reference)
     MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    print(f"Manifest written to: {MANIFEST_PATH.name}")
+    print(f"Local manifest written to: {MANIFEST_PATH.name}")
+
+    # Upload manifest to Drive and update drive_config.json
+    lang_data = manifest[lang_id]
+    config = _load_drive_config()
+    existing_file_id = config.get(lang_id, {}).get("manifest_file_id")
+    manifest_file_id = _upload_manifest_to_drive(
+        drive, lang_data, folder_id, lang_id, existing_file_id
+    )
+    config.setdefault(lang_id, {})["folder_id"] = folder_id
+    config[lang_id]["manifest_file_id"] = manifest_file_id
+    _save_drive_config(config)
+    print(f"Manifest uploaded to Drive (file_id: {manifest_file_id})")
+    print(f"drive_config.json updated.")
+
     print(f"\nShare this folder with your specialist:")
     print(f"  {folder_url}")
 
 
+def push_manifest() -> None:
+    """Upload the existing local sheets_manifest.json to Drive.
+
+    One-time migration utility. Run with:
+        python generate_sheets.py --push-manifest
+    """
+    if not MANIFEST_PATH.exists():
+        raise SystemExit(
+            "sheets_manifest.json not found. Nothing to push.\n"
+            "Run generate_sheets.py first to create sheets."
+        )
+    manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    print("Connecting to Google APIs...")
+    gc, drive = _get_clients()
+    config = _load_drive_config()
+
+    for lang_id, lang_data in manifest.items():
+        folder_url = lang_data.get("folder_url", "")
+        if not folder_url:
+            print(f"  {lang_id}: no folder_url in manifest, skipping")
+            continue
+        folder_id = folder_url.rstrip("/").rsplit("/", 1)[-1]
+        existing_file_id = config.get(lang_id, {}).get("manifest_file_id")
+        file_id = _upload_manifest_to_drive(drive, lang_data, folder_id, lang_id, existing_file_id)
+        config.setdefault(lang_id, {})["folder_id"] = folder_id
+        config[lang_id]["manifest_file_id"] = file_id
+        print(f"  {lang_id}: manifest uploaded (file_id: {file_id})")
+
+    _save_drive_config(config)
+    print(f"drive_config.json written.")
+
+
 if __name__ == "__main__":
-    main()
+    if "--push-manifest" in sys.argv:
+        push_manifest()
+    else:
+        main()

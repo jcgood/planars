@@ -5,6 +5,7 @@ __pycache__/
 *.pyc
 .venv/
 sheets_manifest.json
+drive_config.json
 import_errors/
 *.egg-info/
 notebooks/.ipynb_checkpoints/

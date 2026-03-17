@@ -5,17 +5,15 @@ Run from the repo root:
     python import_sheets.py           # skip files that already exist
     python import_sheets.py --force   # overwrite existing files
 
-Reads sheets_manifest.json, downloads each sheet tab, validates values,
-and writes {class}_{lang}_{construction}_filled.tsv to the appropriate
-numbered output folder (e.g. 02_ciscategorial_output/).
+Reads the manifest from Drive (via drive_config.json), downloads each sheet
+tab, validates values, and writes {construction}_filled.tsv to
+coded_data/{lang_id}/{class_name}/.
 
 Authentication: same OAuth2 setup as generate_sheets.py.
 """
 from __future__ import annotations
 
 import csv
-import json
-import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -25,35 +23,13 @@ ROOT = Path(__file__).resolve().parent
 
 import gspread
 
-MANIFEST_PATH = ROOT / "sheets_manifest.json"
+from generate_sheets import _get_clients, _load_manifest_from_drive
+
 ERROR_DIR = ROOT / "import_errors"
-_DEFAULT_OAUTH_PATH = Path.home() / ".config" / "planars" / "oauth_credentials.json"
 
 _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
 _TRAILING_COLS = {"Comments"}   # free-text; never validated for blank or allowed values
 _DEFAULT_EXPECTED = {"y", "n", "na", "?"}
-
-
-# ---------------------------------------------------------------------------
-# Auth
-# ---------------------------------------------------------------------------
-
-def _get_client() -> gspread.Client:
-    creds_path = Path(
-        os.environ.get("PLANARS_OAUTH_CREDENTIALS", str(_DEFAULT_OAUTH_PATH))
-    )
-    if not creds_path.exists():
-        raise FileNotFoundError(
-            f"OAuth credentials file not found: {creds_path}\n"
-            "See generate_sheets.py for setup instructions."
-        )
-    return gspread.oauth(
-        credentials_filename=str(creds_path),
-        scopes=[
-            "https://www.googleapis.com/auth/spreadsheets",
-            "https://www.googleapis.com/auth/drive.file",
-        ],
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -177,16 +153,9 @@ def main() -> None:
     force = "--force" in sys.argv
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    if not MANIFEST_PATH.exists():
-        raise SystemExit(
-            f"sheets_manifest.json not found at {MANIFEST_PATH}.\n"
-            "Run generate_sheets.py first."
-        )
-
-    manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
-
     print("Connecting to Google...")
-    gc = _get_client()
+    gc, drive = _get_clients()
+    manifest = _load_manifest_from_drive(drive)
 
     total_files = 0
     total_warnings = 0

@@ -51,11 +51,14 @@ from generate_sheets import (
     _move_to_folder,
     _share_anyone_with_link,
     _TRAILING_COLS,
+    _load_manifest_from_drive,
+    _upload_manifest_to_drive,
+    _load_drive_config,
+    _save_drive_config,
 )
 
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
 CODED_DATA = ROOT / "coded_data"
-_DEFAULT_OAUTH_PATH = Path.home() / ".config" / "planars" / "oauth_credentials.json"
 _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
 
 
@@ -292,13 +295,8 @@ def main() -> None:
     apply = "--apply" in sys.argv
     rename_map = _parse_rename_map(sys.argv[1:])
 
-    if not MANIFEST_PATH.exists():
-        raise SystemExit(
-            f"sheets_manifest.json not found at {MANIFEST_PATH}.\n"
-            "Run generate_sheets.py first."
-        )
-
-    manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    gc, drive = _get_clients()
+    manifest = _load_manifest_from_drive(drive)
 
     planar_files = sorted(CODED_DATA.glob("*/planar_input/planar_*.tsv"))
     if not planar_files:
@@ -320,9 +318,6 @@ def main() -> None:
             print(f"  rename: {old!r} -> {new!r}")
     if not apply:
         print("(run with --apply to archive old sheets and regenerate)\n")
-
-    print("Connecting to Google...")
-    gc, drive = _get_clients()
 
     lang_data = manifest.get(lang_id, {})
     folder_url = lang_data.get("folder_url", "")
@@ -416,8 +411,23 @@ def main() -> None:
         print(f"    New sheet (v{new_version}): {new_ss.url}")
 
     if apply:
+        # Update local manifest (gitignored reference copy)
         MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-        print("\nManifest updated.")
+        # Re-upload each language's manifest to Drive
+        config = _load_drive_config()
+        for lang_id_up, lang_data_up in manifest.items():
+            folder_url = lang_data_up.get("folder_url", "")
+            if not folder_url:
+                continue
+            folder_id_up = folder_url.rstrip("/").rsplit("/", 1)[-1]
+            existing_file_id = config.get(lang_id_up, {}).get("manifest_file_id")
+            file_id = _upload_manifest_to_drive(
+                drive, lang_data_up, folder_id_up, lang_id_up, existing_file_id
+            )
+            config.setdefault(lang_id_up, {})["folder_id"] = folder_id_up
+            config[lang_id_up]["manifest_file_id"] = file_id
+        _save_drive_config(config)
+        print("\nManifest updated on Drive.")
 
     if not apply:
         print("\nRun with --apply to make these changes.")
