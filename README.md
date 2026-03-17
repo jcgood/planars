@@ -36,12 +36,15 @@ python -m venv .venv
 ### 1. Generate annotation forms
 
 ```bash
-python generate_sheets.py   # creates one Sheet per analysis class in Google Drive
+python generate_sheets.py   # creates sheets for new classes; skips existing ones
+python generate_sheets.py --force  # regenerate all from scratch
 ```
 
-Creates one Google Sheets file per analysis class with one tab per construction. Each tab has per-parameter dropdown validation and a free-text Comments column. Google Sheets is the definitive copy of annotation forms.
+Creates one Google Sheets file per analysis class with one tab per construction. Each tab has per-parameter dropdown validation and a free-text Comments column. Google Sheets is the definitive copy of annotation forms. On re-runs, only classes not yet in the Drive manifest are created.
 
 Authentication uses OAuth2. On first run a browser window opens for authorization; the token is cached at `~/.config/gspread/authorized_user.json`. OAuth credentials must be at `~/.config/planars/oauth_credentials.json` (override with `PLANARS_OAUTH_CREDENTIALS`).
+
+The manifest is stored on Google Drive as `manifest_{lang_id}.json` in the language folder. A local `drive_config.json` (gitignored) bootstraps the Drive lookup.
 
 ### 2. Annotate
 
@@ -50,7 +53,7 @@ Specialists fill in values in the shared Google Sheets. Keystone rows (`v:verbro
 ### 3. Import
 
 ```bash
-python import_sheets.py          # downloads filled sheets → TSVs in numbered output folders
+python import_sheets.py          # downloads filled sheets → TSVs in coded_data/
 python import_sheets.py --force  # overwrite existing files
 ```
 
@@ -64,16 +67,21 @@ From the repo root:
 python -m planars ciscategorial     <path/to/filled.tsv>
 python -m planars subspanrepetition <path/to/filled.tsv>
 python -m planars noninterruption   <path/to/filled.tsv>
+python -m planars stress            <path/to/filled.tsv>
+python -m planars aspiration        <path/to/filled.tsv>
 ```
 
 ## Maintaining sheets
 
 ```bash
 python update_sheets.py           # dry run — show what would change
-python update_sheets.py --apply   # add missing columns/rows to existing sheets
+python update_sheets.py --apply   # add missing rows/trailing columns to existing sheets
+
+python sync_params.py             # dry run — show param column changes needed
+python sync_params.py --apply     # insert new param columns, update dropdown validation
 ```
 
-Use `update_sheets.py` when the schema changes (e.g. a new trailing column is added) or when new elements are added to the planar structure. Does not handle position renumbering — see [issue #5](https://github.com/jcgood/planars/issues/5).
+Use `update_sheets.py` when new elements are added to the planar structure or a new trailing column (e.g. Comments) needs propagating. Use `sync_params.py` when `diagnostics.tsv` param columns change — it preserves existing annotations while inserting new columns before Comments.
 
 ### 5. Explore results interactively
 
@@ -91,7 +99,10 @@ Open `notebooks/span_results.ipynb`. Make sure the kernel in the top-right says 
 | `ciscategorial` | `V-combines`, `N-combines`, `A-combines` | 4 (strict/loose × complete/partial) |
 | `subspanrepetition` | `widescope_left`, `widescope_right`, `fillable_botheither_conjunct` | 20 (5 categories × 4) |
 | `noninterruption` | `free`, `multiple` | 4 strict spans (2 domain types × complete/partial) |
-| `stress` | `stressable`, `independence`, `left-interaction`, `right-interaction` | TBD |
+| `stress` | `stressable`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 4 (provisional — qualification rule under review) |
+| `aspiration` | `stressable`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 4 (provisional — qualification rule under review) |
+
+See `codebook.yaml` for qualification rules. Stress and aspiration entries are marked `[NEEDS REVIEW]`.
 
 ## Charting
 
@@ -106,7 +117,14 @@ fig.show()   # interactive Plotly figure
 fig.write_image("domains.pdf")  # or save to file
 ```
 
-`collect_all_spans` runs all analyses over all filled TSVs and returns a DataFrame with columns `Test_Labels`, `Analysis`, `Left_Edge`, `Right_Edge`, `Size`. `domain_chart` renders this as a horizontal segment chart with one row per span, colored by analysis type, with the keystone marked by a dotted line.
+`collect_all_spans` runs all analyses over all filled TSVs in `coded_data/` and returns a DataFrame with columns `Test_Labels`, `Analysis`, `Left_Edge`, `Right_Edge`, `Size`. `collect_all_spans_from_sheets(gc, manifest)` does the same but reads directly from Google Sheets (used by Colab notebooks). `domain_chart` renders this as a horizontal segment chart with one row per span, colored by analysis type, with the keystone marked by a dotted line.
+
+### Colab notebooks
+
+Two notebooks in `notebooks/` support browser-only use without a local install:
+
+- **`sync_colab.ipynb`** — for non-technical collaborators: set `DRIVE_FOLDER_PATH` and run all cells to view the domain chart
+- **`span_results_colab.ipynb`** — for contributors: step-by-step cells for setup, manifest loading, and charting
 
 ## diagnostics.tsv
 
@@ -119,25 +137,28 @@ stressable{y/n/both}, independence, left-interaction, right-interaction
 ## Repository structure
 
 ```
-planars/                      Core library
-  io.py                       Shared TSV loader
-  spans.py                    Span computation functions
-  ciscategorial.py            }
-  subspanrepetition.py        } Analysis modules
-  noninterruption.py          }
-  cli.py                      Command-line entry point
-01_planar_input/              Planar structure, diagnostics, make_forms.py utilities
-02_ciscategorial_output/      Ciscategorial data files
-03_subspanrepetition_output/  Subspan repetition data files
-04_noninterruption/           Non-interruption data files
-05_stress/                    Stress data files
-notebooks/                    Jupyter notebooks for interactive exploration
-tests/snapshots/              Regression test baselines
-codebook.yaml                 Parameter and term definitions
-generate_sheets.py            Create annotation forms in Google Drive
-update_sheets.py              Add missing columns/rows to existing sheets
-import_sheets.py              Download filled sheets to TSVs
-populate_sheets.py            One-time upload of legacy TSV data to sheets
+planars/                        Core library
+  io.py                         Shared TSV/Sheets loader
+  spans.py                      Span computation functions
+  ciscategorial.py              }
+  subspanrepetition.py          }
+  noninterruption.py            } Analysis modules
+  stress.py                     }
+  aspiration.py                 }
+  charts.py                     Span collection and domain chart
+  cli.py                        Command-line entry point
+coded_data/{lang_id}/           Annotation data per language
+  planar_input/                 Planar structure TSV + diagnostics.tsv
+  {class_name}/                 Filled TSVs per analysis class
+make_forms.py                   Planar structure and diagnostics utilities
+generate_sheets.py              Create annotation forms in Google Drive
+update_sheets.py                Add missing rows/trailing columns to existing sheets
+sync_params.py                  Sync param columns when diagnostics.tsv changes
+import_sheets.py                Download filled sheets to TSVs
+restructure_sheets.py           Archive and regenerate sheets after structural changes
+notebooks/                      Jupyter notebooks (local + Colab)
+tests/snapshots/                Regression test baselines
+codebook.yaml                   Parameter and term definitions
 ```
 
 ## Regression testing
