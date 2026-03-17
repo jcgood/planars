@@ -133,6 +133,30 @@ def _compute_tab_updates(
     return missing_cols, missing_rows
 
 
+def _clear_trailing_col_validation(
+    ws: gspread.Worksheet,
+    num_data_rows: int,
+    header: List[str],
+) -> None:
+    """Remove any data validation from trailing columns (e.g. Comments)."""
+    for col_name in _TRAILING_COLS:
+        if col_name not in header:
+            continue
+        col_idx = header.index(col_name)  # 0-based
+        ws.spreadsheet.batch_update({"requests": [{
+            "setDataValidation": {
+                "range": {
+                    "sheetId": ws.id,
+                    "startRowIndex": 1,
+                    "endRowIndex": 1 + num_data_rows,
+                    "startColumnIndex": col_idx,
+                    "endColumnIndex": col_idx + 1,
+                }
+                # No "rule" key = clear validation
+            }
+        }]})
+
+
 def _apply_tab_updates(
     ws: gspread.Worksheet,
     missing_cols: List[str],
@@ -163,14 +187,16 @@ def _apply_tab_updates(
     if missing_rows:
         ws.append_rows(missing_rows, value_input_option="RAW")
 
-    # Re-apply dropdown validation to cover newly appended rows
+    # Re-apply dropdown validation to param columns to cover newly appended rows
     if missing_rows and param_names:
         from generate_sheets import _format_and_validate
-        # We only need to extend validation to new rows; re-applying to all is safe
         total_rows = num_data_rows_current + len(missing_rows)
-        # Build per-col values: y/n for all params (trailing cols get no validation)
         per_col_values = [["y", "n"]] * len(param_names)
         _format_and_validate(ws, total_rows, per_col_values)
+
+    # Always clear validation from trailing columns (fixes any pre-existing incorrect validation)
+    total_rows = num_data_rows_current + len(missing_rows)
+    _clear_trailing_col_validation(ws, total_rows, header)
 
 
 # ---------------------------------------------------------------------------
@@ -231,6 +257,10 @@ def main() -> None:
 
                 if not missing_cols and not missing_rows:
                     print(f"    [{construction}] up to date")
+                    if apply:
+                        # Always clear trailing column validation as a repair step
+                        header = rows[0] if rows else []
+                        _clear_trailing_col_validation(ws, num_data_rows, header)
                     continue
 
                 any_changes = True

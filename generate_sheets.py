@@ -291,6 +291,17 @@ def _create_analysis_sheet(
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    force = "--force" in sys.argv
+
+    if MANIFEST_PATH.exists() and not force:
+        raise SystemExit(
+            f"sheets_manifest.json already exists — sheets have already been generated.\n"
+            f"  To update existing sheets:    python update_sheets.py --apply\n"
+            f"  To restructure after changes: python restructure_sheets.py --apply\n"
+            f"  To regenerate from scratch:   python generate_sheets.py --force\n"
+            f"  (--force will create duplicate sheets in Drive; delete the old ones manually)"
+        )
+
     # Find planar file
     planar_files = sorted(PLANAR_DIR.glob("planar_*.tsv"))
     if not planar_files:
