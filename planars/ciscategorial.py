@@ -6,8 +6,10 @@ from typing import Dict
 from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, loose_span
 
+_TRAILING_COLS = {"Comments"}
 
-def derive_v_ciscategorial_fractures(tsv_path: Path) -> Dict[str, object]:
+
+def derive_v_ciscategorial_fractures(tsv_path: Path, strict: bool = True) -> Dict[str, object]:
     """Derive v-ciscategorial fracture spans from a filled ciscategorial TSV.
 
     A position qualifies if elements have V-combines=y and all other params=n.
@@ -20,21 +22,29 @@ def derive_v_ciscategorial_fractures(tsv_path: Path) -> Dict[str, object]:
       - strict_partial_span, loose_partial_span
       - position_number_to_name
       - element_table: DataFrame with is_v_ciscategorial flag
+      - missing_data: {col: [elements]} for blank annotation cells (empty if none)
     """
     data_df, keystone_pos, pos_to_name, param_cols = load_filled_tsv(
-        tsv_path, required_params={"V-combines"}
+        tsv_path, required_params={"V-combines"}, strict=strict
     )
 
     if "V-combines" not in param_cols:
         raise ValueError(f"Expected a parameter column named 'V-combines'. Found: {param_cols}")
 
-    other_params = [c for c in param_cols if c != "V-combines"]
+    other_params = [c for c in param_cols if c != "V-combines" and c not in _TRAILING_COLS]
 
-    # Validate no blanks in all param cols (ciscategorial uses all of them)
-    for c in other_params:
-        if (data_df[c] == "").any():
-            bad = data_df.index[data_df[c] == ""].tolist()[:10]
-            raise ValueError(f"Blank value(s) in column '{c}' (example row indices: {bad}).")
+    if strict:
+        for c in other_params:
+            if (data_df[c] == "").any():
+                bad = data_df.index[data_df[c] == ""].tolist()[:10]
+                raise ValueError(f"Blank value(s) in column '{c}' (example row indices: {bad}).")
+
+    missing_data = {}
+    if not strict:
+        for c in ["V-combines"] + other_params:
+            blank_els = data_df.loc[data_df[c] == "", "Element"].tolist()
+            if blank_els:
+                missing_data[c] = blank_els
 
     is_v = data_df["V-combines"] == "y"
     for c in other_params:
@@ -59,13 +69,23 @@ def derive_v_ciscategorial_fractures(tsv_path: Path) -> Dict[str, object]:
         "loose_partial_span": loose_span(partial_positions, keystone_pos),
         "position_number_to_name": pos_to_name,
         "element_table": data_df,
+        "missing_data": missing_data,
     }
 
 
 def format_result(result: Dict[str, object]) -> str:
     p = result["position_number_to_name"]
     fmt = lambda span: fmt_span(span, p)
-    lines = [
+    lines = []
+    missing = result.get("missing_data", {})
+    if missing:
+        lines.append("NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.")
+        for col, elements in missing.items():
+            preview = elements[:5]
+            suffix = f" … ({len(elements)} total)" if len(elements) > 5 else ""
+            lines.append(f"  {col}: {preview}{suffix}")
+        lines.append("")
+    lines += [
         f"Keystone position: {result['keystone_position']} ({p.get(result['keystone_position'], '?')})",
         "",
         f"V-ciscategorial complete positions: {result['complete_positions']}",

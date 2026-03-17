@@ -17,7 +17,7 @@ _CATEGORIES = {
 }
 
 
-def derive_subspanrepetition_spans(tsv_path: Path) -> Dict[str, object]:
+def derive_subspanrepetition_spans(tsv_path: Path, strict: bool = True) -> Dict[str, object]:
     """Derive subspan repetition spans from a filled subspanrepetition TSV.
 
     Span categories (each with strict/loose x complete/partial = 20 spans total):
@@ -28,10 +28,17 @@ def derive_subspanrepetition_spans(tsv_path: Path) -> Dict[str, object]:
       maximum_narrowscope_right — widescope_right == 'n'
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
-    and for each category: complete_positions, partial_positions,
+    missing_data, and for each category: complete_positions, partial_positions,
     strict/loose x complete/partial spans.
     """
-    data_df, keystone_pos, pos_to_name, _ = load_filled_tsv(tsv_path, _REQUIRED_PARAMS)
+    data_df, keystone_pos, pos_to_name, _ = load_filled_tsv(tsv_path, _REQUIRED_PARAMS, strict=strict)
+
+    missing_data = {}
+    if not strict:
+        for c in _REQUIRED_PARAMS:
+            blank_els = data_df.loc[data_df[c] == "", "Element"].tolist()
+            if blank_els:
+                missing_data[c] = blank_els
 
     data_df["is_fillable"]         = data_df["fillable_botheither_conjunct"] == "y"
     data_df["is_widescope_left"]   = data_df["widescope_left"] == "y"
@@ -43,6 +50,7 @@ def derive_subspanrepetition_spans(tsv_path: Path) -> Dict[str, object]:
         "keystone_position": keystone_pos,
         "position_number_to_name": pos_to_name,
         "element_table": data_df,
+        "missing_data": missing_data,
     }
 
     for cat_name, flag_col in _CATEGORIES.items():
@@ -62,7 +70,16 @@ def derive_subspanrepetition_spans(tsv_path: Path) -> Dict[str, object]:
 def format_result(result: Dict[str, object]) -> str:
     p = result["position_number_to_name"]
     fmt = lambda span: fmt_span(span, p)
-    lines = [
+    lines = []
+    missing = result.get("missing_data", {})
+    if missing:
+        lines.append("NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.")
+        for col, elements in missing.items():
+            preview = elements[:5]
+            suffix = f" … ({len(elements)} total)" if len(elements) > 5 else ""
+            lines.append(f"  {col}: {preview}{suffix}")
+        lines.append("")
+    lines += [
         f"Keystone position: {result['keystone_position']} ({p.get(result['keystone_position'], '?')})",
     ]
     for k in _CATEGORIES:

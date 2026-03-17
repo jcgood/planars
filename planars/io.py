@@ -11,15 +11,18 @@ _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
 def load_filled_tsv(
     path: Path,
     required_params: Set[str],
+    strict: bool = True,
 ) -> Tuple[pd.DataFrame, int, Dict[int, str], List[str]]:
     """Load and validate a filled analysis TSV.
 
     Reads the file, normalizes column types, locates the keystone row
-    (Position_Name == 'v:verbroot'), and validates that no parameter cells
-    are blank in non-keystone rows.
+    (Position_Name == 'v:verbroot'), and optionally validates that no
+    parameter cells are blank in non-keystone rows.
 
     All non-structural columns are normalized (stripped, lowercased).
-    required_params are checked for existence and validated for blank values.
+    required_params are checked for existence. When strict=True (default),
+    blank values in required_params raise ValueError. When strict=False,
+    blanks are left as empty strings for the caller to handle.
 
     Returns:
         data_df:      DataFrame of non-keystone rows
@@ -57,7 +60,7 @@ def load_filled_tsv(
     data_df = df.loc[~keystone_mask].copy()
 
     for c in required_params:
-        if (data_df[c] == "").any():
+        if strict and (data_df[c] == "").any():
             bad = data_df.index[data_df[c] == ""].tolist()[:10]
             raise ValueError(f"Blank value(s) in column '{c}' (example row indices: {bad}).")
 
