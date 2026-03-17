@@ -79,6 +79,8 @@ This is a linguistic typology analysis project for morphosyntactic domain deriva
 
 `generate_snapshots.py` and `check_snapshots.py` at the repo root drive regression testing. Snapshots live in `tests/snapshots/`.
 
+`coded_data/synth0001/` is a synthetic second-language dataset for multi-language testing (not real data). It has a genuinely different planar structure (28 positions, keystone at 23) derived from `stan1293` by dropping 9 positions and flipping ~25% of parameter values. `tests/make_synthetic_lang.py` generates it (`--apply` to write, `--clean --apply` to remove).
+
 ## diagnostics.tsv format
 
 Parameters default to `y/n` dropdowns. To specify custom values use brace syntax:

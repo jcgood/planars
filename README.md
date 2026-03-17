@@ -164,6 +164,7 @@ planars/                        Core library
 coded_data/{lang_id}/           Annotation data per language
   planar_input/                 Planar structure TSV + diagnostics.tsv
   {class_name}/                 Filled TSVs per analysis class
+coded_data/synth0001/           Synthetic second-language dataset (not real data — for testing)
 make_forms.py                   Planar structure and diagnostics utilities
 generate_sheets.py              Create annotation forms in Google Drive
 update_sheets.py                Add missing rows/trailing columns to existing sheets
@@ -180,4 +181,14 @@ codebook.yaml                   Parameter and term definitions
 ```bash
 python generate_snapshots.py   # regenerate baselines
 python check_snapshots.py      # verify output matches baselines
+```
+
+## Multi-language testing
+
+`coded_data/synth0001/` is a synthetic second-language dataset derived from `stan1293` for testing multi-language code paths. It has a different planar structure (28 positions vs. 37, keystone at position 23 vs. 30) and quasi-randomly flipped parameter values. It is not real data.
+
+```bash
+python tests/make_synthetic_lang.py           # dry run
+python tests/make_synthetic_lang.py --apply   # regenerate synth0001
+python tests/make_synthetic_lang.py --clean --apply  # remove synth0001
 ```
