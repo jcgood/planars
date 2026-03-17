@@ -389,3 +389,25 @@ chart_labels:
       meaning: >
         Strict span over partial positions for the single-free domain
         (free=n OR (free=y AND multiple=n)).
+
+  stress:
+    note: "[NEEDS REVIEW] Labels are provisional pending confirmation of the qualification rule."
+    - label: "stress strict complete"
+      meaning: Strict span over complete positions for the stressable domain (stressable ∈ {y, both}).
+    - label: "stress loose complete"
+      meaning: Loose span over complete positions for the stressable domain.
+    - label: "stress strict partial"
+      meaning: Strict span over partial positions for the stressable domain.
+    - label: "stress loose partial"
+      meaning: Loose span over partial positions for the stressable domain.
+
+  aspiration:
+    note: "[NEEDS REVIEW] Labels are provisional pending confirmation of the qualification rule."
+    - label: "asp strict complete"
+      meaning: Strict span over complete positions for the aspirable domain (stressable ∈ {y, both}).
+    - label: "asp loose complete"
+      meaning: Loose span over complete positions for the aspirable domain.
+    - label: "asp strict partial"
+      meaning: Strict span over partial positions for the aspirable domain.
+    - label: "asp loose partial"
+      meaning: Loose span over partial positions for the aspirable domain.
