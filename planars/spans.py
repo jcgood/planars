@@ -5,6 +5,32 @@ from typing import Dict, Set, Tuple
 import pandas as pd
 
 
+def blocked_span(
+    all_positions: Set[int],
+    blocked_positions: Set[int],
+    keystone_pos: int,
+) -> Tuple[int, int]:
+    """Expand from keystone through all positions, stopping just before any blocked position.
+
+    The blocked position is excluded from the span. Used for stress domains where
+    the edge is defined by the first position containing a boundary-triggering element,
+    rather than by positions that qualify.
+    """
+    left = right = keystone_pos
+
+    for pos in sorted([p for p in all_positions if p < keystone_pos], reverse=True):
+        if pos in blocked_positions:
+            break
+        left = pos
+
+    for pos in sorted([p for p in all_positions if p > keystone_pos]):
+        if pos in blocked_positions:
+            break
+        right = pos
+
+    return left, right
+
+
 def fmt_span(span: Tuple[int, int], pos_to_name: Dict[int, str]) -> str:
     l, r = span
     return f"positions {l}\u2013{r}  ({pos_to_name.get(l, '?')} \u2192 {pos_to_name.get(r, '?')})"

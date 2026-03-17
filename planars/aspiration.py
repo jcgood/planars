@@ -4,15 +4,9 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple
 
 from planars.io import load_filled_tsv
-from planars.spans import fmt_span, loose_span, strict_span, position_sets_from_element_mask
+from planars.spans import blocked_span, fmt_span
 
-_REQUIRED_PARAMS = {"stressable"}
-
-# NOTE: The qualification rule below is provisional.
-# Aspiration shares parameters with stress (stressable, obligatory, independence,
-# left-interaction, right-interaction). Initial qualification mirrors the stress
-# module: a position qualifies if its elements can carry aspiration (stressable=y
-# or stressable=both). Refine once the analysis design is confirmed.
+_REQUIRED_PARAMS = {"stressable", "obligatory", "independence"}
 
 
 def derive_aspiration_domains(
@@ -23,14 +17,13 @@ def derive_aspiration_domains(
 ) -> Dict[str, object]:
     """Derive aspiration domain spans from a filled aspiration TSV.
 
-    Aspirable domain — positions where elements can carry aspiration:
-      complete: ALL elements have stressable=y or stressable=both
-      partial:  >=1 element has stressable=y or stressable=both
+    Mirrors the stress domain logic. Two domain types:
 
-    Returns strict and loose spans for each of the four combinations
-    (strict/loose × complete/partial).
+    Minimal aspiration domain — expand from ROOT; stop just before the first
+    position where any element has stressable ∈ {y, both} AND independence = y.
 
-    PROVISIONAL: qualification rule needs confirmation against codebook.yaml.
+    Maximal aspiration domain — expand from ROOT; stop just before the first
+    position where any element has obligatory = y AND independence = y.
     """
     if _data is not None:
         data_df, keystone_pos, pos_to_name, _ = _data
@@ -41,14 +34,27 @@ def derive_aspiration_domains(
 
     missing_data = {}
     if not strict:
-        blank_els = data_df.loc[data_df["stressable"] == "", "Element"].tolist()
-        if blank_els:
-            missing_data["stressable"] = blank_els
+        for c in sorted(_REQUIRED_PARAMS):
+            blank_els = data_df.loc[data_df[c] == "", "Element"].tolist()
+            if blank_els:
+                missing_data[c] = blank_els
 
-    data_df["qualifies"] = data_df["stressable"].isin({"y", "both"})
+    all_positions = set(data_df["Position_Number"].unique().tolist())
 
-    partial_positions, complete_positions = position_sets_from_element_mask(
-        data_df, data_df["qualifies"]
+    minimal_block_mask = (
+        data_df["stressable"].isin({"y", "both"}) &
+        (data_df["independence"] == "y")
+    )
+    minimal_blocked = set(
+        data_df.loc[minimal_block_mask, "Position_Number"].unique().tolist()
+    )
+
+    maximal_block_mask = (
+        (data_df["obligatory"] == "y") &
+        (data_df["independence"] == "y")
+    )
+    maximal_blocked = set(
+        data_df.loc[maximal_block_mask, "Position_Number"].unique().tolist()
     )
 
     return {
@@ -56,12 +62,10 @@ def derive_aspiration_domains(
         "position_number_to_name": pos_to_name,
         "element_table": data_df,
         "missing_data": missing_data,
-        "complete_positions": sorted(complete_positions),
-        "partial_positions":  sorted(partial_positions),
-        "strict_complete_span": strict_span(complete_positions, keystone_pos),
-        "loose_complete_span":  loose_span(complete_positions, keystone_pos),
-        "strict_partial_span":  strict_span(partial_positions, keystone_pos),
-        "loose_partial_span":   loose_span(partial_positions, keystone_pos),
+        "minimal_blocked_positions": sorted(minimal_blocked),
+        "maximal_blocked_positions": sorted(maximal_blocked),
+        "minimal_span": blocked_span(all_positions, minimal_blocked, keystone_pos),
+        "maximal_span": blocked_span(all_positions, maximal_blocked, keystone_pos),
     }
 
 
@@ -82,12 +86,10 @@ def format_result(result: Dict[str, object]) -> str:
     lines += [
         f"Keystone position: {result['keystone_position']} ({p.get(result['keystone_position'], '?')})",
         "",
-        f"Aspirable complete positions: {result['complete_positions']}",
-        f"Aspirable partial positions:  {result['partial_positions']}",
+        f"Minimal blocked positions: {result['minimal_blocked_positions']}",
+        f"Maximal blocked positions: {result['maximal_blocked_positions']}",
         "",
-        f"Strict complete span: {fmt(result['strict_complete_span'])}",
-        f"Loose complete span:  {fmt(result['loose_complete_span'])}",
-        f"Strict partial span:  {fmt(result['strict_partial_span'])}",
-        f"Loose partial span:   {fmt(result['loose_partial_span'])}",
+        f"Minimal aspiration span: {fmt(result['minimal_span'])}",
+        f"Maximal aspiration span: {fmt(result['maximal_span'])}",
     ]
     return "\n".join(lines)

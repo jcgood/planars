@@ -136,55 +136,59 @@ analyses:
 
   - name: stress
     description: >
-      [NEEDS REVIEW] Tests which positions fall within the prosodic stress domain
-      of the verbal planar structure. Parameters capture whether elements can bear
-      stress, whether stress is obligatory, whether stress is independent of
-      neighboring elements, and whether there are left- or right-ward stress
-      interactions.
+      Tests which positions fall within the prosodic stress domain of the verbal
+      planar structure. Two domain types are derived based on different notions of
+      stress domain boundary. Parameters capture whether elements can bear stress,
+      whether stress is obligatory, whether an element's stress is independent of
+      neighboring elements, and whether there are leftward or rightward stress
+      interactions (see issues #16, #17 for meso and interaction domains).
     parameters:
 
       - name: stressable
         values: [y, n, both]
         description: >
-          [NEEDS REVIEW] Whether the element can carry primary stress.
+          Whether the element can carry primary stress.
           y = always stressable; n = never stressable; both = variably stressable
           depending on context.
 
       - name: obligatory
         values: [y, n]
         description: >
-          [NEEDS REVIEW] Whether stress is obligatory on this element (i.e., the
-          element must bear stress when present).
+          Whether stress is obligatory on this element (i.e., the element must
+          bear stress when present).
 
       - name: independence
         values: [y, n]
         description: >
-          [NEEDS REVIEW] Whether the element's stress is independent of neighboring
-          elements — i.e., it does not participate in stress interactions with
-          adjacent positions.
+          Whether the element's stress is independent of neighboring elements —
+          i.e., it does not participate in stress interactions with adjacent
+          positions and forms its own stress domain.
 
       - name: left-interaction
         values: [y, n]
         description: >
-          [NEEDS REVIEW] Whether the element's stress interacts with elements to
-          its left (e.g., attracts or repels stress from the left neighbor).
+          [NEEDS REVIEW — see issue #17] Whether the element's stress interacts
+          with elements to its left.
 
       - name: right-interaction
         values: [y, n]
         description: >
-          [NEEDS REVIEW] Whether the element's stress interacts with elements to
-          its right.
+          [NEEDS REVIEW — see issue #17] Whether the element's stress interacts
+          with elements to its right.
 
     qualification_rule: >
-      [NEEDS REVIEW] Current implementation uses stressable ∈ {y, both} as the
-      qualification criterion (provisional). The intended domain logic — including
-      whether and how obligatory, independence, left-interaction, and
-      right-interaction factor into domain membership or produce distinct domain
-      types — has not yet been specified. Please describe:
-        1. What makes a position qualify (which param values, in which combination)?
-        2. How many domain types should be derived (one, or multiple like noninterruption)?
-        3. Should loose spans be computed (as in ciscategorial) or strict only (as in
-           noninterruption)?
+      Two domain types, each producing a single span (no complete/partial
+      distinction). Both use blocked_span: expand from ROOT in each direction,
+      stopping just before the first position where the blocking condition holds
+      for any element. The blocking position is excluded.
+
+      Minimal stress domain — blocked by: stressable ∈ {y, both} AND independence = y.
+        An independently-stressable element begins a new stress domain; the minimal
+        domain ends just before it.
+
+      Maximal stress domain — blocked by: obligatory = y AND independence = y.
+        An obligatorily-independent stress element creates a hard boundary; the
+        maximal domain extends up to but not including that position.
 
   - name: aspiration
     description: >
@@ -223,10 +227,10 @@ analyses:
           to its right.
 
     qualification_rule: >
-      [NEEDS REVIEW] Mirrors the provisional stress qualification rule
-      (stressable ∈ {y, both}). Same open questions apply — see stress entry above.
-      If aspiration and stress share domain logic, the two modules can be unified;
-      if they differ, specify the aspiration-specific rule here.
+      Mirrors the stress domain logic. Two domain types (minimal, maximal) using
+      blocked_span with the same blocking conditions as stress. If aspiration
+      requires different domain logic once data is collected, update this entry
+      and aspiration.py accordingly.
 
 # ---------------------------------------------------------------------------
 # SHARED PARAMETER VALUES
@@ -391,23 +395,18 @@ chart_labels:
         (free=n OR (free=y AND multiple=n)).
 
   stress:
-    note: "[NEEDS REVIEW] Labels are provisional pending confirmation of the qualification rule."
-    - label: "stress strict complete"
-      meaning: Strict span over complete positions for the stressable domain (stressable ∈ {y, both}).
-    - label: "stress loose complete"
-      meaning: Loose span over complete positions for the stressable domain.
-    - label: "stress strict partial"
-      meaning: Strict span over partial positions for the stressable domain.
-    - label: "stress loose partial"
-      meaning: Loose span over partial positions for the stressable domain.
+    - label: "stress minimal"
+      meaning: >
+        Span from ROOT outward, stopping just before the first position where any
+        element has stressable ∈ {y, both} AND independence = y (that position
+        begins a new independent stress domain).
+    - label: "stress maximal"
+      meaning: >
+        Span from ROOT outward, stopping just before the first position where any
+        element has obligatory = y AND independence = y (a hard stress domain boundary).
 
   aspiration:
-    note: "[NEEDS REVIEW] Labels are provisional pending confirmation of the qualification rule."
-    - label: "asp strict complete"
-      meaning: Strict span over complete positions for the aspirable domain (stressable ∈ {y, both}).
-    - label: "asp loose complete"
-      meaning: Loose span over complete positions for the aspirable domain.
-    - label: "asp strict partial"
-      meaning: Strict span over partial positions for the aspirable domain.
-    - label: "asp loose partial"
-      meaning: Loose span over partial positions for the aspirable domain.
+    - label: "asp minimal"
+      meaning: Minimal aspiration domain — mirrors stress minimal logic.
+    - label: "asp maximal"
+      meaning: Maximal aspiration domain — mirrors stress maximal logic.
