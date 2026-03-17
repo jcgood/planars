@@ -27,9 +27,8 @@ This toolkit builds on the theoretical framework developed in:
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python -m ipykernel install --user --name planars --display-name planars
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m ipykernel install --user --name planars --display-name planars
 ```
 
 ## Workflow

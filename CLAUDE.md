@@ -36,9 +36,8 @@ python check_snapshots.py      # verify current output matches snapshots
 **Setup** (first time or after recreating the venv):
 ```bash
 python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt          # includes jupyterlab
-python -m ipykernel install --user --name planars --display-name planars
+.venv/bin/python -m pip install -r requirements.txt          # includes jupyterlab
+.venv/bin/python -m ipykernel install --user --name planars --display-name planars
 ```
 The `-e .` line in `requirements.txt` installs the `planars` package in editable mode so notebooks can `import planars` directly. To re-register the kernel after recreating the venv, run the `ipykernel install` command again.
 
