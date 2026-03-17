@@ -25,7 +25,12 @@ This toolkit builds on the theoretical framework developed in:
 - [pandas](https://pandas.pydata.org/)
 - [gspread](https://docs.gspread.org/) + google-auth + google-api-python-client (Google Sheets workflow only)
 
-Install dependencies: `pip install -r requirements.txt`
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python -m ipykernel install --user --name planars --display-name planars
+```
 
 ## Workflow
 
@@ -71,6 +76,15 @@ python update_sheets.py --apply   # add missing columns/rows to existing sheets
 
 Use `update_sheets.py` when the schema changes (e.g. a new trailing column is added) or when new elements are added to the planar structure. Does not handle position renumbering — see [issue #5](https://github.com/jcgood/planars/issues/5).
 
+### 5. Explore results interactively
+
+```bash
+source .venv/bin/activate
+jupyter lab
+```
+
+Open `notebooks/span_results.ipynb`. Make sure the kernel in the top-right says **planars** (if not, go to **Kernel → Change Kernel** and select it). Run all cells with **Run → Run All Cells**. The notebook reads the filled TSVs directly and reports spans for all analyses, noting any positions with missing annotations.
+
 ## Analyses
 
 | Analysis | Parameters | Spans derived |
@@ -103,6 +117,7 @@ planars/                      Core library
 03_subspanrepetition_output/  Subspan repetition data files
 04_noninterruption/           Non-interruption data files
 05_stress/                    Stress data files
+notebooks/                    Jupyter notebooks for interactive exploration
 tests/snapshots/              Regression test baselines
 codebook.yaml                 Parameter and term definitions
 generate_sheets.py            Create annotation forms in Google Drive
