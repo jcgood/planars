@@ -265,8 +265,21 @@ def main() -> None:
             removed_params = [p for p in current_params if p not in expected_set]
 
             if not new_params and not removed_params:
-                if not renames:
-                    print(f"  [{class_name}/{construction}] OK — no changes")
+                # Sheet columns are correct; still sync manifest construction_params
+                # in case they were updated out-of-band (e.g. manual column rename).
+                if apply:
+                    cp = sheet_info.setdefault("construction_params", {})
+                    existing_cp = cp.get(construction, {})
+                    if existing_cp.get("param_names") != exp_params or existing_cp.get("param_values") != exp_values:
+                        cp[construction] = {"param_names": exp_params, "param_values": exp_values}
+                        manifest_changed = True
+                        print(f"  [{class_name}/{construction}] Manifest construction_params updated")
+                    else:
+                        if not renames:
+                            print(f"  [{class_name}/{construction}] OK — no changes")
+                else:
+                    if not renames:
+                        print(f"  [{class_name}/{construction}] OK — no changes")
                 continue
 
             any_changes = True
