@@ -51,13 +51,17 @@ _NONINT_SPANS = [
 ]
 
 _STRESS_SPANS = [
-    ("minimal_span", "stress minimal"),
-    ("maximal_span", "stress maximal"),
+    ("minimal_partial_span",  "stress minimal partial"),
+    ("minimal_complete_span", "stress minimal complete"),
+    ("maximal_partial_span",  "stress maximal partial"),
+    ("maximal_complete_span", "stress maximal complete"),
 ]
 
 _ASPIRATION_SPANS = [
-    ("minimal_span", "asp minimal"),
-    ("maximal_span", "asp maximal"),
+    ("minimal_partial_span",  "asp minimal partial"),
+    ("minimal_complete_span", "asp minimal complete"),
+    ("maximal_partial_span",  "asp maximal partial"),
+    ("maximal_complete_span", "asp maximal complete"),
 ]
 
 # --- Span extraction ---
