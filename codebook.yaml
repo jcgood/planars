@@ -410,22 +410,34 @@ chart_labels:
 
   stress:
     note: >
-      Two labels (no complete/partial distinction). The keystone can trigger
+      Four labels (minimal/maximal × partial/complete). The keystone can trigger
       a blocking condition but is not itself a span endpoint.
-    - label: "stress minimal"
+    - label: "stress minimal partial"
       meaning: >
-        Span from ROOT outward, stopping just before the first position where any
-        element (including the keystone) has stressable ∈ {y, both} AND independence = y
-        (that position begins a new independent stress domain).
-    - label: "stress maximal"
+        Minimal stress domain, partial blocking: expand from ROOT, stopping just before
+        the first position where ANY element has stressed ∈ {y, both} AND independence = y.
+        Partial blocking is easier to trigger → smaller domain.
+    - label: "stress minimal complete"
       meaning: >
-        Span from ROOT outward, stopping just before the first position where any
-        element (including the keystone) has obligatory = y AND independence = y
-        (a hard stress domain boundary).
+        Minimal stress domain, complete blocking: expand from ROOT, stopping just before
+        the first position where ALL elements have stressed ∈ {y, both} AND independence = y.
+        Complete blocking is harder to trigger → larger domain.
+    - label: "stress maximal partial"
+      meaning: >
+        Maximal stress domain, partial blocking: expand from ROOT, stopping just before
+        the first position where ANY element has obligatory = y AND independence = y.
+    - label: "stress maximal complete"
+      meaning: >
+        Maximal stress domain, complete blocking: expand from ROOT, stopping just before
+        the first position where ALL elements have obligatory = y AND independence = y.
 
   aspiration:
-    note: Two labels — mirrors stress label structure.
-    - label: "asp minimal"
-      meaning: Minimal aspiration domain — mirrors stress minimal logic.
-    - label: "asp maximal"
-      meaning: Maximal aspiration domain — mirrors stress maximal logic.
+    note: Four labels — mirrors stress label structure.
+    - label: "asp minimal partial"
+      meaning: Minimal aspiration domain, partial blocking — mirrors stress minimal partial logic.
+    - label: "asp minimal complete"
+      meaning: Minimal aspiration domain, complete blocking — mirrors stress minimal complete logic.
+    - label: "asp maximal partial"
+      meaning: Maximal aspiration domain, partial blocking — mirrors stress maximal partial logic.
+    - label: "asp maximal complete"
+      meaning: Maximal aspiration domain, complete blocking — mirrors stress maximal complete logic.
