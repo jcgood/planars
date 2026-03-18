@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"systemMessage\": \"📋 Documentation checklist — did you update any of these?\\n  • CLAUDE.md        (architecture, scripts, conventions)\\n  • codebook.yaml    (parameters, analyses, qualification rules)\\n  • README.md        (user-facing workflow, setup, dependencies)\\n  • notebooks/sync_colab.ipynb or span_results_colab.ipynb\"}'"
+          }
+        ]
+      }
+    ]
+  }
+}

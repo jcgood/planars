@@ -110,6 +110,20 @@ Personal working area not part of the shared analysis pipeline:
 - `scripts/` — active R and Python scripts for visualization and analysis (constituency forests, domain charts, tree traversal, etc.)
 - `OlderFiles/` — archive of older scripts and data, including prior versions of planar_tables and scripts
 
+## Documentation maintenance
+
+Keep the following files up to date as the project evolves. Check each one at the end of any session where relevant changes were made.
+
+| File | Update when |
+|------|-------------|
+| `CLAUDE.md` | Architecture changes, new scripts, new conventions, workflow changes |
+| `codebook.yaml` | New parameters, new analyses, qualification rules change, `[PLACEHOLDER]` or `[NEEDS REVIEW]` entries resolved |
+| `README.md` | User-facing workflow changes, setup instructions change, new dependencies |
+| `notebooks/sync_colab.ipynb` | Contributor-facing workflow changes |
+| `notebooks/span_results_colab.ipynb` | Director-facing workflow changes |
+
+When in doubt, update. These files are the primary onboarding resource for collaborators and future contributors.
+
 ## Issue tracking
 
 Feature requests and bugs are tracked on GitHub Issues: https://github.com/jcgood/planars/issues

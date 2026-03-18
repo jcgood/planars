@@ -125,20 +125,22 @@ Two Colab notebooks support browser-only use without installing anything locally
 
 **Contributor notebook (`sync_colab.ipynb`) — for annotators**
 
-Intended for language contributors (e.g. John) working on a single language. Shows a domain chart for that language only.
+Intended for language contributors working on a single language. Shows a domain chart for that language only. The coordinator shares this notebook via Google Drive (stored in the language's Drive folder) with `DRIVE_FOLDER_ID` pre-set.
 
-1. Go to [colab.research.google.com](https://colab.research.google.com)
-2. Choose **File → Open notebook → Upload** and upload `notebooks/sync_colab.ipynb` from this repo
-3. In the first cell, set `DRIVE_FOLDER_PATH` to your planars Drive folder (e.g. `/content/drive/MyDrive/planars — stan1293`)
-4. Choose **Runtime → Run all**
-5. When prompted, sign in with your Google account and click through the permissions
-6. The domain chart appears at the bottom of the page
+1. Open the shared notebook link in Google Drive — it opens in Colab automatically
+2. Choose **Runtime → Run all**
+3. When prompted, sign in with your Google account and allow access
+4. The domain chart appears at the bottom of the page
+
+If setting up for a new language, set `DRIVE_FOLDER_ID` in the configure cell to the Drive folder ID (the alphanumeric string at the end of the folder's URL).
 
 **Director notebook (`span_results_colab.ipynb`) — for project directors**
 
 Shows full per-construction text reports and one domain chart per language across all languages in the manifest. Intended for project directors reviewing the full dataset.
 
-Same upload steps as above. Cells are split into Setup, Configure, Load manifest, per-analysis report sections, and Domain chart. Run individual sections to inspect one analysis at a time, or use **Runtime → Run all** for the complete output.
+1. Run the **Setup** cell — installs planars if needed and requests Google permissions (once per session)
+2. Set `DRIVE_FOLDER_ID` in the **Configure** cell
+3. Run **Load manifest**, then run analysis and chart cells as needed, or use **Runtime → Run all**
 
 ## diagnostics.tsv
 
