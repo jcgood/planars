@@ -6,9 +6,9 @@ from typing import Dict, Optional, Tuple
 import pandas as pd
 
 from planars.io import load_filled_tsv
-from planars.spans import blocked_span, fmt_span
+from planars.spans import blocked_span, fmt_span, position_sets_from_element_mask
 
-_REQUIRED_PARAMS = {"stressable", "obligatory", "independence"}
+_REQUIRED_PARAMS = {"stressed", "obligatory", "independence"}
 
 
 def derive_aspiration_domains(
@@ -19,13 +19,14 @@ def derive_aspiration_domains(
 ) -> Dict[str, object]:
     """Derive aspiration domain spans from a filled aspiration TSV.
 
-    Mirrors the stress domain logic. Two domain types:
+    Mirrors the stress domain logic. Two domain types, each with complete/partial
+    qualification = 4 spans:
 
     Minimal aspiration domain — expand from ROOT; stop just before the first
-    position where any element has stressable ∈ {y, both} AND independence = y.
+    position where any/all elements have stressed ∈ {y, both} AND independence = y.
 
     Maximal aspiration domain — expand from ROOT; stop just before the first
-    position where any element has obligatory = y AND independence = y.
+    position where any/all elements have obligatory = y AND independence = y.
     """
     if _data is not None:
         data_df, keystone_pos, pos_to_name, _, keystone_df = _data
@@ -47,19 +48,19 @@ def derive_aspiration_domains(
     blocking_df = pd.concat([data_df, keystone_df], ignore_index=True)
 
     minimal_block_mask = (
-        blocking_df["stressable"].isin({"y", "both"}) &
+        blocking_df["stressed"].isin({"y", "both"}) &
         (blocking_df["independence"] == "y")
     )
-    minimal_blocked = set(
-        blocking_df.loc[minimal_block_mask, "Position_Number"].unique().tolist()
+    minimal_partial_blocked, minimal_complete_blocked = position_sets_from_element_mask(
+        blocking_df, minimal_block_mask
     )
 
     maximal_block_mask = (
         (blocking_df["obligatory"] == "y") &
         (blocking_df["independence"] == "y")
     )
-    maximal_blocked = set(
-        blocking_df.loc[maximal_block_mask, "Position_Number"].unique().tolist()
+    maximal_partial_blocked, maximal_complete_blocked = position_sets_from_element_mask(
+        blocking_df, maximal_block_mask
     )
 
     return {
@@ -67,10 +68,14 @@ def derive_aspiration_domains(
         "position_number_to_name": pos_to_name,
         "element_table": data_df,
         "missing_data": missing_data,
-        "minimal_blocked_positions": sorted(minimal_blocked),
-        "maximal_blocked_positions": sorted(maximal_blocked),
-        "minimal_span": blocked_span(all_positions, minimal_blocked, keystone_pos),
-        "maximal_span": blocked_span(all_positions, maximal_blocked, keystone_pos),
+        "minimal_partial_blocked_positions": sorted(minimal_partial_blocked),
+        "minimal_complete_blocked_positions": sorted(minimal_complete_blocked),
+        "maximal_partial_blocked_positions": sorted(maximal_partial_blocked),
+        "maximal_complete_blocked_positions": sorted(maximal_complete_blocked),
+        "minimal_partial_span": blocked_span(all_positions, minimal_partial_blocked, keystone_pos),
+        "minimal_complete_span": blocked_span(all_positions, minimal_complete_blocked, keystone_pos),
+        "maximal_partial_span": blocked_span(all_positions, maximal_partial_blocked, keystone_pos),
+        "maximal_complete_span": blocked_span(all_positions, maximal_complete_blocked, keystone_pos),
     }
 
 
@@ -91,10 +96,14 @@ def format_result(result: Dict[str, object]) -> str:
     lines += [
         f"Keystone position: {result['keystone_position']} ({p.get(result['keystone_position'], '?')})",
         "",
-        f"Minimal blocked positions: {result['minimal_blocked_positions']}",
-        f"Maximal blocked positions: {result['maximal_blocked_positions']}",
+        f"Minimal partial blocked positions: {result['minimal_partial_blocked_positions']}",
+        f"Minimal complete blocked positions: {result['minimal_complete_blocked_positions']}",
+        f"Maximal partial blocked positions:  {result['maximal_partial_blocked_positions']}",
+        f"Maximal complete blocked positions: {result['maximal_complete_blocked_positions']}",
         "",
-        f"Minimal aspiration span: {fmt(result['minimal_span'])}",
-        f"Maximal aspiration span: {fmt(result['maximal_span'])}",
+        f"Minimal aspiration span (partial):  {fmt(result['minimal_partial_span'])}",
+        f"Minimal aspiration span (complete): {fmt(result['minimal_complete_span'])}",
+        f"Maximal aspiration span (partial):  {fmt(result['maximal_partial_span'])}",
+        f"Maximal aspiration span (complete): {fmt(result['maximal_complete_span'])}",
     ]
     return "\n".join(lines)
