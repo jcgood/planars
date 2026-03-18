@@ -99,22 +99,21 @@ Open `notebooks/span_results.ipynb`. Make sure the kernel in the top-right says 
 | `ciscategorial` | `V-combines`, `N-combines`, `A-combines` | 4 (strict/loose × complete/partial) |
 | `subspanrepetition` | `widescope_left`, `widescope_right`, `fillable_botheither_conjunct` | 20 (5 categories × 4) |
 | `noninterruption` | `free`, `multiple` | 4 strict spans (2 domain types × complete/partial) |
-| `stress` | `stressable`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 2 (minimal and maximal) |
-| `aspiration` | `stressable`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 2 (minimal and maximal) |
+| `stress` | `stressed`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 4 (2 domain types × complete/partial) |
+| `aspiration` | `stressed`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 4 (2 domain types × complete/partial) |
 
-Stress and aspiration use `blocked_span`: expand from the keystone outward, stopping just before the first blocking position. The keystone itself can trigger a blocking condition. No complete/partial distinction — a single span per domain type. See `codebook.yaml` for qualification rules; stress and aspiration entries are marked `[NEEDS REVIEW]` for `left-interaction` and `right-interaction` parameters.
+Stress and aspiration use `blocked_span`: expand from the keystone outward, stopping just before the first blocking position. The keystone itself can trigger a blocking condition. Two domain types (minimal, maximal), each with a complete/partial distinction = 4 spans per analysis. See `codebook.yaml` for qualification rules; `left-interaction` and `right-interaction` parameters are marked `[NEEDS REVIEW]`.
 
 ## Charting
 
 `planars.charts` provides two functions for visualizing span results:
 
 ```python
-from planars.charts import collect_all_spans, domain_chart
+from planars.charts import collect_all_spans, charts_by_language
 
-df, keystone_pos, pos_to_name = collect_all_spans(repo_root)
-fig = domain_chart(df, keystone_pos, pos_to_name)
-fig.show()   # interactive Plotly figure
-fig.write_image("domains.pdf")  # or save to file
+df, lang_meta = collect_all_spans(repo_root)
+for lang_id, fig in charts_by_language(df, lang_meta).items():
+    fig.show()   # interactive Plotly figure
 ```
 
 `collect_all_spans` runs all analyses over all filled TSVs in `coded_data/` and returns `(df, lang_meta)`. The DataFrame has columns `Language`, `Test_Labels`, `Analysis`, `Left_Edge`, `Right_Edge`, `Size`. `lang_meta` is a dict keyed by language ID, each entry holding that language's `keystone_pos` and `pos_to_name` — languages have independent planar structures and are never mixed. `collect_all_spans_from_sheets(gc, manifest)` does the same but reads directly from Google Sheets. `domain_chart(df, keystone_pos, pos_to_name)` renders a single-language DataFrame as a horizontal segment chart. `charts_by_language(df, lang_meta)` produces one chart per language and returns `dict[lang_id, Figure]`.
@@ -147,7 +146,7 @@ Shows full per-construction text reports and one domain chart per language acros
 Controls which analyses and constructions are generated for each language. Parameters default to `y/n` dropdowns; custom values use brace syntax:
 
 ```
-stressable{y/n/both}, independence, left-interaction, right-interaction
+stressed{y/n/both}, independence, left-interaction, right-interaction
 ```
 
 ## Repository structure
