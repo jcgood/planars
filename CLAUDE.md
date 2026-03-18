@@ -64,7 +64,8 @@ This is a linguistic typology analysis project for morphosyntactic domain deriva
    - `ciscategorial.py`: A position qualifies if elements have `V-combines=y` and all other params `=n`. Returns 4 spans (strict/loose × complete/partial).
    - `subspanrepetition.py`: 5 span categories (fillable, widescope_left/right, narrowscope_left/right), each with 4 spans = 20 total.
    - `noninterruption.py`: Two domain types (no-free: `free=n`; single-free: `free=n` or `free=y,multiple=n`), each with complete/partial = 4 strict spans.
-   - `stress.py`, `aspiration.py`: Use `blocked_span` — expand from keystone outward, stopping just before the first position where the blocking condition holds for any element (including the keystone itself). Two domain types, each returning 1 span = 2 spans total. Minimal: blocked by `stressable ∈ {y, both} AND independence=y`. Maximal: blocked by `obligatory=y AND independence=y`. See `codebook.yaml` `[NEEDS REVIEW]` entries for open questions on `left-interaction`, `right-interaction`, and meso/interaction domains.
+   - `stress.py`: Uses `blocked_span` with complete/partial distinction — expand from keystone outward, stopping just before the first position where the blocking condition holds. Two domain types, each with complete/partial = 4 spans total. Partial blocking: any element in the position satisfies the condition (smaller domain). Complete blocking: all elements satisfy the condition (larger domain). Minimal: blocked by `stressed ∈ {y, both} AND independence=y`. Maximal: blocked by `obligatory=y AND independence=y`. The keystone always remains in the domain. See `codebook.yaml` for open questions on `left-interaction`, `right-interaction`, and meso/interaction domains (issues #16, #17).
+   - `aspiration.py`: `[NEEDS REVIEW]` — mirrors stress structure but qualification rules are provisional. See `codebook.yaml`.
 
 ## Package structure
 
@@ -86,7 +87,7 @@ This is a linguistic typology analysis project for morphosyntactic domain deriva
 Parameters default to `y/n` dropdowns. To specify custom values use brace syntax:
 
 ```
-stressable{y/n/both}, independence, left-interaction, right-interaction
+stressed{y/n/both}, independence, left-interaction, right-interaction
 ```
 
 `make_forms.py` parses this into `(param_names, param_values)`. `generate_sheets.py` applies per-column dropdown validation and appends a free-text `Comments` column to every tab. `import_sheets.py` validates each parameter against its allowed set (always also accepts `na` and `?`) and passes Comments through unchanged.
@@ -95,7 +96,7 @@ stressable{y/n/both}, independence, left-interaction, right-interaction
 
 ## Codebook
 
-`codebook.yaml` at the repo root is the source of truth for parameter definitions, valid values, analytical terms (keystone, partial, complete, strict, loose), and qualification rules per analysis. Entries marked `[PLACEHOLDER]` need linguistic descriptions; entries marked `[NEEDS REVIEW]` have provisional rules that need confirmation (currently stress and aspiration).
+`codebook.yaml` at the repo root is the source of truth for parameter definitions, valid values, analytical terms (keystone, partial, complete, strict, loose), and qualification rules per analysis. Entries marked `[PLACEHOLDER]` need linguistic descriptions; entries marked `[NEEDS REVIEW]` have provisional rules that need confirmation (currently aspiration; stress qualification rule is settled but `left-interaction` and `right-interaction` params remain under review).
 
 A rendering script (`render_codebook.py`) will be added later to produce human-readable output from this file.
 
