@@ -122,6 +122,7 @@ Keep the following files up to date as the project evolves. Check each one at th
 | `README.md` | User-facing workflow changes, setup instructions change, new dependencies |
 | `notebooks/sync_colab.ipynb` | Contributor-facing workflow changes |
 | `notebooks/span_results_colab.ipynb` | Director-facing workflow changes |
+| `pyproject.toml` version + PyPI upload | Any change to `planars/` library code |
 
 When in doubt, update. These files are the primary onboarding resource for collaborators and future contributors.
 
