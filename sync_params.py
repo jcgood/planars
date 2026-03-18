@@ -2,15 +2,17 @@
 """Sync param columns in existing Google Sheets when diagnostics.tsv changes.
 
 Usage:
-    python sync_params.py          # dry run — shows what would change
-    python sync_params.py --apply  # apply changes to sheets
-    python sync_params.py --apply --remove  # also remove columns not in diagnostics
+    python sync_params.py                              # dry run — shows what would change
+    python sync_params.py --apply                      # apply changes to sheets
+    python sync_params.py --apply --remove             # also remove columns not in diagnostics
+    python sync_params.py --apply --rename old:new     # rename a column header in all sheets
 
 This script:
   - Reads diagnostics.tsv to get the expected params for each class/construction
   - Compares against current column headers in each sheet tab
   - In --apply mode: inserts new param columns before Comments, applies dropdown validation
   - Warns about params present in sheets but not in diagnostics (requires --remove to delete)
+  - --rename renames a column header in-place, preserving all cell values and validation
 """
 from __future__ import annotations
 
@@ -61,6 +63,21 @@ def _get_current_params(ws: gspread.Worksheet) -> Tuple[List[str], int]:
             break
         params.append(header[i])
     return params, comments_col
+
+
+# ---------------------------------------------------------------------------
+# Column rename
+# ---------------------------------------------------------------------------
+
+def _rename_column(ws: gspread.Worksheet, old_name: str, new_name: str) -> bool:
+    """Rename a column header in-place. Returns True if found and renamed."""
+    header = ws.row_values(1)
+    try:
+        col_1based = header.index(old_name) + 1
+    except ValueError:
+        return False
+    ws.update_cell(1, col_1based, new_name)
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -150,9 +167,28 @@ def _insert_param_columns(
 # Main
 # ---------------------------------------------------------------------------
 
+def _parse_renames() -> Dict[str, str]:
+    """Parse --rename old:new pairs from sys.argv."""
+    renames = {}
+    args = sys.argv[1:]
+    for i, arg in enumerate(args):
+        if arg == "--rename" and i + 1 < len(args):
+            pair = args[i + 1]
+            if ":" in pair:
+                old, new = pair.split(":", 1)
+                renames[old.strip()] = new.strip()
+        elif arg.startswith("--rename="):
+            pair = arg[len("--rename="):]
+            if ":" in pair:
+                old, new = pair.split(":", 1)
+                renames[old.strip()] = new.strip()
+    return renames
+
+
 def main() -> None:
     apply = "--apply" in sys.argv
     remove = "--remove" in sys.argv
+    renames = _parse_renames()
 
     # Find planar file to establish lang_id and DATA_DIR
     planar_files = sorted(CODED_DATA.glob("*/planar_input/planar_*.tsv"))
@@ -172,6 +208,8 @@ def main() -> None:
 
     print(f"Language: {lang_id}")
     print(f"Mode:     {'apply' if apply else 'dry run'}")
+    if renames:
+        print(f"Renames:  {renames}")
     print()
 
     print("Connecting to Google APIs...")
@@ -197,6 +235,27 @@ def main() -> None:
                 print(f"  [{class_name}/{construction}] Tab not found — skipping")
                 continue
 
+            # Apply renames first so add/remove detection sees the updated headers
+            if renames:
+                for old_name, new_name in renames.items():
+                    found = old_name in ws.row_values(1)
+                    if found:
+                        print(f"  [{class_name}/{construction}] Rename: {old_name} → {new_name}")
+                        if apply:
+                            _rename_column(ws, old_name, new_name)
+                            any_changes = True
+                            # Update manifest construction_params
+                            cp = sheet_info.setdefault("construction_params", {})
+                            cp.setdefault(construction, {})
+                            param_names = cp[construction].get("param_names", [])
+                            cp[construction]["param_names"] = [
+                                new_name if p == old_name else p for p in param_names
+                            ]
+                            manifest_changed = True
+                            print(f"    Renamed.")
+                    else:
+                        print(f"  [{class_name}/{construction}] Rename: {old_name} not found — skipping")
+
             current_params, comments_col = _get_current_params(ws)
             current_set = set(current_params)
             expected_set = set(exp_params)
@@ -206,7 +265,8 @@ def main() -> None:
             removed_params = [p for p in current_params if p not in expected_set]
 
             if not new_params and not removed_params:
-                print(f"  [{class_name}/{construction}] OK — no changes")
+                if not renames:
+                    print(f"  [{class_name}/{construction}] OK — no changes")
                 continue
 
             any_changes = True

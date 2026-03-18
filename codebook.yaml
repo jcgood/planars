@@ -200,9 +200,6 @@ analyses:
         An obligatorily-independent stress element creates a hard boundary; the
         maximal domain extends up to but not including that position.
 
-      [Claude: Please update as needed to handle the fact that complete/partial still applies
-      to be consistent.}
-
   - name: aspiration
     description: >
       [NEEDS REVIEW] Tests which positions fall within the aspiration domain of

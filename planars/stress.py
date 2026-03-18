@@ -6,9 +6,9 @@ from typing import Dict, Optional, Tuple
 import pandas as pd
 
 from planars.io import load_filled_tsv
-from planars.spans import blocked_span, fmt_span
+from planars.spans import blocked_span, fmt_span, position_sets_from_element_mask
 
-_REQUIRED_PARAMS = {"stressable", "obligatory", "independence"}
+_REQUIRED_PARAMS = {"stressed", "obligatory", "independence"}
 
 
 def derive_stress_domains(
@@ -19,15 +19,21 @@ def derive_stress_domains(
 ) -> Dict[str, object]:
     """Derive stress domain spans from a filled stress TSV.
 
-    Two domain types, each producing a single span:
+    Two domain types, each with complete/partial qualification = 4 spans:
 
     Minimal stress domain — expand from ROOT; stop just before the first position
-    (going outward in each direction) where any element has stressable ∈ {y, both}
-    AND independence = y. That position is excluded (it begins a new stress domain).
+    (going outward in each direction) where the blocking condition holds.
+    Blocking condition: stressed ∈ {y, both} AND independence = y.
+      partial:  any element in the position satisfies the condition (smaller domain)
+      complete: all elements in the position satisfy the condition (larger domain)
 
     Maximal stress domain — expand from ROOT; stop just before the first position
-    where any element has obligatory = y AND independence = y. Everything before
-    that blocking position is included.
+    where any/all elements have obligatory = y AND independence = y.
+      partial:  any element in the position satisfies the condition (smaller domain)
+      complete: all elements in the position satisfy the condition (larger domain)
+
+    The keystone (v:verbroot) is always part of the domain. Its parameter values
+    participate in blocking checks but it is never excluded from the span.
     """
     if _data is not None:
         data_df, keystone_pos, pos_to_name, _, keystone_df = _data
@@ -46,25 +52,25 @@ def derive_stress_domains(
     all_positions = set(data_df["Position_Number"].unique().tolist())
 
     # Include keystone rows in blocking checks so the ROOT position can itself
-    # trigger a domain boundary (e.g. obligatory=y AND independence=y on the ROOT).
+    # trigger a domain boundary, while always remaining part of the span.
     blocking_df = pd.concat([data_df, keystone_df], ignore_index=True)
 
-    # Minimal: blocked by (stressable ∈ {y, both}) AND (independence = y)
+    # Minimal: blocked by stressed ∈ {y, both} AND independence = y
     minimal_block_mask = (
-        blocking_df["stressable"].isin({"y", "both"}) &
+        blocking_df["stressed"].isin({"y", "both"}) &
         (blocking_df["independence"] == "y")
     )
-    minimal_blocked = set(
-        blocking_df.loc[minimal_block_mask, "Position_Number"].unique().tolist()
+    minimal_partial_blocked, minimal_complete_blocked = position_sets_from_element_mask(
+        blocking_df, minimal_block_mask
     )
 
-    # Maximal: blocked by (obligatory = y) AND (independence = y)
+    # Maximal: blocked by obligatory = y AND independence = y
     maximal_block_mask = (
         (blocking_df["obligatory"] == "y") &
         (blocking_df["independence"] == "y")
     )
-    maximal_blocked = set(
-        blocking_df.loc[maximal_block_mask, "Position_Number"].unique().tolist()
+    maximal_partial_blocked, maximal_complete_blocked = position_sets_from_element_mask(
+        blocking_df, maximal_block_mask
     )
 
     return {
@@ -72,10 +78,14 @@ def derive_stress_domains(
         "position_number_to_name": pos_to_name,
         "element_table": data_df,
         "missing_data": missing_data,
-        "minimal_blocked_positions": sorted(minimal_blocked),
-        "maximal_blocked_positions": sorted(maximal_blocked),
-        "minimal_span": blocked_span(all_positions, minimal_blocked, keystone_pos),
-        "maximal_span": blocked_span(all_positions, maximal_blocked, keystone_pos),
+        "minimal_partial_blocked_positions": sorted(minimal_partial_blocked),
+        "minimal_complete_blocked_positions": sorted(minimal_complete_blocked),
+        "maximal_partial_blocked_positions": sorted(maximal_partial_blocked),
+        "maximal_complete_blocked_positions": sorted(maximal_complete_blocked),
+        "minimal_partial_span": blocked_span(all_positions, minimal_partial_blocked, keystone_pos),
+        "minimal_complete_span": blocked_span(all_positions, minimal_complete_blocked, keystone_pos),
+        "maximal_partial_span": blocked_span(all_positions, maximal_partial_blocked, keystone_pos),
+        "maximal_complete_span": blocked_span(all_positions, maximal_complete_blocked, keystone_pos),
     }
 
 
@@ -96,10 +106,14 @@ def format_result(result: Dict[str, object]) -> str:
     lines += [
         f"Keystone position: {result['keystone_position']} ({p.get(result['keystone_position'], '?')})",
         "",
-        f"Minimal blocked positions: {result['minimal_blocked_positions']}",
-        f"Maximal blocked positions: {result['maximal_blocked_positions']}",
+        f"Minimal partial blocked positions: {result['minimal_partial_blocked_positions']}",
+        f"Minimal complete blocked positions: {result['minimal_complete_blocked_positions']}",
+        f"Maximal partial blocked positions:  {result['maximal_partial_blocked_positions']}",
+        f"Maximal complete blocked positions: {result['maximal_complete_blocked_positions']}",
         "",
-        f"Minimal stress span: {fmt(result['minimal_span'])}",
-        f"Maximal stress span: {fmt(result['maximal_span'])}",
+        f"Minimal stress span (partial):  {fmt(result['minimal_partial_span'])}",
+        f"Minimal stress span (complete): {fmt(result['minimal_complete_span'])}",
+        f"Maximal stress span (partial):  {fmt(result['maximal_partial_span'])}",
+        f"Maximal stress span (complete): {fmt(result['maximal_complete_span'])}",
     ]
     return "\n".join(lines)

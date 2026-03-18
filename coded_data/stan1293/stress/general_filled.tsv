@@ -1,4 +1,4 @@
-Element	Position_Name	Position_Number	stressable	obligatory	independence	left-interaction	right-interaction	Comments
+Element	Position_Name	Position_Number	stressed	obligatory	independence	left-interaction	right-interaction	Comments
 also	v:leftedge	1	y	n	y	n	n	
 and	v:leftedge	1	both	n	y	n	n	
 CONJUNCT	v:leftedge	1	y	n	y	n	n	
