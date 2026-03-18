@@ -179,21 +179,24 @@ analyses:
           with elements directly to its right.
 
     qualification_rule: >
-      Two broad domain types, each producing a single span, along with subtypes
-      corresponding to a complete/partial
-      distinction. Both use blocked_span: expand from ROOT in each direction,
-      stopping just before the first position where the blocking condition holds
-      for any element. The blocking position is excluded. The keystone (v:verbroot)
-      must always be part of the domain for this test, and it also participates in blocking checks — its parameter values can trigger a domain
-      boundary. Unlike other blocking elements, it is always part of the domain. That is, other blocking elements
-      help determine domain boundaries, while the keystone is always within the domain, since we are looking
-      for the stress domain around the head of the clause. While the test can be used to find some
-      stress domains that do not involve the keystone, those are not considered in this analysis
-      since we are focused on the stress domain involving the keystone only.
+      Two domain types, each with complete and partial subtypes = 4 spans total.
+      Both use blocked_span: expand from ROOT in each direction, stopping just
+      before the first position where the blocking condition holds. The blocking
+      position is excluded.
 
-      Minimal stress domain — blocked by: stressable ∈ {y, both} (i.e., the value of stressable
-      is either "y" or "both") AND independence = y.
-        An independently-stressable element begins a new stress domain; the minimal
+      Complete vs. partial blocking:
+        partial:  any element in the position satisfies the blocking condition
+                  (easier to block → smaller domain).
+        complete: all elements in the position satisfy the blocking condition
+                  (harder to block → larger domain).
+
+      The keystone (v:verbroot) always remains part of the domain. Its parameter
+      values participate in blocking checks — its values can trigger a domain
+      boundary for positions beyond it — but it is never itself excluded from the
+      span. We are looking for the stress domain around the head of the clause only.
+
+      Minimal stress domain — blocked by: stressed ∈ {y, both} AND independence = y.
+        An independently-stressed element begins a new stress domain; the minimal
         domain ends just before it.
 
       Maximal stress domain — blocked by: obligatory = y AND independence = y.
@@ -206,11 +209,11 @@ analyses:
       the verbal planar structure. Shares parameter structure with stress.
     parameters:
 
-      - name: stressable
+      - name: stressed
         values: [y, n, both]
         description: >
           [NEEDS REVIEW] Whether the element can carry aspiration. Reuses the
-          stressable parameter name from the stress analysis; values have the
+          stressed parameter name from the stress analysis; values have the
           same interpretation in the context of aspiration.
 
       - name: obligatory
