@@ -185,6 +185,28 @@ Commit frequently — after each logical unit of work rather than accumulating c
 
 Separate `coded_data/` annotation changes from tooling/library changes into distinct commits — they have different authors (human annotators vs. code changes) and different review needs.
 
+## In-progress annotation work
+
+### Araona (aroa1237) — partially annotated
+
+Language files are in `coded_data/aroa1237/`. Source: Adam Tallman, "Graded constituency in the Araona (Takana) verb complex," chapter 13 in *Constituency and convergence in the Americas* (langsci/291). Glottolog ID: aroa1237.
+
+**Completed:**
+- `planar_input/planar_aroa1237-20260319.tsv` — 18-position verbal planar structure (XP1 zone through rightXP zone)
+- `planar_input/diagnostics.tsv` — ciscategorial, noninterruption, subspanrepetition (2 constructions)
+- `ciscategorial/general_filled.tsv` — V/N/A-combines annotated; runs and produces spans
+- `noninterruption/general_filled.tsv` — free/multiple annotated; runs and produces spans
+
+**Still needed:**
+- `subspanrepetition/auxiliary_construction_filled.tsv`
+- `subspanrepetition/tso_clause_linkage_filled.tsv`
+
+Parameters needed: `widescope_left`, `widescope_right`, `fillable_botheither_conjunct`. Source sections:
+- Auxiliary construction (§4.5.1, ~lines 862–937 of the .tex): maximal = vpref–aspect (4–15), minimal = vcore–vcore (6–6)
+- *tso*-marked clause linkage (§4.5.2, ~lines 939–1023): maximal = XP1–connector (1–17), minimal = vpref–tamesuf (4–14)
+
+The source .tex file may need re-downloading from the langsci/291 GitHub repo if `/tmp/araona.tex` is gone.
+
 ## Issue tracking
 
 Feature requests and bugs are tracked on GitHub Issues: https://github.com/jcgood/planars/issues
