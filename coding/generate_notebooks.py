@@ -289,10 +289,10 @@ def _run_generation(apply: bool) -> None:
         )
 
     if not apply:
-        print("\nContributor notebooks (one per language):")
+        print("\nContributor notebooks (one per language, includes per-class report sections):")
         for lang_id, classes in lang_classes.items():
             print(f"  domains_{lang_id}.ipynb — {classes}")
-        print(f"\nCoordinator notebook:")
+        print(f"\nCoordinator notebook (all languages):")
         print(f"  all_languages.ipynb — {all_classes}")
         print("\nRun with --apply to generate and upload.")
         return
@@ -321,6 +321,7 @@ def _run_generation(apply: bool) -> None:
             "LANG_ID": lang_id,
             "CONFIG_FILE_ID": config_file_id,
         })
+        nb = _insert_class_cells(nb, _generate_class_cells(classes))
         nb_bytes = json.dumps(nb, indent=1).encode()
         filename = f"domains_{lang_id}.ipynb"
         file_id = _upload_file(
