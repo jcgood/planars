@@ -273,6 +273,40 @@ def _move_to_folder(drive, file_id: str, folder_id: str) -> None:
     ).execute()
 
 
+def _upload_planar_input_files(drive, planar_dir: Path, folder_id: str) -> None:
+    """Upload planar_*.tsv and diagnostics.tsv to the language's Drive folder.
+
+    Updates existing files in place if already present, creates new ones otherwise.
+    This lets collaborators view the planar structure alongside their annotation sheets.
+    """
+    import io
+    paths = list(planar_dir.glob("planar_*.tsv")) + [planar_dir / "diagnostics.tsv"]
+    for path in paths:
+        if not path.exists():
+            continue
+        name = path.name
+        results = drive.files().list(
+            q=f"name='{name}' and '{folder_id}' in parents and trashed=false",
+            fields="files(id)",
+        ).execute()
+        existing = results.get("files", [])
+        media = MediaIoBaseUpload(
+            io.BytesIO(path.read_bytes()),
+            mimetype="text/tab-separated-values",
+            resumable=False,
+        )
+        if existing:
+            drive.files().update(fileId=existing[0]["id"], media_body=media).execute()
+            print(f"  Updated {name} on Drive")
+        else:
+            drive.files().create(
+                body={"name": name, "parents": [folder_id]},
+                media_body=media,
+                fields="id",
+            ).execute()
+            print(f"  Uploaded {name} to Drive")
+
+
 # ---------------------------------------------------------------------------
 # Row building
 # ---------------------------------------------------------------------------
@@ -496,6 +530,8 @@ def main() -> None:
 
     Iterates over all planar_*.tsv files in coded_data/*/planar_input/, creates
     one Google Sheet per analysis class (skipping existing ones unless --force),
+    uploads planar_*.tsv and diagnostics.tsv to each language's Drive folder so
+    collaborators can view the planar structure alongside their annotation sheets,
     uploads per-language manifests to Drive, and regenerates contributor notebooks.
     """
     force = "--force" in sys.argv
@@ -545,6 +581,16 @@ def main() -> None:
 
         print(f"Classes:     {list(all_classes.keys())}")
 
+        # Resolve/create Drive folder before loading existing data so planar input
+        # files can be uploaded regardless of whether sheet creation is skipped.
+        folder_id = _get_or_create_folder(drive, lang_id, parent_id=root_folder_id)
+        _share_anyone_with_link(drive, folder_id)
+        folder_url = f"https://drive.google.com/drive/folders/{folder_id}"
+        print(f"Folder:      {folder_url}")
+
+        # Upload planar input files so collaborators can view them alongside sheets.
+        _upload_planar_input_files(drive, planar_dir, folder_id)
+
         # Load existing data for this language from the merged config or old per-language file.
         existing_lang_data: Dict = merged_config.get(lang_id, {})
         if not existing_lang_data and lang_id in config:
@@ -564,6 +610,9 @@ def main() -> None:
                     f"  All classes already have sheets. Skipping {lang_id}.\n"
                     "  (use --force to regenerate)"
                 )
+                existing_lang_data["folder_id"] = folder_id
+                config.setdefault(lang_id, {})["folder_id"] = folder_id
+                _save_drive_config(config)
                 full_manifest[lang_id] = existing_lang_data
                 merged_config[lang_id] = existing_lang_data
                 continue
@@ -574,12 +623,6 @@ def main() -> None:
             k: v for k, v in all_classes.items()
             if k not in existing_lang_data.get("sheets", {})
         } if not force else dict(all_classes)
-
-        # Create language folder inside root folder (if configured), or at Drive root.
-        folder_id = _get_or_create_folder(drive, lang_id, parent_id=root_folder_id)
-        _share_anyone_with_link(drive, folder_id)
-        folder_url = f"https://drive.google.com/drive/folders/{folder_id}"
-        print(f"Folder:      {folder_url}\n")
 
         # Build lang_data starting from existing data (or fresh), always include folder_id.
         lang_data: Dict = existing_lang_data or {"folder_url": folder_url, "sheets": {}}
