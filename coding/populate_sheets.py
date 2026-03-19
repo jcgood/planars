@@ -2,7 +2,7 @@
 """One-time script to populate Google Sheets with data from existing filled TSVs.
 
 Run from the repo root:
-    python populate_sheets.py
+    python -m coding populate-sheets
 
 For each construction in sheets_manifest.json, searches numbered output folders
 for a matching filled TSV (any suffix: _filled, _fill, _full) and uploads its
@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent
 
 import gspread
 
@@ -41,7 +41,7 @@ def _get_client() -> gspread.Client:
     if not creds_path.exists():
         raise FileNotFoundError(
             f"OAuth credentials file not found: {creds_path}\n"
-            "See generate_sheets.py for setup instructions."
+            "See coding/generate_sheets.py for setup instructions."
         )
     return gspread.oauth(
         credentials_filename=str(creds_path),
@@ -173,7 +173,7 @@ def main() -> None:
     if not MANIFEST_PATH.exists():
         raise SystemExit(
             f"sheets_manifest.json not found at {MANIFEST_PATH}.\n"
-            "Run generate_sheets.py first."
+            "Run python -m coding generate-sheets first."
         )
 
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))

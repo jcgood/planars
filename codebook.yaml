@@ -412,32 +412,34 @@ chart_labels:
     note: >
       Four labels (minimal/maximal × partial/complete). The keystone can trigger
       a blocking condition but is not itself a span endpoint.
-    - label: "stress minimal partial"
-      meaning: >
-        Minimal stress domain, partial blocking: expand from ROOT, stopping just before
-        the first position where ANY element has stressed ∈ {y, both} AND independence = y.
-        Partial blocking is easier to trigger → smaller domain.
-    - label: "stress minimal complete"
-      meaning: >
-        Minimal stress domain, complete blocking: expand from ROOT, stopping just before
-        the first position where ALL elements have stressed ∈ {y, both} AND independence = y.
-        Complete blocking is harder to trigger → larger domain.
-    - label: "stress maximal partial"
-      meaning: >
-        Maximal stress domain, partial blocking: expand from ROOT, stopping just before
-        the first position where ANY element has obligatory = y AND independence = y.
-    - label: "stress maximal complete"
-      meaning: >
-        Maximal stress domain, complete blocking: expand from ROOT, stopping just before
-        the first position where ALL elements have obligatory = y AND independence = y.
+    labels:
+      - label: "stress minimal partial"
+        meaning: >
+          Minimal stress domain, partial blocking: expand from ROOT, stopping just before
+          the first position where ANY element has stressed ∈ {y, both} AND independence = y.
+          Partial blocking is easier to trigger → smaller domain.
+      - label: "stress minimal complete"
+        meaning: >
+          Minimal stress domain, complete blocking: expand from ROOT, stopping just before
+          the first position where ALL elements have stressed ∈ {y, both} AND independence = y.
+          Complete blocking is harder to trigger → larger domain.
+      - label: "stress maximal partial"
+        meaning: >
+          Maximal stress domain, partial blocking: expand from ROOT, stopping just before
+          the first position where ANY element has obligatory = y AND independence = y.
+      - label: "stress maximal complete"
+        meaning: >
+          Maximal stress domain, complete blocking: expand from ROOT, stopping just before
+          the first position where ALL elements have obligatory = y AND independence = y.
 
   aspiration:
     note: Four labels — mirrors stress label structure.
-    - label: "asp minimal partial"
-      meaning: Minimal aspiration domain, partial blocking — mirrors stress minimal partial logic.
-    - label: "asp minimal complete"
-      meaning: Minimal aspiration domain, complete blocking — mirrors stress minimal complete logic.
-    - label: "asp maximal partial"
-      meaning: Maximal aspiration domain, partial blocking — mirrors stress maximal partial logic.
-    - label: "asp maximal complete"
-      meaning: Maximal aspiration domain, complete blocking — mirrors stress maximal complete logic.
+    labels:
+      - label: "asp minimal partial"
+        meaning: Minimal aspiration domain, partial blocking — mirrors stress minimal partial logic.
+      - label: "asp minimal complete"
+        meaning: Minimal aspiration domain, complete blocking — mirrors stress minimal complete logic.
+      - label: "asp maximal partial"
+        meaning: Maximal aspiration domain, partial blocking — mirrors stress maximal partial logic.
+      - label: "asp maximal complete"
+        meaning: Maximal aspiration domain, complete blocking — mirrors stress maximal complete logic.

@@ -2,14 +2,14 @@
 """Generate Google Sheets annotation forms from planar structure and diagnostics.
 
 Run from the repo root:
-    python generate_sheets.py           # create sheets for new classes only
-    python generate_sheets.py --force   # regenerate all (creates duplicates; delete old manually)
+    python -m coding generate-sheets           # create sheets for new classes only
+    python -m coding generate-sheets --force   # regenerate all (creates duplicates; delete old manually)
 
 On the first run, creates one Google Sheet per analysis class with one tab per construction.
 On subsequent runs, only creates sheets for classes not yet in the Drive manifest (e.g. a
 newly added aspiration class). Existing sheets are left untouched.
 
-To sync param column changes to existing sheets: python sync_params.py --apply
+To sync param column changes to existing sheets: python -m coding sync-params --apply
 
 Requires:
     pip install gspread google-auth google-api-python-client
@@ -33,15 +33,14 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(ROOT))
+ROOT = Path(__file__).resolve().parent.parent
 
 import gspread
 from googleapiclient.discovery import build as google_build
 from googleapiclient.http import MediaIoBaseDownload, MediaIoBaseUpload
 
-import make_forms as _mf
-from make_forms import (
+from . import make_forms as _mf
+from .make_forms import (
     build_element_index,
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
@@ -140,7 +139,7 @@ def _load_manifest_from_drive(drive) -> Dict:
     if not config:
         raise SystemExit(
             "drive_config.json not found.\n"
-            "Run: python generate_sheets.py --push-manifest\n"
+            "Run: python -m coding generate-sheets --push-manifest\n"
             "to upload the existing sheets_manifest.json to Drive."
         )
     manifest = {}
@@ -408,9 +407,9 @@ def main() -> None:
                 if not new_class_names:
                     print(
                         "\nAll classes already have sheets in the Drive manifest.\n"
-                        "  To sync param columns:      python sync_params.py --apply\n"
-                        "  To update rows/columns:     python update_sheets.py --apply\n"
-                        "  To regenerate from scratch: python generate_sheets.py --force"
+                        "  To sync param columns:      python -m coding sync-params --apply\n"
+                        "  To update rows/columns:     python -m coding update-sheets --apply\n"
+                        "  To regenerate from scratch: python -m coding generate-sheets --force"
                     )
                     return
                 print(f"Existing:    {list(existing_sheets.keys())}")
@@ -468,12 +467,12 @@ def push_manifest() -> None:
     """Upload the existing local sheets_manifest.json to Drive.
 
     One-time migration utility. Run with:
-        python generate_sheets.py --push-manifest
+        python -m coding generate-sheets --push-manifest
     """
     if not MANIFEST_PATH.exists():
         raise SystemExit(
             "sheets_manifest.json not found. Nothing to push.\n"
-            "Run generate_sheets.py first to create sheets."
+            "Run python -m coding generate-sheets first to create sheets."
         )
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     print("Connecting to Google APIs...")

@@ -5,12 +5,12 @@ Use this when position numbers have changed or rows have been reordered — situ
 where update_sheets.py (which only appends) is insufficient.
 
 Run from the repo root:
-    python restructure_sheets.py           # dry run — show what would change
-    python restructure_sheets.py --apply   # archive old sheets and regenerate
+    python -m coding restructure-sheets           # dry run — show what would change
+    python -m coding restructure-sheets --apply   # archive old sheets and regenerate
 
     # Map renamed positions so their annotations are carried over instead of dropped:
-    python restructure_sheets.py --rename-map "old name:new name"
-    python restructure_sheets.py --rename-map old:new1 --rename-map old2:new2 --apply
+    python -m coding restructure-sheets --rename-map "old name:new name"
+    python -m coding restructure-sheets --rename-map old:new1 --rename-map old2:new2 --apply
 
     --rename-map takes "old_pos_name:new_pos_name" and can be repeated.
     Without it, a renamed position is treated as a drop + new blank row.
@@ -32,18 +32,17 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(ROOT))
+ROOT = Path(__file__).resolve().parent.parent
 
 import gspread
 
-import make_forms as _mf
-from make_forms import (
+from . import make_forms as _mf
+from .make_forms import (
     build_element_index,
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
 )
-from generate_sheets import (
+from .generate_sheets import (
     _get_clients,
     _build_rows,
     _format_and_validate,
@@ -303,7 +302,7 @@ def main() -> None:
     for class_name, constructions_list in classes.items():
         sheet_info = lang_data.get("sheets", {}).get(class_name)
         if not sheet_info:
-            print(f"\n  {class_name}: not in manifest, skipping (run generate_sheets.py first)")
+            print(f"\n  {class_name}: not in manifest, skipping (run python -m coding generate-sheets first)")
             continue
 
         version = sheet_info.get("version", 1)

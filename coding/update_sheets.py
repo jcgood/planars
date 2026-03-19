@@ -2,8 +2,8 @@
 """Update existing Google Sheets: add missing columns and missing rows.
 
 Run from the repo root:
-    python update_sheets.py           # dry run — show what would change
-    python update_sheets.py --apply   # apply changes to sheets
+    python -m coding update-sheets           # dry run — show what would change
+    python -m coding update-sheets --apply   # apply changes to sheets
 
 Operations performed per tab:
   1. Add missing trailing columns (e.g. Comments) after existing param columns
@@ -11,7 +11,7 @@ Operations performed per tab:
      but absent from the sheet tab
 
 Does NOT renumber positions or restructure existing content — use
-restructure_sheets.py for that (archives old sheet, regenerates with carry-over).
+python -m coding restructure-sheets for that (archives old sheet, regenerates with carry-over).
 
 Authentication: same OAuth2 setup as generate_sheets.py.
 """
@@ -21,14 +21,13 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
-ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(ROOT))
+ROOT = Path(__file__).resolve().parent.parent
 
 import gspread
 
-import make_forms as _mf
-from make_forms import build_element_index, _infer_language_id_from_planar_filename
-from generate_sheets import _get_clients, _load_manifest_from_drive
+from . import make_forms as _mf
+from .make_forms import build_element_index, _infer_language_id_from_planar_filename
+from .generate_sheets import _get_clients, _load_manifest_from_drive
 
 CODED_DATA = ROOT / "coded_data"
 _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
@@ -224,7 +223,7 @@ def _apply_tab_updates(
 
     # Re-apply dropdown validation to param columns to cover newly appended rows
     if missing_rows and param_names:
-        from generate_sheets import _format_and_validate
+        from .generate_sheets import _format_and_validate
         total_rows = num_data_rows_current + len(missing_rows)
         per_col_values = [["y", "n"]] * len(param_names)
         _format_and_validate(ws, total_rows, per_col_values)
@@ -287,7 +286,7 @@ def main() -> None:
                     print(f"    [{construction}] WARNING: planar structure has changed:")
                     for w in drift_warnings:
                         print(w)
-                    print(f"    → Run restructure_sheets.py --apply to rebuild this sheet.")
+                    print(f"    → Run python -m coding restructure-sheets --apply to rebuild this sheet.")
                     continue
 
                 missing_cols, missing_rows = _compute_tab_updates(
@@ -318,7 +317,7 @@ def main() -> None:
 
     if any_drift:
         print("\nSome sheets are out of sync with the planar structure.")
-        print("Run: python restructure_sheets.py --apply")
+        print("Run: python -m coding restructure-sheets --apply")
     elif not any_changes:
         print("\nAll sheets are up to date.")
     elif not apply:

@@ -36,8 +36,8 @@ python -m venv .venv
 ### 1. Generate annotation forms
 
 ```bash
-python generate_sheets.py   # creates sheets for new classes; skips existing ones
-python generate_sheets.py --force  # regenerate all from scratch
+python -m coding generate-sheets           # creates sheets for new classes; skips existing ones
+python -m coding generate-sheets --force   # regenerate all from scratch
 ```
 
 Creates one Google Sheets file per analysis class with one tab per construction. Each tab has per-parameter dropdown validation and a free-text Comments column. Google Sheets is the definitive copy of annotation forms. On re-runs, only classes not yet in the Drive manifest are created.
@@ -53,8 +53,8 @@ Specialists fill in values in the shared Google Sheets. Keystone rows (`v:verbro
 ### 3. Import
 
 ```bash
-python import_sheets.py          # downloads filled sheets → TSVs in coded_data/
-python import_sheets.py --force  # overwrite existing files
+python -m coding import-sheets           # downloads filled sheets → TSVs in coded_data/
+python -m coding import-sheets --force   # overwrite existing files
 ```
 
 Skips existing files by default. If any validation warnings are found (blank cells, unexpected values), they are written to `import_errors/{lang}_{timestamp}.txt` as well as printed to the terminal.
@@ -74,14 +74,14 @@ python -m planars aspiration        <path/to/filled.tsv>
 ## Maintaining sheets
 
 ```bash
-python update_sheets.py           # dry run — show what would change
-python update_sheets.py --apply   # add missing rows/trailing columns to existing sheets
+python -m coding update-sheets           # dry run — show what would change
+python -m coding update-sheets --apply   # add missing rows/trailing columns
 
-python sync_params.py             # dry run — show param column changes needed
-python sync_params.py --apply     # insert new param columns, update dropdown validation
+python -m coding sync-params             # dry run — show param column changes needed
+python -m coding sync-params --apply     # insert new param columns, update validation
 ```
 
-Use `update_sheets.py` when new elements are added to the planar structure or a new trailing column (e.g. Comments) needs propagating. Use `sync_params.py` when `diagnostics.tsv` param columns change — it preserves existing annotations while inserting new columns before Comments.
+Use `update-sheets` when new elements are added to the planar structure or a new trailing column (e.g. Comments) needs propagating. Use `sync-params` when `diagnostics.tsv` param columns change — it preserves existing annotations while inserting new columns before Comments.
 
 ### 5. Explore results interactively
 
@@ -162,16 +162,19 @@ planars/                        Core library
   aspiration.py                 }
   charts.py                     Span collection and domain chart
   cli.py                        Command-line entry point
+coding/                         Google Sheets workflow tools (python -m coding <command>)
+  make_forms.py                 Planar structure and diagnostics utilities
+  generate_sheets.py            Create annotation forms in Google Drive
+  update_sheets.py              Add missing rows/trailing columns to existing sheets
+  sync_params.py                Sync param columns when diagnostics.tsv changes
+  import_sheets.py              Download filled sheets to TSVs
+  restructure_sheets.py         Archive and regenerate sheets after structural changes
+  populate_sheets.py            Upload legacy TSV data to sheets (one-time utility)
+  check_codebook.py             Check consistency between codebook.yaml and analysis modules
 coded_data/{lang_id}/           Annotation data per language
   planar_input/                 Planar structure TSV + diagnostics.tsv
   {class_name}/                 Filled TSVs per analysis class
 coded_data/synth0001/           Synthetic second-language dataset (not real data — for testing)
-make_forms.py                   Planar structure and diagnostics utilities
-generate_sheets.py              Create annotation forms in Google Drive
-update_sheets.py                Add missing rows/trailing columns to existing sheets
-sync_params.py                  Sync param columns when diagnostics.tsv changes
-import_sheets.py                Download filled sheets to TSVs
-restructure_sheets.py           Archive and regenerate sheets after structural changes
 notebooks/                      Jupyter notebooks (local + Colab)
 tests/snapshots/                Regression test baselines
 codebook.yaml                   Parameter and term definitions

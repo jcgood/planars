@@ -2,10 +2,10 @@
 """Sync param columns in existing Google Sheets when diagnostics.tsv changes.
 
 Usage:
-    python sync_params.py                              # dry run — shows what would change
-    python sync_params.py --apply                      # apply changes to sheets
-    python sync_params.py --apply --remove             # also remove columns not in diagnostics
-    python sync_params.py --apply --rename old:new     # rename a column header in all sheets
+    python -m coding sync-params                              # dry run — shows what would change
+    python -m coding sync-params --apply                      # apply changes to sheets
+    python -m coding sync-params --apply --remove             # also remove columns not in diagnostics
+    python -m coding sync-params --apply --rename old:new     # rename a column header in all sheets
 
 This script:
   - Reads diagnostics.tsv to get the expected params for each class/construction
@@ -20,17 +20,16 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(ROOT))
+ROOT = Path(__file__).resolve().parent.parent
 
 import gspread
 
-import make_forms as _mf
-from make_forms import (
+from . import make_forms as _mf
+from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
 )
-from generate_sheets import (
+from .generate_sheets import (
     _get_clients,
     _load_manifest_from_drive,
     _upload_manifest_to_drive,

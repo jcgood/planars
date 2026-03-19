@@ -221,4 +221,3 @@ def _read_diagnostics_for_language(
 
     return out
 
-

@@ -2,8 +2,8 @@
 """Import filled Google Sheets annotation forms back to TSVs for analysis.
 
 Run from the repo root:
-    python import_sheets.py           # skip files that already exist
-    python import_sheets.py --force   # overwrite existing files
+    python -m coding import-sheets           # skip files that already exist
+    python -m coding import-sheets --force   # overwrite existing files
 
 Reads the manifest from Drive (via drive_config.json), downloads each sheet
 tab, validates values, and writes {construction}_filled.tsv to
@@ -19,11 +19,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent
 
 import gspread
 
-from generate_sheets import _get_clients, _load_manifest_from_drive
+from .generate_sheets import _get_clients, _load_manifest_from_drive
 
 ERROR_DIR = ROOT / "import_errors"
 

@@ -2,5 +2,5 @@ Class	Language	Constructions	Parameters
 ciscategorial	synth0001	general	V-combines, N-combines, A-combines
 subspanrepetition	synth0001	andCoordination, control, thatCOMP, asyndeticPart	widescope_right, widescope_left, fillable_botheither_conjunct
 noninterruption	synth0001	general	free, multiple
-stress	synth0001	general	stressable{y/n/both}, obligatory, independence, left-interaction, right-interaction
-aspiration	synth0001	general	stressable{y/n/both}, obligatory, independence, left-interaction, right-interaction
+stress	synth0001	general	stressed{y/n/both}, obligatory, independence, left-interaction, right-interaction
+aspiration	synth0001	general	stressed{y/n/both}, obligatory, independence, left-interaction, right-interaction
