@@ -608,13 +608,21 @@ def main() -> None:
         _save_drive_config(config)
         print(f"planars_config.json updated on Drive (id: {existing_config_file_id})")
 
+    # Upload merged config once more after the loop to capture any skipped languages
+    # that were added to merged_config but didn't trigger an in-loop upload.
+    final_file_id = _upload_planars_config(
+        drive, merged_config, root_folder_id, existing_config_file_id
+    )
+    config["_planars_config_file_id"] = final_file_id
+    _save_drive_config(config)
+    print(f"planars_config.json uploaded (id: {final_file_id})")
+
     # Write local manifest with all languages (gitignored, kept for reference)
     MANIFEST_PATH.write_text(json.dumps(full_manifest, indent=2), encoding="utf-8")
     print(f"\nLocal manifest written to: {MANIFEST_PATH.name}")
-    print(f"drive_config.json updated.")
+    print(f"drive_config.json written.")
 
-    print(f"\nShare this folder with your specialist:")
-    print(f"  {folder_url}")
+    print(f"\nShare each language folder with your specialist (see folder URLs above).")
 
     from .generate_notebooks import regenerate_notebooks
     regenerate_notebooks()
