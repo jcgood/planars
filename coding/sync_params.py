@@ -167,22 +167,39 @@ def _insert_param_columns(
 # Main
 # ---------------------------------------------------------------------------
 
-def _parse_renames() -> Dict[str, str]:
-    """Parse --rename old:new pairs from sys.argv."""
-    renames = {}
+def _parse_renames() -> List[Tuple[Optional[str], str, str]]:
+    """Parse --rename [class:]old:new pairs from sys.argv.
+
+    Returns a list of (class_filter, old, new) tuples. class_filter is None
+    when no class prefix is given (applies to all classes).
+
+    Syntax:
+        --rename old:new                  # rename in all classes
+        --rename stress:stressable:stressed  # rename only in the 'stress' class
+    """
+    renames = []
     args = sys.argv[1:]
     for i, arg in enumerate(args):
         if arg == "--rename" and i + 1 < len(args):
             pair = args[i + 1]
-            if ":" in pair:
-                old, new = pair.split(":", 1)
-                renames[old.strip()] = new.strip()
+            renames.append(_parse_rename_pair(pair))
         elif arg.startswith("--rename="):
             pair = arg[len("--rename="):]
-            if ":" in pair:
-                old, new = pair.split(":", 1)
-                renames[old.strip()] = new.strip()
+            renames.append(_parse_rename_pair(pair))
     return renames
+
+
+def _parse_rename_pair(pair: str) -> Tuple[Optional[str], str, str]:
+    """Parse a single rename value into (class_filter, old, new).
+
+    Two colons → class:old:new; one colon → old:new (no class filter).
+    """
+    parts = pair.split(":")
+    if len(parts) >= 3:
+        return parts[0].strip(), parts[1].strip(), ":".join(p.strip() for p in parts[2:])
+    elif len(parts) == 2:
+        return None, parts[0].strip(), parts[1].strip()
+    return None, pair.strip(), pair.strip()
 
 
 def main() -> None:
@@ -223,7 +240,8 @@ def main() -> None:
         print(f"\nLanguage: {lang_id}")
         print(f"Mode:     {'apply' if apply else 'dry run'}")
         if renames:
-            print(f"Renames:  {renames}")
+            rename_strs = [f"{cls + ':' if cls else ''}{old}:{new}" for cls, old, new in renames]
+            print(f"Renames:  {rename_strs}")
 
         lang_data = manifest.get(lang_id, {})
         sheets = lang_data.get("sheets", {})
@@ -244,7 +262,9 @@ def main() -> None:
 
                 # Apply renames first so add/remove detection sees the updated headers
                 if renames:
-                    for old_name, new_name in renames.items():
+                    for cls_filter, old_name, new_name in renames:
+                        if cls_filter is not None and cls_filter != class_name:
+                            continue
                         found = old_name in ws.row_values(1)
                         if found:
                             print(f"  [{class_name}/{construction}] Rename: {old_name} → {new_name}")
