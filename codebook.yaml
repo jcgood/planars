@@ -23,13 +23,13 @@ structural_columns:
   - name: Position_Name
     description: >
       The label for the position in the planar structure. Positions in the verbal
-      domain are prefixed with "v:". The special value "v:verbroot" marks the
+      domain are prefixed with "v:". The special value "v:verbstem" marks the
       keystone position (see Terms).
 
   - name: Position_Number
     description: >
       Integer index of the position in the planar structure. Lower numbers are
-      further left; higher numbers are further right. The keystone (v:verbroot)
+      further left; higher numbers are further right. The keystone (v:verbstem)
       anchors all span computations.
 
 # ---------------------------------------------------------------------------
@@ -190,7 +190,7 @@ analyses:
         complete: all elements in the position satisfy the blocking condition
                   (harder to block → larger domain).
 
-      The keystone (v:verbroot) always remains part of the domain. Its parameter
+      The keystone (v:verbstem) always remains part of the domain. Its parameter
       values participate in blocking checks — its values can trigger a domain
       boundary for positions beyond it — but it is never itself excluded from the
       span. We are looking for the stress domain around the head of the clause only.
@@ -260,7 +260,7 @@ shared_values:
 
   - value: "NA"
     meaning: >
-      Not applicable. Used only for keystone rows (v:verbroot), which are
+      Not applicable. Used only for keystone rows (v:verbstem), which are
       excluded from all span computations.
 
   - value: "?"
@@ -297,7 +297,7 @@ terms:
   - term: keystone
     definition: >
       The semantic head of the planar structure — in a verbal planar structure, the
-      verb root. Identified by Position_Name == "v:verbroot". Every planar structure
+      verb root. Identified by Position_Name == "v:verbstem". Every planar structure
       has exactly one keystone position. It anchors all span computations but is
       excluded from qualification tests.
 

@@ -185,7 +185,7 @@ def _write_tab_with_carryover(
         element = str(row[0])
         pos_name = str(row[1])
         pos_num = str(row[2])
-        is_keystone = pos_name.strip().lower() == "v:verbroot"
+        is_keystone = pos_name.strip().lower() == "v:verbstem"
 
         old_values = _lookup_existing(element, pos_name, existing, old_for_new)
         if old_values is not None:

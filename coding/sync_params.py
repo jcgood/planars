@@ -120,7 +120,7 @@ def _insert_param_columns(
     for i, row in enumerate(all_values):
         if i == 0:
             continue
-        if len(row) > 1 and row[1].strip().lower() == "v:verbroot":
+        if len(row) > 1 and row[1].strip().lower() == "v:verbstem":
             keystone_row = i + 1  # 1-based
             break
 

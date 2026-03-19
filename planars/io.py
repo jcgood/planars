@@ -16,7 +16,7 @@ def _parse_filled_df(
     """Core parsing logic shared by load_filled_tsv and load_filled_sheet.
 
     Normalizes column types, validates structural integrity, locates the keystone
-    row (Position_Name == 'v:verbroot'), and splits keystone rows from the rest.
+    row (Position_Name == 'v:verbstem'), and splits keystone rows from the rest.
 
     Args:
         df: raw DataFrame with at least the structural columns and required_params.
@@ -67,9 +67,9 @@ def _parse_filled_df(
             "run restructure_sheets.py):\n  " + "\n  ".join(msgs)
         )
 
-    keystone_mask = df["Position_Name"].str.lower() == "v:verbroot"
+    keystone_mask = df["Position_Name"].str.lower() == "v:verbstem"
     if not keystone_mask.any():
-        raise ValueError("No keystone row found (Position_Name == 'v:verbroot').")
+        raise ValueError("No keystone row found (Position_Name == 'v:verbstem').")
 
     keystone_positions = sorted(df.loc[keystone_mask, "Position_Number"].unique().tolist())
     if len(keystone_positions) != 1:
@@ -102,7 +102,7 @@ def load_filled_tsv(
     """Load and validate a filled analysis TSV.
 
     Reads the file, normalizes column types, locates the keystone row
-    (Position_Name == 'v:verbroot'), and optionally validates that no
+    (Position_Name == 'v:verbstem'), and optionally validates that no
     parameter cells are blank in non-keystone rows.
 
     All non-structural columns are normalized (stripped, lowercased).

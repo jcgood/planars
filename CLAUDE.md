@@ -100,7 +100,7 @@ This is a linguistic typology analysis project for morphosyntactic domain deriva
    **Drive folder structure**: `python -m coding setup-root-folder` (run once after the first `generate-sheets`) creates a top-level `ConstituencyTypology` Drive folder and moves `planars_config.json` and `all_languages.ipynb` there. New language folders created afterwards are placed inside this root folder. `drive_config.json` tracks per-language `folder_id` and `domains_notebook_file_id`, plus top-level keys: `_root_folder_id` (the ConstituencyTypology folder), `_planars_config_file_id`, `_all_languages_notebook_file_id`. Each run of `generate-sheets` also uploads `planar_*.tsv` and `diagnostics.tsv` to the language's Drive folder (updating existing files in place) so collaborators can view the planar structure alongside their annotation sheets.
 
 3. **Analysis** (`planars/`): Each analysis module reads a filled TSV and derives spans. All share the same core logic:
-   - **Keystone position**: Identified by `Position_Name == 'v:verbroot'`; anchors all span computations.
+   - **Keystone position**: Identified by `Position_Name == 'v:verbstem'`; anchors all span computations.
    - **Partial positions**: ≥1 element in the position qualifies.
    - **Complete positions**: ALL elements in the position qualify.
    - **Strict span**: Contiguous expansion from keystone (no gaps).
@@ -216,7 +216,7 @@ Feature requests and bugs are tracked on GitHub Issues: https://github.com/jcgoo
 - Language ID is inferred from the planar filename: `planar_stan1293-20260209.tsv` → `stan1293`.
 - Elements with leading/trailing hyphens are wrapped in `[brackets]` to avoid Excel parsing issues.
 - Analysis functions take a `Path` object; path resolution happens at the call site (CLI or wrapper scripts), not inside the library.
-- Keystone rows have `Position_Name == 'v:verbroot'`. In filled TSVs they carry actual parameter values (not `NA`) so they can participate in blocking condition checks (stress, aspiration). They are excluded from span expansion — `data_df` never contains the keystone; it is returned separately as `keystone_df`.
+- Keystone rows have `Position_Name == 'v:verbstem'`. In filled TSVs they carry actual parameter values (not `NA`) so they can participate in blocking condition checks (stress, aspiration). They are excluded from span expansion — `data_df` never contains the keystone; it is returned separately as `keystone_df`.
 - Result dicts use `complete_positions` / `partial_positions` and `*_span` key suffixes consistently across all modules.
 - `_TRAILING_COLS = ["Comments"]` is defined in both `coding/generate_sheets.py` and `coding/update_sheets.py`. Add new trailing columns there to propagate them to all new and existing sheets.
 - `coding/populate_sheets.py` is a one-time utility for uploading legacy TSV data. Unnamed trailing columns in legacy TSVs are concatenated with ` | ` into Comments.

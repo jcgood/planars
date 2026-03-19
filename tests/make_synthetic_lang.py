@@ -4,7 +4,7 @@ Copies coded_data/stan1293 to coded_data/synth0001 with two kinds of changes:
 
   Structural: ~25% of non-keystone positions are dropped (seed=42); the
   remaining positions are renumbered sequentially from 1, preserving order.
-  The keystone (v:verbroot) is always kept and gets a new position number.
+  The keystone (v:verbstem) is always kept and gets a new position number.
 
   Parametric: ~25% of y/n parameter values in filled TSVs are flipped
   (same seed). Rows for dropped positions are removed.
@@ -58,7 +58,7 @@ def _build_position_map(planar_path: Path, rng: random.Random) -> dict[int, int]
             if pos not in seen:
                 seen[pos] = row["Position_Name"]
 
-    keystone_pos = next(p for p, name in seen.items() if name == "v:verbroot")
+    keystone_pos = next(p for p, name in seen.items() if name == "v:verbstem")
     non_keystone = [p for p in sorted(seen) if p != keystone_pos]
 
     n_keep = max(1, round(len(non_keystone) * KEEP_PROB))
@@ -178,7 +178,7 @@ def main() -> None:
     new_keystone = pos_map[next(
         int(row["Position"])
         for row in csv.DictReader(planar_src.open(), delimiter="\t")
-        if row["Position_Name"] == "v:verbroot"
+        if row["Position_Name"] == "v:verbstem"
     )]
 
     n_src = len(pos_map)

@@ -24,7 +24,7 @@ def blocked_span(
     Args:
         all_positions: all position numbers in the data (excluding keystone).
         blocked_positions: positions that trigger a domain boundary.
-        keystone_pos: position number of the keystone (v:verbroot).
+        keystone_pos: position number of the keystone (v:verbstem).
 
     Returns:
         (left_edge, right_edge) position numbers of the span.
@@ -54,7 +54,7 @@ def fmt_span(span: Tuple[int, int], pos_to_name: Dict[int, str]) -> str:
         pos_to_name: mapping from position number to position name.
 
     Returns:
-        A string like "positions 3–7  (det:article → v:verbroot)".
+        A string like "positions 3–7  (det:article → v:verbstem)".
     """
     l, r = span
     return f"positions {l}\u2013{r}  ({pos_to_name.get(l, '?')} \u2192 {pos_to_name.get(r, '?')})"
@@ -69,7 +69,7 @@ def strict_span(qual_positions: Set[int], keystone_pos: int) -> Tuple[int, int]:
 
     Args:
         qual_positions: position numbers that qualify for inclusion.
-        keystone_pos: position number of the keystone (v:verbroot).
+        keystone_pos: position number of the keystone (v:verbstem).
 
     Returns:
         (left_edge, right_edge) position numbers of the span.
@@ -90,7 +90,7 @@ def loose_span(qual_positions: Set[int], keystone_pos: int) -> Tuple[int, int]:
 
     Args:
         qual_positions: position numbers that qualify for inclusion.
-        keystone_pos: position number of the keystone (v:verbroot).
+        keystone_pos: position number of the keystone (v:verbstem).
 
     Returns:
         (left_edge, right_edge) position numbers of the span.

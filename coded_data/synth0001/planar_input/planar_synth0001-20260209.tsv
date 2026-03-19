@@ -21,7 +21,7 @@ synth0001	verbal	19	Slot	v:neg4	not	list	They are probably [not] going.
 synth0001	verbal	20	Slot	v:ad-VP5	AD-VP	open	They are probably not [intentionally] going.	
 synth0001	verbal	21	Slot	v:nominal	"baby, house, pet, dog, child, nanny, grounds, care, hand, breast, lip, eye, name, sound, fact, spell, cross, strong, rough, stone, air, spin, pressure"	list	I berry picked yesterday.	
 synth0001	verbal	22	Slot	v:latinprefix	"dis-, mis-, up-, down-, fore-, co-, en-, ex-, sub-, pro-, per-, sur-, contra-, ab-, ad-, ob-, sup-, cata-, dia-, epi-, para-, se-, tele-, ante-, circum-, eu-, inter-, intra-, syn-, be-, "	list	They re[ad]mitted the patient.	
-synth0001	verbal	23	Slot	v:verbroot	KEYSTONE	open	They re[visit]ed the problem.	"Adam has three slots using the Item-Arrangement model, I’d go with deviations from biuniqueness"
+synth0001	verbal	23	Slot	v:verbstem	KEYSTONE	open	They re[visit]ed the problem.	"Adam has three slots using the Item-Arrangement model, I’d go with deviations from biuniqueness"
 synth0001	verbal	24	Slot	v:verbinflection	"-ed, -s, -ing"	list	They revisit[ed] the problem.	
 synth0001	verbal	25	Zone	v:obj-part	"NP{P,T}, PRON{P,T}, VERBPART"	open	It is tough for them to pick [the ball up].	
 synth0001	verbal	26	Slot	v:ad-VP6	Ad-VP	open	It is tough for them to pick up the ball [intentionally].	

@@ -319,7 +319,7 @@ def _build_rows(
     Rows are sorted by (position_number, element_name) so annotators see the
     planar structure in order. Elements with leading/trailing hyphens are wrapped
     in brackets to prevent Excel/Sheets from interpreting them as formulas.
-    Keystone (v:verbroot) rows get 'NA' in all param columns; others get ''.
+    Keystone (v:verbstem) rows get 'NA' in all param columns; others get ''.
 
     Args:
         element_index: ElementIndex from build_element_index.
@@ -343,7 +343,7 @@ def _build_rows(
         # Wrap hyphen-prefixed/suffixed elements to prevent Sheets formula parsing.
         if element.startswith("-") or element.endswith("-"):
             element = f"[{element}]"
-        if pos_name.strip().lower() == "v:verbroot":
+        if pos_name.strip().lower() == "v:verbstem":
             rows.append([element, pos_name, pos] + ["NA"] * len(param_names))
         else:
             rows.append([element, pos_name, pos] + [""] * len(param_names))

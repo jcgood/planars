@@ -120,7 +120,7 @@ def _validate_tab(
 
         record = {col: row[col_index[col]] for col in header if col in col_index}
         pos_name = record.get("Position_Name", "").strip()
-        is_keystone = pos_name.lower() == "v:verbroot"
+        is_keystone = pos_name.lower() == "v:verbstem"
 
         for param in param_cols:
             val = record.get(param, "").strip().lower()
@@ -260,7 +260,7 @@ def main() -> None:
                 # so the status line can warn the user about incomplete annotations.
                 blank_count = sum(
                     1 for r in records
-                    if r.get("Position_Name", "").lower() != "v:verbroot"
+                    if r.get("Position_Name", "").lower() != "v:verbstem"
                     and any(r.get(p, "") == "" for p in expected_params)
                 )
                 status = f"{len(records)} rows"

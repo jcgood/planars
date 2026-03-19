@@ -122,7 +122,7 @@ The manifest is stored on Google Drive as a single merged `planars_config.json` 
 
 ### 2. Annotate
 
-Specialists fill in values in the shared Google Sheets. Keystone rows (`v:verbroot`) are pre-filled with `NA` and should not be changed.
+Specialists fill in values in the shared Google Sheets. Keystone rows (`v:verbstem`) are pre-filled with `NA` and should not be changed.
 
 ### 3. Import
 

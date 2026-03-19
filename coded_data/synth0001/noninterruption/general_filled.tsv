@@ -98,7 +98,7 @@ strong	v:nominal	21
 [syn-]	v:latinprefix	22			
 [tele-]	v:latinprefix	22			
 [up-]	v:latinprefix	22			
-KEYSTONE	v:verbroot	23	na	na	
+KEYSTONE	v:verbstem	23	na	na	
 [-ed]	v:verbinflection	24			
 [-ing]	v:verbinflection	24			
 [-s]	v:verbinflection	24			
