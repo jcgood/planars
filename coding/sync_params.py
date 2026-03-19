@@ -305,8 +305,28 @@ def main() -> None:
                 if removed_params:
                     if remove and apply:
                         print(f"  [{class_name}/{construction}] Removing params: {removed_params}")
-                        # Column removal not yet implemented
-                        print(f"    (column removal not yet implemented — remove manually in Sheets)")
+                        # Re-read header after any insertions above so indices are current.
+                        header = ws.row_values(1)
+                        # Delete columns right-to-left to preserve indices during deletion.
+                        for param in sorted(removed_params, key=lambda p: header.index(p), reverse=True):
+                            col_idx = header.index(param)  # 0-based
+                            ws.spreadsheet.batch_update({"requests": [{
+                                "deleteDimension": {
+                                    "range": {
+                                        "sheetId": ws.id,
+                                        "dimension": "COLUMNS",
+                                        "startIndex": col_idx,
+                                        "endIndex": col_idx + 1,
+                                    }
+                                }
+                            }]})
+                            header.pop(col_idx)
+                        # Update manifest construction_params
+                        cp = sheet_info.setdefault("construction_params", {})
+                        cp.setdefault(construction, {})["param_names"] = exp_params
+                        cp[construction]["param_values"] = exp_values
+                        manifest_changed = True
+                        print(f"    Removed: {removed_params}")
                     else:
                         marker = "(pass --apply --remove to delete)" if apply else "(pass --remove with --apply)"
                         print(
