@@ -82,9 +82,11 @@ def _substitute_tokens(nb: dict, tokens: Dict[str, str]) -> dict:
     """Replace {{TOKEN}} placeholders in all cell sources. Returns a deep copy."""
     nb = copy.deepcopy(nb)
     for cell in nb["cells"]:
-        cell["source"] = [
-            _replace_tokens(line, tokens) for line in cell["source"]
-        ]
+        src = cell["source"]
+        if isinstance(src, str):
+            cell["source"] = _replace_tokens(src, tokens)
+        else:
+            cell["source"] = [_replace_tokens(line, tokens) for line in src]
     return nb
 
 
@@ -157,7 +159,8 @@ def _insert_class_cells(nb: dict, class_cells: List[dict]) -> dict:
     nb = copy.deepcopy(nb)
     new_cells = []
     for cell in nb["cells"]:
-        if cell.get("source") == [_CLASS_CELLS_MARKER]:
+        src = cell.get("source")
+        if src == [_CLASS_CELLS_MARKER] or src == _CLASS_CELLS_MARKER:
             new_cells.extend(class_cells)
         else:
             new_cells.append(cell)
