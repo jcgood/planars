@@ -47,8 +47,10 @@ python -m coding generate-sheets
 python -m coding generate-sheets --force  # regenerate all from scratch
 
 # Sync param columns when diagnostics.tsv changes (dry run by default)
-python -m coding sync-params
-python -m coding sync-params --apply   # insert new param columns, update validation
+python -m coding sync-params                                 # dry run
+python -m coding sync-params --apply                         # insert new param columns, update validation
+python -m coding sync-params --apply --rename old:new        # rename a column in all classes
+python -m coding sync-params --apply --rename class:old:new  # rename only in one analysis class
 
 # Update existing sheets: add missing rows/trailing columns (dry run by default)
 python -m coding update-sheets

@@ -132,8 +132,10 @@ python -m planars aspiration        <path/to/filled.tsv>
 python -m coding update-sheets           # dry run — show what would change
 python -m coding update-sheets --apply   # add missing rows to existing sheets
 
-python -m coding sync-params             # dry run — show param column changes needed
-python -m coding sync-params --apply     # insert new param columns, update validation
+python -m coding sync-params                                 # dry run — show param column changes needed
+python -m coding sync-params --apply                         # insert new param columns, update validation
+python -m coding sync-params --apply --rename old:new        # rename a column in all classes
+python -m coding sync-params --apply --rename class:old:new  # rename only in one analysis class
 
 python -m coding generate-notebooks      # regenerate and upload contributor/coordinator notebooks
 ```
