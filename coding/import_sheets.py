@@ -47,18 +47,48 @@ def _get_output_path(lang_id: str, class_name: str, construction: str) -> Path:
 # Validation
 # ---------------------------------------------------------------------------
 
+def _highlight_invalid_cells(ws, bad_cells: List[Tuple[int, int]]) -> None:
+    """Set a light-red background on invalid cells in the worksheet.
+
+    bad_cells: list of (row_index, col_index), both 0-based.
+    """
+    if not bad_cells:
+        return
+    sheet_id = ws.id
+    requests = []
+    for row_idx, col_idx in bad_cells:
+        requests.append({
+            "updateCells": {
+                "range": {
+                    "sheetId": sheet_id,
+                    "startRowIndex": row_idx,
+                    "endRowIndex": row_idx + 1,
+                    "startColumnIndex": col_idx,
+                    "endColumnIndex": col_idx + 1,
+                },
+                "rows": [{"values": [{"userEnteredFormat": {
+                    "backgroundColor": {"red": 1.0, "green": 0.8, "blue": 0.8}
+                }}]}],
+                "fields": "userEnteredFormat.backgroundColor",
+            }
+        })
+    ws.spreadsheet.batch_update({"requests": requests})
+
+
 def _validate_tab(
     rows: List[List[str]],
     expected_params: List[str],
     tab_name: str,
     param_values: Dict[str, List[str]] = None,
-) -> Tuple[List[Dict], List[str]]:
-    """Validate sheet rows and return (records, warnings).
+) -> Tuple[List[Dict], List[str], List[Tuple[int, int]]]:
+    """Validate sheet rows and return (records, warnings, bad_cells).
 
-    records: list of dicts ready to write as TSV rows
-    warnings: list of human-readable issue strings
+    records:   list of dicts ready to write as TSV rows
+    warnings:  list of human-readable issue strings
+    bad_cells: list of (row_index, col_index) 0-based pairs for invalid cells
     """
     warnings: List[str] = []
+    bad_cells: List[Tuple[int, int]] = []
 
     if not rows:
         return [], [f"{tab_name}: sheet is empty"]
@@ -112,15 +142,17 @@ def _validate_tab(
                         f"{tab_name} row {row_num} '{record.get('Element', '?')}': "
                         f"blank value in '{param}'"
                     )
+                    bad_cells.append((row_num - 1, col_index[param]))
                 elif val not in allowed:
                     warnings.append(
                         f"{tab_name} row {row_num} '{record.get('Element', '?')}': "
                         f"unexpected value '{val}' in '{param}' (allowed: {sorted(allowed)})"
                     )
+                    bad_cells.append((row_num - 1, col_index[param]))
 
         records.append(record)
 
-    return records, warnings
+    return records, warnings, bad_cells
 
 
 # ---------------------------------------------------------------------------
@@ -202,7 +234,13 @@ def main() -> None:
                 construction_params = sheet_info.get("construction_params", {})
                 param_values = construction_params.get(construction, {}).get("param_values")
 
-                records, warnings = _validate_tab(rows, expected_params, construction, param_values)
+                records, warnings, bad_cells = _validate_tab(rows, expected_params, construction, param_values)
+
+                if bad_cells:
+                    try:
+                        _highlight_invalid_cells(ws, bad_cells)
+                    except Exception as e:
+                        print(f"    WARNING: could not highlight cells: {e}")
 
                 for w in warnings:
                     print(f"    WARNING: {w}")
