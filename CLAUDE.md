@@ -2,6 +2,42 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Repository structure
+
+This repository (`planars`) contains the library and coordinator tooling. Annotation data lives in a **separate private repository**, `planars-data`, which is restricted to authorized coordinators.
+
+Coordinators clone both repos and nest `planars-data` inside `planars` as `coded_data/`:
+
+```bash
+git clone https://github.com/jcgood/planars.git
+git clone https://github.com/jcgood/planars-data.git planars/coded_data
+```
+
+`coded_data/` is a fully independent git repo nested inside `planars/`. The outer repo ignores it entirely (`coded_data/` is in `.gitignore`). All `coding/` scripts find data at the expected path with no extra configuration.
+
+**Daily workflow — two separate git operations:**
+
+```bash
+# Committing code changes (inside planars/)
+git add coding/generate_sheets.py
+git commit -m "..."
+git push
+
+# Committing data changes (cd into coded_data first)
+cd coded_data
+git add stan1293/ciscategorial/general_filled.tsv
+git commit -m "..."
+git push
+
+# Pulling the latest code
+cd /path/to/planars && git pull
+
+# Pulling the latest annotation data
+cd /path/to/planars/coded_data && git pull
+```
+
+Changes to code and data are always committed and pushed separately — they go to different repositories. `git pull` in `planars/` never touches `coded_data/`, and vice versa.
+
 ## Running the scripts
 
 ```bash
@@ -109,7 +145,7 @@ stressed{y/n/both}, independence, left-interaction, right-interaction
 
 `codebook.yaml` at the repo root is the source of truth for parameter definitions, valid values, analytical terms (keystone, partial, complete, strict, loose), and qualification rules per analysis. Entries marked `[PLACEHOLDER]` need linguistic descriptions; entries marked `[NEEDS REVIEW]` have provisional rules that need confirmation (currently aspiration; stress qualification rule is settled but `left-interaction` and `right-interaction` params remain under review).
 
-A rendering script (`render_codebook.py`) will be added later to produce human-readable output from this file.
+`render_codebook.py` at the repo root renders `codebook.yaml` as human-readable Markdown: `python render_codebook.py` (stdout) or `python render_codebook.py codebook.md` (file).
 
 ## NonCollaborative/
 
@@ -133,7 +169,7 @@ Keep the following files up to date as the project evolves. Check each one at th
 | `README.md` | User-facing workflow changes, setup instructions change, new dependencies |
 | `notebooks/templates/domains_boilerplate.ipynb` | Contributor notebook boilerplate changes (setup, auth, chart cell) — then run `generate-notebooks --apply` |
 | `notebooks/templates/all_languages_boilerplate.ipynb` | Coordinator notebook boilerplate changes (setup, auth, helper, chart) — then run `generate-notebooks --apply` |
-| `pyproject.toml` version + PyPI upload | Any change to `planars/` library code |
+| `pyproject.toml` version | Any change to `planars/` library code (Colab installs from GitHub, not PyPI) |
 
 When in doubt, update. These files are the primary onboarding resource for collaborators and future contributors.
 

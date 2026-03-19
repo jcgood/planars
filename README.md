@@ -19,6 +19,12 @@ This toolkit builds on the theoretical framework developed in:
 
 > Tallman, Adam J. R., Sandra Auderset, and Hiroto Uchihara (eds.). 2024. *Constituency and convergence in the Americas*. Topics in Phonological Diversity 1. Berlin: Language Science Press. doi:[10.5281/zenodo.10559861](https://doi.org/10.5281/zenodo.10559861)
 
+## Repository structure
+
+This repository contains the `planars` library and coordinator tooling (`coding/`). Annotation
+data lives in a separate private repository, **planars-data**, which is restricted to authorized
+coordinators. If you are a coordinator, see [Coordinator setup](#coordinator-setup) below.
+
 ## Requirements
 
 - Python 3.9+
@@ -30,6 +36,47 @@ python -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python -m ipykernel install --user --name planars --display-name planars
 ```
+
+## Coordinator setup
+
+Coordinators work with both this repo and the private `planars-data` repo. Clone both, then
+nest `planars-data` inside `planars` as `coded_data/`:
+
+```bash
+# Clone both repos (replace jcgood with the org/user as appropriate)
+git clone https://github.com/jcgood/planars.git
+git clone https://github.com/jcgood/planars-data.git planars/coded_data
+```
+
+`coded_data/` is a fully independent git repo nested inside `planars/`. The outer repo ignores
+it entirely (it is listed in `.gitignore`). All `coding/` scripts find data at the expected path
+with no extra configuration.
+
+**Daily workflow — two separate git operations:**
+
+```bash
+# Committing code changes (inside planars/)
+git add coding/generate_sheets.py
+git commit -m "..."
+git push
+
+# Committing data changes (cd into coded_data first)
+cd coded_data
+git add stan1293/ciscategorial/general_filled.tsv
+git commit -m "..."
+git push
+
+# Pulling the latest code
+cd /path/to/planars
+git pull
+
+# Pulling the latest annotation data
+cd /path/to/planars/coded_data
+git pull
+```
+
+Changes to code and data are always committed and pushed separately — they go to different
+repositories. `git pull` in `planars/` never touches `coded_data/`, and vice versa.
 
 ## Workflow
 

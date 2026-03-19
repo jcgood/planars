@@ -10,3 +10,7 @@ import_errors/
 *.egg-info/
 notebooks/.ipynb_checkpoints/
 notebooks/.virtual_documents/
+# coded_data/ is maintained in the separate private planars-data repo.
+# Clone it here: git clone <planars-data-url> coded_data
+coded_data/
+dist/
