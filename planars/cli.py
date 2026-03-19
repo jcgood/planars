@@ -36,6 +36,13 @@ _ANALYSES = {
 
 
 def main(argv: list[str] | None = None) -> None:
+    """Parse CLI arguments and print formatted analysis results to stdout.
+
+    Args:
+        argv: argument list to parse; defaults to sys.argv[1:] when None.
+
+    Exits with status 1 if the analysis name is unrecognised or arguments are missing.
+    """
     args = argv if argv is not None else sys.argv[1:]
 
     if len(args) != 2 or args[0] not in _ANALYSES:

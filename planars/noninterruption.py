@@ -42,7 +42,12 @@ def derive_noninterruption_domains(
             if blank_els:
                 missing_data[c] = blank_els
 
+    # No-free domain: a position qualifies if its elements are bound (free=n).
     data_df["is_bound"] = data_df["free"] == "n"
+
+    # Single-free domain: a position qualifies if elements are either bound (free=n)
+    # or are free but do not occur multiple times (free=y, multiple=n).
+    # This excludes positions with multiply-occurring free forms.
     data_df["is_single_free_ok"] = (
         (data_df["free"] == "n") |
         ((data_df["free"] == "y") & (data_df["multiple"] == "n"))
@@ -68,6 +73,14 @@ def derive_noninterruption_domains(
 
 
 def format_result(result: Dict[str, object]) -> str:
+    """Format a derive_noninterruption_domains result dict as a human-readable string.
+
+    Args:
+        result: dict returned by derive_noninterruption_domains.
+
+    Returns:
+        Multi-line string reporting positions, spans, and any missing-data warnings.
+    """
     p = result["position_number_to_name"]
     fmt = lambda span: fmt_span(span, p)
     lines = []
@@ -93,3 +106,9 @@ def format_result(result: Dict[str, object]) -> str:
         f"Single-free partial span:   {fmt(result['single_free_partial_span'])}",
     ]
     return "\n".join(lines)
+
+
+# Standard entry point used by generate_notebooks.py to call each module's main
+# derive function without a per-module name mapping. New analysis modules must
+# define this alias pointing to their primary derive function.
+derive = derive_noninterruption_domains

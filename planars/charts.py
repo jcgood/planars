@@ -67,6 +67,7 @@ _ASPIRATION_SPANS = [
 # --- Span extraction ---
 
 def _rows_from_cisc(result, lang_id):
+    """Convert a ciscategorial result dict into chart row dicts."""
     rows = []
     for key, label in _CISC_SPANS:
         l, r = result[key]
@@ -77,6 +78,7 @@ def _rows_from_cisc(result, lang_id):
 
 
 def _rows_from_subspan(result, lang_id):
+    """Convert a subspanrepetition result dict into chart row dicts."""
     rows = []
     for cat, short in _SUBSPAN_CATS.items():
         for variant, vlabel in _SUBSPAN_VARIANTS:
@@ -88,6 +90,7 @@ def _rows_from_subspan(result, lang_id):
 
 
 def _rows_from_nonint(result, lang_id):
+    """Convert a noninterruption result dict into chart row dicts."""
     rows = []
     for key, label in _NONINT_SPANS:
         l, r = result[key]
@@ -98,6 +101,7 @@ def _rows_from_nonint(result, lang_id):
 
 
 def _rows_from_stress(result, lang_id):
+    """Convert a stress result dict into chart row dicts."""
     rows = []
     for key, label in _STRESS_SPANS:
         l, r = result[key]
@@ -108,6 +112,7 @@ def _rows_from_stress(result, lang_id):
 
 
 def _rows_from_aspiration(result, lang_id):
+    """Convert an aspiration result dict into chart row dicts."""
     rows = []
     for key, label in _ASPIRATION_SPANS:
         l, r = result[key]
@@ -153,8 +158,11 @@ def collect_all_spans(repo_root):
             if not class_dir.exists():
                 continue
             for tsv in sorted(class_dir.glob("*_filled.tsv")):
+                # strict=False so partially-filled sheets still yield spans.
                 result = derive_fn(tsv, strict=False)
                 rows.extend(row_fn(result, lang_id))
+                # Record keystone and position map once per language; all TSVs
+                # for the same language share the same planar structure.
                 if lang_id not in lang_meta:
                     lang_meta[lang_id] = {
                         "keystone_pos": result["keystone_position"],
@@ -219,6 +227,7 @@ def domain_chart(df, keystone_pos, pos_to_name):
     df must already be filtered to a single language.
     keystone_pos and pos_to_name come from lang_meta[lang_id].
     """
+    # Sort largest spans to the top so shorter spans are visually distinct below.
     df = df.copy().sort_values(["Size", "Left_Edge"], ascending=[False, True])
     df = df.reset_index(drop=True)
 
@@ -228,6 +237,7 @@ def domain_chart(df, keystone_pos, pos_to_name):
     for i, row in df.iterrows():
         analysis = row["Analysis"]
         color = _COLORS.get(analysis, "#888888")
+        # Show a legend entry only the first time each analysis type appears.
         show_legend = analysis not in seen
         seen.add(analysis)
 
@@ -248,6 +258,7 @@ def domain_chart(df, keystone_pos, pos_to_name):
             ),
         ))
 
+    # Dotted vertical line marks the keystone position for quick visual reference.
     fig.add_vline(x=keystone_pos, line_dash="dot", line_color="gray", line_width=1)
 
     positions = sorted(pos_to_name.keys())
@@ -274,6 +285,7 @@ def domain_chart(df, keystone_pos, pos_to_name):
             xanchor="right",
             x=1,
         ),
+        # Scale height so every span label has ~22px of vertical space.
         height=max(400, len(labels) * 22),
         margin=dict(l=180, r=20, t=60, b=60),
         template="simple_white",

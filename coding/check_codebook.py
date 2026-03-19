@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def _load_codebook() -> dict:
+    """Load and parse codebook.yaml from the repo root."""
     with open(ROOT / "codebook.yaml", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
@@ -87,7 +88,19 @@ def _check_diagnostics(codebook: dict) -> List[str]:
 
 
 def _make_minimal_tsv(params: list[str], extra_params: list[str] = None) -> io.StringIO:
-    """Build a minimal filled TSV with one keystone row and one data row."""
+    """Build a minimal filled TSV with one keystone row and one data row.
+
+    Used to run derive functions in isolation during consistency checks, without
+    needing real annotation data. All data-row params are set to 'y' so every
+    qualification condition evaluates to True and all span keys appear in the result.
+
+    Args:
+        params: required parameter column names (e.g. ["free", "multiple"]).
+        extra_params: additional columns to include (e.g. extra interaction params).
+
+    Returns:
+        An io.StringIO object ready to pass to load_filled_tsv.
+    """
     all_params = list(params) + (extra_params or [])
     cols = ["Element", "Position_Name", "Position_Number"] + all_params + ["Comments"]
     header = "\t".join(cols)
@@ -97,7 +110,12 @@ def _make_minimal_tsv(params: list[str], extra_params: list[str] = None) -> io.S
 
 
 def _check_chart_keys() -> List[str]:
-    """Check that chart span label keys exist in the result dicts from each derive fn."""
+    """Check that chart span label keys exist in the result dicts from each derive fn.
+
+    Runs each derive function against a minimal synthetic TSV and verifies that
+    every key referenced in the chart label mappings (_CISC_SPANS, etc.) is
+    actually present in the returned result dict.
+    """
     from planars import ciscategorial, subspanrepetition, noninterruption, stress, aspiration
     from planars.charts import (
         _CISC_SPANS, _NONINT_SPANS, _STRESS_SPANS, _ASPIRATION_SPANS,
@@ -108,6 +126,7 @@ def _check_chart_keys() -> List[str]:
     errors = []
 
     def _check(label, derive_fn, span_keys, tsv_io, required_params, extra=None):
+        """Run derive_fn on a synthetic TSV and check that all span_keys are present."""
         try:
             data = load_filled_tsv(tsv_io, required_params, strict=False)
             result = derive_fn(_data=data, strict=False)
@@ -158,6 +177,13 @@ def _check_chart_keys() -> List[str]:
 
 
 def main() -> None:
+    """Entry point for `python -m coding check-codebook`.
+
+    Runs three consistency checks and exits with status 1 if any fail:
+    1. Every _REQUIRED_PARAMS param in each analysis module is in codebook.yaml.
+    2. Every param name in diagnostics.tsv files is in codebook.yaml.
+    3. Every span key referenced in charts.py exists in the corresponding derive result.
+    """
     codebook = _load_codebook()
     all_errors: List[str] = []
 

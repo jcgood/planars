@@ -9,11 +9,27 @@ DATA_DIR = ""
 
 
 def _resolve_path(filename: str) -> Path:
+    """Resolve a filename against DATA_DIR, falling back to the script directory."""
     base = Path(DATA_DIR) if DATA_DIR else Path(__file__).resolve().parent
     return base / filename
 
 
 def _infer_language_id_from_planar_filename(planar_filename: str) -> str:
+    """Extract the language ID from a planar filename.
+
+    Accepts both bare (planar_<lang>.tsv) and dated (planar_<lang>-<date>.tsv)
+    filenames. Only the portion before the first hyphen after the 'planar_' prefix
+    is treated as the language ID.
+
+    Args:
+        planar_filename: basename or path of the planar TSV file.
+
+    Returns:
+        The language ID string (e.g. 'stan1293').
+
+    Raises:
+        ValueError: if the filename doesn't start with 'planar_' or the ID is empty.
+    """
     # Accept: planar_<lang>.tsv OR planar_<lang>-<date>.tsv
     stem = Path(planar_filename).stem
     if not stem.startswith("planar_"):
@@ -59,12 +75,24 @@ def _split_elements(elements_raw: str) -> List[str]:
 
 
 def build_element_index(planar_filename: str) -> ElementIndex:
-    """
-    Build mapping with *unique keys* per element occurrence:
-        key   = f"{element_plain}@{position_number}"
-        value = (position_number, position_name, language_id, element_plain)
+    """Build a mapping with unique keys per element occurrence in a planar TSV.
 
-    Uses the explicit 'Position' column (integer) from the planar TSV.
+    Each element that appears in the planar structure gets a key of the form
+    ``f"{element_plain}@{position_number}"`` so the same element name can appear
+    in multiple positions without collision.
+
+    Args:
+        planar_filename: basename of the planar TSV file (resolved via DATA_DIR
+            or the script directory). Must have columns: Class_Type, Elements,
+            Position_Name, Position.
+
+    Returns:
+        Dict mapping ``"element@pos"`` keys to
+        ``(position_number, position_name, language_id, element_plain)`` tuples.
+
+    Raises:
+        ValueError: if required columns are missing, Position is non-integer,
+            a duplicate key is found, or Class_Type is unexpected.
     """
     lang_id = _infer_language_id_from_planar_filename(planar_filename)
     path = _resolve_path(planar_filename)
@@ -79,6 +107,7 @@ def build_element_index(planar_filename: str) -> ElementIndex:
     element_to_info: ElementIndex = {}
 
     def add_element(element_plain: str, pos: int, position_name: str) -> None:
+        """Register one element occurrence; raise if the (element, pos) key is duplicate."""
         element_plain = (element_plain or "").strip()
         if not element_plain:
             return
@@ -93,6 +122,7 @@ def build_element_index(planar_filename: str) -> ElementIndex:
 
     for _, row in df.iterrows():
         row_lang = (row.get("Language_ID", "") or "").strip()
+        # Skip rows that belong to a different language (multi-language planar files).
         if row_lang != lang_id:
             continue
 
@@ -111,6 +141,8 @@ def build_element_index(planar_filename: str) -> ElementIndex:
         if not elements_raw:
             continue
 
+        # Both "open" and "list" class types enumerate individual elements;
+        # the distinction matters for form generation but not for indexing.
         if class_type == "open":
             for element_plain in _split_elements(elements_raw):
                 add_element(element_plain, pos, position_name)
@@ -142,6 +174,7 @@ def _resolve_diagnostics_path() -> Path:
 
 
 def _parse_csv_list(value: str) -> List[str]:
+    """Split a comma-separated string into a list of non-empty stripped tokens."""
     return [v.strip() for v in (value or "").split(",") if v.strip()]
 
 

@@ -35,6 +35,7 @@ from .generate_sheets import (
     _upload_manifest_to_drive,
     _load_drive_config,
     _save_drive_config,
+    _open_spreadsheet,
     CODED_DATA,
     _TRAILING_COLS,
 )
@@ -185,126 +186,133 @@ def _parse_renames() -> Dict[str, str]:
 
 
 def main() -> None:
+    """Entry point for `python -m coding sync-params`.
+
+    Compares expected param columns (from diagnostics.tsv) against actual sheet
+    headers, inserts new columns before Comments, optionally removes stale columns,
+    applies dropdown validation, and updates the Drive manifest if anything changed.
+    In dry-run mode (no --apply) only prints what would change.
+    """
     apply = "--apply" in sys.argv
     remove = "--remove" in sys.argv
     renames = _parse_renames()
 
-    # Find planar file to establish lang_id and DATA_DIR
     planar_files = sorted(CODED_DATA.glob("*/planar_input/planar_*.tsv"))
     if not planar_files:
         raise SystemExit("No planar_*.tsv found in coded_data/*/planar_input/")
-    planar_file = planar_files[0]
-    planar_dir = planar_file.parent
-    lang_id = _infer_language_id_from_planar_filename(planar_file.name)
-
-    _mf.DATA_DIR = str(planar_dir)
-    specs = _read_diagnostics_for_language(lang_id)
-
-    # Build expected: class_name -> construction -> (param_names, param_values)
-    expected: Dict[str, Dict[str, Tuple[List[str], Dict[str, List[str]]]]] = {}
-    for class_name, construction, param_names, param_values in specs:
-        expected.setdefault(class_name, {})[construction] = (param_names, param_values)
-
-    print(f"Language: {lang_id}")
-    print(f"Mode:     {'apply' if apply else 'dry run'}")
-    if renames:
-        print(f"Renames:  {renames}")
-    print()
 
     print("Connecting to Google APIs...")
     gc, drive = _get_clients()
     manifest = _load_manifest_from_drive(drive)
-    lang_data = manifest.get(lang_id, {})
-    sheets = lang_data.get("sheets", {})
 
     any_changes = False
     manifest_changed = False
 
-    for class_name, sheet_info in sheets.items():
-        if class_name not in expected:
-            print(f"[{class_name}] Not in diagnostics.tsv — skipping")
-            continue
+    for planar_file in planar_files:
+        planar_dir = planar_file.parent
+        lang_id = _infer_language_id_from_planar_filename(planar_file.name)
 
-        ss = gc.open_by_key(sheet_info["spreadsheet_id"])
+        _mf.DATA_DIR = str(planar_dir)
+        specs = _read_diagnostics_for_language(lang_id)
 
-        for construction, (exp_params, exp_values) in expected[class_name].items():
-            try:
-                ws = ss.worksheet(construction)
-            except gspread.WorksheetNotFound:
-                print(f"  [{class_name}/{construction}] Tab not found — skipping")
+        # Build expected: class_name -> construction -> (param_names, param_values)
+        expected: Dict[str, Dict[str, Tuple[List[str], Dict[str, List[str]]]]] = {}
+        for class_name, construction, param_names, param_values in specs:
+            expected.setdefault(class_name, {})[construction] = (param_names, param_values)
+
+        print(f"\nLanguage: {lang_id}")
+        print(f"Mode:     {'apply' if apply else 'dry run'}")
+        if renames:
+            print(f"Renames:  {renames}")
+
+        lang_data = manifest.get(lang_id, {})
+        sheets = lang_data.get("sheets", {})
+
+        for class_name, sheet_info in sheets.items():
+            if class_name not in expected:
+                print(f"[{class_name}] Not in diagnostics.tsv — skipping")
                 continue
 
-            # Apply renames first so add/remove detection sees the updated headers
-            if renames:
-                for old_name, new_name in renames.items():
-                    found = old_name in ws.row_values(1)
-                    if found:
-                        print(f"  [{class_name}/{construction}] Rename: {old_name} → {new_name}")
-                        if apply:
-                            _rename_column(ws, old_name, new_name)
-                            any_changes = True
-                            # Update manifest construction_params
-                            cp = sheet_info.setdefault("construction_params", {})
-                            cp.setdefault(construction, {})
-                            param_names = cp[construction].get("param_names", [])
-                            cp[construction]["param_names"] = [
-                                new_name if p == old_name else p for p in param_names
-                            ]
+            ss = _open_spreadsheet(gc, sheet_info["spreadsheet_id"])
+
+            for construction, (exp_params, exp_values) in expected[class_name].items():
+                try:
+                    ws = ss.worksheet(construction)
+                except gspread.WorksheetNotFound:
+                    print(f"  [{class_name}/{construction}] Tab not found — skipping")
+                    continue
+
+                # Apply renames first so add/remove detection sees the updated headers
+                if renames:
+                    for old_name, new_name in renames.items():
+                        found = old_name in ws.row_values(1)
+                        if found:
+                            print(f"  [{class_name}/{construction}] Rename: {old_name} → {new_name}")
+                            if apply:
+                                _rename_column(ws, old_name, new_name)
+                                any_changes = True
+                                # Update manifest construction_params
+                                cp = sheet_info.setdefault("construction_params", {})
+                                cp.setdefault(construction, {})
+                                param_names = cp[construction].get("param_names", [])
+                                cp[construction]["param_names"] = [
+                                    new_name if p == old_name else p for p in param_names
+                                ]
+                                manifest_changed = True
+                                print(f"    Renamed.")
+                        else:
+                            print(f"  [{class_name}/{construction}] Rename: {old_name} not found — skipping")
+
+                current_params, comments_col = _get_current_params(ws)
+                current_set = set(current_params)
+                expected_set = set(exp_params)
+
+                # Preserve expected order; only add params that are genuinely new
+                new_params = [p for p in exp_params if p not in current_set]
+                removed_params = [p for p in current_params if p not in expected_set]
+
+                if not new_params and not removed_params:
+                    # Sheet columns match diagnostics. Still sync manifest construction_params
+                    # in case they were updated out-of-band (e.g. manual column rename via --rename).
+                    if apply:
+                        cp = sheet_info.setdefault("construction_params", {})
+                        existing_cp = cp.get(construction, {})
+                        if existing_cp.get("param_names") != exp_params or existing_cp.get("param_values") != exp_values:
+                            cp[construction] = {"param_names": exp_params, "param_values": exp_values}
                             manifest_changed = True
-                            print(f"    Renamed.")
-                    else:
-                        print(f"  [{class_name}/{construction}] Rename: {old_name} not found — skipping")
-
-            current_params, comments_col = _get_current_params(ws)
-            current_set = set(current_params)
-            expected_set = set(exp_params)
-
-            # Preserve expected order; only add params that are genuinely new
-            new_params = [p for p in exp_params if p not in current_set]
-            removed_params = [p for p in current_params if p not in expected_set]
-
-            if not new_params and not removed_params:
-                # Sheet columns are correct; still sync manifest construction_params
-                # in case they were updated out-of-band (e.g. manual column rename).
-                if apply:
-                    cp = sheet_info.setdefault("construction_params", {})
-                    existing_cp = cp.get(construction, {})
-                    if existing_cp.get("param_names") != exp_params or existing_cp.get("param_values") != exp_values:
-                        cp[construction] = {"param_names": exp_params, "param_values": exp_values}
-                        manifest_changed = True
-                        print(f"  [{class_name}/{construction}] Manifest construction_params updated")
+                            print(f"  [{class_name}/{construction}] Manifest construction_params updated")
+                        else:
+                            if not renames:
+                                print(f"  [{class_name}/{construction}] OK — no changes")
                     else:
                         if not renames:
                             print(f"  [{class_name}/{construction}] OK — no changes")
-                else:
-                    if not renames:
-                        print(f"  [{class_name}/{construction}] OK — no changes")
-                continue
+                    continue
 
-            any_changes = True
+                any_changes = True
 
-            if new_params:
-                print(f"  [{class_name}/{construction}] New params: {new_params}")
-                if apply:
-                    _insert_param_columns(ws, new_params, exp_values, comments_col)
-                    # Update manifest construction_params so Colab reads the right params
-                    cp = sheet_info.setdefault("construction_params", {})
-                    cp.setdefault(construction, {})["param_names"] = exp_params
-                    cp[construction]["param_values"] = exp_values
-                    manifest_changed = True
-                    print(f"    Added: {new_params}")
+                if new_params:
+                    print(f"  [{class_name}/{construction}] New params: {new_params}")
+                    if apply:
+                        _insert_param_columns(ws, new_params, exp_values, comments_col)
+                        # Update manifest construction_params so Colab reads the right params
+                        cp = sheet_info.setdefault("construction_params", {})
+                        cp.setdefault(construction, {})["param_names"] = exp_params
+                        cp[construction]["param_values"] = exp_values
+                        manifest_changed = True
+                        print(f"    Added: {new_params}")
 
-            if removed_params:
-                if remove and apply:
-                    print(f"  [{class_name}/{construction}] Removing params: {removed_params}")
-                    # Column removal not yet implemented
-                    print(f"    (column removal not yet implemented — remove manually in Sheets)")
-                else:
-                    marker = "(pass --apply --remove to delete)" if apply else "(pass --remove with --apply)"
-                    print(
-                        f"  [{class_name}/{construction}] WARNING: columns in sheet but not in "
-                        f"diagnostics: {removed_params}\n    {marker}"
-                    )
+                if removed_params:
+                    if remove and apply:
+                        print(f"  [{class_name}/{construction}] Removing params: {removed_params}")
+                        # Column removal not yet implemented
+                        print(f"    (column removal not yet implemented — remove manually in Sheets)")
+                    else:
+                        marker = "(pass --apply --remove to delete)" if apply else "(pass --remove with --apply)"
+                        print(
+                            f"  [{class_name}/{construction}] WARNING: columns in sheet but not in "
+                            f"diagnostics: {removed_params}\n    {marker}"
+                        )
 
     # Update Drive manifest if anything changed
     if apply and manifest_changed:
@@ -323,6 +331,10 @@ def main() -> None:
         print("All sheets are up to date.")
     elif not apply:
         print("Dry run — pass --apply to make changes.")
+
+    if apply and any_changes:
+        from .generate_notebooks import regenerate_notebooks
+        regenerate_notebooks()
 
 
 if __name__ == "__main__":

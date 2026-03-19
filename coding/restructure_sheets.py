@@ -48,6 +48,7 @@ from .generate_sheets import (
     _format_and_validate,
     _move_to_folder,
     _share_anyone_with_link,
+    _open_spreadsheet,
     _TRAILING_COLS,
     _load_manifest_from_drive,
     _upload_manifest_to_drive,
@@ -122,7 +123,7 @@ def _lookup_existing(
 # ---------------------------------------------------------------------------
 
 def _folder_id_from_url(folder_url: str) -> str:
-    """Extract Drive folder ID from a Drive folder URL."""
+    """Extract the Drive folder ID from a Drive folder URL (last path segment)."""
     return folder_url.rstrip("/").rsplit("/", 1)[-1]
 
 
@@ -201,6 +202,8 @@ def _write_tab_with_carryover(
 
         all_rows.append([element, pos_name, pos_num] + param_vals + trailing_vals)
 
+    # Count existing annotations that were not matched by any row in the new structure.
+    # These correspond to positions/elements that were removed from the planar file.
     dropped = sum(1 for k in existing if k not in reachable_old_keys)
 
     try:
@@ -227,7 +230,19 @@ def _compute_stats(
     existing: Dict[Tuple[str, str], Dict[str, str]],
     rename_map: Dict[str, str],
 ) -> Tuple[int, int, List[Tuple[str, str]]]:
-    """Return (carried_count, new_count, dropped_keys) without touching any sheet."""
+    """Compute carry-over stats for a dry run without touching any sheet.
+
+    Args:
+        rows: new rows from _build_rows (the regenerated planar structure).
+        existing: current annotations keyed by (element, pos_name).
+        rename_map: {old_pos_name: new_pos_name} for renamed positions.
+
+    Returns:
+        (carried_count, new_count, dropped_keys) where:
+          - carried_count: rows from existing that matched a row in rows
+          - new_count:     rows in rows with no match in existing (need re-annotation)
+          - dropped_keys:  (element, pos_name) pairs in existing not matched by any row
+    """
     old_for_new = {v: k for k, v in rename_map.items()}
     reachable_old_keys: set = set()
     new = 0
@@ -266,6 +281,15 @@ def _parse_rename_map(argv: List[str]) -> Dict[str, str]:
 
 
 def main() -> None:
+    """Entry point for `python -m coding restructure-sheets`.
+
+    For each class in the manifest, downloads current annotations, optionally
+    archives the existing spreadsheet to archive/v{N}/ in Drive, creates a new
+    spreadsheet from the updated planar structure, and carries over matching
+    annotations by (Element, Position_Name). Unmatched rows are left blank for
+    re-annotation. Updates the manifest on Drive and locally.
+    In dry-run mode (no --apply) only prints what would change.
+    """
     apply = "--apply" in sys.argv
     rename_map = _parse_rename_map(sys.argv[1:])
 
@@ -275,114 +299,115 @@ def main() -> None:
     planar_files = sorted(CODED_DATA.glob("*/planar_input/planar_*.tsv"))
     if not planar_files:
         raise SystemExit("No planar_*.tsv found in coded_data/*/planar_input/")
-    planar_file = planar_files[0]
-    lang_id = _infer_language_id_from_planar_filename(planar_file.name)
-
-    _mf.DATA_DIR = str(planar_file.parent)
-    element_index = build_element_index(planar_file.name)
-    specs = _read_diagnostics_for_language(lang_id)
-
-    classes: Dict[str, List[Tuple[str, List[str], Dict[str, List[str]]]]] = {}
-    for class_name, construction, param_names, param_values in specs:
-        classes.setdefault(class_name, []).append((construction, param_names, param_values))
-
-    print(f"{'DRY RUN — ' if not apply else ''}Language: {lang_id}")
-    if rename_map:
-        for old, new in rename_map.items():
-            print(f"  rename: {old!r} -> {new!r}")
-    if not apply:
-        print("(run with --apply to archive old sheets and regenerate)\n")
-
-    lang_data = manifest.get(lang_id, {})
-    folder_url = lang_data.get("folder_url", "")
-    folder_id = _folder_id_from_url(folder_url) if folder_url else None
 
     any_changes = False
 
-    for class_name, constructions_list in classes.items():
-        sheet_info = lang_data.get("sheets", {}).get(class_name)
-        if not sheet_info:
-            print(f"\n  {class_name}: not in manifest, skipping (run python -m coding generate-sheets first)")
-            continue
+    for planar_file in planar_files:
+        lang_id = _infer_language_id_from_planar_filename(planar_file.name)
 
-        version = sheet_info.get("version", 1)
-        print(f"\n  {class_name} (current v{version})")
+        _mf.DATA_DIR = str(planar_file.parent)
+        element_index = build_element_index(planar_file.name)
+        specs = _read_diagnostics_for_language(lang_id)
 
-        ss = gc.open_by_key(sheet_info["spreadsheet_id"])
+        classes: Dict[str, List[Tuple[str, List[str], Dict[str, List[str]]]]] = {}
+        for class_name, construction, param_names, param_values in specs:
+            classes.setdefault(class_name, []).append((construction, param_names, param_values))
 
-        # Step 1: Download current annotations from all tabs
-        all_annotations: Dict[str, Dict[Tuple[str, str], Dict[str, str]]] = {}
-        for construction in sheet_info["constructions"]:
-            try:
-                ws = ss.worksheet(construction)
-                all_annotations[construction] = _download_tab_annotations(ws)
-                print(f"    [{construction}] downloaded {len(all_annotations[construction])} rows")
-            except gspread.WorksheetNotFound:
-                all_annotations[construction] = {}
-                print(f"    [{construction}] tab not found")
-
-        # Step 2: Compute and report stats per tab
-        for construction, param_names, param_values in constructions_list:
-            rows = _build_rows(element_index, lang_id, param_names)
-            existing = all_annotations.get(construction, {})
-            carried, new_count, dropped = _compute_stats(rows, existing, rename_map)
-            parts = [f"carry over {carried}", f"new blank {new_count}"]
-            if dropped:
-                dropped_labels = [f"{el}@{pn}" for el, pn in dropped]
-                parts.append(f"drop {len(dropped)} ({', '.join(dropped_labels)})")
-            print(f"    [{construction}] {'; '.join(parts)}")
-            if carried < len(existing) - len(dropped):
-                any_changes = True
-            if new_count or dropped:
-                any_changes = True
-
+        print(f"\n{'DRY RUN — ' if not apply else ''}Language: {lang_id}")
+        if rename_map:
+            for old, new in rename_map.items():
+                print(f"  rename: {old!r} -> {new!r}")
         if not apply:
-            continue
+            print("(run with --apply to archive old sheets and regenerate)")
 
-        # Step 3: Archive existing sheet
-        new_version = version + 1
-        if folder_id:
-            archive_id = _get_or_create_subfolder(drive, folder_id, "archive")
-            ver_folder_id = _get_or_create_subfolder(drive, archive_id, f"v{version}")
-            _move_to_folder(drive, ss.id, ver_folder_id)
-            print(f"    Archived to archive/v{version}/")
+        lang_data = manifest.get(lang_id, {})
+        folder_url = lang_data.get("folder_url", "")
+        folder_id = _folder_id_from_url(folder_url) if folder_url else None
 
-        # Step 4: Create new sheet and populate with carry-over
-        sheet_title = f"{class_name}_{lang_id}"
-        new_ss = gc.create(sheet_title)
-        if folder_id:
-            _move_to_folder(drive, new_ss.id, folder_id)
-            _share_anyone_with_link(drive, new_ss.id)
+        for class_name, constructions_list in classes.items():
+            sheet_info = lang_data.get("sheets", {}).get(class_name)
+            if not sheet_info:
+                print(f"\n  {class_name}: not in manifest, skipping (run python -m coding generate-sheets first)")
+                continue
 
-        default_ws = new_ss.sheet1
-        tab_names = []
-        new_construction_params = {}
+            version = sheet_info.get("version", 1)
+            print(f"\n  {class_name} (current v{version})")
 
-        for construction, param_names, param_values in constructions_list:
-            rows = _build_rows(element_index, lang_id, param_names)
-            existing = all_annotations.get(construction, {})
-            carried, new_count, dropped_count = _write_tab_with_carryover(
-                new_ss, construction, param_names, param_values, rows, existing, rename_map
-            )
-            tab_names.append(construction)
-            new_construction_params[construction] = {
-                "param_names": param_names,
-                "param_values": param_values,
+            ss = _open_spreadsheet(gc, sheet_info["spreadsheet_id"])
+
+            # Step 1: Download current annotations from all tabs
+            all_annotations: Dict[str, Dict[Tuple[str, str], Dict[str, str]]] = {}
+            for construction in sheet_info["constructions"]:
+                try:
+                    ws = ss.worksheet(construction)
+                    all_annotations[construction] = _download_tab_annotations(ws)
+                    print(f"    [{construction}] downloaded {len(all_annotations[construction])} rows")
+                except gspread.WorksheetNotFound:
+                    all_annotations[construction] = {}
+                    print(f"    [{construction}] tab not found")
+
+            # Step 2: Compute and report stats per tab
+            for construction, param_names, param_values in constructions_list:
+                rows = _build_rows(element_index, lang_id, param_names)
+                existing = all_annotations.get(construction, {})
+                carried, new_count, dropped = _compute_stats(rows, existing, rename_map)
+                parts = [f"carry over {carried}", f"new blank {new_count}"]
+                if dropped:
+                    dropped_labels = [f"{el}@{pn}" for el, pn in dropped]
+                    parts.append(f"drop {len(dropped)} ({', '.join(dropped_labels)})")
+                print(f"    [{construction}] {'; '.join(parts)}")
+                if carried < len(existing) - len(dropped):
+                    any_changes = True
+                if new_count or dropped:
+                    any_changes = True
+
+            if not apply:
+                continue
+
+            # Step 3: Archive existing sheet
+            new_version = version + 1
+            if folder_id:
+                archive_id = _get_or_create_subfolder(drive, folder_id, "archive")
+                ver_folder_id = _get_or_create_subfolder(drive, archive_id, f"v{version}")
+                _move_to_folder(drive, ss.id, ver_folder_id)
+                print(f"    Archived to archive/v{version}/")
+
+            # Step 4: Create new sheet and populate with carry-over
+            sheet_title = f"{class_name}_{lang_id}"
+            new_ss = gc.create(sheet_title)
+            if folder_id:
+                _move_to_folder(drive, new_ss.id, folder_id)
+                _share_anyone_with_link(drive, new_ss.id)
+
+            default_ws = new_ss.sheet1
+            tab_names = []
+            new_construction_params = {}
+
+            for construction, param_names, param_values in constructions_list:
+                rows = _build_rows(element_index, lang_id, param_names)
+                existing = all_annotations.get(construction, {})
+                carried, new_count, dropped_count = _write_tab_with_carryover(
+                    new_ss, construction, param_names, param_values, rows, existing, rename_map
+                )
+                tab_names.append(construction)
+                new_construction_params[construction] = {
+                    "param_names": param_names,
+                    "param_values": param_values,
+                }
+                print(f"    [{construction}] wrote: carried {carried}, new blank {new_count}, dropped {dropped_count}")
+
+            if default_ws.title not in tab_names:
+                new_ss.del_worksheet(default_ws)
+
+            # Step 5: Update manifest
+            manifest[lang_id]["sheets"][class_name] = {
+                "spreadsheet_id": new_ss.id,
+                "url": new_ss.url,
+                "constructions": tab_names,
+                "construction_params": new_construction_params,
+                "version": new_version,
             }
-            print(f"    [{construction}] wrote: carried {carried}, new blank {new_count}, dropped {dropped_count}")
-
-        if default_ws.title not in tab_names:
-            new_ss.del_worksheet(default_ws)
-
-        # Step 5: Update manifest
-        manifest[lang_id]["sheets"][class_name] = {
-            "spreadsheet_id": new_ss.id,
-            "url": new_ss.url,
-            "constructions": tab_names,
-            "construction_params": new_construction_params,
-            "version": new_version,
-        }
-        print(f"    New sheet (v{new_version}): {new_ss.url}")
+            print(f"    New sheet (v{new_version}): {new_ss.url}")
 
     if apply:
         # Update local manifest (gitignored reference copy)
@@ -407,6 +432,8 @@ def main() -> None:
         print("\nRun with --apply to make these changes.")
     else:
         print("\nDone.")
+        from .generate_notebooks import regenerate_notebooks
+        regenerate_notebooks()
 
 
 if __name__ == "__main__":

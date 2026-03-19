@@ -53,9 +53,14 @@ def derive_stress_domains(
 
     # Include keystone rows in blocking checks so the ROOT position can itself
     # trigger a domain boundary, while always remaining part of the span.
+    # (keystone_df is kept separate from data_df by the loader so it is not
+    # double-counted in span expansion — it is only used for blocking here.)
     blocking_df = pd.concat([data_df, keystone_df], ignore_index=True)
 
-    # Minimal: blocked by stressed ∈ {y, both} AND independence = y
+    # Minimal domain: blocked by a position where any/all elements are independently
+    # stressed (stressed ∈ {y, both}) AND prosodically independent (independence=y).
+    # Partial blocking: ANY element satisfies the condition → smaller minimal domain.
+    # Complete blocking: ALL elements satisfy the condition → larger minimal domain.
     minimal_block_mask = (
         blocking_df["stressed"].isin({"y", "both"}) &
         (blocking_df["independence"] == "y")
@@ -64,7 +69,8 @@ def derive_stress_domains(
         blocking_df, minimal_block_mask
     )
 
-    # Maximal: blocked by obligatory = y AND independence = y
+    # Maximal domain: blocked by obligatory stress AND independence.
+    # Same partial/complete distinction as the minimal domain.
     maximal_block_mask = (
         (blocking_df["obligatory"] == "y") &
         (blocking_df["independence"] == "y")
@@ -90,6 +96,15 @@ def derive_stress_domains(
 
 
 def format_result(result: Dict[str, object]) -> str:
+    """Format a derive_stress_domains result dict as a human-readable string.
+
+    Args:
+        result: dict returned by derive_stress_domains.
+
+    Returns:
+        Multi-line string reporting blocked positions, domain spans, and any
+        missing-data warnings.
+    """
     p = result["position_number_to_name"]
     fmt = lambda span: fmt_span(span, p)
     lines = []
@@ -117,3 +132,9 @@ def format_result(result: Dict[str, object]) -> str:
         f"Maximal stress span (complete): {fmt(result['maximal_complete_span'])}",
     ]
     return "\n".join(lines)
+
+
+# Standard entry point used by generate_notebooks.py to call each module's main
+# derive function without a per-module name mapping. New analysis modules must
+# define this alias pointing to their primary derive function.
+derive = derive_stress_domains

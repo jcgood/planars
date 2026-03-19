@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 import gspread
 
-from .generate_sheets import _get_clients, _load_manifest_from_drive
+from .generate_sheets import _get_clients, _load_manifest_from_drive, _open_spreadsheet
 
 ERROR_DIR = ROOT / "import_errors"
 
@@ -128,6 +128,11 @@ def _validate_tab(
 # ---------------------------------------------------------------------------
 
 def _write_tsv(path: Path, header: List[str], records: List[Dict]) -> None:
+    """Write records to a tab-separated file with the given header order.
+
+    Extra keys in records beyond the header are silently ignored
+    (extrasaction='ignore').
+    """
     with path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
             f, fieldnames=header, delimiter="\t",
@@ -150,6 +155,13 @@ def _write_error_report(lang_id: str, lines: List[str], timestamp: str) -> Path:
 
 
 def main() -> None:
+    """Entry point for `python -m coding import-sheets`.
+
+    Loads the manifest from Drive, downloads each construction tab, validates
+    values, and writes filled TSVs under coded_data/{lang_id}/{class_name}/.
+    Skips existing files unless --force is passed. Writes an error report to
+    import_errors/ if any warnings are generated.
+    """
     force = "--force" in sys.argv
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -166,7 +178,7 @@ def main() -> None:
 
         for class_name, sheet_info in lang_data["sheets"].items():
             print(f"\n  {class_name}")
-            ss = gc.open_by_key(sheet_info["spreadsheet_id"])
+            ss = _open_spreadsheet(gc, sheet_info["spreadsheet_id"])
 
             for construction in sheet_info["constructions"]:
                 try:
@@ -206,6 +218,8 @@ def main() -> None:
 
                 _write_tsv(out_path, header, records)
 
+                # Count non-keystone rows that still have at least one blank param cell,
+                # so the status line can warn the user about incomplete annotations.
                 blank_count = sum(
                     1 for r in records
                     if r.get("Position_Name", "").lower() != "v:verbroot"

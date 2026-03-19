@@ -13,7 +13,25 @@ def _parse_filled_df(
     required_params: Set[str],
     strict: bool,
 ) -> Tuple[pd.DataFrame, int, Dict[int, str], List[str]]:
-    """Core parsing logic shared by load_filled_tsv and load_filled_sheet."""
+    """Core parsing logic shared by load_filled_tsv and load_filled_sheet.
+
+    Normalizes column types, validates structural integrity, locates the keystone
+    row (Position_Name == 'v:verbroot'), and splits keystone rows from the rest.
+
+    Args:
+        df: raw DataFrame with at least the structural columns and required_params.
+        required_params: parameter column names that must be present and (when
+            strict=True) non-blank in all non-keystone rows.
+        strict: if True, raise ValueError on any blank required_param cell in
+            non-keystone rows; if False, leave blanks as empty strings.
+
+    Returns:
+        data_df:      DataFrame of non-keystone rows, all param cells normalized.
+        keystone_pos: integer Position_Number of the keystone row.
+        pos_to_name:  dict mapping Position_Number -> Position_Name.
+        param_cols:   list of all non-structural column names (params + trailing).
+        keystone_df:  DataFrame of keystone rows (for blocking checks in stress/aspiration).
+    """
     missing = (required_params | _STRUCTURAL_COLS) - set(df.columns)
     if missing:
         raise ValueError(f"Missing required column(s): {sorted(missing)}")

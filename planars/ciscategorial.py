@@ -41,6 +41,9 @@ def derive_v_ciscategorial_fractures(
     if "V-combines" not in param_cols:
         raise ValueError(f"Expected a parameter column named 'V-combines'. Found: {param_cols}")
 
+    # All param columns except V-combines and trailing free-text columns are "other params".
+    # An element is v-ciscategorial if it combines with V (V-combines=y) and with nothing
+    # else (all other params = n).
     other_params = [c for c in param_cols if c != "V-combines" and c not in _TRAILING_COLS]
 
     if strict:
@@ -51,20 +54,24 @@ def derive_v_ciscategorial_fractures(
 
     missing_data = {}
     if not strict:
+        # Collect elements with blank cells so format_result can warn the user.
         for c in ["V-combines"] + other_params:
             blank_els = data_df.loc[data_df[c] == "", "Element"].tolist()
             if blank_els:
                 missing_data[c] = blank_els
 
+    # Start with V-combines=y, then narrow by requiring all other params = n.
     is_v = data_df["V-combines"] == "y"
     for c in other_params:
         is_v = is_v & (data_df[c] == "n")
     data_df["is_v_ciscategorial"] = is_v
 
+    # Complete: every element in the position is v-ciscategorial.
     complete_positions = set(
         int(pos) for pos, grp in data_df.groupby("Position_Number")
         if len(grp) > 0 and grp["is_v_ciscategorial"].all()
     )
+    # Partial: at least one element in the position is v-ciscategorial.
     partial_positions = set(
         data_df.loc[data_df["is_v_ciscategorial"], "Position_Number"].unique().tolist()
     )
@@ -84,6 +91,14 @@ def derive_v_ciscategorial_fractures(
 
 
 def format_result(result: Dict[str, object]) -> str:
+    """Format a derive_v_ciscategorial_fractures result dict as a human-readable string.
+
+    Args:
+        result: dict returned by derive_v_ciscategorial_fractures.
+
+    Returns:
+        Multi-line string reporting positions, spans, and any missing-data warnings.
+    """
     p = result["position_number_to_name"]
     fmt = lambda span: fmt_span(span, p)
     lines = []
@@ -107,3 +122,9 @@ def format_result(result: Dict[str, object]) -> str:
         f"Loose partial v-ciscategorial span:   {fmt(result['loose_partial_span'])}",
     ]
     return "\n".join(lines)
+
+
+# Standard entry point used by generate_notebooks.py to call each module's main
+# derive function without a per-module name mapping. New analysis modules must
+# define this alias pointing to their primary derive function.
+derive = derive_v_ciscategorial_fractures

@@ -35,6 +35,7 @@ _FILLED_SUFFIXES = ["filled", "fill", "full"]
 # ---------------------------------------------------------------------------
 
 def _get_client() -> gspread.Client:
+    """Return an authenticated gspread.Client using OAuth2 user credentials."""
     creds_path = Path(
         os.environ.get("PLANARS_OAUTH_CREDENTIALS", str(_DEFAULT_OAUTH_PATH))
     )
@@ -170,6 +171,12 @@ def _upload_tsv_to_tab(ws: gspread.Worksheet, tsv_path: Path) -> int:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    """Entry point for `python -m coding populate-sheets` (one-time legacy upload).
+
+    Reads sheets_manifest.json, searches numbered output folders for filled TSVs
+    matching each construction, selects the candidate with the fewest blank cells,
+    and uploads parameter values to the corresponding sheet tab.
+    """
     if not MANIFEST_PATH.exists():
         raise SystemExit(
             f"sheets_manifest.json not found at {MANIFEST_PATH}.\n"

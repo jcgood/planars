@@ -8,6 +8,8 @@ from planars.spans import fmt_span, strict_span, loose_span, position_sets_from_
 
 _REQUIRED_PARAMS = {"widescope_left", "widescope_right", "fillable_botheither_conjunct"}
 
+# Maps each span category name to the boolean flag column computed on data_df.
+# The flag column names are added to the DataFrame inside derive_subspanrepetition_spans.
 _CATEGORIES = {
     "maximum_fillable":        "is_fillable",
     "maximum_widescope_left":  "is_widescope_left",
@@ -48,6 +50,10 @@ def derive_subspanrepetition_spans(
             if blank_els:
                 missing_data[c] = blank_els
 
+    # Qualification flags derived from raw param values:
+    # - fillable: element can fill either conjunct (fillable_botheither_conjunct=y)
+    # - widescope_left/right: element takes wide scope in that direction (=y)
+    # - narrowscope_left/right: negation of widescope — element takes narrow scope (=n)
     data_df["is_fillable"]         = data_df["fillable_botheither_conjunct"] == "y"
     data_df["is_widescope_left"]   = data_df["widescope_left"] == "y"
     data_df["is_widescope_right"]  = data_df["widescope_right"] == "y"
@@ -61,6 +67,8 @@ def derive_subspanrepetition_spans(
         "missing_data": missing_data,
     }
 
+    # For each of the 5 span categories, compute all 4 span variants
+    # (strict/loose × complete/partial) and store in the result dict.
     for cat_name, flag_col in _CATEGORIES.items():
         partial_positions, complete_positions = position_sets_from_element_mask(
             data_df, data_df[flag_col]
@@ -76,6 +84,15 @@ def derive_subspanrepetition_spans(
 
 
 def format_result(result: Dict[str, object]) -> str:
+    """Format a derive_subspanrepetition_spans result dict as a human-readable string.
+
+    Args:
+        result: dict returned by derive_subspanrepetition_spans.
+
+    Returns:
+        Multi-line string with one section per span category, reporting positions,
+        all four span variants, and any missing-data warnings.
+    """
     p = result["position_number_to_name"]
     fmt = lambda span: fmt_span(span, p)
     lines = []
@@ -103,3 +120,9 @@ def format_result(result: Dict[str, object]) -> str:
             f"Loose partial {k} span:   {fmt(result[f'loose_partial_{k}_span'])}",
         ]
     return "\n".join(lines)
+
+
+# Standard entry point used by generate_notebooks.py to call each module's main
+# derive function without a per-module name mapping. New analysis modules must
+# define this alias pointing to their primary derive function.
+derive = derive_subspanrepetition_spans

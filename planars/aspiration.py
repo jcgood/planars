@@ -19,6 +19,10 @@ def derive_aspiration_domains(
 ) -> Dict[str, object]:
     """Derive aspiration domain spans from a filled aspiration TSV.
 
+    [NEEDS REVIEW] The qualification rules below mirror stress.py but are
+    provisional — the correct blocking parameters for aspiration have not yet
+    been confirmed. See codebook.yaml for the open questions.
+
     Mirrors the stress domain logic. Two domain types, each with complete/partial
     qualification = 4 spans:
 
@@ -27,6 +31,9 @@ def derive_aspiration_domains(
 
     Maximal aspiration domain — expand from ROOT; stop just before the first
     position where any/all elements have obligatory = y AND independence = y.
+
+    Returns the same dict structure as derive_stress_domains, with keys named
+    for aspiration (minimal/maximal × partial/complete blocked positions and spans).
     """
     if _data is not None:
         data_df, keystone_pos, pos_to_name, _, keystone_df = _data
@@ -45,8 +52,10 @@ def derive_aspiration_domains(
     all_positions = set(data_df["Position_Number"].unique().tolist())
 
     # Include keystone rows in blocking checks (mirrors stress.py logic).
+    # The ROOT position can trigger a boundary but always stays inside the domain.
     blocking_df = pd.concat([data_df, keystone_df], ignore_index=True)
 
+    # Minimal blocking condition (provisional — see module docstring).
     minimal_block_mask = (
         blocking_df["stressed"].isin({"y", "both"}) &
         (blocking_df["independence"] == "y")
@@ -55,6 +64,7 @@ def derive_aspiration_domains(
         blocking_df, minimal_block_mask
     )
 
+    # Maximal blocking condition (provisional — see module docstring).
     maximal_block_mask = (
         (blocking_df["obligatory"] == "y") &
         (blocking_df["independence"] == "y")
@@ -80,6 +90,15 @@ def derive_aspiration_domains(
 
 
 def format_result(result: Dict[str, object]) -> str:
+    """Format a derive_aspiration_domains result dict as a human-readable string.
+
+    Args:
+        result: dict returned by derive_aspiration_domains.
+
+    Returns:
+        Multi-line string reporting blocked positions, domain spans, and any
+        missing-data warnings.
+    """
     p = result["position_number_to_name"]
     fmt = lambda span: fmt_span(span, p)
     lines = []
@@ -107,3 +126,9 @@ def format_result(result: Dict[str, object]) -> str:
         f"Maximal aspiration span (complete): {fmt(result['maximal_complete_span'])}",
     ]
     return "\n".join(lines)
+
+
+# Standard entry point used by generate_notebooks.py to call each module's main
+# derive function without a per-module name mapping. New analysis modules must
+# define this alias pointing to their primary derive function.
+derive = derive_aspiration_domains

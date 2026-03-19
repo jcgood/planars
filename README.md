@@ -33,7 +33,7 @@ python -m venv .venv
 
 ## Workflow
 
-### 1. Generate annotation forms
+### 1. Generate annotation forms and notebooks
 
 ```bash
 python -m coding generate-sheets           # creates sheets for new classes; skips existing ones
@@ -41,6 +41,8 @@ python -m coding generate-sheets --force   # regenerate all from scratch
 ```
 
 Creates one Google Sheets file per analysis class with one tab per construction. Each tab has per-parameter dropdown validation and a free-text Comments column. Google Sheets is the definitive copy of annotation forms. On re-runs, only classes not yet in the Drive manifest are created.
+
+`generate-sheets` automatically runs `generate-notebooks` at the end — it uploads per-language contributor notebooks (`domains_{lang_id}.ipynb`) and a coordinator notebook (`all_languages.ipynb`) to Drive. See [Colab notebooks](#colab-notebooks) below for details.
 
 Authentication uses OAuth2. On first run a browser window opens for authorization; the token is cached at `~/.config/gspread/authorized_user.json`. OAuth credentials must be at `~/.config/planars/oauth_credentials.json` (override with `PLANARS_OAUTH_CREDENTIALS`).
 
@@ -75,13 +77,15 @@ python -m planars aspiration        <path/to/filled.tsv>
 
 ```bash
 python -m coding update-sheets           # dry run — show what would change
-python -m coding update-sheets --apply   # add missing rows/trailing columns
+python -m coding update-sheets --apply   # add missing rows to existing sheets
 
 python -m coding sync-params             # dry run — show param column changes needed
 python -m coding sync-params --apply     # insert new param columns, update validation
+
+python -m coding generate-notebooks      # regenerate and upload contributor/coordinator notebooks
 ```
 
-Use `update-sheets` when new elements are added to the planar structure or a new trailing column (e.g. Comments) needs propagating. Use `sync-params` when `diagnostics.tsv` param columns change — it preserves existing annotations while inserting new columns before Comments.
+Use `update-sheets` when new elements are added to the planar structure. Use `sync-params` when `diagnostics.tsv` param columns change — it preserves existing annotations while inserting new columns before Comments, then regenerates notebooks. `generate-notebooks` can also be run standalone to refresh notebooks without changing sheets.
 
 ### 5. Explore results interactively
 
@@ -91,6 +95,8 @@ jupyter lab
 ```
 
 Open `notebooks/span_results.ipynb`. Make sure the kernel in the top-right says **planars** (if not, go to **Kernel → Change Kernel** and select it). Run all cells with **Run → Run All Cells**. The notebook reads the filled TSVs directly and reports spans for all analyses, noting any positions with missing annotations.
+
+For browser-only (no local install) use, see [Colab notebooks](#colab-notebooks) below.
 
 ## Analyses
 
@@ -120,26 +126,28 @@ for lang_id, fig in charts_by_language(df, lang_meta).items():
 
 ### Colab notebooks
 
-Two Colab notebooks support browser-only use without installing anything locally. They serve different audiences:
+Colab notebooks support browser-only use without installing anything locally. They are generated automatically by `python -m coding generate-notebooks` (which runs as part of `generate-sheets`, `sync-params --apply`, and `restructure-sheets --apply`) and uploaded directly to Google Drive. Contributors and coordinators open the shared links — they do not need to manage notebooks manually.
 
-**Contributor notebook (`sync_colab.ipynb`) — for annotators**
+**Contributor notebook (`domains_{lang_id}.ipynb`) — for annotators**
 
-Intended for language contributors working on a single language. Shows a domain chart for that language only. The coordinator shares this notebook via Google Drive (stored in the language's Drive folder) with `DRIVE_FOLDER_ID` pre-set.
+One notebook per language, stored in the language's Drive folder. Shows a domain chart for that language and per-construction text reports for each analysis class.
 
-1. Open the shared notebook link in Google Drive — it opens in Colab automatically
+1. Open the shared notebook link from Google Drive — it opens in Colab automatically
 2. Choose **Runtime → Run all**
 3. When prompted, sign in with your Google account and allow access
-4. The domain chart appears at the bottom of the page
+4. Results and domain chart appear at the bottom of the page
 
-If setting up for a new language, set `DRIVE_FOLDER_ID` in the configure cell to the Drive folder ID (the alphanumeric string at the end of the folder's URL).
+**Coordinator notebook (`all_languages.ipynb`) — for project coordinators**
 
-**Director notebook (`span_results_colab.ipynb`) — for project directors**
+A single notebook covering all languages. Shows per-construction text reports and one domain chart per language across all languages in the manifest.
 
-Shows full per-construction text reports and one domain chart per language across all languages in the manifest. Intended for project directors reviewing the full dataset.
+1. Open the shared notebook link from Google Drive
+2. Choose **Runtime → Run all**
+3. When prompted, sign in and allow access
 
-1. Run the **Setup** cell — installs planars if needed and requests Google permissions (once per session)
-2. Set `DRIVE_FOLDER_ID` in the **Configure** cell
-3. Run **Load manifest**, then run analysis and chart cells as needed, or use **Runtime → Run all**
+The notebook template files live in `notebooks/templates/`. To update the boilerplate (e.g. setup cell, chart cell), edit the template and re-run `python -m coding generate-notebooks`.
+
+Note: `notebooks/sync_colab.ipynb` and `notebooks/span_results_colab.ipynb` are the predecessor manual notebooks. They are superseded by the generated notebook system above but remain in the repository for reference.
 
 ## diagnostics.tsv
 
@@ -165,17 +173,24 @@ planars/                        Core library
 coding/                         Google Sheets workflow tools (python -m coding <command>)
   make_forms.py                 Planar structure and diagnostics utilities
   generate_sheets.py            Create annotation forms in Google Drive
-  update_sheets.py              Add missing rows/trailing columns to existing sheets
+  update_sheets.py              Add missing rows to existing sheets
   sync_params.py                Sync param columns when diagnostics.tsv changes
   import_sheets.py              Download filled sheets to TSVs
   restructure_sheets.py         Archive and regenerate sheets after structural changes
+  generate_notebooks.py         Generate and upload contributor/coordinator Colab notebooks
   populate_sheets.py            Upload legacy TSV data to sheets (one-time utility)
   check_codebook.py             Check consistency between codebook.yaml and analysis modules
 coded_data/{lang_id}/           Annotation data per language
   planar_input/                 Planar structure TSV + diagnostics.tsv
   {class_name}/                 Filled TSVs per analysis class
 coded_data/synth0001/           Synthetic second-language dataset (not real data — for testing)
-notebooks/                      Jupyter notebooks (local + Colab)
+notebooks/
+  templates/                    Boilerplate notebooks used by generate-notebooks
+    domains_boilerplate.ipynb   Contributor notebook template
+    all_languages_boilerplate.ipynb  Coordinator notebook template
+  span_results.ipynb            Local interactive notebook (reads coded_data/ directly)
+  sync_colab.ipynb              Predecessor contributor Colab (superseded)
+  span_results_colab.ipynb      Predecessor coordinator Colab (superseded)
 tests/snapshots/                Regression test baselines
 codebook.yaml                   Parameter and term definitions
 ```
@@ -187,7 +202,11 @@ python generate_snapshots.py   # regenerate baselines
 python check_snapshots.py      # verify output matches baselines
 ```
 
-## Multi-language testing
+## Multi-language support
+
+All workflow commands (`generate-sheets`, `import-sheets`, `sync-params`, `update-sheets`, `restructure-sheets`, `generate-notebooks`) loop over every language found in `coded_data/` — no language-specific flags are needed. Each language has its own `planar_input/` directory with a planar structure TSV and `diagnostics.tsv`, and its own Drive folder. Languages have independent planar structures and are never mixed in analysis.
+
+### Multi-language testing
 
 `coded_data/synth0001/` is a synthetic second-language dataset derived from `stan1293` for testing multi-language code paths. It has a different planar structure (28 positions vs. 37, keystone at position 23 vs. 30) and quasi-randomly flipped parameter values. It is not real data.
 
