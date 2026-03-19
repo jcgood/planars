@@ -52,6 +52,12 @@ git clone https://github.com/jcgood/planars-data.git planars/coded_data
 it entirely (it is listed in `.gitignore`). All `coding/` scripts find data at the expected path
 with no extra configuration.
 
+**Using GitHub Desktop?** The second clone must be done from the command line (GitHub Desktop
+can't clone into a specific subfolder). Use **Repository → Open in Terminal** from your planars
+repo, then run `git clone https://github.com/jcgood/planars-data.git coded_data`. After that,
+add `coded_data/` to GitHub Desktop via **File → Add Local Repository** so both repos appear in
+the switcher. If you already have a `coded_data/` folder, delete it first before cloning.
+
 **Daily workflow — two separate git operations:**
 
 ```bash
