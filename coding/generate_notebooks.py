@@ -141,11 +141,14 @@ def _generate_class_cells(class_names: List[str]) -> List[dict]:
     for class_name in class_names:
         name = _display_name(class_name)
         cells.append(_make_markdown_cell(f"---\n## {name}"))
-        cells.append(_make_code_cell(
+        code_cell = _make_code_cell(
+            f"#@title {name}\n"
             f"from planars import {class_name}\n"
             f"show_class_reports(gc, manifest, '{class_name}', "
             f"{class_name}.derive, {class_name}.format_result)"
-        ))
+        )
+        code_cell["metadata"]["cellView"] = "form"
+        cells.append(code_cell)
     return cells
 
 
