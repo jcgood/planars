@@ -443,3 +443,92 @@ chart_labels:
         meaning: Maximal aspiration domain, partial blocking — mirrors stress maximal partial logic.
       - label: "asp maximal complete"
         meaning: Maximal aspiration domain, complete blocking — mirrors stress maximal complete logic.
+
+# ---------------------------------------------------------------------------
+# ELEMENT CONVENTIONS
+# ---------------------------------------------------------------------------
+# Conventions for the Elements column in planar structure TSVs.
+# The Class_Type column determines which convention applies.
+#
+#   list   — an exhaustive enumeration of morphemes or forms
+#             Elements are lower-case orthographic/transcribed representations.
+#             Example: "-ed, -s, -ing"
+#
+#   open   — a position occupied by an open or semi-open class
+#             Elements are ALL CAPS category labels, optionally refined with
+#             brace notation.  Lower-case items may appear alongside ALL CAPS
+#             labels as shorthand for "additional closed-class items not listed".
+#             Example: "NP{S,A}, CONJUNCT, tso"
+#
+#   closed — a finite but not exhaustively listed set of forms
+#             Behaviour between list and open; conventions as for list.
+#
+# ALL CAPS label notation:
+#   LABEL         — plain category label
+#   LABEL{X,Y}    — LABEL restricted to roles/subtypes X and Y
+#
+# The label KEYSTONE is reserved for the v:verbstem position.
+
+element_conventions:
+
+  standard_labels:
+    note: >
+      Canonical ALL CAPS category labels analogous to the Leipzig Glossing Rules.
+      Use these wherever applicable for cross-language consistency.
+      Language-specific labels are permitted but should be documented here when reused.
+
+    phrase_types:
+      - label: NP
+        gloss: Noun phrase (any grammatical role unless further specified in braces)
+      - label: PP
+        gloss: Adpositional phrase (prepositional or postpositional)
+      - label: S
+        gloss: Clause / sentence
+      - label: AP
+        gloss: Adjective phrase
+      - label: ADVP
+        gloss: Adverb phrase (when scope is unspecified; prefer AD-S / AD-VP / AD-V when scope is known)
+      - label: VP
+        gloss: Verb phrase
+
+    adverb_scope_labels:
+      note: >
+        Project-specific labels for adverb positions classified by their scope of modification.
+        Use a hyphen to separate the AD prefix from the scope domain letter.
+      - label: AD-S
+        gloss: Sentence-scoped adverb (modifies the entire clause)
+      - label: AD-VP
+        gloss: VP-scoped adverb (modifies the verb phrase)
+      - label: AD-V
+        gloss: V-scoped adverb (modifies the verb stem only)
+
+    other_labels:
+      - label: PRON
+        gloss: Pronoun
+      - label: CONJUNCT
+        gloss: Coordinating conjunction or conjunct (use when the full list is open-ended)
+      - label: QWORDS
+        gloss: Question words / wh-words (interrogative expressions)
+      - label: VERBPART
+        gloss: Verbal particle
+      - label: KEYSTONE
+        gloss: Reserved. Marks the v:verbstem position in the Elements column.
+
+    brace_role_labels:
+      note: >
+        Labels used inside braces to restrict a phrase-type label to specific
+        grammatical roles. Example: NP{S,A} = NPs in subject or agent role.
+        Note: S used as a role label (subject) is distinct from S as a phrase
+        type (clause) — context (braces vs. standalone) disambiguates.
+      - label: S
+        gloss: Subject
+      - label: A
+        gloss: Agent (transitive subject)
+      - label: P
+        gloss: Patient (transitive object)
+      - label: T
+        gloss: Theme
+      - label: R
+        gloss: Recipient / Goal
+      - label: O
+        gloss: Object (when A/P distinction is not made)

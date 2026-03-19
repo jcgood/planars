@@ -24,12 +24,14 @@ ROOT = Path(__file__).resolve().parent.parent
 import gspread
 
 from .generate_sheets import _get_clients, _load_manifest_from_drive, _open_spreadsheet
+from . import validate as _val
 
 ERROR_DIR = ROOT / "import_errors"
 
-_STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
-_TRAILING_COLS = {"Comments"}   # free-text; never validated for blank or allowed values
-_DEFAULT_EXPECTED = {"y", "n", "na", "?"}
+# Re-export constants so external code that imported them directly still works.
+_STRUCTURAL_COLS  = _val._STRUCTURAL_COLS
+_TRAILING_COLS    = _val._TRAILING_COLS
+_DEFAULT_EXPECTED = _val._DEFAULT_EXPECTED
 
 
 # ---------------------------------------------------------------------------
@@ -48,31 +50,8 @@ def _get_output_path(lang_id: str, class_name: str, construction: str) -> Path:
 # ---------------------------------------------------------------------------
 
 def _highlight_invalid_cells(ws, bad_cells: List[Tuple[int, int]]) -> None:
-    """Set a light-red background on invalid cells in the worksheet.
-
-    bad_cells: list of (row_index, col_index), both 0-based.
-    """
-    if not bad_cells:
-        return
-    sheet_id = ws.id
-    requests = []
-    for row_idx, col_idx in bad_cells:
-        requests.append({
-            "updateCells": {
-                "range": {
-                    "sheetId": sheet_id,
-                    "startRowIndex": row_idx,
-                    "endRowIndex": row_idx + 1,
-                    "startColumnIndex": col_idx,
-                    "endColumnIndex": col_idx + 1,
-                },
-                "rows": [{"values": [{"userEnteredFormat": {
-                    "backgroundColor": {"red": 1.0, "green": 0.8, "blue": 0.8}
-                }}]}],
-                "fields": "userEnteredFormat.backgroundColor",
-            }
-        })
-    ws.spreadsheet.batch_update({"requests": requests})
+    """Delegate to validate.highlight_cells (kept for backwards compatibility)."""
+    _val.highlight_cells(ws, bad_cells)
 
 
 def _validate_tab(
@@ -81,77 +60,15 @@ def _validate_tab(
     tab_name: str,
     param_values: Dict[str, List[str]] = None,
 ) -> Tuple[List[Dict], List[str], List[Tuple[int, int]]]:
-    """Validate sheet rows and return (records, warnings, bad_cells).
+    """Delegate to validate.validate_annotation_rows (kept for backwards compatibility).
 
-    records:   list of dicts ready to write as TSV rows
-    warnings:  list of human-readable issue strings
-    bad_cells: list of (row_index, col_index) 0-based pairs for invalid cells
+    Returns (records, warnings, bad_cells) in the original format.
     """
-    warnings: List[str] = []
-    bad_cells: List[Tuple[int, int]] = []
-
-    if not rows:
-        return [], [f"{tab_name}: sheet is empty"]
-
-    header = rows[0]
-    data_rows = rows[1:]
-
-    # Check structural columns
-    for col in ("Element", "Position_Name", "Position_Number"):
-        if col not in header:
-            warnings.append(f"{tab_name}: missing structural column '{col}'")
-
-    # Check parameter columns match expected
-    actual_params = [c for c in header if c not in _STRUCTURAL_COLS]
-    if actual_params != expected_params:
-        warnings.append(
-            f"{tab_name}: parameter columns differ from manifest. "
-            f"Expected {expected_params}, got {actual_params}"
-        )
-
-    col_index = {name: i for i, name in enumerate(header)}
-    param_cols = [c for c in header if c not in _STRUCTURAL_COLS and c not in _TRAILING_COLS]
-
-    records = []
-    for row_num, row in enumerate(data_rows, start=2):  # 2 = first data row in sheet
-        # Pad short rows
-        while len(row) < len(header):
-            row.append("")
-
-        record = {col: row[col_index[col]] for col in header if col in col_index}
-        pos_name = record.get("Position_Name", "").strip()
-        is_keystone = pos_name.lower() == "v:verbstem"
-
-        for param in param_cols:
-            val = record.get(param, "").strip().lower()
-            record[param] = val  # normalize in-place
-
-            allowed = (
-                {v.lower() for v in (param_values or {}).get(param, [])} | {"na", "?"}
-                if param_values and param in param_values
-                else _DEFAULT_EXPECTED
-            )
-
-            if is_keystone:
-                # Keystone rows should be NA; fill if blank
-                if val == "":
-                    record[param] = "na"
-            else:
-                if val == "":
-                    warnings.append(
-                        f"{tab_name} row {row_num} '{record.get('Element', '?')}': "
-                        f"blank value in '{param}'"
-                    )
-                    bad_cells.append((row_num - 1, col_index[param]))
-                elif val not in allowed:
-                    warnings.append(
-                        f"{tab_name} row {row_num} '{record.get('Element', '?')}': "
-                        f"unexpected value '{val}' in '{param}' (allowed: {sorted(allowed)})"
-                    )
-                    bad_cells.append((row_num - 1, col_index[param]))
-
-        records.append(record)
-
+    records, issues = _val.validate_annotation_rows(
+        rows, expected_params, tab_name, param_values
+    )
+    warnings  = [str(i) for i in issues]
+    bad_cells = [i.cell for i in issues if i.cell is not None]
     return records, warnings, bad_cells
 
 

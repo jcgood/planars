@@ -64,6 +64,10 @@ python -m coding restructure-sheets --apply   # archive old sheets and regenerat
 python -m coding import-sheets
 python -m coding import-sheets --force   # overwrite existing files
 
+# Re-validate annotation sheets and update pink cell highlighting (for collaborators fixing errors)
+python -m coding validate-sheets                   # all languages
+python -m coding validate-sheets --lang arao1248   # one language
+
 # Check consistency between codebook.yaml, analysis modules, and diagnostics.tsv
 python -m coding check-codebook
 
@@ -170,6 +174,7 @@ Keep the following files up to date as the project evolves. Check each one at th
 | `README.md` | User-facing workflow changes, setup instructions change, new dependencies |
 | `notebooks/templates/domains_boilerplate.ipynb` | Contributor notebook boilerplate changes (setup, auth, chart cell) — then run `generate-notebooks --apply` |
 | `notebooks/templates/all_languages_boilerplate.ipynb` | Coordinator notebook boilerplate changes (setup, auth, helper, chart) — then run `generate-notebooks --apply` |
+| `notebooks/templates/validation_boilerplate.ipynb` | Validation notebook boilerplate changes — then run `generate-notebooks --apply` |
 | `pyproject.toml` version | Any change to `planars/` library code (Colab installs from GitHub, not PyPI) |
 
 When in doubt, update. These files are the primary onboarding resource for collaborators and future contributors.

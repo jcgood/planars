@@ -9,6 +9,7 @@ Commands:
     sync-params          Sync parameter columns when diagnostics.tsv changes
     update-sheets        Add missing rows/columns to existing sheets
     import-sheets        Download filled sheets to TSVs
+    validate-sheets      Re-validate sheets and update cell highlighting
     restructure-sheets   Archive and regenerate sheets after structural changes
     populate-sheets      Upload legacy TSV data to sheets (one-time utility)
     check-codebook       Check consistency between codebook.yaml and analysis modules
@@ -18,7 +19,9 @@ Each command accepts the same flags as the original script. Use --help on any
 command for details, or see CLAUDE.md.
 """
 import sys
+from pathlib import Path
 
+_ROOT = Path(__file__).resolve().parent.parent
 
 _COMMANDS = {
     "generate-sheets":    "coding.generate_sheets",
@@ -26,6 +29,7 @@ _COMMANDS = {
     "sync-params":        "coding.sync_params",
     "update-sheets":      "coding.update_sheets",
     "import-sheets":      "coding.import_sheets",
+    "validate-sheets":    "coding.validate_sheets",
     "restructure-sheets": "coding.restructure_sheets",
     "populate-sheets":    "coding.populate_sheets",
     "check-codebook":     "coding.check_codebook",
@@ -33,10 +37,20 @@ _COMMANDS = {
 }
 
 
+def _warn_pending() -> None:
+    """Print a reminder if pending_changes.json has unreviewed destructive changes."""
+    pending = _ROOT / "pending_changes.json"
+    if pending.exists() and pending.stat().st_size > 2:
+        print("WARNING: Pending destructive changes require coordinator approval.")
+        print("         Run: python -m coding apply-pending\n")
+
+
 def main() -> None:
     if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
         print(__doc__)
         sys.exit(0)
+
+    _warn_pending()
 
     cmd = sys.argv[1]
     if cmd not in _COMMANDS:
