@@ -158,9 +158,11 @@ def _insert_class_cells(nb: dict, class_cells: List[dict]) -> dict:
     """Replace the marker cell in the template with generated per-class cells."""
     nb = copy.deepcopy(nb)
     new_cells = []
+    marker = _CLASS_CELLS_MARKER.strip()
     for cell in nb["cells"]:
         src = cell.get("source")
-        if src == [_CLASS_CELLS_MARKER] or src == _CLASS_CELLS_MARKER:
+        src_text = src if isinstance(src, str) else "".join(src)
+        if src_text.strip() == marker:
             new_cells.extend(class_cells)
         else:
             new_cells.append(cell)
