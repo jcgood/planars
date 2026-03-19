@@ -22,7 +22,7 @@ would	v:frontedauxiliary	3	y	n	y
 [-s]	v:frontedauxiliaryinflection	4	n	n	y	
 [-v]	v:frontedauxiliaryinflection	4	n	n	y	
 NP{S,A}	v:npsubj1	5	y	n	y	
-S-ADVERBS	v:ad-S1	6	y	n	y	Should be AD-S throughout, just do a replacement operation throughout all the tables and fix in the planar structure.
+AD-S	v:ad-S1	6				
 AD-VP	v:ad-VP1	7	y	n	y	martin carefully read the bible and commented on it
 can	v:modal1	8	y	n	y	martin can read the bible and write in the vernacular | martin can read the bible and can write in the vernacular
 could	v:modal1	8	y	n	y	
@@ -55,7 +55,7 @@ AD-V	v:ad-V2	26	y	n	y
 air	v:nominal	27	n	n	y	
 baby	v:nominal	27	n	n	y	
 breast	v:nominal	27	n	n	y	
-caretaker	v:nominal	27	n	n	y	
+care	v:nominal	27				
 child	v:nominal	27	n	n	y	
 cross	v:nominal	27	n	n	y	
 dog	v:nominal	27	n	n	y	
@@ -115,12 +115,13 @@ strong	v:nominal	27	n	n	y
 [syn-]	v:latinprefix	29	n	n	y	
 [tele-]	v:latinprefix	29	n	n	y	
 [up-]	v:latinprefix	29	n	n	y	
-ROOT	v:verbroot	30	n	n	y	na
+KEYSTONE	v:verbroot	30	na	na	na	
 [-ed]	v:verbinflection	31	n	n	y	
 [-ing]	v:verbinflection	31	n	n	y	
 [-s]	v:verbinflection	31	n	n	y	
 Ad-V	v:ad-V3	32	y	n	y	
 NP{P,T}	v:obj-part	33	y	y	y	
+PRON{P,T}	v:obj-part	33				
 VERBPART	v:obj-part	33	n	n	y	cleaned up the kitchen and used the soap | cleaned up the kitchen and used up the soap
 NP{R}	v:rec	34	n	n	y	
 Ad-VP	v:ad-VP6	35	y	n	n	

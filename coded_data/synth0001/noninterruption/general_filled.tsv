@@ -1,109 +1,110 @@
 Element	Position_Name	Position_Number	free	multiple	Comments
-also	v:leftedge	1	y	y	
-and	v:leftedge	1	n	y	
-CONJUNCT	v:leftedge	1	y	n	
-then	v:leftedge	1	y	n	
-NP{S,A,P}	v:frontedXP	2	y	y	
-QWORDS	v:frontedXP	2	y	n	
-be	v:frontedauxiliary	3	n	y	
-can	v:frontedauxiliary	3	n	y	
-could	v:frontedauxiliary	3	n	n	
-do	v:frontedauxiliary	3	y	n	
-have	v:frontedauxiliary	3	n	n	
-may	v:frontedauxiliary	3	n	n	
-might	v:frontedauxiliary	3	n	n	
-must	v:frontedauxiliary	3	n	n	
-ought	v:frontedauxiliary	3	y	n	
-shall	v:frontedauxiliary	3	n	n	
-should	v:frontedauxiliary	3	n	n	
-will	v:frontedauxiliary	3	n	y	
-would	v:frontedauxiliary	3	n	n	
-[-n]	v:frontedauxiliaryinflection	4	n	n	
-[-s]	v:frontedauxiliaryinflection	4	n	n	
-[-v]	v:frontedauxiliaryinflection	4	n	n	
-NP{S,A}	v:npsubj1	5	y	y	
-AD-VP	v:ad-VP1	6	n	y	
-can	v:modal1	7	n	n	
-could	v:modal1	7	n	n	
-may	v:modal1	7	n	n	
-might	v:modal1	7	y	n	
-must	v:modal1	7	n	n	
-shall	v:modal1	7	n	n	
-should	v:modal1	7	n	y	
-will	v:modal1	7	n	n	
-would	v:modal1	7	n	y	
-AD-S	v:sd-S2	8	n	y	
-AD-VP	v:ad-VP2	9	y	y	
-ha	v:perfect	10	n	n	
-AD-S	v:ad-S3	11	y	n	
-not	v:neg2	12	y	y	
-AD-VP	v:ad-VP3	13	n	y	
-AD-V	v:ad-V1	14	y	n	
-[be-]	v:passive	15	n	n	
-AD-S	v:ad-S4	16	n	y	
-AD-VP	v:ad-VP4	17	y	n	
-be	v:progressive	18	n	y	
-not	v:neg4	19	n	n	
-AD-VP	v:ad-VP5	20	n	y	
-air	v:nominal	21	n	n	
-baby	v:nominal	21	y	y	
-breast	v:nominal	21	n	n	
-caretaker	v:nominal	21	y	n	
-child	v:nominal	21	y	n	
-cross	v:nominal	21	y	n	
-dog	v:nominal	21	y	n	
-eye	v:nominal	21	y	n	
-fact	v:nominal	21	y	n	
-grounds	v:nominal	21	y	n	
-hand	v:nominal	21	y	n	
-house	v:nominal	21	n	n	
-lip	v:nominal	21	y	n	
-name	v:nominal	21	y	n	
-nanny	v:nominal	21	n	n	
-pet	v:nominal	21	y	n	
-pressure	v:nominal	21	y	y	
-rough	v:nominal	21	n	n	
-sound	v:nominal	21	y	y	
-spell	v:nominal	21	y	n	
-spin	v:nominal	21	y	y	
-stone	v:nominal	21	y	n	
-strong	v:nominal	21	y	n	
-[ab-]	v:latinprefix	22	n	n	
-[ad-]	v:latinprefix	22	n	y	
-[ante-]	v:latinprefix	22	n	n	
-[be-]	v:latinprefix	22	n	n	
-[cata-]	v:latinprefix	22	n	n	
-[circum-]	v:latinprefix	22	n	n	
-[co-]	v:latinprefix	22	y	y	
-[contra-]	v:latinprefix	22	n	y	
-[dia-]	v:latinprefix	22	n	n	
-[dis-]	v:latinprefix	22	n	y	
-[down-]	v:latinprefix	22	y	y	
-[en-]	v:latinprefix	22	n	y	
-[epi-]	v:latinprefix	22	n	n	
-[eu-]	v:latinprefix	22	y	n	
-[ex-]	v:latinprefix	22	y	n	
-[fore-]	v:latinprefix	22	y	n	
-[inter-]	v:latinprefix	22	y	n	
-[intra-]	v:latinprefix	22	n	n	
-[mis-]	v:latinprefix	22	n	n	
-[ob-]	v:latinprefix	22	n	y	
-[para-]	v:latinprefix	22	y	n	
-[per-]	v:latinprefix	22	n	n	
-[pro-]	v:latinprefix	22	n	n	
-[se-]	v:latinprefix	22	n	n	
-[sub-]	v:latinprefix	22	n	y	
-[sup-]	v:latinprefix	22	y	y	
-[sur-]	v:latinprefix	22	y	n	
-[syn-]	v:latinprefix	22	n	y	
-[tele-]	v:latinprefix	22	n	n	
-[up-]	v:latinprefix	22	y	n	
-ROOT	v:verbroot	23	n	y	na
-[-ed]	v:verbinflection	24	n	n	
-[-ing]	v:verbinflection	24	y	y	
-[-s]	v:verbinflection	24	n	n	
-NP{P,T}	v:obj-part	25	y	y	
-VERBPART	v:obj-part	25	n	y	
-Ad-VP	v:ad-VP6	26	y	y	
-PP	v:PP	27	n	y	
-AD-S	v:rightedge	28	y	y	
+also	v:leftedge	1			
+and	v:leftedge	1			
+CONJUNCT	v:leftedge	1			
+then	v:leftedge	1			
+NP{S,A,P}	v:frontedXP	2			
+QWORDS	v:frontedXP	2			
+be	v:frontedauxiliary	3			
+can	v:frontedauxiliary	3			
+could	v:frontedauxiliary	3			
+do	v:frontedauxiliary	3			
+have	v:frontedauxiliary	3			
+may	v:frontedauxiliary	3			
+might	v:frontedauxiliary	3			
+must	v:frontedauxiliary	3			
+ought	v:frontedauxiliary	3			
+shall	v:frontedauxiliary	3			
+should	v:frontedauxiliary	3			
+will	v:frontedauxiliary	3			
+would	v:frontedauxiliary	3			
+[-n]	v:frontedauxiliaryinflection	4			
+[-s]	v:frontedauxiliaryinflection	4			
+[-v]	v:frontedauxiliaryinflection	4			
+NP{S,A}	v:npsubj1	5			
+AD-VP	v:ad-VP1	6			
+can	v:modal1	7			
+could	v:modal1	7			
+may	v:modal1	7			
+might	v:modal1	7			
+must	v:modal1	7			
+shall	v:modal1	7			
+should	v:modal1	7			
+will	v:modal1	7			
+would	v:modal1	7			
+AD-S	v:sd-S2	8			
+AD-VP	v:ad-VP2	9			
+ha	v:perfect	10			
+AD-S	v:ad-S3	11			
+not	v:neg2	12			
+AD-VP	v:ad-VP3	13			
+AD-V	v:ad-V1	14			
+[be-]	v:passive	15			
+AD-S	v:ad-S4	16			
+AD-VP	v:ad-VP4	17			
+be	v:progressive	18			
+not	v:neg4	19			
+AD-VP	v:ad-VP5	20			
+air	v:nominal	21			
+baby	v:nominal	21			
+breast	v:nominal	21			
+care	v:nominal	21			
+child	v:nominal	21			
+cross	v:nominal	21			
+dog	v:nominal	21			
+eye	v:nominal	21			
+fact	v:nominal	21			
+grounds	v:nominal	21			
+hand	v:nominal	21			
+house	v:nominal	21			
+lip	v:nominal	21			
+name	v:nominal	21			
+nanny	v:nominal	21			
+pet	v:nominal	21			
+pressure	v:nominal	21			
+rough	v:nominal	21			
+sound	v:nominal	21			
+spell	v:nominal	21			
+spin	v:nominal	21			
+stone	v:nominal	21			
+strong	v:nominal	21			
+[ab-]	v:latinprefix	22			
+[ad-]	v:latinprefix	22			
+[ante-]	v:latinprefix	22			
+[be-]	v:latinprefix	22			
+[cata-]	v:latinprefix	22			
+[circum-]	v:latinprefix	22			
+[co-]	v:latinprefix	22			
+[contra-]	v:latinprefix	22			
+[dia-]	v:latinprefix	22			
+[dis-]	v:latinprefix	22			
+[down-]	v:latinprefix	22			
+[en-]	v:latinprefix	22			
+[epi-]	v:latinprefix	22			
+[eu-]	v:latinprefix	22			
+[ex-]	v:latinprefix	22			
+[fore-]	v:latinprefix	22			
+[inter-]	v:latinprefix	22			
+[intra-]	v:latinprefix	22			
+[mis-]	v:latinprefix	22			
+[ob-]	v:latinprefix	22			
+[para-]	v:latinprefix	22			
+[per-]	v:latinprefix	22			
+[pro-]	v:latinprefix	22			
+[se-]	v:latinprefix	22			
+[sub-]	v:latinprefix	22			
+[sup-]	v:latinprefix	22			
+[sur-]	v:latinprefix	22			
+[syn-]	v:latinprefix	22			
+[tele-]	v:latinprefix	22			
+[up-]	v:latinprefix	22			
+KEYSTONE	v:verbroot	23	na	na	
+[-ed]	v:verbinflection	24			
+[-ing]	v:verbinflection	24			
+[-s]	v:verbinflection	24			
+NP{P,T}	v:obj-part	25			
+PRON{P,T}	v:obj-part	25			
+VERBPART	v:obj-part	25			
+Ad-VP	v:ad-VP6	26			
+PP	v:PP	27			
+AD-S	v:rightedge	28			

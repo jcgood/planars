@@ -1,4 +1,4 @@
-Element	Position_Name	Position_Number	stressable	obligatory	independence	left-interaction	right-interaction	Comments
+Element	Position_Name	Position_Number	stressed	obligatory	independence	left-interaction	right-interaction	Comments
 also	v:leftedge	1						
 and	v:leftedge	1						
 CONJUNCT	v:leftedge	1						
@@ -48,7 +48,7 @@ AD-VP	v:ad-VP5	20
 air	v:nominal	21						
 baby	v:nominal	21						
 breast	v:nominal	21						
-caretaker	v:nominal	21						
+care	v:nominal	21						
 child	v:nominal	21						
 cross	v:nominal	21						
 dog	v:nominal	21						
@@ -98,11 +98,12 @@ strong	v:nominal	21
 [syn-]	v:latinprefix	22						
 [tele-]	v:latinprefix	22						
 [up-]	v:latinprefix	22						
-ROOT	v:verbroot	23	na	na	na	na	na	
+KEYSTONE	v:verbroot	23	na	na	na	na	na	
 [-ed]	v:verbinflection	24						
 [-ing]	v:verbinflection	24						
 [-s]	v:verbinflection	24						
 NP{P,T}	v:obj-part	25						
+PRON{P,T}	v:obj-part	25						
 VERBPART	v:obj-part	25						
 Ad-VP	v:ad-VP6	26						
 PP	v:PP	27						

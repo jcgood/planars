@@ -22,7 +22,7 @@ would	v:frontedauxiliary	3
 [-s]	v:frontedauxiliaryinflection	4						
 [-v]	v:frontedauxiliaryinflection	4						
 NP{S,A}	v:npsubj1	5						
-S-ADVERBS	v:ad-S1	6						
+AD-S	v:ad-S1	6						
 AD-VP	v:ad-VP1	7						
 can	v:modal1	8						
 could	v:modal1	8						
@@ -55,7 +55,7 @@ AD-V	v:ad-V2	26
 air	v:nominal	27						
 baby	v:nominal	27						
 breast	v:nominal	27						
-caretaker	v:nominal	27						
+care	v:nominal	27						
 child	v:nominal	27						
 cross	v:nominal	27						
 dog	v:nominal	27						
@@ -115,12 +115,13 @@ strong	v:nominal	27
 [syn-]	v:latinprefix	29						
 [tele-]	v:latinprefix	29						
 [up-]	v:latinprefix	29						
-ROOT	v:verbroot	30	na	na	na	na	na	
+KEYSTONE	v:verbroot	30	na	na	na	na	na	
 [-ed]	v:verbinflection	31						
 [-ing]	v:verbinflection	31						
 [-s]	v:verbinflection	31						
 Ad-V	v:ad-V3	32						
 NP{P,T}	v:obj-part	33						
+PRON{P,T}	v:obj-part	33						
 VERBPART	v:obj-part	33						
 NP{R}	v:rec	34						
 Ad-VP	v:ad-VP6	35						
