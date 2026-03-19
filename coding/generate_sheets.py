@@ -122,27 +122,8 @@ def _save_drive_config(config: Dict) -> None:
 # Drive manifest upload/download
 # ---------------------------------------------------------------------------
 
-def _upload_manifest_to_drive(
-    drive, lang_data: Dict, folder_id: str, lang_id: str, existing_file_id: str = None
-) -> str:
-    """Upload manifest_{lang_id}.json to the Drive folder. Returns file ID."""
-    import io
-    content = json.dumps(lang_data, indent=2).encode("utf-8")
-    media = MediaIoBaseUpload(io.BytesIO(content), mimetype="application/json")
-    file_name = f"manifest_{lang_id}.json"
-    if existing_file_id:
-        drive.files().update(fileId=existing_file_id, media_body=media).execute()
-        return existing_file_id
-    result = drive.files().create(
-        body={"name": file_name, "parents": [folder_id]},
-        media_body=media,
-        fields="id",
-    ).execute()
-    return result["id"]
-
-
-def _download_manifest_from_drive(drive, file_id: str) -> Dict:
-    """Download and parse a manifest JSON file from Drive."""
+def _download_file_json(drive, file_id: str) -> Dict:
+    """Download and parse a JSON file from Drive by file ID."""
     import io
     request = drive.files().get_media(fileId=file_id)
     buffer = io.BytesIO()
@@ -153,21 +134,91 @@ def _download_manifest_from_drive(drive, file_id: str) -> Dict:
     return json.loads(buffer.getvalue().decode("utf-8"))
 
 
+# Backward-compatible alias used by restructure_sheets internals
+_download_manifest_from_drive = _download_file_json
+
+
+def _upload_planars_config(
+    drive, full_config: Dict, root_folder_id: str, existing_file_id: str = None
+) -> str:
+    """Upload the merged planars_config.json to Drive. Returns the file ID.
+
+    The merged config has the structure::
+
+        {lang_id: {folder_id, folder_url, sheets: {...}, ...}, ...}
+
+    This replaces the old per-language ``manifest_{lang_id}.json`` files with a
+    single file that notebooks and all sheet scripts read.
+
+    Args:
+        drive: Drive API service.
+        full_config: complete merged config dict covering all languages.
+        root_folder_id: Drive folder for first-time file creation.
+        existing_file_id: ID of an existing planars_config.json to update in place.
+
+    Returns:
+        The Drive file ID of planars_config.json.
+    """
+    import io
+    content = json.dumps(full_config, indent=2).encode("utf-8")
+    media = MediaIoBaseUpload(io.BytesIO(content), mimetype="application/json")
+    if existing_file_id:
+        drive.files().update(fileId=existing_file_id, media_body=media).execute()
+        return existing_file_id
+    result = drive.files().create(
+        body={"name": "planars_config.json", "parents": [root_folder_id]},
+        media_body=media,
+        fields="id",
+    ).execute()
+    return result["id"]
+
+
 def _load_manifest_from_drive(drive) -> Dict:
-    """Load the full manifest (all languages) from Drive using drive_config.json."""
+    """Load the full manifest (all languages) from Drive.
+
+    Tries the new merged planars_config.json first. Falls back to reading the
+    old per-language ``manifest_{lang_id}.json`` files if the merged format is
+    not yet in place (migration path for setups predating issue #30).
+
+    Returns:
+        Dict mapping lang_id to lang_data, where lang_data contains at minimum
+        ``folder_id``, ``folder_url``, and ``sheets``.
+    """
     config = _load_drive_config()
     if not config:
         raise SystemExit(
-            "drive_config.json not found.\n"
-            "Run: python -m coding generate-sheets --push-manifest\n"
-            "to upload the existing sheets_manifest.json to Drive."
+            "drive_config.json not found. Run: python -m coding generate-sheets"
         )
-    manifest = {}
+
+    # New merged format: single planars_config.json with full manifest data.
+    file_id = config.get("_planars_config_file_id")
+    if file_id:
+        try:
+            full_config = _download_file_json(drive, file_id)
+            # Distinguish new format (has 'sheets' per language) from old (just folder_id).
+            if any("sheets" in v for v in full_config.values() if isinstance(v, dict)):
+                return full_config
+        except Exception as exc:
+            print(f"  Warning: could not load merged config ({exc}), falling back.")
+
+    # Old format fallback: per-language manifest_{lang_id}.json files.
+    print("  Note: loading per-language manifests (pre-#30 format).")
+    print("  Run python -m coding generate-sheets to upgrade to merged planars_config.json.")
+    manifest: Dict = {}
     for lang_id, lang_config in config.items():
-        file_id = lang_config.get("manifest_file_id")
-        if not file_id:
-            raise SystemExit(f"No manifest_file_id in drive_config.json for '{lang_id}'.")
-        manifest[lang_id] = _download_manifest_from_drive(drive, file_id)
+        if lang_id.startswith("_") or not isinstance(lang_config, dict):
+            continue
+        mfid = lang_config.get("manifest_file_id")
+        if not mfid:
+            continue
+        lang_data = _download_file_json(drive, mfid)
+        lang_data.setdefault("folder_id", lang_config.get("folder_id", ""))
+        manifest[lang_id] = lang_data
+    if not manifest:
+        raise SystemExit(
+            "No manifest data found in drive_config.json. "
+            "Run python -m coding generate-sheets first."
+        )
     return manifest
 
 
@@ -457,6 +508,21 @@ def main() -> None:
     print("Connecting to Google APIs...")
     gc, drive = _get_clients()
     config = _load_drive_config()
+    root_folder_id = config.get("_root_folder_id")
+
+    # Load the existing merged config from Drive (if present) so we can update
+    # it incrementally as each language is processed, preserving other languages.
+    existing_config_file_id = config.get("_planars_config_file_id")
+    if existing_config_file_id:
+        try:
+            merged_config: Dict = _download_file_json(drive, existing_config_file_id)
+            # If it's old-format (just folder_ids, no sheets), start fresh.
+            if not any("sheets" in v for v in merged_config.values() if isinstance(v, dict)):
+                merged_config = {}
+        except Exception:
+            merged_config = {}
+    else:
+        merged_config = {}
 
     full_manifest: Dict = {}
 
@@ -479,28 +545,30 @@ def main() -> None:
 
         print(f"Classes:     {list(all_classes.keys())}")
 
-        # Determine which classes already have sheets (unless --force)
-        existing_lang_data: Dict = {}
-        if not force:
-            if config and lang_id in config:
+        # Load existing data for this language from the merged config or old per-language file.
+        existing_lang_data: Dict = merged_config.get(lang_id, {})
+        if not existing_lang_data and lang_id in config:
+            # Migration: try old-format per-language manifest file
+            old_fid = config[lang_id].get("manifest_file_id")
+            if old_fid:
                 try:
-                    existing_lang_data = _download_manifest_from_drive(
-                        drive, config[lang_id]["manifest_file_id"]
-                    )
-                    existing_sheets = existing_lang_data.get("sheets", {})
-                    new_class_names = [c for c in all_classes if c not in existing_sheets]
-                    if not new_class_names:
-                        print(
-                            f"  All classes already have sheets. Skipping {lang_id}.\n"
-                            "  (use --force to regenerate)"
-                        )
-                        full_manifest[lang_id] = existing_lang_data
-                        continue
-                    print(f"Existing:    {list(existing_sheets.keys())}")
-                    print(f"New:         {new_class_names}")
-                except Exception as exc:
-                    print(f"Warning: could not load existing manifest ({exc}). Creating all classes.")
-                    existing_lang_data = {}
+                    existing_lang_data = _download_file_json(drive, old_fid)
+                except Exception:
+                    pass
+
+        if not force and existing_lang_data:
+            existing_sheets = existing_lang_data.get("sheets", {})
+            new_class_names = [c for c in all_classes if c not in existing_sheets]
+            if not new_class_names:
+                print(
+                    f"  All classes already have sheets. Skipping {lang_id}.\n"
+                    "  (use --force to regenerate)"
+                )
+                full_manifest[lang_id] = existing_lang_data
+                merged_config[lang_id] = existing_lang_data
+                continue
+            print(f"Existing:    {list(existing_sheets.keys())}")
+            print(f"New:         {new_class_names}")
 
         classes_to_create = {
             k: v for k, v in all_classes.items()
@@ -508,17 +576,14 @@ def main() -> None:
         } if not force else dict(all_classes)
 
         # Create language folder inside root folder (if configured), or at Drive root.
-        # Existing language folders are not moved — only new ones get placed inside
-        # the ConstituencyTypology root folder.
-        folder_name = lang_id
-        root_folder_id = config.get("_root_folder_id")
-        folder_id = _get_or_create_folder(drive, folder_name, parent_id=root_folder_id)
+        folder_id = _get_or_create_folder(drive, lang_id, parent_id=root_folder_id)
         _share_anyone_with_link(drive, folder_id)
         folder_url = f"https://drive.google.com/drive/folders/{folder_id}"
         print(f"Folder:      {folder_url}\n")
 
-        # Build manifest starting from existing data (or fresh)
+        # Build lang_data starting from existing data (or fresh), always include folder_id.
         lang_data: Dict = existing_lang_data or {"folder_url": folder_url, "sheets": {}}
+        lang_data["folder_id"] = folder_id
 
         # Create one sheet per new analysis class
         for class_name, constructions in classes_to_create.items():
@@ -529,16 +594,19 @@ def main() -> None:
             print(f"    URL: {sheet_info['url']}\n")
 
         full_manifest[lang_id] = lang_data
+        merged_config[lang_id] = lang_data
 
-        # Upload this language's manifest to Drive and update drive_config.json
-        existing_file_id = config.get(lang_id, {}).get("manifest_file_id")
-        manifest_file_id = _upload_manifest_to_drive(
-            drive, lang_data, folder_id, lang_id, existing_file_id
+        # Upload the full merged config to Drive after each language so partial
+        # progress is saved even if a later language fails.
+        existing_config_file_id = _upload_planars_config(
+            drive, merged_config, root_folder_id, existing_config_file_id
         )
+        config["_planars_config_file_id"] = existing_config_file_id
         config.setdefault(lang_id, {})["folder_id"] = folder_id
-        config[lang_id]["manifest_file_id"] = manifest_file_id
+        # Remove stale per-language manifest_file_id (superseded by merged config).
+        config[lang_id].pop("manifest_file_id", None)
         _save_drive_config(config)
-        print(f"Manifest uploaded to Drive (file_id: {manifest_file_id})")
+        print(f"planars_config.json updated on Drive (id: {existing_config_file_id})")
 
     # Write local manifest with all languages (gitignored, kept for reference)
     MANIFEST_PATH.write_text(json.dumps(full_manifest, indent=2), encoding="utf-8")
@@ -553,7 +621,7 @@ def main() -> None:
 
 
 def push_manifest() -> None:
-    """Upload the existing local sheets_manifest.json to Drive.
+    """Upload the existing local sheets_manifest.json to Drive as merged planars_config.json.
 
     One-time migration utility. Run with:
         python -m coding generate-sheets --push-manifest
@@ -565,22 +633,28 @@ def push_manifest() -> None:
         )
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     print("Connecting to Google APIs...")
-    gc, drive = _get_clients()
+    _, drive = _get_clients()
     config = _load_drive_config()
 
+    # Enrich manifest with folder_id from drive_config before uploading.
+    merged_config: Dict = {}
     for lang_id, lang_data in manifest.items():
-        folder_url = lang_data.get("folder_url", "")
-        if not folder_url:
-            print(f"  {lang_id}: no folder_url in manifest, skipping")
-            continue
-        folder_id = folder_url.rstrip("/").rsplit("/", 1)[-1]
-        existing_file_id = config.get(lang_id, {}).get("manifest_file_id")
-        file_id = _upload_manifest_to_drive(drive, lang_data, folder_id, lang_id, existing_file_id)
+        entry = dict(lang_data)
+        folder_url = entry.get("folder_url", "")
+        folder_id = config.get(lang_id, {}).get("folder_id") or (
+            folder_url.rstrip("/").rsplit("/", 1)[-1] if folder_url else ""
+        )
+        entry["folder_id"] = folder_id
         config.setdefault(lang_id, {})["folder_id"] = folder_id
-        config[lang_id]["manifest_file_id"] = file_id
-        print(f"  {lang_id}: manifest uploaded (file_id: {file_id})")
+        config[lang_id].pop("manifest_file_id", None)
+        merged_config[lang_id] = entry
 
+    root_folder_id = config.get("_root_folder_id")
+    existing_file_id = config.get("_planars_config_file_id")
+    file_id = _upload_planars_config(drive, merged_config, root_folder_id, existing_file_id)
+    config["_planars_config_file_id"] = file_id
     _save_drive_config(config)
+    print(f"planars_config.json uploaded (id: {file_id})")
     print(f"drive_config.json written.")
 
 

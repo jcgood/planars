@@ -51,7 +51,7 @@ from .generate_sheets import (
     _open_spreadsheet,
     _TRAILING_COLS,
     _load_manifest_from_drive,
-    _upload_manifest_to_drive,
+    _upload_planars_config,
     _load_drive_config,
     _save_drive_config,
 )
@@ -412,19 +412,20 @@ def main() -> None:
     if apply:
         # Update local manifest (gitignored reference copy)
         MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-        # Re-upload each language's manifest to Drive
+        # Upload the merged planars_config.json to Drive.
         config = _load_drive_config()
-        for lang_id_up, lang_data_up in manifest.items():
-            folder_url = lang_data_up.get("folder_url", "")
-            if not folder_url:
-                continue
-            folder_id_up = folder_url.rstrip("/").rsplit("/", 1)[-1]
-            existing_file_id = config.get(lang_id_up, {}).get("manifest_file_id")
-            file_id = _upload_manifest_to_drive(
-                drive, lang_data_up, folder_id_up, lang_id_up, existing_file_id
-            )
-            config.setdefault(lang_id_up, {})["folder_id"] = folder_id_up
-            config[lang_id_up]["manifest_file_id"] = file_id
+        for lid, ld in manifest.items():
+            # Ensure folder_id is present (derive from folder_url if missing).
+            if "folder_id" not in ld:
+                folder_url = ld.get("folder_url", "")
+                if folder_url:
+                    ld["folder_id"] = folder_url.rstrip("/").rsplit("/", 1)[-1]
+            config.setdefault(lid, {})["folder_id"] = ld.get("folder_id", "")
+            config[lid].pop("manifest_file_id", None)
+        existing_file_id = config.get("_planars_config_file_id")
+        root_folder_id = config.get("_root_folder_id")
+        file_id = _upload_planars_config(drive, manifest, root_folder_id, existing_file_id)
+        config["_planars_config_file_id"] = file_id
         _save_drive_config(config)
         print("\nManifest updated on Drive.")
 

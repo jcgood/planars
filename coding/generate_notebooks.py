@@ -205,14 +205,6 @@ def _set_viewer_permissions(drive, file_id: str) -> None:
 # Config helpers
 # ---------------------------------------------------------------------------
 
-def _build_planars_config(drive_config: dict) -> dict:
-    """Build planars_config.json content: {lang_id: {folder_id}} for all languages."""
-    return {
-        lang_id: {"folder_id": data["folder_id"]}
-        for lang_id, data in drive_config.items()
-        if not lang_id.startswith("_") and isinstance(data, dict) and "folder_id" in data
-    }
-
 
 def _get_global_folder_id(drive_config: dict) -> Optional[str]:
     """Return the folder ID for global files (planars_config.json, all_languages.ipynb).
@@ -285,7 +277,17 @@ def _run_generation(apply: bool) -> None:
 
     if not global_folder_id:
         raise SystemExit(
-            "No folder_id found in drive_config.json. Run generate-sheets first."
+            "No _root_folder_id in drive_config.json. Run setup-root-folder first."
+        )
+
+    # planars_config.json on Drive is maintained by generate-sheets and the sheet
+    # modification scripts. generate-notebooks only needs its file ID to bake into
+    # the notebooks — it does not write to planars_config.json itself.
+    config_file_id = drive_config.get("_planars_config_file_id")
+    if not config_file_id:
+        raise SystemExit(
+            "No _planars_config_file_id in drive_config.json. "
+            "Run python -m coding generate-sheets first."
         )
 
     if not apply:
@@ -298,17 +300,7 @@ def _run_generation(apply: bool) -> None:
         return
 
     _, drive = _get_clients()
-
-    # Upload planars_config.json to Drive
-    planars_config = _build_planars_config(drive_config)
-    config_content = json.dumps(planars_config, indent=2).encode()
-    config_file_id = _upload_file(
-        drive, config_content, "planars_config.json",
-        "application/json", global_folder_id,
-        drive_config.get("_planars_config_file_id"),
-    )
-    drive_config["_planars_config_file_id"] = config_file_id
-    print(f"\nUploaded planars_config.json (id: {config_file_id})")
+    print(f"\nUsing planars_config.json (id: {config_file_id})")
 
     # Generate and upload contributor notebook for each language
     contributor_template = _load_template("domains_boilerplate.ipynb")

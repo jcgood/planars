@@ -32,7 +32,7 @@ from .make_forms import (
 from .generate_sheets import (
     _get_clients,
     _load_manifest_from_drive,
-    _upload_manifest_to_drive,
+    _upload_planars_config,
     _load_drive_config,
     _save_drive_config,
     _open_spreadsheet,
@@ -314,15 +314,16 @@ def main() -> None:
                             f"diagnostics: {removed_params}\n    {marker}"
                         )
 
-    # Update Drive manifest if anything changed
+    # Update the merged planars_config.json on Drive if anything changed.
     if apply and manifest_changed:
         config = _load_drive_config()
-        for lid, ld in manifest.items():
-            folder_id = config.get(lid, {}).get("folder_id")
-            existing_file_id = config.get(lid, {}).get("manifest_file_id")
-            if folder_id:
-                file_id = _upload_manifest_to_drive(drive, ld, folder_id, lid, existing_file_id)
-                config.setdefault(lid, {})["manifest_file_id"] = file_id
+        # Ensure folder_id is present in each manifest entry.
+        for lid in manifest:
+            manifest[lid].setdefault("folder_id", config.get(lid, {}).get("folder_id", ""))
+        existing_file_id = config.get("_planars_config_file_id")
+        root_folder_id = config.get("_root_folder_id")
+        file_id = _upload_planars_config(drive, manifest, root_folder_id, existing_file_id)
+        config["_planars_config_file_id"] = file_id
         _save_drive_config(config)
         print("\nManifest updated on Drive.")
 

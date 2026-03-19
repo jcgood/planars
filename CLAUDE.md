@@ -137,6 +137,16 @@ Keep the following files up to date as the project evolves. Check each one at th
 
 When in doubt, update. These files are the primary onboarding resource for collaborators and future contributors.
 
+## Commit conventions
+
+Commit frequently — after each logical unit of work rather than accumulating changes across a full session. Good commit points:
+- A new script or command is working
+- A bug is fixed
+- Documentation is updated to reflect completed changes
+- A self-contained refactor is done
+
+Separate `coded_data/` annotation changes from tooling/library changes into distinct commits — they have different authors (human annotators vs. code changes) and different review needs.
+
 ## Issue tracking
 
 Feature requests and bugs are tracked on GitHub Issues: https://github.com/jcgood/planars/issues
