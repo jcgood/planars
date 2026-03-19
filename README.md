@@ -46,7 +46,7 @@ Creates one Google Sheets file per analysis class with one tab per construction.
 
 Authentication uses OAuth2. On first run a browser window opens for authorization; the token is cached at `~/.config/gspread/authorized_user.json`. OAuth credentials must be at `~/.config/planars/oauth_credentials.json` (override with `PLANARS_OAUTH_CREDENTIALS`).
 
-The manifest is stored on Google Drive as `manifest_{lang_id}.json` in the language folder. A local `drive_config.json` (gitignored) bootstraps the Drive lookup.
+The manifest is stored on Google Drive as a single merged `planars_config.json` containing all languages' sheet metadata and folder IDs. A local `drive_config.json` (gitignored) bootstraps the Drive lookup.
 
 ### 2. Annotate
 
@@ -147,7 +147,7 @@ A single notebook covering all languages. Shows per-construction text reports an
 
 The notebook template files live in `notebooks/templates/`. To update the boilerplate (e.g. setup cell, chart cell), edit the template and re-run `python -m coding generate-notebooks`.
 
-Note: `notebooks/sync_colab.ipynb` and `notebooks/span_results_colab.ipynb` are the predecessor manual notebooks. They are superseded by the generated notebook system above but remain in the repository for reference.
+The predecessor notebooks (`sync_colab.ipynb`, `span_results_colab.ipynb`) are archived in `notebooks/archive/` for reference.
 
 ## diagnostics.tsv
 
@@ -189,8 +189,7 @@ notebooks/
     domains_boilerplate.ipynb   Contributor notebook template
     all_languages_boilerplate.ipynb  Coordinator notebook template
   span_results.ipynb            Local interactive notebook (reads coded_data/ directly)
-  sync_colab.ipynb              Predecessor contributor Colab (superseded)
-  span_results_colab.ipynb      Predecessor coordinator Colab (superseded)
+  archive/                      Superseded notebooks (sync_colab.ipynb, span_results_colab.ipynb)
 tests/snapshots/                Regression test baselines
 codebook.yaml                   Parameter and term definitions
 ```
