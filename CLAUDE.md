@@ -85,10 +85,9 @@ python check_snapshots.py      # verify current output matches snapshots
 **Setup** (first time or after recreating the venv):
 ```bash
 python -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt          # includes jupyterlab
-.venv/bin/python -m ipykernel install --user --name planars --display-name planars
+.venv/bin/python -m pip install -r requirements.txt
 ```
-The `-e .` line in `requirements.txt` installs the `planars` package in editable mode so notebooks can `import planars` directly. To re-register the kernel after recreating the venv, run the `ipykernel install` command again.
+The `-e .` line in `requirements.txt` installs the `planars` package in editable mode. Notebooks are run via Colab, not locally.
 
 ## Architecture and data flow
 
@@ -187,12 +186,12 @@ Separate `coded_data/` annotation changes from tooling/library changes into dist
 
 ## In-progress annotation work
 
-### Araona (aroa1237) — partially annotated
+### Araona (arao1248) — partially annotated
 
-Language files are in `coded_data/aroa1237/`. Source: Adam Tallman, "Graded constituency in the Araona (Takana) verb complex," chapter 13 in *Constituency and convergence in the Americas* (langsci/291). Glottolog ID: aroa1237.
+Language files are in `coded_data/arao1248/`. Source: Adam Tallman, "Graded constituency in the Araona (Takana) verb complex," chapter 13 in *Constituency and convergence in the Americas* (langsci/291). Glottolog ID: arao1248.
 
 **Completed:**
-- `planar_input/planar_aroa1237-20260319.tsv` — 18-position verbal planar structure (XP1 zone through rightXP zone)
+- `planar_input/planar_arao1248-20260319.tsv` — 18-position verbal planar structure (XP1 zone through rightXP zone)
 - `planar_input/diagnostics.tsv` — ciscategorial, noninterruption, subspanrepetition (2 constructions)
 - `ciscategorial/general_filled.tsv` — V/N/A-combines annotated; runs and produces spans
 - `noninterruption/general_filled.tsv` — free/multiple annotated; runs and produces spans

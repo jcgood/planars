@@ -34,7 +34,6 @@ coordinators. If you are a coordinator, see [Coordinator setup](#coordinator-set
 ```bash
 python -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
-.venv/bin/python -m ipykernel install --user --name planars --display-name planars
 ```
 
 ## Coordinator setup
@@ -83,6 +82,26 @@ git pull
 
 Changes to code and data are always committed and pushed separately — they go to different
 repositories. `git pull` in `planars/` never touches `coded_data/`, and vice versa.
+
+### Adding a new language
+
+1. In `coded_data/`, create `{lang_id}/planar_input/planar_{lang_id}-{date}.tsv` with the planar structure and `{lang_id}/planar_input/diagnostics.tsv` with the analysis classes and parameters.
+
+2. Generate annotation sheets and notebooks:
+   ```bash
+   python -m coding generate-sheets
+   ```
+   This creates one Google Sheets file per analysis class, uploads per-language and coordinator Colab notebooks to Drive, and updates the manifest.
+
+3. On first use, create the top-level Drive folder structure:
+   ```bash
+   python -m coding setup-root-folder
+   ```
+   This only needs to be run once (it is idempotent).
+
+4. Share the language Drive folder and contributor notebook link with your collaborator.
+
+**Ongoing maintenance:** use `sync-params --apply` when `diagnostics.tsv` param columns change, and `update-sheets --apply` when new elements are added to the planar structure.
 
 ## Workflow
 
@@ -144,14 +163,7 @@ Use `update-sheets` when new elements are added to the planar structure. Use `sy
 
 ### 5. Explore results interactively
 
-```bash
-source .venv/bin/activate
-jupyter lab
-```
-
-Open `notebooks/span_results.ipynb`. Make sure the kernel in the top-right says **planars** (if not, go to **Kernel → Change Kernel** and select it). Run all cells with **Run → Run All Cells**. The notebook reads the filled TSVs directly and reports spans for all analyses, noting any positions with missing annotations.
-
-For browser-only (no local install) use, see [Colab notebooks](#colab-notebooks) below.
+See [Colab notebooks](#colab-notebooks) below. Notebooks are browser-only — no local install required. Open the shared Drive link and choose **Runtime → Run all**.
 
 ## Analyses
 
@@ -243,8 +255,7 @@ notebooks/
   templates/                    Boilerplate notebooks used by generate-notebooks
     domains_boilerplate.ipynb   Contributor notebook template
     all_languages_boilerplate.ipynb  Coordinator notebook template
-  span_results.ipynb            Local interactive notebook (reads coded_data/ directly)
-  archive/                      Superseded notebooks (sync_colab.ipynb, span_results_colab.ipynb)
+  archive/                      Superseded notebooks (span_results.ipynb, sync_colab.ipynb, span_results_colab.ipynb)
 tests/snapshots/                Regression test baselines
 codebook.yaml                   Parameter and term definitions
 ```
