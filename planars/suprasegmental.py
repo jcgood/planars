@@ -17,6 +17,11 @@ def derive_suprasegmental_domains(
 ) -> Dict[str, object]:
     """Derive suprasegmental (prosodic) domains from a filled suprasegmental TSV.
 
+    [AUTO-DERIVED: NEEDS REVIEW] Parameter design and qualification rules were
+    automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13
+    (Araona) §Pitch-accent domains and ch. 2 (Cup'ik) §Prosodic domains. Verify
+    before use for annotation or analysis.
+
     A suprasegmental domain identifies the span of positions governed by a
     prosodic or suprasegmental phonological process. Examples include:
     pitch-accent assignment domains (e.g., Araona LH* domain), tone

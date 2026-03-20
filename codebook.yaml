@@ -205,6 +205,10 @@ analyses:
 
   - name: nonpermutability
     description: >
+      [AUTO-DERIVED: NEEDS REVIEW] Parameter design and qualification rules were
+      automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13
+      (Araona) and the intro §Fracturing. Verify before use.
+
       Tests which positions fall within the non-permutability domain of the verbal
       planar structure — a span where elements occur in a fixed linear order relative
       to one another. Two domain types are derived based on how strictly "fixed order"
@@ -253,6 +257,10 @@ analyses:
 
   - name: free_occurrence
     description: >
+      [AUTO-DERIVED: NEEDS REVIEW] Parameter design and qualification rules were
+      automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13
+      (Araona) §Free occurrence. Verify before use.
+
       Tests which positions contain free forms — elements that can constitute a
       standalone utterance independently of the verbal head. The free occurrence
       domain identifies the span of positions where free forms occur (free=y).
@@ -322,6 +330,10 @@ analyses:
 
   - name: biuniqueness
     description: >
+      [AUTO-DERIVED: NEEDS REVIEW] Parameter design and qualification rules were
+      automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13
+      (Araona) §Extended exponence. Verify before use.
+
       Tests for deviations from biuniqueness — spans defined by phenomena such as
       circumfixation (a morpheme discontinuous across positions) and extended
       exponence (the same morphosyntactic feature expressed by multiple morphs in
@@ -349,6 +361,10 @@ analyses:
 
   - name: repair
     description: >
+      [AUTO-DERIVED: NEEDS REVIEW] Parameter design and qualification rules were
+      automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 2
+      (Cup'ik) §Repair domain. Verify before use.
+
       Tests which span speakers restart from when they make a production error.
       The repair domain is the minimal span such that, when an error occurs at
       any position within it, the speaker returns to the left edge and restarts
@@ -368,6 +384,11 @@ analyses:
 
   - name: pausing
     description: >
+      [AUTO-DERIVED: NEEDS REVIEW] Parameter design was automatically derived from
+      the description in Tallman et al. 2024 (langsci/291), Discussion ch. 17 only —
+      no concrete language data was reviewed. Parameter design is speculative.
+      Verify thoroughly before use.
+
       Tests which spans are delimited by prosodic pause boundaries. The pausing
       domain is a span where elements cannot be separated by a prosodic pause —
       the span constitutes a pause unit. Positions outside the domain permit
@@ -387,6 +408,11 @@ analyses:
 
   - name: proform
     description: >
+      [AUTO-DERIVED: NEEDS REVIEW] Parameter design was automatically derived from
+      the description in Tallman et al. 2024 (langsci/291), Discussion ch. 17 only —
+      no concrete language data was reviewed. Parameter design is speculative.
+      Verify thoroughly before use.
+
       Tests which spans can be replaced by a proform (pronoun, pro-verb, pro-VP,
       etc.). The proform domain is the span that the proform substitutes for.
       Classified as a morphosyntactic domain type (Tallman et al. 2024, discussion
@@ -404,6 +430,11 @@ analyses:
 
   - name: play_language
     description: >
+      [AUTO-DERIVED: NEEDS REVIEW] Parameter design was automatically derived from
+      reading Tallman et al. 2024 (langsci/291), Discussion ch. 17 and a brief
+      mention in ch. 8 (Chatino) — no complete language data section was reviewed.
+      Parameter design is speculative. Verify thoroughly before use.
+
       Tests which spans are targeted by play language (ludling) operations —
       e.g., infixation in pig-Latin-like games, reversal or permutation of
       elements within a span. The play language domain is the span within which
@@ -423,6 +454,11 @@ analyses:
 
   - name: idiom
     description: >
+      [AUTO-DERIVED: NEEDS REVIEW] Parameter design was automatically derived from
+      the description in Tallman et al. 2024 (langsci/291), Discussion ch. 17 only —
+      no concrete language data was reviewed. Parameter design is speculative.
+      Verify thoroughly before use.
+
       Tests which spans form idiomatic units — spans where the combination of
       elements has a meaning not predictable from the individual elements.
       The idiom domain is the span covered by the idiomatic unit. Classified
@@ -440,6 +476,10 @@ analyses:
 
   - name: segmental
     description: >
+      [AUTO-DERIVED: NEEDS REVIEW] Parameter design and qualification rules were
+      automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13
+      (Araona) §Vowel syncope and ch. 2 (Cup'ik) §Segmental domains. Verify before use.
+
       Tests which span is governed by a segmental (non-prosodic) phonological process.
       Examples: vowel deletion/coalescence at position junctures (Araona: vowel syncope
       domain vcore–tamesuf), consonant coalescence (Cup'ik: uvular-velar coalescence
@@ -460,6 +500,11 @@ analyses:
 
   - name: suprasegmental
     description: >
+      [AUTO-DERIVED: NEEDS REVIEW] Parameter design and qualification rules were
+      automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13
+      (Araona) §Pitch-accent domains and ch. 2 (Cup'ik) §Prosodic domains. Verify
+      before use.
+
       Tests which span is governed by a suprasegmental (prosodic) phonological process.
       Examples: pitch-accent assignment domain (Araona: LH* domain vpref–connect3),
       iambic stress foot domain (Cup'ik: vbase–pn4), tone melody span. Each process

@@ -17,6 +17,11 @@ def derive_play_language_domains(
 ) -> Dict[str, object]:
     """Derive play language domains from a filled play_language TSV.
 
+    [AUTO-DERIVED: NEEDS REVIEW] Parameter design was automatically derived from
+    reading Tallman et al. 2024 (langsci/291), Discussion ch. 17 and a brief mention
+    in ch. 8 (Chatino) — no complete language data section was reviewed. Parameter
+    design is speculative. Verify thoroughly before use.
+
     The play language domain identifies the span of positions targeted by
     play language (ludling) operations — e.g., infixation in pig-Latin-like
     games, reversal or permutation of elements within a span. The domain is

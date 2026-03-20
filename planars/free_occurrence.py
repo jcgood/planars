@@ -17,6 +17,10 @@ def derive_free_occurrence_spans(
 ) -> Dict[str, object]:
     """Derive free occurrence spans from a filled free_occurrence TSV.
 
+    [AUTO-DERIVED: NEEDS REVIEW] Parameter design and qualification rules were
+    automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13
+    (Araona) §Free occurrence. Verify before use for annotation or analysis.
+
     The free occurrence domain identifies the span of positions where elements
     are free forms (free=y) — elements that can constitute a standalone utterance
     independently of the verbal head.

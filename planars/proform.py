@@ -17,6 +17,11 @@ def derive_proform_domains(
 ) -> Dict[str, object]:
     """Derive proform substitution domains from a filled proform TSV.
 
+    [AUTO-DERIVED: NEEDS REVIEW] Parameter design was automatically derived from
+    the description in Tallman et al. 2024 (langsci/291), Discussion ch. 17 only —
+    no concrete language data was reviewed. Parameter design is speculative.
+    Verify thoroughly before use.
+
     The proform domain identifies the span of positions that can be replaced
     by a proform (pronoun, pro-verb, pro-VP, etc.). An element is substitutable
     if a proform can stand in for it — i.e., the element's position falls

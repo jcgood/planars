@@ -17,6 +17,11 @@ def derive_segmental_domains(
 ) -> Dict[str, object]:
     """Derive segmental phonological domains from a filled segmental TSV.
 
+    [AUTO-DERIVED: NEEDS REVIEW] Parameter design and qualification rules were
+    automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13
+    (Araona) §Vowel syncope and ch. 2 (Cup'ik) §Segmental domains. Verify before
+    use for annotation or analysis.
+
     A segmental domain identifies the span of positions within which a
     segmental (non-prosodic) phonological process applies. Examples include:
     vowel deletion/coalescence at position junctures (e.g., Araona vowel

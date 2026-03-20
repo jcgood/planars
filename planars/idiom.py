@@ -17,6 +17,11 @@ def derive_idiom_domains(
 ) -> Dict[str, object]:
     """Derive idiom domains from a filled idiom TSV.
 
+    [AUTO-DERIVED: NEEDS REVIEW] Parameter design was automatically derived from
+    the description in Tallman et al. 2024 (langsci/291), Discussion ch. 17 only —
+    no concrete language data was reviewed. Parameter design is speculative.
+    Verify thoroughly before use.
+
     The idiom domain identifies the span of positions forming an idiomatic
     unit — a span where the combination of elements has a meaning not
     predictable from the individual elements. An element is idiomatic if it

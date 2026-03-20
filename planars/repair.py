@@ -17,6 +17,10 @@ def derive_repair_domains(
 ) -> Dict[str, object]:
     """Derive repair domains from a filled repair TSV.
 
+    [AUTO-DERIVED: NEEDS REVIEW] Parameter design and qualification rules were
+    automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 2
+    (Cup'ik) §Repair domain. Verify before use for annotation or analysis.
+
     The repair domain identifies the minimal span that speakers restart from
     when they make an error during production: if an error occurs at any
     position within the domain, the speaker returns to the left edge of the

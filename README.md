@@ -177,13 +177,31 @@ See [Colab notebooks](#colab-notebooks) below. Notebooks are browser-only — no
 
 ## Analyses
 
-| Analysis | Parameters | Spans derived |
-|---|---|---|
-| `ciscategorial` | `V-combines`, `N-combines`, `A-combines` | 4 (strict/loose × complete/partial) |
-| `subspanrepetition` | `widescope_left`, `widescope_right`, `fillable_botheither_conjunct` | 20 (5 categories × 4) |
-| `noninterruption` | `free`, `multiple` | 4 strict spans (2 domain types × complete/partial) |
-| `stress` | `stressed`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 4 (2 domain types × complete/partial) |
-| `aspiration` | `stressed`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 4 (2 domain types × complete/partial) |
+| Analysis | Parameters | Spans derived | Status |
+|---|---|---|---|
+| `ciscategorial` | `V-combines`, `N-combines`, `A-combines` | 4 (strict/loose × complete/partial) | — |
+| `subspanrepetition` | `widescope_left`, `widescope_right`, `fillable_botheither_conjunct` | 20 (5 categories × 4) | — |
+| `noninterruption` | `free`, `multiple` | 4 strict spans (2 domain types × complete/partial) | — |
+| `stress` | `stressed`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 4 (2 domain types × complete/partial) | — |
+| `aspiration` | `stressed`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 4 (2 domain types × complete/partial) | [NEEDS REVIEW] |
+| `nonpermutability` †| `permutable`, `scopal` | 4 strict spans (2 domain types × complete/partial) | [AUTO-DERIVED] |
+| `free_occurrence` †| `free` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
+| `biuniqueness` †| `biunique` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
+| `repair` †| `restart` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
+| `segmental` †| `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
+| `suprasegmental` †| `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
+| `pausing` ‡| `pause_domain` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
+| `proform` ‡| `substitutable` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
+| `play_language` ‡| `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
+| `idiom` ‡| `idiomatic` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
+
+**Status key:**
+- `[NEEDS REVIEW]` — rule is human-designed but provisional; specific parameters under review (see `codebook.yaml`).
+- `[AUTO-DERIVED]` — parameter design and qualification rules were automatically derived by reading Tallman et al. 2024 (_Constituency and convergence in the Americas_, langsci/291) and have not been verified by a domain expert. Treat these as drafts: check `codebook.yaml` for details before using them for annotation or analysis.
+
+† Derived from specific language chapters in langsci/291 (Araona ch. 13, Cup'ik ch. 2) — has concrete data support but still needs expert sign-off.
+
+‡ Derived from the Discussion chapter (ch. 17) description only — no concrete language data was reviewed; parameter design is more speculative.
 
 Stress and aspiration use `blocked_span`: expand from the keystone outward, stopping just before the first blocking position. The keystone itself can trigger a blocking condition. Two domain types (minimal, maximal), each with a complete/partial distinction = 4 spans per analysis. See `codebook.yaml` for qualification rules; `left-interaction` and `right-interaction` parameters are marked `[NEEDS REVIEW]`.
 

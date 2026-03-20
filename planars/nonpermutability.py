@@ -17,6 +17,10 @@ def derive_nonpermutability_domains(
 ) -> Dict[str, object]:
     """Derive non-permutability spans from a filled nonpermutability TSV.
 
+    [AUTO-DERIVED: NEEDS REVIEW] Parameter design and qualification rules were
+    automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13
+    (Araona) and the intro §Fracturing. Verify before use for annotation or analysis.
+
     Two domain types, each with complete/partial qualification = 4 strict spans:
 
     Strict non-permutability — positions where elements have absolutely fixed order:

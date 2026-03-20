@@ -17,6 +17,10 @@ def derive_biuniqueness_domains(
 ) -> Dict[str, object]:
     """Derive biuniqueness (extended exponence) domains from a filled biuniqueness TSV.
 
+    [AUTO-DERIVED: NEEDS REVIEW] Parameter design and qualification rules were
+    automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13
+    (Araona) §Extended exponence. Verify before use for annotation or analysis.
+
     The biuniqueness domain identifies the span covered by a discontinuous
     morpheme — a circumfix or extended exponent where a single meaning is
     expressed by two or more pieces in different positions. The domain is
