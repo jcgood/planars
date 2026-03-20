@@ -10,6 +10,7 @@ Checks:
   3. Param names    — base param names are defined in codebook.yaml
   4. Class names    — class corresponds to a planars/ analysis module
   5. Constructions  — 'general' must be alone; no duplicates within a class
+  6. Glottocode     — lang_id matches Glottocode format; advisory if not cached
 """
 from __future__ import annotations
 
@@ -20,6 +21,7 @@ from typing import Dict, List, Set
 import yaml
 
 from .validate import ValidationIssue
+from .glottolog import is_valid_format as _is_valid_glottocode, cached_entry as _cached_glottocode
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -197,5 +199,21 @@ def validate_diagnostics_df(df, lang_id: str) -> List[ValidationIssue]:
                 ))
             else:
                 seen[name] = j
+
+    # ------------------------------------------------------------------
+    # 6. Glottocode format + cache advisory
+    # ------------------------------------------------------------------
+    if not _is_valid_glottocode(lang_id):
+        issues.append(ValidationIssue(
+            "warning", "diagnostics.tsv",
+            f"Language ID '{lang_id}' does not match Glottocode format "
+            f"(expected 4 lowercase letters + 4 digits, e.g. 'arao1248')"
+        ))
+    elif _cached_glottocode(lang_id) is None:
+        issues.append(ValidationIssue(
+            "warning", "diagnostics.tsv",
+            f"Language ID '{lang_id}' has not been verified against Glottolog. "
+            f"Run: python -m coding lookup-lang {lang_id}"
+        ))
 
     return issues

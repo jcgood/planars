@@ -14,3 +14,4 @@ notebooks/.virtual_documents/
 # Clone it here: git clone <planars-data-url> coded_data
 coded_data/
 dist/
+glottolog_cache.json

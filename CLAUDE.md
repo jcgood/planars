@@ -74,6 +74,12 @@ python -m coding validate-coding --lang arao1248   # one language
 # Check consistency between codebook.yaml, analysis modules, and diagnostics.tsv
 python -m coding check-codebook
 
+# Look up Glottolog metadata for a language ID (fetches from API on first use, then caches)
+# Cache lives at glottolog_cache.json (gitignored). Used by validate_diagnostics for format check.
+python -m coding lookup-lang arao1248            # fetch + display + cache
+python -m coding lookup-lang --refresh arao1248  # force re-fetch
+python -m coding lookup-lang --all               # list all cached languages
+
 # One-time Drive setup: create ConstituencyTypology root folder and move global files
 # Run once after generate-sheets; idempotent (safe to re-run)
 python -m coding setup-root-folder
@@ -152,6 +158,7 @@ This is a linguistic typology analysis project for morphosyntactic domain deriva
 - `validate_coding.py`: `validate-coding` command — reads annotation sheets, validates values, clears/updates pink cell highlights. Also calls `validate_planar_df` and `validate_diagnostics_df` before sheet validation.
 - `generate_notebooks.py`: `generate-notebooks` — generates per-language and coordinator Colab notebooks.
 - `check_codebook.py`: `check-codebook` — consistency check between codebook.yaml, diagnostic_classes.yaml, analysis modules, and diagnostics.tsv.
+- `glottolog.py`: `lookup-lang` — fetch and cache Glottolog metadata (name, family, ISO code, coordinates) for a language ID. Cache at `glottolog_cache.json` (gitignored). Also provides `is_valid_format()` and `cached_entry()` used by `validate_diagnostics.py` for check 6 (Glottocode format + advisory).
 - `populate_sheets.py`: One-time utility for uploading legacy TSV data.
 - `setup_root_folder.py`: One-time Drive folder setup (run once after first `generate-sheets`).
 

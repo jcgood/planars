@@ -14,6 +14,7 @@ Commands:
     populate-sheets      Upload legacy TSV data to sheets (one-time utility)
     check-codebook       Check consistency between codebook.yaml and analysis modules
     setup-root-folder    Create ConstituencyTypology root Drive folder (run once)
+    lookup-lang          Fetch and cache Glottolog metadata for a language ID
 
 Each command accepts the same flags as the original script. Use --help on any
 command for details, or see CLAUDE.md.
@@ -34,6 +35,7 @@ _COMMANDS = {
     "populate-sheets":    "coding.populate_sheets",
     "check-codebook":     "coding.check_codebook",
     "setup-root-folder":  "coding.setup_root_folder",
+    "lookup-lang":        "coding.glottolog",
 }
 
 
