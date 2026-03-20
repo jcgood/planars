@@ -1,6 +1,65 @@
 # Analyses
 
-This document describes the span types computed by planars, the available analysis modules, and their status. For parameter definitions and qualification rules, see `codebook.yaml`.
+This document describes the span types computed by planars, the available analysis modules, and their status. `codebook.yaml` is the authoritative reference for all parameters and qualification rules — see [The codebook](#the-codebook) below for a guide to reading it.
+
+---
+
+## The codebook
+
+`codebook.yaml` (repo root) is the definitive reference for everything that governs annotation and computation. It is a YAML file with five top-level sections:
+
+### structural_columns
+
+Columns present in every filled TSV regardless of analysis: `Element`, `Position_Name`, `Position_Number`. Described once here rather than repeated per-analysis.
+
+### analyses
+
+One entry per analysis module. Each entry contains:
+
+| Field | Contents |
+|---|---|
+| `name` | The module name — matches the CLI command and Python module (e.g., `ciscategorial`) |
+| `description` | What the analysis tests, its theoretical basis, and its classification (morphosyntactic / phonological / indeterminate). Entries marked `[AUTO-DERIVED: NEEDS REVIEW]` have not been verified by a domain expert. |
+| `parameters` | Each parameter's name, allowed values, and what it means in context |
+| `qualification_rule` | Exactly how the code decides whether a position qualifies — complete vs. partial, which parameters are checked, and (for blocked-span analyses) what constitutes a domain boundary |
+
+To look up a specific analysis, search for `- name: <analysis>` in the file, or render it as Markdown (see [Rendering](#rendering-the-codebook) below).
+
+### shared_values
+
+The four values accepted by all parameters across all analyses:
+
+| Value | Meaning |
+|---|---|
+| `y` | Yes — the parameter holds for this element |
+| `n` | No — the parameter does not hold |
+| `NA` | Not applicable — used only in keystone rows (`v:verbstem`); do not change |
+| `?` | Unknown / not yet annotated — treated as missing data; triggers a validation warning on import |
+
+### terms
+
+A glossary of analytical terms used throughout the project: *planar structure*, *position*, *element*, *keystone*, *partial position*, *complete position*, *strict span*, *loose span*, *ciscategorial*, *transcategorial*, *subspan repetition*, *wide scope*, *narrow scope*, *non-interruption domain*. If you encounter an unfamiliar term, check here first.
+
+### chart_labels
+
+Short labels used in `domain_chart()` output. Useful when reading the domain chart in a Colab notebook and you want to know exactly what a label like `"ws-L loose partial"` means. See the [Notebooks guide](notebooks.md) for how charts are displayed.
+
+### Rendering the codebook
+
+To read the codebook as formatted Markdown rather than raw YAML:
+
+```bash
+python render_codebook.py              # print to terminal
+python render_codebook.py codebook.md  # write to a file
+```
+
+### Status markers
+
+Entries in the `analyses` section may carry one of these markers in their `description`:
+
+- **`[NEEDS REVIEW]`** — the rule was designed by a human but is provisional; specific parameters are flagged as uncertain (currently: aspiration qualification rules; `left-interaction` and `right-interaction` in stress).
+- **`[AUTO-DERIVED: NEEDS REVIEW]`** — the parameter design was derived by reading Tallman et al. 2024 without reviewing concrete language data for that analysis. Treat as a draft. See the [analyses table](#analysis-modules) below for which modules carry this flag and their data sources.
+- **`[PLACEHOLDER]`** — the entry exists but has not been written yet. Do not use for annotation.
 
 ---
 
