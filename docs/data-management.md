@@ -116,7 +116,7 @@ stressed{y/n/both}, independence, left-interaction, right-interaction
 
 `coding/generate_sheets.py` applies per-column dropdown validation using these values. `coding/import-sheets` validates each cell against its allowed set (always also accepts `na` and `?`).
 
-`diagnostics.tsv` is also the source of truth for notebook generation — `generate-notebooks` reads it to discover analysis classes and constructions. Adding a new class to `diagnostics.tsv` and running `generate-notebooks --apply` is all that is needed to include it in the notebooks.
+`diagnostics.tsv` is also the source of truth for notebook generation — `generate-notebooks` reads it to discover analysis classes and constructions. Adding a new class to `diagnostics.tsv` and running `generate-notebooks --apply` will include it in the notebooks — but you must also add the class name to `_CLASS_DISPLAY_NAMES` in `coding/generate_notebooks.py` first (this dict controls the human-readable section headers).
 
 ---
 

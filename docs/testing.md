@@ -2,7 +2,7 @@
 
 ## Regression testing
 
-Snapshot tests verify that analysis output does not change unexpectedly. Snapshots live in `tests/snapshots/` and cover all filled TSVs in `coded_data/`.
+Snapshot tests verify that analysis output does not change unexpectedly. Snapshots live in `tests/snapshots/` and cover the `ciscategorial`, `subspanrepetition`, and `noninterruption` analyses across all filled TSVs in `coded_data/`. Other analyses do not yet have snapshot coverage.
 
 ```bash
 python generate_snapshots.py   # regenerate baselines from current output
