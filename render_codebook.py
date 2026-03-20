@@ -14,7 +14,7 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parent
-CODEBOOK = ROOT / "codebook.yaml"
+CODEBOOK = ROOT / "schemas" / "codebook.yaml"
 
 
 def _wrap(text: str, indent: int = 0) -> str:

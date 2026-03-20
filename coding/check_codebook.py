@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 def _load_codebook() -> dict:
     """Load and parse codebook.yaml from the repo root."""
-    with open(ROOT / "codebook.yaml", encoding="utf-8") as f:
+    with open(ROOT / "schemas" / "codebook.yaml", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
@@ -34,7 +34,7 @@ def _load_diagnostic_classes() -> dict:
     Returns a dict keyed by class name:
         {class_name: {"required_parameters": [...], "specificity": str, ...}}
     """
-    path = ROOT / "diagnostic_classes.yaml"
+    path = ROOT / "schemas" / "diagnostic_classes.yaml"
     if not path.exists():
         return {}
     with open(path, encoding="utf-8") as f:

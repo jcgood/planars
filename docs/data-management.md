@@ -64,8 +64,9 @@ notebooks/
   templates/                    Boilerplate notebooks used by generate-notebooks
   archive/                      Superseded notebooks
 tests/snapshots/                Regression test baselines
-codebook.yaml                   Parameter and term definitions
-diagnostic_classes.yaml         Normative schema for analysis classes (applicability, required params)
+schemas/
+  codebook.yaml                 Parameter and term definitions
+  diagnostic_classes.yaml       Normative schema for analysis classes (applicability, required params)
 docs/                           Documentation (this directory)
 ```
 

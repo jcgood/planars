@@ -9,7 +9,7 @@ This document describes the span types computed by planars, the available analys
 
 ## The diagnostic classes schema
 
-`diagnostic_classes.yaml` (repo root) is the source of truth for the analysis class framework. It is separate from `codebook.yaml` (which owns parameter semantics) and serves as the normative reference for coordinators and contributors adding new languages or analyses.
+`schemas/diagnostic_classes.yaml` is the source of truth for the analysis class framework. It is separate from `codebook.yaml` (which owns parameter semantics) and serves as the normative reference for coordinators and contributors adding new languages or analyses.
 
 Each entry contains:
 
@@ -33,7 +33,7 @@ To add a new analysis class: edit `diagnostic_classes.yaml`, then ask Claude to 
 
 ## The codebook
 
-`codebook.yaml` (repo root) is the definitive reference for everything that governs annotation and computation. It is a YAML file with five top-level sections:
+`schemas/codebook.yaml` is the definitive reference for everything that governs annotation and computation. It is a YAML file with five top-level sections:
 
 ### structural_columns
 

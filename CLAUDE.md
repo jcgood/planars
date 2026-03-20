@@ -197,9 +197,9 @@ Use Glottolog metadata proactively for:
 
 ## Codebook and diagnostic classes
 
-`codebook.yaml` at the repo root is the source of truth for parameter definitions, valid values, analytical terms (keystone, partial, complete, strict, loose), and qualification rules per analysis. Entries marked `[PLACEHOLDER]` need linguistic descriptions; entries marked `[NEEDS REVIEW]` have provisional rules that need confirmation (currently aspiration; stress qualification rule is settled but `left-interaction` and `right-interaction` params remain under review).
+`schemas/codebook.yaml` is the source of truth for parameter definitions, valid values, analytical terms (keystone, partial, complete, strict, loose), and qualification rules per analysis. Entries marked `[PLACEHOLDER]` need linguistic descriptions; entries marked `[NEEDS REVIEW]` have provisional rules that need confirmation (currently aspiration; stress qualification rule is settled but `left-interaction` and `right-interaction` params remain under review).
 
-`diagnostic_classes.yaml` at the repo root is the normative schema for analysis classes — what they cover, when they apply, what parameters they require. It is separate from `codebook.yaml` (which owns parameter semantics) and serves as the source of truth for:
+`schemas/diagnostic_classes.yaml` is the normative schema for analysis classes — what they cover, when they apply, what parameters they require. It is separate from `codebook.yaml` (which owns parameter semantics) and serves as the source of truth for:
 - Which classes exist and their domain types (morphosyntactic / phonological / indeterminate)
 - Whether a class is universal or conditional and when it applies
 - Whether a class uses a single general construction or is construction-specific
@@ -208,7 +208,7 @@ Use Glottolog metadata proactively for:
 
 `check-codebook` validates diagnostics.tsv against both files. Human-editable workflow: edit `diagnostic_classes.yaml` to add or update a class, then ask Claude to propagate changes to diagnostics.tsv and scaffold the module.
 
-`render_codebook.py` at the repo root renders `codebook.yaml` as human-readable Markdown: `python render_codebook.py` (stdout) or `python render_codebook.py codebook.md` (file).
+`render_codebook.py` at the repo root renders `schemas/codebook.yaml` as human-readable Markdown: `python render_codebook.py` (stdout) or `python render_codebook.py codebook.md` (file).
 
 ## NonCollaborative/
 
@@ -228,8 +228,8 @@ Keep the following files up to date as the project evolves. Check each one at th
 | File | Update when |
 |------|-------------|
 | `CLAUDE.md` | Architecture changes, new scripts, new conventions, workflow changes |
-| `codebook.yaml` | New parameters, new analyses, qualification rules change, `[PLACEHOLDER]` or `[NEEDS REVIEW]` entries resolved |
-| `diagnostic_classes.yaml` | New analysis classes added, applicability or required parameters change, new known construction types |
+| `schemas/codebook.yaml` | New parameters, new analyses, qualification rules change, `[PLACEHOLDER]` or `[NEEDS REVIEW]` entries resolved |
+| `schemas/diagnostic_classes.yaml` | New analysis classes added, applicability or required parameters change, new known construction types |
 | `README.md` | Changes to the annotated TOC (audience routing, guide descriptions) |
 | `docs/*.md` | User-facing workflow changes, setup instructions, new dependencies, new commands |
 | `notebooks/templates/domains_boilerplate.ipynb` | Contributor notebook boilerplate changes (setup, auth, chart cell) — then run `generate-notebooks --apply` |

@@ -50,7 +50,7 @@ def _known_analysis_classes() -> Set[str]:
 
 def _codebook_param_names() -> Set[str]:
     """Return all parameter names defined in codebook.yaml."""
-    cb_path = ROOT / "codebook.yaml"
+    cb_path = ROOT / "schemas" / "codebook.yaml"
     if not cb_path.exists():
         return set()
     with cb_path.open(encoding="utf-8") as f:

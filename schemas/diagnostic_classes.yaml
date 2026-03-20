@@ -9,8 +9,8 @@
 #   - Known construction types (non-exhaustive examples for variable classes)
 #
 # Relationship to other files:
-#   codebook.yaml         — parameter semantics, allowed values, qualification rules
-#   diagnostic_classes.yaml (this file) — class structure, applicability, construction types
+#   schemas/codebook.yaml         — parameter semantics, allowed values, qualification rules
+#   schemas/diagnostic_classes.yaml (this file) — class structure, applicability, construction types
 #   diagnostics.tsv       — per-language instance of these classes, validated against this file
 #   docs/analyses.md      — human reader's guide pointing to both
 #
