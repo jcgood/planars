@@ -8,16 +8,36 @@ from planars import subspanrepetition as _subspan
 from planars import noninterruption as _nonint
 from planars import stress as _stress
 from planars import aspiration as _aspiration
+from planars import nonpermutability as _nonperm
+from planars import free_occurrence as _freeoc
+from planars import biuniqueness as _biuniq
+from planars import repair as _repair
+from planars import segmental as _segmental
+from planars import suprasegmental as _supra
+from planars import pausing as _pausing
+from planars import proform as _proform
+from planars import play_language as _play
+from planars import idiom as _idiom
 
 
 # --- Colors (one per analysis type) ---
 
 _COLORS = {
-    "ciscategorial":    "#BC3C29",
+    "ciscategorial":     "#BC3C29",
     "subspanrepetition": "#0072B5",
-    "noninterruption":  "#20845E",
-    "stress":           "#E18727",
-    "aspiration":       "#7876B1",
+    "noninterruption":   "#20845E",
+    "stress":            "#E18727",
+    "aspiration":        "#7876B1",
+    "nonpermutability":  "#54B0E4",
+    "free_occurrence":   "#DE7EAC",
+    "proform":           "#2CA02C",
+    "idiom":             "#FF7F0E",
+    "biuniqueness":      "#8C564B",
+    "repair":            "#17BECF",
+    "segmental":         "#BCBD22",
+    "suprasegmental":    "#9467BD",
+    "pausing":           "#E377C2",
+    "play_language":     "#7F7F7F",
 }
 
 # --- Span label mappings ---
@@ -122,14 +142,62 @@ def _rows_from_aspiration(result, lang_id):
     return rows
 
 
+# Standard 4-span pattern shared by most simple modules.
+_SIMPLE_SPANS = [
+    ("strict_complete_span", "strict complete"),
+    ("loose_complete_span",  "loose complete"),
+    ("strict_partial_span",  "strict partial"),
+    ("loose_partial_span",   "loose partial"),
+]
+
+_NONPERM_SPANS = [
+    ("strict_complete_span",   "strict complete"),
+    ("strict_partial_span",    "strict partial"),
+    ("flexible_complete_span", "flexible complete"),
+    ("flexible_partial_span",  "flexible partial"),
+]
+
+
+def _make_simple_rows(analysis_name, span_list=None):
+    """Factory: returns a row function for modules that return a standard span set.
+
+    span_list defaults to _SIMPLE_SPANS (strict/loose × complete/partial).
+    Pass a different list for modules with non-standard span keys (e.g. nonpermutability).
+    """
+    if span_list is None:
+        span_list = _SIMPLE_SPANS
+
+    def _fn(result, lang_id):
+        rows = []
+        for key, label in span_list:
+            l, r = result[key]
+            rows.append({"Language": lang_id,
+                         "Test_Labels": f"{analysis_name} {label}",
+                         "Analysis": analysis_name,
+                         "Left_Edge": l, "Right_Edge": r, "Size": r - l + 1})
+        return rows
+
+    return _fn
+
+
 # --- Analysis class registry ---
 
 _CLASS_HANDLERS = {
-    "ciscategorial":     (_cisc.derive_v_ciscategorial_fractures,  _rows_from_cisc),
-    "subspanrepetition": (_subspan.derive_subspanrepetition_spans, _rows_from_subspan),
-    "noninterruption":   (_nonint.derive_noninterruption_domains,  _rows_from_nonint),
-    "stress":            (_stress.derive_stress_domains,           _rows_from_stress),
-    "aspiration":        (_aspiration.derive_aspiration_domains,   _rows_from_aspiration),
+    "ciscategorial":     (_cisc.derive_v_ciscategorial_fractures,     _rows_from_cisc),
+    "subspanrepetition": (_subspan.derive_subspanrepetition_spans,    _rows_from_subspan),
+    "noninterruption":   (_nonint.derive_noninterruption_domains,     _rows_from_nonint),
+    "stress":            (_stress.derive_stress_domains,              _rows_from_stress),
+    "aspiration":        (_aspiration.derive_aspiration_domains,      _rows_from_aspiration),
+    "nonpermutability":  (_nonperm.derive_nonpermutability_domains,   _make_simple_rows("nonpermutability", _NONPERM_SPANS)),
+    "free_occurrence":   (_freeoc.derive_free_occurrence_spans,       _make_simple_rows("free_occurrence")),
+    "biuniqueness":      (_biuniq.derive_biuniqueness_domains,        _make_simple_rows("biuniqueness")),
+    "repair":            (_repair.derive_repair_domains,              _make_simple_rows("repair")),
+    "segmental":         (_segmental.derive_segmental_domains,        _make_simple_rows("segmental")),
+    "suprasegmental":    (_supra.derive_suprasegmental_domains,       _make_simple_rows("suprasegmental")),
+    "pausing":           (_pausing.derive_pausing_domains,            _make_simple_rows("pausing")),
+    "proform":           (_proform.derive_proform_domains,            _make_simple_rows("proform")),
+    "play_language":     (_play.derive_play_language_domains,         _make_simple_rows("play_language")),
+    "idiom":             (_idiom.derive_idiom_domains,                _make_simple_rows("idiom")),
 }
 
 

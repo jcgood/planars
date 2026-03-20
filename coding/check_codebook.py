@@ -52,17 +52,24 @@ def _codebook_params(codebook: dict) -> dict[str, set[str]]:
 
 def _check_required_params(codebook: dict) -> List[str]:
     """Check that every required param in each module is defined in codebook.yaml."""
-    from planars import ciscategorial, subspanrepetition, noninterruption, stress, aspiration
+    import importlib
 
     cb = _codebook_params(codebook)
-    # ciscategorial uses inline required_params rather than a module-level constant
-    module_params = {
-        "ciscategorial":     {"V-combines", "N-combines", "A-combines"},
-        "subspanrepetition": getattr(subspanrepetition, "_REQUIRED_PARAMS", set()),
-        "noninterruption":   getattr(noninterruption, "_REQUIRED_PARAMS", set()),
-        "stress":            getattr(stress, "_REQUIRED_PARAMS", set()),
-        "aspiration":        getattr(aspiration, "_REQUIRED_PARAMS", set()),
+    # ciscategorial uses inline required_params rather than a module-level constant.
+    # All other modules expose _REQUIRED_PARAMS at module level.
+    module_params: dict[str, set] = {
+        "ciscategorial": {"V-combines", "N-combines", "A-combines"},
     }
+    for name in [
+        "subspanrepetition", "noninterruption", "stress", "aspiration",
+        "nonpermutability", "free_occurrence", "biuniqueness", "repair",
+        "segmental", "suprasegmental", "pausing", "proform", "play_language", "idiom",
+    ]:
+        mod = importlib.import_module(f"planars.{name}")
+        params = getattr(mod, "_REQUIRED_PARAMS", None)
+        if params is not None:
+            module_params[name] = set(params)
+
     errors = []
     for name, mod_params in module_params.items():
         cb_params = cb.get(name, set())
@@ -182,16 +189,20 @@ def _check_chart_keys() -> List[str]:
     every key referenced in the chart label mappings (_CISC_SPANS, etc.) is
     actually present in the returned result dict.
     """
-    from planars import ciscategorial, subspanrepetition, noninterruption, stress, aspiration
+    from planars import (
+        ciscategorial, subspanrepetition, noninterruption, stress, aspiration,
+        nonpermutability, free_occurrence, biuniqueness, repair,
+        segmental, suprasegmental, pausing, proform, play_language, idiom,
+    )
     from planars.charts import (
         _CISC_SPANS, _NONINT_SPANS, _STRESS_SPANS, _ASPIRATION_SPANS,
-        _SUBSPAN_CATS, _SUBSPAN_VARIANTS,
+        _SUBSPAN_CATS, _SUBSPAN_VARIANTS, _SIMPLE_SPANS, _NONPERM_SPANS,
     )
     from planars.io import load_filled_tsv
 
     errors = []
 
-    def _check(label, derive_fn, span_keys, tsv_io, required_params, extra=None):
+    def _check(label, derive_fn, span_keys, tsv_io, required_params):
         """Run derive_fn on a synthetic TSV and check that all span_keys are present."""
         try:
             data = load_filled_tsv(tsv_io, required_params, strict=False)
@@ -202,6 +213,8 @@ def _check_chart_keys() -> List[str]:
         for key in span_keys:
             if key not in result:
                 errors.append(f"[{label}] chart references key '{key}' not in result dict")
+
+    simple_keys = [k for k, _ in _SIMPLE_SPANS]
 
     # ciscategorial (no module-level _REQUIRED_PARAMS — uses inline required_params)
     cisc_keys = [k for k, _ in _CISC_SPANS]
@@ -238,6 +251,29 @@ def _check_chart_keys() -> List[str]:
     _check("subspanrepetition", subspanrepetition.derive_subspanrepetition_spans, subspan_keys,
            _make_minimal_tsv(["widescope_left", "widescope_right", "fillable_botheither_conjunct"]),
            subspanrepetition._REQUIRED_PARAMS)
+
+    # nonpermutability (strict+flexible × complete/partial — all strict spans)
+    nonperm_keys = [k for k, _ in _NONPERM_SPANS]
+    _check("nonpermutability", nonpermutability.derive_nonpermutability_domains, nonperm_keys,
+           _make_minimal_tsv(list(nonpermutability._REQUIRED_PARAMS)),
+           nonpermutability._REQUIRED_PARAMS)
+
+    # simple 4-span modules (strict/loose × complete/partial)
+    simple_cases = [
+        ("free_occurrence",  free_occurrence,  free_occurrence.derive_free_occurrence_spans),
+        ("biuniqueness",     biuniqueness,     biuniqueness.derive_biuniqueness_domains),
+        ("repair",           repair,           repair.derive_repair_domains),
+        ("segmental",        segmental,        segmental.derive_segmental_domains),
+        ("suprasegmental",   suprasegmental,   suprasegmental.derive_suprasegmental_domains),
+        ("pausing",          pausing,          pausing.derive_pausing_domains),
+        ("proform",          proform,          proform.derive_proform_domains),
+        ("play_language",    play_language,    play_language.derive_play_language_domains),
+        ("idiom",            idiom,            idiom.derive_idiom_domains),
+    ]
+    for name, mod, derive_fn in simple_cases:
+        _check(name, derive_fn, simple_keys,
+               _make_minimal_tsv(list(mod._REQUIRED_PARAMS)),
+               mod._REQUIRED_PARAMS)
 
     return errors
 
