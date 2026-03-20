@@ -495,12 +495,13 @@ element_conventions:
       note: >
         Project-specific labels for adverb positions classified by their scope of modification.
         Use a hyphen to separate the AD prefix from the scope domain letter.
-      - label: AD-S
-        gloss: Sentence-scoped adverb (modifies the entire clause)
-      - label: AD-VP
-        gloss: VP-scoped adverb (modifies the verb phrase)
-      - label: AD-V
-        gloss: V-scoped adverb (modifies the verb stem only)
+      items:
+        - label: AD-S
+          gloss: Sentence-scoped adverb (modifies the entire clause)
+        - label: AD-VP
+          gloss: VP-scoped adverb (modifies the verb phrase)
+        - label: AD-V
+          gloss: V-scoped adverb (modifies the verb stem only)
 
     other_labels:
       - label: PRON
@@ -520,15 +521,16 @@ element_conventions:
         grammatical roles. Example: NP{S,A} = NPs in subject or agent role.
         Note: S used as a role label (subject) is distinct from S as a phrase
         type (clause) — context (braces vs. standalone) disambiguates.
-      - label: S
-        gloss: Subject
-      - label: A
-        gloss: Agent (transitive subject)
-      - label: P
-        gloss: Patient (transitive object)
-      - label: T
-        gloss: Theme
-      - label: R
-        gloss: Recipient / Goal
-      - label: O
-        gloss: Object (when A/P distinction is not made)
+      items:
+        - label: S
+          gloss: Subject
+        - label: A
+          gloss: Agent (transitive subject)
+        - label: P
+          gloss: Patient (transitive object)
+        - label: T
+          gloss: Theme
+        - label: R
+          gloss: Recipient / Goal
+        - label: O
+          gloss: Object (when A/P distinction is not made)

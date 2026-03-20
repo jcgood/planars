@@ -44,6 +44,7 @@ import pandas as pd
 
 from . import make_forms as _mf
 from . import validate_planar as _val_planar
+from . import validate_diagnostics as _val_diag
 from .make_forms import (
     build_element_index,
     _infer_language_id_from_planar_filename,
@@ -583,6 +584,16 @@ def main() -> None:
             print(f"  Planar validation ({len(planar_issues)} issue(s)):")
             for issue in planar_issues:
                 print(f"    {issue}")
+
+        # Validate diagnostics.tsv; warn but do not block sheet generation.
+        diag_path = planar_dir / "diagnostics.tsv"
+        if diag_path.exists():
+            diag_df = pd.read_csv(diag_path, sep="\t")
+            diag_issues = _val_diag.validate_diagnostics_df(diag_df, lang_id)
+            if diag_issues:
+                print(f"  Diagnostics validation ({len(diag_issues)} issue(s)):")
+                for issue in diag_issues:
+                    print(f"    {issue}")
 
         specs = _read_diagnostics_for_language(lang_id)
 

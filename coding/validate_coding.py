@@ -36,6 +36,7 @@ from .make_forms import (
 from . import make_forms as _mf
 from .validate import ValidationIssue
 from .validate_planar import validate_planar_df
+from .validate_diagnostics import validate_diagnostics_df
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -245,7 +246,7 @@ def main() -> None:
 
         print(f"\n{lang_id}")
 
-        # Validate planar structure.
+        # Validate planar structure and diagnostics.tsv.
         planar_files = sorted((CODED_DATA / lang_id / "planar_input").glob("planar_*.tsv"))
         if planar_files:
             planar_df = pd.read_csv(planar_files[0], sep="\t")
@@ -254,6 +255,15 @@ def main() -> None:
                 print(f"  Planar validation ({len(planar_issues)} issue(s)):")
                 for issue in planar_issues:
                     print(f"    {issue}")
+
+            diag_path = planar_files[0].parent / "diagnostics.tsv"
+            if diag_path.exists():
+                diag_df = pd.read_csv(diag_path, sep="\t")
+                diag_issues = validate_diagnostics_df(diag_df, lang_id)
+                if diag_issues:
+                    print(f"  Diagnostics validation ({len(diag_issues)} issue(s)):")
+                    for issue in diag_issues:
+                        print(f"    {issue}")
 
         for class_name, sheet_info in sorted(lang_data.get("sheets", {}).items()):
             sid = sheet_info.get("spreadsheet_id") or sheet_info.get("id")
