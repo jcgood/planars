@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate per-language contributor notebooks and the all-languages coordinator notebook.
+"""Generate per-language contributor/validation notebooks and the all-languages coordinator notebook.
 
 Run from the repo root:
     python -m coding generate-notebooks           # dry run — show what would be generated
@@ -10,13 +10,16 @@ What this does:
   2. Builds/updates planars_config.json on Drive (maps lang_id → folder_id)
   3. Generates domains_{lang_id}.ipynb for each language from the contributor template,
      with CONFIG_FILE_ID and LANG_ID baked in; uploads to each language's Drive folder
-  4. Generates all_languages.ipynb from the coordinator template, with per-class cells
+  4. Generates validation_{lang_id}.ipynb for each language from the validation template;
+     uploads to each language's Drive folder
+  5. Generates all_languages.ipynb from the coordinator template, with per-class cells
      inserted from the union of all languages' diagnostics; uploads to Drive
-  5. Sets Viewer ("anyone with link") permissions on all uploaded notebooks
-  6. Updates drive_config.json with notebook file IDs for future updates
+  6. Sets Viewer ("anyone with link") permissions on all uploaded notebooks
+  7. Updates drive_config.json with notebook file IDs for future updates
 
 Templates live in notebooks/templates/:
   domains_boilerplate.ipynb      — contributor template (substitution only)
+  validation_boilerplate.ipynb   — validation template (substitution only)
   all_languages_boilerplate.ipynb — coordinator template (substitution + cell generation)
 
 Class cells are generated from diagnostics.tsv, not the templates, so adding a new
@@ -302,6 +305,9 @@ def _run_generation(apply: bool) -> None:
         print("\nContributor notebooks (one per language, includes per-class report sections):")
         for lang_id, classes in lang_classes.items():
             print(f"  domains_{lang_id}.ipynb — {classes}")
+        print("\nValidation notebooks (one per language):")
+        for lang_id in lang_classes:
+            print(f"  validation_{lang_id}.ipynb")
         print(f"\nCoordinator notebook (all languages):")
         print(f"  all_languages.ipynb — {all_classes}")
         print("\nRun with --apply to generate and upload.")
@@ -330,6 +336,27 @@ def _run_generation(apply: bool) -> None:
         )
         _set_viewer_permissions(drive, file_id)
         drive_config.setdefault(lang_id, {})["domains_notebook_file_id"] = file_id
+        print(f"  [{lang_id}] Uploaded {filename} (viewer)")
+
+    # Generate and upload validation notebook for each language
+    validation_template = _load_template("validation_boilerplate.ipynb")
+    for lang_id in lang_classes:
+        folder_id = drive_config.get(lang_id, {}).get("folder_id")
+        if not folder_id:
+            print(f"  [{lang_id}] No folder_id in drive_config — skipping validation notebook")
+            continue
+        nb = _substitute_tokens(validation_template, {
+            "LANG_ID": lang_id,
+            "CONFIG_FILE_ID": config_file_id,
+        })
+        nb_bytes = json.dumps(nb, indent=1).encode()
+        filename = f"validation_{lang_id}.ipynb"
+        file_id = _upload_file(
+            drive, nb_bytes, filename, "application/json", folder_id,
+            drive_config.get(lang_id, {}).get("validation_notebook_file_id"),
+        )
+        _set_viewer_permissions(drive, file_id)
+        drive_config.setdefault(lang_id, {})["validation_notebook_file_id"] = file_id
         print(f"  [{lang_id}] Uploaded {filename} (viewer)")
 
     # Generate and upload coordinator notebook

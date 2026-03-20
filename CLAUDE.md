@@ -173,7 +173,7 @@ stressed{y/n/both}, independence, left-interaction, right-interaction
 
 `python -m coding update-sheets` brings existing sheets up to date when new elements are added to the planar structure. Always dry-run first.
 
-`diagnostics.tsv` is also the source of truth for notebook generation. `python -m coding generate-notebooks` reads each language's `diagnostics.tsv` to discover analysis classes and generates three kinds of notebooks: a per-language contributor notebook (`domains_{lang_id}.ipynb`), a single coordinator notebook (`all_languages.ipynb`) covering all languages, and per-language validation notebooks (`validation_{lang_id}.ipynb` — issue #53, not yet implemented). Per-class cells in the coordinator notebook are generated automatically from the class list — adding a new class to `diagnostics.tsv` and updating `_CLASS_DISPLAY_NAMES` in `coding/generate_notebooks.py`, then running `generate-notebooks --apply`, is all that's needed to include it. Notebook generation is triggered automatically at the end of `generate-sheets`, `sync-params --apply`, and `restructure-sheets --apply`. Templates live in `notebooks/templates/`; the generated notebooks are artifacts uploaded to Drive, not source files. Each analysis module must define a `derive` alias pointing to its primary derive function so the generation script can call it without a per-module name mapping (see e.g. `planars/ciscategorial.py`).
+`diagnostics.tsv` is also the source of truth for notebook generation. `python -m coding generate-notebooks` reads each language's `diagnostics.tsv` to discover analysis classes and generates three kinds of notebooks: a per-language contributor notebook (`domains_{lang_id}.ipynb`), per-language validation notebooks (`validation_{lang_id}.ipynb`), and a single coordinator notebook (`all_languages.ipynb`) covering all languages. Per-class cells in the coordinator notebook are generated automatically from the class list — adding a new class to `diagnostics.tsv` and updating `_CLASS_DISPLAY_NAMES` in `coding/generate_notebooks.py`, then running `generate-notebooks --apply`, is all that's needed to include it. Notebook generation is triggered automatically at the end of `generate-sheets`, `sync-params --apply`, and `restructure-sheets --apply`. Templates live in `notebooks/templates/`; the generated notebooks are artifacts uploaded to Drive, not source files. Each analysis module must define a `derive` alias pointing to its primary derive function so the generation script can call it without a per-module name mapping (see e.g. `planars/ciscategorial.py`).
 
 ## Codebook
 
@@ -240,7 +240,7 @@ All four analyses run and produce spans. Source: Adam Tallman §4.5 (langsci/291
 Feature requests and bugs are tracked on GitHub Issues: https://github.com/jcgood/planars/issues
 
 Notable open issues:
-- **#53** — `generate-notebooks`: generate and upload per-language validation notebooks from `validation_boilerplate.ipynb` so collaborators can validate their own coding in Colab.
+- **#53** — ~~`generate-notebooks`: generate and upload per-language validation notebooks~~ — implemented.
 - **#52** — `integrity-check`: a single-pass project health command that reports planar, diagnostics, and annotation issues as a Markdown summary.
 - **#51** — Remove `_filled` suffix from imported TSV filenames.
 - **#50** — `--rename-element` flag on `restructure-sheets` (implemented; issue open for testing).

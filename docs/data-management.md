@@ -144,6 +144,6 @@ The Drive manifest (`planars_config.json`) is stored on Drive and contains all l
 - `_root_folder_id` — the `ConstituencyTypology` top-level Drive folder
 - `_planars_config_file_id` — the manifest file
 - `_all_languages_notebook_file_id` — the coordinator notebook
-- Per-language: `folder_id`, `domains_notebook_file_id`
+- Per-language: `folder_id`, `domains_notebook_file_id`, `validation_notebook_file_id`
 
 Do not commit `drive_config.json` — it is gitignored.
