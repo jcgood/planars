@@ -285,6 +285,13 @@ analyses:
       Both strict and loose spans are computed (unlike noninterruption, which uses
       strict-only, free occurrence domains need not be contiguous).
 
+      Note on minimal vs. maximal free occurrence (Tallman et al. 2024, ch. 1):
+      The Introduction distinguishes the minimal free occurrence domain (the smallest
+      span that can stand as an independent utterance) from the maximal free occurrence
+      domain (the largest such span). In the planar framework these correspond to the
+      strict complete span (conservative/minimal) and the loose partial span
+      (liberal/maximal) respectively. No additional parameter is needed.
+
   - name: aspiration
     description: >
       [NEEDS REVIEW] Tests which positions fall within the aspiration domain of
