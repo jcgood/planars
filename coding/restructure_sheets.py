@@ -12,8 +12,13 @@ Run from the repo root:
     python -m coding restructure-sheets --rename-map "old name:new name"
     python -m coding restructure-sheets --rename-map old:new1 --rename-map old2:new2 --apply
 
+    # Map renamed elements (e.g. casing fixes) so their annotations are carried over:
+    python -m coding restructure-sheets --rename-element Ad-VP:AD-VP --apply
+    python -m coding restructure-sheets --rename-element Ad-VP:AD-VP --rename-element Ad-V:AD-V --apply
+
     --rename-map takes "old_pos_name:new_pos_name" and can be repeated.
-    Without it, a renamed position is treated as a drop + new blank row.
+    --rename-element takes "old_element:new_element" and can be repeated.
+    Without these flags, renamed positions/elements are treated as drops + new blank rows.
 
 What this does per spreadsheet:
   1. Downloads current annotations from each tab
@@ -107,14 +112,27 @@ def _lookup_existing(
     pos_name: str,
     existing: Dict[Tuple[str, str], Dict[str, str]],
     old_for_new: Dict[str, str],
+    old_el_for_new: Dict[str, str] = {},
 ) -> Optional[Dict[str, str]]:
-    """Look up an annotation by (element, pos_name), falling back to rename alias."""
-    values = existing.get((element, pos_name))
-    if values is not None:
-        return values
+    """Look up an annotation by (element, pos_name), falling back to rename aliases.
+
+    Tries in order:
+      1. Direct match: (element, pos_name)
+      2. Position rename: (element, old_pos_name)
+      3. Element rename: (old_element, pos_name)
+      4. Both renames:   (old_element, old_pos_name)
+    """
+    if (v := existing.get((element, pos_name))) is not None:
+        return v
     old_name = old_for_new.get(pos_name)
-    if old_name:
-        return existing.get((element, old_name))
+    if old_name and (v := existing.get((element, old_name))) is not None:
+        return v
+    old_el = old_el_for_new.get(element)
+    if old_el:
+        if (v := existing.get((old_el, pos_name))) is not None:
+            return v
+        if old_name and (v := existing.get((old_el, old_name))) is not None:
+            return v
     return None
 
 
@@ -155,6 +173,22 @@ def _get_or_create_subfolder(drive, parent_id: str, name: str) -> str:
 # Tab population with carry-over
 # ---------------------------------------------------------------------------
 
+def _old_key(
+    element: str,
+    pos_name: str,
+    existing: Dict[Tuple[str, str], Dict[str, str]],
+    old_for_new: Dict[str, str],
+    old_el_for_new: Dict[str, str],
+) -> Tuple[str, str]:
+    """Return the key that was actually consumed in existing for this (element, pos_name)."""
+    old_el  = old_el_for_new.get(element, element)
+    old_pos = old_for_new.get(pos_name, pos_name)
+    for key in [(element, pos_name), (element, old_pos), (old_el, pos_name), (old_el, old_pos)]:
+        if key in existing:
+            return key
+    return (element, pos_name)  # fallback (won't be in existing, harmless)
+
+
 def _write_tab_with_carryover(
     spreadsheet: gspread.Spreadsheet,
     tab_name: str,
@@ -163,16 +197,18 @@ def _write_tab_with_carryover(
     rows: List[List[object]],
     existing: Dict[Tuple[str, str], Dict[str, str]],
     rename_map: Dict[str, str],
+    element_rename_map: Dict[str, str] = {},
 ) -> Tuple[int, int, int]:
     """Create/clear a tab and populate it, carrying over matching annotations.
 
-    Matching is by (Element, Position_Name), with optional rename_map (old→new)
-    to carry over annotations from renamed positions.
+    Matching is by (Element, Position_Name), with optional rename_map (old→new
+    position renames) and element_rename_map (old→new element label renames).
 
     Returns:
         (carried_count, new_count, dropped_count)
     """
-    old_for_new = {v: k for k, v in rename_map.items()}
+    old_for_new    = {v: k for k, v in rename_map.items()}
+    old_el_for_new = {v: k for k, v in element_rename_map.items()}
     all_cols = param_names + _TRAILING_COLS
     header = ["Element", "Position_Name", "Position_Number"] + all_cols
 
@@ -187,13 +223,11 @@ def _write_tab_with_carryover(
         pos_num = str(row[2])
         is_keystone = pos_name.strip().lower() == "v:verbstem"
 
-        old_values = _lookup_existing(element, pos_name, existing, old_for_new)
+        old_values = _lookup_existing(element, pos_name, existing, old_for_new, old_el_for_new)
         if old_values is not None:
             param_vals = [old_values.get(p, "") for p in param_names]
             trailing_vals = [old_values.get(c, "") for c in _TRAILING_COLS]
-            # Track which old key was consumed (direct or via rename)
-            old_name = old_for_new.get(pos_name)
-            reachable_old_keys.add((element, old_name if old_name and (element, old_name) in existing else pos_name))
+            reachable_old_keys.add(_old_key(element, pos_name, existing, old_for_new, old_el_for_new))
             carried += 1
         else:
             param_vals = ["NA"] * len(param_names) if is_keystone else [""] * len(param_names)
@@ -229,6 +263,7 @@ def _compute_stats(
     rows: List[List[object]],
     existing: Dict[Tuple[str, str], Dict[str, str]],
     rename_map: Dict[str, str],
+    element_rename_map: Dict[str, str] = {},
 ) -> Tuple[int, int, List[Tuple[str, str]]]:
     """Compute carry-over stats for a dry run without touching any sheet.
 
@@ -236,6 +271,7 @@ def _compute_stats(
         rows: new rows from _build_rows (the regenerated planar structure).
         existing: current annotations keyed by (element, pos_name).
         rename_map: {old_pos_name: new_pos_name} for renamed positions.
+        element_rename_map: {old_element: new_element} for renamed element labels.
 
     Returns:
         (carried_count, new_count, dropped_keys) where:
@@ -243,15 +279,15 @@ def _compute_stats(
           - new_count:     rows in rows with no match in existing (need re-annotation)
           - dropped_keys:  (element, pos_name) pairs in existing not matched by any row
     """
-    old_for_new = {v: k for k, v in rename_map.items()}
+    old_for_new    = {v: k for k, v in rename_map.items()}
+    old_el_for_new = {v: k for k, v in element_rename_map.items()}
     reachable_old_keys: set = set()
     new = 0
     for r in rows:
         element, pos_name = str(r[0]), str(r[1])
-        old_values = _lookup_existing(element, pos_name, existing, old_for_new)
+        old_values = _lookup_existing(element, pos_name, existing, old_for_new, old_el_for_new)
         if old_values is not None:
-            old_name = old_for_new.get(pos_name)
-            reachable_old_keys.add((element, old_name if old_name and (element, old_name) in existing else pos_name))
+            reachable_old_keys.add(_old_key(element, pos_name, existing, old_for_new, old_el_for_new))
         else:
             new += 1
     carried = len(reachable_old_keys)
@@ -263,21 +299,21 @@ def _compute_stats(
 # Main
 # ---------------------------------------------------------------------------
 
-def _parse_rename_map(argv: List[str]) -> Dict[str, str]:
-    """Parse all --rename-map old:new arguments into {old: new}."""
-    rename_map: Dict[str, str] = {}
+def _parse_flag_map(argv: List[str], flag: str) -> Dict[str, str]:
+    """Parse all occurrences of --flag old:new into {old: new}."""
+    result: Dict[str, str] = {}
     i = 0
     while i < len(argv):
-        if argv[i] == "--rename-map" and i + 1 < len(argv):
+        if argv[i] == flag and i + 1 < len(argv):
             pair = argv[i + 1]
             if ":" not in pair:
-                raise SystemExit(f"--rename-map requires 'old:new' format, got: {pair!r}")
+                raise SystemExit(f"{flag} requires 'old:new' format, got: {pair!r}")
             old, new = pair.split(":", 1)
-            rename_map[old.strip()] = new.strip()
+            result[old.strip()] = new.strip()
             i += 2
         else:
             i += 1
-    return rename_map
+    return result
 
 
 def main() -> None:
@@ -291,7 +327,8 @@ def main() -> None:
     In dry-run mode (no --apply) only prints what would change.
     """
     apply = "--apply" in sys.argv
-    rename_map = _parse_rename_map(sys.argv[1:])
+    rename_map         = _parse_flag_map(sys.argv[1:], "--rename-map")
+    element_rename_map = _parse_flag_map(sys.argv[1:], "--rename-element")
 
     gc, drive = _get_clients()
     manifest = _load_manifest_from_drive(drive)
@@ -316,7 +353,10 @@ def main() -> None:
         print(f"\n{'DRY RUN — ' if not apply else ''}Language: {lang_id}")
         if rename_map:
             for old, new in rename_map.items():
-                print(f"  rename: {old!r} -> {new!r}")
+                print(f"  rename position: {old!r} -> {new!r}")
+        if element_rename_map:
+            for old, new in element_rename_map.items():
+                print(f"  rename element:  {old!r} -> {new!r}")
         if not apply:
             print("(run with --apply to archive old sheets and regenerate)")
 
@@ -350,7 +390,7 @@ def main() -> None:
             for construction, param_names, param_values in constructions_list:
                 rows = _build_rows(element_index, lang_id, param_names)
                 existing = all_annotations.get(construction, {})
-                carried, new_count, dropped = _compute_stats(rows, existing, rename_map)
+                carried, new_count, dropped = _compute_stats(rows, existing, rename_map, element_rename_map)
                 parts = [f"carry over {carried}", f"new blank {new_count}"]
                 if dropped:
                     dropped_labels = [f"{el}@{pn}" for el, pn in dropped]
@@ -387,7 +427,8 @@ def main() -> None:
                 rows = _build_rows(element_index, lang_id, param_names)
                 existing = all_annotations.get(construction, {})
                 carried, new_count, dropped_count = _write_tab_with_carryover(
-                    new_ss, construction, param_names, param_values, rows, existing, rename_map
+                    new_ss, construction, param_names, param_values, rows, existing,
+                    rename_map, element_rename_map,
                 )
                 tab_names.append(construction)
                 new_construction_params[construction] = {
