@@ -1,15 +1,15 @@
 # Analyses
 
-This document describes the span types computed by planars, the available analysis modules, and their status. Two YAML files at the repo root govern the analysis framework:
+This document describes the span types computed by planars, the available analysis modules, and their status. Two YAML files in `schemas/` govern the analysis framework:
 
-- **`diagnostic_classes.yaml`** — the normative schema for analysis classes: which classes exist, when each applies (universal vs. conditional), construction-specific variants, required parameters, and known construction types. See [The diagnostic classes schema](#the-diagnostic-classes-schema) below.
-- **`codebook.yaml`** — the authoritative reference for parameter semantics, allowed values, and qualification rules. See [The codebook](#the-codebook) below.
+- **`schemas/diagnostic_classes.yaml`** — the normative schema for analysis classes: which classes exist, when each applies (universal vs. conditional), construction-specific variants, required parameters, and known construction types. See [The diagnostic classes schema](#the-diagnostic-classes-schema) below.
+- **`schemas/codebook.yaml`** — the authoritative reference for parameter semantics, allowed values, and qualification rules. See [The codebook](#the-codebook) below.
 
 ---
 
 ## The diagnostic classes schema
 
-`schemas/diagnostic_classes.yaml` is the source of truth for the analysis class framework. It is separate from `codebook.yaml` (which owns parameter semantics) and serves as the normative reference for coordinators and contributors adding new languages or analyses.
+`schemas/diagnostic_classes.yaml` is the source of truth for the analysis class framework. It is separate from `schemas/codebook.yaml` (which owns parameter semantics) and serves as the normative reference for coordinators and contributors adding new languages or analyses.
 
 Each entry contains:
 
@@ -27,7 +27,7 @@ Each entry contains:
 
 ### Human-editable workflow
 
-To add a new analysis class: edit `diagnostic_classes.yaml`, then ask Claude to propagate the changes to `diagnostics.tsv` and scaffold the new `planars/` module. `check-codebook` validates existing `diagnostics.tsv` files against this schema.
+To add a new analysis class: edit `schemas/diagnostic_classes.yaml`, then ask Claude to propagate the changes to `diagnostics.tsv` and scaffold the new `planars/` module. `check-codebook` validates existing `diagnostics.tsv` files against this schema.
 
 ---
 
@@ -137,7 +137,7 @@ Some analyses (stress, aspiration) use a **blocked span** instead: expand from t
 
 † `left-interaction` and `right-interaction` parameters remain provisional — see issue #17.
 
-‡ Likely stable based on cross-language evidence (see `diagnostic_classes.yaml`), but coordinator sign-off still needed.
+‡ Likely stable based on cross-language evidence (see `schemas/diagnostic_classes.yaml`), but coordinator sign-off still needed.
 
 § No confirmed language data; scope unclear — see issue #60.
 
@@ -154,7 +154,7 @@ Both use `blocked_span`: expand from the keystone outward, stopping just before 
 - **Minimal** (stress): blocked by `stressed ∈ {y, both} AND independence=y`
 - **Maximal** (stress): blocked by `obligatory=y AND independence=y`
 
-Each domain type has a complete/partial distinction, giving 4 spans per analysis. The `left-interaction` and `right-interaction` parameters are marked `[NEEDS REVIEW]` in `codebook.yaml` — their role in blocking conditions has not been finalized. Aspiration mirrors the stress structure but its qualification rules are also `[NEEDS REVIEW]`.
+Each domain type has a complete/partial distinction, giving 4 spans per analysis. The `left-interaction` and `right-interaction` parameters are marked `[NEEDS REVIEW]` in `schemas/codebook.yaml` — their role in blocking conditions has not been finalized. Aspiration mirrors the stress structure but its qualification rules are also `[NEEDS REVIEW]`.
 
 ### Noninterruption
 

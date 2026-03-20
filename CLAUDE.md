@@ -123,8 +123,8 @@ This is a linguistic typology analysis project for morphosyntactic domain deriva
    - `ciscategorial.py`: A position qualifies if elements have `V-combines=y` and all other params `=n`. Returns 4 spans (strict/loose × complete/partial).
    - `subspanrepetition.py`: 5 span categories (fillable, widescope_left/right, narrowscope_left/right), each with 4 spans = 20 total.
    - `noninterruption.py`: Two domain types (no-free: `free=n`; single-free: `free=n` or `free=y,multiple=n`), each with complete/partial = 4 strict spans.
-   - `stress.py`: Uses `blocked_span` with complete/partial distinction — expand from keystone outward, stopping just before the first position where the blocking condition holds. Two domain types, each with complete/partial = 4 spans total. Partial blocking: any element in the position satisfies the condition (smaller domain). Complete blocking: all elements satisfy the condition (larger domain). Minimal: blocked by `stressed ∈ {y, both} AND independence=y`. Maximal: blocked by `obligatory=y AND independence=y`. The keystone always remains in the domain. See `codebook.yaml` for open questions on `left-interaction`, `right-interaction`, and meso/interaction domains (issues #16, #17).
-   - `aspiration.py`: `[NEEDS REVIEW]` — mirrors stress structure but qualification rules are provisional. See `codebook.yaml`.
+   - `stress.py`: Uses `blocked_span` with complete/partial distinction — expand from keystone outward, stopping just before the first position where the blocking condition holds. Two domain types, each with complete/partial = 4 spans total. Partial blocking: any element in the position satisfies the condition (smaller domain). Complete blocking: all elements satisfy the condition (larger domain). Minimal: blocked by `stressed ∈ {y, both} AND independence=y`. Maximal: blocked by `obligatory=y AND independence=y`. The keystone always remains in the domain. See `schemas/codebook.yaml` for open questions on `left-interaction`, `right-interaction`, and meso/interaction domains (issues #16, #17).
+   - `aspiration.py`: `[NEEDS REVIEW]` — mirrors stress structure but qualification rules are provisional. See `schemas/codebook.yaml`.
    - `nonpermutability.py`: Two domain types (strict, flexible) based on whether elements' linear ordering is fixed. Parameters: `permutable` (y/n), `scopal` (y/n). Strict = absolutely fixed order (permutable=n). Flexible = fixed OR variable-with-scope (permutable=n OR (permutable=y AND scopal=y)). Each with complete/partial = 4 strict spans. Based on Tallman et al. 2024 intro §Fracturing.
    - `free_occurrence.py`: The free occurrence domain — positions where elements are free forms (free=y). Reuses the `free` parameter from noninterruption. If a language runs both analyses, a single sheet with `free` and `multiple` columns covers both. Returns 4 spans (strict/loose × complete/partial). Classified as an indeterminate domain (Tallman et al. 2024).
    - `biuniqueness.py`: The biuniqueness (extended exponence) domain — span covered by a discontinuous morpheme (circumfix) or extended exponent. Parameter: `biunique` (y/n) where n = element is a piece of the circumfix. One TSV per circumfix/construction. The loose partial span is the primary result (extends from prefix piece to suffix piece). Returns 4 spans (strict/loose × complete/partial). Based on Araona §Extended exponence.
@@ -199,14 +199,14 @@ Use Glottolog metadata proactively for:
 
 `schemas/codebook.yaml` is the source of truth for parameter definitions, valid values, analytical terms (keystone, partial, complete, strict, loose), and qualification rules per analysis. Entries marked `[PLACEHOLDER]` need linguistic descriptions; entries marked `[NEEDS REVIEW]` have provisional rules that need confirmation (currently aspiration; stress qualification rule is settled but `left-interaction` and `right-interaction` params remain under review).
 
-`schemas/diagnostic_classes.yaml` is the normative schema for analysis classes — what they cover, when they apply, what parameters they require. It is separate from `codebook.yaml` (which owns parameter semantics) and serves as the source of truth for:
+`schemas/diagnostic_classes.yaml` is the normative schema for analysis classes — what they cover, when they apply, what parameters they require. It is separate from `schemas/codebook.yaml` (which owns parameter semantics) and serves as the source of truth for:
 - Which classes exist and their domain types (morphosyntactic / phonological / indeterminate)
 - Whether a class is universal or conditional and when it applies
 - Whether a class uses a single general construction or is construction-specific
 - Which parameters must appear in diagnostics.tsv for each class
 - Non-exhaustive examples of known construction types for variable classes
 
-`check-codebook` validates diagnostics.tsv against both files. Human-editable workflow: edit `diagnostic_classes.yaml` to add or update a class, then ask Claude to propagate changes to diagnostics.tsv and scaffold the module.
+`check-codebook` validates diagnostics.tsv against both files. Human-editable workflow: edit `schemas/diagnostic_classes.yaml` to add or update a class, then ask Claude to propagate changes to diagnostics.tsv and scaffold the module.
 
 `render_codebook.py` at the repo root renders `schemas/codebook.yaml` as human-readable Markdown: `python render_codebook.py` (stdout) or `python render_codebook.py codebook.md` (file).
 

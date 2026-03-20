@@ -198,7 +198,7 @@ Regenerates and uploads contributor (`domains_{lang_id}.ipynb`), coordinator (`a
 python -m coding check-codebook
 ```
 
-Verifies that parameter names in `codebook.yaml`, analysis modules, and `diagnostics.tsv` are consistent. Run this after adding new parameters or analyses.
+Verifies that parameter names in `schemas/codebook.yaml`, analysis modules, and `diagnostics.tsv` are consistent. Run this after adding new parameters or analyses.
 
 ---
 

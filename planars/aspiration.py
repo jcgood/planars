@@ -21,7 +21,7 @@ def derive_aspiration_domains(
 
     [NEEDS REVIEW] The qualification rules below mirror stress.py but are
     provisional — the correct blocking parameters for aspiration have not yet
-    been confirmed. See codebook.yaml for the open questions.
+    been confirmed. See schemas/codebook.yaml for the open questions.
 
     Mirrors the stress domain logic. Two domain types, each with complete/partial
     qualification = 4 spans:

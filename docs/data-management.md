@@ -90,7 +90,7 @@ Defines the ordered sequence of positions and their elements. Required columns:
 | `Position_Number` | Sequential integer; positions must be contiguous |
 | `Position_Name` | Unique name for the position; keystone must be named `v:verbstem` |
 | `Element` | Element label (form or form-type within the position) |
-| `Position_Type` | Type of position (see `codebook.yaml`) |
+| `Position_Type` | Type of position (see `schemas/codebook.yaml`) |
 | `Class_Type` | Class of element |
 
 Elements with leading or trailing hyphens are wrapped in `[brackets]` to avoid spreadsheet parsing issues (e.g., `-suffix` → `[-suffix]`).
