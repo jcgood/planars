@@ -43,7 +43,7 @@ from .validate_diagnostics import validate_diagnostics_df
 # ---------------------------------------------------------------------------
 
 _STRUCTURAL_COLS  = {"Element", "Position_Name", "Position_Number"}
-_TRAILING_COLS    = {"Comments"}
+_TRAILING_COLS    = ["Comments"]
 _DEFAULT_EXPECTED = {"y", "n", "na", "?"}
 
 _PINK  = {"red": 1.0, "green": 0.8, "blue": 0.8}
