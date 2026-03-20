@@ -182,6 +182,19 @@ stressed{y/n/both}, independence, left-interaction, right-interaction
 
 `diagnostics.tsv` is also the source of truth for notebook generation. `python -m coding generate-notebooks` reads each language's `diagnostics.tsv` to discover analysis classes and generates three kinds of notebooks: a per-language contributor notebook (`domains_{lang_id}.ipynb`), per-language validation notebooks (`validation_{lang_id}.ipynb`), and a single coordinator notebook (`all_languages.ipynb`) covering all languages. Per-class cells in the coordinator notebook are generated automatically from the class list — adding a new class to `diagnostics.tsv` and updating `_CLASS_DISPLAY_NAMES` in `coding/generate_notebooks.py`, then running `generate-notebooks --apply`, is all that's needed to include it. Notebook generation is triggered automatically at the end of `generate-sheets`, `sync-params --apply`, and `restructure-sheets --apply`. Templates live in `notebooks/templates/`; the generated notebooks are artifacts uploaded to Drive, not source files. Each analysis module must define a `derive` alias pointing to its primary derive function so the generation script can call it without a per-module name mapping (see e.g. `planars/ciscategorial.py`).
 
+## Glottolog metadata convention
+
+Language IDs in this project are Glottocodes (e.g., `arao1248`, `stan1293`). Glottolog metadata (human-readable name, ISO 639-3 code, language family, coordinates) is fetched once via `python -m coding lookup-lang <glottocode>` and cached locally in `glottolog_cache.json` (gitignored).
+
+**Convention:** wherever a language ID appears in user-facing output — notebook headers, chart titles, report tables, Drive folder names, terminal output — prefer the `Name [glottocode]` format (e.g., `Araona [arao1248]`) over the bare Glottocode. The canonical helper for this is `coding/glottolog.py:cached_entry(glottocode)["name"]`.
+
+Metadata is also written into `planars_config.json` on Drive (by `generate-sheets`) so Colab notebooks can access it without any local files. Per-language project metadata (author, source chapter, etc.) lives in the same manifest entry — see issue #55.
+
+Use Glottolog metadata proactively for:
+- Display names in notebooks, chart legends, and terminal output
+- Family/macroarea grouping in future coverage tables and maps (issue #62)
+- Language onboarding validation (`lookup-lang` before `generate-sheets`)
+
 ## Codebook and diagnostic classes
 
 `codebook.yaml` at the repo root is the source of truth for parameter definitions, valid values, analytical terms (keystone, partial, complete, strict, loose), and qualification rules per analysis. Entries marked `[PLACEHOLDER]` need linguistic descriptions; entries marked `[NEEDS REVIEW]` have provisional rules that need confirmation (currently aspiration; stress qualification rule is settled but `left-interaction` and `right-interaction` params remain under review).
