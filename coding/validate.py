@@ -119,6 +119,17 @@ def validate_planar_df(df) -> List[ValidationIssue]:
             f"Multiple keystone rows at positions: {bad_pos}"
         ))
 
+    # Pre-compute: ALL CAPS labels that appear anywhere in the planar and where.
+    # Used to detect whether fixing a casing error would collapse two distinct labels.
+    caps_positions: Dict[str, List[str]] = {}  # ALL-CAPS label → [pos_names]
+    for _, row in df.iterrows():
+        pn = str(row.get("Position_Name", "")).strip()
+        if pn.lower() == _KEYSTONE_NAME:
+            continue
+        for t in _tokenize_elements(str(row.get("Elements", "")).strip()):
+            if _is_all_caps_token(t):
+                caps_positions.setdefault(t, []).append(pn)
+
     for i, row in df.iterrows():
         pos_name = str(row.get("Position_Name", "")).strip()
         is_keystone = pos_name.lower() == _KEYSTONE_NAME
@@ -151,20 +162,29 @@ def validate_planar_df(df) -> List[ValidationIssue]:
 
         if ct == "list":
             caps = [t for t in tokens if _is_all_caps_token(t)]
-            if caps:
+            if caps and len(caps) == len(tokens):
                 issues.append(ValidationIssue(
                     "warning", f"row {i + 2} '{pos_name}'",
-                    f"Type 'list' but contains ALL CAPS token(s) {caps} — "
+                    f"Type 'list' but all elements are ALL CAPS {caps} — "
                     f"consider type 'open' if these are category labels"
                 ))
         elif ct == "open":
-            all_lower = all(t[0].islower() for t in tokens if t)
-            if all_lower:
-                issues.append(ValidationIssue(
-                    "warning", f"row {i + 2} '{pos_name}'",
-                    f"Type 'open' but all elements appear lowercase {tokens} — "
-                    f"consider type 'list' if these are specific morphemes"
-                ))
+            not_caps = [t for t in tokens if not _is_all_caps_token(t)]
+            for t in not_caps:
+                normalized = t.upper()
+                other_pos = [p for p in caps_positions.get(normalized, []) if p != pos_name]
+                if other_pos:
+                    issues.append(ValidationIssue(
+                        "warning", f"row {i + 2} '{pos_name}'",
+                        f"Type 'open' element '{t}' is not ALL CAPS — correcting to "
+                        f"'{normalized}' would collapse it with the same label at: {other_pos}"
+                    ))
+                else:
+                    issues.append(ValidationIssue(
+                        "warning", f"row {i + 2} '{pos_name}'",
+                        f"Type 'open' element '{t}' is not ALL CAPS — "
+                        f"open positions should use ALL CAPS labels (e.g. '{normalized}')"
+                    ))
 
     return issues
 
