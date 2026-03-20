@@ -219,16 +219,10 @@ Language files are in `coded_data/arao1248/`. Source: Adam Tallman, "Graded cons
 - `planar_input/diagnostics.tsv` — ciscategorial, noninterruption, subspanrepetition (2 constructions)
 - `ciscategorial/general_filled.tsv` — V/N/A-combines annotated; runs and produces spans
 - `noninterruption/general_filled.tsv` — free/multiple annotated; runs and produces spans
+- `subspanrepetition/auxiliary_construction_filled.tsv` — maximal vpref–aspect (4–15), minimal vcore (6); no narrowscope elements
+- `subspanrepetition/tso_clause_linkage_filled.tsv` — maximal XP1–connector (1–17), minimal vpref–tamesuf (4–14); rightXP excluded from tso-clauses
 
-**Still needed:**
-- `subspanrepetition/auxiliary_construction_filled.tsv`
-- `subspanrepetition/tso_clause_linkage_filled.tsv`
-
-Parameters needed: `widescope_left`, `widescope_right`, `fillable_botheither_conjunct`. Source sections:
-- Auxiliary construction (§4.5.1, ~lines 862–937 of the .tex): maximal = vpref–aspect (4–15), minimal = vcore–vcore (6–6)
-- *tso*-marked clause linkage (§4.5.2, ~lines 939–1023): maximal = XP1–connector (1–17), minimal = vpref–tamesuf (4–14)
-
-The source .tex file may need re-downloading from the langsci/291 GitHub repo if `/tmp/araona.tex` is gone.
+All four analyses run and produce spans. Source: Adam Tallman §4.5 (langsci/291, ch. 13). Source .tex at `/tmp/araona.tex` (may need re-downloading from langsci/291 GitHub if gone).
 
 ## Issue tracking
 
