@@ -8,7 +8,13 @@
       "Bash(git push:*)",
       "Bash(git status:*)",
       "Bash(gh api:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(curl:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(.venv/bin/python:*)",
+      "Bash(head:*)",
+      "Bash(jq:*)"
     ],
     "ask": [
       "Bash(cd:*)"
@@ -20,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '{\"systemMessage\": \"📋 Documentation checklist — did you update any of these?\\n  • CLAUDE.md                               (architecture, scripts, conventions)\\n  • codebook.yaml                           (parameters, analyses, qualification rules)\\n  • README.md                               (user-facing workflow, setup, dependencies)\\n  • notebooks/templates/domains_boilerplate.ipynb      (contributor notebook template)\\n  • notebooks/templates/all_languages_boilerplate.ipynb (coordinator notebook template)\\n  • pyproject.toml version + PyPI upload    (if planars/ changed)\"}'"
+            "command": "echo '{\"systemMessage\": \"📋 Documentation checklist — did you update any of these?\\n  • CLAUDE.md                               (architecture, scripts, conventions)\\n  • codebook.yaml                           (parameters, analyses, qualification rules)\\n  • diagnostic_classes.yaml                 (new/changed analysis classes)\\n  • README.md                               (user-facing workflow, setup, dependencies)\\n  • notebooks/templates/domains_boilerplate.ipynb      (contributor notebook template)\\n  • notebooks/templates/all_languages_boilerplate.ipynb (coordinator notebook template)\\n  • pyproject.toml version                  (if planars/ changed)\\n\\n🔬 Codebase sanity checks — after major changes:\\n  • python check_snapshots.py               (after any analysis logic change)\\n  • python -m coding check-codebook         (after adding/changing classes or params)\\n  • python -m coding validate-coding        (after sheet structure changes)\"}'"
           }
         ]
       }
