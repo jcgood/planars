@@ -1,0 +1,49 @@
+Arao1248 Subspanrepetition Tso Clause Linkage
+=============================================
+
+Keystone position: 6 (v:verbstem)
+
+== maximum_fillable ==
+maximum_fillable complete positions: [1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+maximum_fillable partial positions:  [1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+
+Strict complete maximum_fillable span: positions 1–17  (v:leftXP → v:connector)
+Loose complete maximum_fillable span:  positions 1–17  (v:leftXP → v:connector)
+Strict partial maximum_fillable span:  positions 1–17  (v:leftXP → v:connector)
+Loose partial maximum_fillable span:   positions 1–17  (v:leftXP → v:connector)
+
+== maximum_widescope_left ==
+maximum_widescope_left complete positions: [1, 2, 3, 15, 16, 17]
+maximum_widescope_left partial positions:  [1, 2, 3, 15, 16, 17]
+
+Strict complete maximum_widescope_left span: positions 6–6  (v:verbstem → v:verbstem)
+Loose complete maximum_widescope_left span:  positions 1–17  (v:leftXP → v:connector)
+Strict partial maximum_widescope_left span:  positions 6–6  (v:verbstem → v:verbstem)
+Loose partial maximum_widescope_left span:   positions 1–17  (v:leftXP → v:connector)
+
+== maximum_widescope_right ==
+maximum_widescope_right complete positions: [1, 2, 3, 15, 16, 17]
+maximum_widescope_right partial positions:  [1, 2, 3, 15, 16, 17]
+
+Strict complete maximum_widescope_right span: positions 6–6  (v:verbstem → v:verbstem)
+Loose complete maximum_widescope_right span:  positions 1–17  (v:leftXP → v:connector)
+Strict partial maximum_widescope_right span:  positions 6–6  (v:verbstem → v:verbstem)
+Loose partial maximum_widescope_right span:   positions 1–17  (v:leftXP → v:connector)
+
+== maximum_narrowscope_left ==
+maximum_narrowscope_left complete positions: [4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 18]
+maximum_narrowscope_left partial positions:  [4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 18]
+
+Strict complete maximum_narrowscope_left span: positions 4–14  (v:prefix → v:tame.suf)
+Loose complete maximum_narrowscope_left span:  positions 4–18  (v:prefix → v:rightXP)
+Strict partial maximum_narrowscope_left span:  positions 4–14  (v:prefix → v:tame.suf)
+Loose partial maximum_narrowscope_left span:   positions 4–18  (v:prefix → v:rightXP)
+
+== maximum_narrowscope_right ==
+maximum_narrowscope_right complete positions: [4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 18]
+maximum_narrowscope_right partial positions:  [4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 18]
+
+Strict complete maximum_narrowscope_right span: positions 4–14  (v:prefix → v:tame.suf)
+Loose complete maximum_narrowscope_right span:  positions 4–18  (v:prefix → v:rightXP)
+Strict partial maximum_narrowscope_right span:  positions 4–14  (v:prefix → v:tame.suf)
+Loose partial maximum_narrowscope_right span:   positions 4–18  (v:prefix → v:rightXP)

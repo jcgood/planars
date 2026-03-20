@@ -322,34 +322,49 @@ analyses:
 
   - name: biuniqueness
     description: >
-      [PLACEHOLDER] Tests for deviations from biuniqueness — spans defined by
-      phenomena such as circumfixation (a morpheme discontinuous across positions),
-      extended exponence (the same morphosyntactic feature expressed by multiple
-      morphs in different positions), and suppletion. Classified as an indeterminate
-      domain (Tallman et al. 2024). In Araona: the negation circumfix (pi-…-ma)
-      identifies a vpref–tamesuf domain; the interactional circumfix (ja-…-ti)
-      identifies a vpref–interactional domain.
+      Tests for deviations from biuniqueness — spans defined by phenomena such as
+      circumfixation (a morpheme discontinuous across positions) and extended
+      exponence (the same morphosyntactic feature expressed by multiple morphs in
+      different positions). The biuniqueness domain is the span from the leftmost
+      piece of the extended exponent to the rightmost piece. Classified as an
+      indeterminate domain (Tallman et al. 2024). Each circumfix or extended
+      exponent group is annotated in its own TSV (one construction per file).
+      In Araona: the negation circumfix (pi-…-ma) identifies a vpref–tamesuf
+      domain; the interactional circumfix (ja-…-ti) identifies a vpref–ti domain.
     parameters:
       - name: biunique
         values: [y, n]
         description: >
-          [PLACEHOLDER] Whether the element participates in a biunique (one-form /
-          one-meaning) relationship. n = the element is part of a deviation from
-          biuniqueness (e.g., one piece of a circumfix or extended exponence set).
-          Parameters for specific biuniqueness deviations (which morpheme a given
-          element co-expresses with) need to be designed per language.
+          Whether the element participates in a biunique (one-form / one-meaning)
+          relationship. y = the element is biunique (not part of an extended
+          exponent). n = the element is one of the pieces of a circumfix or
+          extended exponent set and therefore deviates from strict biuniqueness.
     qualification_rule: >
-      [PLACEHOLDER] Domain type and parameters to be finalized. The domain
-      identifies the span covered by a discontinuous or extended morpheme.
+      A position qualifies if it contains an element where biunique=n. Complete
+      qualification: ALL elements in the position have biunique=n. Partial
+      qualification: at least one element has biunique=n. The loose partial span
+      is the most semantically informative: it extends from the position of the
+      prefixal piece to the position of the suffixal piece, directly identifying
+      the extended exponent domain.
 
   - name: repair
     description: >
-      [PLACEHOLDER] Tests which spans are identified by phonological or morphosyntactic
-      repair strategies (e.g., epenthesis, metathesis, truncation at specific domain
-      boundaries). A repair domain is the span within which a repair strategy applies.
-      Classified as a phonological domain type (Tallman et al. 2024, discussion ch. 17).
+      Tests which span speakers restart from when they make a production error.
+      The repair domain is the minimal span such that, when an error occurs at
+      any position within it, the speaker returns to the left edge and restarts
+      from there rather than resuming from the error point. In Cup'ik, the repair
+      domain corresponds to the traditional Verb Word (vbase–pn4). Classified as
+      a phonological domain type (Tallman et al. 2024, discussion ch. 17).
+    parameters:
+      - name: restart
+        values: [y, n]
+        description: >
+          Whether this element's position is within the repair domain. y = an
+          error at this position triggers restart from the domain's left edge.
     qualification_rule: >
-      [PLACEHOLDER] Parameters and domain logic to be designed from language data.
+      A position qualifies if it contains an element where restart=y. Complete
+      qualification: ALL elements in the position have restart=y. Partial
+      qualification: at least one element has restart=y.
 
   - name: pausing
     description: >
@@ -384,6 +399,47 @@ analyses:
       Classified as a morphosyntactic domain type (Tallman et al. 2024, discussion ch. 17).
     qualification_rule: >
       [PLACEHOLDER] Parameters and domain logic to be designed from language data.
+
+  - name: segmental
+    description: >
+      Tests which span is governed by a segmental (non-prosodic) phonological process.
+      Examples: vowel deletion/coalescence at position junctures (Araona: vowel syncope
+      domain vcore–tamesuf), consonant coalescence (Cup'ik: uvular-velar coalescence
+      domain vbase–pn4), nasality spreading, palatalization. Each process is annotated
+      in its own TSV (one construction per file). Multiple segmental processes in one
+      language may identify different spans. Classified as a phonological domain type
+      (Tallman et al. 2024, discussion ch. 17).
+    parameters:
+      - name: applies
+        values: [y, n]
+        description: >
+          Whether the segmental phonological process applies to or at this element's
+          position. y = this position is within the domain of the process.
+    qualification_rule: >
+      A position qualifies if it contains an element where applies=y. Complete
+      qualification: ALL elements in the position have applies=y. Partial
+      qualification: at least one element has applies=y.
+
+  - name: suprasegmental
+    description: >
+      Tests which span is governed by a suprasegmental (prosodic) phonological process.
+      Examples: pitch-accent assignment domain (Araona: LH* domain vpref–connect3),
+      iambic stress foot domain (Cup'ik: vbase–pn4), tone melody span. Each process
+      is annotated in its own TSV. Note that stress domains identifiable via blocking
+      conditions (e.g., independence of primary stress) are handled by stress.py and
+      aspiration.py using blocked_span logic; this module handles suprasegmental domains
+      where positions are annotated positively as within or outside the domain.
+      Classified as a phonological domain type (Tallman et al. 2024, discussion ch. 17).
+    parameters:
+      - name: applies
+        values: [y, n]
+        description: >
+          Whether the suprasegmental phonological process applies to this element's
+          position. y = this position is within the domain of the prosodic rule.
+    qualification_rule: >
+      A position qualifies if it contains an element where applies=y. Complete
+      qualification: ALL elements in the position have applies=y. Partial
+      qualification: at least one element has applies=y.
 
 # ---------------------------------------------------------------------------
 # SHARED PARAMETER VALUES
@@ -598,6 +654,46 @@ chart_labels:
       meaning: Strict span over partial positions where at least one element is a free form.
     - label: "free loose partial"
       meaning: Loose span over partial positions where at least one element is a free form.
+
+  biuniqueness:
+    - label: "biuniq strict complete"
+      meaning: Strict span over complete positions where all elements are pieces of the extended exponent (biunique=n).
+    - label: "biuniq loose complete"
+      meaning: Loose span over complete positions where all elements are pieces of the extended exponent.
+    - label: "biuniq strict partial"
+      meaning: Strict span over partial positions where at least one element is a piece of the extended exponent.
+    - label: "biuniq loose partial"
+      meaning: Loose span over partial positions where at least one element is a piece of the extended exponent. The primary domain span — extends from the prefixal piece to the suffixal piece.
+
+  repair:
+    - label: "repair strict complete"
+      meaning: Strict span over complete positions where all elements are within the repair domain (restart=y).
+    - label: "repair loose complete"
+      meaning: Loose span over complete positions where all elements are within the repair domain.
+    - label: "repair strict partial"
+      meaning: Strict span over partial positions where at least one element is within the repair domain.
+    - label: "repair loose partial"
+      meaning: Loose span over partial positions where at least one element is within the repair domain.
+
+  segmental:
+    - label: "seg strict complete"
+      meaning: Strict span over complete positions where the segmental phonological process applies to all elements.
+    - label: "seg loose complete"
+      meaning: Loose span over complete positions where the segmental process applies to all elements.
+    - label: "seg strict partial"
+      meaning: Strict span over partial positions where the segmental process applies to at least one element.
+    - label: "seg loose partial"
+      meaning: Loose span over partial positions where the segmental process applies to at least one element.
+
+  suprasegmental:
+    - label: "supra strict complete"
+      meaning: Strict span over complete positions where the suprasegmental process applies to all elements.
+    - label: "supra loose complete"
+      meaning: Loose span over complete positions where the suprasegmental process applies to all elements.
+    - label: "supra strict partial"
+      meaning: Strict span over partial positions where the suprasegmental process applies to at least one element.
+    - label: "supra loose partial"
+      meaning: Loose span over partial positions where the suprasegmental process applies to at least one element.
 
   aspiration:
     note: Four labels — mirrors stress label structure.

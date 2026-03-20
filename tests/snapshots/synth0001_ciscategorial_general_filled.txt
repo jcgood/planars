@@ -1,0 +1,17 @@
+Synth0001 Ciscategorial General
+===============================
+
+NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
+  V-combines: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
+  N-combines: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
+  A-combines: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
+
+Keystone position: 23 (v:verbstem)
+
+V-ciscategorial complete positions: []
+V-ciscategorial partial positions:  []
+
+Strict complete v-ciscategorial span: positions 23–23  (v:verbstem → v:verbstem)
+Loose complete v-ciscategorial span:  positions 23–23  (v:verbstem → v:verbstem)
+Strict partial v-ciscategorial span:  positions 23–23  (v:verbstem → v:verbstem)
+Loose partial v-ciscategorial span:   positions 23–23  (v:verbstem → v:verbstem)
