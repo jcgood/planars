@@ -229,6 +229,7 @@ All four analyses run and produce spans. Source: Adam Tallman §4.5 (langsci/291
 Feature requests and bugs are tracked on GitHub Issues: https://github.com/jcgood/planars/issues
 
 Notable open issues:
+- **#53** — `generate-notebooks`: generate and upload per-language validation notebooks from `validation_boilerplate.ipynb` so collaborators can validate their own coding in Colab.
 - **#52** — `integrity-check`: a single-pass project health command that reports planar, diagnostics, and annotation issues as a Markdown summary.
 - **#51** — Remove `_filled` suffix from imported TSV filenames.
 - **#50** — `--rename-element` flag on `restructure-sheets` (implemented; issue open for testing).
