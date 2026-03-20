@@ -59,6 +59,9 @@ python -m coding update-sheets --apply   # apply changes
 # Restructure sheets after planar structure changes (archive old, regenerate with carry-over)
 python -m coding restructure-sheets
 python -m coding restructure-sheets --apply   # archive old sheets and regenerate
+python -m coding restructure-sheets --rename-map "old_pos:new_pos" --apply   # carry over renamed positions
+python -m coding restructure-sheets --rename-element Ad-VP:AD-VP --apply     # carry over renamed elements
+# Only classes with actual changes (new rows, drops, or renames) are archived and regenerated.
 
 # Import filled sheets back to TSVs (skips existing files by default)
 python -m coding import-sheets
@@ -125,6 +128,22 @@ This is a linguistic typology analysis project for morphosyntactic domain deriva
 - `ciscategorial.py`, `subspanrepetition.py`, `noninterruption.py`, `stress.py`, `aspiration.py`: each exposes `derive_*()` (takes an optional `Path` or `_data` kwarg, returns a result dict) and `format_result()` (takes a result dict, returns a formatted string).
 - `charts.py`: `collect_all_spans(repo_root)` — runs all analyses over all filled TSVs in `coded_data/`, returns `(df, lang_meta)`. `collect_all_spans_from_sheets(gc, manifest)` — same but reads from Google Sheets. Both return a DataFrame with a `Language` column and a `lang_meta` dict `{lang_id: {"keystone_pos": int, "pos_to_name": dict}}` — each language has its own independent planar structure. `domain_chart(df, keystone_pos, pos_to_name)` — single-language chart (caller filters df by language first). `charts_by_language(df, lang_meta)` — produces one chart per language, returns `dict[lang_id, Figure]`.
 - `cli.py` + `__main__.py`: CLI entry point (`python -m planars <analysis> <tsv>`).
+
+`coding/` contains the coordinator tooling:
+- `make_forms.py`: `build_element_index`, `_read_diagnostics_for_language` — utilities used by other scripts.
+- `generate_sheets.py`: `generate-sheets` command. Validates planar and diagnostics before creating sheets.
+- `update_sheets.py`: `update-sheets` — adds missing rows/trailing columns to existing sheets.
+- `sync_params.py`: `sync-params` — syncs param columns when `diagnostics.tsv` changes.
+- `restructure_sheets.py`: `restructure-sheets` — archives and regenerates sheets after structural changes; carries over annotations using `--rename-map` (position renames) and `--rename-element` (element label renames); only processes classes with actual changes.
+- `import_sheets.py`: `import-sheets` — downloads filled sheets to TSVs.
+- `validate.py`: Shared base — just the `ValidationIssue` dataclass.
+- `validate_planar.py`: `validate_planar_df(df)` — validates planar structure TSVs (sequential positions, unique names, keystone present, valid Position_Type/Class_Type, element conventions including collapse detection).
+- `validate_diagnostics.py`: `validate_diagnostics_df(df, lang_id)` — validates diagnostics.tsv (required columns, Language field, brace syntax, param names against codebook.yaml, class names against planars/ modules, construction naming rules).
+- `validate_coding.py`: `validate-coding` command — reads annotation sheets, validates values, clears/updates pink cell highlights. Also calls `validate_planar_df` and `validate_diagnostics_df` before sheet validation.
+- `generate_notebooks.py`: `generate-notebooks` — generates per-language and coordinator Colab notebooks.
+- `check_codebook.py`: `check-codebook` — consistency check between codebook.yaml, analysis modules, and diagnostics.tsv.
+- `populate_sheets.py`: One-time utility for uploading legacy TSV data.
+- `setup_root_folder.py`: One-time Drive folder setup (run once after first `generate-sheets`).
 
 `coded_data/{lang_id}/{class_name}/` contains the filled TSVs imported from Google Sheets (local dev use only — Colab reads directly from Sheets). Archive TSVs live in `coded_data/{lang_id}/{class_name}/archive/`.
 
@@ -215,6 +234,12 @@ The source .tex file may need re-downloading from the langsci/291 GitHub repo if
 
 Feature requests and bugs are tracked on GitHub Issues: https://github.com/jcgood/planars/issues
 
+Notable open issues:
+- **#52** — `integrity-check`: a single-pass project health command that reports planar, diagnostics, and annotation issues as a Markdown summary.
+- **#51** — Remove `_filled` suffix from imported TSV filenames.
+- **#50** — `--rename-element` flag on `restructure-sheets` (implemented; issue open for testing).
+- **#44** — Migrate tests to pytest.
+
 ## Key conventions
 
 - File naming: imported TSVs use `{construction}_filled.tsv` under `coded_data/{lang_id}/{class_name}/`. The lang and class are encoded in the path, not the filename. Legacy files may use `_fill.tsv` or `_full.tsv`.
@@ -223,5 +248,5 @@ Feature requests and bugs are tracked on GitHub Issues: https://github.com/jcgoo
 - Analysis functions take a `Path` object; path resolution happens at the call site (CLI or wrapper scripts), not inside the library.
 - Keystone rows have `Position_Name == 'v:verbstem'`. In filled TSVs they carry actual parameter values (not `NA`) so they can participate in blocking condition checks (stress, aspiration). They are excluded from span expansion — `data_df` never contains the keystone; it is returned separately as `keystone_df`.
 - Result dicts use `complete_positions` / `partial_positions` and `*_span` key suffixes consistently across all modules.
-- `_TRAILING_COLS = ["Comments"]` is defined in both `coding/generate_sheets.py` and `coding/update_sheets.py`. Add new trailing columns there to propagate them to all new and existing sheets.
+- `_TRAILING_COLS = ["Comments"]` is defined in `coding/generate_sheets.py` (source of truth for sheet creation) and `coding/validate_coding.py` (for validation). `coding/sync_params.py` and `coding/restructure_sheets.py` import it from `generate_sheets.py`. Add new trailing columns in both `generate_sheets.py` and `validate_coding.py` to propagate them to all new and existing sheets.
 - `coding/populate_sheets.py` is a one-time utility for uploading legacy TSV data. Unnamed trailing columns in legacy TSVs are concatenated with ` | ` into Comments.

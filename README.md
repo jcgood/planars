@@ -160,9 +160,14 @@ python -m coding generate-notebooks      # regenerate and upload contributor/coo
 
 python -m coding validate-coding                   # re-validate all languages; update pink highlighting
 python -m coding validate-coding --lang arao1248   # one language only
+
+python -m coding restructure-sheets           # dry run — show what would be archived/regenerated
+python -m coding restructure-sheets --apply   # archive old sheets and regenerate from current planar
+python -m coding restructure-sheets --rename-map "old_pos:new_pos" --apply   # carry over renamed positions
+python -m coding restructure-sheets --rename-element Ad-VP:AD-VP --apply     # carry over renamed elements
 ```
 
-Use `update-sheets` when new elements are added to the planar structure. Use `sync-params` when `diagnostics.tsv` param columns change — it preserves existing annotations while inserting new columns before Comments, then regenerates notebooks. `generate-notebooks` can also be run standalone to refresh notebooks without changing sheets.
+Use `update-sheets` when new elements are added to the planar structure. Use `sync-params` when `diagnostics.tsv` param columns change — it preserves existing annotations while inserting new columns before Comments, then regenerates notebooks. Use `restructure-sheets` when the planar structure itself changes (positions added, dropped, or renamed) — it archives each affected sheet and regenerates it with values carried over from the old version. Only classes with actual changes (new rows, drops, or renames) are archived; unchanged classes are left untouched. `generate-notebooks` can also be run standalone to refresh notebooks without changing sheets.
 
 `validate-coding` is safe to run repeatedly — it clears all existing pink cell highlights and re-highlights any remaining invalid cells. Collaborators can run the Colab validation notebook (see below) to do the same from a browser without needing local setup.
 
@@ -259,9 +264,8 @@ coding/                         Google Sheets workflow tools (python -m coding <
   import_sheets.py              Download filled sheets to TSVs
   validate.py                   Shared validation type (ValidationIssue)
   validate_planar.py            Planar structure TSV validation (validate_planar_df)
-  validate_coding.py            Annotation sheet validation + validate-coding command
   validate_diagnostics.py       diagnostics.tsv validation (validate_diagnostics_df)
-  validate_coding.py            Re-validate sheets and update pink highlights (validate-coding)
+  validate_coding.py            Annotation sheet validation + validate-coding command
   restructure_sheets.py         Archive and regenerate sheets after structural changes
   generate_notebooks.py         Generate and upload contributor/coordinator Colab notebooks
   populate_sheets.py            Upload legacy TSV data to sheets (one-time utility)
