@@ -1,6 +1,33 @@
 # Analyses
 
-This document describes the span types computed by planars, the available analysis modules, and their status. `codebook.yaml` is the authoritative reference for all parameters and qualification rules — see [The codebook](#the-codebook) below for a guide to reading it.
+This document describes the span types computed by planars, the available analysis modules, and their status. Two YAML files at the repo root govern the analysis framework:
+
+- **`diagnostic_classes.yaml`** — the normative schema for analysis classes: which classes exist, when each applies (universal vs. conditional), construction-specific variants, required parameters, and known construction types. See [The diagnostic classes schema](#the-diagnostic-classes-schema) below.
+- **`codebook.yaml`** — the authoritative reference for parameter semantics, allowed values, and qualification rules. See [The codebook](#the-codebook) below.
+
+---
+
+## The diagnostic classes schema
+
+`diagnostic_classes.yaml` (repo root) is the source of truth for the analysis class framework. It is separate from `codebook.yaml` (which owns parameter semantics) and serves as the normative reference for coordinators and contributors adding new languages or analyses.
+
+Each entry contains:
+
+| Field | Contents |
+|---|---|
+| `name` | Machine name — matches the `planars/` module and `coded_data/` subfolder |
+| `display_name` | Human-readable label used in notebook section headers |
+| `domain_type` | `morphosyntactic`, `phonological`, or `indeterminate` |
+| `applicability` | `universal` (applies to every language) or `conditional` (applies only when stated conditions hold) |
+| `applicability_conditions` | Prose description of when a conditional class applies |
+| `specificity` | `general` (one TSV per language) or `construction_specific` (one TSV per construction) |
+| `known_constructions` | Non-exhaustive examples for construction-specific classes |
+| `required_parameters` | Parameter columns that must appear in `diagnostics.tsv` |
+| `status` | `stable`, `[NEEDS REVIEW]`, or `[PLACEHOLDER]` |
+
+### Human-editable workflow
+
+To add a new analysis class: edit `diagnostic_classes.yaml`, then ask Claude to propagate the changes to `diagnostics.tsv` and scaffold the new `planars/` module. `check-codebook` validates existing `diagnostics.tsv` files against this schema.
 
 ---
 
@@ -90,30 +117,29 @@ Some analyses (stress, aspiration) use a **blocked span** instead: expand from t
 
 | Analysis | Parameters | Spans derived | Status |
 |---|---|---|---|
-| `ciscategorial` | `V-combines`, `N-combines`, `A-combines` | 4 (strict/loose × complete/partial) | — |
-| `subspanrepetition` | `widescope_left`, `widescope_right`, `fillable_botheither_conjunct` | 20 (5 categories × 4) | — |
-| `noninterruption` | `free`, `multiple` | 4 strict spans (2 domain types × complete/partial) | — |
-| `stress` | `stressed`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 4 (2 domain types × complete/partial) | — |
-| `aspiration` | `stressed`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 4 (2 domain types × complete/partial) | [NEEDS REVIEW] |
-| `nonpermutability` †| `permutable`, `scopal` | 4 strict spans (2 domain types × complete/partial) | [AUTO-DERIVED] |
-| `free_occurrence` †| `free` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
-| `biuniqueness` †| `biunique` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
-| `repair` †| `restart` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
-| `segmental` †| `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
-| `suprasegmental` †| `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
-| `pausing` ‡| `pause_domain` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
-| `proform` ‡| `substitutable` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
-| `play_language` ‡| `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
-| `idiom` ‡| `idiomatic` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
+| `ciscategorial` | `V-combines`, `N-combines`, `A-combines` | 4 (strict/loose × complete/partial) | stable |
+| `subspanrepetition` | `widescope_left`, `widescope_right`, `fillable_botheither_conjunct` | 20 (5 categories × 4) | stable |
+| `noninterruption` | `free`, `multiple` | 4 strict spans (2 domain types × complete/partial) | stable |
+| `nonpermutability` | `permutable`, `scopal` | 4 strict spans (2 domain types × complete/partial) | stable |
+| `free_occurrence` | `free` | 4 (strict/loose × complete/partial) | stable |
+| `segmental` | `applies` | 4 (strict/loose × complete/partial) | stable |
+| `suprasegmental` | `applies` | 4 (strict/loose × complete/partial) | stable |
+| `stress` | `stressed`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 4 (2 domain types × complete/partial) | stable † |
+| `biuniqueness` | `biunique` | 4 (strict/loose × complete/partial) | [NEEDS REVIEW] |
+| `repair` | `restart` | 4 (strict/loose × complete/partial) | [NEEDS REVIEW] |
+| `pausing` | `pause_domain` | 4 (strict/loose × complete/partial) | [NEEDS REVIEW] |
+| `idiom` | `idiomatic` | 4 (strict/loose × complete/partial) | [NEEDS REVIEW] |
+| `play_language` | `applies` | 4 (strict/loose × complete/partial) | [NEEDS REVIEW] |
+| `aspiration` | `stressed`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 4 (2 domain types × complete/partial) | [NEEDS REVIEW] ‡ |
+| `proform` | `substitutable` | 4 (strict/loose × complete/partial) | [NEEDS REVIEW] § |
 
-**Status key:**
+**Status key:** `stable` — confirmed across multiple languages and verified against langsci/291. `[NEEDS REVIEW]` — design is reasonable but needs expert sign-off before annotation; see `diagnostic_classes.yaml` for details.
 
-- `[NEEDS REVIEW]` — rule is human-designed but provisional; specific parameters are under review (see `codebook.yaml`).
-- `[AUTO-DERIVED]` — parameter design and qualification rules were derived by reading Tallman et al. 2024 and have not been verified by a domain expert. Treat these as drafts: check `codebook.yaml` for details before using them for annotation or analysis.
+† `left-interaction` and `right-interaction` parameters remain provisional — see issue #17.
 
-† Derived from specific language chapters in Tallman et al. 2024 (Araona ch. 13, Cup'ik ch. 2) — has concrete data support but still needs expert sign-off.
+‡ No confirmed language data exists. Scope is unclear (prosodic domain vs. segmental spreading process) — see issue #60.
 
-‡ Derived from the Discussion chapter (ch. 17) description only — no concrete language data was reviewed; parameter design is more speculative.
+§ Not included in the langsci/291 published database (ch. 17, line 543). Prospective class.
 
 ---
 
