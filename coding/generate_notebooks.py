@@ -56,13 +56,24 @@ from .generate_sheets import (
 )
 
 # Human-readable display names for notebook section headers.
-# Add an entry here whenever a new analysis class is introduced.
+# Covers all classes in diagnostic_classes.yaml; unknown classes fall back to
+# title-casing the machine name (e.g. "free_occurrence" → "Free Occurrence").
 _CLASS_DISPLAY_NAMES = {
-    "ciscategorial":    "Ciscategorial",
+    "ciscategorial":     "Ciscategorial",
     "subspanrepetition": "Subspan Repetition",
-    "noninterruption":  "Noninterruption",
-    "stress":           "Stress",
-    "aspiration":       "Aspiration",
+    "noninterruption":   "Noninterruption",
+    "nonpermutability":  "Nonpermutability",
+    "free_occurrence":   "Free Occurrence",
+    "proform":           "Proform",
+    "idiom":             "Idiom",
+    "biuniqueness":      "Biuniqueness",
+    "repair":            "Repair",
+    "stress":            "Stress",
+    "aspiration":        "Aspiration",
+    "segmental":         "Segmental",
+    "suprasegmental":    "Suprasegmental",
+    "pausing":           "Pausing",
+    "play_language":     "Play Language",
 }
 
 # Marker placed in all_languages_boilerplate.ipynb to indicate where
@@ -106,7 +117,7 @@ def _replace_tokens(text: str, tokens: Dict[str, str]) -> str:
 
 def _display_name(class_name: str) -> str:
     """Return the human-readable display name for an analysis class."""
-    return _CLASS_DISPLAY_NAMES.get(class_name, class_name.capitalize())
+    return _CLASS_DISPLAY_NAMES.get(class_name, class_name.replace("_", " ").title())
 
 
 def _make_code_cell(source: str) -> dict:
