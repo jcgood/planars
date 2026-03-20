@@ -125,13 +125,17 @@ This is a linguistic typology analysis project for morphosyntactic domain deriva
    - `repair.py`: The repair domain — positions where a production error triggers restart from the domain's left edge. Parameter: `restart` (y/n). Returns 4 spans. Based on Cup'ik §Repair domain.
    - `segmental.py`: A segmental phonological domain — span within which a segmental phonological process applies (vowel deletion, consonant coalescence, etc.). Parameter: `applies` (y/n). One TSV per process. Returns 4 spans. Examples: Araona vowel syncope domain, Cup'ik uvular-velar coalescence domain.
    - `suprasegmental.py`: A suprasegmental (prosodic) phonological domain — span governed by a pitch, stress, or tone assignment rule. Parameter: `applies` (y/n). One TSV per rule. Returns 4 spans. Distinct from stress.py/aspiration.py (which use blocked_span logic for boundary-defined domains). Examples: Araona LH* pitch-accent domain, Cup'ik iambic foot domain.
+   - `pausing.py`: The pausing domain — span where elements cannot be separated by a prosodic pause. Parameter: `pause_domain` (y/n). Returns 4 spans.
+   - `proform.py`: The proform substitution domain — span that can be replaced by a proform (pronoun, pro-verb, etc.). Parameter: `substitutable` (y/n). Returns 4 spans.
+   - `play_language.py`: The play language (ludling) domain — span targeted by play language operations (infixation, reversal, etc.). Parameter: `applies` (y/n). Returns 4 spans. Attested in Zenzontepec Chatino.
+   - `idiom.py`: The idiom domain — span forming a non-compositional idiomatic unit. Parameter: `idiomatic` (y/n). Returns 4 spans.
 
 ## Package structure
 
 `planars/` is the core library:
 - `io.py`: `load_filled_tsv()` — shared TSV loader. `load_filled_sheet(ws, required_params)` — same but reads from a gspread Worksheet. Both share `_parse_filled_df` and return `(data_df, keystone_pos, pos_to_name, param_cols, keystone_df)`. `keystone_df` carries the keystone rows separately so analyses that need blocking checks against the ROOT (stress, aspiration) can include it without adding the keystone to the position expansion set.
 - `spans.py`: `strict_span`, `loose_span`, `position_sets_from_element_mask`, `fmt_span` — shared span math and formatting helper.
-- `ciscategorial.py`, `subspanrepetition.py`, `noninterruption.py`, `stress.py`, `aspiration.py`, `nonpermutability.py`, `free_occurrence.py`, `biuniqueness.py`, `repair.py`, `segmental.py`, `suprasegmental.py`: each exposes `derive_*()` (takes an optional `Path` or `_data` kwarg, returns a result dict) and `format_result()` (takes a result dict, returns a formatted string).
+- `ciscategorial.py`, `subspanrepetition.py`, `noninterruption.py`, `stress.py`, `aspiration.py`, `nonpermutability.py`, `free_occurrence.py`, `biuniqueness.py`, `repair.py`, `segmental.py`, `suprasegmental.py`, `pausing.py`, `proform.py`, `play_language.py`, `idiom.py`: each exposes `derive_*()` (takes an optional `Path` or `_data` kwarg, returns a result dict) and `format_result()` (takes a result dict, returns a formatted string).
 - `charts.py`: `collect_all_spans(repo_root)` — runs all analyses over all filled TSVs in `coded_data/`, returns `(df, lang_meta)`. `collect_all_spans_from_sheets(gc, manifest)` — same but reads from Google Sheets. Both return a DataFrame with a `Language` column and a `lang_meta` dict `{lang_id: {"keystone_pos": int, "pos_to_name": dict}}` — each language has its own independent planar structure. `domain_chart(df, keystone_pos, pos_to_name)` — single-language chart (caller filters df by language first). `charts_by_language(df, lang_meta)` — produces one chart per language, returns `dict[lang_id, Figure]`.
 - `cli.py` + `__main__.py`: CLI entry point (`python -m planars <analysis> <tsv>`).
 

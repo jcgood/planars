@@ -368,37 +368,75 @@ analyses:
 
   - name: pausing
     description: >
-      [PLACEHOLDER] Tests which spans are delimited by prosodic pause boundaries.
-      A pausing domain is a span where elements cannot be separated by pause, or
-      conversely a span that can be uttered in isolation as a prosodic unit.
-      Classified as a phonological domain type (Tallman et al. 2024, discussion ch. 17).
+      Tests which spans are delimited by prosodic pause boundaries. The pausing
+      domain is a span where elements cannot be separated by a prosodic pause —
+      the span constitutes a pause unit. Positions outside the domain permit
+      pause insertion. Classified as a phonological domain type (Tallman et al.
+      2024, discussion ch. 17).
+    parameters:
+      - name: pause_domain
+        values: [y, n]
+        description: >
+          Whether this element's position is within the pause domain. y = a
+          pause cannot be inserted between this position and adjacent positions
+          within the domain.
     qualification_rule: >
-      [PLACEHOLDER] Parameters and domain logic to be designed from language data.
+      A position qualifies if it contains an element where pause_domain=y.
+      Complete qualification: ALL elements in the position have pause_domain=y.
+      Partial qualification: at least one element has pause_domain=y.
 
   - name: proform
     description: >
-      [PLACEHOLDER] Tests which spans can be replaced by a proform (pronoun, pro-verb,
-      pro-VP, etc.). The proform domain is the span that the proform substitutes for.
-      Classified as a morphosyntactic domain type (Tallman et al. 2024, discussion ch. 17).
+      Tests which spans can be replaced by a proform (pronoun, pro-verb, pro-VP,
+      etc.). The proform domain is the span that the proform substitutes for.
+      Classified as a morphosyntactic domain type (Tallman et al. 2024, discussion
+      ch. 17).
+    parameters:
+      - name: substitutable
+        values: [y, n]
+        description: >
+          Whether a proform can replace elements at this position — i.e., whether
+          this position falls within the span the proform substitutes for.
     qualification_rule: >
-      [PLACEHOLDER] Parameters and domain logic to be designed from language data.
+      A position qualifies if it contains an element where substitutable=y.
+      Complete qualification: ALL elements have substitutable=y. Partial
+      qualification: at least one element has substitutable=y.
 
   - name: play_language
     description: >
-      [PLACEHOLDER] Tests which spans are targeted by play language operations (e.g.,
-      infixation in pig-Latin-like games, reversal of elements within a span). The
-      play language domain is the span within which the play language operation applies.
-      Classified as a phonological domain type (Tallman et al. 2024, discussion ch. 17).
+      Tests which spans are targeted by play language (ludling) operations —
+      e.g., infixation in pig-Latin-like games, reversal or permutation of
+      elements within a span. The play language domain is the span within which
+      the ludling operation applies. Currently attested in Zenzontepec Chatino
+      (ch. 8). Classified as a phonological domain type (Tallman et al. 2024,
+      discussion ch. 17).
+    parameters:
+      - name: applies
+        values: [y, n]
+        description: >
+          Whether the play language operation targets this element's position.
+          y = this position is within the domain of the ludling operation.
     qualification_rule: >
-      [PLACEHOLDER] Parameters and domain logic to be designed from language data.
+      A position qualifies if it contains an element where applies=y. Complete
+      qualification: ALL elements have applies=y. Partial qualification: at
+      least one element has applies=y.
 
   - name: idiom
     description: >
-      [PLACEHOLDER] Tests which spans form idiomatic units — spans where the combination
-      of elements has a meaning not predictable from the individual elements.
-      Classified as a morphosyntactic domain type (Tallman et al. 2024, discussion ch. 17).
+      Tests which spans form idiomatic units — spans where the combination of
+      elements has a meaning not predictable from the individual elements.
+      The idiom domain is the span covered by the idiomatic unit. Classified
+      as a morphosyntactic domain type (Tallman et al. 2024, discussion ch. 17).
+    parameters:
+      - name: idiomatic
+        values: [y, n]
+        description: >
+          Whether this element participates in an idiomatic (non-compositional)
+          combination. y = this element is part of an idiomatic unit.
     qualification_rule: >
-      [PLACEHOLDER] Parameters and domain logic to be designed from language data.
+      A position qualifies if it contains an element where idiomatic=y. Complete
+      qualification: ALL elements have idiomatic=y. Partial qualification: at
+      least one element has idiomatic=y.
 
   - name: segmental
     description: >
@@ -694,6 +732,46 @@ chart_labels:
       meaning: Strict span over partial positions where the suprasegmental process applies to at least one element.
     - label: "supra loose partial"
       meaning: Loose span over partial positions where the suprasegmental process applies to at least one element.
+
+  pausing:
+    - label: "pause strict complete"
+      meaning: Strict span over complete positions where all elements are within the pause domain (pause_domain=y).
+    - label: "pause loose complete"
+      meaning: Loose span over complete positions where all elements are within the pause domain.
+    - label: "pause strict partial"
+      meaning: Strict span over partial positions where at least one element is within the pause domain.
+    - label: "pause loose partial"
+      meaning: Loose span over partial positions where at least one element is within the pause domain.
+
+  proform:
+    - label: "proform strict complete"
+      meaning: Strict span over complete positions where all elements are substitutable by a proform.
+    - label: "proform loose complete"
+      meaning: Loose span over complete positions where all elements are substitutable.
+    - label: "proform strict partial"
+      meaning: Strict span over partial positions where at least one element is substitutable by a proform.
+    - label: "proform loose partial"
+      meaning: Loose span over partial positions where at least one element is substitutable.
+
+  play_language:
+    - label: "play strict complete"
+      meaning: Strict span over complete positions where the play language operation applies to all elements.
+    - label: "play loose complete"
+      meaning: Loose span over complete positions where the play language operation applies to all elements.
+    - label: "play strict partial"
+      meaning: Strict span over partial positions where the play language operation applies to at least one element.
+    - label: "play loose partial"
+      meaning: Loose span over partial positions where the play language operation applies to at least one element.
+
+  idiom:
+    - label: "idiom strict complete"
+      meaning: Strict span over complete positions where all elements are idiomatic (part of a non-compositional unit).
+    - label: "idiom loose complete"
+      meaning: Loose span over complete positions where all elements are idiomatic.
+    - label: "idiom strict partial"
+      meaning: Strict span over partial positions where at least one element is idiomatic.
+    - label: "idiom loose partial"
+      meaning: Loose span over partial positions where at least one element is idiomatic.
 
   aspiration:
     note: Four labels — mirrors stress label structure.
