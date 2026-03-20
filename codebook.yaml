@@ -203,6 +203,80 @@ analyses:
         An obligatorily-independent stress element creates a hard boundary; the
         maximal domain extends up to but not including that position.
 
+  - name: nonpermutability
+    description: >
+      Tests which positions fall within the non-permutability domain of the verbal
+      planar structure — a span where elements occur in a fixed linear order relative
+      to one another. Two domain types are derived based on how strictly "fixed order"
+      is interpreted (Tallman et al. 2024, intro §Fracturing).
+    parameters:
+
+      - name: permutable
+        values: [y, n]
+        description: >
+          Whether the element's position can vary relative to elements of adjacent
+          positions. n = fixed order (the element never swaps position with neighboring
+          elements); y = variable order (the element can appear in different linear
+          positions). Fixed-order elements (permutable=n) qualify for both the strict
+          and flexible non-permutability domains.
+
+      - name: scopal
+        values: [y, n]
+        description: >
+          If permutable=y, whether variable ordering is associated with an obligatory
+          difference in semantic scope. y = scopal permutation (the element qualifies
+          for the flexible non-permutability domain); n = free permutation with no
+          meaning difference (the element does not qualify for either domain).
+          When permutable=n, this value is irrelevant (use n).
+
+    qualification_rule: >
+      Two domain types, each with complete and partial position sets = 4 strict spans.
+      Both use strict span only (no loose span) — a non-permutable domain is inherently
+      contiguous.
+
+      Complete vs. partial:
+        partial:  any element in the position satisfies the qualification rule
+                  (easier to qualify → larger domain).
+        complete: all elements in the position satisfy the qualification rule
+                  (harder to qualify → smaller domain).
+
+      Strict non-permutability — blocked by: permutable=y AND scopal=n.
+        Positions where ALL (complete) or ANY (partial) elements have permutable=n.
+        Identifies spans with absolutely fixed ordering under all circumstances.
+
+      Flexible non-permutability — blocked by: permutable=y AND scopal=n.
+        Positions where ALL (complete) or ANY (partial) elements have
+        permutable=n OR (permutable=y AND scopal=y). Extends the strict domain
+        to include positions whose elements can permute but only with a scopal
+        interpretation difference (fixed vs. scope-varying ordering counts
+        as "non-permutable" under this interpretation).
+
+  - name: free_occurrence
+    description: >
+      Tests which positions contain free forms — elements that can constitute a
+      standalone utterance independently of the verbal head. The free occurrence
+      domain identifies the span of positions where free forms occur (free=y).
+      Classified as an indeterminate domain (Tallman et al. 2024) because free
+      occurrence sits between morphosyntactic and phonological criteria.
+    parameters:
+
+      - name: free
+        values: [y, n]
+        description: >
+          Whether the element is morphosyntactically free — i.e., it can occur as a
+          standalone utterance independently of the verbal head. Bound elements
+          (free=n) cannot occur independently. This is the same parameter used in
+          noninterruption; if both analyses are run, a single sheet with both
+          `free` and `multiple` columns covers both.
+
+    qualification_rule: >
+      The free occurrence domain = positions where free=y.
+      Four span variants (strict/loose × complete/partial) = 4 spans total.
+        complete: ALL elements in the position have free=y.
+        partial:  AT LEAST ONE element in the position has free=y.
+      Both strict and loose spans are computed (unlike noninterruption, which uses
+      strict-only, free occurrence domains need not be contiguous).
+
   - name: aspiration
     description: >
       [NEEDS REVIEW] Tests which positions fall within the aspiration domain of
@@ -245,6 +319,71 @@ analyses:
       participates in blocking checks (same as stress). If aspiration requires
       different domain logic once data is collected, update this entry and
       aspiration.py accordingly.
+
+  - name: biuniqueness
+    description: >
+      [PLACEHOLDER] Tests for deviations from biuniqueness — spans defined by
+      phenomena such as circumfixation (a morpheme discontinuous across positions),
+      extended exponence (the same morphosyntactic feature expressed by multiple
+      morphs in different positions), and suppletion. Classified as an indeterminate
+      domain (Tallman et al. 2024). In Araona: the negation circumfix (pi-…-ma)
+      identifies a vpref–tamesuf domain; the interactional circumfix (ja-…-ti)
+      identifies a vpref–interactional domain.
+    parameters:
+      - name: biunique
+        values: [y, n]
+        description: >
+          [PLACEHOLDER] Whether the element participates in a biunique (one-form /
+          one-meaning) relationship. n = the element is part of a deviation from
+          biuniqueness (e.g., one piece of a circumfix or extended exponence set).
+          Parameters for specific biuniqueness deviations (which morpheme a given
+          element co-expresses with) need to be designed per language.
+    qualification_rule: >
+      [PLACEHOLDER] Domain type and parameters to be finalized. The domain
+      identifies the span covered by a discontinuous or extended morpheme.
+
+  - name: repair
+    description: >
+      [PLACEHOLDER] Tests which spans are identified by phonological or morphosyntactic
+      repair strategies (e.g., epenthesis, metathesis, truncation at specific domain
+      boundaries). A repair domain is the span within which a repair strategy applies.
+      Classified as a phonological domain type (Tallman et al. 2024, discussion ch. 17).
+    qualification_rule: >
+      [PLACEHOLDER] Parameters and domain logic to be designed from language data.
+
+  - name: pausing
+    description: >
+      [PLACEHOLDER] Tests which spans are delimited by prosodic pause boundaries.
+      A pausing domain is a span where elements cannot be separated by pause, or
+      conversely a span that can be uttered in isolation as a prosodic unit.
+      Classified as a phonological domain type (Tallman et al. 2024, discussion ch. 17).
+    qualification_rule: >
+      [PLACEHOLDER] Parameters and domain logic to be designed from language data.
+
+  - name: proform
+    description: >
+      [PLACEHOLDER] Tests which spans can be replaced by a proform (pronoun, pro-verb,
+      pro-VP, etc.). The proform domain is the span that the proform substitutes for.
+      Classified as a morphosyntactic domain type (Tallman et al. 2024, discussion ch. 17).
+    qualification_rule: >
+      [PLACEHOLDER] Parameters and domain logic to be designed from language data.
+
+  - name: play_language
+    description: >
+      [PLACEHOLDER] Tests which spans are targeted by play language operations (e.g.,
+      infixation in pig-Latin-like games, reversal of elements within a span). The
+      play language domain is the span within which the play language operation applies.
+      Classified as a phonological domain type (Tallman et al. 2024, discussion ch. 17).
+    qualification_rule: >
+      [PLACEHOLDER] Parameters and domain logic to be designed from language data.
+
+  - name: idiom
+    description: >
+      [PLACEHOLDER] Tests which spans form idiomatic units — spans where the combination
+      of elements has a meaning not predictable from the individual elements.
+      Classified as a morphosyntactic domain type (Tallman et al. 2024, discussion ch. 17).
+    qualification_rule: >
+      [PLACEHOLDER] Parameters and domain logic to be designed from language data.
 
 # ---------------------------------------------------------------------------
 # SHARED PARAMETER VALUES
@@ -431,6 +570,34 @@ chart_labels:
         meaning: >
           Maximal stress domain, complete blocking: expand from ROOT, stopping just before
           the first position where ALL elements have obligatory = y AND independence = y.
+
+  nonpermutability:
+    - label: "nonperm strict complete"
+      meaning: >
+        Strict (absolutely fixed order) non-permutability domain, complete positions:
+        ALL elements in each position have permutable=n.
+    - label: "nonperm strict partial"
+      meaning: >
+        Strict non-permutability domain, partial positions:
+        AT LEAST ONE element has permutable=n.
+    - label: "nonperm flexible complete"
+      meaning: >
+        Flexible (fixed or scopal) non-permutability domain, complete positions:
+        ALL elements have permutable=n OR (permutable=y AND scopal=y).
+    - label: "nonperm flexible partial"
+      meaning: >
+        Flexible non-permutability domain, partial positions:
+        AT LEAST ONE element has permutable=n OR (permutable=y AND scopal=y).
+
+  free_occurrence:
+    - label: "free strict complete"
+      meaning: Strict span over complete positions where all elements are free forms (free=y).
+    - label: "free loose complete"
+      meaning: Loose span over complete positions where all elements are free forms.
+    - label: "free strict partial"
+      meaning: Strict span over partial positions where at least one element is a free form.
+    - label: "free loose partial"
+      meaning: Loose span over partial positions where at least one element is a free form.
 
   aspiration:
     note: Four labels — mirrors stress label structure.
