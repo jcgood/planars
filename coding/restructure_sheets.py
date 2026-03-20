@@ -264,7 +264,7 @@ def _compute_stats(
     existing: Dict[Tuple[str, str], Dict[str, str]],
     rename_map: Dict[str, str],
     element_rename_map: Dict[str, str] = {},
-) -> Tuple[int, int, List[Tuple[str, str]]]:
+) -> Tuple[int, int, int, List[Tuple[str, str]]]:
     """Compute carry-over stats for a dry run without touching any sheet.
 
     Args:
@@ -274,8 +274,9 @@ def _compute_stats(
         element_rename_map: {old_element: new_element} for renamed element labels.
 
     Returns:
-        (carried_count, new_count, dropped_keys) where:
-          - carried_count: rows from existing that matched a row in rows
+        (carried_count, renamed_count, new_count, dropped_keys) where:
+          - carried_count: rows carried over by direct match
+          - renamed_count: rows carried over via a rename (position or element)
           - new_count:     rows in rows with no match in existing (need re-annotation)
           - dropped_keys:  (element, pos_name) pairs in existing not matched by any row
     """
@@ -283,16 +284,20 @@ def _compute_stats(
     old_el_for_new = {v: k for k, v in element_rename_map.items()}
     reachable_old_keys: set = set()
     new = 0
+    renamed = 0
     for r in rows:
         element, pos_name = str(r[0]), str(r[1])
         old_values = _lookup_existing(element, pos_name, existing, old_for_new, old_el_for_new)
         if old_values is not None:
-            reachable_old_keys.add(_old_key(element, pos_name, existing, old_for_new, old_el_for_new))
+            old_k = _old_key(element, pos_name, existing, old_for_new, old_el_for_new)
+            reachable_old_keys.add(old_k)
+            if old_k != (element, pos_name):
+                renamed += 1
         else:
             new += 1
-    carried = len(reachable_old_keys)
+    carried = len(reachable_old_keys) - renamed
     dropped = [k for k in existing if k not in reachable_old_keys]
-    return carried, new, dropped
+    return carried, renamed, new, dropped
 
 
 # ---------------------------------------------------------------------------
@@ -386,20 +391,27 @@ def main() -> None:
                     all_annotations[construction] = {}
                     print(f"    [{construction}] tab not found")
 
-            # Step 2: Compute and report stats per tab
+            # Step 2: Compute and report stats per tab; decide if this class needs restructuring
+            class_needs_restructure = False
             for construction, param_names, param_values in constructions_list:
                 rows = _build_rows(element_index, lang_id, param_names)
                 existing = all_annotations.get(construction, {})
-                carried, new_count, dropped = _compute_stats(rows, existing, rename_map, element_rename_map)
-                parts = [f"carry over {carried}", f"new blank {new_count}"]
+                carried, renamed, new_count, dropped = _compute_stats(rows, existing, rename_map, element_rename_map)
+                parts = [f"carry over {carried}"]
+                if renamed:
+                    parts.append(f"rename {renamed}")
+                parts.append(f"new blank {new_count}")
                 if dropped:
                     dropped_labels = [f"{el}@{pn}" for el, pn in dropped]
                     parts.append(f"drop {len(dropped)} ({', '.join(dropped_labels)})")
                 print(f"    [{construction}] {'; '.join(parts)}")
-                if carried < len(existing) - len(dropped):
+                if renamed or new_count or dropped:
+                    class_needs_restructure = True
                     any_changes = True
-                if new_count or dropped:
-                    any_changes = True
+
+            if not class_needs_restructure:
+                print(f"    (no changes — skipping)")
+                continue
 
             if not apply:
                 continue
