@@ -43,7 +43,7 @@ from googleapiclient.http import MediaIoBaseDownload, MediaIoBaseUpload
 import pandas as pd
 
 from . import make_forms as _mf
-from . import validate as _val
+from . import validate_planar as _val_planar
 from .make_forms import (
     build_element_index,
     _infer_language_id_from_planar_filename,
@@ -578,7 +578,7 @@ def main() -> None:
 
         # Validate planar structure; warn but do not block sheet generation.
         planar_df = pd.read_csv(planar_file, sep="\t")
-        planar_issues = _val.validate_planar_df(planar_df)
+        planar_issues = _val_planar.validate_planar_df(planar_df)
         if planar_issues:
             print(f"  Planar validation ({len(planar_issues)} issue(s)):")
             for issue in planar_issues:

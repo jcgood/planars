@@ -65,8 +65,8 @@ python -m coding import-sheets
 python -m coding import-sheets --force   # overwrite existing files
 
 # Re-validate annotation sheets and update pink cell highlighting (for collaborators fixing errors)
-python -m coding validate-sheets                   # all languages
-python -m coding validate-sheets --lang arao1248   # one language
+python -m coding validate-coding                   # all languages
+python -m coding validate-coding --lang arao1248   # one language
 
 # Check consistency between codebook.yaml, analysis modules, and diagnostics.tsv
 python -m coding check-codebook

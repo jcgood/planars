@@ -158,13 +158,13 @@ python -m coding sync-params --apply --rename class:old:new  # rename only in on
 
 python -m coding generate-notebooks      # regenerate and upload contributor/coordinator notebooks
 
-python -m coding validate-sheets                   # re-validate all languages; update pink highlighting
-python -m coding validate-sheets --lang arao1248   # one language only
+python -m coding validate-coding                   # re-validate all languages; update pink highlighting
+python -m coding validate-coding --lang arao1248   # one language only
 ```
 
 Use `update-sheets` when new elements are added to the planar structure. Use `sync-params` when `diagnostics.tsv` param columns change — it preserves existing annotations while inserting new columns before Comments, then regenerates notebooks. `generate-notebooks` can also be run standalone to refresh notebooks without changing sheets.
 
-`validate-sheets` is safe to run repeatedly — it clears all existing pink cell highlights and re-highlights any remaining invalid cells. Collaborators can run the Colab validation notebook (see below) to do the same from a browser without needing local setup.
+`validate-coding` is safe to run repeatedly — it clears all existing pink cell highlights and re-highlights any remaining invalid cells. Collaborators can run the Colab validation notebook (see below) to do the same from a browser without needing local setup.
 
 ### 5. Explore results interactively
 
@@ -221,7 +221,7 @@ The notebook template files live in `notebooks/templates/`. To update the boiler
 
 **Validation notebook (`validation_{lang_id}.ipynb`) — for collaborators fixing errors**
 
-One notebook per language. Reads the current sheet values, runs the same validation as `import-sheets`, highlights any invalid cells pink, and prints an issue summary. Collaborators can run this themselves as they fix errors — they do not need to wait for a coordinator to run `import-sheets` or `validate-sheets`.
+One notebook per language. Reads the current sheet values, runs the same validation as `import-sheets`, highlights any invalid cells pink, and prints an issue summary. Collaborators can run this themselves as they fix errors — they do not need to wait for a coordinator to run `import-sheets` or `validate-coding`.
 
 1. Open the shared notebook link from the language's Drive folder
 2. Choose **Runtime → Run all**
@@ -257,8 +257,11 @@ coding/                         Google Sheets workflow tools (python -m coding <
   update_sheets.py              Add missing rows to existing sheets
   sync_params.py                Sync param columns when diagnostics.tsv changes
   import_sheets.py              Download filled sheets to TSVs
-  validate.py                   Shared validation logic (ValidationIssue, cell highlighting)
-  validate_sheets.py            Re-validate sheets and update pink highlights (validate-sheets)
+  validate.py                   Shared validation type (ValidationIssue)
+  validate_planar.py            Planar structure TSV validation (validate_planar_df)
+  validate_coding.py            Annotation sheet validation + validate-coding command
+  validate_diagnostics.py       diagnostics.tsv validation (validate_diagnostics_df)
+  validate_coding.py            Re-validate sheets and update pink highlights (validate-coding)
   restructure_sheets.py         Archive and regenerate sheets after structural changes
   generate_notebooks.py         Generate and upload contributor/coordinator Colab notebooks
   populate_sheets.py            Upload legacy TSV data to sheets (one-time utility)

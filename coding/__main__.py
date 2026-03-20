@@ -9,7 +9,7 @@ Commands:
     sync-params          Sync parameter columns when diagnostics.tsv changes
     update-sheets        Add missing rows/columns to existing sheets
     import-sheets        Download filled sheets to TSVs
-    validate-sheets      Re-validate sheets and update cell highlighting
+    validate-coding      Re-validate annotation sheets and update cell highlighting
     restructure-sheets   Archive and regenerate sheets after structural changes
     populate-sheets      Upload legacy TSV data to sheets (one-time utility)
     check-codebook       Check consistency between codebook.yaml and analysis modules
@@ -29,7 +29,7 @@ _COMMANDS = {
     "sync-params":        "coding.sync_params",
     "update-sheets":      "coding.update_sheets",
     "import-sheets":      "coding.import_sheets",
-    "validate-sheets":    "coding.validate_sheets",
+    "validate-coding":    "coding.validate_coding",
     "restructure-sheets": "coding.restructure_sheets",
     "populate-sheets":    "coding.populate_sheets",
     "check-codebook":     "coding.check_codebook",

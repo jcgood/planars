@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parent.parent
 import gspread
 
 from .generate_sheets import _get_clients, _load_manifest_from_drive, _open_spreadsheet
-from . import validate as _val
+from . import validate_coding as _val
 
 ERROR_DIR = ROOT / "import_errors"
 
