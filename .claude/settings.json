@@ -1,4 +1,17 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git push:*)",
+      "Bash(git status:*)"
+    ],
+    "ask": [
+      "Bash(cd:*)"
+    ]
+  },
   "hooks": {
     "Stop": [
       {
