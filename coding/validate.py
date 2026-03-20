@@ -201,7 +201,7 @@ def validate_annotation_rows(
         if col not in header:
             issues.append(ValidationIssue("error", tab_name, f"missing structural column '{col}'"))
 
-    actual_params = [c for c in header if c not in _STRUCTURAL_COLS]
+    actual_params = [c for c in header if c not in _STRUCTURAL_COLS and c not in _TRAILING_COLS]
     if actual_params != expected_params:
         issues.append(ValidationIssue(
             "warning", tab_name,
