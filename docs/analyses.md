@@ -120,26 +120,28 @@ Some analyses (stress, aspiration) use a **blocked span** instead: expand from t
 | `ciscategorial` | `V-combines`, `N-combines`, `A-combines` | 4 (strict/loose × complete/partial) | stable |
 | `subspanrepetition` | `widescope_left`, `widescope_right`, `fillable_botheither_conjunct` | 20 (5 categories × 4) | stable |
 | `noninterruption` | `free`, `multiple` | 4 strict spans (2 domain types × complete/partial) | stable |
-| `nonpermutability` | `permutable`, `scopal` | 4 strict spans (2 domain types × complete/partial) | stable |
-| `free_occurrence` | `free` | 4 (strict/loose × complete/partial) | stable |
-| `segmental` | `applies` | 4 (strict/loose × complete/partial) | stable |
-| `suprasegmental` | `applies` | 4 (strict/loose × complete/partial) | stable |
 | `stress` | `stressed`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 4 (2 domain types × complete/partial) | stable † |
-| `biuniqueness` | `biunique` | 4 (strict/loose × complete/partial) | [NEEDS REVIEW] |
-| `repair` | `restart` | 4 (strict/loose × complete/partial) | [NEEDS REVIEW] |
-| `pausing` | `pause_domain` | 4 (strict/loose × complete/partial) | [NEEDS REVIEW] |
-| `idiom` | `idiomatic` | 4 (strict/loose × complete/partial) | [NEEDS REVIEW] |
-| `play_language` | `applies` | 4 (strict/loose × complete/partial) | [NEEDS REVIEW] |
-| `aspiration` | `stressed`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 4 (2 domain types × complete/partial) | [NEEDS REVIEW] ‡ |
-| `proform` | `substitutable` | 4 (strict/loose × complete/partial) | [NEEDS REVIEW] § |
+| `nonpermutability` | `permutable`, `scopal` | 4 strict spans (2 domain types × complete/partial) | [AUTO-DERIVED] ‡ |
+| `free_occurrence` | `free` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
+| `segmental` | `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] ‡ |
+| `suprasegmental` | `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] ‡ |
+| `biuniqueness` | `biunique` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
+| `repair` | `restart` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
+| `pausing` | `pause_domain` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
+| `idiom` | `idiomatic` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
+| `play_language` | `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
+| `aspiration` | `stressed`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 4 (2 domain types × complete/partial) | [NEEDS REVIEW] § |
+| `proform` | `substitutable` | 4 (strict/loose × complete/partial) | [NEEDS REVIEW] ¶ |
 
-**Status key:** `stable` — confirmed across multiple languages and verified against langsci/291. `[NEEDS REVIEW]` — design is reasonable but needs expert sign-off before annotation; see `diagnostic_classes.yaml` for details.
+**Status key:** `stable` — confirmed and coordinator-approved. `[AUTO-DERIVED]` — parameter design derived from reading Tallman et al. 2024; not yet coordinator-approved. `[NEEDS REVIEW]` — specific known concerns beyond AUTO-DERIVED. Only a coordinator should promote a module out of AUTO-DERIVED status.
 
 † `left-interaction` and `right-interaction` parameters remain provisional — see issue #17.
 
-‡ No confirmed language data exists. Scope is unclear (prosodic domain vs. segmental spreading process) — see issue #60.
+‡ Likely stable based on cross-language evidence (see `diagnostic_classes.yaml`), but coordinator sign-off still needed.
 
-§ Not included in the langsci/291 published database (ch. 17, line 543). Prospective class.
+§ No confirmed language data; scope unclear — see issue #60.
+
+¶ Not included in the langsci/291 published database (ch. 17, line 543). Prospective class.
 
 ---
 

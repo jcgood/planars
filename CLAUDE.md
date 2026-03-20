@@ -290,6 +290,14 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 - **#50** — `--rename-element` flag on `restructure-sheets` (implemented; issue open for testing).
 - **#44** — Migrate tests to pytest.
 
+## Analysis status convention
+
+The `status` field in `diagnostic_classes.yaml` uses three values: `stable`, `[AUTO-DERIVED]`, and `[NEEDS REVIEW]`. **Only a coordinator (Adam Tallman or equivalent domain expert) may promote a module's status out of `[AUTO-DERIVED]`.** Claude should not change `[AUTO-DERIVED]` to `stable` or remove that designation, even when cross-language evidence is strong. Claude may:
+
+- Add "likely stable" notes or cross-language evidence summaries within the status comment
+- Change `[AUTO-DERIVED]` to `[NEEDS REVIEW]` if a specific known concern warrants it
+- Downgrade `stable` to `[NEEDS REVIEW]` if a bug or data problem is discovered
+
 ## Key conventions
 
 - File naming: imported TSVs use `{construction}_filled.tsv` under `coded_data/{lang_id}/{class_name}/`. The lang and class are encoded in the path, not the filename. Legacy files may use `_fill.tsv` or `_full.tsv`.

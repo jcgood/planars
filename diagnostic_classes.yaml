@@ -139,7 +139,8 @@ classes:
     # Note: zone-internal permutability (variable ordering NOT conditioned by scope, e.g.,
     # Quechua TAME zone, Mocoví trlocdir) annotates as permutable=y, scopal=n — these
     # positions fall outside both strict and flexible domains. Confirmed across 5+ languages.
-    status: stable
+    status: "[AUTO-DERIVED: likely stable — qualification rules confirmed across 5+ language
+      chapters (ch. 3, 6, 8, 9, 12, 14, 16); coordinator sign-off needed to remove AUTO-DERIVED]"
 
   - name: free_occurrence
     display_name: "Free Occurrence"
@@ -319,7 +320,8 @@ classes:
     optional_parameters: []
     # Formal abstract type in ch. 17 database schema. Note: `stress` and `aspiration` are
     # separate planars modules but are fractures of this abstract type in the book's taxonomy.
-    status: stable
+    status: "[AUTO-DERIVED: likely stable — confirmed across 10+ language chapters; formal
+      abstract type in ch. 17; coordinator sign-off needed to remove AUTO-DERIVED]"
 
   - name: suprasegmental
     display_name: "Suprasegmental"
@@ -349,7 +351,8 @@ classes:
     optional_parameters: []
     # Formal abstract type in ch. 17 database schema. Note: `stress` and `aspiration` are
     # separate planars modules but are fractures of this abstract type in the book's taxonomy.
-    status: stable
+    status: "[AUTO-DERIVED: likely stable — confirmed across 10+ language chapters; formal
+      abstract type in ch. 17; coordinator sign-off needed to remove AUTO-DERIVED]"
 
   - name: pausing
     display_name: "Pausing"
