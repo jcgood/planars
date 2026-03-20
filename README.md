@@ -157,9 +157,14 @@ python -m coding sync-params --apply --rename old:new        # rename a column i
 python -m coding sync-params --apply --rename class:old:new  # rename only in one analysis class
 
 python -m coding generate-notebooks      # regenerate and upload contributor/coordinator notebooks
+
+python -m coding validate-sheets                   # re-validate all languages; update pink highlighting
+python -m coding validate-sheets --lang arao1248   # one language only
 ```
 
 Use `update-sheets` when new elements are added to the planar structure. Use `sync-params` when `diagnostics.tsv` param columns change — it preserves existing annotations while inserting new columns before Comments, then regenerates notebooks. `generate-notebooks` can also be run standalone to refresh notebooks without changing sheets.
+
+`validate-sheets` is safe to run repeatedly — it clears all existing pink cell highlights and re-highlights any remaining invalid cells. Collaborators can run the Colab validation notebook (see below) to do the same from a browser without needing local setup.
 
 ### 5. Explore results interactively
 
@@ -214,6 +219,15 @@ A single notebook covering all languages. Shows per-construction text reports an
 
 The notebook template files live in `notebooks/templates/`. To update the boilerplate (e.g. setup cell, chart cell), edit the template and re-run `python -m coding generate-notebooks`.
 
+**Validation notebook (`validation_{lang_id}.ipynb`) — for collaborators fixing errors**
+
+One notebook per language. Reads the current sheet values, runs the same validation as `import-sheets`, highlights any invalid cells pink, and prints an issue summary. Collaborators can run this themselves as they fix errors — they do not need to wait for a coordinator to run `import-sheets` or `validate-sheets`.
+
+1. Open the shared notebook link from the language's Drive folder
+2. Choose **Runtime → Run all**
+3. When prompted, sign in with your Google account and allow access
+4. Invalid cells are highlighted pink in the Google Sheets; the summary appears at the bottom of the notebook
+
 The predecessor notebooks (`sync_colab.ipynb`, `span_results_colab.ipynb`) are archived in `notebooks/archive/` for reference.
 
 ## diagnostics.tsv
@@ -243,6 +257,8 @@ coding/                         Google Sheets workflow tools (python -m coding <
   update_sheets.py              Add missing rows to existing sheets
   sync_params.py                Sync param columns when diagnostics.tsv changes
   import_sheets.py              Download filled sheets to TSVs
+  validate.py                   Shared validation logic (ValidationIssue, cell highlighting)
+  validate_sheets.py            Re-validate sheets and update pink highlights (validate-sheets)
   restructure_sheets.py         Archive and regenerate sheets after structural changes
   generate_notebooks.py         Generate and upload contributor/coordinator Colab notebooks
   populate_sheets.py            Upload legacy TSV data to sheets (one-time utility)
@@ -253,8 +269,9 @@ coded_data/{lang_id}/           Annotation data per language
 coded_data/synth0001/           Synthetic second-language dataset (not real data — for testing)
 notebooks/
   templates/                    Boilerplate notebooks used by generate-notebooks
-    domains_boilerplate.ipynb   Contributor notebook template
-    all_languages_boilerplate.ipynb  Coordinator notebook template
+    domains_boilerplate.ipynb         Contributor notebook template
+    all_languages_boilerplate.ipynb   Coordinator notebook template
+    validation_boilerplate.ipynb      Validation notebook template
   archive/                      Superseded notebooks (span_results.ipynb, sync_colab.ipynb, span_results_colab.ipynb)
 tests/snapshots/                Regression test baselines
 codebook.yaml                   Parameter and term definitions
