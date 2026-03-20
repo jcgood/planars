@@ -61,7 +61,9 @@ classes:
 
   - name: subspanrepetition
     display_name: "Subspan Repetition"
-    domain_type: morphosyntactic
+    domain_type: morphosyntactic  # maximal (widescope) domain; per ch. 01 the minimal
+    # (narrowscope/fillable) domain is classified as indeterminate in the book's taxonomy
+    # because it is ambiguous between ellipsis (phonological) and gapping (morphosyntactic).
     applicability: conditional
     applicability_conditions: >
       Applicable when the language has constructions in which a contiguous subspan
@@ -165,8 +167,10 @@ classes:
     specificity: general
     required_parameters: [substitutable]
     optional_parameters: []
-    status: "[NEEDS REVIEW]"  # AUTO-DERIVED from ch. 17; no evidence in 10 reviewed language
-    # chapters. Applicable only where proform substitution can be elicited.
+    status: "[NEEDS REVIEW]"  # Ch. 17 line 543 explicitly states proform was NOT included in
+    # the published database: "There are other tests that have not yet been included in the
+    # database (e.g. proform replacement)." No evidence in 10 reviewed language chapters.
+    # Prospective class — applicable only where proform substitution can be elicited.
 
   - name: idiom
     display_name: "Idiom"
@@ -213,7 +217,11 @@ classes:
       - extended exponent
     required_parameters: [biunique]
     optional_parameters: []
-    status: "[NEEDS REVIEW]"  # AUTO-DERIVED from Araona ch. 13; verify before use
+    status: "[NEEDS REVIEW]"  # Formal abstract type in book's ch. 17 database schema.
+    # Ch. 17 line 554 explicitly acknowledges the class is "relatively superficially
+    # considered" and that "a great deal of complexity and variation is hidden behind such
+    # designations" — direct book-level support for issue #58 (non-automatic allomorphy
+    # as a distinct sub-type). Araona circumfix data is annotated; other types pending.
 
   - name: repair
     display_name: "Repair"
@@ -248,6 +256,9 @@ classes:
     specificity: general
     required_parameters: [stressed, independence, obligatory, left-interaction, right-interaction]
     optional_parameters: []
+    # Note: in the book's ch. 17 abstract type taxonomy, stress is a fracture of the
+    # suprasegmental abstract type (not a separate type). planars treats it as a distinct
+    # module because it uses blocked_span logic rather than positive qualification.
     status: stable  # Note: left-interaction and right-interaction are [NEEDS REVIEW] (issue #17)
 
   - name: aspiration
@@ -266,6 +277,9 @@ classes:
     required_parameters: [stressed, independence, obligatory, left-interaction, right-interaction]
     optional_parameters: []
     # Note: parameter names are reused from stress; see codebook.yaml aspiration entry.
+    # Note: in the book's ch. 17 abstract type taxonomy, aspiration is a fracture of the
+    # suprasegmental abstract type (not a separate type). planars treats it as a distinct
+    # module because it uses blocked_span logic, same as stress.py.
     status: "[NEEDS REVIEW]"  # No confirmed data; scope unclear — see issue #60
 
   - name: segmental
@@ -303,8 +317,9 @@ classes:
       - final apocope domain           # e.g., Cherokee
     required_parameters: [applies]
     optional_parameters: []
-    status: "[NEEDS REVIEW]"  # Confirmed across 10+ languages in ch. 2, 3, 6, 8, 10, 12, 14,
-    # 15, 16; module design is sound. Needs annotation data before marking stable.
+    # Formal abstract type in ch. 17 database schema. Note: `stress` and `aspiration` are
+    # separate planars modules but are fractures of this abstract type in the book's taxonomy.
+    status: stable
 
   - name: suprasegmental
     display_name: "Suprasegmental"
@@ -332,8 +347,9 @@ classes:
       - auxiliary construction domain  # pitch accent extends to auxiliary; e.g., Quechua
     required_parameters: [applies]
     optional_parameters: []
-    status: "[NEEDS REVIEW]"  # Confirmed across ch. 2, 3, 10, 12, 13, 14, 16; distinct from
-    # stress.py (blocked-span) — this module uses positive qualification. Needs annotation data.
+    # Formal abstract type in ch. 17 database schema. Note: `stress` and `aspiration` are
+    # separate planars modules but are fractures of this abstract type in the book's taxonomy.
+    status: stable
 
   - name: pausing
     display_name: "Pausing"
