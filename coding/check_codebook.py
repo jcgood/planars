@@ -1,9 +1,10 @@
-"""Check consistency between codebook.yaml, analysis modules, and charts.py.
+"""Check consistency between codebook.yaml, diagnostic_classes.yaml, analysis modules, and charts.py.
 
 Checks:
   1. Every param in each module's _REQUIRED_PARAMS is defined in codebook.yaml
   2. Parameter names in diagnostics.tsv are defined in codebook.yaml
   3. Chart span label keys match the keys returned by each derive function
+  4. diagnostics.tsv class names and required parameters match diagnostic_classes.yaml
 
 Run:
     python -m coding check-codebook
@@ -25,6 +26,20 @@ def _load_codebook() -> dict:
     """Load and parse codebook.yaml from the repo root."""
     with open(ROOT / "codebook.yaml", encoding="utf-8") as f:
         return yaml.safe_load(f)
+
+
+def _load_diagnostic_classes() -> dict:
+    """Load and parse diagnostic_classes.yaml from the repo root.
+
+    Returns a dict keyed by class name:
+        {class_name: {"required_parameters": [...], "specificity": str, ...}}
+    """
+    path = ROOT / "diagnostic_classes.yaml"
+    if not path.exists():
+        return {}
+    with open(path, encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+    return {cls["name"]: cls for cls in data.get("classes", [])}
 
 
 def _codebook_params(codebook: dict) -> dict[str, set[str]]:
@@ -109,6 +124,57 @@ def _make_minimal_tsv(params: list[str], extra_params: list[str] = None) -> io.S
     return io.StringIO("\n".join([header, keystone, data]) + "\n")
 
 
+def _check_diagnostics_vs_classes(diag_classes: dict) -> List[str]:
+    """Check diagnostics.tsv entries against diagnostic_classes.yaml.
+
+    For each row in every diagnostics.tsv:
+      - The class name must appear in diagnostic_classes.yaml.
+      - All required_parameters listed for that class must be present as param columns.
+    """
+    if not diag_classes:
+        return ["diagnostic_classes.yaml not found — skipping class schema check"]
+
+    diag_files = sorted((ROOT / "coded_data").glob("*/planar_input/diagnostics.tsv"))
+    if not diag_files:
+        return []
+
+    errors = []
+    for diag_path in diag_files:
+        lang = diag_path.parent.parent.name
+        df = pd.read_csv(diag_path, sep="\t", dtype=str, keep_default_na=False)
+        for _, row in df.iterrows():
+            class_name = row.get("Class", "").strip()
+            if not class_name:
+                continue
+
+            if class_name not in diag_classes:
+                errors.append(
+                    f"[{lang}] diagnostics.tsv class '{class_name}' not in "
+                    f"diagnostic_classes.yaml"
+                )
+                continue
+
+            # Check required parameters are present
+            params_raw = row.get("Parameters", "").strip()
+            present = set()
+            for spec in params_raw.split(","):
+                spec = spec.strip()
+                name = spec[: spec.index("{")].strip() if "{" in spec else spec
+                if name:
+                    present.add(name)
+
+            required = diag_classes[class_name].get("required_parameters", [])
+            missing = [p for p in required if p not in present]
+            if missing:
+                construction = row.get("Constructions", "").strip()
+                errors.append(
+                    f"[{lang}/{class_name}/{construction}] missing required "
+                    f"parameter(s) from diagnostic_classes.yaml: {missing}"
+                )
+
+    return errors
+
+
 def _check_chart_keys() -> List[str]:
     """Check that chart span label keys exist in the result dicts from each derive fn.
 
@@ -176,15 +242,47 @@ def _check_chart_keys() -> List[str]:
     return errors
 
 
+def _report_needs_review(codebook: dict, diag_classes: dict) -> int:
+    """Print a summary of [NEEDS REVIEW] and [PLACEHOLDER] entries. Returns count."""
+    flagged = []
+    for analysis in codebook.get("analyses", []):
+        name = analysis["name"]
+        for field in ("description", "qualification_rule"):
+            text = analysis.get(field, "")
+            if "[NEEDS REVIEW]" in text or "[PLACEHOLDER]" in text:
+                flagged.append(f"codebook.yaml [{name}]: {field}")
+                break
+        for param in analysis.get("parameters", []):
+            for field in ("description",):
+                text = param.get(field, "")
+                if "[NEEDS REVIEW]" in text or "[PLACEHOLDER]" in text:
+                    flagged.append(f"codebook.yaml [{name}/{param['name']}]: {field}")
+                    break
+    for cls in diag_classes.values():
+        status = str(cls.get("status", ""))
+        if "[NEEDS REVIEW]" in status or "[PLACEHOLDER]" in status:
+            flagged.append(f"diagnostic_classes.yaml [{cls['name']}]: status")
+    if flagged:
+        print(f"\u26a0  {len(flagged)} entry(ies) marked [NEEDS REVIEW] or [PLACEHOLDER]:")
+        for entry in flagged:
+            print(f"    {entry}")
+    return len(flagged)
+
+
 def main() -> None:
     """Entry point for `python -m coding check-codebook`.
 
-    Runs three consistency checks and exits with status 1 if any fail:
+    Runs four consistency checks and exits with status 1 if any fail:
     1. Every _REQUIRED_PARAMS param in each analysis module is in codebook.yaml.
     2. Every param name in diagnostics.tsv files is in codebook.yaml.
     3. Every span key referenced in charts.py exists in the corresponding derive result.
+    4. diagnostics.tsv class names and required parameters match diagnostic_classes.yaml.
+
+    Also prints a summary of [NEEDS REVIEW] / [PLACEHOLDER] entries as a warning
+    (does not cause a non-zero exit).
     """
     codebook = _load_codebook()
+    diag_classes = _load_diagnostic_classes()
     all_errors: List[str] = []
 
     print("1. Checking _REQUIRED_PARAMS vs codebook.yaml ...")
@@ -196,6 +294,11 @@ def main() -> None:
     print("3. Checking chart span keys vs derive function result dicts ...")
     all_errors.extend(_check_chart_keys())
 
+    print("4. Checking diagnostics.tsv vs diagnostic_classes.yaml ...")
+    all_errors.extend(_check_diagnostics_vs_classes(diag_classes))
+
+    print()
+    _report_needs_review(codebook, diag_classes)
     print()
     if all_errors:
         print(f"FOUND {len(all_errors)} INCONSISTENCY(IES):")

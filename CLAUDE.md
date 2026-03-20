@@ -151,7 +151,7 @@ This is a linguistic typology analysis project for morphosyntactic domain deriva
 - `validate_diagnostics.py`: `validate_diagnostics_df(df, lang_id)` — validates diagnostics.tsv (required columns, Language field, brace syntax, param names against codebook.yaml, class names against planars/ modules, construction naming rules).
 - `validate_coding.py`: `validate-coding` command — reads annotation sheets, validates values, clears/updates pink cell highlights. Also calls `validate_planar_df` and `validate_diagnostics_df` before sheet validation.
 - `generate_notebooks.py`: `generate-notebooks` — generates per-language and coordinator Colab notebooks.
-- `check_codebook.py`: `check-codebook` — consistency check between codebook.yaml, analysis modules, and diagnostics.tsv.
+- `check_codebook.py`: `check-codebook` — consistency check between codebook.yaml, diagnostic_classes.yaml, analysis modules, and diagnostics.tsv.
 - `populate_sheets.py`: One-time utility for uploading legacy TSV data.
 - `setup_root_folder.py`: One-time Drive folder setup (run once after first `generate-sheets`).
 
@@ -175,9 +175,18 @@ stressed{y/n/both}, independence, left-interaction, right-interaction
 
 `diagnostics.tsv` is also the source of truth for notebook generation. `python -m coding generate-notebooks` reads each language's `diagnostics.tsv` to discover analysis classes and generates three kinds of notebooks: a per-language contributor notebook (`domains_{lang_id}.ipynb`), per-language validation notebooks (`validation_{lang_id}.ipynb`), and a single coordinator notebook (`all_languages.ipynb`) covering all languages. Per-class cells in the coordinator notebook are generated automatically from the class list — adding a new class to `diagnostics.tsv` and updating `_CLASS_DISPLAY_NAMES` in `coding/generate_notebooks.py`, then running `generate-notebooks --apply`, is all that's needed to include it. Notebook generation is triggered automatically at the end of `generate-sheets`, `sync-params --apply`, and `restructure-sheets --apply`. Templates live in `notebooks/templates/`; the generated notebooks are artifacts uploaded to Drive, not source files. Each analysis module must define a `derive` alias pointing to its primary derive function so the generation script can call it without a per-module name mapping (see e.g. `planars/ciscategorial.py`).
 
-## Codebook
+## Codebook and diagnostic classes
 
 `codebook.yaml` at the repo root is the source of truth for parameter definitions, valid values, analytical terms (keystone, partial, complete, strict, loose), and qualification rules per analysis. Entries marked `[PLACEHOLDER]` need linguistic descriptions; entries marked `[NEEDS REVIEW]` have provisional rules that need confirmation (currently aspiration; stress qualification rule is settled but `left-interaction` and `right-interaction` params remain under review).
+
+`diagnostic_classes.yaml` at the repo root is the normative schema for analysis classes — what they cover, when they apply, what parameters they require. It is separate from `codebook.yaml` (which owns parameter semantics) and serves as the source of truth for:
+- Which classes exist and their domain types (morphosyntactic / phonological / indeterminate)
+- Whether a class is universal or conditional and when it applies
+- Whether a class uses a single general construction or is construction-specific
+- Which parameters must appear in diagnostics.tsv for each class
+- Non-exhaustive examples of known construction types for variable classes
+
+`check-codebook` validates diagnostics.tsv against both files. Human-editable workflow: edit `diagnostic_classes.yaml` to add or update a class, then ask Claude to propagate changes to diagnostics.tsv and scaffold the module.
 
 `render_codebook.py` at the repo root renders `codebook.yaml` as human-readable Markdown: `python render_codebook.py` (stdout) or `python render_codebook.py codebook.md` (file).
 
@@ -200,6 +209,7 @@ Keep the following files up to date as the project evolves. Check each one at th
 |------|-------------|
 | `CLAUDE.md` | Architecture changes, new scripts, new conventions, workflow changes |
 | `codebook.yaml` | New parameters, new analyses, qualification rules change, `[PLACEHOLDER]` or `[NEEDS REVIEW]` entries resolved |
+| `diagnostic_classes.yaml` | New analysis classes added, applicability or required parameters change, new known construction types |
 | `README.md` | Changes to the annotated TOC (audience routing, guide descriptions) |
 | `docs/*.md` | User-facing workflow changes, setup instructions, new dependencies, new commands |
 | `notebooks/templates/domains_boilerplate.ipynb` | Contributor notebook boilerplate changes (setup, auth, chart cell) — then run `generate-notebooks --apply` |
@@ -239,7 +249,21 @@ All four analyses run and produce spans. Source: Adam Tallman §4.5 (langsci/291
 
 Feature requests and bugs are tracked on GitHub Issues: https://github.com/jcgood/planars/issues
 
-Notable open issues:
+When creating a new issue, apply at least one label from the set below. Use `gh issue create --label "..."` or apply labels immediately after creation with `gh issue edit <n> --add-label "..."`.
+
+### Labels
+
+| Label | Meaning |
+|-------|---------|
+| `diagnostics` | Module design, parameters, or qualification rules requiring linguistic validation — input from Adam needed before implementation. Filter: `gh issue list --label diagnostics` |
+
+### Notable open issues
+
+- **#60** — Clarify `aspiration.py` scope: prosodic domain vs. segmental process. `[diagnostics]`
+- **#59** — Nominal planar structures: scope expansion (Zapotec ch. 07 applies full test battery to noun complex). `[diagnostics]`
+- **#58** — Biuniqueness type 2: non-automatic allomorphy as a distinct diagnostic. `[diagnostics]`
+- **#55** — Per-language metadata/documentation file (author, source, etc.).
+- **#54** — `_CLASS_DISPLAY_NAMES` graceful fallback in `generate_notebooks.py`.
 - **#53** — ~~`generate-notebooks`: generate and upload per-language validation notebooks~~ — implemented.
 - **#52** — `integrity-check`: a single-pass project health command that reports planar, diagnostics, and annotation issues as a Markdown summary.
 - **#51** — Remove `_filled` suffix from imported TSV filenames.

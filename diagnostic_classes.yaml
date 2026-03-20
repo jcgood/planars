@@ -1,0 +1,308 @@
+# Diagnostic Classes
+# Normative schema for analysis classes used in diagnostics.tsv.
+#
+# This file is the source of truth for:
+#   - Which analysis classes exist and what they cover
+#   - When each class is applicable (universal vs. conditional)
+#   - Whether a class uses one general construction or is construction-specific
+#   - Which parameters each class requires in diagnostics.tsv
+#   - Known construction types (non-exhaustive examples for variable classes)
+#
+# Relationship to other files:
+#   codebook.yaml         — parameter semantics, allowed values, qualification rules
+#   diagnostic_classes.yaml (this file) — class structure, applicability, construction types
+#   diagnostics.tsv       — per-language instance of these classes, validated against this file
+#   docs/analyses.md      — human reader's guide pointing to both
+#
+# check-codebook validates diagnostics.tsv against this file:
+#   - required parameters must be present as columns
+#   - conditional classes should have applicability_conditions met
+#   - construction names follow the naming rules for each specificity type
+#
+# Human-editable workflow: edit this file, then ask Claude to propagate changes
+# to diagnostics.tsv and scaffold any new analysis modules.
+#
+# Fields:
+#   name                     machine name (matches planars/ module and coded_data/ folder)
+#   display_name             human-readable label for notebook section headers
+#   domain_type              morphosyntactic | phonological | indeterminate
+#   domain_subtype           segmental | prosodic  (optional; phonological classes only)
+#   applicability            universal | conditional
+#   applicability_conditions prose description of when a conditional class applies
+#   specificity              general | construction_specific
+#   known_constructions      non-exhaustive examples (construction_specific classes only)
+#   required_parameters      parameter columns that must appear in diagnostics.tsv for this class
+#   optional_parameters      parameter columns that may appear but are not required
+#   status                   stable | "[NEEDS REVIEW]" | "[PLACEHOLDER]"
+
+classes:
+
+  # ---------------------------------------------------------------------------
+  # Morphosyntactic domain classes
+  # ---------------------------------------------------------------------------
+
+  - name: ciscategorial
+    display_name: "Ciscategorial"
+    domain_type: morphosyntactic
+    applicability: universal
+    applicability_conditions: >
+      Applies to every verbal planar structure. All languages have elements that
+      combine selectively with part-of-speech categories; the ciscategorial domain
+      is the span of positions whose elements combine exclusively with verbs (as
+      opposed to nouns or adjectives).
+    specificity: general
+    required_parameters: [V-combines, N-combines, A-combines]
+    optional_parameters: []
+    status: stable
+
+  - name: subspanrepetition
+    display_name: "Subspan Repetition"
+    domain_type: morphosyntactic
+    applicability: conditional
+    applicability_conditions: >
+      Applicable when the language has constructions in which a contiguous subspan
+      of the verbal planar structure repeats across two or more conjoined or embedded
+      clauses (e.g., coordination, complementation, serial verb constructions, clause
+      linkage). At least one such construction must be identifiable for annotation.
+    specificity: construction_specific
+    known_constructions:
+      # Non-exhaustive examples. Add language-specific construction names as needed.
+      - and-coordination
+      - or-coordination
+      - complementation
+      - serial verb construction
+      - clause linkage           # e.g., Araona tso-clause linkage
+      - auxiliary construction   # e.g., Araona auxiliary construction
+      - same-subject clause chaining   # e.g., Yukuna
+      - adverbial clause               # e.g., Yukuna
+      - complement clause              # e.g., Yukuna (with lexical nominalizer or -ka)
+      - total reduplication            # verb repeated in full; e.g., Mazatec
+      - verbal parallelism             # same construction with different verb; e.g., Mazatec
+      - nominalization                 # e.g., Mazatec
+    required_parameters: [widescope_left, widescope_right, fillable_botheither_conjunct]
+    optional_parameters: []
+    status: stable
+
+  - name: noninterruption
+    display_name: "Noninterruption"
+    domain_type: morphosyntactic
+    applicability: universal
+    applicability_conditions: >
+      Applies to every verbal planar structure. All languages have bound and free
+      elements; the non-interruption domain tests which contiguous spans cannot be
+      broken by free or multiply-occurring free elements.
+    specificity: general
+    required_parameters: [free, multiple]
+    optional_parameters: []
+    status: stable
+
+  - name: nonpermutability
+    display_name: "Nonpermutability"
+    domain_type: morphosyntactic
+    applicability: universal
+    applicability_conditions: >
+      Applies to every verbal planar structure. All languages have ordering constraints
+      among verbal elements; the non-permutability domain tests the span over which
+      linear ordering is strictly or conditionally fixed.
+    specificity: general
+    required_parameters: [permutable, scopal]
+    optional_parameters: []
+    status: "[NEEDS REVIEW]"  # AUTO-DERIVED: verify qualification rules against data
+
+  - name: free_occurrence
+    display_name: "Free Occurrence"
+    domain_type: indeterminate
+    applicability: universal
+    applicability_conditions: >
+      Applies to every verbal planar structure. All languages have free and bound
+      elements; the free occurrence domain identifies the span of positions containing
+      elements that can constitute a standalone utterance. Classified as indeterminate
+      because free occurrence straddles morphosyntactic and phonological criteria
+      (Tallman et al. 2024, ch. 1).
+    specificity: general
+    required_parameters: [free]
+    optional_parameters: [multiple]  # present when noninterruption is run on the same sheet
+    status: stable
+
+  - name: proform
+    display_name: "Proform"
+    domain_type: morphosyntactic
+    applicability: conditional
+    applicability_conditions: >
+      Applicable when the language has proforms (pronouns, pro-verbs, pro-VP substitutes,
+      etc.) that can replace a contiguous span within the verbal planar structure. The
+      proform domain is the span the proform substitutes for.
+    specificity: general
+    required_parameters: [substitutable]
+    optional_parameters: []
+    status: "[NEEDS REVIEW]"  # AUTO-DERIVED from ch. 17 discussion only; verify before use
+
+  - name: idiom
+    display_name: "Idiom"
+    domain_type: morphosyntactic
+    applicability: conditional
+    applicability_conditions: >
+      Applicable when the language has idiomatic expressions within the verbal planar
+      structure — collocations of verbal elements whose combined meaning is not
+      compositionally predictable from the individual elements. One construction per TSV.
+    specificity: construction_specific
+    known_constructions:
+      # One TSV per idiomatic collocation. Names should describe the idiom briefly.
+      - verb-particle idiom
+      - verb-affix collocation
+    required_parameters: [idiomatic]
+    optional_parameters: []
+    status: "[NEEDS REVIEW]"  # AUTO-DERIVED from ch. 17 discussion only; verify before use
+
+  - name: biuniqueness
+    display_name: "Biuniqueness"
+    domain_type: indeterminate
+    applicability: conditional
+    applicability_conditions: >
+      Applicable when the language has circumfixes (morphemes discontinuous across
+      two positions) or extended exponents (the same morphosyntactic feature expressed
+      by morphs in multiple positions). The biuniqueness domain is the span from the
+      leftmost piece of the discontinuous morpheme to the rightmost. Each circumfix
+      or extended exponent group is annotated in its own TSV. Classified as indeterminate
+      (Tallman et al. 2024).
+      NOTE: This class covers only the circumfixal/extended-exponent type. Non-automatic
+      allomorphy (TAM-conditioned suppletion, valency allomorphy, etc.) is a distinct
+      biuniqueness deviation attested in Zapotec (ch. 07), Yukuna (ch. 11), and Kiowa
+      (ch. 04) — see issue #58.
+    specificity: construction_specific
+    known_constructions:
+      # One TSV per discontinuous morpheme or extended exponent group.
+      - negation circumfix       # e.g., Araona pi-...-ma
+      - interactional circumfix  # e.g., Araona ja-...-ti
+      - perfective circumfix
+      - extended exponent
+    required_parameters: [biunique]
+    optional_parameters: []
+    status: "[NEEDS REVIEW]"  # AUTO-DERIVED from Araona ch. 13; verify before use
+
+  - name: repair
+    display_name: "Repair"
+    domain_type: phonological
+    applicability: conditional
+    applicability_conditions: >
+      Applicable when elicitation can test repair/restart behavior — i.e., when speakers
+      can be prompted to make production errors within the verbal complex and their restart
+      behavior reveals a coherent span. The repair domain is the minimal span such that an
+      error anywhere inside it triggers restart from the left edge.
+    specificity: general
+    required_parameters: [restart]
+    optional_parameters: []
+    status: "[NEEDS REVIEW]"  # AUTO-DERIVED from Cup'ik ch. 2; verify before use
+
+  # ---------------------------------------------------------------------------
+  # Phonological domain classes
+  # ---------------------------------------------------------------------------
+
+  - name: stress
+    display_name: "Stress"
+    domain_type: phonological
+    domain_subtype: prosodic
+    applicability: conditional
+    applicability_conditions: >
+      Applicable when the language has a productive primary stress system in the verbal
+      domain, where stress can be assigned to or blocked within a defined span around
+      the verbal keystone. Requires elicitation data sufficient to determine whether
+      stress is obligatory and/or independent for each position.
+    specificity: general
+    required_parameters: [stressed, independence, obligatory, left-interaction, right-interaction]
+    optional_parameters: []
+    status: stable  # Note: left-interaction and right-interaction are [NEEDS REVIEW] (issue #17)
+
+  - name: aspiration
+    display_name: "Aspiration"
+    domain_type: phonological
+    applicability: conditional
+    applicability_conditions: >
+      Applicable when the language has a prosodic aspiration domain defined by blocking
+      conditions — i.e., when aspiration's distribution relative to the verbal keystone
+      defines a bounded span via independent/obligatory criteria (same logic as stress.py).
+      NOTE: Aspiration as a segmental spreading process (as in Yukuna ch. 11) should be
+      annotated under the `segmental` class instead. This module is for the blocked-span
+      prosodic case only. No confirmed language data exists for this module yet — see
+      issue #60.
+    specificity: general
+    required_parameters: [stressed, independence, obligatory, left-interaction, right-interaction]
+    optional_parameters: []
+    # Note: parameter names are reused from stress; see codebook.yaml aspiration entry.
+    status: "[NEEDS REVIEW]"  # No confirmed data; scope unclear — see issue #60
+
+  - name: segmental
+    display_name: "Segmental"
+    domain_type: phonological
+    domain_subtype: segmental
+    applicability: conditional
+    applicability_conditions: >
+      Applicable when the language has a segmental phonological process (vowel deletion,
+      consonant coalescence, nasality spreading, palatalization, etc.) that applies within
+      a defined span of the verbal planar structure. One process per TSV. Multiple segmental
+      processes may identify different spans.
+    specificity: construction_specific
+    known_constructions:
+      # One TSV per segmental process.
+      - vowel syncope domain          # e.g., Araona: vcore-tamesuf
+      - consonant coalescence domain  # e.g., Cup'ik uvular-velar: vbase-pn4
+      - nasality spreading domain
+      - palatalization domain
+    required_parameters: [applies]
+    optional_parameters: []
+    status: "[NEEDS REVIEW]"  # AUTO-DERIVED from Araona ch. 13 and Cup'ik ch. 2; verify before use
+
+  - name: suprasegmental
+    display_name: "Suprasegmental"
+    domain_type: phonological
+    domain_subtype: prosodic
+    applicability: conditional
+    applicability_conditions: >
+      Applicable when the language has a suprasegmental or prosodic rule (pitch-accent
+      assignment, iambic stress foot, tone melody, etc.) with a positively delimited domain
+      in the verbal planar structure. Distinct from stress.py and aspiration.py, which use
+      blocked_span logic; this module uses positive qualification (positions annotated as
+      inside or outside the domain). One rule per TSV.
+    specificity: construction_specific
+    known_constructions:
+      # One TSV per suprasegmental rule.
+      - pitch-accent domain      # e.g., Araona LH*: vpref-connect3
+      - iambic foot domain       # e.g., Cup'ik: vbase-pn4
+      - tone melody domain
+    required_parameters: [applies]
+    optional_parameters: []
+    status: "[NEEDS REVIEW]"  # AUTO-DERIVED from Araona ch. 13 and Cup'ik ch. 2; verify before use
+
+  - name: pausing
+    display_name: "Pausing"
+    domain_type: phonological
+    domain_subtype: prosodic
+    applicability: conditional
+    applicability_conditions: >
+      Applicable when pausability can be elicited — i.e., when speakers' judgments or
+      natural behavior reveal a span within which prosodic pause insertion is blocked.
+      The pausing domain is a span that constitutes a pause unit; elements outside it
+      permit pause insertion.
+    specificity: general
+    required_parameters: [pause_domain]
+    optional_parameters: []
+    status: "[NEEDS REVIEW]"  # AUTO-DERIVED from ch. 17 discussion only; highly speculative
+
+  - name: play_language
+    display_name: "Play Language"
+    domain_type: phonological
+    applicability: conditional
+    applicability_conditions: >
+      Applicable when the language has documented play language (ludling) phenomena —
+      operations such as infixation, element reversal, or metathesis that target a
+      defined span of the verbal planar structure. Currently attested in Zenzontepec
+      Chatino (ch. 8). One operation type per TSV.
+    specificity: construction_specific
+    known_constructions:
+      # One TSV per ludling operation type.
+      - infixation ludling
+      - element reversal
+      - syllable metathesis
+    required_parameters: [applies]
+    optional_parameters: []
+    status: "[NEEDS REVIEW]"  # AUTO-DERIVED; limited data reviewed (ch. 17 and brief ch. 8 mention)

@@ -65,6 +65,7 @@ notebooks/
   archive/                      Superseded notebooks
 tests/snapshots/                Regression test baselines
 codebook.yaml                   Parameter and term definitions
+diagnostic_classes.yaml         Normative schema for analysis classes (applicability, required params)
 docs/                           Documentation (this directory)
 ```
 
@@ -104,8 +105,8 @@ Controls which analyses and constructions are run for a language. Required colum
 | Column | Contents |
 |---|---|
 | `Language` | Language ID (must match the planar filename) |
-| `Analysis_Class` | Name of the analysis module (e.g., `ciscategorial`) |
-| `Construction` | Construction name (used as tab name in Google Sheets) |
+| `Class` | Name of the analysis module (e.g., `ciscategorial`) |
+| `Constructions` | Tab name(s) in Google Sheets; comma-separated list for construction-specific classes |
 | `Parameters` | Comma-separated list of parameter columns for this analysis |
 
 Parameters default to `y/n` dropdowns. To specify custom allowed values, use brace syntax:
