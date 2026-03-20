@@ -40,7 +40,10 @@ import gspread
 from googleapiclient.discovery import build as google_build
 from googleapiclient.http import MediaIoBaseDownload, MediaIoBaseUpload
 
+import pandas as pd
+
 from . import make_forms as _mf
+from . import validate as _val
 from .make_forms import (
     build_element_index,
     _infer_language_id_from_planar_filename,
@@ -572,6 +575,15 @@ def main() -> None:
         # Set DATA_DIR so make_forms resolves files relative to the planar_input folder
         _mf.DATA_DIR = str(planar_dir)
         element_index = build_element_index(planar_file.name)
+
+        # Validate planar structure; warn but do not block sheet generation.
+        planar_df = pd.read_csv(planar_file, sep="\t")
+        planar_issues = _val.validate_planar_df(planar_df)
+        if planar_issues:
+            print(f"  Planar validation ({len(planar_issues)} issue(s)):")
+            for issue in planar_issues:
+                print(f"    {issue}")
+
         specs = _read_diagnostics_for_language(lang_id)
 
         # Group specs by class_name -> [(construction, param_names, param_values), ...]

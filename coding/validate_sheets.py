@@ -18,6 +18,8 @@ import sys
 from pathlib import Path
 from typing import Dict, List
 
+import pandas as pd
+
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
@@ -79,6 +81,16 @@ def main() -> None:
             continue
 
         print(f"\n{lang_id}")
+
+        # Validate planar structure.
+        planar_files = sorted((CODED_DATA / lang_id / "planar_input").glob("planar_*.tsv"))
+        if planar_files:
+            planar_df = pd.read_csv(planar_files[0], sep="\t")
+            planar_issues = _val.validate_planar_df(planar_df)
+            if planar_issues:
+                print(f"  Planar validation ({len(planar_issues)} issue(s)):")
+                for issue in planar_issues:
+                    print(f"    {issue}")
         for class_name, sheet_info in sorted(lang_data.get("sheets", {}).items()):
             sid = sheet_info.get("spreadsheet_id") or sheet_info.get("id")
             if not sid:
