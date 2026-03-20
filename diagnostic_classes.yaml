@@ -49,7 +49,11 @@ classes:
       Applies to every verbal planar structure. All languages have elements that
       combine selectively with part-of-speech categories; the ciscategorial domain
       is the span of positions whose elements combine exclusively with verbs (as
-      opposed to nouns or adjectives).
+      opposed to nouns or adjectives). NOTE: predicate-flexible languages (e.g.,
+      Chorote ch. 15) allow non-verbal predicates to take "verbal" TAME markers,
+      complicating the strict V-combines test. In such languages, fracture into
+      "predicate-only ciscategorial" (strict) and "with-predicate ciscategorial"
+      (elements that select predicates broadly) may be needed.
     specificity: general
     required_parameters: [V-combines, N-combines, A-combines]
     optional_parameters: []
@@ -67,18 +71,41 @@ classes:
     specificity: construction_specific
     known_constructions:
       # Non-exhaustive examples. Add language-specific construction names as needed.
-      - and-coordination
-      - or-coordination
-      - complementation
-      - serial verb construction
-      - clause linkage           # e.g., Araona tso-clause linkage
-      - auxiliary construction   # e.g., Araona auxiliary construction
-      - same-subject clause chaining   # e.g., Yukuna
+      # Asyndetic (no overt linker)
+      - asyndetic coordination         # no overt marker; e.g., Chatino (primary strategy)
+      - asyndetic juxtaposition        # verb complexes juxtaposed; e.g., Quechua
+      - asyndetic clause combination   # e.g., Mocoví
+      - asyndetic verb-verb linkage    # complement clause juxtaposition; e.g., Mixtec AVVL
+      # Overt coordinators
+      - and-coordination               # e.g., Araona, Mixtec ta, Chorote jla'yi ti/ka
+      - or-coordination                # e.g., Mixtec an, Chorote ni'ne ti/ka
+      - and-then clause linkage        # e.g., Mocoví kan
+      - syndetic coordination          # overt coordinator; e.g., Chatino lóʔō
+      # Subordination and embedding
+      - complementation                # complement clause embedding
+      - complement clause              # e.g., Yukuna -ka nominalization
+      - complement subordination       # non-finite complement; e.g., Mebengokre =je
+      - finite declarative complement clause   # e.g., Martinican
+      - ña-linkage                     # complementizer subordination; e.g., Mixtec
+      - syndetic clause linkage        # purpose/cause/concessive connector; e.g., Mixtec
       - adverbial clause               # e.g., Yukuna
-      - complement clause              # e.g., Yukuna (with lexical nominalizer or -ka)
+      - purpose subordination          # e.g., Mebengokre kadjy
+      # Clause chaining
+      - clause linkage                 # e.g., Araona tso-clause linkage
+      - same-subject clause chaining   # e.g., Yukuna, Mebengokre ne/=n
+      - simultaneous clause chaining   # boundary suffix -yóʔ; e.g., Hup
+      - sequential clause chaining     # boundary suffix -mɨʔ; e.g., Hup
+      # Auxiliaries and causatives
+      - auxiliary construction         # e.g., Araona auxiliary construction
+      - lexical causative construction # minimal subspan; e.g., Mocoví
+      # Reduplication and parallelism
       - total reduplication            # verb repeated in full; e.g., Mazatec
       - verbal parallelism             # same construction with different verb; e.g., Mazatec
-      - nominalization                 # e.g., Mazatec
+      # Nominalization
+      - nominalization                 # general nominalized clause; e.g., Mazatec
+      - nominalized clause combination # gerundive/obligatative/habitual/prior-event; e.g., Quechua
+      # Serial verbs
+      - serial verb construction       # verb serialization; e.g., Hup
     required_parameters: [widescope_left, widescope_right, fillable_botheither_conjunct]
     optional_parameters: []
     status: stable
@@ -107,7 +134,10 @@ classes:
     specificity: general
     required_parameters: [permutable, scopal]
     optional_parameters: []
-    status: "[NEEDS REVIEW]"  # AUTO-DERIVED: verify qualification rules against data
+    # Note: zone-internal permutability (variable ordering NOT conditioned by scope, e.g.,
+    # Quechua TAME zone, Mocoví trlocdir) annotates as permutable=y, scopal=n — these
+    # positions fall outside both strict and flexible domains. Confirmed across 5+ languages.
+    status: stable
 
   - name: free_occurrence
     display_name: "Free Occurrence"
@@ -135,7 +165,8 @@ classes:
     specificity: general
     required_parameters: [substitutable]
     optional_parameters: []
-    status: "[NEEDS REVIEW]"  # AUTO-DERIVED from ch. 17 discussion only; verify before use
+    status: "[NEEDS REVIEW]"  # AUTO-DERIVED from ch. 17; no evidence in 10 reviewed language
+    # chapters. Applicable only where proform substitution can be elicited.
 
   - name: idiom
     display_name: "Idiom"
@@ -152,7 +183,9 @@ classes:
       - verb-affix collocation
     required_parameters: [idiomatic]
     optional_parameters: []
-    status: "[NEEDS REVIEW]"  # AUTO-DERIVED from ch. 17 discussion only; verify before use
+    status: "[NEEDS REVIEW]"  # Mebengokre (ch. 12) provides the clearest evidence: diagnostic
+    # [\ref{idioms}] documents 3 specific idioms with position spans (adjnc-ket). The class
+    # design is sound but needs annotation data.
 
   - name: biuniqueness
     display_name: "Biuniqueness"
@@ -165,10 +198,12 @@ classes:
       leftmost piece of the discontinuous morpheme to the rightmost. Each circumfix
       or extended exponent group is annotated in its own TSV. Classified as indeterminate
       (Tallman et al. 2024).
-      NOTE: This class covers only the circumfixal/extended-exponent type. Non-automatic
-      allomorphy (TAM-conditioned suppletion, valency allomorphy, etc.) is a distinct
-      biuniqueness deviation attested in Zapotec (ch. 07), Yukuna (ch. 11), and Kiowa
-      (ch. 04) — see issue #58.
+      NOTE: This class covers only the circumfixal/extended-exponent type (e.g., Araona
+      pi-...-ma). Non-automatic allomorphy (TAM-conditioned suppletion, inflectional-class
+      allomorphy, valency allomorphy, etc.) is a distinct biuniqueness deviation confirmed
+      across many languages: Zapotec (ch. 07), Yukuna (ch. 11), Kiowa (ch. 04), Mixtec
+      (tonal inflection classes), Chatino (TAM tonal alternations), Chorote (causative/
+      antipassive allomorphy), Mocoví (3rd-person prefix sets) — see issue #58.
     specificity: construction_specific
     known_constructions:
       # One TSV per discontinuous morpheme or extended exponent group.
@@ -192,7 +227,9 @@ classes:
     specificity: general
     required_parameters: [restart]
     optional_parameters: []
-    status: "[NEEDS REVIEW]"  # AUTO-DERIVED from Cup'ik ch. 2; verify before use
+    status: "[NEEDS REVIEW]"  # Strongly confirmed by Cup'ik ch. 2 (4 naturalistic examples,
+    # restart domain = vbase–pn4); no evidence in 8 other reviewed chapters. Applicable
+    # only where elicitation can target production errors within the verbal complex.
 
   # ---------------------------------------------------------------------------
   # Phonological domain classes
@@ -243,14 +280,31 @@ classes:
       processes may identify different spans.
     specificity: construction_specific
     known_constructions:
-      # One TSV per segmental process.
-      - vowel syncope domain          # e.g., Araona: vcore-tamesuf
-      - consonant coalescence domain  # e.g., Cup'ik uvular-velar: vbase-pn4
-      - nasality spreading domain
-      - palatalization domain
+      # One TSV per segmental process. Non-exhaustive examples.
+      - vowel syncope domain           # e.g., Araona: vcore-tamesuf
+      - consonant coalescence domain   # e.g., Cup'ik uvular-velar: vbase-pn4
+      - nasality spreading domain      # e.g., Chatino: positions 13-17
+      - palatalization domain          # e.g., Chatino coronal, Chorote, Mocoví
+      - vowel elision domain           # hiatus resolution; e.g., Chatino verbal prefix domain
+      - vowel fusion domain            # pronoun vowel fusion; e.g., Chatino pos. 13-17
+      - vowel overwriting domain       # CVʔV + vowel-initial pronoun; e.g., Mixtec
+      - vowel copying domain           # morphophonological copying; e.g., Hup
+      - final consonant deletion domain  # coda deletion at suffix boundary; e.g., Hup
+      - syncope domain                 # high-vowel deletion in prefixed stems; e.g., Mebengokre
+      - echo vowel epenthesis domain   # stem-final epenthesis; e.g., Mebengokre
+      - fortition domain               # palatal fortition; e.g., Mebengokre aj-verb
+      - suffix deletion domain         # function word final-syllable deletion; e.g., Quechua
+      - vowel lowering domain          # /u,i/→[o,e] near /q/; e.g., Quechua
+      - yod insertion domain           # /y/ epenthesis at vowel juncture; e.g., Chorote
+      - vowel harmony domain           # verb- or affix-conditioned harmony; e.g., Mocoví
+      - vocalic epenthesis domain      # cluster resolution; e.g., Mocoví
+      - h-metathesis domain            # e.g., Cherokee
+      - vowel deletion domain          # e.g., Cherokee
+      - final apocope domain           # e.g., Cherokee
     required_parameters: [applies]
     optional_parameters: []
-    status: "[NEEDS REVIEW]"  # AUTO-DERIVED from Araona ch. 13 and Cup'ik ch. 2; verify before use
+    status: "[NEEDS REVIEW]"  # Confirmed across 10+ languages in ch. 2, 3, 6, 8, 10, 12, 14,
+    # 15, 16; module design is sound. Needs annotation data before marking stable.
 
   - name: suprasegmental
     display_name: "Suprasegmental"
@@ -265,13 +319,21 @@ classes:
       inside or outside the domain). One rule per TSV.
     specificity: construction_specific
     known_constructions:
-      # One TSV per suprasegmental rule.
-      - pitch-accent domain      # e.g., Araona LH*: vpref-connect3
-      - iambic foot domain       # e.g., Cup'ik: vbase-pn4
-      - tone melody domain
+      # One TSV per suprasegmental rule. Non-exhaustive examples.
+      - pitch-accent domain       # e.g., Araona LH*: vpref-connect3; Quechua L+H*: vcore-plural
+      - iambic foot domain        # e.g., Cup'ik: vbase-pn4
+      - tone melody domain        # e.g., Chatino TAM tonal alternations: pos. 10-13
+      - H1-spreading domain       # e.g., Cherokee: pos. 11-21
+      - H3-assignment domain      # e.g., Cherokee: pos. 5/7-21
+      - superhigh-assignment domain  # e.g., Cherokee: pos. 5/7-22
+      - tone-stress locus domain  # positively delimited; e.g., Hup: pos. 2/3-26
+      - word-stress domain        # stress-final within domain; e.g., Mebengokre: prevb-fin
+      - right-edge stress domain  # stress on final syllable of domain; e.g., Mocoví
+      - auxiliary construction domain  # pitch accent extends to auxiliary; e.g., Quechua
     required_parameters: [applies]
     optional_parameters: []
-    status: "[NEEDS REVIEW]"  # AUTO-DERIVED from Araona ch. 13 and Cup'ik ch. 2; verify before use
+    status: "[NEEDS REVIEW]"  # Confirmed across ch. 2, 3, 10, 12, 13, 14, 16; distinct from
+    # stress.py (blocked-span) — this module uses positive qualification. Needs annotation data.
 
   - name: pausing
     display_name: "Pausing"
@@ -286,7 +348,9 @@ classes:
     specificity: general
     required_parameters: [pause_domain]
     optional_parameters: []
-    status: "[NEEDS REVIEW]"  # AUTO-DERIVED from ch. 17 discussion only; highly speculative
+    status: "[NEEDS REVIEW]"  # Mebengokre (ch. 12) applies and validates: diagnostic [\ref{pause}]
+    # identifies span prevb-fin, converging with non-recursive interruption and stress domain.
+    # No evidence in 9 other reviewed chapters; elicitation access may be the limiting factor.
 
   - name: play_language
     display_name: "Play Language"
@@ -303,6 +367,10 @@ classes:
       - infixation ludling
       - element reversal
       - syllable metathesis
+      - initial-syllable transposition  # initial CV moved to end of form; e.g., Chatino (ch. 8);
+                                        # each lexical tone melody domain is its own target;
+                                        # compound verb stems each transpose independently
     required_parameters: [applies]
     optional_parameters: []
-    status: "[NEEDS REVIEW]"  # AUTO-DERIVED; limited data reviewed (ch. 17 and brief ch. 8 mention)
+    status: "[NEEDS REVIEW]"  # Chatino ch. 8 provides corpus-attested data (Campbell 2020);
+    # target domain = positions 10-13 (verbal core = tonal melody domain). Confirmed real.

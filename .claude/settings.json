@@ -14,7 +14,9 @@
       "Bash(python3:*)",
       "Bash(.venv/bin/python:*)",
       "Bash(head:*)",
-      "Bash(jq:*)"
+      "Bash(jq:*)",
+      "Bash(wc:*)",
+      "Bash(sort:*)"
     ],
     "ask": [
       "Bash(cd:*)"
