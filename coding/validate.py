@@ -46,14 +46,35 @@ def _is_all_caps_token(token: str) -> bool:
 
 
 def _tokenize_elements(s: str) -> List[str]:
-    return [t.strip() for t in s.split(",") if t.strip()]
+    """Split element string by comma, but not commas inside brace notation (e.g. NP{S,A,P})."""
+    tokens = []
+    depth = 0
+    current: List[str] = []
+    for ch in s:
+        if ch == "{":
+            depth += 1
+            current.append(ch)
+        elif ch == "}":
+            depth -= 1
+            current.append(ch)
+        elif ch == "," and depth == 0:
+            token = "".join(current).strip()
+            if token:
+                tokens.append(token)
+            current = []
+        else:
+            current.append(ch)
+    token = "".join(current).strip()
+    if token:
+        tokens.append(token)
+    return tokens
 
 
 def validate_planar_df(df) -> List[ValidationIssue]:
     """Validate a planar structure DataFrame loaded from planar_*.tsv.
 
     Checks:
-    - Position_Number values are sequential integers 1..N
+    - Position values are sequential integers 1..N
     - Position_Name values are unique
     - Exactly one v:verbstem (keystone) row exists
     - Position_Type is Zone or Slot for every non-keystone row
@@ -65,7 +86,7 @@ def validate_planar_df(df) -> List[ValidationIssue]:
     """
     issues: List[ValidationIssue] = []
 
-    required = {"Position_Number", "Position_Name", "Position_Type", "Elements", "Class_Type"}
+    required = {"Position", "Position_Name", "Position_Type", "Elements", "Class_Type"}
     missing = required - set(df.columns)
     if missing:
         issues.append(ValidationIssue(
@@ -76,17 +97,17 @@ def validate_planar_df(df) -> List[ValidationIssue]:
 
     # Sequential position numbers
     try:
-        pos_nums = [int(p) for p in df["Position_Number"]]
+        pos_nums = [int(p) for p in df["Position"]]
     except (ValueError, TypeError):
         issues.append(ValidationIssue(
-            "error", "Position_Number",
-            "Non-integer value(s) in Position_Number column"
+            "error", "Position",
+            "Non-integer value(s) in Position column"
         ))
         pos_nums = []
 
     if pos_nums and pos_nums != list(range(1, len(pos_nums) + 1)):
         issues.append(ValidationIssue(
-            "error", "Position_Number",
+            "error", "Position",
             f"Position numbers are not sequential integers 1..{len(pos_nums)}: {pos_nums}"
         ))
 
@@ -113,7 +134,7 @@ def validate_planar_df(df) -> List[ValidationIssue]:
             f"No keystone row found (Position_Name == '{_KEYSTONE_NAME}')"
         ))
     elif len(keystone_rows) > 1:
-        bad_pos = [df["Position_Number"].iloc[i] for i in keystone_rows]
+        bad_pos = [df["Position"].iloc[i] for i in keystone_rows]
         issues.append(ValidationIssue(
             "error", "planar structure",
             f"Multiple keystone rows at positions: {bad_pos}"
