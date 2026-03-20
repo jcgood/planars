@@ -200,7 +200,8 @@ Keep the following files up to date as the project evolves. Check each one at th
 |------|-------------|
 | `CLAUDE.md` | Architecture changes, new scripts, new conventions, workflow changes |
 | `codebook.yaml` | New parameters, new analyses, qualification rules change, `[PLACEHOLDER]` or `[NEEDS REVIEW]` entries resolved |
-| `README.md` | User-facing workflow changes, setup instructions change, new dependencies |
+| `README.md` | Changes to the annotated TOC (audience routing, guide descriptions) |
+| `docs/*.md` | User-facing workflow changes, setup instructions, new dependencies, new commands |
 | `notebooks/templates/domains_boilerplate.ipynb` | Contributor notebook boilerplate changes (setup, auth, chart cell) — then run `generate-notebooks --apply` |
 | `notebooks/templates/all_languages_boilerplate.ipynb` | Coordinator notebook boilerplate changes (setup, auth, helper, chart) — then run `generate-notebooks --apply` |
 | `notebooks/templates/validation_boilerplate.ipynb` | Validation notebook boilerplate changes — then run `generate-notebooks --apply` |
