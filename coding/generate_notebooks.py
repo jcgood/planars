@@ -49,6 +49,7 @@ from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
 )
+from .glottolog import cached_entry as _cached_glottolog
 from .generate_sheets import (
     _get_clients,
     _load_drive_config,
@@ -109,6 +110,14 @@ def _replace_tokens(text: str, tokens: Dict[str, str]) -> str:
     for token, value in tokens.items():
         text = text.replace("{{" + token + "}}", value)
     return text
+
+
+def _lang_display(lang_id: str) -> str:
+    """Return 'Name [glottocode]' if cached, else the bare glottocode."""
+    meta = _cached_glottolog(lang_id)
+    if meta and meta.get("name"):
+        return f"{meta['name']} [{lang_id}]"
+    return lang_id
 
 
 # ---------------------------------------------------------------------------
@@ -336,6 +345,7 @@ def _run_generation(apply: bool) -> None:
             continue
         nb = _substitute_tokens(contributor_template, {
             "LANG_ID": lang_id,
+            "LANG_DISPLAY": _lang_display(lang_id),
             "CONFIG_FILE_ID": config_file_id,
         })
         nb = _insert_class_cells(nb, _generate_class_cells(classes))
@@ -358,6 +368,7 @@ def _run_generation(apply: bool) -> None:
             continue
         nb = _substitute_tokens(validation_template, {
             "LANG_ID": lang_id,
+            "LANG_DISPLAY": _lang_display(lang_id),
             "CONFIG_FILE_ID": config_file_id,
         })
         nb_bytes = json.dumps(nb, indent=1).encode()

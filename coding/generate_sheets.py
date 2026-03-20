@@ -45,6 +45,7 @@ import pandas as pd
 from . import make_forms as _mf
 from . import validate_planar as _val_planar
 from . import validate_diagnostics as _val_diag
+from .glottolog import cached_entry as _cached_glottolog
 from .make_forms import (
     build_element_index,
     _infer_language_id_from_planar_filename,
@@ -650,6 +651,18 @@ def main() -> None:
         # Build lang_data starting from existing data (or fresh), always include folder_id.
         lang_data: Dict = existing_lang_data or {"folder_url": folder_url, "sheets": {}}
         lang_data["folder_id"] = folder_id
+
+        # Write Glottolog metadata block if available in local cache.
+        # Notebooks read this to display "Name [glottocode]" instead of bare codes.
+        glotto = _cached_glottolog(lang_id)
+        if glotto:
+            lang_data["glottolog"] = {
+                "name":     glotto["name"],
+                "iso639_3": glotto["iso639_3"],
+                "family":   glotto["classification"][0]["name"] if glotto["classification"] else None,
+                "latitude":  glotto["latitude"],
+                "longitude": glotto["longitude"],
+            }
 
         # Create one sheet per new analysis class
         for class_name, constructions in classes_to_create.items():
