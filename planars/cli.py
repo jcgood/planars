@@ -10,6 +10,16 @@ Where <analysis> is one of:
     noninterruption
     stress
     aspiration
+    nonpermutability
+    free_occurrence
+    biuniqueness
+    repair
+    segmental
+    suprasegmental
+    pausing
+    proform
+    play_language
+    idiom
 
 Examples:
     python -m planars ciscategorial coded_data/stan1293/ciscategorial/general_filled.tsv
@@ -25,6 +35,16 @@ from planars import subspanrepetition as _subspan
 from planars import noninterruption as _nonint
 from planars import stress as _stress
 from planars import aspiration as _aspiration
+from planars import nonpermutability as _nonperm
+from planars import free_occurrence as _freeoc
+from planars import biuniqueness as _biuniq
+from planars import repair as _repair
+from planars import segmental as _segmental
+from planars import suprasegmental as _supra
+from planars import pausing as _pausing
+from planars import proform as _proform
+from planars import play_language as _play
+from planars import idiom as _idiom
 
 _ANALYSES = {
     "ciscategorial":     (_cisc.derive_v_ciscategorial_fractures,  _cisc.format_result),
@@ -32,6 +52,16 @@ _ANALYSES = {
     "noninterruption":   (_nonint.derive_noninterruption_domains,  _nonint.format_result),
     "stress":            (_stress.derive_stress_domains,           _stress.format_result),
     "aspiration":        (_aspiration.derive_aspiration_domains,   _aspiration.format_result),
+    "nonpermutability":  (_nonperm.derive,   _nonperm.format_result),
+    "free_occurrence":   (_freeoc.derive,    _freeoc.format_result),
+    "biuniqueness":      (_biuniq.derive,    _biuniq.format_result),
+    "repair":            (_repair.derive,    _repair.format_result),
+    "segmental":         (_segmental.derive, _segmental.format_result),
+    "suprasegmental":    (_supra.derive,     _supra.format_result),
+    "pausing":           (_pausing.derive,   _pausing.format_result),
+    "proform":           (_proform.derive,   _proform.format_result),
+    "play_language":     (_play.derive,      _play.format_result),
+    "idiom":             (_idiom.derive,     _idiom.format_result),
 }
 
 

@@ -131,7 +131,7 @@ From the repo root:
 python -m planars ciscategorial     coded_data/stan1293/ciscategorial/general_filled.tsv
 python -m planars noninterruption   coded_data/stan1293/noninterruption/general_filled.tsv
 python -m planars stress            coded_data/stan1293/stress/general_filled.tsv
-# etc.
+# etc. — all 15 analysis modules are available; see docs/analyses.md for the full list
 ```
 
 Results are also available via the coordinator and contributor Colab notebooks. See the [Notebooks guide](notebooks.md).
