@@ -279,15 +279,24 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 
 ### Notable open issues
 
+- **#67** — Verb-class-conditioned permutability: gap in nonpermutability qualification rules. `[diagnostics]`
+- **#66** — Fluid/multi-position formatives: annotation challenge for nonpermutability. `[diagnostics]`
+- **#65** — Prosodic minimality (bimoraicity) as a constituency diagnostic. `[diagnostics]`
+- **#64** — Culminativity constraints as a constituency diagnostic class. `[diagnostics]`
+- **#63** — Test Glottolog display names in manifest and notebooks.
+- **#62** — New contributor and language onboarding: document and consolidate setup steps.
+- **#61** — Replace hardcoded chart colors with auto-assigned colorblind-friendly palette.
 - **#60** — Clarify `aspiration.py` scope: prosodic domain vs. segmental process. `[diagnostics]`
 - **#59** — Nominal planar structures: scope expansion (Zapotec ch. 07 applies full test battery to noun complex). `[diagnostics]`
 - **#58** — Biuniqueness type 2: non-automatic allomorphy as a distinct diagnostic. `[diagnostics]`
+- **#57** — New analysis module: maximal reduplication domain. `[diagnostics]`
+- **#56** — New analysis module: non-displacement domain. `[diagnostics]`
 - **#55** — Per-language metadata/documentation file (author, source, etc.).
-- **#54** — `_CLASS_DISPLAY_NAMES` graceful fallback in `generate_notebooks.py`.
+- **#54** — ~~`_CLASS_DISPLAY_NAMES` graceful fallback in `generate_notebooks.py`~~ — implemented.
 - **#53** — ~~`generate-notebooks`: generate and upload per-language validation notebooks~~ — implemented.
 - **#52** — `integrity-check`: a single-pass project health command that reports planar, diagnostics, and annotation issues as a Markdown summary.
 - **#51** — Remove `_filled` suffix from imported TSV filenames.
-- **#50** — `--rename-element` flag on `restructure-sheets` (implemented; issue open for testing).
+- **#50** — ~~`--rename-element` flag on `restructure-sheets`~~ — implemented.
 - **#44** — Migrate tests to pytest.
 
 ## Analysis status convention
