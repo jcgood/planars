@@ -134,9 +134,11 @@ def _make_minimal_tsv(params: list[str], extra_params: list[str] = None) -> io.S
 def _check_diagnostics_vs_classes(diag_classes: dict) -> List[str]:
     """Check diagnostics.tsv entries against diagnostic_classes.yaml.
 
-    For each row in every diagnostics.tsv:
+    For each row in every diagnostics_{lang_id}.tsv:
       - The class name must appear in diagnostic_classes.yaml.
       - All required_parameters listed for that class must be present as param columns.
+      - No parameter may appear that is outside the allowed set
+        (required_parameters ∪ optional_parameters) for the class.
     """
     if not diag_classes:
         return ["diagnostic_classes.yaml not found — skipping class schema check"]
@@ -170,13 +172,24 @@ def _check_diagnostics_vs_classes(diag_classes: dict) -> List[str]:
                 if name:
                     present.add(name)
 
+            construction = row.get("Constructions", "").strip()
+
             required = diag_classes[class_name].get("required_parameters", [])
             missing = [p for p in required if p not in present]
             if missing:
-                construction = row.get("Constructions", "").strip()
                 errors.append(
                     f"[{lang}/{class_name}/{construction}] missing required "
                     f"parameter(s) from diagnostic_classes.yaml: {missing}"
+                )
+
+            # Check no undeclared parameters are used (opt-in model)
+            optional = diag_classes[class_name].get("optional_parameters", [])
+            allowed = set(required) | set(optional)
+            extra = sorted(present - allowed)
+            if extra:
+                errors.append(
+                    f"[{lang}/{class_name}/{construction}] parameter(s) not in "
+                    f"diagnostic_classes.yaml allowed set: {extra}"
                 )
 
     return errors
