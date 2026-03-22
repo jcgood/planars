@@ -246,7 +246,7 @@ def main() -> None:
 
         print(f"\n{lang_id}")
 
-        # Validate planar structure and diagnostics.tsv.
+        # Validate planar structure and diagnostics_{lang_id}.tsv.
         planar_files = sorted((CODED_DATA / lang_id / "planar_input").glob("planar_*.tsv"))
         if planar_files:
             planar_df = pd.read_csv(planar_files[0], sep="\t")

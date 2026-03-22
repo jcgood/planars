@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validation for diagnostics.tsv files.
+"""Validation for diagnostics_{lang_id}.tsv files.
 
 Called by generate-sheets and validate-coding to flag issues before sheets
 are created or revalidated.
@@ -116,11 +116,11 @@ def _parse_param_specs(value: str) -> List[tuple]:
 # ---------------------------------------------------------------------------
 
 def validate_diagnostics_df(df, lang_id: str) -> List[ValidationIssue]:
-    """Validate a diagnostics.tsv DataFrame for a given language.
+    """Validate a diagnostics_{lang_id}.tsv DataFrame for a given language.
 
     Parameters
     ----------
-    df      : DataFrame read from diagnostics.tsv
+    df      : DataFrame read from diagnostics_{lang_id}.tsv
     lang_id : expected language ID (from the planar filename)
     """
     issues: List[ValidationIssue] = []
@@ -131,7 +131,7 @@ def validate_diagnostics_df(df, lang_id: str) -> List[ValidationIssue]:
     missing_cols = _REQUIRED_COLS - set(df.columns)
     if missing_cols:
         issues.append(ValidationIssue(
-            "error", "diagnostics.tsv",
+            "error", f"diagnostics_{lang_id}.tsv",
             f"Missing required columns: {sorted(missing_cols)}"
         ))
         return issues  # can't proceed without structure
@@ -230,13 +230,13 @@ def validate_diagnostics_df(df, lang_id: str) -> List[ValidationIssue]:
     # ------------------------------------------------------------------
     if not _is_valid_glottocode(lang_id):
         issues.append(ValidationIssue(
-            "warning", "diagnostics.tsv",
+            "warning", f"diagnostics_{lang_id}.tsv",
             f"Language ID '{lang_id}' does not match Glottocode format "
             f"(expected 4 lowercase letters + 4 digits, e.g. 'arao1248')"
         ))
     elif _cached_glottocode(lang_id) is None:
         issues.append(ValidationIssue(
-            "warning", "diagnostics.tsv",
+            "warning", f"diagnostics_{lang_id}.tsv",
             f"Language ID '{lang_id}' has not been verified against Glottolog. "
             f"Run: python -m coding lookup-lang {lang_id}"
         ))

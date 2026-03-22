@@ -6,7 +6,7 @@ Run from the repo root:
     python -m coding generate-notebooks --apply   # generate and upload to Drive
 
 What this does:
-  1. Reads diagnostics.tsv for each language to discover analysis classes
+  1. Reads diagnostics_{lang_id}.tsv for each language to discover analysis classes
   2. Builds/updates planars_config.json on Drive (maps lang_id → folder_id)
   3. Generates domains_{lang_id}.ipynb for each language from the contributor template,
      with CONFIG_FILE_ID and LANG_ID baked in; uploads to each language's Drive folder
@@ -22,7 +22,7 @@ Templates live in notebooks/templates/:
   validation_boilerplate.ipynb   — validation template (substitution only)
   all_languages_boilerplate.ipynb — coordinator template (substitution + cell generation)
 
-Class cells are generated from diagnostics.tsv, not the templates, so adding a new
+Class cells are generated from diagnostics_{lang_id}.tsv, not the templates, so adding a new
 analysis class automatically includes it the next time generate-notebooks is run.
 Each analysis module must define a `derive` alias pointing to its primary derive function
 (see e.g. planars/ciscategorial.py) for this to work correctly.

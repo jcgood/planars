@@ -44,19 +44,19 @@ coding/                         Google Sheets workflow tools (python -m coding <
   make_forms.py                 Planar structure and diagnostics utilities
   generate_sheets.py            Create annotation forms in Google Drive
   update_sheets.py              Add missing rows to existing sheets
-  sync_params.py                Sync param columns when diagnostics.tsv changes
+  sync_params.py                Sync param columns when diagnostics_{lang_id}.tsv changes
   restructure_sheets.py         Archive and regenerate sheets after structural changes
   import_sheets.py              Download filled sheets to TSVs
   validate.py                   Shared validation type (ValidationIssue)
   validate_planar.py            Planar structure TSV validation
-  validate_diagnostics.py       diagnostics.tsv validation
+  validate_diagnostics.py       diagnostics_{lang_id}.tsv validation
   validate_coding.py            Annotation sheet validation + validate-coding command
   generate_notebooks.py         Generate and upload Colab notebooks
-  check_codebook.py             Consistency check: codebook.yaml ↔ modules ↔ diagnostics.tsv
+  check_codebook.py             Consistency check: codebook.yaml ↔ modules ↔ diagnostics_{lang_id}.tsv
   populate_sheets.py            Upload legacy TSV data (one-time utility)
   setup_root_folder.py          One-time Drive folder setup
 coded_data/{lang_id}/           Annotation data per language (in planars-data repo)
-  planar_input/                 Planar structure TSV + diagnostics.tsv
+  planar_input/                 Planar structure TSV + diagnostics_{lang_id}.tsv
   {class_name}/                 Filled TSVs per analysis class
   {class_name}/archive/         Superseded TSVs (after restructure-sheets)
 coded_data/synth0001/           Synthetic second-language dataset (not real data)
@@ -99,7 +99,7 @@ The **keystone position** (`v:verbstem`) is the anchor for all span computations
 
 ---
 
-## diagnostics.tsv
+## diagnostics_{lang_id}.tsv
 
 Controls which analyses and constructions are run for a language. Required columns:
 
@@ -129,7 +129,7 @@ coded_data/
   {lang_id}/
     planar_input/
       planar_{lang_id}-{date}.tsv
-      diagnostics.tsv
+      diagnostics_{lang_id}.tsv
     {class_name}/
       {construction}_filled.tsv       ← imported from Google Sheets
       archive/

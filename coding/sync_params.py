@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sync param columns in existing Google Sheets when diagnostics.tsv changes.
+"""Sync param columns in existing Google Sheets when diagnostics_{lang_id}.tsv changes.
 
 Usage:
     python -m coding sync-params                              # dry run — shows what would change
@@ -8,7 +8,7 @@ Usage:
     python -m coding sync-params --apply --rename old:new     # rename a column header in all sheets
 
 This script:
-  - Reads diagnostics.tsv to get the expected params for each class/construction
+  - Reads diagnostics_{lang_id}.tsv to get the expected params for each class/construction
   - Compares against current column headers in each sheet tab
   - In --apply mode: inserts new param columns before Comments, applies dropdown validation
   - Warns about params present in sheets but not in diagnostics (requires --remove to delete)
@@ -205,7 +205,7 @@ def _parse_rename_pair(pair: str) -> Tuple[Optional[str], str, str]:
 def main() -> None:
     """Entry point for `python -m coding sync-params`.
 
-    Compares expected param columns (from diagnostics.tsv) against actual sheet
+    Compares expected param columns (from diagnostics_{lang_id}.tsv) against actual sheet
     headers, inserts new columns before Comments, optionally removes stale columns,
     applies dropdown validation, and updates the Drive manifest if anything changed.
     In dry-run mode (no --apply) only prints what would change.
@@ -248,7 +248,7 @@ def main() -> None:
 
         for class_name, sheet_info in sheets.items():
             if class_name not in expected:
-                print(f"[{class_name}] Not in diagnostics.tsv — skipping")
+                print(f"[{class_name}] Not in diagnostics_{lang_id}.tsv — skipping")
                 continue
 
             ss = _open_spreadsheet(gc, sheet_info["spreadsheet_id"])

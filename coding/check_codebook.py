@@ -2,9 +2,9 @@
 
 Checks:
   1. Every param in each module's _REQUIRED_PARAMS is defined in codebook.yaml
-  2. Parameter names in diagnostics.tsv are defined in codebook.yaml
+  2. Parameter names in diagnostics_{lang_id}.tsv are defined in codebook.yaml
   3. Chart span label keys match the keys returned by each derive function
-  4. diagnostics.tsv class names and required parameters match diagnostic_classes.yaml
+  4. diagnostics_{lang_id}.tsv class names and required parameters match diagnostic_classes.yaml
 
 Run:
     python -m coding check-codebook
@@ -83,7 +83,7 @@ def _check_required_params(codebook: dict) -> List[str]:
 
 
 def _check_diagnostics(codebook: dict) -> List[str]:
-    """Check that param names in all diagnostics.tsv files are in codebook.yaml."""
+    """Check that param names in all diagnostics_{lang_id}.tsv files are in codebook.yaml."""
     cb = _codebook_params(codebook)
     diag_files = sorted((ROOT / "coded_data").glob("*/planar_input/diagnostics_*.tsv"))
     if not diag_files:
@@ -103,7 +103,7 @@ def _check_diagnostics(codebook: dict) -> List[str]:
                 name = spec[: spec.index("{")] .strip() if "{" in spec else spec
                 if name and name not in cb.get(class_name, set()):
                     errors.append(
-                        f"[{lang}/{class_name}] diagnostics.tsv param '{name}' "
+                        f"[{lang}/{class_name}] diagnostics_{lang}.tsv param '{name}' "
                         f"not found in codebook"
                     )
     return errors
@@ -132,7 +132,7 @@ def _make_minimal_tsv(params: list[str], extra_params: list[str] = None) -> io.S
 
 
 def _check_diagnostics_vs_classes(diag_classes: dict) -> List[str]:
-    """Check diagnostics.tsv entries against diagnostic_classes.yaml.
+    """Check diagnostics_{lang_id}.tsv entries against diagnostic_classes.yaml.
 
     For each row in every diagnostics_{lang_id}.tsv:
       - The class name must appear in diagnostic_classes.yaml.
@@ -158,7 +158,7 @@ def _check_diagnostics_vs_classes(diag_classes: dict) -> List[str]:
 
             if class_name not in diag_classes:
                 errors.append(
-                    f"[{lang}] diagnostics.tsv class '{class_name}' not in "
+                    f"[{lang}] diagnostics_{lang}.tsv class '{class_name}' not in "
                     f"diagnostic_classes.yaml"
                 )
                 continue
@@ -323,9 +323,9 @@ def main() -> None:
 
     Runs four consistency checks and exits with status 1 if any fail:
     1. Every _REQUIRED_PARAMS param in each analysis module is in codebook.yaml.
-    2. Every param name in diagnostics.tsv files is in codebook.yaml.
+    2. Every param name in diagnostics_{lang_id}.tsv files is in codebook.yaml.
     3. Every span key referenced in charts.py exists in the corresponding derive result.
-    4. diagnostics.tsv class names and required parameters match diagnostic_classes.yaml.
+    4. diagnostics_{lang_id}.tsv class names and required parameters match diagnostic_classes.yaml.
 
     Also prints a summary of [NEEDS REVIEW] / [PLACEHOLDER] entries as a warning
     (does not cause a non-zero exit).
@@ -337,13 +337,13 @@ def main() -> None:
     print("1. Checking _REQUIRED_PARAMS vs codebook.yaml ...")
     all_errors.extend(_check_required_params(codebook))
 
-    print("2. Checking diagnostics.tsv vs codebook.yaml ...")
+    print("2. Checking diagnostics_{lang_id}.tsv vs codebook.yaml ...")
     all_errors.extend(_check_diagnostics(codebook))
 
     print("3. Checking chart span keys vs derive function result dicts ...")
     all_errors.extend(_check_chart_keys())
 
-    print("4. Checking diagnostics.tsv vs diagnostic_classes.yaml ...")
+    print("4. Checking diagnostics_{lang_id}.tsv vs diagnostic_classes.yaml ...")
     all_errors.extend(_check_diagnostics_vs_classes(diag_classes))
 
     print()

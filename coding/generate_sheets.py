@@ -279,7 +279,7 @@ def _move_to_folder(drive, file_id: str, folder_id: str) -> None:
 
 
 def _upload_planar_input_files(drive, planar_dir: Path, folder_id: str) -> None:
-    """Upload planar_*.tsv and diagnostics.tsv to the language's Drive folder.
+    """Upload planar_*.tsv and diagnostics_{lang_id}.tsv to the language's Drive folder.
 
     Updates existing files in place if already present, creates new ones otherwise.
     This lets collaborators view the planar structure alongside their annotation sheets.
@@ -536,7 +536,7 @@ def main() -> None:
 
     Iterates over all planar_*.tsv files in coded_data/*/planar_input/, creates
     one Google Sheet per analysis class (skipping existing ones unless --force),
-    uploads planar_*.tsv and diagnostics.tsv to each language's Drive folder so
+    uploads planar_*.tsv and diagnostics_{lang_id}.tsv to each language's Drive folder so
     collaborators can view the planar structure alongside their annotation sheets,
     uploads per-language manifests to Drive, and regenerates contributor notebooks.
     """

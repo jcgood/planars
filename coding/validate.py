@@ -7,7 +7,7 @@ Imports from here:
 Domain-specific validation lives in:
   validate_planar.py      — planar structure TSV validation
   validate_coding.py      — annotation sheet validation + validate-coding command
-  validate_diagnostics.py — diagnostics.tsv validation
+  validate_diagnostics.py — diagnostics_{lang_id}.tsv validation
 """
 from __future__ import annotations
 

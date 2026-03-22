@@ -79,7 +79,7 @@ git pull
 
 1. In `coded_data/`, create:
    - `{lang_id}/planar_input/planar_{lang_id}-{date}.tsv` — planar structure
-   - `{lang_id}/planar_input/diagnostics.tsv` — analysis classes and parameters
+   - `{lang_id}/planar_input/diagnostics_{lang_id}.tsv` — analysis classes and parameters
 
    See [Data management](data-management.md) for the required format of both files.
 
@@ -149,7 +149,7 @@ python -m coding update-sheets           # dry run — show what would change
 python -m coding update-sheets --apply   # add missing rows to existing sheets
 ```
 
-### Updating parameters in diagnostics.tsv
+### Updating parameters in diagnostics_{lang_id}.tsv
 
 When `diagnostics_{lang_id}.tsv` param columns change (new parameters added, parameters renamed):
 
