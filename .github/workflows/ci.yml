@@ -23,7 +23,7 @@ jobs:
           path: _planars_data
 
       - name: Merge annotation data into coded_data
-        run: cp -r _planars_data/. coded_data/
+        run: rsync -r --exclude='.git' _planars_data/ coded_data/
 
       - name: Set up Python
         uses: actions/setup-python@v5
