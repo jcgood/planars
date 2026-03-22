@@ -104,7 +104,7 @@ The `-e .` line in `requirements.txt` installs the `planars` package in editable
 
 ## Architecture and data flow
 
-This is a linguistic typology analysis project for morphosyntactic domain derivation. The workflow is:
+This is a linguistic typology analysis project for morphosyntactic domain derivation. The ultimate analytical goal is to test three hypotheses about constituency structure within a language (developed in Good, "Domains of linearization, constituency, and wordhood in Chichewa," draft): (i) **Tree hypothesis** — the domains of constituency diagnostics should nest within each other; (ii) **Morphosyntax/phonology divide hypothesis** — deviations from nesting are allowed between morphosyntactic and phonological diagnostics, but not within each class; (iii) **Word hypothesis** — a set of diagnostics will converge on a consistently small span that can be identified as a word domain, with the larger domain completely partitioned into such spans. The span computations performed by planars' analysis modules are the primary instrument for testing these hypotheses. The workflow is:
 
 1. **Input** (`coded_data/{lang_id}/planar_input/`): `planar_<lang>-<date>.tsv` defines positions and elements for a language. `diagnostics.tsv` specifies which analyses to run (class, construction, parameters). `coding/make_forms.py` provides utility functions used by other scripts (`build_element_index`, `_read_diagnostics_for_language`) — it no longer generates blank TSVs directly.
 
@@ -276,6 +276,17 @@ Language files are in `coded_data/arao1248/`. Source: Adam Tallman, "Graded cons
 - `subspanrepetition/tso_clause_linkage_filled.tsv` — maximal XP1–connector (1–17), minimal vpref–tamesuf (4–14); rightXP excluded from tso-clauses
 
 All four analyses run and produce spans. Source: Adam Tallman §4.5 (langsci/291, ch. 13). Source .tex at `/tmp/araona.tex` (may need re-downloading from langsci/291 GitHub if gone).
+
+### Chichewa (nyan1308) — planned
+
+Source: Jeff Good, "Domains of linearization, constituency, and wordhood in Chichewa" (draft ms.). Glottolog ID: nyan1308. First African language in planars; first language with an active cross-theoretic wordhood debate.
+
+**Documented in source paper, not yet set up in planars:**
+- 22-position clausal planar structure (Question Marker through postobject zone; keystone at Position 10, verb root)
+- 96 constituency diagnostics (57 base + fractures) across six categories: free occurrence (indeterminate), morphosyntactic (non-interruptability, non-permutability, ciscategorial selection, repetition, biuniqueness), phonological (6 segmental processes + penultimate lengthening accentual), tonosegmental (29 tonal melody domains — a category absent from Tallman 2021 and TallmanEtAl 2024, needed for Bantu), and intonational (12 pitch/downdrift domains)
+- Results (draft): 26 distinct domains, largely nesting, centered on verb root; forest visualization via `NonCollaborative/scripts/treeTraversal.py`
+
+Onboarding will require scaffolding `tonosegmental` and `intonational` analysis modules (see issues #70, #71) before the full diagnostic set can be run.
 
 ## Issue tracking
 
