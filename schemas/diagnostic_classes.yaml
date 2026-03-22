@@ -1,26 +1,26 @@
 # Diagnostic Classes
-# Normative schema for analysis classes used in diagnostics.tsv.
+# Normative schema for analysis classes used in diagnostics_{lang_id}.tsv.
 #
 # This file is the source of truth for:
 #   - Which analysis classes exist and what they cover
 #   - When each class is applicable (universal vs. conditional)
 #   - Whether a class uses one general construction or is construction-specific
-#   - Which parameters each class requires in diagnostics.tsv
+#   - Which parameters each class requires in diagnostics_{lang_id}.tsv
 #   - Known construction types (non-exhaustive examples for variable classes)
 #
 # Relationship to other files:
 #   schemas/codebook.yaml         — parameter semantics, allowed values, qualification rules
 #   schemas/diagnostic_classes.yaml (this file) — class structure, applicability, construction types
-#   diagnostics.tsv       — per-language instance of these classes, validated against this file
+#   diagnostics_{lang_id}.tsv       — per-language instance of these classes, validated against this file
 #   docs/analyses.md      — human reader's guide pointing to both
 #
-# check-codebook validates diagnostics.tsv against this file:
+# check-codebook validates diagnostics_{lang_id}.tsv against this file:
 #   - required parameters must be present as columns
 #   - conditional classes should have applicability_conditions met
 #   - construction names follow the naming rules for each specificity type
 #
 # Human-editable workflow: edit this file, then ask Claude to propagate changes
-# to diagnostics.tsv and scaffold any new analysis modules.
+# to diagnostics_{lang_id}.tsv and scaffold any new analysis modules.
 #
 # Fields:
 #   name                     machine name (matches planars/ module and coded_data/ folder)
@@ -31,7 +31,7 @@
 #   applicability_conditions prose description of when a conditional class applies
 #   specificity              general | construction_specific
 #   known_constructions      non-exhaustive examples (construction_specific classes only)
-#   required_parameters      parameter columns that must appear in diagnostics.tsv for this class
+#   required_parameters      parameter columns that must appear in diagnostics_{lang_id}.tsv for this class
 #   optional_parameters      parameter columns that may appear but are not required
 #   status                   stable | "[NEEDS REVIEW]" | "[PLACEHOLDER]"
 #   parameter_set_status     stable | "[PROVISIONAL]" (expected to grow as more languages

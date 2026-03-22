@@ -256,7 +256,7 @@ def main() -> None:
                 for issue in planar_issues:
                     print(f"    {issue}")
 
-            diag_path = planar_files[0].parent / "diagnostics.tsv"
+            diag_path = planar_files[0].parent / f"diagnostics_{lang_id}.tsv"
             if diag_path.exists():
                 diag_df = pd.read_csv(diag_path, sep="\t")
                 diag_issues = validate_diagnostics_df(diag_df, lang_id)

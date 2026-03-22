@@ -157,20 +157,16 @@ def build_element_index(planar_filename: str) -> ElementIndex:
     return element_to_info
 
 
-def _resolve_diagnostics_path() -> Path:
-    """Find diagnostics file in the script folder.
+def _resolve_diagnostics_path(lang_id: str) -> Path:
+    """Find the language-specific diagnostics file in the planar_input folder.
 
-    Preferred name: diagnostics.tsv
-    Also accepts a common misspelling used earlier: diagnotics.tsv
+    Expected name: diagnostics_{lang_id}.tsv
     """
     base = Path(DATA_DIR) if DATA_DIR else Path(__file__).resolve().parent
-    p1 = base / "diagnostics.tsv"
-    if p1.exists():
-        return p1
-    p2 = base / "diagnotics.tsv"
-    if p2.exists():
-        return p2
-    raise FileNotFoundError("Could not find diagnostics.tsv (or diagnotics.tsv) in the script directory.")
+    p = base / f"diagnostics_{lang_id}.tsv"
+    if p.exists():
+        return p
+    raise FileNotFoundError(f"Could not find diagnostics_{lang_id}.tsv in {base}")
 
 
 def _parse_csv_list(value: str) -> List[str]:
@@ -218,12 +214,12 @@ def _parse_param_specs(value: str) -> Tuple[List[str], Dict[str, List[str]]]:
 def _read_diagnostics_for_language(
     language_id: str,
 ) -> List[Tuple[str, str, List[str], Dict[str, List[str]]]]:
-    """Read diagnostics.tsv and return rows for a language.
+    """Read diagnostics_{lang_id}.tsv and return rows for a language.
 
     Each row is (class_name, construction, param_names, param_values) where
     param_values maps each parameter name to its list of allowed values.
     """
-    diag_path = _resolve_diagnostics_path()
+    diag_path = _resolve_diagnostics_path(language_id)
     df = pd.read_csv(diag_path, sep="\t", header=0, dtype=str, keep_default_na=False)
 
     required = {"Class", "Language", "Constructions", "Parameters"}

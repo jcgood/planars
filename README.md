@@ -31,7 +31,7 @@ python -m venv .venv
 | [Coordinator guide](docs/coordinator-guide.md) | Project coordinators managing data and sheets | Repository setup, daily git workflow, adding languages, all `coding/` commands |
 | [Analyses](docs/analyses.md) | Researchers and library contributors | Span types, all 15 analysis modules, parameter reference, `[AUTO-DERIVED]` status notes |
 | [Notebooks](docs/notebooks.md) | All users | Contributor, coordinator, and validation Colab notebooks — what they contain and how to use them |
-| [Data management](docs/data-management.md) | Coordinators and developers | Two-repo architecture, planar input format, `diagnostics.tsv` format, `coded_data/` layout |
+| [Data management](docs/data-management.md) | Coordinators and developers | Two-repo architecture, planar input format, `diagnostics_{lang_id}.tsv` format, `coded_data/` layout |
 | [Testing](docs/testing.md) | Developers | Regression snapshot tests, synthetic test language (`synth0001`) |
 
 For parameter definitions, valid values, and qualification rules, see `schemas/codebook.yaml`.

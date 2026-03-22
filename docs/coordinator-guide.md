@@ -151,7 +151,7 @@ python -m coding update-sheets --apply   # add missing rows to existing sheets
 
 ### Updating parameters in diagnostics.tsv
 
-When `diagnostics.tsv` param columns change (new parameters added, parameters renamed):
+When `diagnostics_{lang_id}.tsv` param columns change (new parameters added, parameters renamed):
 
 ```bash
 python -m coding sync-params                                  # dry run
@@ -198,7 +198,7 @@ Regenerates and uploads contributor (`domains_{lang_id}.ipynb`), coordinator (`a
 python -m coding check-codebook
 ```
 
-Verifies that parameter names in `schemas/codebook.yaml`, analysis modules, and `diagnostics.tsv` are consistent. Run this after adding new parameters or analyses.
+Verifies that parameter names in `schemas/codebook.yaml`, analysis modules, and `diagnostics_{lang_id}.tsv` are consistent. Run this after adding new parameters or analyses.
 
 ---
 
@@ -206,4 +206,4 @@ Verifies that parameter names in `schemas/codebook.yaml`, analysis modules, and 
 
 The Drive manifest (`planars_config.json`) is stored on Drive and contains all languages' sheet metadata and folder IDs. A local `drive_config.json` (gitignored) bootstraps the Drive lookup — it holds `_root_folder_id`, `_planars_config_file_id`, and per-language `folder_id` and `domains_notebook_file_id`.
 
-Each `generate-sheets` run also uploads `planar_*.tsv` and `diagnostics.tsv` to the language's Drive folder so collaborators can view the planar structure alongside their annotation sheets.
+Each `generate-sheets` run also uploads `planar_*.tsv` and `diagnostics_{lang_id}.tsv` to the language's Drive folder so collaborators can view the planar structure alongside their annotation sheets.

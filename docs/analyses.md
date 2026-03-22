@@ -22,12 +22,12 @@ Each entry contains:
 | `applicability_conditions` | Prose description of when a conditional class applies |
 | `specificity` | `general` (one TSV per language) or `construction_specific` (one TSV per construction) |
 | `known_constructions` | Non-exhaustive examples for construction-specific classes |
-| `required_parameters` | Parameter columns that must appear in `diagnostics.tsv` |
+| `required_parameters` | Parameter columns that must appear in `diagnostics_{lang_id}.tsv` |
 | `status` | `stable`, `[NEEDS REVIEW]`, or `[PLACEHOLDER]` |
 
 ### Human-editable workflow
 
-To add a new analysis class: edit `schemas/diagnostic_classes.yaml`, then ask Claude to propagate the changes to `diagnostics.tsv` and scaffold the new `planars/` module. `check-codebook` validates existing `diagnostics.tsv` files against this schema.
+To add a new analysis class: edit `schemas/diagnostic_classes.yaml`, then ask Claude to propagate the changes to `diagnostics_{lang_id}.tsv` and scaffold the new `planars/` module. `check-codebook` validates existing `diagnostics_{lang_id}.tsv` files against this schema.
 
 ---
 

@@ -285,7 +285,8 @@ def _upload_planar_input_files(drive, planar_dir: Path, folder_id: str) -> None:
     This lets collaborators view the planar structure alongside their annotation sheets.
     """
     import io
-    paths = list(planar_dir.glob("planar_*.tsv")) + [planar_dir / "diagnostics.tsv"]
+    lang_id = planar_dir.parent.name
+    paths = list(planar_dir.glob("planar_*.tsv")) + [planar_dir / f"diagnostics_{lang_id}.tsv"]
     for path in paths:
         if not path.exists():
             continue
@@ -586,8 +587,8 @@ def main() -> None:
             for issue in planar_issues:
                 print(f"    {issue}")
 
-        # Validate diagnostics.tsv; warn but do not block sheet generation.
-        diag_path = planar_dir / "diagnostics.tsv"
+        # Validate diagnostics_{lang_id}.tsv; warn but do not block sheet generation.
+        diag_path = planar_dir / f"diagnostics_{lang_id}.tsv"
         if diag_path.exists():
             diag_df = pd.read_csv(diag_path, sep="\t")
             diag_issues = _val_diag.validate_diagnostics_df(diag_df, lang_id)

@@ -125,9 +125,9 @@ def build_plan(
     src_pi = src_root / "planar_input"
     dst_pi = dst_root / "planar_input"
 
-    # diagnostics.tsv — only lang ID changes
-    diag_text = (src_pi / "diagnostics.tsv").read_text().replace(SRC_LANG, DST_LANG)
-    plan.append((dst_pi / "diagnostics.tsv", diag_text))
+    # diagnostics_{lang_id}.tsv — only lang ID changes
+    diag_text = (src_pi / f"diagnostics_{SRC_LANG}.tsv").read_text().replace(SRC_LANG, DST_LANG)
+    plan.append((dst_pi / f"diagnostics_{DST_LANG}.tsv", diag_text))
 
     # planar TSV — drop positions, renumber, update lang ID
     planar_src = next(src_pi.glob("planar_*.tsv"))

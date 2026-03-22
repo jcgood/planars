@@ -85,9 +85,9 @@ def _check_required_params(codebook: dict) -> List[str]:
 def _check_diagnostics(codebook: dict) -> List[str]:
     """Check that param names in all diagnostics.tsv files are in codebook.yaml."""
     cb = _codebook_params(codebook)
-    diag_files = sorted((ROOT / "coded_data").glob("*/planar_input/diagnostics.tsv"))
+    diag_files = sorted((ROOT / "coded_data").glob("*/planar_input/diagnostics_*.tsv"))
     if not diag_files:
-        return ["No diagnostics.tsv files found under coded_data/"]
+        return ["No diagnostics_*.tsv files found under coded_data/"]
 
     errors = []
     for diag_path in diag_files:
@@ -141,7 +141,7 @@ def _check_diagnostics_vs_classes(diag_classes: dict) -> List[str]:
     if not diag_classes:
         return ["diagnostic_classes.yaml not found — skipping class schema check"]
 
-    diag_files = sorted((ROOT / "coded_data").glob("*/planar_input/diagnostics.tsv"))
+    diag_files = sorted((ROOT / "coded_data").glob("*/planar_input/diagnostics_*.tsv"))
     if not diag_files:
         return []
 

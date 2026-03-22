@@ -6,7 +6,7 @@ Usage:
 Commands:
     generate-sheets      Create/update Google Sheets annotation forms
     generate-notebooks   Generate and upload contributor + coordinator notebooks
-    sync-params          Sync parameter columns when diagnostics.tsv changes
+    sync-params          Sync parameter columns when diagnostics_{lang_id}.tsv changes
     update-sheets        Add missing rows/columns to existing sheets
     import-sheets        Download filled sheets to TSVs
     validate-coding      Re-validate annotation sheets and update cell highlighting
