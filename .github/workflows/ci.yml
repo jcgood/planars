@@ -25,6 +25,9 @@ jobs:
       - name: Merge annotation data into coded_data
         run: rsync -r --exclude='.git' _planars_data/ coded_data/
 
+      - name: Remove legacy _filled.tsv filenames
+        run: find coded_data -name "*_filled.tsv" -delete
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:

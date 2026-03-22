@@ -21,7 +21,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 SNAPSHOTS_DIR = ROOT / "tests" / "snapshots"
 
-_FILLED_RE = re.compile(r"\.tsv$", re.IGNORECASE)
+_FILLED_RE  = re.compile(r"\.tsv$", re.IGNORECASE)
+_LEGACY_RE  = re.compile(r"_(fill(?:ed)?|full|test)\.tsv$", re.IGNORECASE)
 _SUFFIX_RE  = re.compile(r"_(filled?|full|test|blank)$", re.IGNORECASE)
 _CAMEL_RE   = re.compile(r"(?<=[a-z])(?=[A-Z])")
 
@@ -54,7 +55,9 @@ TASKS = [
     for lang_dir in sorted((ROOT / "coded_data").iterdir())
     if lang_dir.is_dir()
     for tsv_path in sorted((lang_dir / class_name).glob("*.tsv"))
-    if (lang_dir / class_name).exists() and _FILLED_RE.search(tsv_path.name)
+    if (lang_dir / class_name).exists()
+    and _FILLED_RE.search(tsv_path.name)
+    and not _LEGACY_RE.search(tsv_path.name)
 ]
 
 
