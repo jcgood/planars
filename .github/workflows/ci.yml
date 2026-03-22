@@ -15,6 +15,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check out planars-data
+        uses: actions/checkout@v4
+        with:
+          repository: jcgood/planars-data
+          token: ${{ secrets.PLANARS_DATA_TOKEN }}
+          path: coded_data
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
