@@ -21,24 +21,30 @@ from planars import idiom as _idiom
 
 
 # --- Colors (one per analysis type) ---
+#
+# Colorblind-friendly palette drawn from Paul Tol's Bright and Muted schemes
+# plus two Okabe-Ito colors to reach 15.
+# Reference: https://personal.sron.nl/~pault/
+# Colors are auto-assigned in _CLASS_HANDLERS registration order so new
+# analyses get a color automatically without manual editing here.
 
-_COLORS = {
-    "ciscategorial":     "#BC3C29",
-    "subspanrepetition": "#0072B5",
-    "noninterruption":   "#20845E",
-    "stress":            "#E18727",
-    "aspiration":        "#7876B1",
-    "nonpermutability":  "#54B0E4",
-    "free_occurrence":   "#DE7EAC",
-    "proform":           "#2CA02C",
-    "idiom":             "#FF7F0E",
-    "biuniqueness":      "#8C564B",
-    "repair":            "#17BECF",
-    "segmental":         "#BCBD22",
-    "suprasegmental":    "#9467BD",
-    "pausing":           "#E377C2",
-    "play_language":     "#7F7F7F",
-}
+_PALETTE = [
+    "#4477AA",  # blue        (Tol Bright)
+    "#EE6677",  # red         (Tol Bright)
+    "#228833",  # green       (Tol Bright)
+    "#CCBB44",  # yellow      (Tol Bright)
+    "#66CCEE",  # cyan        (Tol Bright)
+    "#AA3377",  # purple      (Tol Bright)
+    "#BBBBBB",  # grey        (Tol Bright)
+    "#332288",  # indigo      (Tol Muted)
+    "#CC6677",  # rose        (Tol Muted)
+    "#DDCC77",  # sand        (Tol Muted)
+    "#44AA99",  # teal        (Tol Muted)
+    "#882255",  # wine        (Tol Muted)
+    "#AA4499",  # mauve       (Tol Muted)
+    "#E69F00",  # orange      (Okabe-Ito)
+    "#0072B2",  # dark blue   (Okabe-Ito)
+]
 
 # --- Span label mappings ---
 
@@ -198,6 +204,13 @@ _CLASS_HANDLERS = {
     "proform":           (_proform.derive_proform_domains,            _make_simple_rows("proform")),
     "play_language":     (_play.derive_play_language_domains,         _make_simple_rows("play_language")),
     "idiom":             (_idiom.derive_idiom_domains,                _make_simple_rows("idiom")),
+}
+
+# Auto-assign colors from _PALETTE in registration order.
+# Cycles if more analyses are registered than palette entries.
+_COLORS = {
+    name: _PALETTE[i % len(_PALETTE)]
+    for i, name in enumerate(_CLASS_HANDLERS)
 }
 
 
