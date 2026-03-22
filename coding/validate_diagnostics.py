@@ -11,6 +11,9 @@ Checks:
   4. Class names    — class corresponds to a planars/ analysis module
   5. Constructions  — 'general' must be alone; no duplicates within a class
   6. Glottocode     — lang_id matches Glottocode format; advisory if not cached
+  7. Schema conform — every parameter is in the allowed set for its class
+                      (required_parameters ∪ optional_parameters in
+                      diagnostic_classes.yaml)
 """
 from __future__ import annotations
 
@@ -46,6 +49,28 @@ def _known_analysis_classes() -> Set[str]:
         except Exception:
             pass
     return classes
+
+
+def _diagnostic_class_allowed_params() -> Dict[str, Set[str]]:
+    """Return {class_name: set_of_allowed_param_names} from diagnostic_classes.yaml.
+
+    Allowed = required_parameters ∪ optional_parameters.
+    Returns an empty dict if the schema file is missing.
+    """
+    path = ROOT / "schemas" / "diagnostic_classes.yaml"
+    if not path.exists():
+        return {}
+    with path.open(encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+    result: Dict[str, Set[str]] = {}
+    for cls in data.get("classes", []):
+        name = cls.get("name", "")
+        if not name:
+            continue
+        allowed: Set[str] = set(cls.get("required_parameters", []))
+        allowed.update(cls.get("optional_parameters", []))
+        result[name] = allowed
+    return result
 
 
 def _codebook_param_names() -> Set[str]:
@@ -215,5 +240,29 @@ def validate_diagnostics_df(df, lang_id: str) -> List[ValidationIssue]:
             f"Language ID '{lang_id}' has not been verified against Glottolog. "
             f"Run: python -m coding lookup-lang {lang_id}"
         ))
+
+    # ------------------------------------------------------------------
+    # 7. Schema conformance — params must be in the allowed set for class
+    # ------------------------------------------------------------------
+    allowed_by_class = _diagnostic_class_allowed_params()
+
+    if allowed_by_class:
+        for i, row in df.iterrows():
+            class_name = str(row.get("Class", "")).strip()
+            params_raw = str(row.get("Parameters", "")).strip()
+            location   = f"row {i + 2} [{class_name}]"
+
+            if not class_name or class_name not in allowed_by_class:
+                continue  # unknown class already flagged in check 4
+
+            allowed = allowed_by_class[class_name]
+            for name, _values, _raw in _parse_param_specs(params_raw):
+                if name and name not in allowed:
+                    issues.append(ValidationIssue(
+                        "warning", location,
+                        f"Parameter '{name}' is not in the allowed set for class "
+                        f"'{class_name}' in diagnostic_classes.yaml "
+                        f"(allowed: {sorted(allowed)})"
+                    ))
 
     return issues
