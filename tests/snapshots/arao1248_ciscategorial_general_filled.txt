@@ -5,6 +5,7 @@ NOTE: Some cells are unannotated — spans computed treating blanks as non-quali
   V-combines: ['adverbials', 'interrogatives', 'NP{NP,PP,S}', 'dipa', 'pa'] … (72 total)
   N-combines: ['adverbials', 'interrogatives', 'NP{NP,PP,S}', 'dipa', 'pa'] … (72 total)
   A-combines: ['adverbials', 'interrogatives', 'NP{NP,PP,S}', 'dipa', 'pa'] … (72 total)
+  PRED-combines: ['adverbials', 'interrogatives', 'NP{NP,PP,S}', 'dipa', 'pa'] … (72 total)
 
 Keystone position: 6 (v:verbstem)
 

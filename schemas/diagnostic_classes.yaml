@@ -58,11 +58,11 @@ classes:
       (elements that select predicates broadly) may be needed.
     specificity: general
     required_parameters: [V-combines, N-combines, A-combines]
-    optional_parameters: []
+    optional_parameters: [PRED-combines]  # predicate-flexible languages (e.g., Araona,
+      # Chorote ch. 15) where non-verbal predicates take verbal TAME markers — issue #39.
     status: stable
-    parameter_set_status: "[PROVISIONAL]"  # PRED-combines needed for predicate-flexible
-      # languages (e.g., Chorote ch. 15) where non-verbal predicates take verbal TAME
-      # markers — see issue #39.
+    parameter_set_status: "[PROVISIONAL]"  # Parameter set may grow further as more
+      # predicate-flexible languages are onboarded; other *-combines types not yet attested.
 
   - name: subspanrepetition
     display_name: "Subspan Repetition"

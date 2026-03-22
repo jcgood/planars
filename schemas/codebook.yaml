@@ -63,6 +63,15 @@ analyses:
         description: >
           Whether the element can semantically combine with an adjectival head.
 
+      - name: PRED-combines
+        values: [y, n]
+        description: >
+          Whether the element can semantically combine with a predicative head of any
+          category (verbal, nominal, or adjectival). Used in predicate-flexible languages
+          where non-verbal predicates take the same TAME markers as verbal predicates
+          (e.g. Araona). An element with PRED-combines=y is transcategorial and therefore
+          not v-ciscategorial. Optional: omit for languages where no such category exists.
+
     qualification_rule: >
       An element is v-ciscategorial if V-combines=y AND N-combines=n AND A-combines=n
       (and any further combine parameters are also n).
