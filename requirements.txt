@@ -61,7 +61,6 @@ pandas==3.0.1
 pandocfilters==1.5.1
 parso==0.8.6
 pexpect==4.9.0
--e git+https://github.com/jcgood/planars.git@5179ff8a741c2b08902d5f34701c8f9869c9bb1e#egg=planars
 platformdirs==4.9.4
 plotly==6.6.0
 prometheus_client==0.24.1
