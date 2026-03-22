@@ -91,8 +91,10 @@ python -m planars noninterruption coded_data/stan1293/noninterruption/general_fi
 python -m planars stress coded_data/stan1293/stress/general_filled.tsv
 
 # Regression testing
-python generate_snapshots.py   # regenerate baseline snapshots
-python check_snapshots.py      # verify current output matches snapshots
+pytest                         # run all tests (io, restructure, snapshots)
+python generate_snapshots.py   # regenerate snapshot baselines after intentional output changes
+                               # review with: git diff tests/snapshots/
+python check_snapshots.py      # quick CLI alternative to pytest for snapshot-only checks
 ```
 
 **Setup** (first time or after recreating the venv):
@@ -176,7 +178,7 @@ The planars data model was developed independently but shares several fundamenta
 
 `coded_data/{lang_id}/{class_name}/` contains the filled TSVs imported from Google Sheets (local dev use only — Colab reads directly from Sheets). Archive TSVs live in `coded_data/{lang_id}/{class_name}/archive/`.
 
-`generate_snapshots.py` and `check_snapshots.py` at the repo root drive regression testing. Snapshots live in `tests/snapshots/`.
+`generate_snapshots.py` at the repo root regenerates snapshot baselines; `pytest` (via `tests/test_snapshots.py`) runs the snapshot regression tests alongside all other tests. Snapshots live in `tests/snapshots/`. Auto-discovers all planars modules with `derive` + `format_result`. `check_snapshots.py` remains as a quick CLI alternative for snapshot-only checks.
 
 `coded_data/synth0001/` is a synthetic second-language dataset for multi-language testing (not real data). It has a genuinely different planar structure (28 positions, keystone at 23) derived from `stan1293` by dropping 9 positions and flipping ~25% of parameter values. `tests/make_synthetic_lang.py` generates it (`--apply` to write, `--clean --apply` to remove).
 
@@ -327,7 +329,7 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 - **#52** — `integrity-check`: a single-pass project health command that reports planar, diagnostics, and annotation issues as a Markdown summary.
 - **#51** — Remove `_filled` suffix from imported TSV filenames.
 - **#50** — ~~`--rename-element` flag on `restructure-sheets`~~ — implemented.
-- **#44** — Migrate tests to pytest.
+- **#44** — ~~Migrate tests to pytest~~ — implemented.
 
 ## Work phases
 

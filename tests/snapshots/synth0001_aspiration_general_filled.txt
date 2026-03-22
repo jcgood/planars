@@ -1,0 +1,19 @@
+Synth0001 Aspiration General
+============================
+
+NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
+  independence: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
+  obligatory: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
+  stressed: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
+
+Keystone position: 23 (v:verbstem)
+
+Minimal partial blocked positions: []
+Minimal complete blocked positions: []
+Maximal partial blocked positions:  []
+Maximal complete blocked positions: []
+
+Minimal aspiration span (partial):  positions 1–28  (v:leftedge → v:rightedge)
+Minimal aspiration span (complete): positions 1–28  (v:leftedge → v:rightedge)
+Maximal aspiration span (partial):  positions 1–28  (v:leftedge → v:rightedge)
+Maximal aspiration span (complete): positions 1–28  (v:leftedge → v:rightedge)

@@ -25,3 +25,6 @@ Repository = "https://github.com/jcgood/planars"
 
 [tool.setuptools.packages.find]
 include = ["planars*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
