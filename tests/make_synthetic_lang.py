@@ -138,7 +138,7 @@ def build_plan(
     for class_dir in sorted(src_root.iterdir()):
         if not class_dir.is_dir() or class_dir.name in ("planar_input", "archive", ".DS_Store"):
             continue
-        for tsv in sorted(class_dir.glob("*_filled.tsv")):
+        for tsv in sorted(class_dir.glob("*.tsv")):
             content = _transform_filled_tsv(tsv.read_text(), pos_map, rng)
             plan.append((dst_root / class_dir.name / tsv.name, content))
 
@@ -198,7 +198,7 @@ def main() -> None:
             print(f"  wrote  {rel}")
         else:
             print(f"  would write  {rel}")
-        if "filled" in dst.name:
+        if dst.suffix == ".tsv" and dst.parent.name != "planar_input":
             src_tsv = src_root / dst.parent.name / dst.name
             if src_tsv.exists():
                 src_lines = src_tsv.read_text().splitlines()[1:]

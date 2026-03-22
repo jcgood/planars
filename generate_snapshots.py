@@ -21,7 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 SNAPSHOTS_DIR = ROOT / "tests" / "snapshots"
 
-_FILLED_RE = re.compile(r"_(fill(?:ed)?|full|test)\.tsv$", re.IGNORECASE)
+_FILLED_RE = re.compile(r"\.tsv$", re.IGNORECASE)
 _SUFFIX_RE  = re.compile(r"_(filled?|full|test|blank)$", re.IGNORECASE)
 _CAMEL_RE   = re.compile(r"(?<=[a-z])(?=[A-Z])")
 

@@ -22,8 +22,8 @@ Where <analysis> is one of:
     idiom
 
 Examples:
-    python -m planars ciscategorial coded_data/stan1293/ciscategorial/general_filled.tsv
-    python -m planars stress coded_data/stan1293/stress/general_filled.tsv
+    python -m planars ciscategorial coded_data/stan1293/ciscategorial/general.tsv
+    python -m planars stress coded_data/stan1293/stress/general.tsv
 """
 from __future__ import annotations
 

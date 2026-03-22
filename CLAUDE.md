@@ -25,7 +25,7 @@ git push
 
 # Committing data changes (cd into coded_data first)
 cd coded_data
-git add stan1293/ciscategorial/general_filled.tsv
+git add stan1293/ciscategorial/general.tsv
 git commit -m "..."
 git push
 
@@ -85,10 +85,10 @@ python -m coding lookup-lang --all               # list all cached languages
 python -m coding setup-root-folder
 
 # Run a single analysis via the CLI (from repo root)
-python -m planars ciscategorial coded_data/stan1293/ciscategorial/general_filled.tsv
-python -m planars subspanrepetition coded_data/stan1293/subspanrepetition/andCoordination_filled.tsv
-python -m planars noninterruption coded_data/stan1293/noninterruption/general_filled.tsv
-python -m planars stress coded_data/stan1293/stress/general_filled.tsv
+python -m planars ciscategorial coded_data/stan1293/ciscategorial/general.tsv
+python -m planars subspanrepetition coded_data/stan1293/subspanrepetition/andCoordination.tsv
+python -m planars noninterruption coded_data/stan1293/noninterruption/general.tsv
+python -m planars stress coded_data/stan1293/stress/general.tsv
 
 # Regression testing
 pytest                         # run all tests (io, restructure, snapshots)
@@ -272,10 +272,10 @@ Language files are in `coded_data/arao1248/`. Source: Adam Tallman, "Graded cons
 **Completed:**
 - `planar_input/planar_arao1248-20260319.tsv` — 18-position verbal planar structure (XP1 zone through rightXP zone)
 - `planar_input/diagnostics_{lang_id}.tsv` — ciscategorial, noninterruption, subspanrepetition (2 constructions)
-- `ciscategorial/general_filled.tsv` — V/N/A-combines annotated; runs and produces spans
-- `noninterruption/general_filled.tsv` — free/multiple annotated; runs and produces spans
-- `subspanrepetition/auxiliary_construction_filled.tsv` — maximal vpref–aspect (4–15), minimal vcore (6); no narrowscope elements
-- `subspanrepetition/tso_clause_linkage_filled.tsv` — maximal XP1–connector (1–17), minimal vpref–tamesuf (4–14); rightXP excluded from tso-clauses
+- `ciscategorial/general.tsv` — V/N/A-combines annotated; runs and produces spans
+- `noninterruption/general.tsv` — free/multiple annotated; runs and produces spans
+- `subspanrepetition/auxiliary_construction.tsv` — maximal vpref–aspect (4–15), minimal vcore (6); no narrowscope elements
+- `subspanrepetition/tso_clause_linkage.tsv` — maximal XP1–connector (1–17), minimal vpref–tamesuf (4–14); rightXP excluded from tso-clauses
 
 All four analyses run and produce spans. Source: Adam Tallman §4.5 (langsci/291, ch. 13). Source .tex at `/tmp/araona.tex` (may need re-downloading from langsci/291 GitHub if gone).
 
@@ -327,7 +327,7 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 - **#54** — ~~`_CLASS_DISPLAY_NAMES` graceful fallback in `generate_notebooks.py`~~ — implemented.
 - **#53** — ~~`generate-notebooks`: generate and upload per-language validation notebooks~~ — implemented.
 - **#52** — `integrity-check`: a single-pass project health command that reports planar, diagnostics, and annotation issues as a Markdown summary.
-- **#51** — Remove `_filled` suffix from imported TSV filenames.
+- **#51** — ~~Remove `_filled` suffix from imported TSV filenames~~ — implemented.
 - **#50** — ~~`--rename-element` flag on `restructure-sheets`~~ — implemented.
 - **#44** — ~~Migrate tests to pytest~~ — implemented.
 
@@ -355,7 +355,7 @@ The `status` field in `diagnostic_classes.yaml` uses three values: `stable`, `[A
 
 ## Key conventions
 
-- File naming: imported TSVs use `{construction}_filled.tsv` under `coded_data/{lang_id}/{class_name}/`. The lang and class are encoded in the path, not the filename. Legacy files may use `_fill.tsv` or `_full.tsv`.
+- File naming: imported TSVs use `{construction}.tsv` under `coded_data/{lang_id}/{class_name}/`. The lang and class are encoded in the path, not the filename.
 - Language ID is inferred from the planar filename: `planar_stan1293-20260209.tsv` → `stan1293`.
 - Elements with leading/trailing hyphens are wrapped in `[brackets]` to avoid Excel parsing issues.
 - Analysis functions take a `Path` object; path resolution happens at the call site (CLI or wrapper scripts), not inside the library.

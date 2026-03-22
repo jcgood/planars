@@ -238,7 +238,7 @@ def collect_all_spans(repo_root):
             class_dir = lang_dir / class_name
             if not class_dir.exists():
                 continue
-            for tsv in sorted(class_dir.glob("*_filled.tsv")):
+            for tsv in sorted(class_dir.glob("*.tsv")):
                 # strict=False so partially-filled sheets still yield spans.
                 result = derive_fn(tsv, strict=False)
                 rows.extend(row_fn(result, lang_id))

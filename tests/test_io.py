@@ -46,7 +46,7 @@ CASES = [
 @pytest.mark.parametrize("lang_id,class_name,construction,params", CASES,
                          ids=[f"{c[0]}/{c[1]}/{c[2]}" for c in CASES])
 def test_tsv_and_sheet_agree(lang_id, class_name, construction, params):
-    tsv_path = ROOT / "coded_data" / lang_id / class_name / f"{construction}_filled.tsv"
+    tsv_path = ROOT / "coded_data" / lang_id / class_name / f"{construction}.tsv"
     if not tsv_path.exists():
         pytest.skip(f"file not found: {tsv_path.relative_to(ROOT)}")
 

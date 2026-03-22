@@ -58,7 +58,7 @@ git push
 
 # Committing annotation data (cd into coded_data first — separate step)
 cd coded_data
-git add stan1293/ciscategorial/general_filled.tsv
+git add stan1293/ciscategorial/general.tsv
 git commit -m "..."
 git push
 
@@ -128,9 +128,9 @@ Skips existing files by default. Validates values on import (blanks and unexpect
 From the repo root:
 
 ```bash
-python -m planars ciscategorial     coded_data/stan1293/ciscategorial/general_filled.tsv
-python -m planars noninterruption   coded_data/stan1293/noninterruption/general_filled.tsv
-python -m planars stress            coded_data/stan1293/stress/general_filled.tsv
+python -m planars ciscategorial     coded_data/stan1293/ciscategorial/general.tsv
+python -m planars noninterruption   coded_data/stan1293/noninterruption/general.tsv
+python -m planars stress            coded_data/stan1293/stress/general.tsv
 # etc. — all 15 analysis modules are available; see docs/analyses.md for the full list
 ```
 

@@ -131,13 +131,12 @@ coded_data/
       planar_{lang_id}-{date}.tsv
       diagnostics_{lang_id}.tsv
     {class_name}/
-      {construction}_filled.tsv       ← imported from Google Sheets
-      archive/
-        {construction}_filled_{date}.tsv   ← archived by restructure-sheets
+      {construction}.tsv              ← imported from Google Sheets
+      archive/                        ← old sheets archived to Drive (not local files)
   synth0001/                          ← synthetic test language (not real data)
 ```
 
-Filled TSV filenames use the pattern `{construction}_filled.tsv`. The language ID and analysis class are encoded in the directory path, not the filename. Legacy files may use `_fill.tsv` or `_full.tsv` suffixes.
+Filled TSV filenames use the pattern `{construction}.tsv`. The language ID and analysis class are encoded in the directory path, not the filename.
 
 ### Google Drive manifest
 

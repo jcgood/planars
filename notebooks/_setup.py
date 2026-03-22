@@ -15,7 +15,7 @@ from planars import ciscategorial as _cisc
 from planars import subspanrepetition as _subspan
 from planars import noninterruption as _nonint
 
-def show_results(folder, derive_fn, fmt_fn, pattern="*_filled.tsv"):
+def show_results(folder, derive_fn, fmt_fn, pattern="*.tsv"):
     tsv_files = sorted((REPO_ROOT / "coded_data").glob(f"*/{folder}/{pattern}"))
     if not tsv_files:
         print(f"  No filled TSVs found in {folder}/")
@@ -23,7 +23,7 @@ def show_results(folder, derive_fn, fmt_fn, pattern="*_filled.tsv"):
     for tsv in tsv_files:
         lang_id = tsv.parent.parent.name
         print(f"{'─' * 60}")
-        print(f"  {folder}  [{lang_id}]  —  {tsv.stem.replace('_filled', '')}")
+        print(f"  {folder}  [{lang_id}]  —  {tsv.stem}")
         print(f"{'─' * 60}")
         result = derive_fn(tsv, strict=False)
         print(fmt_fn(result))

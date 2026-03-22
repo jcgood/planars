@@ -6,7 +6,7 @@ Run from the repo root:
     python -m coding import-sheets --force   # overwrite existing files
 
 Reads the manifest from Drive (via drive_config.json), downloads each sheet
-tab, validates values, and writes {construction}_filled.tsv to
+tab, validates values, and writes {construction}.tsv to
 coded_data/{lang_id}/{class_name}/.
 
 Authentication: same OAuth2 setup as generate_sheets.py.
@@ -42,7 +42,7 @@ def _get_output_path(lang_id: str, class_name: str, construction: str) -> Path:
     """Return the output TSV path under coded_data/, creating directories as needed."""
     folder = ROOT / "coded_data" / lang_id / class_name
     folder.mkdir(parents=True, exist_ok=True)
-    return folder / f"{construction}_filled.tsv"
+    return folder / f"{construction}.tsv"
 
 
 # ---------------------------------------------------------------------------
