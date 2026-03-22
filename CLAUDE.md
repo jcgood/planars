@@ -299,6 +299,20 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 - **#50** — ~~`--rename-element` flag on `restructure-sheets`~~ — implemented.
 - **#44** — Migrate tests to pytest.
 
+## Work phases
+
+This is a **research project**: the schemas, qualification rules, and analytical models are themselves outputs of the research process, not fixed inputs. Annotation work informs theory, which changes `codebook.yaml`, which changes what gets annotated. This makes it fundamentally unlike a business application with stable requirements — the tools serve a moving target by design. As understanding deepens across languages, all facets of the project (data model, diagnostics, module logic, documentation) are subject to revision.
+
+Sessions tend to fall into a few natural patterns. Naming the primary focus at the start of a session helps keep scope manageable.
+
+**Schema/codebook work** — Editing `schemas/codebook.yaml`, `schemas/diagnostic_classes.yaml`, or the qualification rules in analysis modules. The most consequential work; mistakes here cascade across languages and analyses. Go slow, check `check-codebook` after changes. Qualification rule changes must also propagate to inline comments and module docstrings — not just the YAML files.
+
+**Language onboarding** — End-to-end work for a new language: gathering source material, drafting `diagnostics.tsv`, running `generate-sheets`, producing a first-pass annotation, importing, and verifying analysis output. During prototyping, this has involved reading finished book chapters; in production, onboarding will be a collaborative process with contributors who may provide information in varied and yet-to-be-modeled forms (notes, drafts, conversation, partial data). The tooling should remain open to this rather than assuming a finished written source is always available. Automated first-pass coding may eventually be possible, but will always require expert review.
+
+**Contributor tooling** — Building or improving the `coding/` scripts, sheet generation, import/validation pipelines, and notebook generation. Standard software work, but changes to sheet structure need `update-sheets` or `restructure-sheets` to propagate.
+
+**Audit** — Checking consistency between code, documentation, codebook, and annotation data. Includes `check-codebook`, snapshot tests, and reviewing CLAUDE.md/docs for drift. Also includes verifying that inline comments and module docstrings match current behavior — code evolves faster than comments. A good way to start a session after a gap.
+
 ## Analysis status convention
 
 The `status` field in `diagnostic_classes.yaml` uses three values: `stable`, `[AUTO-DERIVED]`, and `[NEEDS REVIEW]`. **Only a coordinator (Adam Tallman or equivalent domain expert) may promote a module's status out of `[AUTO-DERIVED]`.** Claude should not change `[AUTO-DERIVED]` to `stable` or remove that designation, even when cross-language evidence is strong. Claude may:
