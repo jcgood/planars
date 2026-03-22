@@ -136,6 +136,18 @@ This is a linguistic typology analysis project for morphosyntactic domain deriva
    - `play_language.py`: The play language (ludling) domain — span targeted by play language operations (infixation, reversal, etc.). Parameter: `applies` (y/n). Returns 4 spans. Attested in Zenzontepec Chatino.
    - `idiom.py`: The idiom domain — span forming a non-compositional idiomatic unit. Parameter: `idiomatic` (y/n). Returns 4 spans.
 
+## Design principles (influenced by AUTOTYP)
+
+The planars data model was developed independently but shares several fundamental design principles with AUTOTYP. These are articulated in Witzlack-Makarevich, Nichols, Hildebrandt, Zakharko & Bickel, "Managing AUTOTYP Data: Design Principles and Implementation," ch. 56 in *The Open Handbook of Linguistic Data Management* (MIT Press, doi:10.7551/mitpress/12200.001.0001). Understanding these principles explains architectural decisions that might otherwise seem arbitrary.
+
+**Late aggregation**: Raw annotation data is stored exhaustively at the lowest level (y/n per element per position). All derived categories — spans, domain types, partial vs. complete distinctions — are computed algorithmically outside the stored data (in the analysis modules). This means the same annotation files can answer different research questions as the theoretical framework evolves, without recoding. Never aggregate during data collection.
+
+**Autotypology (dynamic schema)**: The parameter definitions in `schemas/codebook.yaml` and analysis classes in `schemas/diagnostic_classes.yaml` are not a fixed a priori etic grid. They are updated throughout data collection as new languages reveal new phenomena; initial codings are often revised as the typology stabilizes (AUTOTYP observes this typically takes ~40–50 entries before new types stop emerging). The `[PLACEHOLDER]` and `[NEEDS REVIEW]` markers in these files reflect genuine ongoing theoretical work, not incomplete implementation. This is by design.
+
+**Definition files vs. data files**: `schemas/codebook.yaml` and `schemas/diagnostic_classes.yaml` are *definition files* — they list possible parameter values with linguistic definitions and coding procedure descriptions, and are updated dynamically throughout data collection. Filled TSVs under `coded_data/` are *data files* — actual annotations for individual languages. Definition files serve qualitative typological work (what distinctions are cross-linguistically viable?); data files enable quantitative analysis. Keep them clearly separate.
+
+**Language reports**: AUTOTYP uses free-text language reports as intermediate documents during module development — text documents containing paradigms, citation examples, and explicit motivation for coding decisions. These are especially valuable when new values are being identified and coding decisions are being revised, and serve as an audit trail connecting annotations to their empirical basis. Planars currently relies on source chapters in this role during prototyping; a structured language report format for production onboarding is an open question (see issue #68).
+
 ## Package structure
 
 `planars/` is the core library:
