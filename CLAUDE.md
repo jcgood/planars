@@ -302,6 +302,13 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 
 ### Notable open issues
 
+- **#74** — Schema change propagation: parameter lifecycle tooling (add, remove, rename, split, merge across languages). Prerequisite for managing parameter evolution at scale.
+- **#73** — `validate_diagnostics.py` conformance check: each language's `diagnostics_{lang_id}.tsv` must only use parameters listed in `diagnostic_classes.yaml` (opt-in model enforcement).
+- **#72** — Prepare Chichewa (nyan1308) for onboarding: planar structure, diagnostics, tonosegmental/intonational domains. `[Jeff]`
+- **#71** — New analysis module: intonational domain (clause-level pitch patterns). `[diagnostics]`
+- **#70** — New analysis module: tonosegmental domain (tonal melody overlaid on morphosyntax). `[diagnostics]`
+- **#69** — Multilingual contributor assistant: chatbot to help contributors navigate the coding process.
+- **#68** — Survey open typology codebases (Grambank, CLDF, AUTOTYP) for design ideas.
 - **#67** — Verb-class-conditioned permutability: gap in nonpermutability qualification rules. `[diagnostics]`
 - **#66** — Fluid/multi-position formatives: annotation challenge for nonpermutability. `[diagnostics]`
 - **#65** — Prosodic minimality (bimoraicity) as a constituency diagnostic. `[diagnostics]`
