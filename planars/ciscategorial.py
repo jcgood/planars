@@ -39,9 +39,9 @@ def derive_v_ciscategorial_fractures(
         )
 
     if "V-combines" not in criterion_cols:
-        raise ValueError(f"Expected a parameter column named 'V-combines'. Found: {criterion_cols}")
+        raise ValueError(f"Expected a criterion column named 'V-combines'. Found: {criterion_cols}")
 
-    # All param columns except V-combines and trailing free-text columns are "other params".
+    # All criterion columns except V-combines and trailing free-text columns are "other criteria".
     # An element is v-ciscategorial if it combines with V (V-combines=y) and with nothing
     # else (all other params = n).
     other_params = [c for c in criterion_cols if c != "V-combines" and c not in _TRAILING_COLS]

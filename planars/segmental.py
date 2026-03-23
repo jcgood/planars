@@ -17,7 +17,7 @@ def derive_segmental_domains(
 ) -> Dict[str, object]:
     """Derive segmental phonological domains from a filled segmental TSV.
 
-    [AUTO-DERIVED: NEEDS REVIEW] Parameter design and qualification rules were
+    [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design and qualification rules were
     automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13
     (Araona) §Vowel syncope and ch. 2 (Cup'ik) §Segmental domains. Verify before
     use for annotation or analysis.
@@ -37,8 +37,8 @@ def derive_segmental_domains(
 
     Four span variants (strict/loose × complete/partial) = 4 spans total.
 
-    Parameter
-    ---------
+    Diagnostic criterion
+    --------------------
     applies : y/n — whether the segmental phonological process applies to
               or at this element's position. y = this position is within
               the domain of the process.

@@ -78,9 +78,9 @@ The notebook is safe to run repeatedly — it clears all existing pink highlight
 
 ### Reading the validation output
 
-The summary lists issues by construction tab, parameter column, and element. Common issue types:
+The summary lists issues by construction tab, criterion column, and element. Common issue types:
 
-- **Unexpected value** — the cell contains a value not in the allowed list for that parameter (check for typos; use the dropdown)
+- **Unexpected value** — the cell contains a value not in the allowed list for that criterion (check for typos; use the dropdown)
 - **Blank cell** — the cell is empty; blank is treated as non-qualifying when spans are computed, and will appear as a warning on import
 - **Keystone modified** — the `NA` in a keystone row was changed; restore it to `NA`
 

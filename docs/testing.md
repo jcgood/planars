@@ -24,7 +24,7 @@ The snapshot runner covers these modules (changes to any of them should be verif
 
 `coded_data/synth0001/` is a synthetic second-language dataset used for testing multi-language code paths. It is not real data.
 
-It was derived from `stan1293` by dropping 9 positions and flipping approximately 25% of parameter values, giving a genuinely different planar structure (28 positions vs. 37, keystone at position 23 vs. 30).
+It was derived from `stan1293` by dropping 9 positions and flipping approximately 25% of criterion values, giving a genuinely different planar structure (28 positions vs. 37, keystone at position 23 vs. 30).
 
 ```bash
 python tests/make_synthetic_lang.py                    # dry run — show what would be written

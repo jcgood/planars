@@ -330,11 +330,11 @@ def _build_rows(
     Args:
         element_index: ElementIndex from build_element_index.
         lang_id: language ID to filter the index.
-        param_names: ordered list of parameter column names.
+        param_names: ordered list of criterion column names.
 
     Returns:
         List of rows (without the header), each a list:
-        [element, position_name, position_number, *param_values].
+        [element, position_name, position_number, *criterion_values].
     """
     items = [
         (pos, element, pos_name)
@@ -449,13 +449,13 @@ def _populate_tab(
 
     If a tab named tab_name already exists it is cleared and rewritten;
     otherwise a new worksheet is created. Trailing columns (_TRAILING_COLS)
-    are appended after the param columns with empty values.
+    are appended after the criterion columns with empty values.
 
     Args:
         spreadsheet: the parent gspread Spreadsheet.
         tab_name: worksheet title to create or clear.
-        param_names: ordered list of parameter column names.
-        param_values: dict mapping param name to list of allowed values.
+        param_names: ordered list of criterion column names.
+        param_values: dict mapping criterion name to list of allowed values.
         rows: data rows from _build_rows (no header).
 
     Returns:

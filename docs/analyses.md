@@ -68,8 +68,8 @@ python render_codebook.py codebook.md  # write to a file
 
 Entries in the `analyses` section may carry one of these markers in their `description`:
 
-- **`[NEEDS REVIEW]`** — the rule was designed by a human but is provisional; specific parameters are flagged as uncertain (currently: aspiration qualification rules; `left-interaction` and `right-interaction` in stress).
-- **`[AUTO-DERIVED: NEEDS REVIEW]`** — the parameter design was derived by reading Tallman et al. 2024 without reviewing concrete language data for that analysis. Treat as a draft. See the [analyses table](#analysis-modules) below for which modules carry this flag and their data sources.
+- **`[NEEDS REVIEW]`** — the rule was designed by a human but is provisional; specific criteria are flagged as uncertain (currently: aspiration qualification rules; `left-interaction` and `right-interaction` in stress).
+- **`[AUTO-DERIVED: NEEDS REVIEW]`** — the diagnostic criterion design was derived by reading Tallman et al. 2024 without reviewing concrete language data for that analysis. Treat as a draft. See the [analyses table](#analysis-modules) below for which modules carry this flag and their data sources.
 - **`[PLACEHOLDER]`** — the entry exists but has not been written yet. Do not use for annotation.
 
 ---
@@ -99,7 +99,7 @@ Some analyses (stress, aspiration) use a **blocked span** instead: expand from t
 
 ## Analysis modules
 
-| Analysis | Parameters | Spans derived | Status |
+| Analysis | Criteria | Spans derived | Status |
 |---|---|---|---|
 | `ciscategorial` | `V-combines`, `N-combines`, `A-combines` | 4 (strict/loose × complete/partial) | stable |
 | `subspanrepetition` | `widescope_left`, `widescope_right`, `fillable_botheither_conjunct` | 20 (5 categories × 4) | stable |
@@ -117,9 +117,9 @@ Some analyses (stress, aspiration) use a **blocked span** instead: expand from t
 | `aspiration` | `stressed`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 4 (2 domain types × complete/partial) | [NEEDS REVIEW] § |
 | `proform` | `substitutable` | 4 (strict/loose × complete/partial) | [NEEDS REVIEW] ¶ |
 
-**Status key:** `stable` — confirmed and coordinator-approved. `[AUTO-DERIVED]` — parameter design derived from reading Tallman et al. 2024; not yet coordinator-approved. `[NEEDS REVIEW]` — specific known concerns beyond AUTO-DERIVED. Only a coordinator should promote a module out of AUTO-DERIVED status.
+**Status key:** `stable` — confirmed and coordinator-approved. `[AUTO-DERIVED]` — diagnostic criterion design derived from reading Tallman et al. 2024; not yet coordinator-approved. `[NEEDS REVIEW]` — specific known concerns beyond AUTO-DERIVED. Only a coordinator should promote a module out of AUTO-DERIVED status.
 
-† `left-interaction` and `right-interaction` parameters remain provisional — see issue #17.
+† `left-interaction` and `right-interaction` criteria remain provisional — see issue #17.
 
 ‡ Likely stable based on cross-language evidence (see `schemas/diagnostic_classes.yaml`), but coordinator sign-off still needed.
 

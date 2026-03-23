@@ -79,7 +79,7 @@ classes:
       A position is complete if ALL its elements are v-ciscategorial.
       A position is partial if AT LEAST ONE element is v-ciscategorial.
     status: stable
-    criterion_set_status: "[PROVISIONAL]"  # Parameter set may grow further as more
+    criterion_set_status: "[PROVISIONAL]"  # Criterion set may grow further as more
       # predicate-flexible languages are onboarded; other *-combines types not yet attested.
 
   - name: subspanrepetition
@@ -144,7 +144,7 @@ classes:
       (strict/loose x complete/partial).
     status: stable
     criterion_set_status: "[PROVISIONAL]"  # Construction types are open-ended and expected
-      # to grow as more languages are added. Parameter names may also need refinement as
+      # to grow as more languages are added. Criterion names may also need refinement as
       # additional construction types are attested.
 
   - name: noninterruption
@@ -252,9 +252,9 @@ classes:
       A position qualifies if it contains an element where substitutable=y. Complete
       qualification: ALL elements have substitutable=y. Partial qualification: at
       least one element has substitutable=y.
-    criterion_set_status: "[PROVISIONAL]"  # Class itself is [NEEDS REVIEW]; parameter set
+    criterion_set_status: "[PROVISIONAL]"  # Class itself is [NEEDS REVIEW]; criterion set
       # may need refinement once real annotation data exists. Proform type (pronoun,
-      # pro-verb, pro-VP) may warrant a parameter distinguishing substitution scope.
+      # pro-verb, pro-VP) may warrant a criterion distinguishing substitution scope.
     status: "[NEEDS REVIEW]"  # Ch. 17 line 543 explicitly states proform was NOT included in
     # the published database: "There are other tests that have not yet been included in the
     # database (e.g. proform replacement)." No evidence in 10 reviewed language chapters.
@@ -279,7 +279,7 @@ classes:
       A position qualifies if it contains an element where idiomatic=y. Complete
       qualification: ALL elements have idiomatic=y. Partial qualification: at
       least one element has idiomatic=y.
-    criterion_set_status: stable  # Single binary parameter is appropriate; idiom identity
+    criterion_set_status: stable  # Single binary criterion is appropriate; idiom identity
       # is encoded in the construction name, not additional parameters.
     status: "[NEEDS REVIEW]"  # Mebengokre (ch. 12) provides the clearest evidence: diagnostic
     # [\ref{idioms}] documents 3 specific idioms with position spans (adjnc-ket). The class
@@ -318,9 +318,9 @@ classes:
       is the most semantically informative: it extends from the position of the
       prefixal piece to the position of the suffixal piece, directly identifying
       the extended exponent domain.
-    criterion_set_status: stable  # Single binary parameter is appropriate for the
+    criterion_set_status: stable  # Single binary criterion is appropriate for the
       # circumfix/extended-exponent type. Non-automatic allomorphy (issue #58) is a
-      # distinct class, not an extension of this parameter set.
+      # distinct class, not an extension of this criterion set.
     status: "[NEEDS REVIEW]"  # Formal abstract type in book's ch. 17 database schema.
     # Ch. 17 line 554 explicitly acknowledges the class is "relatively superficially
     # considered" and that "a great deal of complexity and variation is hidden behind such
@@ -343,7 +343,7 @@ classes:
       A position qualifies if it contains an element where restart=y. Complete
       qualification: ALL elements in the position have restart=y. Partial
       qualification: at least one element has restart=y.
-    criterion_set_status: stable  # Single binary parameter is appropriate; restart
+    criterion_set_status: stable  # Single binary criterion is appropriate; restart
       # behavior is categorical (yes/no per position).
     status: "[NEEDS REVIEW]"  # Strongly confirmed by Cup'ik ch. 2 (4 naturalistic examples,
     # restart domain = vbase–pn4); no evidence in 8 other reviewed chapters. Applicable
@@ -422,7 +422,7 @@ classes:
       aspiration.py accordingly.
     criterion_set_status: "[PROVISIONAL]"  # Inherits the same open questions as stress
       # re: left-interaction and right-interaction (issues #16, #17). Additionally, the
-      # scope of this class is itself unresolved (issue #60) — parameter set may change
+      # scope of this class is itself unresolved (issue #60) — criterion set may change
       # substantially depending on whether this remains a blocked_span module.
     # Note: criterion names are reused from stress; see diagnostic_criteria.yaml aspiration entry.
     # Note: in the book's ch. 17 abstract type taxonomy, aspiration is a fracture of the
@@ -469,7 +469,7 @@ classes:
       A position qualifies if it contains an element where applies=y. Complete
       qualification: ALL elements in the position have applies=y. Partial
       qualification: at least one element has applies=y.
-    criterion_set_status: stable  # Single binary parameter is appropriate; the process
+    criterion_set_status: stable  # Single binary criterion is appropriate; the process
       # identity is encoded in the construction name. No cross-language evidence suggests
       # additional parameters are needed.
     # Formal abstract type in ch. 17 database schema. Note: `stress` and `aspiration` are
@@ -507,7 +507,7 @@ classes:
       A position qualifies if it contains an element where applies=y. Complete
       qualification: ALL elements in the position have applies=y. Partial
       qualification: at least one element has applies=y.
-    criterion_set_status: stable  # Single binary parameter is appropriate; rule identity
+    criterion_set_status: stable  # Single binary criterion is appropriate; rule identity
       # is encoded in the construction name. No cross-language evidence suggests additional
       # parameters are needed.
     # Formal abstract type in ch. 17 database schema. Note: `stress` and `aspiration` are
@@ -532,7 +532,7 @@ classes:
       A position qualifies if it contains an element where pause_domain=y.
       Complete qualification: ALL elements in the position have pause_domain=y.
       Partial qualification: at least one element has pause_domain=y.
-    criterion_set_status: stable  # Single binary parameter is appropriate; pause
+    criterion_set_status: stable  # Single binary criterion is appropriate; pause
       # behavior is categorical (yes/no per position).
     status: "[NEEDS REVIEW]"  # Mebengokre (ch. 12) applies and validates: diagnostic [\ref{pause}]
     # identifies span prevb-fin, converging with non-recursive interruption and stress domain.
@@ -562,7 +562,7 @@ classes:
       A position qualifies if it contains an element where applies=y. Complete
       qualification: ALL elements have applies=y. Partial qualification: at
       least one element has applies=y.
-    criterion_set_status: stable  # Single binary parameter is appropriate; ludling
+    criterion_set_status: stable  # Single binary criterion is appropriate; ludling
       # operation identity is encoded in the construction name.
     status: "[NEEDS REVIEW]"  # Chatino ch. 8 provides corpus-attested data (Campbell 2020);
     # target domain = positions 10-13 (verbal core = tonal melody domain). Confirmed real.

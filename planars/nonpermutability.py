@@ -17,7 +17,7 @@ def derive_nonpermutability_domains(
 ) -> Dict[str, object]:
     """Derive non-permutability spans from a filled nonpermutability TSV.
 
-    [AUTO-DERIVED: NEEDS REVIEW] Parameter design and qualification rules were
+    [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design and qualification rules were
     automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13
     (Araona) and the intro §Fracturing. Verify before use for annotation or analysis.
 
@@ -32,8 +32,8 @@ def derive_nonpermutability_domains(
       complete: ALL elements have permutable=n OR (permutable=y AND scopal=y)
       partial:  >=1 element has permutable=n OR (permutable=y AND scopal=y)
 
-    Parameters
-    ----------
+    Diagnostic criteria
+    -------------------
     permutable : y/n — whether the element's position can vary relative to adjacent
                  positions. n = fixed order (qualifies for both domains).
     scopal     : y/n — if permutable=y, whether variable ordering is associated with

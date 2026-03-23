@@ -79,7 +79,7 @@ git pull
 
 1. In `coded_data/`, create:
    - `{lang_id}/planar_input/planar_{lang_id}-{date}.tsv` — planar structure
-   - `{lang_id}/planar_input/diagnostics_{lang_id}.tsv` — analysis classes and parameters
+   - `{lang_id}/planar_input/diagnostics_{lang_id}.tsv` — analysis classes and diagnostic criteria
 
    See [Data management](data-management.md) for the required format of both files.
 
@@ -108,7 +108,7 @@ python -m coding generate-sheets           # creates sheets for new classes only
 python -m coding generate-sheets --force   # regenerate all from scratch
 ```
 
-Creates one Google Sheets file per analysis class with one tab per construction. Each tab has per-parameter dropdown validation and a free-text Comments column. Also runs `generate-notebooks` automatically at the end.
+Creates one Google Sheets file per analysis class with one tab per construction. Each tab has per-criterion dropdown validation and a free-text Comments column. Also runs `generate-notebooks` automatically at the end.
 
 ### 2. Collaborators annotate
 
@@ -149,9 +149,9 @@ python -m coding update-sheets           # dry run — show what would change
 python -m coding update-sheets --apply   # add missing rows to existing sheets
 ```
 
-### Updating parameters in diagnostics_{lang_id}.tsv
+### Updating diagnostic criteria in diagnostics_{lang_id}.tsv
 
-When `diagnostics_{lang_id}.tsv` param columns change (new parameters added, parameters renamed):
+When `diagnostics_{lang_id}.tsv` criterion columns change (new criteria added, criteria renamed):
 
 ```bash
 python -m coding sync-params                                  # dry run

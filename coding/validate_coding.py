@@ -2,7 +2,7 @@
 """Annotation sheet validation and the validate-coding command.
 
 Validates filled annotation sheets (Google Sheets tabs) against their
-expected parameter columns and allowed values. Updates pink cell highlighting
+expected criterion columns and allowed values. Updates pink cell highlighting
 so collaborators can find and fix errors without coordinator help.
 
 Run from the repo root:
@@ -125,7 +125,7 @@ def validate_annotation_rows(
     if actual_params != expected_params:
         issues.append(ValidationIssue(
             "warning", tab_name,
-            f"parameter columns differ from manifest — "
+            f"criterion columns differ from manifest — "
             f"expected {expected_params}, got {actual_params}"
         ))
 

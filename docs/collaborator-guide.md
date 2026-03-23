@@ -10,9 +10,9 @@ If you want to understand more about how the results are computed or how to vali
 
 ### What you will be doing
 
-You have been given a link to a Google Sheets annotation form for one or more languages and analysis classes. Each sheet has one tab per construction. Your job is to fill in the parameter cells — typically `y` (yes) or `n` (no) — for each element in the planar structure.
+You have been given a link to a Google Sheets annotation form for one or more languages and analysis classes. Each sheet has one tab per construction. Your job is to fill in the criterion cells — typically `y` (yes) or `n` (no) — for each element in the planar structure.
 
-The cells you fill in describe grammatical properties of the elements: whether they can be separated by pauses, whether they permute, whether they are freely occurring, and so on. The project coordinator will have explained what each parameter means for your language. You can also consult the Comments column in each tab if your coordinator has left notes, or add your own.
+The cells you fill in describe grammatical properties of the elements: whether they can be separated by pauses, whether they permute, whether they are freely occurring, and so on. The project coordinator will have explained what each diagnostic criterion means for your language. You can also consult the Comments column in each tab if your coordinator has left notes, or add your own.
 
 ### Opening your sheet
 
@@ -20,7 +20,7 @@ Your coordinator will share a Google Sheets link with you. Open it in a browser 
 
 ### Filling in values
 
-Each parameter column has a dropdown validation list. Click a cell and use the dropdown, or type the value directly. Most parameters accept `y` or `n`; some accept additional values such as `both` or `?`. The allowed values are listed in the dropdown — entering anything else will trigger a validation warning (the cell will turn pink).
+Each criterion column has a dropdown validation list. Click a cell and use the dropdown, or type the value directly. Most criteria accept `y` or `n`; some accept additional values such as `both` or `?`. The allowed values are listed in the dropdown — entering anything else will trigger a validation warning (the cell will turn pink).
 
 A few rules:
 - **Keystone row** (`v:verbstem`): Pre-filled with `NA`. Do not change these cells.
@@ -50,7 +50,7 @@ See the [Notebooks guide](notebooks.md#validation-notebook) for more detail on h
 
 ### What to do when a cell turns pink
 
-Pink means the value is not in the allowed list for that parameter. Common causes:
+Pink means the value is not in the allowed list for that criterion. Common causes:
 - A typo (e.g. `Y` instead of `y`)
 - A value that is valid in another column but not this one (e.g. `both` in a column that only accepts `y/n`)
 - A cell that was accidentally cleared

@@ -178,7 +178,7 @@ _DEFAULT_CRITERION_VALUES = ["y", "n"]
 
 
 def _parse_criterion_spec(spec: str) -> Tuple[str, List[str]]:
-    """Parse a parameter specification into (name, allowed_values).
+    """Parse a diagnostic criterion specification into (name, allowed_values).
 
     Examples:
         'free'              -> ('free', ['y', 'n'])
@@ -187,11 +187,11 @@ def _parse_criterion_spec(spec: str) -> Tuple[str, List[str]]:
     spec = spec.strip()
     if "{" in spec:
         if not spec.endswith("}"):
-            raise ValueError(f"Malformed parameter spec (missing closing brace): '{spec}'")
+            raise ValueError(f"Malformed criterion spec (missing closing brace): '{spec}'")
         name, _, values_str = spec[:-1].partition("{")
         values = [v.strip() for v in values_str.split("/") if v.strip()]
         if not values:
-            raise ValueError(f"Parameter spec has empty value list: '{spec}'")
+            raise ValueError(f"Criterion spec has empty value list: '{spec}'")
         return name.strip(), values
     return spec, list(_DEFAULT_CRITERION_VALUES)
 

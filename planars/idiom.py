@@ -17,9 +17,9 @@ def derive_idiom_domains(
 ) -> Dict[str, object]:
     """Derive idiom domains from a filled idiom TSV.
 
-    [AUTO-DERIVED: NEEDS REVIEW] Parameter design was automatically derived from
+    [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design was automatically derived from
     the description in Tallman et al. 2024 (langsci/291), Discussion ch. 17 only —
-    no concrete language data was reviewed. Parameter design is speculative.
+    no concrete language data was reviewed. Diagnostic criterion design is speculative.
     Verify thoroughly before use.
 
     The idiom domain identifies the span of positions forming an idiomatic
@@ -33,8 +33,8 @@ def derive_idiom_domains(
 
     Four span variants (strict/loose × complete/partial) = 4 spans total.
 
-    Parameter
-    ---------
+    Diagnostic criterion
+    --------------------
     idiomatic : y/n — whether this element participates in an idiomatic
                 (non-compositional) combination. y = this element is part
                 of an idiomatic unit.

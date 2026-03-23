@@ -6,8 +6,8 @@ Run from the repo root:
 
 For each construction in sheets_manifest.json, searches numbered output folders
 for a matching filled TSV (any suffix: _filled, _fill, _full) and uploads its
-parameter values to the corresponding sheet tab. Picks the TSV with the fewest
-blank parameter cells when multiple candidates exist.
+criterion values to the corresponding sheet tab. Picks the TSV with the fewest
+blank criterion cells when multiple candidates exist.
 
 Skips constructions where no TSV is found or all candidates are fully blank.
 """
@@ -58,7 +58,7 @@ def _get_client() -> gspread.Client:
 # ---------------------------------------------------------------------------
 
 def _count_param_cells(path: Path) -> Tuple[int, int]:
-    """Return (unannotated_count, total_count) for parameter cells (cols 4+), excluding header.
+    """Return (unannotated_count, total_count) for criterion cells (cols 4+), excluding header.
 
     Cells that are blank or 'na' (keystone auto-fill) are counted as unannotated.
     """
@@ -78,7 +78,7 @@ def _count_param_cells(path: Path) -> Tuple[int, int]:
 
 
 def _find_best_tsv(class_name: str, lang_id: str, construction: str) -> Optional[Tuple[Path, int, int]]:
-    """Find the TSV candidate with the fewest blank parameter cells.
+    """Find the TSV candidate with the fewest blank criterion cells.
 
     Returns (path, blank_count, total_count) or None if no candidates found.
     """
@@ -104,7 +104,7 @@ def _find_best_tsv(class_name: str, lang_id: str, construction: str) -> Optional
 # ---------------------------------------------------------------------------
 
 def _upload_tsv_to_tab(ws: gspread.Worksheet, tsv_path: Path) -> int:
-    """Replace parameter values in a sheet tab with data from a TSV.
+    """Replace criterion values in a sheet tab with data from a TSV.
 
     Matches rows by (Element, Position_Number). Returns count of rows updated.
     Unnamed trailing columns are concatenated with ' | ' into the Comments column.
@@ -175,7 +175,7 @@ def main() -> None:
 
     Reads sheets_manifest.json, searches numbered output folders for filled TSVs
     matching each construction, selects the candidate with the fewest blank cells,
-    and uploads parameter values to the corresponding sheet tab.
+    and uploads criterion values to the corresponding sheet tab.
     """
     if not MANIFEST_PATH.exists():
         raise SystemExit(

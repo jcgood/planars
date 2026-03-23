@@ -17,7 +17,7 @@ def derive_biuniqueness_domains(
 ) -> Dict[str, object]:
     """Derive biuniqueness (extended exponence) domains from a filled biuniqueness TSV.
 
-    [AUTO-DERIVED: NEEDS REVIEW] Parameter design and qualification rules were
+    [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design and qualification rules were
     automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13
     (Araona) §Extended exponence. Verify before use for annotation or analysis.
 
@@ -37,8 +37,8 @@ def derive_biuniqueness_domains(
     Each circumfix/extended-exponent group should be annotated in its own TSV
     (one construction per file), analogous to subspanrepetition.
 
-    Parameter
-    ---------
+    Diagnostic criterion
+    --------------------
     biunique : y/n — whether the element participates in a biunique
                (one-form / one-meaning) relationship. n = the element is one
                of the pieces of a circumfix or extended exponent set, and

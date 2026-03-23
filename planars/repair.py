@@ -17,7 +17,7 @@ def derive_repair_domains(
 ) -> Dict[str, object]:
     """Derive repair domains from a filled repair TSV.
 
-    [AUTO-DERIVED: NEEDS REVIEW] Parameter design and qualification rules were
+    [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design and qualification rules were
     automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 2
     (Cup'ik) §Repair domain. Verify before use for annotation or analysis.
 
@@ -31,8 +31,8 @@ def derive_repair_domains(
 
     Four span variants (strict/loose × complete/partial) = 4 spans total.
 
-    Parameter
-    ---------
+    Diagnostic criterion
+    --------------------
     restart : y/n — whether this element's position is within the repair
               domain. y = an error at this position triggers restart from
               the left edge of the domain.

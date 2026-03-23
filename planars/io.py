@@ -20,9 +20,9 @@ def _parse_filled_df(
 
     Args:
         df: raw DataFrame with at least the structural columns and required_criteria.
-        required_criteria: parameter column names that must be present and (when
+        required_criteria: criterion column names that must be present and (when
             strict=True) non-blank in all non-keystone rows.
-        strict: if True, raise ValueError on any blank required_param cell in
+        strict: if True, raise ValueError on any blank required criterion cell in
             non-keystone rows; if False, leave blanks as empty strings.
 
     Returns:
@@ -103,7 +103,7 @@ def load_filled_tsv(
 
     Reads the file, normalizes column types, locates the keystone row
     (Position_Name == 'v:verbstem'), and optionally validates that no
-    parameter cells are blank in non-keystone rows.
+    criterion cells are blank in non-keystone rows.
 
     All non-structural columns are normalized (stripped, lowercased).
     required_criteria are checked for existence. When strict=True (default),

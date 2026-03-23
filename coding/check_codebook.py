@@ -117,8 +117,8 @@ def _make_minimal_tsv(params: list[str], extra_params: list[str] = None) -> io.S
     qualification condition evaluates to True and all span keys appear in the result.
 
     Args:
-        params: required parameter column names (e.g. ["free", "multiple"]).
-        extra_params: additional columns to include (e.g. extra interaction params).
+        params: required criterion column names (e.g. ["free", "multiple"]).
+        extra_params: additional columns to include (e.g. extra interaction criteria).
 
     Returns:
         An io.StringIO object ready to pass to load_filled_tsv.

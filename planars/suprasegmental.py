@@ -17,7 +17,7 @@ def derive_suprasegmental_domains(
 ) -> Dict[str, object]:
     """Derive suprasegmental (prosodic) domains from a filled suprasegmental TSV.
 
-    [AUTO-DERIVED: NEEDS REVIEW] Parameter design and qualification rules were
+    [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design and qualification rules were
     automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13
     (Araona) §Pitch-accent domains and ch. 2 (Cup'ik) §Prosodic domains. Verify
     before use for annotation or analysis.
@@ -40,8 +40,8 @@ def derive_suprasegmental_domains(
 
     Four span variants (strict/loose × complete/partial) = 4 spans total.
 
-    Parameter
-    ---------
+    Diagnostic criterion
+    --------------------
     applies : y/n — whether the suprasegmental phonological process applies
               to this element's position. y = this position is within the
               domain of the prosodic rule.

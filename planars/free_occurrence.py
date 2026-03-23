@@ -17,7 +17,7 @@ def derive_free_occurrence_spans(
 ) -> Dict[str, object]:
     """Derive free occurrence spans from a filled free_occurrence TSV.
 
-    [AUTO-DERIVED: NEEDS REVIEW] Parameter design and qualification rules were
+    [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design and qualification rules were
     automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13
     (Araona) §Free occurrence. Verify before use for annotation or analysis.
 
@@ -30,10 +30,10 @@ def derive_free_occurrence_spans(
 
     Four span variants (strict/loose × complete/partial) = 4 spans total.
 
-    Parameter
-    ---------
+    Diagnostic criterion
+    --------------------
     free : y/n — whether the element can occur as a standalone utterance
-           independent of the verbal head. Reuses the same parameter as
+           independent of the verbal head. Reuses the same criterion as
            noninterruption.py; if both analyses are run, a single annotation
            sheet with both `free` and `multiple` columns covers both.
 

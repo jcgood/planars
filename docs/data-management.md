@@ -80,7 +80,7 @@ docs/                           Documentation (this directory)
 Each language has a `planar_input/` directory containing:
 
 - `planar_{lang_id}-{date}.tsv` — the planar structure
-- `diagnostics_{lang_id}.tsv` — which analyses to run and with which parameters
+- `diagnostics_{lang_id}.tsv` — which analyses to run and with which diagnostic criteria
 
 The language ID is inferred from the planar filename: `planar_stan1293-20260209.tsv` → `stan1293`.
 
@@ -98,7 +98,7 @@ Defines the ordered sequence of positions and their elements. Required columns:
 
 Elements with leading or trailing hyphens are wrapped in `[brackets]` to avoid spreadsheet parsing issues (e.g., `-suffix` → `[-suffix]`).
 
-The **keystone position** (`v:verbstem`) is the anchor for all span computations. It must be present. In filled TSVs, keystone rows carry actual parameter values (not `NA`) so they can participate in blocking condition checks (stress, aspiration). They are excluded from span expansion — `load_filled_tsv` returns the keystone rows separately as `keystone_df`.
+The **keystone position** (`v:verbstem`) is the anchor for all span computations. It must be present. In filled TSVs, keystone rows carry actual criterion values (not `NA`) so they can participate in blocking condition checks (stress, aspiration). They are excluded from span expansion — `load_filled_tsv` returns the keystone rows separately as `keystone_df`.
 
 ---
 
@@ -111,9 +111,9 @@ Controls which analyses and constructions are run for a language. Required colum
 | `Language` | Language ID (must match the planar filename) |
 | `Class` | Name of the analysis module (e.g., `ciscategorial`) |
 | `Constructions` | Tab name(s) in Google Sheets; comma-separated list for construction-specific classes |
-| `Parameters` | Comma-separated list of parameter columns for this analysis |
+| `Criteria` | Comma-separated list of diagnostic criteria for this analysis |
 
-Parameters default to `y/n` dropdowns. To specify custom allowed values, use brace syntax:
+Criteria default to `y/n` dropdowns. To specify custom allowed values, use brace syntax:
 
 ```
 stressed{y/n/both}, independence, left-interaction, right-interaction

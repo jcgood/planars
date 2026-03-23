@@ -32,7 +32,7 @@ def derive_stress_domains(
       partial:  any element in the position satisfies the condition (smaller domain)
       complete: all elements in the position satisfy the condition (larger domain)
 
-    The keystone (v:verbstem) is always part of the domain. Its parameter values
+    The keystone (v:verbstem) is always part of the domain. Its criterion values
     participate in blocking checks but it is never excluded from the span.
     """
     if _data is not None:

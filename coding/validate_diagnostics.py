@@ -54,7 +54,7 @@ def _known_analysis_classes() -> Set[str]:
 def _diagnostic_class_allowed_criteria() -> Dict[str, Set[str]]:
     """Return {class_name: set_of_allowed_param_names} from diagnostic_classes.yaml.
 
-    Allowed = required_parameters ∪ optional_parameters.
+    Allowed = required_criteria ∪ optional_criteria.
     Returns an empty dict if the schema file is missing.
     """
     path = ROOT / "schemas" / "diagnostic_classes.yaml"
@@ -90,7 +90,7 @@ def _codebook_criterion_names() -> Set[str]:
 
 
 def _parse_criterion_specs(value: str) -> List[tuple]:
-    """Parse a comma-separated parameter specs string into (name, values, raw_spec) tuples.
+    """Parse a comma-separated criterion specs string into (name, values, raw_spec) tuples.
 
     Does not raise — returns what it can and lets the caller emit ValidationIssues.
     """
