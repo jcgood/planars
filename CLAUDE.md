@@ -228,6 +228,7 @@ Use Glottolog metadata proactively for:
 - Whether a class is universal or conditional and when it applies
 - Whether a class uses a single general construction or is construction-specific
 - Which diagnostic criteria must appear in diagnostics_{lang_id}.tsv for each class
+- Whether a class is required for all languages (`collection_required: true/false`) — values are `[NEEDS COORDINATOR INPUT]` until Adam decides
 - Non-exhaustive examples of known construction types for variable classes
 
 `check-codebook` validates diagnostics_{lang_id}.tsv against both files. Human-editable workflow: edit `schemas/diagnostic_classes.yaml` to add or update a class, then ask Claude to propagate changes to diagnostics_{lang_id}.tsv and scaffold the module.
@@ -318,7 +319,7 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 
 - **#80** — Auto-generate schema structure diagrams from YAML schema files.
 - **#79** — Add references list and "How to cite" section to repository documentation.
-- **#78** — Add `collection_required` field to `diagnostic_classes.yaml`; validate presence per language.
+- **#78** — Add `collection_required` field to `diagnostic_classes.yaml`; validate presence per language. Field added (all classes marked `[NEEDS COORDINATOR INPUT]`); validation logic and final values pending Adam's input.
 - **#76** — Proactive detection of unauthorized sheet edits (scheduled `validate-coding`).
 - **#75** — Auto-trigger snapshot regeneration when analysis output changes.
 - **#74** — Schema change propagation: diagnostic criterion lifecycle tooling (add, remove, rename, split, merge across languages). Prerequisite for managing criterion evolution at scale.
@@ -332,7 +333,6 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 - **#66** — Fluid/multi-position formatives: annotation challenge for nonpermutability. `[diagnostics]`
 - **#65** — Prosodic minimality (bimoraicity) as a constituency diagnostic. `[diagnostics]`
 - **#64** — Culminativity constraints as a constituency diagnostic class. `[diagnostics]`
-- **#63** — Test Glottolog display names in manifest and notebooks.
 - **#62** — New contributor and language onboarding: document and consolidate setup steps.
 - **#61** — Replace hardcoded chart colors with auto-assigned colorblind-friendly palette.
 - **#60** — Clarify `aspiration.py` scope: prosodic domain vs. segmental process. `[diagnostics]`
