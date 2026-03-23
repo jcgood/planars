@@ -211,8 +211,8 @@ classes:
     # Quechua TAME zone, Mocoví trlocdir) annotates as permutable=y, scopal=n — these
     # positions fall outside both strict and flexible domains. Confirmed across 5+ languages.
     status: "[AUTO-DERIVED: likely stable — qualification rules confirmed across 5+ language
-    collection_required: "[NEEDS COORDINATOR INPUT]"
       chapters (ch. 3, 6, 8, 9, 12, 14, 16); coordinator sign-off needed to remove AUTO-DERIVED]"
+    collection_required: "[NEEDS COORDINATOR INPUT]"
 
   - name: free_occurrence
     display_name: "Free Occurrence"
@@ -489,8 +489,8 @@ classes:
     # Formal abstract type in ch. 17 database schema. Note: `stress` and `aspiration` are
     # separate planars modules but are fractures of this abstract type in the book's taxonomy.
     status: "[AUTO-DERIVED: likely stable — confirmed across 10+ language chapters; formal
-    collection_required: "[NEEDS COORDINATOR INPUT]"
       abstract type in ch. 17; coordinator sign-off needed to remove AUTO-DERIVED]"
+    collection_required: "[NEEDS COORDINATOR INPUT]"
 
   - name: suprasegmental
     display_name: "Suprasegmental"
@@ -528,8 +528,8 @@ classes:
     # Formal abstract type in ch. 17 database schema. Note: `stress` and `aspiration` are
     # separate planars modules but are fractures of this abstract type in the book's taxonomy.
     status: "[AUTO-DERIVED: likely stable — confirmed across 10+ language chapters; formal
-    collection_required: "[NEEDS COORDINATOR INPUT]"
       abstract type in ch. 17; coordinator sign-off needed to remove AUTO-DERIVED]"
+    collection_required: "[NEEDS COORDINATOR INPUT]"
 
   - name: pausing
     display_name: "Pausing"
