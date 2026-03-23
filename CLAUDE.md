@@ -71,6 +71,11 @@ python -m coding import-sheets --force   # overwrite existing files
 python -m coding validate-coding                   # all languages
 python -m coding validate-coding --lang arao1248   # one language
 
+# Full project-wide integrity check (planar structure, diagnostics, schemas, modules)
+python -m coding integrity-check                       # all languages, local checks
+python -m coding integrity-check --lang arao1248       # one language
+python -m coding integrity-check --sheets              # also check live sheet structure
+
 # Check consistency between codebook.yaml, analysis modules, and diagnostics_{lang_id}.tsv
 python -m coding check-codebook
 
@@ -172,6 +177,7 @@ The planars data model was developed independently but shares several fundamenta
 - `validate_coding.py`: `validate-coding` command — reads annotation sheets, validates values, clears/updates pink cell highlights. Also calls `validate_planar_df` and `validate_diagnostics_df` before sheet validation.
 - `generate_notebooks.py`: `generate-notebooks` — generates per-language and coordinator Colab notebooks.
 - `check_codebook.py`: `check-codebook` — consistency check between codebook.yaml, diagnostic_classes.yaml, analysis modules, and diagnostics_{lang_id}.tsv.
+- `integrity_check.py`: `integrity-check` — full project-wide health report across six sections (PLANAR STRUCTURE, DIAGNOSTICS, CODEBOOK CONSISTENCY, ANALYSIS CONSISTENCY, ANNOTATION SHEETS, NEEDS REVIEW). Use `--lang` to restrict per-language sections; `--sheets` to include live Google Sheets structural validation.
 - `glottolog.py`: `lookup-lang` — fetch and cache Glottolog metadata (name, family, ISO code, coordinates) for a language ID. Cache at `glottolog_cache.json` (gitignored). Also provides `is_valid_format()` and `cached_entry()` used by `validate_diagnostics.py` for check 6 (Glottocode format + advisory).
 - `populate_sheets.py`: One-time utility for uploading legacy TSV data.
 - `setup_root_folder.py`: One-time Drive folder setup (run once after first `generate-sheets`).
@@ -326,7 +332,7 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 - **#55** — Per-language metadata/documentation file (author, source, etc.).
 - **#54** — ~~`_CLASS_DISPLAY_NAMES` graceful fallback in `generate_notebooks.py`~~ — implemented.
 - **#53** — ~~`generate-notebooks`: generate and upload per-language validation notebooks~~ — implemented.
-- **#52** — `integrity-check`: a single-pass project health command that reports planar, diagnostics, and annotation issues as a Markdown summary.
+- **#52** — ~~`integrity-check`: a single-pass project health command that reports planar, diagnostics, and annotation issues as a Markdown summary~~ — implemented.
 - **#51** — ~~Remove `_filled` suffix from imported TSV filenames~~ — implemented.
 - **#50** — ~~`--rename-element` flag on `restructure-sheets`~~ — implemented.
 - **#44** — ~~Migrate tests to pytest~~ — implemented.
@@ -337,13 +343,13 @@ This is a **research project**: the schemas, qualification rules, and analytical
 
 Sessions tend to fall into a few natural patterns. Naming the primary focus at the start of a session helps keep scope manageable.
 
-**Schema/codebook work** — Editing `schemas/codebook.yaml`, `schemas/diagnostic_classes.yaml`, or the qualification rules in analysis modules. The most consequential work; mistakes here cascade across languages and analyses. Go slow, check `check-codebook` after changes. Qualification rule changes must also propagate to inline comments and module docstrings — not just the YAML files.
+**Schema/codebook work** — Editing `schemas/codebook.yaml`, `schemas/diagnostic_classes.yaml`, or the qualification rules in analysis modules. The most consequential work; mistakes here cascade across languages and analyses. Go slow, run `integrity-check` after changes. Qualification rule changes must also propagate to inline comments and module docstrings — not just the YAML files.
 
 **Language onboarding** — End-to-end work for a new language: gathering source material, drafting `diagnostics_{lang_id}.tsv`, running `generate-sheets`, producing a first-pass annotation, importing, and verifying analysis output. During prototyping, this has involved reading finished book chapters; in production, onboarding will be a collaborative process with contributors who may provide information in varied and yet-to-be-modeled forms (notes, drafts, conversation, partial data). The tooling should remain open to this rather than assuming a finished written source is always available. Automated first-pass coding may eventually be possible, but will always require expert review.
 
 **Contributor tooling** — Building or improving the `coding/` scripts, sheet generation, import/validation pipelines, and notebook generation. Standard software work, but changes to sheet structure need `update-sheets` or `restructure-sheets` to propagate.
 
-**Audit** — Checking consistency between code, documentation, codebook, and annotation data. Includes `check-codebook`, snapshot tests, and reviewing CLAUDE.md/docs for drift. Also includes verifying that inline comments and module docstrings match current behavior — code evolves faster than comments. A good way to start a session after a gap.
+**Audit** — Checking consistency between code, documentation, codebook, and annotation data. Includes `integrity-check` (and `check-codebook` for lower-level detail), snapshot tests, and reviewing CLAUDE.md/docs for drift. Also includes verifying that inline comments and module docstrings match current behavior — code evolves faster than comments. A good way to start a session after a gap.
 
 ## Analysis status convention
 

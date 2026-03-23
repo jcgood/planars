@@ -13,6 +13,7 @@ Commands:
     restructure-sheets   Archive and regenerate sheets after structural changes
     populate-sheets      Upload legacy TSV data to sheets (one-time utility)
     check-codebook       Check consistency between codebook.yaml and analysis modules
+    integrity-check      Full project-wide integrity check (all languages, all schemas)
     setup-root-folder    Create ConstituencyTypology root Drive folder (run once)
     lookup-lang          Fetch and cache Glottolog metadata for a language ID
 
@@ -34,6 +35,7 @@ _COMMANDS = {
     "restructure-sheets": "coding.restructure_sheets",
     "populate-sheets":    "coding.populate_sheets",
     "check-codebook":     "coding.check_codebook",
+    "integrity-check":    "coding.integrity_check",
     "setup-root-folder":  "coding.setup_root_folder",
     "lookup-lang":        "coding.glottolog",
 }
