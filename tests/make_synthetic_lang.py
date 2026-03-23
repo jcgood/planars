@@ -92,8 +92,8 @@ def _transform_filled_tsv(text: str, pos_map: dict[int, int], rng: random.Random
     if not lines:
         return text
     header = lines[0].rstrip("\n").split("\t")
-    param_cols = [i for i, h in enumerate(header)
-                  if h not in _STRUCTURAL and h not in _TRAILING]
+    criterion_cols = [i for i, h in enumerate(header)
+                      if h not in _STRUCTURAL and h not in _TRAILING]
     out = [lines[0]]
     for line in lines[1:]:
         parts = line.rstrip("\n").split("\t")
@@ -103,7 +103,7 @@ def _transform_filled_tsv(text: str, pos_map: dict[int, int], rng: random.Random
         if pos not in pos_map:
             continue
         parts[header.index("Position_Number")] = str(pos_map[pos])
-        for i in param_cols:
+        for i in criterion_cols:
             if parts[i] in _FLIPPABLE and rng.random() < FLIP_PROB:
                 parts[i] = "n" if parts[i] == "y" else "y"
         out.append("\t".join(parts) + "\n")

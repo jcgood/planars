@@ -8,7 +8,7 @@ import pandas as pd
 from planars.io import load_filled_tsv
 from planars.spans import blocked_span, fmt_span, position_sets_from_element_mask
 
-_REQUIRED_PARAMS = {"stressed", "obligatory", "independence"}
+_REQUIRED_CRITERIA = {"stressed", "obligatory", "independence"}
 
 
 def derive_stress_domains(
@@ -39,12 +39,12 @@ def derive_stress_domains(
         data_df, keystone_pos, pos_to_name, _, keystone_df = _data
     else:
         data_df, keystone_pos, pos_to_name, _, keystone_df = load_filled_tsv(
-            tsv_path, _REQUIRED_PARAMS, strict=strict
+            tsv_path, _REQUIRED_CRITERIA, strict=strict
         )
 
     missing_data = {}
     if not strict:
-        for c in sorted(_REQUIRED_PARAMS):
+        for c in sorted(_REQUIRED_CRITERIA):
             blank_els = data_df.loc[data_df[c] == "", "Element"].tolist()
             if blank_els:
                 missing_data[c] = blank_els

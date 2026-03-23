@@ -174,10 +174,10 @@ def _parse_csv_list(value: str) -> List[str]:
     return [v.strip() for v in (value or "").split(",") if v.strip()]
 
 
-_DEFAULT_PARAM_VALUES = ["y", "n"]
+_DEFAULT_CRITERION_VALUES = ["y", "n"]
 
 
-def _parse_param_spec(spec: str) -> Tuple[str, List[str]]:
+def _parse_criterion_spec(spec: str) -> Tuple[str, List[str]]:
     """Parse a parameter specification into (name, allowed_values).
 
     Examples:
@@ -193,22 +193,22 @@ def _parse_param_spec(spec: str) -> Tuple[str, List[str]]:
         if not values:
             raise ValueError(f"Parameter spec has empty value list: '{spec}'")
         return name.strip(), values
-    return spec, list(_DEFAULT_PARAM_VALUES)
+    return spec, list(_DEFAULT_CRITERION_VALUES)
 
 
-def _parse_param_specs(value: str) -> Tuple[List[str], Dict[str, List[str]]]:
-    """Parse a comma-separated parameter specs string.
+def _parse_criterion_specs(value: str) -> Tuple[List[str], Dict[str, List[str]]]:
+    """Parse a comma-separated criterion specs string.
 
-    Returns (param_names, param_values) where param_values maps each name
+    Returns (criterion_names, criterion_values) where criterion_values maps each name
     to its allowed values list.
     """
-    param_names: List[str] = []
-    param_values: Dict[str, List[str]] = {}
+    criterion_names: List[str] = []
+    criterion_values: Dict[str, List[str]] = {}
     for spec in _parse_csv_list(value):
-        name, values = _parse_param_spec(spec)
-        param_names.append(name)
-        param_values[name] = values
-    return param_names, param_values
+        name, values = _parse_criterion_spec(spec)
+        criterion_names.append(name)
+        criterion_values[name] = values
+    return criterion_names, criterion_values
 
 
 def _read_diagnostics_for_language(
@@ -216,13 +216,13 @@ def _read_diagnostics_for_language(
 ) -> List[Tuple[str, str, List[str], Dict[str, List[str]]]]:
     """Read diagnostics_{lang_id}.tsv and return rows for a language.
 
-    Each row is (class_name, construction, param_names, param_values) where
-    param_values maps each parameter name to its list of allowed values.
+    Each row is (class_name, construction, criterion_names, criterion_values) where
+    criterion_values maps each criterion name to its list of allowed values.
     """
     diag_path = _resolve_diagnostics_path(language_id)
     df = pd.read_csv(diag_path, sep="\t", header=0, dtype=str, keep_default_na=False)
 
-    required = {"Class", "Language", "Constructions", "Parameters"}
+    required = {"Class", "Language", "Constructions", "Criteria"}
     missing = required - set(df.columns)
     if missing:
         raise ValueError(f"Diagnostics file missing required columns: {sorted(missing)}")
@@ -236,17 +236,17 @@ def _read_diagnostics_for_language(
 
         class_name = (row.get("Class", "") or "").strip()
         constructions = _parse_csv_list(row.get("Constructions", ""))
-        param_names, param_values = _parse_param_specs(row.get("Parameters", ""))
+        criterion_names, criterion_values = _parse_criterion_specs(row.get("Criteria", ""))
 
         if not class_name:
             raise ValueError("Diagnostics file has a row with empty Class.")
         if not constructions:
             continue
-        if not param_names:
-            raise ValueError(f"Diagnostics row for class '{class_name}' has no Parameters.")
+        if not criterion_names:
+            raise ValueError(f"Diagnostics row for class '{class_name}' has no Criteria.")
 
         for construction in constructions:
-            out.append((class_name, construction, param_names, param_values))
+            out.append((class_name, construction, criterion_names, criterion_values))
 
     return out
 

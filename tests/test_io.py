@@ -58,7 +58,7 @@ def test_tsv_and_sheet_agree(lang_id, class_name, construction, params):
 
     assert ks_pos_s  == ks_pos_t,  "keystone_pos mismatch"
     assert p2n_s     == p2n_t,     "pos_to_name mismatch"
-    assert pcols_s   == pcols_t,   "param_cols mismatch"
+    assert pcols_s   == pcols_t,   "criterion_cols mismatch"
     assert data_df_s.reset_index(drop=True).equals(data_df_t.reset_index(drop=True)), \
         "data_df mismatch"
     assert ks_df_s.reset_index(drop=True).equals(ks_df_t.reset_index(drop=True)), \

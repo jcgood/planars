@@ -6,7 +6,7 @@ from typing import Dict, Optional, Tuple
 from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, position_sets_from_element_mask
 
-_REQUIRED_PARAMS = {"free", "multiple"}
+_REQUIRED_CRITERIA = {"free", "multiple"}
 
 
 def derive_noninterruption_domains(
@@ -33,11 +33,11 @@ def derive_noninterruption_domains(
     if _data is not None:
         data_df, keystone_pos, pos_to_name, _, _ = _data
     else:
-        data_df, keystone_pos, pos_to_name, _, _ = load_filled_tsv(tsv_path, _REQUIRED_PARAMS, strict=strict)
+        data_df, keystone_pos, pos_to_name, _, _ = load_filled_tsv(tsv_path, _REQUIRED_CRITERIA, strict=strict)
 
     missing_data = {}
     if not strict:
-        for c in sorted(_REQUIRED_PARAMS):
+        for c in sorted(_REQUIRED_CRITERIA):
             blank_els = data_df.loc[data_df[c] == "", "Element"].tolist()
             if blank_els:
                 missing_data[c] = blank_els

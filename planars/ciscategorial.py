@@ -32,19 +32,19 @@ def derive_v_ciscategorial_fractures(
       - missing_data: {col: [elements]} for blank annotation cells (empty if none)
     """
     if _data is not None:
-        data_df, keystone_pos, pos_to_name, param_cols, _ = _data
+        data_df, keystone_pos, pos_to_name, criterion_cols, _ = _data
     else:
-        data_df, keystone_pos, pos_to_name, param_cols, _ = load_filled_tsv(
-            tsv_path, required_params={"V-combines"}, strict=strict
+        data_df, keystone_pos, pos_to_name, criterion_cols, _ = load_filled_tsv(
+            tsv_path, required_criteria={"V-combines"}, strict=strict
         )
 
-    if "V-combines" not in param_cols:
-        raise ValueError(f"Expected a parameter column named 'V-combines'. Found: {param_cols}")
+    if "V-combines" not in criterion_cols:
+        raise ValueError(f"Expected a parameter column named 'V-combines'. Found: {criterion_cols}")
 
     # All param columns except V-combines and trailing free-text columns are "other params".
     # An element is v-ciscategorial if it combines with V (V-combines=y) and with nothing
     # else (all other params = n).
-    other_params = [c for c in param_cols if c != "V-combines" and c not in _TRAILING_COLS]
+    other_params = [c for c in criterion_cols if c != "V-combines" and c not in _TRAILING_COLS]
 
     if strict:
         for c in other_params:

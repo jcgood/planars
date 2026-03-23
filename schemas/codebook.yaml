@@ -1,5 +1,25 @@
 # Planars Codebook
-# Source of truth for parameters, values, and analytical terms.
+#
+# THIS FILE IS THE SOURCE OF TRUTH FOR:
+#   - Diagnostic criteria (annotation columns): their names, allowed values, and
+#     linguistic definitions (what each y/n value means in the field)
+#   - Analytical terms: definitions of span types, qualification concepts, etc.
+#   - Structural column definitions: what Element, Position_Name, Position_Number mean
+#
+# THIS FILE IS NOT THE SOURCE OF TRUTH FOR:
+#   - Which analysis classes exist, when they apply, or what constructions they cover
+#     → see schemas/diagnostic_classes.yaml
+#   - Which diagnostic criteria are required or optional for each class
+#     → see schemas/diagnostic_classes.yaml (required_criteria / optional_criteria)
+#   - Qualification rules (how spans are computed from criterion values)
+#     → see schemas/diagnostic_classes.yaml (qualification_rule field)
+#   - Per-language instances of these classes
+#     → see coded_data/{lang_id}/planar_input/diagnostics_{lang_id}.tsv
+#
+# NOTE: A refactor is planned (issue #77) that will split this file into focused
+# modules (planar ontology, diagnostic criteria, analytical terms).
+# The `diagnostic_criteria:` key in each analysis entry was formerly `parameters:`.
+#
 # Definitions draw on the theoretical framework in:
 # Tallman, Auderset & Uchihara (eds.) (2024), "Constituency and convergence in the Americas",
 # Topics in Phonological Diversity 1, Language Science Press. doi:10.5281/zenodo.10559861
@@ -33,7 +53,7 @@ structural_columns:
       anchors all span computations.
 
 # ---------------------------------------------------------------------------
-# PARAMETERS BY ANALYSIS
+# DIAGNOSTIC CRITERIA BY ANALYSIS
 # ---------------------------------------------------------------------------
 
 analyses:
@@ -44,7 +64,7 @@ analyses:
       category (ciscategorial selection). A ciscategorial domain is a contiguous subspan
       of positions whose elements can semantically combine with only one category class
       (V, N, or A). Elements that combine with multiple categories are transcategorial.
-    parameters:
+    diagnostic_criteria:
 
       - name: V-combines
         values: [y, n]
@@ -84,7 +104,7 @@ analyses:
       a contiguous subspan of the planar structure occurs more than once (e.g. coordination,
       complementation, serial verb constructions). Fractured by scope (widescope vs.
       narrowscope) and fillability.
-    parameters:
+    diagnostic_criteria:
 
       - name: widescope_left
         values: [y, n]
@@ -121,7 +141,7 @@ analyses:
       Tests morphosyntactic non-interruption: a span that cannot be interrupted by
       free or multiply-occurring free elements. Two domain types are derived based
       on what counts as an interruptor.
-    parameters:
+    diagnostic_criteria:
 
       - name: free
         values: [y, n]
@@ -151,7 +171,7 @@ analyses:
       whether stress is obligatory, whether an element's stress is independent of
       neighboring elements, and whether there are leftward or rightward stress
       interactions (see issues #16, #17 for meso and interaction domains).
-    parameters:
+    diagnostic_criteria:
 
       - name: stressed
         values: [y, n, both]
@@ -222,7 +242,7 @@ analyses:
       planar structure — a span where elements occur in a fixed linear order relative
       to one another. Two domain types are derived based on how strictly "fixed order"
       is interpreted (Tallman et al. 2024, intro §Fracturing).
-    parameters:
+    diagnostic_criteria:
 
       - name: permutable
         values: [y, n]
@@ -275,7 +295,7 @@ analyses:
       domain identifies the span of positions where free forms occur (free=y).
       Classified as an indeterminate domain (Tallman et al. 2024) because free
       occurrence sits between morphosyntactic and phonological criteria.
-    parameters:
+    diagnostic_criteria:
 
       - name: free
         values: [y, n]
@@ -305,7 +325,7 @@ analyses:
     description: >
       [NEEDS REVIEW] Tests which positions fall within the aspiration domain of
       the verbal planar structure. Shares parameter structure with stress.
-    parameters:
+    diagnostic_criteria:
 
       - name: stressed
         values: [y, n, both]
@@ -359,7 +379,7 @@ analyses:
       exponent group is annotated in its own TSV (one construction per file).
       In Araona: the negation circumfix (pi-…-ma) identifies a vpref–tamesuf
       domain; the interactional circumfix (ja-…-ti) identifies a vpref–ti domain.
-    parameters:
+    diagnostic_criteria:
       - name: biunique
         values: [y, n]
         description: >
@@ -387,7 +407,7 @@ analyses:
       from there rather than resuming from the error point. In Cup'ik, the repair
       domain corresponds to the traditional Verb Word (vbase–pn4). Classified as
       a phonological domain type (Tallman et al. 2024, discussion ch. 17).
-    parameters:
+    diagnostic_criteria:
       - name: restart
         values: [y, n]
         description: >
@@ -410,7 +430,7 @@ analyses:
       the span constitutes a pause unit. Positions outside the domain permit
       pause insertion. Classified as a phonological domain type (Tallman et al.
       2024, discussion ch. 17).
-    parameters:
+    diagnostic_criteria:
       - name: pause_domain
         values: [y, n]
         description: >
@@ -433,7 +453,7 @@ analyses:
       etc.). The proform domain is the span that the proform substitutes for.
       Classified as a morphosyntactic domain type (Tallman et al. 2024, discussion
       ch. 17).
-    parameters:
+    diagnostic_criteria:
       - name: substitutable
         values: [y, n]
         description: >
@@ -457,7 +477,7 @@ analyses:
       the ludling operation applies. Currently attested in Zenzontepec Chatino
       (ch. 8). Classified as a phonological domain type (Tallman et al. 2024,
       discussion ch. 17).
-    parameters:
+    diagnostic_criteria:
       - name: applies
         values: [y, n]
         description: >
@@ -479,7 +499,7 @@ analyses:
       elements has a meaning not predictable from the individual elements.
       The idiom domain is the span covered by the idiomatic unit. Classified
       as a morphosyntactic domain type (Tallman et al. 2024, discussion ch. 17).
-    parameters:
+    diagnostic_criteria:
       - name: idiomatic
         values: [y, n]
         description: >
@@ -503,7 +523,7 @@ analyses:
       in its own TSV (one construction per file). Multiple segmental processes in one
       language may identify different spans. Classified as a phonological domain type
       (Tallman et al. 2024, discussion ch. 17).
-    parameters:
+    diagnostic_criteria:
       - name: applies
         values: [y, n]
         description: >
@@ -529,7 +549,7 @@ analyses:
       aspiration.py using blocked_span logic; this module handles suprasegmental domains
       where positions are annotated positively as within or outside the domain.
       Classified as a phonological domain type (Tallman et al. 2024, discussion ch. 17).
-    parameters:
+    diagnostic_criteria:
       - name: applies
         values: [y, n]
         description: >

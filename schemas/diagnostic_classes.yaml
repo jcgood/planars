@@ -1,21 +1,36 @@
 # Diagnostic Classes
 # Normative schema for analysis classes used in diagnostics_{lang_id}.tsv.
 #
-# This file is the source of truth for:
+# THIS FILE IS THE SOURCE OF TRUTH FOR:
 #   - Which analysis classes exist and what they cover
 #   - When each class is applicable (universal vs. conditional)
 #   - Whether a class uses one general construction or is construction-specific
-#   - Which parameters each class requires in diagnostics_{lang_id}.tsv
+#   - Which diagnostic criteria each class requires or allows
+#   - Qualification rules: how spans are computed from criterion values for each class
 #   - Known construction types (non-exhaustive examples for variable classes)
 #
+# THIS FILE IS NOT THE SOURCE OF TRUTH FOR:
+#   - What each diagnostic criterion means linguistically or what values it accepts
+#     → see schemas/codebook.yaml (diagnostic_criteria sections under each analysis)
+#   - Definitions of span types and analytical terms (strict, loose, partial, complete)
+#     → see schemas/codebook.yaml (terms section, to be added)
+#   - Planar structure concepts (what positions, elements, keystone are)
+#     → see schemas/codebook.yaml (structural_columns section; full ontology planned)
+#   - Per-language instances of these classes
+#     → see coded_data/{lang_id}/planar_input/diagnostics_{lang_id}.tsv
+#
+# NOTE: A refactor is planned (issue #77) that will split schemas/codebook.yaml into
+# focused modules and rename "parameter" to "diagnostic criterion" throughout.
+# This file will absorb qualification_rule fields from codebook.yaml in that refactor.
+#
 # Relationship to other files:
-#   schemas/codebook.yaml         — parameter semantics, allowed values, qualification rules
+#   schemas/codebook.yaml         — diagnostic criterion semantics, allowed values, qualification rules
 #   schemas/diagnostic_classes.yaml (this file) — class structure, applicability, construction types
 #   diagnostics_{lang_id}.tsv       — per-language instance of these classes, validated against this file
 #   docs/analyses.md      — human reader's guide pointing to both
 #
 # check-codebook validates diagnostics_{lang_id}.tsv against this file:
-#   - required parameters must be present as columns
+#   - required diagnostic criteria must be present as columns
 #   - conditional classes should have applicability_conditions met
 #   - construction names follow the naming rules for each specificity type
 #
@@ -31,10 +46,10 @@
 #   applicability_conditions prose description of when a conditional class applies
 #   specificity              general | construction_specific
 #   known_constructions      non-exhaustive examples (construction_specific classes only)
-#   required_parameters      parameter columns that must appear in diagnostics_{lang_id}.tsv for this class
-#   optional_parameters      parameter columns that may appear but are not required
+#   required_criteria        diagnostic criterion columns that must appear in diagnostics_{lang_id}.tsv for this class
+#   optional_criteria        diagnostic criterion columns that may appear but are not required
 #   status                   stable | "[NEEDS REVIEW]" | "[PLACEHOLDER]"
-#   parameter_set_status     stable | "[PROVISIONAL]" (expected to grow as more languages
+#   criterion_set_status     stable | "[PROVISIONAL]" (expected to grow as more languages
 #                            are analyzed; note explains known gaps or open questions)
 
 classes:
@@ -57,11 +72,11 @@ classes:
       "predicate-only ciscategorial" (strict) and "with-predicate ciscategorial"
       (elements that select predicates broadly) may be needed.
     specificity: general
-    required_parameters: [V-combines, N-combines, A-combines]
-    optional_parameters: [PRED-combines]  # predicate-flexible languages (e.g., Araona,
+    required_criteria: [V-combines, N-combines, A-combines]
+    optional_criteria: [PRED-combines]  # predicate-flexible languages (e.g., Araona,
       # Chorote ch. 15) where non-verbal predicates take verbal TAME markers — issue #39.
     status: stable
-    parameter_set_status: "[PROVISIONAL]"  # Parameter set may grow further as more
+    criterion_set_status: "[PROVISIONAL]"  # Parameter set may grow further as more
       # predicate-flexible languages are onboarded; other *-combines types not yet attested.
 
   - name: subspanrepetition
@@ -113,10 +128,10 @@ classes:
       - nominalized clause combination # gerundive/obligatative/habitual/prior-event; e.g., Quechua
       # Serial verbs
       - serial verb construction       # verb serialization; e.g., Hup
-    required_parameters: [widescope_left, widescope_right, fillable_botheither_conjunct]
-    optional_parameters: []
+    required_criteria: [widescope_left, widescope_right, fillable_botheither_conjunct]
+    optional_criteria: []
     status: stable
-    parameter_set_status: "[PROVISIONAL]"  # Construction types are open-ended and expected
+    criterion_set_status: "[PROVISIONAL]"  # Construction types are open-ended and expected
       # to grow as more languages are added. Parameter names may also need refinement as
       # additional construction types are attested.
 
@@ -129,10 +144,10 @@ classes:
       elements; the non-interruption domain tests which contiguous spans cannot be
       broken by free or multiply-occurring free elements.
     specificity: general
-    required_parameters: [free, multiple]
-    optional_parameters: []
+    required_criteria: [free, multiple]
+    optional_criteria: []
     status: stable
-    parameter_set_status: stable
+    criterion_set_status: stable
 
   - name: nonpermutability
     display_name: "Nonpermutability"
@@ -143,9 +158,9 @@ classes:
       among verbal elements; the non-permutability domain tests the span over which
       linear ordering is strictly or conditionally fixed.
     specificity: general
-    required_parameters: [permutable, scopal]
-    optional_parameters: []
-    parameter_set_status: "[PROVISIONAL]"  # Known gaps: verb-class-conditioned permutability
+    required_criteria: [permutable, scopal]
+    optional_criteria: []
+    criterion_set_status: "[PROVISIONAL]"  # Known gaps: verb-class-conditioned permutability
       # (issue #67) and fluid/multi-position formatives (issue #66) may require additional
       # parameters once the linguistic questions are resolved.
     # Note: zone-internal permutability (variable ordering NOT conditioned by scope, e.g.,
@@ -165,10 +180,10 @@ classes:
       because free occurrence straddles morphosyntactic and phonological criteria
       (Tallman et al. 2024, ch. 1).
     specificity: general
-    required_parameters: [free]
-    optional_parameters: [multiple]  # present when noninterruption is run on the same sheet
+    required_criteria: [free]
+    optional_criteria: [multiple]  # present when noninterruption is run on the same sheet
     status: stable
-    parameter_set_status: stable
+    criterion_set_status: stable
 
   - name: proform
     display_name: "Proform"
@@ -179,9 +194,9 @@ classes:
       etc.) that can replace a contiguous span within the verbal planar structure. The
       proform domain is the span the proform substitutes for.
     specificity: general
-    required_parameters: [substitutable]
-    optional_parameters: []
-    parameter_set_status: "[PROVISIONAL]"  # Class itself is [NEEDS REVIEW]; parameter set
+    required_criteria: [substitutable]
+    optional_criteria: []
+    criterion_set_status: "[PROVISIONAL]"  # Class itself is [NEEDS REVIEW]; parameter set
       # may need refinement once real annotation data exists. Proform type (pronoun,
       # pro-verb, pro-VP) may warrant a parameter distinguishing substitution scope.
     status: "[NEEDS REVIEW]"  # Ch. 17 line 543 explicitly states proform was NOT included in
@@ -202,9 +217,9 @@ classes:
       # One TSV per idiomatic collocation. Names should describe the idiom briefly.
       - verb-particle idiom
       - verb-affix collocation
-    required_parameters: [idiomatic]
-    optional_parameters: []
-    parameter_set_status: stable  # Single binary parameter is appropriate; idiom identity
+    required_criteria: [idiomatic]
+    optional_criteria: []
+    criterion_set_status: stable  # Single binary parameter is appropriate; idiom identity
       # is encoded in the construction name, not additional parameters.
     status: "[NEEDS REVIEW]"  # Mebengokre (ch. 12) provides the clearest evidence: diagnostic
     # [\ref{idioms}] documents 3 specific idioms with position spans (adjnc-ket). The class
@@ -234,9 +249,9 @@ classes:
       - interactional circumfix  # e.g., Araona ja-...-ti
       - perfective circumfix
       - extended exponent
-    required_parameters: [biunique]
-    optional_parameters: []
-    parameter_set_status: stable  # Single binary parameter is appropriate for the
+    required_criteria: [biunique]
+    optional_criteria: []
+    criterion_set_status: stable  # Single binary parameter is appropriate for the
       # circumfix/extended-exponent type. Non-automatic allomorphy (issue #58) is a
       # distinct class, not an extension of this parameter set.
     status: "[NEEDS REVIEW]"  # Formal abstract type in book's ch. 17 database schema.
@@ -255,9 +270,9 @@ classes:
       behavior reveals a coherent span. The repair domain is the minimal span such that an
       error anywhere inside it triggers restart from the left edge.
     specificity: general
-    required_parameters: [restart]
-    optional_parameters: []
-    parameter_set_status: stable  # Single binary parameter is appropriate; restart
+    required_criteria: [restart]
+    optional_criteria: []
+    criterion_set_status: stable  # Single binary parameter is appropriate; restart
       # behavior is categorical (yes/no per position).
     status: "[NEEDS REVIEW]"  # Strongly confirmed by Cup'ik ch. 2 (4 naturalistic examples,
     # restart domain = vbase–pn4); no evidence in 8 other reviewed chapters. Applicable
@@ -278,9 +293,9 @@ classes:
       the verbal keystone. Requires elicitation data sufficient to determine whether
       stress is obligatory and/or independent for each position.
     specificity: general
-    required_parameters: [stressed, independence, obligatory, left-interaction, right-interaction]
-    optional_parameters: []
-    parameter_set_status: "[PROVISIONAL]"  # left-interaction and right-interaction are
+    required_criteria: [stressed, independence, obligatory, left-interaction, right-interaction]
+    optional_criteria: []
+    criterion_set_status: "[PROVISIONAL]"  # left-interaction and right-interaction are
       # [NEEDS REVIEW] — their role in the qualification rule is unresolved (issue #17).
       # They may be removed, renamed, or replaced depending on resolution of meso/interaction
       # domain design (issues #16, #17).
@@ -302,9 +317,9 @@ classes:
       prosodic case only. No confirmed language data exists for this module yet — see
       issue #60.
     specificity: general
-    required_parameters: [stressed, independence, obligatory, left-interaction, right-interaction]
-    optional_parameters: []
-    parameter_set_status: "[PROVISIONAL]"  # Inherits the same open questions as stress
+    required_criteria: [stressed, independence, obligatory, left-interaction, right-interaction]
+    optional_criteria: []
+    criterion_set_status: "[PROVISIONAL]"  # Inherits the same open questions as stress
       # re: left-interaction and right-interaction (issues #16, #17). Additionally, the
       # scope of this class is itself unresolved (issue #60) — parameter set may change
       # substantially depending on whether this remains a blocked_span module.
@@ -347,9 +362,9 @@ classes:
       - h-metathesis domain            # e.g., Cherokee
       - vowel deletion domain          # e.g., Cherokee
       - final apocope domain           # e.g., Cherokee
-    required_parameters: [applies]
-    optional_parameters: []
-    parameter_set_status: stable  # Single binary parameter is appropriate; the process
+    required_criteria: [applies]
+    optional_criteria: []
+    criterion_set_status: stable  # Single binary parameter is appropriate; the process
       # identity is encoded in the construction name. No cross-language evidence suggests
       # additional parameters are needed.
     # Formal abstract type in ch. 17 database schema. Note: `stress` and `aspiration` are
@@ -381,9 +396,9 @@ classes:
       - word-stress domain        # stress-final within domain; e.g., Mebengokre: prevb-fin
       - right-edge stress domain  # stress on final syllable of domain; e.g., Mocoví
       - auxiliary construction domain  # pitch accent extends to auxiliary; e.g., Quechua
-    required_parameters: [applies]
-    optional_parameters: []
-    parameter_set_status: stable  # Single binary parameter is appropriate; rule identity
+    required_criteria: [applies]
+    optional_criteria: []
+    criterion_set_status: stable  # Single binary parameter is appropriate; rule identity
       # is encoded in the construction name. No cross-language evidence suggests additional
       # parameters are needed.
     # Formal abstract type in ch. 17 database schema. Note: `stress` and `aspiration` are
@@ -402,9 +417,9 @@ classes:
       The pausing domain is a span that constitutes a pause unit; elements outside it
       permit pause insertion.
     specificity: general
-    required_parameters: [pause_domain]
-    optional_parameters: []
-    parameter_set_status: stable  # Single binary parameter is appropriate; pause
+    required_criteria: [pause_domain]
+    optional_criteria: []
+    criterion_set_status: stable  # Single binary parameter is appropriate; pause
       # behavior is categorical (yes/no per position).
     status: "[NEEDS REVIEW]"  # Mebengokre (ch. 12) applies and validates: diagnostic [\ref{pause}]
     # identifies span prevb-fin, converging with non-recursive interruption and stress domain.
@@ -428,9 +443,9 @@ classes:
       - initial-syllable transposition  # initial CV moved to end of form; e.g., Chatino (ch. 8);
                                         # each lexical tone melody domain is its own target;
                                         # compound verb stems each transpose independently
-    required_parameters: [applies]
-    optional_parameters: []
-    parameter_set_status: stable  # Single binary parameter is appropriate; ludling
+    required_criteria: [applies]
+    optional_criteria: []
+    criterion_set_status: stable  # Single binary parameter is appropriate; ludling
       # operation identity is encoded in the construction name.
     status: "[NEEDS REVIEW]"  # Chatino ch. 8 provides corpus-attested data (Campbell 2020);
     # target domain = positions 10-13 (verbal core = tonal melody domain). Confirmed real.

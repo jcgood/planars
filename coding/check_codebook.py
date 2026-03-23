@@ -1,10 +1,10 @@
 """Check consistency between codebook.yaml, diagnostic_classes.yaml, analysis modules, and charts.py.
 
 Checks:
-  1. Every param in each module's _REQUIRED_PARAMS is defined in codebook.yaml
-  2. Parameter names in diagnostics_{lang_id}.tsv are defined in codebook.yaml
+  1. Every criterion in each module's _REQUIRED_CRITERIA is defined in codebook.yaml
+  2. Criterion names in diagnostics_{lang_id}.tsv are defined in codebook.yaml
   3. Chart span label keys match the keys returned by each derive function
-  4. diagnostics_{lang_id}.tsv class names and required parameters match diagnostic_classes.yaml
+  4. diagnostics_{lang_id}.tsv class names and required criteria match diagnostic_classes.yaml
 
 Run:
     python -m coding check-codebook
@@ -32,7 +32,7 @@ def _load_diagnostic_classes() -> dict:
     """Load and parse diagnostic_classes.yaml from the repo root.
 
     Returns a dict keyed by class name:
-        {class_name: {"required_parameters": [...], "specificity": str, ...}}
+        {class_name: {"required_criteria": [...], "specificity": str, ...}}
     """
     path = ROOT / "schemas" / "diagnostic_classes.yaml"
     if not path.exists():
@@ -42,21 +42,21 @@ def _load_diagnostic_classes() -> dict:
     return {cls["name"]: cls for cls in data.get("classes", [])}
 
 
-def _codebook_params(codebook: dict) -> dict[str, set[str]]:
-    """Return {analysis_name: {param_name, ...}} from codebook."""
+def _codebook_criteria(codebook: dict) -> dict[str, set[str]]:
+    """Return {analysis_name: {criterion_name, ...}} from codebook."""
     return {
-        a["name"]: {p["name"] for p in a.get("parameters", [])}
+        a["name"]: {p["name"] for p in a.get("diagnostic_criteria", [])}
         for a in codebook.get("analyses", [])
     }
 
 
-def _check_required_params(codebook: dict) -> List[str]:
-    """Check that every required param in each module is defined in codebook.yaml."""
+def _check_required_criteria(codebook: dict) -> List[str]:
+    """Check that every required criterion in each module is defined in codebook.yaml."""
     import importlib
 
-    cb = _codebook_params(codebook)
-    # ciscategorial uses inline required_params rather than a module-level constant.
-    # All other modules expose _REQUIRED_PARAMS at module level.
+    cb = _codebook_criteria(codebook)
+    # ciscategorial uses inline required_criteria rather than a module-level constant.
+    # All other modules expose _REQUIRED_CRITERIA at module level.
     module_params: dict[str, set] = {
         "ciscategorial": {"V-combines", "N-combines", "A-combines"},
     }
@@ -66,7 +66,7 @@ def _check_required_params(codebook: dict) -> List[str]:
         "segmental", "suprasegmental", "pausing", "proform", "play_language", "idiom",
     ]:
         mod = importlib.import_module(f"planars.{name}")
-        params = getattr(mod, "_REQUIRED_PARAMS", None)
+        params = getattr(mod, "_REQUIRED_CRITERIA", None)
         if params is not None:
             module_params[name] = set(params)
 
@@ -76,15 +76,15 @@ def _check_required_params(codebook: dict) -> List[str]:
         not_in_codebook = mod_params - cb_params
         if not_in_codebook:
             errors.append(
-                f"[{name}] required params not in codebook: "
+                f"[{name}] required criteria not in codebook: "
                 f"{sorted(not_in_codebook)}"
             )
     return errors
 
 
 def _check_diagnostics(codebook: dict) -> List[str]:
-    """Check that param names in all diagnostics_{lang_id}.tsv files are in codebook.yaml."""
-    cb = _codebook_params(codebook)
+    """Check that criterion names in all diagnostics_{lang_id}.tsv files are in codebook.yaml."""
+    cb = _codebook_criteria(codebook)
     diag_files = sorted((ROOT / "coded_data").glob("*/planar_input/diagnostics_*.tsv"))
     if not diag_files:
         return ["No diagnostics_*.tsv files found under coded_data/"]
@@ -95,7 +95,7 @@ def _check_diagnostics(codebook: dict) -> List[str]:
         df = pd.read_csv(diag_path, sep="\t", dtype=str, keep_default_na=False)
         for _, row in df.iterrows():
             class_name = row.get("Class", "").strip()
-            params_raw = row.get("Parameters", "").strip()
+            params_raw = row.get("Criteria", "").strip()
             if not params_raw:
                 continue
             for spec in params_raw.split(","):
@@ -103,7 +103,7 @@ def _check_diagnostics(codebook: dict) -> List[str]:
                 name = spec[: spec.index("{")] .strip() if "{" in spec else spec
                 if name and name not in cb.get(class_name, set()):
                     errors.append(
-                        f"[{lang}/{class_name}] diagnostics_{lang}.tsv param '{name}' "
+                        f"[{lang}/{class_name}] diagnostics_{lang}.tsv criterion '{name}' "
                         f"not found in codebook"
                     )
     return errors
@@ -136,9 +136,9 @@ def _check_diagnostics_vs_classes(diag_classes: dict) -> List[str]:
 
     For each row in every diagnostics_{lang_id}.tsv:
       - The class name must appear in diagnostic_classes.yaml.
-      - All required_parameters listed for that class must be present as param columns.
-      - No parameter may appear that is outside the allowed set
-        (required_parameters ∪ optional_parameters) for the class.
+      - All required_criteria listed for that class must be present as criterion columns.
+      - No criterion may appear that is outside the allowed set
+        (required_criteria ∪ optional_criteria) for the class.
     """
     if not diag_classes:
         return ["diagnostic_classes.yaml not found — skipping class schema check"]
@@ -163,8 +163,8 @@ def _check_diagnostics_vs_classes(diag_classes: dict) -> List[str]:
                 )
                 continue
 
-            # Check required parameters are present
-            params_raw = row.get("Parameters", "").strip()
+            # Check required criteria are present
+            params_raw = row.get("Criteria", "").strip()
             present = set()
             for spec in params_raw.split(","):
                 spec = spec.strip()
@@ -174,21 +174,21 @@ def _check_diagnostics_vs_classes(diag_classes: dict) -> List[str]:
 
             construction = row.get("Constructions", "").strip()
 
-            required = diag_classes[class_name].get("required_parameters", [])
+            required = diag_classes[class_name].get("required_criteria", [])
             missing = [p for p in required if p not in present]
             if missing:
                 errors.append(
                     f"[{lang}/{class_name}/{construction}] missing required "
-                    f"parameter(s) from diagnostic_classes.yaml: {missing}"
+                    f"diagnostic criterion(ia) from diagnostic_classes.yaml: {missing}"
                 )
 
-            # Check no undeclared parameters are used (opt-in model)
-            optional = diag_classes[class_name].get("optional_parameters", [])
+            # Check no undeclared criteria are used (opt-in model)
+            optional = diag_classes[class_name].get("optional_criteria", [])
             allowed = set(required) | set(optional)
             extra = sorted(present - allowed)
             if extra:
                 errors.append(
-                    f"[{lang}/{class_name}/{construction}] parameter(s) not in "
+                    f"[{lang}/{class_name}/{construction}] diagnostic criterion(ia) not in "
                     f"diagnostic_classes.yaml allowed set: {extra}"
                 )
 
@@ -229,7 +229,7 @@ def _check_chart_keys() -> List[str]:
 
     simple_keys = [k for k, _ in _SIMPLE_SPANS]
 
-    # ciscategorial (no module-level _REQUIRED_PARAMS — uses inline required_params)
+    # ciscategorial (no module-level _REQUIRED_CRITERIA — uses inline required_criteria)
     cisc_keys = [k for k, _ in _CISC_SPANS]
     _check("ciscategorial", ciscategorial.derive_v_ciscategorial_fractures, cisc_keys,
            _make_minimal_tsv(["V-combines", "N-combines", "A-combines"]),
@@ -239,21 +239,21 @@ def _check_chart_keys() -> List[str]:
     nonint_keys = [k for k, _ in _NONINT_SPANS]
     _check("noninterruption", noninterruption.derive_noninterruption_domains, nonint_keys,
            _make_minimal_tsv(["free", "multiple"]),
-           noninterruption._REQUIRED_PARAMS)
+           noninterruption._REQUIRED_CRITERIA)
 
     # stress
     stress_keys = [k for k, _ in _STRESS_SPANS]
     _check("stress", stress.derive_stress_domains, stress_keys,
            _make_minimal_tsv(["stressed", "obligatory", "independence"],
                               ["left-interaction", "right-interaction"]),
-           stress._REQUIRED_PARAMS)
+           stress._REQUIRED_CRITERIA)
 
     # aspiration
     asp_keys = [k for k, _ in _ASPIRATION_SPANS]
     _check("aspiration", aspiration.derive_aspiration_domains, asp_keys,
            _make_minimal_tsv(["stressed", "obligatory", "independence"],
                               ["left-interaction", "right-interaction"]),
-           aspiration._REQUIRED_PARAMS)
+           aspiration._REQUIRED_CRITERIA)
 
     # subspanrepetition
     subspan_keys = [
@@ -263,13 +263,13 @@ def _check_chart_keys() -> List[str]:
     ]
     _check("subspanrepetition", subspanrepetition.derive_subspanrepetition_spans, subspan_keys,
            _make_minimal_tsv(["widescope_left", "widescope_right", "fillable_botheither_conjunct"]),
-           subspanrepetition._REQUIRED_PARAMS)
+           subspanrepetition._REQUIRED_CRITERIA)
 
     # nonpermutability (strict+flexible × complete/partial — all strict spans)
     nonperm_keys = [k for k, _ in _NONPERM_SPANS]
     _check("nonpermutability", nonpermutability.derive_nonpermutability_domains, nonperm_keys,
-           _make_minimal_tsv(list(nonpermutability._REQUIRED_PARAMS)),
-           nonpermutability._REQUIRED_PARAMS)
+           _make_minimal_tsv(list(nonpermutability._REQUIRED_CRITERIA)),
+           nonpermutability._REQUIRED_CRITERIA)
 
     # simple 4-span modules (strict/loose × complete/partial)
     simple_cases = [
@@ -285,8 +285,8 @@ def _check_chart_keys() -> List[str]:
     ]
     for name, mod, derive_fn in simple_cases:
         _check(name, derive_fn, simple_keys,
-               _make_minimal_tsv(list(mod._REQUIRED_PARAMS)),
-               mod._REQUIRED_PARAMS)
+               _make_minimal_tsv(list(mod._REQUIRED_CRITERIA)),
+               mod._REQUIRED_CRITERIA)
 
     return errors
 
@@ -301,7 +301,7 @@ def _report_needs_review(codebook: dict, diag_classes: dict) -> int:
             if "[NEEDS REVIEW]" in text or "[PLACEHOLDER]" in text:
                 flagged.append(f"codebook.yaml [{name}]: {field}")
                 break
-        for param in analysis.get("parameters", []):
+        for param in analysis.get("diagnostic_criteria", []):
             for field in ("description",):
                 text = param.get(field, "")
                 if "[NEEDS REVIEW]" in text or "[PLACEHOLDER]" in text:
@@ -322,10 +322,10 @@ def main() -> None:
     """Entry point for `python -m coding check-codebook`.
 
     Runs four consistency checks and exits with status 1 if any fail:
-    1. Every _REQUIRED_PARAMS param in each analysis module is in codebook.yaml.
-    2. Every param name in diagnostics_{lang_id}.tsv files is in codebook.yaml.
+    1. Every _REQUIRED_CRITERIA criterion in each analysis module is in codebook.yaml.
+    2. Every criterion name in diagnostics_{lang_id}.tsv files is in codebook.yaml.
     3. Every span key referenced in charts.py exists in the corresponding derive result.
-    4. diagnostics_{lang_id}.tsv class names and required parameters match diagnostic_classes.yaml.
+    4. diagnostics_{lang_id}.tsv class names and required criteria match diagnostic_classes.yaml.
 
     Also prints a summary of [NEEDS REVIEW] / [PLACEHOLDER] entries as a warning
     (does not cause a non-zero exit).
@@ -334,8 +334,8 @@ def main() -> None:
     diag_classes = _load_diagnostic_classes()
     all_errors: List[str] = []
 
-    print("1. Checking _REQUIRED_PARAMS vs codebook.yaml ...")
-    all_errors.extend(_check_required_params(codebook))
+    print("1. Checking _REQUIRED_CRITERIA vs codebook.yaml ...")
+    all_errors.extend(_check_required_criteria(codebook))
 
     print("2. Checking diagnostics_{lang_id}.tsv vs codebook.yaml ...")
     all_errors.extend(_check_diagnostics(codebook))
@@ -343,7 +343,7 @@ def main() -> None:
     print("3. Checking chart span keys vs derive function result dicts ...")
     all_errors.extend(_check_chart_keys())
 
-    print("4. Checking diagnostics_{lang_id}.tsv vs diagnostic_classes.yaml ...")
+    print("4. Checking diagnostics_{lang_id}.tsv criteria vs diagnostic_classes.yaml ...")
     all_errors.extend(_check_diagnostics_vs_classes(diag_classes))
 
     print()

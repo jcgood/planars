@@ -6,13 +6,13 @@ are created or revalidated.
 
 Checks:
   1. Structural     — required columns present; Language matches lang_id
-  2. Brace syntax   — param specs like stressed{y/n/both} are well-formed
-  3. Param names    — base param names are defined in codebook.yaml
+  2. Brace syntax   — criterion specs like stressed{y/n/both} are well-formed
+  3. Criterion names — base criterion names are defined in codebook.yaml
   4. Class names    — class corresponds to a planars/ analysis module
   5. Constructions  — 'general' must be alone; no duplicates within a class
   6. Glottocode     — lang_id matches Glottocode format; advisory if not cached
-  7. Schema conform — every parameter is in the allowed set for its class
-                      (required_parameters ∪ optional_parameters in
+  7. Schema conform — every criterion is in the allowed set for its class
+                      (required_criteria ∪ optional_criteria in
                       diagnostic_classes.yaml)
 """
 from __future__ import annotations
@@ -32,7 +32,7 @@ ROOT = Path(__file__).resolve().parent.parent
 # Helpers
 # ---------------------------------------------------------------------------
 
-_REQUIRED_COLS = {"Class", "Language", "Constructions", "Parameters"}
+_REQUIRED_COLS = {"Class", "Language", "Constructions", "Criteria"}
 
 
 def _known_analysis_classes() -> Set[str]:
@@ -51,7 +51,7 @@ def _known_analysis_classes() -> Set[str]:
     return classes
 
 
-def _diagnostic_class_allowed_params() -> Dict[str, Set[str]]:
+def _diagnostic_class_allowed_criteria() -> Dict[str, Set[str]]:
     """Return {class_name: set_of_allowed_param_names} from diagnostic_classes.yaml.
 
     Allowed = required_parameters ∪ optional_parameters.
@@ -67,13 +67,13 @@ def _diagnostic_class_allowed_params() -> Dict[str, Set[str]]:
         name = cls.get("name", "")
         if not name:
             continue
-        allowed: Set[str] = set(cls.get("required_parameters", []))
-        allowed.update(cls.get("optional_parameters", []))
+        allowed: Set[str] = set(cls.get("required_criteria", []))
+        allowed.update(cls.get("optional_criteria", []))
         result[name] = allowed
     return result
 
 
-def _codebook_param_names() -> Set[str]:
+def _codebook_criterion_names() -> Set[str]:
     """Return all parameter names defined in codebook.yaml."""
     cb_path = ROOT / "schemas" / "codebook.yaml"
     if not cb_path.exists():
@@ -82,14 +82,14 @@ def _codebook_param_names() -> Set[str]:
         cb = yaml.safe_load(f)
     names: Set[str] = set()
     for analysis in cb.get("analyses", []):
-        for param in analysis.get("parameters", []):
+        for param in analysis.get("diagnostic_criteria", []):
             name = param.get("name", "").strip()
             if name:
                 names.add(name)
     return names
 
 
-def _parse_param_specs(value: str) -> List[tuple]:
+def _parse_criterion_specs(value: str) -> List[tuple]:
     """Parse a comma-separated parameter specs string into (name, values, raw_spec) tuples.
 
     Does not raise — returns what it can and lets the caller emit ValidationIssues.
@@ -147,14 +147,14 @@ def validate_diagnostics_df(df, lang_id: str) -> List[ValidationIssue]:
     # ------------------------------------------------------------------
     # 2. Brace syntax + 3. Param names vs. codebook
     # ------------------------------------------------------------------
-    known_params = _codebook_param_names()
+    known_criteria = _codebook_criterion_names()
 
     for i, row in df.iterrows():
         class_name = str(row.get("Class", "")).strip()
-        params_raw = str(row.get("Parameters", "")).strip()
+        params_raw = str(row.get("Criteria", "")).strip()
         location   = f"row {i + 2} [{class_name}]"
 
-        for name, values, raw_spec in _parse_param_specs(params_raw):
+        for name, values, raw_spec in _parse_criterion_specs(params_raw):
             # Brace syntax
             if values is None:
                 if "}" not in raw_spec:
@@ -168,10 +168,10 @@ def validate_diagnostics_df(df, lang_id: str) -> List[ValidationIssue]:
                         f"Param spec '{raw_spec}' has empty value list"
                     ))
             # Param names vs. codebook (only if codebook loaded successfully)
-            if known_params and name and name not in known_params:
+            if known_criteria and name and name not in known_criteria:
                 issues.append(ValidationIssue(
                     "warning", location,
-                    f"Parameter '{name}' is not defined in codebook.yaml"
+                    f"Diagnostic criterion '{name}' is not defined in codebook.yaml"
                 ))
 
     # ------------------------------------------------------------------
@@ -244,23 +244,23 @@ def validate_diagnostics_df(df, lang_id: str) -> List[ValidationIssue]:
     # ------------------------------------------------------------------
     # 7. Schema conformance — params must be in the allowed set for class
     # ------------------------------------------------------------------
-    allowed_by_class = _diagnostic_class_allowed_params()
+    allowed_by_class = _diagnostic_class_allowed_criteria()
 
     if allowed_by_class:
         for i, row in df.iterrows():
             class_name = str(row.get("Class", "")).strip()
-            params_raw = str(row.get("Parameters", "")).strip()
+            params_raw = str(row.get("Criteria", "")).strip()
             location   = f"row {i + 2} [{class_name}]"
 
             if not class_name or class_name not in allowed_by_class:
                 continue  # unknown class already flagged in check 4
 
             allowed = allowed_by_class[class_name]
-            for name, _values, _raw in _parse_param_specs(params_raw):
+            for name, _values, _raw in _parse_criterion_specs(params_raw):
                 if name and name not in allowed:
                     issues.append(ValidationIssue(
                         "warning", location,
-                        f"Parameter '{name}' is not in the allowed set for class "
+                        f"Diagnostic criterion '{name}' is not in the allowed set for class "
                         f"'{class_name}' in diagnostic_classes.yaml "
                         f"(allowed: {sorted(allowed)})"
                     ))

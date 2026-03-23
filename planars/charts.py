@@ -288,7 +288,7 @@ def collect_all_spans_from_sheets(gc, manifest):
                 required = set(
                     construction_params.get(construction, {}).get("param_names", [])
                 )
-                loaded = load_filled_sheet(ws, required_params=required, strict=False)
+                loaded = load_filled_sheet(ws, required_criteria=required, strict=False)
                 result = derive_fn(_data=loaded, strict=False)
                 rows.extend(row_fn(result, lang_id))
                 if lang_id not in lang_meta:

@@ -6,7 +6,7 @@ from typing import Dict, Optional, Tuple
 from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, loose_span, position_sets_from_element_mask
 
-_REQUIRED_PARAMS = {"pause_domain"}
+_REQUIRED_CRITERIA = {"pause_domain"}
 
 
 def derive_pausing_domains(
@@ -46,7 +46,7 @@ def derive_pausing_domains(
     if _data is not None:
         data_df, keystone_pos, pos_to_name, _, _ = _data
     else:
-        data_df, keystone_pos, pos_to_name, _, _ = load_filled_tsv(tsv_path, _REQUIRED_PARAMS, strict=strict)
+        data_df, keystone_pos, pos_to_name, _, _ = load_filled_tsv(tsv_path, _REQUIRED_CRITERIA, strict=strict)
 
     missing_data = {}
     if not strict:

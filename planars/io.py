@@ -10,7 +10,7 @@ _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
 
 def _parse_filled_df(
     df: pd.DataFrame,
-    required_params: Set[str],
+    required_criteria: Set[str],
     strict: bool,
 ) -> Tuple[pd.DataFrame, int, Dict[int, str], List[str]]:
     """Core parsing logic shared by load_filled_tsv and load_filled_sheet.
@@ -19,8 +19,8 @@ def _parse_filled_df(
     row (Position_Name == 'v:verbstem'), and splits keystone rows from the rest.
 
     Args:
-        df: raw DataFrame with at least the structural columns and required_params.
-        required_params: parameter column names that must be present and (when
+        df: raw DataFrame with at least the structural columns and required_criteria.
+        required_criteria: parameter column names that must be present and (when
             strict=True) non-blank in all non-keystone rows.
         strict: if True, raise ValueError on any blank required_param cell in
             non-keystone rows; if False, leave blanks as empty strings.
@@ -29,10 +29,10 @@ def _parse_filled_df(
         data_df:      DataFrame of non-keystone rows, all param cells normalized.
         keystone_pos: integer Position_Number of the keystone row.
         pos_to_name:  dict mapping Position_Number -> Position_Name.
-        param_cols:   list of all non-structural column names (params + trailing).
+        criterion_cols:   list of all non-structural column names (criteria + trailing).
         keystone_df:  DataFrame of keystone rows (for blocking checks in stress/aspiration).
     """
-    missing = (required_params | _STRUCTURAL_COLS) - set(df.columns)
+    missing = (required_criteria | _STRUCTURAL_COLS) - set(df.columns)
     if missing:
         raise ValueError(f"Missing required column(s): {sorted(missing)}")
 
@@ -44,8 +44,8 @@ def _parse_filled_df(
     df["Position_Name"] = df["Position_Name"].astype(str).str.strip()
     df["Element"] = df["Element"].astype(str).str.strip()
 
-    param_cols = [c for c in df.columns if c not in _STRUCTURAL_COLS]
-    for c in param_cols:
+    criterion_cols = [c for c in df.columns if c not in _STRUCTURAL_COLS]
+    for c in criterion_cols:
         df[c] = df[c].astype(str).str.strip().str.lower()
 
     # Validate Position_Name ↔ Position_Number is a consistent 1-to-1 mapping.
@@ -79,7 +79,7 @@ def _parse_filled_df(
     keystone_df = df.loc[keystone_mask].copy()
     data_df = df.loc[~keystone_mask].copy()
 
-    for c in required_params:
+    for c in required_criteria:
         if strict and (data_df[c] == "").any():
             bad = data_df.index[data_df[c] == ""].tolist()[:10]
             raise ValueError(f"Blank value(s) in column '{c}' (example row indices: {bad}).")
@@ -91,12 +91,12 @@ def _parse_filled_df(
           .to_dict()
     )
 
-    return data_df, keystone_pos, pos_to_name, param_cols, keystone_df
+    return data_df, keystone_pos, pos_to_name, criterion_cols, keystone_df
 
 
 def load_filled_tsv(
     path: Path,
-    required_params: Set[str],
+    required_criteria: Set[str],
     strict: bool = True,
 ) -> Tuple[pd.DataFrame, int, Dict[int, str], List[str], pd.DataFrame]:
     """Load and validate a filled analysis TSV.
@@ -106,24 +106,24 @@ def load_filled_tsv(
     parameter cells are blank in non-keystone rows.
 
     All non-structural columns are normalized (stripped, lowercased).
-    required_params are checked for existence. When strict=True (default),
-    blank values in required_params raise ValueError. When strict=False,
+    required_criteria are checked for existence. When strict=True (default),
+    blank values in required_criteria raise ValueError. When strict=False,
     blanks are left as empty strings for the caller to handle.
 
     Returns:
         data_df:      DataFrame of non-keystone rows
         keystone_pos: integer Position_Number of the keystone
         pos_to_name:  dict mapping Position_Number -> Position_Name
-        param_cols:   list of all non-structural column names
+        criterion_cols:   list of all non-structural column names
         keystone_df:  DataFrame of keystone rows (for blocking checks)
     """
     df = pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False)
-    return _parse_filled_df(df, required_params, strict)
+    return _parse_filled_df(df, required_criteria, strict)
 
 
 def load_filled_sheet(
     ws,
-    required_params: Set[str],
+    required_criteria: Set[str],
     strict: bool = True,
 ) -> Tuple[pd.DataFrame, int, Dict[int, str], List[str], pd.DataFrame]:
     """Load and validate a filled annotation from a gspread Worksheet.
@@ -133,11 +133,11 @@ def load_filled_sheet(
     data is read directly from Google Sheets without a local TSV intermediary.
 
     Returns the same 5-tuple as load_filled_tsv:
-    (data_df, keystone_pos, pos_to_name, param_cols, keystone_df).
+    (data_df, keystone_pos, pos_to_name, criterion_cols, keystone_df).
     """
     rows = ws.get_all_values()
     if not rows:
         raise ValueError(f"Sheet '{ws.title}' is empty.")
     header, data_rows = rows[0], rows[1:]
     df = pd.DataFrame(data_rows, columns=header)
-    return _parse_filled_df(df, required_params, strict)
+    return _parse_filled_df(df, required_criteria, strict)
