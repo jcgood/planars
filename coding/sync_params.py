@@ -2,17 +2,28 @@
 """Sync param columns in existing Google Sheets when diagnostics_{lang_id}.tsv changes.
 
 Usage:
-    python -m coding sync-params                              # dry run — shows what would change
-    python -m coding sync-params --apply                      # apply changes to sheets
-    python -m coding sync-params --apply --remove             # also remove columns not in diagnostics
-    python -m coding sync-params --apply --rename old:new     # rename a column header in all sheets
+    python -m coding sync-params                                  # dry run
+    python -m coding sync-params --apply                          # apply changes to sheets
+    python -m coding sync-params --apply --remove                 # also remove stale columns
+    python -m coding sync-params --apply --rename old:new         # rename criterion in all classes
+    python -m coding sync-params --apply --rename class:old:new   # rename in one class only
+    python -m coding sync-params --apply --split old:new1:new2    # split one criterion into two
+    python -m coding sync-params --apply --merge old1:old2:new    # merge two criteria into one
 
-This script:
-  - Reads diagnostics_{lang_id}.tsv to get the expected params for each class/construction
-  - Compares against current column headers in each sheet tab
-  - In --apply mode: inserts new param columns before Comments, applies dropdown validation
-  - Warns about params present in sheets but not in diagnostics (requires --remove to delete)
-  - --rename renames a column header in-place, preserving all cell values and validation
+This script propagates diagnostic criterion changes across all layers:
+
+  diagnostics_{lang_id}.tsv  — per-language criterion list (updated by rename/split/merge)
+  Google Sheets              — annotation form column headers (always updated)
+
+Imported TSVs in coded_data/ are downstream of Sheets; re-run import-sheets --force after
+any lifecycle operation to bring them in sync.
+
+--rename renames a criterion in-place, preserving all cell values and validation.
+--split adds new1/new2 columns and renames old to _split_old; coordinator remaps values then
+  removes the stale column manually.
+--merge adds a new column and renames old1/old2 to _merged_old1/_merged_old2; same cleanup.
+
+integrity-check --sheets warns on any _split_ or _merged_ prefixed column headers.
 """
 from __future__ import annotations
 
@@ -22,6 +33,7 @@ from typing import Dict, List, Optional, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 
+import pandas as pd
 import gspread
 
 from . import make_forms as _mf
@@ -78,6 +90,103 @@ def _rename_column(ws: gspread.Worksheet, old_name: str, new_name: str) -> bool:
         return False
     ws.update_cell(1, col_1based, new_name)
     return True
+
+
+# ---------------------------------------------------------------------------
+# Criterion token manipulation (diagnostics_{lang_id}.tsv — Criteria cell)
+# ---------------------------------------------------------------------------
+
+def _criterion_name_from_spec(spec: str) -> str:
+    """Extract criterion name from a spec, stripping brace-syntax values.
+
+    'free'               -> 'free'
+    'stressed{y/n/both}' -> 'stressed'
+    """
+    return spec.split("{")[0].strip()
+
+
+def _rename_criterion_in_cell(cell: str, old: str, new: str) -> str:
+    """Rename criterion token 'old' to 'new' in a comma-separated Criteria cell.
+
+    Preserves brace-syntax value lists on the renamed criterion.
+    """
+    specs = [s.strip() for s in cell.split(",") if s.strip()]
+    result = []
+    for spec in specs:
+        name = _criterion_name_from_spec(spec)
+        if name == old:
+            brace_part = spec[len(name):]   # e.g. '{y/n/both}' or ''
+            result.append(new + brace_part)
+        else:
+            result.append(spec)
+    return ", ".join(result)
+
+
+def _split_criterion_in_cell(cell: str, old: str, new1: str, new2: str) -> str:
+    """Replace criterion 'old' with 'new1, new2' in a Criteria cell."""
+    specs = [s.strip() for s in cell.split(",") if s.strip()]
+    result = []
+    for spec in specs:
+        if _criterion_name_from_spec(spec) == old:
+            result.extend([new1, new2])
+        else:
+            result.append(spec)
+    return ", ".join(result)
+
+
+def _merge_criteria_in_cell(cell: str, old1: str, old2: str, new: str) -> str:
+    """Replace criterion tokens 'old1' and 'old2' with 'new' in a Criteria cell.
+
+    The new token is inserted at the position of the first matched old token.
+    """
+    specs = [s.strip() for s in cell.split(",") if s.strip()]
+    result = []
+    inserted = False
+    for spec in specs:
+        name = _criterion_name_from_spec(spec)
+        if name in (old1, old2):
+            if not inserted:
+                result.append(new)
+                inserted = True
+        else:
+            result.append(spec)
+    return ", ".join(result)
+
+
+def _update_diagnostics_tsv(
+    diag_path: "Path",
+    transform_fn,
+    class_filter: Optional[str],
+    dry_run: bool,
+) -> List[str]:
+    """Apply transform_fn to the Criteria cell of each matching row.
+
+    transform_fn: (cell: str) -> str
+    class_filter: restrict to this Class value (None = all rows)
+    dry_run: if True, return descriptions without writing
+
+    Returns list of human-readable change descriptions.
+    """
+    df = pd.read_csv(diag_path, sep="\t", dtype=str, keep_default_na=False)
+    changes = []
+
+    for i, row in df.iterrows():
+        if class_filter and row.get("Class", "") != class_filter:
+            continue
+        old_val = row.get("Criteria", "")
+        new_val = transform_fn(old_val)
+        if new_val != old_val:
+            cls = row.get("Class", "?")
+            changes.append(
+                f"  [{cls}] diagnostics Criteria: {old_val!r} -> {new_val!r}"
+            )
+            if not dry_run:
+                df.at[i, "Criteria"] = new_val
+
+    if not dry_run and changes:
+        df.to_csv(diag_path, sep="\t", index=False)
+
+    return changes
 
 
 # ---------------------------------------------------------------------------
@@ -164,6 +273,62 @@ def _insert_param_columns(
 
 
 # ---------------------------------------------------------------------------
+# Split / merge sheet operations
+# ---------------------------------------------------------------------------
+
+_STALE_PREFIXES = ("_split_", "_merged_")
+
+
+def _apply_split_to_sheet(
+    ws: gspread.Worksheet,
+    old_name: str,
+    new1: str,
+    new2: str,
+    param_values_map: Dict[str, List[str]],
+) -> bool:
+    """Split old_name into new1 + new2 in a sheet tab.
+
+    Inserts new1 and new2 columns before Comments, then renames old_name to
+    _split_{old_name} so annotators can remap values before cleanup.
+    Returns True if old_name was found.
+    """
+    header = ws.row_values(1)
+    if old_name not in header:
+        return False
+    _, comments_col = _get_current_params(ws)
+    _insert_param_columns(ws, [new1, new2], param_values_map, comments_col)
+    _rename_column(ws, old_name, f"_split_{old_name}")
+    return True
+
+
+def _apply_merge_to_sheet(
+    ws: gspread.Worksheet,
+    old1: str,
+    old2: str,
+    new: str,
+    param_values_map: Dict[str, List[str]],
+) -> Tuple[bool, bool]:
+    """Merge old1 and old2 into new in a sheet tab.
+
+    Inserts a new column before Comments, then renames old1/old2 to
+    _merged_{old1}/_merged_{old2} so annotators can remap values.
+    Returns (old1_found, old2_found).
+    """
+    header = ws.row_values(1)
+    old1_found = old1 in header
+    old2_found = old2 in header
+    if not old1_found and not old2_found:
+        return False, False
+    _, comments_col = _get_current_params(ws)
+    _insert_param_columns(ws, [new], param_values_map, comments_col)
+    if old1_found:
+        _rename_column(ws, old1, f"_merged_{old1}")
+    if old2_found:
+        _rename_column(ws, old2, f"_merged_{old2}")
+    return old1_found, old2_found
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -202,6 +367,48 @@ def _parse_rename_pair(pair: str) -> Tuple[Optional[str], str, str]:
     return None, pair.strip(), pair.strip()
 
 
+def _parse_splits() -> List[Tuple[str, str, str]]:
+    """Parse --split old:new1:new2 pairs from sys.argv.
+
+    Returns a list of (old, new1, new2) tuples.
+    """
+    result = []
+    args = sys.argv[1:]
+    for i, arg in enumerate(args):
+        if arg == "--split" and i + 1 < len(args):
+            parts = args[i + 1].split(":")
+            if len(parts) == 3:
+                result.append((parts[0].strip(), parts[1].strip(), parts[2].strip()))
+            else:
+                print(f"WARNING: --split requires old:new1:new2, got: {args[i + 1]!r}")
+        elif arg.startswith("--split="):
+            parts = arg[len("--split="):].split(":")
+            if len(parts) == 3:
+                result.append((parts[0].strip(), parts[1].strip(), parts[2].strip()))
+    return result
+
+
+def _parse_merges() -> List[Tuple[str, str, str]]:
+    """Parse --merge old1:old2:new pairs from sys.argv.
+
+    Returns a list of (old1, old2, new) tuples.
+    """
+    result = []
+    args = sys.argv[1:]
+    for i, arg in enumerate(args):
+        if arg == "--merge" and i + 1 < len(args):
+            parts = args[i + 1].split(":")
+            if len(parts) == 3:
+                result.append((parts[0].strip(), parts[1].strip(), parts[2].strip()))
+            else:
+                print(f"WARNING: --merge requires old1:old2:new, got: {args[i + 1]!r}")
+        elif arg.startswith("--merge="):
+            parts = arg[len("--merge="):].split(":")
+            if len(parts) == 3:
+                result.append((parts[0].strip(), parts[1].strip(), parts[2].strip()))
+    return result
+
+
 def main() -> None:
     """Entry point for `python -m coding sync-params`.
 
@@ -213,6 +420,8 @@ def main() -> None:
     apply = "--apply" in sys.argv
     remove = "--remove" in sys.argv
     renames = _parse_renames()
+    splits  = _parse_splits()
+    merges  = _parse_merges()
 
     planar_files = sorted(CODED_DATA.glob("*/planar_input/planar_*.tsv"))
     if not planar_files:
@@ -229,6 +438,23 @@ def main() -> None:
         planar_dir = planar_file.parent
         lang_id = _infer_language_id_from_planar_filename(planar_file.name)
 
+        # Update diagnostics_{lang_id}.tsv before re-reading so sheet operations
+        # see the already-updated criterion list.
+        diag_path = planar_dir / f"diagnostics_{lang_id}.tsv"
+        if diag_path.exists():
+            for cls_filter, old, new in renames:
+                fn = lambda cell, o=old, n=new: _rename_criterion_in_cell(cell, o, n)
+                for change in _update_diagnostics_tsv(diag_path, fn, cls_filter, dry_run=not apply):
+                    print(change)
+            for old, new1, new2 in splits:
+                fn = lambda cell, o=old, n1=new1, n2=new2: _split_criterion_in_cell(cell, o, n1, n2)
+                for change in _update_diagnostics_tsv(diag_path, fn, None, dry_run=not apply):
+                    print(change)
+            for old1, old2, new in merges:
+                fn = lambda cell, o1=old1, o2=old2, n=new: _merge_criteria_in_cell(cell, o1, o2, n)
+                for change in _update_diagnostics_tsv(diag_path, fn, None, dry_run=not apply):
+                    print(change)
+
         _mf.DATA_DIR = str(planar_dir)
         specs = _read_diagnostics_for_language(lang_id)
 
@@ -242,6 +468,10 @@ def main() -> None:
         if renames:
             rename_strs = [f"{cls + ':' if cls else ''}{old}:{new}" for cls, old, new in renames]
             print(f"Renames:  {rename_strs}")
+        if splits:
+            print(f"Splits:   {[f'{o}:{n1}:{n2}' for o, n1, n2 in splits]}")
+        if merges:
+            print(f"Merges:   {[f'{o1}:{o2}:{n}' for o1, o2, n in merges]}")
 
         lang_data = manifest.get(lang_id, {})
         sheets = lang_data.get("sheets", {})
@@ -283,13 +513,62 @@ def main() -> None:
                         else:
                             print(f"  [{class_name}/{construction}] Rename: {old_name} not found — skipping")
 
+                # Apply splits to this sheet tab
+                for old, new1, new2 in splits:
+                    default_vals = {new1: ["y", "n"], new2: ["y", "n"]}
+                    if old in ws.row_values(1):
+                        print(f"  [{class_name}/{construction}] Split: {old} -> {new1}, {new2}")
+                        if apply:
+                            _apply_split_to_sheet(ws, old, new1, new2, default_vals)
+                            cp = sheet_info.setdefault("construction_params", {})
+                            cp.setdefault(construction, {})
+                            pnames = [p for p in cp[construction].get("param_names", []) if p != old]
+                            for p in (new1, new2):
+                                if p not in pnames:
+                                    pnames.append(p)
+                            cp[construction]["param_names"] = pnames
+                            manifest_changed = True
+                            any_changes = True
+                            print(f"    Split applied.")
+                    else:
+                        print(f"  [{class_name}/{construction}] Split: {old} not found — skipping")
+
+                # Apply merges to this sheet tab
+                for old1, old2, new in merges:
+                    default_vals = {new: ["y", "n"]}
+                    header_now = ws.row_values(1)
+                    o1_found = old1 in header_now
+                    o2_found = old2 in header_now
+                    if o1_found or o2_found:
+                        print(f"  [{class_name}/{construction}] Merge: {old1}, {old2} -> {new}")
+                        if apply:
+                            _apply_merge_to_sheet(ws, old1, old2, new, default_vals)
+                            cp = sheet_info.setdefault("construction_params", {})
+                            cp.setdefault(construction, {})
+                            pnames = [p for p in cp[construction].get("param_names", [])
+                                      if p not in (old1, old2)]
+                            if new not in pnames:
+                                pnames.append(new)
+                            cp[construction]["param_names"] = pnames
+                            manifest_changed = True
+                            any_changes = True
+                            print(f"    Merge applied.")
+                    else:
+                        print(f"  [{class_name}/{construction}] Merge: neither {old1} nor {old2} found — skipping")
+
                 current_params, comments_col = _get_current_params(ws)
                 current_set = set(current_params)
                 expected_set = set(exp_params)
 
-                # Preserve expected order; only add params that are genuinely new
+                # Preserve expected order; only add params that are genuinely new.
+                # Exclude _split_/_merged_ stale columns from removed_params — these
+                # are preserved intentionally until the coordinator remaps values.
                 new_params = [p for p in exp_params if p not in current_set]
-                removed_params = [p for p in current_params if p not in expected_set]
+                removed_params = [
+                    p for p in current_params
+                    if p not in expected_set
+                    and not any(p.startswith(pfx) for pfx in _STALE_PREFIXES)
+                ]
 
                 if not new_params and not removed_params:
                     # Sheet columns match diagnostics. Still sync manifest construction_params
@@ -302,10 +581,10 @@ def main() -> None:
                             manifest_changed = True
                             print(f"  [{class_name}/{construction}] Manifest construction_params updated")
                         else:
-                            if not renames:
+                            if not renames and not splits and not merges:
                                 print(f"  [{class_name}/{construction}] OK — no changes")
                     else:
-                        if not renames:
+                        if not renames and not splits and not merges:
                             print(f"  [{class_name}/{construction}] OK — no changes")
                     continue
 

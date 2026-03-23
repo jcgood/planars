@@ -283,7 +283,16 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
                 expected = construction_params.get(construction, {}).get("param_names", [])
                 actual   = [c for c in header if c not in _STRUCTURAL and c not in _TRAILING]
 
-                if actual != expected:
+                # Warn on stale lifecycle columns left from --split or --merge operations.
+                stale = [c for c in actual if c.startswith("_split_") or c.startswith("_merged_")]
+                if stale:
+                    print(_warn(label))
+                    for col in stale:
+                        prefix = "_split_" if col.startswith("_split_") else "_merged_"
+                        op = "split" if prefix == "_split_" else "merge"
+                        print(_sub(f"stale {op} column '{col}' — remap values then remove manually"))
+                    total_w += 1
+                elif actual != expected:
                     print(_warn(label))
                     print(_sub(f"expected criteria columns: {expected}"))
                     print(_sub(f"actual criteria columns:   {actual}"))
