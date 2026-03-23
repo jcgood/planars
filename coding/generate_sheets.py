@@ -278,39 +278,121 @@ def _move_to_folder(drive, file_id: str, folder_id: str) -> None:
     ).execute()
 
 
-def _upload_planar_input_files(drive, planar_dir: Path, folder_id: str) -> None:
-    """Upload planar_*.tsv and diagnostics_{lang_id}.tsv to the language's Drive folder.
+def _create_or_update_tsv_sheet(
+    gc: gspread.Client,
+    drive,
+    folder_id: str,
+    name: str,
+    tsv_path: Path,
+    existing_id: str = None,
+) -> Tuple[str, str]:
+    """Create or overwrite a Google Sheet with the contents of a TSV file.
 
-    Updates existing files in place if already present, creates new ones otherwise.
-    This lets collaborators view the planar structure alongside their annotation sheets.
+    If existing_id is given, clears and rewrites that sheet; otherwise creates a new one,
+    moves it to folder_id, and shares it with anyone-with-link as editor.
+
+    Returns (spreadsheet_id, url).
     """
-    import io
-    lang_id = planar_dir.parent.name
-    paths = list(planar_dir.glob("planar_*.tsv")) + [planar_dir / f"diagnostics_{lang_id}.tsv"]
-    for path in paths:
-        if not path.exists():
-            continue
-        name = path.name
-        results = drive.files().list(
-            q=f"name='{name}' and '{folder_id}' in parents and trashed=false",
-            fields="files(id)",
-        ).execute()
-        existing = results.get("files", [])
-        media = MediaIoBaseUpload(
-            io.BytesIO(path.read_bytes()),
-            mimetype="text/tab-separated-values",
-            resumable=False,
-        )
-        if existing:
-            drive.files().update(fileId=existing[0]["id"], media_body=media).execute()
-            print(f"  Updated {name} on Drive")
+    df = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
+    all_rows = [list(df.columns)] + [list(row) for _, row in df.iterrows()]
+
+    if existing_id:
+        ss = _open_spreadsheet(gc, existing_id)
+        ws = ss.sheet1
+        ws.clear()
+    else:
+        ss = gc.create(name)
+        _move_to_folder(drive, ss.id, folder_id)
+        _share_anyone_with_link(drive, ss.id)
+        ws = ss.sheet1
+
+    ws.update(all_rows, "A1")
+
+    # Bold and freeze the header row.
+    ss.batch_update({"requests": [
+        {
+            "updateSheetProperties": {
+                "properties": {
+                    "sheetId": ws.id,
+                    "gridProperties": {"frozenRowCount": 1},
+                },
+                "fields": "gridProperties.frozenRowCount",
+            }
+        },
+        {
+            "repeatCell": {
+                "range": {"sheetId": ws.id, "startRowIndex": 0, "endRowIndex": 1},
+                "cell": {"userEnteredFormat": {"textFormat": {"bold": True}}},
+                "fields": "userEnteredFormat.textFormat.bold",
+            }
+        },
+    ]})
+
+    return ss.id, ss.url
+
+
+def _upload_planar_input_as_sheets(
+    gc: gspread.Client,
+    drive,
+    planar_dir: Path,
+    lang_id: str,
+    folder_id: str,
+    existing_lang_data: Dict,
+    force: bool = False,
+) -> Dict:
+    """Upload planar_*.tsv and diagnostics_{lang_id}.tsv as editable Google Sheets.
+
+    Google Sheets is the source of truth for planar structure and diagnostics; local TSVs
+    are downstream copies produced by import-sheets. This function pushes the current local
+    TSV state to Sheets on initial setup, or on --force to propagate intentional edits.
+
+    Skips a file if its sheet ID is already in existing_lang_data and force=False.
+
+    Returns a dict with planar_spreadsheet_id/url and diagnostics_spreadsheet_id/url
+    for any sheets that were created or updated (only keys present if the file exists).
+    """
+    result: Dict = {}
+
+    planar_files = sorted(planar_dir.glob("planar_*.tsv"))
+    if planar_files:
+        planar_path = planar_files[-1]   # most recent
+        existing_id = existing_lang_data.get("planar_spreadsheet_id")
+        if existing_id and not force:
+            print(f"  Planar sheet exists — skipping (use --force to overwrite)")
+            result["planar_spreadsheet_id"]  = existing_id
+            result["planar_spreadsheet_url"] = existing_lang_data.get("planar_spreadsheet_url", "")
         else:
-            drive.files().create(
-                body={"name": name, "parents": [folder_id]},
-                media_body=media,
-                fields="id",
-            ).execute()
-            print(f"  Uploaded {name} to Drive")
+            sheet_id, url = _create_or_update_tsv_sheet(
+                gc, drive, folder_id,
+                name=f"planar_{lang_id}",
+                tsv_path=planar_path,
+                existing_id=existing_id,
+            )
+            result["planar_spreadsheet_id"]  = sheet_id
+            result["planar_spreadsheet_url"] = url
+            action = "Updated" if existing_id else "Created"
+            print(f"  {action} planar sheet: {url}")
+
+    diag_path = planar_dir / f"diagnostics_{lang_id}.tsv"
+    if diag_path.exists():
+        existing_id = existing_lang_data.get("diagnostics_spreadsheet_id")
+        if existing_id and not force:
+            print(f"  Diagnostics sheet exists — skipping (use --force to overwrite)")
+            result["diagnostics_spreadsheet_id"]  = existing_id
+            result["diagnostics_spreadsheet_url"] = existing_lang_data.get("diagnostics_spreadsheet_url", "")
+        else:
+            sheet_id, url = _create_or_update_tsv_sheet(
+                gc, drive, folder_id,
+                name=f"diagnostics_{lang_id}",
+                tsv_path=diag_path,
+                existing_id=existing_id,
+            )
+            result["diagnostics_spreadsheet_id"]  = sheet_id
+            result["diagnostics_spreadsheet_url"] = url
+            action = "Updated" if existing_id else "Created"
+            print(f"  {action} diagnostics sheet: {url}")
+
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -534,11 +616,13 @@ def _create_analysis_sheet(
 def main() -> None:
     """Entry point for `python -m coding generate-sheets`.
 
-    Iterates over all planar_*.tsv files in coded_data/*/planar_input/, creates
-    one Google Sheet per analysis class (skipping existing ones unless --force),
-    uploads planar_*.tsv and diagnostics_{lang_id}.tsv to each language's Drive folder so
-    collaborators can view the planar structure alongside their annotation sheets,
-    uploads per-language manifests to Drive, and regenerates contributor notebooks.
+    Iterates over all planar_*.tsv files in coded_data/*/planar_input/ and for each language:
+    - Creates planar_*.tsv and diagnostics_{lang_id}.tsv as editable Google Sheets (source of
+      truth). Skips files whose sheet IDs are already in the manifest unless --force.
+    - Creates one annotation Google Sheet per analysis class (skipping existing ones unless
+      --force). Each sheet has one tab per construction with dropdown validation.
+    - Uploads the merged planars_config.json manifest to Drive after each language.
+    - Regenerates contributor notebooks at the end.
     """
     force = "--force" in sys.argv
 
@@ -606,17 +690,13 @@ def main() -> None:
 
         print(f"Classes:     {list(all_classes.keys())}")
 
-        # Resolve/create Drive folder before loading existing data so planar input
-        # files can be uploaded regardless of whether sheet creation is skipped.
+        # Resolve/create Drive folder.
         folder_id = _get_or_create_folder(drive, lang_id, parent_id=root_folder_id)
         _share_anyone_with_link(drive, folder_id)
         folder_url = f"https://drive.google.com/drive/folders/{folder_id}"
         print(f"Folder:      {folder_url}")
 
-        # Upload planar input files so collaborators can view them alongside sheets.
-        _upload_planar_input_files(drive, planar_dir, folder_id)
-
-        # Load existing data for this language from the merged config or old per-language file.
+        # Load existing data early so we can look up existing planar/diagnostics sheet IDs.
         existing_lang_data: Dict = merged_config.get(lang_id, {})
         if not existing_lang_data and lang_id in config:
             # Migration: try old-format per-language manifest file
@@ -627,6 +707,12 @@ def main() -> None:
                 except Exception:
                     pass
 
+        # Upload planar and diagnostics as editable Google Sheets (source of truth).
+        # Skips files whose sheet IDs are already in the manifest unless --force.
+        input_sheet_info = _upload_planar_input_as_sheets(
+            gc, drive, planar_dir, lang_id, folder_id, existing_lang_data, force=force
+        )
+
         if not force and existing_lang_data:
             existing_sheets = existing_lang_data.get("sheets", {})
             new_class_names = [c for c in all_classes if c not in existing_sheets]
@@ -636,6 +722,7 @@ def main() -> None:
                     "  (use --force to regenerate)"
                 )
                 existing_lang_data["folder_id"] = folder_id
+                existing_lang_data.update(input_sheet_info)
                 config.setdefault(lang_id, {})["folder_id"] = folder_id
                 _save_drive_config(config)
                 full_manifest[lang_id] = existing_lang_data
@@ -652,6 +739,7 @@ def main() -> None:
         # Build lang_data starting from existing data (or fresh), always include folder_id.
         lang_data: Dict = existing_lang_data or {"folder_url": folder_url, "sheets": {}}
         lang_data["folder_id"] = folder_id
+        lang_data.update(input_sheet_info)  # store planar/diagnostics spreadsheet IDs
 
         # Write Glottolog metadata block if available in local cache.
         # Notebooks read this to display "Name [glottocode]" instead of bare codes.
