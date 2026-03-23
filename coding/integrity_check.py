@@ -236,6 +236,17 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
             total_w += 1
             continue
 
+        # Check project metadata completeness.
+        meta = lang_data.get("meta", {})
+        _KEY_META = ("source", "author")
+        missing_meta = [f for f in _KEY_META if not meta.get(f)]
+        if not meta:
+            print(_warn(f"{lang}  —  meta block missing from manifest (run generate-sheets to scaffold)"))
+            total_w += 1
+        elif missing_meta:
+            print(_warn(f"{lang}  —  meta block incomplete: {', '.join(missing_meta)} not set"))
+            total_w += 1
+
         sheets_info = lang_data.get("sheets", {})
         if not sheets_info:
             print(_warn(f"{lang}  —  no sheets in manifest"))

@@ -665,6 +665,17 @@ def main() -> None:
                 "longitude": glotto["longitude"],
             }
 
+        # Scaffold project metadata block for new languages.
+        # Coordinators fill these fields; integrity-check warns when key fields are blank.
+        if "meta" not in lang_data:
+            lang_data["meta"] = {
+                "source": "",       # publication or chapter reference (e.g. "Tallman 2021, ch. 13")
+                "author": "",       # author of the source material
+                "annotator": "",    # name of the person who performed the annotation
+                "annotation_status": "",  # e.g. "partial", "complete"
+                "notes": "",        # free-text coordinator notes
+            }
+
         # Create one sheet per new analysis class
         for class_name, constructions in classes_to_create.items():
             sheet_info = _create_analysis_sheet(

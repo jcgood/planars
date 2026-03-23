@@ -208,7 +208,7 @@ Language IDs in this project are Glottocodes (e.g., `arao1248`, `stan1293`). Glo
 
 **Convention:** wherever a language ID appears in user-facing output — notebook headers, chart titles, report tables, Drive folder names, terminal output — prefer the `Name [glottocode]` format (e.g., `Araona [arao1248]`) over the bare Glottocode. The canonical helper for this is `coding/glottolog.py:cached_entry(glottocode)["name"]`.
 
-Metadata is also written into `planars_config.json` on Drive (by `generate-sheets`) so Colab notebooks can access it without any local files. Per-language project metadata (author, source chapter, etc.) lives in the same manifest entry — see issue #55.
+Metadata is also written into `planars_config.json` on Drive (by `generate-sheets`) so Colab notebooks can access it without any local files. Per-language project metadata lives in a `meta` block in the same manifest entry: `source` (publication/chapter), `author`, `annotator`, `annotation_status`, `notes`. `generate-sheets` scaffolds empty `meta` fields for new languages; `integrity-check --sheets` warns when `source` or `author` are blank.
 
 Use Glottolog metadata proactively for:
 - Display names in notebooks, chart legends, and terminal output
@@ -340,7 +340,7 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 - **#58** — Biuniqueness type 2: non-automatic allomorphy as a distinct diagnostic. `[diagnostics]`
 - **#57** — New analysis module: maximal reduplication domain. `[diagnostics]`
 - **#56** — New analysis module: non-displacement domain. `[diagnostics]`
-- **#55** — Per-language metadata/documentation file (author, source, etc.).
+- **#55** — ~~Per-language metadata/documentation file (author, source, etc.)~~ — implemented: `meta` block scaffolded by `generate-sheets`; `integrity-check --sheets` warns on blank key fields.
 - **#9** — Fill in `[PLACEHOLDER]` and `[NEEDS REVIEW]` entries in schema files (`diagnostic_criteria.yaml`, `diagnostic_classes.yaml`). Requires input from Adam. `[needs-input]`
 
 ## Work phases
