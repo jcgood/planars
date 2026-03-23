@@ -316,6 +316,11 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 
 ### Notable open issues
 
+- **#80** — Auto-generate schema structure diagrams from YAML schema files.
+- **#79** — Add references list and "How to cite" section to repository documentation.
+- **#78** — Add `collection_required` field to `diagnostic_classes.yaml`; validate presence per language.
+- **#76** — Proactive detection of unauthorized sheet edits (scheduled `validate-coding`).
+- **#75** — Auto-trigger snapshot regeneration when analysis output changes.
 - **#74** — Schema change propagation: diagnostic criterion lifecycle tooling (add, remove, rename, split, merge across languages). Prerequisite for managing criterion evolution at scale.
 - **#73** — `validate_diagnostics.py` conformance check: each language's `diagnostics_{lang_id}.tsv` must only use diagnostic criteria listed in `diagnostic_classes.yaml` (opt-in model enforcement).
 - **#72** — Prepare Chichewa (nyan1308) for onboarding: planar structure, diagnostics, tonosegmental/intonational domains. `[Jeff]`
@@ -336,12 +341,7 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 - **#57** — New analysis module: maximal reduplication domain. `[diagnostics]`
 - **#56** — New analysis module: non-displacement domain. `[diagnostics]`
 - **#55** — Per-language metadata/documentation file (author, source, etc.).
-- **#54** — ~~`_CLASS_DISPLAY_NAMES` graceful fallback in `generate_notebooks.py`~~ — implemented.
-- **#53** — ~~`generate-notebooks`: generate and upload per-language validation notebooks~~ — implemented.
-- **#52** — ~~`integrity-check`: a single-pass project health command that reports planar, diagnostics, and annotation issues as a Markdown summary~~ — implemented.
-- **#51** — ~~Remove `_filled` suffix from imported TSV filenames~~ — implemented.
-- **#50** — ~~`--rename-element` flag on `restructure-sheets`~~ — implemented.
-- **#44** — ~~Migrate tests to pytest~~ — implemented.
+- **#9** — Fill in `[PLACEHOLDER]` and `[NEEDS REVIEW]` entries in schema files (`diagnostic_criteria.yaml`, `diagnostic_classes.yaml`). Requires input from Adam. `[needs-input]`
 
 ## Work phases
 

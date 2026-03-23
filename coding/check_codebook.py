@@ -215,10 +215,10 @@ def _check_chart_keys() -> List[str]:
 
     errors = []
 
-    def _check(label, derive_fn, span_keys, tsv_io, required_params):
+    def _check(label, derive_fn, span_keys, tsv_io, required_criteria):
         """Run derive_fn on a synthetic TSV and check that all span_keys are present."""
         try:
-            data = load_filled_tsv(tsv_io, required_params, strict=False)
+            data = load_filled_tsv(tsv_io, required_criteria, strict=False)
             result = derive_fn(_data=data, strict=False)
         except Exception as e:
             errors.append(f"[{label}] could not run derive function: {e}")
