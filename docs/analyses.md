@@ -1,15 +1,17 @@
 # Analyses
 
-This document describes the span types computed by planars, the available analysis modules, and their status. Two YAML files in `schemas/` govern the analysis framework:
+This document describes the span types computed by planars, the available analysis modules, and their status. Four YAML files in `schemas/` govern the analysis framework:
 
-- **`schemas/diagnostic_classes.yaml`** — the normative schema for analysis classes: which classes exist, when each applies (universal vs. conditional), construction-specific variants, required parameters, and known construction types. See [The diagnostic classes schema](#the-diagnostic-classes-schema) below.
-- **`schemas/codebook.yaml`** — the authoritative reference for parameter semantics, allowed values, and qualification rules. See [The codebook](#the-codebook) below.
+- **`schemas/diagnostic_classes.yaml`** — the normative schema for analysis classes: which classes exist, when each applies (universal vs. conditional), construction-specific variants, required diagnostic criteria, qualification rules, and known construction types. See [The diagnostic classes schema](#the-diagnostic-classes-schema) below.
+- **`schemas/diagnostic_criteria.yaml`** — the authoritative reference for diagnostic criterion semantics, allowed values, and linguistic definitions. See [The diagnostic criteria schema](#the-diagnostic-criteria-schema) below.
+- **`schemas/terms.yaml`** — definitions of analytical terms (strict/loose span, partial/complete position, keystone, etc.) and chart label glossary.
+- **`schemas/planar.yaml`** — planar structure ontology: structural columns, element conventions, and label standards.
 
 ---
 
 ## The diagnostic classes schema
 
-`schemas/diagnostic_classes.yaml` is the source of truth for the analysis class framework. It is separate from `schemas/codebook.yaml` (which owns parameter semantics) and serves as the normative reference for coordinators and contributors adding new languages or analyses.
+`schemas/diagnostic_classes.yaml` is the source of truth for the analysis class framework. It is separate from `schemas/diagnostic_criteria.yaml` (which owns criterion semantics) and serves as the normative reference for coordinators and contributors adding new languages or analyses.
 
 Each entry contains:
 
@@ -22,7 +24,8 @@ Each entry contains:
 | `applicability_conditions` | Prose description of when a conditional class applies |
 | `specificity` | `general` (one TSV per language) or `construction_specific` (one TSV per construction) |
 | `known_constructions` | Non-exhaustive examples for construction-specific classes |
-| `required_parameters` | Parameter columns that must appear in `diagnostics_{lang_id}.tsv` |
+| `required_criteria` | Diagnostic criterion columns that must appear in `diagnostics_{lang_id}.tsv` |
+| `qualification_rule` | How the code decides whether a position qualifies — complete vs. partial, blocking conditions, etc. |
 | `status` | `stable`, `[NEEDS REVIEW]`, or `[PLACEHOLDER]` |
 
 ### Human-editable workflow
@@ -31,49 +34,30 @@ To add a new analysis class: edit `schemas/diagnostic_classes.yaml`, then ask Cl
 
 ---
 
-## The codebook
+## The diagnostic criteria schema
 
-`schemas/codebook.yaml` is the definitive reference for everything that governs annotation and computation. It is a YAML file with five top-level sections:
-
-### structural_columns
-
-Columns present in every filled TSV regardless of analysis: `Element`, `Position_Name`, `Position_Number`. Described once here rather than repeated per-analysis.
-
-### analyses
-
-One entry per analysis module. Each entry contains:
+`schemas/diagnostic_criteria.yaml` is the definitive reference for diagnostic criterion semantics. One entry per analysis module, each containing:
 
 | Field | Contents |
 |---|---|
 | `name` | The module name — matches the CLI command and Python module (e.g., `ciscategorial`) |
 | `description` | What the analysis tests, its theoretical basis, and its classification (morphosyntactic / phonological / indeterminate). Entries marked `[AUTO-DERIVED: NEEDS REVIEW]` have not been verified by a domain expert. |
-| `parameters` | Each parameter's name, allowed values, and what it means in context |
-| `qualification_rule` | Exactly how the code decides whether a position qualifies — complete vs. partial, which parameters are checked, and (for blocked-span analyses) what constitutes a domain boundary |
+| `diagnostic_criteria` | Each criterion's name, allowed values, and what it means in context |
 
-To look up a specific analysis, search for `- name: <analysis>` in the file, or render it as Markdown (see [Rendering](#rendering-the-codebook) below).
-
-### shared_values
-
-The four values accepted by all parameters across all analyses:
+Shared criterion values across all analyses:
 
 | Value | Meaning |
 |---|---|
-| `y` | Yes — the parameter holds for this element |
-| `n` | No — the parameter does not hold |
+| `y` | Yes — the criterion holds for this element |
+| `n` | No — the criterion does not hold |
 | `NA` | Not applicable — used only in keystone rows (`v:verbstem`); do not change |
 | `?` | Unknown / not yet annotated — treated as missing data; triggers a validation warning on import |
 
-### terms
+To look up a specific analysis, search for `- name: <analysis>` in `schemas/diagnostic_criteria.yaml`.
 
-A glossary of analytical terms used throughout the project: *planar structure*, *position*, *element*, *keystone*, *partial position*, *complete position*, *strict span*, *loose span*, *ciscategorial*, *transcategorial*, *subspan repetition*, *wide scope*, *narrow scope*, *non-interruption domain*. If you encounter an unfamiliar term, check here first.
+### Rendering the schema files
 
-### chart_labels
-
-Short labels used in `domain_chart()` output. Useful when reading the domain chart in a Colab notebook and you want to know exactly what a label like `"ws-L loose partial"` means. See the [Notebooks guide](notebooks.md) for how charts are displayed.
-
-### Rendering the codebook
-
-To read the codebook as formatted Markdown rather than raw YAML:
+To read the schemas as formatted Markdown rather than raw YAML:
 
 ```bash
 python render_codebook.py              # print to terminal
@@ -154,7 +138,7 @@ Both use `blocked_span`: expand from the keystone outward, stopping just before 
 - **Minimal** (stress): blocked by `stressed ∈ {y, both} AND independence=y`
 - **Maximal** (stress): blocked by `obligatory=y AND independence=y`
 
-Each domain type has a complete/partial distinction, giving 4 spans per analysis. The `left-interaction` and `right-interaction` parameters are marked `[NEEDS REVIEW]` in `schemas/codebook.yaml` — their role in blocking conditions has not been finalized. Aspiration mirrors the stress structure but its qualification rules are also `[NEEDS REVIEW]`.
+Each domain type has a complete/partial distinction, giving 4 spans per analysis. The `left-interaction` and `right-interaction` criteria are marked `[NEEDS REVIEW]` in `schemas/diagnostic_criteria.yaml` — their role in blocking conditions has not been finalized. Aspiration mirrors the stress structure but its qualification rules are also `[NEEDS REVIEW]` (see `schemas/diagnostic_classes.yaml`).
 
 ### Noninterruption
 

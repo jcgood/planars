@@ -11,23 +11,21 @@
 #
 # THIS FILE IS NOT THE SOURCE OF TRUTH FOR:
 #   - What each diagnostic criterion means linguistically or what values it accepts
-#     → see schemas/codebook.yaml (diagnostic_criteria sections under each analysis)
+#     → see schemas/diagnostic_criteria.yaml
 #   - Definitions of span types and analytical terms (strict, loose, partial, complete)
-#     → see schemas/codebook.yaml (terms section, to be added)
+#     → see schemas/terms.yaml
 #   - Planar structure concepts (what positions, elements, keystone are)
-#     → see schemas/codebook.yaml (structural_columns section; full ontology planned)
+#     → see schemas/planar.yaml
 #   - Per-language instances of these classes
 #     → see coded_data/{lang_id}/planar_input/diagnostics_{lang_id}.tsv
 #
-# NOTE: A refactor is planned (issue #77) that will split schemas/codebook.yaml into
-# focused modules and rename "parameter" to "diagnostic criterion" throughout.
-# This file will absorb qualification_rule fields from codebook.yaml in that refactor.
-#
 # Relationship to other files:
-#   schemas/codebook.yaml         — diagnostic criterion semantics, allowed values, qualification rules
-#   schemas/diagnostic_classes.yaml (this file) — class structure, applicability, construction types
+#   schemas/diagnostic_criteria.yaml — diagnostic criterion semantics and allowed values
+#   schemas/diagnostic_classes.yaml (this file) — class structure, applicability, qualification rules
+#   schemas/planar.yaml             — planar structure ontology (positions, elements, columns)
+#   schemas/terms.yaml              — analytical vocabulary (strict/loose span, partial/complete)
 #   diagnostics_{lang_id}.tsv       — per-language instance of these classes, validated against this file
-#   docs/analyses.md      — human reader's guide pointing to both
+#   docs/analyses.md                — human reader's guide pointing to all schema files
 #
 # check-codebook validates diagnostics_{lang_id}.tsv against this file:
 #   - required diagnostic criteria must be present as columns
@@ -75,6 +73,11 @@ classes:
     required_criteria: [V-combines, N-combines, A-combines]
     optional_criteria: [PRED-combines]  # predicate-flexible languages (e.g., Araona,
       # Chorote ch. 15) where non-verbal predicates take verbal TAME markers — issue #39.
+    qualification_rule: >
+      An element is v-ciscategorial if V-combines=y AND N-combines=n AND A-combines=n
+      (and any further combine parameters are also n).
+      A position is complete if ALL its elements are v-ciscategorial.
+      A position is partial if AT LEAST ONE element is v-ciscategorial.
     status: stable
     criterion_set_status: "[PROVISIONAL]"  # Parameter set may grow further as more
       # predicate-flexible languages are onboarded; other *-combines types not yet attested.
@@ -130,6 +133,15 @@ classes:
       - serial verb construction       # verb serialization; e.g., Hup
     required_criteria: [widescope_left, widescope_right, fillable_botheither_conjunct]
     optional_criteria: []
+    qualification_rule: >
+      Five span categories are derived:
+        maximum_fillable:          fillable_botheither_conjunct=y
+        maximum_widescope_left:    widescope_left=y
+        maximum_widescope_right:   widescope_right=y
+        maximum_narrowscope_left:  widescope_left=n  (element lacks wide scope left)
+        maximum_narrowscope_right: widescope_right=n (element lacks wide scope right)
+      Each category produces complete and partial position sets and four spans
+      (strict/loose x complete/partial).
     status: stable
     criterion_set_status: "[PROVISIONAL]"  # Construction types are open-ended and expected
       # to grow as more languages are added. Parameter names may also need refinement as
@@ -146,6 +158,11 @@ classes:
     specificity: general
     required_criteria: [free, multiple]
     optional_criteria: []
+    qualification_rule: >
+      Two domain types, each with complete and partial position sets:
+        no-free domain:     element qualifies if free=n (bound).
+        single-free domain: element qualifies if free=n OR (free=y AND multiple=n).
+      Only strict spans are computed for non-interruption (no loose span).
     status: stable
     criterion_set_status: stable
 
@@ -160,6 +177,27 @@ classes:
     specificity: general
     required_criteria: [permutable, scopal]
     optional_criteria: []
+    qualification_rule: >
+      Two domain types, each with complete and partial position sets = 4 strict spans.
+      Both use strict span only (no loose span) — a non-permutable domain is inherently
+      contiguous.
+
+      Complete vs. partial:
+        partial:  any element in the position satisfies the qualification rule
+                  (easier to qualify → larger domain).
+        complete: all elements in the position satisfy the qualification rule
+                  (harder to qualify → smaller domain).
+
+      Strict non-permutability — blocked by: permutable=y AND scopal=n.
+        Positions where ALL (complete) or ANY (partial) elements have permutable=n.
+        Identifies spans with absolutely fixed ordering under all circumstances.
+
+      Flexible non-permutability — blocked by: permutable=y AND scopal=n.
+        Positions where ALL (complete) or ANY (partial) elements have
+        permutable=n OR (permutable=y AND scopal=y). Extends the strict domain
+        to include positions whose elements can permute but only with a scopal
+        interpretation difference (fixed vs. scope-varying ordering counts
+        as "non-permutable" under this interpretation).
     criterion_set_status: "[PROVISIONAL]"  # Known gaps: verb-class-conditioned permutability
       # (issue #67) and fluid/multi-position formatives (issue #66) may require additional
       # parameters once the linguistic questions are resolved.
@@ -182,6 +220,20 @@ classes:
     specificity: general
     required_criteria: [free]
     optional_criteria: [multiple]  # present when noninterruption is run on the same sheet
+    qualification_rule: >
+      The free occurrence domain = positions where free=y.
+      Four span variants (strict/loose × complete/partial) = 4 spans total.
+        complete: ALL elements in the position have free=y.
+        partial:  AT LEAST ONE element in the position has free=y.
+      Both strict and loose spans are computed (unlike noninterruption, which uses
+      strict-only, free occurrence domains need not be contiguous).
+
+      Note on minimal vs. maximal free occurrence (Tallman et al. 2024, ch. 1):
+      The Introduction distinguishes the minimal free occurrence domain (the smallest
+      span that can stand as an independent utterance) from the maximal free occurrence
+      domain (the largest such span). In the planar framework these correspond to the
+      strict complete span (conservative/minimal) and the loose partial span
+      (liberal/maximal) respectively. No additional criterion is needed.
     status: stable
     criterion_set_status: stable
 
@@ -196,6 +248,10 @@ classes:
     specificity: general
     required_criteria: [substitutable]
     optional_criteria: []
+    qualification_rule: >
+      A position qualifies if it contains an element where substitutable=y. Complete
+      qualification: ALL elements have substitutable=y. Partial qualification: at
+      least one element has substitutable=y.
     criterion_set_status: "[PROVISIONAL]"  # Class itself is [NEEDS REVIEW]; parameter set
       # may need refinement once real annotation data exists. Proform type (pronoun,
       # pro-verb, pro-VP) may warrant a parameter distinguishing substitution scope.
@@ -219,6 +275,10 @@ classes:
       - verb-affix collocation
     required_criteria: [idiomatic]
     optional_criteria: []
+    qualification_rule: >
+      A position qualifies if it contains an element where idiomatic=y. Complete
+      qualification: ALL elements have idiomatic=y. Partial qualification: at
+      least one element has idiomatic=y.
     criterion_set_status: stable  # Single binary parameter is appropriate; idiom identity
       # is encoded in the construction name, not additional parameters.
     status: "[NEEDS REVIEW]"  # Mebengokre (ch. 12) provides the clearest evidence: diagnostic
@@ -251,6 +311,13 @@ classes:
       - extended exponent
     required_criteria: [biunique]
     optional_criteria: []
+    qualification_rule: >
+      A position qualifies if it contains an element where biunique=n. Complete
+      qualification: ALL elements in the position have biunique=n. Partial
+      qualification: at least one element has biunique=n. The loose partial span
+      is the most semantically informative: it extends from the position of the
+      prefixal piece to the position of the suffixal piece, directly identifying
+      the extended exponent domain.
     criterion_set_status: stable  # Single binary parameter is appropriate for the
       # circumfix/extended-exponent type. Non-automatic allomorphy (issue #58) is a
       # distinct class, not an extension of this parameter set.
@@ -272,6 +339,10 @@ classes:
     specificity: general
     required_criteria: [restart]
     optional_criteria: []
+    qualification_rule: >
+      A position qualifies if it contains an element where restart=y. Complete
+      qualification: ALL elements in the position have restart=y. Partial
+      qualification: at least one element has restart=y.
     criterion_set_status: stable  # Single binary parameter is appropriate; restart
       # behavior is categorical (yes/no per position).
     status: "[NEEDS REVIEW]"  # Strongly confirmed by Cup'ik ch. 2 (4 naturalistic examples,
@@ -295,6 +366,30 @@ classes:
     specificity: general
     required_criteria: [stressed, independence, obligatory, left-interaction, right-interaction]
     optional_criteria: []
+    qualification_rule: >
+      Two domain types, each with complete and partial subtypes = 4 spans total.
+      Both use blocked_span: expand from ROOT in each direction, stopping just
+      before the first position where the blocking condition holds. The blocking
+      position is excluded.
+
+      Complete vs. partial blocking:
+        partial:  any element in the position satisfies the blocking condition
+                  (easier to block → smaller domain).
+        complete: all elements in the position satisfy the blocking condition
+                  (harder to block → larger domain).
+
+      The keystone (v:verbstem) always remains part of the domain. Its criterion
+      values participate in blocking checks — its values can trigger a domain
+      boundary for positions beyond it — but it is never itself excluded from the
+      span. We are looking for the stress domain around the head of the clause only.
+
+      Minimal stress domain — blocked by: stressed ∈ {y, both} AND independence = y.
+        An independently-stressed element begins a new stress domain; the minimal
+        domain ends just before it.
+
+      Maximal stress domain — blocked by: obligatory = y AND independence = y.
+        An obligatorily-independent stress element creates a hard boundary; the
+        maximal domain extends up to but not including that position.
     criterion_set_status: "[PROVISIONAL]"  # left-interaction and right-interaction are
       # [NEEDS REVIEW] — their role in the qualification rule is unresolved (issue #17).
       # They may be removed, renamed, or replaced depending on resolution of meso/interaction
@@ -319,11 +414,17 @@ classes:
     specificity: general
     required_criteria: [stressed, independence, obligatory, left-interaction, right-interaction]
     optional_criteria: []
+    qualification_rule: >
+      Mirrors the stress domain logic. Two domain types (minimal, maximal) using
+      blocked_span with the same blocking conditions as stress. The keystone
+      participates in blocking checks (same as stress). If aspiration requires
+      different domain logic once data is collected, update this entry and
+      aspiration.py accordingly.
     criterion_set_status: "[PROVISIONAL]"  # Inherits the same open questions as stress
       # re: left-interaction and right-interaction (issues #16, #17). Additionally, the
       # scope of this class is itself unresolved (issue #60) — parameter set may change
       # substantially depending on whether this remains a blocked_span module.
-    # Note: parameter names are reused from stress; see codebook.yaml aspiration entry.
+    # Note: criterion names are reused from stress; see diagnostic_criteria.yaml aspiration entry.
     # Note: in the book's ch. 17 abstract type taxonomy, aspiration is a fracture of the
     # suprasegmental abstract type (not a separate type). planars treats it as a distinct
     # module because it uses blocked_span logic, same as stress.py.
@@ -364,6 +465,10 @@ classes:
       - final apocope domain           # e.g., Cherokee
     required_criteria: [applies]
     optional_criteria: []
+    qualification_rule: >
+      A position qualifies if it contains an element where applies=y. Complete
+      qualification: ALL elements in the position have applies=y. Partial
+      qualification: at least one element has applies=y.
     criterion_set_status: stable  # Single binary parameter is appropriate; the process
       # identity is encoded in the construction name. No cross-language evidence suggests
       # additional parameters are needed.
@@ -398,6 +503,10 @@ classes:
       - auxiliary construction domain  # pitch accent extends to auxiliary; e.g., Quechua
     required_criteria: [applies]
     optional_criteria: []
+    qualification_rule: >
+      A position qualifies if it contains an element where applies=y. Complete
+      qualification: ALL elements in the position have applies=y. Partial
+      qualification: at least one element has applies=y.
     criterion_set_status: stable  # Single binary parameter is appropriate; rule identity
       # is encoded in the construction name. No cross-language evidence suggests additional
       # parameters are needed.
@@ -419,6 +528,10 @@ classes:
     specificity: general
     required_criteria: [pause_domain]
     optional_criteria: []
+    qualification_rule: >
+      A position qualifies if it contains an element where pause_domain=y.
+      Complete qualification: ALL elements in the position have pause_domain=y.
+      Partial qualification: at least one element has pause_domain=y.
     criterion_set_status: stable  # Single binary parameter is appropriate; pause
       # behavior is categorical (yes/no per position).
     status: "[NEEDS REVIEW]"  # Mebengokre (ch. 12) applies and validates: diagnostic [\ref{pause}]
@@ -445,6 +558,10 @@ classes:
                                         # compound verb stems each transpose independently
     required_criteria: [applies]
     optional_criteria: []
+    qualification_rule: >
+      A position qualifies if it contains an element where applies=y. Complete
+      qualification: ALL elements have applies=y. Partial qualification: at
+      least one element has applies=y.
     criterion_set_status: stable  # Single binary parameter is appropriate; ludling
       # operation identity is encoded in the construction name.
     status: "[NEEDS REVIEW]"  # Chatino ch. 8 provides corpus-attested data (Campbell 2020);

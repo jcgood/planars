@@ -12,7 +12,7 @@ Commands:
     validate-coding      Re-validate annotation sheets and update cell highlighting
     restructure-sheets   Archive and regenerate sheets after structural changes
     populate-sheets      Upload legacy TSV data to sheets (one-time utility)
-    check-codebook       Check consistency between codebook.yaml and analysis modules
+    check-codebook       Check consistency between schema files and analysis modules
     integrity-check      Full project-wide integrity check (all languages, all schemas)
     setup-root-folder    Create ConstituencyTypology root Drive folder (run once)
     lookup-lang          Fetch and cache Glottolog metadata for a language ID

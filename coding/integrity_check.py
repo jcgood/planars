@@ -6,7 +6,7 @@ Runs six sections of checks and prints a structured report:
   PLANAR STRUCTURE       — validates planar_*.tsv for each language
   DIAGNOSTICS            — validates diagnostics_*.tsv for each language
   CODEBOOK CONSISTENCY   — cross-checks diagnostics TSVs against schema files
-  ANALYSIS CONSISTENCY   — validates analysis modules match codebook.yaml
+  ANALYSIS CONSISTENCY   — validates analysis modules match diagnostic_criteria.yaml
   ANNOTATION SHEETS      — checks live sheet structure (requires --sheets)
   NEEDS REVIEW           — surfaces [NEEDS REVIEW] / [PLACEHOLDER] markers
 
@@ -190,11 +190,11 @@ def _section_analysis(codebook: dict) -> Tuple[int, int]:
     errs_keys = _check_chart_keys()
 
     if errs_req:
-        print(_fail("Module _REQUIRED_CRITERIA vs. codebook.yaml"))
+        print(_fail("Module _REQUIRED_CRITERIA vs. diagnostic_criteria.yaml"))
         for e in errs_req:
             print(_sub(e))
     else:
-        print(_ok("Module _REQUIRED_CRITERIA all defined in codebook.yaml"))
+        print(_ok("Module _REQUIRED_CRITERIA all defined in diagnostic_criteria.yaml"))
 
     if errs_keys:
         print(_fail("Chart span keys vs. derive function result dicts"))
@@ -292,13 +292,13 @@ def _section_needs_review(codebook: dict, diag_classes: dict) -> None:
         for field in ("description", "qualification_rule"):
             text = analysis.get(field, "")
             if "[NEEDS REVIEW]" in text or "[PLACEHOLDER]" in text:
-                flagged.append(f"codebook.yaml [{name}]: {field}")
+                flagged.append(f"diagnostic_criteria.yaml [{name}]: {field}")
                 break
         for crit in analysis.get("diagnostic_criteria", []):
             for field in ("description",):
                 text = crit.get(field, "")
                 if "[NEEDS REVIEW]" in text or "[PLACEHOLDER]" in text:
-                    flagged.append(f"codebook.yaml [{name}/{crit['name']}]: {field}")
+                    flagged.append(f"diagnostic_criteria.yaml [{name}/{crit['name']}]: {field}")
                     break
 
     for cls in diag_classes.values():

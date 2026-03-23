@@ -7,7 +7,7 @@ are created or revalidated.
 Checks:
   1. Structural     — required columns present; Language matches lang_id
   2. Brace syntax   — criterion specs like stressed{y/n/both} are well-formed
-  3. Criterion names — base criterion names are defined in codebook.yaml
+  3. Criterion names — base criterion names are defined in diagnostic_criteria.yaml
   4. Class names    — class corresponds to a planars/ analysis module
   5. Constructions  — 'general' must be alone; no duplicates within a class
   6. Glottocode     — lang_id matches Glottocode format; advisory if not cached
@@ -74,8 +74,8 @@ def _diagnostic_class_allowed_criteria() -> Dict[str, Set[str]]:
 
 
 def _codebook_criterion_names() -> Set[str]:
-    """Return all parameter names defined in codebook.yaml."""
-    cb_path = ROOT / "schemas" / "codebook.yaml"
+    """Return all criterion names defined in diagnostic_criteria.yaml."""
+    cb_path = ROOT / "schemas" / "diagnostic_criteria.yaml"
     if not cb_path.exists():
         return set()
     with cb_path.open(encoding="utf-8") as f:
@@ -171,7 +171,7 @@ def validate_diagnostics_df(df, lang_id: str) -> List[ValidationIssue]:
             if known_criteria and name and name not in known_criteria:
                 issues.append(ValidationIssue(
                     "warning", location,
-                    f"Diagnostic criterion '{name}' is not defined in codebook.yaml"
+                    f"Diagnostic criterion '{name}' is not defined in diagnostic_criteria.yaml"
                 ))
 
     # ------------------------------------------------------------------

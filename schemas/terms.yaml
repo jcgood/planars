@@ -1,0 +1,298 @@
+# Analytical Terms and Chart Labels
+#
+# THIS FILE IS THE SOURCE OF TRUTH FOR:
+#   - Definitions of analytical terms used in span derivation: strict span, loose span,
+#     partial position, complete position, keystone, ciscategorial, etc.
+#   - Chart label glossary: short labels used in domain_chart() output (planars/charts.py)
+#
+# THIS FILE IS NOT THE SOURCE OF TRUTH FOR:
+#   - Diagnostic criterion names, values, or linguistic definitions
+#     → see schemas/diagnostic_criteria.yaml
+#   - Which analysis classes exist or their qualification rules
+#     → see schemas/diagnostic_classes.yaml
+#   - Planar structure column definitions or element conventions
+#     → see schemas/planar.yaml
+
+# ---------------------------------------------------------------------------
+# TERMS
+# ---------------------------------------------------------------------------
+
+terms:
+
+  - term: planar structure
+    definition: >
+      A maximally flat hypothesis space for coding the results of constituency tests.
+      Contains an ordered sequence of positions fit out by elements, scoping over a
+      whole sentence without regard to orthographic word boundaries. Languages have
+      a separate planar structure for each part-of-speech distinction (verbal, nominal,
+      adjectival, etc.).
+
+  - term: position
+    definition: >
+      A non-terminal slot in the planar structure. Positions are of two types:
+      slots (where only one element can occur at a time) and zones (where multiple
+      elements can occur in any order). Each position has a name and an integer index.
+
+  - term: element
+    definition: >
+      A terminal component that fills a position: a morph, another planar structure,
+      or a well-defined subspan of a planar structure. Multiple elements can occupy
+      the same position; each is annotated independently.
+
+  - term: keystone
+    definition: >
+      The semantic head of the planar structure — in a verbal planar structure, the
+      verb root. Identified by Position_Name == "v:verbstem". Every planar structure
+      has exactly one keystone position. It anchors all span computations but is
+      excluded from qualification tests.
+
+  - term: partial position
+    definition: >
+      A position in which AT LEAST ONE element satisfies the qualification rule
+      for a given analysis. Partial positions define the widest possible span
+      under that analysis.
+
+  - term: complete position
+    definition: >
+      A position in which ALL elements satisfy the qualification rule for a given
+      analysis. Complete positions define a more conservative span.
+
+  - term: strict span
+    definition: >
+      The contiguous range of qualifying positions anchored at the keystone.
+      Expansion stops at the first gap (non-qualifying position) on either side.
+      Analogous to a minimal domain derived by positive evidence only.
+
+  - term: loose span
+    definition: >
+      The range from the farthest qualifying position on the left to the farthest
+      on the right of the keystone, regardless of intervening gaps. Always >= the
+      strict span. Analogous to a maximal domain.
+
+  - term: ciscategorial
+    definition: >
+      Describes an element or position that combines with only one part-of-speech
+      category (V, N, or A). Contrasts with transcategorial, which applies to
+      elements that can combine with multiple categories.
+
+  - term: transcategorial
+    definition: >
+      Describes an element that can semantically combine with more than one
+      part-of-speech category. Transcategorial elements are excluded from
+      ciscategorial domains.
+
+  - term: subspan repetition
+    definition: >
+      A construction in which a contiguous subspan of the planar structure occurs
+      more than once (e.g. coordination, complementation, serial verb constructions).
+      Fractured into minimal (narrowscope) and maximal (widescope) versions.
+
+  - term: wide scope
+    definition: >
+      A property of an element in a subspan repetition construction whereby the
+      element appears in one conjunct but has semantic scope over multiple conjoined
+      spans. Wide-scope elements are outside the minimal subspan repetition domain.
+
+  - term: narrow scope
+    definition: >
+      A property of an element confined to a single conjunct in a subspan repetition
+      construction, with no scope over repeated spans. Narrowscope elements define
+      the minimal subspan repetition domain.
+
+  - term: non-interruption domain
+    definition: >
+      A span that cannot be interrupted by a free or multiply-occurring free element.
+      Two versions are distinguished: the no-free domain (interrupted only by bound
+      elements) and the single-free domain (allows singly-occurring free elements).
+
+# ---------------------------------------------------------------------------
+# CHART LABEL GLOSSARY
+# Short labels used in domain_chart() output (planars/charts.py).
+# These are subject to revision pending input from collaborators.
+# ---------------------------------------------------------------------------
+
+chart_labels:
+
+  ciscategorial:
+    - label: "cisc strict complete"
+      meaning: Strict span over complete positions for the v-ciscategorial analysis.
+    - label: "cisc loose complete"
+      meaning: Loose span over complete positions for the v-ciscategorial analysis.
+    - label: "cisc strict partial"
+      meaning: Strict span over partial positions for the v-ciscategorial analysis.
+    - label: "cisc loose partial"
+      meaning: Loose span over partial positions for the v-ciscategorial analysis.
+
+  subspanrepetition:
+    prefixes:
+      fill:  maximum_fillable — positions where fillable_botheither_conjunct=y
+      ws-L:  maximum_widescope_left — positions where widescope_left=y
+      ws-R:  maximum_widescope_right — positions where widescope_right=y
+      ns-L:  maximum_narrowscope_left — positions where widescope_left=n
+      ns-R:  maximum_narrowscope_right — positions where widescope_right=n
+    suffixes:
+      "strict complete": Strict span over complete positions.
+      "loose complete":  Loose span over complete positions.
+      "strict partial":  Strict span over partial positions.
+      "loose partial":   Loose span over partial positions.
+    note: >
+      Labels are formed by combining a prefix and a suffix, e.g. "fill strict complete",
+      "ws-L loose partial". This yields 20 labels (5 prefixes × 4 suffixes).
+
+  noninterruption:
+    - label: "no-free complete"
+      meaning: Strict span over complete positions for the no-free domain (free=n).
+    - label: "no-free partial"
+      meaning: Strict span over partial positions for the no-free domain (free=n).
+    - label: "1-free complete"
+      meaning: >
+        Strict span over complete positions for the single-free domain
+        (free=n OR (free=y AND multiple=n)).
+    - label: "1-free partial"
+      meaning: >
+        Strict span over partial positions for the single-free domain
+        (free=n OR (free=y AND multiple=n)).
+
+  stress:
+    note: >
+      Four labels (minimal/maximal × partial/complete). The keystone can trigger
+      a blocking condition but is not itself a span endpoint.
+    labels:
+      - label: "stress minimal partial"
+        meaning: >
+          Minimal stress domain, partial blocking: expand from ROOT, stopping just before
+          the first position where ANY element has stressed ∈ {y, both} AND independence = y.
+          Partial blocking is easier to trigger → smaller domain.
+      - label: "stress minimal complete"
+        meaning: >
+          Minimal stress domain, complete blocking: expand from ROOT, stopping just before
+          the first position where ALL elements have stressed ∈ {y, both} AND independence = y.
+          Complete blocking is harder to trigger → larger domain.
+      - label: "stress maximal partial"
+        meaning: >
+          Maximal stress domain, partial blocking: expand from ROOT, stopping just before
+          the first position where ANY element has obligatory = y AND independence = y.
+      - label: "stress maximal complete"
+        meaning: >
+          Maximal stress domain, complete blocking: expand from ROOT, stopping just before
+          the first position where ALL elements have obligatory = y AND independence = y.
+
+  nonpermutability:
+    - label: "nonperm strict complete"
+      meaning: >
+        Strict (absolutely fixed order) non-permutability domain, complete positions:
+        ALL elements in each position have permutable=n.
+    - label: "nonperm strict partial"
+      meaning: >
+        Strict non-permutability domain, partial positions:
+        AT LEAST ONE element has permutable=n.
+    - label: "nonperm flexible complete"
+      meaning: >
+        Flexible (fixed or scopal) non-permutability domain, complete positions:
+        ALL elements have permutable=n OR (permutable=y AND scopal=y).
+    - label: "nonperm flexible partial"
+      meaning: >
+        Flexible non-permutability domain, partial positions:
+        AT LEAST ONE element has permutable=n OR (permutable=y AND scopal=y).
+
+  free_occurrence:
+    - label: "free strict complete"
+      meaning: Strict span over complete positions where all elements are free forms (free=y).
+    - label: "free loose complete"
+      meaning: Loose span over complete positions where all elements are free forms.
+    - label: "free strict partial"
+      meaning: Strict span over partial positions where at least one element is a free form.
+    - label: "free loose partial"
+      meaning: Loose span over partial positions where at least one element is a free form.
+
+  biuniqueness:
+    - label: "biuniq strict complete"
+      meaning: Strict span over complete positions where all elements are pieces of the extended exponent (biunique=n).
+    - label: "biuniq loose complete"
+      meaning: Loose span over complete positions where all elements are pieces of the extended exponent.
+    - label: "biuniq strict partial"
+      meaning: Strict span over partial positions where at least one element is a piece of the extended exponent.
+    - label: "biuniq loose partial"
+      meaning: Loose span over partial positions where at least one element is a piece of the extended exponent. The primary domain span — extends from the prefixal piece to the suffixal piece.
+
+  repair:
+    - label: "repair strict complete"
+      meaning: Strict span over complete positions where all elements are within the repair domain (restart=y).
+    - label: "repair loose complete"
+      meaning: Loose span over complete positions where all elements are within the repair domain.
+    - label: "repair strict partial"
+      meaning: Strict span over partial positions where at least one element is within the repair domain.
+    - label: "repair loose partial"
+      meaning: Loose span over partial positions where at least one element is within the repair domain.
+
+  segmental:
+    - label: "seg strict complete"
+      meaning: Strict span over complete positions where the segmental phonological process applies to all elements.
+    - label: "seg loose complete"
+      meaning: Loose span over complete positions where the segmental process applies to all elements.
+    - label: "seg strict partial"
+      meaning: Strict span over partial positions where the segmental process applies to at least one element.
+    - label: "seg loose partial"
+      meaning: Loose span over partial positions where the segmental process applies to at least one element.
+
+  suprasegmental:
+    - label: "supra strict complete"
+      meaning: Strict span over complete positions where the suprasegmental process applies to all elements.
+    - label: "supra loose complete"
+      meaning: Loose span over complete positions where the suprasegmental process applies to all elements.
+    - label: "supra strict partial"
+      meaning: Strict span over partial positions where the suprasegmental process applies to at least one element.
+    - label: "supra loose partial"
+      meaning: Loose span over partial positions where the suprasegmental process applies to at least one element.
+
+  pausing:
+    - label: "pause strict complete"
+      meaning: Strict span over complete positions where all elements are within the pause domain (pause_domain=y).
+    - label: "pause loose complete"
+      meaning: Loose span over complete positions where all elements are within the pause domain.
+    - label: "pause strict partial"
+      meaning: Strict span over partial positions where at least one element is within the pause domain.
+    - label: "pause loose partial"
+      meaning: Loose span over partial positions where at least one element is within the pause domain.
+
+  proform:
+    - label: "proform strict complete"
+      meaning: Strict span over complete positions where all elements are substitutable by a proform.
+    - label: "proform loose complete"
+      meaning: Loose span over complete positions where all elements are substitutable.
+    - label: "proform strict partial"
+      meaning: Strict span over partial positions where at least one element is substitutable by a proform.
+    - label: "proform loose partial"
+      meaning: Loose span over partial positions where at least one element is substitutable.
+
+  play_language:
+    - label: "play strict complete"
+      meaning: Strict span over complete positions where the play language operation applies to all elements.
+    - label: "play loose complete"
+      meaning: Loose span over complete positions where the play language operation applies to all elements.
+    - label: "play strict partial"
+      meaning: Strict span over partial positions where the play language operation applies to at least one element.
+    - label: "play loose partial"
+      meaning: Loose span over partial positions where the play language operation applies to at least one element.
+
+  idiom:
+    - label: "idiom strict complete"
+      meaning: Strict span over complete positions where all elements are idiomatic (part of a non-compositional unit).
+    - label: "idiom loose complete"
+      meaning: Loose span over complete positions where all elements are idiomatic.
+    - label: "idiom strict partial"
+      meaning: Strict span over partial positions where at least one element is idiomatic.
+    - label: "idiom loose partial"
+      meaning: Loose span over partial positions where at least one element is idiomatic.
+
+  aspiration:
+    note: Four labels — mirrors stress label structure.
+    labels:
+      - label: "asp minimal partial"
+        meaning: Minimal aspiration domain, partial blocking — mirrors stress minimal partial logic.
+      - label: "asp minimal complete"
+        meaning: Minimal aspiration domain, complete blocking — mirrors stress minimal complete logic.
+      - label: "asp maximal partial"
+        meaning: Maximal aspiration domain, partial blocking — mirrors stress maximal partial logic.
+      - label: "asp maximal complete"
+        meaning: Maximal aspiration domain, complete blocking — mirrors stress maximal complete logic.

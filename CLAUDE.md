@@ -76,7 +76,7 @@ python -m coding integrity-check                       # all languages, local ch
 python -m coding integrity-check --lang arao1248       # one language
 python -m coding integrity-check --sheets              # also check live sheet structure
 
-# Check consistency between codebook.yaml, analysis modules, and diagnostics_{lang_id}.tsv
+# Check consistency between diagnostic_criteria.yaml, analysis modules, and diagnostics_{lang_id}.tsv
 python -m coding check-codebook
 
 # Look up Glottolog metadata for a language ID (fetches from API on first use, then caches)
@@ -130,8 +130,8 @@ This is a linguistic typology analysis project for morphosyntactic domain deriva
    - `ciscategorial.py`: A position qualifies if elements have `V-combines=y` and all other params `=n`. Returns 4 spans (strict/loose × complete/partial).
    - `subspanrepetition.py`: 5 span categories (fillable, widescope_left/right, narrowscope_left/right), each with 4 spans = 20 total.
    - `noninterruption.py`: Two domain types (no-free: `free=n`; single-free: `free=n` or `free=y,multiple=n`), each with complete/partial = 4 strict spans.
-   - `stress.py`: Uses `blocked_span` with complete/partial distinction — expand from keystone outward, stopping just before the first position where the blocking condition holds. Two domain types, each with complete/partial = 4 spans total. Partial blocking: any element in the position satisfies the condition (smaller domain). Complete blocking: all elements satisfy the condition (larger domain). Minimal: blocked by `stressed ∈ {y, both} AND independence=y`. Maximal: blocked by `obligatory=y AND independence=y`. The keystone always remains in the domain. See `schemas/codebook.yaml` for open questions on `left-interaction`, `right-interaction`, and meso/interaction domains (issues #16, #17).
-   - `aspiration.py`: `[NEEDS REVIEW]` — mirrors stress structure but qualification rules are provisional. See `schemas/codebook.yaml`.
+   - `stress.py`: Uses `blocked_span` with complete/partial distinction — expand from keystone outward, stopping just before the first position where the blocking condition holds. Two domain types, each with complete/partial = 4 spans total. Partial blocking: any element in the position satisfies the condition (smaller domain). Complete blocking: all elements satisfy the condition (larger domain). Minimal: blocked by `stressed ∈ {y, both} AND independence=y`. Maximal: blocked by `obligatory=y AND independence=y`. The keystone always remains in the domain. See `schemas/diagnostic_criteria.yaml` and `schemas/diagnostic_classes.yaml` for open questions on `left-interaction`, `right-interaction`, and meso/interaction domains (issues #16, #17).
+   - `aspiration.py`: `[NEEDS REVIEW]` — mirrors stress structure but qualification rules are provisional. See `schemas/diagnostic_classes.yaml`.
    - `nonpermutability.py`: Two domain types (strict, flexible) based on whether elements' linear ordering is fixed. Criteria: `permutable` (y/n), `scopal` (y/n). Strict = absolutely fixed order (permutable=n). Flexible = fixed OR variable-with-scope (permutable=n OR (permutable=y AND scopal=y)). Each with complete/partial = 4 strict spans. Based on Tallman et al. 2024 intro §Fracturing.
    - `free_occurrence.py`: The free occurrence domain — positions where elements are free forms (free=y). Reuses the `free` parameter from noninterruption. If a language runs both analyses, a single sheet with `free` and `multiple` columns covers both. Returns 4 spans (strict/loose × complete/partial). Classified as an indeterminate domain (Tallman et al. 2024).
    - `biuniqueness.py`: The biuniqueness (extended exponence) domain — span covered by a discontinuous morpheme (circumfix) or extended exponent. Parameter: `biunique` (y/n) where n = element is a piece of the circumfix. One TSV per circumfix/construction. The loose partial span is the primary result (extends from prefix piece to suffix piece). Returns 4 spans (strict/loose × complete/partial). Based on Araona §Extended exponence.
@@ -149,9 +149,9 @@ The planars data model was developed independently but shares several fundamenta
 
 **Late aggregation**: Raw annotation data is stored exhaustively at the lowest level (y/n per element per position). All derived categories — spans, domain types, partial vs. complete distinctions — are computed algorithmically outside the stored data (in the analysis modules). This means the same annotation files can answer different research questions as the theoretical framework evolves, without recoding. Never aggregate during data collection.
 
-**Autotypology (dynamic schema)**: The parameter definitions in `schemas/codebook.yaml` and analysis classes in `schemas/diagnostic_classes.yaml` are not a fixed a priori etic grid. They are updated throughout data collection as new languages reveal new phenomena; initial codings are often revised as the typology stabilizes (AUTOTYP observes this typically takes ~40–50 entries before new types stop emerging). The `[PLACEHOLDER]` and `[NEEDS REVIEW]` markers in these files reflect genuine ongoing theoretical work, not incomplete implementation. This is by design.
+**Autotypology (dynamic schema)**: The diagnostic criterion definitions in `schemas/diagnostic_criteria.yaml` and analysis classes in `schemas/diagnostic_classes.yaml` are not a fixed a priori etic grid. They are updated throughout data collection as new languages reveal new phenomena; initial codings are often revised as the typology stabilizes (AUTOTYP observes this typically takes ~40–50 entries before new types stop emerging). The `[PLACEHOLDER]` and `[NEEDS REVIEW]` markers in these files reflect genuine ongoing theoretical work, not incomplete implementation. This is by design.
 
-**Definition files vs. data files**: `schemas/codebook.yaml` and `schemas/diagnostic_classes.yaml` are *definition files* — they list possible parameter values with linguistic definitions and coding procedure descriptions, and are updated dynamically throughout data collection. Filled TSVs under `coded_data/` are *data files* — actual annotations for individual languages. Definition files serve qualitative typological work (what distinctions are cross-linguistically viable?); data files enable quantitative analysis. Keep them clearly separate.
+**Definition files vs. data files**: `schemas/diagnostic_criteria.yaml`, `schemas/diagnostic_classes.yaml`, `schemas/planar.yaml`, and `schemas/terms.yaml` are *definition files* — they list possible criterion values with linguistic definitions and coding procedure descriptions, and are updated dynamically throughout data collection. Filled TSVs under `coded_data/` are *data files* — actual annotations for individual languages. Definition files serve qualitative typological work (what distinctions are cross-linguistically viable?); data files enable quantitative analysis. Keep them clearly separate.
 
 **Language reports**: AUTOTYP uses free-text language reports as intermediate documents during module development — text documents containing paradigms, citation examples, and explicit motivation for coding decisions. These are especially valuable when new values are being identified and coding decisions are being revised, and serve as an audit trail connecting annotations to their empirical basis. Planars currently relies on source chapters in this role during prototyping; a structured language report format for production onboarding is an open question (see issue #68).
 
@@ -173,10 +173,10 @@ The planars data model was developed independently but shares several fundamenta
 - `import_sheets.py`: `import-sheets` — downloads filled sheets to TSVs.
 - `validate.py`: Shared base — just the `ValidationIssue` dataclass.
 - `validate_planar.py`: `validate_planar_df(df)` — validates planar structure TSVs (sequential positions, unique names, keystone present, valid Position_Type/Class_Type, element conventions including collapse detection).
-- `validate_diagnostics.py`: `validate_diagnostics_df(df, lang_id)` — validates diagnostics_{lang_id}.tsv (required columns, Language field, brace syntax, param names against codebook.yaml, class names against planars/ modules, construction naming rules).
+- `validate_diagnostics.py`: `validate_diagnostics_df(df, lang_id)` — validates diagnostics_{lang_id}.tsv (required columns, Language field, brace syntax, criterion names against diagnostic_criteria.yaml, class names against planars/ modules, construction naming rules).
 - `validate_coding.py`: `validate-coding` command — reads annotation sheets, validates values, clears/updates pink cell highlights. Also calls `validate_planar_df` and `validate_diagnostics_df` before sheet validation.
 - `generate_notebooks.py`: `generate-notebooks` — generates per-language and coordinator Colab notebooks.
-- `check_codebook.py`: `check-codebook` — consistency check between codebook.yaml, diagnostic_classes.yaml, analysis modules, and diagnostics_{lang_id}.tsv.
+- `check_codebook.py`: `check-codebook` — consistency check between diagnostic_criteria.yaml, diagnostic_classes.yaml, analysis modules, and diagnostics_{lang_id}.tsv.
 - `integrity_check.py`: `integrity-check` — full project-wide health report across six sections (PLANAR STRUCTURE, DIAGNOSTICS, CODEBOOK CONSISTENCY, ANALYSIS CONSISTENCY, ANNOTATION SHEETS, NEEDS REVIEW). Use `--lang` to restrict per-language sections; `--sheets` to include live Google Sheets structural validation.
 - `glottolog.py`: `lookup-lang` — fetch and cache Glottolog metadata (name, family, ISO code, coordinates) for a language ID. Cache at `glottolog_cache.json` (gitignored). Also provides `is_valid_format()` and `cached_entry()` used by `validate_diagnostics.py` for check 6 (Glottocode format + advisory).
 - `populate_sheets.py`: One-time utility for uploading legacy TSV data.
@@ -217,9 +217,13 @@ Use Glottolog metadata proactively for:
 
 ## Codebook and diagnostic classes
 
-`schemas/codebook.yaml` is the source of truth for diagnostic criterion definitions, valid values, analytical terms (keystone, partial, complete, strict, loose), and qualification rules per analysis. Entries marked `[PLACEHOLDER]` need linguistic descriptions; entries marked `[NEEDS REVIEW]` have provisional rules that need confirmation (currently aspiration; stress qualification rule is settled but `left-interaction` and `right-interaction` criteria remain under review).
+`schemas/diagnostic_criteria.yaml` is the source of truth for diagnostic criterion definitions, valid values, and linguistic descriptions. Entries marked `[PLACEHOLDER]` need linguistic descriptions; entries marked `[NEEDS REVIEW]` have provisional rules that need confirmation (currently aspiration; stress qualification rule is settled but `left-interaction` and `right-interaction` criteria remain under review).
 
-`schemas/diagnostic_classes.yaml` is the normative schema for analysis classes — what they cover, when they apply, what diagnostic criteria they require. It is separate from `schemas/codebook.yaml` (which owns criterion semantics) and serves as the source of truth for:
+`schemas/terms.yaml` is the source of truth for analytical terms (keystone, partial, complete, strict, loose) and chart label glossary.
+
+`schemas/planar.yaml` is the source of truth for structural column definitions and element conventions.
+
+`schemas/diagnostic_classes.yaml` is the normative schema for analysis classes — what they cover, when they apply, what diagnostic criteria they require, and how spans are computed (qualification_rule). It is separate from `schemas/diagnostic_criteria.yaml` (which owns criterion semantics) and serves as the source of truth for:
 - Which classes exist and their domain types (morphosyntactic / phonological / indeterminate)
 - Whether a class is universal or conditional and when it applies
 - Whether a class uses a single general construction or is construction-specific
@@ -228,7 +232,7 @@ Use Glottolog metadata proactively for:
 
 `check-codebook` validates diagnostics_{lang_id}.tsv against both files. Human-editable workflow: edit `schemas/diagnostic_classes.yaml` to add or update a class, then ask Claude to propagate changes to diagnostics_{lang_id}.tsv and scaffold the module.
 
-`render_codebook.py` at the repo root renders `schemas/codebook.yaml` as human-readable Markdown: `python render_codebook.py` (stdout) or `python render_codebook.py codebook.md` (file).
+`render_codebook.py` at the repo root renders the schemas as human-readable Markdown (reads from all four schema files): `python render_codebook.py` (stdout) or `python render_codebook.py codebook.md` (file).
 
 ## NonCollaborative/
 
@@ -248,8 +252,10 @@ Keep the following files up to date as the project evolves. Check each one at th
 | File | Update when |
 |------|-------------|
 | `CLAUDE.md` | Architecture changes, new scripts, new conventions, workflow changes |
-| `schemas/codebook.yaml` | New diagnostic criteria, new analyses, qualification rules change, `[PLACEHOLDER]` or `[NEEDS REVIEW]` entries resolved |
-| `schemas/diagnostic_classes.yaml` | New analysis classes added, applicability or required criteria change, new known construction types |
+| `schemas/diagnostic_criteria.yaml` | New diagnostic criteria, new analyses, `[PLACEHOLDER]` or `[NEEDS REVIEW]` entries resolved |
+| `schemas/diagnostic_classes.yaml` | New analysis classes added, applicability, required criteria, qualification rules, or known construction types change |
+| `schemas/planar.yaml` | New standard element labels or structural column conventions |
+| `schemas/terms.yaml` | New analytical terms or chart label changes |
 | `README.md` | Changes to the annotated TOC (audience routing, guide descriptions) |
 | `docs/*.md` | User-facing workflow changes, setup instructions, new dependencies, new commands |
 | `notebooks/templates/domains_boilerplate.ipynb` | Contributor notebook boilerplate changes (setup, auth, chart cell) — then run `generate-notebooks --apply` |
@@ -339,11 +345,11 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 
 ## Work phases
 
-This is a **research project**: the schemas, qualification rules, and analytical models are themselves outputs of the research process, not fixed inputs. Annotation work informs theory, which changes `codebook.yaml`, which changes what gets annotated. This makes it fundamentally unlike a business application with stable requirements — the tools serve a moving target by design. As understanding deepens across languages, all facets of the project (data model, diagnostics, module logic, documentation) are subject to revision.
+This is a **research project**: the schemas, qualification rules, and analytical models are themselves outputs of the research process, not fixed inputs. Annotation work informs theory, which changes the schema files (`schemas/`), which changes what gets annotated. This makes it fundamentally unlike a business application with stable requirements — the tools serve a moving target by design. As understanding deepens across languages, all facets of the project (data model, diagnostics, module logic, documentation) are subject to revision.
 
 Sessions tend to fall into a few natural patterns. Naming the primary focus at the start of a session helps keep scope manageable.
 
-**Schema/codebook work** — Editing `schemas/codebook.yaml`, `schemas/diagnostic_classes.yaml`, or the qualification rules in analysis modules. The most consequential work; mistakes here cascade across languages and analyses. Go slow, run `integrity-check` after changes. Qualification rule changes must also propagate to inline comments and module docstrings — not just the YAML files.
+**Schema work** — Editing any file in `schemas/` or the qualification rules in analysis modules. The most consequential work; mistakes here cascade across languages and analyses. Go slow, run `integrity-check` after changes. Qualification rule changes must also propagate to inline comments and module docstrings — not just the YAML files.
 
 **Language onboarding** — End-to-end work for a new language: gathering source material, drafting `diagnostics_{lang_id}.tsv`, running `generate-sheets`, producing a first-pass annotation, importing, and verifying analysis output. During prototyping, this has involved reading finished book chapters; in production, onboarding will be a collaborative process with contributors who may provide information in varied and yet-to-be-modeled forms (notes, drafts, conversation, partial data). The tooling should remain open to this rather than assuming a finished written source is always available. Automated first-pass coding may eventually be possible, but will always require expert review.
 

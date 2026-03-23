@@ -1,8 +1,8 @@
-"""Check consistency between codebook.yaml, diagnostic_classes.yaml, analysis modules, and charts.py.
+"""Check consistency between diagnostic_criteria.yaml, diagnostic_classes.yaml, analysis modules, and charts.py.
 
 Checks:
-  1. Every criterion in each module's _REQUIRED_CRITERIA is defined in codebook.yaml
-  2. Criterion names in diagnostics_{lang_id}.tsv are defined in codebook.yaml
+  1. Every criterion in each module's _REQUIRED_CRITERIA is defined in diagnostic_criteria.yaml
+  2. Criterion names in diagnostics_{lang_id}.tsv are defined in diagnostic_criteria.yaml
   3. Chart span label keys match the keys returned by each derive function
   4. diagnostics_{lang_id}.tsv class names and required criteria match diagnostic_classes.yaml
 
@@ -23,8 +23,8 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def _load_codebook() -> dict:
-    """Load and parse codebook.yaml from the repo root."""
-    with open(ROOT / "schemas" / "codebook.yaml", encoding="utf-8") as f:
+    """Load and parse diagnostic_criteria.yaml from the schemas/ directory."""
+    with open(ROOT / "schemas" / "diagnostic_criteria.yaml", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
@@ -51,7 +51,7 @@ def _codebook_criteria(codebook: dict) -> dict[str, set[str]]:
 
 
 def _check_required_criteria(codebook: dict) -> List[str]:
-    """Check that every required criterion in each module is defined in codebook.yaml."""
+    """Check that every required criterion in each module is defined in diagnostic_criteria.yaml."""
     import importlib
 
     cb = _codebook_criteria(codebook)
@@ -83,7 +83,7 @@ def _check_required_criteria(codebook: dict) -> List[str]:
 
 
 def _check_diagnostics(codebook: dict) -> List[str]:
-    """Check that criterion names in all diagnostics_{lang_id}.tsv files are in codebook.yaml."""
+    """Check that criterion names in all diagnostics_{lang_id}.tsv files are in diagnostic_criteria.yaml."""
     cb = _codebook_criteria(codebook)
     diag_files = sorted((ROOT / "coded_data").glob("*/planar_input/diagnostics_*.tsv"))
     if not diag_files:
@@ -299,13 +299,13 @@ def _report_needs_review(codebook: dict, diag_classes: dict) -> int:
         for field in ("description", "qualification_rule"):
             text = analysis.get(field, "")
             if "[NEEDS REVIEW]" in text or "[PLACEHOLDER]" in text:
-                flagged.append(f"codebook.yaml [{name}]: {field}")
+                flagged.append(f"diagnostic_criteria.yaml [{name}]: {field}")
                 break
         for param in analysis.get("diagnostic_criteria", []):
             for field in ("description",):
                 text = param.get(field, "")
                 if "[NEEDS REVIEW]" in text or "[PLACEHOLDER]" in text:
-                    flagged.append(f"codebook.yaml [{name}/{param['name']}]: {field}")
+                    flagged.append(f"diagnostic_criteria.yaml [{name}/{param['name']}]: {field}")
                     break
     for cls in diag_classes.values():
         status = str(cls.get("status", ""))
@@ -322,8 +322,8 @@ def main() -> None:
     """Entry point for `python -m coding check-codebook`.
 
     Runs four consistency checks and exits with status 1 if any fail:
-    1. Every _REQUIRED_CRITERIA criterion in each analysis module is in codebook.yaml.
-    2. Every criterion name in diagnostics_{lang_id}.tsv files is in codebook.yaml.
+    1. Every _REQUIRED_CRITERIA criterion in each analysis module is in diagnostic_criteria.yaml.
+    2. Every criterion name in diagnostics_{lang_id}.tsv files is in diagnostic_criteria.yaml.
     3. Every span key referenced in charts.py exists in the corresponding derive result.
     4. diagnostics_{lang_id}.tsv class names and required criteria match diagnostic_classes.yaml.
 
@@ -334,10 +334,10 @@ def main() -> None:
     diag_classes = _load_diagnostic_classes()
     all_errors: List[str] = []
 
-    print("1. Checking _REQUIRED_CRITERIA vs codebook.yaml ...")
+    print("1. Checking _REQUIRED_CRITERIA vs diagnostic_criteria.yaml ...")
     all_errors.extend(_check_required_criteria(codebook))
 
-    print("2. Checking diagnostics_{lang_id}.tsv vs codebook.yaml ...")
+    print("2. Checking diagnostics_{lang_id}.tsv vs diagnostic_criteria.yaml ...")
     all_errors.extend(_check_diagnostics(codebook))
 
     print("3. Checking chart span keys vs derive function result dicts ...")

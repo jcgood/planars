@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Render codebook.yaml as human-readable Markdown.
+"""Render the planars schema files as human-readable Markdown.
+
+Reads from schemas/diagnostic_criteria.yaml (criteria and analyses),
+schemas/diagnostic_classes.yaml (qualification rules), schemas/terms.yaml
+(glossary and chart labels), and schemas/planar.yaml (structural columns).
 
 Run from the repo root:
     python render_codebook.py              # print to stdout
@@ -14,7 +18,7 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parent
-CODEBOOK = ROOT / "schemas" / "codebook.yaml"
+SCHEMAS = ROOT / "schemas"
 
 
 def _wrap(text: str, indent: int = 0) -> str:
@@ -22,35 +26,48 @@ def _wrap(text: str, indent: int = 0) -> str:
     return textwrap.fill(text.strip(), width=88, initial_indent=prefix, subsequent_indent=prefix)
 
 
-def render(cb: dict) -> str:
+def render(
+    dc: dict,    # diagnostic_criteria.yaml
+    classes: dict,  # diagnostic_classes.yaml (for qualification_rule lookup)
+    terms: dict,    # terms.yaml
+    planar: dict,   # planar.yaml
+) -> str:
     lines = []
 
-    lines.append("# Planars Codebook\n")
+    lines.append("# Planars Schema Reference\n")
     lines.append(
-        "_Source of truth for parameters, values, and analytical terms. "
-        "Generated from `codebook.yaml`._\n"
+        "_Source of truth for diagnostic criteria, analytical terms, and planar structure. "
+        "Generated from `schemas/diagnostic_criteria.yaml`, `schemas/diagnostic_classes.yaml`, "
+        "`schemas/terms.yaml`, and `schemas/planar.yaml`._\n"
     )
 
     # -----------------------------------------------------------------------
-    # Structural columns
+    # Structural columns (from planar.yaml)
     # -----------------------------------------------------------------------
     lines.append("---\n")
     lines.append("## Structural Columns\n")
     lines.append("Present in every filled TSV.\n")
-    for col in cb.get("structural_columns", []):
+    for col in planar.get("structural_columns", []):
         lines.append(f"### `{col['name']}`\n")
         lines.append(_wrap(col["description"]) + "\n")
 
     # -----------------------------------------------------------------------
-    # Analyses
+    # Analyses (from diagnostic_criteria.yaml, with qualification_rule from
+    # diagnostic_classes.yaml)
     # -----------------------------------------------------------------------
     lines.append("---\n")
     lines.append("## Analyses\n")
 
-    for analysis in cb.get("analyses", []):
+    # Build a quick lookup for qualification_rule by class name
+    classes_by_name = {
+        cls["name"]: cls
+        for cls in classes.get("classes", [])
+    }
+
+    for analysis in dc.get("analyses", []):
         name = analysis["name"]
-        status = ""
         desc = analysis.get("description", "").strip()
+        status = ""
         if "[NEEDS REVIEW]" in desc:
             status = " ⚠️ NEEDS REVIEW"
             desc = desc.replace("[NEEDS REVIEW]", "").strip()
@@ -58,10 +75,10 @@ def render(cb: dict) -> str:
         lines.append(f"### {name}{status}\n")
         lines.append(_wrap(desc) + "\n")
 
-        params = analysis.get("parameters", [])
-        if params:
-            lines.append("**Parameters:**\n")
-            for p in params:
+        criteria = analysis.get("diagnostic_criteria", [])
+        if criteria:
+            lines.append("**Diagnostic criteria:**\n")
+            for p in criteria:
                 pname = p["name"]
                 vals = ", ".join(f"`{v}`" for v in p.get("values", []))
                 pdesc = p.get("description", "").strip()
@@ -70,33 +87,33 @@ def render(cb: dict) -> str:
                 pdesc = pdesc.replace("[NEEDS REVIEW]", "").replace("[PLACEHOLDER]", "").strip()
                 lines.append(f"- **`{pname}`** ({vals}){tag}  \n  {_wrap(pdesc, indent=2).lstrip()}\n")
 
-        rule = analysis.get("qualification_rule", "").strip()
+        rule = classes_by_name.get(name, {}).get("qualification_rule", "").strip()
         if rule:
             lines.append("**Qualification rule:**\n")
             lines.append("```\n" + rule + "\n```\n")
 
     # -----------------------------------------------------------------------
-    # Shared values
+    # Shared values (from diagnostic_criteria.yaml)
     # -----------------------------------------------------------------------
     lines.append("---\n")
-    lines.append("## Shared Parameter Values\n")
+    lines.append("## Shared Criterion Values\n")
     lines.append("| Value | Meaning |\n|---|---|\n")
-    for sv in cb.get("shared_values", []):
+    for sv in dc.get("shared_values", []):
         meaning = sv["meaning"].strip().replace("\n", " ")
         lines.append(f"| `{sv['value']}` | {meaning} |\n")
     lines.append("\n")
 
     # -----------------------------------------------------------------------
-    # Terms / Glossary
+    # Terms / Glossary (from terms.yaml)
     # -----------------------------------------------------------------------
     lines.append("---\n")
     lines.append("## Glossary\n")
-    for t in cb.get("terms", []):
+    for t in terms.get("terms", []):
         lines.append(f"**{t['term']}**  \n")
         lines.append(_wrap(t["definition"], indent=0) + "\n")
 
     # -----------------------------------------------------------------------
-    # Chart labels
+    # Chart labels (from terms.yaml)
     # -----------------------------------------------------------------------
     lines.append("---\n")
     lines.append("## Chart Labels\n")
@@ -105,7 +122,7 @@ def render(cb: dict) -> str:
         "Subject to revision pending collaborator input (see issue #8).\n"
     )
 
-    cl = cb.get("chart_labels", {})
+    cl = terms.get("chart_labels", {})
 
     for section, data in cl.items():
         lines.append(f"### {section}\n")
@@ -140,10 +157,16 @@ def render(cb: dict) -> str:
 
 
 def main():
-    with open(CODEBOOK) as f:
-        cb = yaml.safe_load(f)
+    with open(SCHEMAS / "diagnostic_criteria.yaml") as f:
+        dc = yaml.safe_load(f)
+    with open(SCHEMAS / "diagnostic_classes.yaml") as f:
+        classes = yaml.safe_load(f)
+    with open(SCHEMAS / "terms.yaml") as f:
+        terms = yaml.safe_load(f)
+    with open(SCHEMAS / "planar.yaml") as f:
+        planar = yaml.safe_load(f)
 
-    output = render(cb)
+    output = render(dc, classes, terms, planar)
 
     if len(sys.argv) > 1:
         out_path = Path(sys.argv[1])

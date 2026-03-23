@@ -52,7 +52,7 @@ coding/                         Google Sheets workflow tools (python -m coding <
   validate_diagnostics.py       diagnostics_{lang_id}.tsv validation
   validate_coding.py            Annotation sheet validation + validate-coding command
   generate_notebooks.py         Generate and upload Colab notebooks
-  check_codebook.py             Consistency check: codebook.yaml ↔ modules ↔ diagnostics_{lang_id}.tsv
+  check_codebook.py             Consistency check: diagnostic_criteria.yaml ↔ modules ↔ diagnostics_{lang_id}.tsv
   populate_sheets.py            Upload legacy TSV data (one-time utility)
   setup_root_folder.py          One-time Drive folder setup
 coded_data/{lang_id}/           Annotation data per language (in planars-data repo)
@@ -65,8 +65,11 @@ notebooks/
   archive/                      Superseded notebooks
 tests/snapshots/                Regression test baselines
 schemas/
-  codebook.yaml                 Parameter and term definitions
-  diagnostic_classes.yaml       Normative schema for analysis classes (applicability, required params)
+  diagnostic_criteria.yaml      Diagnostic criterion definitions and allowed values
+  diagnostic_classes.yaml       Analysis class schema (applicability, required criteria, qualification rules)
+  planar.yaml                   Planar structure ontology (structural columns, element conventions)
+  terms.yaml                    Analytical vocabulary (strict/loose span, etc.) and chart labels
+  codebook.yaml                 Redirect stub — see the four files above
 docs/                           Documentation (this directory)
 ```
 
@@ -90,7 +93,7 @@ Defines the ordered sequence of positions and their elements. Required columns:
 | `Position_Number` | Sequential integer; positions must be contiguous |
 | `Position_Name` | Unique name for the position; keystone must be named `v:verbstem` |
 | `Element` | Element label (form or form-type within the position) |
-| `Position_Type` | Type of position (see `schemas/codebook.yaml`) |
+| `Position_Type` | Type of position (see `schemas/planar.yaml`) |
 | `Class_Type` | Class of element |
 
 Elements with leading or trailing hyphens are wrapped in `[brackets]` to avoid spreadsheet parsing issues (e.g., `-suffix` → `[-suffix]`).

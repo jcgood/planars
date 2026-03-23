@@ -34,4 +34,4 @@ python -m venv .venv
 | [Data management](docs/data-management.md) | Coordinators and developers | Two-repo architecture, planar input format, `diagnostics_{lang_id}.tsv` format, `coded_data/` layout |
 | [Testing](docs/testing.md) | Developers | Regression snapshot tests, synthetic test language (`synth0001`) |
 
-For parameter definitions, valid values, and qualification rules, see `schemas/codebook.yaml`.
+For diagnostic criterion definitions and qualification rules, see `schemas/diagnostic_criteria.yaml` and `schemas/diagnostic_classes.yaml`. For analytical term definitions, see `schemas/terms.yaml`.

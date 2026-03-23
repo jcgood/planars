@@ -1,0 +1,133 @@
+# Planar Structure Ontology
+#
+# THIS FILE IS THE SOURCE OF TRUTH FOR:
+#   - Structural column definitions (Element, Position_Name, Position_Number)
+#   - Element conventions: Class_Type categories, ALL CAPS label standards,
+#     brace notation, reserved labels
+#
+# THIS FILE IS NOT THE SOURCE OF TRUTH FOR:
+#   - Diagnostic criterion names and values
+#     → see schemas/diagnostic_criteria.yaml
+#   - Which analysis classes exist or their qualification rules
+#     → see schemas/diagnostic_classes.yaml
+#   - Analytical terms (strict/loose span, partial/complete position)
+#     → see schemas/terms.yaml
+#   - Per-language planar structures
+#     → see coded_data/{lang_id}/planar_input/planar_{lang_id}-*.tsv
+
+# ---------------------------------------------------------------------------
+# STRUCTURAL COLUMNS
+# Present in every filled TSV.
+# ---------------------------------------------------------------------------
+
+structural_columns:
+
+  - name: Element
+    description: >
+      A terminal component of a planar structure: a morph, another planar structure,
+      or a well-defined subspan of a planar structure. Elements occupy positions.
+      Elements with leading or trailing hyphens are wrapped in brackets (e.g. [-ed])
+      to prevent misinterpretation by spreadsheet software.
+
+  - name: Position_Name
+    description: >
+      The label for the position in the planar structure. Positions in the verbal
+      domain are prefixed with "v:". The special value "v:verbstem" marks the
+      keystone position (see schemas/terms.yaml).
+
+  - name: Position_Number
+    description: >
+      Integer index of the position in the planar structure. Lower numbers are
+      further left; higher numbers are further right. The keystone (v:verbstem)
+      anchors all span computations.
+
+# ---------------------------------------------------------------------------
+# ELEMENT CONVENTIONS
+# ---------------------------------------------------------------------------
+# Conventions for the Elements column in planar structure TSVs.
+# The Class_Type column determines which convention applies.
+#
+#   list   — an exhaustive enumeration of morphemes or forms
+#             Elements are lower-case orthographic/transcribed representations.
+#             Example: "-ed, -s, -ing"
+#
+#   open   — a position occupied by an open or semi-open class
+#             Elements are ALL CAPS category labels, optionally refined with
+#             brace notation.  Lower-case items may appear alongside ALL CAPS
+#             labels as shorthand for "additional closed-class items not listed".
+#             Example: "NP{S,A}, CONJUNCT, tso"
+#
+#   closed — a finite but not exhaustively listed set of forms
+#             Behaviour between list and open; conventions as for list.
+#
+# ALL CAPS label notation:
+#   LABEL         — plain category label
+#   LABEL{X,Y}    — LABEL restricted to roles/subtypes X and Y
+#
+# The label KEYSTONE is reserved for the v:verbstem position.
+
+element_conventions:
+
+  standard_labels:
+    note: >
+      Canonical ALL CAPS category labels analogous to the Leipzig Glossing Rules.
+      Use these wherever applicable for cross-language consistency.
+      Language-specific labels are permitted but should be documented here when reused.
+
+    phrase_types:
+      - label: NP
+        gloss: Noun phrase (any grammatical role unless further specified in braces)
+      - label: PP
+        gloss: Adpositional phrase (prepositional or postpositional)
+      - label: S
+        gloss: Clause / sentence
+      - label: AP
+        gloss: Adjective phrase
+      - label: ADVP
+        gloss: Adverb phrase (when scope is unspecified; prefer AD-S / AD-VP / AD-V when scope is known)
+      - label: VP
+        gloss: Verb phrase
+
+    adverb_scope_labels:
+      note: >
+        Project-specific labels for adverb positions classified by their scope of modification.
+        Use a hyphen to separate the AD prefix from the scope domain letter.
+      items:
+        - label: AD-S
+          gloss: Sentence-scoped adverb (modifies the entire clause)
+        - label: AD-VP
+          gloss: VP-scoped adverb (modifies the verb phrase)
+        - label: AD-V
+          gloss: V-scoped adverb (modifies the verb stem only)
+
+    other_labels:
+      - label: PRON
+        gloss: Pronoun
+      - label: CONJUNCT
+        gloss: Coordinating conjunction or conjunct (use when the full list is open-ended)
+      - label: QWORDS
+        gloss: Question words / wh-words (interrogative expressions)
+      - label: VERBPART
+        gloss: Verbal particle
+      - label: KEYSTONE
+        gloss: Reserved. Marks the v:verbstem position in the Elements column.
+
+    brace_role_labels:
+      note: >
+        Labels used inside braces to restrict a phrase-type label to specific
+        grammatical roles. Example: NP{S,A} = NPs in subject or agent role.
+        Note: S used as a role label (subject) is distinct from S as a phrase
+        type (clause) — context (braces vs. standalone) disambiguates.
+      items:
+        - label: S
+          gloss: Subject
+        - label: A
+          gloss: Agent (transitive subject)
+        - label: P
+          gloss: Patient (transitive object)
+        - label: T
+          gloss: Theme
+        - label: R
+          gloss: Recipient / Goal
+        - label: O
+          gloss: Object (when A/P distinction is not made)
