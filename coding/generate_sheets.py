@@ -45,7 +45,7 @@ import pandas as pd
 from . import make_forms as _mf
 from . import validate_planar as _val_planar
 from . import validate_diagnostics as _val_diag
-from .glottolog import cached_entry as _cached_glottolog
+from .glottolog import cached_entry as _cached_glottolog, get_metadata as _fetch_glottolog
 from .make_forms import (
     build_element_index,
     _infer_language_id_from_planar_filename,
@@ -741,9 +741,16 @@ def main() -> None:
         lang_data["folder_id"] = folder_id
         lang_data.update(input_sheet_info)  # store planar/diagnostics spreadsheet IDs
 
-        # Write Glottolog metadata block if available in local cache.
-        # Notebooks read this to display "Name [glottocode]" instead of bare codes.
+        # Write Glottolog metadata block into the manifest so notebooks can display
+        # "Name [glottocode]" instead of bare codes.  Fetch from the API if not yet
+        # in the local cache (mirrors what lookup-lang does).
         glotto = _cached_glottolog(lang_id)
+        if not glotto:
+            try:
+                glotto = _fetch_glottolog(lang_id)
+                print(f"  [{lang_id}] Fetched Glottolog metadata")
+            except Exception as exc:
+                print(f"  [{lang_id}] WARNING: Could not fetch Glottolog metadata: {exc}")
         if glotto:
             lang_data["glottolog"] = {
                 "name":     glotto["name"],
