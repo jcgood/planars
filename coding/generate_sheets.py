@@ -165,7 +165,22 @@ def _upload_planars_config(
         The Drive file ID of manifest.json.
     """
     import io
-    content = json.dumps(full_config, indent=2).encode("utf-8")
+    # Reorder each language entry so human-readable metadata comes first.
+    _KEY_ORDER = [
+        "glottolog", "meta",
+        "folder_id", "folder_url",
+        "planar_spreadsheet_id", "planar_spreadsheet_url",
+        "diagnostics_spreadsheet_id", "diagnostics_spreadsheet_url",
+        "sheets",
+    ]
+    ordered = {}
+    for lid, entry in full_config.items():
+        if isinstance(entry, dict):
+            ordered[lid] = {k: entry[k] for k in _KEY_ORDER if k in entry}
+            ordered[lid].update({k: v for k, v in entry.items() if k not in _KEY_ORDER})
+        else:
+            ordered[lid] = entry
+    content = json.dumps(ordered, indent=2).encode("utf-8")
     media = MediaIoBaseUpload(io.BytesIO(content), mimetype="application/json")
     if existing_file_id:
         drive.files().update(fileId=existing_file_id, media_body=media).execute()
