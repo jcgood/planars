@@ -122,7 +122,7 @@ Late aggregation, autotypology (dynamic schema), definition files vs. data files
 - `generate_notebooks.py`: `generate-notebooks` — generates per-language and coordinator Colab notebooks.
 - `check_codebook.py`: `check-codebook` — consistency check between diagnostic_criteria.yaml, diagnostic_classes.yaml, analysis modules, and diagnostics_{lang_id}.tsv.
 - `integrity_check.py`: `integrity-check` — full project-wide health report across six sections (PLANAR STRUCTURE, DIAGNOSTICS, CODEBOOK CONSISTENCY, ANALYSIS CONSISTENCY, ANNOTATION SHEETS, NEEDS REVIEW). Use `--lang` to restrict per-language sections; `--sheets` to include live Google Sheets structural validation.
-- `glottolog.py`: `lookup-lang` — fetch and cache Glottolog metadata (name, family, ISO code, coordinates) for a language ID. Cache at `glottolog_cache.json` (gitignored). Also provides `is_valid_format()` and `cached_entry()` used by `validate_diagnostics.py` for check 6 (Glottocode format + advisory).
+- `glottolog.py`: `lookup-lang` — fetch and cache Glottolog metadata for a language ID. Writes to both `glottolog_cache.json` (gitignored, local) and `schemas/languages.yaml` (source of truth, committed). Always refreshes Glottolog fields; scaffolds empty `meta` block in `languages.yaml` only if absent. Also provides `is_valid_format()` and `cached_entry()` used by `validate_diagnostics.py` for check 6 (Glottocode format + advisory).
 - `populate_sheets.py`: One-time utility for uploading legacy TSV data.
 - `setup_root_folder.py`: One-time Drive folder setup (run once after first `generate-sheets`).
 
@@ -150,9 +150,9 @@ stressed{y/n/both}, independence, left-interaction, right-interaction
 
 Language IDs in this project are Glottocodes (e.g., `arao1248`, `stan1293`). Glottolog metadata (human-readable name, ISO 639-3 code, language family, coordinates) is fetched once via `python -m coding lookup-lang <glottocode>` and cached locally in `glottolog_cache.json` (gitignored).
 
-**Convention:** wherever a language ID appears in user-facing output — notebook headers, chart titles, report tables, Drive folder names, terminal output — prefer the `Name [glottocode]` format (e.g., `Araona [arao1248]`) over the bare Glottocode. The canonical helper for this is `coding/glottolog.py:cached_entry(glottocode)["name"]`.
+**Convention:** wherever a language ID appears in user-facing output — notebook headers, chart titles, report tables, Drive folder names, terminal output — prefer the `Name [glottocode]` format (e.g., `Araona [arao1248]`) over the bare Glottocode. The canonical helper for this is `planars.languages.get_display_name(glottocode)`.
 
-Metadata is also written into `manifest.json` on Drive (by `generate-sheets`) so Colab notebooks can access it without any local files. Per-language project metadata lives in a `meta` block in the same manifest entry: `source` (publication/chapter), `author`, `annotator`, `annotation_status`, `notes`. `generate-sheets` scaffolds empty `meta` fields for new languages; `integrity-check --sheets` warns when `source` or `author` are blank.
+Metadata is also written into `manifest.json` on Drive (by `generate-sheets` and `import-sheets`) so the data lives near the annotation sheets. `schemas/languages.yaml` is the source of truth; the Drive manifest carries a synced copy. `lookup-lang` scaffolds the `meta` block for new languages; `integrity-check --sheets` warns when `source` or `author` are blank in `languages.yaml`.
 
 Use Glottolog metadata proactively for:
 - Display names in notebooks, chart legends, and terminal output
