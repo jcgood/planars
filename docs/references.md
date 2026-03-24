@@ -1,10 +1,10 @@
 # References
 
-This page collects all works cited in the planars codebase, schemas, and documentation. Citations are given in two formats: [Unified Linguistic Style Sheet](#ulss-format) and [BibTeX](#bibtex).
+This page collects all works cited in the planars codebase, schemas, and documentation. Citations are given in two formats: [Unified Style Sheet for Linguistics](#unified-style-sheet-format) and [BibTeX](#bibtex).
 
 ---
 
-## ULSS format
+## Unified Style Sheet format
 
 ### planars toolkit
 
