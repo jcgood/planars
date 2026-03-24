@@ -333,7 +333,6 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 - **#78** — Add `collection_required` field to `diagnostic_classes.yaml`; validate presence per language. Field added (all classes marked `[NEEDS COORDINATOR INPUT]`); validation logic and final values pending Adam's input.
 - **#76** — Proactive detection of unauthorized sheet edits (scheduled `validate-coding`).
 - **#75** — Auto-trigger snapshot regeneration when analysis output changes.
-- **#73** — `validate_diagnostics.py` conformance check: each language's `diagnostics_{lang_id}.tsv` must only use diagnostic criteria listed in `diagnostic_classes.yaml` (opt-in model enforcement).
 - **#72** — Prepare Chichewa (nyan1308) for onboarding: planar structure, diagnostics, tonosegmental/intonational domains. `[Jeff]`
 - **#71** — New analysis module: intonational domain (clause-level pitch patterns). `[diagnostics]`
 - **#70** — New analysis module: tonosegmental domain (tonal melody overlaid on morphosyntax). `[diagnostics]`
