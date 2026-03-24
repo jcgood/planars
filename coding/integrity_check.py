@@ -40,7 +40,7 @@ from .check_codebook import (
     _check_diagnostics_vs_classes,
     _check_chart_keys,
 )
-from .glottolog import cached_entry as _cached_glottocode
+import yaml as _yaml
 
 # ---------------------------------------------------------------------------
 # Formatting
@@ -70,11 +70,27 @@ def _sub(msg: str) -> str:
     return f"       {msg}"
 
 
+def _load_languages_yaml() -> dict:
+    """Load schemas/languages.yaml, returning {} on any error."""
+    path = ROOT / "schemas" / "languages.yaml"
+    if path.exists():
+        try:
+            with open(path, encoding="utf-8") as f:
+                return _yaml.safe_load(f) or {}
+        except Exception:
+            pass
+    return {}
+
+
+_LANGUAGES: dict = {}  # module-level cache populated on first call
+
+
 def _lang_label(lang_id: str) -> str:
-    entry = _cached_glottocode(lang_id)
-    if entry:
-        return f"{entry['name']} [{lang_id}]"
-    return lang_id
+    global _LANGUAGES
+    if not _LANGUAGES:
+        _LANGUAGES = _load_languages_yaml()
+    name = _LANGUAGES.get(lang_id, {}).get("glottolog", {}).get("name")
+    return f"{name} [{lang_id}]" if name else lang_id
 
 
 def _print_issues(issues: List[ValidationIssue], label: str) -> Tuple[int, int]:
@@ -236,15 +252,19 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
             total_w += 1
             continue
 
-        # Check project metadata completeness.
-        meta = lang_data.get("meta", {})
+        # Check project metadata completeness against languages.yaml (source of truth).
+        lang_entry = _LANGUAGES.get(lang_id, {})
+        meta = lang_entry.get("meta", {})
         _KEY_META = ("source", "author")
         missing_meta = [f for f in _KEY_META if not meta.get(f)]
-        if not meta:
-            print(_warn(f"{lang}  —  meta block missing from manifest (run generate-sheets to scaffold)"))
+        if not lang_entry:
+            print(_warn(f"{lang}  —  not in schemas/languages.yaml (run lookup-lang to add)"))
+            total_w += 1
+        elif not meta:
+            print(_warn(f"{lang}  —  meta block missing from languages.yaml (run lookup-lang to scaffold)"))
             total_w += 1
         elif missing_meta:
-            print(_warn(f"{lang}  —  meta block incomplete: {', '.join(missing_meta)} not set"))
+            print(_warn(f"{lang}  —  languages.yaml meta incomplete: {', '.join(missing_meta)} not set"))
             total_w += 1
 
         sheets_info = lang_data.get("sheets", {})

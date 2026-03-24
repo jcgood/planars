@@ -29,7 +29,10 @@ ROOT = Path(__file__).resolve().parent.parent
 import pandas as pd
 import gspread
 
-from .generate_sheets import _get_clients, _load_manifest_from_drive, _open_spreadsheet
+from .generate_sheets import (
+    _get_clients, _load_manifest_from_drive, _open_spreadsheet,
+    _upload_planars_config, _load_drive_config, _save_drive_config,
+)
 from . import validate_coding as _val
 from .validate_planar import validate_planar_df as _validate_planar_df
 from .validate_diagnostics import validate_diagnostics_df as _validate_diagnostics_df
@@ -479,6 +482,34 @@ def main() -> None:
             print(f"\n  Error report: {report_path.relative_to(ROOT)}")
 
     print(f"\nDone. {total_files} file(s) written, {total_warnings} warning(s).")
+
+    # Sync glottolog + meta from languages.yaml into the Drive manifest.
+    import yaml as _yaml
+    _lang_yaml = ROOT / "schemas" / "languages.yaml"
+    _langs = {}
+    if _lang_yaml.exists():
+        with open(_lang_yaml, encoding="utf-8") as _f:
+            _langs = _yaml.safe_load(_f) or {}
+    manifest_changed = False
+    for lid, entry in manifest.items():
+        if lid.startswith("_") or not isinstance(entry, dict):
+            continue
+        lang_entry = _langs.get(lid)
+        if lang_entry:
+            if entry.get("glottolog") != lang_entry.get("glottolog") or \
+               entry.get("meta") != lang_entry.get("meta"):
+                entry["glottolog"] = lang_entry.get("glottolog", {})
+                entry["meta"] = lang_entry.get("meta", {})
+                manifest_changed = True
+    if manifest_changed:
+        drive_cfg = _load_drive_config()
+        file_id = drive_cfg.get("_planars_config_file_id")
+        root_id = drive_cfg.get("_root_folder_id")
+        new_id = _upload_planars_config(drive, manifest, root_id, file_id)
+        if new_id != file_id:
+            drive_cfg["_planars_config_file_id"] = new_id
+            _save_drive_config(drive_cfg)
+        print("manifest.json updated on Drive with languages.yaml metadata.")
 
     # Write destructive changes to pending_changes.json for coordinator review.
     if all_pending:
