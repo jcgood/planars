@@ -707,6 +707,24 @@ def main() -> None:
                 except Exception:
                     pass
 
+        def _update_glottolog_block(lang_data: dict, lid: str) -> None:
+            """Write/refresh the glottolog block in lang_data, fetching if needed."""
+            glotto = _cached_glottolog(lid)
+            if not glotto:
+                try:
+                    glotto = _fetch_glottolog(lid)
+                    print(f"  [{lid}] Fetched Glottolog metadata")
+                except Exception as exc:
+                    print(f"  [{lid}] WARNING: Could not fetch Glottolog metadata: {exc}")
+            if glotto:
+                lang_data["glottolog"] = {
+                    "name":      glotto["name"],
+                    "iso639_3":  glotto["iso639_3"],
+                    "family":    glotto["classification"][0]["name"] if glotto["classification"] else None,
+                    "latitude":  glotto["latitude"],
+                    "longitude": glotto["longitude"],
+                }
+
         # Upload planar and diagnostics as editable Google Sheets (source of truth).
         # Skips files whose sheet IDs are already in the manifest unless --force.
         input_sheet_info = _upload_planar_input_as_sheets(
@@ -723,6 +741,7 @@ def main() -> None:
                 )
                 existing_lang_data["folder_id"] = folder_id
                 existing_lang_data.update(input_sheet_info)
+                _update_glottolog_block(existing_lang_data, lang_id)
                 config.setdefault(lang_id, {})["folder_id"] = folder_id
                 _save_drive_config(config)
                 full_manifest[lang_id] = existing_lang_data
@@ -741,24 +760,7 @@ def main() -> None:
         lang_data["folder_id"] = folder_id
         lang_data.update(input_sheet_info)  # store planar/diagnostics spreadsheet IDs
 
-        # Write Glottolog metadata block into the manifest so notebooks can display
-        # "Name [glottocode]" instead of bare codes.  Fetch from the API if not yet
-        # in the local cache (mirrors what lookup-lang does).
-        glotto = _cached_glottolog(lang_id)
-        if not glotto:
-            try:
-                glotto = _fetch_glottolog(lang_id)
-                print(f"  [{lang_id}] Fetched Glottolog metadata")
-            except Exception as exc:
-                print(f"  [{lang_id}] WARNING: Could not fetch Glottolog metadata: {exc}")
-        if glotto:
-            lang_data["glottolog"] = {
-                "name":     glotto["name"],
-                "iso639_3": glotto["iso639_3"],
-                "family":   glotto["classification"][0]["name"] if glotto["classification"] else None,
-                "latitude":  glotto["latitude"],
-                "longitude": glotto["longitude"],
-            }
+        _update_glottolog_block(lang_data, lang_id)
 
         # Scaffold project metadata block for new languages.
         # Coordinators fill these fields; integrity-check warns when key fields are blank.
