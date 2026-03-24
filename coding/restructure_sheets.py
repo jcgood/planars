@@ -465,7 +465,7 @@ def main() -> None:
     if apply:
         # Update local manifest (gitignored reference copy)
         MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-        # Upload the merged planars_config.json to Drive.
+        # Upload the merged manifest.json to Drive.
         config = _load_drive_config()
         for lid, ld in manifest.items():
             # Ensure folder_id is present (derive from folder_url if missing).

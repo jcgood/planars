@@ -146,7 +146,7 @@ _download_manifest_from_drive = _download_file_json
 def _upload_planars_config(
     drive, full_config: Dict, root_folder_id: str, existing_file_id: str = None
 ) -> str:
-    """Upload the merged planars_config.json to Drive. Returns the file ID.
+    """Upload the merged manifest.json to Drive. Returns the file ID.
 
     The merged config has the structure::
 
@@ -159,10 +159,10 @@ def _upload_planars_config(
         drive: Drive API service.
         full_config: complete merged config dict covering all languages.
         root_folder_id: Drive folder for first-time file creation.
-        existing_file_id: ID of an existing planars_config.json to update in place.
+        existing_file_id: ID of an existing manifest.json to update in place.
 
     Returns:
-        The Drive file ID of planars_config.json.
+        The Drive file ID of manifest.json.
     """
     import io
     content = json.dumps(full_config, indent=2).encode("utf-8")
@@ -171,7 +171,7 @@ def _upload_planars_config(
         drive.files().update(fileId=existing_file_id, media_body=media).execute()
         return existing_file_id
     result = drive.files().create(
-        body={"name": "planars_config.json", "parents": [root_folder_id]},
+        body={"name": "manifest.json", "parents": [root_folder_id]},
         media_body=media,
         fields="id",
     ).execute()
@@ -181,7 +181,7 @@ def _upload_planars_config(
 def _load_manifest_from_drive(drive) -> Dict:
     """Load the full manifest (all languages) from Drive.
 
-    Tries the new merged planars_config.json first. Falls back to reading the
+    Tries the new merged manifest.json first. Falls back to reading the
     old per-language ``manifest_{lang_id}.json`` files if the merged format is
     not yet in place (migration path for setups predating issue #30).
 
@@ -195,7 +195,7 @@ def _load_manifest_from_drive(drive) -> Dict:
             "drive_config.json not found. Run: python -m coding generate-sheets"
         )
 
-    # New merged format: single planars_config.json with full manifest data.
+    # New merged format: single manifest.json with full manifest data.
     file_id = config.get("_planars_config_file_id")
     if file_id:
         try:
@@ -208,7 +208,7 @@ def _load_manifest_from_drive(drive) -> Dict:
 
     # Old format fallback: per-language manifest_{lang_id}.json files.
     print("  Note: loading per-language manifests (pre-#30 format).")
-    print("  Run python -m coding generate-sheets to upgrade to merged planars_config.json.")
+    print("  Run python -m coding generate-sheets to upgrade to merged manifest.json.")
     manifest: Dict = {}
     for lang_id, lang_config in config.items():
         if lang_id.startswith("_") or not isinstance(lang_config, dict):
@@ -621,7 +621,7 @@ def main() -> None:
       truth). Skips files whose sheet IDs are already in the manifest unless --force.
     - Creates one annotation Google Sheet per analysis class (skipping existing ones unless
       --force). Each sheet has one tab per construction with dropdown validation.
-    - Uploads the merged planars_config.json manifest to Drive after each language.
+    - Uploads the merged manifest.json manifest to Drive after each language.
     - Regenerates contributor notebooks at the end.
     """
     force = "--force" in sys.argv
@@ -807,7 +807,7 @@ def main() -> None:
         # Remove stale per-language manifest_file_id (superseded by merged config).
         config[lang_id].pop("manifest_file_id", None)
         _save_drive_config(config)
-        print(f"planars_config.json updated on Drive (id: {existing_config_file_id})")
+        print(f"manifest.json updated on Drive (id: {existing_config_file_id})")
 
     # Upload merged config once more after the loop to capture any skipped languages
     # that were added to merged_config but didn't trigger an in-loop upload.
@@ -816,7 +816,7 @@ def main() -> None:
     )
     config["_planars_config_file_id"] = final_file_id
     _save_drive_config(config)
-    print(f"planars_config.json uploaded (id: {final_file_id})")
+    print(f"manifest.json uploaded (id: {final_file_id})")
 
     # Write local manifest with all languages (gitignored, kept for reference)
     MANIFEST_PATH.write_text(json.dumps(full_manifest, indent=2), encoding="utf-8")
@@ -830,7 +830,7 @@ def main() -> None:
 
 
 def push_manifest() -> None:
-    """Upload the existing local sheets_manifest.json to Drive as merged planars_config.json.
+    """Upload the existing local sheets_manifest.json to Drive as merged manifest.json.
 
     One-time migration utility. Run with:
         python -m coding generate-sheets --push-manifest
@@ -863,7 +863,7 @@ def push_manifest() -> None:
     file_id = _upload_planars_config(drive, merged_config, root_folder_id, existing_file_id)
     config["_planars_config_file_id"] = file_id
     _save_drive_config(config)
-    print(f"planars_config.json uploaded (id: {file_id})")
+    print(f"manifest.json uploaded (id: {file_id})")
     print(f"drive_config.json written.")
 
 

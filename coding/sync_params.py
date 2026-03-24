@@ -633,7 +633,7 @@ def main() -> None:
                             f"diagnostics: {removed_params}\n    {marker}"
                         )
 
-    # Update the merged planars_config.json on Drive if anything changed.
+    # Update the merged manifest.json on Drive if anything changed.
     if apply and manifest_changed:
         config = _load_drive_config()
         # Ensure folder_id is present in each manifest entry.

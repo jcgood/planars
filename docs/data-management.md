@@ -144,7 +144,7 @@ Filled TSV filenames use the pattern `{construction}.tsv`. The language ID and a
 
 ### Google Drive manifest
 
-The Drive manifest (`planars_config.json`) is stored on Drive and contains all languages' sheet metadata and folder IDs. A local `drive_config.json` (gitignored, in the repo root) bootstraps the Drive lookup. It holds:
+The Drive manifest (`manifest.json`) is stored on Drive and contains all languages' sheet metadata and folder IDs. A local `drive_config.json` (gitignored, in the repo root) bootstraps the Drive lookup. It holds:
 
 - `_root_folder_id` — the `ConstituencyTypology` top-level Drive folder
 - `_planars_config_file_id` — the manifest file

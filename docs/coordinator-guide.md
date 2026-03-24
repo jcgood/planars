@@ -261,6 +261,6 @@ Run `pytest` after any change to an analysis module, `io.py`, or `spans.py`.
 
 ## Drive folder structure
 
-The Drive manifest (`planars_config.json`) is stored on Drive and contains all languages' sheet metadata and folder IDs. A local `drive_config.json` (gitignored) bootstraps the Drive lookup — it holds `_root_folder_id`, `_planars_config_file_id`, and per-language `folder_id` and `domains_notebook_file_id`.
+The Drive manifest (`manifest.json`) is stored on Drive and contains all languages' sheet metadata and folder IDs. A local `drive_config.json` (gitignored) bootstraps the Drive lookup — it holds `_root_folder_id`, `_planars_config_file_id`, and per-language `folder_id` and `domains_notebook_file_id`.
 
 Each `generate-sheets` run also creates editable Google Sheets for `planar_*.tsv` and `diagnostics_{lang_id}.tsv` in the language's Drive folder so collaborators can view (and coordinators can edit) the planar structure alongside their annotation sheets. `import-sheets` reads these Sheets back to local TSVs and detects any changes.

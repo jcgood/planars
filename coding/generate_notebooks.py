@@ -7,7 +7,7 @@ Run from the repo root:
 
 What this does:
   1. Reads diagnostics_{lang_id}.tsv for each language to discover analysis classes
-  2. Builds/updates planars_config.json on Drive (maps lang_id → folder_id)
+  2. Builds/updates manifest.json on Drive (maps lang_id → folder_id)
   3. Generates domains_{lang_id}.ipynb for each language from the contributor template,
      with CONFIG_FILE_ID and LANG_ID baked in; uploads to each language's Drive folder
   4. Generates validation_{lang_id}.ipynb for each language from the validation template;
@@ -247,7 +247,7 @@ def _set_viewer_permissions(drive, file_id: str) -> None:
 
 
 def _get_global_folder_id(drive_config: dict) -> Optional[str]:
-    """Return the folder ID for global files (planars_config.json, all_languages.ipynb).
+    """Return the folder ID for global files (manifest.json, all_languages.ipynb).
 
     Lookup order:
     1. ``_root_folder_id`` — set by ``python -m coding setup-root-folder``; the
@@ -277,7 +277,7 @@ def _run_generation(apply: bool) -> None:
     """Core logic for notebook generation.
 
     In dry-run mode (apply=False) prints what would be generated without
-    touching Drive. In apply mode, uploads planars_config.json, per-language
+    touching Drive. In apply mode, uploads manifest.json, per-language
     contributor notebooks, and the coordinator notebook.
 
     Args:
@@ -320,9 +320,9 @@ def _run_generation(apply: bool) -> None:
             "No _root_folder_id in drive_config.json. Run setup-root-folder first."
         )
 
-    # planars_config.json on Drive is maintained by generate-sheets and the sheet
+    # manifest.json on Drive is maintained by generate-sheets and the sheet
     # modification scripts. generate-notebooks only needs its file ID to bake into
-    # the notebooks — it does not write to planars_config.json itself.
+    # the notebooks — it does not write to manifest.json itself.
     config_file_id = drive_config.get("_planars_config_file_id")
     if not config_file_id:
         raise SystemExit(
@@ -343,7 +343,7 @@ def _run_generation(apply: bool) -> None:
         return
 
     _, drive = _get_clients()
-    print(f"\nUsing planars_config.json (id: {config_file_id})")
+    print(f"\nUsing manifest.json (id: {config_file_id})")
 
     # Generate and upload contributor notebook for each language
     contributor_template = _load_template("domains_boilerplate.ipynb")

@@ -2,7 +2,7 @@
 """Create the ConstituencyTypology root Drive folder and migrate global files into it.
 
 Run once after the initial generate-sheets setup to establish a shared root folder
-that houses the coordinator notebook and planars_config.json — files that span all
+that houses the coordinator notebook and manifest.json — files that span all
 languages and do not belong in any single language folder.
 
     python -m coding setup-root-folder
@@ -12,7 +12,7 @@ What this does:
   2. Sets Viewer permissions on it (anyone with the link can view)
   3. Moves all existing language folders into the root folder
   4. Renames language folders from 'planars — {lang_id}' to plain '{lang_id}'
-  5. Moves planars_config.json to the root folder (if it exists on Drive)
+  5. Moves manifest.json to the root folder (if it exists on Drive)
   6. Moves all_languages.ipynb to the root folder (if it exists on Drive)
   7. Saves _root_folder_id to drive_config.json
 
@@ -149,17 +149,17 @@ def main() -> None:
             ).execute()
             print(f"Renamed '{current_name}' → '{lang_id}'.")
 
-    # Step 5a: Move planars_config.json to root folder (if it exists)
+    # Step 5a: Move manifest.json to root folder (if it exists)
     planars_config_id = config.get("_planars_config_file_id")
     if planars_config_id:
         fi = drive.files().get(fileId=planars_config_id, fields="parents").execute()
         if root_id in fi.get("parents", []):
-            print("planars_config.json already in root folder — skipping.")
+            print("manifest.json already in root folder — skipping.")
         else:
             _move_to_folder(drive, planars_config_id, root_id)
-            print(f"Moved planars_config.json (id: {planars_config_id}) to root folder.")
+            print(f"Moved manifest.json (id: {planars_config_id}) to root folder.")
     else:
-        print("No planars_config.json found in drive_config.json — skipping.")
+        print("No manifest.json found in drive_config.json — skipping.")
         print("  (Run python -m coding generate-notebooks --apply to create it.)")
 
     # Step 5b: Move all_languages.ipynb to root folder (if it exists)
@@ -188,7 +188,7 @@ def main() -> None:
         "\n  - New language folders will be created inside this root folder automatically."
         "\n  - Share the root folder URL with coordinators who need access to all_languages.ipynb."
         "\n  - Run python -m coding generate-notebooks --apply to regenerate notebooks"
-        "\n    (confirms planars_config.json points to the correct location)."
+        "\n    (confirms manifest.json points to the correct location)."
     )
 
 
