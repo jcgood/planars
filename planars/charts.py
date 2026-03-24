@@ -302,11 +302,12 @@ def collect_all_spans_from_sheets(gc, manifest):
 
 # --- Chart ---
 
-def domain_chart(df, keystone_pos, pos_to_name):
+def domain_chart(df, keystone_pos, pos_to_name, title=None):
     """Horizontal segment chart of spans for one language.
 
     df must already be filtered to a single language.
     keystone_pos and pos_to_name come from lang_meta[lang_id].
+    title, if given, is shown as the chart title (use "Name [glottocode]" format).
     """
     # Sort largest spans to the top so shorter spans are visually distinct below.
     df = df.copy().sort_values(["Size", "Left_Edge"], ascending=[False, True])
@@ -368,24 +369,28 @@ def domain_chart(df, keystone_pos, pos_to_name):
         ),
         # Scale height so every span label has ~22px of vertical space.
         height=max(400, len(labels) * 22),
-        margin=dict(l=180, r=20, t=60, b=60),
+        margin=dict(l=180, r=20, t=80 if title else 60, b=60),
         template="simple_white",
+        **({"title": dict(text=title, x=0.5, xanchor="center")} if title else {}),
     )
 
     return fig
 
 
-def charts_by_language(df, lang_meta):
+def charts_by_language(df, lang_meta, lang_names=None):
     """Produce one domain_chart per language.
 
     Returns dict[lang_id, Figure]. Each chart uses that language's own
     position numbering and pos_to_name — languages are never mixed.
+    lang_names, if given, is a dict mapping lang_id to a display string
+    used as the chart title (e.g. {"arao1248": "Araona [arao1248]"}).
     """
     return {
         lang_id: domain_chart(
             df[df["Language"] == lang_id],
             meta["keystone_pos"],
             meta["pos_to_name"],
+            title=(lang_names or {}).get(lang_id),
         )
         for lang_id, meta in lang_meta.items()
     }
