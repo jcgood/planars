@@ -363,13 +363,13 @@ def domain_chart(df, keystone_pos, pos_to_name, title=None):
             title="Analysis:",
             orientation="h",
             yanchor="bottom",
-            y=1.02,
+            y=1.10 if title else 1.02,
             xanchor="right",
             x=1,
         ),
         # Scale height so every span label has ~22px of vertical space.
         height=max(400, len(labels) * 22),
-        margin=dict(l=180, r=20, t=80 if title else 60, b=60),
+        margin=dict(l=180, r=20, t=110 if title else 60, b=60),
         template="simple_white",
         **({"title": dict(text=title, x=0.5, xanchor="center")} if title else {}),
     )
