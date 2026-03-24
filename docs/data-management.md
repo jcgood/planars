@@ -152,3 +152,17 @@ The Drive manifest (`planars_config.json`) is stored on Drive and contains all l
 - Per-language: `folder_id`, `domains_notebook_file_id`, `validation_notebook_file_id`, `planar_spreadsheet_id`, `diagnostics_spreadsheet_id`
 
 Do not commit `drive_config.json` — it is gitignored.
+
+---
+
+## Design principles
+
+The planars data model was developed independently but shares fundamental design principles with [AUTOTYP](https://github.com/autotyp/autotyp-data) (see Witzlack-Makarevich et al., "Managing AUTOTYP Data: Design Principles and Implementation," ch. 56 in *The Open Handbook of Linguistic Data Management*, MIT Press). These principles explain architectural decisions that might otherwise seem arbitrary.
+
+**Late aggregation**: Raw annotation data is stored exhaustively at the lowest level — y/n per element per position. All derived categories (spans, domain types, partial vs. complete distinctions) are computed algorithmically in the analysis modules, not stored. This means the same annotation files can answer different research questions as the theoretical framework evolves, without recoding. Never aggregate during data collection.
+
+**Autotypology (dynamic schema)**: The diagnostic criterion definitions in `schemas/diagnostic_criteria.yaml` and analysis classes in `schemas/diagnostic_classes.yaml` are not a fixed a priori etic grid. They are updated throughout data collection as new languages reveal new phenomena. The `[PLACEHOLDER]` and `[NEEDS REVIEW]` markers in these files reflect genuine ongoing theoretical work, not incomplete implementation. This is by design; AUTOTYP observes that typologies typically stabilize after ~40–50 entries.
+
+**Definition files vs. data files**: `schemas/` files are *definition files* — they list possible criterion values with linguistic definitions and are updated dynamically. Filled TSVs under `coded_data/` are *data files* — actual annotations for individual languages. Keep them clearly separate.
+
+**Language reports**: Free-text documents containing paradigms, citation examples, and motivation for coding decisions serve as an audit trail connecting annotations to their empirical basis. Planars currently relies on source chapters in this role; a structured language report format for production onboarding is an open question (see issue #68).

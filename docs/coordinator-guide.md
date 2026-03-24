@@ -221,13 +221,41 @@ python -m coding generate-notebooks
 
 Regenerates and uploads contributor (`domains_{lang_id}.ipynb`), coordinator (`all_languages.ipynb`), and validation (`validation_{lang_id}.ipynb`) notebooks to Drive. Also runs automatically at the end of `generate-sheets`, `sync-params --apply`, and `restructure-sheets --apply`. See the [Notebooks guide](notebooks.md) for what each notebook contains.
 
-### Consistency checks
+### Full integrity check
+
+```bash
+python -m coding integrity-check                        # all languages, local checks
+python -m coding integrity-check --lang arao1248        # one language only
+python -m coding integrity-check --sheets               # also validate live Google Sheets structure
+```
+
+Runs a full project-wide health report across six sections: PLANAR STRUCTURE, DIAGNOSTICS, CODEBOOK CONSISTENCY, ANALYSIS CONSISTENCY, ANNOTATION SHEETS, and NEEDS REVIEW. Run this after any significant change — new language, schema edit, or module addition. The `--sheets` flag adds live validation of Google Sheets structure but requires Drive access.
+
+### Codebook consistency check
 
 ```bash
 python -m coding check-codebook
 ```
 
-Verifies that criterion names in `schemas/diagnostic_criteria.yaml`, analysis modules, and `diagnostics_{lang_id}.tsv` are consistent. Run this after adding new diagnostic criteria or analyses.
+Verifies that criterion names in `schemas/diagnostic_criteria.yaml`, analysis modules, and `diagnostics_{lang_id}.tsv` are consistent. Run this after adding new diagnostic criteria or analyses. `integrity-check` includes this check; `check-codebook` is useful for lower-level detail.
+
+---
+
+## Regression testing
+
+```bash
+pytest                          # run all tests (I/O, restructure, snapshots)
+python check_snapshots.py       # quick CLI alternative for snapshot-only checks
+```
+
+Snapshot baselines live in `tests/snapshots/`. When analysis output changes intentionally (e.g., after a qualification rule fix), regenerate the baselines and review the diff before committing:
+
+```bash
+python generate_snapshots.py    # regenerate snapshot baselines
+git diff tests/snapshots/       # review what changed
+```
+
+Run `pytest` after any change to an analysis module, `io.py`, or `spans.py`.
 
 ---
 

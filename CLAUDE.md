@@ -40,76 +40,32 @@ Changes to code and data are always committed and pushed separately — they go 
 
 ## Running the scripts
 
+Full command reference with flags: [docs/coordinator-guide.md](docs/coordinator-guide.md). Quick reference:
+
 ```bash
-# Generate Google Sheets annotation forms (opens browser for OAuth on first run)
-# On re-runs, only creates sheets for classes not yet in the Drive manifest
-python -m coding generate-sheets
-python -m coding generate-sheets --force  # regenerate all from scratch
+# Sheet lifecycle
+python -m coding generate-sheets          # create annotation sheets (--force to regenerate all)
+python -m coding import-sheets            # download filled sheets → TSVs (--force to overwrite)
+python -m coding apply-pending            # review destructive changes written by import-sheets
+python -m coding validate-coding          # re-validate + update pink highlights (--lang for one)
 
-# Sync criterion columns when diagnostics_{lang_id}.tsv changes (dry run by default)
-python -m coding sync-params                                  # dry run
-python -m coding sync-params --apply                          # insert new criterion columns, update validation
-python -m coding sync-params --apply --rename old:new         # rename a column in all classes
-python -m coding sync-params --apply --rename class:old:new   # rename only in one analysis class
-python -m coding sync-params --apply --split old:new1:new2    # split one criterion into two
-python -m coding sync-params --apply --merge old1:old2:new    # merge two criteria into one
-python -m coding sync-params --apply --remove                 # also remove stale columns
+# Sheet maintenance
+python -m coding sync-params              # sync criterion columns (--apply, --rename, --split, --merge, --remove)
+python -m coding update-sheets            # add missing rows/columns (--apply)
+python -m coding restructure-sheets       # archive + regenerate after planar changes (--apply, --rename-map, --rename-element)
 
-# Update existing sheets: add missing rows/trailing columns (dry run by default)
-python -m coding update-sheets
-python -m coding update-sheets --apply   # apply changes
+# Health checks
+python -m coding integrity-check          # full project health report (--lang, --sheets)
+python -m coding check-codebook           # criterion/module/diagnostics consistency
 
-# Restructure sheets after planar structure changes (archive old, regenerate with carry-over)
-python -m coding restructure-sheets
-python -m coding restructure-sheets --apply   # archive old sheets and regenerate
-python -m coding restructure-sheets --rename-map "old_pos:new_pos" --apply   # carry over renamed positions
-python -m coding restructure-sheets --rename-element Ad-VP:AD-VP --apply     # carry over renamed elements
-# Only classes with actual changes (new rows, drops, or renames) are archived and regenerated.
+# Other
+python -m coding lookup-lang arao1248     # fetch + cache Glottolog metadata (--refresh, --all)
+python -m coding setup-root-folder        # one-time Drive folder setup
+python -m planars <module> <tsv>          # run a single analysis
 
-# Import filled sheets back to TSVs (skips existing files by default)
-# Also downloads planar and diagnostics Sheets to coded_data/*/planar_input/,
-# validates them, auto-applies safe downstream commands (update-sheets, sync-params),
-# and writes destructive changes (deletions, reorders, renames) to pending_changes.json.
-python -m coding import-sheets
-python -m coding import-sheets --force   # overwrite existing annotation TSVs
-
-# Review and apply pending destructive changes (written by import-sheets)
-python -m coding apply-pending           # prompt for each change
-python -m coding apply-pending --all     # apply all without prompting
-
-# Re-validate annotation sheets and update pink cell highlighting (for collaborators fixing errors)
-python -m coding validate-coding                   # all languages
-python -m coding validate-coding --lang arao1248   # one language
-
-# Full project-wide integrity check (planar structure, diagnostics, schemas, modules)
-python -m coding integrity-check                       # all languages, local checks
-python -m coding integrity-check --lang arao1248       # one language
-python -m coding integrity-check --sheets              # also check live sheet structure
-
-# Check consistency between diagnostic_criteria.yaml, analysis modules, and diagnostics_{lang_id}.tsv
-python -m coding check-codebook
-
-# Look up Glottolog metadata for a language ID (fetches from API on first use, then caches)
-# Cache lives at glottolog_cache.json (gitignored). Used by validate_diagnostics for format check.
-python -m coding lookup-lang arao1248            # fetch + display + cache
-python -m coding lookup-lang --refresh arao1248  # force re-fetch
-python -m coding lookup-lang --all               # list all cached languages
-
-# One-time Drive setup: create ConstituencyTypology root folder and move global files
-# Run once after generate-sheets; idempotent (safe to re-run)
-python -m coding setup-root-folder
-
-# Run a single analysis via the CLI (from repo root)
-python -m planars ciscategorial coded_data/stan1293/ciscategorial/general.tsv
-python -m planars subspanrepetition coded_data/stan1293/subspanrepetition/andCoordination.tsv
-python -m planars noninterruption coded_data/stan1293/noninterruption/general.tsv
-python -m planars stress coded_data/stan1293/stress/general.tsv
-
-# Regression testing
-pytest                         # run all tests (io, restructure, snapshots)
-python generate_snapshots.py   # regenerate snapshot baselines after intentional output changes
-                               # review with: git diff tests/snapshots/
-python check_snapshots.py      # quick CLI alternative to pytest for snapshot-only checks
+# Testing
+pytest                                    # all tests (io, restructure, snapshots)
+python generate_snapshots.py              # regenerate baselines; review with: git diff tests/snapshots/
 ```
 
 **Setup** (first time or after recreating the venv):
@@ -136,34 +92,11 @@ This is a linguistic typology analysis project for morphosyntactic domain deriva
    - **Strict span**: Contiguous expansion from keystone (no gaps).
    - **Loose span**: Extends to farthest qualifying position on each side regardless of gaps.
 
-4. **Analysis modules in detail**:
-   - `ciscategorial.py`: A position qualifies if elements have `V-combines=y` and all other criteria `=n`. Returns 4 spans (strict/loose × complete/partial).
-   - `subspanrepetition.py`: 5 span categories (fillable, widescope_left/right, narrowscope_left/right), each with 4 spans = 20 total.
-   - `noninterruption.py`: Two domain types (no-free: `free=n`; single-free: `free=n` or `free=y,multiple=n`), each with complete/partial = 4 strict spans.
-   - `stress.py`: Uses `blocked_span` with complete/partial distinction — expand from keystone outward, stopping just before the first position where the blocking condition holds. Two domain types, each with complete/partial = 4 spans total. Partial blocking: any element in the position satisfies the condition (smaller domain). Complete blocking: all elements satisfy the condition (larger domain). Minimal: blocked by `stressed ∈ {y, both} AND independence=y`. Maximal: blocked by `obligatory=y AND independence=y`. The keystone always remains in the domain. See `schemas/diagnostic_criteria.yaml` and `schemas/diagnostic_classes.yaml` for open questions on `left-interaction`, `right-interaction`, and meso/interaction domains (issues #16, #17).
-   - `aspiration.py`: `[NEEDS REVIEW]` — mirrors stress structure but qualification rules are provisional. See `schemas/diagnostic_classes.yaml`.
-   - `nonpermutability.py`: Two domain types (strict, flexible) based on whether elements' linear ordering is fixed. Criteria: `permutable` (y/n), `scopal` (y/n). Strict = absolutely fixed order (permutable=n). Flexible = fixed OR variable-with-scope (permutable=n OR (permutable=y AND scopal=y)). Each with complete/partial = 4 strict spans. Based on Tallman et al. 2024 intro §Fracturing.
-   - `free_occurrence.py`: The free occurrence domain — positions where elements are free forms (free=y). Reuses the `free` criterion from noninterruption. If a language runs both analyses, a single sheet with `free` and `multiple` columns covers both. Returns 4 spans (strict/loose × complete/partial). Classified as an indeterminate domain (Tallman et al. 2024).
-   - `biuniqueness.py`: The biuniqueness (extended exponence) domain — span covered by a discontinuous morpheme (circumfix) or extended exponent. Criterion: `biunique` (y/n) where n = element is a piece of the circumfix. One TSV per circumfix/construction. The loose partial span is the primary result (extends from prefix piece to suffix piece). Returns 4 spans (strict/loose × complete/partial). Based on Araona §Extended exponence.
-   - `repair.py`: The repair domain — positions where a production error triggers restart from the domain's left edge. Criterion: `restart` (y/n). Returns 4 spans. Based on Cup'ik §Repair domain.
-   - `segmental.py`: A segmental phonological domain — span within which a segmental phonological process applies (vowel deletion, consonant coalescence, etc.). Criterion: `applies` (y/n). One TSV per process. Returns 4 spans. Examples: Araona vowel syncope domain, Cup'ik uvular-velar coalescence domain.
-   - `suprasegmental.py`: A suprasegmental (prosodic) phonological domain — span governed by a pitch, stress, or tone assignment rule. Criterion: `applies` (y/n). One TSV per rule. Returns 4 spans. Distinct from stress.py/aspiration.py (which use blocked_span logic for boundary-defined domains). Examples: Araona LH* pitch-accent domain, Cup'ik iambic foot domain.
-   - `pausing.py`: The pausing domain — span where elements cannot be separated by a prosodic pause. Criterion: `pause_domain` (y/n). Returns 4 spans.
-   - `proform.py`: The proform substitution domain — span that can be replaced by a proform (pronoun, pro-verb, etc.). Criterion: `substitutable` (y/n). Returns 4 spans.
-   - `play_language.py`: The play language (ludling) domain — span targeted by play language operations (infixation, reversal, etc.). Criterion: `applies` (y/n). Returns 4 spans. Attested in Zenzontepec Chatino.
-   - `idiom.py`: The idiom domain — span forming a non-compositional idiomatic unit. Criterion: `idiomatic` (y/n). Returns 4 spans.
+4. **Analysis modules**: Per-module qualification rules, required criteria, and span counts are in `schemas/diagnostic_classes.yaml` (under `qualification_rule`) and summarized in `docs/analyses.md`. Each module in `planars/` exposes `derive_*()` and `format_result()`.
 
 ## Design principles (influenced by AUTOTYP)
 
-The planars data model was developed independently but shares several fundamental design principles with AUTOTYP. These are articulated in Witzlack-Makarevich, Nichols, Hildebrandt, Zakharko & Bickel, "Managing AUTOTYP Data: Design Principles and Implementation," ch. 56 in *The Open Handbook of Linguistic Data Management* (MIT Press, doi:10.7551/mitpress/12200.001.0001). Understanding these principles explains architectural decisions that might otherwise seem arbitrary.
-
-**Late aggregation**: Raw annotation data is stored exhaustively at the lowest level (y/n per element per position). All derived categories — spans, domain types, partial vs. complete distinctions — are computed algorithmically outside the stored data (in the analysis modules). This means the same annotation files can answer different research questions as the theoretical framework evolves, without recoding. Never aggregate during data collection.
-
-**Autotypology (dynamic schema)**: The diagnostic criterion definitions in `schemas/diagnostic_criteria.yaml` and analysis classes in `schemas/diagnostic_classes.yaml` are not a fixed a priori etic grid. They are updated throughout data collection as new languages reveal new phenomena; initial codings are often revised as the typology stabilizes (AUTOTYP observes this typically takes ~40–50 entries before new types stop emerging). The `[PLACEHOLDER]` and `[NEEDS REVIEW]` markers in these files reflect genuine ongoing theoretical work, not incomplete implementation. This is by design.
-
-**Definition files vs. data files**: `schemas/diagnostic_criteria.yaml`, `schemas/diagnostic_classes.yaml`, `schemas/planar.yaml`, and `schemas/terms.yaml` are *definition files* — they list possible criterion values with linguistic definitions and coding procedure descriptions, and are updated dynamically throughout data collection. Filled TSVs under `coded_data/` are *data files* — actual annotations for individual languages. Definition files serve qualitative typological work (what distinctions are cross-linguistically viable?); data files enable quantitative analysis. Keep them clearly separate.
-
-**Language reports**: AUTOTYP uses free-text language reports as intermediate documents during module development — text documents containing paradigms, citation examples, and explicit motivation for coding decisions. These are especially valuable when new values are being identified and coding decisions are being revised, and serve as an audit trail connecting annotations to their empirical basis. Planars currently relies on source chapters in this role during prototyping; a structured language report format for production onboarding is an open question (see issue #68).
+Late aggregation, autotypology (dynamic schema), definition files vs. data files, and language reports are documented in [docs/data-management.md](docs/data-management.md#design-principles). The key operational implication: never aggregate during data collection; never store derived values (spans, domain types) in annotation TSVs.
 
 ## Package structure
 
@@ -305,14 +238,7 @@ All four analyses run and produce spans. Source: Adam Tallman §4.5 (langsci/291
 
 ### Chichewa (nyan1308) — planned
 
-Source: Jeff Good, "Domains of linearization, constituency, and wordhood in Chichewa" (draft ms.). Glottolog ID: nyan1308. First African language in planars; first language with an active cross-theoretic wordhood debate.
-
-**Documented in source paper, not yet set up in planars:**
-- 22-position clausal planar structure (Question Marker through postobject zone; keystone at Position 10, verb root)
-- 96 constituency diagnostics (57 base + fractures) across six categories: free occurrence (indeterminate), morphosyntactic (non-interruptability, non-permutability, ciscategorial selection, repetition, biuniqueness), phonological (6 segmental processes + penultimate lengthening accentual), tonosegmental (29 tonal melody domains — a category absent from Tallman 2021 and TallmanEtAl 2024, needed for Bantu), and intonational (12 pitch/downdrift domains)
-- Results (draft): 26 distinct domains, largely nesting, centered on verb root; forest visualization via `NonCollaborative/scripts/treeTraversal.py`
-
-Onboarding will require scaffolding `tonosegmental` and `intonational` analysis modules (see issues #70, #71) before the full diagnostic set can be run.
+Source: Jeff Good, "Domains of linearization, constituency, and wordhood in Chichewa" (draft ms.). Glottolog ID: nyan1308. Not yet set up in planars — requires `tonosegmental` and `intonational` modules (issues #70, #71) before onboarding. See issue #72.
 
 ## Issue tracking
 
@@ -328,29 +254,18 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 
 ### Notable open issues
 
+Run `gh issue list` for the full list. Key active issues:
+
+- **#81** — Add collaborator notes alongside annotation sheets: per-language Google Doc with tabs per class/construction; download notes in `import-sheets` to surface uncertain codings and propose refinements. See also #68.
 - **#80** — Auto-generate schema structure diagrams from YAML schema files.
-- **#79** — Add references list and "How to cite" section to repository documentation.
-- **#78** — Add `collection_required` field to `diagnostic_classes.yaml`; validate presence per language. Field added (all classes marked `[NEEDS COORDINATOR INPUT]`); validation logic and final values pending Adam's input.
+- **#78** — Add `collection_required` validation; field added (all `[NEEDS COORDINATOR INPUT]`), validation logic and final values pending Adam's input.
 - **#76** — Proactive detection of unauthorized sheet edits (scheduled `validate-coding`).
 - **#75** — Auto-trigger snapshot regeneration when analysis output changes.
-- **#72** — Prepare Chichewa (nyan1308) for onboarding: planar structure, diagnostics, tonosegmental/intonational domains. `[Jeff]`
-- **#71** — New analysis module: intonational domain (clause-level pitch patterns). `[diagnostics]`
-- **#70** — New analysis module: tonosegmental domain (tonal melody overlaid on morphosyntax). `[diagnostics]`
-- **#69** — Multilingual contributor assistant: chatbot to help contributors navigate the coding process.
-- **#68** — Survey open typology codebases (Grambank, CLDF, AUTOTYP) for design ideas.
-- **#67** — Verb-class-conditioned permutability: gap in nonpermutability qualification rules. `[diagnostics]`
-- **#66** — Fluid/multi-position formatives: annotation challenge for nonpermutability. `[diagnostics]`
-- **#65** — Prosodic minimality (bimoraicity) as a constituency diagnostic. `[diagnostics]`
-- **#64** — Culminativity constraints as a constituency diagnostic class. `[diagnostics]`
-- **#62** — New contributor and language onboarding: document and consolidate setup steps.
-- **#61** — Replace hardcoded chart colors with auto-assigned colorblind-friendly palette.
-- **#60** — Clarify `aspiration.py` scope: prosodic domain vs. segmental process. `[diagnostics]`
-- **#59** — Nominal planar structures: scope expansion (Zapotec ch. 07 applies full test battery to noun complex). `[diagnostics]`
-- **#58** — Biuniqueness type 2: non-automatic allomorphy as a distinct diagnostic. `[diagnostics]`
-- **#57** — New analysis module: maximal reduplication domain. `[diagnostics]`
-- **#56** — New analysis module: non-displacement domain. `[diagnostics]`
-- **#55** — ~~Per-language metadata/documentation file (author, source, etc.)~~ — implemented: `meta` block scaffolded by `generate-sheets`; `integrity-check --sheets` warns on blank key fields.
-- **#9** — Fill in `[PLACEHOLDER]` and `[NEEDS REVIEW]` entries in schema files (`diagnostic_criteria.yaml`, `diagnostic_classes.yaml`). Requires input from Adam. `[needs-input]`
+- **#72** — Prepare Chichewa (nyan1308) for onboarding. `[Jeff]`
+- **#71** — New analysis module: intonational domain. `[diagnostics]`
+- **#70** — New analysis module: tonosegmental domain. `[diagnostics]`
+- **#68** — Survey open typology codebases (Grambank, CLDF, AUTOTYP) for design ideas; language report format for production onboarding.
+- **#9** — Fill in `[PLACEHOLDER]` and `[NEEDS REVIEW]` entries in schema files. Requires input from Adam. `[needs-input]`
 
 ## Work phases
 
