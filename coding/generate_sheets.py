@@ -183,8 +183,11 @@ def _upload_planars_config(
     content = json.dumps(ordered, indent=2).encode("utf-8")
     media = MediaIoBaseUpload(io.BytesIO(content), mimetype="application/json")
     if existing_file_id:
-        drive.files().update(fileId=existing_file_id, media_body=media).execute()
-        return existing_file_id
+        try:
+            drive.files().update(fileId=existing_file_id, media_body=media).execute()
+            return existing_file_id
+        except Exception as e:
+            print(f"  WARNING: could not update existing manifest.json ({e}); creating new file.")
     result = drive.files().create(
         body={"name": "manifest.json", "parents": [root_folder_id]},
         media_body=media,
