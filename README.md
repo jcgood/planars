@@ -33,5 +33,24 @@ python -m venv .venv
 | [Notebooks](docs/notebooks.md) | All users | Contributor, coordinator, and validation Colab notebooks — what they contain and how to use them |
 | [Data management](docs/data-management.md) | Coordinators and developers | Two-repo architecture, planar input format, `diagnostics_{lang_id}.tsv` format, `coded_data/` layout |
 | [Testing](docs/testing.md) | Developers | Regression snapshot tests, synthetic test language (`synth0001`) |
+| [References](docs/references.md) | All users | Full bibliography in ULSS and BibTeX; how to cite the toolkit and individual language analyses |
 
 For diagnostic criterion definitions and qualification rules, see `schemas/diagnostic_criteria.yaml` and `schemas/diagnostic_classes.yaml`. For analytical term definitions, see `schemas/terms.yaml`.
+
+---
+
+## How to cite
+
+**Citing the planars toolkit:**
+
+> Good, Jeff & Adam J. R. Tallman. 2026. *planars*: A Python toolkit for deriving morphosyntactic constituency spans from annotated planar structures (version 0.1.0a11). GitHub repository. https://github.com/jcgood/planars
+
+A `CITATION.cff` file is included in the repository root for citation manager import. A Zenodo DOI will be added when the repository is formally archived at release.
+
+**Citing the underlying theoretical framework:**
+
+> Tallman, Adam J. R., Sandra Auderset & Hiroto Uchihara (eds.). 2024. *Constituency and convergence in the Americas* (Topics in Phonological Diversity 1). Berlin: Language Science Press. doi:10.5281/zenodo.10559861
+
+**Citing specific language analyses:**
+
+When reporting results for a specific language, please also cite the relevant chapter from Tallman, Auderset & Uchihara (2024). BibTeX entries and ULSS-formatted citations for all chapters that have informed this codebase are collected in [docs/references.md](docs/references.md).

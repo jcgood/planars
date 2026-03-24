@@ -1,0 +1,44 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "planars: A Python toolkit for deriving morphosyntactic constituency spans from annotated planar structures"
+authors:
+  - family-names: Good
+    given-names: Jeff
+  - family-names: Tallman
+    given-names: Adam J. R.
+version: 0.1.0a11
+date-released: "2026-03-23"
+url: "https://github.com/jcgood/planars"
+license: MIT
+repository-code: "https://github.com/jcgood/planars"
+abstract: >
+  planars is a Python toolkit for deriving morphosyntactic constituency spans
+  from annotated planar structures. It supports cross-linguistic typological
+  research by computing strict and loose spans from specialist annotations
+  across multiple constituency diagnostics (ciscategorial selection,
+  non-interruptability, subspan repetition, stress, and others). The toolkit
+  also provides Google Sheets-based annotation workflow tools for research
+  coordinators and collaborators.
+keywords:
+  - linguistics
+  - morphosyntax
+  - constituency
+  - typology
+  - planar structure
+  - span computation
+preferred-citation:
+  type: software
+  title: "planars: A Python toolkit for deriving morphosyntactic constituency spans from annotated planar structures"
+  authors:
+    - family-names: Good
+      given-names: Jeff
+    - family-names: Tallman
+      given-names: Adam J. R.
+  year: 2026
+  url: "https://github.com/jcgood/planars"
+  notes: >
+    When citing this toolkit, please also cite the underlying theoretical
+    framework: Tallman, Auderset & Uchihara (eds.) 2024, Constituency and
+    convergence in the Americas, Language Science Press,
+    doi:10.5281/zenodo.10559861
