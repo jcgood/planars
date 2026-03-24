@@ -109,7 +109,7 @@ Late aggregation, autotypology (dynamic schema), definition files vs. data files
 
 `coding/` contains the coordinator tooling:
 - `make_forms.py`: `build_element_index`, `_read_diagnostics_for_language` — utilities used by other scripts.
-- `generate_sheets.py`: `generate-sheets` command. Validates planar and diagnostics before creating sheets.
+- `generate_sheets.py`: `generate-sheets` command. Validates planar and diagnostics before creating sheets. Backs up the Drive manifest to `manifest_backup.json` (gitignored) at the start of each run. Aborts if the manifest is empty for an established language (stale manifest guard). `--force` is destructive — clears and rewrites all sheets.
 - `update_sheets.py`: `update-sheets` — adds missing rows/trailing columns to existing sheets.
 - `sync_params.py`: `sync-params` — syncs criterion columns when `diagnostics_{lang_id}.tsv` changes; supports rename, split, merge, and remove lifecycle operations.
 - `restructure_sheets.py`: `restructure-sheets` — archives and regenerates sheets after structural changes; carries over annotations using `--rename-map` (position renames) and `--rename-element` (element label renames); only processes classes with actual changes.

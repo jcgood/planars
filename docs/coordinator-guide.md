@@ -129,10 +129,12 @@ git pull
 
 ```bash
 python -m coding generate-sheets           # creates sheets for new classes only
-python -m coding generate-sheets --force   # regenerate all from scratch
+python -m coding generate-sheets --force   # DESTRUCTIVE: clears and rewrites all sheets (annotation data will be lost)
 ```
 
 Creates one Google Sheets file per analysis class with one tab per construction. Each tab has per-criterion dropdown validation and a free-text Comments column. Also runs `generate-notebooks` automatically at the end.
+
+At the start of each run, the current Drive manifest is backed up to `manifest_backup.json` (gitignored) in the repo root. If something goes wrong during a run, this file can be used to recover sheet IDs without needing to access Drive directly.
 
 ### 2. Collaborators annotate
 
