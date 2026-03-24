@@ -77,25 +77,38 @@ git pull
 
 ## Adding a new language
 
-1. In `coded_data/`, create:
+1. Fetch and cache Glottolog metadata for the language:
+   ```bash
+   python -m coding lookup-lang {lang_id}
+   ```
+   Verifies the Glottocode is valid and caches the language name, family, and ISO code for use in notebooks and output.
+
+2. In `coded_data/`, create:
    - `{lang_id}/planar_input/planar_{lang_id}-{date}.tsv` — planar structure
    - `{lang_id}/planar_input/diagnostics_{lang_id}.tsv` — analysis classes and diagnostic criteria
 
    See [Data management](data-management.md) for the required format of both files.
 
-2. Generate annotation sheets and notebooks:
+3. Generate annotation sheets and notebooks:
    ```bash
    python -m coding generate-sheets
    ```
-   This creates one Google Sheets file per analysis class, uploads contributor and coordinator Colab notebooks to Drive, and updates the Drive manifest. On re-runs, only classes not yet in the manifest are created.
+   This creates one Google Sheets file per analysis class, uploads contributor and coordinator Colab notebooks to Drive, creates editable Google Sheets for the planar structure and diagnostics files, and updates the Drive manifest. On re-runs, only classes not yet in the manifest are created.
 
-3. On first use (run once after the very first `generate-sheets`):
+4. On first use (run once after the very first `generate-sheets`):
    ```bash
    python -m coding setup-root-folder
    ```
    Creates the top-level `ConstituencyTypology` Drive folder and moves global files there. This is idempotent — safe to re-run.
 
-4. Share the language Drive folder and the contributor notebook link with your collaborator.
+5. Share the language Drive folder and the contributor notebook link with your collaborator.
+
+6. After collaborators have filled in sheets, import and verify:
+   ```bash
+   python -m coding import-sheets
+   python -m coding apply-pending        # if any destructive changes were detected
+   python -m coding integrity-check --lang {lang_id}
+   ```
 
 ---
 
