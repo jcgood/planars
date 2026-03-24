@@ -1,0 +1,50 @@
+# schemas/languages.yaml
+#
+# Source of truth for per-language metadata in the planars project.
+#
+# Glottolog fields are written/refreshed by:
+#   python -m coding lookup-lang <glottocode>
+#
+# Project metadata (meta block) is hand-edited by coordinators.
+# New entries are scaffolded automatically by lookup-lang.
+#
+# The Drive manifest carries a copy of each entry (written by generate-sheets
+# and import-sheets) as a convenience; always edit here, not there.
+#
+# annotation_status values: planned | in-progress | complete
+#
+# Note: lookup-lang rewrites this file using PyYAML, which strips comments.
+# Essential documentation lives in schemas/__init__.py.
+
+arao1248:
+  glottolog:
+    name: Araona
+    iso639_3: aro
+    family: Pano-Tacanan
+    latitude: -12.4242
+    longitude: -67.7293
+  meta:
+    language: Araona
+    glottocode: arao1248
+    source: "Adam Tallman, 'Graded constituency in the Araona (Takana) verb complex,'
+      ch. 13 in Constituency and convergence in the Americas (langsci/291)"
+    author: Adam Tallman
+    annotator: Adam Tallman
+    annotation_status: in-progress
+    notes: ""
+
+stan1293:
+  glottolog:
+    name: English
+    iso639_3: eng
+    family: Indo-European
+    latitude: 53.0
+    longitude: -1.0
+  meta:
+    language: English
+    glottocode: stan1293
+    source: ""
+    author: ""
+    annotator: ""
+    annotation_status: in-progress
+    notes: ""

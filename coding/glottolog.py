@@ -32,8 +32,11 @@ import urllib.request
 from pathlib import Path
 from typing import Optional
 
+import yaml
+
 ROOT = Path(__file__).resolve().parent.parent
 CACHE_PATH = ROOT / "glottolog_cache.json"
+_LANGUAGES_YAML = ROOT / "schemas" / "languages.yaml"
 _API_URL = "https://glottolog.org/resource/languoid/id/{glottocode}.json"
 
 # Glottocodes: exactly 4 lowercase ASCII letters followed by 4 digits.
@@ -55,6 +58,48 @@ def _save_cache(cache: dict) -> None:
     with open(CACHE_PATH, "w", encoding="utf-8") as f:
         json.dump(cache, f, indent=2, ensure_ascii=False)
         f.write("\n")
+
+
+def _update_languages_yaml(glottocode: str, meta: dict) -> None:
+    """Write/refresh the entry for glottocode in schemas/languages.yaml.
+
+    Always updates the glottolog block (name, iso639_3, family, coordinates).
+    Scaffolds an empty meta block only if one does not already exist, so
+    hand-edited coordinator fields (source, author, etc.) are never overwritten.
+
+    Note: this function uses PyYAML to rewrite the file, which strips any YAML
+    comments present in languages.yaml.  Essential documentation lives in
+    schemas/__init__.py rather than in the file header for this reason.
+    """
+    if _LANGUAGES_YAML.exists():
+        with open(_LANGUAGES_YAML, encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+    else:
+        data = {}
+
+    entry = data.setdefault(glottocode, {})
+
+    entry["glottolog"] = {
+        "name":      meta["name"],
+        "iso639_3":  meta["iso639_3"],
+        "family":    meta["classification"][0]["name"] if meta["classification"] else None,
+        "latitude":  meta["latitude"],
+        "longitude": meta["longitude"],
+    }
+
+    if "meta" not in entry:
+        entry["meta"] = {
+            "language":          meta["name"],
+            "glottocode":        glottocode,
+            "source":            "",
+            "author":            "",
+            "annotator":         "",
+            "annotation_status": "planned",
+            "notes":             "",
+        }
+
+    with open(_LANGUAGES_YAML, "w", encoding="utf-8") as f:
+        yaml.dump(data, f, allow_unicode=True, sort_keys=True, default_flow_style=False)
 
 
 # ---------------------------------------------------------------------------
@@ -118,6 +163,7 @@ def get_metadata(glottocode: str, *, refresh: bool = False) -> dict:
 
     cache[glottocode] = meta
     _save_cache(cache)
+    _update_languages_yaml(glottocode, meta)
     return meta
 
 

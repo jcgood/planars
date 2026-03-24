@@ -707,23 +707,39 @@ def main() -> None:
                 except Exception:
                     pass
 
-        def _update_glottolog_block(lang_data: dict, lid: str) -> None:
-            """Write/refresh the glottolog block in lang_data, fetching if needed."""
-            glotto = _cached_glottolog(lid)
-            if not glotto:
-                try:
-                    glotto = _fetch_glottolog(lid)
-                    print(f"  [{lid}] Fetched Glottolog metadata")
-                except Exception as exc:
-                    print(f"  [{lid}] WARNING: Could not fetch Glottolog metadata: {exc}")
-            if glotto:
-                lang_data["glottolog"] = {
-                    "name":      glotto["name"],
-                    "iso639_3":  glotto["iso639_3"],
-                    "family":    glotto["classification"][0]["name"] if glotto["classification"] else None,
-                    "latitude":  glotto["latitude"],
-                    "longitude": glotto["longitude"],
-                }
+        def _sync_language_metadata(lang_data: dict, lid: str) -> None:
+            """Copy glottolog + meta blocks from languages.yaml into the Drive manifest entry.
+
+            languages.yaml is the source of truth.  The Drive manifest carries a
+            copy so the data lives near the annotation sheets.  If the language is
+            not yet in languages.yaml, falls back to glottolog_cache.json and warns.
+            """
+            from planars.languages import get_entry as _get_lang_entry
+            entry = _get_lang_entry(lid)
+            if entry:
+                if "glottolog" in entry:
+                    lang_data["glottolog"] = entry["glottolog"]
+                if "meta" in entry:
+                    lang_data["meta"] = entry["meta"]
+            else:
+                print(
+                    f"  [{lid}] WARNING: not found in schemas/languages.yaml. "
+                    f"Run 'python -m coding lookup-lang {lid}' before generate-sheets."
+                )
+                glotto = _cached_glottolog(lid)
+                if not glotto:
+                    try:
+                        glotto = _fetch_glottolog(lid)
+                    except Exception as exc:
+                        print(f"  [{lid}] WARNING: Could not fetch Glottolog metadata: {exc}")
+                if glotto:
+                    lang_data["glottolog"] = {
+                        "name":      glotto["name"],
+                        "iso639_3":  glotto["iso639_3"],
+                        "family":    glotto["classification"][0]["name"] if glotto["classification"] else None,
+                        "latitude":  glotto["latitude"],
+                        "longitude": glotto["longitude"],
+                    }
 
         # Upload planar and diagnostics as editable Google Sheets (source of truth).
         # Skips files whose sheet IDs are already in the manifest unless --force.
@@ -741,7 +757,7 @@ def main() -> None:
                 )
                 existing_lang_data["folder_id"] = folder_id
                 existing_lang_data.update(input_sheet_info)
-                _update_glottolog_block(existing_lang_data, lang_id)
+                _sync_language_metadata(existing_lang_data, lang_id)
                 config.setdefault(lang_id, {})["folder_id"] = folder_id
                 _save_drive_config(config)
                 full_manifest[lang_id] = existing_lang_data
@@ -760,18 +776,7 @@ def main() -> None:
         lang_data["folder_id"] = folder_id
         lang_data.update(input_sheet_info)  # store planar/diagnostics spreadsheet IDs
 
-        _update_glottolog_block(lang_data, lang_id)
-
-        # Scaffold project metadata block for new languages.
-        # Coordinators fill these fields; integrity-check warns when key fields are blank.
-        if "meta" not in lang_data:
-            lang_data["meta"] = {
-                "source": "",       # publication or chapter reference (e.g. "Tallman 2021, ch. 13")
-                "author": "",       # author of the source material
-                "annotator": "",    # name of the person who performed the annotation
-                "annotation_status": "",  # e.g. "partial", "complete"
-                "notes": "",        # free-text coordinator notes
-            }
+        _sync_language_metadata(lang_data, lang_id)
 
         # Create one sheet per new analysis class
         for class_name, constructions in classes_to_create.items():

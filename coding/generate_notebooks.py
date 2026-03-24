@@ -49,7 +49,6 @@ from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
 )
-from .glottolog import cached_entry as _cached_glottolog
 from .generate_sheets import (
     _get_clients,
     _load_drive_config,
@@ -113,11 +112,9 @@ def _replace_tokens(text: str, tokens: Dict[str, str]) -> str:
 
 
 def _lang_display(lang_id: str) -> str:
-    """Return 'Name [glottocode]' if cached, else the bare glottocode."""
-    meta = _cached_glottolog(lang_id)
-    if meta and meta.get("name"):
-        return f"{meta['name']} [{lang_id}]"
-    return lang_id
+    """Return 'Name [glottocode]' from languages.yaml, else the bare glottocode."""
+    from planars.languages import get_display_name
+    return get_display_name(lang_id)
 
 
 # ---------------------------------------------------------------------------

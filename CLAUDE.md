@@ -159,6 +159,12 @@ Use Glottolog metadata proactively for:
 - Family/macroarea grouping in future coverage tables and maps (issue #62)
 - Language onboarding validation (`lookup-lang` before `generate-sheets`)
 
+## schemas/ package
+
+`schemas/` is a Python package (it has `__init__.py`) so that its YAML files are delivered to Colab when planars is installed via `pip install`. Files are readable via `importlib.resources`. `pyproject.toml` includes `schemas*` in `packages.find` and lists `schemas = ["*.yaml"]` in `package-data`. Documentation for each file lives in `schemas/__init__.py`.
+
+`schemas/languages.yaml` is the source of truth for per-language metadata. Glottolog fields (`name`, `iso639_3`, `family`, coordinates) are written/refreshed by `python -m coding lookup-lang <glottocode>`. Project metadata (`language`, `glottocode`, `source`, `author`, `annotator`, `annotation_status`, `notes`) is hand-edited by coordinators. Valid `annotation_status` values: `planned | in-progress | complete`. The Drive manifest carries a copy written by `generate-sheets`; always edit `languages.yaml`, not the manifest. `planars/languages.py` provides `get_display_name(glottocode)` → `"Name [glottocode]"` for use in notebooks and charts. Note: `lookup-lang` rewrites `languages.yaml` using PyYAML, which strips YAML comments — documentation lives in `schemas/__init__.py` for this reason.
+
 ## Codebook and diagnostic classes
 
 `schemas/diagnostic_criteria.yaml` is the source of truth for diagnostic criterion definitions, valid values, and linguistic descriptions. Entries marked `[PLACEHOLDER]` need linguistic descriptions; entries marked `[NEEDS REVIEW]` have provisional rules that need confirmation (currently aspiration; stress qualification rule is settled but `left-interaction` and `right-interaction` criteria remain under review).
@@ -197,6 +203,7 @@ Keep the following files up to date as the project evolves. Check each one at th
 | File | Update when |
 |------|-------------|
 | `CLAUDE.md` | Architecture changes, new scripts, new conventions, workflow changes |
+| `schemas/languages.yaml` | New language onboarded, or coordinator edits `source`/`author`/`annotation_status` fields |
 | `schemas/diagnostic_criteria.yaml` | New diagnostic criteria, new analyses, `[PLACEHOLDER]` or `[NEEDS REVIEW]` entries resolved |
 | `schemas/diagnostic_classes.yaml` | New analysis classes added, applicability, required criteria, qualification rules, or known construction types change |
 | `schemas/planar.yaml` | New standard element labels or structural column conventions |
@@ -258,7 +265,7 @@ Run `gh issue list` for the full list. Key active issues:
 
 - **#81** — Add collaborator notes alongside annotation sheets: per-language Google Doc with tabs per class/construction; download notes in `import-sheets` to surface uncertain codings and propose refinements. See also #68.
 - **#80** — Auto-generate schema structure diagrams from YAML schema files.
-- **#78** — Add `collection_required` validation; field added (all `[NEEDS COORDINATOR INPUT]`), validation logic and final values pending Adam's input.
+- **#78** — `collection_required` field added and check implemented; inert until Adam sets true/false values per class.
 - **#76** — Proactive detection of unauthorized sheet edits (scheduled `validate-coding`).
 - **#75** — Auto-trigger snapshot regeneration when analysis output changes.
 - **#72** — Prepare Chichewa (nyan1308) for onboarding. `[Jeff]`

@@ -4,9 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "planars"
-version = "0.1.0a12"
+version = "0.1.0a13"
 requires-python = ">=3.9"
-dependencies = ["pandas", "plotly"]
+dependencies = ["pandas", "plotly", "pyyaml"]
 description = "Toolkit for deriving morphosyntactic constituency spans from annotated planar structures"
 readme = "README.md"
 license = { text = "MIT" }
@@ -24,7 +24,10 @@ classifiers = [
 Repository = "https://github.com/jcgood/planars"
 
 [tool.setuptools.packages.find]
-include = ["planars*", "coding*"]
+include = ["planars*", "coding*", "schemas*"]
+
+[tool.setuptools.package-data]
+schemas = ["*.yaml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
