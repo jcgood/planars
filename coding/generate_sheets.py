@@ -713,9 +713,17 @@ def main() -> None:
             languages.yaml is the source of truth.  The Drive manifest carries a
             copy so the data lives near the annotation sheets.  If the language is
             not yet in languages.yaml, falls back to glottolog_cache.json and warns.
+
+            Reads languages.yaml directly by path (not via importlib.resources) so
+            this works without reinstalling the package after schema changes.
             """
-            from planars.languages import get_entry as _get_lang_entry
-            entry = _get_lang_entry(lid)
+            import yaml as _yaml
+            _lang_yaml = ROOT / "schemas" / "languages.yaml"
+            _langs = {}
+            if _lang_yaml.exists():
+                with open(_lang_yaml, encoding="utf-8") as _f:
+                    _langs = _yaml.safe_load(_f) or {}
+            entry = _langs.get(lid)
             if entry:
                 if "glottolog" in entry:
                     lang_data["glottolog"] = entry["glottolog"]
