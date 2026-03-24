@@ -175,6 +175,35 @@ def validate_annotation_rows(
     return records, issues
 
 
+def annotation_status(
+    rows: List[List[str]],
+    expected_params: List[str],
+    param_values: Dict[str, List[str]] = None,
+) -> dict:
+    """Return completeness/validity counts for one annotation sheet tab.
+
+    Returns {'total': int, 'filled': int, 'blank': int, 'invalid': int}.
+    Keystone rows (v:verbstem) are excluded from all counts.
+    """
+    if not rows or len(rows) < 2:
+        return {"total": 0, "filled": 0, "blank": 0, "invalid": 0}
+
+    header = rows[0]
+    param_cols = [c for c in header if c not in _STRUCTURAL_COLS and c not in _TRAILING_COLS]
+    n_params = len(param_cols)
+    pos_idx = header.index("Position_Name") if "Position_Name" in header else -1
+    n_data_rows = sum(
+        1 for row in rows[1:]
+        if not (pos_idx >= 0 and len(row) > pos_idx and row[pos_idx].lower() == _KEYSTONE_NAME)
+    )
+    total = n_data_rows * n_params
+
+    _, issues = validate_annotation_rows(rows, expected_params, "", param_values)
+    blank = sum(1 for i in issues if "blank value" in i.message)
+    invalid = sum(1 for i in issues if "unexpected value" in i.message)
+    return {"total": total, "filled": total - blank, "blank": blank, "invalid": invalid}
+
+
 def revalidate_sheet(
     ws,
     expected_params: List[str],
