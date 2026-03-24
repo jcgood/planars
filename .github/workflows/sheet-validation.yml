@@ -1,0 +1,100 @@
+name: Sheet validation
+
+# Runs daily to detect unauthorized or accidental edits to annotation sheets.
+# On failure: creates a GitHub issue (or comments on an existing open one).
+# On success after failure: closes the open issue automatically.
+#
+# Required secrets (Settings → Secrets and variables → Actions):
+#   PLANARS_DATA_TOKEN       — PAT with read access to jcgood/planars-data
+#   PLANARS_OAUTH_CREDENTIALS — contents of ~/.config/planars/oauth_credentials.json
+#   GOOGLE_OAUTH_TOKEN       — contents of ~/.config/gspread/authorized_user.json
+#   PLANARS_DRIVE_CONFIG     — contents of drive_config.json
+#
+# Keep PLANARS_DRIVE_CONFIG in sync with your local drive_config.json whenever
+# generate-sheets adds a new language or updates sheet IDs.
+
+on:
+  schedule:
+    - cron: '0 9 * * *'   # daily at 09:00 UTC
+  workflow_dispatch:        # allow manual trigger from the Actions tab
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check out planars-data
+        uses: actions/checkout@v4
+        with:
+          repository: jcgood/planars-data
+          token: ${{ secrets.PLANARS_DATA_TOKEN }}
+          path: _planars_data
+
+      - name: Merge annotation data into coded_data
+        run: rsync -r --exclude='.git' _planars_data/ coded_data/
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Write credentials
+        env:
+          OAUTH_CREDS: ${{ secrets.PLANARS_OAUTH_CREDENTIALS }}
+          OAUTH_TOKEN: ${{ secrets.GOOGLE_OAUTH_TOKEN }}
+          DRIVE_CONFIG: ${{ secrets.PLANARS_DRIVE_CONFIG }}
+        run: |
+          mkdir -p ~/.config/planars ~/.config/gspread
+          printf '%s' "$OAUTH_CREDS" > ~/.config/planars/oauth_credentials.json
+          printf '%s' "$OAUTH_TOKEN" > ~/.config/gspread/authorized_user.json
+          printf '%s' "$DRIVE_CONFIG" > drive_config.json
+
+      - name: Run validate-coding
+        id: validate
+        run: python -m coding validate-coding > /tmp/report.txt 2>&1
+        continue-on-error: true
+
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "## Sheet validation — $(date -u +%Y-%m-%d)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat /tmp/report.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: File or update GitHub issue if issues found
+        if: steps.validate.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN_COUNT=$(gh issue list --label sheet-validation --state open --json number --jq length)
+          if [ "$OPEN_COUNT" -eq 0 ]; then
+            gh issue create \
+              --title "Sheet validation issues detected $(date -u +%Y-%m-%d)" \
+              --label sheet-validation \
+              --body-file /tmp/report.txt
+          else
+            ISSUE_NUM=$(gh issue list --label sheet-validation --state open --json number --jq '.[0].number')
+            gh issue comment "$ISSUE_NUM" --body-file /tmp/report.txt
+          fi
+
+      - name: Close open validation issue if all clear
+        if: steps.validate.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN_COUNT=$(gh issue list --label sheet-validation --state open --json number --jq length)
+          if [ "$OPEN_COUNT" -gt 0 ]; then
+            ISSUE_NUM=$(gh issue list --label sheet-validation --state open --json number --jq '.[0].number')
+            gh issue comment "$ISSUE_NUM" --body "Sheet validation passed on $(date -u +%Y-%m-%d) — closing."
+            gh issue close "$ISSUE_NUM"
+          fi

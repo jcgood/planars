@@ -325,6 +325,7 @@ def main() -> None:
     print(f"Validated {total_sheets} sheet(s).  Total issues: {total_issues}")
     if total_issues:
         print("Cell highlighting updated in Google Sheets.")
+        sys.exit(1)
     else:
         print("All highlights cleared.")
 

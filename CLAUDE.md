@@ -118,7 +118,7 @@ Late aggregation, autotypology (dynamic schema), definition files vs. data files
 - `validate.py`: Shared base — just the `ValidationIssue` dataclass.
 - `validate_planar.py`: `validate_planar_df(df)` — validates planar structure TSVs (sequential positions, unique names, keystone present, valid Position_Type/Class_Type, element conventions including collapse detection).
 - `validate_diagnostics.py`: `validate_diagnostics_df(df, lang_id)` — validates diagnostics_{lang_id}.tsv (required columns, Language field, brace syntax, criterion names against diagnostic_criteria.yaml, class names against planars/ modules, construction naming rules).
-- `validate_coding.py`: `validate-coding` command — reads annotation sheets, validates values, clears/updates pink cell highlights. Also calls `validate_planar_df` and `validate_diagnostics_df` before sheet validation.
+- `validate_coding.py`: `validate-coding` command — reads annotation sheets, validates values, clears/updates pink cell highlights. Also calls `validate_planar_df` and `validate_diagnostics_df` before sheet validation. Exits with code 1 if any issues are found (used by the scheduled sheet-validation GitHub Actions workflow).
 - `generate_notebooks.py`: `generate-notebooks` — generates per-language and coordinator Colab notebooks.
 - `check_codebook.py`: `check-codebook` — consistency check between diagnostic_criteria.yaml, diagnostic_classes.yaml, analysis modules, and diagnostics_{lang_id}.tsv.
 - `integrity_check.py`: `integrity-check` — full project-wide health report across six sections (PLANAR STRUCTURE, DIAGNOSTICS, CODEBOOK CONSISTENCY, ANALYSIS CONSISTENCY, ANNOTATION SHEETS, NEEDS REVIEW). Use `--lang` to restrict per-language sections; `--sheets` to include live Google Sheets structural validation.
@@ -266,7 +266,7 @@ Run `gh issue list` for the full list. Key active issues:
 - **#81** — Add collaborator notes alongside annotation sheets: per-language Google Doc with tabs per class/construction; download notes in `import-sheets` to surface uncertain codings and propose refinements. See also #68.
 - **#80** — Auto-generate schema structure diagrams from YAML schema files.
 - **#78** — `collection_required` field added and check implemented; inert until Adam sets true/false values per class.
-- **#76** — Proactive detection of unauthorized sheet edits (scheduled `validate-coding`).
+- **#76** — Proactive detection of unauthorized sheet edits: `.github/workflows/sheet-validation.yml` runs `validate-coding` daily; opens/closes a `sheet-validation` issue automatically. Requires four GitHub secrets to be set — see coordinator guide.
 - **#75** — Auto-trigger snapshot regeneration when analysis output changes.
 - **#72** — Prepare Chichewa (nyan1308) for onboarding. `[Jeff]`
 - **#71** — New analysis module: intonational domain. `[diagnostics]`
