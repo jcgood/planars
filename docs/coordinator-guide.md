@@ -257,6 +257,27 @@ git diff tests/snapshots/       # review what changed
 
 Run `pytest` after any change to an analysis module, `io.py`, or `spans.py`.
 
+### Pre-push snapshot check (recommended)
+
+A pre-push hook catches stale snapshots locally before they reach CI. Install it once after setting up the project:
+
+```bash
+.venv/bin/pip install pre-commit
+.venv/bin/pre-commit install --hook-type pre-push
+```
+
+After installation, `git push` will automatically run `check_snapshots.py` and block the push if any snapshots are stale, with a message showing which analyses differ. If the diff is intentional, regenerate snapshots and include them in the push:
+
+```bash
+python generate_snapshots.py
+git diff tests/snapshots/       # review
+git add tests/snapshots/
+git commit -m "Update snapshots: ..."
+git push
+```
+
+CI also runs `check_snapshots.py` as a dedicated step, so stale snapshots will fail the build even if the hook is not installed.
+
 ---
 
 ## Drive folder structure

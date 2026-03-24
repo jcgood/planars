@@ -1,0 +1,10 @@
+repos:
+  - repo: local
+    hooks:
+      - id: check-snapshots
+        name: Check snapshots are up to date
+        entry: .venv/bin/python check_snapshots.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
