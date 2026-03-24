@@ -112,9 +112,21 @@ def _replace_tokens(text: str, tokens: Dict[str, str]) -> str:
 
 
 def _lang_display(lang_id: str) -> str:
-    """Return 'Name [glottocode]' from languages.yaml, else the bare glottocode."""
-    from planars.languages import get_display_name
-    return get_display_name(lang_id)
+    """Return 'Name [glottocode]' from languages.yaml, else the bare glottocode.
+
+    Reads languages.yaml directly by path so this works without reinstalling
+    the package after schema changes.
+    """
+    import yaml as _yaml
+    _lang_yaml = ROOT / "schemas" / "languages.yaml"
+    if _lang_yaml.exists():
+        with open(_lang_yaml, encoding="utf-8") as _f:
+            _langs = _yaml.safe_load(_f) or {}
+        entry = _langs.get(lang_id, {})
+        name = entry.get("glottolog", {}).get("name")
+        if name:
+            return f"{name} [{lang_id}]"
+    return lang_id
 
 
 # ---------------------------------------------------------------------------
