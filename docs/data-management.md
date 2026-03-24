@@ -46,7 +46,8 @@ coding/                         Google Sheets workflow tools (python -m coding <
   update_sheets.py              Add missing rows to existing sheets
   sync_params.py                Sync param columns when diagnostics_{lang_id}.tsv changes
   restructure_sheets.py         Archive and regenerate sheets after structural changes
-  import_sheets.py              Download filled sheets to TSVs
+  import_sheets.py              Download filled sheets to TSVs; sync planar/diagnostics Sheets
+  apply_pending.py              Review and apply pending destructive changes
   validate.py                   Shared validation type (ValidationIssue)
   validate_planar.py            Planar structure TSV validation
   validate_diagnostics.py       diagnostics_{lang_id}.tsv validation
@@ -148,6 +149,6 @@ The Drive manifest (`planars_config.json`) is stored on Drive and contains all l
 - `_root_folder_id` — the `ConstituencyTypology` top-level Drive folder
 - `_planars_config_file_id` — the manifest file
 - `_all_languages_notebook_file_id` — the coordinator notebook
-- Per-language: `folder_id`, `domains_notebook_file_id`, `validation_notebook_file_id`
+- Per-language: `folder_id`, `domains_notebook_file_id`, `validation_notebook_file_id`, `planar_spreadsheet_id`, `diagnostics_spreadsheet_id`
 
 Do not commit `drive_config.json` — it is gitignored.

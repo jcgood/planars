@@ -118,10 +118,23 @@ Collaborators fill in values in the shared Google Sheets. See the [Collaborator 
 
 ```bash
 python -m coding import-sheets           # downloads filled sheets → TSVs in coded_data/
-python -m coding import-sheets --force   # overwrite existing files
+python -m coding import-sheets --force   # overwrite existing annotation TSVs
 ```
 
-Skips existing files by default. Validates values on import (blanks and unexpected entries produce warnings). If any warnings are found, they are written to `import_errors/{lang}_{timestamp}.txt` as well as printed to the terminal.
+Skips existing annotation TSVs by default. On each run, `import-sheets` also:
+
+- **Downloads and validates** the planar structure and diagnostics Sheets for each language, writing them to `coded_data/{lang_id}/planar_input/`.
+- **Auto-applies safe downstream commands** (`update-sheets --apply`, `sync-params --apply`, `generate-sheets`) when additive changes are detected (new positions, new criteria, new construction tabs).
+- **Writes destructive changes** (planar deletions/reorders, criterion renames/removals, new constructions within existing classes) to `pending_changes.json` for coordinator review rather than applying them immediately.
+
+After import, review and apply any pending changes:
+
+```bash
+python -m coding apply-pending           # prompt for each change
+python -m coding apply-pending --all     # apply all without prompting
+```
+
+If any annotation warnings are found, they are written to `import_errors/{lang}_{timestamp}.txt` as well as printed to the terminal. Invalid cells are highlighted pink in the Google Sheet regardless of `--force`.
 
 ### 4. Run analyses
 
@@ -154,13 +167,16 @@ python -m coding update-sheets --apply   # add missing rows to existing sheets
 When `diagnostics_{lang_id}.tsv` criterion columns change (new criteria added, criteria renamed):
 
 ```bash
-python -m coding sync-params                                  # dry run
-python -m coding sync-params --apply                          # insert new columns, update validation
-python -m coding sync-params --apply --rename old:new         # rename a column in all classes
-python -m coding sync-params --apply --rename class:old:new   # rename only in one class
+python -m coding sync-params                                   # dry run
+python -m coding sync-params --apply                           # insert new columns, update validation
+python -m coding sync-params --apply --rename old:new          # rename a column in all classes
+python -m coding sync-params --apply --rename class:old:new    # rename only in one class
+python -m coding sync-params --apply --split old:new1:new2     # split one criterion into two
+python -m coding sync-params --apply --merge old1:old2:new     # merge two criteria into one
+python -m coding sync-params --apply --remove                  # also remove stale columns
 ```
 
-Preserves existing annotations while inserting new columns before Comments. Automatically regenerates and uploads notebooks afterward.
+Preserves existing annotations while inserting new columns before Comments. Rename updates headers and validation in place. Split/merge rename the old column(s) to `_split_`/`_merged_` prefixes and add the new column(s) — coordinator remaps values then removes stale columns manually. `integrity-check --sheets` warns on any stale prefixed columns. Automatically regenerates and uploads notebooks afterward.
 
 ### Restructuring after planar changes
 
@@ -206,4 +222,4 @@ Verifies that criterion names in `schemas/diagnostic_criteria.yaml`, analysis mo
 
 The Drive manifest (`planars_config.json`) is stored on Drive and contains all languages' sheet metadata and folder IDs. A local `drive_config.json` (gitignored) bootstraps the Drive lookup — it holds `_root_folder_id`, `_planars_config_file_id`, and per-language `folder_id` and `domains_notebook_file_id`.
 
-Each `generate-sheets` run also uploads `planar_*.tsv` and `diagnostics_{lang_id}.tsv` to the language's Drive folder so collaborators can view the planar structure alongside their annotation sheets.
+Each `generate-sheets` run also creates editable Google Sheets for `planar_*.tsv` and `diagnostics_{lang_id}.tsv` in the language's Drive folder so collaborators can view (and coordinators can edit) the planar structure alongside their annotation sheets. `import-sheets` reads these Sheets back to local TSVs and detects any changes.
