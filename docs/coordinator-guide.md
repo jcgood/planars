@@ -77,11 +77,26 @@ git pull
 
 ## Adding a new language
 
-1. Fetch and cache Glottolog metadata for the language:
+1. Fetch Glottolog metadata and register the language:
    ```bash
    python -m coding lookup-lang {lang_id}
    ```
-   Verifies the Glottocode is valid and caches the language name, family, and ISO code for use in notebooks and output.
+   Verifies the Glottocode is valid, fetches the language name, family, and ISO code from Glottolog, and writes them into `schemas/languages.yaml`. It also scaffolds an empty `meta` block if none exists.
+
+   Open `schemas/languages.yaml` and fill in the `meta` block for the new language:
+   ```yaml
+   meta:
+     source: "Author, Title (year)"
+     author: "Author Name"
+     annotator: "Annotator Name"
+     annotation_status: planned   # planned | in-progress | complete
+     notes: ""
+   ```
+   Commit `schemas/languages.yaml` to the `planars` repo before running `generate-sheets` — this ensures display names appear correctly in notebooks and charts:
+   ```bash
+   git add schemas/languages.yaml
+   git commit -m "Register {lang_id} in languages.yaml"
+   ```
 
 2. In `coded_data/`, create:
    - `{lang_id}/planar_input/planar_{lang_id}-{date}.tsv` — planar structure
@@ -95,11 +110,7 @@ git pull
    ```
    This creates one Google Sheets file per analysis class, uploads contributor and coordinator Colab notebooks to Drive, creates editable Google Sheets for the planar structure and diagnostics files, and updates the Drive manifest. On re-runs, only classes not yet in the manifest are created.
 
-4. On first use (run once after the very first `generate-sheets`):
-   ```bash
-   python -m coding setup-root-folder
-   ```
-   Creates the top-level `ConstituencyTypology` Drive folder and moves global files there. This is idempotent — safe to re-run.
+4. If this is the first language in the project, run `setup-root-folder` once after `generate-sheets` — see [Drive folder structure](#drive-folder-structure) below.
 
 5. Share the language Drive folder and the contributor notebook link with your collaborator.
 
@@ -282,6 +293,22 @@ CI also runs `check_snapshots.py` as a dedicated step, so stale snapshots will f
 
 ## Drive folder structure
 
-The Drive manifest (`manifest.json`) is stored on Drive and contains all languages' sheet metadata and folder IDs. A local `drive_config.json` (gitignored) bootstraps the Drive lookup — it holds `_root_folder_id`, `_planars_config_file_id`, and per-language `folder_id` and `domains_notebook_file_id`.
+The Drive manifest (`manifest.json`) is stored on Drive and contains all languages' sheet metadata and folder IDs. A local `drive_config.json` (gitignored) bootstraps the Drive lookup — it holds `_root_folder_id`, `_planars_config_file_id`, and per-language `folder_id`, `planar_spreadsheet_id`, and `diagnostics_spreadsheet_id`.
+
+`drive_config.json` is created and updated automatically — you never need to edit it by hand. `generate-sheets` writes per-language IDs as it creates Drive folders and files; `setup-root-folder` adds the top-level `_root_folder_id`.
 
 Each `generate-sheets` run also creates editable Google Sheets for `planar_*.tsv` and `diagnostics_{lang_id}.tsv` in the language's Drive folder so collaborators can view (and coordinators can edit) the planar structure alongside their annotation sheets. `import-sheets` reads these Sheets back to local TSVs and detects any changes.
+
+### First-time project setup
+
+After the very first `generate-sheets`, run `setup-root-folder` once to create the top-level `ConstituencyTypology` Drive folder and move shared files there:
+
+```bash
+python -m coding setup-root-folder
+```
+
+This is idempotent — safe to re-run, but only needs to happen once per project.
+
+### Joining an existing project
+
+`drive_config.json` is gitignored and cannot be recovered from the repo. If you are joining a project that is already set up, ask the lead coordinator to share their `drive_config.json` and place it at the root of your `planars/` clone. Without it, `generate-sheets` and `import-sheets` cannot locate the existing Drive manifest or language folders.
