@@ -50,6 +50,10 @@ def main() -> None:
 
     if failures:
         print(f"\n{len(failures)} snapshot(s) failed.")
+        print("Regenerate and review before pushing:")
+        print("  python generate_snapshots.py")
+        print("  git diff tests/snapshots/")
+        print("  git add tests/snapshots/ && git commit -m 'Update snapshots'")
         sys.exit(1)
     else:
         print(f"\nAll {len(TASKS)} snapshots match.")
