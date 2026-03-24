@@ -16,6 +16,7 @@ Commands:
     integrity-check      Full project-wide integrity check (all languages, all schemas)
     setup-root-folder    Create ConstituencyTypology root Drive folder (run once)
     lookup-lang          Fetch and cache Glottolog metadata for a language ID
+    apply-pending        Review and apply pending destructive changes
 
 Each command accepts the same flags as the original script. Use --help on any
 command for details, or see CLAUDE.md.
@@ -38,6 +39,7 @@ _COMMANDS = {
     "integrity-check":    "coding.integrity_check",
     "setup-root-folder":  "coding.setup_root_folder",
     "lookup-lang":        "coding.glottolog",
+    "apply-pending":      "coding.apply_pending",
 }
 
 
