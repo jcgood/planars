@@ -266,7 +266,7 @@ A pre-push hook catches stale snapshots locally before they reach CI. Install it
 .venv/bin/pre-commit install --hook-type pre-push
 ```
 
-After installation, `git push` will automatically run `check_snapshots.py` and block the push if any snapshots are stale, with a message showing which analyses differ. If the diff is intentional, regenerate snapshots and include them in the push:
+After installation, `git push` will automatically run `check_snapshots.py` and block the push if any snapshots are stale, with a message showing which analyses differ. Snapshots go stale when analysis logic changes (a module, `io.py`, or `spans.py`) but `generate_snapshots.py` has not been re-run — the most common case is fixing a qualification rule and forgetting to regenerate before pushing. If the diff is intentional, regenerate snapshots and include them in the push:
 
 ```bash
 python generate_snapshots.py
