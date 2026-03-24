@@ -660,6 +660,11 @@ def main() -> None:
     if existing_config_file_id:
         try:
             merged_config: Dict = _download_file_json(drive, existing_config_file_id)
+            # Back up the raw downloaded manifest before any mutations so it can
+            # be used for recovery if something goes wrong during this run.
+            _manifest_backup = ROOT / "manifest_backup.json"
+            _manifest_backup.write_text(json.dumps(merged_config, indent=2), encoding="utf-8")
+            print(f"Manifest backed up to manifest_backup.json ({len(merged_config)} language(s))")
             # If it's old-format (just folder_ids, no sheets), start fresh.
             if not any("sheets" in v for v in merged_config.values() if isinstance(v, dict)):
                 merged_config = {}
@@ -724,6 +729,27 @@ def main() -> None:
                     existing_lang_data = _download_file_json(drive, old_fid)
                 except Exception:
                     pass
+
+        # Safety check: if the manifest has no entry for this language but
+        # drive_config.json shows it was previously set up (has a folder_id),
+        # the manifest is almost certainly stale — not a genuinely new language.
+        # Creating sheets now would produce empty sheets that overwrite annotation data.
+        # Abort unless --force is explicitly passed.
+        if not existing_lang_data and not force:
+            established = config.get(lang_id, {})
+            if established.get("folder_id"):
+                raise SystemExit(
+                    f"\nERROR: The Drive manifest has no entry for '{lang_id}', but "
+                    f"drive_config.json records it as an established language "
+                    f"(folder_id: {established['folder_id']}).\n"
+                    f"This almost certainly means the manifest is stale or was accidentally "
+                    f"replaced with an empty file — NOT that the sheets are genuinely new.\n"
+                    f"\nCreating sheets now would produce empty sheets and destroy annotation data.\n"
+                    f"\nTo recover: check manifest_backup.json (written at the start of this run)\n"
+                    f"or inspect the Drive manifest directly (file id: {existing_config_file_id}).\n"
+                    f"\nTo force recreation of all sheets (DESTRUCTIVE — data will be lost): "
+                    f"use --force."
+                )
 
         def _sync_language_metadata(lang_data: dict, lid: str) -> None:
             """Copy glottolog + meta blocks from languages.yaml into the Drive manifest entry.
