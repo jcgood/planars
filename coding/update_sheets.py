@@ -17,6 +17,7 @@ Authentication: same OAuth2 setup as generate_sheets.py.
 from __future__ import annotations
 
 import sys
+import time
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
 
@@ -33,6 +34,25 @@ from .generate_sheets import (
 
 CODED_DATA = ROOT / "coded_data"
 _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
+
+
+# ---------------------------------------------------------------------------
+# API helpers
+# ---------------------------------------------------------------------------
+
+def _get_all_values_with_retry(ws: gspread.Worksheet, retries: int = 5) -> List[List[str]]:
+    """Call ws.get_all_values() with exponential backoff on 429 quota errors."""
+    for attempt in range(retries):
+        try:
+            return ws.get_all_values()
+        except gspread.exceptions.APIError as e:
+            if e.response.status_code == 429 and attempt < retries - 1:
+                wait = 15 * (attempt + 1)
+                print(f"    (quota exceeded — waiting {wait}s before retry)")
+                time.sleep(wait)
+            else:
+                raise
+    return ws.get_all_values()  # final attempt, let it raise
 
 
 # ---------------------------------------------------------------------------
@@ -134,7 +154,7 @@ def _compute_missing_rows(
     param_names: List[str],
 ) -> List[List[str]]:
     """Compute rows present in the planar structure but missing from the sheet tab."""
-    rows = ws.get_all_values()
+    rows = _get_all_values_with_retry(ws)
     header = rows[0] if rows else []
 
     existing_keys = _sheet_element_keys(rows, header)
@@ -245,7 +265,7 @@ def main() -> None:
                     continue
 
                 param_names = construction_params.get(construction, {}).get("param_names", [])
-                rows = ws.get_all_values()
+                rows = _get_all_values_with_retry(ws)
                 num_data_rows = max(0, len(rows) - 1)
 
                 # Check for structural drift before anything else
