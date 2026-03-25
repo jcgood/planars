@@ -310,6 +310,69 @@ def _append_pending_changes(new_entries: List[Dict]) -> None:
     )
 
 
+def _notify_pending_changes(entries: List[Dict]) -> None:
+    """Create or update a GitHub issue when pending_changes.json has new entries.
+
+    Requires `gh` CLI to be installed and authenticated. Silently skips if not
+    available — the warning printed to stdout is always the primary notification.
+    """
+    import subprocess as _sp
+
+    # Check gh is available
+    try:
+        _sp.run(["gh", "auth", "status"], capture_output=True, check=True)
+    except Exception:
+        return
+
+    # Build issue body
+    lines = [
+        f"{len(entries)} destructive change(s) detected by `import-sheets` and written "
+        f"to `pending_changes.json`. Run `python -m coding apply-pending` to review "
+        f"and apply each change.\n"
+    ]
+    for e in entries:
+        lines.append(f"### {e.get('lang_id', '?')} — {e.get('description', '')}")
+        diff = e.get("diff_summary", "").strip()
+        if diff:
+            lines.append(f"```\n{diff}\n```")
+        cmd = e.get("command", "")
+        if cmd:
+            lines.append(f"Command: `{cmd}`")
+        lines.append("")
+
+    body = "\n".join(lines)
+    body_file = ROOT / "pending_changes_issue.tmp"
+    body_file.write_text(body, encoding="utf-8")
+
+    try:
+        # Check for an existing open pending-changes issue
+        result = _sp.run(
+            ["gh", "issue", "list", "--label", "pending-changes",
+             "--state", "open", "--json", "number", "--jq", ".[0].number"],
+            capture_output=True, text=True,
+        )
+        existing_num = result.stdout.strip()
+        if existing_num and existing_num != "null":
+            _sp.run(
+                ["gh", "issue", "comment", existing_num, "--body-file", str(body_file)],
+                check=True,
+            )
+            print(f"   GitHub issue #{existing_num} updated with new pending changes.")
+        else:
+            r = _sp.run(
+                ["gh", "issue", "create",
+                 "--title", f"Pending destructive changes require coordinator approval",
+                 "--label", "pending-changes",
+                 "--body-file", str(body_file)],
+                capture_output=True, text=True, check=True,
+            )
+            print(f"   GitHub issue created: {r.stdout.strip()}")
+    except Exception as exc:
+        print(f"   (Could not create GitHub issue: {exc})")
+    finally:
+        body_file.unlink(missing_ok=True)
+
+
 def _download_planar_input_sheets(
     gc: gspread.Client,
     lang_id: str,
@@ -516,6 +579,7 @@ def main() -> None:
         _append_pending_changes(all_pending)
         print(f"\n⚠  {len(all_pending)} destructive change(s) written to pending_changes.json")
         print("   Review and apply with: python -m coding apply-pending")
+        _notify_pending_changes(all_pending)
 
     # Auto-apply safe downstream commands (new elements → update-sheets, etc.)
     if all_safe_cmds:

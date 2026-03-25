@@ -44,6 +44,29 @@ def _run_command(cmd: str) -> int:
     return result.returncode
 
 
+def _close_pending_issue() -> None:
+    """Close the open pending-changes GitHub issue, if any. Silently skips if gh unavailable."""
+    import subprocess as _sp
+    try:
+        _sp.run(["gh", "auth", "status"], capture_output=True, check=True)
+        result = _sp.run(
+            ["gh", "issue", "list", "--label", "pending-changes",
+             "--state", "open", "--json", "number", "--jq", ".[0].number"],
+            capture_output=True, text=True,
+        )
+        issue_num = result.stdout.strip()
+        if issue_num and issue_num != "null":
+            _sp.run(
+                ["gh", "issue", "comment", issue_num,
+                 "--body", "All pending changes applied — closing."],
+                check=True,
+            )
+            _sp.run(["gh", "issue", "close", issue_num], check=True)
+            print(f"GitHub issue #{issue_num} closed.")
+    except Exception:
+        pass
+
+
 def main() -> None:
     """Entry point for `python -m coding apply-pending`."""
     all_flag = "--all" in sys.argv
@@ -88,6 +111,9 @@ def main() -> None:
     _save_pending(remaining)
     applied = len(entries) - len(remaining)
     print(f"Applied {applied} of {len(entries)} change(s). {len(remaining)} still pending.")
+
+    if not remaining:
+        _close_pending_issue()
 
 
 if __name__ == "__main__":
