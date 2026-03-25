@@ -198,7 +198,9 @@ def _chart_html(data: dict, static: bool = False) -> str:
             title=data.get("display_name"),
         )
         if static:
-            png_bytes = fig.to_image(format="png", width=640, height=700, scale=2)
+            n_rows = spans["Test_Labels"].nunique() if "Test_Labels" in spans.columns else 4
+            height = max(400, 160 + n_rows * 160)
+            png_bytes = fig.to_image(format="png", width=640, height=height, scale=2)
             b64 = base64.b64encode(png_bytes).decode()
             return (
                 '<div class="chart-wrap">'
