@@ -88,6 +88,27 @@ Fix the flagged cells in the Google Sheet, then re-run the notebook to confirm t
 
 ---
 
+## Report notebook
+
+**Filename:** `report_{lang_id}.ipynb`
+**Audience:** Non-technical collaborators, coordinators
+**Location:** Language Drive folder
+
+One notebook per language. Generates a self-contained HTML report for that language and uploads it to Drive as `report_{lang_id}.html` — updating the file in-place so the shared URL stays stable.
+
+### How to use
+
+1. Open the report notebook link from your Drive folder
+2. Choose **Runtime → Run all**
+3. When prompted, sign in with your Google account and allow access
+4. The notebook prints the stable Drive URL for the HTML report at the end
+
+The HTML report can then be shared directly — recipients do not need a Google account or Colab to view it. The report includes a completeness table (which constructions are annotated), a domain chart, and a timestamp showing when it was generated.
+
+The report is also refreshed automatically by a nightly GitHub Actions workflow — see the [Coordinator guide](coordinator-guide.md#nightly-report-generation). Run the notebook manually when you want an on-demand update outside the nightly schedule.
+
+---
+
 ## How notebooks are generated
 
 Notebooks are built from templates in `notebooks/templates/`:
@@ -97,6 +118,7 @@ Notebooks are built from templates in `notebooks/templates/`:
 | `domains_boilerplate.ipynb` | Per-language contributor notebooks |
 | `all_languages_boilerplate.ipynb` | Coordinator notebook |
 | `validation_boilerplate.ipynb` | Per-language validation notebooks |
+| `report_boilerplate.ipynb` | Per-language report notebooks |
 
 To update the boilerplate (setup cell, chart cell, etc.), edit the template and re-run:
 

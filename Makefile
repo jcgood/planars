@@ -4,7 +4,7 @@
 
 .PHONY: help \
         generate-sheets import-sheets apply-pending validate-coding \
-        update-sheets sync-params restructure-sheets generate-notebooks \
+        update-sheets sync-params restructure-sheets generate-notebooks generate-reports \
         update-sheets-dry sync-params-dry restructure-dry \
         integrity-check check-codebook lookup-lang \
         test snapshots
@@ -21,6 +21,7 @@ help:
 	@echo "  sync-params           Sync criterion columns (--apply)"
 	@echo "  restructure-sheets    Archive + regenerate after planar changes (--apply)"
 	@echo "  generate-notebooks    Regenerate and upload Colab notebooks"
+	@echo "  generate-reports      Generate and upload HTML reports to Drive"
 	@echo ""
 	@echo "Dry runs (show what would change, no writes):"
 	@echo "  update-sheets-dry     Dry run for update-sheets"
@@ -70,6 +71,9 @@ restructure-sheets:
 
 generate-notebooks:
 	python -m coding generate-notebooks
+
+generate-reports:
+	python -m coding generate-reports --apply
 
 # Dry runs
 

@@ -169,11 +169,12 @@ The `biunique=n` qualification identifies elements that are pieces of a circumfi
 `planars.charts` provides functions for visualizing span results across all languages:
 
 ```python
-from planars.charts import collect_all_spans, charts_by_language
+from planars.reports import project_spans
+from planars.charts import charts_by_language
 
-df, lang_meta = collect_all_spans(repo_root)
+df, lang_meta = project_spans(source="local", repo_root=repo_root)
 for lang_id, fig in charts_by_language(df, lang_meta).items():
     fig.show()
 ```
 
-`collect_all_spans` runs all analyses over all filled TSVs in `coded_data/` and returns a DataFrame with columns `Language`, `Test_Labels`, `Analysis`, `Left_Edge`, `Right_Edge`, `Size`, plus a `lang_meta` dict keyed by language ID (each holding `keystone_pos` and `pos_to_name`). `collect_all_spans_from_sheets(gc, manifest)` does the same but reads directly from Google Sheets — this is what the Colab notebooks use. See the [Notebooks guide](notebooks.md) for how charts appear in practice.
+`project_spans` runs all analyses over all filled TSVs in `coded_data/` and returns a DataFrame with columns `Language`, `Test_Labels`, `Analysis`, `Left_Edge`, `Right_Edge`, `Size`, plus a `lang_meta` dict keyed by language ID (each holding `keystone_pos` and `pos_to_name`). Use `source="sheets"` with `gc` and `manifest` arguments to read directly from Google Sheets — this is what the Colab notebooks use. `language_spans(lang_id, ...)` does the same for a single language. Both live in `planars.reports`, which is the canonical data layer; `planars.charts` handles visualization only. See the [Notebooks guide](notebooks.md) for how charts appear in practice.

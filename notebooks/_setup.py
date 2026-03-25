@@ -29,6 +29,7 @@ def show_results(folder, derive_fn, fmt_fn, pattern="*.tsv"):
         print(fmt_fn(result))
         print()
 
-from planars.charts import collect_all_spans, domain_chart, charts_by_language
+from planars.reports import collect_all_spans
+from planars.charts import domain_chart, charts_by_language
 
 print(f"Ready. Repo root: {REPO_ROOT}")

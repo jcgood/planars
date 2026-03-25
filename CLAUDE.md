@@ -58,6 +58,10 @@ python -m coding restructure-sheets       # archive + regenerate after planar ch
 python -m coding integrity-check          # full project health report (--lang, --sheets)
 python -m coding check-codebook           # criterion/module/diagnostics consistency
 
+# Notebooks and reports
+python -m coding generate-notebooks       # regenerate and upload Colab notebooks (--apply)
+python -m coding generate-reports         # generate and upload HTML reports to Drive (--apply)
+
 # Other
 python -m coding lookup-lang arao1248     # fetch + cache Glottolog metadata (--refresh, --all)
 python -m coding setup-root-folder        # one-time Drive folder setup
