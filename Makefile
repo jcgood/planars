@@ -1,32 +1,38 @@
 # Planars coordinator command aliases.
 # Activate the project venv before running: source .venv/bin/activate
 # For commands with flags not covered here, use: python -m coding <command> --help
+#
+# Commands that write to Google Sheets or Drive default to dry run.
+# Use the -apply variant to execute: e.g. make update-sheets-apply
 
 .PHONY: help \
         generate-sheets import-sheets apply-pending validate-coding \
-        update-sheets sync-params restructure-sheets generate-notebooks generate-reports \
-        update-sheets-dry sync-params-dry restructure-dry \
+        update-sheets update-sheets-apply \
+        sync-params sync-params-apply \
+        restructure-sheets restructure-sheets-apply \
+        generate-notebooks generate-notebooks-apply \
+        generate-reports generate-reports-apply \
         integrity-check check-codebook lookup-lang \
         test snapshots
 
 help:
 	@echo "Sheet lifecycle:"
-	@echo "  generate-sheets       Create annotation sheets for new classes"
-	@echo "  import-sheets         Download filled sheets → TSVs"
-	@echo "  apply-pending         Review and apply pending destructive changes"
-	@echo "  validate-coding       Re-validate sheets and update pink highlights"
+	@echo "  generate-sheets             Create annotation sheets for new classes"
+	@echo "  import-sheets               Download filled sheets → TSVs"
+	@echo "  apply-pending               Review and apply pending destructive changes"
+	@echo "  validate-coding             Re-validate sheets and update pink highlights"
 	@echo ""
-	@echo "Sheet maintenance (write to Google Sheets — dry run first):"
-	@echo "  update-sheets         Add missing rows to sheets (--apply)"
-	@echo "  sync-params           Sync criterion columns (--apply)"
-	@echo "  restructure-sheets    Archive + regenerate after planar changes (--apply)"
-	@echo "  generate-notebooks    Regenerate and upload Colab notebooks"
-	@echo "  generate-reports      Generate and upload HTML reports to Drive"
-	@echo ""
-	@echo "Dry runs (show what would change, no writes):"
-	@echo "  update-sheets-dry     Dry run for update-sheets"
-	@echo "  sync-params-dry       Dry run for sync-params"
-	@echo "  restructure-dry       Dry run for restructure-sheets"
+	@echo "Sheet maintenance (bare target = dry run; -apply variant writes):"
+	@echo "  update-sheets               Dry run: show missing rows"
+	@echo "  update-sheets-apply         Add missing rows to sheets"
+	@echo "  sync-params                 Dry run: show criterion column changes"
+	@echo "  sync-params-apply           Sync criterion columns"
+	@echo "  restructure-sheets          Dry run: show restructure plan"
+	@echo "  restructure-sheets-apply    DESTRUCTIVE: archive + regenerate sheets"
+	@echo "  generate-notebooks          Dry run: show what would be generated"
+	@echo "  generate-notebooks-apply    Regenerate and upload Colab notebooks"
+	@echo "  generate-reports            Dry run: show languages to be reported"
+	@echo "  generate-reports-apply      Generate and upload PDF reports to Drive"
 	@echo ""
 	@echo "Health checks:"
 	@echo "  integrity-check       Full project health report"
@@ -54,37 +60,41 @@ validate-coding:
 	python -m coding validate-coding
 
 # ---------------------------------------------------------------------------
-# Sheet maintenance  (write changes — review dry runs first)
+# Sheet maintenance — dry run by default; -apply variant writes
 # Rename/split/merge/remove flags are not aliased; use full command directly.
 # ---------------------------------------------------------------------------
 
 update-sheets:
+	python -m coding update-sheets
+
+update-sheets-apply:
 	python -m coding update-sheets --apply
 
 sync-params:
+	python -m coding sync-params
+
+sync-params-apply:
 	python -m coding sync-params --apply
 
 # DESTRUCTIVE: archives existing sheets before regenerating.
 # For rename/element-rename: python -m coding restructure-sheets --rename-map ...
 restructure-sheets:
+	python -m coding restructure-sheets
+
+restructure-sheets-apply:
 	python -m coding restructure-sheets --apply
 
 generate-notebooks:
 	python -m coding generate-notebooks
 
+generate-notebooks-apply:
+	python -m coding generate-notebooks --apply
+
 generate-reports:
+	python -m coding generate-reports
+
+generate-reports-apply:
 	python -m coding generate-reports --apply
-
-# Dry runs
-
-update-sheets-dry:
-	python -m coding update-sheets
-
-sync-params-dry:
-	python -m coding sync-params
-
-restructure-dry:
-	python -m coding restructure-sheets
 
 # ---------------------------------------------------------------------------
 # Health checks

@@ -241,21 +241,25 @@ python -m coding generate-notebooks
 
 Regenerates and uploads contributor (`domains_{lang_id}.ipynb`), coordinator (`all_languages.ipynb`), validation (`validation_{lang_id}.ipynb`), and report (`report_{lang_id}.ipynb`) notebooks to Drive. Also runs automatically at the end of `generate-sheets`, `sync-params --apply`, and `restructure-sheets --apply`. See the [Notebooks guide](notebooks.md) for what each notebook contains.
 
-### Generating HTML reports
+### Generating PDF reports
 
 ```bash
 python -m coding generate-reports           # dry run — show what would be uploaded
-python -m coding generate-reports --apply   # generate and upload HTML reports to Drive
+python -m coding generate-reports --apply   # generate and upload PDF reports to Drive
 ```
 
-Generates a self-contained HTML report for each language and uploads it to the language's Drive folder as `report_{lang_id}.html`. The file is created once and updated in-place on subsequent runs, so shared URLs stay stable. Non-technical collaborators can bookmark the Drive URL and always see the current state of span results and annotation completeness without opening a notebook.
+Or via Make: `make generate-reports` (dry run) / `make generate-reports-apply` (upload).
+
+Generates a PDF report for each language and uploads it to the language's Drive folder as `report_{lang_id}.pdf`. The file is created once and updated in-place on subsequent runs, so shared URLs stay stable. PDFs render natively in the Drive viewer — collaborators can open the link directly without downloading anything.
 
 Reports contain:
 - A completeness table showing which constructions are annotated vs. blank for each analysis class
 - A domain chart showing span results for all analyses
 - A timestamp at the top showing when the report was generated
 
-**Sharing the report URL with a collaborator:** In Drive, right-click `report_{lang_id}.html` → **Get link** → set to "Anyone with the link can view", then share that link. The file ID never changes between updates, so the link remains valid after every refresh.
+**Sharing the report URL with a collaborator:** In Drive, right-click `report_{lang_id}.pdf` → **Get link** → set to "Anyone with the link can view", then share that link. The file ID never changes between updates, so the link remains valid after every refresh.
+
+**Local setup:** `generate-reports --apply` requires WeasyPrint system libraries. On macOS: `brew install pango cairo`. These are installed automatically in the nightly GitHub Actions workflow.
 
 A lightweight Colab notebook (`report_{lang_id}.ipynb`) in the language Drive folder lets collaborators regenerate the report on demand — useful when they want to see the latest results immediately without waiting for the nightly automated run. See the [Notebooks guide](notebooks.md#report-notebook) for details.
 
@@ -376,9 +380,9 @@ You can also trigger the workflow manually from the Actions tab at any time.
 
 ### Nightly report generation
 
-A second daily workflow (`.github/workflows/generate-reports.yml`) runs `generate-reports --apply` at 06:00 UTC and refreshes all language HTML reports on Drive. It uses the **same four secrets** as the sheet-validation workflow — if those are already set, no additional configuration is needed.
+A second daily workflow (`.github/workflows/generate-reports.yml`) runs `generate-reports --apply` at 06:00 UTC and refreshes all language PDF reports on Drive. It uses the **same four secrets** as the sheet-validation workflow — if those are already set, no additional configuration is needed.
 
-You can trigger the workflow manually from the Actions tab at any time. The report timestamp at the top of each HTML file shows when it was last regenerated.
+You can trigger the workflow manually from the Actions tab at any time. The report timestamp at the top of each PDF shows when it was last regenerated.
 
 **Keeping `PLANARS_DRIVE_CONFIG` current:** As with `sheet-validation.yml`, copy the updated `drive_config.json` contents into the secret after any `generate-sheets` run that creates new language folders or updates file IDs.
 
