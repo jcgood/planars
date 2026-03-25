@@ -869,6 +869,13 @@ def main() -> None:
 
     print(f"\nShare each language folder with your specialist (see folder URLs above).")
 
+    print(
+        "\n⚠  drive_config.json was updated. If you have the scheduled sheet-validation\n"
+        "   workflow enabled, update the PLANARS_DRIVE_CONFIG GitHub secret with the\n"
+        "   new contents of drive_config.json:\n"
+        "   GitHub → Settings → Secrets and variables → Actions → PLANARS_DRIVE_CONFIG"
+    )
+
     from .generate_notebooks import regenerate_notebooks
     regenerate_notebooks()
 

@@ -295,16 +295,18 @@ CI also runs `check_snapshots.py` as a dedicated step, so stale snapshots will f
 
 A daily GitHub Actions workflow (`.github/workflows/sheet-validation.yml`) runs `validate-coding` against all live Google Sheets and opens a GitHub issue (labeled `sheet-validation`) if problems are found. When the issue is resolved and the next daily run comes back clean, the issue is closed automatically.
 
-To enable it, add the following four secrets under **Settings → Secrets and variables → Actions** in the GitHub repo:
+To enable it, add the following four secrets under **Settings → Secrets and variables → Actions** in the GitHub repo (`https://github.com/jcgood/planars` → Settings → Secrets and variables → Actions → New repository secret):
 
-| Secret | Value |
-|--------|-------|
-| `PLANARS_DATA_TOKEN` | PAT with read access to `jcgood/planars-data` (already used by CI) |
-| `PLANARS_OAUTH_CREDENTIALS` | Full contents of `~/.config/planars/oauth_credentials.json` |
-| `GOOGLE_OAUTH_TOKEN` | Full contents of `~/.config/gspread/authorized_user.json` (created on first OAuth login) |
-| `PLANARS_DRIVE_CONFIG` | Full contents of `drive_config.json` |
+| Secret | Where to get it |
+|--------|-----------------|
+| `PLANARS_DATA_TOKEN` | Already exists — used by the existing CI workflow to read `jcgood/planars-data`. No action needed. |
+| `PLANARS_OAUTH_CREDENTIALS` | Contents of `~/.config/planars/oauth_credentials.json` on your laptop — the OAuth client secret downloaded from Google Cloud Console during initial setup. |
+| `GOOGLE_OAUTH_TOKEN` | Contents of `~/.config/gspread/authorized_user.json` on your laptop — written by gspread after your first interactive login. Contains a refresh token, so the workflow can renew its Google access silently without browser interaction. Stays valid as long as the workflow runs at least once every few months. |
+| `PLANARS_DRIVE_CONFIG` | Contents of `drive_config.json` in the repo root — tells the workflow how to find the Drive manifest and language folders. |
 
-Keep `PLANARS_DRIVE_CONFIG` in sync with your local `drive_config.json` whenever `generate-sheets` adds a new language or updates sheet IDs. You can also trigger the workflow manually from the Actions tab at any time.
+**Keeping `PLANARS_DRIVE_CONFIG` current:** `generate-sheets` rewrites `drive_config.json` whenever it creates a new language folder or updates sheet IDs. After any such run, copy the updated file contents into the secret. `generate-sheets` prints a reminder at the end of each run when the secret may need updating.
+
+You can also trigger the workflow manually from the Actions tab at any time.
 
 ---
 
