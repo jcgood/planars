@@ -267,6 +267,11 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 
 Run `gh issue list` for the full list. Key active issues:
 
+- **#88** — Archive planars data as versioned CLDF release on Zenodo (depends on #84).
+- **#87** — Add cross-language annotator assignment and status tracking (Drive sheet or yaml in planars-data).
+- **#86** — Document blank / `?` / `na` value semantics in codebook and guides (docs only).
+- **#85** — Add `Source` column to annotation sheets for value-level provenance (connects to #81).
+- **#84** — Add `export-cldf` command to produce a CLDF StructureDataset from planars annotation data.
 - **#81** — Add collaborator notes alongside annotation sheets: per-language Google Doc with tabs per class/construction; download notes in `import-sheets` to surface uncertain codings and propose refinements. See also #68.
 - **#80** — Auto-generate schema structure diagrams from YAML schema files. Initial implementation in `generate_diagram.py` (class taxonomy with criteria + language instances); layout refinement still needed.
 - **#78** — `collection_required` field added and check implemented; inert until Adam sets true/false values per class.
@@ -275,7 +280,7 @@ Run `gh issue list` for the full list. Key active issues:
 - **#72** — Prepare Chichewa (nyan1308) for onboarding. `[Jeff]`
 - **#71** — New analysis module: intonational domain. `[diagnostics]`
 - **#70** — New analysis module: tonosegmental domain. `[diagnostics]`
-- **#68** — Survey open typology codebases (Grambank, CLDF, AUTOTYP) for design ideas; language report format for production onboarding.
+- **#68** — Survey open typology codebases (Grambank, CLDF, AUTOTYP) for design ideas. Completed; produced issues #84–#88.
 - **#9** — Fill in `[PLACEHOLDER]` and `[NEEDS REVIEW]` entries in schema files. Requires input from Adam. `[needs-input]`
 
 ## Work phases
