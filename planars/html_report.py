@@ -56,7 +56,8 @@ header .timestamp {
     color: #666;
 }
 main { max-width: 960px; margin: 0 auto; padding: 0 1.5rem; }
-section { margin-bottom: 2.5rem; break-inside: avoid; }
+section { margin-bottom: 2.5rem; }
+.completeness-section { break-inside: avoid; }
 h2 {
     font-size: 1.1rem;
     font-weight: 600;
@@ -198,8 +199,8 @@ def _chart_html(data: dict, static: bool = False) -> str:
             title=data.get("display_name"),
         )
         if static:
-            n_rows = spans["Test_Labels"].nunique() if "Test_Labels" in spans.columns else 4
-            height = max(400, 160 + n_rows * 160)
+            n_rows = spans["Test_Labels"].nunique() if "Test_Labels" in spans.columns else 10
+            height = max(400, 200 + n_rows * 45)
             png_bytes = fig.to_image(format="png", width=640, height=height, scale=2)
             b64 = base64.b64encode(png_bytes).decode()
             return (
@@ -235,14 +236,14 @@ def render_language_report(data: dict, static: bool = False) -> str:
     completeness_html = ""
     if data.get("completeness"):
         completeness_html = (
-            "<section>"
+            '<section class="completeness-section">'
             "<h2>Annotation Completeness</h2>"
             + _completeness_table(data["completeness"], data.get("status"))
             + "</section>"
         )
     else:
         completeness_html = (
-            "<section>"
+            '<section class="completeness-section">'
             "<h2>Annotation Completeness</h2>"
             '<p class="no-data">No annotation data found.</p>'
             "</section>"
