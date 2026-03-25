@@ -78,9 +78,10 @@ thead th {
 tbody td { padding: 0.5rem 0.9rem; border-bottom: 1px solid #f0f0f0; }
 tbody tr:last-child td { border-bottom: none; }
 tbody tr:hover { background: #fafafa; }
-.ok    { color: #1a7f3c; font-weight: 600; }
-.blank { color: #b45300; font-weight: 600; }
-.error { color: #c0392b; font-weight: 600; }
+.ok      { color: #1a7f3c; font-weight: 600; }
+.blank   { color: #b45300; font-weight: 600; }
+.error   { color: #c0392b; font-weight: 600; }
+.missing { color: #888; font-style: italic; }
 .badge {
     display: inline-block;
     padding: 0.15rem 0.55rem;
@@ -129,7 +130,13 @@ def _completeness_table(completeness: dict, status: Optional[dict]) -> str:
             label_con   = _html.escape(construction)
             con_status  = (status or {}).get(class_name, {}).get(construction, "")
 
-            if "error" in stats:
+            if stats.get("missing"):
+                rows.append(
+                    f"<tr><td>{label_class}</td><td>{label_con}</td>"
+                    f'<td><span class="missing">not started</span></td>'
+                    f"<td>{_badge(con_status)}</td></tr>"
+                )
+            elif "error" in stats:
                 rows.append(
                     f"<tr><td>{label_class}</td><td>{label_con}</td>"
                     f"<td colspan='2' class='error'>Error: {_html.escape(str(stats['error']))}</td>"

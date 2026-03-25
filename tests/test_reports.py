@@ -27,6 +27,7 @@ pytestmark = pytest.mark.skipif(
 
 from planars.reports import (
     _tab_completeness,
+    _read_expected_constructions,
     language_completeness,
     language_report_data,
     language_spans,
@@ -226,6 +227,126 @@ class TestLanguageCompleteness:
     def test_unknown_source_raises(self):
         with pytest.raises(ValueError, match="Unknown source"):
             language_completeness("stan1293", source="bad", repo_root=ROOT)
+
+    def test_invariant_skips_missing_constructions(self):
+        # missing=True constructions have total=filled=blank=0 — invariant still holds.
+        result = language_completeness("arao1248", source="local", repo_root=ROOT)
+        for class_name, constructions in result.items():
+            for construction, stats in constructions.items():
+                if not stats.get("missing") and "error" not in stats:
+                    assert stats["total"] == stats["filled"] + stats["blank"]
+
+
+# ---------------------------------------------------------------------------
+# Layer 1 completeness (_read_expected_constructions + missing constructions)
+# ---------------------------------------------------------------------------
+
+class TestLayer1Completeness:
+    def _make_lang_dir(self, tmp_path, diagnostics_rows: list[dict],
+                       tsv_files: dict | None = None) -> Path:
+        """Create a minimal synthetic lang dir with diagnostics and optional TSVs."""
+        lang_id = "test1234"
+        lang_dir = tmp_path / "coded_data" / lang_id
+        planar_input = lang_dir / "planar_input"
+        planar_input.mkdir(parents=True)
+
+        import csv, io
+        rows = diagnostics_rows
+        if rows:
+            diag_path = planar_input / f"diagnostics_{lang_id}.tsv"
+            with open(diag_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(f, fieldnames=["Class", "Language", "Constructions", "Criteria"],
+                                        delimiter="\t")
+                writer.writeheader()
+                for row in rows:
+                    writer.writerow({**{"Language": lang_id, "Criteria": "crit"}, **row})
+
+        if tsv_files:
+            for (class_name, construction), content in tsv_files.items():
+                class_dir = lang_dir / class_name
+                class_dir.mkdir(parents=True, exist_ok=True)
+                tsv_path = class_dir / f"{construction}.tsv"
+                tsv_path.write_text(content, encoding="utf-8")
+
+        return lang_dir
+
+    def _minimal_tsv(self) -> str:
+        return (
+            "Element\tPosition_Name\tPosition_Number\tcrit\n"
+            "elem-L\tv:left\t3\ty\n"
+            "ks\tv:verbstem\t5\tNA\n"
+            "elem-R\tv:right\t7\tn\n"
+        )
+
+    def test_read_expected_constructions_basic(self, tmp_path):
+        lang_dir = self._make_lang_dir(tmp_path, [
+            {"Class": "ciscategorial", "Constructions": "general"},
+            {"Class": "subspanrepetition", "Constructions": "aux, main"},
+        ])
+        result = _read_expected_constructions(lang_dir)
+        assert result["ciscategorial"] == ["general"]
+        assert result["subspanrepetition"] == ["aux", "main"]
+
+    def test_read_expected_constructions_missing_file(self, tmp_path):
+        lang_dir = tmp_path / "coded_data" / "nofile1234"
+        lang_dir.mkdir(parents=True)
+        assert _read_expected_constructions(lang_dir) == {}
+
+    def test_missing_construction_appears_in_completeness(self, tmp_path):
+        # diagnostics declares two constructions; only one has a TSV
+        lang_dir = self._make_lang_dir(
+            tmp_path,
+            [{"Class": "ciscategorial", "Constructions": "general, other_construction"}],
+            tsv_files={("ciscategorial", "general"): self._minimal_tsv()},
+        )
+        repo_root = tmp_path
+        result = language_completeness("test1234", source="local", repo_root=repo_root)
+        assert "ciscategorial" in result
+        # 'general' should have real stats (TSV present)
+        assert result["ciscategorial"]["general"].get("missing") is None
+        assert result["ciscategorial"]["general"]["total"] > 0
+        # 'other_construction' should be flagged as missing
+        assert result["ciscategorial"]["other_construction"]["missing"] is True
+        assert result["ciscategorial"]["other_construction"]["total"] == 0
+
+    def test_all_constructions_present_no_missing_flag(self, tmp_path):
+        lang_dir = self._make_lang_dir(
+            tmp_path,
+            [{"Class": "ciscategorial", "Constructions": "general"}],
+            tsv_files={("ciscategorial", "general"): self._minimal_tsv()},
+        )
+        result = language_completeness("test1234", source="local", repo_root=tmp_path)
+        assert "missing" not in result["ciscategorial"]["general"]
+
+    def test_extra_tsv_not_in_diagnostics_still_included(self, tmp_path):
+        # TSV exists but class isn't in diagnostics — should appear without missing flag
+        lang_dir = self._make_lang_dir(
+            tmp_path,
+            [],  # no diagnostics rows
+            tsv_files={("ciscategorial", "general"): self._minimal_tsv()},
+        )
+        result = language_completeness("test1234", source="local", repo_root=tmp_path)
+        assert "ciscategorial" in result
+        assert "missing" not in result["ciscategorial"]["general"]
+
+    def test_missing_construction_ordering(self, tmp_path):
+        # Diagnostics order should be preserved: expected constructions come first
+        lang_dir = self._make_lang_dir(
+            tmp_path,
+            [{"Class": "ciscategorial", "Constructions": "alpha, beta, gamma"}],
+            tsv_files={("ciscategorial", "beta"): self._minimal_tsv()},
+        )
+        result = language_completeness("test1234", source="local", repo_root=tmp_path)
+        constructions = list(result["ciscategorial"].keys())
+        assert constructions == ["alpha", "beta", "gamma"]
+
+    def test_whole_class_missing(self, tmp_path):
+        # diagnostics declares a class but no TSVs exist at all for it
+        lang_dir = self._make_lang_dir(tmp_path, [
+            {"Class": "ciscategorial", "Constructions": "general"},
+        ])
+        result = language_completeness("test1234", source="local", repo_root=tmp_path)
+        assert result["ciscategorial"]["general"]["missing"] is True
 
 
 # ---------------------------------------------------------------------------

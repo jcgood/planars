@@ -388,6 +388,33 @@ def collect_all_spans_from_sheets(gc, manifest) -> Tuple[pd.DataFrame, dict]:
 # Columns that are structural (position metadata), not criterion values.
 _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
 
+
+def _read_expected_constructions(lang_dir: Path) -> Dict[str, list]:
+    """Read diagnostics_{lang_id}.tsv and return {class_name: [constructions]}.
+
+    Returns {} if the diagnostics file is absent or cannot be parsed.
+    Used by language_completeness to determine Layer 1 completeness: which
+    constructions are expected but not yet present in coded_data/.
+    """
+    lang_id = lang_dir.name
+    diag_path = lang_dir / "planar_input" / f"diagnostics_{lang_id}.tsv"
+    if not diag_path.exists():
+        return {}
+    try:
+        df = pd.read_csv(diag_path, sep="\t", dtype=str, keep_default_na=False)
+        result: Dict[str, list] = {}
+        for _, row in df.iterrows():
+            class_name = str(row.get("Class", "")).strip()
+            constructions_raw = str(row.get("Constructions", "")).strip()
+            if not class_name or not constructions_raw:
+                continue
+            constructions = [c.strip() for c in constructions_raw.split(",") if c.strip()]
+            if constructions:
+                result.setdefault(class_name, []).extend(constructions)
+        return result
+    except Exception:
+        return {}
+
 # Trailing sheet columns that are not annotation criteria (e.g. free-text notes).
 # Matches the definition in coding/generate_sheets.py.
 _TRAILING_COLS = {"Comments"}
@@ -436,35 +463,75 @@ def language_completeness(
 ) -> Dict[str, Dict[str, dict]]:
     """Per-construction completeness stats for one language.
 
+    Covers three layers for source="local":
+      Layer 1 — construction completeness: constructions declared in
+        diagnostics_{lang_id}.tsv but not yet present in coded_data/ are
+        included with {"total": 0, "filled": 0, "blank": 0, "missing": True}.
+      Layer 2 — cell completeness: for present TSVs, counts filled vs. blank
+        criterion cells (excluding Comments and structural columns).
+      Layer 3 — structural completeness: not covered here; use validate-coding.
+
     Returns:
         {class_name: {construction: {"total": int, "filled": int, "blank": int}}}
 
-    On per-tab load errors, {"total": 0, "filled": 0, "blank": 0, "error": str}
-    is returned for that construction so callers can surface the problem.
+    Extra keys in the per-construction dict:
+        "missing": True  — construction expected but TSV not yet present (Layer 1)
+        "error": str     — TSV present but could not be loaded
     """
     if source == "local":
         if repo_root is None:
             raise ValueError("repo_root is required when source='local'")
         lang_dir = Path(repo_root) / "coded_data" / lang_id
+
+        # Layer 1: expected constructions from diagnostics_{lang_id}.tsv.
+        expected = _read_expected_constructions(lang_dir)
+
+        # Collect all class names: declared in diagnostics + present in coded_data.
+        present_dirs = {
+            d.name for d in lang_dir.iterdir()
+            if d.is_dir() and d.name not in {"planar_input", "archive"}
+        } if lang_dir.exists() else set()
+        all_class_names = sorted(set(expected.keys()) | present_dirs)
+
         result: Dict[str, Dict[str, dict]] = {}
-        for class_dir in sorted(lang_dir.iterdir()):
-            if not class_dir.is_dir() or class_dir.name in {"planar_input", "archive"}:
+        for class_name in all_class_names:
+            class_dir = lang_dir / class_name
+            exp_constructions = expected.get(class_name, [])
+            actual: Dict[str, Path] = (
+                {tsv.stem: tsv for tsv in sorted(class_dir.glob("*.tsv"))}
+                if class_dir.exists() else {}
+            )
+            # Ordered union: expected first (preserving diagnostics order), then extras.
+            seen: set = set()
+            ordered: list = []
+            for c in exp_constructions:
+                if c not in seen:
+                    ordered.append(c)
+                    seen.add(c)
+            for c in sorted(actual):
+                if c not in seen:
+                    ordered.append(c)
+                    seen.add(c)
+            if not ordered:
                 continue
-            class_name = class_dir.name
             constructions: Dict[str, dict] = {}
-            for tsv in sorted(class_dir.glob("*.tsv")):
-                construction = tsv.stem
-                try:
-                    data_df, _, _, crit_cols, _ = load_filled_tsv(
-                        tsv, required_criteria=set(), strict=False
-                    )
-                    constructions[construction] = _tab_completeness(data_df, crit_cols)
-                except Exception as e:
+            for construction in ordered:
+                if construction in actual:
+                    try:
+                        data_df, _, _, crit_cols, _ = load_filled_tsv(
+                            actual[construction], required_criteria=set(), strict=False
+                        )
+                        constructions[construction] = _tab_completeness(data_df, crit_cols)
+                    except Exception as e:
+                        constructions[construction] = {
+                            "total": 0, "filled": 0, "blank": 0, "error": str(e)
+                        }
+                else:
+                    # Expected by diagnostics but not yet present in coded_data (Layer 1).
                     constructions[construction] = {
-                        "total": 0, "filled": 0, "blank": 0, "error": str(e)
+                        "total": 0, "filled": 0, "blank": 0, "missing": True
                     }
-            if constructions:
-                result[class_name] = constructions
+            result[class_name] = constructions
         return result
 
     elif source == "sheets":
