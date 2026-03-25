@@ -267,6 +267,7 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 
 Run `gh issue list` for the full list. Key active issues:
 
+- **#89** — HTML reports for non-technical collaborators (John-facing): refreshable via lightweight Colab notebook (on-demand) and nightly GitHub Action; prominent timestamp at top; stable Drive URL. Depends on #22 (shared computation layer) and reuses #76 credentials.
 - **#88** — Archive planars data as versioned CLDF release on Zenodo (depends on #84).
 - **#87** — Add cross-language annotator assignment and status tracking (Drive sheet or yaml in planars-data).
 - **#86** — Document blank / `?` / `na` value semantics in codebook and guides (docs only).
