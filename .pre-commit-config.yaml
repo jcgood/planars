@@ -1,6 +1,14 @@
 repos:
   - repo: local
     hooks:
+      - id: regenerate-snapshots
+        name: Regenerate snapshots for changed analyses
+        entry: .venv/bin/python regenerate_snapshots_hook.py
+        language: system
+        pass_filenames: false
+        files: ^planars/.*\.py$
+        stages: [pre-commit]
+
       - id: check-snapshots
         name: Check snapshots are up to date
         entry: .venv/bin/python check_snapshots.py

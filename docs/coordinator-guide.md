@@ -331,16 +331,21 @@ git diff tests/snapshots/       # review what changed
 
 Run `pytest` after any change to an analysis module, `io.py`, or `spans.py`.
 
-### Pre-push snapshot check (recommended)
+### Local snapshot hooks (recommended)
 
-A pre-push hook catches stale snapshots locally before they reach CI. Install it once after setting up the project:
+Two local hooks keep snapshots in sync automatically. Install both at once after setting up the project:
 
 ```bash
 .venv/bin/pip install pre-commit
-.venv/bin/pre-commit install --hook-type pre-push
+.venv/bin/pre-commit install              # pre-commit hook (auto-regenerate)
+.venv/bin/pre-commit install --hook-type pre-push   # pre-push hook (safety check)
 ```
 
-After installation, `git push` will automatically run `check_snapshots.py` and block the push if any snapshots are stale, with a message showing which analyses differ. Snapshots go stale when analysis logic changes (a module, `io.py`, or `spans.py`) but `generate_snapshots.py` has not been re-run — the most common case is fixing a qualification rule and forgetting to regenerate before pushing. If the diff is intentional, regenerate snapshots and include them in the push:
+**Pre-commit hook (`regenerate-snapshots`):** Triggers whenever any `planars/*.py` file is staged. Regenerates all snapshots and stages the updated files automatically, so snapshot updates are always included in the same commit as the analysis change. A summary of which files changed is printed at the end of the commit.
+
+**Pre-push hook (`check-snapshots`):** Runs `check_snapshots.py` against the full local state before every push. Blocks the push if any snapshots are stale — a safety net for cases the pre-commit hook didn't catch (e.g. a data-only change in `planars-data`).
+
+If the pre-push hook blocks and the diff is intentional, regenerate and commit manually before pushing:
 
 ```bash
 python generate_snapshots.py
@@ -350,7 +355,7 @@ git commit -m "Update snapshots: ..."
 git push
 ```
 
-CI also runs `check_snapshots.py` as a dedicated step, so stale snapshots will fail the build even if the hook is not installed.
+CI also runs `check_snapshots.py` as a dedicated step, so stale snapshots will fail the build even if neither hook is installed.
 
 ### Scheduled sheet validation
 
