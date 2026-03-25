@@ -185,6 +185,10 @@ Use Glottolog metadata proactively for:
 
 `render_codebook.py` at the repo root renders the schemas as human-readable Markdown (reads from all four schema files): `python render_codebook.py` (stdout) or `python render_codebook.py codebook.md` (file).
 
+`generate_diagram.py` at the repo root generates a Graphviz diagram of the analysis class taxonomy: classes grouped by domain type with diagnostic criteria listed inside each node, and language instances connected on the right with construction names on edges for construction-specific classes. Output: `python generate_diagram.py out.svg` (or `.pdf`, `.dot`, `.png`). Requires `dot` (Graphviz) to be installed.
+
+`Makefile` at the repo root provides short `make` aliases for all coordinator commands. Run `make help` for the full list. The venv must be activated before using `make`.
+
 ## NonCollaborative/
 
 Personal working area not part of the shared analysis pipeline:
@@ -264,7 +268,7 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 Run `gh issue list` for the full list. Key active issues:
 
 - **#81** — Add collaborator notes alongside annotation sheets: per-language Google Doc with tabs per class/construction; download notes in `import-sheets` to surface uncertain codings and propose refinements. See also #68.
-- **#80** — Auto-generate schema structure diagrams from YAML schema files.
+- **#80** — Auto-generate schema structure diagrams from YAML schema files. Initial implementation in `generate_diagram.py` (class taxonomy with criteria + language instances); layout refinement still needed.
 - **#78** — `collection_required` field added and check implemented; inert until Adam sets true/false values per class.
 - **#76** — Proactive detection of unauthorized sheet edits: `.github/workflows/sheet-validation.yml` runs `validate-coding` daily; opens/closes a `sheet-validation` issue automatically. Requires four GitHub secrets to be set — see coordinator guide.
 - **#75** — Auto-trigger snapshot regeneration when analysis output changes.

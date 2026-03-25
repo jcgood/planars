@@ -281,6 +281,22 @@ For commands that accept extra flags not covered by the aliases (e.g. `--rename-
 
 ---
 
+## Schema utilities
+
+Two standalone scripts in the repo root generate human-readable views of the schema files:
+
+```bash
+python render_codebook.py              # print schema reference to stdout
+python render_codebook.py codebook.md # write to file
+
+python generate_diagram.py out.svg    # analysis class taxonomy diagram (requires Graphviz)
+python generate_diagram.py out.pdf    # same, PDF output
+```
+
+`generate_diagram.py` shows all 15 analysis classes grouped by domain type, with diagnostic criteria inside each node and the languages that instantiate each class connected on the right.
+
+---
+
 ## Regression testing
 
 ```bash
