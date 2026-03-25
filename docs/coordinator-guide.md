@@ -160,6 +160,8 @@ python -m coding apply-pending           # prompt for each change
 python -m coding apply-pending --all     # apply all without prompting
 ```
 
+When destructive changes are detected, `import-sheets` automatically opens a GitHub issue labeled `pending-changes` (or comments on an existing open one) with a summary of each change. When `apply-pending` clears all entries, it closes the issue. This requires `gh` to be installed and authenticated; if it isn't, the terminal warning is the only notification.
+
 If any annotation warnings are found, they are written to `import_errors/{lang}_{timestamp}.txt` as well as printed to the terminal. Invalid cells are highlighted pink in the Google Sheet regardless of `--force`.
 
 ### 4. Run analyses
