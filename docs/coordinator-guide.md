@@ -261,6 +261,26 @@ Verifies that criterion names in `schemas/diagnostic_criteria.yaml`, analysis mo
 
 ---
 
+## Makefile aliases
+
+A `Makefile` in the repo root provides short aliases for all common commands. Run `make help` for the full list. Examples:
+
+```bash
+make generate-sheets      # python -m coding generate-sheets
+make import-sheets        # python -m coding import-sheets
+make update-sheets        # python -m coding update-sheets --apply
+make update-sheets-dry    # python -m coding update-sheets  (dry run)
+make restructure-sheets   # python -m coding restructure-sheets --apply  ⚠ destructive
+make integrity-check      # python -m coding integrity-check
+make lookup-lang LANG=arao1248
+make test
+make snapshots
+```
+
+For commands that accept extra flags not covered by the aliases (e.g. `--rename-map`, `--rename-element`, `--lang`), use the full `python -m coding ...` form directly. The venv must be activated before using `make`.
+
+---
+
 ## Regression testing
 
 ```bash
