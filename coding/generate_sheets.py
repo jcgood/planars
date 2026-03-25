@@ -58,6 +58,8 @@ CODED_DATA = ROOT / "coded_data"
 
 # Columns appended after param columns on every tab; no dropdown validation
 _TRAILING_COLS = ["Comments"]
+_STATUS_TAB = "Status"
+_STATUS_VALUES = ["in-progress", "ready-for-review"]
 
 _DEFAULT_OAUTH_PATH = Path.home() / ".config" / "planars" / "oauth_credentials.json"
 
@@ -457,6 +459,84 @@ def _build_rows(
 
 
 # ---------------------------------------------------------------------------
+# Status tab
+# ---------------------------------------------------------------------------
+
+def _move_status_tab_to_end(spreadsheet: gspread.Spreadsheet) -> None:
+    """Ensure the Status tab is the last worksheet in the spreadsheet."""
+    worksheets = spreadsheet.worksheets()
+    if not worksheets or worksheets[-1].title == _STATUS_TAB:
+        return
+    status_ws = next((w for w in worksheets if w.title == _STATUS_TAB), None)
+    if status_ws is None:
+        return
+    ordered = [w for w in worksheets if w.title != _STATUS_TAB] + [status_ws]
+    spreadsheet.reorder_worksheets(ordered)
+
+
+def _create_status_tab(
+    spreadsheet: gspread.Spreadsheet,
+    construction_names: List[str],
+) -> None:
+    """Add a Status tab to a spreadsheet, or update an existing one.
+
+    The tab has two columns: Construction and Status. Each construction gets
+    one row with an 'in-progress' default and a dropdown for Status.
+    If the tab already exists, adds any missing construction rows and moves
+    the tab to the last position.
+    """
+    existing = {ws.title: ws for ws in spreadsheet.worksheets()}
+
+    if _STATUS_TAB in existing:
+        ws = existing[_STATUS_TAB]
+        rows = ws.get_all_values()
+        current_constructions = {r[0] for r in rows[1:] if r} if len(rows) > 1 else set()
+        missing = [c for c in construction_names if c not in current_constructions]
+        if missing:
+            ws.append_rows([[c, "in-progress"] for c in missing], value_input_option="RAW")
+        _move_status_tab_to_end(spreadsheet)
+        return
+
+    ws = spreadsheet.add_worksheet(title=_STATUS_TAB, rows=len(construction_names) + 2, cols=2)
+    header = [["Construction", "Status"]]
+    data = [[c, "in-progress"] for c in construction_names]
+    ws.update(header + data, "A1")
+
+    sheet_id = ws.id
+    num_rows = len(construction_names)
+    spreadsheet.batch_update({"requests": [
+        # Freeze + bold header
+        {"updateSheetProperties": {
+            "properties": {"sheetId": sheet_id, "gridProperties": {"frozenRowCount": 1}},
+            "fields": "gridProperties.frozenRowCount",
+        }},
+        {"repeatCell": {
+            "range": {"sheetId": sheet_id, "startRowIndex": 0, "endRowIndex": 1},
+            "cell": {"userEnteredFormat": {"textFormat": {"bold": True}}},
+            "fields": "userEnteredFormat.textFormat.bold",
+        }},
+        # Dropdown on Status column (col B = index 1)
+        {"setDataValidation": {
+            "range": {
+                "sheetId": sheet_id,
+                "startRowIndex": 1, "endRowIndex": 1 + num_rows,
+                "startColumnIndex": 1, "endColumnIndex": 2,
+            },
+            "rule": {
+                "condition": {
+                    "type": "ONE_OF_LIST",
+                    "values": [{"userEnteredValue": v} for v in _STATUS_VALUES],
+                },
+                "showCustomUi": True,
+                "strict": True,
+            },
+        }},
+    ]})
+    _move_status_tab_to_end(spreadsheet)
+    print(f"    Status tab created ({len(construction_names)} construction(s))")
+
+
+# ---------------------------------------------------------------------------
 # Sheet formatting and validation
 # ---------------------------------------------------------------------------
 
@@ -612,6 +692,9 @@ def _create_analysis_sheet(
     # Remove the default empty sheet if it wasn't one of our tabs
     if default_ws.title not in tab_names:
         spreadsheet.del_worksheet(default_ws)
+
+    # Add Status tab last
+    _create_status_tab(spreadsheet, tab_names)
 
     # Build per-construction param_values map for the manifest
     construction_params = {

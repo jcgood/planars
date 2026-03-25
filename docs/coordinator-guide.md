@@ -132,7 +132,7 @@ python -m coding generate-sheets           # creates sheets for new classes only
 python -m coding generate-sheets --force   # DESTRUCTIVE: clears and rewrites all sheets (annotation data will be lost)
 ```
 
-Creates one Google Sheets file per analysis class with one tab per construction. Each tab has per-criterion dropdown validation and a free-text Comments column. Also runs `generate-notebooks` automatically at the end.
+Creates one Google Sheets file per analysis class with one tab per construction. Each tab has per-criterion dropdown validation and a free-text Comments column. Each spreadsheet also gets a **Status tab** (always the last tab) with one row per construction and a dropdown (`in-progress` / `ready-for-review`). Also runs `generate-notebooks` automatically at the end.
 
 At the start of each run, the current Drive manifest is backed up to `manifest_backup.json` (gitignored) in the repo root. If something goes wrong during a run, this file can be used to recover sheet IDs without needing to access Drive directly.
 
@@ -140,11 +140,14 @@ At the start of each run, the current Drive manifest is backed up to `manifest_b
 
 Collaborators fill in values in the shared Google Sheets. See the [Collaborator guide](collaborator-guide.md). Keystone rows (`v:verbstem`) are pre-filled with `NA` and should not be changed.
 
+When a construction is complete, the collaborator sets its row in the **Status tab** to `ready-for-review`. This signals to the coordinator that the construction is ready to import.
+
 ### 3. Import filled sheets
 
 ```bash
-python -m coding import-sheets           # downloads filled sheets → TSVs in coded_data/
-python -m coding import-sheets --force   # overwrite existing annotation TSVs
+python -m coding import-sheets                  # import ready-for-review constructions only
+python -m coding import-sheets --ignore-status  # import all constructions regardless of status
+python -m coding import-sheets --force          # overwrite existing annotation TSVs
 ```
 
 Skips existing annotation TSVs by default. On each run, `import-sheets` also:

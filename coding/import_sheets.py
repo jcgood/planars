@@ -32,6 +32,7 @@ import gspread
 from .generate_sheets import (
     _get_clients, _load_manifest_from_drive, _open_spreadsheet,
     _upload_planars_config, _load_drive_config, _save_drive_config,
+    _STATUS_TAB, _STATUS_VALUES,
 )
 from . import validate_coding as _val
 from .validate_planar import validate_planar_df as _validate_planar_df
@@ -295,6 +296,18 @@ def _detect_diagnostics_changes(
     return safe_cmds, pending
 
 
+def _read_status_tab(ss: gspread.Spreadsheet) -> Dict[str, str]:
+    """Return {construction: status} from the Status tab, or {} if absent."""
+    try:
+        ws = ss.worksheet(_STATUS_TAB)
+    except gspread.WorksheetNotFound:
+        return {}
+    rows = ws.get_all_values()
+    if len(rows) < 2:
+        return {}
+    return {row[0].strip(): row[1].strip() for row in rows[1:] if len(row) >= 2 and row[0].strip()}
+
+
 def _append_pending_changes(new_entries: List[Dict]) -> None:
     """Append new_entries to pending_changes.json, preserving existing entries."""
     if not new_entries:
@@ -459,6 +472,7 @@ def main() -> None:
     import_errors/ if any warnings are generated.
     """
     force = "--force" in sys.argv
+    ignore_status = "--ignore-status" in sys.argv
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     print("Connecting to Google...")
@@ -483,6 +497,10 @@ def main() -> None:
             print(f"\n  {class_name}")
             ss = _open_spreadsheet(gc, sheet_info["spreadsheet_id"])
 
+            status_map = _read_status_tab(ss)
+            if not status_map and not ignore_status:
+                print(f"    (no Status tab found — importing all constructions)")
+
             for construction in sheet_info["constructions"]:
                 try:
                     ws = ss.worksheet(construction)
@@ -492,6 +510,14 @@ def main() -> None:
                     lang_warning_lines.append(f"WARNING: {msg}")
                     total_warnings += 1
                     continue
+
+                # Check annotation status before importing
+                if not ignore_status and status_map:
+                    tab_status = status_map.get(construction, "in-progress")
+                    if tab_status != "ready-for-review":
+                        print(f"    [{construction}] status: {tab_status!r} — skipping"
+                              f" (set to 'ready-for-review' in Status tab, or use --ignore-status)")
+                        continue
 
                 rows = ws.get_all_values()
 

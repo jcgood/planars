@@ -28,6 +28,7 @@ from .generate_sheets import (
     _get_clients,
     _load_manifest_from_drive,
     _open_spreadsheet,
+    _STATUS_TAB,
 )
 from .make_forms import (
     _infer_language_id_from_planar_filename,
@@ -306,6 +307,8 @@ def main() -> None:
 
             for ws in ss.worksheets():
                 construction = ws.title
+                if construction == _STATUS_TAB:
+                    continue
                 info = param_map.get(class_name, {}).get(construction, {})
                 issues = revalidate_sheet(
                     ws,

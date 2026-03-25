@@ -26,7 +26,10 @@ import gspread
 
 from . import make_forms as _mf
 from .make_forms import build_element_index, _infer_language_id_from_planar_filename
-from .generate_sheets import _get_clients, _load_manifest_from_drive, _open_spreadsheet
+from .generate_sheets import (
+    _get_clients, _load_manifest_from_drive, _open_spreadsheet,
+    _create_status_tab, _move_status_tab_to_end,
+)
 
 CODED_DATA = ROOT / "coded_data"
 _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
@@ -232,8 +235,9 @@ def main() -> None:
             ss = _open_spreadsheet(gc, sheet_info["spreadsheet_id"])
 
             construction_params = sheet_info.get("construction_params", {})
+            constructions = sheet_info["constructions"]
 
-            for construction in sheet_info["constructions"]:
+            for construction in constructions:
                 try:
                     ws = ss.worksheet(construction)
                 except gspread.WorksheetNotFound:
@@ -269,6 +273,11 @@ def main() -> None:
                 if apply:
                     _apply_missing_rows(ws, missing_rows, num_data_rows, param_names)
                     print(f"    [{construction}] done")
+
+            # Ensure Status tab exists and is last
+            if apply:
+                _create_status_tab(ss, constructions)
+                _move_status_tab_to_end(ss)
 
     if any_drift:
         print("\nSome sheets are out of sync with the planar structure.")
