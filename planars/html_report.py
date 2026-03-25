@@ -32,6 +32,7 @@ import html as _html
 from typing import Optional
 
 _CSS = """
+@page { size: A4; margin: 2cm 2.5cm; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
@@ -55,7 +56,7 @@ header .timestamp {
     color: #666;
 }
 main { max-width: 960px; margin: 0 auto; padding: 0 1.5rem; }
-section { margin-bottom: 2.5rem; }
+section { margin-bottom: 2.5rem; break-inside: avoid; }
 h2 {
     font-size: 1.1rem;
     font-weight: 600;
@@ -197,11 +198,11 @@ def _chart_html(data: dict, static: bool = False) -> str:
             title=data.get("display_name"),
         )
         if static:
-            png_bytes = fig.to_image(format="png", width=900, height=400)
+            png_bytes = fig.to_image(format="png", width=640, height=420)
             b64 = base64.b64encode(png_bytes).decode()
             return (
                 '<div class="chart-wrap">'
-                f'<img src="data:image/png;base64,{b64}" style="max-width:100%;">'
+                f'<img src="data:image/png;base64,{b64}" style="max-width:100%;height:auto;">'
                 '</div>'
             )
         chart_div = fig.to_html(full_html=False, include_plotlyjs="cdn")
