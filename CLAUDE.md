@@ -283,6 +283,10 @@ Run `gh issue list` for the full list. Key active issues:
 - **#71** — New analysis module: intonational domain. `[diagnostics]`
 - **#70** — New analysis module: tonosegmental domain. `[diagnostics]`
 - **#68** — Survey open typology codebases (Grambank, CLDF, AUTOTYP) for design ideas. Completed; produced issues #84–#88.
+- **#93** — Smoke-test the 10 analysis modules with no coded data (nonpermutability, free_occurrence, biuniqueness, repair, segmental, suprasegmental, pausing, proform, play_language, idiom).
+- **#92** — Extend `test_io.py` with error-path tests; add `languages.py` tests.
+- **#91** — Add unit tests for `planars/spans.py` core math (strict_span, loose_span, blocked_span, position_sets_from_element_mask).
+- **#90** — Add tests for `planars/reports.py` (data layer): span collection, completeness, report bundle, error handling.
 - **#9** — Fill in `[PLACEHOLDER]` and `[NEEDS REVIEW]` entries in schema files. Requires input from Adam. `[needs-input]`
 
 ## Work phases
