@@ -1,0 +1,68 @@
+name: Generate reports
+
+# Runs nightly to regenerate HTML reports for all languages and upload them
+# to Google Drive. Reports are updated in place so shared URLs stay stable.
+# Non-technical collaborators (e.g. John) can bookmark the Drive URL and
+# always see the current state of span results and annotation completeness.
+#
+# Required secrets (Settings → Secrets and variables → Actions):
+#   PLANARS_DATA_TOKEN       — PAT with read access to jcgood/planars-data
+#   PLANARS_OAUTH_CREDENTIALS — contents of ~/.config/planars/oauth_credentials.json
+#   GOOGLE_OAUTH_TOKEN       — contents of ~/.config/gspread/authorized_user.json
+#   PLANARS_DRIVE_CONFIG     — contents of drive_config.json
+#
+# Keep PLANARS_DRIVE_CONFIG in sync with your local drive_config.json whenever
+# generate-sheets adds a new language or updates folder IDs.
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # daily at 06:00 UTC
+  workflow_dispatch:        # allow manual trigger from the Actions tab
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check out planars-data
+        uses: actions/checkout@v4
+        with:
+          repository: jcgood/planars-data
+          token: ${{ secrets.PLANARS_DATA_TOKEN }}
+          path: _planars_data
+
+      - name: Merge annotation data into coded_data
+        run: rsync -r --exclude='.git' _planars_data/ coded_data/
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Write credentials
+        env:
+          OAUTH_CREDS: ${{ secrets.PLANARS_OAUTH_CREDENTIALS }}
+          OAUTH_TOKEN: ${{ secrets.GOOGLE_OAUTH_TOKEN }}
+          DRIVE_CONFIG: ${{ secrets.PLANARS_DRIVE_CONFIG }}
+        run: |
+          mkdir -p ~/.config/planars ~/.config/gspread
+          printf '%s' "$OAUTH_CREDS" > ~/.config/planars/oauth_credentials.json
+          printf '%s' "$OAUTH_TOKEN" > ~/.config/gspread/authorized_user.json
+          printf '%s' "$DRIVE_CONFIG" > drive_config.json
+
+      - name: Generate and upload reports
+        run: python -m coding generate-reports --apply
+
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "## Report generation — $(date -u +%Y-%m-%d)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Reports uploaded to Google Drive for each language in coded_data/." >> $GITHUB_STEP_SUMMARY

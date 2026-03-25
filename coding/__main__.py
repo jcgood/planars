@@ -6,6 +6,7 @@ Usage:
 Commands:
     generate-sheets      Create/update Google Sheets annotation forms
     generate-notebooks   Generate and upload contributor + coordinator notebooks
+    generate-reports     Generate and upload HTML reports for all languages to Drive
     sync-params          Sync diagnostic criterion columns when diagnostics_{lang_id}.tsv changes
     update-sheets        Add missing rows/columns to existing sheets
     import-sheets        Download filled sheets to TSVs
@@ -29,6 +30,7 @@ _ROOT = Path(__file__).resolve().parent.parent
 _COMMANDS = {
     "generate-sheets":    "coding.generate_sheets",
     "generate-notebooks": "coding.generate_notebooks",
+    "generate-reports":   "coding.generate_reports",
     "sync-params":        "coding.sync_params",
     "update-sheets":      "coding.update_sheets",
     "import-sheets":      "coding.import_sheets",
