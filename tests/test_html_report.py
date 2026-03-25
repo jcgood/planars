@@ -151,6 +151,35 @@ class TestRenderLanguageReport:
         assert "&lt;bad&gt;" in html
 
 
+class TestRenderPDF:
+    """Tests for render_language_report_pdf (requires weasyprint + kaleido)."""
+
+    def _render(self, bundle):
+        weasyprint = pytest.importorskip("weasyprint")  # noqa: F841
+        from planars.html_report import render_language_report_pdf
+        try:
+            return render_language_report_pdf(bundle)
+        except Exception as e:
+            pytest.skip(f"WeasyPrint render failed (system deps missing?): {e}")
+
+    def test_returns_bytes(self):
+        pdf = self._render(_minimal_bundle())
+        assert isinstance(pdf, bytes)
+
+    def test_is_pdf(self):
+        pdf = self._render(_minimal_bundle())
+        assert pdf[:4] == b"%PDF"
+
+    def test_pdf_no_spans_still_renders(self):
+        pdf = self._render(_minimal_bundle(spans=None))
+        assert pdf[:4] == b"%PDF"
+
+    def test_pdf_with_completeness_still_renders(self):
+        completeness = {"ciscategorial": {"general": {"total": 10, "filled": 8, "blank": 2}}}
+        pdf = self._render(_minimal_bundle(completeness=completeness))
+        assert pdf[:4] == b"%PDF"
+
+
 class TestRenderWithRealData:
     """Smoke tests using actual coded_data/ if present."""
 

@@ -1,9 +1,10 @@
 name: Generate reports
 
-# Runs nightly to regenerate HTML reports for all languages and upload them
+# Runs nightly to regenerate PDF reports for all languages and upload them
 # to Google Drive. Reports are updated in place so shared URLs stay stable.
 # Non-technical collaborators (e.g. John) can bookmark the Drive URL and
 # always see the current state of span results and annotation completeness.
+# PDFs render natively in the Drive viewer (no download needed).
 #
 # Required secrets (Settings → Secrets and variables → Actions):
 #   PLANARS_DATA_TOKEN       — PAT with read access to jcgood/planars-data
@@ -43,6 +44,9 @@ jobs:
         with:
           python-version: "3.13"
 
+      - name: Install WeasyPrint system dependencies
+        run: sudo apt-get install -y libpango-1.0-0 libpangocairo-1.0-0 libcairo2
+
       - name: Install dependencies
         run: pip install -r requirements.txt
 
@@ -65,4 +69,4 @@ jobs:
         run: |
           echo "## Report generation — $(date -u +%Y-%m-%d)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Reports uploaded to Google Drive for each language in coded_data/." >> $GITHUB_STEP_SUMMARY
+          echo "PDF reports uploaded to Google Drive for each language in coded_data/." >> $GITHUB_STEP_SUMMARY

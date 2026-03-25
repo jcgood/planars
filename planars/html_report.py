@@ -1,23 +1,33 @@
-"""HTML report rendering for planars.
+"""HTML and PDF report rendering for planars.
 
-Produces self-contained HTML reports from language_report_data bundles for
+Produces self-contained reports from language_report_data bundles for
 non-technical collaborators. Reports show annotation completeness, review
-status, and the domain chart in a readable format that can be opened in any
-browser or shared via a stable Drive URL.
+status, and the domain chart.
+
+- ``render_language_report(data)`` — HTML string with interactive Plotly chart
+  (CDN). Open in any browser or display inline in Colab.
+- ``render_language_report_pdf(data)`` — PDF bytes with a static PNG chart
+  (requires ``weasyprint`` and ``kaleido``). Upload to Google Drive for a
+  shareable URL that renders natively in the Drive viewer.
 
 Typical usage
 -------------
     from planars.reports import language_report_data
-    from planars.html_report import render_language_report
+    from planars.html_report import render_language_report, render_language_report_pdf
     from pathlib import Path
 
     data = language_report_data("arao1248", source="local", repo_root=Path("."))
-    html = render_language_report(data)
-    Path("arao1248_report.html").write_text(html, encoding="utf-8")
+
+    # HTML — browser / Colab
+    Path("arao1248_report.html").write_text(render_language_report(data), encoding="utf-8")
+
+    # PDF — Drive sharing
+    Path("arao1248_report.pdf").write_bytes(render_language_report_pdf(data))
 """
 
 from __future__ import annotations
 
+import base64
 import html as _html
 from typing import Optional
 
@@ -171,8 +181,8 @@ def _completeness_table(completeness: dict, status: Optional[dict]) -> str:
     return f"<table>{header}<tbody>{''.join(rows)}</tbody></table>"
 
 
-def _chart_html(data: dict) -> str:
-    spans    = data.get("spans")
+def _chart_html(data: dict, static: bool = False) -> str:
+    spans     = data.get("spans")
     lang_meta = data.get("lang_meta")
 
     if spans is None or spans.empty or lang_meta is None:
@@ -186,19 +196,30 @@ def _chart_html(data: dict) -> str:
             lang_meta["pos_to_name"],
             title=data.get("display_name"),
         )
+        if static:
+            png_bytes = fig.to_image(format="png", width=900, height=400)
+            b64 = base64.b64encode(png_bytes).decode()
+            return (
+                '<div class="chart-wrap">'
+                f'<img src="data:image/png;base64,{b64}" style="max-width:100%;">'
+                '</div>'
+            )
         chart_div = fig.to_html(full_html=False, include_plotlyjs="cdn")
         return f'<div class="chart-wrap">{chart_div}</div>'
     except Exception as e:
         return f'<p class="error">Chart error: {_html.escape(str(e))}</p>'
 
 
-def render_language_report(data: dict) -> str:
+def render_language_report(data: dict, static: bool = False) -> str:
     """Render a language_report_data bundle as a self-contained HTML string.
 
-    data: the dict returned by planars.reports.language_report_data().
+    data:   the dict returned by planars.reports.language_report_data().
+    static: if True, embed the chart as a static PNG (base64 data URI) instead
+            of the interactive Plotly CDN chart. Used internally by
+            render_language_report_pdf(); not normally needed for direct HTML use.
 
     The returned HTML string can be written directly to a .html file or
-    uploaded to Drive for sharing. It embeds the Plotly chart via CDN
+    displayed inline in Colab. It embeds the Plotly chart via CDN by default
     (requires an internet connection to display the chart).
     """
     display_name = _html.escape(data.get("display_name") or data.get("lang_id", ""))
@@ -227,7 +248,7 @@ def render_language_report(data: dict) -> str:
     chart_section = (
         "<section>"
         "<h2>Domain Chart</h2>"
-        + _chart_html(data)
+        + _chart_html(data, static=static)
         + "</section>"
     )
 
@@ -250,3 +271,17 @@ def render_language_report(data: dict) -> str:
   </main>
 </body>
 </html>"""
+
+
+def render_language_report_pdf(data: dict) -> bytes:
+    """Render a language_report_data bundle as a PDF byte string.
+
+    Requires ``weasyprint`` (HTML→PDF) and ``kaleido`` (Plotly static export).
+    The chart is embedded as a static PNG rather than interactive JavaScript.
+
+    The returned bytes can be written directly to a .pdf file or uploaded to
+    Google Drive, where PDFs render natively in the Drive viewer.
+    """
+    html = render_language_report(data, static=True)
+    from weasyprint import HTML  # noqa: PLC0415
+    return HTML(string=html).write_pdf()

@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
-"""Generate and upload HTML reports for all languages to Google Drive.
+"""Generate and upload PDF reports for all languages to Google Drive.
 
 Run from the repo root:
     python -m coding generate-reports           # dry run — show what would be generated
     python -m coding generate-reports --apply   # generate and upload to Drive
 
-Each language gets a report_{lang_id}.html in its Drive folder. The file is
+Each language gets a report_{lang_id}.pdf in its Drive folder. The file is
 created on the first run and updated in place on subsequent runs, so the URL
-stays stable. Intended for non-technical collaborators (#89).
+stays stable. PDFs render natively in the Drive viewer, making the URL
+directly shareable with non-technical collaborators (#89, #94).
+
+Requires weasyprint and kaleido (both in requirements.txt). WeasyPrint also
+needs system libraries: libpango-1.0-0, libpangocairo-1.0-0, libcairo2
+(installed automatically in CI; on macOS install via Homebrew: pango cairo).
 
 Uses source="local" (reads from coded_data/ TSVs) so it works in CI without
 requiring live Google Sheets access during the data collection step. Drive
@@ -29,14 +34,14 @@ CODED_DATA = ROOT / "coded_data"
 from googleapiclient.http import MediaIoBaseUpload
 
 from planars.reports import language_report_data
-from planars.html_report import render_language_report
+from planars.html_report import render_language_report_pdf
 from .generate_sheets import _get_clients, _load_drive_config, _save_drive_config
 
 
-def _upload_html(drive, html: str, filename: str, folder_id: str, existing_file_id: str | None) -> str:
-    """Upload (create or update) an HTML file in Drive. Returns the file ID."""
+def _upload_pdf(drive, pdf_bytes: bytes, filename: str, folder_id: str, existing_file_id: str | None) -> str:
+    """Upload (create or update) a PDF file in Drive. Returns the file ID."""
     media = MediaIoBaseUpload(
-        io.BytesIO(html.encode("utf-8")), mimetype="text/html", resumable=False
+        io.BytesIO(pdf_bytes), mimetype="application/pdf", resumable=False
     )
     if existing_file_id:
         drive.files().update(
@@ -72,7 +77,7 @@ def _run(apply: bool) -> None:
 
     if not apply:
         for lang_id in lang_ids:
-            print(f"  report_{lang_id}.html")
+            print(f"  report_{lang_id}.pdf")
         print("\nRun with --apply to generate and upload.")
         return
 
@@ -92,17 +97,20 @@ def _run(apply: bool) -> None:
             print(f"ERROR: {e}")
             continue
 
-        html = render_language_report(data)
-        filename = f"report_{lang_id}.html"
-        existing = drive_config.get(lang_id, {}).get("report_html_file_id")
+        pdf_bytes = render_language_report_pdf(data)
+        filename = f"report_{lang_id}.pdf"
+        # Migrate legacy key report_html_file_id → report_file_id if present
+        lang_cfg = drive_config.get(lang_id, {})
+        existing = lang_cfg.get("report_file_id") or lang_cfg.get("report_html_file_id")
 
         try:
-            file_id = _upload_html(drive, html, filename, folder_id, existing)
+            file_id = _upload_pdf(drive, pdf_bytes, filename, folder_id, existing)
         except Exception as e:
             print(f"upload ERROR: {e}")
             continue
 
-        drive_config.setdefault(lang_id, {})["report_html_file_id"] = file_id
+        drive_config.setdefault(lang_id, {})["report_file_id"] = file_id
+        drive_config[lang_id].pop("report_html_file_id", None)
         action = "updated" if existing else "created"
         print(f"{action}. https://drive.google.com/file/d/{file_id}/view")
 
