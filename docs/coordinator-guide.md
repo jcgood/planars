@@ -193,6 +193,8 @@ python -m coding update-sheets           # dry run — show what would change
 python -m coding update-sheets --apply   # add missing rows to existing sheets
 ```
 
+If you see `(quota exceeded — waiting Xs before retry)` messages, the command is handling Google Sheets API rate limits automatically — just let it run.
+
 ### Updating diagnostic criteria in diagnostics_{lang_id}.tsv
 
 When `diagnostics_{lang_id}.tsv` criterion columns change (new criteria added, criteria renamed):
