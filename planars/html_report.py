@@ -192,22 +192,43 @@ def _chart_html(data: dict, static: bool = False) -> str:
 
     try:
         from planars.charts import domain_chart
+
+        if static:
+            all_labels = (list(spans["Test_Labels"].unique())
+                          if "Test_Labels" in spans.columns else [])
+            rows_per_chunk = 14
+            chunks = ([all_labels[i:i + rows_per_chunk]
+                       for i in range(0, len(all_labels), rows_per_chunk)]
+                      if all_labels else [None])
+            parts = []
+            for i, chunk_labels in enumerate(chunks):
+                if chunk_labels is not None:
+                    chunk_spans = spans[spans["Test_Labels"].isin(chunk_labels)]
+                    n_rows = len(chunk_labels)
+                else:
+                    chunk_spans = spans
+                    n_rows = max(1, len(spans))
+                chunk_fig = domain_chart(
+                    chunk_spans,
+                    lang_meta["keystone_pos"],
+                    lang_meta["pos_to_name"],
+                    title=data.get("display_name") if i == 0 else None,
+                )
+                height = max(400, 200 + n_rows * 45)
+                png_bytes = chunk_fig.to_image(format="png", width=640, height=height, scale=2)
+                b64 = base64.b64encode(png_bytes).decode()
+                parts.append(
+                    f'<img src="data:image/png;base64,{b64}"'
+                    f' style="max-width:100%;height:auto;display:block;">'
+                )
+            return '<div class="chart-wrap">' + "".join(parts) + "</div>"
+
         fig = domain_chart(
             spans,
             lang_meta["keystone_pos"],
             lang_meta["pos_to_name"],
             title=data.get("display_name"),
         )
-        if static:
-            n_rows = spans["Test_Labels"].nunique() if "Test_Labels" in spans.columns else 10
-            height = max(400, 200 + n_rows * 45)
-            png_bytes = fig.to_image(format="png", width=640, height=height, scale=2)
-            b64 = base64.b64encode(png_bytes).decode()
-            return (
-                '<div class="chart-wrap">'
-                f'<img src="data:image/png;base64,{b64}" style="max-width:100%;height:auto;">'
-                '</div>'
-            )
         chart_div = fig.to_html(full_html=False, include_plotlyjs="cdn")
         return f'<div class="chart-wrap">{chart_div}</div>'
     except Exception as e:
