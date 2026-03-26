@@ -3,7 +3,7 @@
 
 Run from the repo root:
     python -m coding generate-sheets           # create sheets for new classes only
-    python -m coding generate-sheets --force   # DESTRUCTIVE: clear and rewrite all sheets (annotation data will be lost)
+    python -m coding generate-sheets --force   # blocked with a hard error if annotation sheets already exist
 
 On the first run, creates one Google Sheet per analysis class with one tab per construction.
 On subsequent runs, only creates sheets for classes not yet in the Drive manifest (e.g. a

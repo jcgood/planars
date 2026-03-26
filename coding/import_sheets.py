@@ -12,7 +12,7 @@ coded_data/{lang_id}/{class_name}/.
 
 Side effect: invalid cells are highlighted pink in the Google Sheet during
 import (same behaviour as validate-coding). This write-back happens even
-without --force and even when the local TSV is skipped.
+without --apply and even when the local TSV is skipped.
 
 Authentication: same OAuth2 setup as generate_sheets.py.
 """
@@ -566,10 +566,11 @@ def _check_coded_data_clean(coded_data_dir: Optional[Path] = None) -> None:
 def main() -> None:
     """Entry point for `python -m coding import-sheets`.
 
-    Loads the manifest from Drive, downloads each construction tab, validates
-    values, and writes filled TSVs under coded_data/{lang_id}/{class_name}/.
-    Skips existing files unless --force is passed. Writes an error report to
-    import_errors/ if any warnings are generated.
+    Dry-run by default — pass --apply to write any TSVs. Loads the manifest
+    from Drive, downloads each construction tab, validates values, and writes
+    filled TSVs under coded_data/{lang_id}/{class_name}/. Skips existing files
+    unless --overwrite-existing is also passed (auto-archives before overwriting).
+    Writes an error report to import_errors/ if any warnings are generated.
     """
     apply = "--apply" in sys.argv
     force = "--overwrite-existing" in sys.argv
