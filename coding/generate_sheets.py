@@ -711,6 +711,31 @@ def _create_analysis_sheet(
 
 
 # ---------------------------------------------------------------------------
+# Safety checks
+# ---------------------------------------------------------------------------
+
+def _check_force_against_existing_sheets(
+    lang_id: str, force: bool, existing_lang_data: Dict
+) -> None:
+    """Raise SystemExit if --force is attempted on a language with existing annotation sheets.
+
+    Annotation data is irreplaceable. --force must never recreate sheets that
+    already have IDs in the manifest, as that would orphan the filled sheets.
+    """
+    if force and existing_lang_data.get("sheets"):
+        existing_sheet_classes = list(existing_lang_data["sheets"].keys())
+        print(
+            f"\nERROR: --force refused for {lang_id}.\n"
+            f"  Existing annotation sheets: {existing_sheet_classes}\n"
+            "  Destroying annotation sheets is not allowed. Annotated data is\n"
+            "  irreplaceable. If you need to restructure sheets, use:\n"
+            "    python -m coding restructure-sheets --apply\n"
+            "  To add new classes only (no destruction), omit --force."
+        )
+        raise SystemExit(1)
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -901,17 +926,7 @@ def main() -> None:
             print(f"Existing:    {list(existing_sheets.keys())}")
             print(f"New:         {new_class_names}")
 
-        if force and existing_lang_data.get("sheets"):
-            existing_sheet_classes = list(existing_lang_data["sheets"].keys())
-            print(
-                f"\nERROR: --force refused for {lang_id}.\n"
-                f"  Existing annotation sheets: {existing_sheet_classes}\n"
-                "  Destroying annotation sheets is not allowed. Annotated data is\n"
-                "  irreplaceable. If you need to restructure sheets, use:\n"
-                "    python -m coding restructure-sheets --apply\n"
-                "  To add new classes only (no destruction), omit --force."
-            )
-            raise SystemExit(1)
+        _check_force_against_existing_sheets(lang_id, force, existing_lang_data)
 
         classes_to_create = {
             k: v for k, v in all_classes.items()

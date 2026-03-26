@@ -533,14 +533,16 @@ def _verify_manifest_sheet_ids(drive, manifest: Dict) -> None:
         raise SystemExit(1)
 
 
-def _check_coded_data_clean() -> None:
+def _check_coded_data_clean(coded_data_dir: Optional[Path] = None) -> None:
     """Abort if coded_data/ git repo has uncommitted changes to annotation TSVs.
 
     Protects against import-sheets overwriting local edits that have not yet
     been committed. Silently skips the check if coded_data/ is not a git repo
     (e.g. CI environments that check out the data separately).
+
+    coded_data_dir: override path for testing (defaults to ROOT/coded_data).
     """
-    coded_data = ROOT / "coded_data"
+    coded_data = coded_data_dir or ROOT / "coded_data"
     if not (coded_data / ".git").exists():
         return
     result = subprocess.run(
@@ -551,7 +553,7 @@ def _check_coded_data_clean() -> None:
         return  # git not available or not a repo; skip check
     dirty_lines = [
         line for line in result.stdout.splitlines()
-        if line.strip() and line[3:].endswith(".tsv")
+        if line.strip() and line[3:].strip().endswith(".tsv")
     ]
     if dirty_lines:
         print("ERROR: coded_data/ has uncommitted changes to annotation TSVs:")
