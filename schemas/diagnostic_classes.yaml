@@ -253,7 +253,7 @@ classes:
       Applicable when the language has proforms (pronouns, pro-verbs, pro-VP substitutes,
       etc.) that can replace a contiguous span within the verbal planar structure. The
       proform domain is the span the proform substitutes for.
-    specificity: general
+    specificity: construction_specific
     required_criteria: [substitutable]
     optional_criteria: []
     qualification_rule: >
