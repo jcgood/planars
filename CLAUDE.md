@@ -115,6 +115,8 @@ Late aggregation, autotypology (dynamic schema), definition files vs. data files
 - `cli.py` + `__main__.py`: CLI entry point (`python -m planars <analysis> <tsv>`).
 
 `coding/` contains the coordinator tooling:
+- `drive.py`: Shared Google Drive/Sheets client helpers used by all coordinator commands — `_get_clients()`, `_load/save_drive_config()`, `_open_spreadsheet()`, `_load/upload_manifest`, folder/permission helpers, and `_with_retry(fn)` for 429 quota backoff. All OAuth2 auth logic lives here.
+- `schemas.py`: Cached loaders for schema YAML files — `load_diagnostic_classes()` and `load_diagnostic_criteria()`. Each file is read once per process. `languages.yaml` is intentionally excluded (written to mid-session by `lookup-lang`; callers read it fresh at point of use).
 - `make_forms.py`: `build_element_index`, `_read_diagnostics_for_language` — utilities used by other scripts.
 - `generate_sheets.py`: `generate-sheets` command. Validates planar and diagnostics before creating sheets. Backs up the Drive manifest to `manifest_backup.json` (gitignored) at the start of each run. Aborts if the manifest is empty for an established language (stale manifest guard). **`--force` aborts with a hard error if any language already has annotation sheet IDs in the manifest** — annotation data is irreplaceable and must never be destroyed by a flag. To add new classes only, omit `--force`. To restructure existing sheets use `restructure-sheets --apply`. Each annotation spreadsheet gets a `Status` tab (last tab) with one row per construction and an `in-progress` / `ready-for-review` dropdown.
 - `update_sheets.py`: `update-sheets` — adds missing rows/trailing columns to existing sheets. Also ensures the Status tab exists and is last in each spreadsheet. Retries `get_all_values()` with exponential backoff (up to 5 retries, 15s×attempt) on 429 quota errors.
@@ -304,7 +306,7 @@ Sessions tend to fall into a few natural patterns. Naming the primary focus at t
 
 **Audit** — Checking consistency between code, documentation, codebook, and annotation data. Includes `integrity-check` (and `check-codebook` for lower-level detail), snapshot tests, and reviewing CLAUDE.md/docs for drift. Also includes verifying that inline comments and module docstrings match current behavior — code evolves faster than comments. A good way to start a session after a gap.
 
-**Refactoring** — Structural cleanup with no behavior changes. Targets: duplicated logic, oversized modules, inconsistent patterns. Run a refactoring pass after any major feature addition or every few sessions. Current known targets are tracked in issue #98 (`coding/drive.py` extraction, retry consolidation, schema loading). When a refactor is complete, close the resolved item in #98 or open a focused issue if scope has grown.
+**Refactoring** — Structural cleanup with no behavior changes. Targets: duplicated logic, oversized modules, inconsistent patterns. Run a refactoring pass after any major feature addition or every few sessions. Track known targets in a dedicated issue (issue #98 is now closed — `coding/drive.py` extraction, retry consolidation, and schema loading centralization are all complete). Open a new issue when the next round of targets is identified.
 
 ## Analysis status convention
 

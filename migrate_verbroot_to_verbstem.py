@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
-from coding.generate_sheets import _get_clients, _load_manifest_from_drive
+from coding.drive import _get_clients, _load_manifest_from_drive
 from googleapiclient.discovery import build as google_build
 
 DRY_RUN = "--apply" not in sys.argv

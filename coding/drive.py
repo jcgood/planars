@@ -106,9 +106,6 @@ def _download_file_json(drive, file_id: str) -> Dict:
     return json.loads(buffer.getvalue().decode("utf-8"))
 
 
-# Backward-compatible alias used by restructure_sheets internals
-_download_manifest_from_drive = _download_file_json
-
 
 def _upload_planars_config(
     drive, full_config: Dict, root_folder_id: str, existing_file_id: str = None
