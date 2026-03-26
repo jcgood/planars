@@ -71,7 +71,12 @@ def _sub(msg: str) -> str:
 
 
 def _load_languages_yaml() -> dict:
-    """Load schemas/languages.yaml, returning {} on any error."""
+    """Load schemas/languages.yaml, returning {} on any error.
+
+    Not loaded via coding.schemas (the shared cached loader module) because
+    languages.yaml is written to by ``lookup-lang`` mid-session. A cached
+    loader would return stale data after a write. Each caller reads it fresh.
+    """
     path = ROOT / "schemas" / "languages.yaml"
     if path.exists():
         try:

@@ -17,28 +17,24 @@ from pathlib import Path
 from typing import List
 
 import pandas as pd
-import yaml
+
+from .schemas import load_diagnostic_classes as _load_dc, load_diagnostic_criteria as _load_crit
 
 ROOT = Path(__file__).resolve().parent.parent
 
 
 def _load_codebook() -> dict:
-    """Load and parse diagnostic_criteria.yaml from the schemas/ directory."""
-    with open(ROOT / "schemas" / "diagnostic_criteria.yaml", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+    """Return diagnostic_criteria.yaml as a dict (via shared cached loader)."""
+    return _load_crit()
 
 
 def _load_diagnostic_classes() -> dict:
-    """Load and parse diagnostic_classes.yaml from the repo root.
+    """Return diagnostic_classes.yaml keyed by class name (via shared cached loader).
 
     Returns a dict keyed by class name:
         {class_name: {"required_criteria": [...], "specificity": str, ...}}
     """
-    path = ROOT / "schemas" / "diagnostic_classes.yaml"
-    if not path.exists():
-        return {}
-    with open(path, encoding="utf-8") as f:
-        data = yaml.safe_load(f)
+    data = _load_dc()
     return {cls["name"]: cls for cls in data.get("classes", [])}
 
 

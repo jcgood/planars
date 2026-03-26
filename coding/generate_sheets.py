@@ -640,8 +640,9 @@ def main() -> None:
             copy so the data lives near the annotation sheets.  If the language is
             not yet in languages.yaml, falls back to glottolog_cache.json and warns.
 
-            Reads languages.yaml directly by path (not via importlib.resources) so
-            this works without reinstalling the package after schema changes.
+            Reads languages.yaml directly by path (not via coding.schemas cached
+            loader) because lookup-lang may write a new entry earlier in the same
+            session and we need the just-written state, not a cached snapshot.
             """
             import yaml as _yaml
             _lang_yaml = ROOT / "schemas" / "languages.yaml"

@@ -24,10 +24,9 @@ import importlib
 from pathlib import Path
 from typing import Dict, List, Set
 
-import yaml
-
 from .validate import ValidationIssue
 from .glottolog import is_valid_format as _is_valid_glottocode, cached_entry as _cached_glottocode
+from .schemas import load_diagnostic_classes, load_diagnostic_criteria
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -60,11 +59,7 @@ def _diagnostic_class_allowed_criteria() -> Dict[str, Set[str]]:
     Allowed = required_criteria ∪ optional_criteria.
     Returns an empty dict if the schema file is missing.
     """
-    path = ROOT / "schemas" / "diagnostic_classes.yaml"
-    if not path.exists():
-        return {}
-    with path.open(encoding="utf-8") as f:
-        data = yaml.safe_load(f)
+    data = load_diagnostic_classes()
     result: Dict[str, Set[str]] = {}
     for cls in data.get("classes", []):
         name = cls.get("name", "")
@@ -82,11 +77,7 @@ def _required_collection_classes() -> Set[str]:
     Classes with collection_required: false or '[NEEDS COORDINATOR INPUT]' are excluded.
     Returns an empty set if the schema file is missing or no classes are marked true.
     """
-    path = ROOT / "schemas" / "diagnostic_classes.yaml"
-    if not path.exists():
-        return set()
-    with path.open(encoding="utf-8") as f:
-        data = yaml.safe_load(f)
+    data = load_diagnostic_classes()
     return {
         cls["name"]
         for cls in data.get("classes", [])
@@ -96,11 +87,7 @@ def _required_collection_classes() -> Set[str]:
 
 def _codebook_criterion_names() -> Set[str]:
     """Return all criterion names defined in diagnostic_criteria.yaml."""
-    cb_path = ROOT / "schemas" / "diagnostic_criteria.yaml"
-    if not cb_path.exists():
-        return set()
-    with cb_path.open(encoding="utf-8") as f:
-        cb = yaml.safe_load(f)
+    cb = load_diagnostic_criteria()
     names: Set[str] = set()
     for analysis in cb.get("analyses", []):
         for param in analysis.get("diagnostic_criteria", []):

@@ -693,6 +693,9 @@ def main() -> None:
     print(f"\nDone. {total_files} file(s) written, {total_warnings} warning(s).")
 
     # Sync glottolog + meta from languages.yaml into the Drive manifest.
+    # Read fresh each run — not via coding.schemas cached loader — because
+    # lookup-lang may have written a new languages.yaml entry earlier in the
+    # same session and we need the just-written state, not a cached snapshot.
     import yaml as _yaml
     _lang_yaml = ROOT / "schemas" / "languages.yaml"
     _langs = {}

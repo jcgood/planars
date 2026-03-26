@@ -36,6 +36,8 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 CACHE_PATH = ROOT / "glottolog_cache.json"
+# Not loaded via coding.schemas cached loader: this module *writes* to
+# languages.yaml, so it must always read the current on-disk state.
 _LANGUAGES_YAML = ROOT / "schemas" / "languages.yaml"
 _API_URL = "https://glottolog.org/resource/languoid/id/{glottocode}.json"
 

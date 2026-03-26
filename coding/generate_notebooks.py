@@ -115,8 +115,9 @@ def _replace_tokens(text: str, tokens: Dict[str, str]) -> str:
 def _lang_display(lang_id: str) -> str:
     """Return 'Name [glottocode]' from languages.yaml, else the bare glottocode.
 
-    Reads languages.yaml directly by path so this works without reinstalling
-    the package after schema changes.
+    Reads languages.yaml directly (not via coding.schemas cached loader) because
+    lookup-lang may write a new entry earlier in the same session and we need
+    the just-written state, not a cached snapshot.
     """
     import yaml as _yaml
     _lang_yaml = ROOT / "schemas" / "languages.yaml"
