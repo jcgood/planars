@@ -61,7 +61,7 @@ python -m coding check-codebook           # criterion/module/diagnostics consist
 
 # Notebooks and reports
 python -m coding generate-notebooks       # regenerate and upload Colab notebooks (--apply)
-python -m coding generate-reports         # generate and upload HTML reports to Drive (--apply)
+python -m coding generate-reports         # generate and upload PDF reports to Drive (--apply)
 
 # Other
 python -m coding lookup-lang arao1248     # fetch + cache Glottolog metadata (--refresh, --all)

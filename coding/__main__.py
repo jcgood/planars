@@ -6,7 +6,7 @@ Usage:
 Commands:
     generate-sheets      Create/update Google Sheets annotation forms
     generate-notebooks   Generate and upload contributor + coordinator notebooks
-    generate-reports     Generate and upload HTML reports for all languages to Drive
+    generate-reports     Generate and upload PDF reports for all languages to Drive
     sync-params          Sync diagnostic criterion columns when diagnostics_{lang_id}.tsv changes
     update-sheets        Add missing rows/columns to existing sheets
     import-sheets        Download filled sheets to TSVs
