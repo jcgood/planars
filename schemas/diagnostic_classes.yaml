@@ -82,7 +82,7 @@ classes:
       A position is complete if ALL its elements are v-ciscategorial.
       A position is partial if AT LEAST ONE element is v-ciscategorial.
     status: stable
-    collection_required: "[NEEDS COORDINATOR INPUT]"
+    collection_required: "y"
     criterion_set_status: "[PROVISIONAL]"  # Criterion set may grow further as more
       # predicate-flexible languages are onboarded; other *-combines types not yet attested.
 
@@ -147,7 +147,7 @@ classes:
       Each category produces complete and partial position sets and four spans
       (strict/loose x complete/partial).
     status: stable
-    collection_required: "[NEEDS COORDINATOR INPUT]"
+    collection_required: "y"
     criterion_set_status: "[PROVISIONAL]"  # Construction types are open-ended and expected
       # to grow as more languages are added. Criterion names may also need refinement as
       # additional construction types are attested.
@@ -169,7 +169,7 @@ classes:
         single-free domain: element qualifies if free=n OR (free=y AND multiple=n).
       Only strict spans are computed for non-interruption (no loose span).
     status: stable
-    collection_required: "[NEEDS COORDINATOR INPUT]"
+    collection_required: "y"
     criterion_set_status: stable
 
   - name: nonpermutability
@@ -212,7 +212,7 @@ classes:
     # positions fall outside both strict and flexible domains. Confirmed across 5+ languages.
     status: "[AUTO-DERIVED: likely stable — qualification rules confirmed across 5+ language
       chapters (ch. 3, 6, 8, 9, 12, 14, 16); coordinator sign-off needed to remove AUTO-DERIVED]"
-    collection_required: "[NEEDS COORDINATOR INPUT]"
+    collection_required: "y"
 
   - name: free_occurrence
     display_name: "Free Occurrence"
@@ -242,7 +242,7 @@ classes:
       strict complete span (conservative/minimal) and the loose partial span
       (liberal/maximal) respectively. No additional criterion is needed.
     status: stable
-    collection_required: "[NEEDS COORDINATOR INPUT]"
+    collection_required: "y"
     criterion_set_status: stable
 
   - name: proform
@@ -267,7 +267,7 @@ classes:
     # the published database: "There are other tests that have not yet been included in the
     # database (e.g. proform replacement)." No evidence in 10 reviewed language chapters.
     # Prospective class — applicable only where proform substitution can be elicited.
-    collection_required: "[NEEDS COORDINATOR INPUT]"
+    collection_required: "y"
 
   - name: idiom
     display_name: "Idiom"
@@ -293,7 +293,7 @@ classes:
     status: "[NEEDS REVIEW]"  # Mebengokre (ch. 12) provides the clearest evidence: diagnostic
     # [\ref{idioms}] documents 3 specific idioms with position spans (adjnc-ket). The class
     # design is sound but needs annotation data.
-    collection_required: "[NEEDS COORDINATOR INPUT]"
+    collection_required: "n"
 
   - name: biuniqueness
     display_name: "Biuniqueness"
@@ -359,7 +359,7 @@ classes:
     status: "[NEEDS REVIEW]"  # Strongly confirmed by Cup'ik ch. 2 (4 naturalistic examples,
     # restart domain = vbase–pn4); no evidence in 8 other reviewed chapters. Applicable
     # only where elicitation can target production errors within the verbal complex.
-    collection_required: "[NEEDS COORDINATOR INPUT]"
+    collection_required: "n"
 
   # ---------------------------------------------------------------------------
   # Phonological domain classes
@@ -410,7 +410,7 @@ classes:
     # suprasegmental abstract type (not a separate type). planars treats it as a distinct
     # module because it uses blocked_span logic rather than positive qualification.
     status: stable  # Note: left-interaction and right-interaction are [NEEDS REVIEW] (issue #17)
-    collection_required: "[NEEDS COORDINATOR INPUT]"
+    collection_required: "n"
 
   - name: aspiration
     display_name: "Aspiration"
@@ -442,7 +442,7 @@ classes:
     # suprasegmental abstract type (not a separate type). planars treats it as a distinct
     # module because it uses blocked_span logic, same as stress.py.
     status: "[NEEDS REVIEW]"  # No confirmed data; scope unclear — see issue #60
-    collection_required: "[NEEDS COORDINATOR INPUT]"
+    collection_required: "n"
 
   - name: segmental
     display_name: "Segmental"
@@ -490,7 +490,7 @@ classes:
     # separate planars modules but are fractures of this abstract type in the book's taxonomy.
     status: "[AUTO-DERIVED: likely stable — confirmed across 10+ language chapters; formal
       abstract type in ch. 17; coordinator sign-off needed to remove AUTO-DERIVED]"
-    collection_required: "[NEEDS COORDINATOR INPUT]"
+    collection_required: "n"
 
   - name: suprasegmental
     display_name: "Suprasegmental"
@@ -529,7 +529,7 @@ classes:
     # separate planars modules but are fractures of this abstract type in the book's taxonomy.
     status: "[AUTO-DERIVED: likely stable — confirmed across 10+ language chapters; formal
       abstract type in ch. 17; coordinator sign-off needed to remove AUTO-DERIVED]"
-    collection_required: "[NEEDS COORDINATOR INPUT]"
+    collection_required: "y"
 
   - name: pausing
     display_name: "Pausing"
@@ -553,7 +553,7 @@ classes:
     status: "[NEEDS REVIEW]"  # Mebengokre (ch. 12) applies and validates: diagnostic [\ref{pause}]
     # identifies span prevb-fin, converging with non-recursive interruption and stress domain.
     # No evidence in 9 other reviewed chapters; elicitation access may be the limiting factor.
-    collection_required: "[NEEDS COORDINATOR INPUT]"
+    collection_required: "n"
 
   - name: play_language
     display_name: "Play Language"
@@ -583,4 +583,4 @@ classes:
       # operation identity is encoded in the construction name.
     status: "[NEEDS REVIEW]"  # Chatino ch. 8 provides corpus-attested data (Campbell 2020);
     # target domain = positions 10-13 (verbal core = tonal melody domain). Confirmed real.
-    collection_required: "[NEEDS COORDINATOR INPUT]"
+    collection_required: "n"
