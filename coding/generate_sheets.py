@@ -901,10 +901,22 @@ def main() -> None:
             print(f"Existing:    {list(existing_sheets.keys())}")
             print(f"New:         {new_class_names}")
 
+        if force and existing_lang_data.get("sheets"):
+            existing_sheet_classes = list(existing_lang_data["sheets"].keys())
+            print(
+                f"\nERROR: --force refused for {lang_id}.\n"
+                f"  Existing annotation sheets: {existing_sheet_classes}\n"
+                "  Destroying annotation sheets is not allowed. Annotated data is\n"
+                "  irreplaceable. If you need to restructure sheets, use:\n"
+                "    python -m coding restructure-sheets --apply\n"
+                "  To add new classes only (no destruction), omit --force."
+            )
+            raise SystemExit(1)
+
         classes_to_create = {
             k: v for k, v in all_classes.items()
             if k not in existing_lang_data.get("sheets", {})
-        } if not force else dict(all_classes)
+        }
 
         # Build lang_data starting from existing data (or fresh), always include folder_id.
         lang_data: Dict = existing_lang_data or {"folder_url": folder_url, "sheets": {}}

@@ -44,7 +44,7 @@ Full command reference with flags: [docs/coordinator-guide.md](docs/coordinator-
 
 ```bash
 # Sheet lifecycle
-python -m coding generate-sheets          # create annotation sheets (--force to regenerate all)
+python -m coding generate-sheets          # create annotation sheets (--force blocked if sheets exist)
 python -m coding import-sheets            # download filled sheets → TSVs (--force to overwrite)
 python -m coding apply-pending            # review destructive changes written by import-sheets
 python -m coding validate-coding          # re-validate + update pink highlights (--lang for one)
@@ -115,7 +115,7 @@ Late aggregation, autotypology (dynamic schema), definition files vs. data files
 
 `coding/` contains the coordinator tooling:
 - `make_forms.py`: `build_element_index`, `_read_diagnostics_for_language` — utilities used by other scripts.
-- `generate_sheets.py`: `generate-sheets` command. Validates planar and diagnostics before creating sheets. Backs up the Drive manifest to `manifest_backup.json` (gitignored) at the start of each run. Aborts if the manifest is empty for an established language (stale manifest guard). `--force` is destructive — clears and rewrites all sheets. Each annotation spreadsheet gets a `Status` tab (last tab) with one row per construction and an `in-progress` / `ready-for-review` dropdown.
+- `generate_sheets.py`: `generate-sheets` command. Validates planar and diagnostics before creating sheets. Backs up the Drive manifest to `manifest_backup.json` (gitignored) at the start of each run. Aborts if the manifest is empty for an established language (stale manifest guard). **`--force` aborts with a hard error if any language already has annotation sheet IDs in the manifest** — annotation data is irreplaceable and must never be destroyed by a flag. To add new classes only, omit `--force`. To restructure existing sheets use `restructure-sheets --apply`. Each annotation spreadsheet gets a `Status` tab (last tab) with one row per construction and an `in-progress` / `ready-for-review` dropdown.
 - `update_sheets.py`: `update-sheets` — adds missing rows/trailing columns to existing sheets. Also ensures the Status tab exists and is last in each spreadsheet. Retries `get_all_values()` with exponential backoff (up to 5 retries, 15s×attempt) on 429 quota errors.
 - `sync_params.py`: `sync-params` — syncs criterion columns when `diagnostics_{lang_id}.tsv` changes; supports rename, split, merge, and remove lifecycle operations.
 - `restructure_sheets.py`: `restructure-sheets` — archives and regenerates sheets after structural changes; carries over annotations using `--rename-map` (position renames) and `--rename-element` (element label renames); only processes classes with actual changes.
