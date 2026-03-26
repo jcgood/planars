@@ -304,6 +304,8 @@ Sessions tend to fall into a few natural patterns. Naming the primary focus at t
 
 **Audit** — Checking consistency between code, documentation, codebook, and annotation data. Includes `integrity-check` (and `check-codebook` for lower-level detail), snapshot tests, and reviewing CLAUDE.md/docs for drift. Also includes verifying that inline comments and module docstrings match current behavior — code evolves faster than comments. A good way to start a session after a gap.
 
+**Refactoring** — Structural cleanup with no behavior changes. Targets: duplicated logic, oversized modules, inconsistent patterns. Run a refactoring pass after any major feature addition or every few sessions. Current known targets are tracked in issue #98 (`coding/drive.py` extraction, retry consolidation, schema loading). When a refactor is complete, close the resolved item in #98 or open a focused issue if scope has grown.
+
 ## Analysis status convention
 
 The `status` field in `diagnostic_classes.yaml` uses three values: `stable`, `[AUTO-DERIVED]`, and `[NEEDS REVIEW]`. **Only a coordinator (Adam Tallman or equivalent domain expert) may promote a module's status out of `[AUTO-DERIVED]`.** Claude should not change `[AUTO-DERIVED]` to `stable` or remove that designation, even when cross-language evidence is strong. Claude may:
