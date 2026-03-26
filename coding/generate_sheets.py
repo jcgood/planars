@@ -594,7 +594,10 @@ def main() -> None:
 
         # Resolve/create Drive folder.
         folder_id = _get_or_create_folder(drive, lang_id, parent_id=root_folder_id)
-        _share_anyone_with_link(drive, folder_id)
+        try:
+            _share_anyone_with_link(drive, folder_id)
+        except Exception as _share_err:
+            print(f"  [WARNING] Could not share folder for {lang_id}: {_share_err}")
         folder_url = f"https://drive.google.com/drive/folders/{folder_id}"
         print(f"Folder:      {folder_url}")
 
