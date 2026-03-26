@@ -47,19 +47,11 @@ from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
 )
-from .generate_sheets import (
-    _get_clients,
-    _build_rows,
-    _format_and_validate,
-    _move_to_folder,
-    _share_anyone_with_link,
-    _open_spreadsheet,
-    _TRAILING_COLS,
-    _load_manifest_from_drive,
-    _upload_planars_config,
-    _load_drive_config,
-    _save_drive_config,
+from .drive import (
+    _get_clients, _move_to_folder, _share_anyone_with_link, _open_spreadsheet,
+    _load_manifest_from_drive, _upload_planars_config, _load_drive_config, _save_drive_config,
 )
+from .generate_sheets import _build_rows, _format_and_validate, _TRAILING_COLS
 
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
 CODED_DATA = ROOT / "coded_data"

@@ -24,12 +24,8 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
-from .generate_sheets import (
-    _get_clients,
-    _load_manifest_from_drive,
-    _open_spreadsheet,
-    _STATUS_TAB,
-)
+from .drive import _get_clients, _load_manifest_from_drive, _open_spreadsheet
+from .generate_sheets import _STATUS_TAB
 from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,

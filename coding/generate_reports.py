@@ -35,7 +35,7 @@ from googleapiclient.http import MediaIoBaseUpload
 
 from planars.reports import language_report_data
 from planars.html_report import render_language_report_pdf
-from .generate_sheets import _get_clients, _load_drive_config, _save_drive_config
+from .drive import _get_clients, _load_drive_config, _save_drive_config
 
 
 def _upload_pdf(drive, pdf_bytes: bytes, filename: str, folder_id: str, existing_file_id: str | None) -> str:

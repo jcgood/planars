@@ -21,14 +21,11 @@ from __future__ import annotations
 
 import argparse
 import sys
-import time
 from datetime import date
 from pathlib import Path
-from typing import Callable, List, Tuple, TypeVar
+from typing import List, Tuple
 
 import pandas as pd
-
-_T = TypeVar("_T")
 
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
@@ -225,27 +222,11 @@ def _section_analysis(codebook: dict) -> Tuple[int, int]:
     return len(errs_req) + len(errs_keys), 0
 
 
-def _sheets_with_retry(fn: Callable[[], _T], retries: int = 5) -> _T:
-    """Call fn() with exponential backoff on 429 quota errors."""
-    import gspread  # local import — only needed when --sheets is active
-    for attempt in range(retries):
-        try:
-            return fn()
-        except gspread.exceptions.APIError as e:
-            if e.response.status_code == 429 and attempt < retries - 1:
-                wait = 15 * (attempt + 1)
-                print(f"    (quota exceeded — waiting {wait}s before retry {attempt + 2}/{retries})")
-                time.sleep(wait)
-            else:
-                raise
-    return fn()  # final attempt — let it raise
-
-
 def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
     print(_section("ANNOTATION SHEETS"))
 
     try:
-        from .generate_sheets import _get_clients, _load_manifest_from_drive
+        from .drive import _get_clients, _load_manifest_from_drive, _with_retry
     except ImportError as exc:
         print(_warn(f"Could not import sheet utilities: {exc}"))
         return 0, 1
@@ -294,14 +275,14 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
 
         for class_name, sheet_info in sorted(sheets_info.items()):
             try:
-                ss = _sheets_with_retry(lambda: gc.open_by_key(sheet_info["spreadsheet_id"]))
+                ss = _with_retry(lambda: gc.open_by_key(sheet_info["spreadsheet_id"]))
             except Exception as exc:
                 print(_fail(f"{lang} · {class_name}  —  could not open spreadsheet: {exc}"))
                 total_e += 1
                 continue
 
             try:
-                tab_titles = {ws.title for ws in _sheets_with_retry(lambda: ss.worksheets())}
+                tab_titles = {ws.title for ws in _with_retry(lambda: ss.worksheets())}
             except Exception as exc:
                 print(_fail(f"{lang} · {class_name}  —  could not list worksheets: {exc}"))
                 total_e += 1
@@ -317,8 +298,8 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
                     continue
 
                 try:
-                    ws     = _sheets_with_retry(lambda: ss.worksheet(construction))
-                    header = _sheets_with_retry(lambda: ws.row_values(1))
+                    ws     = _with_retry(lambda: ss.worksheet(construction))
+                    header = _with_retry(lambda: ws.row_values(1))
                 except Exception as exc:
                     print(_fail(f"{label}  —  could not read header: {exc}"))
                     total_e += 1

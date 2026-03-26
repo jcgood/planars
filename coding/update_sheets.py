@@ -17,7 +17,6 @@ Authentication: same OAuth2 setup as generate_sheets.py.
 from __future__ import annotations
 
 import sys
-import time
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
 
@@ -27,10 +26,8 @@ import gspread
 
 from . import make_forms as _mf
 from .make_forms import build_element_index, _infer_language_id_from_planar_filename
-from .generate_sheets import (
-    _get_clients, _load_manifest_from_drive, _open_spreadsheet,
-    _create_status_tab, _move_status_tab_to_end,
-)
+from .drive import _get_clients, _load_manifest_from_drive, _open_spreadsheet, _with_retry
+from .generate_sheets import _create_status_tab, _move_status_tab_to_end
 
 CODED_DATA = ROOT / "coded_data"
 _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
@@ -39,21 +36,6 @@ _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
 # ---------------------------------------------------------------------------
 # API helpers
 # ---------------------------------------------------------------------------
-
-def _get_all_values_with_retry(ws: gspread.Worksheet, retries: int = 5) -> List[List[str]]:
-    """Call ws.get_all_values() with exponential backoff on 429 quota errors."""
-    for attempt in range(retries):
-        try:
-            return ws.get_all_values()
-        except gspread.exceptions.APIError as e:
-            if e.response.status_code == 429 and attempt < retries - 1:
-                wait = 15 * (attempt + 1)
-                print(f"    (quota exceeded — waiting {wait}s before retry)")
-                time.sleep(wait)
-            else:
-                raise
-    return ws.get_all_values()  # final attempt, let it raise
-
 
 # ---------------------------------------------------------------------------
 # Element index helpers
@@ -154,7 +136,7 @@ def _compute_missing_rows(
     param_names: List[str],
 ) -> List[List[str]]:
     """Compute rows present in the planar structure but missing from the sheet tab."""
-    rows = _get_all_values_with_retry(ws)
+    rows = _with_retry(ws.get_all_values)
     header = rows[0] if rows else []
 
     existing_keys = _sheet_element_keys(rows, header)
@@ -265,7 +247,7 @@ def main() -> None:
                     continue
 
                 param_names = construction_params.get(construction, {}).get("param_names", [])
-                rows = _get_all_values_with_retry(ws)
+                rows = _with_retry(ws.get_all_values)
                 num_data_rows = max(0, len(rows) - 1)
 
                 # Check for structural drift before anything else

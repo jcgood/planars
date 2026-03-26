@@ -41,16 +41,11 @@ from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
 )
-from .generate_sheets import (
-    _get_clients,
-    _load_manifest_from_drive,
-    _upload_planars_config,
-    _load_drive_config,
-    _save_drive_config,
-    _open_spreadsheet,
-    CODED_DATA,
-    _TRAILING_COLS,
+from .drive import (
+    _get_clients, _load_manifest_from_drive, _upload_planars_config,
+    _load_drive_config, _save_drive_config, _open_spreadsheet,
 )
+from .generate_sheets import CODED_DATA, _TRAILING_COLS
 
 _TRAILING_SET = set(_TRAILING_COLS)
 

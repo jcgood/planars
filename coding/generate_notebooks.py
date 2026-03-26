@@ -54,11 +54,7 @@ from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
 )
-from .generate_sheets import (
-    _get_clients,
-    _load_drive_config,
-    _save_drive_config,
-)
+from .drive import _get_clients, _load_drive_config, _save_drive_config
 
 # Human-readable display names for notebook section headers.
 # Covers all classes in diagnostic_classes.yaml; unknown classes fall back to

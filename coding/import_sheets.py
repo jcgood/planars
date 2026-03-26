@@ -32,11 +32,11 @@ ROOT = Path(__file__).resolve().parent.parent
 import pandas as pd
 import gspread
 
-from .generate_sheets import (
+from .drive import (
     _get_clients, _load_manifest_from_drive, _open_spreadsheet,
     _upload_planars_config, _load_drive_config, _save_drive_config,
-    _STATUS_TAB, _STATUS_VALUES,
 )
+from .generate_sheets import _STATUS_TAB, _STATUS_VALUES
 from . import validate_coding as _val
 from .validate_planar import validate_planar_df as _validate_planar_df
 from .validate_diagnostics import validate_diagnostics_df as _validate_diagnostics_df

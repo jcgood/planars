@@ -31,12 +31,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-from .generate_sheets import (
-    _get_clients,
-    _load_drive_config,
-    _save_drive_config,
-    _move_to_folder,
-)
+from .drive import _get_clients, _load_drive_config, _save_drive_config, _move_to_folder
 
 _ROOT_FOLDER_NAME = "ConstituencyTypology"
 
