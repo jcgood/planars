@@ -276,25 +276,17 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 
 Run `gh issue list` for the full list. Key active issues:
 
-- **#89** — Reports for non-technical collaborators (John-facing): implemented as PDF (#94, closed) — nightly GitHub Action uploads PDF to Drive, Colab report notebook generates HTML for inline display and uploads to Drive. Remaining: prominent timestamp at top; evaluate whether PDF or HTML is preferred long-term.
 - **#88** — Archive planars data as versioned CLDF release on Zenodo (depends on #84).
 - **#87** — Add cross-language annotator assignment and status tracking (Drive sheet or yaml in planars-data).
 - **#86** — Document blank / `?` / `na` value semantics in codebook and guides (docs only).
 - **#85** — Add `Source` column to annotation sheets for value-level provenance (connects to #81).
 - **#84** — Add `export-cldf` command to produce a CLDF StructureDataset from planars annotation data.
-- **#81** — Add collaborator notes alongside annotation sheets: per-language Google Doc with tabs per class/construction; download notes in `import-sheets` to surface uncertain codings and propose refinements. See also #68.
+- **#81** — Add collaborator notes alongside annotation sheets: per-language Google Doc with tabs per class/construction; download notes in `import-sheets` to surface uncertain codings and propose refinements.
 - **#80** — Auto-generate schema structure diagrams from YAML schema files. Initial implementation in `generate_diagram.py` (class taxonomy with criteria + language instances); layout refinement still needed.
 - **#78** — `collection_required` field added and check implemented; inert until Adam sets true/false values per class.
-- **#76** — Proactive detection of unauthorized sheet edits: `.github/workflows/sheet-validation.yml` runs `validate-coding` daily; opens/closes a `sheet-validation` issue automatically. Requires four GitHub secrets to be set — see coordinator guide.
-- **#75** — Auto-trigger snapshot regeneration when analysis output changes.
 - **#72** — Prepare Chichewa (nyan1308) for onboarding. `[Jeff]`
 - **#71** — New analysis module: intonational domain. `[diagnostics]`
 - **#70** — New analysis module: tonosegmental domain. `[diagnostics]`
-- **#68** — Survey open typology codebases (Grambank, CLDF, AUTOTYP) for design ideas. Completed; produced issues #84–#88.
-- **#93** — Smoke-test the 10 analysis modules with no coded data (nonpermutability, free_occurrence, biuniqueness, repair, segmental, suprasegmental, pausing, proform, play_language, idiom).
-- **#92** — Extend `test_io.py` with error-path tests; add `languages.py` tests.
-- **#91** — Add unit tests for `planars/spans.py` core math (strict_span, loose_span, blocked_span, position_sets_from_element_mask).
-- **#90** — Add tests for `planars/reports.py` (data layer): span collection, completeness, report bundle, error handling.
 - **#97** — `import-sheets`: archive TSVs on change detection (not just `--overwrite-existing`); archives committed to planars-data for browsable history alongside live files.
 - **#9** — Fill in `[PLACEHOLDER]` and `[NEEDS REVIEW]` entries in schema files. Requires input from Adam. `[needs-input]`
 
