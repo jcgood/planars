@@ -2,8 +2,9 @@
 """Import filled Google Sheets annotation forms back to TSVs for analysis.
 
 Run from the repo root:
-    python -m coding import-sheets           # skip files that already exist
-    python -m coding import-sheets --force   # overwrite existing files
+    python -m coding import-sheets              # dry run: report what would be written
+    python -m coding import-sheets --apply      # write new TSVs (skip existing)
+    python -m coding import-sheets --apply --overwrite-existing  # re-download and overwrite existing TSVs
 
 Reads the manifest from Drive (via drive_config.json), downloads each sheet
 tab, validates values, and writes {construction}.tsv to
@@ -19,6 +20,8 @@ from __future__ import annotations
 
 import csv
 import json
+import shutil
+import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -88,6 +91,18 @@ def _validate_tab(
 # ---------------------------------------------------------------------------
 # TSV writing
 # ---------------------------------------------------------------------------
+
+def _archive_tsv(path: Path, timestamp: str) -> Path:
+    """Copy path to archive/ with a timestamp suffix before overwriting.
+
+    Creates the archive/ subdirectory if absent. Returns the archive path.
+    """
+    archive_dir = path.parent / "archive"
+    archive_dir.mkdir(exist_ok=True)
+    archive_path = archive_dir / f"{path.stem}_{timestamp}{path.suffix}"
+    shutil.copy2(path, archive_path)
+    return archive_path
+
 
 def _write_tsv(path: Path, header: List[str], records: List[Dict]) -> None:
     """Write records to a tab-separated file with the given header order.
@@ -390,6 +405,8 @@ def _download_planar_input_sheets(
     gc: gspread.Client,
     lang_id: str,
     lang_data: Dict,
+    timestamp: str = "",
+    apply: bool = True,
 ) -> Tuple[Set[str], List[Dict]]:
     """Download planar and diagnostics Sheets for one language to local TSVs.
 
@@ -425,14 +442,25 @@ def _download_planar_input_sheets(
                     safe_cmds |= s
                     pending   += p
                     out_path = existing[-1]   # overwrite most recent file in place
+                    if apply:
+                        if timestamp:
+                            archived = _archive_tsv(out_path, timestamp)
+                            print(f"  [planar] Archived existing → archive/{archived.name}")
+                        planar_dir.mkdir(parents=True, exist_ok=True)
+                        new_df.to_csv(out_path, sep="\t", index=False)
+                        print(f"  [planar] Downloaded → {out_path.name}")
+                    else:
+                        print(f"  [planar] Would overwrite → {out_path.name}")
                 else:
                     from datetime import date
                     today    = date.today().strftime("%Y%m%d")
                     out_path = planar_dir / f"planar_{lang_id}-{today}.tsv"
-
-                planar_dir.mkdir(parents=True, exist_ok=True)
-                new_df.to_csv(out_path, sep="\t", index=False)
-                print(f"  [planar] Downloaded → {out_path.name}")
+                    if apply:
+                        planar_dir.mkdir(parents=True, exist_ok=True)
+                        new_df.to_csv(out_path, sep="\t", index=False)
+                        print(f"  [planar] Downloaded → {out_path.name}")
+                    else:
+                        print(f"  [planar] Would create → {out_path.name}")
 
     # --- Diagnostics sheet ---
     diag_id = lang_data.get("diagnostics_spreadsheet_id")
@@ -455,12 +483,82 @@ def _download_planar_input_sheets(
                     s, p = _detect_diagnostics_changes(old_df, new_df, lang_id)
                     safe_cmds |= s
                     pending   += p
-
-                planar_dir.mkdir(parents=True, exist_ok=True)
-                new_df.to_csv(diag_path, sep="\t", index=False)
-                print(f"  [diagnostics] Downloaded → {diag_path.name}")
+                    if apply:
+                        if timestamp:
+                            archived = _archive_tsv(diag_path, timestamp)
+                            print(f"  [diagnostics] Archived existing → archive/{archived.name}")
+                        planar_dir.mkdir(parents=True, exist_ok=True)
+                        new_df.to_csv(diag_path, sep="\t", index=False)
+                        print(f"  [diagnostics] Downloaded → {diag_path.name}")
+                    else:
+                        print(f"  [diagnostics] Would overwrite → {diag_path.name}")
+                elif apply:
+                    planar_dir.mkdir(parents=True, exist_ok=True)
+                    new_df.to_csv(diag_path, sep="\t", index=False)
+                    print(f"  [diagnostics] Downloaded → {diag_path.name}")
+                else:
+                    print(f"  [diagnostics] Would create → {diag_path.name}")
 
     return safe_cmds, pending
+
+
+def _verify_manifest_sheet_ids(drive, manifest: Dict) -> None:
+    """Abort if any annotation spreadsheet ID in the manifest is inaccessible.
+
+    Protects against writing TSVs from a stale or corrupted manifest that
+    points to wrong (empty, deleted, or duplicate) spreadsheets. Runs a
+    lightweight Drive metadata fetch for each sheet ID — no sheet content
+    is downloaded at this stage.
+    """
+    bad: List[str] = []
+    for lang_id, lang_data in manifest.items():
+        if not isinstance(lang_data, dict):
+            continue
+        for class_name, sheet_info in lang_data.get("sheets", {}).items():
+            if not isinstance(sheet_info, dict):
+                continue
+            spreadsheet_id = sheet_info.get("spreadsheet_id")
+            if not spreadsheet_id:
+                continue
+            try:
+                drive.files().get(fileId=spreadsheet_id, fields="id,trashed").execute()
+            except Exception as e:
+                bad.append(f"  {lang_id}/{class_name}: {spreadsheet_id} — {e}")
+    if bad:
+        print("ERROR: Manifest contains inaccessible spreadsheet IDs:")
+        for line in bad:
+            print(line)
+        print("The manifest may be stale or point to deleted/moved sheets.")
+        print("Run: python /tmp/investigate_drive.py  to diagnose.")
+        raise SystemExit(1)
+
+
+def _check_coded_data_clean() -> None:
+    """Abort if coded_data/ git repo has uncommitted changes to annotation TSVs.
+
+    Protects against import-sheets overwriting local edits that have not yet
+    been committed. Silently skips the check if coded_data/ is not a git repo
+    (e.g. CI environments that check out the data separately).
+    """
+    coded_data = ROOT / "coded_data"
+    if not (coded_data / ".git").exists():
+        return
+    result = subprocess.run(
+        ["git", "-C", str(coded_data), "status", "--porcelain"],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        return  # git not available or not a repo; skip check
+    dirty_lines = [
+        line for line in result.stdout.splitlines()
+        if line.strip() and line[3:].endswith(".tsv")
+    ]
+    if dirty_lines:
+        print("ERROR: coded_data/ has uncommitted changes to annotation TSVs:")
+        for line in dirty_lines:
+            print(f"  {line}")
+        print("Commit or stash these changes before running import-sheets.")
+        raise SystemExit(1)
 
 
 def main() -> None:
@@ -471,13 +569,23 @@ def main() -> None:
     Skips existing files unless --force is passed. Writes an error report to
     import_errors/ if any warnings are generated.
     """
-    force = "--force" in sys.argv
+    apply = "--apply" in sys.argv
+    force = "--overwrite-existing" in sys.argv
     ignore_status = "--ignore-status" in sys.argv
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    if not apply:
+        print("DRY RUN — pass --apply to write TSVs.\n")
+
+    if apply:
+        _check_coded_data_clean()
 
     print("Connecting to Google...")
     gc, drive = _get_clients()
     manifest = _load_manifest_from_drive(drive)
+
+    if apply:
+        _verify_manifest_sheet_ids(drive, manifest)
 
     total_files = 0
     total_warnings = 0
@@ -489,7 +597,7 @@ def main() -> None:
         lang_warning_lines: List[str] = []
 
         # Download planar and diagnostics Sheets to local TSVs; detect changes.
-        s, p = _download_planar_input_sheets(gc, lang_id, lang_data)
+        s, p = _download_planar_input_sheets(gc, lang_id, lang_data, timestamp, apply)
         all_safe_cmds |= s
         all_pending   += p
 
@@ -547,9 +655,18 @@ def main() -> None:
                 out_path = _get_output_path(lang_id, class_name, construction)
                 out_name = out_path.name
 
-                if out_path.exists() and not force:
-                    print(f"    [{construction}] SKIPPED (file exists, use --force to overwrite) → coded_data/{lang_id}/{class_name}/{out_name}")
+                if not apply:
+                    action = "Would overwrite" if out_path.exists() else "Would create"
+                    print(f"    [{construction}] {action} → coded_data/{lang_id}/{class_name}/{out_name}")
                     continue
+
+                if out_path.exists() and not force:
+                    print(f"    [{construction}] SKIPPED (file exists, use --overwrite-existing to re-download) → coded_data/{lang_id}/{class_name}/{out_name}")
+                    continue
+
+                if out_path.exists():
+                    archived = _archive_tsv(out_path, timestamp)
+                    print(f"    [{construction}] Archived existing → coded_data/{lang_id}/{class_name}/archive/{archived.name}")
 
                 _write_tsv(out_path, header, records)
 

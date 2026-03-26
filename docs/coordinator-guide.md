@@ -129,7 +129,7 @@ git pull
 
 ```bash
 python -m coding generate-sheets           # creates sheets for new classes only
-python -m coding generate-sheets --force   # DESTRUCTIVE: clears and rewrites all sheets (annotation data will be lost)
+python -m coding generate-sheets --force   # blocked with a hard error if annotation sheets already exist
 ```
 
 Creates one Google Sheets file per analysis class with one tab per construction. Each tab has per-criterion dropdown validation and a free-text Comments column. Each spreadsheet also gets a **Status tab** (always the last tab) with one row per construction and a dropdown (`in-progress` / `ready-for-review`). Also runs `generate-notebooks` automatically at the end.
@@ -145,12 +145,13 @@ When a construction is complete, the collaborator sets its row in the **Status t
 ### 3. Import filled sheets
 
 ```bash
-python -m coding import-sheets                  # import ready-for-review constructions only
-python -m coding import-sheets --ignore-status  # import all constructions regardless of status
-python -m coding import-sheets --force          # overwrite existing annotation TSVs
+python -m coding import-sheets                               # dry run: show what would be written
+python -m coding import-sheets --apply                       # import ready-for-review constructions only
+python -m coding import-sheets --apply --ignore-status       # import all constructions regardless of status
+python -m coding import-sheets --apply --overwrite-existing  # re-download and overwrite existing TSVs (auto-archives first)
 ```
 
-Skips existing annotation TSVs by default. On each run, `import-sheets` also:
+Dry-run by default — pass `--apply` to write any TSVs. Skips existing annotation TSVs unless `--overwrite-existing` is also passed; when overwriting, the existing TSV is automatically archived to `archive/` first. On each run, `import-sheets` also:
 
 - **Downloads and validates** the planar structure and diagnostics Sheets for each language, writing them to `coded_data/{lang_id}/planar_input/`.
 - **Auto-applies safe downstream commands** (`update-sheets --apply`, `sync-params --apply`, `generate-sheets`) when additive changes are detected (new positions, new criteria, new construction tabs).
@@ -165,7 +166,7 @@ python -m coding apply-pending --all     # apply all without prompting
 
 When destructive changes are detected, `import-sheets` automatically opens a GitHub issue labeled `pending-changes` (or comments on an existing open one) with a summary of each change. When `apply-pending` clears all entries, it closes the issue. This requires `gh` to be installed and authenticated; if it isn't, the terminal warning is the only notification.
 
-If any annotation warnings are found, they are written to `import_errors/{lang}_{timestamp}.txt` as well as printed to the terminal. Invalid cells are highlighted pink in the Google Sheet regardless of `--force`.
+If any annotation warnings are found, they are written to `import_errors/{lang}_{timestamp}.txt` as well as printed to the terminal. Invalid cells are highlighted pink in the Google Sheet regardless of `--overwrite-existing`.
 
 ### 4. Run analyses
 

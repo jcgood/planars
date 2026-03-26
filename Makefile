@@ -18,7 +18,8 @@
 help:
 	@echo "Sheet lifecycle:"
 	@echo "  generate-sheets             Create annotation sheets for new classes"
-	@echo "  import-sheets               Download filled sheets → TSVs"
+	@echo "  import-sheets               Dry run: show what would be imported"
+	@echo "  import-sheets-apply         Download filled sheets → TSVs"
 	@echo "  apply-pending               Review and apply pending destructive changes"
 	@echo "  validate-coding             Re-validate sheets and update pink highlights"
 	@echo ""
@@ -52,6 +53,9 @@ generate-sheets:
 
 import-sheets:
 	python -m coding import-sheets
+
+import-sheets-apply:
+	python -m coding import-sheets --apply
 
 apply-pending:
 	python -m coding apply-pending
