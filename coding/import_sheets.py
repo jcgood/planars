@@ -710,7 +710,7 @@ def main() -> None:
                 entry["glottolog"] = lang_entry.get("glottolog", {})
                 entry["meta"] = lang_entry.get("meta", {})
                 manifest_changed = True
-    if manifest_changed:
+    if manifest_changed and apply:
         drive_cfg = _load_drive_config()
         file_id = drive_cfg.get("_planars_config_file_id")
         root_id = drive_cfg.get("_root_folder_id")
@@ -719,27 +719,39 @@ def main() -> None:
             drive_cfg["_planars_config_file_id"] = new_id
             _save_drive_config(drive_cfg)
         print("manifest.json updated on Drive with languages.yaml metadata.")
+    elif manifest_changed:
+        print("(manifest.json has pending metadata changes — re-run with --apply to write)")
 
     # Write destructive changes to pending_changes.json for coordinator review.
     if all_pending:
-        _append_pending_changes(all_pending)
-        print(f"\n⚠  {len(all_pending)} destructive change(s) written to pending_changes.json")
-        print("   Review and apply with: python -m coding apply-pending")
-        _notify_pending_changes(all_pending)
+        if apply:
+            _append_pending_changes(all_pending)
+            print(f"\n⚠  {len(all_pending)} destructive change(s) written to pending_changes.json")
+            print("   Review and apply with: python -m coding apply-pending")
+            _notify_pending_changes(all_pending)
+        else:
+            print(f"\n⚠  {len(all_pending)} destructive change(s) detected (dry run — pass --apply to write pending_changes.json):")
+            for e in all_pending:
+                print(f"   {e.get('lang_id', '?')}: {e.get('description', '')}")
 
     # Auto-apply safe downstream commands (new elements → update-sheets, etc.)
     if all_safe_cmds:
-        print(f"\nAuto-applying {len(all_safe_cmds)} safe downstream command(s):")
-        import importlib
-        for cmd in sorted(all_safe_cmds):
-            print(f"  {cmd}")
-            parts = cmd.split()
-            # parts: ["python", "-m", "coding", "<command>", ...]
-            mod_name = "coding." + parts[3].replace("-", "_")
-            extra_args = parts[4:]
-            sys.argv = [parts[3]] + extra_args
-            mod = importlib.import_module(mod_name)
-            mod.main()
+        if apply:
+            print(f"\nAuto-applying {len(all_safe_cmds)} safe downstream command(s):")
+            import importlib
+            for cmd in sorted(all_safe_cmds):
+                print(f"  {cmd}")
+                parts = cmd.split()
+                # parts: ["python", "-m", "coding", "<command>", ...]
+                mod_name = "coding." + parts[3].replace("-", "_")
+                extra_args = parts[4:]
+                sys.argv = [parts[3]] + extra_args
+                mod = importlib.import_module(mod_name)
+                mod.main()
+        else:
+            print(f"\nSafe downstream commands detected (dry run — pass --apply to auto-apply):")
+            for cmd in sorted(all_safe_cmds):
+                print(f"  {cmd}")
 
 
 if __name__ == "__main__":
