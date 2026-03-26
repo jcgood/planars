@@ -958,6 +958,12 @@ def main() -> None:
         )
         config["_planars_config_file_id"] = existing_config_file_id
         config.setdefault(lang_id, {})["folder_id"] = folder_id
+        # Mirror planar/diagnostics sheet IDs into drive_config.json so they are
+        # available locally without fetching the full manifest from Drive.
+        for key in ("planar_spreadsheet_id", "planar_spreadsheet_url",
+                    "diagnostics_spreadsheet_id", "diagnostics_spreadsheet_url"):
+            if key in input_sheet_info:
+                config[lang_id][key] = input_sheet_info[key]
         # Remove stale per-language manifest_file_id (superseded by merged config).
         config[lang_id].pop("manifest_file_id", None)
         _save_drive_config(config)
