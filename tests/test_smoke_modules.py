@@ -2,7 +2,7 @@
 
 Covers the modules that have no annotation TSVs in coded_data/:
   nonpermutability, free_occurrence, biuniqueness, repair, segmental,
-  tonal, tonosegmental, pausing, proform, play_language, idiom
+  tonal, tonosegmental, intonational, pausing, proform, play_language, idiom
 
 Each test passes a minimal synthetic _data tuple (no file I/O) and verifies:
   1. The derive function does not raise.
@@ -98,6 +98,11 @@ _MODULES = [
       "strict_partial_span",  "loose_partial_span"}),
 
     ("planars.tonosegmental",    "derive_tonosegmental_domains",
+     ["applies"],
+     {"strict_complete_span", "loose_complete_span",
+      "strict_partial_span",  "loose_partial_span"}),
+
+    ("planars.intonational",     "derive_intonational_domains",
      ["applies"],
      {"strict_complete_span", "loose_complete_span",
       "strict_partial_span",  "loose_partial_span"}),

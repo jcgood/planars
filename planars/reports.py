@@ -48,6 +48,7 @@ from planars import repair as _repair
 from planars import segmental as _segmental
 from planars import tonal as _tonal
 from planars import tonosegmental as _tonoseg
+from planars import intonational as _inton
 from planars import pausing as _pausing
 from planars import proform as _proform
 from planars import play_language as _play
@@ -219,6 +220,7 @@ _CLASS_HANDLERS = {
     "segmental":         (_segmental.derive_segmental_domains,        _rows_from_segmental),
     "tonal":             (_tonal.derive_tonal_domains,                _make_simple_rows("tonal")),
     "tonosegmental":     (_tonoseg.derive_tonosegmental_domains,      _make_simple_rows("tonosegmental")),
+    "intonational":      (_inton.derive_intonational_domains,         _make_simple_rows("intonational")),
     "pausing":           (_pausing.derive_pausing_domains,            _make_simple_rows("pausing")),
     "proform":           (_proform.derive_proform_domains,            _make_simple_rows("proform")),
     "play_language":     (_play.derive_play_language_domains,         _make_simple_rows("play_language")),
