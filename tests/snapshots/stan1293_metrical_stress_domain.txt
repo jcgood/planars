@@ -2,9 +2,9 @@ English Metrical Stress Domain
 ==============================
 
 NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
+  accented: ['AD-S', 'care', 'PRON{P,T}']
   independence: ['AD-S', 'care', 'PRON{P,T}']
   obligatory: ['AD-S', 'care', 'PRON{P,T}']
-  stressed: ['AD-S', 'care', 'PRON{P,T}']
 
 Keystone position: 30 (v:verbstem)
 

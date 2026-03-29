@@ -121,7 +121,7 @@ analyses:
     description: >
       Tests which positions fall within a metrical or prosodic domain of the verbal
       planar structure. Dispatch-based module: blocked-span constructions (e.g.,
-      stress_domain) use stressed/obligatory/independence to derive domain boundaries;
+      stress_domain) use accented/obligatory/independence to derive domain boundaries;
       positive-qualification constructions (e.g., pitch-accent domain, iambic foot
       domain) use applies. One construction per TSV.
 
@@ -137,12 +137,12 @@ analyses:
           Used by positive-qualification constructions (e.g., pitch-accent domain,
           iambic foot domain).
 
-      - name: stressed
+      - name: accented
         values: [y, n, both]
         description: >
           Whether the element can carry primary stress (or the analogous metrical
-          prominence). y = always stressed; n = never stressed; both = variably
-          stressed depending on context. Used by blocked-span constructions
+          prominence). y = always accented; n = never accented; both = variably
+          accented depending on context. Used by blocked-span constructions
           (e.g., stress_domain).
 
       - name: obligatory
@@ -159,8 +159,8 @@ analyses:
         values: [y, n]
         description: >
           Whether the element's stress is independent of the keystone. Can be
-          operationalized as: can this element be stressed when the keystone is
-          also stressed?
+          operationalized as: can this element be accented when the keystone is
+          also accented?
 
       - name: left-interaction
         values: [y, n]
@@ -364,7 +364,7 @@ analyses:
 
       Dispatch-based module: positive-qualification constructions use `applies`;
       prominence-conditioned constructions (e.g., aspiration_prominence) use the
-      blocked-span criteria below (stressed, obligatory, independence, etc.).
+      blocked-span criteria below (accented, obligatory, independence, etc.).
     diagnostic_criteria:
       - name: applies
         values: [y, n]
@@ -373,10 +373,10 @@ analyses:
           position. y = this position is within the domain of the process.
           Used by positive-qualification constructions (e.g., vowel syncope domain).
 
-      - name: stressed
+      - name: accented
         values: [y, n, both]
         description: >
-          [NEEDS REVIEW] Whether the element is in a stressed position relative to the
+          [NEEDS REVIEW] Whether the element is in a accented position relative to the
           segmental process. Used by prominence-conditioned constructions (e.g.,
           aspiration_prominence). `both` = the position contains elements with and
           without stress conditioning.
@@ -407,7 +407,7 @@ analyses:
 
   # suprasegmental is retired as of issue #100. Constructions redistributed to:
   #   metrical (pitch-accent, iambic foot, word-stress, etc.) — uses applies or
-  #     stressed/obligatory/independence depending on construction type
+  #     accented/obligatory/independence depending on construction type
   #   tonosegmental (tone melody, superhigh-assignment) — uses applies
   #   tonal (H1-spreading, H3-assignment) — uses applies
   # See metrical and tonal/tonosegmental sections for criteria.

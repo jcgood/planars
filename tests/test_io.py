@@ -40,8 +40,8 @@ CASES = [
         {"V-combines", "N-combines", "A-combines"},
     ),
     (
-        "stan1293", "stress", "general",
-        {"stressed", "obligatory", "independence", "left-interaction", "right-interaction"},
+        "stan1293", "metrical", "stress_domain",
+        {"accented", "obligatory", "independence", "left-interaction", "right-interaction"},
     ),
 ]
 

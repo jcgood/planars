@@ -147,7 +147,7 @@ Late aggregation, autotypology (dynamic schema), definition files vs. data files
 Criteria default to `y/n` dropdowns. To specify custom values use brace syntax:
 
 ```
-stressed{y/n/both}, independence, left-interaction, right-interaction
+accented{y/n/both}, independence, left-interaction, right-interaction
 ```
 
 `coding/make_forms.py` parses this into `(criterion_names, criterion_values)`. `python -m coding generate-sheets` applies per-column dropdown validation and appends a free-text `Comments` column to every tab. `python -m coding import-sheets` validates each criterion against its allowed set (always also accepts `na` and `?`) and passes Comments through unchanged.

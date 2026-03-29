@@ -117,7 +117,7 @@ Controls which analyses and constructions are run for a language. Required colum
 Criteria default to `y/n` dropdowns. To specify custom allowed values, use brace syntax:
 
 ```
-stressed{y/n/both}, independence, left-interaction, right-interaction
+accented{y/n/both}, independence, left-interaction, right-interaction
 ```
 
 `coding/generate_sheets.py` applies per-column dropdown validation using these values. `coding/import-sheets` validates each cell against its allowed set (always also accepts `na` and `?`).

@@ -2,9 +2,9 @@ English Segmental Aspiration Prominence
 =======================================
 
 NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
+  accented: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (127 total)
   independence: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (127 total)
   obligatory: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (127 total)
-  stressed: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (127 total)
 
 Keystone position: 30 (v:verbstem)
 

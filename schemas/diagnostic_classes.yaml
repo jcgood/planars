@@ -377,7 +377,7 @@ classes:
       One construction per TSV. The module dispatches on which criteria are present.
     specificity: construction_specific
     known_constructions:
-      # Blocked-span constructions (stressed/obligatory/independence criteria)
+      # Blocked-span constructions (accented/obligatory/independence criteria)
       - stress_domain          # boundary-defined stress domain; e.g., English, stan1293
       # Positive-qualification constructions (applies criterion) — moving from suprasegmental
       # as part of restructuring issue #100
@@ -388,19 +388,19 @@ classes:
       - tone-stress locus domain  # positively delimited; e.g., Hup: pos. 2/3-26
       - auxiliary construction domain  # pitch accent extends to auxiliary; e.g., Quechua
     required_criteria: []
-    optional_criteria: [applies, stressed, obligatory, independence, left-interaction, right-interaction]
+    optional_criteria: [applies, accented, obligatory, independence, left-interaction, right-interaction]
     # Dispatch-based module: no single required criterion set applies to all constructions.
-    # Blocked-span constructions (stress_domain) use stressed/obligatory/independence;
+    # Blocked-span constructions (stress_domain) use accented/obligatory/independence;
     # positive-qual constructions use applies. The module dispatches on criteria present.
     qualification_rule: >
       Dispatches on criteria present in the TSV:
 
-      Blocked-span path (stressed/obligatory/independence — stress_domain and similar):
+      Blocked-span path (accented/obligatory/independence — stress_domain and similar):
         Expand from keystone in each direction, stopping just before the first
         position where the blocking condition holds.
 
-        Minimal metrical domain — blocked by: stressed ∈ {y, both} AND independence = y.
-          An independently-stressed element begins a new metrical domain; the minimal
+        Minimal metrical domain — blocked by: accented ∈ {y, both} AND independence = y.
+          An independently-accented element begins a new metrical domain; the minimal
           domain ends just before it.
 
         Maximal metrical domain — blocked by: obligatory = y AND independence = y.
@@ -436,7 +436,7 @@ classes:
       Aspiration is included here using the AUTOTYP-style construction naming convention
       {process} ({mechanism}) to distinguish subtypes:
         aspiration_prominence — blocked-span, prosodically conditioned (e.g. English:
-          aspiration blocked by independent stress). Uses stressed/obligatory/independence
+          aspiration blocked by independent stress). Uses accented/obligatory/independence
           criteria; same blocked-span logic as the accent/metrical module.
         aspiration_fusion — aspiration-related segmental process type (e.g. Yukuna ch. 11).
           Uses applies criterion like other segmental processes.
@@ -472,9 +472,9 @@ classes:
       - palatalization domain          # e.g., Chatino coronal, Chorote, Mocoví
       - fortition domain               # palatal fortition; e.g., Mebengokre aj-verb
     required_criteria: []
-    optional_criteria: [applies, stressed, obligatory, independence, left-interaction, right-interaction]
+    optional_criteria: [applies, accented, obligatory, independence, left-interaction, right-interaction]
     # Dispatch-based module: no single required criterion set applies to all constructions.
-    # Most segmental constructions use applies; aspiration_prominence uses stressed/obligatory/independence.
+    # Most segmental constructions use applies; aspiration_prominence uses accented/obligatory/independence.
     # The module dispatches on which criteria are present in the TSV.
     qualification_rule: >
       Dispatches on criteria present in the TSV:
@@ -485,7 +485,7 @@ classes:
         qualification: at least one element has applies=y. Returns four spans
         (strict/loose × complete/partial).
 
-      Blocked-span path (stressed/obligatory/independence criteria — aspiration prominence):
+      Blocked-span path (accented/obligatory/independence criteria — aspiration prominence):
         Mirrors the accent/metrical module blocked-span logic. Two domain types
         (minimal, maximal) using blocked_span. Returns four blocked spans
         (minimal/maximal × partial/complete).

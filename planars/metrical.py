@@ -8,12 +8,12 @@ import pandas as pd
 from planars.io import load_filled_tsv
 from planars.spans import blocked_span, fmt_span, strict_span, loose_span, position_sets_from_element_mask
 
-_REQUIRED_CRITERIA_BLOCKED  = {"stressed", "obligatory", "independence"}
+_REQUIRED_CRITERIA_BLOCKED  = {"accented", "obligatory", "independence"}
 _REQUIRED_CRITERIA_POSITIVE = {"applies"}
 
 
 # ---------------------------------------------------------------------------
-# Blocked-span path (stress_domain: stressed/obligatory/independence criteria)
+# Blocked-span path (stress_domain: accented/obligatory/independence criteria)
 # ---------------------------------------------------------------------------
 
 def _derive_blocked_domain(data: Tuple, strict: bool) -> Dict[str, object]:
@@ -32,9 +32,9 @@ def _derive_blocked_domain(data: Tuple, strict: bool) -> Dict[str, object]:
     # trigger a domain boundary, while always remaining part of the span.
     blocking_df = pd.concat([data_df, keystone_df], ignore_index=True)
 
-    # Minimal domain: blocked by independently stressed position.
+    # Minimal domain: blocked by independently accented position.
     minimal_block_mask = (
-        blocking_df["stressed"].isin({"y", "both"}) &
+        blocking_df["accented"].isin({"y", "both"}) &
         (blocking_df["independence"] == "y")
     )
     minimal_partial_blocked, minimal_complete_blocked = position_sets_from_element_mask(
@@ -115,9 +115,9 @@ def derive_metrical_domains(
 
     Dispatches on the criterion columns present in the data:
 
-    - ``stressed`` / ``obligatory`` / ``independence`` columns → blocked-span
+    - ``accented`` / ``obligatory`` / ``independence`` columns → blocked-span
       path for stress_domain constructions. The domain expands from the
-      keystone until an independently or obligatorily stressed position
+      keystone until an independently or obligatorily accented position
       creates a boundary. Returns minimal/maximal × partial/complete spans.
 
     - ``applies`` column → positive-qualification path for pitch-accent,
@@ -125,7 +125,7 @@ def derive_metrical_domains(
       domains. Returns four standard spans (strict/loose × complete/partial).
 
     Known construction types:
-      stress_domain         — blocked-span (stressed/obligatory/independence)
+      stress_domain         — blocked-span (accented/obligatory/independence)
       pitch-accent domain   — positive-qual (applies); e.g., Araona, Quechua
       iambic foot domain    — positive-qual (applies); e.g., Cup'ik
       word-stress domain    — positive-qual (applies); e.g., Mebengokre
@@ -143,7 +143,7 @@ def derive_metrical_domains(
         _header = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False, nrows=0)
         col_set = set(_header.columns)
 
-    if "stressed" in col_set:
+    if "accented" in col_set:
         if _data is None:
             _data = load_filled_tsv(tsv_path, _REQUIRED_CRITERIA_BLOCKED, strict=strict)
         return _derive_blocked_domain(_data, strict)
@@ -154,7 +154,7 @@ def derive_metrical_domains(
     else:
         raise ValueError(
             f"Cannot determine metrical domain type from columns {sorted(col_set)}. "
-            "Expected 'stressed' (blocked-span) or 'applies' (positive qualification)."
+            "Expected 'accented' (blocked-span) or 'applies' (positive qualification)."
         )
 
 

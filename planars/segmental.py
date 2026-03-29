@@ -9,7 +9,7 @@ from planars.io import load_filled_tsv
 from planars.spans import blocked_span, fmt_span, strict_span, loose_span, position_sets_from_element_mask
 
 _REQUIRED_CRITERIA_POSITIVE = {"applies"}
-_REQUIRED_CRITERIA_BLOCKED  = {"stressed", "obligatory", "independence"}
+_REQUIRED_CRITERIA_BLOCKED  = {"accented", "obligatory", "independence"}
 
 
 # ---------------------------------------------------------------------------
@@ -47,7 +47,7 @@ def _derive_positive_domain(data: Tuple, strict: bool) -> Dict[str, object]:
 
 
 # ---------------------------------------------------------------------------
-# Blocked-span path (aspiration prominence: stressed/obligatory/independence)
+# Blocked-span path (aspiration prominence: accented/obligatory/independence)
 # ---------------------------------------------------------------------------
 
 def _derive_prominence_domain(data: Tuple, strict: bool) -> Dict[str, object]:
@@ -66,7 +66,7 @@ def _derive_prominence_domain(data: Tuple, strict: bool) -> Dict[str, object]:
     blocking_df = pd.concat([data_df, keystone_df], ignore_index=True)
 
     minimal_block_mask = (
-        blocking_df["stressed"].isin({"y", "both"}) &
+        blocking_df["accented"].isin({"y", "both"}) &
         (blocking_df["independence"] == "y")
     )
     minimal_partial_blocked, minimal_complete_blocked = position_sets_from_element_mask(
@@ -116,7 +116,7 @@ def derive_segmental_domains(
       if its elements are within the domain (applies=y). Returns four standard
       spans (strict/loose × complete/partial).
 
-    - ``stressed`` / ``obligatory`` / ``independence`` columns → blocked-span
+    - ``accented`` / ``obligatory`` / ``independence`` columns → blocked-span
       path for aspiration (prominence) constructions (prosodically conditioned
       aspiration, e.g. English). Mirrors stress.py blocked-span logic. Returns
       minimal/maximal × partial/complete blocked spans.
@@ -142,14 +142,14 @@ def derive_segmental_domains(
         if _data is None:
             _data = load_filled_tsv(tsv_path, _REQUIRED_CRITERIA_POSITIVE, strict=strict)
         return _derive_positive_domain(_data, strict)
-    elif "stressed" in col_set:
+    elif "accented" in col_set:
         if _data is None:
             _data = load_filled_tsv(tsv_path, _REQUIRED_CRITERIA_BLOCKED, strict=strict)
         return _derive_prominence_domain(_data, strict)
     else:
         raise ValueError(
             f"Cannot determine segmental domain type from columns {sorted(col_set)}. "
-            "Expected 'applies' (positive qualification) or 'stressed' (blocked-span)."
+            "Expected 'applies' (positive qualification) or 'accented' (blocked-span)."
         )
 
 

@@ -104,17 +104,18 @@ Some analyses (stress, aspiration) use a **blocked span** instead: expand from t
 | `ciscategorial` | `V-combines`, `N-combines`, `A-combines` | 4 (strict/loose × complete/partial) | stable |
 | `subspanrepetition` | `widescope_left`, `widescope_right`, `fillable_botheither_conjunct` | 20 (5 categories × 4) | stable |
 | `noninterruption` | `free`, `multiple` | 4 strict spans (2 domain types × complete/partial) | stable |
-| `stress` | `stressed`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 4 (2 domain types × complete/partial) | stable † |
+| `metrical` | `accented`, `obligatory`, `independence`, `left-interaction`, `right-interaction` (blocked-span); `applies` (positive-qual) | 4 (2 domain types × complete/partial) | stable † |
 | `nonpermutability` | `permutable`, `scopal` | 4 strict spans (2 domain types × complete/partial) | [AUTO-DERIVED] ‡ |
 | `free_occurrence` | `free` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
-| `segmental` | `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] ‡ |
-| `suprasegmental` | `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] ‡ |
+| `segmental` | `applies` (positive-qual); `accented`, `obligatory`, `independence`, `left-interaction`, `right-interaction` (blocked-span) | 4 (strict/loose × complete/partial or 2 domain types × complete/partial) | [AUTO-DERIVED] ‡ |
+| `tonal` | `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
+| `tonosegmental` | `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
+| `intonational` | `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
 | `biuniqueness` | `biunique` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
 | `repair` | `restart` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
 | `pausing` | `pause_domain` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
 | `idiom` | `idiomatic` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
 | `play_language` | `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
-| `aspiration` | `stressed`, `obligatory`, `independence`, `left-interaction`, `right-interaction` | 4 (2 domain types × complete/partial) | [NEEDS REVIEW] § |
 | `proform` | `substitutable` | 4 (strict/loose × complete/partial) | [NEEDS REVIEW] ¶ |
 
 **Status key:** `stable` — confirmed and coordinator-approved. `[AUTO-DERIVED]` — diagnostic criterion design derived from reading Tallman et al. 2024; not yet coordinator-approved. `[NEEDS REVIEW]` — specific known concerns beyond AUTO-DERIVED. Only a coordinator should promote a module out of AUTO-DERIVED status.
@@ -123,22 +124,20 @@ Some analyses (stress, aspiration) use a **blocked span** instead: expand from t
 
 ‡ Likely stable based on cross-language evidence (see `schemas/diagnostic_classes.yaml`), but coordinator sign-off still needed.
 
-§ No confirmed language data; scope unclear — see issue #60.
-
 ¶ Not included in the langsci/291 published database (ch. 17, line 543). Prospective class.
 
 ---
 
 ## Notes on specific analyses
 
-### Stress and aspiration
+### Metrical and segmental (blocked-span constructions)
 
-Both use `blocked_span`: expand from the keystone outward, stopping just before the first blocking position. Two domain types are defined:
+Both support a `blocked_span` path: expand from the keystone outward, stopping just before the first blocking position. Two domain types are defined:
 
-- **Minimal** (stress): blocked by `stressed ∈ {y, both} AND independence=y`
-- **Maximal** (stress): blocked by `obligatory=y AND independence=y`
+- **Minimal**: blocked by `accented ∈ {y, both} AND independence=y`
+- **Maximal**: blocked by `obligatory=y AND independence=y`
 
-Each domain type has a complete/partial distinction, giving 4 spans per analysis. The `left-interaction` and `right-interaction` criteria are marked `[NEEDS REVIEW]` in `schemas/diagnostic_criteria.yaml` — their role in blocking conditions has not been finalized. Aspiration mirrors the stress structure but its qualification rules are also `[NEEDS REVIEW]` (see `schemas/diagnostic_classes.yaml`).
+Each domain type has a complete/partial distinction, giving 4 spans per analysis. The `left-interaction` and `right-interaction` criteria are marked `[NEEDS REVIEW]` in `schemas/diagnostic_criteria.yaml` — their role in blocking conditions has not been finalized.
 
 ### Noninterruption
 

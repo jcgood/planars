@@ -242,16 +242,16 @@ def _check_chart_keys() -> List[str]:
     # metrical (blocked-span path: stress_domain and similar)
     metr_keys = [k for k, _ in _METRICAL_BLOCKED_SPANS]
     _check("metrical (blocked-span)", metrical.derive_metrical_domains, metr_keys,
-           _make_minimal_tsv(["stressed", "obligatory", "independence"],
+           _make_minimal_tsv(["accented", "obligatory", "independence"],
                               ["left-interaction", "right-interaction"]),
-           {"stressed", "obligatory", "independence"})
+           {"accented", "obligatory", "independence"})
 
     # segmental (blocked-span path: aspiration_prominence)
     seg_blocked_keys = [k for k, _ in _SEGMENTAL_BLOCKED_SPANS]
     _check("segmental (blocked-span)", segmental.derive_segmental_domains, seg_blocked_keys,
-           _make_minimal_tsv(["stressed", "obligatory", "independence"],
+           _make_minimal_tsv(["accented", "obligatory", "independence"],
                               ["left-interaction", "right-interaction"]),
-           {"stressed", "obligatory", "independence"})
+           {"accented", "obligatory", "independence"})
 
     # subspanrepetition
     subspan_keys = [
