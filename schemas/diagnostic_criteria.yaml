@@ -407,6 +407,44 @@ analyses:
           Whether the suprasegmental phonological process applies to this element's
           position. y = this position is within the domain of the prosodic rule.
 
+  - name: tonal
+    description: >
+      [AUTO-DERIVED] Tests which span is governed by a general tonal phonological
+      process (spreading, assignment, sandhi) distinct from tonosegmental melody
+      overlays. Examples: H1-spreading domain (Cherokee), H3-assignment domain
+      (Cherokee). Each process is annotated in its own TSV.
+    diagnostic_criteria:
+      - name: applies
+        values: [y, n]
+        description: >
+          Whether the tonal phonological process applies to this element's position.
+          y = this position is within the domain of the tonal rule.
+
+  - name: tonosegmental
+    description: >
+      [AUTO-DERIVED] Tests which span is governed by a tonal melody assigned to
+      a segmental span as the surface realisation of a grammatical or semantic
+      feature (e.g., Chatino TAM tone melodies, Cherokee superhigh-assignment).
+      Each melody is annotated in its own TSV.
+    diagnostic_criteria:
+      - name: applies
+        values: [y, n]
+        description: >
+          Whether the tonosegmental process applies to this element's position.
+          y = this position is within the domain of the tonal melody assignment rule.
+
+  - name: intonational
+    description: >
+      [AUTO-DERIVED] Tests which span is governed by an intonational phonological
+      pattern (boundary tone, pitch reset, declination, etc.). Each pattern is
+      annotated in its own TSV.
+    diagnostic_criteria:
+      - name: applies
+        values: [y, n]
+        description: >
+          Whether the intonational pattern applies to this element's position.
+          y = this position is within the intonational domain.
+
 # ---------------------------------------------------------------------------
 # SHARED CRITERION VALUES
 # ---------------------------------------------------------------------------

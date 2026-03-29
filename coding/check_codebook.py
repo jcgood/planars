@@ -57,9 +57,10 @@ def _check_required_criteria(codebook: dict) -> List[str]:
         "ciscategorial": {"V-combines", "N-combines", "A-combines"},
     }
     for name in [
-        "subspanrepetition", "noninterruption", "stress", "aspiration",
+        "subspanrepetition", "noninterruption", "metrical",
         "nonpermutability", "free_occurrence", "biuniqueness", "repair",
-        "segmental", "suprasegmental", "pausing", "proform", "play_language", "idiom",
+        "segmental", "tonal", "tonosegmental", "intonational",
+        "pausing", "proform", "play_language", "idiom",
     ]:
         mod = importlib.import_module(f"planars.{name}")
         params = getattr(mod, "_REQUIRED_CRITERIA", None)
@@ -199,12 +200,13 @@ def _check_chart_keys() -> List[str]:
     actually present in the returned result dict.
     """
     from planars import (
-        ciscategorial, subspanrepetition, noninterruption, stress, aspiration,
-        nonpermutability, free_occurrence, biuniqueness, repair,
-        segmental, suprasegmental, pausing, proform, play_language, idiom,
+        ciscategorial, subspanrepetition, noninterruption,
+        metrical, nonpermutability, free_occurrence, biuniqueness, repair,
+        segmental, tonal, tonosegmental, intonational,
+        pausing, proform, play_language, idiom,
     )
     from planars.charts import (
-        _CISC_SPANS, _NONINT_SPANS, _STRESS_SPANS, _ASPIRATION_SPANS,
+        _CISC_SPANS, _NONINT_SPANS, _METRICAL_BLOCKED_SPANS, _SEGMENTAL_BLOCKED_SPANS,
         _SUBSPAN_CATS, _SUBSPAN_VARIANTS, _SIMPLE_SPANS, _NONPERM_SPANS,
     )
     from planars.io import load_filled_tsv
@@ -237,19 +239,19 @@ def _check_chart_keys() -> List[str]:
            _make_minimal_tsv(["free", "multiple"]),
            noninterruption._REQUIRED_CRITERIA)
 
-    # stress
-    stress_keys = [k for k, _ in _STRESS_SPANS]
-    _check("stress", stress.derive_stress_domains, stress_keys,
+    # metrical (blocked-span path: stress_domain and similar)
+    metr_keys = [k for k, _ in _METRICAL_BLOCKED_SPANS]
+    _check("metrical (blocked-span)", metrical.derive_metrical_domains, metr_keys,
            _make_minimal_tsv(["stressed", "obligatory", "independence"],
                               ["left-interaction", "right-interaction"]),
-           stress._REQUIRED_CRITERIA)
+           {"stressed", "obligatory", "independence"})
 
-    # aspiration
-    asp_keys = [k for k, _ in _ASPIRATION_SPANS]
-    _check("aspiration", aspiration.derive_aspiration_domains, asp_keys,
+    # segmental (blocked-span path: aspiration_prominence)
+    seg_blocked_keys = [k for k, _ in _SEGMENTAL_BLOCKED_SPANS]
+    _check("segmental (blocked-span)", segmental.derive_segmental_domains, seg_blocked_keys,
            _make_minimal_tsv(["stressed", "obligatory", "independence"],
                               ["left-interaction", "right-interaction"]),
-           aspiration._REQUIRED_CRITERIA)
+           {"stressed", "obligatory", "independence"})
 
     # subspanrepetition
     subspan_keys = [
@@ -269,20 +271,23 @@ def _check_chart_keys() -> List[str]:
 
     # simple 4-span modules (strict/loose × complete/partial)
     simple_cases = [
-        ("free_occurrence",  free_occurrence,  free_occurrence.derive_free_occurrence_spans),
-        ("biuniqueness",     biuniqueness,     biuniqueness.derive_biuniqueness_domains),
-        ("repair",           repair,           repair.derive_repair_domains),
-        ("segmental",        segmental,        segmental.derive_segmental_domains),
-        ("suprasegmental",   suprasegmental,   suprasegmental.derive_suprasegmental_domains),
-        ("pausing",          pausing,          pausing.derive_pausing_domains),
-        ("proform",          proform,          proform.derive_proform_domains),
-        ("play_language",    play_language,    play_language.derive_play_language_domains),
-        ("idiom",            idiom,            idiom.derive_idiom_domains),
+        ("free_occurrence",       free_occurrence.derive_free_occurrence_spans,  free_occurrence._REQUIRED_CRITERIA),
+        ("biuniqueness",          biuniqueness.derive_biuniqueness_domains,      biuniqueness._REQUIRED_CRITERIA),
+        ("repair",                repair.derive_repair_domains,                  repair._REQUIRED_CRITERIA),
+        ("segmental (positive)",  segmental.derive_segmental_domains,        segmental._REQUIRED_CRITERIA_POSITIVE),
+        ("metrical (positive)",   metrical.derive_metrical_domains,          metrical._REQUIRED_CRITERIA_POSITIVE),
+        ("tonal",                 tonal.derive_tonal_domains,                tonal._REQUIRED_CRITERIA),
+        ("tonosegmental",         tonosegmental.derive_tonosegmental_domains, tonosegmental._REQUIRED_CRITERIA),
+        ("intonational",          intonational.derive_intonational_domains,   intonational._REQUIRED_CRITERIA),
+        ("pausing",               pausing.derive_pausing_domains,             pausing._REQUIRED_CRITERIA),
+        ("proform",               proform.derive_proform_domains,             proform._REQUIRED_CRITERIA),
+        ("play_language",         play_language.derive_play_language_domains, play_language._REQUIRED_CRITERIA),
+        ("idiom",                 idiom.derive_idiom_domains,                 idiom._REQUIRED_CRITERIA),
     ]
-    for name, mod, derive_fn in simple_cases:
+    for name, derive_fn, req_criteria in simple_cases:
         _check(name, derive_fn, simple_keys,
-               _make_minimal_tsv(list(mod._REQUIRED_CRITERIA)),
-               mod._REQUIRED_CRITERIA)
+               _make_minimal_tsv(list(req_criteria)),
+               req_criteria)
 
     return errors
 

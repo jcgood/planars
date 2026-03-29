@@ -387,11 +387,11 @@ classes:
       - right-edge stress domain  # stress on final syllable of domain; e.g., Mocoví
       - tone-stress locus domain  # positively delimited; e.g., Hup: pos. 2/3-26
       - auxiliary construction domain  # pitch accent extends to auxiliary; e.g., Quechua
-    required_criteria: [stressed, obligatory, independence]
-    optional_criteria: [applies, left-interaction, right-interaction]
-    # Note: blocked-span constructions use stressed/obligatory/independence;
-    # positive-qual constructions use applies. The module dispatches on which
-    # criteria are present in the TSV.
+    required_criteria: []
+    optional_criteria: [applies, stressed, obligatory, independence, left-interaction, right-interaction]
+    # Dispatch-based module: no single required criterion set applies to all constructions.
+    # Blocked-span constructions (stress_domain) use stressed/obligatory/independence;
+    # positive-qual constructions use applies. The module dispatches on criteria present.
     qualification_rule: >
       Dispatches on criteria present in the TSV:
 
@@ -471,10 +471,11 @@ classes:
       - nasality spreading domain      # e.g., Chatino: positions 13-17
       - palatalization domain          # e.g., Chatino coronal, Chorote, Mocoví
       - fortition domain               # palatal fortition; e.g., Mebengokre aj-verb
-    required_criteria: [applies]
-    optional_criteria: [stressed, obligatory, independence, left-interaction, right-interaction]
-    # Note: aspiration_prominence constructions use stressed/obligatory/independence instead
-    # of applies. The module dispatches on which criteria are present in the TSV.
+    required_criteria: []
+    optional_criteria: [applies, stressed, obligatory, independence, left-interaction, right-interaction]
+    # Dispatch-based module: no single required criterion set applies to all constructions.
+    # Most segmental constructions use applies; aspiration_prominence uses stressed/obligatory/independence.
+    # The module dispatches on which criteria are present in the TSV.
     qualification_rule: >
       Dispatches on criteria present in the TSV:
 
