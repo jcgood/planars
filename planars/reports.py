@@ -40,7 +40,7 @@ import pandas as pd
 from planars import ciscategorial as _cisc
 from planars import subspanrepetition as _subspan
 from planars import noninterruption as _nonint
-from planars import stress as _stress
+from planars import metrical as _metrical
 from planars import nonpermutability as _nonperm
 from planars import free_occurrence as _freeoc
 from planars import biuniqueness as _biuniq
@@ -87,11 +87,11 @@ _NONINT_SPANS = [
     ("single_free_partial_span", "1-free partial"),
 ]
 
-_STRESS_SPANS = [
-    ("minimal_partial_span",  "stress minimal partial"),
-    ("minimal_complete_span", "stress minimal complete"),
-    ("maximal_partial_span",  "stress maximal partial"),
-    ("maximal_complete_span", "stress maximal complete"),
+_METRICAL_BLOCKED_SPANS = [
+    ("minimal_partial_span",  "metr minimal partial"),
+    ("minimal_complete_span", "metr minimal complete"),
+    ("maximal_partial_span",  "metr maximal partial"),
+    ("maximal_complete_span", "metr maximal complete"),
 ]
 
 _SEGMENTAL_BLOCKED_SPANS = [
@@ -152,12 +152,16 @@ def _rows_from_nonint(result, lang_id):
     return rows
 
 
-def _rows_from_stress(result, lang_id):
+def _rows_from_metrical(result, lang_id):
     rows = []
-    for key, label in _STRESS_SPANS:
+    if result.get("domain_logic") == "blocked":
+        span_list = _METRICAL_BLOCKED_SPANS
+    else:
+        span_list = _SIMPLE_SPANS
+    for key, label in span_list:
         l, r = result[key]
         rows.append({"Language": lang_id, "Test_Labels": label,
-                     "Analysis": "stress",
+                     "Analysis": "metrical",
                      "Left_Edge": l, "Right_Edge": r, "Size": r - l + 1})
     return rows
 
@@ -206,7 +210,7 @@ _CLASS_HANDLERS = {
     "ciscategorial":     (_cisc.derive_v_ciscategorial_fractures,     _rows_from_cisc),
     "subspanrepetition": (_subspan.derive_subspanrepetition_spans,    _rows_from_subspan),
     "noninterruption":   (_nonint.derive_noninterruption_domains,     _rows_from_nonint),
-    "stress":            (_stress.derive_stress_domains,              _rows_from_stress),
+    "metrical":          (_metrical.derive_metrical_domains,           _rows_from_metrical),
     "nonpermutability":  (_nonperm.derive_nonpermutability_domains,   _make_simple_rows("nonpermutability", _NONPERM_SPANS)),
     "free_occurrence":   (_freeoc.derive_free_occurrence_spans,       _make_simple_rows("free_occurrence")),
     "biuniqueness":      (_biuniq.derive_biuniqueness_domains,        _make_simple_rows("biuniqueness")),

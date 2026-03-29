@@ -1,0 +1,19 @@
+Synth0001 Metrical Stress Domain
+================================
+
+NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
+  independence: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
+  obligatory: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
+  stressed: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
+
+Keystone position: 23 (v:verbstem)
+
+Minimal partial blocked positions:  []
+Minimal complete blocked positions: []
+Maximal partial blocked positions:  []
+Maximal complete blocked positions: []
+
+Minimal metrical span (partial):   positions 1–28  (v:leftedge → v:rightedge)
+Minimal metrical span (complete):  positions 1–28  (v:leftedge → v:rightedge)
+Maximal metrical span (partial):   positions 1–28  (v:leftedge → v:rightedge)
+Maximal metrical span (complete):  positions 1–28  (v:leftedge → v:rightedge)

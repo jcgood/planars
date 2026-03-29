@@ -365,50 +365,59 @@ classes:
   # Phonological domain classes
   # ---------------------------------------------------------------------------
 
-  - name: stress
-    display_name: "Stress"
+  - name: metrical
+    display_name: "Metrical"
     domain_type: phonological
     domain_subtype: prosodic
     applicability: conditional
     applicability_conditions: >
-      Applicable when the language has a productive primary stress system in the verbal
-      domain, where stress can be assigned to or blocked within a defined span around
-      the verbal keystone. Requires elicitation data sufficient to determine whether
-      stress is obligatory and/or independent for each position.
-    specificity: general
-    required_criteria: [stressed, independence, obligatory, left-interaction, right-interaction]
-    optional_criteria: []
+      Applicable when the language has a metrical or prosodic domain in the verbal
+      complex — either a boundary-defined domain (stress, accent) or a positively
+      delimited domain (pitch-accent span, iambic foot, word-stress domain, etc.).
+      One construction per TSV. The module dispatches on which criteria are present.
+    specificity: construction_specific
+    known_constructions:
+      # Blocked-span constructions (stressed/obligatory/independence criteria)
+      - stress_domain          # boundary-defined stress domain; e.g., English, stan1293
+      # Positive-qualification constructions (applies criterion) — moving from suprasegmental
+      # as part of restructuring issue #100
+      - pitch-accent domain    # e.g., Araona LH*: vpref-connect3; Quechua L+H*: vcore-plural
+      - iambic foot domain     # e.g., Cup'ik: vbase-pn4
+      - word-stress domain     # stress-final within domain; e.g., Mebengokre: prevb-fin
+      - right-edge stress domain  # stress on final syllable of domain; e.g., Mocoví
+      - tone-stress locus domain  # positively delimited; e.g., Hup: pos. 2/3-26
+      - auxiliary construction domain  # pitch accent extends to auxiliary; e.g., Quechua
+    required_criteria: [stressed, obligatory, independence]
+    optional_criteria: [applies, left-interaction, right-interaction]
+    # Note: blocked-span constructions use stressed/obligatory/independence;
+    # positive-qual constructions use applies. The module dispatches on which
+    # criteria are present in the TSV.
     qualification_rule: >
-      Two domain types, each with complete and partial subtypes = 4 spans total.
-      Both use blocked_span: expand from ROOT in each direction, stopping just
-      before the first position where the blocking condition holds. The blocking
-      position is excluded.
+      Dispatches on criteria present in the TSV:
 
-      Complete vs. partial blocking:
-        partial:  any element in the position satisfies the blocking condition
-                  (easier to block → smaller domain).
-        complete: all elements in the position satisfy the blocking condition
-                  (harder to block → larger domain).
+      Blocked-span path (stressed/obligatory/independence — stress_domain and similar):
+        Expand from keystone in each direction, stopping just before the first
+        position where the blocking condition holds.
 
-      The keystone (v:verbstem) always remains part of the domain. Its criterion
-      values participate in blocking checks — its values can trigger a domain
-      boundary for positions beyond it — but it is never itself excluded from the
-      span. We are looking for the stress domain around the head of the clause only.
+        Minimal metrical domain — blocked by: stressed ∈ {y, both} AND independence = y.
+          An independently-stressed element begins a new metrical domain; the minimal
+          domain ends just before it.
 
-      Minimal stress domain — blocked by: stressed ∈ {y, both} AND independence = y.
-        An independently-stressed element begins a new stress domain; the minimal
-        domain ends just before it.
+        Maximal metrical domain — blocked by: obligatory = y AND independence = y.
+          An obligatorily-independent element creates a hard boundary.
 
-      Maximal stress domain — blocked by: obligatory = y AND independence = y.
-        An obligatorily-independent stress element creates a hard boundary; the
-        maximal domain extends up to but not including that position.
+        The keystone always remains part of the domain. Its criterion values
+        participate in blocking checks but it is never excluded from the span.
+        Returns minimal/maximal × partial/complete = 4 blocked spans.
+
+      Positive-qualification path (applies — pitch-accent domain, iambic foot, etc.):
+        A position qualifies if it contains an element where applies=y.
+        Complete: ALL elements have applies=y. Partial: at least one has applies=y.
+        Returns four standard spans (strict/loose × complete/partial).
     criterion_set_status: "[PROVISIONAL]"  # left-interaction and right-interaction are
-      # [NEEDS REVIEW] — their role in the qualification rule is unresolved (issue #17).
-      # They may be removed, renamed, or replaced depending on resolution of meso/interaction
-      # domain design (issues #16, #17).
-    # Note: in the book's ch. 17 abstract type taxonomy, stress is a fracture of the
-    # suprasegmental abstract type (not a separate type). planars treats it as a distinct
-    # module because it uses blocked_span logic rather than positive qualification.
+      # [NEEDS REVIEW] — their role in the blocked-span qualification rule is unresolved
+      # (issue #17). May be removed, renamed, or replaced depending on resolution of
+      # meso/interaction domain design (issues #16, #17).
     status: stable  # Note: left-interaction and right-interaction are [NEEDS REVIEW] (issue #17)
     collection_required: "n"
 
@@ -507,7 +516,7 @@ classes:
       - H1-spreading domain       # e.g., Cherokee: pos. 11-21
       - H3-assignment domain      # e.g., Cherokee: pos. 5/7-21
       - superhigh-assignment domain  # e.g., Cherokee: pos. 5/7-22
-      - tone-stress locus domain  # positively delimited; e.g., Hup: pos. 2/3-26
+      - tone-stress locus domain  # positively delimited; e.g., Hup: pos. 2/3-26 — → metrical (restructuring #100)
       - word-stress domain        # stress-final within domain; e.g., Mebengokre: prevb-fin
       - right-edge stress domain  # stress on final syllable of domain; e.g., Mocoví
       - auxiliary construction domain  # pitch accent extends to auxiliary; e.g., Quechua
