@@ -1,134 +1,18 @@
-from __future__ import annotations
+"""aspiration.py — retired.
 
-from pathlib import Path
-from typing import Dict, Optional, Tuple
+Aspiration is now handled by planars/segmental.py as a construction type
+within the segmental class. Use:
 
-import pandas as pd
+  - construction ``aspiration_prominence`` for the blocked-span
+    prosodically-conditioned case (e.g. English).
+  - construction ``aspiration_fusion`` for aspiration-related segmental
+    process types (e.g. Yukuna ch. 11).
 
-from planars.io import load_filled_tsv
-from planars.spans import blocked_span, fmt_span, position_sets_from_element_mask
+See schemas/diagnostic_classes.yaml (segmental class) and issue #100.
+"""
 
-_REQUIRED_CRITERIA = {"stressed", "obligatory", "independence"}
-
-
-def derive_aspiration_domains(
-    tsv_path: Optional[Path] = None,
-    strict: bool = True,
-    *,
-    _data: Optional[Tuple] = None,
-) -> Dict[str, object]:
-    """Derive aspiration domain spans from a filled aspiration TSV.
-
-    [NEEDS REVIEW] The qualification rules below mirror stress.py but are
-    provisional — the correct blocking parameters for aspiration have not yet
-    been confirmed. See schemas/diagnostic_classes.yaml for the open questions.
-
-    Mirrors the stress domain logic. Two domain types, each with complete/partial
-    qualification = 4 spans:
-
-    Minimal aspiration domain — expand from ROOT; stop just before the first
-    position where any/all elements have stressed ∈ {y, both} AND independence = y.
-
-    Maximal aspiration domain — expand from ROOT; stop just before the first
-    position where any/all elements have obligatory = y AND independence = y.
-
-    Returns the same dict structure as derive_stress_domains, with keys named
-    for aspiration (minimal/maximal × partial/complete blocked positions and spans).
-    """
-    if _data is not None:
-        data_df, keystone_pos, pos_to_name, _, keystone_df = _data
-    else:
-        data_df, keystone_pos, pos_to_name, _, keystone_df = load_filled_tsv(
-            tsv_path, _REQUIRED_CRITERIA, strict=strict
-        )
-
-    missing_data = {}
-    if not strict:
-        for c in sorted(_REQUIRED_CRITERIA):
-            blank_els = data_df.loc[data_df[c] == "", "Element"].tolist()
-            if blank_els:
-                missing_data[c] = blank_els
-
-    all_positions = set(data_df["Position_Number"].unique().tolist())
-
-    # Include keystone rows in blocking checks (mirrors stress.py logic).
-    # The ROOT position can trigger a boundary but always stays inside the domain.
-    blocking_df = pd.concat([data_df, keystone_df], ignore_index=True)
-
-    # Minimal blocking condition (provisional — see module docstring).
-    minimal_block_mask = (
-        blocking_df["stressed"].isin({"y", "both"}) &
-        (blocking_df["independence"] == "y")
-    )
-    minimal_partial_blocked, minimal_complete_blocked = position_sets_from_element_mask(
-        blocking_df, minimal_block_mask
-    )
-
-    # Maximal blocking condition (provisional — see module docstring).
-    maximal_block_mask = (
-        (blocking_df["obligatory"] == "y") &
-        (blocking_df["independence"] == "y")
-    )
-    maximal_partial_blocked, maximal_complete_blocked = position_sets_from_element_mask(
-        blocking_df, maximal_block_mask
-    )
-
-    return {
-        "keystone_position": keystone_pos,
-        "position_number_to_name": pos_to_name,
-        "element_table": data_df,
-        "missing_data": missing_data,
-        "minimal_partial_blocked_positions": sorted(minimal_partial_blocked),
-        "minimal_complete_blocked_positions": sorted(minimal_complete_blocked),
-        "maximal_partial_blocked_positions": sorted(maximal_partial_blocked),
-        "maximal_complete_blocked_positions": sorted(maximal_complete_blocked),
-        "minimal_partial_span": blocked_span(all_positions, minimal_partial_blocked, keystone_pos),
-        "minimal_complete_span": blocked_span(all_positions, minimal_complete_blocked, keystone_pos),
-        "maximal_partial_span": blocked_span(all_positions, maximal_partial_blocked, keystone_pos),
-        "maximal_complete_span": blocked_span(all_positions, maximal_complete_blocked, keystone_pos),
-    }
-
-
-def format_result(result: Dict[str, object]) -> str:
-    """Format a derive_aspiration_domains result dict as a human-readable string.
-
-    Args:
-        result: dict returned by derive_aspiration_domains.
-
-    Returns:
-        Multi-line string reporting blocked positions, domain spans, and any
-        missing-data warnings.
-    """
-    p = result["position_number_to_name"]
-    fmt = lambda span: fmt_span(span, p)
-    lines = []
-    missing = result.get("missing_data", {})
-    if missing:
-        lines.append(
-            "NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying."
-        )
-        for col, elements in missing.items():
-            preview = elements[:5]
-            suffix = f" … ({len(elements)} total)" if len(elements) > 5 else ""
-            lines.append(f"  {col}: {preview}{suffix}")
-        lines.append("")
-    lines += [
-        f"Keystone position: {result['keystone_position']} ({p.get(result['keystone_position'], '?')})",
-        "",
-        f"Minimal partial blocked positions: {result['minimal_partial_blocked_positions']}",
-        f"Minimal complete blocked positions: {result['minimal_complete_blocked_positions']}",
-        f"Maximal partial blocked positions:  {result['maximal_partial_blocked_positions']}",
-        f"Maximal complete blocked positions: {result['maximal_complete_blocked_positions']}",
-        "",
-        f"Minimal aspiration span (partial):  {fmt(result['minimal_partial_span'])}",
-        f"Minimal aspiration span (complete): {fmt(result['minimal_complete_span'])}",
-        f"Maximal aspiration span (partial):  {fmt(result['maximal_partial_span'])}",
-        f"Maximal aspiration span (complete): {fmt(result['maximal_complete_span'])}",
-    ]
-    return "\n".join(lines)
-
-
-# Standard entry point used by generate_notebooks.py to call each module's main
-# derive function without a per-module name mapping. New analysis modules must
-# define this alias pointing to their primary derive function.
-derive = derive_aspiration_domains
+raise ImportError(
+    "planars.aspiration has been retired. "
+    "Use planars.segmental with construction 'aspiration_prominence' or "
+    "'aspiration_fusion' instead. See issue #100."
+)

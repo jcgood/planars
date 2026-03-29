@@ -41,7 +41,6 @@ from planars import ciscategorial as _cisc
 from planars import subspanrepetition as _subspan
 from planars import noninterruption as _nonint
 from planars import stress as _stress
-from planars import aspiration as _aspiration
 from planars import nonpermutability as _nonperm
 from planars import free_occurrence as _freeoc
 from planars import biuniqueness as _biuniq
@@ -95,11 +94,11 @@ _STRESS_SPANS = [
     ("maximal_complete_span", "stress maximal complete"),
 ]
 
-_ASPIRATION_SPANS = [
-    ("minimal_partial_span",  "asp minimal partial"),
-    ("minimal_complete_span", "asp minimal complete"),
-    ("maximal_partial_span",  "asp maximal partial"),
-    ("maximal_complete_span", "asp maximal complete"),
+_SEGMENTAL_BLOCKED_SPANS = [
+    ("minimal_partial_span",  "seg minimal partial"),
+    ("minimal_complete_span", "seg minimal complete"),
+    ("maximal_partial_span",  "seg maximal partial"),
+    ("maximal_complete_span", "seg maximal complete"),
 ]
 
 # Standard 4-span pattern shared by most simple modules.
@@ -163,12 +162,16 @@ def _rows_from_stress(result, lang_id):
     return rows
 
 
-def _rows_from_aspiration(result, lang_id):
+def _rows_from_segmental(result, lang_id):
     rows = []
-    for key, label in _ASPIRATION_SPANS:
+    if result.get("domain_logic") == "blocked":
+        span_list = _SEGMENTAL_BLOCKED_SPANS
+    else:
+        span_list = _SIMPLE_SPANS
+    for key, label in span_list:
         l, r = result[key]
         rows.append({"Language": lang_id, "Test_Labels": label,
-                     "Analysis": "aspiration",
+                     "Analysis": "segmental",
                      "Left_Edge": l, "Right_Edge": r, "Size": r - l + 1})
     return rows
 
@@ -204,12 +207,11 @@ _CLASS_HANDLERS = {
     "subspanrepetition": (_subspan.derive_subspanrepetition_spans,    _rows_from_subspan),
     "noninterruption":   (_nonint.derive_noninterruption_domains,     _rows_from_nonint),
     "stress":            (_stress.derive_stress_domains,              _rows_from_stress),
-    "aspiration":        (_aspiration.derive_aspiration_domains,      _rows_from_aspiration),
     "nonpermutability":  (_nonperm.derive_nonpermutability_domains,   _make_simple_rows("nonpermutability", _NONPERM_SPANS)),
     "free_occurrence":   (_freeoc.derive_free_occurrence_spans,       _make_simple_rows("free_occurrence")),
     "biuniqueness":      (_biuniq.derive_biuniqueness_domains,        _make_simple_rows("biuniqueness")),
     "repair":            (_repair.derive_repair_domains,              _make_simple_rows("repair")),
-    "segmental":         (_segmental.derive_segmental_domains,        _make_simple_rows("segmental")),
+    "segmental":         (_segmental.derive_segmental_domains,        _rows_from_segmental),
     "suprasegmental":    (_supra.derive_suprasegmental_domains,       _make_simple_rows("suprasegmental")),
     "pausing":           (_pausing.derive_pausing_domains,            _make_simple_rows("pausing")),
     "proform":           (_proform.derive_proform_domains,            _make_simple_rows("proform")),

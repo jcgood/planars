@@ -412,37 +412,6 @@ classes:
     status: stable  # Note: left-interaction and right-interaction are [NEEDS REVIEW] (issue #17)
     collection_required: "n"
 
-  - name: aspiration
-    display_name: "Aspiration"
-    domain_type: phonological
-    applicability: conditional
-    applicability_conditions: >
-      Applicable when the language has a prosodic aspiration domain defined by blocking
-      conditions — i.e., when aspiration's distribution relative to the verbal keystone
-      defines a bounded span via independent/obligatory criteria (same logic as stress.py).
-      NOTE: Aspiration as a segmental spreading process (as in Yukuna ch. 11) should be
-      annotated under the `segmental` class instead. This module is for the blocked-span
-      prosodic case only. No confirmed language data exists for this module yet — see
-      issue #60.
-    specificity: general
-    required_criteria: [stressed, independence, obligatory, left-interaction, right-interaction]
-    optional_criteria: []
-    qualification_rule: >
-      Mirrors the stress domain logic. Two domain types (minimal, maximal) using
-      blocked_span with the same blocking conditions as stress. The keystone
-      participates in blocking checks (same as stress). If aspiration requires
-      different domain logic once data is collected, update this entry and
-      aspiration.py accordingly.
-    criterion_set_status: "[PROVISIONAL]"  # Inherits the same open questions as stress
-      # re: left-interaction and right-interaction (issues #16, #17). Additionally, the
-      # scope of this class is itself unresolved (issue #60) — criterion set may change
-      # substantially depending on whether this remains a blocked_span module.
-    # Note: criterion names are reused from stress; see diagnostic_criteria.yaml aspiration entry.
-    # Note: in the book's ch. 17 abstract type taxonomy, aspiration is a fracture of the
-    # suprasegmental abstract type (not a separate type). planars treats it as a distinct
-    # module because it uses blocked_span logic, same as stress.py.
-    status: "[NEEDS REVIEW]"  # No confirmed data; scope unclear — see issue #60
-    collection_required: "n"
 
   - name: segmental
     display_name: "Segmental"
@@ -451,43 +420,69 @@ classes:
     applicability: conditional
     applicability_conditions: >
       Applicable when the language has a segmental phonological process (vowel deletion,
-      consonant coalescence, nasality spreading, palatalization, etc.) that applies within
-      a defined span of the verbal planar structure. One process per TSV. Multiple segmental
-      processes may identify different spans.
+      consonant coalescence, nasality spreading, palatalization, aspiration, etc.) that
+      applies within a defined span of the verbal planar structure. One process per TSV.
+      Multiple segmental processes may identify different spans.
+
+      Aspiration is included here using the AUTOTYP-style construction naming convention
+      {process} ({mechanism}) to distinguish subtypes:
+        aspiration_prominence — blocked-span, prosodically conditioned (e.g. English:
+          aspiration blocked by independent stress). Uses stressed/obligatory/independence
+          criteria; same blocked-span logic as the accent/metrical module.
+        aspiration_fusion — aspiration-related segmental process type (e.g. Yukuna ch. 11).
+          Uses applies criterion like other segmental processes.
+      Collaborators will naturally treat aspiration as segmental regardless of mechanism,
+      so all aspiration types live here. The module dispatches on which criteria are present.
     specificity: construction_specific
     known_constructions:
       # One TSV per segmental process. Non-exhaustive examples.
+      # Aspiration (AUTOTYP-style mechanism subtype in construction name)
+      - aspiration_prominence          # blocked-span, prosodically conditioned; e.g., English
+      - aspiration_fusion              # aspiration-related segmental process; e.g., Yukuna ch. 11
+      # Vowel processes
       - vowel syncope domain           # e.g., Araona: vcore-tamesuf
-      - consonant coalescence domain   # e.g., Cup'ik uvular-velar: vbase-pn4
-      - nasality spreading domain      # e.g., Chatino: positions 13-17
-      - palatalization domain          # e.g., Chatino coronal, Chorote, Mocoví
       - vowel elision domain           # hiatus resolution; e.g., Chatino verbal prefix domain
       - vowel fusion domain            # pronoun vowel fusion; e.g., Chatino pos. 13-17
       - vowel overwriting domain       # CVʔV + vowel-initial pronoun; e.g., Mixtec
       - vowel copying domain           # morphophonological copying; e.g., Hup
-      - final consonant deletion domain  # coda deletion at suffix boundary; e.g., Hup
-      - syncope domain                 # high-vowel deletion in prefixed stems; e.g., Mebengokre
-      - echo vowel epenthesis domain   # stem-final epenthesis; e.g., Mebengokre
-      - fortition domain               # palatal fortition; e.g., Mebengokre aj-verb
-      - suffix deletion domain         # function word final-syllable deletion; e.g., Quechua
+      - vowel deletion domain          # e.g., Cherokee
       - vowel lowering domain          # /u,i/→[o,e] near /q/; e.g., Quechua
-      - yod insertion domain           # /y/ epenthesis at vowel juncture; e.g., Chorote
       - vowel harmony domain           # verb- or affix-conditioned harmony; e.g., Mocoví
       - vocalic epenthesis domain      # cluster resolution; e.g., Mocoví
+      - echo vowel epenthesis domain   # stem-final epenthesis; e.g., Mebengokre
+      - syncope domain                 # high-vowel deletion in prefixed stems; e.g., Mebengokre
+      - suffix deletion domain         # function word final-syllable deletion; e.g., Quechua
+      - yod insertion domain           # /y/ epenthesis at vowel juncture; e.g., Chorote
+      # Consonant processes
+      - consonant coalescence domain   # e.g., Cup'ik uvular-velar: vbase-pn4
+      - final consonant deletion domain  # coda deletion at suffix boundary; e.g., Hup
       - h-metathesis domain            # e.g., Cherokee
-      - vowel deletion domain          # e.g., Cherokee
       - final apocope domain           # e.g., Cherokee
+      # Spreading / assimilation
+      - nasality spreading domain      # e.g., Chatino: positions 13-17
+      - palatalization domain          # e.g., Chatino coronal, Chorote, Mocoví
+      - fortition domain               # palatal fortition; e.g., Mebengokre aj-verb
     required_criteria: [applies]
-    optional_criteria: []
+    optional_criteria: [stressed, obligatory, independence, left-interaction, right-interaction]
+    # Note: aspiration_prominence constructions use stressed/obligatory/independence instead
+    # of applies. The module dispatches on which criteria are present in the TSV.
     qualification_rule: >
-      A position qualifies if it contains an element where applies=y. Complete
-      qualification: ALL elements in the position have applies=y. Partial
-      qualification: at least one element has applies=y.
-    criterion_set_status: stable  # Single binary criterion is appropriate; the process
-      # identity is encoded in the construction name. No cross-language evidence suggests
-      # additional parameters are needed.
-    # Formal abstract type in ch. 17 database schema. Note: `stress` and `aspiration` are
-    # separate planars modules but are fractures of this abstract type in the book's taxonomy.
+      Dispatches on criteria present in the TSV:
+
+      Positive-qualification path (applies criterion):
+        A position qualifies if it contains an element where applies=y. Complete
+        qualification: ALL elements in the position have applies=y. Partial
+        qualification: at least one element has applies=y. Returns four spans
+        (strict/loose × complete/partial).
+
+      Blocked-span path (stressed/obligatory/independence criteria — aspiration prominence):
+        Mirrors the accent/metrical module blocked-span logic. Two domain types
+        (minimal, maximal) using blocked_span. Returns four blocked spans
+        (minimal/maximal × partial/complete).
+    criterion_set_status: "[PROVISIONAL]"  # aspiration_prominence inherits open questions
+      # re: left-interaction and right-interaction from stress (issues #16, #17).
+      # Other segmental criteria are stable (single binary applies criterion).
+    # Formal abstract type in ch. 17 database schema.
     status: "[AUTO-DERIVED: likely stable — confirmed across 10+ language chapters; formal
       abstract type in ch. 17; coordinator sign-off needed to remove AUTO-DERIVED]"
     collection_required: "n"
