@@ -24,7 +24,8 @@ Each criterion column has a dropdown validation list. Click a cell and use the d
 
 A few rules:
 - **Keystone row** (`v:verbstem`): Pre-filled with `NA`. Do not change these cells.
-- **Blank cells**: Leave blank only if you genuinely cannot determine the value. Blanks are treated as non-qualifying when spans are computed, and will appear as warnings when the coordinator imports the data.
+- **Blank cells**: Leave blank if you have not yet annotated this element. Blanks appear as warnings when the coordinator imports the data and are excluded from span computations.
+- **`?`**: Use `?` (not a blank) when you have consulted the source and genuinely cannot determine the value. A `?` is a positive annotation of uncertainty — it tells the coordinator "I looked and could not decide", which is different from "I have not looked yet". Both are flagged on import, but they mean different things for the record.
 - **Comments column**: Use this for anything you want to flag — uncertainty, alternative analyses, references to examples. It is passed through unchanged and is never used in computation.
 
 ### Viewing your results

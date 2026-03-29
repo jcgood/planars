@@ -140,6 +140,16 @@ At the start of each run, the current Drive manifest is backed up to `manifest_b
 
 Collaborators fill in values in the shared Google Sheets. See the [Collaborator guide](collaborator-guide.md). Keystone rows (`v:verbstem`) are pre-filled with `NA` and should not be changed.
 
+**Blank / `?` / `NA` semantics** — these three values are distinct and should not be used interchangeably:
+
+| Value | Meaning | Import behavior |
+|-------|---------|-----------------|
+| blank | Not yet annotated — annotator has not examined this element | Warning on import; excluded from span computations |
+| `?` | Uncertain — source was consulted but answer could not be determined | Warning on import; excluded from span computations |
+| `NA` | Not applicable — keystone row only (`v:verbstem`) | Silently accepted; keystone excluded from span expansion by design |
+
+The blank/`?` distinction matters for data quality: a `?` is a positive annotation of uncertainty ("I looked and could not decide"), while a blank means the cell has not been filled. Both are flagged on import, but they are semantically different — especially for cross-database comparison (see also #84, CLDF export).
+
 When a construction is complete, the collaborator sets its row in the **Status tab** to `ready-for-review`. This signals to the coordinator that the construction is ready to import.
 
 ### 3. Import filled sheets

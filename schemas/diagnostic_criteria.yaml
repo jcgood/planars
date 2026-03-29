@@ -426,5 +426,17 @@ shared_values:
 
   - value: "?"
     meaning: >
-      Unknown or not yet annotated. Treated as missing data; rows with "?"
-      will cause validation errors if passed to an analysis function.
+      Uncertain — the source was consulted but the answer could not be
+      determined. Distinct from blank (not yet coded): a "?" is a positive
+      annotation of uncertainty, not an absence of annotation. Treated as
+      missing data; rows with "?" will cause validation warnings on import
+      and are excluded from span computations.
+
+  - value: ""
+    meaning: >
+      Blank — not yet coded. Absence of annotation; the annotator has not
+      yet examined this element for this criterion. Distinct from "?":
+      a blank cell does not mean the answer is unknown, only that no
+      annotation has been entered. Blank cells trigger a validation warning
+      on import and are excluded from span computations. Do not use "?" as
+      a substitute for a blank cell.
