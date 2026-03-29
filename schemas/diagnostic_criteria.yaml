@@ -114,37 +114,53 @@ analyses:
           Only meaningful when free=y. A singly-occurring free element (free=y, multiple=n)
           does not interrupt the single-free domain.
 
-  - name: stress
+  # stress is retired as of issue #100 — now handled by metrical
+  # (construction stress_domain). Criteria moved to metrical section below.
+
+  - name: metrical
     description: >
-      Tests which positions fall within the prosodic stress domain of the verbal
-      keystone. Two domain types are derived based on different notions of
-      stress domain boundary. Criteria capture whether elements can bear stress,
-      whether stress is obligatory, whether an element's stress is independent of
-      neighboring elements, and whether there are leftward or rightward stress
-      interactions (see issues #16, #17 for meso and interaction domains).
+      Tests which positions fall within a metrical or prosodic domain of the verbal
+      planar structure. Dispatch-based module: blocked-span constructions (e.g.,
+      stress_domain) use stressed/obligatory/independence to derive domain boundaries;
+      positive-qualification constructions (e.g., pitch-accent domain, iambic foot
+      domain) use applies. One construction per TSV.
+
+      Blocked-span criteria derive two domain types based on different notions of
+      metrical boundary (see issues #16, #17 for meso and interaction domains).
     diagnostic_criteria:
+
+      - name: applies
+        values: [y, n]
+        description: >
+          Whether the metrical process applies to this element's position.
+          y = this position is within the domain of the metrical rule.
+          Used by positive-qualification constructions (e.g., pitch-accent domain,
+          iambic foot domain).
 
       - name: stressed
         values: [y, n, both]
         description: >
-          Whether the element can carry primary stress.
-          y = always stressed; n = never stressed; both = variably stressed
-          depending on context.
+          Whether the element can carry primary stress (or the analogous metrical
+          prominence). y = always stressed; n = never stressed; both = variably
+          stressed depending on context. Used by blocked-span constructions
+          (e.g., stress_domain).
 
       - name: obligatory
         values: [y, n]
         description: >
           Whether stress is obligatory on this element (i.e., the element must
-          bear stress when present). This is designed to handle situations where an intervening element
-          may require stress (e.g., a Full NP argument) which would block the prosodic integration of a
-          some element with the keystone's domain (e.g., a verbal particle). Contrastive example: "[picked up] the ball"
+          bear stress when present). Designed to handle situations where an
+          intervening element may require stress (e.g., a full NP argument)
+          which would block prosodic integration with the keystone's domain
+          (e.g., a verbal particle). Contrastive example: "[picked up] the ball"
           versus "[pick] the ball [up]".
 
       - name: independence
         values: [y, n]
         description: >
-          Whether the element's stress is independent of the keystone. This can be operationalized as: Can this element
-          be stressed when the keystone is also stressed.
+          Whether the element's stress is independent of the keystone. Can be
+          operationalized as: can this element be stressed when the keystone is
+          also stressed?
 
       - name: left-interaction
         values: [y, n]
