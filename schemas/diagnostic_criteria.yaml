@@ -210,41 +210,8 @@ analyses:
           noninterruption; if both analyses are run, a single sheet with both
           `free` and `multiple` columns covers both.
 
-  - name: aspiration
-    description: >
-      [NEEDS REVIEW] Tests which positions fall within the aspiration domain of
-      the verbal planar structure. Shares criterion structure with stress.
-    diagnostic_criteria:
-
-      - name: stressed
-        values: [y, n, both]
-        description: >
-          [NEEDS REVIEW] Whether the element can carry aspiration. Reuses the
-          stressed criterion name from the stress analysis; values have the
-          same interpretation in the context of aspiration.
-
-      - name: obligatory
-        values: [y, n]
-        description: >
-          [NEEDS REVIEW] Whether aspiration is obligatory on this element.
-
-      - name: independence
-        values: [y, n]
-        description: >
-          [NEEDS REVIEW] Whether the element's aspiration is independent of
-          neighboring elements.
-
-      - name: left-interaction
-        values: [y, n]
-        description: >
-          [NEEDS REVIEW] Whether the element's aspiration interacts with elements
-          to its left.
-
-      - name: right-interaction
-        values: [y, n]
-        description: >
-          [NEEDS REVIEW] Whether the element's aspiration interacts with elements
-          to its right.
+  # aspiration is retired as of issue #100 — now handled by segmental
+  # (construction aspiration_prominence). Criteria moved to segmental section below.
 
   - name: biuniqueness
     description: >
@@ -374,38 +341,60 @@ analyses:
       Tests which span is governed by a segmental (non-prosodic) phonological process.
       Examples: vowel deletion/coalescence at position junctures (Araona: vowel syncope
       domain vcore–tamesuf), consonant coalescence (Cup'ik: uvular-velar coalescence
-      domain vbase–pn4), nasality spreading, palatalization. Each process is annotated
-      in its own TSV (one construction per file). Multiple segmental processes in one
-      language may identify different spans. Classified as a phonological domain type
-      (Tallman et al. 2024, discussion ch. 17).
+      domain vbase–pn4), nasality spreading, palatalization, aspiration spread. Each
+      process is annotated in its own TSV (one construction per file). Multiple segmental
+      processes in one language may identify different spans. Classified as a phonological
+      domain type (Tallman et al. 2024, discussion ch. 17).
+
+      Dispatch-based module: positive-qualification constructions use `applies`;
+      prominence-conditioned constructions (e.g., aspiration_prominence) use the
+      blocked-span criteria below (stressed, obligatory, independence, etc.).
     diagnostic_criteria:
       - name: applies
         values: [y, n]
         description: >
           Whether the segmental phonological process applies to or at this element's
           position. y = this position is within the domain of the process.
+          Used by positive-qualification constructions (e.g., vowel syncope domain).
 
-  - name: suprasegmental
-    description: >
-      [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design and qualification rules were
-      automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13
-      (Araona) §Pitch-accent domains and ch. 2 (Cup'ik) §Prosodic domains. Verify
-      before use.
+      - name: stressed
+        values: [y, n, both]
+        description: >
+          [NEEDS REVIEW] Whether the element is in a stressed position relative to the
+          segmental process. Used by prominence-conditioned constructions (e.g.,
+          aspiration_prominence). `both` = the position contains elements with and
+          without stress conditioning.
 
-      Tests which span is governed by a suprasegmental (prosodic) phonological process.
-      Examples: pitch-accent assignment domain (Araona: LH* domain vpref–connect3),
-      iambic stress foot domain (Cup'ik: vbase–pn4), tone melody span. Each process
-      is annotated in its own TSV. Note that stress domains identifiable via blocking
-      conditions (e.g., independence of primary stress) are handled by stress.py and
-      aspiration.py using blocked_span logic; this module handles suprasegmental domains
-      where positions are annotated positively as within or outside the domain.
-      Classified as a phonological domain type (Tallman et al. 2024, discussion ch. 17).
-    diagnostic_criteria:
-      - name: applies
+      - name: obligatory
         values: [y, n]
         description: >
-          Whether the suprasegmental phonological process applies to this element's
-          position. y = this position is within the domain of the prosodic rule.
+          [NEEDS REVIEW] Whether the segmental process is obligatory at this element's
+          position.
+
+      - name: independence
+        values: [y, n]
+        description: >
+          [NEEDS REVIEW] Whether the element's segmental process is independent of
+          neighboring elements (not conditioned by adjacency).
+
+      - name: left-interaction
+        values: [y, n]
+        description: >
+          [NEEDS REVIEW] Whether the element's segmental process interacts with
+          elements to its left.
+
+      - name: right-interaction
+        values: [y, n]
+        description: >
+          [NEEDS REVIEW] Whether the element's segmental process interacts with
+          elements to its right.
+
+  # suprasegmental is retired as of issue #100. Constructions redistributed to:
+  #   metrical (pitch-accent, iambic foot, word-stress, etc.) — uses applies or
+  #     stressed/obligatory/independence depending on construction type
+  #   tonosegmental (tone melody, superhigh-assignment) — uses applies
+  #   tonal (H1-spreading, H3-assignment) — uses applies
+  # See metrical and tonal/tonosegmental sections for criteria.
 
   - name: tonal
     description: >
