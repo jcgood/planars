@@ -496,6 +496,35 @@ classes:
       abstract type in ch. 17; coordinator sign-off needed to remove AUTO-DERIVED]"
     collection_required: "n"
 
+  - name: tonal
+    display_name: "Tonal"
+    domain_type: phonological
+    domain_subtype: tonal
+    applicability: conditional
+    applicability_conditions: >
+      Applicable when the language has a general tonal phonological process (spreading,
+      assignment, or sandhi) that applies within a defined span of the verbal planar
+      structure but is NOT a tonosegmental overlay (i.e., not a tonal melody assigned to
+      a segmental span as the surface realisation of a grammatical or semantic feature —
+      those belong in tonosegmental). Examples include tonal spreading rules and tonal
+      assignment rules conditioned by morphological or phonological environment.
+      One rule per TSV.
+    specificity: construction_specific
+    known_constructions:
+      # One TSV per tonal rule. Non-exhaustive examples.
+      - H1-spreading domain       # e.g., Cherokee: pos. 11-21
+      - H3-assignment domain      # e.g., Cherokee: pos. 5/7-21
+    required_criteria: [applies]
+    optional_criteria: []
+    qualification_rule: >
+      A position qualifies if it contains an element where applies=y. Complete
+      qualification: ALL elements in the position have applies=y. Partial
+      qualification: at least one element has applies=y. Returns four spans
+      (strict/loose × complete/partial).
+    criterion_set_status: "[AUTO-DERIVED]"
+    status: "[AUTO-DERIVED]"
+    collection_required: "n"
+
   - name: suprasegmental
     display_name: "Suprasegmental"
     domain_type: phonological
