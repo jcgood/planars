@@ -46,7 +46,6 @@ from planars import free_occurrence as _freeoc
 from planars import biuniqueness as _biuniq
 from planars import repair as _repair
 from planars import segmental as _segmental
-from planars import suprasegmental as _supra
 from planars import tonal as _tonal
 from planars import tonosegmental as _tonoseg
 from planars import pausing as _pausing
@@ -218,7 +217,6 @@ _CLASS_HANDLERS = {
     "biuniqueness":      (_biuniq.derive_biuniqueness_domains,        _make_simple_rows("biuniqueness")),
     "repair":            (_repair.derive_repair_domains,              _make_simple_rows("repair")),
     "segmental":         (_segmental.derive_segmental_domains,        _rows_from_segmental),
-    "suprasegmental":    (_supra.derive_suprasegmental_domains,       _make_simple_rows("suprasegmental")),
     "tonal":             (_tonal.derive_tonal_domains,                _make_simple_rows("tonal")),
     "tonosegmental":     (_tonoseg.derive_tonosegmental_domains,      _make_simple_rows("tonosegmental")),
     "pausing":           (_pausing.derive_pausing_domains,            _make_simple_rows("pausing")),

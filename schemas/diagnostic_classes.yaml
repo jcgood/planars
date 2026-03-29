@@ -553,44 +553,12 @@ classes:
     status: "[AUTO-DERIVED]"
     collection_required: "n"
 
-  - name: suprasegmental
-    display_name: "Suprasegmental"
-    domain_type: phonological
-    domain_subtype: prosodic
-    applicability: conditional
-    applicability_conditions: >
-      Applicable when the language has a suprasegmental or prosodic rule (pitch-accent
-      assignment, iambic stress foot, tone melody, etc.) with a positively delimited domain
-      in the verbal planar structure. Distinct from stress.py and aspiration.py, which use
-      blocked_span logic; this module uses positive qualification (positions annotated as
-      inside or outside the domain). One rule per TSV.
-    specificity: construction_specific
-    known_constructions:
-      # One TSV per suprasegmental rule. Non-exhaustive examples.
-      - pitch-accent domain       # e.g., Araona LH*: vpref-connect3; Quechua L+H*: vcore-plural
-      - iambic foot domain        # e.g., Cup'ik: vbase-pn4
-      - tone melody domain        # e.g., Chatino TAM tonal alternations: pos. 10-13
-      - H1-spreading domain       # e.g., Cherokee: pos. 11-21
-      - H3-assignment domain      # e.g., Cherokee: pos. 5/7-21
-      - superhigh-assignment domain  # e.g., Cherokee: pos. 5/7-22
-      - tone-stress locus domain  # positively delimited; e.g., Hup: pos. 2/3-26 — → metrical (restructuring #100)
-      - word-stress domain        # stress-final within domain; e.g., Mebengokre: prevb-fin
-      - right-edge stress domain  # stress on final syllable of domain; e.g., Mocoví
-      - auxiliary construction domain  # pitch accent extends to auxiliary; e.g., Quechua
-    required_criteria: [applies]
-    optional_criteria: []
-    qualification_rule: >
-      A position qualifies if it contains an element where applies=y. Complete
-      qualification: ALL elements in the position have applies=y. Partial
-      qualification: at least one element has applies=y.
-    criterion_set_status: stable  # Single binary criterion is appropriate; rule identity
-      # is encoded in the construction name. No cross-language evidence suggests additional
-      # parameters are needed.
-    # Formal abstract type in ch. 17 database schema. Note: `stress` and `aspiration` are
-    # separate planars modules but are fractures of this abstract type in the book's taxonomy.
-    status: "[AUTO-DERIVED: likely stable — confirmed across 10+ language chapters; formal
-      abstract type in ch. 17; coordinator sign-off needed to remove AUTO-DERIVED]"
-    collection_required: "y"
+  # suprasegmental is retired as of issue #100. Its constructions have been redistributed:
+  #   metrical:      pitch-accent domain, iambic foot domain, word-stress domain,
+  #                  right-edge stress domain, tone-stress locus domain,
+  #                  auxiliary construction domain
+  #   tonosegmental: tone melody domain, superhigh-assignment domain
+  #   tonal:         H1-spreading domain, H3-assignment domain
 
   - name: pausing
     display_name: "Pausing"
