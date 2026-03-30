@@ -280,19 +280,20 @@ Run `gh issue list` for the full list. Key active issues:
 
 - **#88** — Archive planars data as versioned CLDF release on Zenodo (depends on #84).
 - **#87** — Add cross-language annotator assignment and status tracking (Drive sheet or yaml in planars-data).
-- **#86** — Document blank / `?` / `na` value semantics in codebook and guides (docs only).
 - **#85** — Add `Source` column to annotation sheets for value-level provenance (connects to #81).
 - **#84** — Add `export-cldf` command to produce a CLDF StructureDataset from planars annotation data.
 - **#81** — Add collaborator notes alongside annotation sheets: per-language Google Doc with tabs per class/construction; download notes in `import-sheets` to surface uncertain codings and propose refinements.
 - **#80** — Auto-generate schema structure diagrams from YAML schema files. Initial implementation in `generate_diagram.py` (class taxonomy with criteria + language instances); layout refinement still needed.
-- **#78** — `collection_required` field added and check implemented; inert until Adam sets true/false values per class.
 - **#72** — Prepare Chichewa (nyan1308) for onboarding. `[Jeff]`
-- **#71** — New analysis module: intonational domain. `[diagnostics]`
-- **#70** — New analysis module: tonosegmental domain. `[diagnostics]`
+- **#70** — New analysis module: tonosegmental domain. Stub created; qualification rule and status need Adam's sign-off. `[diagnostics]`
+- **#107** — Allow explicit NA value for inapplicable diagnostic criteria (e.g. English stress); needs Adam's input on which criteria and computational treatment. `[diagnostics]` `[needs-input]`
+- **#104** — Keystone coding for phonological blocked-span tests: verbstem row should have real accented/obligatory/independence values, not `na`. Needs documentation, sheet fix, and Adam's input on correct values. `[diagnostics]`
+- **#103** — `restructure-sheets`: support class/construction renames with annotation carry-forward. Currently brittle (helper scripts only). `[enhancement]`
+- **#101** — Tonal alternations from hybrid morphemes: does this need a new phonological category distinct from `tonal` and `tonosegmental`? Needs Adam's input. `[diagnostics]`
+- **#99** — `free_occurrence` should read from `noninterruption/general.tsv` when it exists (shares `free` criterion); no separate sheet needed. `[enhancement]`
 - **#97** — `import-sheets`: archive TSVs on change detection (not just `--overwrite-existing`); archives committed to planars-data for browsable history alongside live files.
 - **#105** — Automate daily snapshot refresh (import-sheets → generate_snapshots → commit); document that qualification rule changes require snapshot regeneration.
 - **#102** — Remove duplicate and redundant test cases in `test_spans.py` and `test_smoke_modules.py` (~14 redundant cases identified).
-- **#107** — Allow explicit NA value for inapplicable diagnostic criteria (e.g. English stress); needs Adam's input on which criteria and computational treatment. `[diagnostics]` `[needs-input]`
 - **#9** — Fill in `[PLACEHOLDER]` and `[NEEDS REVIEW]` entries in schema files. Requires input from Adam. `[needs-input]`
 
 ## Work phases
@@ -302,6 +303,8 @@ This is a **research project**: the schemas, qualification rules, and analytical
 Sessions tend to fall into a few natural patterns. Naming the primary focus at the start of a session helps keep scope manageable.
 
 **Schema work** — Editing any file in `schemas/` or the qualification rules in analysis modules. The most consequential work; mistakes here cascade across languages and analyses. Go slow, run `integrity-check` after changes. Qualification rule changes must also propagate to inline comments and module docstrings — not just the YAML files.
+
+Snapshot lifecycle: the pre-commit hook (`regenerate_snapshots_hook.py`) regenerates affected snapshots automatically when any `planars/*.py` file is staged — qualification rule changes are covered here. The daily `data-refresh.yml` GitHub Action imports fresh annotations from Google Sheets and regenerates snapshots — data changes are covered there. A snapshot diff in a commit is the expected record of how a change altered span output. A snapshot failure on a PR means a code change altered output without going through the hook.
 
 **Language onboarding** — End-to-end work for a new language: gathering source material, drafting `diagnostics_{lang_id}.tsv`, running `generate-sheets`, producing a first-pass annotation, importing, and verifying analysis output. During prototyping, this has involved reading finished book chapters; in production, onboarding will be a collaborative process with contributors who may provide information in varied and yet-to-be-modeled forms (notes, drafts, conversation, partial data). The tooling should remain open to this rather than assuming a finished written source is always available. Automated first-pass coding may eventually be possible, but will always require expert review.
 

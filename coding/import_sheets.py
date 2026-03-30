@@ -3,8 +3,8 @@
 
 Run from the repo root:
     python -m coding import-sheets              # dry run: report what would be written
-    python -m coding import-sheets --apply      # write new TSVs (skip existing)
-    python -m coding import-sheets --apply --overwrite-existing  # re-download and overwrite existing TSVs
+    python -m coding import-sheets --apply      # write TSVs when content has changed
+    python -m coding import-sheets --apply --overwrite-existing  # force overwrite even if unchanged
 
 Reads the manifest from Drive (via drive_config.json), downloads each sheet
 tab, validates values, and writes {construction}.tsv to
@@ -102,6 +102,24 @@ def _archive_tsv(path: Path, timestamp: str) -> Path:
     archive_path = archive_dir / f"{path.stem}_{timestamp}{path.suffix}"
     shutil.copy2(path, archive_path)
     return archive_path
+
+
+def _tsv_content_changed(path: Path, header: List[str], records: List[Dict]) -> bool:
+    """Return True if the new header+records differ from the existing file at path.
+
+    Reads the existing file into a DataFrame, aligns columns to the new header
+    (filling missing columns with ""), and compares element-wise after normalising
+    NaN → "".  Returns True when content differs or the file cannot be parsed.
+    """
+    try:
+        existing = pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False)
+    except Exception:
+        return True
+    new_df = pd.DataFrame(records).reindex(columns=header).fillna("")
+    existing = existing.reindex(columns=header).fillna("")
+    if existing.shape != new_df.shape:
+        return True
+    return not existing.reset_index(drop=True).equals(new_df.reset_index(drop=True))
 
 
 def _write_tsv(path: Path, header: List[str], records: List[Dict]) -> None:
@@ -442,15 +460,22 @@ def _download_planar_input_sheets(
                     safe_cmds |= s
                     pending   += p
                     out_path = existing[-1]   # overwrite most recent file in place
+                    content_changed = not old_df.reset_index(drop=True).equals(
+                        new_df.reset_index(drop=True)
+                    )
                     if apply:
-                        if timestamp:
-                            archived = _archive_tsv(out_path, timestamp)
-                            print(f"  [planar] Archived existing → archive/{archived.name}")
-                        planar_dir.mkdir(parents=True, exist_ok=True)
-                        new_df.to_csv(out_path, sep="\t", index=False)
-                        print(f"  [planar] Downloaded → {out_path.name}")
+                        if content_changed:
+                            if timestamp:
+                                archived = _archive_tsv(out_path, timestamp)
+                                print(f"  [planar] Archived existing → archive/{archived.name}")
+                            planar_dir.mkdir(parents=True, exist_ok=True)
+                            new_df.to_csv(out_path, sep="\t", index=False)
+                            print(f"  [planar] Downloaded → {out_path.name}")
+                        else:
+                            print(f"  [planar] No changes → {out_path.name}")
                     else:
-                        print(f"  [planar] Would overwrite → {out_path.name}")
+                        action = "Would overwrite (changed)" if content_changed else "No changes"
+                        print(f"  [planar] {action} → {out_path.name}")
                 else:
                     from datetime import date
                     today    = date.today().strftime("%Y%m%d")
@@ -483,15 +508,22 @@ def _download_planar_input_sheets(
                     s, p = _detect_diagnostics_changes(old_df, new_df, lang_id)
                     safe_cmds |= s
                     pending   += p
+                    content_changed = not old_df.reset_index(drop=True).equals(
+                        new_df.reset_index(drop=True)
+                    )
                     if apply:
-                        if timestamp:
-                            archived = _archive_tsv(diag_path, timestamp)
-                            print(f"  [diagnostics] Archived existing → archive/{archived.name}")
-                        planar_dir.mkdir(parents=True, exist_ok=True)
-                        new_df.to_csv(diag_path, sep="\t", index=False)
-                        print(f"  [diagnostics] Downloaded → {diag_path.name}")
+                        if content_changed:
+                            if timestamp:
+                                archived = _archive_tsv(diag_path, timestamp)
+                                print(f"  [diagnostics] Archived existing → archive/{archived.name}")
+                            planar_dir.mkdir(parents=True, exist_ok=True)
+                            new_df.to_csv(diag_path, sep="\t", index=False)
+                            print(f"  [diagnostics] Downloaded → {diag_path.name}")
+                        else:
+                            print(f"  [diagnostics] No changes → {diag_path.name}")
                     else:
-                        print(f"  [diagnostics] Would overwrite → {diag_path.name}")
+                        action = "Would overwrite (changed)" if content_changed else "No changes"
+                        print(f"  [diagnostics] {action} → {diag_path.name}")
                 elif apply:
                     planar_dir.mkdir(parents=True, exist_ok=True)
                     new_df.to_csv(diag_path, sep="\t", index=False)
@@ -568,8 +600,10 @@ def main() -> None:
 
     Dry-run by default — pass --apply to write any TSVs. Loads the manifest
     from Drive, downloads each construction tab, validates values, and writes
-    filled TSVs under coded_data/{lang_id}/{class_name}/. Skips existing files
-    unless --overwrite-existing is also passed (auto-archives before overwriting).
+    filled TSVs under coded_data/{lang_id}/{class_name}/. Compares downloaded
+    content to the existing file: if changed, archives the old file and writes
+    the new one; if unchanged, skips with "No changes". Pass --overwrite-existing
+    to force overwrite even when content is identical.
     Writes an error report to import_errors/ if any warnings are generated.
     """
     apply = "--apply" in sys.argv
@@ -659,15 +693,18 @@ def main() -> None:
                 out_name = out_path.name
 
                 if not apply:
-                    action = "Would overwrite" if out_path.exists() else "Would create"
+                    if out_path.exists():
+                        changed = _tsv_content_changed(out_path, header, records)
+                        action = "Would overwrite (changed)" if changed else "No changes"
+                    else:
+                        action = "Would create"
                     print(f"    [{construction}] {action} → coded_data/{lang_id}/{class_name}/{out_name}")
                     continue
 
-                if out_path.exists() and not force:
-                    print(f"    [{construction}] SKIPPED (file exists, use --overwrite-existing to re-download) → coded_data/{lang_id}/{class_name}/{out_name}")
-                    continue
-
                 if out_path.exists():
+                    if not force and not _tsv_content_changed(out_path, header, records):
+                        print(f"    [{construction}] No changes → coded_data/{lang_id}/{class_name}/{out_name}")
+                        continue
                     archived = _archive_tsv(out_path, timestamp)
                     print(f"    [{construction}] Archived existing → coded_data/{lang_id}/{class_name}/archive/{archived.name}")
 
