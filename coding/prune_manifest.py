@@ -41,6 +41,8 @@ from .drive import (
     _get_clients,
     _load_manifest_from_drive,
     _upload_planars_config,
+    _load_drive_config,
+    _save_drive_config,
 )
 from .import_sheets import _archive_tsv
 
@@ -167,7 +169,13 @@ def main() -> None:
         print()
 
     if any_changes:
-        _upload_planars_config(drive, manifest)
+        drive_cfg = _load_drive_config()
+        file_id = drive_cfg.get("_planars_config_file_id")
+        root_id = drive_cfg.get("_root_folder_id")
+        new_id = _upload_planars_config(drive, manifest, root_id, file_id)
+        if new_id != file_id:
+            drive_cfg["_planars_config_file_id"] = new_id
+            _save_drive_config(drive_cfg)
         print("Drive manifest updated.")
     else:
         print("No changes made (all classes skipped).")
