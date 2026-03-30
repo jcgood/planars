@@ -11,7 +11,7 @@ Commands:
     update-sheets        Add missing rows/columns to existing sheets
     import-sheets        Download filled sheets to TSVs
     validate-coding      Re-validate annotation sheets and update cell highlighting
-    restructure-sheets   Archive and regenerate sheets after structural changes
+    restructure-sheets   Archive and regenerate sheets after structural changes (--rename-class, --rename-map, --rename-element)
     populate-sheets      Upload legacy TSV data to sheets (one-time utility)
     check-codebook       Check consistency between schema files and analysis modules
     integrity-check      Full project-wide integrity check (all languages, all schemas)

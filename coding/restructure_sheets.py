@@ -16,9 +16,18 @@ Run from the repo root:
     python -m coding restructure-sheets --rename-element Ad-VP:AD-VP --apply
     python -m coding restructure-sheets --rename-element Ad-VP:AD-VP --rename-element Ad-V:AD-V --apply
 
+    # Rename an analysis class across all languages (renames sheet, local TSV dir, manifest):
+    python -m coding restructure-sheets --rename-class old_class:new_class --apply
+    python -m coding restructure-sheets --rename-class old:new1 --rename-class old2:new2 --apply
+
     --rename-map takes "old_pos_name:new_pos_name" and can be repeated.
     --rename-element takes "old_element:new_element" and can be repeated.
+    --rename-class takes "old_class_name:new_class_name" and can be repeated.
     Without these flags, renamed positions/elements are treated as drops + new blank rows.
+
+    IMPORTANT for --rename-class: update diagnostics_{lang_id}.tsv to use the new class name
+    BEFORE running this command. The pre-flight check will abort if the old name is still
+    present in any language's diagnostics file, or if the new name is absent.
 
 What this does per spreadsheet:
   1. Downloads current annotations from each tab
@@ -27,6 +36,10 @@ What this does per spreadsheet:
   4. Carries over annotations matched by (Element, Position_Name)
   5. Leaves unmatched rows blank for re-annotation
   6. Updates sheets_manifest.json to point to the new spreadsheets
+
+For --rename-class, step 3 creates a spreadsheet under the new class name, and
+local TSV directories are renamed in-place (coded_data/{lang}/{old}/ ->
+coded_data/{lang}/{new}/) preserving git history.
 
 Authentication: same OAuth2 setup as generate_sheets.py.
 """
@@ -293,6 +306,205 @@ def _compute_stats(
 
 
 # ---------------------------------------------------------------------------
+# Class rename helpers
+# ---------------------------------------------------------------------------
+
+def _preflight_rename_class(
+    manifest: dict,
+    rename_class_map: Dict[str, str],
+    planar_files: list,
+) -> None:
+    """Abort if any language fails the --rename-class pre-flight checks.
+
+    For each rename pair (old_class -> new_class), every language that has
+    old_class in the manifest must also have new_class in its diagnostics.tsv
+    (and must NOT have old_class in diagnostics.tsv).  This enforces the
+    required ordering: edit diagnostics_{lang_id}.tsv first, then rename.
+    """
+    errors = []
+    for planar_file in planar_files:
+        lang_id = _infer_language_id_from_planar_filename(planar_file.name)
+        _mf.DATA_DIR = str(planar_file.parent)
+        try:
+            specs = _read_diagnostics_for_language(lang_id)
+        except Exception:
+            continue
+        active_classes = {c for c, _, _, _ in specs}
+        manifest_classes = set(manifest.get(lang_id, {}).get("sheets", {}).keys())
+
+        for old_class, new_class in rename_class_map.items():
+            # Language doesn't involve this rename at all — skip.
+            if old_class not in manifest_classes and new_class not in active_classes:
+                continue
+            # Old class still in diagnostics.tsv — coordinator must remove it first.
+            if old_class in active_classes:
+                errors.append(
+                    f"  {lang_id}: {old_class!r} is still in diagnostics_{lang_id}.tsv.\n"
+                    f"    Replace it with {new_class!r} before running --rename-class."
+                )
+            # Old class in manifest but new class absent from diagnostics.tsv.
+            if old_class in manifest_classes and new_class not in active_classes:
+                errors.append(
+                    f"  {lang_id}: {new_class!r} is not in diagnostics_{lang_id}.tsv.\n"
+                    f"    Add it before running --rename-class."
+                )
+
+    if errors:
+        print("Pre-flight checks failed:\n")
+        for e in errors:
+            print(e)
+        raise SystemExit(1)
+
+
+def _rename_class_for_language(
+    gc,
+    drive,
+    manifest: dict,
+    lang_id: str,
+    old_class: str,
+    new_class: str,
+    element_index: dict,
+    specs: list,
+    apply: bool,
+    folder_id: Optional[str],
+) -> bool:
+    """Rename one analysis class for one language.
+
+    Downloads annotations from the old class sheet, archives it, creates a new
+    sheet under new_class with all annotations carried over, renames the local
+    TSV directory, and updates the manifest in-place.
+
+    Returns True if changes were made (or would be made in dry-run).
+    """
+    lang_data = manifest.get(lang_id, {})
+    sheet_info = lang_data.get("sheets", {}).get(old_class)
+
+    if not sheet_info:
+        if lang_data.get("sheets", {}).get(new_class):
+            print(f"  {lang_id}/{old_class}: already renamed to {new_class!r} in manifest — skipping")
+        else:
+            print(f"  {lang_id}/{old_class}: no manifest entry — skipping")
+        return False
+
+    version = sheet_info.get("version", 1)
+    new_version = version + 1
+    constructions = sheet_info.get("constructions", [])
+
+    # Param info from new diagnostics entry
+    new_specs = {constr: (pn, pv) for cls, constr, pn, pv in specs if cls == new_class}
+
+    if not new_specs:
+        print(f"  {lang_id}/{old_class}: {new_class!r} not found in diagnostics — skipping")
+        return False
+
+    print(f"\n  {lang_id}: {old_class} -> {new_class} (v{version}):")
+
+    # Download annotations from old sheet
+    ss = _open_spreadsheet(gc, sheet_info["spreadsheet_id"])
+    all_annotations: Dict[str, Dict[Tuple[str, str], Dict[str, str]]] = {}
+    for construction in constructions:
+        try:
+            ws = ss.worksheet(construction)
+            all_annotations[construction] = _download_tab_annotations(ws)
+            print(f"    [{construction}] downloaded {len(all_annotations[construction])} rows")
+        except gspread.WorksheetNotFound:
+            all_annotations[construction] = {}
+            print(f"    [{construction}] tab not found")
+
+    # Compute carry-over stats (dry-run or apply)
+    for construction, (param_names, _) in new_specs.items():
+        rows = _build_rows(element_index, lang_id, param_names)
+        existing = all_annotations.get(construction, {})
+        carried, renamed_count, new_count, dropped = _compute_stats(rows, existing, {}, {})
+        parts = [f"carry over {carried}"]
+        if renamed_count:
+            parts.append(f"rename {renamed_count}")
+        if new_count:
+            parts.append(f"new blank {new_count}")
+        if dropped:
+            parts.append(f"drop {len(dropped)}")
+        print(f"    [{construction}] {'; '.join(parts)}")
+
+    old_dir = CODED_DATA / lang_id / old_class
+    new_dir = CODED_DATA / lang_id / new_class
+
+    if old_dir.exists():
+        if new_dir.exists():
+            print(f"    WARNING: {new_dir.relative_to(ROOT)} already exists — local rename will be skipped")
+        else:
+            print(f"    would rename: {old_dir.relative_to(ROOT)} -> {new_dir.relative_to(ROOT)}")
+    else:
+        print(f"    no local TSVs for {old_class}/")
+
+    print(f"    would archive: {old_class}_{lang_id} (v{version}) to archive/v{version}/")
+    print(f"    would create: {new_class}_{lang_id} (v{new_version})")
+    print(f"    would update manifest: {old_class} -> {new_class}")
+
+    if not apply:
+        return True
+
+    # --- apply ---
+
+    # Archive old sheet
+    if folder_id:
+        archive_id = _get_or_create_subfolder(drive, folder_id, "archive")
+        ver_folder_id = _get_or_create_subfolder(drive, archive_id, f"v{version}")
+        _move_to_folder(drive, ss.id, ver_folder_id)
+        print(f"    Archived {old_class}_{lang_id} to archive/v{version}/")
+
+    # Create new sheet
+    sheet_title = f"{new_class}_{lang_id}"
+    new_ss = gc.create(sheet_title)
+    if folder_id:
+        _move_to_folder(drive, new_ss.id, folder_id)
+        _share_anyone_with_link(drive, new_ss.id)
+
+    default_ws = new_ss.sheet1
+    tab_names = []
+    new_construction_params = {}
+
+    for construction in constructions:
+        if construction not in new_specs:
+            print(f"    [{construction}] not in new diagnostics — skipped")
+            continue
+        param_names, param_values = new_specs[construction]
+        rows = _build_rows(element_index, lang_id, param_names)
+        existing = all_annotations.get(construction, {})
+        carried, new_count, dropped_count = _write_tab_with_carryover(
+            new_ss, construction, param_names, param_values, rows, existing, {}, {}
+        )
+        tab_names.append(construction)
+        new_construction_params[construction] = {
+            "param_names": param_names,
+            "param_values": param_values,
+        }
+        print(f"    [{construction}] wrote: carried {carried}, new blank {new_count}, dropped {dropped_count}")
+
+    if default_ws.title not in tab_names:
+        new_ss.del_worksheet(default_ws)
+
+    # Rename local TSV directory in-place (preserves git history)
+    if old_dir.exists():
+        if new_dir.exists():
+            print(f"    WARNING: {new_dir.relative_to(ROOT)} already exists — local rename skipped")
+        else:
+            old_dir.rename(new_dir)
+            print(f"    Renamed: {old_dir.relative_to(ROOT)} -> {new_dir.relative_to(ROOT)}")
+
+    # Update manifest in-place
+    del manifest[lang_id]["sheets"][old_class]
+    manifest[lang_id]["sheets"][new_class] = {
+        "spreadsheet_id": new_ss.id,
+        "url": new_ss.url,
+        "constructions": tab_names,
+        "construction_params": new_construction_params,
+        "version": new_version,
+    }
+    print(f"    Manifest: {old_class} -> {new_class} (v{new_version}): {new_ss.url}")
+    return True
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -322,10 +534,17 @@ def main() -> None:
     annotations by (Element, Position_Name). Unmatched rows are left blank for
     re-annotation. Updates the manifest on Drive and locally.
     In dry-run mode (no --apply) only prints what would change.
+
+    With --rename-class old:new, renames the class across all languages: archives
+    the old sheet, creates a new one under the new name with all annotations
+    carried over, renames coded_data/{lang}/{old}/ to coded_data/{lang}/{new}/,
+    and updates the manifest.  diagnostics_{lang_id}.tsv must be updated to use
+    the new name BEFORE running this command (enforced by pre-flight checks).
     """
     apply = "--apply" in sys.argv
     rename_map         = _parse_flag_map(sys.argv[1:], "--rename-map")
     element_rename_map = _parse_flag_map(sys.argv[1:], "--rename-element")
+    rename_class_map   = _parse_flag_map(sys.argv[1:], "--rename-class")
 
     gc, drive = _get_clients()
     manifest = _load_manifest_from_drive(drive)
@@ -335,6 +554,33 @@ def main() -> None:
         raise SystemExit("No planar_*.tsv found in coded_data/*/planar_input/")
 
     any_changes = False
+
+    # --rename-class pass: runs before the main restructure loop so the manifest
+    # reflects the new class names when the main loop processes each language.
+    if rename_class_map:
+        print(f"\n{'DRY RUN — ' if not apply else ''}Class renames:")
+        for old, new in rename_class_map.items():
+            print(f"  {old!r} -> {new!r}")
+        _preflight_rename_class(manifest, rename_class_map, list(planar_files))
+        for planar_file in planar_files:
+            lang_id = _infer_language_id_from_planar_filename(planar_file.name)
+            _mf.DATA_DIR = str(planar_file.parent)
+            element_index = build_element_index(planar_file.name)
+            specs = _read_diagnostics_for_language(lang_id)
+            lang_data = manifest.get(lang_id, {})
+            folder_url = lang_data.get("folder_url", "")
+            folder_id = _folder_id_from_url(folder_url) if folder_url else None
+            for old_class, new_class in rename_class_map.items():
+                changed = _rename_class_for_language(
+                    gc, drive, manifest, lang_id, old_class, new_class,
+                    element_index, specs, apply, folder_id,
+                )
+                if changed:
+                    any_changes = True
+
+        if not apply:
+            print("\nRun with --apply to make these changes.")
+            return
 
     for planar_file in planar_files:
         lang_id = _infer_language_id_from_planar_filename(planar_file.name)

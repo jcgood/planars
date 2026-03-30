@@ -236,9 +236,37 @@ python -m coding restructure-sheets --rename-element Ad-VP:AD-VP --apply     # c
 
 Only classes with actual changes are archived; unchanged classes are left untouched. Automatically regenerates and uploads notebooks afterward.
 
+### Renaming an analysis class
+
+When an analysis class is renamed (e.g. `stress` → `metrical` during a module restructure):
+
+**Required ordering:**
+1. Update `diagnostics_{lang_id}.tsv` for all affected languages to use the new class name.
+2. Run `restructure-sheets --rename-class` (pre-flight check enforces this order).
+
+```bash
+# Dry run — shows what would be archived, created, and renamed
+python -m coding restructure-sheets --rename-class old_class:new_class
+
+# Apply — archives old sheet, creates new sheet under new name, renames local TSV directory
+python -m coding restructure-sheets --rename-class old_class:new_class --apply
+
+# Multiple renames in one pass
+python -m coding restructure-sheets --rename-class old1:new1 --rename-class old2:new2 --apply
+```
+
+For each renamed class, `--apply` will:
+1. Download all annotations from the old class sheet
+2. Archive the old spreadsheet to `archive/v{N}/` in Drive
+3. Create a new spreadsheet under the new class name with all annotations carried over
+4. Rename `coded_data/{lang}/{old_class}/` to `coded_data/{lang}/{new_class}/` in-place (preserves git history)
+5. Update the Drive manifest: remove old class entry, add new class entry
+
+**Do NOT use `prune-manifest` for a rename** — it would discard annotation data. `prune-manifest` is for retiring a class entirely.
+
 ### Retiring an analysis class
 
-When an analysis class is removed from `diagnostics_{lang_id}.tsv` (e.g. because it was renamed as part of a module restructure), run `prune-manifest` to clean up:
+When an analysis class is removed from `diagnostics_{lang_id}.tsv` (no longer analyzed), run `prune-manifest` to clean up:
 
 ```bash
 python -m coding prune-manifest           # dry run — show what would be archived and removed
@@ -251,7 +279,9 @@ For each retired class, `--apply` will:
 2. Archive each active TSV in `coded_data/{lang}/{class}/` to its `archive/` subdirectory
 3. Remove the class entry from the Drive manifest
 
-The retired Google Sheets on Drive are not deleted — only the manifest entry and local active TSVs are cleaned up. Skipping this step after a class rename causes `import-sheets` and the daily data-refresh to keep re-importing the old sheet indefinitely.
+The retired Google Sheets on Drive are not deleted — only the manifest entry and local active TSVs are cleaned up. Skipping this step after retiring a class causes `import-sheets` and the daily data-refresh to keep re-importing the old sheet indefinitely.
+
+If `prune-manifest` warns "this class contains annotation data — consider `--rename-class` instead", check whether the class was renamed rather than retired before proceeding.
 
 ### Validating annotation sheets
 

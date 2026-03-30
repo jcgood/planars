@@ -114,7 +114,7 @@ def main() -> None:
         print("All manifest entries match active diagnostics — nothing to prune.")
         return
 
-    # Always show dry-run summary
+    # Always show dry-run summary; warn if annotation data exists (possible rename)
     print(f"{'DRY RUN — ' if not apply else ''}Stale manifest entries found:\n")
     for lang_id, stale_classes in stale_map.items():
         print(f"  {lang_id}:")
@@ -124,6 +124,12 @@ def main() -> None:
             if tsvs:
                 for tsv in tsvs:
                     print(f"    would archive: {tsv.relative_to(ROOT)}")
+                print(
+                    f"    WARNING: {class_name}/ contains annotation data.\n"
+                    f"    If this class was renamed rather than retired, use:\n"
+                    f"      python -m coding restructure-sheets --rename-class {class_name}:NEW_NAME --apply\n"
+                    f"    instead of pruning it (--rename-class preserves annotations under the new name)."
+                )
             else:
                 print(f"    no local TSVs for {class_name}/")
             print(f"    would remove from manifest: {lang_id}/{class_name}")
