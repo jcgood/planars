@@ -295,7 +295,7 @@ Run `gh issue list` for the full list. Key active issues:
 - **#104** — Keystone coding for phonological blocked-span tests: verbstem row should have real accented/obligatory/independence values, not `na`. Needs documentation, sheet fix, and Adam's input on correct values. `[diagnostics]`
 - **#103** — `restructure-sheets`: support class/construction renames with annotation carry-forward. Currently brittle (helper scripts only). `[enhancement]`
 - **#101** — Tonal alternations from hybrid morphemes: does this need a new phonological category distinct from `tonal` and `tonosegmental`? Needs Adam's input. `[diagnostics]`
-- **#99** — `free_occurrence` should read from `noninterruption/general.tsv` when it exists (shares `free` criterion); no separate sheet needed. `[enhancement]`
+- **#99** — `free_occurrence` redesign: needs `depends-on` criterion (position reference for non-free elements), min-max fracture spans, and conditional validation pattern. Qualification rule and span labels need Adam's input before implementation. `[diagnostics]`
 - **#9** — Fill in `[PLACEHOLDER]` and `[NEEDS REVIEW]` entries in schema files. Requires input from Adam. `[needs-input]`
 
 ## Work phases
