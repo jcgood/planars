@@ -6,6 +6,10 @@ Checks:
   3. Chart span label keys match the keys returned by each derive function
   4. diagnostics_{lang_id}.tsv class names and required criteria match diagnostic_classes.yaml
 
+Informational reports (not errors):
+  5. Schema stubs: classes in diagnostic_classes.yaml with no language coverage
+  6. Coverage matrix: language × class grid (✓ = active, - = not collected)
+
 Run:
     python -m coding check-codebook
 """
@@ -310,17 +314,83 @@ def _report_needs_review(codebook: dict, diag_classes: dict) -> int:
     return len(flagged)
 
 
+def _collect_coverage(root: Path = ROOT) -> dict[str, list[str]]:
+    """Return {class_name: [lang_id, ...]} for all active classes across all diagnostics TSVs.
+
+    Args:
+        root: repository root to search under (default ROOT; tests pass tmp_path here).
+    """
+    coverage: dict[str, list[str]] = {}
+    for diag_path in sorted((root / "coded_data").glob("*/planar_input/diagnostics_*.tsv")):
+        lang = diag_path.parent.parent.name
+        df = pd.read_csv(diag_path, sep="\t", dtype=str, keep_default_na=False)
+        for _, row in df.iterrows():
+            class_name = row.get("Class", "").strip()
+            if class_name:
+                coverage.setdefault(class_name, []).append(lang)
+    return coverage
+
+
+def _report_schema_stubs(diag_classes: dict, coverage: dict[str, list[str]]) -> int:
+    """Print schema stubs for classes in diagnostic_classes.yaml with no language coverage.
+
+    A schema stub is the ready-to-paste diagnostics_{lang_id}.tsv row derived from the
+    schema definition — the minimal instantiation before language-specific choices are made.
+    Distinct from 'planar template', which refers to the planar structure.
+
+    Returns the count of uncovered classes (informational, not an error).
+    """
+    uncovered = [name for name in diag_classes if name not in coverage]
+    if not uncovered:
+        print("  All schema classes have at least one language.")
+        return 0
+
+    print(f"  {len(uncovered)} class(es) with no language coverage.")
+    print("  Paste into diagnostics_{{lang_id}}.tsv and adjust constructions/criteria as needed:\n")
+    for name in uncovered:
+        cls = diag_classes[name]
+        specificity = cls.get("specificity", "general")
+        required = cls.get("required_criteria", [])
+        if specificity == "general":
+            constructions = "general"
+        else:
+            known = cls.get("known_constructions", [])
+            constructions = ", ".join(known) if known else "CONSTRUCTION_NAME"
+        criteria = ", ".join(required) if required else "CRITERION"
+        print(f"  {name}\t{{lang_id}}\t{constructions}\t{criteria}")
+    return len(uncovered)
+
+
+def _report_coverage_matrix(
+    diag_classes: dict,
+    coverage: dict[str, list[str]],
+    lang_ids: list[str],
+) -> None:
+    """Print a language × class coverage matrix (✓ = active, - = not collected)."""
+    if not lang_ids or not diag_classes:
+        return
+
+    col_w = max(len(l) for l in lang_ids) + 2
+    row_w = max(len(name) for name in diag_classes) + 2
+
+    header = " " * (row_w + 2) + "".join(l.ljust(col_w) for l in lang_ids)
+    print(f"  {header}")
+    for name in diag_classes:
+        langs_with = set(coverage.get(name, []))
+        cells = "".join(("✓" if l in langs_with else "-").ljust(col_w) for l in lang_ids)
+        print(f"  {name.ljust(row_w)}  {cells}")
+
+
 def main() -> None:
     """Entry point for `python -m coding check-codebook`.
 
-    Runs four consistency checks and exits with status 1 if any fail:
+    Runs four consistency checks (exit 1 if any fail) then two informational reports:
     1. Every _REQUIRED_CRITERIA criterion in each analysis module is in diagnostic_criteria.yaml.
     2. Every criterion name in diagnostics_{lang_id}.tsv files is in diagnostic_criteria.yaml.
     3. Every span key referenced in charts.py exists in the corresponding derive result.
     4. diagnostics_{lang_id}.tsv class names and required criteria match diagnostic_classes.yaml.
-
-    Also prints a summary of [NEEDS REVIEW] / [PLACEHOLDER] entries as a warning
-    (does not cause a non-zero exit).
+    5. Schema stubs: classes with no language coverage (ready-to-paste TSV rows).
+    6. Coverage matrix: language × class grid.
     """
     codebook = _load_codebook()
     diag_classes = _load_diagnostic_classes()
@@ -340,6 +410,18 @@ def main() -> None:
 
     print()
     _report_needs_review(codebook, diag_classes)
+
+    coverage = _collect_coverage()
+    lang_ids = sorted({l for langs in coverage.values() for l in langs})
+
+    print()
+    print("5. Schema stubs (classes with no language coverage):")
+    _report_schema_stubs(diag_classes, coverage)
+
+    print()
+    print("6. Coverage matrix:")
+    _report_coverage_matrix(diag_classes, coverage, lang_ids)
+
     print()
     if all_errors:
         print(f"FOUND {len(all_errors)} INCONSISTENCY(IES):")

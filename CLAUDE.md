@@ -295,9 +295,8 @@ Run `gh issue list` for the full list. Key active issues:
 - **#109** — Multi-coordinator manifest coordination: `drive_config.json` not shared via git and no conflict detection on concurrent manifest mutations. `[Jeff]`
 - **#107** — Allow explicit NA value for inapplicable diagnostic criteria (e.g. English stress); needs Adam's input on which criteria and computational treatment. `[diagnostics]` `[needs-input]`
 - **#104** — Keystone coding for phonological blocked-span tests: verbstem row should have real accented/obligatory/independence values, not `na`. Needs documentation, sheet fix, and Adam's input on correct values. `[diagnostics]`
-- **#111** — `prune-manifest` / `restructure-sheets`: add cross-warnings for rename-vs-retire confusion. `[enhancement]`
 - **#112** — Restructure coordinator guide: workflow-oriented sections, automatic vs. manual actions, and tool-roles table (enforces "checkers don't proliferate" principle).
-- **#110** — `check-codebook`: schema stubs + coverage matrix for language diagnostics; per-language diagnostics YAML (`sync-diagnostics-yaml` command). `[enhancement]`
+- **#113** — `sync-diagnostics-yaml`: per-language YAML as coordinator-facing diagnostics source of truth; round-trips with TSV. Split out from #110. `[enhancement]`
 - **#101** — Tonal alternations from hybrid morphemes: does this need a new phonological category distinct from `tonal` and `tonosegmental`? Needs Adam's input. `[diagnostics]`
 - **#99** — `free_occurrence` redesign: needs `depends-on` criterion (position reference for non-free elements), min-max fracture spans, and conditional validation pattern. Qualification rule and span labels need Adam's input before implementation. `[diagnostics]`
 - **#9** — Fill in `[PLACEHOLDER]` and `[NEEDS REVIEW]` entries in schema files. Requires input from Adam. `[needs-input]`
