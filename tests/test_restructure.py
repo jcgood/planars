@@ -1,9 +1,14 @@
-"""Tests for rename-map logic in restructure_sheets.py."""
+"""Tests for rename-map and rename-class logic in restructure_sheets.py."""
 from __future__ import annotations
 
 import pytest
 
-from coding.restructure_sheets import _compute_stats, _lookup_existing, _parse_flag_map
+from coding.restructure_sheets import (
+    _compute_stats,
+    _lookup_existing,
+    _parse_flag_map,
+    _preflight_rename_class,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -159,3 +164,70 @@ def test_compute_stats_unmatched_rename(existing2, rows2):
     assert carried == 1
     assert renamed == 1
     assert new == 1
+
+
+# ---------------------------------------------------------------------------
+# _preflight_rename_class
+# ---------------------------------------------------------------------------
+
+def _make_planar_file(tmp_path, lang_id: str) -> "Path":
+    """Create a minimal planar file so _infer_language_id_from_planar_filename works."""
+    f = tmp_path / f"planar_{lang_id}-20260101.tsv"
+    f.write_text("Position_Number\tPosition_Name\n1\tv:verbstem\n")
+    return f
+
+
+def _make_diagnostics(tmp_path, lang_id: str, classes: list[str]) -> None:
+    """Write a minimal diagnostics_{lang_id}.tsv with the given class names."""
+    lines = ["Class\tLanguage\tConstructions\tCriteria"]
+    for cls in classes:
+        lines.append(f"{cls}\t{lang_id}\tgeneral\tfree")
+    (tmp_path / f"diagnostics_{lang_id}.tsv").write_text("\n".join(lines) + "\n")
+
+
+@pytest.fixture
+def lang_id():
+    return "test1234"
+
+
+@pytest.fixture
+def manifest_with_old(lang_id):
+    """Manifest where lang has 'old_class' but not 'new_class'."""
+    return {lang_id: {"sheets": {"old_class": {"spreadsheet_id": "abc"}}}}
+
+
+def test_preflight_passes_when_new_in_diagnostics_old_absent(tmp_path, lang_id, manifest_with_old):
+    """No error when diagnostics has new_class and old_class is gone."""
+    _make_diagnostics(tmp_path, lang_id, ["new_class"])
+    planar = _make_planar_file(tmp_path, lang_id)
+    _preflight_rename_class(manifest_with_old, {"old_class": "new_class"}, [planar])  # should not raise
+
+
+def test_preflight_errors_when_old_still_in_diagnostics(tmp_path, lang_id, manifest_with_old):
+    """Abort when old class still present in diagnostics (coordinator forgot to update)."""
+    _make_diagnostics(tmp_path, lang_id, ["old_class", "new_class"])
+    planar = _make_planar_file(tmp_path, lang_id)
+    with pytest.raises(SystemExit):
+        _preflight_rename_class(manifest_with_old, {"old_class": "new_class"}, [planar])
+
+
+def test_preflight_errors_when_new_absent_from_diagnostics(tmp_path, lang_id, manifest_with_old):
+    """Abort when new class is missing from diagnostics (coordinator forgot to add it)."""
+    _make_diagnostics(tmp_path, lang_id, ["other_class"])
+    planar = _make_planar_file(tmp_path, lang_id)
+    with pytest.raises(SystemExit):
+        _preflight_rename_class(manifest_with_old, {"old_class": "new_class"}, [planar])
+
+
+def test_preflight_skips_language_with_no_involvement(tmp_path, lang_id):
+    """No error for a language that has neither old class in manifest nor new class in diagnostics."""
+    manifest = {lang_id: {"sheets": {"unrelated_class": {}}}}
+    _make_diagnostics(tmp_path, lang_id, ["unrelated_class"])
+    planar = _make_planar_file(tmp_path, lang_id)
+    _preflight_rename_class(manifest, {"old_class": "new_class"}, [planar])  # should not raise
+
+
+def test_preflight_parse_rename_class_flag():
+    """--rename-class uses the same _parse_flag_map as --rename-map."""
+    result = _parse_flag_map(["--rename-class", "stress:metrical"], "--rename-class")
+    assert result == {"stress": "metrical"}
