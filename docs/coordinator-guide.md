@@ -397,6 +397,17 @@ You can trigger the workflow manually from the Actions tab at any time. The repo
 
 **Keeping `PLANARS_DRIVE_CONFIG` current:** As with `sheet-validation.yml`, copy the updated `drive_config.json` contents into the secret after any `generate-sheets` run that creates new language folders or updates file IDs.
 
+### Daily data refresh and snapshot regeneration
+
+A third daily workflow (`.github/workflows/data-refresh.yml`) runs at 06:00 UTC and:
+1. Runs `import-sheets --apply` to pull the latest annotation data from Google Sheets into planars-data.
+2. Runs `generate_snapshots.py` to regenerate snapshot baselines from the updated data.
+3. Commits and pushes any changes — annotation data to planars-data, snapshots to planars.
+
+This keeps snapshot baselines continuously anchored to current annotation data. With this in place, a snapshot failure on a pull request means exactly one thing: a code change altered span output without going through the pre-commit hook. It uses the **same four secrets** as the other daily workflows — no additional configuration needed.
+
+You can trigger it manually from the Actions tab at any time (useful after a large annotation session to sync immediately rather than waiting for the next scheduled run).
+
 ---
 
 ## Drive folder structure
