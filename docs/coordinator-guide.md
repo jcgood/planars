@@ -185,8 +185,9 @@ From the repo root:
 ```bash
 python -m planars ciscategorial     coded_data/stan1293/ciscategorial/general.tsv
 python -m planars noninterruption   coded_data/stan1293/noninterruption/general.tsv
-python -m planars stress            coded_data/stan1293/stress/general.tsv
-# etc. — all 15 analysis modules are available; see docs/analyses.md for the full list
+python -m planars metrical          coded_data/stan1293/metrical/stress_domain.tsv
+python -m planars segmental         coded_data/stan1293/segmental/aspiration_prominence.tsv
+# etc. — all analysis modules are available; see docs/analyses.md for the full list
 ```
 
 Results are also available via the coordinator and contributor Colab notebooks. See the [Notebooks guide](notebooks.md).
@@ -234,6 +235,23 @@ python -m coding restructure-sheets --rename-element Ad-VP:AD-VP --apply     # c
 ```
 
 Only classes with actual changes are archived; unchanged classes are left untouched. Automatically regenerates and uploads notebooks afterward.
+
+### Retiring an analysis class
+
+When an analysis class is removed from `diagnostics_{lang_id}.tsv` (e.g. because it was renamed as part of a module restructure), run `prune-manifest` to clean up:
+
+```bash
+python -m coding prune-manifest           # dry run — show what would be archived and removed
+python -m coding prune-manifest --apply   # archive TSVs and remove manifest entries
+python -m coding prune-manifest --apply --all   # same, skipping per-class confirmation prompts
+```
+
+For each retired class, `--apply` will:
+1. Write a timestamped manifest snapshot to `manifest_archives/` (local audit trail, gitignored)
+2. Archive each active TSV in `coded_data/{lang}/{class}/` to its `archive/` subdirectory
+3. Remove the class entry from the Drive manifest
+
+The retired Google Sheets on Drive are not deleted — only the manifest entry and local active TSVs are cleaned up. Skipping this step after a class rename causes `import-sheets` and the daily data-refresh to keep re-importing the old sheet indefinitely.
 
 ### Validating annotation sheets
 

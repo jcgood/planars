@@ -17,3 +17,4 @@ coded_data/
 dist/
 glottolog_cache.json
 pending_changes.json
+manifest_archives/

@@ -54,6 +54,7 @@ python -m coding validate-coding          # re-validate + update pink highlights
 python -m coding sync-params              # sync criterion columns (--apply, --rename, --split, --merge, --remove)
 python -m coding update-sheets            # add missing rows/columns (--apply)
 python -m coding restructure-sheets       # archive + regenerate after planar changes (--apply, --rename-map, --rename-element)
+python -m coding prune-manifest           # archive retired class TSVs and remove stale manifest entries (--apply, --all)
 
 # Health checks
 python -m coding integrity-check          # full project health report (--lang, --sheets)
@@ -124,6 +125,7 @@ Late aggregation, autotypology (dynamic schema), definition files vs. data files
 - `restructure_sheets.py`: `restructure-sheets` — archives and regenerates sheets after structural changes; carries over annotations using `--rename-map` (position renames) and `--rename-element` (element label renames); only processes classes with actual changes.
 - `import_sheets.py`: `import-sheets` — downloads filled annotation sheets to TSVs; also downloads planar/diagnostics Sheets, detects changes, auto-applies safe downstream commands, and writes destructive changes to `pending_changes.json`; highlights invalid cells pink in the Sheet as a side effect. Aborts if `coded_data/` has uncommitted TSV changes. Skips existing TSVs by default; `--overwrite-existing` re-downloads them (auto-archives to `archive/` first). When destructive changes are written, opens or updates a GitHub issue labeled `pending-changes` (requires `gh` CLI). Skips constructions whose Status tab entry is not `ready-for-review` unless `--ignore-status` is passed.
 - `apply_pending.py`: `apply-pending` — interactive review and application of pending destructive changes written by `import-sheets`. Closes the `pending-changes` GitHub issue when all entries are cleared.
+- `prune_manifest.py`: `prune-manifest` — removes retired analysis class entries from the Drive manifest and archives their local TSVs. Run after removing a class from `diagnostics_{lang_id}.tsv`. Dry-run by default; `--apply` to execute, `--all` to skip per-class prompts. Writes a timestamped manifest snapshot to `manifest_archives/` (gitignored) before any mutation.
 - `validate.py`: Shared base — just the `ValidationIssue` dataclass.
 - `validate_planar.py`: `validate_planar_df(df)` — validates planar structure TSVs (sequential positions, unique names, keystone present, valid Position_Type/Class_Type, element conventions including collapse detection).
 - `validate_diagnostics.py`: `validate_diagnostics_df(df, lang_id)` — validates diagnostics_{lang_id}.tsv (required columns, Language field, brace syntax, criterion names against diagnostic_criteria.yaml, class names against planars/ modules, construction naming rules).
@@ -310,6 +312,8 @@ Sessions tend to fall into a few natural patterns. Naming the primary focus at t
 **Schema work** — Editing any file in `schemas/` or the qualification rules in analysis modules. The most consequential work; mistakes here cascade across languages and analyses. Go slow, run `integrity-check` after changes. Qualification rule changes must also propagate to inline comments and module docstrings — not just the YAML files.
 
 Snapshot lifecycle: the pre-commit hook (`regenerate_snapshots_hook.py`) regenerates affected snapshots automatically when any `planars/*.py` file is staged — qualification rule changes are covered here. The daily `data-refresh.yml` GitHub Action imports fresh annotations from Google Sheets and regenerates snapshots — data changes are covered there. A snapshot diff in a commit is the expected record of how a change altered span output. A snapshot failure on a PR means a code change altered output without going through the hook.
+
+Retiring a class: when a class is removed from `diagnostics_{lang_id}.tsv`, run `python -m coding prune-manifest --apply` afterward. This archives the retired class's local TSVs (rather than deleting them) and removes the stale entry from the Drive manifest. Skipping this step causes `import-sheets` and `data-refresh` to keep re-importing the old sheet indefinitely.
 
 **Language onboarding** — End-to-end work for a new language: gathering source material, drafting `diagnostics_{lang_id}.tsv`, running `generate-sheets`, producing a first-pass annotation, importing, and verifying analysis output. During prototyping, this has involved reading finished book chapters; in production, onboarding will be a collaborative process with contributors who may provide information in varied and yet-to-be-modeled forms (notes, drafts, conversation, partial data). The tooling should remain open to this rather than assuming a finished written source is always available. Automated first-pass coding may eventually be possible, but will always require expert review.
 
