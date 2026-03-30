@@ -163,9 +163,6 @@ class TestSmokeModule:
         data = _make_data(criteria, all_y=all_y)
         return fn(_data=data, strict=False), mod
 
-    def test_does_not_raise(self, mod_name, fn_name, criteria, span_keys):
-        self._derive(mod_name, fn_name, criteria)
-
     def test_returns_dict(self, mod_name, fn_name, criteria, span_keys):
         result, _ = self._derive(mod_name, fn_name, criteria)
         assert isinstance(result, dict)

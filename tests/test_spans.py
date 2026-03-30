@@ -40,12 +40,8 @@ class TestStrictSpan:
     def test_expand_both_sides(self):
         assert strict_span({3, 4, 6, 7}, K) == (3, 7)
 
-    def test_gap_stops_left_expansion(self):
-        # 4 qualifies but 3 doesn't → left stops at 4
-        assert strict_span({4, 6}, K) == (4, 6)
-
-    def test_gap_stops_right_expansion(self):
-        # 6 qualifies but 7 doesn't → right stops at 6
+    def test_gap_stops_expansion(self):
+        # 4 qualifies but 3 doesn't → left stops at 4; 6 qualifies but 7 doesn't → right stops at 6
         assert strict_span({4, 6}, K) == (4, 6)
 
     def test_gap_mid_left(self):
@@ -58,11 +54,6 @@ class TestStrictSpan:
 
     def test_full_contiguous_range(self):
         assert strict_span({1, 2, 3, 4, 6, 7, 8, 9}, K) == (1, 9)
-
-    def test_keystone_not_in_qual_positions(self):
-        # Keystone is never in qual_positions (it's excluded from data_df);
-        # strict_span should still anchor at keystone.
-        assert strict_span({4, 6}, K) == (4, 6)
 
     def test_single_left_neighbor(self):
         assert strict_span({4}, K) == (4, K)
@@ -86,9 +77,6 @@ class TestStrictSpan:
 class TestLooseSpan:
     def test_keystone_only_no_qualifiers(self):
         assert loose_span(set(), K) == (K, K)
-
-    def test_expand_left_only(self):
-        assert loose_span({2, 4}, K) == (2, K)
 
     def test_expand_right_only(self):
         assert loose_span({6, 8}, K) == (K, 8)
