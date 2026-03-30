@@ -22,7 +22,6 @@ from planars.reports import (
     _SUBSPAN_VARIANTS,
     _NONINT_SPANS,
     _METRICAL_BLOCKED_SPANS,
-    _SEGMENTAL_BLOCKED_SPANS,
     _SIMPLE_SPANS,
     _NONPERM_SPANS,
 )

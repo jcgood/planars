@@ -292,6 +292,7 @@ Run `gh issue list` for the full list. Key active issues:
 - **#97** — `import-sheets`: archive TSVs on change detection (not just `--overwrite-existing`); archives committed to planars-data for browsable history alongside live files.
 - **#105** — Automate daily snapshot refresh (import-sheets → generate_snapshots → commit); document that qualification rule changes require snapshot regeneration.
 - **#102** — Remove duplicate and redundant test cases in `test_spans.py` and `test_smoke_modules.py` (~14 redundant cases identified).
+- **#107** — Allow explicit NA value for inapplicable diagnostic criteria (e.g. English stress); needs Adam's input on which criteria and computational treatment. `[diagnostics]` `[needs-input]`
 - **#9** — Fill in `[PLACEHOLDER]` and `[NEEDS REVIEW]` entries in schema files. Requires input from Adam. `[needs-input]`
 
 ## Work phases

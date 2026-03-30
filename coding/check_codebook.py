@@ -206,7 +206,7 @@ def _check_chart_keys() -> List[str]:
         pausing, proform, play_language, idiom,
     )
     from planars.charts import (
-        _CISC_SPANS, _NONINT_SPANS, _METRICAL_BLOCKED_SPANS, _SEGMENTAL_BLOCKED_SPANS,
+        _CISC_SPANS, _NONINT_SPANS, _METRICAL_BLOCKED_SPANS,
         _SUBSPAN_CATS, _SUBSPAN_VARIANTS, _SIMPLE_SPANS, _NONPERM_SPANS,
     )
     from planars.io import load_filled_tsv
@@ -239,19 +239,11 @@ def _check_chart_keys() -> List[str]:
            _make_minimal_tsv(["free", "multiple"]),
            noninterruption._REQUIRED_CRITERIA)
 
-    # metrical (blocked-span path: stress_domain and similar)
+    # metrical (blocked-span: accented/obligatory/independence)
     metr_keys = [k for k, _ in _METRICAL_BLOCKED_SPANS]
-    _check("metrical (blocked-span)", metrical.derive_metrical_domains, metr_keys,
-           _make_minimal_tsv(["accented", "obligatory", "independence"],
-                              ["left-interaction", "right-interaction"]),
-           {"accented", "obligatory", "independence"})
-
-    # segmental (blocked-span path: aspiration_prominence)
-    seg_blocked_keys = [k for k, _ in _SEGMENTAL_BLOCKED_SPANS]
-    _check("segmental (blocked-span)", segmental.derive_segmental_domains, seg_blocked_keys,
-           _make_minimal_tsv(["accented", "obligatory", "independence"],
-                              ["left-interaction", "right-interaction"]),
-           {"accented", "obligatory", "independence"})
+    _check("metrical", metrical.derive_metrical_domains, metr_keys,
+           _make_minimal_tsv(["accented", "obligatory", "independence"]),
+           metrical._REQUIRED_CRITERIA)
 
     # subspanrepetition
     subspan_keys = [
@@ -274,8 +266,7 @@ def _check_chart_keys() -> List[str]:
         ("free_occurrence",       free_occurrence.derive_free_occurrence_spans,  free_occurrence._REQUIRED_CRITERIA),
         ("biuniqueness",          biuniqueness.derive_biuniqueness_domains,      biuniqueness._REQUIRED_CRITERIA),
         ("repair",                repair.derive_repair_domains,                  repair._REQUIRED_CRITERIA),
-        ("segmental (positive)",  segmental.derive_segmental_domains,        segmental._REQUIRED_CRITERIA_POSITIVE),
-        ("metrical (positive)",   metrical.derive_metrical_domains,          metrical._REQUIRED_CRITERIA_POSITIVE),
+        ("segmental",             segmental.derive_segmental_domains,        segmental._REQUIRED_CRITERIA),
         ("tonal",                 tonal.derive_tonal_domains,                tonal._REQUIRED_CRITERIA),
         ("tonosegmental",         tonosegmental.derive_tonosegmental_domains, tonosegmental._REQUIRED_CRITERIA),
         ("intonational",          intonational.derive_intonational_domains,   intonational._REQUIRED_CRITERIA),

@@ -2,18 +2,14 @@ Synth0001 Segmental Aspiration Prominence
 =========================================
 
 NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
-  accented: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
-  independence: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
-  obligatory: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
+  applies: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
 
 Keystone position: 23 (v:verbstem)
 
-Minimal partial blocked positions:  []
-Minimal complete blocked positions: []
-Maximal partial blocked positions:  []
-Maximal complete blocked positions: []
+Segmental domain complete positions: []
+Segmental domain partial positions:  []
 
-Minimal segmental span (partial):   positions 1–28  (v:leftedge → v:rightedge)
-Minimal segmental span (complete):  positions 1–28  (v:leftedge → v:rightedge)
-Maximal segmental span (partial):   positions 1–28  (v:leftedge → v:rightedge)
-Maximal segmental span (complete):  positions 1–28  (v:leftedge → v:rightedge)
+Strict complete segmental span: positions 23–23  (v:verbstem → v:verbstem)
+Loose complete segmental span:  positions 23–23  (v:verbstem → v:verbstem)
+Strict partial segmental span:  positions 23–23  (v:verbstem → v:verbstem)
+Loose partial segmental span:   positions 23–23  (v:verbstem → v:verbstem)

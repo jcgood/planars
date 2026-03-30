@@ -372,30 +372,16 @@ classes:
     applicability: conditional
     applicability_conditions: >
       Applicable when the language has a metrical or prosodic domain in the verbal
-      complex — either a boundary-defined domain (stress, accent) or a positively
-      delimited domain (pitch-accent span, iambic foot, word-stress domain, etc.).
-      One construction per TSV. The module dispatches on which criteria are present.
+      complex that is defined by accent or stress — a boundary-defined domain where
+      the domain expands from the keystone until an independently or obligatorily
+      accented position creates a boundary. One construction per TSV.
     specificity: construction_specific
     known_constructions:
-      # Blocked-span constructions (accented/obligatory/independence criteria)
       - stress_domain          # boundary-defined stress domain; e.g., English, stan1293
-      # Positive-qualification constructions (applies criterion) — moving from suprasegmental
-      # as part of restructuring issue #100
-      - pitch-accent domain    # e.g., Araona LH*: vpref-connect3; Quechua L+H*: vcore-plural
-      - iambic foot domain     # e.g., Cup'ik: vbase-pn4
-      - word-stress domain     # stress-final within domain; e.g., Mebengokre: prevb-fin
-      - right-edge stress domain  # stress on final syllable of domain; e.g., Mocoví
-      - tone-stress locus domain  # positively delimited; e.g., Hup: pos. 2/3-26
-      - auxiliary construction domain  # pitch accent extends to auxiliary; e.g., Quechua
-    required_criteria: []
-    optional_criteria: [applies, accented, obligatory, independence, left-interaction, right-interaction]
-    # Dispatch-based module: no single required criterion set applies to all constructions.
-    # Blocked-span constructions (stress_domain) use accented/obligatory/independence;
-    # positive-qual constructions use applies. The module dispatches on criteria present.
+    required_criteria: [accented, obligatory, independence]
+    optional_criteria: [left-interaction, right-interaction]
     qualification_rule: >
-      Dispatches on criteria present in the TSV:
-
-      Blocked-span path (accented/obligatory/independence — stress_domain and similar):
+      Blocked-span path (accented/obligatory/independence criteria):
         Expand from keystone in each direction, stopping just before the first
         position where the blocking condition holds.
 
@@ -409,11 +395,6 @@ classes:
         The keystone always remains part of the domain. Its criterion values
         participate in blocking checks but it is never excluded from the span.
         Returns minimal/maximal × partial/complete = 4 blocked spans.
-
-      Positive-qualification path (applies — pitch-accent domain, iambic foot, etc.):
-        A position qualifies if it contains an element where applies=y.
-        Complete: ALL elements have applies=y. Partial: at least one has applies=y.
-        Returns four standard spans (strict/loose × complete/partial).
     criterion_set_status: "[PROVISIONAL]"  # left-interaction and right-interaction are
       # [NEEDS REVIEW] — their role in the blocked-span qualification rule is unresolved
       # (issue #17). May be removed, renamed, or replaced depending on resolution of
@@ -432,21 +413,10 @@ classes:
       consonant coalescence, nasality spreading, palatalization, aspiration, etc.) that
       applies within a defined span of the verbal planar structure. One process per TSV.
       Multiple segmental processes may identify different spans.
-
-      Aspiration is included here using the AUTOTYP-style construction naming convention
-      {process} ({mechanism}) to distinguish subtypes:
-        aspiration_prominence — blocked-span, prosodically conditioned (e.g. English:
-          aspiration blocked by independent stress). Uses accented/obligatory/independence
-          criteria; same blocked-span logic as the accent/metrical module.
-        aspiration_fusion — aspiration-related segmental process type (e.g. Yukuna ch. 11).
-          Uses applies criterion like other segmental processes.
-      Collaborators will naturally treat aspiration as segmental regardless of mechanism,
-      so all aspiration types live here. The module dispatches on which criteria are present.
     specificity: construction_specific
     known_constructions:
       # One TSV per segmental process. Non-exhaustive examples.
-      # Aspiration (AUTOTYP-style mechanism subtype in construction name)
-      - aspiration_prominence          # blocked-span, prosodically conditioned; e.g., English
+      - aspiration_prominence          # prosodically conditioned aspiration; e.g., English
       - aspiration_fusion              # aspiration-related segmental process; e.g., Yukuna ch. 11
       # Vowel processes
       - vowel syncope domain           # e.g., Araona: vcore-tamesuf
@@ -471,27 +441,14 @@ classes:
       - nasality spreading domain      # e.g., Chatino: positions 13-17
       - palatalization domain          # e.g., Chatino coronal, Chorote, Mocoví
       - fortition domain               # palatal fortition; e.g., Mebengokre aj-verb
-    required_criteria: []
-    optional_criteria: [applies, accented, obligatory, independence, left-interaction, right-interaction]
-    # Dispatch-based module: no single required criterion set applies to all constructions.
-    # Most segmental constructions use applies; aspiration_prominence uses accented/obligatory/independence.
-    # The module dispatches on which criteria are present in the TSV.
+    required_criteria: [applies]
+    optional_criteria: []
     qualification_rule: >
-      Dispatches on criteria present in the TSV:
-
       Positive-qualification path (applies criterion):
-        A position qualifies if it contains an element where applies=y. Complete
-        qualification: ALL elements in the position have applies=y. Partial
-        qualification: at least one element has applies=y. Returns four spans
-        (strict/loose × complete/partial).
-
-      Blocked-span path (accented/obligatory/independence criteria — aspiration prominence):
-        Mirrors the accent/metrical module blocked-span logic. Two domain types
-        (minimal, maximal) using blocked_span. Returns four blocked spans
-        (minimal/maximal × partial/complete).
-    criterion_set_status: "[PROVISIONAL]"  # aspiration_prominence inherits open questions
-      # re: left-interaction and right-interaction from stress (issues #16, #17).
-      # Other segmental criteria are stable (single binary applies criterion).
+        A position qualifies if it contains an element where applies=y.
+        Complete: ALL elements in the position have applies=y.
+        Partial: at least one element has applies=y.
+        Returns four spans (strict/loose × complete/partial).
     # Formal abstract type in ch. 17 database schema.
     status: "[AUTO-DERIVED: likely stable — confirmed across 10+ language chapters; formal
       abstract type in ch. 17; coordinator sign-off needed to remove AUTO-DERIVED]"

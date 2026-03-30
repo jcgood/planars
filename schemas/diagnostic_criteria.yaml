@@ -357,57 +357,19 @@ analyses:
       Tests which span is governed by a segmental (non-prosodic) phonological process.
       Examples: vowel deletion/coalescence at position junctures (Araona: vowel syncope
       domain vcore–tamesuf), consonant coalescence (Cup'ik: uvular-velar coalescence
-      domain vbase–pn4), nasality spreading, palatalization, aspiration spread. Each
+      domain vbase–pn4), nasality spreading, palatalization, aspiration. Each
       process is annotated in its own TSV (one construction per file). Multiple segmental
       processes in one language may identify different spans. Classified as a phonological
       domain type (Tallman et al. 2024, discussion ch. 17).
-
-      Dispatch-based module: positive-qualification constructions use `applies`;
-      prominence-conditioned constructions (e.g., aspiration_prominence) use the
-      blocked-span criteria below (accented, obligatory, independence, etc.).
     diagnostic_criteria:
       - name: applies
         values: [y, n]
         description: >
-          Whether the segmental phonological process applies to or at this element's
-          position. y = this position is within the domain of the process.
-          Used by positive-qualification constructions (e.g., vowel syncope domain).
-
-      - name: accented
-        values: [y, n, both]
-        description: >
-          [NEEDS REVIEW] Whether the element is in a accented position relative to the
-          segmental process. Used by prominence-conditioned constructions (e.g.,
-          aspiration_prominence). `both` = the position contains elements with and
-          without stress conditioning.
-
-      - name: obligatory
-        values: [y, n]
-        description: >
-          [NEEDS REVIEW] Whether the segmental process is obligatory at this element's
-          position.
-
-      - name: independence
-        values: [y, n]
-        description: >
-          [NEEDS REVIEW] Whether the element's segmental process is independent of
-          neighboring elements (not conditioned by adjacency).
-
-      - name: left-interaction
-        values: [y, n]
-        description: >
-          [NEEDS REVIEW] Whether the element's segmental process interacts with
-          elements to its left.
-
-      - name: right-interaction
-        values: [y, n]
-        description: >
-          [NEEDS REVIEW] Whether the element's segmental process interacts with
-          elements to its right.
+          [NEEDS REVIEW] Whether the segmental phonological process applies to this
+          element's position. y = this position is within the domain of the process.
 
   # suprasegmental is retired as of issue #100. Constructions redistributed to:
-  #   metrical (pitch-accent, iambic foot, word-stress, etc.) — uses applies or
-  #     accented/obligatory/independence depending on construction type
+  #   metrical (stress_domain) — uses accented/obligatory/independence (blocked-span)
   #   tonosegmental (tone melody, superhigh-assignment) — uses applies
   #   tonal (H1-spreading, H3-assignment) — uses applies
   # See metrical and tonal/tonosegmental sections for criteria.
