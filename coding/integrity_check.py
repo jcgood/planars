@@ -244,7 +244,7 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
         return 1, 0
 
     _STRUCTURAL = {"Element", "Position_Name", "Position_Number"}
-    _TRAILING   = {"Comments"}
+    _TRAILING   = {"Source", "Comments"}
 
     total_e = total_w = 0
 

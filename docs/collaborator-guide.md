@@ -26,7 +26,8 @@ A few rules:
 - **Keystone row** (`v:verbstem`): Pre-filled with `NA`. Do not change these cells.
 - **Blank cells**: Leave blank if you have not yet annotated this element. Blanks appear as warnings when the coordinator imports the data and are excluded from span computations.
 - **`?`**: Use `?` (not a blank) when you have consulted the source and genuinely cannot determine the value. A `?` is a positive annotation of uncertainty — it tells the coordinator "I looked and could not decide", which is different from "I have not looked yet". Both are flagged on import, but they mean different things for the record.
-- **Comments column**: Use this for anything you want to flag — uncertainty, alternative analyses, references to examples. It is passed through unchanged and is never used in computation.
+- **Source column**: Use this for page or section references that justify your annotation for that row (e.g. `§4.3`, `p. 217`, `Table 6.2`). Free text, never validated. Filling this in creates an audit trail so anyone can verify a decision later.
+- **Comments column**: Use this for anything you want to flag — uncertainty, alternative analyses, questions for the coordinator. It is passed through unchanged and is never used in computation.
 
 ### Viewing your results
 
@@ -58,12 +59,15 @@ Pink means the value is not in the allowed list for that criterion. Common cause
 
 Fix the cell using the dropdown, then re-run the validation notebook to confirm the pink is gone.
 
-### Using the Comments column
+### Using the Source and Comments columns
 
-The Comments column is free text and is never validated. Use it freely:
-- Flag uncertainty (`"unclear — see example 3.12"`)
-- Note alternative analyses
-- Ask a question for the coordinator
-- Record the source example you based your annotation on
+Both columns are free text and are never validated.
 
-Comments are preserved through `import-sheets` and are available in the filled TSV.
+**Source** — Put page or section references here that justify the annotation for that row (e.g. `§4.3`, `p. 217`, `Table 6.2`). This creates an audit trail so anyone can verify a decision later without re-reading the whole grammar. You can leave it blank, but filling it in is strongly encouraged, especially for `y` annotations and any value you found difficult to determine.
+
+**Comments** — Use for anything else you want to flag:
+- Uncertainty (`"unclear — see example 3.12"`)
+- Alternative analyses
+- Questions for the coordinator
+
+Both columns are preserved through `import-sheets` and are available in the filled TSV.

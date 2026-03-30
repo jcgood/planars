@@ -6,7 +6,8 @@ Run from the repo root:
     python -m coding update-sheets --apply   # apply changes to sheets
 
 Operations performed per tab:
-  1. Add missing rows for elements present in the current planar structure
+  1. Add missing trailing columns (e.g. Source) before existing ones
+  2. Add missing rows for elements present in the current planar structure
      but absent from the sheet tab
 
 Does NOT renumber positions or restructure existing content — use
@@ -27,7 +28,7 @@ import gspread
 from . import make_forms as _mf
 from .make_forms import build_element_index, _infer_language_id_from_planar_filename
 from .drive import _get_clients, _load_manifest_from_drive, _open_spreadsheet, _with_retry
-from .generate_sheets import _create_status_tab, _move_status_tab_to_end
+from .generate_sheets import _create_status_tab, _move_status_tab_to_end, _TRAILING_COLS
 
 CODED_DATA = ROOT / "coded_data"
 _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
@@ -123,6 +124,56 @@ def _check_structural_drift(
                 f"planar has pos {planar_pos_map[pos_name]}"
             )
     return warnings
+
+
+# ---------------------------------------------------------------------------
+# Trailing column helpers
+# ---------------------------------------------------------------------------
+
+_TRAILING_ORDER = {col: i for i, col in enumerate(_TRAILING_COLS)}
+
+
+def _add_trailing_columns(
+    ws: gspread.Worksheet,
+    header: List[str],
+    rows: List[List[str]],
+) -> List[str]:
+    """Insert any missing trailing columns at their correct ordered position.
+
+    Trailing columns are defined by _TRAILING_COLS (ordered). Each missing
+    column is inserted immediately before the first existing trailing column
+    that follows it in _TRAILING_COLS order, or appended at the end if none
+    follow it.
+
+    Returns the updated header list (mutated in place on the sheet).
+    """
+    missing = [col for col in _TRAILING_COLS if col not in header]
+    if not missing:
+        return header
+
+    num_rows = len(rows)  # includes header row
+    header = list(header)
+
+    for col_name in missing:
+        col_order = _TRAILING_ORDER[col_name]
+
+        # Find the first existing column that is a trailing col ranked after this one
+        insert_before_idx = None
+        for idx, existing in enumerate(header):
+            if existing in _TRAILING_ORDER and _TRAILING_ORDER[existing] > col_order:
+                insert_before_idx = idx
+                break
+
+        if insert_before_idx is not None:
+            insert_col_1 = insert_before_idx + 1  # gspread uses 1-based column indices
+        else:
+            insert_col_1 = len(header) + 1  # append after all existing columns
+
+        col_data = [col_name] + [""] * (num_rows - 1)
+        ws.insert_cols([col_data], col=insert_col_1)
+        header.insert(insert_before_idx if insert_before_idx is not None else len(header), col_name)
+
+    return header
 
 
 # ---------------------------------------------------------------------------
@@ -260,20 +311,33 @@ def main() -> None:
                     print(f"    → Run python -m coding restructure-sheets --apply to rebuild this sheet.")
                     continue
 
+                header = rows[0] if rows else []
+                missing_trailing = [col for col in _TRAILING_COLS if col not in header]
+                if missing_trailing:
+                    any_changes = True
+                    print(f"    [{construction}] add trailing column(s): {missing_trailing}")
+                    if apply:
+                        _add_trailing_columns(ws, header, rows)
+                        # Re-fetch rows so _compute_missing_rows sees the updated header
+                        rows = _with_retry(ws.get_all_values)
+                        num_data_rows = max(0, len(rows) - 1)
+
                 missing_rows = _compute_missing_rows(
                     ws, element_index, manifest_lang, param_names
                 )
 
-                if not missing_rows:
+                if not missing_rows and not missing_trailing:
                     print(f"    [{construction}] up to date")
                     continue
 
-                any_changes = True
-                elements = [r[0] for r in missing_rows]
-                print(f"    [{construction}] add {len(missing_rows)} row(s): {elements}")
+                if missing_rows:
+                    any_changes = True
+                    elements = [r[0] for r in missing_rows]
+                    print(f"    [{construction}] add {len(missing_rows)} row(s): {elements}")
+                    if apply:
+                        _apply_missing_rows(ws, missing_rows, num_data_rows, param_names)
 
-                if apply:
-                    _apply_missing_rows(ws, missing_rows, num_data_rows, param_names)
+                if apply and (missing_rows or missing_trailing):
                     print(f"    [{construction}] done")
 
             # Ensure Status tab exists and is last
@@ -284,10 +348,12 @@ def main() -> None:
     if any_drift:
         print("\nSome sheets are out of sync with the planar structure.")
         print("Run: python -m coding restructure-sheets --apply")
+        sys.exit(1)
     elif not any_changes:
         print("\nAll sheets are up to date.")
     elif not apply:
         print("\nRun with --apply to make these changes.")
+        sys.exit(1)
     else:
         print("\nDone.")
 

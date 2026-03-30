@@ -273,6 +273,9 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 | Label | Meaning |
 |-------|---------|
 | `diagnostics` | Module design, diagnostic criteria, or qualification rules requiring linguistic validation — input from Adam needed before implementation. Filter: `gh issue list --label diagnostics` |
+| `sheet-validation` | Filed automatically by the `sheet-validation.yml` workflow when `validate-coding` detects invalid cell values. Auto-closed when clean. |
+| `sheet-drift` | Filed automatically by the `data-refresh.yml` workflow when `update-sheets` (dry-run) detects sheets out of sync with the data model. Resolve by running `update-sheets --apply`. Auto-closed when clean. |
+| `pending-changes` | Filed automatically by `import-sheets` when destructive changes are written to `pending_changes.json`. Resolve by running `apply-pending`. |
 
 ### Notable open issues
 
@@ -330,5 +333,5 @@ The `status` field in `diagnostic_classes.yaml` uses three values: `stable`, `[A
 - Analysis functions take a `Path` object; path resolution happens at the call site (CLI or wrapper scripts), not inside the library.
 - Keystone rows have `Position_Name == 'v:verbstem'`. In filled TSVs they carry actual criterion values (not `NA`) so they can participate in blocking condition checks (stress, aspiration). They are excluded from span expansion — `data_df` never contains the keystone; it is returned separately as `keystone_df`.
 - Result dicts use `complete_positions` / `partial_positions` and `*_span` key suffixes consistently across all modules.
-- `_TRAILING_COLS = ["Comments"]` is defined in `coding/generate_sheets.py` (source of truth for sheet creation) and `coding/validate_coding.py` (for validation). `coding/sync_params.py` and `coding/restructure_sheets.py` import it from `generate_sheets.py`. Add new trailing columns in both `generate_sheets.py` and `validate_coding.py` to propagate them to all new and existing sheets.
+- `_TRAILING_COLS = ["Source", "Comments"]` is defined in `coding/generate_sheets.py` (source of truth for sheet creation) and `coding/validate_coding.py` (for validation). `coding/sync_params.py` and `coding/restructure_sheets.py` import it from `generate_sheets.py`. `coding/integrity_check.py` has its own independent copy (`_TRAILING = {"Source", "Comments"}` inside `_section_sheets`). Add new trailing columns in all three places to propagate them to new and existing sheets. `update-sheets --apply` rolls out missing trailing columns to existing sheets.
 - `coding/populate_sheets.py` is a one-time utility for uploading legacy TSV data. Unnamed trailing columns in legacy TSVs are concatenated with ` | ` into Comments.

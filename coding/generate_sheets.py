@@ -51,6 +51,7 @@ from .drive import (
     _get_or_create_folder,
     _share_anyone_with_link,
     _move_to_folder,
+    _with_retry,
     DRIVE_CONFIG_PATH,
 )
 from .glottolog import cached_entry as _cached_glottolog, get_metadata as _fetch_glottolog
@@ -64,7 +65,7 @@ MANIFEST_PATH = ROOT / "sheets_manifest.json"
 CODED_DATA = ROOT / "coded_data"
 
 # Columns appended after param columns on every tab; no dropdown validation
-_TRAILING_COLS = ["Comments"]
+_TRAILING_COLS = ["Source", "Comments"]
 _STATUS_TAB = "Status"
 _STATUS_VALUES = ["in-progress", "ready-for-review"]
 
@@ -235,7 +236,7 @@ def _build_rows(
 
 def _move_status_tab_to_end(spreadsheet: gspread.Spreadsheet) -> None:
     """Ensure the Status tab is the last worksheet in the spreadsheet."""
-    worksheets = spreadsheet.worksheets()
+    worksheets = _with_retry(spreadsheet.worksheets)
     if not worksheets or worksheets[-1].title == _STATUS_TAB:
         return
     status_ws = next((w for w in worksheets if w.title == _STATUS_TAB), None)
@@ -256,7 +257,7 @@ def _create_status_tab(
     If the tab already exists, adds any missing construction rows and moves
     the tab to the last position.
     """
-    existing = {ws.title: ws for ws in spreadsheet.worksheets()}
+    existing = {ws.title: ws for ws in _with_retry(spreadsheet.worksheets)}
 
     if _STATUS_TAB in existing:
         ws = existing[_STATUS_TAB]

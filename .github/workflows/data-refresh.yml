@@ -27,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write       # needed to push snapshot changes to planars
+      issues: write         # needed to file sheet-drift issues
 
     steps:
       - uses: actions/checkout@v4
@@ -88,4 +89,46 @@ jobs:
           else
             git commit -m "snapshots: regenerate from daily data refresh $(date -u +%Y-%m-%d)"
             git push
+          fi
+
+      - name: Check for sheet drift
+        id: drift
+        run: python -m coding update-sheets > /tmp/sheet_drift.txt 2>&1
+        continue-on-error: true
+
+      - name: Write drift summary
+        if: always()
+        run: |
+          echo "## Sheet drift check — $(date -u +%Y-%m-%d)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat /tmp/sheet_drift.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: File or update GitHub issue if drift detected
+        if: steps.drift.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN_COUNT=$(gh issue list --label sheet-drift --state open --json number --jq length)
+          if [ "$OPEN_COUNT" -eq 0 ]; then
+            gh issue create \
+              --title "Sheet drift detected — run update-sheets --apply ($(date -u +%Y-%m-%d))" \
+              --label sheet-drift \
+              --body-file /tmp/sheet_drift.txt
+          else
+            ISSUE_NUM=$(gh issue list --label sheet-drift --state open --json number --jq '.[0].number')
+            gh issue comment "$ISSUE_NUM" --body-file /tmp/sheet_drift.txt
+          fi
+
+      - name: Close open drift issue if all clear
+        if: steps.drift.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN_COUNT=$(gh issue list --label sheet-drift --state open --json number --jq length)
+          if [ "$OPEN_COUNT" -gt 0 ]; then
+            ISSUE_NUM=$(gh issue list --label sheet-drift --state open --json number --jq '.[0].number')
+            gh issue comment "$ISSUE_NUM" --body "Sheet drift resolved on $(date -u +%Y-%m-%d) — closing."
+            gh issue close "$ISSUE_NUM"
           fi

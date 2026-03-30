@@ -121,10 +121,10 @@ def _make_minimal_tsv(params: list[str], extra_params: list[str] = None) -> io.S
         An io.StringIO object ready to pass to load_filled_tsv.
     """
     all_params = list(params) + (extra_params or [])
-    cols = ["Element", "Position_Name", "Position_Number"] + all_params + ["Comments"]
+    cols = ["Element", "Position_Name", "Position_Number"] + all_params + ["Source", "Comments"]
     header = "\t".join(cols)
-    keystone = "\t".join(["ROOT", "v:verbstem", "1"] + ["na"] * len(all_params) + [""])
-    data    = "\t".join(["x",    "v:test",    "2"] + ["y"]  * len(all_params) + [""])
+    keystone = "\t".join(["ROOT", "v:verbstem", "1"] + ["na"] * len(all_params) + ["", ""])
+    data    = "\t".join(["x",    "v:test",    "2"] + ["y"]  * len(all_params) + ["", ""])
     return io.StringIO("\n".join([header, keystone, data]) + "\n")
 
 
