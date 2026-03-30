@@ -289,6 +289,8 @@ Run `gh issue list` for the full list. Key active issues:
 - **#80** — Auto-generate schema structure diagrams from YAML schema files. Initial implementation in `generate_diagram.py` (class taxonomy with criteria + language instances); layout refinement still needed.
 - **#72** — Prepare Chichewa (nyan1308) for onboarding. `[Jeff]`
 - **#70** — New analysis module: tonosegmental domain. Stub created; qualification rule and status need Adam's sign-off. `[diagnostics]`
+- **#109** — Multi-coordinator manifest coordination: `drive_config.json` not shared via git and no conflict detection on concurrent manifest mutations. `[Jeff]`
+- **#108** — Add `prune-manifest` command to remove retired class entries from Drive manifest and archive their TSVs; includes timestamped manifest snapshots before mutation.
 - **#107** — Allow explicit NA value for inapplicable diagnostic criteria (e.g. English stress); needs Adam's input on which criteria and computational treatment. `[diagnostics]` `[needs-input]`
 - **#104** — Keystone coding for phonological blocked-span tests: verbstem row should have real accented/obligatory/independence values, not `na`. Needs documentation, sheet fix, and Adam's input on correct values. `[diagnostics]`
 - **#103** — `restructure-sheets`: support class/construction renames with annotation carry-forward. Currently brittle (helper scripts only). `[enhancement]`
