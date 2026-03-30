@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Set, Tuple
 import pandas as pd
 
 _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
+_TRAILING_COLS   = {"Source", "Comments"}
 
 
 def _parse_filled_df(
@@ -29,7 +30,7 @@ def _parse_filled_df(
         data_df:      DataFrame of non-keystone rows, all param cells normalized.
         keystone_pos: integer Position_Number of the keystone row.
         pos_to_name:  dict mapping Position_Number -> Position_Name.
-        criterion_cols:   list of all non-structural column names (criteria + trailing).
+        criterion_cols:   list of criterion column names (excludes structural and trailing columns).
         keystone_df:  DataFrame of keystone rows (for blocking checks in stress/aspiration).
     """
     missing = (required_criteria | _STRUCTURAL_COLS) - set(df.columns)
@@ -44,7 +45,7 @@ def _parse_filled_df(
     df["Position_Name"] = df["Position_Name"].astype(str).str.strip()
     df["Element"] = df["Element"].astype(str).str.strip()
 
-    criterion_cols = [c for c in df.columns if c not in _STRUCTURAL_COLS]
+    criterion_cols = [c for c in df.columns if c not in _STRUCTURAL_COLS and c not in _TRAILING_COLS]
     for c in criterion_cols:
         df[c] = df[c].astype(str).str.strip().str.lower()
 
@@ -114,7 +115,7 @@ def load_filled_tsv(
         data_df:      DataFrame of non-keystone rows
         keystone_pos: integer Position_Number of the keystone
         pos_to_name:  dict mapping Position_Number -> Position_Name
-        criterion_cols:   list of all non-structural column names
+        criterion_cols:   list of criterion column names (excludes structural and trailing columns)
         keystone_df:  DataFrame of keystone rows (for blocking checks)
     """
     df = pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False)

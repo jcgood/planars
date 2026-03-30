@@ -5,7 +5,6 @@ NOTE: Some cells are unannotated — spans computed treating blanks as non-quali
   V-combines: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
   N-combines: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
   A-combines: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
-  Source: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
 
 Keystone position: 23 (v:verbstem)
 
