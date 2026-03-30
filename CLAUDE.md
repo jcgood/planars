@@ -104,6 +104,8 @@ This is a linguistic typology analysis project for morphosyntactic domain deriva
 
 Late aggregation, autotypology (dynamic schema), definition files vs. data files, and language reports are documented in [docs/data-management.md](docs/data-management.md#design-principles). The key operational implication: never aggregate during data collection; never store derived values (spans, domain types) in annotation TSVs.
 
+**Checkers don't proliferate; commands do.** New validation logic belongs in `integrity-check` (summary) or `check-codebook` (detail) — not in new standalone scripts. New scripts are commands (they transform or generate data) and may validate as a side effect, but are not primarily checkers. When proposing a new validation, route it to an existing tool. When `integrity-check` grows too long, add `--section` flags rather than splitting into more scripts. This principle is enforced by documentation (here and in `docs/coordinator-guide.md`), not by code structure.
+
 ## Package structure
 
 `planars/` is the core library:
@@ -294,7 +296,8 @@ Run `gh issue list` for the full list. Key active issues:
 - **#107** — Allow explicit NA value for inapplicable diagnostic criteria (e.g. English stress); needs Adam's input on which criteria and computational treatment. `[diagnostics]` `[needs-input]`
 - **#104** — Keystone coding for phonological blocked-span tests: verbstem row should have real accented/obligatory/independence values, not `na`. Needs documentation, sheet fix, and Adam's input on correct values. `[diagnostics]`
 - **#111** — `prune-manifest` / `restructure-sheets`: add cross-warnings for rename-vs-retire confusion. `[enhancement]`
-- **#110** — `check-codebook`: suggest template row when new schema class has no language coverage. `[enhancement]`
+- **#112** — Restructure coordinator guide: workflow-oriented sections, automatic vs. manual actions, and tool-roles table (enforces "checkers don't proliferate" principle).
+- **#110** — `check-codebook`: schema stubs + coverage matrix for language diagnostics; per-language diagnostics YAML (`sync-diagnostics-yaml` command). `[enhancement]`
 - **#101** — Tonal alternations from hybrid morphemes: does this need a new phonological category distinct from `tonal` and `tonosegmental`? Needs Adam's input. `[diagnostics]`
 - **#99** — `free_occurrence` redesign: needs `depends-on` criterion (position reference for non-free elements), min-max fracture spans, and conditional validation pattern. Qualification rule and span labels need Adam's input before implementation. `[diagnostics]`
 - **#9** — Fill in `[PLACEHOLDER]` and `[NEEDS REVIEW]` entries in schema files. Requires input from Adam. `[needs-input]`
