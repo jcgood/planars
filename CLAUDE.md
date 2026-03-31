@@ -198,6 +198,8 @@ Run `lookup-lang` before `generate-sheets` when onboarding a new language.
 
 `Makefile` at the repo root provides short `make` aliases for all coordinator commands. Run `make help` for the full list. The venv must be activated before using `make`.
 
+`migrations/` contains one-time data migration scripts kept for historical reference. Each script should have a module-level docstring documenting what it does, why it was needed, when it was run, how to invoke it (dry-run and apply), and what to check afterward. See `migrations/README.md` for the full convention.
+
 ## NonCollaborative/
 
 Personal working area not part of the shared analysis pipeline:

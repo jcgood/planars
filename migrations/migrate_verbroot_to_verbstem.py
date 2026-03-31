@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
 """One-time migration: rename v:verbroot → v:verbstem in all Google Sheets.
 
-Run from the repo root:
-    python migrate_verbroot_to_verbstem.py           # dry run (lists affected sheets)
-    python migrate_verbroot_to_verbstem.py --apply   # apply changes
+Motivation: keystone position was renamed from v:verbroot to v:verbstem to
+better reflect its role in the analysis.
+Run: early 2026 (before commit 465e5a4).
+
+Usage:
+    python migrations/migrate_verbroot_to_verbstem.py           # dry run (lists affected sheets)
+    python migrations/migrate_verbroot_to_verbstem.py --apply   # apply changes
+
+Post-run checks:
+    python -m coding integrity-check
 """
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from coding.drive import _get_clients, _load_manifest_from_drive
