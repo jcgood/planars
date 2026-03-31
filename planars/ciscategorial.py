@@ -8,7 +8,7 @@ import pandas as pd
 from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, loose_span
 
-_TRAILING_COLS = {"Comments"}
+_TRAILING_COLS = {"Source", "Comments"}
 
 
 def derive_v_ciscategorial_fractures(

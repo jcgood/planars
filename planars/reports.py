@@ -402,7 +402,7 @@ def _read_expected_constructions(lang_dir: Path) -> Dict[str, list]:
 
 # Trailing sheet columns that are not annotation criteria (e.g. free-text notes).
 # Matches the definition in coding/generate_sheets.py.
-_TRAILING_COLS = {"Comments"}
+_TRAILING_COLS = {"Source", "Comments"}
 
 # Name of the per-spreadsheet tab that records construction review status.
 _STATUS_TAB = "Status"
