@@ -104,7 +104,11 @@ jobs:
           echo "## Sheet drift check — $(date -u +%Y-%m-%d)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          cat /tmp/sheet_drift.txt >> $GITHUB_STEP_SUMMARY
+          if [ -f /tmp/sheet_drift.txt ]; then
+            cat /tmp/sheet_drift.txt >> $GITHUB_STEP_SUMMARY
+          else
+            echo "(drift check did not run)" >> $GITHUB_STEP_SUMMARY
+          fi
           echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: File or update GitHub issue if drift detected
