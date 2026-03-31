@@ -35,7 +35,9 @@ import datetime
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
+import yaml
 import pandas as pd
+from importlib.resources import files as _res_files
 
 from planars import ciscategorial as _cisc
 from planars import subspanrepetition as _subspan
@@ -57,59 +59,29 @@ from planars.io import load_filled_tsv, load_filled_sheet
 from planars.languages import get_display_name
 
 # ---------------------------------------------------------------------------
-# Span label constants (used here and re-exported by planars.charts for
-# backward compatibility with callers such as coding/check_codebook.py)
+# Span label constants
+# Loaded from schemas/terms.yaml (span_label_map section).
+# Re-exported by planars.charts for backward compatibility with callers
+# such as coding/check_codebook.py.
 # ---------------------------------------------------------------------------
 
-_CISC_SPANS = [
-    ("strict_complete_span", "cisc strict complete"),
-    ("loose_complete_span",  "cisc loose complete"),
-    ("strict_partial_span",  "cisc strict partial"),
-    ("loose_partial_span",   "cisc loose partial"),
-]
+def _load_span_label_map() -> dict:
+    text = _res_files("schemas").joinpath("terms.yaml").read_text(encoding="utf-8")
+    return (yaml.safe_load(text) or {}).get("span_label_map", {})
 
-_SUBSPAN_CATS = {
-    "maximum_fillable":          "fill",
-    "maximum_widescope_left":    "ws-L",
-    "maximum_widescope_right":   "ws-R",
-    "maximum_narrowscope_left":  "ns-L",
-    "maximum_narrowscope_right": "ns-R",
-}
-_SUBSPAN_VARIANTS = [
-    ("strict_complete", "strict complete"),
-    ("loose_complete",  "loose complete"),
-    ("strict_partial",  "strict partial"),
-    ("loose_partial",   "loose partial"),
-]
+_span_map = _load_span_label_map()
 
-_NONINT_SPANS = [
-    ("no_free_complete_span",    "no-free complete"),
-    ("no_free_partial_span",     "no-free partial"),
-    ("single_free_complete_span","1-free complete"),
-    ("single_free_partial_span", "1-free partial"),
-]
-
-_METRICAL_BLOCKED_SPANS = [
-    ("minimal_partial_span",  "metr minimal partial"),
-    ("minimal_complete_span", "metr minimal complete"),
-    ("maximal_partial_span",  "metr maximal partial"),
-    ("maximal_complete_span", "metr maximal complete"),
-]
+_CISC_SPANS           = list(_span_map.get("ciscategorial", {}).items())
+_NONINT_SPANS         = list(_span_map.get("noninterruption", {}).items())
+_METRICAL_BLOCKED_SPANS = list(_span_map.get("metrical", {}).items())
+_NONPERM_SPANS        = list(_span_map.get("nonpermutability", {}).items())
 
 # Standard 4-span pattern shared by most simple modules.
-_SIMPLE_SPANS = [
-    ("strict_complete_span", "strict complete"),
-    ("loose_complete_span",  "loose complete"),
-    ("strict_partial_span",  "strict partial"),
-    ("loose_partial_span",   "loose partial"),
-]
+_SIMPLE_SPANS         = list(_span_map.get("simple_variants", {}).items())
 
-_NONPERM_SPANS = [
-    ("strict_complete_span",   "strict complete"),
-    ("strict_partial_span",    "strict partial"),
-    ("flexible_complete_span", "flexible complete"),
-    ("flexible_partial_span",  "flexible partial"),
-]
+_subspan_map    = _span_map.get("subspanrepetition", {})
+_SUBSPAN_CATS   = _subspan_map.get("categories", {})
+_SUBSPAN_VARIANTS = list(_subspan_map.get("variants", {}).items())
 
 
 # ---------------------------------------------------------------------------

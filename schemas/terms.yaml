@@ -296,3 +296,75 @@ chart_labels:
         meaning: Maximal aspiration domain, partial blocking — mirrors stress maximal partial logic.
       - label: "asp maximal complete"
         meaning: Maximal aspiration domain, complete blocking — mirrors stress maximal complete logic.
+
+# ---------------------------------------------------------------------------
+# SPAN LABEL MAP
+# Machine-readable mapping from result dict keys → chart labels.
+# This is the source of truth read by planars/reports.py. The chart_labels
+# section above is the human-readable glossary; the two should agree but
+# the span_label_map governs what appears in actual chart output.
+#
+# Simple analyses (free_occurrence, biuniqueness, repair, segmental, tonal,
+# tonosegmental, intonational, pausing, proform, play_language, idiom) all use
+# the standard 4-span pattern with label = "{analysis_name} {variant}".
+# Their result keys and variant suffixes are in simple_variants; their names
+# are listed in simple_analyses.
+# ---------------------------------------------------------------------------
+
+span_label_map:
+
+  simple_variants:
+    strict_complete_span: "strict complete"
+    loose_complete_span:  "loose complete"
+    strict_partial_span:  "strict partial"
+    loose_partial_span:   "loose partial"
+
+  simple_analyses:
+    - free_occurrence
+    - biuniqueness
+    - repair
+    - segmental
+    - tonal
+    - tonosegmental
+    - intonational
+    - pausing
+    - proform
+    - play_language
+    - idiom
+
+  ciscategorial:
+    strict_complete_span: "cisc strict complete"
+    loose_complete_span:  "cisc loose complete"
+    strict_partial_span:  "cisc strict partial"
+    loose_partial_span:   "cisc loose partial"
+
+  noninterruption:
+    no_free_complete_span:     "no-free complete"
+    no_free_partial_span:      "no-free partial"
+    single_free_complete_span: "1-free complete"
+    single_free_partial_span:  "1-free partial"
+
+  metrical:
+    minimal_partial_span:  "metr minimal partial"
+    minimal_complete_span: "metr minimal complete"
+    maximal_partial_span:  "metr maximal partial"
+    maximal_complete_span: "metr maximal complete"
+
+  nonpermutability:
+    strict_complete_span:   "nonpermutability strict complete"
+    strict_partial_span:    "nonpermutability strict partial"
+    flexible_complete_span: "nonpermutability flexible complete"
+    flexible_partial_span:  "nonpermutability flexible partial"
+
+  subspanrepetition:
+    categories:
+      maximum_fillable:          fill
+      maximum_widescope_left:    ws-L
+      maximum_widescope_right:   ws-R
+      maximum_narrowscope_left:  ns-L
+      maximum_narrowscope_right: ns-R
+    variants:
+      strict_complete: "strict complete"
+      loose_complete:  "loose complete"
+      strict_partial:  "strict partial"
+      loose_partial:   "loose partial"
