@@ -6,7 +6,6 @@ __pycache__/
 .venv/
 sheets_manifest.json
 manifest_backup.json
-drive_config.json
 import_errors/
 *.egg-info/
 notebooks/.ipynb_checkpoints/

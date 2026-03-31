@@ -12,10 +12,9 @@ name: Data refresh
 #   PLANARS_DATA_TOKEN        — PAT with read/write access to jcgood/planars-data
 #   PLANARS_OAUTH_CREDENTIALS — contents of ~/.config/planars/oauth_credentials.json
 #   GOOGLE_OAUTH_TOKEN        — contents of ~/.config/gspread/authorized_user.json
-#   PLANARS_DRIVE_CONFIG      — contents of drive_config.json
 #
-# Keep PLANARS_DRIVE_CONFIG in sync with your local drive_config.json whenever
-# generate-sheets adds a new language or updates sheet IDs.
+# drive_config.json is committed to the repo (no credentials, only Drive IDs)
+# and is used directly — no secret needed.
 
 on:
   schedule:
@@ -53,12 +52,10 @@ jobs:
         env:
           OAUTH_CREDS: ${{ secrets.PLANARS_OAUTH_CREDENTIALS }}
           OAUTH_TOKEN: ${{ secrets.GOOGLE_OAUTH_TOKEN }}
-          DRIVE_CONFIG: ${{ secrets.PLANARS_DRIVE_CONFIG }}
         run: |
           mkdir -p ~/.config/planars ~/.config/gspread
           printf '%s' "$OAUTH_CREDS" > ~/.config/planars/oauth_credentials.json
           printf '%s' "$OAUTH_TOKEN" > ~/.config/gspread/authorized_user.json
-          printf '%s' "$DRIVE_CONFIG" > drive_config.json
 
       - name: Import annotation data from Google Sheets
         run: python -m coding import-sheets --apply --ignore-status
