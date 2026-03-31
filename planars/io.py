@@ -3,10 +3,17 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
+import yaml
 import pandas as pd
+from importlib.resources import files as _res_files
 
-_STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
-_TRAILING_COLS   = {"Source", "Comments"}
+def _load_planar_schema() -> dict:
+    text = _res_files("schemas").joinpath("planar.yaml").read_text(encoding="utf-8")
+    return yaml.safe_load(text) or {}
+
+_planar_schema     = _load_planar_schema()
+_STRUCTURAL_COLS   = {"Element", "Position_Name", "Position_Number"}
+_TRAILING_COLS     = set(_planar_schema.get("trailing_columns", ["Source", "Comments"]))
 
 
 def _parse_filled_df(

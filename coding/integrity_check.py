@@ -40,6 +40,7 @@ from .check_codebook import (
     _check_diagnostics_vs_classes,
     _check_chart_keys,
 )
+from .schemas import load_planar_schema
 import yaml as _yaml
 
 # ---------------------------------------------------------------------------
@@ -244,7 +245,7 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
         return 1, 0
 
     _STRUCTURAL = {"Element", "Position_Name", "Position_Number"}
-    _TRAILING   = {"Source", "Comments"}
+    _TRAILING   = set(load_planar_schema().get("trailing_columns", ["Source", "Comments"]))
 
     total_e = total_w = 0
 

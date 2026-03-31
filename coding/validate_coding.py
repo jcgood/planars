@@ -41,7 +41,7 @@ from .schemas import load_diagnostic_criteria, load_planar_schema
 # ---------------------------------------------------------------------------
 
 _STRUCTURAL_COLS  = {"Element", "Position_Name", "Position_Number"}
-_TRAILING_COLS    = ["Source", "Comments"]
+_TRAILING_COLS    = load_planar_schema().get("trailing_columns", ["Source", "Comments"])
 _DEFAULT_EXPECTED = set(load_diagnostic_criteria().get("default_allowed_values", ["y", "n", "na", "?"]))
 
 _PINK  = {"red": 1.0, "green": 0.8, "blue": 0.8}

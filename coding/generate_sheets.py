@@ -55,6 +55,7 @@ from .drive import (
     DRIVE_CONFIG_PATH,
 )
 from .glottolog import cached_entry as _cached_glottolog, get_metadata as _fetch_glottolog
+from .schemas import load_planar_schema
 from .make_forms import (
     build_element_index,
     _infer_language_id_from_planar_filename,
@@ -64,8 +65,9 @@ from .make_forms import (
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
 CODED_DATA = ROOT / "coded_data"
 
-# Columns appended after param columns on every tab; no dropdown validation
-_TRAILING_COLS = ["Source", "Comments"]
+# Columns appended after param columns on every tab; no dropdown validation.
+# Source of truth: schemas/planar.yaml trailing_columns.
+_TRAILING_COLS = load_planar_schema().get("trailing_columns", ["Source", "Comments"])
 _STATUS_TAB = "Status"
 _STATUS_VALUES = ["in-progress", "ready-for-review"]
 

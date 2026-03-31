@@ -45,6 +45,11 @@ structural_columns:
 # Used by validate_planar.py, validate_coding.py, and planars/io.py.
 keystone_position_name: "v:verbstem"
 
+# Columns appended after criterion columns on every annotation tab.
+# Ordered: Source before Comments. Used by generate_sheets.py, validate_coding.py,
+# integrity_check.py, and planars/io.py.
+trailing_columns: [Source, Comments]
+
 # ---------------------------------------------------------------------------
 # ELEMENT CONVENTIONS
 # ---------------------------------------------------------------------------
