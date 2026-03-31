@@ -41,6 +41,10 @@ structural_columns:
       further left; higher numbers are further right. The keystone (v:verbstem)
       anchors all span computations.
 
+# The Position_Name value that identifies the keystone row.
+# Used by validate_planar.py, validate_coding.py, and planars/io.py.
+keystone_position_name: "v:verbstem"
+
 # ---------------------------------------------------------------------------
 # ELEMENT CONVENTIONS
 # ---------------------------------------------------------------------------

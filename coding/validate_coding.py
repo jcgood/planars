@@ -34,6 +34,7 @@ from . import make_forms as _mf
 from .validate import ValidationIssue
 from .validate_planar import validate_planar_df
 from .validate_diagnostics import validate_diagnostics_df
+from .schemas import load_diagnostic_criteria, load_planar_schema
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -41,12 +42,12 @@ from .validate_diagnostics import validate_diagnostics_df
 
 _STRUCTURAL_COLS  = {"Element", "Position_Name", "Position_Number"}
 _TRAILING_COLS    = ["Source", "Comments"]
-_DEFAULT_EXPECTED = {"y", "n", "na", "?"}
+_DEFAULT_EXPECTED = set(load_diagnostic_criteria().get("default_allowed_values", ["y", "n", "na", "?"]))
 
 _PINK  = {"red": 1.0, "green": 0.8, "blue": 0.8}
 _WHITE = {"red": 1.0, "green": 1.0, "blue": 1.0}
 
-_KEYSTONE_NAME = "v:verbstem"
+_KEYSTONE_NAME = load_planar_schema().get("keystone_position_name", "v:verbstem")
 
 # ---------------------------------------------------------------------------
 # Cell highlighting

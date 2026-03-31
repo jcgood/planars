@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 _diagnostic_classes_cache: Dict | None = None
 _diagnostic_criteria_cache: Dict | None = None
+_planar_schema_cache: Dict | None = None
 
 
 def load_diagnostic_classes() -> Dict:
@@ -37,6 +38,23 @@ def load_diagnostic_classes() -> Dict:
         else:
             _diagnostic_classes_cache = {}
     return _diagnostic_classes_cache
+
+
+def load_planar_schema() -> Dict:
+    """Return the parsed planar.yaml dict (cached per process).
+
+    Returns the raw YAML structure including ``keystone_position_name`` and
+    ``structural_columns``. Returns an empty dict if the file is missing.
+    """
+    global _planar_schema_cache
+    if _planar_schema_cache is None:
+        path = ROOT / "schemas" / "planar.yaml"
+        if path.exists():
+            with open(path, encoding="utf-8") as f:
+                _planar_schema_cache = yaml.safe_load(f) or {}
+        else:
+            _planar_schema_cache = {}
+    return _planar_schema_cache
 
 
 def load_diagnostic_criteria() -> Dict:

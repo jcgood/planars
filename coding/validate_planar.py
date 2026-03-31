@@ -10,6 +10,7 @@ import re
 from typing import Dict, List
 
 from .validate import ValidationIssue
+from .schemas import load_planar_schema
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -17,7 +18,7 @@ from .validate import ValidationIssue
 
 _VALID_POSITION_TYPES = {"Zone", "Slot"}
 _VALID_CLASS_TYPES    = {"open", "list", "closed"}
-_KEYSTONE_NAME        = "v:verbstem"
+_KEYSTONE_NAME        = load_planar_schema().get("keystone_position_name", "v:verbstem")
 
 # ALL CAPS label: starts with an uppercase letter, contains only uppercase
 # letters, digits, hyphens, underscores, and optional brace-enclosed suffixes.

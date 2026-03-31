@@ -416,6 +416,10 @@ analyses:
 # SHARED CRITERION VALUES
 # ---------------------------------------------------------------------------
 
+# Machine-readable set of values always accepted by validate_coding.py,
+# regardless of per-criterion allowed values.
+default_allowed_values: [y, n, na, "?"]
+
 shared_values:
 
   - value: "y"

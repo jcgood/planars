@@ -16,6 +16,10 @@
 # Note: lookup-lang rewrites this file using PyYAML, which strips comments.
 # Essential documentation lives in schemas/__init__.py.
 
+# Machine-readable list of meta fields integrity-check warns about when blank.
+# Survives lookup-lang rewrites (PyYAML preserves data keys).
+required_meta_fields: [source, author]
+
 arao1248:
   glottolog:
     name: Araona

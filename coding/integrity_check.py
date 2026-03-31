@@ -260,7 +260,7 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
         # Check project metadata completeness against languages.yaml (source of truth).
         lang_entry = _LANGUAGES.get(lang_id, {})
         meta = lang_entry.get("meta", {})
-        _KEY_META = ("source", "author")
+        _KEY_META = tuple(_LANGUAGES.get("required_meta_fields", ["source", "author"]))
         missing_meta = [f for f in _KEY_META if not meta.get(f)]
         if not lang_entry:
             print(_warn(f"{lang}  —  not in schemas/languages.yaml (run lookup-lang to add)"))
