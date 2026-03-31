@@ -93,7 +93,9 @@ jobs:
 
       - name: Check for sheet drift
         id: drift
-        run: python -m coding update-sheets > /tmp/sheet_drift.txt 2>&1
+        run: |
+          touch /tmp/sheet_drift.txt
+          python -m coding update-sheets > /tmp/sheet_drift.txt 2>&1
         continue-on-error: true
 
       - name: Write drift summary
