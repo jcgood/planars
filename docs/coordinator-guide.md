@@ -6,6 +6,24 @@ For background on the analyses and span types, see the [Analyses guide](analyses
 
 ---
 
+## What happens automatically
+
+Once set up, the following run without coordinator action:
+
+| Trigger | What runs | What it does |
+|---------|-----------|--------------|
+| Every commit to `planars/*.py` | pre-commit hook | Regenerates affected snapshots and stages them |
+| Every push | pre-push hook | Verifies all snapshots are current; blocks push if stale |
+| Daily at 06:00 UTC | `data-refresh.yml` | Imports latest sheets → regenerates snapshots → commits; opens GitHub issues for sheet drift (`sheet-drift`) or pending destructive changes (`pending-changes`) |
+| Daily at 06:00 UTC | `sheet-validation.yml` | Runs `validate-coding`; opens a `sheet-validation` issue if problems found; closes it when clean |
+| Daily at 06:00 UTC | `generate-reports.yml` | Generates and uploads PDF reports to Drive |
+
+The hooks require a one-time install per machine — see [Regression testing and hooks](#regression-testing-and-hooks). The GitHub Actions require secrets configured in the repo — see [Automated workflows](#automated-workflows).
+
+**When something goes wrong automatically:** the daily workflows open labeled GitHub issues (`sheet-validation`, `sheet-drift`, `pending-changes`) so nothing is silently dropped. Check the Issues tab if something looks out of sync.
+
+---
+
 ## Repository setup
 
 ### Initial clone
@@ -75,7 +93,9 @@ git pull
 
 ---
 
-## Adding a new language
+## Workflows
+
+### Onboarding a new language
 
 1. Fetch Glottolog metadata and register the language:
    ```bash
@@ -121,11 +141,9 @@ git pull
    python -m coding integrity-check --lang {lang_id}
    ```
 
----
+### Annotation cycle
 
-## Sheet lifecycle
-
-### 1. Generate annotation forms
+#### 1. Generate annotation forms
 
 ```bash
 python -m coding generate-sheets           # creates sheets for new classes only
@@ -136,7 +154,7 @@ Creates one Google Sheets file per analysis class with one tab per construction.
 
 At the start of each run, the current Drive manifest is backed up to `manifest_backup.json` (gitignored) in the repo root. If something goes wrong during a run, this file can be used to recover sheet IDs without needing to access Drive directly.
 
-### 2. Collaborators annotate
+#### 2. Collaborators annotate
 
 Collaborators fill in values in the shared Google Sheets. See the [Collaborator guide](collaborator-guide.md). Keystone rows (`v:verbstem`) are pre-filled with `NA` and should not be changed.
 
@@ -148,11 +166,11 @@ Collaborators fill in values in the shared Google Sheets. See the [Collaborator 
 | `?` | Uncertain — source was consulted but answer could not be determined | Warning on import; excluded from span computations |
 | `NA` | Not applicable — keystone row only (`v:verbstem`) | Silently accepted; keystone excluded from span expansion by design |
 
-The blank/`?` distinction matters for data quality: a `?` is a positive annotation of uncertainty ("I looked and could not decide"), while a blank means the cell has not been filled. Both are flagged on import, but they are semantically different — especially for cross-database comparison (see also #84, CLDF export).
+The blank/`?` distinction matters for data quality: a `?` is a positive annotation of uncertainty ("I looked and could not decide"), while a blank means the cell has not been filled. Both are flagged on import, but they are semantically different — especially for cross-database comparison.
 
 When a construction is complete, the collaborator sets its row in the **Status tab** to `ready-for-review`. This signals to the coordinator that the construction is ready to import.
 
-### 3. Import filled sheets
+#### 3. Import filled sheets
 
 ```bash
 python -m coding import-sheets                               # dry run: show what would be written
@@ -178,7 +196,7 @@ When destructive changes are detected, `import-sheets` automatically opens a Git
 
 If any annotation warnings are found, they are written to `import_errors/{lang}_{timestamp}.txt` as well as printed to the terminal. Invalid cells are highlighted pink in the Google Sheet regardless of `--overwrite-existing`.
 
-### 4. Run analyses
+#### 4. Run analyses
 
 From the repo root:
 
@@ -192,22 +210,30 @@ python -m planars segmental         coded_data/stan1293/segmental/aspiration_pro
 
 Results are also available via the coordinator and contributor Colab notebooks. See the [Notebooks guide](notebooks.md).
 
----
+### Schema changes
 
-## Sheet maintenance commands
+When the diagnostic model changes — a new analysis class, a class renamed or retired, or criteria added or modified — the general sequence is:
 
-### Adding elements to the planar structure
+1. Edit `schemas/diagnostic_classes.yaml` (add the class, set required criteria, qualification rule, etc.)
+2. Scaffold or rename the analysis module in `planars/` if needed.
+3. Run `check-codebook` to verify consistency and get a ready-to-paste schema stub:
+   ```bash
+   python -m coding check-codebook
+   ```
+   Section 5 prints the TSV row to paste into each applicable language's `diagnostics_{lang_id}.tsv`. Section 6 shows the current language × class coverage matrix.
+4. Edit `diagnostics_{lang_id}.tsv` for each applicable language.
+5. Run the appropriate command below.
 
-When new elements are added to `planar_input/planar_{lang_id}-{date}.tsv`:
+#### Adding a new analysis class
+
+After step 4 above:
 
 ```bash
-python -m coding update-sheets           # dry run — show what would change
-python -m coding update-sheets --apply   # add missing rows to existing sheets
+python -m coding generate-sheets      # creates annotation sheets for the new class
+python -m coding sync-params --apply  # if existing sheets need the new criteria columns
 ```
 
-If you see `(quota exceeded — waiting Xs before retry)` messages, the command is handling Google Sheets API rate limits automatically — just let it run.
-
-### Updating diagnostic criteria in diagnostics_{lang_id}.tsv
+#### Updating diagnostic criteria
 
 When `diagnostics_{lang_id}.tsv` criterion columns change (new criteria added, criteria renamed):
 
@@ -223,22 +249,7 @@ python -m coding sync-params --apply --remove                  # also remove sta
 
 Preserves existing annotations while inserting new columns before Comments. Rename updates headers and validation in place. Split/merge rename the old column(s) to `_split_`/`_merged_` prefixes and add the new column(s) — coordinator remaps values then removes stale columns manually. `integrity-check --sheets` warns on any stale prefixed columns. Automatically regenerates and uploads notebooks afterward.
 
-### Restructuring after planar changes
-
-When the planar structure itself changes (positions added, dropped, or renamed):
-
-```bash
-python -m coding restructure-sheets                                       # dry run
-python -m coding restructure-sheets --apply                               # archive old sheets, regenerate
-python -m coding restructure-sheets --rename-map "old_pos:new_pos" --apply   # carry over renamed positions
-python -m coding restructure-sheets --rename-element Ad-VP:AD-VP --apply     # carry over renamed elements
-```
-
-Only classes with actual changes are archived; unchanged classes are left untouched. Automatically regenerates and uploads notebooks afterward.
-
-### Renaming an analysis class
-
-When an analysis class is renamed (e.g. `stress` → `metrical` during a module restructure):
+#### Renaming an analysis class
 
 **Required ordering:**
 1. Update `diagnostics_{lang_id}.tsv` for all affected languages to use the new class name.
@@ -255,94 +266,97 @@ python -m coding restructure-sheets --rename-class old_class:new_class --apply
 python -m coding restructure-sheets --rename-class old1:new1 --rename-class old2:new2 --apply
 ```
 
-For each renamed class, `--apply` will:
-1. Download all annotations from the old class sheet
-2. Archive the old spreadsheet to `archive/v{N}/` in Drive
-3. Create a new spreadsheet under the new class name with all annotations carried over
-4. Rename `coded_data/{lang}/{old_class}/` to `coded_data/{lang}/{new_class}/` in-place (preserves git history)
-5. Update the Drive manifest: remove old class entry, add new class entry
+For each renamed class, `--apply` archives the old spreadsheet, creates a new one under the new name with all annotations carried over, renames `coded_data/{lang}/{old}/` to `coded_data/{lang}/{new}/` in-place (preserving git history), and updates the Drive manifest.
 
 **Do NOT use `prune-manifest` for a rename** — it would discard annotation data. `prune-manifest` is for retiring a class entirely.
 
-### Retiring an analysis class
+#### Retiring an analysis class
 
-When an analysis class is removed from `diagnostics_{lang_id}.tsv` (no longer analyzed), run `prune-manifest` to clean up:
+Remove the class from `diagnostics_{lang_id}.tsv`, then run `prune-manifest` to clean up:
 
 ```bash
-python -m coding prune-manifest           # dry run — show what would be archived and removed
-python -m coding prune-manifest --apply   # archive TSVs and remove manifest entries
-python -m coding prune-manifest --apply --all   # same, skipping per-class confirmation prompts
+python -m coding prune-manifest                  # dry run — show what would be archived and removed
+python -m coding prune-manifest --apply          # archive TSVs and remove manifest entries
+python -m coding prune-manifest --apply --all    # same, skipping per-class confirmation prompts
 ```
 
-For each retired class, `--apply` will:
-1. Write a timestamped manifest snapshot to `manifest_archives/` (local audit trail, gitignored)
-2. Archive each active TSV in `coded_data/{lang}/{class}/` to its `archive/` subdirectory
-3. Remove the class entry from the Drive manifest
+For each retired class, `--apply`:
+1. Writes a timestamped manifest snapshot to `manifest_archives/` (local audit trail, gitignored)
+2. Archives each active TSV in `coded_data/{lang}/{class}/` to its `archive/` subdirectory
+3. Removes the class entry from the Drive manifest
 
-The retired Google Sheets on Drive are not deleted — only the manifest entry and local active TSVs are cleaned up. Skipping this step after retiring a class causes `import-sheets` and the daily data-refresh to keep re-importing the old sheet indefinitely.
+The retired Google Sheets on Drive are not deleted. Skipping this step after retiring a class causes `import-sheets` and the daily data-refresh to keep re-importing the old sheet indefinitely.
 
 If `prune-manifest` warns "this class contains annotation data — consider `--rename-class` instead", check whether the class was renamed rather than retired before proceeding.
 
-### Validating annotation sheets
+### Sheet maintenance
+
+For changes to the planar structure itself — positions added, dropped, or renamed.
+
+#### Adding elements to the planar structure
+
+When new elements are added to `planar_input/planar_{lang_id}-{date}.tsv`:
 
 ```bash
-python -m coding validate-coding                    # all languages
-python -m coding validate-coding --lang arao1248    # one language
+python -m coding update-sheets           # dry run — show what would change
+python -m coding update-sheets --apply   # add missing rows to existing sheets
 ```
 
-Reads current sheet values, clears existing pink highlights, re-highlights any invalid cells, and prints an issue summary. Safe to run repeatedly. Collaborators can also run the validation notebook themselves — see the [Notebooks guide](notebooks.md#validation-notebook).
+If you see `(quota exceeded — waiting Xs before retry)` messages, the command is handling Google Sheets API rate limits automatically — just let it run.
 
-### Regenerating notebooks
+#### Restructuring after planar changes
+
+When position numbers change or rows are reordered:
 
 ```bash
-python -m coding generate-notebooks
+python -m coding restructure-sheets                                            # dry run
+python -m coding restructure-sheets --apply                                    # archive old sheets, regenerate
+python -m coding restructure-sheets --rename-map "old_pos:new_pos" --apply    # carry over renamed positions
+python -m coding restructure-sheets --rename-element Ad-VP:AD-VP --apply      # carry over renamed elements
 ```
 
-Regenerates and uploads contributor (`domains_{lang_id}.ipynb`), coordinator (`all_languages.ipynb`), validation (`validation_{lang_id}.ipynb`), and report (`report_{lang_id}.ipynb`) notebooks to Drive. Also runs automatically at the end of `generate-sheets`, `sync-params --apply`, and `restructure-sheets --apply`. See the [Notebooks guide](notebooks.md) for what each notebook contains.
+Only classes with actual changes are archived; unchanged classes are left untouched. Automatically regenerates and uploads notebooks afterward.
 
-### Generating PDF reports
+### Health checks
+
+Two commands cover project health at different levels of detail. Run both after any significant change — new language, schema edit, or module addition.
 
 ```bash
-python -m coding generate-reports           # dry run — show what would be uploaded
-python -m coding generate-reports --apply   # generate and upload PDF reports to Drive
+python -m coding integrity-check                      # full health report — all languages, all schemas
+python -m coding integrity-check --lang arao1248      # one language only
+python -m coding integrity-check --sheets             # also validate live Google Sheets structure
 ```
 
-Or via Make: `make generate-reports` (dry run) / `make generate-reports-apply` (upload).
-
-Generates a PDF report for each language and uploads it to the language's Drive folder as `report_{lang_id}.pdf`. The file is created once and updated in-place on subsequent runs, so shared URLs stay stable. PDFs render natively in the Drive viewer — collaborators can open the link directly without downloading anything.
-
-Reports contain:
-- A completeness table showing which constructions are annotated vs. blank for each analysis class
-- A domain chart showing span results for all analyses
-- A timestamp at the top showing when the report was generated
-
-**Sharing the report URL with a collaborator:** In Drive, right-click `report_{lang_id}.pdf` → **Get link** → set to "Anyone with the link can view", then share that link. The file ID never changes between updates, so the link remains valid after every refresh.
-
-**Local setup:** `generate-reports --apply` requires WeasyPrint system libraries. On macOS: `brew install pango cairo`. These are installed automatically in the nightly GitHub Actions workflow.
-
-A lightweight Colab notebook (`report_{lang_id}.ipynb`) in the language Drive folder lets collaborators regenerate the report on demand — useful when they want to see the latest results immediately without waiting for the nightly automated run. See the [Notebooks guide](notebooks.md#report-notebook) for details.
-
-### Full integrity check
-
-```bash
-python -m coding integrity-check                        # all languages, local checks
-python -m coding integrity-check --lang arao1248        # one language only
-python -m coding integrity-check --sheets               # also validate live Google Sheets structure
-```
-
-Runs a full project-wide health report across six sections: PLANAR STRUCTURE, DIAGNOSTICS, CODEBOOK CONSISTENCY, ANALYSIS CONSISTENCY, ANNOTATION SHEETS, and NEEDS REVIEW. Run this after any significant change — new language, schema edit, or module addition. The `--sheets` flag adds live validation of Google Sheets structure but requires Drive access.
-
-### Codebook consistency check
+`integrity-check` runs six sections: PLANAR STRUCTURE, DIAGNOSTICS, CODEBOOK CONSISTENCY, ANALYSIS CONSISTENCY, ANNOTATION SHEETS (with `--sheets`), and NEEDS REVIEW. Use it as the first tool when starting an audit or after any major change.
 
 ```bash
 python -m coding check-codebook
 ```
 
-Verifies that criterion names in `schemas/diagnostic_criteria.yaml`, analysis modules, and `diagnostics_{lang_id}.tsv` are consistent. Run this after adding new diagnostic criteria or analyses. `integrity-check` includes this check; `check-codebook` is useful for lower-level detail.
+`check-codebook` provides lower-level schema detail and two informational reports:
+- **Schema stubs** (section 5): classes with no language coverage, with a ready-to-paste `diagnostics_{lang_id}.tsv` row for each
+- **Coverage matrix** (section 6): language × class grid showing which classes are active per language
+
+Use `check-codebook` when adding criteria or classes, or when `integrity-check` flags a codebook inconsistency and you want more detail. `integrity-check` includes all `check-codebook` checks; `check-codebook` is faster and more detailed for schema-specific diagnosis.
 
 ---
 
-## Makefile aliases
+## Tool roles
+
+Each checker has a defined scope. New validation belongs in one of these tools, not in a new script.
+
+| Tool | Role | When to reach for it |
+|------|------|----------------------|
+| `integrity-check` | Full project health report across all layers | After any major change; start of an audit session |
+| `check-codebook` | Schema/module/diagnostics consistency + schema stubs + coverage matrix | When adding a class or criterion; for detailed codebook diagnostics |
+| `validate-coding` | Live annotation sheet values + pink cell highlights | Before a review cycle; runs automatically via `sheet-validation.yml` |
+| `check-snapshots` | Snapshot regression against current analysis output | Runs automatically via pre-push hook and CI |
+
+---
+
+## Reference
+
+### Makefile aliases
 
 A `Makefile` in the repo root provides short aliases for all common commands. Run `make help` for the full list. Examples:
 
@@ -360,9 +374,7 @@ make snapshots
 
 For commands that accept extra flags not covered by the aliases (e.g. `--rename-map`, `--rename-element`, `--lang`), use the full `python -m coding ...` form directly. The venv must be activated before using `make` (see [Python environment](#python-environment) above).
 
----
-
-## Schema utilities
+### Schema utilities
 
 Two standalone scripts in the repo root generate human-readable views of the schema files:
 
@@ -374,11 +386,9 @@ python generate_diagram.py out.svg    # analysis class taxonomy diagram (require
 python generate_diagram.py out.pdf    # same, PDF output
 ```
 
-`generate_diagram.py` shows all 15 analysis classes grouped by domain type, with diagnostic criteria inside each node and the languages that instantiate each class connected on the right.
+`generate_diagram.py` shows all analysis classes grouped by domain type, with diagnostic criteria inside each node and the languages that instantiate each class connected on the right.
 
----
-
-## Regression testing
+### Regression testing and hooks
 
 ```bash
 pytest                          # run all tests (I/O, restructure, snapshots)
@@ -394,19 +404,19 @@ git diff tests/snapshots/       # review what changed
 
 Run `pytest` after any change to an analysis module, `io.py`, or `spans.py`.
 
-### Local snapshot hooks (recommended)
+#### Local snapshot hooks (recommended)
 
 Two local hooks keep snapshots in sync automatically. Install both at once after setting up the project:
 
 ```bash
 .venv/bin/pip install pre-commit
-.venv/bin/pre-commit install              # pre-commit hook (auto-regenerate)
-.venv/bin/pre-commit install --hook-type pre-push   # pre-push hook (safety check)
+.venv/bin/pre-commit install                              # pre-commit hook (auto-regenerate)
+.venv/bin/pre-commit install --hook-type pre-push        # pre-push hook (safety check)
 ```
 
-**Pre-commit hook (`regenerate-snapshots`):** Triggers whenever any `planars/*.py` file is staged. Regenerates all snapshots and stages the updated files automatically, so snapshot updates are always included in the same commit as the analysis change. A summary of which files changed is printed at the end of the commit.
+**Pre-commit hook (`regenerate-snapshots`):** Triggers whenever any `planars/*.py` file is staged. Regenerates all snapshots and stages the updated files automatically, so snapshot updates are always included in the same commit as the analysis change.
 
-**Pre-push hook (`check-snapshots`):** Runs `check_snapshots.py` against the full local state before every push. Blocks the push if any snapshots are stale — a safety net for cases the pre-commit hook didn't catch (e.g. a data-only change in `planars-data`).
+**Pre-push hook (`check-snapshots`):** Runs `check_snapshots.py` against the full local state before every push. Blocks the push if any snapshots are stale — a safety net for cases the pre-commit hook didn't catch.
 
 If the pre-push hook blocks and the diff is intentional, regenerate and commit manually before pushing:
 
@@ -420,45 +430,32 @@ git push
 
 CI also runs `check_snapshots.py` as a dedicated step, so stale snapshots will fail the build even if neither hook is installed.
 
-### Scheduled sheet validation
+### Automated workflows
 
-A daily GitHub Actions workflow (`.github/workflows/sheet-validation.yml`) runs `validate-coding` against all live Google Sheets and opens a GitHub issue (labeled `sheet-validation`) if problems are found. When the issue is resolved and the next daily run comes back clean, the issue is closed automatically.
+Three daily GitHub Actions workflows run at 06:00 UTC. All three use the same four secrets.
 
-To enable it, add the following four secrets under **Settings → Secrets and variables → Actions** in the GitHub repo (`https://github.com/jcgood/planars` → Settings → Secrets and variables → Actions → New repository secret):
+#### Secrets setup
+
+Add the following secrets under **Settings → Secrets and variables → Actions** in the GitHub repo:
 
 | Secret | Where to get it |
 |--------|-----------------|
 | `PLANARS_DATA_TOKEN` | Already exists — used by the existing CI workflow to read `jcgood/planars-data`. No action needed. |
 | `PLANARS_OAUTH_CREDENTIALS` | Contents of `~/.config/planars/oauth_credentials.json` on your laptop — the OAuth client secret downloaded from Google Cloud Console during initial setup. |
-| `GOOGLE_OAUTH_TOKEN` | Contents of `~/.config/gspread/authorized_user.json` on your laptop — written by gspread after your first interactive login. Contains a refresh token, so the workflow can renew its Google access silently without browser interaction. Stays valid as long as the workflow runs at least once every few months. |
+| `GOOGLE_OAUTH_TOKEN` | Contents of `~/.config/gspread/authorized_user.json` on your laptop — written by gspread after your first interactive login. Contains a refresh token so the workflow can renew its Google access silently. Stays valid as long as the workflow runs at least once every few months. |
 | `PLANARS_DRIVE_CONFIG` | Contents of `drive_config.json` in the repo root — tells the workflow how to find the Drive manifest and language folders. |
 
 **Keeping `PLANARS_DRIVE_CONFIG` current:** `generate-sheets` rewrites `drive_config.json` whenever it creates a new language folder or updates sheet IDs. After any such run, copy the updated file contents into the secret. `generate-sheets` prints a reminder at the end of each run when the secret may need updating.
 
-You can also trigger the workflow manually from the Actions tab at any time.
+#### What each workflow does
 
-### Nightly report generation
+**`data-refresh.yml`** — imports the latest annotation data from Google Sheets into planars-data, regenerates snapshot baselines, and commits any changes. Also runs `update-sheets` (dry-run) to detect sheet drift; if drift is found, opens or updates a GitHub issue labeled `sheet-drift`. If destructive pending changes are written, opens a `pending-changes` issue. You can trigger it manually from the Actions tab after a large annotation session to sync immediately rather than waiting for the next scheduled run.
 
-A second daily workflow (`.github/workflows/generate-reports.yml`) runs `generate-reports --apply` at 06:00 UTC and refreshes all language PDF reports on Drive. It uses the **same four secrets** as the sheet-validation workflow — if those are already set, no additional configuration is needed.
+**`sheet-validation.yml`** — runs `validate-coding` against all live Google Sheets and opens a GitHub issue labeled `sheet-validation` if problems are found. Closes the issue automatically when the next run comes back clean.
 
-You can trigger the workflow manually from the Actions tab at any time. The report timestamp at the top of each PDF shows when it was last regenerated.
+**`generate-reports.yml`** — runs `generate-reports --apply` and uploads refreshed PDF reports to Drive. The report timestamp at the top of each PDF shows when it was last regenerated. You can trigger it manually at any time. Requires WeasyPrint system libraries (installed automatically in the workflow; not needed locally unless you run `generate-reports --apply` yourself).
 
-**Keeping `PLANARS_DRIVE_CONFIG` current:** As with `sheet-validation.yml`, copy the updated `drive_config.json` contents into the secret after any `generate-sheets` run that creates new language folders or updates file IDs.
-
-### Daily data refresh and snapshot regeneration
-
-A third daily workflow (`.github/workflows/data-refresh.yml`) runs at 06:00 UTC and:
-1. Runs `import-sheets --apply` to pull the latest annotation data from Google Sheets into planars-data.
-2. Runs `generate_snapshots.py` to regenerate snapshot baselines from the updated data.
-3. Commits and pushes any changes — annotation data to planars-data, snapshots to planars.
-
-This keeps snapshot baselines continuously anchored to current annotation data. With this in place, a snapshot failure on a pull request means exactly one thing: a code change altered span output without going through the pre-commit hook. It uses the **same four secrets** as the other daily workflows — no additional configuration needed.
-
-You can trigger it manually from the Actions tab at any time (useful after a large annotation session to sync immediately rather than waiting for the next scheduled run).
-
----
-
-## Drive folder structure
+### Drive folder structure
 
 The Drive manifest (`manifest.json`) is stored on Drive and contains all languages' sheet metadata and folder IDs. A local `drive_config.json` (gitignored) bootstraps the Drive lookup — it holds `_root_folder_id`, `_planars_config_file_id`, and per-language `folder_id`, `planar_spreadsheet_id`, and `diagnostics_spreadsheet_id`.
 
@@ -466,7 +463,7 @@ The Drive manifest (`manifest.json`) is stored on Drive and contains all languag
 
 Each `generate-sheets` run also creates editable Google Sheets for `planar_*.tsv` and `diagnostics_{lang_id}.tsv` in the language's Drive folder so collaborators can view (and coordinators can edit) the planar structure alongside their annotation sheets. `import-sheets` reads these Sheets back to local TSVs and detects any changes.
 
-### First-time project setup
+#### First-time project setup
 
 After the very first `generate-sheets`, run `setup-root-folder` once to create the top-level `ConstituencyTypology` Drive folder and move shared files there:
 
@@ -476,6 +473,6 @@ python -m coding setup-root-folder
 
 This is idempotent — safe to re-run, but only needs to happen once per project.
 
-### Joining an existing project
+#### Joining an existing project
 
 `drive_config.json` is gitignored and cannot be recovered from the repo. If you are joining a project that is already set up, ask the lead coordinator to share their `drive_config.json` and place it at the root of your `planars/` clone. Without it, `generate-sheets` and `import-sheets` cannot locate the existing Drive manifest or language folders.
