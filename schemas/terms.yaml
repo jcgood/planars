@@ -332,6 +332,15 @@ span_label_map:
     - play_language
     - idiom
 
+  # Short prefix overrides for simple analyses where the full analysis name
+  # is too long for chart labels. Omitted entries use the full analysis name.
+  simple_prefix_overrides:
+    free_occurrence: free
+    biuniqueness:    biuniq
+    segmental:       seg
+    pausing:         pause
+    play_language:   play
+
   ciscategorial:
     strict_complete_span: "cisc strict complete"
     loose_complete_span:  "cisc loose complete"
@@ -351,10 +360,10 @@ span_label_map:
     maximal_complete_span: "metr maximal complete"
 
   nonpermutability:
-    strict_complete_span:   "nonpermutability strict complete"
-    strict_partial_span:    "nonpermutability strict partial"
-    flexible_complete_span: "nonpermutability flexible complete"
-    flexible_partial_span:  "nonpermutability flexible partial"
+    strict_complete_span:   "nonperm strict complete"
+    strict_partial_span:    "nonperm strict partial"
+    flexible_complete_span: "nonperm flexible complete"
+    flexible_partial_span:  "nonperm flexible partial"
 
   subspanrepetition:
     categories:

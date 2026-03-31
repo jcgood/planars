@@ -83,6 +83,9 @@ _subspan_map    = _span_map.get("subspanrepetition", {})
 _SUBSPAN_CATS   = _subspan_map.get("categories", {})
 _SUBSPAN_VARIANTS = list(_subspan_map.get("variants", {}).items())
 
+# Short prefix overrides for simple analyses (e.g. "seg" instead of "segmental").
+_SIMPLE_PREFIXES = _span_map.get("simple_prefix_overrides", {})
+
 
 # ---------------------------------------------------------------------------
 # Row extraction helpers
@@ -129,17 +132,19 @@ def _rows_from_metrical(result, lang_id):
     return rows
 
 
-def _make_simple_rows(analysis_name, span_list=None):
+def _make_simple_rows(analysis_name, span_list=None, prefix=None):
     """Factory: returns a row function for modules with a standard span set."""
     if span_list is None:
         span_list = _SIMPLE_SPANS
+    if prefix is None:
+        prefix = _SIMPLE_PREFIXES.get(analysis_name, analysis_name)
 
     def _fn(result, lang_id):
         rows = []
         for key, label in span_list:
             l, r = result[key]
             rows.append({"Language": lang_id,
-                         "Test_Labels": f"{analysis_name} {label}",
+                         "Test_Labels": f"{prefix} {label}",
                          "Analysis": analysis_name,
                          "Left_Edge": l, "Right_Edge": r, "Size": r - l + 1})
         return rows
