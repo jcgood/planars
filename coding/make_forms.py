@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import pandas as pd
+import yaml
 
 DATA_DIR = ""
 
@@ -167,6 +168,96 @@ def _resolve_diagnostics_path(lang_id: str) -> Path:
     if p.exists():
         return p
     raise FileNotFoundError(f"Could not find diagnostics_{lang_id}.tsv in {base}")
+
+
+def _resolve_diagnostics_yaml_path(lang_id: str) -> Path:
+    """Return the path for diagnostics_{lang_id}.yaml (may not exist yet)."""
+    base = Path(DATA_DIR) if DATA_DIR else Path(__file__).resolve().parent
+    return base / f"diagnostics_{lang_id}.yaml"
+
+
+# ---------------------------------------------------------------------------
+# Compact YAML dumper — writes lists as inline [y, n] style
+# ---------------------------------------------------------------------------
+
+class _CompactDumper(yaml.Dumper):
+    pass
+
+
+def _inline_list_representer(dumper: yaml.Dumper, data: list) -> Any:
+    return dumper.represent_sequence("tag:yaml.org,2002:seq", data, flow_style=True)
+
+
+_CompactDumper.add_representer(list, _inline_list_representer)
+
+
+def _dump_diagnostics_yaml(data: dict) -> str:
+    """Serialize a diagnostics YAML dict to a string with inline value lists."""
+    return yaml.dump(
+        data,
+        Dumper=_CompactDumper,
+        default_flow_style=False,
+        allow_unicode=True,
+        sort_keys=False,
+    )
+
+
+# ---------------------------------------------------------------------------
+# TSV ↔ YAML serializers
+# ---------------------------------------------------------------------------
+
+def _yaml_to_tsv_df(yaml_data: dict, lang_id: str) -> pd.DataFrame:
+    """Convert a diagnostics YAML dict to a TSV-format DataFrame.
+
+    The returned DataFrame has columns: Class, Language, Constructions, Criteria.
+    Criteria with non-default values are encoded with brace syntax (e.g.
+    ``accented{y/n/both}``); default [y, n] criteria use plain names.
+    """
+    rows = []
+    for class_name, class_data in yaml_data.get("classes", {}).items():
+        constructions = class_data.get("constructions", [])
+        criteria_dict: Dict[str, List[str]] = class_data.get("criteria", {})
+
+        criteria_parts = []
+        for crit_name, crit_values in criteria_dict.items():
+            if list(crit_values) == ["y", "n"]:
+                criteria_parts.append(crit_name)
+            else:
+                criteria_parts.append(f"{crit_name}{{{'/'.join(crit_values)}}}")
+
+        rows.append({
+            "Class": class_name,
+            "Language": lang_id,
+            "Constructions": ", ".join(constructions),
+            "Criteria": ", ".join(criteria_parts),
+        })
+    return pd.DataFrame(rows, columns=["Class", "Language", "Constructions", "Criteria"])
+
+
+def _tsv_df_to_yaml(df: pd.DataFrame, lang_id: str) -> dict:
+    """Convert a diagnostics TSV DataFrame to a YAML-format dict.
+
+    Used for migrating existing TSVs to YAML and for round-tripping TSV
+    changes back into YAML.  Each TSV row (one per class) becomes a class
+    entry; constructions are expanded into a list; criteria brace syntax is
+    decoded into explicit value lists.
+    """
+    classes: Dict[str, Any] = {}
+    for _, row in df.iterrows():
+        lang = str(row.get("Language", "")).strip()
+        if lang != lang_id:
+            continue
+
+        class_name = str(row.get("Class", "")).strip()
+        constructions = _parse_csv_list(str(row.get("Constructions", "")))
+        criterion_names, criterion_values = _parse_criterion_specs(str(row.get("Criteria", "")))
+
+        classes[class_name] = {
+            "constructions": constructions,
+            "criteria": {name: criterion_values[name] for name in criterion_names},
+        }
+
+    return {"language": lang_id, "classes": classes}
 
 
 def _parse_csv_list(value: str) -> List[str]:

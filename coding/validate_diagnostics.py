@@ -123,6 +123,151 @@ def _parse_criterion_specs(value: str) -> List[tuple]:
 # Public API
 # ---------------------------------------------------------------------------
 
+def validate_diagnostics_yaml(data: dict, lang_id: str) -> List[ValidationIssue]:
+    """Validate a diagnostics_{lang_id}.yaml dict for a given language.
+
+    Parameters
+    ----------
+    data    : parsed YAML dict (top-level keys: language, classes)
+    lang_id : expected language ID (from the planar filename)
+    """
+    issues: List[ValidationIssue] = []
+    filename = f"diagnostics_{lang_id}.yaml"
+
+    # ------------------------------------------------------------------
+    # 1. Top-level structure
+    # ------------------------------------------------------------------
+    if not isinstance(data, dict):
+        issues.append(ValidationIssue("error", filename, "YAML root must be a mapping"))
+        return issues
+
+    yaml_lang = str(data.get("language", "")).strip()
+    if yaml_lang != lang_id:
+        issues.append(ValidationIssue(
+            "error", filename,
+            f"'language' value '{yaml_lang}' does not match expected lang_id '{lang_id}'"
+        ))
+
+    classes = data.get("classes")
+    if not isinstance(classes, dict) or not classes:
+        issues.append(ValidationIssue("error", filename, "Missing or empty 'classes' mapping"))
+        return issues
+
+    known_criteria   = _codebook_criterion_names()
+    known_classes    = _known_analysis_classes()
+    allowed_by_class = _diagnostic_class_allowed_criteria()
+    required_classes = _required_collection_classes()
+
+    for class_name, class_data in classes.items():
+        location = f"{filename} [{class_name}]"
+
+        if not isinstance(class_data, dict):
+            issues.append(ValidationIssue("error", location, "Class entry must be a mapping"))
+            continue
+
+        # ------------------------------------------------------------------
+        # 2. constructions
+        # ------------------------------------------------------------------
+        constructions = class_data.get("constructions")
+        if not isinstance(constructions, list) or not constructions:
+            issues.append(ValidationIssue(
+                "error", location, "'constructions' must be a non-empty list"
+            ))
+            constructions = []
+
+        if "general" in constructions and len(constructions) > 1:
+            issues.append(ValidationIssue(
+                "error", location,
+                f"'general' must be the only construction when used, but found: {constructions}"
+            ))
+
+        seen: Dict[str, int] = {}
+        for j, name in enumerate(constructions):
+            if name in seen:
+                issues.append(ValidationIssue(
+                    "error", location, f"Duplicate construction name '{name}'"
+                ))
+            else:
+                seen[name] = j
+
+        # ------------------------------------------------------------------
+        # 3. criteria
+        # ------------------------------------------------------------------
+        criteria = class_data.get("criteria")
+        if not isinstance(criteria, dict) or not criteria:
+            issues.append(ValidationIssue(
+                "error", location, "'criteria' must be a non-empty mapping"
+            ))
+            criteria = {}
+
+        for crit_name, crit_values in criteria.items():
+            if not isinstance(crit_values, list) or not crit_values:
+                issues.append(ValidationIssue(
+                    "error", location,
+                    f"Criterion '{crit_name}' must have a non-empty list of allowed values"
+                ))
+            # Criterion names vs. codebook
+            if known_criteria and crit_name not in known_criteria:
+                issues.append(ValidationIssue(
+                    "warning", location,
+                    f"Diagnostic criterion '{crit_name}' is not defined in diagnostic_criteria.yaml"
+                ))
+
+        # ------------------------------------------------------------------
+        # 4. Class names vs. analysis modules
+        # ------------------------------------------------------------------
+        if known_classes and class_name not in known_classes:
+            issues.append(ValidationIssue(
+                "warning", location,
+                f"Class '{class_name}' has no corresponding planars/ analysis module "
+                f"(known: {sorted(known_classes)})"
+            ))
+
+        # ------------------------------------------------------------------
+        # 5. Schema conformance
+        # ------------------------------------------------------------------
+        if allowed_by_class and class_name in allowed_by_class:
+            allowed = allowed_by_class[class_name]
+            for crit_name in criteria:
+                if crit_name not in allowed:
+                    issues.append(ValidationIssue(
+                        "warning", location,
+                        f"Diagnostic criterion '{crit_name}' is not in the allowed set for "
+                        f"class '{class_name}' in diagnostic_classes.yaml "
+                        f"(allowed: {sorted(allowed)})"
+                    ))
+
+    # ------------------------------------------------------------------
+    # 6. Glottocode format + cache advisory
+    # ------------------------------------------------------------------
+    if not _is_valid_glottocode(lang_id):
+        issues.append(ValidationIssue(
+            "warning", filename,
+            f"Language ID '{lang_id}' does not match Glottocode format "
+            f"(expected 4 lowercase letters + 4 digits, e.g. 'arao1248')"
+        ))
+    elif _cached_glottocode(lang_id) is None:
+        issues.append(ValidationIssue(
+            "warning", filename,
+            f"Language ID '{lang_id}' has not been verified against Glottolog. "
+            f"Run: python -m coding lookup-lang {lang_id}"
+        ))
+
+    # ------------------------------------------------------------------
+    # 7. Required classes must be present
+    # ------------------------------------------------------------------
+    if required_classes:
+        present = set(classes.keys())
+        for cls in sorted(required_classes):
+            if cls not in present:
+                issues.append(ValidationIssue(
+                    "error", filename,
+                    f"Required class '{cls}' (collection_required: true) is missing"
+                ))
+
+    return issues
+
+
 def validate_diagnostics_df(df, lang_id: str) -> List[ValidationIssue]:
     """Validate a diagnostics_{lang_id}.tsv DataFrame for a given language.
 

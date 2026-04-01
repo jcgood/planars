@@ -46,6 +46,29 @@ languages.yaml
       required_meta_fields: meta fields integrity-check warns about when blank
         (currently [source, author]).
 
+diagnostics_{lang_id}.yaml  (per-language, lives in coded_data/{lang_id}/planar_input/)
+    Per-language source of truth for which analysis classes, constructions, and
+    diagnostic criteria apply to a language.  The TSV of the same name is a
+    derived artifact generated from this file.  Format::
+
+        language: stan1293
+        classes:
+          ciscategorial:
+            constructions: [general]
+            criteria:
+              V-combines: [y, n]
+              N-combines: [y, n]
+            notes: "optional free-text notes"   # omit if not needed
+
+    Rules:
+      - ``constructions`` is a non-empty list of construction names.
+      - ``general`` must be the only construction when used.
+      - ``criteria`` is an ordered dict of criterion_name → allowed_values list.
+      - Allowed values always include ``na`` and ``?`` implicitly; only list the
+        domain-meaningful values (e.g. ``[y, n]`` or ``[y, n, both]``).
+      - ``notes`` is an optional string (class-level).
+    Validated by ``coding/validate_diagnostics.py:validate_diagnostics_yaml()``.
+
 terms.yaml
     Source of truth for analytical terms and chart label glossary.
     Key machine-readable entries:
