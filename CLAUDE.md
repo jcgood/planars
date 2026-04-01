@@ -274,6 +274,7 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 | `sheet-validation` | Filed automatically by the `sheet-validation.yml` workflow when `validate-coding` detects invalid cell values. Auto-closed when clean. |
 | `sheet-drift` | Filed automatically by the `data-refresh.yml` workflow when `update-sheets` (dry-run) detects sheets out of sync with the data model. Resolve by running `update-sheets --apply`. Auto-closed when clean. |
 | `pending-changes` | Filed automatically by `import-sheets` when destructive changes are written to `pending_changes.json`. Resolve by running `apply-pending`. |
+| `diagnostics-drift` | Filed automatically by `data-refresh.yml` when `import-sheets` detects ambiguous TSV→YAML differences in `diagnostics_drift.json`. Resolve by reviewing the drift, editing YAML manually, and running `sync-diagnostics-yaml --apply`. Auto-closed when clear. |
 
 ### Notable open issues
 

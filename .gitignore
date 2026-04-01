@@ -16,4 +16,5 @@ coded_data/
 dist/
 glottolog_cache.json
 pending_changes.json
+diagnostics_drift.json
 manifest_archives/

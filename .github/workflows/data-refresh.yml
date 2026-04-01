@@ -60,6 +60,66 @@ jobs:
       - name: Import annotation data from Google Sheets
         run: python -m coding import-sheets --apply --ignore-status
 
+      - name: Check for diagnostics YAML drift
+        id: diag_drift
+        run: |
+          if [ -f diagnostics_drift.json ]; then
+            COUNT=$(python -c "import json; d=json.load(open('diagnostics_drift.json')); print(len(d))")
+            if [ "$COUNT" -gt 0 ]; then
+              echo "drift=true" >> $GITHUB_OUTPUT
+            else
+              echo "drift=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "drift=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: File or update GitHub issue if diagnostics drift detected
+        if: steps.diag_drift.outputs.drift == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BODY_FILE=$(mktemp)
+          echo "## Diagnostics YAML drift detected — $(date -u +%Y-%m-%d)" >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo "The daily data refresh found ambiguous differences between a diagnostics TSV" >> "$BODY_FILE"
+          echo "(downloaded from Google Sheets) and the corresponding YAML source of truth." >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo "**Ambiguous changes require coordinator review** before they can be applied." >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo "To resolve:" >> "$BODY_FILE"
+          echo "1. Pull latest \`coded_data/\` and run \`python -m coding sync-diagnostics-yaml --from-tsv\` (dry run)" >> "$BODY_FILE"
+          echo "2. Review the output and edit the YAML directly for any ambiguous items" >> "$BODY_FILE"
+          echo "3. Run \`python -m coding sync-diagnostics-yaml --apply\` to regenerate the TSV from the corrected YAML" >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo "### Drift details" >> "$BODY_FILE"
+          echo '```json' >> "$BODY_FILE"
+          cat diagnostics_drift.json >> "$BODY_FILE"
+          echo '```' >> "$BODY_FILE"
+          OPEN_COUNT=$(gh issue list --label diagnostics-drift --state open --json number --jq length)
+          if [ "$OPEN_COUNT" -eq 0 ]; then
+            gh issue create \
+              --title "Diagnostics YAML drift detected ($(date -u +%Y-%m-%d))" \
+              --label diagnostics-drift \
+              --body-file "$BODY_FILE"
+          else
+            ISSUE_NUM=$(gh issue list --label diagnostics-drift --state open --json number --jq '.[0].number')
+            gh issue comment "$ISSUE_NUM" --body-file "$BODY_FILE"
+          fi
+          rm -f "$BODY_FILE"
+
+      - name: Close open diagnostics drift issue if all clear
+        if: steps.diag_drift.outputs.drift == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN_COUNT=$(gh issue list --label diagnostics-drift --state open --json number --jq length)
+          if [ "$OPEN_COUNT" -gt 0 ]; then
+            ISSUE_NUM=$(gh issue list --label diagnostics-drift --state open --json number --jq '.[0].number')
+            gh issue comment "$ISSUE_NUM" --body "Diagnostics YAML drift resolved on $(date -u +%Y-%m-%d) — closing."
+            gh issue close "$ISSUE_NUM"
+          fi
+
       - name: Regenerate snapshots
         run: python generate_snapshots.py
 
