@@ -14,7 +14,7 @@ Once set up, the following run without coordinator action:
 |---------|-----------|--------------|
 | Every commit to `planars/*.py` | pre-commit hook | Regenerates affected snapshots and stages them |
 | Every push | pre-push hook | Verifies all snapshots are current; blocks push if stale |
-| Daily at 06:00 UTC | `data-refresh.yml` | Imports latest sheets → regenerates snapshots → commits; opens GitHub issues for sheet drift (`sheet-drift`) or pending destructive changes (`pending-changes`) |
+| Daily at 06:00 UTC | `data-refresh.yml` | Imports latest sheets → regenerates snapshots → commits; opens GitHub issues for sheet drift (`sheet-drift`), pending destructive changes (`pending-changes`), or ambiguous diagnostics YAML drift (`diagnostics-drift`) |
 | Daily at 06:00 UTC | `sheet-validation.yml` | Runs `validate-coding`; opens a `sheet-validation` issue if problems found; closes it when clean |
 | Daily at 06:00 UTC | `generate-reports.yml` | Generates and uploads PDF reports to Drive |
 
@@ -120,9 +120,25 @@ git pull
 
 2. In `coded_data/`, create:
    - `{lang_id}/planar_input/planar_{lang_id}-{date}.tsv` — planar structure
-   - `{lang_id}/planar_input/diagnostics_{lang_id}.tsv` — analysis classes and diagnostic criteria
+   - `{lang_id}/planar_input/diagnostics_{lang_id}.yaml` — analysis classes and diagnostic criteria (YAML is the source of truth; the TSV is generated from it)
 
-   See [Data management](data-management.md) for the required format of both files.
+   Minimal YAML example:
+   ```yaml
+   language: arao1248
+   classes:
+     ciscategorial:
+       constructions: [general]
+       criteria:
+         V-combines: [y, n]
+         N-combines: [y, n]
+   ```
+
+   After writing the YAML, generate the TSV:
+   ```bash
+   python -m coding sync-diagnostics-yaml --apply --lang {lang_id}
+   ```
+
+   See [Data management](data-management.md) for the required format of both files. `check-codebook` section 5 prints a ready-to-paste YAML snippet for each class not yet covered by any language.
 
 3. Generate annotation sheets and notebooks:
    ```bash
@@ -221,8 +237,26 @@ When the diagnostic model changes — a new analysis class, a class renamed or r
    python -m coding check-codebook
    ```
    Section 5 prints the TSV row to paste into each applicable language's `diagnostics_{lang_id}.tsv`. Section 6 shows the current language × class coverage matrix.
-4. Edit `diagnostics_{lang_id}.tsv` for each applicable language.
+4. Edit `diagnostics_{lang_id}.yaml` for each applicable language (see [Editing the diagnostics YAML](#editing-the-diagnostics-yaml)).
 5. Run the appropriate command below.
+
+#### Editing the diagnostics YAML
+
+`diagnostics_{lang_id}.yaml` in `coded_data/{lang_id}/planar_input/` is the source of truth for which analyses run for a language. After editing it, regenerate the derived TSV:
+
+```bash
+python -m coding sync-diagnostics-yaml --lang {lang_id}        # dry run: show what would change
+python -m coding sync-diagnostics-yaml --apply --lang {lang_id} # regenerate TSV
+```
+
+When `import-sheets` downloads a diagnostics TSV from Google Sheets that differs from the YAML, it diffs them automatically:
+- **Deterministic changes** (known classes/criteria added or removed) are applied to the YAML by running `sync-diagnostics-yaml --from-tsv --apply`.
+- **Ambiguous changes** (unknown class/criterion names, class removals) are written to `diagnostics_drift.json` and surface as a `diagnostics-drift` GitHub issue.
+
+To resolve a `diagnostics-drift` issue:
+1. Pull the latest data and run `python -m coding sync-diagnostics-yaml --from-tsv` (dry run) to see the diff.
+2. Edit the YAML directly for any ambiguous items.
+3. Run `python -m coding sync-diagnostics-yaml --apply` to regenerate the TSV from the corrected YAML.
 
 #### Adding a new analysis class
 
@@ -235,7 +269,7 @@ python -m coding sync-params --apply  # if existing sheets need the new criteria
 
 #### Updating diagnostic criteria
 
-When `diagnostics_{lang_id}.tsv` criterion columns change (new criteria added, criteria renamed):
+When `diagnostics_{lang_id}.yaml` criterion columns change (new criteria added, criteria renamed):
 
 ```bash
 python -m coding sync-params                                   # dry run
@@ -252,7 +286,7 @@ Preserves existing annotations while inserting new columns before Comments. Rena
 #### Renaming an analysis class
 
 **Required ordering:**
-1. Update `diagnostics_{lang_id}.tsv` for all affected languages to use the new class name.
+1. Update `diagnostics_{lang_id}.yaml` for all affected languages to use the new class name, then run `sync-diagnostics-yaml --apply` to regenerate the TSV.
 2. Run `restructure-sheets --rename-class` (pre-flight check enforces this order).
 
 ```bash
@@ -272,7 +306,7 @@ For each renamed class, `--apply` archives the old spreadsheet, creates a new on
 
 #### Retiring an analysis class
 
-Remove the class from `diagnostics_{lang_id}.tsv`, then run `prune-manifest` to clean up:
+Remove the class from `diagnostics_{lang_id}.yaml` and run `sync-diagnostics-yaml --apply` to regenerate the TSV, then run `prune-manifest` to clean up:
 
 ```bash
 python -m coding prune-manifest                  # dry run — show what would be archived and removed

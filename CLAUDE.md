@@ -92,7 +92,7 @@ The `-e .` line in `requirements.txt` installs the `planars` package in editable
 
 This is a linguistic typology analysis project for morphosyntactic domain derivation. The ultimate analytical goal is to test three hypotheses about constituency structure within a language (developed in Good, "Domains of linearization, constituency, and wordhood in Chichewa," draft): (i) **Tree hypothesis** — the domains of constituency diagnostics should nest within each other; (ii) **Morphosyntax/phonology divide hypothesis** — deviations from nesting are allowed between morphosyntactic and phonological diagnostics, but not within each class; (iii) **Word hypothesis** — a set of diagnostics will converge on a consistently small span that can be identified as a word domain, with the larger domain completely partitioned into such spans. The span computations performed by planars' analysis modules are the primary instrument for testing these hypotheses. The workflow is:
 
-1. **Input** (`coded_data/{lang_id}/planar_input/`): `planar_<lang>-<date>.tsv` defines positions and elements for a language. `diagnostics_{lang_id}.tsv` specifies which analyses to run (class, construction, criteria). `coding/make_forms.py` provides utility functions used by other scripts (`build_element_index`, `_read_diagnostics_for_language`) — it no longer generates blank TSVs directly.
+1. **Input** (`coded_data/{lang_id}/planar_input/`): `planar_<lang>-<date>.tsv` defines positions and elements for a language. `diagnostics_{lang_id}.yaml` is the coordinator-facing source of truth for which analyses to run (class, constructions, criteria, optional notes); `diagnostics_{lang_id}.tsv` is a derived artifact generated from it. `coding/make_forms.py` provides utility functions used by other scripts (`build_element_index`, `_read_diagnostics_for_language`) — it reads YAML preferentially and falls back to TSV if no YAML exists.
 
 2. **Manual annotation**: Google Sheets is the definitive copy of annotation forms. OAuth credentials at `~/.config/planars/oauth_credentials.json` (set `PLANARS_OAUTH_CREDENTIALS` to override). The manifest lives on Drive as `manifest.json`; `drive_config.json` (gitignored) bootstraps Drive lookup with `_root_folder_id`, `_planars_config_file_id`, and per-language folder/sheet IDs. `import-sheets` aborts if `coded_data/` has uncommitted TSV changes; skips existing TSVs unless `--overwrite-existing` (auto-archives first); writes destructive changes to `pending_changes.json`. Invalid cells are highlighted pink as a side effect. When criterion columns change, use `sync-params --apply` to propagate to existing sheets.
 
@@ -128,14 +128,15 @@ Late aggregation, autotypology (dynamic schema), definition files vs. data files
 - `make_forms.py`: `build_element_index`, `_read_diagnostics_for_language` — utilities used by other scripts.
 - `generate_sheets.py`: `generate-sheets` command. Validates planar and diagnostics before creating sheets. Backs up the Drive manifest to `manifest_backup.json` (gitignored) at the start of each run. Aborts if the manifest is empty for an established language (stale manifest guard). **`--force` aborts with a hard error if any language already has annotation sheet IDs in the manifest** — annotation data is irreplaceable and must never be destroyed by a flag. To add new classes only, omit `--force`. To restructure existing sheets use `restructure-sheets --apply`. Each annotation spreadsheet gets a `Status` tab (last tab) with one row per construction and an `in-progress` / `ready-for-review` dropdown.
 - `update_sheets.py`: `update-sheets` — adds missing rows/trailing columns to existing sheets. Also ensures the Status tab exists and is last in each spreadsheet. Retries `get_all_values()` with exponential backoff (up to 5 retries, 15s×attempt) on 429 quota errors.
-- `sync_params.py`: `sync-params` — syncs criterion columns when `diagnostics_{lang_id}.tsv` changes; supports rename, split, merge, and remove lifecycle operations.
+- `sync_params.py`: `sync-params` — syncs criterion columns when `diagnostics_{lang_id}.yaml` changes; supports rename, split, merge, and remove lifecycle operations. After mutating the TSV it regenerates the YAML (preserving `notes`) so both files stay in sync.
+- `sync_diagnostics_yaml.py`: `sync-diagnostics-yaml` — syncs between YAML (source of truth) and TSV (derived artifact). Default direction is YAML → TSV; `--from-tsv` diffs a freshly-downloaded TSV against the YAML and categorises changes as deterministic (auto-applied) or ambiguous (written to `diagnostics_drift.json` for coordinator review). String-distance heuristics (`difflib.get_close_matches`) flag likely criterion/class renames. Dry-run by default; `--apply` to write. `--lang` to restrict to one language.
 - `restructure_sheets.py`: `restructure-sheets` — archives and regenerates sheets after structural changes; carries over annotations using `--rename-map` (position renames), `--rename-element` (element label renames), and `--rename-class` (analysis class renames: archives old sheet, creates new sheet under new name, renames local TSV directory in-place, updates manifest); only processes classes with actual changes. `--rename-class` requires diagnostics_{lang_id}.tsv to already use the new name (enforced by pre-flight check); pair with `prune-manifest` if retiring (not renaming) a class.
-- `import_sheets.py`: `import-sheets` — downloads filled annotation sheets to TSVs; also downloads planar/diagnostics Sheets, detects changes, auto-applies safe downstream commands, and writes destructive changes to `pending_changes.json`; highlights invalid cells pink in the Sheet as a side effect. Aborts if `coded_data/` has uncommitted TSV changes. Skips existing TSVs by default; `--overwrite-existing` re-downloads them (auto-archives to `archive/` first). When destructive changes are written, opens or updates a GitHub issue labeled `pending-changes` (requires `gh` CLI). Skips constructions whose Status tab entry is not `ready-for-review` unless `--ignore-status` is passed.
+- `import_sheets.py`: `import-sheets` — downloads filled annotation sheets to TSVs; also downloads planar/diagnostics Sheets, detects changes, auto-applies safe downstream commands, and writes destructive changes to `pending_changes.json`; highlights invalid cells pink in the Sheet as a side effect. After downloading a diagnostics TSV it diffs it against the language's YAML and writes ambiguous differences to `diagnostics_drift.json`; the daily `data-refresh.yml` Action files a `diagnostics-drift` issue if any are found. Aborts if `coded_data/` has uncommitted TSV changes. Skips existing TSVs by default; `--overwrite-existing` re-downloads them (auto-archives to `archive/` first). When destructive changes are written, opens or updates a GitHub issue labeled `pending-changes` (requires `gh` CLI). Skips constructions whose Status tab entry is not `ready-for-review` unless `--ignore-status` is passed.
 - `apply_pending.py`: `apply-pending` — interactive review and application of pending destructive changes written by `import-sheets`. Closes the `pending-changes` GitHub issue when all entries are cleared.
 - `prune_manifest.py`: `prune-manifest` — removes retired analysis class entries from the Drive manifest and archives their local TSVs. Run after removing a class from `diagnostics_{lang_id}.tsv`. Dry-run by default; `--apply` to execute, `--all` to skip per-class prompts. Writes a timestamped manifest snapshot to `manifest_archives/` (gitignored) before any mutation.
 - `validate.py`: Shared base — just the `ValidationIssue` dataclass.
 - `validate_planar.py`: `validate_planar_df(df)` — validates planar TSV structure.
-- `validate_diagnostics.py`: `validate_diagnostics_df(df, lang_id)` — validates diagnostics_{lang_id}.tsv against schema files.
+- `validate_diagnostics.py`: `validate_diagnostics_df(df, lang_id)` — validates diagnostics_{lang_id}.tsv against schema files. `validate_diagnostics_yaml(data, lang_id)` — validates the YAML dict form.
 - `validate_coding.py`: `validate-coding` command — reads annotation sheets, validates values, clears/updates pink cell highlights. Also calls `validate_planar_df` and `validate_diagnostics_df` before sheet validation. Exits with code 1 if any issues are found (used by the scheduled sheet-validation GitHub Actions workflow).
 - `generate_notebooks.py`: `generate-notebooks` — generates per-language contributor, validation, and report notebooks, plus the coordinator notebook. Stores `report_notebook_file_id` in `drive_config.json`.
 - `generate_reports.py`: `generate-reports` — generates and uploads `report_{lang_id}.pdf` directly (no Colab; used by nightly GitHub Action). Stores `report_file_id` in `drive_config.json`.
@@ -151,19 +152,30 @@ Late aggregation, autotypology (dynamic schema), definition files vs. data files
 
 `coded_data/synth0001/` is a synthetic second-language dataset for multi-language testing (not real data). It has a genuinely different planar structure (28 positions, keystone at 23) derived from `stan1293` by dropping 9 positions and flipping ~25% of criterion values. `tests/make_synthetic_lang.py` generates it (`--apply` to write, `--clean --apply` to remove).
 
-## diagnostics_{lang_id}.tsv format
+## diagnostics_{lang_id}.yaml / diagnostics_{lang_id}.tsv
 
-Criteria default to `y/n` dropdowns. To specify custom values use brace syntax:
+`diagnostics_{lang_id}.yaml` (in `coded_data/{lang_id}/planar_input/`) is the **coordinator-facing source of truth** for per-language diagnostics. `diagnostics_{lang_id}.tsv` is a derived artifact — always regenerated from the YAML by `sync-diagnostics-yaml --apply`. Coordinators edit the YAML; the TSV is never hand-edited.
 
+```yaml
+language: stan1293
+classes:
+  metrical:
+    constructions: [stress_domain]
+    criteria:
+      accented: [y, n, both]
+      obligatory: [y, n]
+    notes: "left/right-interaction still under review"
 ```
-accented{y/n/both}, independence, left-interaction, right-interaction
-```
 
-`coding/make_forms.py` parses this into `(criterion_names, criterion_values)`. `python -m coding generate-sheets` applies per-column dropdown validation and appends a free-text `Comments` column to every tab. `python -m coding import-sheets` validates each criterion against its allowed set (always also accepts `na` and `?`) and passes Comments through unchanged.
+Criteria default to `[y, n]`; non-default values are listed explicitly in the YAML and encoded as brace syntax in the TSV (`accented{y/n/both}`). `coding/make_forms.py` reads YAML first and falls back to TSV if no YAML exists (backward compatibility for languages not yet migrated).
+
+`python -m coding sync-diagnostics-yaml` regenerates TSVs from all YAMLs (dry-run; `--apply` to write; `--lang` to restrict). `--from-tsv` diffs a TSV against the YAML and categorises changes as deterministic (auto-applied) or ambiguous (written to `diagnostics_drift.json`). When `import-sheets` downloads a changed diagnostics TSV it runs this diff automatically; ambiguous results appear in the daily `diagnostics-drift` GitHub issue if any are found.
+
+`python -m coding generate-sheets` applies per-column dropdown validation and appends a free-text `Comments` column to every tab. `python -m coding import-sheets` validates each criterion against its allowed set (always also accepts `na` and `?`) and passes Comments through unchanged.
 
 `python -m coding update-sheets` brings existing sheets up to date when new elements are added to the planar structure. Always dry-run first.
 
-`diagnostics_{lang_id}.tsv` is also the source of truth for notebook generation. `generate-notebooks` reads it to discover analysis classes and generates contributor, validation, and coordinator notebooks. Notebook generation is triggered automatically at the end of `generate-sheets`, `sync-params --apply`, and `restructure-sheets --apply`. Each analysis module must define a `derive` alias pointing to its primary derive function (see `planars/ciscategorial.py`).
+The YAML is also the source of truth for notebook generation. `generate-notebooks` reads it (via `_read_diagnostics_for_language`) to discover analysis classes and generates contributor, validation, and coordinator notebooks. Notebook generation is triggered automatically at the end of `generate-sheets`, `sync-params --apply`, and `restructure-sheets --apply`. Each analysis module must define a `derive` alias pointing to its primary derive function (see `planars/ciscategorial.py`).
 
 ## Glottolog metadata convention
 
@@ -226,6 +238,7 @@ Keep the following files up to date as the project evolves. Check each one at th
 |------|-------------|
 | `CLAUDE.md` | Architecture changes, new scripts, new conventions, workflow changes |
 | `schemas/languages.yaml` | New language onboarded, or coordinator edits `source`/`author`/`annotation_status` fields |
+| `coded_data/{lang_id}/planar_input/diagnostics_{lang_id}.yaml` | Classes, constructions, criteria, or notes change for a language — then run `sync-diagnostics-yaml --apply` |
 | `schemas/diagnostic_criteria.yaml` | New diagnostic criteria, new analyses, `[PLACEHOLDER]` or `[NEEDS REVIEW]` entries resolved |
 | `schemas/diagnostic_classes.yaml` | New analysis classes added, applicability, required criteria, qualification rules, or known construction types change |
 | `schemas/planar.yaml` | New standard element labels or structural column conventions |
