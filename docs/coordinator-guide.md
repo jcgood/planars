@@ -495,7 +495,7 @@ The Drive manifest (`manifest.json`) is stored on Drive and contains all languag
 
 `drive_config.json` is created and updated automatically — you never need to edit it by hand. `generate-sheets` writes per-language IDs as it creates Drive folders and files; `setup-root-folder` adds the top-level `_root_folder_id`.
 
-Each `generate-sheets` run also creates editable Google Sheets for `planar_*.tsv` and `diagnostics_{lang_id}.tsv` in the language's Drive folder so collaborators can view (and coordinators can edit) the planar structure alongside their annotation sheets. `import-sheets` reads these Sheets back to local TSVs and detects any changes.
+Each `generate-sheets` run also creates an editable Google Sheet for `planar_*.tsv` in the language's Drive folder so collaborators can view (and coordinators can edit) the planar structure alongside their annotation sheets. The `diagnostics_{lang_id}.tsv` Sheet is a read-only view — a derived artifact. To change diagnostics, edit `diagnostics_{lang_id}.yaml` locally and run `sync-diagnostics-yaml --apply`. `import-sheets` reads the planar Sheet back to local TSVs and detects any changes.
 
 #### First-time project setup
 

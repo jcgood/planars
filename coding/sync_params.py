@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sync param columns in existing Google Sheets when diagnostics_{lang_id}.tsv changes.
+"""Sync param columns in existing Google Sheets when diagnostics_{lang_id}.yaml changes.
 
 Usage:
     python -m coding sync-params                                  # dry run
@@ -10,9 +10,10 @@ Usage:
     python -m coding sync-params --apply --split old:new1:new2    # split one criterion into two
     python -m coding sync-params --apply --merge old1:old2:new    # merge two criteria into one
 
-This script propagates diagnostic criterion changes across all layers:
+This script propagates diagnostic criterion changes across all downstream layers:
 
-  diagnostics_{lang_id}.tsv  — per-language criterion list (updated by rename/split/merge)
+  diagnostics_{lang_id}.yaml — per-language criterion source of truth (edit this)
+  diagnostics_{lang_id}.tsv  — derived artifact (regenerated to match YAML after each run)
   Google Sheets              — annotation form column headers (always updated)
 
 Imported TSVs in coded_data/ are downstream of Sheets; re-run import-sheets --force after

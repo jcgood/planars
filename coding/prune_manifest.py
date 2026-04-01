@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Remove retired analysis class entries from the Drive manifest and archive their TSVs.
 
-When an analysis class is removed from diagnostics_{lang_id}.tsv (e.g. because it was
-renamed as part of a module restructure), the Drive manifest retains the stale entry
+When an analysis class is removed from diagnostics_{lang_id}.yaml (and the TSV regenerated
+via `sync-diagnostics-yaml --apply`), the Drive manifest retains the stale entry
 indefinitely. This causes import-sheets to keep downloading the old sheet and writing
 TSVs to the retired class directory.
 

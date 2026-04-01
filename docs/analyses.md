@@ -30,7 +30,7 @@ Each entry contains:
 
 ### Human-editable workflow
 
-To add a new analysis class: edit `schemas/diagnostic_classes.yaml`, then ask Claude to propagate the changes to `diagnostics_{lang_id}.tsv` and scaffold the new `planars/` module. `check-codebook` validates existing `diagnostics_{lang_id}.tsv` files against this schema.
+To add a new analysis class: edit `schemas/diagnostic_classes.yaml`, then for each applicable language edit `diagnostics_{lang_id}.yaml` and run `sync-diagnostics-yaml --apply --lang {lang_id}` to regenerate the TSV. Ask Claude to scaffold the new `planars/` module. `check-codebook` validates existing diagnostics files against this schema.
 
 ---
 

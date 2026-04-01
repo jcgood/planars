@@ -67,6 +67,11 @@ diagnostics_{lang_id}.yaml  (per-language, lives in coded_data/{lang_id}/planar_
       - Allowed values always include ``na`` and ``?`` implicitly; only list the
         domain-meaningful values (e.g. ``[y, n]`` or ``[y, n, both]``).
       - ``notes`` is an optional string (class-level).
+    Workflow:
+      - Coordinators edit this YAML directly (never edit the TSV by hand).
+      - After editing, run ``python -m coding sync-diagnostics-yaml --apply --lang {lang_id}``
+        to regenerate the TSV.  Direct TSV edits are overwritten on the next run.
+      - The Google Sheets ``diagnostics_{lang_id}.tsv`` display is read-only.
     Validated by ``coding/validate_diagnostics.py:validate_diagnostics_yaml()``.
 
 terms.yaml

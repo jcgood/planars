@@ -7,7 +7,7 @@ Commands:
     generate-sheets          Create/update Google Sheets annotation forms
     generate-notebooks       Generate and upload contributor + coordinator notebooks
     generate-reports         Generate and upload PDF reports for all languages to Drive
-    sync-params              Sync diagnostic criterion columns when diagnostics_{lang_id}.tsv changes
+    sync-params              Sync diagnostic criterion columns when diagnostics_{lang_id}.yaml changes
     sync-diagnostics-yaml    Sync diagnostics YAML → TSV (YAML is source of truth)
     update-sheets            Add missing rows/columns to existing sheets
     import-sheets            Download filled sheets to TSVs
