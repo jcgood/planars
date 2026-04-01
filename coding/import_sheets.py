@@ -35,6 +35,7 @@ import gspread
 from .drive import (
     _get_clients, _load_manifest_from_drive, _open_spreadsheet,
     _upload_planars_config, _load_drive_config, _save_drive_config,
+    _with_retry,
 )
 from .generate_sheets import _STATUS_TAB, _STATUS_VALUES
 from . import validate_coding as _val
@@ -335,7 +336,7 @@ def _read_status_tab(ss: gspread.Spreadsheet) -> Dict[str, str]:
         ws = ss.worksheet(_STATUS_TAB)
     except gspread.WorksheetNotFound:
         return {}
-    rows = ws.get_all_values()
+    rows = _with_retry(ws.get_all_values)
     if len(rows) < 2:
         return {}
     return {row[0].strip(): row[1].strip() for row in rows[1:] if len(row) >= 2 and row[0].strip()}
