@@ -36,10 +36,15 @@ ROOT = Path(__file__).resolve().parent.parent
 import pandas as pd
 import gspread
 
+import yaml as _yaml
+
 from . import make_forms as _mf
 from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
+    _tsv_df_to_yaml,
+    _dump_diagnostics_yaml,
+    _resolve_diagnostics_yaml_path,
 )
 from .drive import (
     _get_clients, _load_manifest_from_drive, _upload_planars_config,
@@ -449,6 +454,21 @@ def main() -> None:
                 fn = lambda cell, o1=old1, o2=old2, n=new: _merge_criteria_in_cell(cell, o1, o2, n)
                 for change in _update_diagnostics_tsv(diag_path, fn, None, dry_run=not apply):
                     print(change)
+
+            # After TSV mutations, regenerate the YAML if one exists.
+            yaml_path = _resolve_diagnostics_yaml_path(lang_id)
+            if apply and yaml_path.exists() and (renames or splits or merges):
+                tsv_df = pd.read_csv(diag_path, sep="\t", dtype=str, keep_default_na=False)
+                # Preserve fields not in the TSV (e.g. notes) by loading existing YAML first.
+                with open(yaml_path, encoding="utf-8") as _f:
+                    existing_yaml = _yaml.safe_load(_f)
+                new_yaml = _tsv_df_to_yaml(tsv_df, lang_id)
+                # Merge: carry over notes from existing YAML into regenerated structure.
+                for cls, cls_data in (existing_yaml.get("classes") or {}).items():
+                    if cls in new_yaml.get("classes", {}) and "notes" in cls_data:
+                        new_yaml["classes"][cls]["notes"] = cls_data["notes"]
+                yaml_path.write_text(_dump_diagnostics_yaml(new_yaml), encoding="utf-8")
+                print(f"  [{lang_id}] YAML updated → {yaml_path.name}")
 
         _mf.DATA_DIR = str(planar_dir)
         specs = _read_diagnostics_for_language(lang_id)

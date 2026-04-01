@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import copy
+from difflib import get_close_matches
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -350,3 +352,180 @@ def _read_diagnostics_for_language(
 
     return out
 
+
+# ---------------------------------------------------------------------------
+# TSV → YAML diff and apply
+# ---------------------------------------------------------------------------
+
+def _diff_diagnostics_tsv_yaml(
+    tsv_df: pd.DataFrame,
+    yaml_data: dict,
+    lang_id: str,
+) -> "Tuple[List[Dict], List[Dict]]":
+    """Diff a diagnostics TSV DataFrame against a YAML dict.
+
+    Parses both into a normalized structure and categorises each difference
+    as deterministic (safe to auto-apply) or ambiguous (requires coordinator
+    review with string-distance suggestions).
+
+    Deterministic changes:
+        class_added, construction_added, construction_removed,
+        criterion_added, criterion_removed, criterion_values_changed
+
+    Ambiguous changes:
+        unknown_class   — class in TSV not in YAML and no close match in schema
+        class_removed   — class in YAML absent from TSV (may be intentional)
+        unknown_criterion — criterion not in diagnostic_criteria.yaml
+
+    Args:
+        tsv_df: DataFrame with columns Class, Language, Constructions, Criteria.
+        yaml_data: dict loaded from diagnostics_{lang_id}.yaml.
+        lang_id: language ID string.
+
+    Returns:
+        (deterministic, ambiguous) — two lists of change dicts. Each dict has
+        at least 'kind' and 'class_name' keys; additional keys depend on kind.
+    """
+    from coding.schemas import load_diagnostic_classes, load_diagnostic_criteria
+
+    diag_classes = load_diagnostic_classes()
+    diag_criteria = load_diagnostic_criteria()
+    # diagnostic_classes.yaml: {"classes": [{"name": "ciscategorial", ...}, ...]}
+    known_classes = {entry["name"] for entry in diag_classes.get("classes", []) if "name" in entry}
+    # diagnostic_criteria.yaml: {"analyses": [{"name": ..., "diagnostic_criteria": [...]}, ...]}
+    known_criteria: set = set()
+    for analysis in diag_criteria.get("analyses", []):
+        for crit in analysis.get("diagnostic_criteria", []):
+            if isinstance(crit, str):
+                known_criteria.add(crit)
+            elif isinstance(crit, dict) and "name" in crit:
+                known_criteria.add(crit["name"])
+
+    # --- parse TSV into normalised structure ---
+    tsv_classes: Dict[str, Dict] = {}
+    for _, row in tsv_df.iterrows():
+        lang = str(row.get("Language", "")).strip()
+        if lang != lang_id:
+            continue
+        class_name = str(row.get("Class", "")).strip()
+        constructions = set(_parse_csv_list(str(row.get("Constructions", ""))))
+        crit_names, crit_values = _parse_criterion_specs(str(row.get("Criteria", "")))
+        tsv_classes[class_name] = {
+            "constructions": constructions,
+            "criteria": {n: crit_values[n] for n in crit_names},
+        }
+
+    # --- parse YAML into normalised structure ---
+    yaml_classes: Dict[str, Dict] = {}
+    for class_name, class_data in (yaml_data.get("classes") or {}).items():
+        constructions = set(class_data.get("constructions") or [])
+        criteria = dict(class_data.get("criteria") or {})
+        yaml_classes[class_name] = {
+            "constructions": constructions,
+            "criteria": criteria,
+        }
+
+    deterministic: List[Dict] = []
+    ambiguous: List[Dict] = []
+
+    # --- classes in TSV but not in YAML ---
+    for class_name in tsv_classes:
+        if class_name not in yaml_classes:
+            if class_name in known_classes:
+                deterministic.append({"kind": "class_added", "class_name": class_name,
+                                      "data": tsv_classes[class_name]})
+            else:
+                suggestions = get_close_matches(class_name, known_classes, n=3, cutoff=0.6)
+                ambiguous.append({"kind": "unknown_class", "class_name": class_name,
+                                  "suggestions": suggestions, "data": tsv_classes[class_name]})
+
+    # --- classes in YAML but not in TSV ---
+    for class_name in yaml_classes:
+        if class_name not in tsv_classes:
+            ambiguous.append({"kind": "class_removed", "class_name": class_name})
+
+    # --- classes present in both: diff constructions and criteria ---
+    for class_name in tsv_classes:
+        if class_name not in yaml_classes:
+            continue
+        tsv = tsv_classes[class_name]
+        yml = yaml_classes[class_name]
+
+        for c in tsv["constructions"] - yml["constructions"]:
+            deterministic.append({"kind": "construction_added", "class_name": class_name,
+                                   "construction": c})
+        for c in yml["constructions"] - tsv["constructions"]:
+            deterministic.append({"kind": "construction_removed", "class_name": class_name,
+                                   "construction": c})
+
+        for crit in tsv["criteria"]:
+            if crit not in yml["criteria"]:
+                if crit in known_criteria:
+                    deterministic.append({"kind": "criterion_added", "class_name": class_name,
+                                          "criterion": crit, "values": tsv["criteria"][crit]})
+                else:
+                    suggestions = get_close_matches(crit, known_criteria, n=3, cutoff=0.6)
+                    ambiguous.append({"kind": "unknown_criterion", "class_name": class_name,
+                                      "criterion": crit, "suggestions": suggestions,
+                                      "values": tsv["criteria"][crit]})
+            elif tsv["criteria"][crit] != yml["criteria"][crit]:
+                deterministic.append({"kind": "criterion_values_changed",
+                                      "class_name": class_name, "criterion": crit,
+                                      "old_values": yml["criteria"][crit],
+                                      "new_values": tsv["criteria"][crit]})
+
+        for crit in yml["criteria"]:
+            if crit not in tsv["criteria"]:
+                deterministic.append({"kind": "criterion_removed", "class_name": class_name,
+                                      "criterion": crit})
+
+    return deterministic, ambiguous
+
+
+def _apply_yaml_diff(yaml_data: dict, deterministic_changes: "List[Dict]") -> dict:
+    """Apply deterministic diff changes to a YAML dict, returning a new dict.
+
+    Preserves notes and any other YAML-only fields. Does not touch ambiguous
+    changes — those are left for coordinator review.
+
+    Args:
+        yaml_data: original YAML dict (not mutated).
+        deterministic_changes: list of change dicts from _diff_diagnostics_tsv_yaml.
+
+    Returns:
+        New YAML dict with changes applied.
+    """
+    data = copy.deepcopy(yaml_data)
+    classes = data.setdefault("classes", {})
+
+    for change in deterministic_changes:
+        kind = change["kind"]
+        class_name = change["class_name"]
+
+        if kind == "class_added":
+            entry = change["data"]
+            classes[class_name] = {
+                "constructions": sorted(entry["constructions"]),
+                "criteria": entry["criteria"],
+            }
+
+        elif kind == "construction_added":
+            cons = classes[class_name].setdefault("constructions", [])
+            if change["construction"] not in cons:
+                cons.append(change["construction"])
+
+        elif kind == "construction_removed":
+            cons = classes[class_name].get("constructions", [])
+            if change["construction"] in cons:
+                cons.remove(change["construction"])
+
+        elif kind == "criterion_added":
+            classes[class_name].setdefault("criteria", {})[change["criterion"]] = change["values"]
+
+        elif kind == "criterion_removed":
+            classes[class_name].get("criteria", {}).pop(change["criterion"], None)
+
+        elif kind == "criterion_values_changed":
+            classes[class_name].setdefault("criteria", {})[change["criterion"]] = change["new_values"]
+
+    return data

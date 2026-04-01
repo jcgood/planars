@@ -41,6 +41,7 @@ from .generate_sheets import _STATUS_TAB, _STATUS_VALUES
 from . import validate_coding as _val
 from .validate_planar import validate_planar_df as _validate_planar_df
 from .validate_diagnostics import validate_diagnostics_df as _validate_diagnostics_df
+from .make_forms import _diff_diagnostics_tsv_yaml
 
 ERROR_DIR    = ROOT / "import_errors"
 PENDING_PATH = ROOT / "pending_changes.json"
@@ -330,6 +331,28 @@ def _detect_diagnostics_changes(
     return safe_cmds, pending
 
 
+DRIFT_PATH = ROOT / "diagnostics_drift.json"
+
+
+def _check_yaml_drift(lang_id: str, tsv_df: pd.DataFrame) -> List[Dict]:
+    """Diff a diagnostics TSV against the language's YAML and return ambiguous entries.
+
+    Returns a list of ambiguous change dicts (unknown classes/criteria, class removals)
+    that require coordinator review. Deterministic changes are intentionally not returned
+    here — they are handled by ``sync-diagnostics-yaml --from-tsv --apply``.
+
+    Returns an empty list if no YAML exists for this language or no ambiguous drift found.
+    """
+    import yaml as _yaml
+    yaml_path = ROOT / "coded_data" / lang_id / "planar_input" / f"diagnostics_{lang_id}.yaml"
+    if not yaml_path.exists():
+        return []
+    with open(yaml_path, encoding="utf-8") as f:
+        yaml_data = _yaml.safe_load(f)
+    _det, ambiguous = _diff_diagnostics_tsv_yaml(tsv_df, yaml_data, lang_id)
+    return ambiguous
+
+
 def _read_status_tab(ss: gspread.Spreadsheet) -> Dict[str, str]:
     """Return {construction: status} from the Status tab, or {} if absent."""
     try:
@@ -426,16 +449,18 @@ def _download_planar_input_sheets(
     lang_data: Dict,
     timestamp: str = "",
     apply: bool = True,
-) -> Tuple[Set[str], List[Dict]]:
+) -> Tuple[Set[str], List[Dict], List[Dict]]:
     """Download planar and diagnostics Sheets for one language to local TSVs.
 
     Validates the downloaded data before writing. Detects structural changes
     and classifies them as safe (auto-applicable) or destructive (pending).
 
-    Returns (safe_commands, pending_entries).
+    Returns (safe_commands, pending_entries, drift_entries).
+    drift_entries contains ambiguous TSV→YAML differences for coordinator review.
     """
     safe_cmds: Set[str] = set()
     pending: List[Dict] = []
+    drift_entries: List[Dict] = []
 
     planar_dir = ROOT / "coded_data" / lang_id / "planar_input"
 
@@ -532,7 +557,16 @@ def _download_planar_input_sheets(
                 else:
                     print(f"  [diagnostics] Would create → {diag_path.name}")
 
-    return safe_cmds, pending
+                # --- YAML drift check ---
+                # Compare the freshly-downloaded TSV against the YAML (if one exists).
+                # Only ambiguous changes are returned; deterministic ones are handled by
+                # sync-diagnostics-yaml --from-tsv --apply.
+                ambiguous = _check_yaml_drift(lang_id, new_df)
+                if ambiguous:
+                    print(f"  [diagnostics] {len(ambiguous)} ambiguous YAML drift item(s) — see diagnostics_drift.json")
+                    drift_entries.append({"lang_id": lang_id, "ambiguous": ambiguous})
+
+    return safe_cmds, pending, drift_entries
 
 
 def _verify_manifest_sheet_ids(drive, manifest: Dict) -> None:
@@ -629,15 +663,17 @@ def main() -> None:
     total_warnings = 0
     all_safe_cmds: Set[str] = set()
     all_pending: List[Dict] = []
+    all_drift: List[Dict] = []
 
     for lang_id, lang_data in manifest.items():
         print(f"\nLanguage: {lang_id}")
         lang_warning_lines: List[str] = []
 
         # Download planar and diagnostics Sheets to local TSVs; detect changes.
-        s, p = _download_planar_input_sheets(gc, lang_id, lang_data, timestamp, apply)
+        s, p, d = _download_planar_input_sheets(gc, lang_id, lang_data, timestamp, apply)
         all_safe_cmds |= s
         all_pending   += p
+        all_drift     += d
 
         for class_name, sheet_info in lang_data["sheets"].items():
             print(f"\n  {class_name}")
@@ -774,6 +810,18 @@ def main() -> None:
             print(f"\n⚠  {len(all_pending)} destructive change(s) detected (dry run — pass --apply to write pending_changes.json):")
             for e in all_pending:
                 print(f"   {e.get('lang_id', '?')}: {e.get('description', '')}")
+
+    # Write ambiguous YAML drift entries for coordinator review.
+    if all_drift:
+        print(f"\n⚠  {len(all_drift)} language(s) have ambiguous YAML drift — see diagnostics_drift.json")
+        print("   Resolve with: python -m coding sync-diagnostics-yaml --from-tsv --apply")
+        if apply:
+            DRIFT_PATH.write_text(
+                json.dumps(all_drift, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+        else:
+            print("   (dry run — pass --apply to write diagnostics_drift.json)")
 
     # Auto-apply safe downstream commands (new elements → update-sheets, etc.)
     if all_safe_cmds:
