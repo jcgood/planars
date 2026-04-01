@@ -9,6 +9,7 @@
         generate-sheets import-sheets apply-pending validate-coding \
         update-sheets update-sheets-apply \
         sync-params sync-params-apply \
+        sync-diagnostics-yaml sync-diagnostics-yaml-apply \
         restructure-sheets restructure-sheets-apply \
         generate-notebooks generate-notebooks-apply \
         generate-reports generate-reports-apply \
@@ -28,6 +29,8 @@ help:
 	@echo "  update-sheets-apply         Add missing rows to sheets"
 	@echo "  sync-params                 Dry run: show criterion column changes"
 	@echo "  sync-params-apply           Sync criterion columns"
+	@echo "  sync-diagnostics-yaml       Dry run: show YAML → TSV changes"
+	@echo "  sync-diagnostics-yaml-apply Regenerate TSVs from YAML source of truth"
 	@echo "  restructure-sheets          Dry run: show restructure plan"
 	@echo "  restructure-sheets-apply    DESTRUCTIVE: archive + regenerate sheets"
 	@echo "  generate-notebooks          Dry run: show what would be generated"
@@ -79,6 +82,12 @@ sync-params:
 
 sync-params-apply:
 	python -m coding sync-params --apply
+
+sync-diagnostics-yaml:
+	python -m coding sync-diagnostics-yaml
+
+sync-diagnostics-yaml-apply:
+	python -m coding sync-diagnostics-yaml --apply
 
 # DESTRUCTIVE: archives existing sheets before regenerating.
 # For rename/element-rename: python -m coding restructure-sheets --rename-map ...

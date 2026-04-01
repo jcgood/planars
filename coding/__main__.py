@@ -4,21 +4,22 @@ Usage:
     python -m coding <command> [options]
 
 Commands:
-    generate-sheets      Create/update Google Sheets annotation forms
-    generate-notebooks   Generate and upload contributor + coordinator notebooks
-    generate-reports     Generate and upload PDF reports for all languages to Drive
-    sync-params          Sync diagnostic criterion columns when diagnostics_{lang_id}.tsv changes
-    update-sheets        Add missing rows/columns to existing sheets
-    import-sheets        Download filled sheets to TSVs
-    validate-coding      Re-validate annotation sheets and update cell highlighting
-    restructure-sheets   Archive and regenerate sheets after structural changes (--rename-class, --rename-map, --rename-element)
-    populate-sheets      Upload legacy TSV data to sheets (one-time utility)
-    check-codebook       Check consistency between schema files and analysis modules
-    integrity-check      Full project-wide integrity check (all languages, all schemas)
-    setup-root-folder    Create ConstituencyTypology root Drive folder (run once)
-    lookup-lang          Fetch and cache Glottolog metadata for a language ID
-    apply-pending        Review and apply pending destructive changes
-    prune-manifest       Archive retired class TSVs and remove stale manifest entries
+    generate-sheets          Create/update Google Sheets annotation forms
+    generate-notebooks       Generate and upload contributor + coordinator notebooks
+    generate-reports         Generate and upload PDF reports for all languages to Drive
+    sync-params              Sync diagnostic criterion columns when diagnostics_{lang_id}.tsv changes
+    sync-diagnostics-yaml    Sync diagnostics YAML → TSV (YAML is source of truth)
+    update-sheets            Add missing rows/columns to existing sheets
+    import-sheets            Download filled sheets to TSVs
+    validate-coding          Re-validate annotation sheets and update cell highlighting
+    restructure-sheets       Archive and regenerate sheets after structural changes (--rename-class, --rename-map, --rename-element)
+    populate-sheets          Upload legacy TSV data to sheets (one-time utility)
+    check-codebook           Check consistency between schema files and analysis modules
+    integrity-check          Full project-wide integrity check (all languages, all schemas)
+    setup-root-folder        Create ConstituencyTypology root Drive folder (run once)
+    lookup-lang              Fetch and cache Glottolog metadata for a language ID
+    apply-pending            Review and apply pending destructive changes
+    prune-manifest           Archive retired class TSVs and remove stale manifest entries
 
 Each command accepts the same flags as the original script. Use --help on any
 command for details, or see CLAUDE.md.
@@ -32,7 +33,8 @@ _COMMANDS = {
     "generate-sheets":    "coding.generate_sheets",
     "generate-notebooks": "coding.generate_notebooks",
     "generate-reports":   "coding.generate_reports",
-    "sync-params":        "coding.sync_params",
+    "sync-params":             "coding.sync_params",
+    "sync-diagnostics-yaml":  "coding.sync_diagnostics_yaml",
     "update-sheets":      "coding.update_sheets",
     "import-sheets":      "coding.import_sheets",
     "validate-coding":    "coding.validate_coding",

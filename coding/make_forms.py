@@ -305,13 +305,22 @@ def _parse_criterion_specs(value: str) -> Tuple[List[str], Dict[str, List[str]]]
 def _read_diagnostics_for_language(
     language_id: str,
 ) -> List[Tuple[str, str, List[str], Dict[str, List[str]]]]:
-    """Read diagnostics_{lang_id}.tsv and return rows for a language.
+    """Read diagnostics for a language, preferring YAML over TSV.
+
+    Checks for diagnostics_{lang_id}.yaml first; falls back to
+    diagnostics_{lang_id}.tsv if the YAML is absent.
 
     Each row is (class_name, construction, criterion_names, criterion_values) where
     criterion_values maps each criterion name to its list of allowed values.
     """
-    diag_path = _resolve_diagnostics_path(language_id)
-    df = pd.read_csv(diag_path, sep="\t", header=0, dtype=str, keep_default_na=False)
+    yaml_path = _resolve_diagnostics_yaml_path(language_id)
+    if yaml_path.exists():
+        with open(yaml_path, encoding="utf-8") as f:
+            yaml_data = yaml.safe_load(f)
+        df = _yaml_to_tsv_df(yaml_data, language_id)
+    else:
+        diag_path = _resolve_diagnostics_path(language_id)
+        df = pd.read_csv(diag_path, sep="\t", header=0, dtype=str, keep_default_na=False)
 
     required = {"Class", "Language", "Constructions", "Criteria"}
     missing = required - set(df.columns)
