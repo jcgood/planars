@@ -81,8 +81,8 @@ def _sync_to_tsv(lang_id: str, apply: bool) -> bool:
         yaml_data = yaml.safe_load(f)
 
     issues = validate_diagnostics_yaml(yaml_data, lang_id)
-    errors   = [i for i in issues if i.severity == "error"]
-    warnings = [i for i in issues if i.severity == "warning"]
+    errors   = [i for i in issues if i.level == "error"]
+    warnings = [i for i in issues if i.level == "warning"]
 
     for w in warnings:
         print(f"  [{lang_id}] WARNING {w.location}: {w.message}")

@@ -13,11 +13,17 @@ from unittest.mock import MagicMock
 
 import pytest
 
+import textwrap
+
+import pandas as pd
+
 from coding.import_sheets import (
     _archive_tsv,
     _check_coded_data_clean,
     _verify_manifest_sheet_ids,
+    _check_yaml_drift,
 )
+import coding.import_sheets as _is
 
 
 # ---------------------------------------------------------------------------
@@ -201,3 +207,54 @@ class TestVerifyManifestSheetIds:
     def test_skips_non_dict_lang_data(self):
         manifest = {"_root_folder_id": "some_folder_id"}
         _verify_manifest_sheet_ids(_make_drive_mock(), manifest)  # no error
+
+
+# ---------------------------------------------------------------------------
+# _check_yaml_drift
+# ---------------------------------------------------------------------------
+
+_YAML_CONTENT = textwrap.dedent("""\
+    language: lang0001
+    classes:
+      ciscategorial:
+        constructions: [general]
+        criteria:
+          V-combines: [y, n]
+          N-combines: [y, n]
+""")
+
+
+class TestCheckYamlDrift:
+    def _tsv_df(self, criteria="V-combines, N-combines"):
+        return pd.DataFrame(
+            [{"Class": "ciscategorial", "Language": "lang0001",
+              "Constructions": "general", "Criteria": criteria}],
+            columns=["Class", "Language", "Constructions", "Criteria"],
+        )
+
+    def test_returns_empty_when_no_yaml(self, tmp_path, monkeypatch):
+        """No YAML → no drift."""
+        monkeypatch.setattr(_is, "ROOT", tmp_path)
+        tsv_df = self._tsv_df()
+        result = _check_yaml_drift("lang0001", tsv_df)
+        assert result == []
+
+    def test_returns_empty_when_in_sync(self, tmp_path, monkeypatch):
+        """TSV matches YAML → no ambiguous drift."""
+        monkeypatch.setattr(_is, "ROOT", tmp_path)
+        yaml_dir = tmp_path / "coded_data" / "lang0001" / "planar_input"
+        yaml_dir.mkdir(parents=True)
+        (yaml_dir / "diagnostics_lang0001.yaml").write_text(_YAML_CONTENT)
+        result = _check_yaml_drift("lang0001", self._tsv_df())
+        assert result == []
+
+    def test_returns_ambiguous_for_unknown_criterion(self, tmp_path, monkeypatch):
+        """Unknown criterion in TSV surfaces as ambiguous drift entry."""
+        monkeypatch.setattr(_is, "ROOT", tmp_path)
+        yaml_dir = tmp_path / "coded_data" / "lang0001" / "planar_input"
+        yaml_dir.mkdir(parents=True)
+        (yaml_dir / "diagnostics_lang0001.yaml").write_text(_YAML_CONTENT)
+        tsv_df = self._tsv_df("V-combines, N-combines, totally_made_up_zyx")
+        result = _check_yaml_drift("lang0001", tsv_df)
+        assert len(result) == 1
+        assert result[0]["kind"] == "unknown_criterion"
