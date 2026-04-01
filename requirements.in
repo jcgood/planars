@@ -1,0 +1,21 @@
+# Direct dependencies only. Run `pip-compile requirements.in` to regenerate requirements.txt.
+# To upgrade all deps: `pip-compile --upgrade requirements.in`
+# pip-tools itself: `pip install pip-tools` (not listed here; it's a maintainer tool, not a runtime dep)
+
+# Core library
+gspread
+google-api-python-client
+pandas
+plotly
+PyYAML
+weasyprint>=68.0
+
+# Needed at runtime but not directly imported
+kaleido          # plotly image/PDF export backend
+
+# Dev / CI
+pytest
+pre-commit
+
+# Editable install of planars itself
+-e .
