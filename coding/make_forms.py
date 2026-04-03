@@ -431,13 +431,16 @@ def _diff_diagnostics_tsv_yaml(
     # --- classes in TSV but not in YAML ---
     for class_name in tsv_classes:
         if class_name not in yaml_classes:
+            # Serialize constructions as a sorted list — sets are not JSON-serializable.
+            serializable_data = {**tsv_classes[class_name],
+                                 "constructions": sorted(tsv_classes[class_name]["constructions"])}
             if class_name in known_classes:
                 deterministic.append({"kind": "class_added", "class_name": class_name,
-                                      "data": tsv_classes[class_name]})
+                                      "data": serializable_data})
             else:
                 suggestions = get_close_matches(class_name, known_classes, n=3, cutoff=0.6)
                 ambiguous.append({"kind": "unknown_class", "class_name": class_name,
-                                  "suggestions": suggestions, "data": tsv_classes[class_name]})
+                                  "suggestions": suggestions, "data": serializable_data})
 
     # --- classes in YAML but not in TSV ---
     for class_name in yaml_classes:

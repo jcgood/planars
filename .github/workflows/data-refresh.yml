@@ -58,7 +58,46 @@ jobs:
           printf '%s' "$OAUTH_TOKEN" > ~/.config/gspread/authorized_user.json
 
       - name: Import annotation data from Google Sheets
-        run: python -m coding import-sheets --apply --ignore-status
+        id: import_sheets
+        run: python -m coding import-sheets --apply --ignore-status > /tmp/import_report.txt
+        continue-on-error: true
+
+      - name: Write import summary
+        if: always()
+        run: |
+          echo "## Import — $(date -u +%Y-%m-%d)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat /tmp/import_report.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: File or update GitHub issue if import failed
+        if: steps.import_sheets.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN_COUNT=$(gh issue list --label import-error --state open --json number --jq length)
+          if [ "$OPEN_COUNT" -eq 0 ]; then
+            gh issue create \
+              --title "Import error in data refresh ($(date -u +%Y-%m-%d))" \
+              --label import-error \
+              --body-file /tmp/import_report.txt
+          else
+            ISSUE_NUM=$(gh issue list --label import-error --state open --json number --jq '.[0].number')
+            gh issue comment "$ISSUE_NUM" --body-file /tmp/import_report.txt
+          fi
+
+      - name: Close open import-error issue if import succeeded
+        if: steps.import_sheets.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN_COUNT=$(gh issue list --label import-error --state open --json number --jq length)
+          if [ "$OPEN_COUNT" -gt 0 ]; then
+            ISSUE_NUM=$(gh issue list --label import-error --state open --json number --jq '.[0].number')
+            gh issue comment "$ISSUE_NUM" --body "Import succeeded on $(date -u +%Y-%m-%d) — closing."
+            gh issue close "$ISSUE_NUM"
+          fi
 
       - name: Regenerate diagnostics TSVs from YAML
         # Keeps diagnostics_{lang_id}.tsv in sync with the YAML source of truth.

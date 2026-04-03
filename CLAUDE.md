@@ -288,6 +288,7 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 | `sheet-drift` | Filed automatically by the `data-refresh.yml` workflow when `update-sheets` (dry-run) detects sheets out of sync with the data model. Resolve by running `update-sheets --apply`. Auto-closed when clean. |
 | `pending-changes` | Filed automatically by `import-sheets` when destructive changes are written to `pending_changes.json`. Resolve by running `apply-pending`. |
 | `diagnostics-drift` | Filed automatically by `data-refresh.yml` when `import-sheets` detects ambiguous TSV→YAML differences in `diagnostics_drift.json`. Resolve by reviewing the drift, editing YAML manually, and running `sync-diagnostics-yaml --apply`. Auto-closed when clear. |
+| `import-error` | Filed automatically by `data-refresh.yml` when `import-sheets --apply` exits non-zero (crash or import failure). The issue body contains the import output up to the point of failure. Auto-closed when import succeeds. |
 
 ### Notable open issues
 
