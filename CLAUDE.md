@@ -289,6 +289,7 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 | `pending-changes` | Filed automatically by `import-sheets` when destructive changes are written to `pending_changes.json`. Resolve by running `apply-pending`. |
 | `diagnostics-drift` | Filed automatically by `data-refresh.yml` when `import-sheets` detects ambiguous TSV→YAML differences in `diagnostics_drift.json`. Resolve by reviewing the drift, editing YAML manually, and running `sync-diagnostics-yaml --apply`. Auto-closed when clear. |
 | `import-error` | Filed automatically by `data-refresh.yml` when `import-sheets --apply` exits non-zero (crash or import failure). The issue body contains the import output up to the point of failure. Auto-closed when import succeeds. |
+| `codebook-error` | Filed automatically by `data-refresh.yml` when `check-codebook` detects schema inconsistencies (criteria in modules but not in `diagnostic_criteria.yaml`, required criteria missing from `diagnostics_{lang}.tsv`, etc.). Also runs in CI on every push. Auto-closed when check passes. |
 
 ### Notable open issues
 

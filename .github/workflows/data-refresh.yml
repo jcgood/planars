@@ -171,6 +171,44 @@ jobs:
             gh issue close "$ISSUE_NUM"
           fi
 
+      - name: Check codebook consistency
+        # Gap 1 (#121): catches schema inconsistencies (criteria in modules but
+        # not in diagnostic_criteria.yaml, required criteria missing from
+        # diagnostics_{lang}.tsv, etc.) that can arise from data changes as well
+        # as code changes. CI covers the code-change path; this covers the
+        # data-change path (e.g. new class added to diagnostics TSV via sheets).
+        id: codebook
+        run: python -m coding check-codebook > /tmp/codebook_report.txt
+        continue-on-error: true
+
+      - name: File or update GitHub issue if codebook check failed
+        if: steps.codebook.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN_COUNT=$(gh issue list --label codebook-error --state open --json number --jq length)
+          if [ "$OPEN_COUNT" -eq 0 ]; then
+            gh issue create \
+              --title "Codebook inconsistency detected ($(date -u +%Y-%m-%d))" \
+              --label codebook-error \
+              --body-file /tmp/codebook_report.txt
+          else
+            ISSUE_NUM=$(gh issue list --label codebook-error --state open --json number --jq '.[0].number')
+            gh issue comment "$ISSUE_NUM" --body-file /tmp/codebook_report.txt
+          fi
+
+      - name: Close open codebook-error issue if all clear
+        if: steps.codebook.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN_COUNT=$(gh issue list --label codebook-error --state open --json number --jq length)
+          if [ "$OPEN_COUNT" -gt 0 ]; then
+            ISSUE_NUM=$(gh issue list --label codebook-error --state open --json number --jq '.[0].number')
+            gh issue comment "$ISSUE_NUM" --body "Codebook check passed on $(date -u +%Y-%m-%d) — closing."
+            gh issue close "$ISSUE_NUM"
+          fi
+
       - name: Regenerate snapshots
         # Gap 4 (#121): if: always() ensures snapshots are regenerated even when
         # earlier steps failed (e.g. import-sheets crash). coded_data/ is always
