@@ -172,6 +172,10 @@ jobs:
           fi
 
       - name: Regenerate snapshots
+        # Gap 4 (#121): if: always() ensures snapshots are regenerated even when
+        # earlier steps failed (e.g. import-sheets crash). coded_data/ is always
+        # populated by the checkout step so generation is safe to run regardless.
+        if: always()
         run: python generate_snapshots.py
 
       - name: Commit and push planars-data changes
@@ -188,6 +192,10 @@ jobs:
           fi
 
       - name: Commit and push planars snapshot changes
+        # Gap 4 (#121): if: always() ensures snapshots are committed even when
+        # earlier steps failed, preventing stale-snapshot CI failures on the
+        # next code push.
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -198,6 +206,14 @@ jobs:
             git commit -m "snapshots: regenerate from daily data refresh $(date -u +%Y-%m-%d)"
             git push
           fi
+
+      - name: Apply additive sheet updates
+        # Gap 3 (#121): auto-apply new planar elements and missing trailing
+        # columns to existing annotation sheets. This is additive and safe —
+        # same reasoning as sync-params --apply (#120). The dry-run drift check
+        # below then confirms whether anything non-additive still needs attention.
+        run: python -m coding update-sheets --apply
+        continue-on-error: true
 
       - name: Check for sheet drift
         id: drift
@@ -227,7 +243,7 @@ jobs:
           OPEN_COUNT=$(gh issue list --label sheet-drift --state open --json number --jq length)
           if [ "$OPEN_COUNT" -eq 0 ]; then
             gh issue create \
-              --title "Sheet drift detected — run update-sheets --apply ($(date -u +%Y-%m-%d))" \
+              --title "Sheet drift detected — update-sheets --apply needs review ($(date -u +%Y-%m-%d))" \
               --label sheet-drift \
               --body-file /tmp/sheet_drift.txt
           else
