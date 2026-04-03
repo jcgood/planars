@@ -60,6 +60,14 @@ jobs:
       - name: Import annotation data from Google Sheets
         run: python -m coding import-sheets --apply --ignore-status
 
+      - name: Regenerate diagnostics TSVs from YAML
+        # Keeps diagnostics_{lang_id}.tsv in sync with the YAML source of truth.
+        # Catches cases where a coordinator edited the YAML locally but forgot to
+        # run sync-diagnostics-yaml --apply before committing.
+        # Note: this only handles the YAML → TSV direction. Propagating new criteria
+        # to Google Sheets (TSV → Sheet) still requires a manual: sync-params --apply
+        run: python -m coding sync-diagnostics-yaml --apply
+
       - name: Check for diagnostics YAML drift
         id: diag_drift
         run: |

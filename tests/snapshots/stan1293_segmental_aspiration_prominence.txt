@@ -1,15 +1,12 @@
 English Segmental Aspiration Prominence
 =======================================
 
-NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
-  applies: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (127 total)
-
 Keystone position: 30 (v:verbstem)
 
-Segmental domain complete positions: []
-Segmental domain partial positions:  []
+Segmental domain complete positions: [2, 5, 6, 7, 9, 11, 14, 16, 17, 19, 21, 23, 25, 26, 32, 35, 36, 37]
+Segmental domain partial positions:  [2, 3, 5, 6, 7, 8, 9, 11, 14, 16, 17, 19, 21, 23, 25, 26, 27, 28, 29, 32, 33, 35, 36, 37]
 
 Strict complete segmental span: positions 30–30  (v:verbstem → v:verbstem)
-Loose complete segmental span:  positions 30–30  (v:verbstem → v:verbstem)
-Strict partial segmental span:  positions 30–30  (v:verbstem → v:verbstem)
-Loose partial segmental span:   positions 30–30  (v:verbstem → v:verbstem)
+Loose complete segmental span:  positions 2–37  (v:frontedXP → v:rightedge)
+Strict partial segmental span:  positions 25–30  (v:ad-VP5 → v:verbstem)
+Loose partial segmental span:   positions 2–37  (v:frontedXP → v:rightedge)

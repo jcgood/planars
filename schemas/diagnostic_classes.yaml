@@ -441,13 +441,13 @@ classes:
       - nasality spreading domain      # e.g., Chatino: positions 13-17
       - palatalization domain          # e.g., Chatino coronal, Chorote, Mocoví
       - fortition domain               # palatal fortition; e.g., Mebengokre aj-verb
-    required_criteria: [applies]
+    required_criteria: [aspirated]
     optional_criteria: []
     qualification_rule: >
-      Positive-qualification path (applies criterion):
-        A position qualifies if it contains an element where applies=y.
-        Complete: ALL elements in the position have applies=y.
-        Partial: at least one element has applies=y.
+      Positive-qualification path (aspirated criterion):
+        A position qualifies if it contains an element where aspirated=y.
+        Complete: ALL elements in the position have aspirated=y.
+        Partial: at least one element has aspirated=y.
         Returns four spans (strict/loose × complete/partial).
     # Formal abstract type in ch. 17 database schema.
     status: "[AUTO-DERIVED: likely stable — confirmed across 10+ language chapters; formal

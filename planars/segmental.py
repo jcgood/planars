@@ -6,7 +6,7 @@ from typing import Dict, Optional, Tuple
 from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, loose_span, position_sets_from_element_mask
 
-_REQUIRED_CRITERIA = {"applies"}
+_REQUIRED_CRITERIA = {"aspirated"}
 
 
 def derive_segmental_domains(
@@ -18,7 +18,7 @@ def derive_segmental_domains(
     """Derive segmental phonological domains from a filled segmental TSV.
 
     Uses positive-qualification logic: a position qualifies when its elements
-    are within the domain of the segmental process (applies=y).
+    are within the domain of the segmental process (aspirated=y).
 
     Each phonological process is annotated in its own TSV (one process per
     construction). Multiple segmental processes may identify different spans.
@@ -29,11 +29,11 @@ def derive_segmental_domains(
 
     Diagnostic criterion
     --------------------
-    applies : y/n — whether this segmental process applies to this element's
-              position. y = this position is within the domain of the process.
+    aspirated : y/n — whether this segmental process applies to this element's
+                position. y = this position is within the domain of the process.
 
-    A position is complete if ALL its elements are within the domain (applies=y).
-    A position is partial if AT LEAST ONE element is (applies=y).
+    A position is complete if ALL its elements are within the domain (aspirated=y).
+    A position is partial if AT LEAST ONE element is (aspirated=y).
 
     Four span variants (strict/loose × complete/partial) = 4 spans total.
 
@@ -46,11 +46,11 @@ def derive_segmental_domains(
 
     missing_data = {}
     if not strict:
-        blank_els = data_df.loc[data_df["applies"] == "", "Element"].tolist()
+        blank_els = data_df.loc[data_df["aspirated"] == "", "Element"].tolist()
         if blank_els:
-            missing_data["applies"] = blank_els
+            missing_data["aspirated"] = blank_els
 
-    data_df["is_in_domain"] = data_df["applies"] == "y"
+    data_df["is_in_domain"] = data_df["aspirated"] == "y"
 
     partial_positions, complete_positions = position_sets_from_element_mask(
         data_df, data_df["is_in_domain"]

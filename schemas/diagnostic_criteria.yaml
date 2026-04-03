@@ -362,7 +362,7 @@ analyses:
       processes in one language may identify different spans. Classified as a phonological
       domain type (Tallman et al. 2024, discussion ch. 17).
     diagnostic_criteria:
-      - name: applies
+      - name: aspirated
         values: [y, n]
         description: >
           [NEEDS REVIEW] Whether the segmental phonological process applies to this
