@@ -247,6 +247,7 @@ def _load_param_map(lang_id: str) -> Dict[str, Dict[str, dict]]:
 def main() -> None:
     args = sys.argv[1:]
     lang_filter = args[args.index("--lang") + 1] if "--lang" in args else None
+    verbose = "--verbose" in args
 
     pending = ROOT / "pending_changes.json"
     if pending.exists() and pending.stat().st_size > 2:
@@ -259,7 +260,7 @@ def main() -> None:
     if not manifest:
         raise SystemExit("No manifest found. Run generate-sheets first.")
 
-    total_issues = 0
+    total_blocking = 0
     total_sheets = 0
 
     for lang_id, lang_data in sorted(manifest.items()):
@@ -313,21 +314,38 @@ def main() -> None:
                     info.get("values", {}),
                 )
                 total_sheets += 1
-                total_issues += len(issues)
-                if issues:
-                    print(f"  [{class_name}/{construction}] {len(issues)} issue(s):")
-                    for issue in issues:
+
+                # Separate actionable issues from blank-cell completeness noise.
+                # Blank cells are expected during annotation and highlighted pink
+                # in the Sheet for annotators, but should not trigger exit(1) or
+                # clutter the report. Use --verbose to see them individually.
+                blocking = [i for i in issues if "blank value" not in i.message]
+                blank_count = len(issues) - len(blocking)
+                total_blocking += len(blocking)
+
+                if blocking:
+                    print(f"  [{class_name}/{construction}] {len(blocking)} issue(s):")
+                    for issue in blocking:
                         print(f"    {issue}")
+                    if blank_count and not verbose:
+                        print(f"    ({blank_count} blank cell(s) — annotation in progress; use --verbose to list)")
+                elif blank_count:
+                    print(f"  [{class_name}/{construction}] {blank_count} blank cell(s) — annotation in progress")
                 else:
                     print(f"  [{class_name}/{construction}] no issues")
 
+                if verbose and blank_count:
+                    for issue in issues:
+                        if "blank value" in issue.message:
+                            print(f"    {issue}")
+
     print(f"\n{'─' * 50}")
-    print(f"Validated {total_sheets} sheet(s).  Total issues: {total_issues}")
-    if total_issues:
+    print(f"Validated {total_sheets} sheet(s).  Blocking issues: {total_blocking}")
+    if total_blocking:
         print("Cell highlighting updated in Google Sheets.")
         sys.exit(1)
     else:
-        print("All highlights cleared.")
+        print("All blocking issues cleared. (Pink highlighting for blank cells preserved.)")
 
 
 if __name__ == "__main__":

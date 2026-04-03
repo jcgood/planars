@@ -721,10 +721,15 @@ def main() -> None:
                     except Exception as e:
                         print(f"    WARNING: could not highlight cells: {e}")
 
-                for w in warnings:
+                # Suppress per-cell blank warnings from the report — blank cells
+                # are expected during annotation and the count already appears in
+                # the status line below. Only surface structural and invalid-value
+                # warnings individually.
+                blocking_warnings = [w for w in warnings if "blank value" not in w]
+                for w in blocking_warnings:
                     print(f"    WARNING: {w}")
                     lang_warning_lines.append(f"[{class_name}/{construction}] {w}")
-                total_warnings += len(warnings)
+                total_warnings += len(blocking_warnings)
 
                 out_path = _get_output_path(lang_id, class_name, construction)
                 out_name = out_path.name
