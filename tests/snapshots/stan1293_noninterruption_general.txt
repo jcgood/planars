@@ -1,18 +1,14 @@
 English Noninterruption General
 ===============================
 
-NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
-  free: ['AD-S', 'care', 'PRON{P,T}']
-  multiple: ['AD-S', 'care', 'PRON{P,T}']
-
 Keystone position: 30 (v:verbstem)
 
 No-free complete positions:      [3, 4, 8, 10, 12, 13, 15, 18, 20, 22, 24, 31]
 No-free partial positions:       [3, 4, 8, 10, 12, 13, 15, 18, 20, 22, 24, 28, 29, 31, 33]
-Single-free complete positions:  [1, 3, 4, 8, 10, 12, 13, 15, 18, 20, 22, 24, 28, 29, 31]
+Single-free complete positions:  [1, 3, 4, 8, 10, 12, 13, 15, 18, 20, 22, 24, 27, 28, 29, 31]
 Single-free partial positions:   [1, 2, 3, 4, 8, 10, 12, 13, 15, 18, 20, 22, 24, 27, 28, 29, 31, 33]
 
 No-free complete span:      positions 30–31  (v:verbstem → v:verbinflection)
 No-free partial span:       positions 28–31  (v:productiveprefix → v:verbinflection)
-Single-free complete span:  positions 28–31  (v:productiveprefix → v:verbinflection)
+Single-free complete span:  positions 27–31  (v:nominal → v:verbinflection)
 Single-free partial span:   positions 27–31  (v:nominal → v:verbinflection)
