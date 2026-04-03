@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
-"""Sync between diagnostics YAML (source of truth) and diagnostics TSV (derived artifact).
+"""Sync between diagnostics YAML (source of truth) and diagnostics TSV/Sheet.
 
 Usage:
     # YAML → TSV (default direction): regenerate TSV from YAML
     python -m coding sync-diagnostics-yaml                        # dry run (all languages)
     python -m coding sync-diagnostics-yaml --lang stan1293        # dry run (one language)
     python -m coding sync-diagnostics-yaml --apply                # write TSVs
+
+    # YAML → Google Sheet: push YAML changes back to the diagnostics Sheet
+    python -m coding sync-diagnostics-yaml --to-sheet             # dry run (all languages)
+    python -m coding sync-diagnostics-yaml --to-sheet --apply     # upload to Sheet
+    python -m coding sync-diagnostics-yaml --to-sheet --lang stan1293
 
     # TSV → YAML: propose changes from TSV back to YAML
     python -m coding sync-diagnostics-yaml --from-tsv             # dry run (all languages)
@@ -14,9 +19,15 @@ Usage:
 
 YAML is the authoritative source of truth; TSV is a derived artifact.
 
-YAML → TSV (--to-tsv, the default):
+YAML → TSV (default):
     The TSV is always generated fresh from the YAML. Direct edits to the TSV
     are overwritten. To change diagnostics, edit the YAML and run --apply.
+
+YAML → Sheet (--to-sheet):
+    Reads the YAML, generates the TSV representation, and uploads it to the
+    diagnostics Google Sheet (overwriting stale content). Requires Drive access.
+    Run this after renaming classes or criteria in the YAML so the Sheet stays
+    in sync and import-sheets no longer detects false drift.
 
 TSV → YAML (--from-tsv):
     Diffs the TSV against the YAML and categorises changes:
@@ -162,10 +173,92 @@ def _sync_from_tsv(lang_id: str, apply: bool, drift_entries: List[Dict]) -> bool
     return bool(deterministic)
 
 
+def _sync_to_sheet(lang_id: str, gc, manifest: dict, apply: bool) -> bool:
+    """Sync YAML → Google Sheet for one language.
+
+    Reads the YAML, generates the TSV representation, compares it against the
+    live diagnostics Sheet, and optionally overwrites it. This is the upload
+    direction — the mirror of import-sheets downloading the diagnostics Sheet.
+
+    Use this when YAML class names or criteria have changed locally and the
+    Google Sheet is stale. Running this in data-refresh after sync-diagnostics-yaml
+    --apply keeps the Sheet in continuous sync with the YAML.
+
+    Returns True if changes were made (or would be).
+    """
+    from .drive import _open_spreadsheet, _with_retry
+
+    lang_data = manifest.get(lang_id, {})
+    diag_id = lang_data.get("diagnostics_spreadsheet_id")
+    if not diag_id:
+        print(f"  [{lang_id}] No diagnostics_spreadsheet_id in manifest — skipping")
+        return False
+
+    planar_dir = CODED_DATA / lang_id / "planar_input"
+    yaml_path = planar_dir / f"diagnostics_{lang_id}.yaml"
+
+    if not yaml_path.exists():
+        print(f"  [{lang_id}] No YAML found — skipping")
+        return False
+
+    with open(yaml_path, encoding="utf-8") as f:
+        yaml_data = yaml.safe_load(f)
+
+    issues = validate_diagnostics_yaml(yaml_data, lang_id)
+    errors = [i for i in issues if i.level == "error"]
+    if errors:
+        for e in errors:
+            print(f"  [{lang_id}] ERROR {e.location}: {e.message}")
+        print(f"  [{lang_id}] Skipping — fix errors above before uploading.")
+        return False
+
+    new_df = _yaml_to_tsv_df(yaml_data, lang_id)
+
+    try:
+        ss = _open_spreadsheet(gc, diag_id)
+        current_rows = _with_retry(ss.sheet1.get_all_values)
+    except Exception as e:
+        print(f"  [{lang_id}] Could not read Sheet: {e}")
+        return False
+
+    if current_rows:
+        current_df = pd.DataFrame(
+            current_rows[1:], columns=current_rows[0], dtype=str
+        ).fillna("")
+        if current_df.reset_index(drop=True).equals(new_df.reset_index(drop=True)):
+            print(f"  [{lang_id}] Sheet already up to date")
+            return False
+        # Show row-level diff so coordinator can review before applying.
+        current_classes = set(current_df.get("Class", pd.Series(dtype=str)).tolist())
+        new_classes = set(new_df.get("Class", pd.Series(dtype=str)).tolist())
+        for c in sorted(current_classes - new_classes):
+            print(f"  [{lang_id}]   - removed: {c}")
+        for c in sorted(new_classes - current_classes):
+            print(f"  [{lang_id}]   + added:   {c}")
+        for c in sorted(current_classes & new_classes):
+            old_row = current_df[current_df["Class"] == c].iloc[0].to_dict()
+            new_row = new_df[new_df["Class"] == c].iloc[0].to_dict()
+            if old_row != new_row:
+                print(f"  [{lang_id}]   ~ changed: {c}")
+    else:
+        print(f"  [{lang_id}]   (sheet is empty — will populate from YAML)")
+
+    if apply:
+        new_rows = [list(new_df.columns)] + [list(row) for _, row in new_df.iterrows()]
+        ss.sheet1.clear()
+        ss.sheet1.update(new_rows, "A1")
+        print(f"  [{lang_id}] Updated → diagnostics Sheet")
+    else:
+        print(f"  [{lang_id}] Would update → diagnostics Sheet (use --apply to write)")
+
+    return True
+
+
 def main() -> None:
     args = sys.argv[1:]
     apply = "--apply" in args
     from_tsv = "--from-tsv" in args
+    to_sheet = "--to-sheet" in args
     lang_filter: Optional[str] = None
 
     if "--lang" in args:
@@ -177,6 +270,25 @@ def main() -> None:
 
     if not apply:
         print("Dry run — use --apply to write changes.\n")
+
+    if to_sheet:
+        # Upload direction requires Google API access.
+        from .drive import _get_clients, _load_manifest_from_drive
+        print("Connecting to Google APIs...")
+        gc, drive = _get_clients()
+        manifest = _load_manifest_from_drive(drive)
+        if not manifest:
+            raise SystemExit("No manifest found. Run generate-sheets first.")
+        languages = [lang_filter] if lang_filter else list(manifest.keys())
+        changed = 0
+        for lang_id in sorted(languages):
+            changed += _sync_to_sheet(lang_id, gc, manifest, apply)
+        print()
+        if apply:
+            print(f"Done: {changed} Sheet(s) updated.")
+        else:
+            print(f"Dry run complete: {changed} Sheet(s) would be updated.")
+        return
 
     languages = [lang_filter] if lang_filter else _discover_languages()
 
