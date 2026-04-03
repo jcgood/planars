@@ -1,6 +1,11 @@
 English Ciscategorial General
 =============================
 
+NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
+  V-combines: ['AD-S', 'care', 'PRON{P,T}']
+  N-combines: ['AD-S', 'care', 'PRON{P,T}']
+  A-combines: ['AD-S', 'care', 'PRON{P,T}']
+
 Keystone position: 30 (v:verbstem)
 
 V-ciscategorial complete positions: [3, 4, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 31, 32, 34, 35, 37]
