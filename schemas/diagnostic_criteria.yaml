@@ -430,22 +430,29 @@ shared_values:
 
   - value: "NA"
     meaning: >
-      Not applicable. Used only for keystone rows (v:verbstem), which are
-      excluded from all span computations.
+      Not applicable — the criterion does not apply to this position or
+      element in this language. A positive annotation act: the annotator has
+      examined the position and determined that the criterion is linguistically
+      inapplicable (e.g. a root that can only ever have one vowel in a harmony
+      test, or the keystone position in a test where it does not participate).
+      Distinct from blank (not yet examined) and from "?" (examined but
+      answer indeterminate). NA positions are excluded from span computations.
 
   - value: "?"
     meaning: >
-      Uncertain — the source was consulted but the answer could not be
-      determined. Distinct from blank (not yet coded): a "?" is a positive
-      annotation of uncertainty, not an absence of annotation. Treated as
-      missing data; rows with "?" will cause validation warnings on import
+      Indeterminate — annotation was attempted but a definitive answer is not
+      possible with currently available information. A positive annotation act,
+      not an absence of annotation: the annotator has examined the position and
+      found the evidence insufficient to decide. The answer may become
+      resolvable as more data or analysis becomes available. Distinct from
+      blank (not yet attempted) and from NA (criterion inapplicable). Treated
+      as missing data; rows with "?" will cause validation warnings on import
       and are excluded from span computations.
 
   - value: ""
     meaning: >
-      Blank — not yet coded. Absence of annotation; the annotator has not
-      yet examined this element for this criterion. Distinct from "?":
-      a blank cell does not mean the answer is unknown, only that no
-      annotation has been entered. Blank cells trigger a validation warning
-      on import and are excluded from span computations. Do not use "?" as
-      a substitute for a blank cell.
+      Blank — not yet attempted. The annotator has not yet examined this
+      element for this criterion. Distinct from "?" (examined but
+      indeterminate) and from NA (examined and inapplicable). Blank cells
+      trigger a validation warning on import and are excluded from span
+      computations. Do not use "?" as a substitute for a blank cell.
