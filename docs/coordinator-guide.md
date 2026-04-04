@@ -14,13 +14,24 @@ Once set up, the following run without coordinator action:
 |---------|-----------|--------------|
 | Every commit to `planars/*.py` | pre-commit hook | Regenerates affected snapshots and stages them |
 | Every push | pre-push hook | Verifies all snapshots are current; blocks push if stale |
-| Daily at 06:00 UTC | `data-refresh.yml` | Imports latest sheets → regenerates snapshots → commits; opens GitHub issues for sheet drift (`sheet-drift`), pending destructive changes (`pending-changes`), or ambiguous diagnostics YAML drift (`diagnostics-drift`) |
+| Daily at 06:00 UTC | `data-refresh.yml` | Imports latest sheets → syncs diagnostics YAML → regenerates snapshots → commits; opens GitHub issues for import failures (`import-error`), sheet drift (`sheet-drift`), pending destructive changes (`pending-changes`), ambiguous diagnostics YAML drift (`diagnostics-drift`), schema inconsistencies (`codebook-error`), stale manifest entries (`stale-manifest`), or overwritten coordinator commits (`data-overwrite`) |
 | Daily at 06:00 UTC | `sheet-validation.yml` | Runs `validate-coding`; opens a `sheet-validation` issue if problems found; closes it when clean |
 | Daily at 06:00 UTC | `generate-reports.yml` | Generates and uploads PDF reports to Drive |
 
 The hooks require a one-time install per machine — see [Regression testing and hooks](#regression-testing-and-hooks). The GitHub Actions require secrets configured in the repo — see [Automated workflows](#automated-workflows).
 
-**When something goes wrong automatically:** the daily workflows open labeled GitHub issues (`sheet-validation`, `sheet-drift`, `pending-changes`) so nothing is silently dropped. Check the Issues tab if something looks out of sync.
+**When something goes wrong automatically:** the daily workflows open labeled GitHub issues so nothing is silently dropped. Check the Issues tab if something looks out of sync. Labels and what they mean:
+
+| Label | Meaning | Resolution |
+|-------|---------|------------|
+| `import-error` | `import-sheets` crashed or failed | Check issue body for error; fix root cause; next run closes it |
+| `sheet-drift` | Sheets are out of sync with data model | Run `update-sheets --apply` |
+| `pending-changes` | Destructive annotation changes need review | Run `apply-pending` |
+| `diagnostics-drift` | Ambiguous TSV→YAML differences found | Review drift, edit YAML, run `sync-diagnostics-yaml --apply` |
+| `codebook-error` | Schema inconsistency detected | Run `check-codebook` locally for details |
+| `stale-manifest` | Manifest has classes no longer in diagnostics | Run `prune-manifest --apply` |
+| `data-overwrite` | Coordinator commits may have been overwritten by refresh | Check `git log`/`git show` in planars-data to verify |
+| `sheet-validation` | Invalid cell values in annotation sheets | Run `validate-coding` locally for details |
 
 ---
 
@@ -245,9 +256,12 @@ When the diagnostic model changes — a new analysis class, a class renamed or r
 `diagnostics_{lang_id}.yaml` in `coded_data/{lang_id}/planar_input/` is the source of truth for which analyses run for a language. After editing it, regenerate the derived TSV:
 
 ```bash
-python -m coding sync-diagnostics-yaml --lang {lang_id}        # dry run: show what would change
-python -m coding sync-diagnostics-yaml --apply --lang {lang_id} # regenerate TSV
+python -m coding sync-diagnostics-yaml --lang {lang_id}                  # dry run: show what would change
+python -m coding sync-diagnostics-yaml --apply --lang {lang_id}          # regenerate TSV from YAML
+python -m coding sync-diagnostics-yaml --to-sheet --apply --lang {lang_id} # push YAML back to diagnostics Sheet
 ```
+
+The `--to-sheet` direction is run automatically by `data-refresh.yml` after every import, so the diagnostics Google Sheet stays in sync with the YAML. Run it manually after renaming a class or criterion locally if you want the Sheet updated before the next daily refresh.
 
 When `import-sheets` downloads a diagnostics TSV from Google Sheets that differs from the YAML, it diffs them automatically:
 - **Deterministic changes** (known classes/criteria added or removed) are applied to the YAML by running `sync-diagnostics-yaml --from-tsv --apply`.
@@ -483,7 +497,21 @@ Add the following secrets under **Settings → Secrets and variables → Actions
 
 #### What each workflow does
 
-**`data-refresh.yml`** — imports the latest annotation data from Google Sheets into planars-data, regenerates snapshot baselines, and commits any changes. Also runs `update-sheets` (dry-run) to detect sheet drift; if drift is found, opens or updates a GitHub issue labeled `sheet-drift`. If destructive pending changes are written, opens a `pending-changes` issue. You can trigger it manually from the Actions tab after a large annotation session to sync immediately rather than waiting for the next scheduled run.
+**`data-refresh.yml`** — the main daily automation pipeline. Runs at 06:00 UTC and does the following in order:
+
+1. Records planars-data HEAD and any human-committed files (for overwrite detection later).
+2. Imports latest annotation data from Google Sheets into planars-data (`import-sheets --apply`).
+3. Regenerates all diagnostics TSVs from their YAML source of truth (`sync-diagnostics-yaml --apply`).
+4. Pushes YAML content back to the diagnostics Google Sheets (`sync-diagnostics-yaml --to-sheet --apply`), keeping Sheets in sync after any class or criterion renames.
+5. Checks for ambiguous TSV→YAML drift and files a `diagnostics-drift` issue if found.
+6. Runs `check-codebook` and files a `codebook-error` issue if schema inconsistencies are found.
+7. Runs `integrity-check --check-manifest` and files a `stale-manifest` issue if retired classes remain in the Drive manifest.
+8. Regenerates snapshot baselines and commits them (`if: always()` — runs even if earlier steps failed).
+9. Commits and pushes planars-data changes.
+10. Detects whether the import overwrote any human commits to planars-data and files a `data-overwrite` issue if so.
+11. Applies additive sheet updates (`update-sheets --apply`) and files a `sheet-drift` issue for any remaining non-additive drift.
+
+All issue types are auto-closed on the next clean run. You can trigger the workflow manually from the Actions tab after a large annotation session to sync immediately.
 
 **`sheet-validation.yml`** — runs `validate-coding` against all live Google Sheets and opens a GitHub issue labeled `sheet-validation` if problems are found. Closes the issue automatically when the next run comes back clean.
 
