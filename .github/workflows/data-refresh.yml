@@ -149,6 +149,14 @@ jobs:
         run: python -m coding sync-diagnostics-yaml --to-sheet --apply
         continue-on-error: true
 
+      - name: Sync criterion columns to annotation sheets
+        # Issue #120: adds missing criterion columns and updates dropdown validation
+        # for any new criteria added to diagnostics_{lang}.yaml since the last run.
+        # Safe to automate: --apply without destructive flags (--rename/--remove/
+        # --split/--merge) is additive-only and idempotent.
+        run: python -m coding sync-params --apply
+        continue-on-error: true
+
       - name: Check for diagnostics YAML drift
         id: diag_drift
         run: |
