@@ -1,7 +1,10 @@
 name: Generate reports
 
-# Runs nightly to regenerate PDF reports for all languages and upload them
-# to Google Drive. Reports are updated in place so shared URLs stay stable.
+# Runs after data-refresh.yml completes (success or failure) so reports
+# always reflect the freshest annotation data. Previously ran on a fixed
+# cron at the same time as data-refresh, causing a race where reports could
+# be generated from stale data. Can also be triggered manually at any time.
+#
 # Non-technical collaborators (e.g. John) can bookmark the Drive URL and
 # always see the current state of span results and annotation completeness.
 # PDFs render natively in the Drive viewer (no download needed).
@@ -15,8 +18,9 @@ name: Generate reports
 # and is used directly — no secret needed.
 
 on:
-  schedule:
-    - cron: '0 6 * * *'   # daily at 06:00 UTC
+  workflow_run:
+    workflows: ["Data refresh"]
+    types: [completed]    # triggers after data-refresh finishes, so reports always use fresh data
   workflow_dispatch:        # allow manual trigger from the Actions tab
 
 jobs:
