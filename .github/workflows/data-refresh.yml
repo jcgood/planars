@@ -93,29 +93,13 @@ jobs:
         if: steps.import_sheets.outcome == 'failure'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          OPEN_COUNT=$(gh issue list --label import-error --state open --json number --jq length)
-          if [ "$OPEN_COUNT" -eq 0 ]; then
-            gh issue create \
-              --title "Import error in data refresh ($(date -u +%Y-%m-%d))" \
-              --label import-error \
-              --body-file /tmp/import_report.txt
-          else
-            ISSUE_NUM=$(gh issue list --label import-error --state open --json number --jq '.[0].number')
-            gh issue comment "$ISSUE_NUM" --body-file /tmp/import_report.txt
-          fi
+        run: bash .github/scripts/manage_issue.sh file import-error "Import error in data refresh ($(date -u +%Y-%m-%d))" /tmp/import_report.txt
 
       - name: Close open import-error issue if import succeeded
         if: steps.import_sheets.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          OPEN_COUNT=$(gh issue list --label import-error --state open --json number --jq length)
-          if [ "$OPEN_COUNT" -gt 0 ]; then
-            ISSUE_NUM=$(gh issue list --label import-error --state open --json number --jq '.[0].number')
-            gh issue comment "$ISSUE_NUM" --body "Import succeeded on $(date -u +%Y-%m-%d) — closing."
-            gh issue close "$ISSUE_NUM"
-          fi
+        run: bash .github/scripts/manage_issue.sh close import-error "Import succeeded on $(date -u +%Y-%m-%d) — closing."
 
       - name: Remind if pending-changes issue is stale
         # If pending_changes.json exists and hasn't been updated in 7+ days,
@@ -193,29 +177,14 @@ jobs:
           echo '```json' >> "$BODY_FILE"
           cat diagnostics_drift.json >> "$BODY_FILE"
           echo '```' >> "$BODY_FILE"
-          OPEN_COUNT=$(gh issue list --label diagnostics-drift --state open --json number --jq length)
-          if [ "$OPEN_COUNT" -eq 0 ]; then
-            gh issue create \
-              --title "Diagnostics YAML drift detected ($(date -u +%Y-%m-%d))" \
-              --label diagnostics-drift \
-              --body-file "$BODY_FILE"
-          else
-            ISSUE_NUM=$(gh issue list --label diagnostics-drift --state open --json number --jq '.[0].number')
-            gh issue comment "$ISSUE_NUM" --body-file "$BODY_FILE"
-          fi
+          bash .github/scripts/manage_issue.sh file diagnostics-drift "Diagnostics YAML drift detected ($(date -u +%Y-%m-%d))" "$BODY_FILE"
           rm -f "$BODY_FILE"
 
       - name: Close open diagnostics drift issue if all clear
         if: steps.diag_drift.outputs.drift == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          OPEN_COUNT=$(gh issue list --label diagnostics-drift --state open --json number --jq length)
-          if [ "$OPEN_COUNT" -gt 0 ]; then
-            ISSUE_NUM=$(gh issue list --label diagnostics-drift --state open --json number --jq '.[0].number')
-            gh issue comment "$ISSUE_NUM" --body "Diagnostics YAML drift resolved on $(date -u +%Y-%m-%d) — closing."
-            gh issue close "$ISSUE_NUM"
-          fi
+        run: bash .github/scripts/manage_issue.sh close diagnostics-drift "Diagnostics YAML drift resolved on $(date -u +%Y-%m-%d) — closing."
 
       - name: Check codebook consistency
         # Gap 1 (#121): catches schema inconsistencies (criteria in modules but
@@ -231,29 +200,13 @@ jobs:
         if: steps.codebook.outcome == 'failure'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          OPEN_COUNT=$(gh issue list --label codebook-error --state open --json number --jq length)
-          if [ "$OPEN_COUNT" -eq 0 ]; then
-            gh issue create \
-              --title "Codebook inconsistency detected ($(date -u +%Y-%m-%d))" \
-              --label codebook-error \
-              --body-file /tmp/codebook_report.txt
-          else
-            ISSUE_NUM=$(gh issue list --label codebook-error --state open --json number --jq '.[0].number')
-            gh issue comment "$ISSUE_NUM" --body-file /tmp/codebook_report.txt
-          fi
+        run: bash .github/scripts/manage_issue.sh file codebook-error "Codebook inconsistency detected ($(date -u +%Y-%m-%d))" /tmp/codebook_report.txt
 
       - name: Close open codebook-error issue if all clear
         if: steps.codebook.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          OPEN_COUNT=$(gh issue list --label codebook-error --state open --json number --jq length)
-          if [ "$OPEN_COUNT" -gt 0 ]; then
-            ISSUE_NUM=$(gh issue list --label codebook-error --state open --json number --jq '.[0].number')
-            gh issue comment "$ISSUE_NUM" --body "Codebook check passed on $(date -u +%Y-%m-%d) — closing."
-            gh issue close "$ISSUE_NUM"
-          fi
+        run: bash .github/scripts/manage_issue.sh close codebook-error "Codebook check passed on $(date -u +%Y-%m-%d) — closing."
 
       - name: Check for stale manifest entries
         # Flags manifest classes that are no longer in diagnostics_{lang}.yaml.
@@ -268,29 +221,13 @@ jobs:
         if: steps.stale_manifest.outcome == 'failure'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          OPEN_COUNT=$(gh issue list --label stale-manifest --state open --json number --jq length)
-          if [ "$OPEN_COUNT" -eq 0 ]; then
-            gh issue create \
-              --title "Stale manifest entries detected ($(date -u +%Y-%m-%d))" \
-              --label stale-manifest \
-              --body-file /tmp/stale_manifest.txt
-          else
-            ISSUE_NUM=$(gh issue list --label stale-manifest --state open --json number --jq '.[0].number')
-            gh issue comment "$ISSUE_NUM" --body-file /tmp/stale_manifest.txt
-          fi
+        run: bash .github/scripts/manage_issue.sh file stale-manifest "Stale manifest entries detected ($(date -u +%Y-%m-%d))" /tmp/stale_manifest.txt
 
       - name: Close open stale-manifest issue if all clear
         if: steps.stale_manifest.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          OPEN_COUNT=$(gh issue list --label stale-manifest --state open --json number --jq length)
-          if [ "$OPEN_COUNT" -gt 0 ]; then
-            ISSUE_NUM=$(gh issue list --label stale-manifest --state open --json number --jq '.[0].number')
-            gh issue comment "$ISSUE_NUM" --body "Stale manifest entries resolved on $(date -u +%Y-%m-%d) — closing."
-            gh issue close "$ISSUE_NUM"
-          fi
+        run: bash .github/scripts/manage_issue.sh close stale-manifest "Stale manifest entries resolved on $(date -u +%Y-%m-%d) — closing."
 
       - name: Run integrity check
         # Validates planar TSV structure and analysis module consistency —
@@ -304,29 +241,13 @@ jobs:
         if: steps.integrity.outcome == 'failure'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          OPEN_COUNT=$(gh issue list --label integrity-error --state open --json number --jq length)
-          if [ "$OPEN_COUNT" -eq 0 ]; then
-            gh issue create \
-              --title "Integrity check failed ($(date -u +%Y-%m-%d))" \
-              --label integrity-error \
-              --body-file /tmp/integrity_report.txt
-          else
-            ISSUE_NUM=$(gh issue list --label integrity-error --state open --json number --jq '.[0].number')
-            gh issue comment "$ISSUE_NUM" --body-file /tmp/integrity_report.txt
-          fi
+        run: bash .github/scripts/manage_issue.sh file integrity-error "Integrity check failed ($(date -u +%Y-%m-%d))" /tmp/integrity_report.txt
 
       - name: Close open integrity-error issue if all clear
         if: steps.integrity.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          OPEN_COUNT=$(gh issue list --label integrity-error --state open --json number --jq length)
-          if [ "$OPEN_COUNT" -gt 0 ]; then
-            ISSUE_NUM=$(gh issue list --label integrity-error --state open --json number --jq '.[0].number')
-            gh issue comment "$ISSUE_NUM" --body "Integrity check passed on $(date -u +%Y-%m-%d) — closing."
-            gh issue close "$ISSUE_NUM"
-          fi
+        run: bash .github/scripts/manage_issue.sh close integrity-error "Integrity check passed on $(date -u +%Y-%m-%d) — closing."
 
       - name: Regenerate snapshots
         # Gap 4 (#121): if: always() ensures snapshots are regenerated even when
@@ -395,29 +316,14 @@ jobs:
           echo '```' >> "$BODY_FILE"
           cat /tmp/overwritten_files.txt >> "$BODY_FILE"
           echo '```' >> "$BODY_FILE"
-          OPEN_COUNT=$(gh issue list --label data-overwrite --state open --json number --jq length)
-          if [ "$OPEN_COUNT" -eq 0 ]; then
-            gh issue create \
-              --title "Coordinator data may have been overwritten by data-refresh ($(date -u +%Y-%m-%d))" \
-              --label data-overwrite \
-              --body-file "$BODY_FILE"
-          else
-            ISSUE_NUM=$(gh issue list --label data-overwrite --state open --json number --jq '.[0].number')
-            gh issue comment "$ISSUE_NUM" --body-file "$BODY_FILE"
-          fi
+          bash .github/scripts/manage_issue.sh file data-overwrite "Coordinator data may have been overwritten by data-refresh ($(date -u +%Y-%m-%d))" "$BODY_FILE"
           rm -f "$BODY_FILE"
 
       - name: Close open data-overwrite issue if all clear
         if: steps.overwrite_check.outputs.overwrite == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          OPEN_COUNT=$(gh issue list --label data-overwrite --state open --json number --jq length)
-          if [ "$OPEN_COUNT" -gt 0 ]; then
-            ISSUE_NUM=$(gh issue list --label data-overwrite --state open --json number --jq '.[0].number')
-            gh issue comment "$ISSUE_NUM" --body "No coordinator data overwritten on $(date -u +%Y-%m-%d) — closing."
-            gh issue close "$ISSUE_NUM"
-          fi
+        run: bash .github/scripts/manage_issue.sh close data-overwrite "No coordinator data overwritten on $(date -u +%Y-%m-%d) — closing."
 
       - name: Commit and push planars snapshot changes
         # Gap 4 (#121): if: always() ensures snapshots are committed even when
@@ -467,29 +373,13 @@ jobs:
         if: steps.drift.outcome == 'failure'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          OPEN_COUNT=$(gh issue list --label sheet-drift --state open --json number --jq length)
-          if [ "$OPEN_COUNT" -eq 0 ]; then
-            gh issue create \
-              --title "Sheet drift detected — update-sheets --apply needs review ($(date -u +%Y-%m-%d))" \
-              --label sheet-drift \
-              --body-file /tmp/sheet_drift.txt
-          else
-            ISSUE_NUM=$(gh issue list --label sheet-drift --state open --json number --jq '.[0].number')
-            gh issue comment "$ISSUE_NUM" --body-file /tmp/sheet_drift.txt
-          fi
+        run: bash .github/scripts/manage_issue.sh file sheet-drift "Sheet drift detected — update-sheets --apply needs review ($(date -u +%Y-%m-%d))" /tmp/sheet_drift.txt
 
       - name: Close open drift issue if all clear
         if: steps.drift.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          OPEN_COUNT=$(gh issue list --label sheet-drift --state open --json number --jq length)
-          if [ "$OPEN_COUNT" -gt 0 ]; then
-            ISSUE_NUM=$(gh issue list --label sheet-drift --state open --json number --jq '.[0].number')
-            gh issue comment "$ISSUE_NUM" --body "Sheet drift resolved on $(date -u +%Y-%m-%d) — closing."
-            gh issue close "$ISSUE_NUM"
-          fi
+        run: bash .github/scripts/manage_issue.sh close sheet-drift "Sheet drift resolved on $(date -u +%Y-%m-%d) — closing."
 
       - name: Annotation scope summary
         # Informational: count languages, classes, and constructions from

@@ -26,6 +26,7 @@ Authentication: same OAuth2 setup as generate_sheets.py.
 """
 from __future__ import annotations
 
+import csv
 import json
 import shutil
 import sys
@@ -33,12 +34,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+import yaml as _yaml
+
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 MANIFEST_ARCHIVES = ROOT / "manifest_archives"
 
-from . import make_forms as _mf
-from .make_forms import _read_diagnostics_for_language
 from .drive import (
     _get_clients,
     _load_manifest_from_drive,
@@ -123,16 +124,23 @@ def _archive_drive_sheet(
 # ---------------------------------------------------------------------------
 
 def _active_classes(lang_id: str) -> set[str]:
-    """Return the set of class names currently active in diagnostics_{lang_id}.tsv."""
+    """Return the set of class names currently active for lang_id.
+
+    Reads diagnostics_{lang_id}.yaml preferentially; falls back to .tsv if
+    no YAML exists. Returns an empty set if neither file is present.
+    """
     planar_input = CODED_DATA / lang_id / "planar_input"
-    if not planar_input.exists():
-        return set()
-    _mf.DATA_DIR = str(planar_input)
-    try:
-        rows = _read_diagnostics_for_language(lang_id)
-    except Exception:
-        return set()
-    return {class_name for class_name, _, _, _ in rows}
+    yaml_path = planar_input / f"diagnostics_{lang_id}.yaml"
+    tsv_path  = planar_input / f"diagnostics_{lang_id}.tsv"
+    if yaml_path.exists():
+        with open(yaml_path, encoding="utf-8") as f:
+            data = _yaml.safe_load(f)
+        return set((data or {}).get("classes", {}).keys())
+    if tsv_path.exists():
+        with open(tsv_path, encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f, delimiter="\t")
+            return {row["Class"] for row in reader if row.get("Class")}
+    return set()
 
 
 def _find_stale(manifest: dict) -> Dict[str, List[str]]:
