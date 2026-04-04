@@ -334,9 +334,10 @@ python -m coding prune-manifest --apply --all    # same, skipping per-class conf
 For each retired class, `--apply`:
 1. Writes a timestamped manifest snapshot to `manifest_archives/` (local audit trail, gitignored)
 2. Archives each active TSV in `coded_data/{lang}/{class}/` to its `archive/` subdirectory
-3. Removes the class entry from the Drive manifest
+3. Moves the Drive spreadsheet into an `_archived/` subfolder inside the language's Drive folder
+4. Removes the class entry from the Drive manifest
 
-The retired Google Sheets on Drive are not deleted. Skipping this step after retiring a class causes `import-sheets` and the daily data-refresh to keep re-importing the old sheet indefinitely.
+The Drive sheet is moved, not deleted — annotation data is irreplaceable. A warning is shown if the sheet was edited within the last 14 days (possible unapplied annotation work). If the move fails for any reason, a warning is printed and the sheet can be moved manually from Drive; the manifest entry is still removed.
 
 If `prune-manifest` warns "this class contains annotation data — consider `--rename-class` instead", check whether the class was renamed rather than retired before proceeding.
 

@@ -8,17 +8,19 @@ TSVs to the retired class directory.
 
 Run from the repo root:
     python -m coding prune-manifest           # dry run — show what would change
-    python -m coding prune-manifest --apply   # archive TSVs and remove manifest entries
+    python -m coding prune-manifest --apply   # archive TSVs, move Drive sheet, remove manifest entry
     python -m coding prune-manifest --apply --all  # skip per-class confirmation prompts
 
 For each stale class (in manifest but not in diagnostics.tsv), --apply will:
   1. Write a timestamped manifest snapshot to manifest_archives/ (gitignored)
   2. Archive each active *.tsv in coded_data/{lang}/{class}/ to its archive/ subdirectory
   3. Remove the now-archived active TSV files
-  4. Remove the class entry from the Drive manifest and re-upload it
+  4. Move the Drive spreadsheet into an _archived/ subfolder in the language's Drive folder
+  5. Remove the class entry from the Drive manifest and re-upload it
 
-The retired Google Sheets on Drive are NOT deleted — they remain as a record.
-Only the manifest entry and local TSVs are cleaned up.
+The Drive sheet is moved to _archived/, not deleted — annotation data is irreplaceable.
+A recency warning is shown if the sheet was modified within the last 14 days, in case
+there is unapplied annotation work.
 
 Authentication: same OAuth2 setup as generate_sheets.py.
 """
@@ -27,7 +29,7 @@ from __future__ import annotations
 import json
 import shutil
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -43,8 +45,77 @@ from .drive import (
     _upload_planars_config,
     _load_drive_config,
     _save_drive_config,
+    _get_or_create_folder,
+    _move_to_folder,
+    _with_retry,
 )
 from .import_sheets import _archive_tsv
+
+
+_RECENCY_DAYS = 14  # warn if sheet was modified within this many days
+
+
+# ---------------------------------------------------------------------------
+# Drive sheet archival
+# ---------------------------------------------------------------------------
+
+def _archive_drive_sheet(
+    drive, lang_id: str, class_name: str, manifest: dict, apply: bool
+) -> bool:
+    """Move the Drive spreadsheet for a retired class into _archived/ in the language folder.
+
+    In dry-run mode prints what would happen; in apply mode performs the move.
+    Returns True if the sheet was (or would be) archived.
+    """
+    lang_data = manifest.get(lang_id, {})
+    sheet_info = lang_data.get("sheets", {}).get(class_name, {})
+    spreadsheet_id = sheet_info.get("spreadsheet_id")
+    folder_id = lang_data.get("folder_id")
+
+    if not spreadsheet_id:
+        print(f"    no spreadsheet_id in manifest for {class_name} — skipping Drive archival")
+        return False
+    if not folder_id:
+        print(f"    no folder_id in manifest for {lang_id} — skipping Drive archival")
+        return False
+
+    if not apply:
+        ss_url = sheet_info.get("spreadsheet_url", spreadsheet_id)
+        print(f"    would move Drive sheet → _archived/  ({ss_url})")
+        return True
+
+    # Fetch sheet name and modification time for the recency check and display.
+    try:
+        meta = _with_retry(lambda: drive.files().get(
+            fileId=spreadsheet_id,
+            fields="name,modifiedTime",
+            supportsAllDrives=True,
+        ).execute())
+    except Exception as exc:
+        print(f"    WARNING: could not read sheet metadata for {class_name}: {exc}")
+        print(f"    Skipping Drive archival — remove the sheet manually if needed.")
+        return False
+
+    sheet_name = meta.get("name", spreadsheet_id)
+    modified_str = meta.get("modifiedTime", "")
+    if modified_str:
+        modified_dt = datetime.fromisoformat(modified_str.replace("Z", "+00:00"))
+        age_days = (datetime.now(timezone.utc) - modified_dt).days
+        if age_days < _RECENCY_DAYS:
+            print(
+                f"    WARNING: '{sheet_name}' was edited {age_days} day(s) ago — "
+                f"check for unapplied annotation work before proceeding."
+            )
+
+    try:
+        archived_folder_id = _get_or_create_folder(drive, "_archived", parent_id=folder_id)
+        _move_to_folder(drive, spreadsheet_id, archived_folder_id)
+        print(f"    archived Drive sheet: '{sheet_name}' → _archived/")
+        return True
+    except Exception as exc:
+        print(f"    WARNING: could not move Drive sheet for {class_name}: {exc}")
+        print(f"    Remove the sheet manually from Drive if needed.")
+        return False
 
 
 # ---------------------------------------------------------------------------
@@ -132,6 +203,7 @@ def main() -> None:
                 )
             else:
                 print(f"    no local TSVs for {class_name}/")
+            _archive_drive_sheet(drive, lang_id, class_name, manifest, apply=False)
             print(f"    would remove from manifest: {lang_id}/{class_name}")
         print()
 
@@ -166,6 +238,9 @@ def main() -> None:
 
             if not tsvs:
                 print(f"    no local TSVs to archive for {class_name}/")
+
+            # Move Drive sheet to _archived/ subfolder
+            _archive_drive_sheet(drive, lang_id, class_name, manifest, apply=True)
 
             # Remove from manifest
             del manifest[lang_id]["sheets"][class_name]
