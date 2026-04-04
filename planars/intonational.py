@@ -7,6 +7,7 @@ from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, loose_span, position_sets_from_element_mask
 
 _REQUIRED_CRITERIA = {"applies"}
+_QUALIFICATION_RULE_HASH = "3dd8fb51"
 
 
 def derive_intonational_domains(
@@ -39,6 +40,13 @@ def derive_intonational_domains(
     --------------------
     applies : y/n — whether the intonational pattern applies to this element's
               position. y = this position is within the intonational domain.
+
+    Qualification rule (mirrors diagnostic_classes.yaml)
+    ----------------------------------------------------
+    A position qualifies if it contains an element where applies=y. Complete
+    qualification: ALL elements in the position have applies=y. Partial
+    qualification: at least one element has applies=y. Returns four spans
+    (strict/loose × complete/partial).
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
     missing_data, complete_positions, partial_positions, and four span keys.

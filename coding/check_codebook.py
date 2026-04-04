@@ -5,16 +5,20 @@ Checks:
   2. Criterion names in diagnostics_{lang_id}.tsv are defined in diagnostic_criteria.yaml
   3. Chart span label keys match the keys returned by each derive function
   4. diagnostics_{lang_id}.tsv class names and required criteria match diagnostic_classes.yaml
+  5. qualification_rule hash sentinel and docstring presence in each analysis module
 
 Informational reports (not errors):
-  5. Schema stubs: classes in diagnostic_classes.yaml with no language coverage
-  6. Coverage matrix: language × class grid (✓ = active, - = not collected)
+  6. Schema stubs: classes in diagnostic_classes.yaml with no language coverage
+  7. Coverage matrix: language × class grid (✓ = active, - = not collected)
 
 Run:
     python -m coding check-codebook
 """
 from __future__ import annotations
 
+import hashlib
+import importlib
+import importlib.util
 import io
 import sys
 from pathlib import Path
@@ -287,6 +291,57 @@ def _check_chart_keys() -> List[str]:
     return errors
 
 
+def _check_qualification_rule_drift(diag_classes: dict) -> List[str]:
+    """Check qualification_rule sentinel hashes and docstring presence in analysis modules.
+
+    For each class in diagnostic_classes.yaml with a qualification_rule:
+    - _QUALIFICATION_RULE_HASH present and matching expected hash: OK
+    - _QUALIFICATION_RULE_HASH present but wrong: ERROR — YAML changed without module review
+    - _QUALIFICATION_RULE_HASH missing: warning (module not yet tagged)
+    - qualification_rule text not found in module source: warning (docstring drift)
+
+    Hash is SHA-256[:8] of the whitespace-normalised qualification_rule text.
+    """
+    errors = []
+    for name, cls in diag_classes.items():
+        qr = cls.get("qualification_rule", "")
+        if not qr:
+            continue
+        normalized_qr = " ".join(qr.split())
+        expected_hash = hashlib.sha256(normalized_qr.encode()).hexdigest()[:8]
+
+        try:
+            mod = importlib.import_module(f"planars.{name}")
+        except ImportError:
+            errors.append(f"[{name}] could not import planars.{name}")
+            continue
+
+        actual_hash = getattr(mod, "_QUALIFICATION_RULE_HASH", None)
+        if actual_hash is None:
+            print(f"  \u26a0  [{name}] _QUALIFICATION_RULE_HASH not set "
+                  f"(expected: {expected_hash!r})")
+        elif actual_hash != expected_hash:
+            errors.append(
+                f"[{name}] _QUALIFICATION_RULE_HASH mismatch: module has {actual_hash!r}, "
+                f"YAML expects {expected_hash!r} — qualification_rule changed; "
+                f"review module logic and update hash"
+            )
+
+        spec = importlib.util.find_spec(f"planars.{name}")
+        if spec and spec.origin:
+            try:
+                source_normalized = " ".join(
+                    Path(spec.origin).read_text(encoding="utf-8").split()
+                )
+                if normalized_qr not in source_normalized:
+                    print(f"  \u26a0  [{name}] qualification_rule text not found in module "
+                          f"source — add a 'Qualification rule' docstring section")
+            except Exception:
+                pass
+
+    return errors
+
+
 def _report_needs_review(codebook: dict, diag_classes: dict) -> int:
     """Print a summary of [NEEDS REVIEW] and [PLACEHOLDER] entries. Returns count."""
     flagged = []
@@ -384,13 +439,14 @@ def _report_coverage_matrix(
 def main() -> None:
     """Entry point for `python -m coding check-codebook`.
 
-    Runs four consistency checks (exit 1 if any fail) then two informational reports:
+    Runs five consistency checks (exit 1 if any fail) then two informational reports:
     1. Every _REQUIRED_CRITERIA criterion in each analysis module is in diagnostic_criteria.yaml.
     2. Every criterion name in diagnostics_{lang_id}.tsv files is in diagnostic_criteria.yaml.
     3. Every span key referenced in charts.py exists in the corresponding derive result.
     4. diagnostics_{lang_id}.tsv class names and required criteria match diagnostic_classes.yaml.
-    5. Schema stubs: classes with no language coverage (ready-to-paste TSV rows).
-    6. Coverage matrix: language × class grid.
+    5. qualification_rule hash sentinel and docstring presence in each analysis module.
+    6. Schema stubs: classes with no language coverage (ready-to-paste TSV rows).
+    7. Coverage matrix: language × class grid.
     """
     codebook = _load_codebook()
     diag_classes = _load_diagnostic_classes()
@@ -408,6 +464,9 @@ def main() -> None:
     print("4. Checking diagnostics_{lang_id}.tsv criteria vs diagnostic_classes.yaml ...")
     all_errors.extend(_check_diagnostics_vs_classes(diag_classes))
 
+    print("5. Checking qualification rule drift (hash sentinel + docstring) ...")
+    all_errors.extend(_check_qualification_rule_drift(diag_classes))
+
     print()
     _report_needs_review(codebook, diag_classes)
 
@@ -415,11 +474,11 @@ def main() -> None:
     lang_ids = sorted({l for langs in coverage.values() for l in langs})
 
     print()
-    print("5. Schema stubs (classes with no language coverage):")
+    print("6. Schema stubs (classes with no language coverage):")
     _report_schema_stubs(diag_classes, coverage)
 
     print()
-    print("6. Coverage matrix:")
+    print("7. Coverage matrix:")
     _report_coverage_matrix(diag_classes, coverage, lang_ids)
 
     print()

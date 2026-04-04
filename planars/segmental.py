@@ -9,6 +9,7 @@ from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, loose_span, position_sets_from_element_mask
 
 _REQUIRED_CRITERIA = {"aspirated"}
+_QUALIFICATION_RULE_HASH = "8a46562f"
 
 
 def derive_segmental_domains(
@@ -38,6 +39,14 @@ def derive_segmental_domains(
     A position is partial if AT LEAST ONE element is (aspirated=y).
 
     Four span variants (strict/loose × complete/partial) = 4 spans total.
+
+    Qualification rule (mirrors diagnostic_classes.yaml)
+    ----------------------------------------------------
+    Positive-qualification path (aspirated criterion):
+      A position qualifies if it contains an element where aspirated=y.
+      Complete: ALL elements in the position have aspirated=y.
+      Partial: at least one element has aspirated=y.
+      Returns four spans (strict/loose × complete/partial).
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
     missing_data, complete_positions, partial_positions, and four span keys.

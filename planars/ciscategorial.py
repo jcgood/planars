@@ -8,6 +8,8 @@ import pandas as pd
 from planars.io import load_filled_tsv, _TRAILING_COLS
 from planars.spans import fmt_span, strict_span, loose_span
 
+_QUALIFICATION_RULE_HASH = "eefbef19"
+
 
 def derive_v_ciscategorial_fractures(
     tsv_path: Optional[Path] = None,
@@ -18,6 +20,13 @@ def derive_v_ciscategorial_fractures(
     """Derive v-ciscategorial fracture spans from a filled ciscategorial TSV.
 
     A position qualifies if elements have V-combines=y and all other params=n.
+
+    Qualification rule (mirrors diagnostic_classes.yaml)
+    ----------------------------------------------------
+    An element is v-ciscategorial if V-combines=y AND N-combines=n AND A-combines=n
+    (and any further combine parameters are also n). A position is complete if ALL
+    its elements are v-ciscategorial. A position is partial if AT LEAST ONE element
+    is v-ciscategorial.
 
     Returns a dict with:
       - keystone_position

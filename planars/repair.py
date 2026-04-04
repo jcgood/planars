@@ -7,6 +7,7 @@ from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, loose_span, position_sets_from_element_mask
 
 _REQUIRED_CRITERIA = {"restart"}
+_QUALIFICATION_RULE_HASH = "29dbc84b"
 
 
 def derive_repair_domains(
@@ -36,6 +37,12 @@ def derive_repair_domains(
     restart : y/n — whether this element's position is within the repair
               domain. y = an error at this position triggers restart from
               the left edge of the domain.
+
+    Qualification rule (mirrors diagnostic_classes.yaml)
+    ----------------------------------------------------
+    A position qualifies if it contains an element where restart=y. Complete
+    qualification: ALL elements in the position have restart=y. Partial
+    qualification: at least one element has restart=y.
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
     missing_data, complete_positions, partial_positions, and four span keys.

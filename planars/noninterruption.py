@@ -7,6 +7,7 @@ from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, position_sets_from_element_mask
 
 _REQUIRED_CRITERIA = {"free", "multiple"}
+_QUALIFICATION_RULE_HASH = "92149718"
 
 
 def derive_noninterruption_domains(
@@ -26,6 +27,13 @@ def derive_noninterruption_domains(
     Single-free domain — positions with no multiply-occurring free elements:
       complete: ALL elements have free=n OR (free=y, multiple=n)
       partial:  >=1 element has free=n OR (free=y, multiple=n)
+
+    Qualification rule (mirrors diagnostic_classes.yaml)
+    ----------------------------------------------------
+    Two domain types, each with complete and partial position sets:
+      no-free domain:     element qualifies if free=n (bound).
+      single-free domain: element qualifies if free=n OR (free=y AND multiple=n).
+    Only strict spans are computed for non-interruption (no loose span).
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
     missing_data, and positions and spans for each of the four combinations.

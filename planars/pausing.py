@@ -7,6 +7,7 @@ from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, loose_span, position_sets_from_element_mask
 
 _REQUIRED_CRITERIA = {"pause_domain"}
+_QUALIFICATION_RULE_HASH = "4fe4d821"
 
 
 def derive_pausing_domains(
@@ -39,6 +40,12 @@ def derive_pausing_domains(
     pause_domain : y/n — whether this element's position is within the
                    pause domain. y = elements here cannot be separated from
                    adjacent positions by a prosodic pause.
+
+    Qualification rule (mirrors diagnostic_classes.yaml)
+    ----------------------------------------------------
+    A position qualifies if it contains an element where pause_domain=y.
+    Complete qualification: ALL elements in the position have pause_domain=y.
+    Partial qualification: at least one element has pause_domain=y.
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
     missing_data, complete_positions, partial_positions, and four span keys.

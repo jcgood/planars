@@ -7,6 +7,7 @@ from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, loose_span, position_sets_from_element_mask
 
 _REQUIRED_CRITERIA = {"biunique"}
+_QUALIFICATION_RULE_HASH = "bc5aee58"
 
 
 def derive_biuniqueness_domains(
@@ -43,6 +44,15 @@ def derive_biuniqueness_domains(
                (one-form / one-meaning) relationship. n = the element is one
                of the pieces of a circumfix or extended exponent set, and
                therefore deviates from strict biuniqueness.
+
+    Qualification rule (mirrors diagnostic_classes.yaml)
+    ----------------------------------------------------
+    A position qualifies if it contains an element where biunique=n. Complete
+    qualification: ALL elements in the position have biunique=n. Partial
+    qualification: at least one element has biunique=n. The loose partial span
+    is the most semantically informative: it extends from the position of the
+    prefixal piece to the position of the suffixal piece, directly identifying
+    the extended exponent domain.
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
     missing_data, piece_complete_positions, piece_partial_positions, and four span keys.

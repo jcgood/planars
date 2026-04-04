@@ -7,6 +7,7 @@ from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, position_sets_from_element_mask
 
 _REQUIRED_CRITERIA = {"permutable", "scopal"}
+_QUALIFICATION_RULE_HASH = "c14de1a8"
 
 
 def derive_nonpermutability_domains(
@@ -39,6 +40,28 @@ def derive_nonpermutability_domains(
     scopal     : y/n — if permutable=y, whether variable ordering is associated with
                  a difference in semantic scope. y = scopal (qualifies for flexible
                  domain only); n = free permutation (does not qualify for either domain).
+
+    Qualification rule (mirrors diagnostic_classes.yaml)
+    ----------------------------------------------------
+    Two domain types, each with complete and partial position sets = 4 strict spans.
+    Both use strict span only (no loose span) — a non-permutable domain is inherently
+    contiguous.
+    Complete vs. partial:
+      partial:  any element in the position satisfies the qualification rule
+                (easier to qualify → larger domain).
+      complete: all elements in the position satisfy the qualification rule
+                (harder to qualify → smaller domain).
+
+    Strict non-permutability — blocked by: permutable=y AND scopal=n.
+      Positions where ALL (complete) or ANY (partial) elements have permutable=n.
+      Identifies spans with absolutely fixed ordering under all circumstances.
+
+    Flexible non-permutability — blocked by: permutable=y AND scopal=n.
+      Positions where ALL (complete) or ANY (partial) elements have
+      permutable=n OR (permutable=y AND scopal=y). Extends the strict domain
+      to include positions whose elements can permute but only with a scopal
+      interpretation difference (fixed vs. scope-varying ordering counts
+      as "non-permutable" under this interpretation).
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
     missing_data, and positions and spans for each of the four combinations.

@@ -7,6 +7,7 @@ from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, loose_span, position_sets_from_element_mask
 
 _REQUIRED_CRITERIA = {"substitutable"}
+_QUALIFICATION_RULE_HASH = "8dd2b0d4"
 
 
 def derive_proform_domains(
@@ -39,6 +40,12 @@ def derive_proform_domains(
     substitutable : y/n — whether a proform can replace this element / whether
                     this element's position is within the proform substitution
                     domain.
+
+    Qualification rule (mirrors diagnostic_classes.yaml)
+    ----------------------------------------------------
+    A position qualifies if it contains an element where substitutable=y. Complete
+    qualification: ALL elements have substitutable=y. Partial qualification: at
+    least one element has substitutable=y.
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
     missing_data, complete_positions, partial_positions, and four span keys.

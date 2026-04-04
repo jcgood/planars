@@ -7,6 +7,7 @@ from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, loose_span, position_sets_from_element_mask
 
 _REQUIRED_CRITERIA = {"idiomatic"}
+_QUALIFICATION_RULE_HASH = "2794fd02"
 
 
 def derive_idiom_domains(
@@ -38,6 +39,12 @@ def derive_idiom_domains(
     idiomatic : y/n — whether this element participates in an idiomatic
                 (non-compositional) combination. y = this element is part
                 of an idiomatic unit.
+
+    Qualification rule (mirrors diagnostic_classes.yaml)
+    ----------------------------------------------------
+    A position qualifies if it contains an element where idiomatic=y. Complete
+    qualification: ALL elements have idiomatic=y. Partial qualification: at
+    least one element has idiomatic=y.
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
     missing_data, complete_positions, partial_positions, and four span keys.

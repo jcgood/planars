@@ -9,6 +9,7 @@ from planars.io import load_filled_tsv
 from planars.spans import blocked_span, fmt_span, position_sets_from_element_mask
 
 _REQUIRED_CRITERIA = {"accented", "obligatory", "independence"}
+_QUALIFICATION_RULE_HASH = "56e9aeb2"
 
 
 def derive_metrical_domains(
@@ -47,6 +48,23 @@ def derive_metrical_domains(
     The keystone always remains part of the domain. Its criterion values
     participate in blocking checks so the ROOT position can itself trigger a
     boundary, while always being included in the span.
+
+    Qualification rule (mirrors diagnostic_classes.yaml)
+    ----------------------------------------------------
+    Blocked-span path (accented/obligatory/independence criteria):
+      Expand from keystone in each direction, stopping just before the first
+      position where the blocking condition holds.
+
+      Minimal metrical domain — blocked by: accented ∈ {y, both} AND independence = y.
+        An independently-accented element begins a new metrical domain; the minimal
+        domain ends just before it.
+
+      Maximal metrical domain — blocked by: obligatory = y AND independence = y.
+        An obligatorily-independent element creates a hard boundary.
+
+      The keystone always remains part of the domain. Its criterion values
+      participate in blocking checks but it is never excluded from the span.
+      Returns minimal/maximal × partial/complete = 4 blocked spans.
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
     missing_data, and four span keys (minimal/maximal × partial/complete).

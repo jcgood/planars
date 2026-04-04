@@ -7,6 +7,7 @@ from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, loose_span, position_sets_from_element_mask
 
 _REQUIRED_CRITERIA = {"free"}
+_QUALIFICATION_RULE_HASH = "101625a7"
 
 
 def derive_free_occurrence_spans(
@@ -36,6 +37,21 @@ def derive_free_occurrence_spans(
            independent of the verbal head. Reuses the same criterion as
            noninterruption.py; if both analyses are run, a single annotation
            sheet with both `free` and `multiple` columns covers both.
+
+    Qualification rule (mirrors diagnostic_classes.yaml)
+    ----------------------------------------------------
+    The free occurrence domain = positions where free=y. Four span variants
+    (strict/loose × complete/partial) = 4 spans total.
+      complete: ALL elements in the position have free=y.
+      partial:  AT LEAST ONE element in the position has free=y.
+    Both strict and loose spans are computed (unlike noninterruption, which uses
+    strict-only, free occurrence domains need not be contiguous).
+    Note on minimal vs. maximal free occurrence (Tallman et al. 2024, ch. 1): The
+    Introduction distinguishes the minimal free occurrence domain (the smallest span
+    that can stand as an independent utterance) from the maximal free occurrence domain
+    (the largest such span). In the planar framework these correspond to the strict
+    complete span (conservative/minimal) and the loose partial span
+    (liberal/maximal) respectively. No additional criterion is needed.
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
     missing_data, complete_positions, partial_positions, and four span keys.

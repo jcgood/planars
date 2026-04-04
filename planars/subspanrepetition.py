@@ -7,6 +7,7 @@ from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, loose_span, position_sets_from_element_mask
 
 _REQUIRED_CRITERIA = {"widescope_left", "widescope_right", "fillable_botheither_conjunct"}
+_QUALIFICATION_RULE_HASH = "82a6a7c2"
 
 # Maps each span category name to the boolean flag column computed on data_df.
 # The flag column names are added to the DataFrame inside derive_subspanrepetition_spans.
@@ -33,6 +34,17 @@ def derive_subspanrepetition_spans(
       maximum_widescope_right — widescope_right == 'y'
       maximum_narrowscope_left  — widescope_left == 'n'
       maximum_narrowscope_right — widescope_right == 'n'
+
+    Qualification rule (mirrors diagnostic_classes.yaml)
+    ----------------------------------------------------
+    Five span categories are derived:
+      maximum_fillable:          fillable_botheither_conjunct=y
+      maximum_widescope_left:    widescope_left=y
+      maximum_widescope_right:   widescope_right=y
+      maximum_narrowscope_left:  widescope_left=n  (element lacks wide scope left)
+      maximum_narrowscope_right: widescope_right=n (element lacks wide scope right)
+    Each category produces complete and partial position sets and four spans
+    (strict/loose x complete/partial).
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
     missing_data, and for each category: complete_positions, partial_positions,
