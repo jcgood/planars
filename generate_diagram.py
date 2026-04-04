@@ -1,16 +1,24 @@
 #!/usr/bin/env python3
-"""Generate a Graphviz diagram of the planars analysis class taxonomy.
+"""Generate Graphviz diagrams of planars schema structure and analysis taxonomy.
 
-Shows all analysis classes grouped by domain type, with their diagnostic
-criteria listed inside each node, and the languages that instantiate each
-class (with construction names for construction-specific classes).
+Two diagram types are available:
+
+  taxonomy (default)
+    All analysis classes grouped by domain type, with diagnostic criteria
+    listed inside each node, and language instances connected on the right
+    with construction names on edges for construction-specific classes.
+
+  schema-map
+    The four YAML schema files, their roles, cross-references, and how the
+    per-language diagnostics files derive from them.
 
 Run from the repo root:
-    python generate_diagram.py              # print DOT source to stdout
-    python generate_diagram.py out.dot      # write DOT source
-    python generate_diagram.py out.svg      # render to SVG  (requires dot)
-    python generate_diagram.py out.pdf      # render to PDF  (requires dot)
-    python generate_diagram.py out.png      # render to PNG  (requires dot)
+    python generate_diagram.py                          # taxonomy → stdout
+    python generate_diagram.py out.svg                  # taxonomy → SVG (requires dot)
+    python generate_diagram.py out.pdf                  # taxonomy → PDF
+    python generate_diagram.py out.dot                  # taxonomy → DOT source
+    python generate_diagram.py --diagram schema-map out.svg   # schema map → SVG
+    python generate_diagram.py --diagram schema-map           # schema map → stdout
 """
 from __future__ import annotations
 
@@ -251,21 +259,167 @@ def build_dot(classes: list[dict], instances: dict[str, list[dict]]) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Entry point
+# Schema-map diagram (diagram 2)
 # ---------------------------------------------------------------------------
 
-def main() -> None:
-    classes   = _load_classes()
-    instances = _load_language_instances()
-    dot_source = build_dot(classes, instances)
+def build_schema_map_dot() -> str:
+    """Return DOT source for the schema file relationships diagram.
 
-    if len(sys.argv) < 2:
+    Shows the four YAML schema files, their source-of-truth roles,
+    cross-references between them, and how the per-language diagnostics
+    files derive from / are validated against them.
+    """
+    _SCHEMA_BG     = "#e8f4f8"
+    _SCHEMA_BORDER = "#2a6496"
+    _LANG_BG       = "#fff8e1"
+    _LANG_BORDER   = "#c07800"
+    _DERIVED_BG    = "#f3f3f3"
+    _DERIVED_BORDER = "#888888"
+
+    def _schema_node(node_id: str, title: str, items: list[str]) -> str:
+        rows = [
+            f'<TR><TD BGCOLOR="{_SCHEMA_BORDER}" ALIGN="CENTER" CELLPADDING="5">'
+            f'<FONT COLOR="white"><B>{title}</B></FONT></TD></TR>',
+        ]
+        for item in items:
+            rows.append(
+                f'<TR><TD ALIGN="LEFT" CELLPADDING="4" BGCOLOR="{_SCHEMA_BG}">'
+                f'<FONT POINT-SIZE="10">{item}</FONT></TD></TR>'
+            )
+        inner = "".join(rows)
+        label = f'<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0">{inner}</TABLE>>'
+        return f'    {node_id} [shape=none, margin=0, label={label}];'
+
+    def _lang_node(node_id: str, title: str, subtitle: str, bg: str, border: str) -> str:
+        label = (
+            f'<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0">'
+            f'<TR><TD BGCOLOR="{border}" ALIGN="CENTER" CELLPADDING="5">'
+            f'<FONT COLOR="white"><B>{title}</B></FONT></TD></TR>'
+            f'<TR><TD ALIGN="CENTER" CELLPADDING="4" BGCOLOR="{bg}">'
+            f'<FONT POINT-SIZE="10"><I>{subtitle}</I></FONT></TD></TR>'
+            f'</TABLE>>'
+        )
+        return f'    {node_id} [shape=none, margin=0, label={label}];'
+
+    lines: list[str] = []
+    lines.append("digraph schema_map {")
+    lines.append('    graph [rankdir=LR, ranksep=1.8, nodesep=0.5, pad=0.5,')
+    lines.append('           fontname="Helvetica",')
+    lines.append('           label="Planars Schema File Relationships",')
+    lines.append('           labelloc=t, fontsize=15];')
+    lines.append('    node  [fontname="Helvetica", fontsize=11];')
+    lines.append('    edge  [fontname="Helvetica", fontsize=9];')
+    lines.append("")
+
+    # ---- Schema file cluster ------------------------------------------------
+    lines.append("    subgraph cluster_schemas {")
+    lines.append('        label="schemas/"; style=filled;')
+    lines.append(f'        fillcolor="{_SCHEMA_BG}"; color="{_SCHEMA_BORDER}"; penwidth=2.0;')
+    lines.append('        fontname="Helvetica-Bold"; fontsize=12; margin=20;')
+    lines.append("")
+    lines.append(_schema_node("dc_classes", "diagnostic_classes.yaml", [
+        "source of truth for:",
+        "· class taxonomy (name, domain_type)",
+        "· applicability (universal / conditional)",
+        "· required + optional criteria per class",
+        "· qualification rules",
+        "· collection_required flag",
+    ]))
+    lines.append(_schema_node("dc_criteria", "diagnostic_criteria.yaml", [
+        "source of truth for:",
+        "· criterion definitions",
+        "· valid values per criterion",
+        "· linguistic descriptions",
+    ]))
+    lines.append(_schema_node("planar_yaml", "planar.yaml", [
+        "source of truth for:",
+        "· structural column definitions",
+        "· element conventions",
+        "· trailing_columns list",
+    ]))
+    lines.append(_schema_node("terms_yaml", "terms.yaml", [
+        "source of truth for:",
+        "· analytical term definitions",
+        "· chart label glossary",
+    ]))
+    lines.append("    }")
+    lines.append("")
+
+    # ---- Per-language files cluster -----------------------------------------
+    lines.append("    subgraph cluster_lang {")
+    lines.append('        label="coded_data/{lang_id}/planar_input/";')
+    lines.append(f'        style=filled; fillcolor="{_LANG_BG}";')
+    lines.append(f'        color="{_LANG_BORDER}"; penwidth=2.0;')
+    lines.append('        fontname="Helvetica-Bold"; fontsize=12; margin=20;')
+    lines.append("")
+    lines.append(_lang_node("diag_yaml", "diagnostics_{lang}.yaml",
+                            "coordinator-edited source of truth", _LANG_BG, _LANG_BORDER))
+    lines.append(_lang_node("diag_tsv", "diagnostics_{lang}.tsv",
+                            "derived artifact (never hand-edited)", _DERIVED_BG, _DERIVED_BORDER))
+    lines.append("    }")
+    lines.append("")
+
+    # ---- Cross-references within schemas ------------------------------------
+    lines.append("    // Cross-references between schema files")
+    lines.append(
+        '    dc_classes -> dc_criteria [label="required_criteria\\nreferences", '
+        'color="#2a6496", fontcolor="#2a6496", style=dashed];'
+    )
+    lines.append("")
+
+    # ---- Schema → language derivation / validation --------------------------
+    lines.append("    // Schema files → per-language diagnostics")
+    lines.append(
+        '    diag_yaml -> diag_tsv [label="sync-diagnostics-yaml\\n--apply", '
+        'color="#c07800", fontcolor="#c07800", penwidth=1.5];'
+    )
+    lines.append(
+        '    dc_classes -> diag_tsv [label="check-codebook\\nvalidates", '
+        'color="#888888", fontcolor="#888888", style=dashed];'
+    )
+    lines.append(
+        '    dc_criteria -> diag_tsv [label="check-codebook\\nvalidates", '
+        'color="#888888", fontcolor="#888888", style=dashed];'
+    )
+    lines.append(
+        '    dc_classes -> diag_yaml [label="class names\\nmust exist here", '
+        'color="#888888", fontcolor="#888888", style=dotted];'
+    )
+    lines.append("")
+
+    # ---- Legend -------------------------------------------------------------
+    lines.append("    subgraph cluster_legend {")
+    lines.append('        label="Legend"; style=filled; fillcolor="#f8f8f8";')
+    lines.append('        color="#cccccc"; penwidth=1.0; fontsize=10; margin=10; rank=sink;')
+    lines.append(f'        _leg_s [shape=box, style=filled, fillcolor="{_SCHEMA_BG}", '
+                 f'color="{_SCHEMA_BORDER}", label="Schema file", fontsize=9];')
+    lines.append(f'        _leg_l [shape=box, style=filled, fillcolor="{_LANG_BG}", '
+                 f'color="{_LANG_BORDER}", label="Per-language file\\n(coordinator-edited)", fontsize=9];')
+    lines.append(f'        _leg_d [shape=box, style=filled, fillcolor="{_DERIVED_BG}", '
+                 f'color="{_DERIVED_BORDER}", label="Per-language file\\n(derived artifact)", fontsize=9];')
+    lines.append('        _leg_sync  [shape=point, width=0]; _leg_val  [shape=point, width=0];')
+    lines.append('        _leg_s -> _leg_l -> _leg_d [style=invis];')
+    lines.append('        _leg_sync -> _leg_val [label="generates", color="#c07800", fontcolor="#c07800", fontsize=8];')
+    lines.append('        _leg_sync2 -> _leg_val2 [label="validates", color="#888888", '
+                 'fontcolor="#888888", style=dashed, fontsize=8];')
+    lines.append('        _leg_sync [shape=point, width=0]; _leg_val [shape=point, width=0];')
+    lines.append('        _leg_sync2 [shape=point, width=0]; _leg_val2 [shape=point, width=0];')
+    lines.append("    }")
+
+    lines.append("}")
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Shared render helper
+# ---------------------------------------------------------------------------
+
+def _render(dot_source: str, out_path: Path | None) -> None:
+    if out_path is None:
         print(dot_source)
         return
 
-    out_path = Path(sys.argv[1])
-    suffix   = out_path.suffix.lower()
-
+    suffix = out_path.suffix.lower()
     if suffix == ".dot":
         out_path.write_text(dot_source, encoding="utf-8")
         print(f"DOT source written to {out_path}")
@@ -287,6 +441,37 @@ def main() -> None:
     raise SystemExit(
         f"Unsupported output format '{suffix}'. Use .dot, .svg, .pdf, or .png."
     )
+
+
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
+
+def main() -> None:
+    args = sys.argv[1:]
+
+    # Parse --diagram flag
+    diagram = "taxonomy"
+    if "--diagram" in args:
+        idx = args.index("--diagram")
+        if idx + 1 >= len(args):
+            raise SystemExit("--diagram requires an argument: taxonomy | schema-map")
+        diagram = args[idx + 1]
+        args = args[:idx] + args[idx + 2:]
+
+    if diagram not in {"taxonomy", "schema-map"}:
+        raise SystemExit(f"Unknown diagram '{diagram}'. Choose: taxonomy | schema-map")
+
+    out_path = Path(args[0]) if args else None
+
+    if diagram == "taxonomy":
+        classes    = _load_classes()
+        instances  = _load_language_instances()
+        dot_source = build_dot(classes, instances)
+    else:
+        dot_source = build_schema_map_dot()
+
+    _render(dot_source, out_path)
 
 
 if __name__ == "__main__":

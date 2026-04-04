@@ -213,7 +213,11 @@ Run `lookup-lang` before `generate-sheets` when onboarding a new language.
 
 `render_codebook.py` at the repo root renders the schemas as human-readable Markdown (reads from all four schema files): `python render_codebook.py` (stdout) or `python render_codebook.py codebook.md` (file).
 
-`generate_diagram.py` at the repo root generates a Graphviz diagram of the analysis class taxonomy: classes grouped by domain type with diagnostic criteria listed inside each node, and language instances connected on the right with construction names on edges for construction-specific classes. Output: `python generate_diagram.py out.svg` (or `.pdf`, `.dot`, `.png`). Requires `dot` (Graphviz) to be installed.
+`generate_diagram.py` at the repo root generates Graphviz diagrams of the planars schema structure. Two diagram types are supported via `--diagram`:
+- `taxonomy` (default): analysis class taxonomy — classes grouped by domain type with diagnostic criteria listed inside each node, and language instances connected on the right with construction names on edges for construction-specific classes.
+- `schema-map`: schema file relationships — the four YAML schema files, their source-of-truth roles, cross-references between them, and how per-language diagnostics files derive from and are validated against them.
+
+Output: `python generate_diagram.py out.svg` (or `.pdf`, `.dot`, `.png`). Use `--diagram schema-map out.svg` for the schema map. Requires `dot` (Graphviz) to be installed.
 
 `Makefile` at the repo root provides short `make` aliases for all coordinator commands. Run `make help` for the full list. The venv must be activated before using `make`.
 
