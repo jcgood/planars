@@ -185,10 +185,41 @@ def test_keystone_active_absent_is_valid():
 
 
 # ---------------------------------------------------------------------------
-# Check 7: Glottocode format
+# Check 7: Glottocode format + verified check
 # ---------------------------------------------------------------------------
 
 def test_invalid_glottocode_format_is_warning():
     data = _valid_data("not_a_glottocode")
     warns = _warnings(data, "not_a_glottocode")
     assert any("Glottocode format" in w.message for w in warns)
+
+
+def test_glottolog_verified_via_languages_yaml_suppresses_advisory(tmp_path, monkeypatch):
+    import yaml
+    import coding.validate_diagnostics as vd
+
+    # Write a minimal languages.yaml with a glottolog.name entry
+    lang_yaml = tmp_path / "languages.yaml"
+    lang_yaml.write_text(yaml.dump({
+        "test1234": {"glottolog": {"name": "Test Language"}}
+    }), encoding="utf-8")
+    monkeypatch.setattr(vd, "_LANGUAGES_YAML", lang_yaml)
+    # Pretend the local cache has no entry
+    monkeypatch.setattr(vd, "_cached_glottocode", lambda _: None)
+
+    data = _valid_data("test1234")
+    warns = _warnings(data, "test1234")
+    assert not any("not been verified" in w.message for w in warns)
+
+
+def test_glottolog_not_in_cache_or_languages_yaml_warns(tmp_path, monkeypatch):
+    import coding.validate_diagnostics as vd
+
+    lang_yaml = tmp_path / "languages.yaml"
+    lang_yaml.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(vd, "_LANGUAGES_YAML", lang_yaml)
+    monkeypatch.setattr(vd, "_cached_glottocode", lambda _: None)
+
+    data = _valid_data("test1234")
+    warns = _warnings(data, "test1234")
+    assert any("not been verified" in w.message for w in warns)

@@ -27,6 +27,29 @@ from typing import Dict, List, Set
 
 from .validate import ValidationIssue
 from .glottolog import is_valid_format as _is_valid_glottocode, cached_entry as _cached_glottocode
+
+ROOT = Path(__file__).resolve().parent.parent
+_LANGUAGES_YAML = ROOT / "schemas" / "languages.yaml"
+
+
+def _is_glottolog_verified(lang_id: str) -> bool:
+    """Return True if lang_id has Glottolog metadata in the local cache OR in languages.yaml.
+
+    The local cache (glottolog_cache.json) is gitignored and absent in CI, so checking
+    only the cache produces a spurious advisory on every CI run for fully-onboarded
+    languages. languages.yaml is the committed source of truth for Glottolog metadata
+    and is always present — if a language has a non-empty 'glottolog.name' there, it
+    has been verified and the advisory should not fire.
+    """
+    if _cached_glottocode(lang_id) is not None:
+        return True
+    if _LANGUAGES_YAML.exists():
+        import yaml as _yaml
+        data = _yaml.safe_load(_LANGUAGES_YAML.read_text(encoding="utf-8")) or {}
+        entry = data.get(lang_id, {})
+        if isinstance(entry, dict) and entry.get("glottolog", {}).get("name"):
+            return True
+    return False
 from .schemas import load_diagnostic_classes, load_diagnostic_criteria
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -263,7 +286,7 @@ def validate_diagnostics_yaml(data: dict, lang_id: str) -> List[ValidationIssue]
             f"Language ID '{lang_id}' does not match Glottocode format "
             f"(expected 4 lowercase letters + 4 digits, e.g. 'arao1248')"
         ))
-    elif _cached_glottocode(lang_id) is None:
+    elif not _is_glottolog_verified(lang_id):
         issues.append(ValidationIssue(
             "warning", filename,
             f"Language ID '{lang_id}' has not been verified against Glottolog. "
@@ -404,7 +427,7 @@ def validate_diagnostics_df(df, lang_id: str) -> List[ValidationIssue]:
             f"Language ID '{lang_id}' does not match Glottocode format "
             f"(expected 4 lowercase letters + 4 digits, e.g. 'arao1248')"
         ))
-    elif _cached_glottocode(lang_id) is None:
+    elif not _is_glottolog_verified(lang_id):
         issues.append(ValidationIssue(
             "warning", f"diagnostics_{lang_id}.tsv",
             f"Language ID '{lang_id}' has not been verified against Glottolog. "
