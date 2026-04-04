@@ -46,6 +46,16 @@
 #   known_constructions      non-exhaustive examples (construction_specific classes only)
 #   required_criteria        diagnostic criterion columns that must appear in diagnostics_{lang_id}.tsv for this class
 #   optional_criteria        diagnostic criterion columns that may appear but are not required
+#   keystone_active_default  true | false | "[NEEDS REVIEW]"
+#                            Whether the keystone position (v:verbstem) is an active
+#                            participant in this analysis class by default. true = the
+#                            keystone is annotated with real criterion values and
+#                            participates in span computation. false = the keystone is
+#                            coded 'na' (criterion inapplicable). "[NEEDS REVIEW]" =
+#                            the linguistic question is unresolved; treat as false until
+#                            resolved. May be overridden per-language in
+#                            diagnostics_{lang}.yaml (construction-level dict or class-
+#                            level bool).
 #   status                   stable | "[NEEDS REVIEW]" | "[PLACEHOLDER]"
 #   criterion_set_status     stable | "[PROVISIONAL]" (expected to grow as more languages
 #                            are analyzed; note explains known gaps or open questions)
@@ -82,6 +92,7 @@ classes:
       A position is complete if ALL its elements are v-ciscategorial.
       A position is partial if AT LEAST ONE element is v-ciscategorial.
     status: stable
+    keystone_active_default: false
     collection_required: "y"
     criterion_set_status: "[PROVISIONAL]"  # Criterion set may grow further as more
       # predicate-flexible languages are onboarded; other *-combines types not yet attested.
@@ -147,6 +158,7 @@ classes:
       Each category produces complete and partial position sets and four spans
       (strict/loose x complete/partial).
     status: stable
+    keystone_active_default: false
     collection_required: "y"
     criterion_set_status: "[PROVISIONAL]"  # Construction types are open-ended and expected
       # to grow as more languages are added. Criterion names may also need refinement as
@@ -169,6 +181,7 @@ classes:
         single-free domain: element qualifies if free=n OR (free=y AND multiple=n).
       Only strict spans are computed for non-interruption (no loose span).
     status: stable
+    keystone_active_default: false
     collection_required: "y"
     criterion_set_status: stable
 
@@ -212,6 +225,7 @@ classes:
     # positions fall outside both strict and flexible domains. Confirmed across 5+ languages.
     status: "[AUTO-DERIVED: likely stable — qualification rules confirmed across 5+ language
       chapters (ch. 3, 6, 8, 9, 12, 14, 16); coordinator sign-off needed to remove AUTO-DERIVED]"
+    keystone_active_default: false
     collection_required: "y"
 
   - name: free_occurrence
@@ -242,6 +256,7 @@ classes:
       strict complete span (conservative/minimal) and the loose partial span
       (liberal/maximal) respectively. No additional criterion is needed.
     status: stable
+    keystone_active_default: false
     collection_required: "y"
     criterion_set_status: stable
 
@@ -267,6 +282,7 @@ classes:
     # the published database: "There are other tests that have not yet been included in the
     # database (e.g. proform replacement)." No evidence in 10 reviewed language chapters.
     # Prospective class — applicable only where proform substitution can be elicited.
+    keystone_active_default: false
     collection_required: "y"
 
   - name: idiom
@@ -293,6 +309,7 @@ classes:
     status: "[NEEDS REVIEW]"  # Mebengokre (ch. 12) provides the clearest evidence: diagnostic
     # [\ref{idioms}] documents 3 specific idioms with position spans (adjnc-ket). The class
     # design is sound but needs annotation data.
+    keystone_active_default: false
     collection_required: "n"
 
   - name: biuniqueness
@@ -336,6 +353,7 @@ classes:
     # considered" and that "a great deal of complexity and variation is hidden behind such
     # designations" — direct book-level support for issue #58 (non-automatic allomorphy
     # as a distinct sub-type). Araona circumfix data is annotated; other types pending.
+    keystone_active_default: false
     collection_required: "[NEEDS COORDINATOR INPUT]"
 
   - name: repair
@@ -359,6 +377,8 @@ classes:
     status: "[NEEDS REVIEW]"  # Strongly confirmed by Cup'ik ch. 2 (4 naturalistic examples,
     # restart domain = vbase–pn4); no evidence in 8 other reviewed chapters. Applicable
     # only where elicitation can target production errors within the verbal complex.
+    keystone_active_default: "[NEEDS REVIEW]"  # Unclear whether the verbstem participates
+      # in repair/restart behavior. Treat as false until Adam resolves.
     collection_required: "n"
 
   # ---------------------------------------------------------------------------
@@ -400,6 +420,9 @@ classes:
       # (issue #17). May be removed, renamed, or replaced depending on resolution of
       # meso/interaction domain design (issues #16, #17).
     status: stable  # Note: left-interaction and right-interaction are [NEEDS REVIEW] (issue #17)
+    keystone_active_default: true  # The verbstem has real stress/accent properties
+      # (accented, obligatory, independence) that participate in the blocked-span
+      # boundary computation. Keystone rows must be annotated with real values.
     collection_required: "n"
 
 
@@ -452,6 +475,9 @@ classes:
     # Formal abstract type in ch. 17 database schema.
     status: "[AUTO-DERIVED: likely stable — confirmed across 10+ language chapters; formal
       abstract type in ch. 17; coordinator sign-off needed to remove AUTO-DERIVED]"
+    keystone_active_default: "[NEEDS REVIEW]"  # Current code does not implement keystone
+      # blocking for segmental; unclear whether verbstem segmental properties create a
+      # domain boundary. Treat as false until Adam resolves.
     collection_required: "n"
 
   - name: tonal
@@ -481,6 +507,7 @@ classes:
       (strict/loose × complete/partial).
     criterion_set_status: "[AUTO-DERIVED]"
     status: "[AUTO-DERIVED]"
+    keystone_active_default: "[NEEDS REVIEW]"
     collection_required: "n"
 
   - name: tonosegmental
@@ -509,6 +536,7 @@ classes:
       (strict/loose × complete/partial).
     criterion_set_status: "[AUTO-DERIVED]"
     status: "[AUTO-DERIVED]"
+    keystone_active_default: "[NEEDS REVIEW]"
     collection_required: "n"
 
   - name: intonational
@@ -533,6 +561,7 @@ classes:
       (strict/loose × complete/partial).
     criterion_set_status: "[AUTO-DERIVED]"
     status: "[AUTO-DERIVED]"
+    keystone_active_default: "[NEEDS REVIEW]"
     collection_required: "n"
 
   # suprasegmental is retired as of issue #100. Its constructions have been redistributed:
@@ -564,6 +593,7 @@ classes:
     status: "[NEEDS REVIEW]"  # Mebengokre (ch. 12) applies and validates: diagnostic [\ref{pause}]
     # identifies span prevb-fin, converging with non-recursive interruption and stress domain.
     # No evidence in 9 other reviewed chapters; elicitation access may be the limiting factor.
+    keystone_active_default: "[NEEDS REVIEW]"
     collection_required: "n"
 
   - name: play_language
@@ -594,4 +624,5 @@ classes:
       # operation identity is encoded in the construction name.
     status: "[NEEDS REVIEW]"  # Chatino ch. 8 provides corpus-attested data (Campbell 2020);
     # target domain = positions 10-13 (verbal core = tonal melody domain). Confirmed real.
+    keystone_active_default: "[NEEDS REVIEW]"
     collection_required: "n"

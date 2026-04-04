@@ -29,6 +29,7 @@ from .generate_sheets import _STATUS_TAB
 from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
+    resolve_keystone_active,
 )
 from . import make_forms as _mf
 from .validate import ValidationIssue
@@ -102,6 +103,7 @@ def validate_annotation_rows(
     expected_params: List[str],
     tab_name: str,
     param_values: Dict[str, List[str]] = None,
+    keystone_active: bool = False,
 ) -> Tuple[List[Dict], List[ValidationIssue]]:
     """Validate annotation sheet rows.
 
@@ -150,8 +152,40 @@ def validate_annotation_rows(
             )
 
             if is_keystone:
-                if val == "":
-                    record[param] = "na"
+                if keystone_active:
+                    # Keystone participates in this analysis — treat like any row.
+                    if val == "":
+                        issues.append(ValidationIssue(
+                            "warning",
+                            f"{tab_name} row {row_num} '{record.get('Element', '?')}'",
+                            f"blank value in '{param}' (keystone is active for this construction)",
+                            cell=(row_num - 1, col_index[param]),
+                        ))
+                    elif val == "na":
+                        issues.append(ValidationIssue(
+                            "warning",
+                            f"{tab_name} row {row_num} '{record.get('Element', '?')}'",
+                            f"'na' in '{param}' but keystone is active — expected a real annotation value",
+                            cell=(row_num - 1, col_index[param]),
+                        ))
+                    elif val not in allowed:
+                        issues.append(ValidationIssue(
+                            "warning",
+                            f"{tab_name} row {row_num} '{record.get('Element', '?')}'",
+                            f"unexpected value '{val}' in '{param}' (allowed: {sorted(allowed)})",
+                            cell=(row_num - 1, col_index[param]),
+                        ))
+                else:
+                    # Keystone does not participate — should always be 'na'.
+                    if val == "":
+                        record[param] = "na"
+                    elif val != "na":
+                        issues.append(ValidationIssue(
+                            "warning",
+                            f"{tab_name} row {row_num} '{record.get('Element', '?')}'",
+                            f"unexpected value '{val}' in '{param}' for keystone row (expected 'na')",
+                            cell=(row_num - 1, col_index[param]),
+                        ))
             else:
                 if val == "":
                     issues.append(ValidationIssue(
@@ -206,6 +240,7 @@ def revalidate_sheet(
     ws,
     expected_params: List[str],
     param_values: Dict[str, List[str]] = None,
+    keystone_active: bool = False,
 ) -> List[ValidationIssue]:
     """Read a worksheet, validate it, update cell highlighting, return issues.
 
@@ -213,7 +248,9 @@ def revalidate_sheet(
     Safe to call repeatedly as collaborators fix errors.
     """
     rows = ws.get_all_values()
-    _, issues = validate_annotation_rows(rows, expected_params, ws.title, param_values)
+    _, issues = validate_annotation_rows(
+        rows, expected_params, ws.title, param_values, keystone_active=keystone_active
+    )
     bad_cells = [issue.cell for issue in issues if issue.cell is not None]
     clear_highlights(ws)
     highlight_cells(ws, bad_cells)
@@ -308,10 +345,15 @@ def main() -> None:
                 if construction == _STATUS_TAB:
                     continue
                 info = param_map.get(class_name, {}).get(construction, {})
+                ka = resolve_keystone_active(lang_id, class_name, construction)
+                if ka is None:
+                    print(f"  [{class_name}/{construction}] WARNING: keystone_active unresolved — treating as False")
+                    ka = False
                 issues = revalidate_sheet(
                     ws,
                     info.get("params", []),
                     info.get("values", {}),
+                    keystone_active=ka,
                 )
                 total_sheets += 1
 

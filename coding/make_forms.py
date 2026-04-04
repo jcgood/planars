@@ -205,6 +205,59 @@ def _dump_diagnostics_yaml(data: dict) -> str:
 
 
 # ---------------------------------------------------------------------------
+# keystone_active resolution
+# ---------------------------------------------------------------------------
+
+def resolve_keystone_active(
+    lang_id: str,
+    class_name: str,
+    construction: Optional[str] = None,
+) -> Optional[bool]:
+    """Resolve keystone_active for a (lang, class, construction) triple.
+
+    Two-level lookup:
+    1. diagnostics_{lang}.yaml → classes → {class} → keystone_active
+       - bool: applies to all constructions in the class
+       - dict: look up by construction name specifically
+    2. diagnostic_classes.yaml → class → keystone_active_default
+
+    Returns:
+        True  — keystone participates; require real criterion values on keystone row.
+        False — keystone is inactive; require 'na' on keystone row.
+        None  — unspecified at both levels (treat as False; warn via check-codebook).
+    """
+    # Level 1: language YAML
+    yaml_path = _resolve_diagnostics_yaml_path(lang_id)
+    if yaml_path.exists():
+        with open(yaml_path, encoding="utf-8") as _f:
+            _yaml_data = yaml.safe_load(_f) or {}
+        _class_data = (_yaml_data.get("classes") or {}).get(class_name, {})
+        _ka = _class_data.get("keystone_active")
+        if _ka is not None:
+            if isinstance(_ka, bool):
+                return _ka
+            if isinstance(_ka, dict) and construction is not None:
+                _val = _ka.get(construction)
+                if isinstance(_val, bool):
+                    return _val
+                # construction not in dict → fall through to class default
+
+    # Level 2: diagnostic_classes.yaml default
+    try:
+        from .schemas import load_diagnostic_classes
+        _schema = load_diagnostic_classes()
+    except Exception:
+        return None
+    for _cls in _schema.get("classes", []):
+        if _cls.get("name") == class_name:
+            _default = _cls.get("keystone_active_default")
+            if isinstance(_default, bool):
+                return _default
+            return None  # "[NEEDS REVIEW]" or absent
+    return None
+
+
+# ---------------------------------------------------------------------------
 # TSV ↔ YAML serializers
 # ---------------------------------------------------------------------------
 
