@@ -117,6 +117,24 @@ jobs:
             gh issue close "$ISSUE_NUM"
           fi
 
+      - name: Remind if pending-changes issue is stale
+        # If pending_changes.json exists and hasn't been updated in 7+ days,
+        # the coordinator has forgotten to run apply-pending. Bump the open
+        # issue so it resurfaces rather than silently ageing out.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f pending_changes.json ] && [ -s pending_changes.json ]; then
+            RECENT=$(git log --since="7 days ago" --format="%H" -- pending_changes.json)
+            if [ -z "$RECENT" ]; then
+              OPEN_COUNT=$(gh issue list --label pending-changes --state open --json number --jq length)
+              if [ "$OPEN_COUNT" -gt 0 ]; then
+                ISSUE_NUM=$(gh issue list --label pending-changes --state open --json number --jq '.[0].number')
+                gh issue comment "$ISSUE_NUM" --body "Reminder: \`pending_changes.json\` has been unresolved for more than 7 days as of $(date -u +%Y-%m-%d). Run \`python -m coding apply-pending\` to review and apply."
+              fi
+            fi
+          fi
+
       - name: Regenerate diagnostics TSVs from YAML
         # Keeps diagnostics_{lang_id}.tsv in sync with the YAML source of truth.
         # Catches cases where a coordinator edited the YAML locally but forgot to
@@ -263,6 +281,42 @@ jobs:
           if [ "$OPEN_COUNT" -gt 0 ]; then
             ISSUE_NUM=$(gh issue list --label stale-manifest --state open --json number --jq '.[0].number')
             gh issue comment "$ISSUE_NUM" --body "Stale manifest entries resolved on $(date -u +%Y-%m-%d) — closing."
+            gh issue close "$ISSUE_NUM"
+          fi
+
+      - name: Run integrity check
+        # Validates planar TSV structure and analysis module consistency —
+        # things that can break due to data changes, not just code changes.
+        # Complements check-codebook (which focuses on schema consistency).
+        id: integrity
+        run: python -m coding integrity-check > /tmp/integrity_report.txt
+        continue-on-error: true
+
+      - name: File or update GitHub issue if integrity check failed
+        if: steps.integrity.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN_COUNT=$(gh issue list --label integrity-error --state open --json number --jq length)
+          if [ "$OPEN_COUNT" -eq 0 ]; then
+            gh issue create \
+              --title "Integrity check failed ($(date -u +%Y-%m-%d))" \
+              --label integrity-error \
+              --body-file /tmp/integrity_report.txt
+          else
+            ISSUE_NUM=$(gh issue list --label integrity-error --state open --json number --jq '.[0].number')
+            gh issue comment "$ISSUE_NUM" --body-file /tmp/integrity_report.txt
+          fi
+
+      - name: Close open integrity-error issue if all clear
+        if: steps.integrity.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN_COUNT=$(gh issue list --label integrity-error --state open --json number --jq length)
+          if [ "$OPEN_COUNT" -gt 0 ]; then
+            ISSUE_NUM=$(gh issue list --label integrity-error --state open --json number --jq '.[0].number')
+            gh issue comment "$ISSUE_NUM" --body "Integrity check passed on $(date -u +%Y-%m-%d) — closing."
             gh issue close "$ISSUE_NUM"
           fi
 
@@ -428,3 +482,15 @@ jobs:
             gh issue comment "$ISSUE_NUM" --body "Sheet drift resolved on $(date -u +%Y-%m-%d) — closing."
             gh issue close "$ISSUE_NUM"
           fi
+
+      - name: Annotation scope summary
+        # Informational: count languages, classes, and constructions from
+        # diagnostics YAMLs so the step summary gives a quick project-wide picture.
+        if: always()
+        run: |
+          LANGS=$(find coded_data -maxdepth 1 -mindepth 1 -type d -not -name ".*" | wc -l | tr -d ' ')
+          YAMLS=$(find coded_data -name "diagnostics_*.yaml" | wc -l | tr -d ' ')
+          TSVS=$(find coded_data -name "*.tsv" -not -path "*/archive/*" -not -path "*/planar_input/*" | wc -l | tr -d ' ')
+          echo "## Annotation scope — $(date -u +%Y-%m-%d)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "${LANGS} language(s) · ${YAMLS} with diagnostics YAML · ${TSVS} filled construction TSV(s)" >> $GITHUB_STEP_SUMMARY

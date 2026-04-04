@@ -292,6 +292,7 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 | `codebook-error` | Filed automatically by `data-refresh.yml` when `check-codebook` detects schema inconsistencies (criteria in modules but not in `diagnostic_criteria.yaml`, required criteria missing from `diagnostics_{lang}.tsv`, etc.). Also runs in CI on every push. Auto-closed when check passes. |
 | `data-overwrite` | Filed automatically by `data-refresh.yml` when human commits to planars-data appear to have been overwritten by today's Sheet import. May be a false alarm (coordinator's local edit matched the Sheet). Check `git log` / `git show` in planars-data to verify. Auto-closed when clean. |
 | `stale-manifest` | Filed automatically by `data-refresh.yml` when `integrity-check --check-manifest` finds manifest entries whose class is no longer in `diagnostics_{lang}.yaml`. Resolve by running `prune-manifest --apply`. Auto-closed when clean. |
+| `integrity-error` | Filed automatically by `data-refresh.yml` when `integrity-check` detects planar TSV structure or analysis module consistency errors. Run `integrity-check` locally for details. Auto-closed when clean. |
 
 ### Notable open issues
 

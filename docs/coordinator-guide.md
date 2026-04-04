@@ -31,6 +31,7 @@ The hooks require a one-time install per machine — see [Regression testing and
 | `codebook-error` | Schema inconsistency detected | Run `check-codebook` locally for details |
 | `stale-manifest` | Manifest has classes no longer in diagnostics | Run `prune-manifest --apply` |
 | `data-overwrite` | Coordinator commits may have been overwritten by refresh | Check `git log`/`git show` in planars-data to verify |
+| `integrity-error` | Planar TSV structure or analysis module consistency error | Run `integrity-check` locally for details |
 | `sheet-validation` | Invalid cell values in annotation sheets | Run `validate-coding` locally for details |
 
 ---
@@ -506,10 +507,12 @@ Add the following secrets under **Settings → Secrets and variables → Actions
 5. Checks for ambiguous TSV→YAML drift and files a `diagnostics-drift` issue if found.
 6. Runs `check-codebook` and files a `codebook-error` issue if schema inconsistencies are found.
 7. Runs `integrity-check --check-manifest` and files a `stale-manifest` issue if retired classes remain in the Drive manifest.
-8. Regenerates snapshot baselines and commits them (`if: always()` — runs even if earlier steps failed).
-9. Commits and pushes planars-data changes.
-10. Detects whether the import overwrote any human commits to planars-data and files a `data-overwrite` issue if so.
-11. Applies additive sheet updates (`update-sheets --apply`) and files a `sheet-drift` issue for any remaining non-additive drift.
+8. Runs `integrity-check` (non-sheets) and files an `integrity-error` issue if planar structure or analysis module errors are found.
+9. Regenerates snapshot baselines and commits them (`if: always()` — runs even if earlier steps failed).
+10. Commits and pushes planars-data changes.
+11. Detects whether the import overwrote any human commits to planars-data and files a `data-overwrite` issue if so.
+12. Applies additive sheet updates (`update-sheets --apply`) and files a `sheet-drift` issue for any remaining non-additive drift.
+13. Writes an annotation scope summary (language/class/construction counts) to the run's step summary.
 
 All issue types are auto-closed on the next clean run. You can trigger the workflow manually from the Actions tab after a large annotation session to sync immediately.
 
