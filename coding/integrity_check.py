@@ -279,6 +279,26 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
             total_w += 1
             continue
 
+        # Check for stale manifest entries: classes in the manifest that are no
+        # longer in diagnostics_{lang}.yaml (or .tsv fallback). These cause
+        # import-sheets to keep re-importing retired sheets indefinitely.
+        yaml_path = CODED_DATA / lang_id / "planar_input" / f"diagnostics_{lang_id}.yaml"
+        tsv_path  = CODED_DATA / lang_id / "planar_input" / f"diagnostics_{lang_id}.tsv"
+        if yaml_path.exists():
+            with open(yaml_path, encoding="utf-8") as _f:
+                _diag = _yaml.safe_load(_f)
+            active_classes = set((_diag or {}).get("classes", {}).keys())
+        elif tsv_path.exists():
+            _df = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
+            active_classes = set(_df["Class"].unique()) if "Class" in _df.columns else set()
+        else:
+            active_classes = None
+
+        if active_classes is not None:
+            for stale_cls in sorted(set(sheets_info.keys()) - active_classes):
+                print(_warn(f"{lang} · {stale_cls}  —  in manifest but not in diagnostics — run prune-manifest"))
+                total_w += 1
+
         for class_name, sheet_info in sorted(sheets_info.items()):
             try:
                 ss = _with_retry(lambda: gc.open_by_key(sheet_info["spreadsheet_id"]))
