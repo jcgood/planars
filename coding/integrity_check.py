@@ -438,8 +438,11 @@ def main() -> None:
             _, drive_svc = _get_clients()
             manifest = _load_manifest_from_drive(drive_svc)
         except Exception as exc:
-            print(f"ERROR: Could not load manifest: {exc}")
-            sys.exit(1)
+            # Drive unavailable — skip silently rather than filing a misleading
+            # stale-manifest issue. import-sheets will file an import-error issue
+            # if Drive is genuinely down.
+            print(f"WARNING: Could not load manifest ({exc}) — skipping stale manifest check.")
+            return
         stale = _stale_manifest_classes(manifest, lang_ids)
         if stale:
             print(f"STALE MANIFEST ENTRIES ({len(stale)}) — run prune-manifest --apply to clean up:")

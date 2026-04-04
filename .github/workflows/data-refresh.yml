@@ -122,12 +122,14 @@ jobs:
         # Catches cases where a coordinator edited the YAML locally but forgot to
         # run sync-diagnostics-yaml --apply before committing.
         run: python -m coding sync-diagnostics-yaml --apply
+        continue-on-error: true
 
       - name: Push diagnostics YAML changes back to Google Sheets
         # Keeps the diagnostics Google Sheet in sync with the YAML source of truth.
         # Prevents false-alarm diagnostics-drift issues caused by stale Sheet content
         # (e.g. old class names after a rename). See issue #125.
         run: python -m coding sync-diagnostics-yaml --to-sheet --apply
+        continue-on-error: true
 
       - name: Check for diagnostics YAML drift
         id: diag_drift
