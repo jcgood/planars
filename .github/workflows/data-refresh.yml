@@ -57,6 +57,24 @@ jobs:
           printf '%s' "$OAUTH_CREDS" > ~/.config/planars/oauth_credentials.json
           printf '%s' "$OAUTH_TOKEN" > ~/.config/gspread/authorized_user.json
 
+      - name: Record planars-data state before import
+        # Gap 2 (#121): snapshot the planars-data HEAD and the set of files
+        # touched by human (non-bot) commits since the last data-refresh run.
+        # Used after the import to detect whether fresh Sheet data overwrote
+        # work a coordinator committed directly to planars-data.
+        id: pre_import
+        working-directory: coded_data
+        run: |
+          echo "before_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          LAST_BOT=$(git log --format="%H %ae" | grep "github-actions\[bot\]" | head -1 | cut -d' ' -f1)
+          if [ -n "$LAST_BOT" ]; then
+            git diff --name-only "$LAST_BOT" HEAD > /tmp/human_committed_files.txt
+          else
+            git ls-files > /tmp/human_committed_files.txt
+          fi
+          echo "Human-committed files at risk of overwrite:"
+          cat /tmp/human_committed_files.txt || echo "(none)"
+
       - name: Import annotation data from Google Sheets
         id: import_sheets
         run: python -m coding import-sheets --apply --ignore-status > /tmp/import_report.txt
@@ -227,6 +245,77 @@ jobs:
           else
             git commit -m "data: daily annotation refresh $(date -u +%Y-%m-%d)"
             git push
+          fi
+
+      - name: Check for coordinator data overwritten by refresh
+        # Gap 2 (#121): intersect human-committed files (recorded pre-import)
+        # with files changed by today's import. An intersection means the
+        # coordinator's direct planars-data commits may have been overwritten.
+        id: overwrite_check
+        if: always()
+        working-directory: coded_data
+        run: |
+          touch /tmp/human_committed_files.txt
+          BEFORE="${{ steps.pre_import.outputs.before_sha }}"
+          AFTER=$(git rev-parse HEAD)
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "$AFTER" ]; then
+            echo "No planars-data changes — skipping overwrite check."
+            echo "overwrite=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          git diff --name-only "$BEFORE" "$AFTER" > /tmp/refresh_changed_files.txt
+          comm -12 <(sort /tmp/human_committed_files.txt) <(sort /tmp/refresh_changed_files.txt) > /tmp/overwritten_files.txt
+          if [ -s /tmp/overwritten_files.txt ]; then
+            echo "overwrite=true" >> $GITHUB_OUTPUT
+            echo "Potentially overwritten files:"
+            cat /tmp/overwritten_files.txt
+          else
+            echo "overwrite=false" >> $GITHUB_OUTPUT
+            echo "No coordinator files overwritten."
+          fi
+
+      - name: File or update GitHub issue if coordinator data overwritten
+        if: steps.overwrite_check.outputs.overwrite == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BODY_FILE=$(mktemp)
+          echo "## Coordinator data may have been overwritten — $(date -u +%Y-%m-%d)" >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo "The daily data refresh detected human commits to planars-data that were" >> "$BODY_FILE"
+          echo "overwritten by today's import from Google Sheets." >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo "This may be a false alarm if the coordinator's local edit matched the Sheet." >> "$BODY_FILE"
+          echo "But if the Sheet was stale (e.g. after a column rename), annotation data may be lost." >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo "**Check git history in planars-data to verify. Use \`git log\` and \`git show\`** on the commit(s) listed below, then compare against the current TSV." >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo "### Files affected" >> "$BODY_FILE"
+          echo '```' >> "$BODY_FILE"
+          cat /tmp/overwritten_files.txt >> "$BODY_FILE"
+          echo '```' >> "$BODY_FILE"
+          OPEN_COUNT=$(gh issue list --label data-overwrite --state open --json number --jq length)
+          if [ "$OPEN_COUNT" -eq 0 ]; then
+            gh issue create \
+              --title "Coordinator data may have been overwritten by data-refresh ($(date -u +%Y-%m-%d))" \
+              --label data-overwrite \
+              --body-file "$BODY_FILE"
+          else
+            ISSUE_NUM=$(gh issue list --label data-overwrite --state open --json number --jq '.[0].number')
+            gh issue comment "$ISSUE_NUM" --body-file "$BODY_FILE"
+          fi
+          rm -f "$BODY_FILE"
+
+      - name: Close open data-overwrite issue if all clear
+        if: steps.overwrite_check.outputs.overwrite == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN_COUNT=$(gh issue list --label data-overwrite --state open --json number --jq length)
+          if [ "$OPEN_COUNT" -gt 0 ]; then
+            ISSUE_NUM=$(gh issue list --label data-overwrite --state open --json number --jq '.[0].number')
+            gh issue comment "$ISSUE_NUM" --body "No coordinator data overwritten on $(date -u +%Y-%m-%d) — closing."
+            gh issue close "$ISSUE_NUM"
           fi
 
       - name: Commit and push planars snapshot changes
