@@ -141,7 +141,51 @@ def test_unknown_class_is_warning():
 
 
 # ---------------------------------------------------------------------------
-# Check 6: Glottocode format
+# Check 6: keystone_active field validation
+# ---------------------------------------------------------------------------
+
+def _data_with_keystone_active(ka_value) -> dict:
+    data = _valid_data()
+    data["classes"]["ciscategorial"]["keystone_active"] = ka_value
+    return data
+
+
+def test_keystone_active_bool_true_is_valid():
+    assert _errors(_data_with_keystone_active(True)) == []
+
+
+def test_keystone_active_bool_false_is_valid():
+    assert _errors(_data_with_keystone_active(False)) == []
+
+
+def test_keystone_active_dict_of_str_bool_is_valid():
+    assert _errors(_data_with_keystone_active({"general": True})) == []
+
+
+def test_keystone_active_string_is_error():
+    errs = _errors(_data_with_keystone_active("yes"))
+    assert any("keystone_active" in e.message for e in errs)
+
+
+def test_keystone_active_int_is_error():
+    errs = _errors(_data_with_keystone_active(1))
+    assert any("keystone_active" in e.message for e in errs)
+
+
+def test_keystone_active_dict_with_non_bool_value_is_error():
+    errs = _errors(_data_with_keystone_active({"general": "true"}))
+    assert any("keystone_active" in e.message for e in errs)
+
+
+def test_keystone_active_absent_is_valid():
+    # Not present at all — no error, no warning
+    data = _valid_data()
+    assert "keystone_active" not in data["classes"]["ciscategorial"]
+    assert _errors(data) == []
+
+
+# ---------------------------------------------------------------------------
+# Check 7: Glottocode format
 # ---------------------------------------------------------------------------
 
 def test_invalid_glottocode_format_is_warning():

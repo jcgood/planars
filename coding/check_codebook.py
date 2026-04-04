@@ -8,8 +8,9 @@ Checks:
   5. Qualification rule drift: bidirectional module/YAML correspondence, hash sentinel, docstring mirror
 
 Informational reports (not errors):
-  6. Schema stubs: classes in diagnostic_classes.yaml with no language coverage
-  7. Coverage matrix: language × class grid (✓ = active, - = not collected)
+  6. keystone_active_default "[NEEDS REVIEW]" for active (lang, class) pairs with no override
+  7. Schema stubs: classes in diagnostic_classes.yaml with no language coverage
+  8. Coverage matrix: language × class grid (✓ = active, - = not collected)
 
 Run:
     python -m coding check-codebook
@@ -389,6 +390,52 @@ def _check_qualification_rule_drift(diag_classes: dict) -> List[str]:
     return errors
 
 
+def _report_keystone_active_unresolved(
+    diag_classes: dict,
+    coverage: dict[str, list[str]],
+    root: Path = ROOT,
+) -> int:
+    """Warn when an active (lang, class) pair has keystone_active_default: "[NEEDS REVIEW]"
+    and no language-level keystone_active override.
+
+    A "[NEEDS REVIEW]" default means the linguistic question is unresolved and the class
+    will silently treat the keystone as inactive (False). This is usually fine during
+    development, but coordinators should know which active classes are still unresolved
+    so they can make an explicit decision when evidence arrives.
+
+    Returns the count of unresolved pairs (informational, not an error).
+    """
+    import yaml as _yaml
+
+    unresolved: list[tuple[str, str]] = []  # (lang_id, class_name)
+
+    for class_name, lang_ids in sorted(coverage.items()):
+        cls = diag_classes.get(class_name, {})
+        default = cls.get("keystone_active_default", "")
+        if not (isinstance(default, str) and "[NEEDS REVIEW]" in default):
+            continue
+        for lang_id in sorted(lang_ids):
+            yaml_path = root / "coded_data" / lang_id / "planar_input" / f"diagnostics_{lang_id}.yaml"
+            if not yaml_path.exists():
+                unresolved.append((lang_id, class_name))
+                continue
+            lang_data = _yaml.safe_load(yaml_path.read_text(encoding="utf-8")) or {}
+            class_entry = (lang_data.get("classes") or {}).get(class_name, {})
+            if "keystone_active" not in class_entry:
+                unresolved.append((lang_id, class_name))
+
+    if not unresolved:
+        print("  All active classes have a resolved keystone_active.")
+        return 0
+
+    print(f"  {len(unresolved)} active (language, class) pair(s) with "
+          f"keystone_active_default: \"[NEEDS REVIEW]\" and no language override:")
+    for lang_id, class_name in unresolved:
+        print(f"    [{lang_id}/{class_name}] add keystone_active: true/false to "
+              f"diagnostics_{lang_id}.yaml when the linguistic question is resolved")
+    return len(unresolved)
+
+
 def _report_needs_review(codebook: dict, diag_classes: dict) -> int:
     """Print a summary of [NEEDS REVIEW] and [PLACEHOLDER] entries. Returns count."""
     flagged = []
@@ -486,15 +533,16 @@ def _report_coverage_matrix(
 def main() -> None:
     """Entry point for `python -m coding check-codebook`.
 
-    Runs five consistency checks (exit 1 if any fail) then two informational reports:
+    Runs five consistency checks (exit 1 if any fail) then three informational reports:
     1. Every _REQUIRED_CRITERIA criterion in each analysis module is in diagnostic_criteria.yaml.
     2. Every criterion name in diagnostics_{lang_id}.tsv files is in diagnostic_criteria.yaml.
     3. Every span key referenced in charts.py exists in the corresponding derive result.
     4. diagnostics_{lang_id}.tsv class names and required criteria match diagnostic_classes.yaml.
     5. Qualification rule drift: bidirectional module/YAML correspondence, hash sentinel,
        docstring mirror.
-    6. Schema stubs: classes with no language coverage (ready-to-paste TSV rows).
-    7. Coverage matrix: language × class grid.
+    6. keystone_active_default "[NEEDS REVIEW]" for active classes with no language override.
+    7. Schema stubs: classes with no language coverage (ready-to-paste TSV rows).
+    8. Coverage matrix: language × class grid.
     """
     codebook = _load_codebook()
     diag_classes = _load_diagnostic_classes()
@@ -515,18 +563,22 @@ def main() -> None:
     print("5. Checking qualification rule drift (hash sentinel + docstring) ...")
     all_errors.extend(_check_qualification_rule_drift(diag_classes))
 
-    print()
-    _report_needs_review(codebook, diag_classes)
-
     coverage = _collect_coverage()
     lang_ids = sorted({l for langs in coverage.values() for l in langs})
 
     print()
-    print("6. Schema stubs (classes with no language coverage):")
+    _report_needs_review(codebook, diag_classes)
+
+    print()
+    print("6. keystone_active_default [NEEDS REVIEW] for active classes:")
+    _report_keystone_active_unresolved(diag_classes, coverage)
+
+    print()
+    print("7. Schema stubs (classes with no language coverage):")
     _report_schema_stubs(diag_classes, coverage)
 
     print()
-    print("7. Coverage matrix:")
+    print("8. Coverage matrix:")
     _report_coverage_matrix(diag_classes, coverage, lang_ids)
 
     print()

@@ -10,11 +10,12 @@ Checks:
   3. Criterion names — base criterion names are defined in diagnostic_criteria.yaml
   4. Class names    — class corresponds to a planars/ analysis module
   5. Constructions  — 'general' must be alone; no duplicates within a class
-  6. Glottocode     — lang_id matches Glottocode format; advisory if not cached
-  7. Schema conform — every criterion is in the allowed set for its class
+  6. keystone_active — if present, must be bool or {construction: bool} dict
+  7. Glottocode     — lang_id matches Glottocode format; advisory if not cached
+  8. Schema conform — every criterion is in the allowed set for its class
                       (required_criteria ∪ optional_criteria in
                       diagnostic_classes.yaml)
-  8. Required classes — every class with collection_required: true in
+  9. Required classes — every class with collection_required: true in
                       diagnostic_classes.yaml must be present (no-op while
                       values are '[NEEDS COORDINATOR INPUT]')
 """
@@ -224,7 +225,23 @@ def validate_diagnostics_yaml(data: dict, lang_id: str) -> List[ValidationIssue]
             ))
 
         # ------------------------------------------------------------------
-        # 5. Schema conformance
+        # 5. keystone_active field type (optional field)
+        # ------------------------------------------------------------------
+        ka = class_data.get("keystone_active")
+        if ka is not None:
+            valid_ka = isinstance(ka, bool) or (
+                isinstance(ka, dict)
+                and all(isinstance(k, str) and isinstance(v, bool) for k, v in ka.items())
+            )
+            if not valid_ka:
+                issues.append(ValidationIssue(
+                    "error", location,
+                    f"'keystone_active' must be a bool (true/false) or a dict mapping "
+                    f"construction names to bool; got: {ka!r}"
+                ))
+
+        # ------------------------------------------------------------------
+        # 6. Schema conformance
         # ------------------------------------------------------------------
         if allowed_by_class and class_name in allowed_by_class:
             allowed = allowed_by_class[class_name]
