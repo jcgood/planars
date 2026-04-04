@@ -150,7 +150,7 @@ git pull
    python -m coding sync-diagnostics-yaml --apply --lang {lang_id}
    ```
 
-   See [Data management](data-management.md) for the required format of both files. `check-codebook` section 5 prints a ready-to-paste YAML snippet for each class not yet covered by any language.
+   See [Data management](data-management.md) for the required format of both files. `check-codebook` section 7 prints a ready-to-paste YAML snippet for each class not yet covered by any language.
 
 3. Generate annotation sheets and notebooks:
    ```bash
@@ -438,9 +438,10 @@ python -m coding integrity-check --sheets             # also validate live Googl
 python -m coding check-codebook
 ```
 
-`check-codebook` provides lower-level schema detail and two informational reports:
-- **Schema stubs** (section 5): classes with no language coverage, with a ready-to-paste `diagnostics_{lang_id}.tsv` row for each
-- **Coverage matrix** (section 6): language × class grid showing which classes are active per language
+`check-codebook` provides lower-level schema detail and three informational reports:
+- **keystone_active unresolved** (section 6): active (language, class) pairs whose `keystone_active_default` is `[NEEDS REVIEW]` and have no language-level override — a reminder to declare an explicit value when the linguistic question is resolved
+- **Schema stubs** (section 7): classes with no language coverage, with a ready-to-paste `diagnostics_{lang_id}.tsv` row for each
+- **Coverage matrix** (section 8): language × class grid showing which classes are active per language
 
 Use `check-codebook` when adding criteria or classes, or when `integrity-check` flags a codebook inconsistency and you want more detail. `integrity-check` includes all `check-codebook` checks; `check-codebook` is faster and more detailed for schema-specific diagnosis.
 
