@@ -228,6 +228,32 @@ def _section_analysis(codebook: dict) -> Tuple[int, int]:
     return len(errs_req) + len(errs_keys), 0
 
 
+def _stale_manifest_classes(manifest: dict, lang_ids: List[str]) -> List[Tuple[str, str]]:
+    """Return (lang_id, class_name) pairs that are in the manifest but absent from diagnostics.
+
+    Reads local diagnostics_{lang}.yaml (or .tsv fallback) — no Sheet API calls.
+    """
+    stale = []
+    for lang_id in lang_ids:
+        sheets_info = manifest.get(lang_id, {}).get("sheets", {})
+        if not sheets_info:
+            continue
+        yaml_path = CODED_DATA / lang_id / "planar_input" / f"diagnostics_{lang_id}.yaml"
+        tsv_path  = CODED_DATA / lang_id / "planar_input" / f"diagnostics_{lang_id}.tsv"
+        if yaml_path.exists():
+            with open(yaml_path, encoding="utf-8") as _f:
+                _diag = _yaml.safe_load(_f)
+            active = set((_diag or {}).get("classes", {}).keys())
+        elif tsv_path.exists():
+            _df = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
+            active = set(_df["Class"].unique()) if "Class" in _df.columns else set()
+        else:
+            continue
+        for cls in sorted(set(sheets_info.keys()) - active):
+            stale.append((lang_id, cls))
+    return stale
+
+
 def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
     print(_section("ANNOTATION SHEETS"))
 
@@ -279,25 +305,10 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
             total_w += 1
             continue
 
-        # Check for stale manifest entries: classes in the manifest that are no
-        # longer in diagnostics_{lang}.yaml (or .tsv fallback). These cause
-        # import-sheets to keep re-importing retired sheets indefinitely.
-        yaml_path = CODED_DATA / lang_id / "planar_input" / f"diagnostics_{lang_id}.yaml"
-        tsv_path  = CODED_DATA / lang_id / "planar_input" / f"diagnostics_{lang_id}.tsv"
-        if yaml_path.exists():
-            with open(yaml_path, encoding="utf-8") as _f:
-                _diag = _yaml.safe_load(_f)
-            active_classes = set((_diag or {}).get("classes", {}).keys())
-        elif tsv_path.exists():
-            _df = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
-            active_classes = set(_df["Class"].unique()) if "Class" in _df.columns else set()
-        else:
-            active_classes = None
-
-        if active_classes is not None:
-            for stale_cls in sorted(set(sheets_info.keys()) - active_classes):
-                print(_warn(f"{lang} · {stale_cls}  —  in manifest but not in diagnostics — run prune-manifest"))
-                total_w += 1
+        # Check for stale manifest entries via shared helper (no Sheet API calls).
+        for _, stale_cls in _stale_manifest_classes(manifest, [lang_id]):
+            print(_warn(f"{lang} · {stale_cls}  —  in manifest but not in diagnostics — run prune-manifest"))
+            total_w += 1
 
         for class_name, sheet_info in sorted(sheets_info.items()):
             try:
@@ -403,6 +414,12 @@ def main() -> None:
         action="store_true",
         help="Also check live Google Sheets structure (requires OAuth credentials)",
     )
+    parser.add_argument(
+        "--check-manifest",
+        action="store_true",
+        help="Fast standalone check: flag manifest classes absent from diagnostics YAML. "
+             "Requires Drive access but makes no Sheet API calls. Used by data-refresh.",
+    )
     args = parser.parse_args()
 
     # Discover language IDs
@@ -413,6 +430,25 @@ def main() -> None:
             d.name for d in CODED_DATA.iterdir()
             if d.is_dir() and not d.name.startswith(".")
         )
+
+    # --check-manifest: lightweight standalone mode, no Sheet API calls.
+    if args.check_manifest:
+        from .drive import _get_clients, _load_manifest_from_drive
+        try:
+            _, drive_svc = _get_clients()
+            manifest = _load_manifest_from_drive(drive_svc)
+        except Exception as exc:
+            print(f"ERROR: Could not load manifest: {exc}")
+            sys.exit(1)
+        stale = _stale_manifest_classes(manifest, lang_ids)
+        if stale:
+            print(f"STALE MANIFEST ENTRIES ({len(stale)}) — run prune-manifest --apply to clean up:")
+            for lang_id, cls in stale:
+                print(f"  {_lang_label(lang_id)} · {cls}")
+            sys.exit(1)
+        else:
+            print("No stale manifest entries.")
+        return
 
     # Header
     today = date.today().isoformat()

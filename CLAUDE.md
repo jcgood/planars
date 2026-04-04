@@ -291,6 +291,7 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 | `import-error` | Filed automatically by `data-refresh.yml` when `import-sheets --apply` exits non-zero (crash or import failure). The issue body contains the import output up to the point of failure. Auto-closed when import succeeds. |
 | `codebook-error` | Filed automatically by `data-refresh.yml` when `check-codebook` detects schema inconsistencies (criteria in modules but not in `diagnostic_criteria.yaml`, required criteria missing from `diagnostics_{lang}.tsv`, etc.). Also runs in CI on every push. Auto-closed when check passes. |
 | `data-overwrite` | Filed automatically by `data-refresh.yml` when human commits to planars-data appear to have been overwritten by today's Sheet import. May be a false alarm (coordinator's local edit matched the Sheet). Check `git log` / `git show` in planars-data to verify. Auto-closed when clean. |
+| `stale-manifest` | Filed automatically by `data-refresh.yml` when `integrity-check --check-manifest` finds manifest entries whose class is no longer in `diagnostics_{lang}.yaml`. Resolve by running `prune-manifest --apply`. Auto-closed when clean. |
 
 ### Notable open issues
 
