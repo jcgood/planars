@@ -5,7 +5,7 @@ Checks:
   2. Criterion names in diagnostics_{lang_id}.tsv are defined in diagnostic_criteria.yaml
   3. Chart span label keys match the keys returned by each derive function
   4. diagnostics_{lang_id}.tsv class names and required criteria match diagnostic_classes.yaml
-  5. qualification_rule hash sentinel and docstring presence in each analysis module
+  5. Qualification rule drift: bidirectional module/YAML correspondence, hash sentinel, docstring mirror
 
 Informational reports (not errors):
   6. Schema stubs: classes in diagnostic_classes.yaml with no language coverage
@@ -291,40 +291,87 @@ def _check_chart_keys() -> List[str]:
     return errors
 
 
-def _check_qualification_rule_drift(diag_classes: dict) -> List[str]:
-    """Check qualification_rule sentinel hashes and docstring presence in analysis modules.
+def _discover_analysis_modules() -> set[str]:
+    """Return set of module names in planars/ that expose a `derive` attribute.
 
-    For each class in diagnostic_classes.yaml with a qualification_rule:
-    - _QUALIFICATION_RULE_HASH present and matching expected hash: OK
-    - _QUALIFICATION_RULE_HASH present but wrong: ERROR — YAML changed without module review
-    - _QUALIFICATION_RULE_HASH missing: warning (module not yet tagged)
-    - qualification_rule text not found in module source: warning (docstring drift)
+    Scans planars/*.py (excluding __init__, __main__, and non-analysis files)
+    and returns names of modules that define a `derive` callable at module level.
+    This avoids hardcoding the module list and auto-discovers new modules.
+    """
+    planars_dir = ROOT / "planars"
+    names: set[str] = set()
+    skip = {"__init__", "__main__", "io", "spans", "reports", "charts",
+            "cli", "html_report", "languages"}
+    for path in sorted(planars_dir.glob("*.py")):
+        name = path.stem
+        if name in skip:
+            continue
+        try:
+            mod = importlib.import_module(f"planars.{name}")
+        except Exception:
+            continue
+        if hasattr(mod, "derive"):
+            names.add(name)
+    return names
+
+
+def _check_qualification_rule_drift(diag_classes: dict) -> List[str]:
+    """Check qualification rule bidirectional correspondence, hash sentinel, and docstring.
+
+    Bidirectional correspondence (dynamic — no hardcoded module list):
+      - YAML class with qualification_rule but no corresponding module: WARNING
+        (expected during development; does not exit 1)
+      - Python module with no YAML class: HARD ERROR (always a mistake; exits 1)
+
+    Hash sentinel (hash lives in YAML as qualification_rule_hash):
+      - qualification_rule_hash missing from YAML: WARNING (new class, not yet stamped)
+      - Hash present but wrong: HARD ERROR (rule edited without review; exits 1)
+
+    Docstring mirror:
+      - Normalised qualification_rule text not found in normalised module source: WARNING
 
     Hash is SHA-256[:8] of the whitespace-normalised qualification_rule text.
+    Run `python -m coding sync-qualification-hashes --apply` to stamp hashes after
+    a module has been reviewed and updated.
     """
     errors = []
-    for name, cls in diag_classes.items():
-        qr = cls.get("qualification_rule", "")
-        if not qr:
-            continue
+    analysis_modules = _discover_analysis_modules()
+    yaml_classes_with_rule = {name for name, cls in diag_classes.items()
+                               if cls.get("qualification_rule", "")}
+
+    # Module with no YAML class → hard error
+    for name in sorted(analysis_modules):
+        if name not in diag_classes:
+            errors.append(
+                f"[{name}] planars/{name}.py has a `derive` attribute but no entry in "
+                f"diagnostic_classes.yaml — add the class definition or remove the module"
+            )
+
+    # YAML class with rule but no module → warning only
+    for name in sorted(yaml_classes_with_rule):
+        if name not in analysis_modules:
+            print(f"  \u26a0  [{name}] diagnostic_classes.yaml has a qualification_rule "
+                  f"but planars/{name}.py has no `derive` attribute "
+                  f"(expected during development)")
+
+    # Hash sentinel and docstring mirror for classes that have both YAML and module
+    for name in sorted(yaml_classes_with_rule & analysis_modules):
+        cls = diag_classes[name]
+        qr = cls["qualification_rule"]
         normalized_qr = " ".join(qr.split())
         expected_hash = hashlib.sha256(normalized_qr.encode()).hexdigest()[:8]
 
-        try:
-            mod = importlib.import_module(f"planars.{name}")
-        except ImportError:
-            errors.append(f"[{name}] could not import planars.{name}")
-            continue
-
-        actual_hash = getattr(mod, "_QUALIFICATION_RULE_HASH", None)
-        if actual_hash is None:
-            print(f"  \u26a0  [{name}] _QUALIFICATION_RULE_HASH not set "
-                  f"(expected: {expected_hash!r})")
-        elif actual_hash != expected_hash:
+        yaml_hash = cls.get("qualification_rule_hash")
+        if yaml_hash is None:
+            print(f"  \u26a0  [{name}] qualification_rule_hash not set in "
+                  f"diagnostic_classes.yaml (expected: {expected_hash!r}) — "
+                  f"run: python -m coding sync-qualification-hashes --apply --class {name}")
+        elif yaml_hash != expected_hash:
             errors.append(
-                f"[{name}] _QUALIFICATION_RULE_HASH mismatch: module has {actual_hash!r}, "
-                f"YAML expects {expected_hash!r} — qualification_rule changed; "
-                f"review module logic and update hash"
+                f"[{name}] qualification_rule_hash mismatch: YAML has {yaml_hash!r} but "
+                f"qualification_rule hashes to {expected_hash!r} — "
+                f"the rule was edited without a module review cycle; "
+                f"run: python -m coding generate-rule-update-prompt {name}"
             )
 
         spec = importlib.util.find_spec(f"planars.{name}")
@@ -335,7 +382,7 @@ def _check_qualification_rule_drift(diag_classes: dict) -> List[str]:
                 )
                 if normalized_qr not in source_normalized:
                     print(f"  \u26a0  [{name}] qualification_rule text not found in module "
-                          f"source — add a 'Qualification rule' docstring section")
+                          f"source — update the 'Qualification rule' docstring section")
             except Exception:
                 pass
 
@@ -444,7 +491,8 @@ def main() -> None:
     2. Every criterion name in diagnostics_{lang_id}.tsv files is in diagnostic_criteria.yaml.
     3. Every span key referenced in charts.py exists in the corresponding derive result.
     4. diagnostics_{lang_id}.tsv class names and required criteria match diagnostic_classes.yaml.
-    5. qualification_rule hash sentinel and docstring presence in each analysis module.
+    5. Qualification rule drift: bidirectional module/YAML correspondence, hash sentinel,
+       docstring mirror.
     6. Schema stubs: classes with no language coverage (ready-to-paste TSV rows).
     7. Coverage matrix: language × class grid.
     """

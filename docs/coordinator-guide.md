@@ -238,6 +238,59 @@ python -m planars segmental         coded_data/stan1293/segmental/aspiration_pro
 
 Results are also available via the coordinator and contributor Colab notebooks. See the [Notebooks guide](notebooks.md).
 
+### Updating a qualification rule
+
+A **qualification rule** is the formal description of how span computations work for an analysis class — which criterion values cause a position to qualify, whether strict or loose spans are computed, and what blocking conditions apply. The rule text lives in `schemas/diagnostic_classes.yaml` under `qualification_rule:`, and the Python module in `planars/` must implement exactly that rule.
+
+To guard against the rule and code drifting apart, `diagnostic_classes.yaml` stores a `qualification_rule_hash` for each class — a short fingerprint of the rule text. `check-codebook` (and CI) verify that the hash matches the current rule. If you edit the rule text without updating the hash, CI files a `codebook-error` issue.
+
+#### How to recognize the error
+
+The `codebook-error` GitHub issue body will contain a line like:
+
+```
+✗ [metrical] qualification_rule_hash mismatch: YAML has "56e9aeb2" but qualification_rule
+  hashes to "a1b2c3d4" — the rule was edited without a module review cycle;
+  run: python -m coding generate-rule-update-prompt metrical
+```
+
+#### The 7-step workflow
+
+1. Edit `qualification_rule` in `schemas/diagnostic_classes.yaml`.
+2. `check-codebook` (CI or local) detects the hash mismatch → `codebook-error` issue filed.
+   The issue body includes a ready-to-paste Claude prompt.
+3. Copy the Claude prompt from the issue and paste it into a Claude Code session.
+4. Claude reads the new rule, updates `planars/{name}.py` (logic + docstring), runs tests.
+5. Review the diff.
+6. Stamp the new hash:
+   ```bash
+   python -m coding sync-qualification-hashes --apply --class {name}
+   ```
+7. `check-codebook` passes → `codebook-error` issue auto-closes.
+
+Claude enters only at step 3, with all context pre-assembled. Steps 1, 2, 5–7 are fully deterministic.
+
+#### What "the hash" means
+
+`qualification_rule_hash` is a record that the Python module was verified against this exact rule text. It does **not** guarantee correctness — that is Claude's job in step 4. It guarantees that a human reviewed the change. Run `sync-qualification-hashes --apply` only after you are satisfied with the module diff.
+
+#### Generating a prompt manually
+
+If you want to update a module without waiting for CI:
+
+```bash
+python -m coding generate-rule-update-prompt metrical   # one class
+python -m coding generate-rule-update-prompt            # all stale classes
+```
+
+The prompt includes the current rule text, the current module source, and the exact command to run afterward.
+
+#### If the change is non-trivial or you are unsure
+
+Paste the generated prompt into Claude and ask it to explain what changed before making any edits. The prompt contains enough context for Claude to reason about the linguistic implications of the rule change.
+
+---
+
 ### Schema changes
 
 When the diagnostic model changes — a new analysis class, a class renamed or retired, or criteria added or modified — the general sequence is:

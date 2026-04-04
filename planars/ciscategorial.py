@@ -8,7 +8,6 @@ import pandas as pd
 from planars.io import load_filled_tsv, _TRAILING_COLS
 from planars.spans import fmt_span, strict_span, loose_span
 
-_QUALIFICATION_RULE_HASH = "eefbef19"
 
 
 def derive_v_ciscategorial_fractures(

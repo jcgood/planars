@@ -196,11 +196,24 @@ jobs:
         run: python -m coding check-codebook > /tmp/codebook_report.txt
         continue-on-error: true
 
+      - name: Generate rule-update prompts for stale hashes
+        if: steps.codebook.outcome == 'failure'
+        run: python -m coding generate-rule-update-prompt > /tmp/rule_update_prompts.txt
+        continue-on-error: true
+
       - name: File or update GitHub issue if codebook check failed
         if: steps.codebook.outcome == 'failure'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash .github/scripts/manage_issue.sh file codebook-error "Codebook inconsistency detected ($(date -u +%Y-%m-%d))" /tmp/codebook_report.txt
+        run: |
+          BODY_FILE=$(mktemp)
+          cat /tmp/codebook_report.txt >> "$BODY_FILE"
+          if [ -s /tmp/rule_update_prompts.txt ]; then
+            printf '\n---\n\n## Ready-to-paste Claude prompts\n\n' >> "$BODY_FILE"
+            cat /tmp/rule_update_prompts.txt >> "$BODY_FILE"
+          fi
+          bash .github/scripts/manage_issue.sh file codebook-error "Codebook inconsistency detected ($(date -u +%Y-%m-%d))" "$BODY_FILE"
+          rm -f "$BODY_FILE"
 
       - name: Close open codebook-error issue if all clear
         if: steps.codebook.outcome == 'success'

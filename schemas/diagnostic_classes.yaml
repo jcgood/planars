@@ -91,6 +91,7 @@ classes:
       (and any further combine parameters are also n).
       A position is complete if ALL its elements are v-ciscategorial.
       A position is partial if AT LEAST ONE element is v-ciscategorial.
+    qualification_rule_hash: "eefbef19"
     status: stable
     keystone_active_default: false
     collection_required: "y"
@@ -157,6 +158,7 @@ classes:
         maximum_narrowscope_right: widescope_right=n (element lacks wide scope right)
       Each category produces complete and partial position sets and four spans
       (strict/loose x complete/partial).
+    qualification_rule_hash: "82a6a7c2"
     status: stable
     keystone_active_default: false
     collection_required: "y"
@@ -180,6 +182,7 @@ classes:
         no-free domain:     element qualifies if free=n (bound).
         single-free domain: element qualifies if free=n OR (free=y AND multiple=n).
       Only strict spans are computed for non-interruption (no loose span).
+    qualification_rule_hash: "92149718"
     status: stable
     keystone_active_default: false
     collection_required: "y"
@@ -217,6 +220,7 @@ classes:
         to include positions whose elements can permute but only with a scopal
         interpretation difference (fixed vs. scope-varying ordering counts
         as "non-permutable" under this interpretation).
+    qualification_rule_hash: "c14de1a8"
     criterion_set_status: "[PROVISIONAL]"  # Known gaps: verb-class-conditioned permutability
       # (issue #67) and fluid/multi-position formatives (issue #66) may require additional
       # parameters once the linguistic questions are resolved.
@@ -255,6 +259,7 @@ classes:
       domain (the largest such span). In the planar framework these correspond to the
       strict complete span (conservative/minimal) and the loose partial span
       (liberal/maximal) respectively. No additional criterion is needed.
+    qualification_rule_hash: "101625a7"
     status: stable
     keystone_active_default: false
     collection_required: "y"
@@ -275,6 +280,7 @@ classes:
       A position qualifies if it contains an element where substitutable=y. Complete
       qualification: ALL elements have substitutable=y. Partial qualification: at
       least one element has substitutable=y.
+    qualification_rule_hash: "8dd2b0d4"
     criterion_set_status: "[PROVISIONAL]"  # Class itself is [NEEDS REVIEW]; criterion set
       # may need refinement once real annotation data exists. Proform type (pronoun,
       # pro-verb, pro-VP) may warrant a criterion distinguishing substitution scope.
@@ -304,6 +310,7 @@ classes:
       A position qualifies if it contains an element where idiomatic=y. Complete
       qualification: ALL elements have idiomatic=y. Partial qualification: at
       least one element has idiomatic=y.
+    qualification_rule_hash: "2794fd02"
     criterion_set_status: stable  # Single binary criterion is appropriate; idiom identity
       # is encoded in the construction name, not additional parameters.
     status: "[NEEDS REVIEW]"  # Mebengokre (ch. 12) provides the clearest evidence: diagnostic
@@ -345,6 +352,7 @@ classes:
       is the most semantically informative: it extends from the position of the
       prefixal piece to the position of the suffixal piece, directly identifying
       the extended exponent domain.
+    qualification_rule_hash: "bc5aee58"
     criterion_set_status: stable  # Single binary criterion is appropriate for the
       # circumfix/extended-exponent type. Non-automatic allomorphy (issue #58) is a
       # distinct class, not an extension of this criterion set.
@@ -372,6 +380,7 @@ classes:
       A position qualifies if it contains an element where restart=y. Complete
       qualification: ALL elements in the position have restart=y. Partial
       qualification: at least one element has restart=y.
+    qualification_rule_hash: "29dbc84b"
     criterion_set_status: stable  # Single binary criterion is appropriate; restart
       # behavior is categorical (yes/no per position).
     status: "[NEEDS REVIEW]"  # Strongly confirmed by Cup'ik ch. 2 (4 naturalistic examples,
@@ -415,6 +424,7 @@ classes:
         The keystone always remains part of the domain. Its criterion values
         participate in blocking checks but it is never excluded from the span.
         Returns minimal/maximal × partial/complete = 4 blocked spans.
+    qualification_rule_hash: "56e9aeb2"
     criterion_set_status: "[PROVISIONAL]"  # left-interaction and right-interaction are
       # [NEEDS REVIEW] — their role in the blocked-span qualification rule is unresolved
       # (issue #17). May be removed, renamed, or replaced depending on resolution of
@@ -472,6 +482,7 @@ classes:
         Complete: ALL elements in the position have aspirated=y.
         Partial: at least one element has aspirated=y.
         Returns four spans (strict/loose × complete/partial).
+    qualification_rule_hash: "8a46562f"
     # Formal abstract type in ch. 17 database schema.
     status: "[AUTO-DERIVED: likely stable — confirmed across 10+ language chapters; formal
       abstract type in ch. 17; coordinator sign-off needed to remove AUTO-DERIVED]"
@@ -505,6 +516,7 @@ classes:
       qualification: ALL elements in the position have applies=y. Partial
       qualification: at least one element has applies=y. Returns four spans
       (strict/loose × complete/partial).
+    qualification_rule_hash: "3dd8fb51"
     criterion_set_status: "[AUTO-DERIVED]"
     status: "[AUTO-DERIVED]"
     keystone_active_default: "[NEEDS REVIEW]"
@@ -534,6 +546,7 @@ classes:
       qualification: ALL elements in the position have applies=y. Partial
       qualification: at least one element has applies=y. Returns four spans
       (strict/loose × complete/partial).
+    qualification_rule_hash: "3dd8fb51"
     criterion_set_status: "[AUTO-DERIVED]"
     status: "[AUTO-DERIVED]"
     keystone_active_default: "[NEEDS REVIEW]"
@@ -559,6 +572,7 @@ classes:
       qualification: ALL elements in the position have applies=y. Partial
       qualification: at least one element has applies=y. Returns four spans
       (strict/loose × complete/partial).
+    qualification_rule_hash: "3dd8fb51"
     criterion_set_status: "[AUTO-DERIVED]"
     status: "[AUTO-DERIVED]"
     keystone_active_default: "[NEEDS REVIEW]"
@@ -588,6 +602,7 @@ classes:
       A position qualifies if it contains an element where pause_domain=y.
       Complete qualification: ALL elements in the position have pause_domain=y.
       Partial qualification: at least one element has pause_domain=y.
+    qualification_rule_hash: "4fe4d821"
     criterion_set_status: stable  # Single binary criterion is appropriate; pause
       # behavior is categorical (yes/no per position).
     status: "[NEEDS REVIEW]"  # Mebengokre (ch. 12) applies and validates: diagnostic [\ref{pause}]
@@ -620,6 +635,7 @@ classes:
       A position qualifies if it contains an element where applies=y. Complete
       qualification: ALL elements have applies=y. Partial qualification: at
       least one element has applies=y.
+    qualification_rule_hash: "fa856d1c"
     criterion_set_status: stable  # Single binary criterion is appropriate; ludling
       # operation identity is encoded in the construction name.
     status: "[NEEDS REVIEW]"  # Chatino ch. 8 provides corpus-attested data (Campbell 2020);

@@ -308,7 +308,7 @@ This is a **research project**: the schemas, qualification rules, and analytical
 
 Sessions tend to fall into a few natural patterns. Naming the primary focus at the start of a session helps keep scope manageable.
 
-**Schema work** — Editing any file in `schemas/` or the qualification rules in analysis modules. The most consequential work; mistakes here cascade across languages and analyses. Go slow, run `integrity-check` after changes. Qualification rule changes must also propagate to inline comments and module docstrings — not just the YAML files.
+**Schema work** — Editing any file in `schemas/` or the qualification rules in analysis modules. The most consequential work; mistakes here cascade across languages and analyses. Go slow, run `integrity-check` after changes. Qualification rule changes must also propagate to inline comments and module docstrings — not just the YAML files. See `docs/coordinator-guide.md` § "Updating a qualification rule" for the 7-step workflow (edit YAML → CI detects hash mismatch → paste generated Claude prompt → review diff → `sync-qualification-hashes --apply`).
 
 Snapshot lifecycle: the pre-commit hook (`regenerate_snapshots_hook.py`) regenerates affected snapshots automatically when any `planars/*.py` file is staged — qualification rule changes are covered here. The daily `data-refresh.yml` GitHub Action imports fresh annotations from Google Sheets and regenerates snapshots — data changes are covered there. A snapshot diff in a commit is the expected record of how a change altered span output. A snapshot failure on a PR means a code change altered output without going through the hook.
 

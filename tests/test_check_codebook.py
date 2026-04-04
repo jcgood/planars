@@ -1,9 +1,16 @@
-"""Tests for coverage-reporting additions to coding/check_codebook.py."""
+"""Tests for coding/check_codebook.py."""
 from __future__ import annotations
+
+import hashlib
 
 import pytest
 
-from coding.check_codebook import _collect_coverage, _report_schema_stubs
+from coding.check_codebook import (
+    _collect_coverage,
+    _report_schema_stubs,
+    _check_qualification_rule_drift,
+    _discover_analysis_modules,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -114,3 +121,100 @@ def test_report_schema_stubs_construction_specific(capsys):
     _report_schema_stubs(diag_classes, coverage)
     out = capsys.readouterr().out
     assert "verb-particle idiom" in out
+
+
+# ---------------------------------------------------------------------------
+# _discover_analysis_modules
+# ---------------------------------------------------------------------------
+
+def test_discover_analysis_modules_finds_known_modules():
+    modules = _discover_analysis_modules()
+    assert "ciscategorial" in modules
+    assert "metrical" in modules
+    assert "noninterruption" in modules
+
+
+def test_discover_analysis_modules_excludes_non_analysis():
+    modules = _discover_analysis_modules()
+    assert "io" not in modules
+    assert "spans" not in modules
+    assert "reports" not in modules
+    assert "charts" not in modules
+
+
+# ---------------------------------------------------------------------------
+# _check_qualification_rule_drift
+# ---------------------------------------------------------------------------
+
+def _make_rule_hash(text: str) -> str:
+    normalized = " ".join(text.split())
+    return hashlib.sha256(normalized.encode()).hexdigest()[:8]
+
+
+def _diag_class_with_rule(name: str, rule: str, hash_val: str | None = None) -> dict:
+    cls: dict = {"name": name, "qualification_rule": rule}
+    if hash_val is not None:
+        cls["qualification_rule_hash"] = hash_val
+    return {name: cls}
+
+
+def test_qr_drift_all_clean_no_errors(monkeypatch):
+    import coding.check_codebook as ccb
+    rule = "A position qualifies if free=y."
+    expected_hash = _make_rule_hash(rule)
+    diag_classes = _diag_class_with_rule("noninterruption", rule, expected_hash)
+    monkeypatch.setattr(ccb, "_discover_analysis_modules", lambda: {"noninterruption"})
+    errors = _check_qualification_rule_drift(diag_classes)
+    assert errors == []
+
+
+def test_qr_drift_missing_hash_is_warning_not_error(monkeypatch, capsys):
+    import coding.check_codebook as ccb
+    rule = "A position qualifies if free=y."
+    diag_classes = _diag_class_with_rule("noninterruption", rule, hash_val=None)
+    monkeypatch.setattr(ccb, "_discover_analysis_modules", lambda: {"noninterruption"})
+    errors = _check_qualification_rule_drift(diag_classes)
+    assert errors == []
+    out = capsys.readouterr().out
+    assert "qualification_rule_hash not set" in out
+
+
+def test_qr_drift_wrong_hash_is_hard_error(monkeypatch):
+    import coding.check_codebook as ccb
+    rule = "A position qualifies if free=y."
+    diag_classes = _diag_class_with_rule("noninterruption", rule, hash_val="deadbeef")
+    monkeypatch.setattr(ccb, "_discover_analysis_modules", lambda: {"noninterruption"})
+    errors = _check_qualification_rule_drift(diag_classes)
+    assert any("mismatch" in e for e in errors)
+    assert any("noninterruption" in e for e in errors)
+
+
+def test_qr_drift_no_rule_skipped(monkeypatch):
+    import coding.check_codebook as ccb
+    # class has no qualification_rule; module exists → no error (rule not required)
+    diag_classes = {"ciscategorial": {"name": "ciscategorial"}}
+    monkeypatch.setattr(ccb, "_discover_analysis_modules", lambda: {"ciscategorial"})
+    errors = _check_qualification_rule_drift(diag_classes)
+    assert errors == []
+
+
+def test_qr_drift_module_with_no_yaml_class_is_hard_error(monkeypatch):
+    import coding.check_codebook as ccb
+    # Module is discovered but not in diag_classes → hard error
+    monkeypatch.setattr(ccb, "_discover_analysis_modules", lambda: {"biuniqueness"})
+    errors = _check_qualification_rule_drift({})
+    assert len(errors) == 1
+    assert "no entry in diagnostic_classes.yaml" in errors[0]
+
+
+def test_qr_drift_yaml_class_with_rule_but_no_module_is_warning(monkeypatch, capsys):
+    import coding.check_codebook as ccb
+    # Class has a rule but no module → warning only
+    rule = "Some rule text."
+    diag_classes = _diag_class_with_rule("hypothetical_class_xyz", rule, hash_val=None)
+    monkeypatch.setattr(ccb, "_discover_analysis_modules", lambda: set())
+    errors = _check_qualification_rule_drift(diag_classes)
+    assert errors == []
+    out = capsys.readouterr().out
+    assert "hypothetical_class_xyz" in out
+    assert "no `derive` attribute" in out

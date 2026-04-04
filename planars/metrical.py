@@ -9,7 +9,6 @@ from planars.io import load_filled_tsv
 from planars.spans import blocked_span, fmt_span, position_sets_from_element_mask
 
 _REQUIRED_CRITERIA = {"accented", "obligatory", "independence"}
-_QUALIFICATION_RULE_HASH = "56e9aeb2"
 
 
 def derive_metrical_domains(

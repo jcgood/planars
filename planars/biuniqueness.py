@@ -7,7 +7,6 @@ from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, loose_span, position_sets_from_element_mask
 
 _REQUIRED_CRITERIA = {"biunique"}
-_QUALIFICATION_RULE_HASH = "bc5aee58"
 
 
 def derive_biuniqueness_domains(

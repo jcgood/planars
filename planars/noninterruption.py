@@ -7,7 +7,6 @@ from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, position_sets_from_element_mask
 
 _REQUIRED_CRITERIA = {"free", "multiple"}
-_QUALIFICATION_RULE_HASH = "92149718"
 
 
 def derive_noninterruption_domains(

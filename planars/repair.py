@@ -7,7 +7,6 @@ from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, loose_span, position_sets_from_element_mask
 
 _REQUIRED_CRITERIA = {"restart"}
-_QUALIFICATION_RULE_HASH = "29dbc84b"
 
 
 def derive_repair_domains(

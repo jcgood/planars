@@ -7,7 +7,6 @@ from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, position_sets_from_element_mask
 
 _REQUIRED_CRITERIA = {"permutable", "scopal"}
-_QUALIFICATION_RULE_HASH = "c14de1a8"
 
 
 def derive_nonpermutability_domains(
