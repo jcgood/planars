@@ -60,6 +60,7 @@ from .make_forms import (
     build_element_index,
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
+    resolve_keystone_active,
 )
 
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
@@ -194,19 +195,21 @@ def _upload_planar_input_as_sheets(
 # ---------------------------------------------------------------------------
 
 def _build_rows(
-    element_index, lang_id: str, param_names: List[str]
+    element_index, lang_id: str, param_names: List[str], keystone_active: bool = False
 ) -> List[List[object]]:
     """Build sorted data rows for a sheet tab.
 
     Rows are sorted by (position_number, element_name) so annotators see the
     planar structure in order. Elements with leading/trailing hyphens are wrapped
     in brackets to prevent Excel/Sheets from interpreting them as formulas.
-    Keystone (v:verbstem) rows get 'NA' in all param columns; others get ''.
+    Keystone (v:verbstem) rows get 'NA' in all param columns when keystone_active
+    is False (default); when True they get '' so annotators fill in real values.
 
     Args:
         element_index: ElementIndex from build_element_index.
         lang_id: language ID to filter the index.
         param_names: ordered list of criterion column names.
+        keystone_active: if True, keystone rows start blank like all other rows.
 
     Returns:
         List of rows (without the header), each a list:
@@ -225,7 +228,7 @@ def _build_rows(
         # Wrap hyphen-prefixed/suffixed elements to prevent Sheets formula parsing.
         if element.startswith("-") or element.endswith("-"):
             element = f"[{element}]"
-        if pos_name.strip().lower() == "v:verbstem":
+        if pos_name.strip().lower() == "v:verbstem" and not keystone_active:
             rows.append([element, pos_name, pos] + ["NA"] * len(param_names))
         else:
             rows.append([element, pos_name, pos] + [""] * len(param_names))
@@ -458,7 +461,8 @@ def _create_analysis_sheet(
     tab_names = []
 
     for construction, param_names, param_values in constructions:
-        rows = _build_rows(element_index, lang_id, param_names)
+        ka = resolve_keystone_active(lang_id, class_name, construction) or False
+        rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
         _populate_tab(spreadsheet, construction, param_names, param_values, rows)
         tab_names.append(construction)
         print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")

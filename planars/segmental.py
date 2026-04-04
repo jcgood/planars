@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
+import pandas as pd
+
 from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, loose_span, position_sets_from_element_mask
 
@@ -42,7 +44,7 @@ def derive_segmental_domains(
     """
     if _data is None:
         _data = load_filled_tsv(tsv_path, _REQUIRED_CRITERIA, strict=strict)
-    data_df, keystone_pos, pos_to_name, _, _ = _data
+    data_df, keystone_pos, pos_to_name, _, keystone_df = _data
 
     missing_data = {}
     if not strict:
@@ -50,10 +52,13 @@ def derive_segmental_domains(
         if blank_els:
             missing_data["aspirated"] = blank_els
 
-    data_df["is_in_domain"] = data_df["aspirated"] == "y"
+    # Include keystone rows so the verbstem's aspirated value participates in
+    # domain qualification (mirrors metrical.py's blocking_df pattern).
+    domain_df = pd.concat([data_df, keystone_df], ignore_index=True)
+    domain_df["is_in_domain"] = domain_df["aspirated"] == "y"
 
     partial_positions, complete_positions = position_sets_from_element_mask(
-        data_df, data_df["is_in_domain"]
+        domain_df, domain_df["is_in_domain"]
     )
 
     return {

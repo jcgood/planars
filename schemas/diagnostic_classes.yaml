@@ -475,9 +475,9 @@ classes:
     # Formal abstract type in ch. 17 database schema.
     status: "[AUTO-DERIVED: likely stable — confirmed across 10+ language chapters; formal
       abstract type in ch. 17; coordinator sign-off needed to remove AUTO-DERIVED]"
-    keystone_active_default: "[NEEDS REVIEW]"  # Current code does not implement keystone
-      # blocking for segmental; unclear whether verbstem segmental properties create a
-      # domain boundary. Treat as false until Adam resolves.
+    keystone_active_default: true  # The verbstem's segmental properties (e.g. aspirated=y/n)
+      # are real annotation data worth collecting. Note: segmental.py does not yet include
+      # keystone_df in domain qualification — Phase B of #104 will fix this.
     collection_required: "n"
 
   - name: tonal
