@@ -112,8 +112,9 @@ def _generate_prompt(cls: dict) -> str:
         )
         lines.append("3. Run `pytest` to verify tests pass.")
 
+    final_step = 5 if source is None else 4
     lines.append(
-        f"5. After Claude is done, run:\n"
+        f"{final_step}. After Claude is done, run:\n"
         f"   ```bash\n"
         f"   {sync_cmd}\n"
         f"   ```\n"
