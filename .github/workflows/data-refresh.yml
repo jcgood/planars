@@ -102,22 +102,20 @@ jobs:
         run: bash .github/scripts/manage_issue.sh close import-error "Import succeeded on $(date -u +%Y-%m-%d) — closing."
 
       - name: Remind if pending-changes issue is stale
-        # If pending_changes.json exists and hasn't been updated in 7+ days,
-        # the coordinator has forgotten to run apply-pending. Bump the open
-        # issue so it resurfaces rather than silently ageing out.
+        # If an open pending-changes issue has been open for more than 7 days,
+        # add a daily comment to resurface it. Uses the GitHub issue creation
+        # date — not pending_changes.json, which is gitignored and never present
+        # in CI. The issue is the persistent record; the file is ephemeral.
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -f pending_changes.json ] && [ -s pending_changes.json ]; then
-            RECENT=$(git log --since="7 days ago" --format="%H" -- pending_changes.json)
-            if [ -z "$RECENT" ]; then
-              OPEN_COUNT=$(gh issue list --label pending-changes --state open --json number --jq length)
-              if [ "$OPEN_COUNT" -gt 0 ]; then
-                ISSUE_NUM=$(gh issue list --label pending-changes --state open --json number --jq '.[0].number')
-                gh issue comment "$ISSUE_NUM" --body "Reminder: \`pending_changes.json\` has been unresolved for more than 7 days as of $(date -u +%Y-%m-%d). Run \`python -m coding apply-pending\` to review and apply."
-              fi
-            fi
-          fi
+          STALE=$(gh issue list --label pending-changes --state open \
+            --json number,createdAt \
+            --jq '[.[] | select((now - (.createdAt | fromdateiso8601)) > 604800)] | .[].number')
+          for ISSUE_NUM in $STALE; do
+            gh issue comment "$ISSUE_NUM" \
+              --body "Reminder: this pending-changes issue has been open for more than 7 days as of $(date -u +%Y-%m-%d). Run \`python -m coding apply-pending\` to review and apply each change."
+          done
 
       - name: Regenerate diagnostics TSVs from YAML
         # Keeps diagnostics_{lang_id}.tsv in sync with the YAML source of truth.
