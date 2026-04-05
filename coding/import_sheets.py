@@ -238,10 +238,13 @@ def _detect_diagnostics_changes(
     old_df: pd.DataFrame,
     new_df: pd.DataFrame,
     lang_id: str,
+    sheets_data: Optional[Dict] = None,
 ) -> Tuple[Set[str], List[Dict]]:
     """Compare old and new diagnostics DataFrames for changes to criteria and constructions.
 
     Returns (safe_commands, pending_entries).
+    sheets_data: mapping of class_name → sheet info dict (from manifest) used to record
+    spreadsheet IDs in new-construction pending entries for later Drive verification.
     """
     safe_cmds: Set[str] = set()
     pending: List[Dict] = []
@@ -273,9 +276,18 @@ def _detect_diagnostics_changes(
             pending.append({
                 "lang_id": lang_id,
                 "change_type": "diagnostics_class_removed",
-                "description": f"Analysis class '{cls}' removed from diagnostics_{lang_id}.tsv",
-                "diff_summary": f"Class '{cls}' was in old diagnostics but not in new.",
-                "command": "python -m coding sync-params --remove --apply",
+                "class_name": cls,
+                "description": f"Analysis class '{cls}' removed from diagnostics_{lang_id}.tsv — requires YAML update and manifest cleanup",
+                "diff_summary": (
+                    f"Class '{cls}' was present in the old diagnostics but not in the new download.\n"
+                    f"Steps to resolve:\n"
+                    f"  1. Remove '{cls}' from coded_data/{lang_id}/planar_input/diagnostics_{lang_id}.yaml\n"
+                    f"  2. python -m coding sync-diagnostics-yaml --apply --lang {lang_id}\n"
+                    f"  3. python -m coding prune-manifest --apply\n"
+                    f"     (archives local TSVs for '{cls}' and removes stale manifest entry;\n"
+                    f"     skipping this causes import-sheets to keep re-importing the old sheet)"
+                ),
+                "command": "python -m coding prune-manifest --apply",
             })
             continue
 
@@ -306,17 +318,30 @@ def _detect_diagnostics_changes(
             })
 
         if added_cons:
+            sheet_id = (sheets_data or {}).get(cls, {}).get("spreadsheet_id", "")
+            cons_list = sorted(added_cons)
             diff = (
-                f"Class '{cls}': new constructions: {sorted(added_cons)}\n"
-                f"Add new tab(s) to the existing {cls}_{lang_id} sheet manually,\n"
-                f"or run generate-sheets --force to recreate (archives existing annotations)."
+                f"Class '{cls}': new construction(s): {cons_list}\n"
+                f"A new tab must be added to the existing Google Sheet for this class.\n"
+                f"This cannot be automated without archiving existing annotations.\n"
+                f"Options:\n"
+                f"  1. Open the Google Sheet for '{cls}' / '{lang_id}' and add the tab(s)\n"
+                f"     manually, then set each to 'ready-for-review'.\n"
+                f"  2. Or run: python -m coding generate-sheets --force\n"
+                f"     WARNING: --force archives ALL existing annotations for '{cls}'\n"
+                f"     and recreates the sheet from scratch.\n"
+                f"This entry will remain open until the tab(s) are verified in the Sheet."
             )
             pending.append({
                 "lang_id": lang_id,
                 "change_type": "diagnostics_new_construction",
-                "description": f"New construction(s) in class '{cls}' — new sheet tab required",
+                "class_name": cls,
+                "new_constructions": cons_list,
+                "spreadsheet_id": sheet_id,
+                "instructions_shown": False,
+                "description": f"New construction(s) in class '{cls}' — new sheet tab required: {cons_list}",
                 "diff_summary": diff,
-                "command": "python -m coding generate-sheets",
+                "command": "",
             })
 
         if removed_cons:
@@ -531,7 +556,7 @@ def _download_planar_input_sheets(
                 diag_path = planar_dir / f"diagnostics_{lang_id}.tsv"
                 if diag_path.exists():
                     old_df = pd.read_csv(diag_path, sep="\t", dtype=str).fillna("")
-                    s, p = _detect_diagnostics_changes(old_df, new_df, lang_id)
+                    s, p = _detect_diagnostics_changes(old_df, new_df, lang_id, lang_data.get("sheets", {}))
                     safe_cmds |= s
                     pending   += p
                     content_changed = not old_df.reset_index(drop=True).equals(
@@ -596,7 +621,8 @@ def _verify_manifest_sheet_ids(drive, manifest: Dict) -> None:
         for line in bad:
             print(line)
         print("The manifest may be stale or point to deleted/moved sheets.")
-        print("Run: python /tmp/investigate_drive.py  to diagnose.")
+        print("→ Run: python -m coding integrity-check --sheets")
+        print("  This will list which spreadsheet IDs are unreachable and what to do next.")
         raise SystemExit(1)
 
 

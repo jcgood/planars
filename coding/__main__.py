@@ -26,6 +26,7 @@ Commands:
 Each command accepts the same flags as the original script. Use --help on any
 command for details, or see CLAUDE.md.
 """
+import json
 import sys
 from pathlib import Path
 
@@ -56,7 +57,7 @@ _COMMANDS = {
 def _warn_pending() -> None:
     """Print a reminder if pending_changes.json has unreviewed destructive changes."""
     pending = _ROOT / "pending_changes.json"
-    if pending.exists() and pending.stat().st_size > 2:
+    if pending.exists() and json.loads(pending.read_text(encoding="utf-8") or "[]"):
         print("WARNING: Pending destructive changes require coordinator approval.")
         print("         Run: python -m coding apply-pending\n")
 
