@@ -549,9 +549,8 @@ Add the following secrets under **Settings → Secrets and variables → Actions
 | `PLANARS_DATA_TOKEN` | Already exists — used by the existing CI workflow to read `jcgood/planars-data`. No action needed. |
 | `PLANARS_OAUTH_CREDENTIALS` | Contents of `~/.config/planars/oauth_credentials.json` on your laptop — the OAuth client secret downloaded from Google Cloud Console during initial setup. |
 | `GOOGLE_OAUTH_TOKEN` | Contents of `~/.config/gspread/authorized_user.json` on your laptop — written by gspread after your first interactive login. Contains a refresh token so the workflow can renew its Google access silently. Stays valid as long as the workflow runs at least once every few months. |
-| `PLANARS_DRIVE_CONFIG` | Contents of `drive_config.json` in the repo root — tells the workflow how to find the Drive manifest and language folders. |
 
-**Keeping `PLANARS_DRIVE_CONFIG` current:** `generate-sheets` rewrites `drive_config.json` whenever it creates a new language folder or updates sheet IDs. After any such run, copy the updated file contents into the secret. `generate-sheets` prints a reminder at the end of each run when the secret may need updating.
+Note: `drive_config.json` is **committed to the repo** (it contains only Drive folder and sheet IDs, no credentials) and is read directly by the workflows — no secret is needed for it.
 
 #### What each workflow does
 
@@ -580,7 +579,7 @@ All issue types are auto-closed on the next clean run. You can trigger the workf
 
 ### Drive folder structure
 
-The Drive manifest (`manifest.json`) is stored on Drive and contains all languages' sheet metadata and folder IDs. A local `drive_config.json` (gitignored) bootstraps the Drive lookup — it holds `_root_folder_id`, `_planars_config_file_id`, and per-language `folder_id`, `planar_spreadsheet_id`, and `diagnostics_spreadsheet_id`.
+The Drive manifest (`manifest.json`) is stored on Drive and contains all languages' sheet metadata and folder IDs. `drive_config.json` (committed to the repo) bootstraps the Drive lookup — it holds `_root_folder_id`, `_planars_config_file_id`, and per-language `folder_id`, `planar_spreadsheet_id`, and `diagnostics_spreadsheet_id`. It contains no credentials, only IDs, so it is safe to commit.
 
 `drive_config.json` is created and updated automatically — you never need to edit it by hand. `generate-sheets` writes per-language IDs as it creates Drive folders and files; `setup-root-folder` adds the top-level `_root_folder_id`.
 
@@ -598,4 +597,4 @@ This is idempotent — safe to re-run, but only needs to happen once per project
 
 #### Joining an existing project
 
-`drive_config.json` is gitignored and cannot be recovered from the repo. If you are joining a project that is already set up, ask the lead coordinator to share their `drive_config.json` and place it at the root of your `planars/` clone. Without it, `generate-sheets` and `import-sheets` cannot locate the existing Drive manifest or language folders.
+`drive_config.json` is committed to the `planars` repo and will be present in your clone automatically — no file sharing needed. It contains only Drive folder and sheet IDs (no credentials), so it is safe to commit. Once you have cloned the repo and set up the three GitHub Actions secrets above, the workflows can locate the existing Drive manifest and language folders without any additional configuration.
