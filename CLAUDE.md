@@ -123,28 +123,28 @@ Late aggregation, autotypology (dynamic schema), definition files vs. data files
 - `cli.py` + `__main__.py`: CLI entry point (`python -m planars <analysis> <tsv>`).
 
 `coding/` contains the coordinator tooling:
-- `drive.py`: Shared Google Drive/Sheets client helpers used by all coordinator commands — `_get_clients()`, `_load/save_drive_config()`, `_open_spreadsheet()`, `_load/upload_manifest`, folder/permission helpers, and `_with_retry(fn)` for 429 quota backoff. All OAuth2 auth logic lives here.
-- `schemas.py`: Cached loaders for schema YAML files — `load_diagnostic_classes()` and `load_diagnostic_criteria()`. Each file is read once per process. `languages.yaml` is intentionally excluded (written to mid-session by `lookup-lang`; callers read it fresh at point of use).
+- `drive.py`: Shared Drive/Sheets client helpers — OAuth2 auth, config load/save, manifest upload/download, and `_with_retry(fn)` for 429 quota backoff.
+- `schemas.py`: Cached loaders for `load_diagnostic_classes()` and `load_diagnostic_criteria()`; `languages.yaml` excluded (read fresh by callers).
 - `make_forms.py`: `build_element_index`, `_read_diagnostics_for_language` — utilities used by other scripts.
-- `generate_sheets.py`: `generate-sheets` command. Validates planar and diagnostics before creating sheets. Backs up the Drive manifest to `manifest_backup.json` (gitignored) at the start of each run. Aborts if the manifest is empty for an established language (stale manifest guard). **`--force` aborts with a hard error if any language already has annotation sheet IDs in the manifest** — annotation data is irreplaceable and must never be destroyed by a flag. To add new classes only, omit `--force`. To restructure existing sheets use `restructure-sheets --apply`. Each annotation spreadsheet gets a `Status` tab (last tab) with one row per construction and an `in-progress` / `ready-for-review` dropdown.
-- `update_sheets.py`: `update-sheets` — adds missing rows/trailing columns to existing sheets. Also ensures the Status tab exists and is last in each spreadsheet. Retries `get_all_values()` with exponential backoff (up to 5 retries, 15s×attempt) on 429 quota errors.
-- `sync_params.py`: `sync-params` — syncs criterion columns when `diagnostics_{lang_id}.yaml` changes; supports rename, split, merge, and remove lifecycle operations. After mutating the TSV it regenerates the YAML (preserving `notes`) so both files stay in sync.
-- `sync_diagnostics_yaml.py`: `sync-diagnostics-yaml` — syncs between YAML (source of truth) and TSV (derived artifact) or Google Sheet. Default direction is YAML → TSV; `--to-sheet` uploads the YAML-derived content to the diagnostics Google Sheet (requires Drive access — use after renaming classes/criteria to prevent false diagnostics-drift issues); `--from-tsv` diffs a freshly-downloaded TSV against the YAML and categorises changes as deterministic (auto-applied) or ambiguous (written to `diagnostics_drift.json` for coordinator review). String-distance heuristics (`difflib.get_close_matches`) flag likely criterion/class renames. Dry-run by default; `--apply` to write. `--lang` to restrict to one language.
-- `sync_qualification_hashes.py`: `sync-qualification-hashes` — stamps `qualification_rule_hash` in `diagnostic_classes.yaml` after a module has been reviewed against an updated rule. Computes SHA-256[:8] of the normalised `qualification_rule` text and writes it in-place. Dry-run by default; `--apply` to write; `--class NAME` to restrict to one class. Run this as the final step after Claude has updated a module (step 6 of the qualification rule update workflow).
-- `generate_rule_update_prompt.py`: `generate-rule-update-prompt` — generates a coordinator-facing Claude prompt for each class whose `qualification_rule_hash` is missing or stale. Output includes the current rule text, current module source, explicit update instructions, and the exact `sync-qualification-hashes` command to run afterward. Used by `data-refresh.yml` to enrich `codebook-error` issue bodies. Pass a class name to restrict to one class; omit for all stale classes.
-- `restructure_sheets.py`: `restructure-sheets` — archives and regenerates sheets after structural changes; carries over annotations using `--rename-map` (position renames), `--rename-element` (element label renames), and `--rename-class` (analysis class renames: archives old sheet, creates new sheet under new name, renames local TSV directory in-place, updates manifest); only processes classes with actual changes. `--rename-class` requires diagnostics_{lang_id}.tsv to already use the new name (enforced by pre-flight check); pair with `prune-manifest` if retiring (not renaming) a class.
-- `import_sheets.py`: `import-sheets` — downloads filled annotation sheets to TSVs; also downloads planar/diagnostics Sheets, detects changes, auto-applies safe downstream commands, and writes destructive changes to `pending_changes.json`; highlights invalid cells pink in the Sheet as a side effect. After downloading a diagnostics TSV it diffs it against the language's YAML and writes ambiguous differences to `diagnostics_drift.json`; the daily `data-refresh.yml` Action files a `diagnostics-drift` issue if any are found. Aborts if `coded_data/` has uncommitted TSV changes. Skips existing TSVs by default; `--overwrite-existing` re-downloads them (auto-archives to `archive/` first). When destructive changes are written, opens or updates a GitHub issue labeled `pending-changes` (requires `gh` CLI). Skips constructions whose Status tab entry is not `ready-for-review` unless `--ignore-status` is passed.
-- `apply_pending.py`: `apply-pending` — interactive review and application of pending destructive changes written by `import-sheets`. Closes the `pending-changes` GitHub issue when all entries are cleared.
-- `prune_manifest.py`: `prune-manifest` — removes retired analysis class entries from the Drive manifest and archives their local TSVs. Run after removing a class from `diagnostics_{lang_id}.tsv`. Dry-run by default; `--apply` to execute, `--all` to skip per-class prompts. Writes a timestamped manifest snapshot to `manifest_archives/` (gitignored) before any mutation. Also moves the Drive spreadsheet for each retired class into an `_archived/` subfolder (not deleted — annotation data is irreplaceable); prints a recency warning if the sheet was edited within the last 14 days.
+- `generate_sheets.py`: Creates annotation sheets; validates planar/diagnostics first; **`--force` aborts if any language already has sheet IDs in the manifest** (annotation data is irreplaceable); each spreadsheet gets a `Status` tab with `in-progress`/`ready-for-review` dropdowns.
+- `update_sheets.py`: Adds missing rows/trailing columns to existing sheets; ensures Status tab exists and is last.
+- `sync_params.py`: Syncs criterion columns when `diagnostics_{lang_id}.yaml` changes; supports rename, split, merge, remove; regenerates YAML afterward.
+- `sync_diagnostics_yaml.py`: Syncs YAML → TSV (default), YAML → Sheet (`--to-sheet`), or diffs TSV → YAML (`--from-tsv`) writing ambiguous differences to `diagnostics_drift.json`.
+- `sync_qualification_hashes.py`: Stamps `qualification_rule_hash` in `diagnostic_classes.yaml` after module review; run as the final step of the qualification rule update workflow.
+- `generate_rule_update_prompt.py`: Generates a coordinator-facing Claude prompt for each class with a missing or stale `qualification_rule_hash`; used by `data-refresh.yml` to enrich `codebook-error` issue bodies.
+- `restructure_sheets.py`: Archives and regenerates sheets after structural changes; `--rename-map` (positions), `--rename-element` (elements), `--rename-class` (archives old sheet, creates new, renames local TSV dir, updates manifest); pair with `prune-manifest` if retiring rather than renaming.
+- `import_sheets.py`: Downloads filled annotation sheets to TSVs; auto-applies safe downstream commands; writes destructive changes to `pending_changes.json`; aborts if `coded_data/` has uncommitted changes; skips constructions not `ready-for-review` unless `--ignore-status`.
+- `apply_pending.py`: Interactive review and application of destructive changes from `import-sheets`; closes the `pending-changes` issue when cleared.
+- `prune_manifest.py`: Removes retired class entries from the Drive manifest, archives local TSVs, and moves Drive spreadsheets to `_archived/`; warns if a sheet was edited within 14 days.
 - `validate.py`: Shared base — just the `ValidationIssue` dataclass.
 - `validate_planar.py`: `validate_planar_df(df)` — validates planar TSV structure.
-- `validate_diagnostics.py`: `validate_diagnostics_df(df, lang_id)` — validates diagnostics_{lang_id}.tsv against schema files. `validate_diagnostics_yaml(data, lang_id)` — validates the YAML dict form.
-- `validate_coding.py`: `validate-coding` command — reads annotation sheets, validates values, clears/updates pink cell highlights. Also calls `validate_planar_df` and `validate_diagnostics_df` before sheet validation. Exits with code 1 if any issues are found (used by the scheduled sheet-validation GitHub Actions workflow).
-- `generate_notebooks.py`: `generate-notebooks` — generates per-language contributor, validation, and report notebooks, plus the coordinator notebook. Stores `report_notebook_file_id` in `drive_config.json`.
-- `generate_reports.py`: `generate-reports` — generates and uploads `report_{lang_id}.pdf` directly (no Colab; used by nightly GitHub Action). Stores `report_file_id` in `drive_config.json`.
-- `check_codebook.py`: `check-codebook` — consistency check between diagnostic_criteria.yaml, diagnostic_classes.yaml, analysis modules, and diagnostics_{lang_id}.tsv.
-- `integrity_check.py`: `integrity-check` — full project-wide health report across six sections (PLANAR STRUCTURE, DIAGNOSTICS, CODEBOOK CONSISTENCY, ANALYSIS CONSISTENCY, ANNOTATION SHEETS, NEEDS REVIEW). Use `--lang` to restrict per-language sections; `--sheets` to include live Google Sheets structural validation.
-- `glottolog.py`: `lookup-lang` — fetches and caches Glottolog metadata; writes to `glottolog_cache.json` (gitignored) and `schemas/languages.yaml` (source of truth). Also provides `is_valid_format()` and `cached_entry()` used by `validate_diagnostics.py`.
+- `validate_diagnostics.py`: `validate_diagnostics_df(df, lang_id)` and `validate_diagnostics_yaml(data, lang_id)` — validate TSV and YAML forms against schema files.
+- `validate_coding.py`: `validate-coding` — reads annotation sheets, validates values, updates pink highlights; exits code 1 on issues (used by the sheet-validation workflow).
+- `generate_notebooks.py`: Generates per-language contributor, validation, and report notebooks, plus the coordinator notebook.
+- `generate_reports.py`: Generates and uploads `report_{lang_id}.pdf` directly (no Colab; used by nightly GitHub Action).
+- `check_codebook.py`: Consistency check between diagnostic_criteria.yaml, diagnostic_classes.yaml, analysis modules, and diagnostics_{lang_id}.tsv.
+- `integrity_check.py`: Full project-wide health report; `--lang` restricts per-language sections; `--sheets` includes live Sheets structural validation.
+- `glottolog.py`: Fetches and caches Glottolog metadata to `glottolog_cache.json` and `schemas/languages.yaml`; provides `is_valid_format()` and `cached_entry()`.
 - `populate_sheets.py`: One-time utility for uploading legacy TSV data.
 - `setup_root_folder.py`: One-time Drive folder setup (run once after first `generate-sheets`).
 
@@ -215,11 +215,7 @@ Run `lookup-lang` before `generate-sheets` when onboarding a new language.
 
 `render_codebook.py` at the repo root renders the schemas as human-readable Markdown (reads from all four schema files): `python render_codebook.py` (stdout) or `python render_codebook.py codebook.md` (file).
 
-`generate_diagram.py` at the repo root generates Graphviz diagrams of the planars schema structure. Two diagram types are supported via `--diagram`:
-- `taxonomy` (default): analysis class taxonomy — classes grouped by domain type with diagnostic criteria listed inside each node, and language instances connected on the right with construction names on edges for construction-specific classes.
-- `schema-map`: schema file relationships — the four YAML schema files, their source-of-truth roles, cross-references between them, and how per-language diagnostics files derive from and are validated against them.
-
-Output: `python generate_diagram.py out.svg` (or `.pdf`, `.dot`, `.png`). Use `--diagram schema-map out.svg` for the schema map. Requires `dot` (Graphviz) to be installed.
+`generate_diagram.py` generates Graphviz diagrams: `taxonomy` (default, class taxonomy by domain type) or `schema-map` (YAML schema file relationships). Run: `python generate_diagram.py [--diagram schema-map] out.svg` (also `.pdf`, `.dot`, `.png`). Requires Graphviz.
 
 `Makefile` at the repo root provides short `make` aliases for all coordinator commands. Run `make help` for the full list. The venv must be activated before using `make`.
 
@@ -227,14 +223,7 @@ Output: `python generate_diagram.py out.svg` (or `.pdf`, `.dot`, `.png`). Use `-
 
 ## NonCollaborative/
 
-Personal working area not part of the shared analysis pipeline:
-
-- `make_file.R` — R equivalent of `make_forms.py`
-- `domains/` — domain TSV files for various languages (Chac, Mart, Nyan, Quech, Yupik, etc.)
-- `domainGenerationTests/` — earlier prototypes of the analysis scripts
-- `planar_tables/` — CSV/TSV versions of the planar structure for stan1293
-- `scripts/` — active R and Python scripts for visualization and analysis (constituency forests, domain charts, tree traversal, etc.)
-- `OlderFiles/` — archive of older scripts and data, including prior versions of planar_tables and scripts
+Personal R/Python working area (scripts, prototypes, domain TSVs, older files) — not part of the analysis pipeline.
 
 ## Documentation maintenance
 
@@ -289,20 +278,16 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 
 | Label | Meaning |
 |-------|---------|
-| `diagnostics` | Module design, diagnostic criteria, or qualification rules requiring linguistic validation — input from Adam needed before implementation. Filter: `gh issue list --label diagnostics` |
-| `sheet-validation` | Filed automatically by the `sheet-validation.yml` workflow when `validate-coding` detects invalid cell values. Auto-closed when clean. |
-| `sheet-drift` | Filed automatically by the `data-refresh.yml` workflow when `update-sheets` (dry-run) detects sheets out of sync with the data model. Resolve by running `update-sheets --apply`. Auto-closed when clean. |
-| `pending-changes` | Filed automatically by `import-sheets` when destructive changes are written to `pending_changes.json`. Resolve by running `apply-pending`. |
-| `diagnostics-drift` | Filed automatically by `data-refresh.yml` when `import-sheets` detects ambiguous TSV→YAML differences in `diagnostics_drift.json`. Resolve by reviewing the drift, editing YAML manually, and running `sync-diagnostics-yaml --apply`. Auto-closed when clear. |
-| `import-error` | Filed automatically by `data-refresh.yml` when `import-sheets --apply` exits non-zero (crash or import failure). The issue body contains the import output up to the point of failure. Auto-closed when import succeeds. |
-| `codebook-error` | Filed automatically by `data-refresh.yml` when `check-codebook` detects schema inconsistencies (criteria in modules but not in `diagnostic_criteria.yaml`, required criteria missing from `diagnostics_{lang}.tsv`, etc.). Also runs in CI on every push. Auto-closed when check passes. |
-| `data-overwrite` | Filed automatically by `data-refresh.yml` when human commits to planars-data appear to have been overwritten by today's Sheet import. May be a false alarm (coordinator's local edit matched the Sheet). Check `git log` / `git show` in planars-data to verify. Auto-closed when clean. |
-| `stale-manifest` | Filed automatically by `data-refresh.yml` when `integrity-check --check-manifest` finds manifest entries whose class is no longer in `diagnostics_{lang}.yaml`. Resolve by running `prune-manifest --apply`. Auto-closed when clean. |
-| `integrity-error` | Filed automatically by `data-refresh.yml` when `integrity-check` detects planar TSV structure or analysis module consistency errors. Run `integrity-check` locally for details. Auto-closed when clean. |
-
-### Notable open issues
-
-Run `gh issue list` for the full list.
+| `diagnostics` | Requires linguistic validation from Adam before implementation. Filter: `gh issue list --label diagnostics` |
+| `sheet-validation` | Filed by `sheet-validation.yml` when `validate-coding` finds invalid cell values. Resolve: fix values in Sheet. Auto-closed when clean. |
+| `sheet-drift` | Filed by `data-refresh.yml` when sheets are out of sync with the data model. Resolve: `update-sheets --apply`. Auto-closed when clean. |
+| `pending-changes` | Filed by `import-sheets` when destructive changes land in `pending_changes.json`. Resolve: `apply-pending`. |
+| `diagnostics-drift` | Filed by `data-refresh.yml` when `import-sheets` finds ambiguous TSV→YAML differences. Resolve: edit YAML, run `sync-diagnostics-yaml --apply`. Auto-closed when clear. |
+| `import-error` | Filed by `data-refresh.yml` when `import-sheets --apply` exits non-zero. Issue body contains the failure output. Auto-closed when import succeeds. |
+| `codebook-error` | Filed by `data-refresh.yml` (and CI on every push) when `check-codebook` finds schema inconsistencies. Auto-closed when check passes. |
+| `data-overwrite` | Filed by `data-refresh.yml` when human commits appear overwritten by today's Sheet import. Check `git log`/`git show` in planars-data to verify. Auto-closed when clean. |
+| `stale-manifest` | Filed by `data-refresh.yml` when manifest entries have no matching class in `diagnostics_{lang}.yaml`. Resolve: `prune-manifest --apply`. Auto-closed when clean. |
+| `integrity-error` | Filed by `data-refresh.yml` when `integrity-check` detects errors. Run `integrity-check` locally for details. Auto-closed when clean. |
 
 ## Work phases
 
