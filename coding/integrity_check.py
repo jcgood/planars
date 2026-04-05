@@ -135,12 +135,16 @@ def _section_planar(lang_ids: List[str]) -> Tuple[int, int]:
 
         if not planar_dir.exists():
             print(_fail(f"{lang}  —  no planar_input/ directory"))
+            print(_sub(f"→ Language onboarding is incomplete."))
+            print(_sub(f"  See docs/coordinator-guide.md § 'Onboarding a new language'."))
             total_e += 1
             continue
 
         planar_files = sorted(planar_dir.glob("planar_*.tsv"))
         if not planar_files:
-            print(_fail(f"{lang}  —  no planar_*.tsv found"))
+            print(_fail(f"{lang}  —  no planar_*.tsv found in planar_input/"))
+            print(_sub(f"→ Add the planar TSV: coded_data/{lang_id}/planar_input/planar_{lang_id}-YYYYMMDD.tsv"))
+            print(_sub(f"  See docs/coordinator-guide.md § 'Onboarding a new language'."))
             total_e += 1
             continue
 
@@ -171,6 +175,15 @@ def _section_diagnostics(lang_ids: List[str]) -> Tuple[int, int]:
 
         if not diag_path.exists():
             print(_fail(f"{lang}  —  diagnostics_{lang_id}.tsv not found"))
+            yaml_path = CODED_DATA / lang_id / "planar_input" / f"diagnostics_{lang_id}.yaml"
+            if yaml_path.exists():
+                print(_sub(f"→ YAML exists but TSV has not been generated."))
+                print(_sub(f"  run: python -m coding sync-diagnostics-yaml --apply --lang {lang_id}"))
+            else:
+                print(_sub(f"→ Neither YAML nor TSV found — language onboarding is incomplete."))
+                print(_sub(f"  Create coded_data/{lang_id}/planar_input/diagnostics_{lang_id}.yaml,"))
+                print(_sub(f"  then run: python -m coding sync-diagnostics-yaml --apply --lang {lang_id}"))
+                print(_sub(f"  See docs/coordinator-guide.md § 'Onboarding a new language'."))
             total_e += 1
             continue
 
@@ -215,6 +228,8 @@ def _section_analysis(codebook: dict) -> Tuple[int, int]:
         print(_fail("Module _REQUIRED_CRITERIA vs. diagnostic_criteria.yaml"))
         for e in errs_req:
             print(_sub(e))
+        print(_sub("→ Add the missing criterion to schemas/diagnostic_criteria.yaml,"))
+        print(_sub("  then run: python -m coding check-codebook"))
     else:
         print(_ok("Module _REQUIRED_CRITERIA all defined in diagnostic_criteria.yaml"))
 
@@ -222,6 +237,8 @@ def _section_analysis(codebook: dict) -> Tuple[int, int]:
         print(_fail("Chart span keys vs. derive function result dicts"))
         for e in errs_keys:
             print(_sub(e))
+        print(_sub("→ Fix the mismatched key in the module's derive_*() return dict or in"))
+        print(_sub("  planars/charts.py, then run: pytest"))
     else:
         print(_ok("All chart span keys match derive function result dicts"))
 
@@ -307,7 +324,8 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
 
         # Check for stale manifest entries via shared helper (no Sheet API calls).
         for _, stale_cls in _stale_manifest_classes(manifest, [lang_id]):
-            print(_warn(f"{lang} · {stale_cls}  —  in manifest but not in diagnostics — run prune-manifest"))
+            print(_warn(f"{lang} · {stale_cls}  —  in manifest but not in diagnostics"))
+            print(_sub(f"→ run: python -m coding prune-manifest --apply"))
             total_w += 1
 
         for class_name, sheet_info in sorted(sheets_info.items()):
@@ -352,12 +370,16 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
                     for col in stale:
                         prefix = "_split_" if col.startswith("_split_") else "_merged_"
                         op = "split" if prefix == "_split_" else "merge"
-                        print(_sub(f"stale {op} column '{col}' — remap values then remove manually"))
+                        print(_sub(f"stale {op} column '{col}'"))
+                    print(_sub(f"→ Remap any cell values from the stale column(s) to the current"))
+                    print(_sub(f"  criterion column(s) in the Google Sheet, then delete the stale"))
+                    print(_sub(f"  column(s) manually. Re-run integrity-check --sheets to confirm."))
                     total_w += 1
                 elif actual != expected:
                     print(_warn(label))
                     print(_sub(f"expected criteria columns: {expected}"))
                     print(_sub(f"actual criteria columns:   {actual}"))
+                    print(_sub(f"→ run: python -m coding sync-params --apply"))
                     total_w += 1
                 else:
                     print(_ok(label))
@@ -392,6 +414,9 @@ def _section_needs_review(codebook: dict, diag_classes: dict) -> None:
         print(_warn(f"{len(flagged)} entry(ies) marked [NEEDS REVIEW] or [PLACEHOLDER]:"))
         for entry in flagged:
             print(_sub(entry))
+        print(_sub("→ Edit the relevant schema file to resolve each entry."))
+        print(_sub("  Promoting a module status out of [AUTO-DERIVED] requires coordinator"))
+        print(_sub("  sign-off. See docs/coordinator-guide.md § 'Updating a qualification rule'."))
     else:
         print(_ok("No [NEEDS REVIEW] or [PLACEHOLDER] entries"))
 
