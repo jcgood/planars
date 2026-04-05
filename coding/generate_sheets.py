@@ -663,10 +663,24 @@ def main() -> None:
                     lang_data["glottolog"] = entry["glottolog"]
                 if "meta" in entry:
                     lang_data["meta"] = entry["meta"]
+                # Warn if key meta fields are blank — display names will be wrong
+                # in Drive folders and notebooks until they are filled in.
+                meta = entry.get("meta") or {}
+                glottolog = entry.get("glottolog") or {}
+                missing = [f for f in ("source", "author") if not meta.get(f)]
+                no_name = not glottolog.get("name")
+                if missing or no_name:
+                    problems = (["name (run lookup-lang first)"] if no_name else []) + missing
+                    print(
+                        f"  [{lid}] WARNING: languages.yaml meta incomplete "
+                        f"(missing: {', '.join(problems)}).\n"
+                        f"    Display names may be incorrect in Drive folders and notebooks.\n"
+                        f"    Fill in the meta block and commit before sharing notebooks with contributors."
+                    )
             else:
                 print(
                     f"  [{lid}] WARNING: not found in schemas/languages.yaml. "
-                    f"Run 'python -m coding lookup-lang {lid}' before generate-sheets."
+                    f"Run 'python -m coding lookup-lang {lid}' before running generate-sheets."
                 )
                 glotto = _cached_glottolog(lid)
                 if not glotto:

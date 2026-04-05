@@ -106,7 +106,7 @@ Some analyses (stress, aspiration) use a **blocked span** instead: expand from t
 | `noninterruption` | `free`, `multiple` | 4 strict spans (2 domain types × complete/partial) | stable |
 | `metrical` | `accented`, `obligatory`, `independence`, `left-interaction`, `right-interaction` (blocked-span); `applies` (positive-qual) | 4 (2 domain types × complete/partial) | stable † |
 | `nonpermutability` | `permutable`, `scopal` | 4 strict spans (2 domain types × complete/partial) | [AUTO-DERIVED] ‡ |
-| `free_occurrence` | `free` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
+| `free_occurrence` | `free` | 4 (strict/loose × complete/partial) | stable |
 | `segmental` | `aspirated` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] ‡ |
 | `tonal` | `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
 | `tonosegmental` | `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |

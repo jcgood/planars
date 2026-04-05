@@ -456,8 +456,14 @@ def _report_needs_review(codebook: dict, diag_classes: dict) -> int:
         status = str(cls.get("status", ""))
         if "[NEEDS REVIEW]" in status or "[PLACEHOLDER]" in status:
             flagged.append(f"diagnostic_classes.yaml [{cls['name']}]: status")
+        cr = str(cls.get("collection_required", ""))
+        if "[NEEDS COORDINATOR INPUT]" in cr:
+            flagged.append(
+                f"diagnostic_classes.yaml [{cls['name']}]: collection_required — "
+                f"coordinator decision needed (set to 'y' or 'n')"
+            )
     if flagged:
-        print(f"\u26a0  {len(flagged)} entry(ies) marked [NEEDS REVIEW] or [PLACEHOLDER]:")
+        print(f"\u26a0  {len(flagged)} entry(ies) marked [NEEDS REVIEW], [PLACEHOLDER], or [NEEDS COORDINATOR INPUT]:")
         for entry in flagged:
             print(f"    {entry}")
     return len(flagged)
@@ -572,6 +578,20 @@ def main() -> None:
     print()
     print("6. keystone_active_default [NEEDS REVIEW] for active classes:")
     _report_keystone_active_unresolved(diag_classes, coverage)
+
+    print()
+    print("6b. Open policy questions — classes with unresolved keystone_active_default (no active instances yet):")
+    pending_defaults = sorted(
+        name for name, cls in diag_classes.items()
+        if "[NEEDS REVIEW]" in str(cls.get("keystone_active_default", ""))
+        and name not in coverage
+    )
+    if pending_defaults:
+        print(f"  {len(pending_defaults)} class(es) — not yet blocking, but resolve when a language adopts the class:")
+        for name in pending_defaults:
+            print(f"    [{name}] add keystone_active: true/false to diagnostics_{{lang_id}}.yaml at onboarding")
+    else:
+        print("  All classes with [NEEDS REVIEW] keystone_active_default already have active instances (see section 6).")
 
     print()
     print("7. Schema stubs (classes with no language coverage):")

@@ -172,9 +172,24 @@ jobs:
           echo "3. Run \`python -m coding sync-diagnostics-yaml --apply\` to regenerate the TSV from the corrected YAML" >> "$BODY_FILE"
           echo "" >> "$BODY_FILE"
           echo "### Drift details" >> "$BODY_FILE"
-          echo '```json' >> "$BODY_FILE"
-          cat diagnostics_drift.json >> "$BODY_FILE"
-          echo '```' >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          python3 - << 'PYEOF' >> "$BODY_FILE"
+import json, sys
+data = json.load(open("diagnostics_drift.json"))
+rows = []
+for entry in data:
+    lang = entry.get("lang_id", "?")
+    for change in entry.get("ambiguous", []):
+        kind = change.get("kind", "?")
+        cls  = change.get("class_name", "?")
+        sugg = ", ".join(change.get("suggestions", [])) or "—"
+        rows.append((lang, cls, kind, sugg))
+if rows:
+    print("| Language | Class | Change type | Suggestions |")
+    print("|---|---|---|---|")
+    for lang, cls, kind, sugg in rows:
+        print(f"| {lang} | {cls} | {kind} | {sugg} |")
+PYEOF
           bash .github/scripts/manage_issue.sh file diagnostics-drift "Diagnostics YAML drift detected ($(date -u +%Y-%m-%d))" "$BODY_FILE"
           rm -f "$BODY_FILE"
 
