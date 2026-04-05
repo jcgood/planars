@@ -173,23 +173,11 @@ jobs:
           echo "" >> "$BODY_FILE"
           echo "### Drift details" >> "$BODY_FILE"
           echo "" >> "$BODY_FILE"
-          python3 - << 'PYEOF' >> "$BODY_FILE"
-import json, sys
-data = json.load(open("diagnostics_drift.json"))
-rows = []
-for entry in data:
-    lang = entry.get("lang_id", "?")
-    for change in entry.get("ambiguous", []):
-        kind = change.get("kind", "?")
-        cls  = change.get("class_name", "?")
-        sugg = ", ".join(change.get("suggestions", [])) or "—"
-        rows.append((lang, cls, kind, sugg))
-if rows:
-    print("| Language | Class | Change type | Suggestions |")
-    print("|---|---|---|---|")
-    for lang, cls, kind, sugg in rows:
-        print(f"| {lang} | {cls} | {kind} | {sugg} |")
-PYEOF
+          echo "| Language | Class | Change type | Suggestions |" >> "$BODY_FILE"
+          echo "|---|---|---|---|" >> "$BODY_FILE"
+          jq -r '.[] | .lang_id as $lang | .ambiguous[] |
+            "| \($lang) | \(.class_name) | \(.kind) | \(if (.suggestions // []) | length > 0 then (.suggestions | join(", ")) else "—" end) |"' \
+            diagnostics_drift.json >> "$BODY_FILE"
           bash .github/scripts/manage_issue.sh file diagnostics-drift "Diagnostics YAML drift detected ($(date -u +%Y-%m-%d))" "$BODY_FILE"
           rm -f "$BODY_FILE"
 
