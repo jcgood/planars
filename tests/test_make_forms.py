@@ -15,9 +15,7 @@ from coding.make_forms import (
     _dump_diagnostics_yaml,
     _diff_diagnostics_tsv_yaml,
     _apply_yaml_diff,
-    DATA_DIR,
 )
-import coding.make_forms as _mf
 
 
 # ---------------------------------------------------------------------------
@@ -58,24 +56,22 @@ def planar_dir(tmp_path):
 # _read_diagnostics_for_language — YAML path
 # ---------------------------------------------------------------------------
 
-def test_read_diagnostics_prefers_yaml(planar_dir, monkeypatch):
+def test_read_diagnostics_prefers_yaml(planar_dir):
     """When YAML is present it is used; the TSV is ignored even if it exists."""
     (planar_dir / "diagnostics_lang0001.yaml").write_text(YAML_CONTENT)
     (planar_dir / "diagnostics_lang0001.tsv").write_text(TSV_CONTENT)
-    monkeypatch.setattr(_mf, "DATA_DIR", str(planar_dir))
 
-    rows = _read_diagnostics_for_language("lang0001")
+    rows = _read_diagnostics_for_language("lang0001", planar_dir)
     classes = [r[0] for r in rows]
     assert "ciscategorial" in classes
     assert "metrical" in classes
 
 
-def test_read_diagnostics_yaml_criteria(planar_dir, monkeypatch):
+def test_read_diagnostics_yaml_criteria(planar_dir):
     """Criteria from YAML are parsed correctly, including non-default value lists."""
     (planar_dir / "diagnostics_lang0001.yaml").write_text(YAML_CONTENT)
-    monkeypatch.setattr(_mf, "DATA_DIR", str(planar_dir))
 
-    rows = _read_diagnostics_for_language("lang0001")
+    rows = _read_diagnostics_for_language("lang0001", planar_dir)
     metrical = next(r for r in rows if r[0] == "metrical")
     _class, construction, crit_names, crit_values = metrical
     assert construction == "stress_domain"
@@ -84,12 +80,11 @@ def test_read_diagnostics_yaml_criteria(planar_dir, monkeypatch):
     assert crit_values["obligatory"] == ["y", "n"]
 
 
-def test_read_diagnostics_falls_back_to_tsv(planar_dir, monkeypatch):
+def test_read_diagnostics_falls_back_to_tsv(planar_dir):
     """When no YAML is present, TSV is read as before."""
     (planar_dir / "diagnostics_lang0001.tsv").write_text(TSV_CONTENT)
-    monkeypatch.setattr(_mf, "DATA_DIR", str(planar_dir))
 
-    rows = _read_diagnostics_for_language("lang0001")
+    rows = _read_diagnostics_for_language("lang0001", planar_dir)
     classes = [r[0] for r in rows]
     assert "ciscategorial" in classes
     assert "metrical" in classes

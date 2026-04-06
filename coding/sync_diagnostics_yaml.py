@@ -64,7 +64,6 @@ from .make_forms import (
     _dump_diagnostics_yaml,
     _diff_diagnostics_tsv_yaml,
     _apply_yaml_diff,
-    DATA_DIR,
 )
 from .validate_diagnostics import validate_diagnostics_yaml
 

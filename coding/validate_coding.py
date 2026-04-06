@@ -31,7 +31,6 @@ from .make_forms import (
     _read_diagnostics_for_language,
     resolve_keystone_active,
 )
-from . import make_forms as _mf
 from .validate import ValidationIssue
 from .validate_planar import validate_planar_df
 from .validate_diagnostics import validate_diagnostics_df
@@ -266,10 +265,10 @@ def _load_param_map(lang_id: str) -> Dict[str, Dict[str, dict]]:
     planar_files = sorted((CODED_DATA / lang_id / "planar_input").glob("planar_*.tsv"))
     if not planar_files:
         return {}
-    _mf.DATA_DIR = str(planar_files[0].parent)
+    data_dir = planar_files[0].parent
     inferred = _infer_language_id_from_planar_filename(planar_files[0].name)
     param_map: Dict[str, Dict[str, dict]] = {}
-    for class_name, construction, param_names, param_values in _read_diagnostics_for_language(inferred):
+    for class_name, construction, param_names, param_values in _read_diagnostics_for_language(inferred, data_dir):
         param_map.setdefault(class_name, {})[construction] = {
             "params": param_names,
             "values": param_values,
@@ -345,7 +344,8 @@ def main() -> None:
                 if construction == _STATUS_TAB:
                     continue
                 info = param_map.get(class_name, {}).get(construction, {})
-                ka = resolve_keystone_active(lang_id, class_name, construction)
+                ka = resolve_keystone_active(lang_id, class_name, construction,
+                                            data_dir=CODED_DATA / lang_id / "planar_input")
                 if ka is None:
                     print(f"  [{class_name}/{construction}] WARNING: keystone_active unresolved — treating as False")
                     ka = False

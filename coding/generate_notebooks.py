@@ -49,7 +49,6 @@ CODED_DATA = ROOT / "coded_data"
 
 from googleapiclient.http import MediaIoBaseUpload
 
-from . import make_forms as _mf
 from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
@@ -293,8 +292,7 @@ def _run_generation(apply: bool) -> None:
     lang_classes: Dict[str, List[str]] = {}
     for planar_file in planar_files:
         lang_id = _infer_language_id_from_planar_filename(planar_file.name)
-        _mf.DATA_DIR = str(planar_file.parent)
-        specs = _read_diagnostics_for_language(lang_id)
+        specs = _read_diagnostics_for_language(lang_id, planar_file.parent)
         seen: Dict[str, bool] = {}
         for class_name, _, _, _ in specs:
             if class_name not in seen:

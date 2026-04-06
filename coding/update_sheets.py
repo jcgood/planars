@@ -25,7 +25,6 @@ ROOT = Path(__file__).resolve().parent.parent
 
 import gspread
 
-from . import make_forms as _mf
 from .make_forms import build_element_index, _infer_language_id_from_planar_filename
 from .drive import _get_clients, _load_manifest_from_drive, _open_spreadsheet, _with_retry
 from .generate_sheets import _create_status_tab, _move_status_tab_to_end, _TRAILING_COLS
@@ -266,8 +265,7 @@ def main() -> None:
     lang_planar_data: Dict[str, tuple] = {}
     for planar_file in planar_files:
         lid = _infer_language_id_from_planar_filename(planar_file.name)
-        _mf.DATA_DIR = str(planar_file.parent)
-        ei = build_element_index(planar_file.name)
+        ei = build_element_index(planar_file.name, planar_file.parent)
         lang_planar_data[lid] = (ei, _build_planar_pos_map(ei, lid))
 
     print(f"{'DRY RUN — ' if not apply else ''}Languages: {list(lang_planar_data.keys())}")

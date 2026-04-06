@@ -39,7 +39,6 @@ import gspread
 
 import yaml as _yaml
 
-from . import make_forms as _mf
 from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
@@ -471,8 +470,7 @@ def main() -> None:
                 yaml_path.write_text(_dump_diagnostics_yaml(new_yaml), encoding="utf-8")
                 print(f"  [{lang_id}] YAML updated → {yaml_path.name}")
 
-        _mf.DATA_DIR = str(planar_dir)
-        specs = _read_diagnostics_for_language(lang_id)
+        specs = _read_diagnostics_for_language(lang_id, planar_dir)
 
         # Build expected: class_name -> construction -> (param_names, param_values)
         expected: Dict[str, Dict[str, Tuple[List[str], Dict[str, List[str]]]]] = {}

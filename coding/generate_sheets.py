@@ -38,7 +38,6 @@ import gspread
 
 import pandas as pd
 
-from . import make_forms as _mf
 from . import validate_planar as _val_planar
 from . import validate_diagnostics as _val_diag
 from .drive import (
@@ -461,7 +460,7 @@ def _create_analysis_sheet(
     tab_names = []
 
     for construction, param_names, param_values in constructions:
-        ka = resolve_keystone_active(lang_id, class_name, construction) or False
+        ka = resolve_keystone_active(lang_id, class_name, construction, data_dir=planar_dir) or False
         rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
         _populate_tab(spreadsheet, construction, param_names, param_values, rows)
         tab_names.append(construction)
@@ -568,9 +567,7 @@ def main() -> None:
         print(f"\nLanguage:    {lang_id}")
         print(f"Planar file: {planar_file.name}")
 
-        # Set DATA_DIR so make_forms resolves files relative to the planar_input folder
-        _mf.DATA_DIR = str(planar_dir)
-        element_index = build_element_index(planar_file.name)
+        element_index = build_element_index(planar_file.name, planar_dir)
 
         # Validate planar structure; warn but do not block sheet generation.
         planar_df = pd.read_csv(planar_file, sep="\t")
@@ -590,7 +587,7 @@ def main() -> None:
                 for issue in diag_issues:
                     print(f"    {issue}")
 
-        specs = _read_diagnostics_for_language(lang_id)
+        specs = _read_diagnostics_for_language(lang_id, planar_dir)
 
         # Group specs by class_name -> [(construction, param_names, param_values), ...]
         all_classes: Dict[str, List[Tuple[str, List[str], Dict[str, List[str]]]]] = {}

@@ -55,7 +55,6 @@ ROOT = Path(__file__).resolve().parent.parent
 
 import gspread
 
-from . import make_forms as _mf
 from .make_forms import (
     build_element_index,
     _infer_language_id_from_planar_filename,
@@ -325,9 +324,8 @@ def _preflight_rename_class(
     errors = []
     for planar_file in planar_files:
         lang_id = _infer_language_id_from_planar_filename(planar_file.name)
-        _mf.DATA_DIR = str(planar_file.parent)
         try:
-            specs = _read_diagnostics_for_language(lang_id)
+            specs = _read_diagnostics_for_language(lang_id, planar_file.parent)
         except Exception:
             continue
         active_classes = {c for c, _, _, _ in specs}
@@ -565,9 +563,8 @@ def main() -> None:
         _preflight_rename_class(manifest, rename_class_map, list(planar_files))
         for planar_file in planar_files:
             lang_id = _infer_language_id_from_planar_filename(planar_file.name)
-            _mf.DATA_DIR = str(planar_file.parent)
-            element_index = build_element_index(planar_file.name)
-            specs = _read_diagnostics_for_language(lang_id)
+            element_index = build_element_index(planar_file.name, planar_file.parent)
+            specs = _read_diagnostics_for_language(lang_id, planar_file.parent)
             lang_data = manifest.get(lang_id, {})
             folder_url = lang_data.get("folder_url", "")
             folder_id = _folder_id_from_url(folder_url) if folder_url else None
@@ -586,9 +583,8 @@ def main() -> None:
     for planar_file in planar_files:
         lang_id = _infer_language_id_from_planar_filename(planar_file.name)
 
-        _mf.DATA_DIR = str(planar_file.parent)
-        element_index = build_element_index(planar_file.name)
-        specs = _read_diagnostics_for_language(lang_id)
+        element_index = build_element_index(planar_file.name, planar_file.parent)
+        specs = _read_diagnostics_for_language(lang_id, planar_file.parent)
 
         classes: Dict[str, List[Tuple[str, List[str], Dict[str, List[str]]]]] = {}
         for class_name, construction, param_names, param_values in specs:

@@ -8,13 +8,9 @@ from typing import Any, Dict, List, Tuple
 import pandas as pd
 import yaml
 
-DATA_DIR = ""
-
-
-def _resolve_path(filename: str) -> Path:
-    """Resolve a filename against DATA_DIR, falling back to the script directory."""
-    base = Path(DATA_DIR) if DATA_DIR else Path(__file__).resolve().parent
-    return base / filename
+def _resolve_path(filename: str, data_dir: Path | str) -> Path:
+    """Resolve a filename against data_dir."""
+    return Path(data_dir) / filename
 
 
 def _infer_language_id_from_planar_filename(planar_filename: str) -> str:
@@ -77,7 +73,7 @@ def _split_elements(elements_raw: str) -> List[str]:
     return [p for p in parts if p]
 
 
-def build_element_index(planar_filename: str) -> ElementIndex:
+def build_element_index(planar_filename: str, data_dir: Path | str) -> ElementIndex:
     """Build a mapping with unique keys per element occurrence in a planar TSV.
 
     Each element that appears in the planar structure gets a key of the form
@@ -85,9 +81,9 @@ def build_element_index(planar_filename: str) -> ElementIndex:
     in multiple positions without collision.
 
     Args:
-        planar_filename: basename of the planar TSV file (resolved via DATA_DIR
-            or the script directory). Must have columns: Class_Type, Elements,
-            Position_Name, Position.
+        planar_filename: basename of the planar TSV file. Must have columns:
+            Class_Type, Elements, Position_Name, Position.
+        data_dir: directory containing the planar TSV file.
 
     Returns:
         Dict mapping ``"element@pos"`` keys to
@@ -98,7 +94,7 @@ def build_element_index(planar_filename: str) -> ElementIndex:
             a duplicate key is found, or Class_Type is unexpected.
     """
     lang_id = _infer_language_id_from_planar_filename(planar_filename)
-    path = _resolve_path(planar_filename)
+    path = _resolve_path(planar_filename, data_dir)
 
     df = pd.read_csv(path, sep="\t", header=0, dtype=str, keep_default_na=False)
 
@@ -160,22 +156,20 @@ def build_element_index(planar_filename: str) -> ElementIndex:
     return element_to_info
 
 
-def _resolve_diagnostics_path(lang_id: str) -> Path:
+def _resolve_diagnostics_path(lang_id: str, data_dir: Path | str) -> Path:
     """Find the language-specific diagnostics file in the planar_input folder.
 
     Expected name: diagnostics_{lang_id}.tsv
     """
-    base = Path(DATA_DIR) if DATA_DIR else Path(__file__).resolve().parent
-    p = base / f"diagnostics_{lang_id}.tsv"
+    p = Path(data_dir) / f"diagnostics_{lang_id}.tsv"
     if p.exists():
         return p
-    raise FileNotFoundError(f"Could not find diagnostics_{lang_id}.tsv in {base}")
+    raise FileNotFoundError(f"Could not find diagnostics_{lang_id}.tsv in {data_dir}")
 
 
-def _resolve_diagnostics_yaml_path(lang_id: str) -> Path:
+def _resolve_diagnostics_yaml_path(lang_id: str, data_dir: Path | str) -> Path:
     """Return the path for diagnostics_{lang_id}.yaml (may not exist yet)."""
-    base = Path(DATA_DIR) if DATA_DIR else Path(__file__).resolve().parent
-    return base / f"diagnostics_{lang_id}.yaml"
+    return Path(data_dir) / f"diagnostics_{lang_id}.yaml"
 
 
 # ---------------------------------------------------------------------------
@@ -212,6 +206,7 @@ def resolve_keystone_active(
     lang_id: str,
     class_name: str,
     construction: Optional[str] = None,
+    data_dir: Path | str = "",
 ) -> Optional[bool]:
     """Resolve keystone_active for a (lang, class, construction) triple.
 
@@ -227,7 +222,7 @@ def resolve_keystone_active(
         None  — unspecified at both levels (treat as False; warn via check-codebook).
     """
     # Level 1: language YAML
-    yaml_path = _resolve_diagnostics_yaml_path(lang_id)
+    yaml_path = _resolve_diagnostics_yaml_path(lang_id, data_dir)
     if yaml_path.exists():
         with open(yaml_path, encoding="utf-8") as _f:
             _yaml_data = yaml.safe_load(_f) or {}
@@ -359,6 +354,7 @@ def _parse_criterion_specs(value: str) -> Tuple[List[str], Dict[str, List[str]]]
 
 def _read_diagnostics_for_language(
     language_id: str,
+    data_dir: Path | str,
 ) -> List[Tuple[str, str, List[str], Dict[str, List[str]]]]:
     """Read diagnostics for a language, preferring YAML over TSV.
 
@@ -368,13 +364,13 @@ def _read_diagnostics_for_language(
     Each row is (class_name, construction, criterion_names, criterion_values) where
     criterion_values maps each criterion name to its list of allowed values.
     """
-    yaml_path = _resolve_diagnostics_yaml_path(language_id)
+    yaml_path = _resolve_diagnostics_yaml_path(language_id, data_dir)
     if yaml_path.exists():
         with open(yaml_path, encoding="utf-8") as f:
             yaml_data = yaml.safe_load(f)
         df = _yaml_to_tsv_df(yaml_data, language_id)
     else:
-        diag_path = _resolve_diagnostics_path(language_id)
+        diag_path = _resolve_diagnostics_path(language_id, data_dir)
         df = pd.read_csv(diag_path, sep="\t", header=0, dtype=str, keep_default_na=False)
 
     required = {"Class", "Language", "Constructions", "Criteria"}
