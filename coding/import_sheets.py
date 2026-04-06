@@ -729,9 +729,9 @@ def main() -> None:
 
                 rows = ws.get_all_values()
 
-                # Determine expected params from header row (skip structural cols)
+                # Determine expected params from header row (skip structural and trailing cols)
                 expected_params = (
-                    [c for c in rows[0] if c not in _STRUCTURAL_COLS] if rows else []
+                    [c for c in rows[0] if c not in _STRUCTURAL_COLS and c not in _TRAILING_COLS] if rows else []
                 )
                 header = rows[0] if rows else []
 
