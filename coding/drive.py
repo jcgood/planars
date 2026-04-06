@@ -282,14 +282,19 @@ def _move_to_folder(drive, file_id: str, folder_id: str) -> None:
 _ACK_PREFIX = "Notes transferred to coordinator"
 
 
-def _create_notes_doc(drive, lang_id: str, folder_id: str) -> str:
+def _create_notes_doc(drive, lang_id: str, folder_id: str, display_name: str = "") -> str:
     """Create a Google Doc for collaborator notes in the language folder.
+
+    The doc is named "{display_name} — Annotation Notes" (e.g. "Araona [arao1248]
+    — Annotation Notes"), falling back to "notes_{lang_id}" if display_name is
+    not provided.
 
     Returns the new document's file ID.
     """
+    doc_name = f"{display_name} — Annotation Notes" if display_name else f"notes_{lang_id}"
     result = drive.files().create(
         body={
-            "name": f"notes_{lang_id}",
+            "name": doc_name,
             "mimeType": "application/vnd.google-apps.document",
             "parents": [folder_id],
         },

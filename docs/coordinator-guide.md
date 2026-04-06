@@ -74,6 +74,8 @@ source .venv/bin/activate
 
 Authentication uses OAuth2. Place your credentials at `~/.config/planars/oauth_credentials.json` (or set `PLANARS_OAUTH_CREDENTIALS` to override the path). On first run of any `coding/` command that touches Google Drive or Sheets, a browser window opens for authorization. The token is cached after first authorization.
 
+**Re-authorization after scope changes:** if a new Google API scope is added to the project (e.g., the `documents` scope added for collaborator notes), the cached token at `~/.config/gspread/authorized_user.json` will not include that scope. The next `coding/` command will open a browser window for re-authorization automatically. For the GitHub Actions workflow, update the `GOOGLE_OAUTH_TOKEN` secret with the contents of the newly refreshed token file after re-authorizing locally.
+
 ---
 
 ## Daily git workflow

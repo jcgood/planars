@@ -56,6 +56,7 @@ from .drive import (
     DRIVE_CONFIG_PATH,
 )
 from .glottolog import cached_entry as _cached_glottolog, get_metadata as _fetch_glottolog
+from planars.languages import get_display_name as _get_display_name
 from .schemas import load_planar_schema
 from .make_forms import (
     build_element_index,
@@ -612,7 +613,7 @@ def main() -> None:
         existing_notes_doc_id = merged_config.get(lang_id, {}).get("notes_doc_id") or config.get(lang_id, {}).get("notes_doc_id")
         if not existing_notes_doc_id:
             try:
-                existing_notes_doc_id = _create_notes_doc(drive, lang_id, folder_id)
+                existing_notes_doc_id = _create_notes_doc(drive, lang_id, folder_id, _get_display_name(lang_id))
                 print(f"Notes doc:   https://docs.google.com/document/d/{existing_notes_doc_id}")
             except Exception as _notes_err:
                 print(f"  [WARNING] Could not create notes doc for {lang_id}: {_notes_err}")

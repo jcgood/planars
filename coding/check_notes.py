@@ -139,7 +139,7 @@ def main() -> None:
     from .drive import (
         _get_clients, _get_docs_client, _load_manifest_from_drive,
         _read_notes_doc_text, _strip_acknowledgment_lines, _append_to_notes_doc,
-        _upload_planars_config, _load_drive_config,
+        _upload_planars_config, _load_drive_config, _save_drive_config,
         _ACK_PREFIX,
     )
     from planars.languages import get_display_name
@@ -178,7 +178,7 @@ def main() -> None:
             if apply:
                 from .drive import _create_notes_doc
                 try:
-                    doc_id = _create_notes_doc(drive, lang_id, folder_id)
+                    doc_id = _create_notes_doc(drive, lang_id, folder_id, get_display_name(lang_id))
                     lang_data["notes_doc_id"] = doc_id
                     manifest[lang_id]["notes_doc_id"] = doc_id
                     config.setdefault(lang_id, {})["notes_doc_id"] = doc_id
@@ -259,7 +259,6 @@ def main() -> None:
         _save_notes_state(state)
         print("\nnotes_state.json updated.")
         if manifest_dirty and root_folder_id and existing_config_file_id:
-            from .drive import _save_drive_config
             _upload_planars_config(drive, manifest, root_folder_id, existing_config_file_id)
             _save_drive_config(config)
             print("Drive manifest updated with new notes_doc_id(s).")
