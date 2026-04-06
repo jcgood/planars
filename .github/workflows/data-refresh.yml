@@ -117,6 +117,17 @@ jobs:
               --body "Reminder: this pending-changes issue has been open for more than 7 days as of $(date -u +%Y-%m-%d). Run \`python -m coding apply-pending\` to review and apply each change."
           done
 
+      - name: Check collaborator notes docs
+        # Reads each language's Google Doc for new collaborator notes. If new
+        # content is detected, files or updates a per-annotator collaborator-notes
+        # GitHub issue containing the notes and a ready-to-paste Claude triage prompt.
+        # Also appends an acknowledgment line to the doc so collaborators know their
+        # notes were received. Updates coded_data/notes_state.json with content hashes.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python -m coding check-notes --apply
+        continue-on-error: true
+
       - name: Regenerate diagnostics TSVs from YAML
         # Keeps diagnostics_{lang_id}.tsv in sync with the YAML source of truth.
         # Catches cases where a coordinator edited the YAML locally but forgot to

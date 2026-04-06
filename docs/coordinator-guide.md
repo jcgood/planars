@@ -198,6 +198,22 @@ The blank/`?` distinction matters for data quality: a `?` is a positive annotati
 
 When a construction is complete, the collaborator sets its row in the **Status tab** to `ready-for-review`. This signals to the coordinator that the construction is ready to import.
 
+#### 2b. Collaborator notes
+
+Each language has a **Notes Google Doc** in its Drive folder (created automatically by `generate-sheets`). Collaborators write freeform observations, questions, and concerns there — anything they'd want to flag to the coordinator but wouldn't know how to file as a GitHub issue.
+
+**For collaborators:** just write freely. There's no required format. The doc is yours to use as a scratchpad.
+
+**For coordinators:** the daily data-refresh reads all notes docs and surfaces new content as GitHub issues. Each open issue has a ready-to-paste Claude prompt — paste it into your Claude session to get a proposed list of issues to file. Review the list, file what's warranted, then close the `collaborator-notes` issue.
+
+When notes are downloaded, an acknowledgment line is automatically appended to the doc (e.g., `[2026-04-06] Notes transferred to coordinator. Please consult with them for an update.`) so the collaborator knows their notes were received.
+
+To check notes manually:
+```bash
+python -m coding check-notes          # dry run: show what would be filed
+python -m coding check-notes --apply  # file/update issues, acknowledge in doc, save state
+```
+
 #### 3. Import filled sheets
 
 ```bash

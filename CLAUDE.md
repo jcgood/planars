@@ -56,6 +56,10 @@ python -m coding update-sheets            # add missing rows/columns (--apply)
 python -m coding restructure-sheets       # archive + regenerate after planar changes (--apply, --rename-map, --rename-element, --rename-class)
 python -m coding prune-manifest           # archive retired class TSVs and remove stale manifest entries (--apply, --all)
 
+# Collaborator notes
+python -m coding check-notes              # dry run: report new notes from collaborator docs
+python -m coding check-notes --apply      # file/update GitHub issues, acknowledge in doc, save state
+
 # Health checks
 python -m coding integrity-check          # full project health report (--lang, --sheets)
 python -m coding check-codebook           # criterion/module/diagnostics consistency
@@ -289,6 +293,7 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 | `data-overwrite` | Filed by `data-refresh.yml` when human commits appear overwritten by today's Sheet import. Check `git log`/`git show` in planars-data to verify. Auto-closed when clean. |
 | `stale-manifest` | Filed by `data-refresh.yml` when manifest entries have no matching class in `diagnostics_{lang}.yaml`. Resolve: `prune-manifest --apply`. Auto-closed when clean. |
 | `integrity-error` | Filed by `data-refresh.yml` when `integrity-check` detects errors. Run `integrity-check` locally for details. Auto-closed when clean. |
+| `collaborator-notes` | Filed by `data-refresh.yml` when a collaborator's notes doc has new content. Resolve: paste the Claude prompt from the issue body, review proposed issues, file warranted ones, then close this issue. |
 
 ## Work phases
 

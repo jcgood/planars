@@ -22,6 +22,7 @@ Commands:
     lookup-lang                  Fetch and cache Glottolog metadata for a language ID
     apply-pending                Review and apply pending destructive changes
     prune-manifest               Archive retired class TSVs and remove stale manifest entries
+    check-notes                  Check collaborator notes docs for new content and file issues
 
 Each command accepts the same flags as the original script. Use --help on any
 command for details, or see CLAUDE.md.
@@ -51,6 +52,7 @@ _COMMANDS = {
     "lookup-lang":                 "coding.glottolog",
     "apply-pending":               "coding.apply_pending",
     "prune-manifest":              "coding.prune_manifest",
+    "check-notes":                 "coding.check_notes",
 }
 
 

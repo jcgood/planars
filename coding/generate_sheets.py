@@ -51,6 +51,8 @@ from .drive import (
     _share_anyone_with_link,
     _move_to_folder,
     _with_retry,
+    _get_docs_client,
+    _create_notes_doc,
     DRIVE_CONFIG_PATH,
 )
 from .glottolog import cached_entry as _cached_glottolog, get_metadata as _fetch_glottolog
@@ -536,6 +538,7 @@ def main() -> None:
     # Connect to Google once for all languages
     print("Connecting to Google APIs...")
     gc, drive = _get_clients()
+    docs = _get_docs_client(gc)
     config = _load_drive_config()
     root_folder_id = config.get("_root_folder_id")
 
@@ -604,6 +607,18 @@ def main() -> None:
             print(f"  [WARNING] Could not share folder for {lang_id}: {_share_err}")
         folder_url = f"https://drive.google.com/drive/folders/{folder_id}"
         print(f"Folder:      {folder_url}")
+
+        # Create collaborator notes doc if not already in the manifest.
+        existing_notes_doc_id = merged_config.get(lang_id, {}).get("notes_doc_id") or config.get(lang_id, {}).get("notes_doc_id")
+        if not existing_notes_doc_id:
+            try:
+                existing_notes_doc_id = _create_notes_doc(drive, lang_id, folder_id)
+                print(f"Notes doc:   https://docs.google.com/document/d/{existing_notes_doc_id}")
+            except Exception as _notes_err:
+                print(f"  [WARNING] Could not create notes doc for {lang_id}: {_notes_err}")
+                existing_notes_doc_id = None
+        else:
+            print(f"Notes doc:   (existing) https://docs.google.com/document/d/{existing_notes_doc_id}")
 
         # Load existing data early so we can look up existing planar/diagnostics sheet IDs.
         existing_lang_data: Dict = merged_config.get(lang_id, {})
@@ -709,9 +724,13 @@ def main() -> None:
                     "  (use --force to regenerate)"
                 )
                 existing_lang_data["folder_id"] = folder_id
+                if existing_notes_doc_id:
+                    existing_lang_data["notes_doc_id"] = existing_notes_doc_id
                 existing_lang_data.update(input_sheet_info)
                 _sync_language_metadata(existing_lang_data, lang_id)
                 config.setdefault(lang_id, {})["folder_id"] = folder_id
+                if existing_notes_doc_id:
+                    config[lang_id]["notes_doc_id"] = existing_notes_doc_id
                 _save_drive_config(config)
                 full_manifest[lang_id] = existing_lang_data
                 merged_config[lang_id] = existing_lang_data
@@ -729,6 +748,8 @@ def main() -> None:
         # Build lang_data starting from existing data (or fresh), always include folder_id.
         lang_data: Dict = existing_lang_data or {"folder_url": folder_url, "sheets": {}}
         lang_data["folder_id"] = folder_id
+        if existing_notes_doc_id:
+            lang_data["notes_doc_id"] = existing_notes_doc_id
         lang_data.update(input_sheet_info)  # store planar/diagnostics spreadsheet IDs
 
         _sync_language_metadata(lang_data, lang_id)
@@ -757,6 +778,8 @@ def main() -> None:
                     "diagnostics_spreadsheet_id", "diagnostics_spreadsheet_url"):
             if key in input_sheet_info:
                 config[lang_id][key] = input_sheet_info[key]
+        if existing_notes_doc_id:
+            config[lang_id]["notes_doc_id"] = existing_notes_doc_id
         # Remove stale per-language manifest_file_id (superseded by merged config).
         config[lang_id].pop("manifest_file_id", None)
         _save_drive_config(config)

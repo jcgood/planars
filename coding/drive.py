@@ -68,11 +68,17 @@ def _get_clients():
         scopes=[
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive.file",
+            "https://www.googleapis.com/auth/documents",
         ],
     )
     # Reuse the refreshed credentials from gspread for the Drive API client
     drive = google_build("drive", "v3", credentials=gc.http_client.auth)
     return gc, drive
+
+
+def _get_docs_client(gc):
+    """Build a Google Docs API client from existing gspread credentials."""
+    return google_build("docs", "v1", credentials=gc.http_client.auth)
 
 
 # ---------------------------------------------------------------------------
@@ -132,6 +138,7 @@ def _upload_planars_config(
     _KEY_ORDER = [
         "glottolog", "meta",
         "folder_id", "folder_url",
+        "notes_doc_id",
         "planar_spreadsheet_id", "planar_spreadsheet_url",
         "diagnostics_spreadsheet_id", "diagnostics_spreadsheet_url",
         "sheets",
@@ -265,4 +272,74 @@ def _move_to_folder(drive, file_id: str, folder_id: str) -> None:
         addParents=folder_id,
         removeParents=previous_parents,
         fields="id, parents",
+    ).execute()
+
+
+# ---------------------------------------------------------------------------
+# Google Docs helpers (collaborator notes)
+# ---------------------------------------------------------------------------
+
+_ACK_PREFIX = "Notes transferred to coordinator"
+
+
+def _create_notes_doc(drive, lang_id: str, folder_id: str) -> str:
+    """Create a Google Doc for collaborator notes in the language folder.
+
+    Returns the new document's file ID.
+    """
+    result = drive.files().create(
+        body={
+            "name": f"notes_{lang_id}",
+            "mimeType": "application/vnd.google-apps.document",
+            "parents": [folder_id],
+        },
+        fields="id",
+    ).execute()
+    doc_id = result["id"]
+    _share_anyone_with_link(drive, doc_id)
+    return doc_id
+
+
+def _read_notes_doc_text(docs, doc_id: str) -> str:
+    """Return the full plain-text content of a Google Doc."""
+    doc = docs.documents().get(documentId=doc_id).execute()
+    parts: list[str] = []
+    for block in doc.get("body", {}).get("content", []):
+        if "paragraph" in block:
+            for element in block["paragraph"].get("elements", []):
+                if "textRun" in element:
+                    parts.append(element["textRun"]["content"])
+    return "".join(parts)
+
+
+def _strip_acknowledgment_lines(text: str) -> str:
+    """Strip system-written acknowledgment lines before hashing.
+
+    Removes lines containing our transfer marker so that write-backs we
+    append to the doc don't register as new collaborator content on the
+    next daily run.
+    """
+    return "\n".join(
+        line for line in text.splitlines()
+        if _ACK_PREFIX not in line
+    )
+
+
+def _append_to_notes_doc(docs, doc_id: str, text: str) -> None:
+    """Append text to the end of a Google Doc."""
+    doc = docs.documents().get(documentId=doc_id).execute()
+    content = doc.get("body", {}).get("content", [])
+    end_index = content[-1]["endIndex"] - 1 if content else 1
+    docs.documents().batchUpdate(
+        documentId=doc_id,
+        body={
+            "requests": [
+                {
+                    "insertText": {
+                        "location": {"index": end_index},
+                        "text": "\n" + text,
+                    }
+                }
+            ]
+        },
     ).execute()
