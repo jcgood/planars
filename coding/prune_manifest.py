@@ -237,15 +237,20 @@ def main() -> None:
                     print(f"    Skipped {class_name}.")
                     continue
 
-            # Archive and remove active TSVs
+            # Archive and remove active TSVs, then remove the empty class directory.
             tsvs = _tsv_paths(lang_id, class_name)
             for tsv in tsvs:
                 archived = _archive_tsv(tsv, timestamp)
                 tsv.unlink()
-                print(f"    archived: {tsv.name} → {archived.relative_to(CODED_DATA / lang_id / class_name)}")
+                print(f"    archived: {tsv.name} → archive/{class_name}/{archived.name}")
 
             if not tsvs:
                 print(f"    no local TSVs to archive for {class_name}/")
+
+            class_dir = CODED_DATA / lang_id / class_name
+            if class_dir.exists() and not any(class_dir.iterdir()):
+                class_dir.rmdir()
+                print(f"    removed empty directory: coded_data/{lang_id}/{class_name}/")
 
             # Move Drive sheet to _archived/ subfolder
             _archive_drive_sheet(drive, lang_id, class_name, manifest, apply=True)

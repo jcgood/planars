@@ -95,12 +95,14 @@ def _validate_tab(
 # ---------------------------------------------------------------------------
 
 def _archive_tsv(path: Path, timestamp: str) -> Path:
-    """Copy path to archive/ with a timestamp suffix before overwriting.
+    """Copy path to the per-language archive directory with a timestamp suffix.
 
-    Creates the archive/ subdirectory if absent. Returns the archive path.
+    Archives to coded_data/{lang}/archive/{class}/{stem}_{timestamp}.tsv so that
+    retired class directories can be removed cleanly after pruning.
+    Creates intermediate directories if absent. Returns the archive path.
     """
-    archive_dir = path.parent / "archive"
-    archive_dir.mkdir(exist_ok=True)
+    archive_dir = path.parent.parent / "archive" / path.parent.name
+    archive_dir.mkdir(parents=True, exist_ok=True)
     archive_path = archive_dir / f"{path.stem}_{timestamp}{path.suffix}"
     shutil.copy2(path, archive_path)
     return archive_path
@@ -774,7 +776,7 @@ def main() -> None:
                         print(f"    [{construction}] No changes → coded_data/{lang_id}/{class_name}/{out_name}")
                         continue
                     archived = _archive_tsv(out_path, timestamp)
-                    print(f"    [{construction}] Archived existing → coded_data/{lang_id}/{class_name}/archive/{archived.name}")
+                    print(f"    [{construction}] Archived existing → coded_data/{lang_id}/archive/{class_name}/{archived.name}")
 
                 _write_tsv(out_path, header, records)
 
