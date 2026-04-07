@@ -31,42 +31,56 @@ import coding.import_sheets as _is
 # ---------------------------------------------------------------------------
 
 class TestArchiveTsv:
+    # _archive_tsv expects path to be {lang}/{class}/file.tsv and archives to
+    # {lang}/archive/{class}/file_timestamp.tsv — tests use lang/class/file structure.
+
     def test_creates_archive_dir(self, tmp_path):
-        tsv = tmp_path / "general.tsv"
+        class_dir = tmp_path / "ciscategorial"
+        class_dir.mkdir()
+        tsv = class_dir / "general.tsv"
         tsv.write_text("Position\tval\n1\ty\n", encoding="utf-8")
         _archive_tsv(tsv, "20260325_120000")
-        assert (tmp_path / "archive").is_dir()
+        assert (tmp_path / "archive" / "ciscategorial").is_dir()
 
     def test_archive_file_has_timestamp_suffix(self, tmp_path):
-        tsv = tmp_path / "general.tsv"
+        class_dir = tmp_path / "ciscategorial"
+        class_dir.mkdir()
+        tsv = class_dir / "general.tsv"
         tsv.write_text("a\tb\n", encoding="utf-8")
         archived = _archive_tsv(tsv, "20260325_120000")
         assert archived.name == "general_20260325_120000.tsv"
 
     def test_archive_content_matches_original(self, tmp_path):
         content = "Position\tcriterion\n1\ty\n2\tn\n"
-        tsv = tmp_path / "general.tsv"
+        class_dir = tmp_path / "ciscategorial"
+        class_dir.mkdir()
+        tsv = class_dir / "general.tsv"
         tsv.write_text(content, encoding="utf-8")
         archived = _archive_tsv(tsv, "20260325_120000")
         assert archived.read_text(encoding="utf-8") == content
 
     def test_original_file_unchanged(self, tmp_path):
         content = "Position\tval\n"
-        tsv = tmp_path / "general.tsv"
+        class_dir = tmp_path / "ciscategorial"
+        class_dir.mkdir()
+        tsv = class_dir / "general.tsv"
         tsv.write_text(content, encoding="utf-8")
         _archive_tsv(tsv, "20260325_120000")
         assert tsv.read_text(encoding="utf-8") == content
 
     def test_archive_dir_created_if_missing(self, tmp_path):
-        tsv = tmp_path / "subdir" / "general.tsv"
-        tsv.parent.mkdir()
+        class_dir = tmp_path / "ciscategorial"
+        class_dir.mkdir()
+        tsv = class_dir / "general.tsv"
         tsv.write_text("x\n", encoding="utf-8")
-        assert not (tsv.parent / "archive").exists()
+        assert not (tmp_path / "archive").exists()
         _archive_tsv(tsv, "ts")
-        assert (tsv.parent / "archive").is_dir()
+        assert (tmp_path / "archive" / "ciscategorial").is_dir()
 
     def test_multiple_archives_distinct(self, tmp_path):
-        tsv = tmp_path / "general.tsv"
+        class_dir = tmp_path / "ciscategorial"
+        class_dir.mkdir()
+        tsv = class_dir / "general.tsv"
         tsv.write_text("v1\n", encoding="utf-8")
         a1 = _archive_tsv(tsv, "20260325_100000")
         tsv.write_text("v2\n", encoding="utf-8")
@@ -76,7 +90,9 @@ class TestArchiveTsv:
         assert a2.read_text(encoding="utf-8") == "v2\n"
 
     def test_returns_archive_path(self, tmp_path):
-        tsv = tmp_path / "general.tsv"
+        class_dir = tmp_path / "ciscategorial"
+        class_dir.mkdir()
+        tsv = class_dir / "general.tsv"
         tsv.write_text("x\n", encoding="utf-8")
         result = _archive_tsv(tsv, "ts")
         assert isinstance(result, Path)
