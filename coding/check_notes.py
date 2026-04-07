@@ -142,7 +142,7 @@ def main() -> None:
         _upload_planars_config, _load_drive_config, _save_drive_config,
         _ACK_PREFIX,
     )
-    from planars.languages import get_display_name
+    from planars.languages import get_display_name, get_entry
 
     print("Connecting to Google APIs...")
     gc, drive = _get_clients()
@@ -193,7 +193,12 @@ def main() -> None:
                 print(f"[{lang_id}] No notes_doc_id in manifest (would create on --apply)")
                 continue
 
-        annotator = lang_data.get("meta", {}).get("annotator") or "Unknown"
+        lang_entry = get_entry(lang_id) or {}
+        annotator = (
+            lang_entry.get("meta", {}).get("annotator")
+            or lang_data.get("meta", {}).get("annotator")
+            or "Unknown"
+        )
         display_name = get_display_name(lang_id)
 
         try:
@@ -253,7 +258,7 @@ def main() -> None:
                     print(f"[{lang_id}] Acknowledgment appended to notes doc.")
                 except Exception as e:
                     print(f"[{lang_id}] Could not append acknowledgment: {e}")
-            state[lang_id]["notes_hash"] = new_hash
+            state.setdefault(lang_id, {})["notes_hash"] = new_hash
             state[lang_id]["last_changed"] = today
 
     # Persist state and manifest if changed.

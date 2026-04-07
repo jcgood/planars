@@ -2,13 +2,15 @@
 """Sync param columns in existing Google Sheets when diagnostics_{lang_id}.yaml changes.
 
 Usage:
-    python -m coding sync-params                                  # dry run
-    python -m coding sync-params --apply                          # apply changes to sheets
-    python -m coding sync-params --apply --remove                 # also remove stale columns
-    python -m coding sync-params --apply --rename old:new         # rename criterion in all classes
-    python -m coding sync-params --apply --rename class:old:new   # rename in one class only
-    python -m coding sync-params --apply --split old:new1:new2    # split one criterion into two
-    python -m coding sync-params --apply --merge old1:old2:new    # merge two criteria into one
+    python -m coding sync-params                                         # dry run
+    python -m coding sync-params --apply                                 # apply changes to sheets
+    python -m coding sync-params --apply --remove                        # also remove stale columns
+    python -m coding sync-params --apply --rename old:new                # rename criterion in all classes
+    python -m coding sync-params --apply --rename class:old:new          # rename in one class only
+    python -m coding sync-params --apply --split old:new1:new2           # split one criterion into two
+    python -m coding sync-params --apply --merge old1:old2:new           # merge two criteria into one
+    python -m coding sync-params --refresh-dropdowns                     # dry run: show stale dropdowns
+    python -m coding sync-params --refresh-dropdowns --apply             # push updated allowed values to sheets
 
 This script propagates diagnostic criterion changes across all downstream layers:
 
@@ -332,6 +334,47 @@ def _apply_merge_to_sheet(
 # Main
 # ---------------------------------------------------------------------------
 
+def _build_dropdown_refresh_requests(
+    ws: gspread.Worksheet,
+    stale_params: List[str],
+    exp_values: Dict[str, List[str]],
+) -> List[dict]:
+    """Build setDataValidation requests for params with stale allowed values.
+
+    Uses ws.row_count as the end row so validation covers all current data rows.
+    """
+    if not stale_params:
+        return []
+    header = ws.row_values(1)
+    num_rows = ws.row_count
+    requests = []
+    for param in stale_params:
+        if param not in header:
+            continue
+        col_idx = header.index(param)  # 0-based
+        values = exp_values.get(param, ["y", "n"])
+        requests.append({
+            "setDataValidation": {
+                "range": {
+                    "sheetId": ws.id,
+                    "startRowIndex": 1,
+                    "endRowIndex": num_rows,
+                    "startColumnIndex": col_idx,
+                    "endColumnIndex": col_idx + 1,
+                },
+                "rule": {
+                    "condition": {
+                        "type": "ONE_OF_LIST",
+                        "values": [{"userEnteredValue": v} for v in values],
+                    },
+                    "showCustomUi": True,
+                    "strict": False,
+                },
+            }
+        })
+    return requests
+
+
 def _parse_renames() -> List[Tuple[Optional[str], str, str]]:
     """Parse --rename [class:]old:new pairs from sys.argv.
 
@@ -419,6 +462,7 @@ def main() -> None:
     """
     apply = "--apply" in sys.argv
     remove = "--remove" in sys.argv
+    refresh_dropdowns = "--refresh-dropdowns" in sys.argv
     renames = _parse_renames()
     splits  = _parse_splits()
     merges  = _parse_merges()
@@ -456,7 +500,7 @@ def main() -> None:
                     print(change)
 
             # After TSV mutations, regenerate the YAML if one exists.
-            yaml_path = _resolve_diagnostics_yaml_path(lang_id)
+            yaml_path = _resolve_diagnostics_yaml_path(lang_id, planar_dir)
             if apply and yaml_path.exists() and (renames or splits or merges):
                 tsv_df = pd.read_csv(diag_path, sep="\t", dtype=str, keep_default_na=False)
                 # Preserve fields not in the TSV (e.g. notes) by loading existing YAML first.
@@ -585,21 +629,45 @@ def main() -> None:
                 ]
 
                 if not new_params and not removed_params:
-                    # Sheet columns match diagnostics. Still sync manifest construction_params
-                    # in case they were updated out-of-band (e.g. manual column rename via --rename).
+                    # Sheet columns match diagnostics. Sync param_names in manifest if needed,
+                    # but do NOT update param_values here — only update param_values when dropdowns
+                    # are actually pushed to the sheet, so it remains a reliable staleness reference.
                     if apply:
                         cp = sheet_info.setdefault("construction_params", {})
                         existing_cp = cp.get(construction, {})
-                        if existing_cp.get("param_names") != exp_params or existing_cp.get("param_values") != exp_values:
-                            cp[construction] = {"param_names": exp_params, "param_values": exp_values}
+                        if existing_cp.get("param_names") != exp_params:
+                            cp.setdefault(construction, {})["param_names"] = exp_params
                             manifest_changed = True
-                            print(f"  [{class_name}/{construction}] Manifest construction_params updated")
+                            if not refresh_dropdowns:
+                                print(f"  [{class_name}/{construction}] Manifest param_names updated")
                         else:
-                            if not renames and not splits and not merges:
+                            if not renames and not splits and not merges and not refresh_dropdowns:
                                 print(f"  [{class_name}/{construction}] OK — no changes")
                     else:
-                        if not renames and not splits and not merges:
+                        if not renames and not splits and not merges and not refresh_dropdowns:
                             print(f"  [{class_name}/{construction}] OK — no changes")
+
+                    if refresh_dropdowns:
+                        existing_cp = sheet_info.get("construction_params", {}).get(construction, {})
+                        stored_values = existing_cp.get("param_values", {})
+                        stale = [p for p in exp_params if exp_values.get(p) != stored_values.get(p)]
+                        if stale:
+                            any_changes = True
+                            print(f"  [{class_name}/{construction}] Would update dropdowns:")
+                            for p in stale:
+                                old = stored_values.get(p, "?")
+                                print(f"    {p}: {old} → {exp_values.get(p)}")
+                            if apply:
+                                requests = _build_dropdown_refresh_requests(ws, stale, exp_values)
+                                if requests:
+                                    ws.spreadsheet.batch_update({"requests": requests})
+                                    cp = sheet_info.setdefault("construction_params", {})
+                                    cp.setdefault(construction, {})["param_values"] = exp_values
+                                    manifest_changed = True
+                                    any_changes = True
+                                    print(f"    Done.")
+                        else:
+                            print(f"  [{class_name}/{construction}] OK — dropdowns up to date")
                     continue
 
                 any_changes = True
@@ -647,6 +715,30 @@ def main() -> None:
                             f"diagnostics: {removed_params}\n    {marker}"
                         )
 
+                # For tabs with structural changes, also refresh dropdowns on existing columns
+                # if requested. (New columns already get correct validation from _insert_param_columns.)
+                if refresh_dropdowns:
+                    existing_cp2 = sheet_info.get("construction_params", {}).get(construction, {})
+                    stored_values2 = existing_cp2.get("param_values", {})
+                    stale2 = [
+                        p for p in exp_params
+                        if p not in new_params and exp_values.get(p) != stored_values2.get(p)
+                    ]
+                    if stale2:
+                        any_changes = True
+                        print(f"  [{class_name}/{construction}] Would update dropdowns on existing columns:")
+                        for p in stale2:
+                            old = stored_values2.get(p, "?")
+                            print(f"    {p}: {old} → {exp_values.get(p)}")
+                        if apply:
+                            requests = _build_dropdown_refresh_requests(ws, stale2, exp_values)
+                            if requests:
+                                ws.spreadsheet.batch_update({"requests": requests})
+                                cp = sheet_info.setdefault("construction_params", {})
+                                cp.setdefault(construction, {})["param_values"] = exp_values
+                                manifest_changed = True
+                                print(f"    Done.")
+
     # Update the merged manifest.json on Drive if anything changed.
     if apply and manifest_changed:
         config = _load_drive_config()
@@ -664,7 +756,9 @@ def main() -> None:
     if not any_changes:
         print("All sheets are up to date.")
     elif not apply:
-        print("Dry run — pass --apply to make changes.")
+        apply_args = [a for a in sys.argv[1:] if a != "--apply"] + ["--apply"]
+        apply_cmd = "python -m coding sync-params " + " ".join(apply_args)
+        print(f"Dry run — changes detected. To apply:\n\n    {apply_cmd}\n")
 
     if apply and any_changes:
         from .generate_notebooks import regenerate_notebooks
