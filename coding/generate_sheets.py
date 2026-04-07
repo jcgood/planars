@@ -610,6 +610,8 @@ def main() -> None:
         print(f"Folder:      {folder_url}")
 
         # Create collaborator notes doc if not already in the manifest.
+        # _get_display_name reads glottolog_cache.json — run `lookup-lang <lang_id>`
+        # first if the cache is empty (doc will fall back to notes_{lang_id} otherwise).
         existing_notes_doc_id = merged_config.get(lang_id, {}).get("notes_doc_id") or config.get(lang_id, {}).get("notes_doc_id")
         if not existing_notes_doc_id:
             try:

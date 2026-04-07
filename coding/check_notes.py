@@ -160,6 +160,8 @@ def main() -> None:
     annotator_notes: Dict[str, List[Tuple[str, str]]] = {}
     # Track (lang_id, doc_id, new_hash) for write-back after issue filing.
     to_acknowledge: List[Tuple[str, str, str]] = []
+    # Languages successfully checked (for last_checked state update on --apply).
+    checked_lang_ids: List[str] = []
     manifest_dirty = False
 
     for lang_id, lang_data in sorted(manifest.items()):
@@ -206,7 +208,7 @@ def main() -> None:
         lang_state = state.get(lang_id, {})
         stored_hash = lang_state.get("notes_hash", "")
 
-        state.setdefault(lang_id, {})["last_checked"] = today
+        checked_lang_ids.append(lang_id)
 
         if new_hash == stored_hash:
             print(f"[{lang_id}] No new notes.")
@@ -216,7 +218,7 @@ def main() -> None:
         stripped = collaborator_text.strip()
         if not stripped:
             # Doc is empty (only whitespace/ack lines) — update hash but don't file.
-            state[lang_id]["notes_hash"] = new_hash
+            state.setdefault(lang_id, {})["notes_hash"] = new_hash
             print(f"[{lang_id}] Notes doc is empty — hash updated.")
             continue
 
@@ -256,15 +258,14 @@ def main() -> None:
 
     # Persist state and manifest if changed.
     if apply:
+        for lang_id in checked_lang_ids:
+            state.setdefault(lang_id, {})["last_checked"] = today
         _save_notes_state(state)
         print("\nnotes_state.json updated.")
         if manifest_dirty and root_folder_id and existing_config_file_id:
             _upload_planars_config(drive, manifest, root_folder_id, existing_config_file_id)
             _save_drive_config(config)
             print("Drive manifest updated with new notes_doc_id(s).")
-    else:
-        # Even in dry run, update last_checked so it's accurate when --apply is used.
-        pass
 
     if not annotator_notes:
         print("\nNo new notes to report.")

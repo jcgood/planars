@@ -14,6 +14,7 @@ from __future__ import annotations
 import io
 import json
 import os
+import re
 import time
 from pathlib import Path
 from typing import Callable, Dict, TypeVar
@@ -317,16 +318,22 @@ def _read_notes_doc_text(docs, doc_id: str) -> str:
     return "".join(parts)
 
 
+_ACK_LINE_RE = re.compile(r"^\[\d{4}-\d{2}-\d{2}\] " + re.escape(_ACK_PREFIX))
+
+
 def _strip_acknowledgment_lines(text: str) -> str:
     """Strip system-written acknowledgment lines before hashing.
 
-    Removes lines containing our transfer marker so that write-backs we
-    append to the doc don't register as new collaborator content on the
-    next daily run.
+    Removes lines that match the system acknowledgment pattern
+    (date-prefixed transfer marker) so that write-backs we append to the
+    doc don't register as new collaborator content on the next daily run.
+    Uses an anchored regex rather than a substring match to avoid
+    stripping legitimate collaborator notes that happen to quote the
+    marker text.
     """
     return "\n".join(
         line for line in text.splitlines()
-        if _ACK_PREFIX not in line
+        if not _ACK_LINE_RE.match(line)
     )
 
 
