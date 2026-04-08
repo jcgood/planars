@@ -152,7 +152,7 @@ Late aggregation, autotypology (dynamic schema), definition files vs. data files
 - `populate_sheets.py`: One-time utility for uploading legacy TSV data.
 - `setup_root_folder.py`: One-time Drive folder setup (run once after first `generate-sheets`).
 
-`coded_data/{lang_id}/{class_name}/` contains the filled TSVs imported from Google Sheets (local dev use only — Colab reads directly from Sheets). Archive TSVs live in `coded_data/{lang_id}/{class_name}/archive/`.
+`coded_data/{lang_id}/{class_name}/` contains the filled TSVs imported from Google Sheets (local dev use only — Colab reads directly from Sheets). Archive TSVs live in `coded_data/{lang_id}/archive/{class_name}/`.
 
 `generate_snapshots.py` at the repo root regenerates snapshot baselines; `pytest` (via `tests/test_snapshots.py`) runs the snapshot regression tests alongside all other tests. Snapshots live in `tests/snapshots/`. Auto-discovers all planars modules with `derive` + `format_result`. `check_snapshots.py` remains as a quick CLI alternative for snapshot-only checks.
 

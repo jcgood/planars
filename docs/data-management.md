@@ -59,7 +59,7 @@ coding/                         Google Sheets workflow tools (python -m coding <
 coded_data/{lang_id}/           Annotation data per language (in planars-data repo)
   planar_input/                 Planar structure TSV + diagnostics_{lang_id}.tsv
   {class_name}/                 Filled TSVs per analysis class
-  {class_name}/archive/         Superseded TSVs (after restructure-sheets)
+  archive/{class_name}/         Superseded TSVs (after import-sheets --overwrite-existing or prune-manifest)
 coded_data/synth0001/           Synthetic second-language dataset (not real data)
 notebooks/
   templates/                    Boilerplate notebooks used by generate-notebooks
