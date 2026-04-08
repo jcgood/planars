@@ -105,7 +105,28 @@ jobs:
         if: steps.import_sheets.outcome == 'failure'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash .github/scripts/manage_issue.sh file import-error "Import error in data refresh ($(date -u +%Y-%m-%d))" /tmp/import_report.txt
+        run: |
+          python3 << 'PYEOF'
+          text = open('/tmp/import_report.txt').read()
+          errors = [l.strip() for l in text.splitlines() if l.startswith('ERROR:')]
+          with open('/tmp/import_error_body.md', 'w') as f:
+              f.write("## What's wrong\n\n")
+              if errors:
+                  f.write('\n'.join(f"- {e}" for e in errors) + '\n')
+              else:
+                  f.write("_(Error details could not be extracted — see full log.)_\n")
+              f.write("\n## What to do\n\n")
+              f.write("Common causes:\n")
+              f.write('- **OAuth token expired** — re-authorize credentials (see `docs/coordinator-guide.md § "OAuth setup"`)\n')
+              f.write("- **Sheet structure changed** — run `python -m coding update-sheets --apply`\n")
+              f.write("- **Uncommitted `coded_data/` changes** — commit or discard them locally, then re-trigger this workflow\n")
+              f.write("\nThe issue closes automatically when the next import run succeeds.\n")
+              f.write("\n## Full log\n\n")
+              f.write("<details><summary>Show full import output</summary>\n\n```\n")
+              f.write(text)
+              f.write("\n```\n\n</details>\n")
+          PYEOF
+          bash .github/scripts/manage_issue.sh file import-error "Import error in data refresh ($(date -u +%Y-%m-%d))" /tmp/import_error_body.md
 
       - name: Close open import-error issue if import succeeded
         if: steps.import_sheets.outcome == 'success'
@@ -230,14 +251,33 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          BODY_FILE=$(mktemp)
-          cat /tmp/codebook_report.txt >> "$BODY_FILE"
-          if [ -s /tmp/rule_update_prompts.txt ]; then
-            printf '\n---\n\n## Ready-to-paste Claude prompts\n\n' >> "$BODY_FILE"
-            cat /tmp/rule_update_prompts.txt >> "$BODY_FILE"
-          fi
-          bash .github/scripts/manage_issue.sh file codebook-error "Codebook inconsistency detected ($(date -u +%Y-%m-%d))" "$BODY_FILE"
-          rm -f "$BODY_FILE"
+          python3 << 'PYEOF'
+          import os
+          report = open('/tmp/codebook_report.txt').read()
+          errors = [l.strip()[1:].strip() for l in report.splitlines() if l.strip().startswith('\u2717')]
+          prompts_path = '/tmp/rule_update_prompts.txt'
+          has_prompts = os.path.exists(prompts_path) and os.path.getsize(prompts_path) > 0
+          with open('/tmp/codebook_error_body.md', 'w') as f:
+              f.write("## What's wrong\n\n")
+              if errors:
+                  f.write('\n'.join(f"- {e}" for e in errors) + '\n')
+              else:
+                  f.write("_(Inconsistency details could not be extracted — see full log.)_\n")
+              f.write("\n## What to do\n\n")
+              f.write("What to do depends on the specific error:\n")
+              f.write("- **Qualification rule hash mismatch** — paste the Claude prompt below into a new conversation, review the proposed changes, then run `python -m coding sync-qualification-hashes --apply`\n")
+              f.write("- **Criterion missing from `diagnostic_criteria.yaml`** — add an entry to `schemas/diagnostic_criteria.yaml`\n")
+              f.write("- **TSV class/criteria mismatch** — update `diagnostics_{lang_id}.yaml` and run `python -m coding sync-diagnostics-yaml --apply`\n")
+              f.write("\nThe issue closes automatically when `check-codebook` passes.\n")
+              f.write("\n## Full log\n\n")
+              f.write("<details><summary>Show full codebook check output</summary>\n\n```\n")
+              f.write(report)
+              f.write("\n```\n\n</details>\n")
+              if has_prompts:
+                  f.write("\n---\n\n## Ready-to-paste Claude prompts\n\n")
+                  f.write(open(prompts_path).read())
+          PYEOF
+          bash .github/scripts/manage_issue.sh file codebook-error "Codebook inconsistency detected ($(date -u +%Y-%m-%d))" /tmp/codebook_error_body.md
 
       - name: Close open codebook-error issue if all clear
         if: steps.codebook.outcome == 'success'
@@ -278,7 +318,29 @@ jobs:
         if: steps.integrity.outcome == 'failure'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash .github/scripts/manage_issue.sh file integrity-error "Integrity check failed ($(date -u +%Y-%m-%d))" /tmp/integrity_report.txt
+        run: |
+          python3 << 'PYEOF'
+          text = open('/tmp/integrity_report.txt').read()
+          errors = [l.strip()[1:].strip() for l in text.splitlines() if l.strip().startswith('\u2717')]
+          with open('/tmp/integrity_error_body.md', 'w') as f:
+              f.write("## What's wrong\n\n")
+              if errors:
+                  f.write('\n'.join(f"- {e}" for e in errors) + '\n')
+              else:
+                  f.write("_(Error details could not be extracted — see full log.)_\n")
+              f.write("\n## What to do\n\n")
+              f.write(
+                  "Each bullet above corresponds to a `\u2717` line in the full log. "
+                  "The `\u2192` lines below each one in the full log explain what to do. "
+                  "Run `python -m coding integrity-check` locally for the full report with guidance.\n\n"
+                  "The issue closes automatically when the integrity check passes.\n"
+              )
+              f.write("\n## Full log\n\n")
+              f.write("<details><summary>Show full integrity check output</summary>\n\n```\n")
+              f.write(text)
+              f.write("\n```\n\n</details>\n")
+          PYEOF
+          bash .github/scripts/manage_issue.sh file integrity-error "Integrity check failed ($(date -u +%Y-%m-%d))" /tmp/integrity_error_body.md
 
       - name: Close open integrity-error issue if all clear
         if: steps.integrity.outcome == 'success'

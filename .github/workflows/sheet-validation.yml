@@ -68,6 +68,45 @@ jobs:
           cat /tmp/report.txt >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
+      - name: Build structured issue body for sheet validation
+        if: steps.validate.outcome == 'failure'
+        run: |
+          python3 << 'PYEOF'
+          import re
+          text = open('/tmp/report.txt').read()
+          lines = text.splitlines()
+          errors = []
+          current_lang = None
+          current_class = None
+          for line in lines:
+              if re.match(r'^[a-z]{4}\d{4}$', line.strip()):
+                  current_lang = line.strip()
+                  current_class = None
+              elif m := re.match(r'^\s{2}\[(\S+/\S+)\] \d+ issue', line):
+                  current_class = m.group(1)
+              elif m := re.match(r'^\s{4}\[ERROR\] [^:]+: (.+)', line):
+                  if current_lang and current_class:
+                      errors.append(f"- **{current_lang}** / {current_class}: {m.group(1)}")
+          with open('/tmp/issue_body.md', 'w') as f:
+              f.write("## What's wrong\n\n")
+              if errors:
+                  f.write('\n'.join(errors[:20]) + '\n')
+                  if len(errors) > 20:
+                      f.write(f"\n_…and {len(errors) - 20} more — see full log._\n")
+              else:
+                  f.write("_(Error details could not be extracted — see full log.)_\n")
+              f.write("\n## What to do\n\n")
+              f.write(
+                  "Open the affected sheet, find the highlighted pink cells, "
+                  "and correct the values to one of the allowed options listed above. "
+                  "The issue closes automatically when the next validation run passes.\n"
+              )
+              f.write("\n## Full log\n\n")
+              f.write("<details><summary>Show full validation output</summary>\n\n```\n")
+              f.write(text)
+              f.write("\n```\n\n</details>\n")
+          PYEOF
+
       - name: File or update GitHub issue if issues found
         if: steps.validate.outcome == 'failure'
         env:
@@ -78,10 +117,10 @@ jobs:
             gh issue create \
               --title "Sheet validation issues detected $(date -u +%Y-%m-%d)" \
               --label sheet-validation \
-              --body-file /tmp/report.txt
+              --body-file /tmp/issue_body.md
           else
             ISSUE_NUM=$(gh issue list --label sheet-validation --state open --json number --jq '.[0].number')
-            gh issue comment "$ISSUE_NUM" --body-file /tmp/report.txt
+            gh issue comment "$ISSUE_NUM" --body-file /tmp/issue_body.md
           fi
 
       - name: Close open validation issue if all clear
