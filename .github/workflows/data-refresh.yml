@@ -62,15 +62,27 @@ jobs:
         # touched by human (non-bot) commits since the last data-refresh run.
         # Used after the import to detect whether fresh Sheet data overwrote
         # work a coordinator committed directly to planars-data.
+        #
+        # Excluded from the at-risk list (workflow legitimately updates these):
+        #   notes_state.json            — always rewritten by check-notes --apply
+        #   planar_input/diagnostics_*  — derived artifacts regenerated from YAML
+        #     by sync-diagnostics-yaml; coordinator intent lives in the YAML, not
+        #     the TSV, so a refresh updating the TSV is correct, not an overwrite.
         id: pre_import
         working-directory: coded_data
         run: |
           echo "before_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
           LAST_BOT=$(git log --format="%H %ae" | grep "github-actions\[bot\]" | head -1 | cut -d' ' -f1)
           if [ -n "$LAST_BOT" ]; then
-            git diff --name-only "$LAST_BOT" HEAD > /tmp/human_committed_files.txt
+            git diff --name-only "$LAST_BOT" HEAD \
+              | grep -v "^notes_state\.json$" \
+              | grep -v "planar_input/diagnostics_" \
+              > /tmp/human_committed_files.txt
           else
-            git ls-files > /tmp/human_committed_files.txt
+            git ls-files \
+              | grep -v "^notes_state\.json$" \
+              | grep -v "planar_input/diagnostics_" \
+              > /tmp/human_committed_files.txt
           fi
           echo "Human-committed files at risk of overwrite:"
           cat /tmp/human_committed_files.txt || echo "(none)"
