@@ -37,8 +37,8 @@ TSV_CONTENT = (
 
 @pytest.fixture()
 def lang_dir(tmp_path, monkeypatch):
-    """Set up a coded_data/lang0001/planar_input/ tree and patch CODED_DATA."""
-    d = tmp_path / "coded_data" / "lang0001" / "planar_input"
+    """Set up a coded_data/lang0001/lang_setup/ tree and patch CODED_DATA."""
+    d = tmp_path / "coded_data" / "lang0001" / "lang_setup"
     d.mkdir(parents=True)
     monkeypatch.setattr(_sdy, "CODED_DATA", tmp_path / "coded_data")
     return d

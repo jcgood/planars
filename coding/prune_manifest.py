@@ -129,9 +129,9 @@ def _active_classes(lang_id: str) -> set[str]:
     Reads diagnostics_{lang_id}.yaml preferentially; falls back to .tsv if
     no YAML exists. Returns an empty set if neither file is present.
     """
-    planar_input = CODED_DATA / lang_id / "planar_input"
-    yaml_path = planar_input / f"diagnostics_{lang_id}.yaml"
-    tsv_path  = planar_input / f"diagnostics_{lang_id}.tsv"
+    lang_setup = CODED_DATA / lang_id / "lang_setup"
+    yaml_path = lang_setup / f"diagnostics_{lang_id}.yaml"
+    tsv_path  = lang_setup / f"diagnostics_{lang_id}.tsv"
     if yaml_path.exists():
         with open(yaml_path, encoding="utf-8") as f:
             data = _yaml.safe_load(f)

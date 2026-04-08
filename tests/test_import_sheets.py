@@ -258,7 +258,7 @@ class TestCheckYamlDrift:
     def test_returns_empty_when_in_sync(self, tmp_path, monkeypatch):
         """TSV matches YAML → no ambiguous drift."""
         monkeypatch.setattr(_is, "ROOT", tmp_path)
-        yaml_dir = tmp_path / "coded_data" / "lang0001" / "planar_input"
+        yaml_dir = tmp_path / "coded_data" / "lang0001" / "lang_setup"
         yaml_dir.mkdir(parents=True)
         (yaml_dir / "diagnostics_lang0001.yaml").write_text(_YAML_CONTENT)
         result = _check_yaml_drift("lang0001", self._tsv_df())
@@ -267,7 +267,7 @@ class TestCheckYamlDrift:
     def test_returns_ambiguous_for_unknown_criterion(self, tmp_path, monkeypatch):
         """Unknown criterion in TSV surfaces as ambiguous drift entry."""
         monkeypatch.setattr(_is, "ROOT", tmp_path)
-        yaml_dir = tmp_path / "coded_data" / "lang0001" / "planar_input"
+        yaml_dir = tmp_path / "coded_data" / "lang0001" / "lang_setup"
         yaml_dir.mkdir(parents=True)
         (yaml_dir / "diagnostics_lang0001.yaml").write_text(_YAML_CONTENT)
         tsv_df = self._tsv_df("V-combines, N-combines, totally_made_up_zyx")

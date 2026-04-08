@@ -258,9 +258,9 @@ def main() -> None:
     manifest = _load_manifest_from_drive(drive)
 
     # Build element index and planar position map for every language
-    planar_files = sorted(CODED_DATA.glob("*/planar_input/planar_*.tsv"))
+    planar_files = sorted(CODED_DATA.glob("*/lang_setup/planar_*.tsv"))
     if not planar_files:
-        raise SystemExit("No planar_*.tsv found in coded_data/*/planar_input/")
+        raise SystemExit("No planar_*.tsv found in coded_data/*/lang_setup/")
 
     lang_planar_data: Dict[str, tuple] = {}
     for planar_file in planar_files:

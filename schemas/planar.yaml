@@ -13,7 +13,7 @@
 #   - Analytical terms (strict/loose span, partial/complete position)
 #     → see schemas/terms.yaml
 #   - Per-language planar structures
-#     → see coded_data/{lang_id}/planar_input/planar_{lang_id}-*.tsv
+#     → see coded_data/{lang_id}/lang_setup/planar_{lang_id}-*.tsv
 
 # ---------------------------------------------------------------------------
 # STRUCTURAL COLUMNS

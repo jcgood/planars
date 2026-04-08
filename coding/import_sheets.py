@@ -283,7 +283,7 @@ def _detect_diagnostics_changes(
                 "diff_summary": (
                     f"Class '{cls}' was present in the old diagnostics but not in the new download.\n"
                     f"Steps to resolve:\n"
-                    f"  1. Remove '{cls}' from coded_data/{lang_id}/planar_input/diagnostics_{lang_id}.yaml\n"
+                    f"  1. Remove '{cls}' from coded_data/{lang_id}/lang_setup/diagnostics_{lang_id}.yaml\n"
                     f"  2. python -m coding sync-diagnostics-yaml --apply --lang {lang_id}\n"
                     f"  3. python -m coding prune-manifest --apply\n"
                     f"     (archives local TSVs for '{cls}' and removes stale manifest entry;\n"
@@ -371,7 +371,7 @@ def _check_yaml_drift(lang_id: str, tsv_df: pd.DataFrame) -> List[Dict]:
     Returns an empty list if no YAML exists for this language or no ambiguous drift found.
     """
     import yaml as _yaml
-    yaml_path = ROOT / "coded_data" / lang_id / "planar_input" / f"diagnostics_{lang_id}.yaml"
+    yaml_path = ROOT / "coded_data" / lang_id / "lang_setup" / f"diagnostics_{lang_id}.yaml"
     if not yaml_path.exists():
         return []
     with open(yaml_path, encoding="utf-8") as f:
@@ -470,7 +470,7 @@ def _notify_pending_changes(entries: List[Dict]) -> None:
         body_file.unlink(missing_ok=True)
 
 
-def _download_planar_input_sheets(
+def _download_lang_setup_sheets(
     gc: gspread.Client,
     lang_id: str,
     lang_data: Dict,
@@ -489,7 +489,7 @@ def _download_planar_input_sheets(
     pending: List[Dict] = []
     drift_entries: List[Dict] = []
 
-    planar_dir = ROOT / "coded_data" / lang_id / "planar_input"
+    planar_dir = ROOT / "coded_data" / lang_id / "lang_setup"
 
     # --- Planar sheet ---
     planar_id = lang_data.get("planar_spreadsheet_id")
@@ -698,7 +698,7 @@ def main() -> None:
         lang_warning_lines: List[str] = []
 
         # Download planar and diagnostics Sheets to local TSVs; detect changes.
-        s, p, d = _download_planar_input_sheets(gc, lang_id, lang_data, timestamp, apply)
+        s, p, d = _download_lang_setup_sheets(gc, lang_id, lang_data, timestamp, apply)
         all_safe_cmds |= s
         all_pending   += p
         all_drift     += d

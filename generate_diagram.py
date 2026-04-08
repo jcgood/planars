@@ -87,7 +87,7 @@ def _load_language_instances() -> dict[str, list[dict]]:
     lang_dirs = sorted(d for d in CODED.iterdir() if d.is_dir())
     for lang_dir in lang_dirs:
         lang_id = lang_dir.name
-        diag_files = sorted((lang_dir / "planar_input").glob("diagnostics_*.tsv"))
+        diag_files = sorted((lang_dir / "lang_setup").glob("diagnostics_*.tsv"))
         if not diag_files:
             continue
         with open(diag_files[0]) as f:
@@ -347,7 +347,7 @@ def build_schema_map_dot() -> str:
 
     # ---- Per-language files cluster -----------------------------------------
     lines.append("    subgraph cluster_lang {")
-    lines.append('        label="coded_data/{lang_id}/planar_input/";')
+    lines.append('        label="coded_data/{lang_id}/lang_setup/";')
     lines.append(f'        style=filled; fillcolor="{_LANG_BG}";')
     lines.append(f'        color="{_LANG_BORDER}"; penwidth=2.0;')
     lines.append('        fontname="Helvetica-Bold"; fontsize=12; margin=20;')

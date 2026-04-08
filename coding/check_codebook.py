@@ -91,7 +91,7 @@ def _check_required_criteria(codebook: dict) -> List[str]:
 def _check_diagnostics(codebook: dict) -> List[str]:
     """Check that criterion names in all diagnostics_{lang_id}.tsv files are in diagnostic_criteria.yaml."""
     cb = _codebook_criteria(codebook)
-    diag_files = sorted((ROOT / "coded_data").glob("*/planar_input/diagnostics_*.tsv"))
+    diag_files = sorted((ROOT / "coded_data").glob("*/lang_setup/diagnostics_*.tsv"))
     if not diag_files:
         return ["No diagnostics_*.tsv files found under coded_data/"]
 
@@ -149,7 +149,7 @@ def _check_diagnostics_vs_classes(diag_classes: dict) -> List[str]:
     if not diag_classes:
         return ["diagnostic_classes.yaml not found — skipping class schema check"]
 
-    diag_files = sorted((ROOT / "coded_data").glob("*/planar_input/diagnostics_*.tsv"))
+    diag_files = sorted((ROOT / "coded_data").glob("*/lang_setup/diagnostics_*.tsv"))
     if not diag_files:
         return []
 
@@ -415,7 +415,7 @@ def _report_keystone_active_unresolved(
         if not (isinstance(default, str) and "[NEEDS REVIEW]" in default):
             continue
         for lang_id in sorted(lang_ids):
-            yaml_path = root / "coded_data" / lang_id / "planar_input" / f"diagnostics_{lang_id}.yaml"
+            yaml_path = root / "coded_data" / lang_id / "lang_setup" / f"diagnostics_{lang_id}.yaml"
             if not yaml_path.exists():
                 unresolved.append((lang_id, class_name))
                 continue
@@ -476,7 +476,7 @@ def _collect_coverage(root: Path = ROOT) -> dict[str, list[str]]:
         root: repository root to search under (default ROOT; tests pass tmp_path here).
     """
     coverage: dict[str, list[str]] = {}
-    for diag_path in sorted((root / "coded_data").glob("*/planar_input/diagnostics_*.tsv")):
+    for diag_path in sorted((root / "coded_data").glob("*/lang_setup/diagnostics_*.tsv")):
         lang = diag_path.parent.parent.name
         df = pd.read_csv(diag_path, sep="\t", dtype=str, keep_default_na=False)
         for _, row in df.iterrows():

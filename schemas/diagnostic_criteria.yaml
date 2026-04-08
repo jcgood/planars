@@ -17,7 +17,7 @@
 #   - Planar structure ontology (positions, elements, structural columns)
 #     → see schemas/planar.yaml
 #   - Per-language instances of these classes
-#     → see coded_data/{lang_id}/planar_input/diagnostics_{lang_id}.tsv
+#     → see coded_data/{lang_id}/lang_setup/diagnostics_{lang_id}.tsv
 #
 # Definitions draw on the theoretical framework in:
 # Tallman, Auderset & Uchihara (eds.) (2024), "Constituency and convergence in the Americas",

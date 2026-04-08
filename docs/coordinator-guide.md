@@ -140,8 +140,8 @@ git pull
    ```
 
 2. In `coded_data/`, create:
-   - `{lang_id}/planar_input/planar_{lang_id}-{date}.tsv` — planar structure
-   - `{lang_id}/planar_input/diagnostics_{lang_id}.yaml` — analysis classes and diagnostic criteria (YAML is the source of truth; the TSV is generated from it)
+   - `{lang_id}/lang_setup/planar_{lang_id}-{date}.tsv` — planar structure
+   - `{lang_id}/lang_setup/diagnostics_{lang_id}.yaml` — analysis classes and diagnostic criteria (YAML is the source of truth; the TSV is generated from it)
 
    Minimal YAML example:
    ```yaml
@@ -234,7 +234,7 @@ python -m coding import-sheets --apply --overwrite-existing  # re-download and o
 
 Dry-run by default — pass `--apply` to write any TSVs. Skips existing annotation TSVs unless `--overwrite-existing` is also passed; when overwriting, the existing TSV is automatically archived to `archive/` first. On each run, `import-sheets` also:
 
-- **Downloads and validates** the planar structure and diagnostics Sheets for each language, writing them to `coded_data/{lang_id}/planar_input/`.
+- **Downloads and validates** the planar structure and diagnostics Sheets for each language, writing them to `coded_data/{lang_id}/lang_setup/`.
 - **Auto-applies safe downstream commands** (`update-sheets --apply`, `sync-params --apply`, `generate-sheets`) when additive changes are detected (new positions, new criteria, new construction tabs).
 - **Writes destructive changes** (planar deletions/reorders, criterion renames/removals, new constructions within existing classes) to `pending_changes.json` for coordinator review rather than applying them immediately.
 
@@ -332,7 +332,7 @@ When the diagnostic model changes — a new analysis class, a class renamed or r
 
 #### Editing the diagnostics YAML
 
-`diagnostics_{lang_id}.yaml` in `coded_data/{lang_id}/planar_input/` is the source of truth for which analyses run for a language. After editing it, regenerate the derived TSV:
+`diagnostics_{lang_id}.yaml` in `coded_data/{lang_id}/lang_setup/` is the source of truth for which analyses run for a language. After editing it, regenerate the derived TSV:
 
 ```bash
 python -m coding sync-diagnostics-yaml --lang {lang_id}                  # dry run: show what would change
@@ -425,7 +425,7 @@ For changes to the planar structure itself — positions added, dropped, or rena
 
 #### Adding elements to the planar structure
 
-When new elements are added to `planar_input/planar_{lang_id}-{date}.tsv`:
+When new elements are added to `lang_setup/planar_{lang_id}-{date}.tsv`:
 
 ```bash
 python -m coding update-sheets           # dry run — show what would change

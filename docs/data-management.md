@@ -57,7 +57,7 @@ coding/                         Google Sheets workflow tools (python -m coding <
   populate_sheets.py            Upload legacy TSV data (one-time utility)
   setup_root_folder.py          One-time Drive folder setup
 coded_data/{lang_id}/           Annotation data per language (in planars-data repo)
-  planar_input/                 Planar structure TSV + diagnostics_{lang_id}.tsv
+  lang_setup/                 Planar structure TSV + diagnostics_{lang_id}.tsv
   {class_name}/                 Filled TSVs per analysis class
   archive/{class_name}/         Superseded TSVs (after import-sheets --overwrite-existing or prune-manifest)
 coded_data/synth0001/           Synthetic second-language dataset (not real data)
@@ -76,9 +76,9 @@ docs/                           Documentation (this directory)
 
 ---
 
-## Planar structure: planar_input/
+## Planar structure: lang_setup/
 
-Each language has a `planar_input/` directory containing:
+Each language has a `lang_setup/` directory containing:
 
 - `planar_{lang_id}-{date}.tsv` — the planar structure
 - `diagnostics_{lang_id}.tsv` — which analyses to run and with which diagnostic criteria
@@ -131,7 +131,7 @@ accented{y/n/both}, independence, left-interaction, right-interaction
 ```
 coded_data/
   {lang_id}/
-    planar_input/
+    lang_setup/
       planar_{lang_id}-{date}.tsv
       diagnostics_{lang_id}.tsv
     {class_name}/

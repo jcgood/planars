@@ -145,9 +145,9 @@ class TestLanguageSpans:
         lang = request.param
         if not (CODED_DATA / lang).exists():
             pytest.skip(f"coded_data/{lang} not present")
-        # Must have at least one non-planar_input class dir with a TSV
+        # Must have at least one non-lang_setup class dir with a TSV
         has_data = any(
-            d.is_dir() and d.name not in {"planar_input", "archive"}
+            d.is_dir() and d.name not in {"lang_setup", "archive"}
             and any(d.glob("*.tsv"))
             for d in (CODED_DATA / lang).iterdir()
         )
@@ -212,9 +212,9 @@ class TestLanguageCompleteness:
         assert cisc.get("total", 0) > 0, "ciscategorial/general should have annotation cells"
         assert cisc.get("filled", 0) > 0, "ciscategorial/general should have filled cells"
 
-    def test_planar_input_excluded(self):
+    def test_lang_setup_excluded(self):
         result = language_completeness("stan1293", source="local", repo_root=ROOT)
-        assert "planar_input" not in result
+        assert "lang_setup" not in result
 
     def test_archive_excluded(self):
         result = language_completeness("stan1293", source="local", repo_root=ROOT)
@@ -247,13 +247,13 @@ class TestLayer1Completeness:
         """Create a minimal synthetic lang dir with diagnostics and optional TSVs."""
         lang_id = "test1234"
         lang_dir = tmp_path / "coded_data" / lang_id
-        planar_input = lang_dir / "planar_input"
-        planar_input.mkdir(parents=True)
+        lang_setup = lang_dir / "lang_setup"
+        lang_setup.mkdir(parents=True)
 
         import csv, io
         rows = diagnostics_rows
         if rows:
-            diag_path = planar_input / f"diagnostics_{lang_id}.tsv"
+            diag_path = lang_setup / f"diagnostics_{lang_id}.tsv"
             with open(diag_path, "w", newline="", encoding="utf-8") as f:
                 writer = csv.DictWriter(f, fieldnames=["Class", "Language", "Constructions", "Criteria"],
                                         delimiter="\t")

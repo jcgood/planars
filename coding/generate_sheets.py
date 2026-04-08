@@ -128,7 +128,7 @@ def _create_or_update_tsv_sheet(
     return ss.id, ss.url
 
 
-def _upload_planar_input_as_sheets(
+def _upload_lang_setup_as_sheets(
     gc: gspread.Client,
     drive,
     planar_dir: Path,
@@ -522,7 +522,7 @@ def _check_force_against_existing_sheets(
 def main() -> None:
     """Entry point for `python -m coding generate-sheets`.
 
-    Iterates over all planar_*.tsv files in coded_data/*/planar_input/ and for each language:
+    Iterates over all planar_*.tsv files in coded_data/*/lang_setup/ and for each language:
     - Creates planar_*.tsv and diagnostics_{lang_id}.tsv as editable Google Sheets (source of
       truth). Skips files whose sheet IDs are already in the manifest unless --force.
     - Creates one annotation Google Sheet per analysis class (skipping existing ones unless
@@ -532,9 +532,9 @@ def main() -> None:
     """
     force = "--force" in sys.argv
 
-    planar_files = sorted(CODED_DATA.glob("*/planar_input/planar_*.tsv"))
+    planar_files = sorted(CODED_DATA.glob("*/lang_setup/planar_*.tsv"))
     if not planar_files:
-        raise SystemExit("No planar_*.tsv found in coded_data/*/planar_input/")
+        raise SystemExit("No planar_*.tsv found in coded_data/*/lang_setup/")
 
     # Connect to Google once for all languages
     print("Connecting to Google APIs...")
@@ -714,7 +714,7 @@ def main() -> None:
 
         # Upload planar and diagnostics as editable Google Sheets (source of truth).
         # Skips files whose sheet IDs are already in the manifest unless --force.
-        input_sheet_info = _upload_planar_input_as_sheets(
+        input_sheet_info = _upload_lang_setup_as_sheets(
             gc, drive, planar_dir, lang_id, folder_id, existing_lang_data, force=force
         )
 

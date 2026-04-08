@@ -130,11 +130,11 @@ def _section_planar(lang_ids: List[str]) -> Tuple[int, int]:
     total_e = total_w = 0
 
     for lang_id in lang_ids:
-        planar_dir = CODED_DATA / lang_id / "planar_input"
+        planar_dir = CODED_DATA / lang_id / "lang_setup"
         lang = _lang_label(lang_id)
 
         if not planar_dir.exists():
-            print(_fail(f"{lang}  —  no planar_input/ directory"))
+            print(_fail(f"{lang}  —  no lang_setup/ directory"))
             print(_sub(f"→ Language onboarding is incomplete."))
             print(_sub(f"  See docs/coordinator-guide.md § 'Onboarding a new language'."))
             total_e += 1
@@ -142,8 +142,8 @@ def _section_planar(lang_ids: List[str]) -> Tuple[int, int]:
 
         planar_files = sorted(planar_dir.glob("planar_*.tsv"))
         if not planar_files:
-            print(_fail(f"{lang}  —  no planar_*.tsv found in planar_input/"))
-            print(_sub(f"→ Add the planar TSV: coded_data/{lang_id}/planar_input/planar_{lang_id}-YYYYMMDD.tsv"))
+            print(_fail(f"{lang}  —  no planar_*.tsv found in lang_setup/"))
+            print(_sub(f"→ Add the planar TSV: coded_data/{lang_id}/lang_setup/planar_{lang_id}-YYYYMMDD.tsv"))
             print(_sub(f"  See docs/coordinator-guide.md § 'Onboarding a new language'."))
             total_e += 1
             continue
@@ -170,18 +170,18 @@ def _section_diagnostics(lang_ids: List[str]) -> Tuple[int, int]:
     total_e = total_w = 0
 
     for lang_id in lang_ids:
-        diag_path = CODED_DATA / lang_id / "planar_input" / f"diagnostics_{lang_id}.tsv"
+        diag_path = CODED_DATA / lang_id / "lang_setup" / f"diagnostics_{lang_id}.tsv"
         lang = _lang_label(lang_id)
 
         if not diag_path.exists():
             print(_fail(f"{lang}  —  diagnostics_{lang_id}.tsv not found"))
-            yaml_path = CODED_DATA / lang_id / "planar_input" / f"diagnostics_{lang_id}.yaml"
+            yaml_path = CODED_DATA / lang_id / "lang_setup" / f"diagnostics_{lang_id}.yaml"
             if yaml_path.exists():
                 print(_sub(f"→ YAML exists but TSV has not been generated."))
                 print(_sub(f"  run: python -m coding sync-diagnostics-yaml --apply --lang {lang_id}"))
             else:
                 print(_sub(f"→ Neither YAML nor TSV found — language onboarding is incomplete."))
-                print(_sub(f"  Create coded_data/{lang_id}/planar_input/diagnostics_{lang_id}.yaml,"))
+                print(_sub(f"  Create coded_data/{lang_id}/lang_setup/diagnostics_{lang_id}.yaml,"))
                 print(_sub(f"  then run: python -m coding sync-diagnostics-yaml --apply --lang {lang_id}"))
                 print(_sub(f"  See docs/coordinator-guide.md § 'Onboarding a new language'."))
             total_e += 1
@@ -255,8 +255,8 @@ def _stale_manifest_classes(manifest: dict, lang_ids: List[str]) -> List[Tuple[s
         sheets_info = manifest.get(lang_id, {}).get("sheets", {})
         if not sheets_info:
             continue
-        yaml_path = CODED_DATA / lang_id / "planar_input" / f"diagnostics_{lang_id}.yaml"
-        tsv_path  = CODED_DATA / lang_id / "planar_input" / f"diagnostics_{lang_id}.tsv"
+        yaml_path = CODED_DATA / lang_id / "lang_setup" / f"diagnostics_{lang_id}.yaml"
+        tsv_path  = CODED_DATA / lang_id / "lang_setup" / f"diagnostics_{lang_id}.tsv"
         if yaml_path.exists():
             with open(yaml_path, encoding="utf-8") as _f:
                 _diag = _yaml.safe_load(_f)

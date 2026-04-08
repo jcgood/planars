@@ -359,7 +359,7 @@ def _read_expected_constructions(lang_dir: Path) -> Dict[str, list]:
     constructions are expected but not yet present in coded_data/.
     """
     lang_id = lang_dir.name
-    diag_path = lang_dir / "planar_input" / f"diagnostics_{lang_id}.tsv"
+    diag_path = lang_dir / "lang_setup" / f"diagnostics_{lang_id}.tsv"
     if not diag_path.exists():
         return {}
     try:
@@ -451,7 +451,7 @@ def language_completeness(
         # Collect all class names: declared in diagnostics + present in coded_data.
         present_dirs = {
             d.name for d in lang_dir.iterdir()
-            if d.is_dir() and d.name not in {"planar_input", "archive"}
+            if d.is_dir() and d.name not in {"lang_setup", "archive"}
         } if lang_dir.exists() else set()
         all_class_names = sorted(set(expected.keys()) | present_dirs)
 

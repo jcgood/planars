@@ -262,7 +262,7 @@ def revalidate_sheet(
 
 def _load_param_map(lang_id: str) -> Dict[str, Dict[str, dict]]:
     """Return {class_name: {construction: {params, values}}} for a language."""
-    planar_files = sorted((CODED_DATA / lang_id / "planar_input").glob("planar_*.tsv"))
+    planar_files = sorted((CODED_DATA / lang_id / "lang_setup").glob("planar_*.tsv"))
     if not planar_files:
         return {}
     data_dir = planar_files[0].parent
@@ -311,7 +311,7 @@ def main() -> None:
         print(f"\n{lang_id}")
 
         # Validate planar structure and diagnostics_{lang_id}.tsv.
-        planar_files = sorted((CODED_DATA / lang_id / "planar_input").glob("planar_*.tsv"))
+        planar_files = sorted((CODED_DATA / lang_id / "lang_setup").glob("planar_*.tsv"))
         if planar_files:
             planar_df = pd.read_csv(planar_files[0], sep="\t")
             planar_issues = validate_planar_df(planar_df)
@@ -345,7 +345,7 @@ def main() -> None:
                     continue
                 info = param_map.get(class_name, {}).get(construction, {})
                 ka = resolve_keystone_active(lang_id, class_name, construction,
-                                            data_dir=CODED_DATA / lang_id / "planar_input")
+                                            data_dir=CODED_DATA / lang_id / "lang_setup")
                 if ka is None:
                     print(f"  [{class_name}/{construction}] WARNING: keystone_active unresolved — treating as False")
                     ka = False

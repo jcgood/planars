@@ -122,8 +122,8 @@ def build_plan(
 ) -> list[tuple[Path, str]]:
     """Return list of (dst_path, content) pairs."""
     plan = []
-    src_pi = src_root / "planar_input"
-    dst_pi = dst_root / "planar_input"
+    src_pi = src_root / "lang_setup"
+    dst_pi = dst_root / "lang_setup"
 
     # diagnostics_{lang_id}.tsv — only lang ID changes
     diag_text = (src_pi / f"diagnostics_{SRC_LANG}.tsv").read_text().replace(SRC_LANG, DST_LANG)
@@ -136,7 +136,7 @@ def build_plan(
 
     # filled TSVs — drop rows, renumber, flip values
     for class_dir in sorted(src_root.iterdir()):
-        if not class_dir.is_dir() or class_dir.name in ("planar_input", "archive", ".DS_Store"):
+        if not class_dir.is_dir() or class_dir.name in ("lang_setup", "archive", ".DS_Store"):
             continue
         for tsv in sorted(class_dir.glob("*.tsv")):
             content = _transform_filled_tsv(tsv.read_text(), pos_map, rng)
@@ -172,7 +172,7 @@ def main() -> None:
         return
 
     rng = random.Random(SEED)
-    planar_src = next((src_root / "planar_input").glob("planar_*.tsv"))
+    planar_src = next((src_root / "lang_setup").glob("planar_*.tsv"))
     pos_map = _build_position_map(planar_src, rng)
 
     new_keystone = pos_map[next(
@@ -198,7 +198,7 @@ def main() -> None:
             print(f"  wrote  {rel}")
         else:
             print(f"  would write  {rel}")
-        if dst.suffix == ".tsv" and dst.parent.name != "planar_input":
+        if dst.suffix == ".tsv" and dst.parent.name != "lang_setup":
             src_tsv = src_root / dst.parent.name / dst.name
             if src_tsv.exists():
                 src_lines = src_tsv.read_text().splitlines()[1:]

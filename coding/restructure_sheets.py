@@ -548,9 +548,9 @@ def main() -> None:
     gc, drive = _get_clients()
     manifest = _load_manifest_from_drive(drive)
 
-    planar_files = sorted(CODED_DATA.glob("*/planar_input/planar_*.tsv"))
+    planar_files = sorted(CODED_DATA.glob("*/lang_setup/planar_*.tsv"))
     if not planar_files:
-        raise SystemExit("No planar_*.tsv found in coded_data/*/planar_input/")
+        raise SystemExit("No planar_*.tsv found in coded_data/*/lang_setup/")
 
     any_changes = False
 

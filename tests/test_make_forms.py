@@ -47,7 +47,7 @@ TSV_CONTENT = textwrap.dedent("""\
 
 @pytest.fixture()
 def planar_dir(tmp_path):
-    d = tmp_path / "coded_data" / "lang0001" / "planar_input"
+    d = tmp_path / "coded_data" / "lang0001" / "lang_setup"
     d.mkdir(parents=True)
     return d
 
@@ -118,7 +118,7 @@ def test_yaml_to_tsv_df_non_default_values():
 def test_tsv_df_to_yaml_round_trip():
     """TSV → YAML → TSV round-trip preserves class/construction/criteria."""
     df = pd.read_csv(
-        Path(__file__).parent.parent / "coded_data" / "stan1293" / "planar_input" / "diagnostics_stan1293.tsv",
+        Path(__file__).parent.parent / "coded_data" / "stan1293" / "lang_setup" / "diagnostics_stan1293.tsv",
         sep="\t", dtype=str, keep_default_na=False,
     )
     yaml_data = _tsv_df_to_yaml(df, "stan1293")

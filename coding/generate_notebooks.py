@@ -284,9 +284,9 @@ def _run_generation(apply: bool) -> None:
     Args:
         apply: if True, connect to Drive and upload; if False, dry-run only.
     """
-    planar_files = sorted(CODED_DATA.glob("*/planar_input/planar_*.tsv"))
+    planar_files = sorted(CODED_DATA.glob("*/lang_setup/planar_*.tsv"))
     if not planar_files:
-        raise SystemExit("No planar_*.tsv found in coded_data/*/planar_input/")
+        raise SystemExit("No planar_*.tsv found in coded_data/*/lang_setup/")
 
     # Read diagnostics for each language to get ordered class lists
     lang_classes: Dict[str, List[str]] = {}

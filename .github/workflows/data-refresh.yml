@@ -65,7 +65,7 @@ jobs:
         #
         # Excluded from the at-risk list (workflow legitimately updates these):
         #   notes_state.json            — always rewritten by check-notes --apply
-        #   planar_input/diagnostics_*  — derived artifacts regenerated from YAML
+        #   lang_setup/diagnostics_*  — derived artifacts regenerated from YAML
         #     by sync-diagnostics-yaml; coordinator intent lives in the YAML, not
         #     the TSV, so a refresh updating the TSV is correct, not an overwrite.
         id: pre_import
@@ -76,12 +76,12 @@ jobs:
           if [ -n "$LAST_BOT" ]; then
             git diff --name-only "$LAST_BOT" HEAD \
               | grep -v "^notes_state\.json$" \
-              | grep -v "planar_input/diagnostics_" \
+              | grep -v "lang_setup/diagnostics_" \
               > /tmp/human_committed_files.txt
           else
             git ls-files \
               | grep -v "^notes_state\.json$" \
-              | grep -v "planar_input/diagnostics_" \
+              | grep -v "lang_setup/diagnostics_" \
               > /tmp/human_committed_files.txt
           fi
           echo "Human-committed files at risk of overwrite:"
@@ -487,7 +487,7 @@ jobs:
         run: |
           LANGS=$(find coded_data -maxdepth 1 -mindepth 1 -type d -not -name ".*" | wc -l | tr -d ' ')
           YAMLS=$(find coded_data -name "diagnostics_*.yaml" | wc -l | tr -d ' ')
-          TSVS=$(find coded_data -name "*.tsv" -not -path "*/archive/*" -not -path "*/planar_input/*" | wc -l | tr -d ' ')
+          TSVS=$(find coded_data -name "*.tsv" -not -path "*/archive/*" -not -path "*/lang_setup/*" | wc -l | tr -d ' ')
           echo "## Annotation scope — $(date -u +%Y-%m-%d)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "${LANGS} language(s) · ${YAMLS} with diagnostics YAML · ${TSVS} filled construction TSV(s)" >> $GITHUB_STEP_SUMMARY

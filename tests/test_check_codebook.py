@@ -19,8 +19,8 @@ from coding.check_codebook import (
 # ---------------------------------------------------------------------------
 
 def _write_diagnostics(tmp_path, lang_id: str, classes: list[str]) -> None:
-    """Write a minimal diagnostics_{lang_id}.tsv under tmp_path/coded_data/{lang_id}/planar_input/."""
-    d = tmp_path / "coded_data" / lang_id / "planar_input"
+    """Write a minimal diagnostics_{lang_id}.tsv under tmp_path/coded_data/{lang_id}/lang_setup/."""
+    d = tmp_path / "coded_data" / lang_id / "lang_setup"
     d.mkdir(parents=True)
     lines = ["Class\tLanguage\tConstructions\tCriteria"]
     for cls in classes:
@@ -226,9 +226,9 @@ def test_qr_drift_yaml_class_with_rule_but_no_module_is_warning(monkeypatch, cap
 # ---------------------------------------------------------------------------
 
 def _make_lang_yaml(tmp_path, lang_id: str, classes: dict) -> None:
-    """Write a minimal diagnostics_{lang_id}.yaml under tmp_path/coded_data/{lang_id}/planar_input/."""
+    """Write a minimal diagnostics_{lang_id}.yaml under tmp_path/coded_data/{lang_id}/lang_setup/."""
     import yaml
-    d = tmp_path / "coded_data" / lang_id / "planar_input"
+    d = tmp_path / "coded_data" / lang_id / "lang_setup"
     d.mkdir(parents=True)
     data = {"language": lang_id, "classes": classes}
     (d / f"diagnostics_{lang_id}.yaml").write_text(
@@ -287,7 +287,7 @@ def test_keystone_active_no_yaml_file_counts_as_unresolved(tmp_path, capsys):
     diag_classes = _dc_needs_review("pausing")
     coverage = {"pausing": ["lang0001"]}
     # Don't create the YAML file
-    (tmp_path / "coded_data" / "lang0001" / "planar_input").mkdir(parents=True)
+    (tmp_path / "coded_data" / "lang0001" / "lang_setup").mkdir(parents=True)
     count = _report_keystone_active_unresolved(diag_classes, coverage, root=tmp_path)
     assert count == 1
 

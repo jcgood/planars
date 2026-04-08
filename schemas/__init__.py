@@ -46,7 +46,7 @@ languages.yaml
       required_meta_fields: meta fields integrity-check warns about when blank
         (currently [source, author]).
 
-diagnostics_{lang_id}.yaml  (per-language, lives in coded_data/{lang_id}/planar_input/)
+diagnostics_{lang_id}.yaml  (per-language, lives in coded_data/{lang_id}/lang_setup/)
     Per-language source of truth for which analysis classes, constructions, and
     diagnostic criteria apply to a language.  The TSV of the same name is a
     derived artifact generated from this file.  Format::

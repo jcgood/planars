@@ -17,7 +17,7 @@
 #   - Planar structure concepts (what positions, elements, keystone are)
 #     → see schemas/planar.yaml
 #   - Per-language instances of these classes
-#     → see coded_data/{lang_id}/planar_input/diagnostics_{lang_id}.tsv
+#     → see coded_data/{lang_id}/lang_setup/diagnostics_{lang_id}.tsv
 #
 # Relationship to other files:
 #   schemas/diagnostic_criteria.yaml — diagnostic criterion semantics and allowed values

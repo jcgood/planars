@@ -40,7 +40,7 @@ TSV → YAML (--from-tsv):
     is given. Ambiguous changes are printed and written to
     diagnostics_drift.json for coordinator review.
 
-Each language must have a diagnostics_{lang_id}.yaml in its planar_input/
+Each language must have a diagnostics_{lang_id}.yaml in its lang_setup/
 folder to participate. Languages without YAML are skipped.
 """
 from __future__ import annotations
@@ -71,7 +71,7 @@ from .validate_diagnostics import validate_diagnostics_yaml
 def _discover_languages() -> List[str]:
     """Return language IDs that have a diagnostics YAML in coded_data/."""
     langs = []
-    for yaml_path in sorted(CODED_DATA.glob("*/planar_input/diagnostics_*.yaml")):
+    for yaml_path in sorted(CODED_DATA.glob("*/lang_setup/diagnostics_*.yaml")):
         lang_id = yaml_path.stem.replace("diagnostics_", "", 1)
         langs.append(lang_id)
     return langs
@@ -79,7 +79,7 @@ def _discover_languages() -> List[str]:
 
 def _sync_to_tsv(lang_id: str, apply: bool) -> bool:
     """Sync YAML → TSV for one language. Returns True if changes were made (or would be)."""
-    planar_dir = CODED_DATA / lang_id / "planar_input"
+    planar_dir = CODED_DATA / lang_id / "lang_setup"
     yaml_path  = planar_dir / f"diagnostics_{lang_id}.yaml"
     tsv_path   = planar_dir / f"diagnostics_{lang_id}.tsv"
 
@@ -126,7 +126,7 @@ def _sync_from_tsv(lang_id: str, apply: bool, drift_entries: List[Dict]) -> bool
     Deterministic changes are auto-applied; ambiguous changes are appended to
     drift_entries for the caller to write to diagnostics_drift.json.
     """
-    planar_dir = CODED_DATA / lang_id / "planar_input"
+    planar_dir = CODED_DATA / lang_id / "lang_setup"
     yaml_path  = planar_dir / f"diagnostics_{lang_id}.yaml"
     tsv_path   = planar_dir / f"diagnostics_{lang_id}.tsv"
 
@@ -193,7 +193,7 @@ def _sync_to_sheet(lang_id: str, gc, manifest: dict, apply: bool) -> bool:
         print(f"  [{lang_id}] No diagnostics_spreadsheet_id in manifest — skipping")
         return False
 
-    planar_dir = CODED_DATA / lang_id / "planar_input"
+    planar_dir = CODED_DATA / lang_id / "lang_setup"
     yaml_path = planar_dir / f"diagnostics_{lang_id}.yaml"
 
     if not yaml_path.exists():

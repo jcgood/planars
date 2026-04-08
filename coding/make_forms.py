@@ -157,7 +157,7 @@ def build_element_index(planar_filename: str, data_dir: Path | str) -> ElementIn
 
 
 def _resolve_diagnostics_path(lang_id: str, data_dir: Path | str) -> Path:
-    """Find the language-specific diagnostics file in the planar_input folder.
+    """Find the language-specific diagnostics file in the lang_setup folder.
 
     Expected name: diagnostics_{lang_id}.tsv
     """

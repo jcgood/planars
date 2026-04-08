@@ -96,7 +96,7 @@ The `-e .` line in `requirements.txt` installs the `planars` package in editable
 
 This is a linguistic typology analysis project for morphosyntactic domain derivation. The ultimate analytical goal is to test three hypotheses about constituency structure within a language (developed in Good, "Domains of linearization, constituency, and wordhood in Chichewa," draft): (i) **Tree hypothesis** — the domains of constituency diagnostics should nest within each other; (ii) **Morphosyntax/phonology divide hypothesis** — deviations from nesting are allowed between morphosyntactic and phonological diagnostics, but not within each class; (iii) **Word hypothesis** — a set of diagnostics will converge on a consistently small span that can be identified as a word domain, with the larger domain completely partitioned into such spans. The span computations performed by planars' analysis modules are the primary instrument for testing these hypotheses. The workflow is:
 
-1. **Input** (`coded_data/{lang_id}/planar_input/`): `planar_<lang>-<date>.tsv` defines positions and elements for a language. `diagnostics_{lang_id}.yaml` is the coordinator-facing source of truth for which analyses to run (class, constructions, criteria, optional notes); `diagnostics_{lang_id}.tsv` is a derived artifact generated from it. `coding/make_forms.py` provides utility functions used by other scripts (`build_element_index`, `_read_diagnostics_for_language`) — it reads YAML preferentially and falls back to TSV if no YAML exists.
+1. **Input** (`coded_data/{lang_id}/lang_setup/`): `planar_<lang>-<date>.tsv` defines positions and elements for a language. `diagnostics_{lang_id}.yaml` is the coordinator-facing source of truth for which analyses to run (class, constructions, criteria, optional notes); `diagnostics_{lang_id}.tsv` is a derived artifact generated from it. `coding/make_forms.py` provides utility functions used by other scripts (`build_element_index`, `_read_diagnostics_for_language`) — it reads YAML preferentially and falls back to TSV if no YAML exists.
 
 2. **Manual annotation**: Google Sheets is the definitive copy of annotation forms. OAuth credentials at `~/.config/planars/oauth_credentials.json` (set `PLANARS_OAUTH_CREDENTIALS` to override). The manifest lives on Drive as `manifest.json`; `drive_config.json` (gitignored) bootstraps Drive lookup with `_root_folder_id`, `_planars_config_file_id`, and per-language folder/sheet IDs. Per-language manifest entries also carry `notes_doc_id` (Google Doc ID for the collaborator notes document) once created by `check-notes --apply` or `generate-sheets`. Change-detection state for collaborator notes is stored in `coded_data/notes_state.json` (in planars-data). `import-sheets` aborts if `coded_data/` has uncommitted TSV changes; skips existing TSVs unless `--overwrite-existing` (auto-archives first); writes destructive changes to `pending_changes.json`. Invalid cells are highlighted pink as a side effect. When criterion columns change, use `sync-params --apply` to propagate to existing sheets. **Note:** adding the `documents` OAuth scope (for `check-notes`) requires a one-time token re-authorization — see `docs/coordinator-guide.md` § "Collaborator notes".
 
@@ -160,7 +160,7 @@ Late aggregation, autotypology (dynamic schema), definition files vs. data files
 
 ## diagnostics_{lang_id}.yaml / diagnostics_{lang_id}.tsv
 
-`diagnostics_{lang_id}.yaml` (in `coded_data/{lang_id}/planar_input/`) is the **coordinator-facing source of truth** for per-language diagnostics. `diagnostics_{lang_id}.tsv` is a derived artifact — always regenerated from the YAML by `sync-diagnostics-yaml --apply`. Coordinators edit the YAML; the TSV is never hand-edited.
+`diagnostics_{lang_id}.yaml` (in `coded_data/{lang_id}/lang_setup/`) is the **coordinator-facing source of truth** for per-language diagnostics. `diagnostics_{lang_id}.tsv` is a derived artifact — always regenerated from the YAML by `sync-diagnostics-yaml --apply`. Coordinators edit the YAML; the TSV is never hand-edited.
 
 ```yaml
 language: stan1293
@@ -237,7 +237,7 @@ Keep the following files up to date as the project evolves. Check each one at th
 |------|-------------|
 | `CLAUDE.md` | Architecture changes, new scripts, new conventions, workflow changes |
 | `schemas/languages.yaml` | New language onboarded, or coordinator edits `source`/`author`/`annotation_status` fields |
-| `coded_data/{lang_id}/planar_input/diagnostics_{lang_id}.yaml` | Classes, constructions, criteria, or notes change for a language — then run `sync-diagnostics-yaml --apply` |
+| `coded_data/{lang_id}/lang_setup/diagnostics_{lang_id}.yaml` | Classes, constructions, criteria, or notes change for a language — then run `sync-diagnostics-yaml --apply` |
 | `schemas/diagnostic_criteria.yaml` | New diagnostic criteria, new analyses, `[PLACEHOLDER]` or `[NEEDS REVIEW]` entries resolved |
 | `schemas/diagnostic_classes.yaml` | New analysis classes added, applicability, required criteria, qualification rules, or known construction types change |
 | `schemas/planar.yaml` | New standard element labels or structural column conventions |
