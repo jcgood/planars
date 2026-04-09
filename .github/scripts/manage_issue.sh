@@ -19,8 +19,10 @@ if [ "$ACTION" = "file" ]; then
     if [ "$OPEN_COUNT" -eq 0 ]; then
         gh issue create --title "$TITLE" --label "$LABEL" --body-file "$BODY_FILE"
     else
+        # Update the existing issue body and title in-place so the current
+        # failure is always visible at the top, not buried in comments.
         ISSUE_NUM=$(gh issue list --label "$LABEL" --state open --json number --jq '.[0].number')
-        gh issue comment "$ISSUE_NUM" --body-file "$BODY_FILE"
+        gh issue edit "$ISSUE_NUM" --title "$TITLE" --body-file "$BODY_FILE"
     fi
 
 elif [ "$ACTION" = "close" ]; then
