@@ -79,14 +79,22 @@ jobs:
           current_lang = None
           current_class = None
           for line in lines:
+              # Language header: Glottocode pattern (4 letters + 4 digits)
               if re.match(r'^[a-z]{4}\d{4}$', line.strip()):
                   current_lang = line.strip()
                   current_class = None
+              # Planar / diagnostics validation sections
+              elif re.match(r'^\s{2}Planar validation \(\d+ issue', line):
+                  current_class = 'planar'
+              elif re.match(r'^\s{2}Diagnostics validation \(\d+ issue', line):
+                  current_class = 'diagnostics'
+              # Sheet class/construction with issues
               elif m := re.match(r'^\s{2}\[(\S+/\S+)\] \d+ issue', line):
                   current_class = m.group(1)
-              elif m := re.match(r'^\s{4}\[ERROR\] [^:]+: (.+)', line):
+              # ERROR or WARNING detail line (both are blocking issues)
+              elif m := re.match(r'^\s{4}\[(ERROR|WARNING)\] .+?: (.+)', line):
                   if current_lang and current_class:
-                      errors.append(f"- **{current_lang}** / {current_class}: {m.group(1)}")
+                      errors.append(f"- **{current_lang}** / {current_class}: {m.group(2)}")
           with open('/tmp/issue_body.md', 'w') as f:
               f.write("## What's wrong\n\n")
               if errors:
