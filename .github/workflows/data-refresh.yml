@@ -108,18 +108,26 @@ jobs:
         run: |
           python3 << 'PYEOF'
           text = open('/tmp/import_report.txt').read()
-          errors = [l.strip() for l in text.splitlines() if l.startswith('ERROR:')]
+          lines = text.splitlines()
+          errors = [l.strip() for l in lines if l.startswith('ERROR:')]
           with open('/tmp/import_error_body.md', 'w') as f:
               f.write("## What's wrong\n\n")
               if errors:
                   f.write('\n'.join(f"- {e}" for e in errors) + '\n')
               else:
-                  f.write("_(Error details could not be extracted — see full log.)_\n")
+                  # No ERROR: lines — likely an API exception or traceback.
+                  # Show the last 25 lines so the actual error is visible.
+                  tail = lines[-25:] if len(lines) > 25 else lines
+                  f.write("_(No `ERROR:` lines found — showing end of output where the failure likely appears.)_\n\n")
+                  f.write("```\n")
+                  f.write('\n'.join(tail))
+                  f.write("\n```\n")
               f.write("\n## What to do\n\n")
               f.write("Common causes:\n")
               f.write('- **OAuth token expired** — re-authorize credentials (see `docs/coordinator-guide.md § "OAuth setup"`)\n')
               f.write("- **Sheet structure changed** — run `python -m coding update-sheets --apply`\n")
               f.write("- **Uncommitted `coded_data/` changes** — commit or discard them locally, then re-trigger this workflow\n")
+              f.write("- **API quota exhausted** — transient; the issue will close automatically when the next run succeeds\n")
               f.write("\nThe issue closes automatically when the next import run succeeds.\n")
               f.write("\n## Full log\n\n")
               f.write("<details><summary>Show full import output</summary>\n\n```\n")
