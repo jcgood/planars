@@ -72,17 +72,17 @@ jobs:
         working-directory: coded_data
         run: |
           echo "before_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-          LAST_BOT=$(git log --format="%H %ae" | grep "github-actions\[bot\]" | head -1 | cut -d' ' -f1)
+          LAST_BOT=$(git log --format="%H %ae" | grep "github-actions\[bot\]" | head -1 | cut -d' ' -f1 || true)
           if [ -n "$LAST_BOT" ]; then
             git diff --name-only "$LAST_BOT" HEAD \
               | grep -v "^notes_state\.json$" \
               | grep -v "lang_setup/diagnostics_" \
-              > /tmp/human_committed_files.txt
+              > /tmp/human_committed_files.txt || true
           else
             git ls-files \
               | grep -v "^notes_state\.json$" \
               | grep -v "lang_setup/diagnostics_" \
-              > /tmp/human_committed_files.txt
+              > /tmp/human_committed_files.txt || true
           fi
           echo "Human-committed files at risk of overwrite:"
           cat /tmp/human_committed_files.txt || echo "(none)"
@@ -98,7 +98,11 @@ jobs:
           echo "## Import — $(date -u +%Y-%m-%d)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          cat /tmp/import_report.txt >> $GITHUB_STEP_SUMMARY
+          if [ -f /tmp/import_report.txt ]; then
+            cat /tmp/import_report.txt >> $GITHUB_STEP_SUMMARY
+          else
+            echo "(import did not produce output — step may have crashed before writing)" >> $GITHUB_STEP_SUMMARY
+          fi
           echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: File or update GitHub issue if import failed
@@ -107,7 +111,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python3 << 'PYEOF'
-          text = open('/tmp/import_report.txt').read()
+          import os
+          text = open('/tmp/import_report.txt').read() if os.path.exists('/tmp/import_report.txt') else ""
           lines = text.splitlines()
           errors = [l.strip() for l in lines if l.startswith('ERROR:')]
           with open('/tmp/import_error_body.md', 'w') as f:
