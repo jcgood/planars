@@ -480,7 +480,7 @@ Each checker has a defined scope. New validation belongs in one of these tools, 
 |------|------|----------------------|
 | `integrity-check` | Full project health report across all layers | After any major change; start of an audit session |
 | `check-codebook` | Schema/module/diagnostics consistency + schema stubs + coverage matrix | When adding a class or criterion; for detailed codebook diagnostics |
-| `validate-coding` | Live annotation sheet values + pink cell highlights | Before a review cycle; runs automatically via `sheet-validation.yml` |
+| `validate-coding` | Validates local TSVs + updates pink cell highlights in Sheets | Before a review cycle; runs automatically via `sheet-validation.yml`. Requires local TSVs — run `import-sheets` first if missing. |
 | `check-snapshots` | Snapshot regression against current analysis output | Runs automatically via pre-push hook and CI |
 
 ---

@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 """Annotation sheet validation and the validate-coding command.
 
-Validates filled annotation sheets (Google Sheets tabs) against their
-expected criterion columns and allowed values. Updates pink cell highlighting
-so collaborators can find and fix errors without coordinator help.
+Validates filled annotation sheets against their expected criterion columns
+and allowed values. Updates pink cell highlighting so collaborators can find
+and fix errors without coordinator help.
 
 Run from the repo root:
     python -m coding validate-coding                   # all languages
     python -m coding validate-coding --lang arao1248   # one language
 
-For each annotation sheet, reads current cell values, re-runs validation,
-clears stale pink highlights, and re-highlights any remaining invalid cells.
-Prints an issue summary to the terminal.
+Reads cell values from local TSVs (written by import-sheets) rather than
+re-fetching them from Google Sheets, then writes pink highlights back to
+Sheets only where invalid cells are found. Local TSVs must exist — if any
+are missing, run `python -m coding import-sheets` first.
 """
 from __future__ import annotations
 
@@ -235,20 +236,46 @@ def annotation_status(
     return {"total": total, "filled": total - blank, "blank": blank, "invalid": invalid}
 
 
+# ---------------------------------------------------------------------------
+# TSV reader
+# ---------------------------------------------------------------------------
+
+def _read_tsv_rows(lang_id: str, class_name: str, construction: str) -> List[List[str]]:
+    """Read a local annotation TSV and return rows as List[List[str]].
+
+    Raises FileNotFoundError with an actionable message if the TSV does not
+    exist (i.e. import-sheets has not been run for this construction).
+    """
+    tsv_path = CODED_DATA / lang_id / class_name / f"{construction}.tsv"
+    if not tsv_path.exists():
+        raise FileNotFoundError(
+            f"No local TSV for {lang_id}/{class_name}/{construction}. "
+            "Run `python -m coding import-sheets` first."
+        )
+    df = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
+    return [list(df.columns)] + df.values.tolist()
+
+
 def revalidate_sheet(
     ws,
+    lang_id: str,
+    class_name: str,
+    construction: str,
     expected_params: List[str],
     param_values: Dict[str, List[str]] = None,
     keystone_active: bool = False,
 ) -> List[ValidationIssue]:
-    """Read a worksheet, validate it, update cell highlighting, return issues.
+    """Read a local TSV, validate it, update cell highlighting in the Sheet, return issues.
 
-    Clears all existing highlights first, then re-highlights bad cells.
-    Safe to call repeatedly as collaborators fix errors.
+    Reads cell values from the local TSV produced by import-sheets rather than
+    fetching them from Google Sheets, then writes pink highlights back only
+    where invalid cells are found.
+
+    Raises FileNotFoundError if the local TSV does not exist.
     """
-    rows = ws.get_all_values()
+    rows = _read_tsv_rows(lang_id, class_name, construction)
     _, issues = validate_annotation_rows(
-        rows, expected_params, ws.title, param_values, keystone_active=keystone_active
+        rows, expected_params, construction, param_values, keystone_active=keystone_active
     )
     bad_cells = [issue.cell for issue in issues if issue.cell is not None]
     clear_highlights(ws)
@@ -298,6 +325,7 @@ def main() -> None:
 
     total_blocking = 0
     total_sheets = 0
+    total_missing = 0
 
     for lang_id, lang_data in sorted(manifest.items()):
         if lang_filter and lang_id != lang_filter:
@@ -349,12 +377,20 @@ def main() -> None:
                 if ka is None:
                     print(f"  [{class_name}/{construction}] WARNING: keystone_active unresolved — treating as False")
                     ka = False
-                issues = revalidate_sheet(
-                    ws,
-                    info.get("params", []),
-                    info.get("values", {}),
-                    keystone_active=ka,
-                )
+                try:
+                    issues = revalidate_sheet(
+                        ws,
+                        lang_id,
+                        class_name,
+                        construction,
+                        info.get("params", []),
+                        info.get("values", {}),
+                        keystone_active=ka,
+                    )
+                except FileNotFoundError as e:
+                    print(f"  [{class_name}/{construction}] ERROR: {e}")
+                    total_missing += 1
+                    continue
                 total_sheets += 1
 
                 # Separate actionable issues from blank-cell completeness noise.
@@ -382,12 +418,16 @@ def main() -> None:
                             print(f"    {issue}")
 
     print(f"\n{'─' * 50}")
-    print(f"Validated {total_sheets} sheet(s).  Blocking issues: {total_blocking}")
+    print(f"Validated {total_sheets} sheet(s).  Data coding issues: {total_blocking}")
+    if total_missing:
+        print(f"{total_missing} construction(s) skipped — no local TSV. Run `python -m coding import-sheets` first.")
     if total_blocking:
         print("Cell highlighting updated in Google Sheets.")
         sys.exit(1)
+    elif total_missing:
+        sys.exit(1)
     else:
-        print("All blocking issues cleared. (Pink highlighting for blank cells preserved.)")
+        print("All data coding issues cleared. (Pink highlighting for blank cells preserved.)")
 
 
 if __name__ == "__main__":
