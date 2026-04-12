@@ -89,7 +89,7 @@ jobs:
 
       - name: Import annotation data from Google Sheets
         id: import_sheets
-        run: python -m coding import-sheets --apply --ignore-status > /tmp/import_report.txt
+        run: python -m coding import-sheets --apply --ignore-status > /tmp/import_report.txt 2>&1
         continue-on-error: true
 
       - name: Write import summary
@@ -251,12 +251,12 @@ jobs:
         # as code changes. CI covers the code-change path; this covers the
         # data-change path (e.g. new class added to diagnostics TSV via sheets).
         id: codebook
-        run: python -m coding check-codebook > /tmp/codebook_report.txt
+        run: python -m coding check-codebook > /tmp/codebook_report.txt 2>&1
         continue-on-error: true
 
       - name: Generate rule-update prompts for stale hashes
         if: steps.codebook.outcome == 'failure'
-        run: python -m coding generate-rule-update-prompt > /tmp/rule_update_prompts.txt
+        run: python -m coding generate-rule-update-prompt > /tmp/rule_update_prompts.txt 2>&1
         continue-on-error: true
 
       - name: File or update GitHub issue if codebook check failed
@@ -304,7 +304,7 @@ jobs:
         # Tells the coordinator to run prune-manifest before data-refresh keeps
         # re-importing retired sheets indefinitely.
         id: stale_manifest
-        run: python -m coding integrity-check --check-manifest > /tmp/stale_manifest.txt
+        run: python -m coding integrity-check --check-manifest > /tmp/stale_manifest.txt 2>&1
         continue-on-error: true
 
       - name: File or update GitHub issue if stale manifest entries found
@@ -324,7 +324,7 @@ jobs:
         # things that can break due to data changes, not just code changes.
         # Complements check-codebook (which focuses on schema consistency).
         id: integrity
-        run: python -m coding integrity-check > /tmp/integrity_report.txt
+        run: python -m coding integrity-check > /tmp/integrity_report.txt 2>&1
         continue-on-error: true
 
       - name: File or update GitHub issue if integrity check failed
