@@ -466,6 +466,13 @@ jobs:
         run: |
           touch /tmp/sheet_drift.txt
           python -m coding update-sheets > /tmp/sheet_drift.txt 2>&1
+          DRIFT_EXIT=$?
+          if grep -q "APIError" /tmp/sheet_drift.txt; then
+            echo "api_error=true" >> $GITHUB_OUTPUT
+          else
+            echo "api_error=false" >> $GITHUB_OUTPUT
+          fi
+          exit $DRIFT_EXIT
         continue-on-error: true
 
       - name: Write drift summary
@@ -482,7 +489,7 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: File or update GitHub issue if drift detected
-        if: steps.drift.outcome == 'failure'
+        if: steps.drift.outcome == 'failure' && steps.drift.outputs.api_error != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash .github/scripts/manage_issue.sh file sheet-drift "Sheet drift detected — update-sheets --apply needs review ($(date -u +%Y-%m-%d))" /tmp/sheet_drift.txt
