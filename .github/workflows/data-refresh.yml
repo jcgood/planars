@@ -456,23 +456,12 @@ jobs:
       - name: Apply additive sheet updates
         # Gap 3 (#121): auto-apply new planar elements and missing trailing
         # columns to existing annotation sheets. This is additive and safe —
-        # same reasoning as sync-params --apply (#120). The dry-run drift check
-        # below then confirms whether anything non-additive still needs attention.
-        run: python -m coding update-sheets --apply
-        continue-on-error: true
-
-      - name: Check for sheet drift
-        id: drift
-        run: |
-          touch /tmp/sheet_drift.txt
-          python -m coding update-sheets > /tmp/sheet_drift.txt 2>&1
-          DRIFT_EXIT=$?
-          if grep -q "APIError" /tmp/sheet_drift.txt; then
-            echo "api_error=true" >> $GITHUB_OUTPUT
-          else
-            echo "api_error=false" >> $GITHUB_OUTPUT
-          fi
-          exit $DRIFT_EXIT
+        # same reasoning as sync-params --apply (#120). Exit 1 means structural
+        # drift that only restructure-sheets can fix; additive changes are always
+        # applied in-place. No separate dry-run needed — this output IS the drift
+        # report, and the second read pass was causing quota exhaustion (#154).
+        id: update_sheets
+        run: python -m coding update-sheets --apply > /tmp/update_sheets_report.txt 2>&1
         continue-on-error: true
 
       - name: Write drift summary
@@ -481,21 +470,21 @@ jobs:
           echo "## Sheet drift check — $(date -u +%Y-%m-%d)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          if [ -f /tmp/sheet_drift.txt ]; then
-            cat /tmp/sheet_drift.txt >> $GITHUB_STEP_SUMMARY
+          if [ -f /tmp/update_sheets_report.txt ]; then
+            cat /tmp/update_sheets_report.txt >> $GITHUB_STEP_SUMMARY
           else
-            echo "(drift check did not run)" >> $GITHUB_STEP_SUMMARY
+            echo "(update-sheets did not run)" >> $GITHUB_STEP_SUMMARY
           fi
           echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: File or update GitHub issue if drift detected
-        if: steps.drift.outcome == 'failure' && steps.drift.outputs.api_error != 'true'
+        if: steps.update_sheets.outcome == 'failure'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash .github/scripts/manage_issue.sh file sheet-drift "Sheet drift detected — update-sheets --apply needs review ($(date -u +%Y-%m-%d))" /tmp/sheet_drift.txt
+        run: bash .github/scripts/manage_issue.sh file sheet-drift "Sheet drift detected — update-sheets --apply needs review ($(date -u +%Y-%m-%d))" /tmp/update_sheets_report.txt
 
       - name: Close open drift issue if all clear
-        if: steps.drift.outcome == 'success'
+        if: steps.update_sheets.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash .github/scripts/manage_issue.sh close sheet-drift "Sheet drift resolved on $(date -u +%Y-%m-%d) — closing."
