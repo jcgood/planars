@@ -20,7 +20,7 @@ charset-normalizer==3.4.6
     # via requests
 choreographer==1.2.1
     # via kaleido
-cryptography==46.0.6
+cryptography==46.0.7
     # via google-auth
 cssselect2==0.9.0
     # via weasyprint
@@ -86,7 +86,7 @@ pandas==3.0.1
     # via
     #   -r requirements.in
     #   planars
-pillow==12.1.1
+pillow==12.2.0
     # via weasyprint
 platformdirs==4.9.4
     # via
@@ -121,7 +121,7 @@ pyparsing==3.3.2
     # via httplib2
 pyphen==0.17.2
     # via weasyprint
-pytest==9.0.2
+pytest==9.0.3
     # via -r requirements.in
 python-dateutil==2.9.0.post0
     # via pandas
