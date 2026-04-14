@@ -160,7 +160,7 @@ def _write_error_report(lang_id: str, lines: List[str], timestamp: str) -> Path:
 def _read_sheet_as_df(gc: gspread.Client, spreadsheet_id: str) -> Optional[pd.DataFrame]:
     """Download sheet1 of a Google Sheet and return as a DataFrame, or None if empty."""
     ss = _open_spreadsheet(gc, spreadsheet_id)
-    rows = ss.sheet1.get_all_values()
+    rows = _with_retry(ss.sheet1.get_all_values)
     if not rows:
         return None
     return pd.DataFrame(rows[1:], columns=rows[0], dtype=str).fillna("")
