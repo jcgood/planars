@@ -421,7 +421,7 @@ def _populate_tab(
         The populated gspread Worksheet.
     """
     try:
-        ws = spreadsheet.worksheet(tab_name)
+        ws = _with_retry(lambda: spreadsheet.worksheet(tab_name))
         ws.clear()
     except gspread.WorksheetNotFound:
         ws = spreadsheet.add_worksheet(

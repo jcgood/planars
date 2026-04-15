@@ -50,7 +50,7 @@ from .make_forms import (
 )
 from .drive import (
     _get_clients, _load_manifest_from_drive, _upload_planars_config,
-    _load_drive_config, _save_drive_config, _open_spreadsheet,
+    _load_drive_config, _save_drive_config, _open_spreadsheet, _with_retry,
 )
 from .generate_sheets import CODED_DATA, _TRAILING_COLS
 
@@ -543,7 +543,7 @@ def main() -> None:
 
             for construction, (exp_params, exp_values) in expected[class_name].items():
                 try:
-                    ws = ss.worksheet(construction)
+                    ws = _with_retry(lambda: ss.worksheet(construction))
                 except gspread.WorksheetNotFound:
                     print(f"  [{class_name}/{construction}] Tab not found — skipping")
                     continue

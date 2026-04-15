@@ -63,6 +63,7 @@ from .make_forms import (
 from .drive import (
     _get_clients, _move_to_folder, _share_anyone_with_link, _open_spreadsheet,
     _load_manifest_from_drive, _upload_planars_config, _load_drive_config, _save_drive_config,
+    _with_retry,
 )
 from .generate_sheets import _build_rows, _format_and_validate, _TRAILING_COLS
 
@@ -246,7 +247,7 @@ def _write_tab_with_carryover(
     dropped = sum(1 for k in existing if k not in reachable_old_keys)
 
     try:
-        ws = spreadsheet.worksheet(tab_name)
+        ws = _with_retry(lambda: spreadsheet.worksheet(tab_name))
         ws.clear()
     except gspread.WorksheetNotFound:
         ws = spreadsheet.add_worksheet(
@@ -403,7 +404,7 @@ def _rename_class_for_language(
     all_annotations: Dict[str, Dict[Tuple[str, str], Dict[str, str]]] = {}
     for construction in constructions:
         try:
-            ws = ss.worksheet(construction)
+            ws = _with_retry(lambda: ss.worksheet(construction))
             all_annotations[construction] = _download_tab_annotations(ws)
             print(f"    [{construction}] downloaded {len(all_annotations[construction])} rows")
         except gspread.WorksheetNotFound:
@@ -619,7 +620,7 @@ def main() -> None:
             all_annotations: Dict[str, Dict[Tuple[str, str], Dict[str, str]]] = {}
             for construction in sheet_info["constructions"]:
                 try:
-                    ws = ss.worksheet(construction)
+                    ws = _with_retry(lambda: ss.worksheet(construction))
                     all_annotations[construction] = _download_tab_annotations(ws)
                     print(f"    [{construction}] downloaded {len(all_annotations[construction])} rows")
                 except gspread.WorksheetNotFound:

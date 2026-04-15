@@ -290,7 +290,7 @@ def main() -> None:
 
             for construction in constructions:
                 try:
-                    ws = ss.worksheet(construction)
+                    ws = _with_retry(lambda: ss.worksheet(construction))
                 except gspread.WorksheetNotFound:
                     print(f"    [{construction}] tab not found, skipping")
                     continue

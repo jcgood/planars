@@ -383,7 +383,7 @@ def _check_yaml_drift(lang_id: str, tsv_df: pd.DataFrame) -> List[Dict]:
 def _read_status_tab(ss: gspread.Spreadsheet) -> Dict[str, str]:
     """Return {construction: status} from the Status tab, or {} if absent."""
     try:
-        ws = ss.worksheet(_STATUS_TAB)
+        ws = _with_retry(lambda: ss.worksheet(_STATUS_TAB))
     except gspread.WorksheetNotFound:
         return {}
     rows = _with_retry(ws.get_all_values)
@@ -713,7 +713,7 @@ def main() -> None:
 
             for construction in sheet_info["constructions"]:
                 try:
-                    ws = ss.worksheet(construction)
+                    ws = _with_retry(lambda: ss.worksheet(construction))
                 except gspread.WorksheetNotFound:
                     msg = f"[{class_name}/{construction}] tab not found in sheet, skipping"
                     print(f"    WARNING: {msg}")
