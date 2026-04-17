@@ -80,7 +80,7 @@ jobs:
           current_class = None
           for line in lines:
               # Language header: Glottocode pattern (4 letters + 4 digits)
-              if re.match(r'^[a-z]{4}\d{4}$', line.strip()):
+              if re.match(r'^[a-z]+\d{4}$', line.strip()):
                   current_lang = line.strip()
                   current_class = None
               # Planar / diagnostics validation sections

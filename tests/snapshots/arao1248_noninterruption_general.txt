@@ -2,8 +2,8 @@ Arao1248 Noninterruption General
 ================================
 
 NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
-  free: ['adverbials', 'interrogatives', 'NP{NP,PP,S}', 'dipa', 'pa'] … (72 total)
-  multiple: ['adverbials', 'interrogatives', 'NP{NP,PP,S}', 'dipa', 'pa'] … (72 total)
+  free: ['ADVERBIALS', 'INTERROGATIVES', 'NP{NP,PP,S}', 'dipa', 'pa'] … (72 total)
+  multiple: ['ADVERBIALS', 'INTERROGATIVES', 'NP{NP,PP,S}', 'dipa', 'pa'] … (72 total)
 
 Keystone position: 6 (v:verbstem)
 
