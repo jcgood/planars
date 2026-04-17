@@ -95,15 +95,15 @@ def _create_or_update_tsv_sheet(
 
     if existing_id:
         ss = _open_spreadsheet(gc, existing_id)
-        ws = ss.sheet1
-        ws.clear()
+        ws = _with_retry(lambda: ss.sheet1)
+        _with_retry(ws.clear)
     else:
         ss = gc.create(name)
         _move_to_folder(drive, ss.id, folder_id)
         _share_anyone_with_link(drive, ss.id)
-        ws = ss.sheet1
+        ws = _with_retry(lambda: ss.sheet1)
 
-    ws.update(all_rows, "A1")
+    _with_retry(lambda: ws.update(all_rows, "A1"))
 
     # Bold and freeze the header row.
     ss.batch_update({"requests": [

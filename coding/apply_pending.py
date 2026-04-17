@@ -53,10 +53,10 @@ def _verify_construction_tabs(spreadsheet_id: str, constructions: List[str]) -> 
     if not spreadsheet_id:
         return None
     try:
-        from .drive import _get_clients
+        from .drive import _get_clients, _with_retry
         gc, _ = _get_clients()
         ss = gc.open_by_key(spreadsheet_id)
-        existing_titles = {ws.title for ws in ss.worksheets()}
+        existing_titles = {ws.title for ws in _with_retry(ss.worksheets)}
         return {c: c in existing_titles for c in constructions}
     except Exception:
         return None

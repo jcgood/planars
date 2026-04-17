@@ -215,6 +215,8 @@ def annotation_status(
     rows: List[List[str]],
     expected_params: List[str],
     param_values: Dict[str, List[str]] = None,
+    keystone_active: bool = False,
+    keystone_na_criteria: List[str] = None,
 ) -> dict:
     """Return completeness/validity counts for one annotation sheet tab.
 
@@ -234,7 +236,11 @@ def annotation_status(
     )
     total = n_data_rows * n_params
 
-    _, issues = validate_annotation_rows(rows, expected_params, "", param_values)
+    _, issues = validate_annotation_rows(
+        rows, expected_params, "", param_values,
+        keystone_active=keystone_active,
+        keystone_na_criteria=keystone_na_criteria,
+    )
     blank = sum(1 for i in issues if "blank value" in i.message)
     invalid = sum(1 for i in issues if "unexpected value" in i.message)
     return {"total": total, "filled": total - blank, "blank": blank, "invalid": invalid}

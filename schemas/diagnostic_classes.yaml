@@ -56,6 +56,12 @@
 #                            resolved. May be overridden per-language in
 #                            diagnostics_{lang}.yaml (construction-level dict or class-
 #                            level bool).
+#   keystone_na_criteria     list of criterion names that must always be 'na' on the
+#                            keystone row even when keystone_active is true. Used for
+#                            self-referential criteria — e.g., 'independence' asks
+#                            whether an element's stress is independent *of* the
+#                            keystone, which is undefined for the keystone itself.
+#                            Omit the field (or leave empty) when no such criteria exist.
 #   status                   stable | "[NEEDS REVIEW]" | "[PLACEHOLDER]"
 #   criterion_set_status     stable | "[PROVISIONAL]" (expected to grow as more languages
 #                            are analyzed; note explains known gaps or open questions)

@@ -109,7 +109,13 @@ def _update_languages_yaml(glottocode: str, meta: dict) -> None:
 # ---------------------------------------------------------------------------
 
 def is_valid_format(glottocode: str) -> bool:
-    """Return True if glottocode matches the 4-letter + 4-digit Glottocode format."""
+    """Return True if glottocode matches the 4-letter + 4-digit Glottocode format.
+
+    IDs starting with 'synth' are reserved for synthetic test languages and are
+    considered valid even though they don't match the standard Glottocode pattern.
+    """
+    if glottocode.startswith("synth"):
+        return True
     return bool(_GLOTTOCODE_RE.match(glottocode))
 
 

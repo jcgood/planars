@@ -459,7 +459,7 @@ def _rename_class_for_language(
         _move_to_folder(drive, new_ss.id, folder_id)
         _share_anyone_with_link(drive, new_ss.id)
 
-    default_ws = new_ss.sheet1
+    default_ws = _with_retry(lambda: new_ss.sheet1)
     tab_names = []
     new_construction_params = {}
 
@@ -667,7 +667,7 @@ def main() -> None:
                 _move_to_folder(drive, new_ss.id, folder_id)
                 _share_anyone_with_link(drive, new_ss.id)
 
-            default_ws = new_ss.sheet1
+            default_ws = _with_retry(lambda: new_ss.sheet1)
             tab_names = []
             new_construction_params = {}
 

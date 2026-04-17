@@ -244,8 +244,9 @@ def _sync_to_sheet(lang_id: str, gc, manifest: dict, apply: bool) -> bool:
 
     if apply:
         new_rows = [list(new_df.columns)] + [list(row) for _, row in new_df.iterrows()]
-        ss.sheet1.clear()
-        ss.sheet1.update(new_rows, "A1")
+        ws = _with_retry(lambda: ss.sheet1)
+        _with_retry(ws.clear)
+        _with_retry(lambda: ws.update(new_rows, "A1"))
         print(f"  [{lang_id}] Updated → diagnostics Sheet")
     else:
         print(f"  [{lang_id}] Would update → diagnostics Sheet (use --apply to write)")
