@@ -252,6 +252,32 @@ def resolve_keystone_active(
     return None
 
 
+def resolve_keystone_na_criteria(
+    class_name: str,
+) -> List[str]:
+    """Return criteria that must always be 'na' on the keystone row for this class.
+
+    These are criteria that are self-referential on the keystone (e.g., 'independence'
+    asks whether an element's stress is independent *of* the keystone — a circular
+    question for the keystone itself).
+
+    Reads keystone_na_criteria from diagnostic_classes.yaml. Returns an empty list
+    if the field is absent or the class is not found.
+    """
+    try:
+        from .schemas import load_diagnostic_classes
+        _schema = load_diagnostic_classes()
+    except Exception:
+        return []
+    for _cls in _schema.get("classes", []):
+        if _cls.get("name") == class_name:
+            val = _cls.get("keystone_na_criteria")
+            if isinstance(val, list):
+                return [str(c) for c in val]
+            return []
+    return []
+
+
 # ---------------------------------------------------------------------------
 # TSV ↔ YAML serializers
 # ---------------------------------------------------------------------------

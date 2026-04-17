@@ -433,6 +433,10 @@ classes:
     keystone_active_default: true  # The verbstem has real stress/accent properties
       # (accented, obligatory, independence) that participate in the blocked-span
       # boundary computation. Keystone rows must be annotated with real values.
+    keystone_na_criteria: [independence]  # 'independence' asks whether an element's
+      # stress is independent *of* the keystone — a self-referential question for the
+      # keystone itself. It is always 'na' on the keystone row even when
+      # keystone_active is true.
     collection_required: "n"
 
 

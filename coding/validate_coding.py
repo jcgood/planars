@@ -31,6 +31,7 @@ from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
     resolve_keystone_active,
+    resolve_keystone_na_criteria,
 )
 from .validate import ValidationIssue
 from .validate_planar import validate_planar_df
@@ -104,6 +105,7 @@ def validate_annotation_rows(
     tab_name: str,
     param_values: Dict[str, List[str]] = None,
     keystone_active: bool = False,
+    keystone_na_criteria: List[str] = None,
 ) -> Tuple[List[Dict], List[ValidationIssue]]:
     """Validate annotation sheet rows.
 
@@ -152,7 +154,8 @@ def validate_annotation_rows(
             )
 
             if is_keystone:
-                if keystone_active:
+                _na_criteria = keystone_na_criteria or []
+                if keystone_active and param not in _na_criteria:
                     # Keystone participates in this analysis — treat like any row.
                     if val == "":
                         issues.append(ValidationIssue(
@@ -176,7 +179,8 @@ def validate_annotation_rows(
                             cell=(row_num - 1, col_index[param]),
                         ))
                 else:
-                    # Keystone does not participate — should always be 'na'.
+                    # Keystone does not participate (or criterion is self-referential
+                    # on the keystone) — should always be 'na'.
                     if val == "":
                         record[param] = "na"
                     elif val != "na":
@@ -264,6 +268,7 @@ def revalidate_sheet(
     expected_params: List[str],
     param_values: Dict[str, List[str]] = None,
     keystone_active: bool = False,
+    keystone_na_criteria: List[str] = None,
 ) -> List[ValidationIssue]:
     """Read a local TSV, validate it, update cell highlighting in the Sheet, return issues.
 
@@ -275,7 +280,9 @@ def revalidate_sheet(
     """
     rows = _read_tsv_rows(lang_id, class_name, construction)
     _, issues = validate_annotation_rows(
-        rows, expected_params, construction, param_values, keystone_active=keystone_active
+        rows, expected_params, construction, param_values,
+        keystone_active=keystone_active,
+        keystone_na_criteria=keystone_na_criteria,
     )
     bad_cells = [issue.cell for issue in issues if issue.cell is not None]
     clear_highlights(ws)
@@ -377,6 +384,7 @@ def main() -> None:
                 if ka is None:
                     print(f"  [{class_name}/{construction}] WARNING: keystone_active unresolved — treating as False")
                     ka = False
+                kna = resolve_keystone_na_criteria(class_name)
                 try:
                     issues = revalidate_sheet(
                         ws,
@@ -386,6 +394,7 @@ def main() -> None:
                         info.get("params", []),
                         info.get("values", {}),
                         keystone_active=ka,
+                        keystone_na_criteria=kna,
                     )
                 except FileNotFoundError as e:
                     print(f"  [{class_name}/{construction}] ERROR: {e}")
