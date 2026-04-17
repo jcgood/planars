@@ -41,7 +41,11 @@ from .generate_sheets import _STATUS_TAB, _STATUS_VALUES
 from . import validate_coding as _val
 from .validate_planar import validate_planar_df as _validate_planar_df
 from .validate_diagnostics import validate_diagnostics_df as _validate_diagnostics_df
-from .make_forms import _diff_diagnostics_tsv_yaml
+from .make_forms import (
+    _diff_diagnostics_tsv_yaml,
+    resolve_keystone_active,
+    resolve_keystone_na_criteria,
+)
 
 ERROR_DIR    = ROOT / "import_errors"
 PENDING_PATH = ROOT / "pending_changes.json"
@@ -77,13 +81,17 @@ def _validate_tab(
     expected_params: List[str],
     tab_name: str,
     param_values: Dict[str, List[str]] = None,
+    keystone_active: bool = False,
+    keystone_na_criteria: List[str] = None,
 ) -> Tuple[List[Dict], List[str], List[Tuple[int, int]]]:
     """Delegate to validate.validate_annotation_rows (kept for backwards compatibility).
 
     Returns (records, warnings, bad_cells) in the original format.
     """
     records, issues = _val.validate_annotation_rows(
-        rows, expected_params, tab_name, param_values
+        rows, expected_params, tab_name, param_values,
+        keystone_active=keystone_active,
+        keystone_na_criteria=keystone_na_criteria,
     )
     warnings  = [str(i) for i in issues]
     bad_cells = [i.cell for i in issues if i.cell is not None]
@@ -672,6 +680,7 @@ def main() -> None:
     apply = "--apply" in sys.argv
     force = "--overwrite-existing" in sys.argv
     ignore_status = "--ignore-status" in sys.argv
+    lang_filter = sys.argv[sys.argv.index("--lang") + 1] if "--lang" in sys.argv else None
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     if not apply:
@@ -694,6 +703,8 @@ def main() -> None:
     all_drift: List[Dict] = []
 
     for lang_id, lang_data in manifest.items():
+        if lang_filter and lang_id != lang_filter:
+            continue
         print(f"\nLanguage: {lang_id}")
         lang_warning_lines: List[str] = []
 
@@ -741,7 +752,16 @@ def main() -> None:
                 construction_params = sheet_info.get("construction_params", {})
                 param_values = construction_params.get(construction, {}).get("param_values")
 
-                records, warnings, bad_cells = _validate_tab(rows, expected_params, construction, param_values)
+                ka = resolve_keystone_active(
+                    lang_id, class_name, construction,
+                    data_dir=ROOT / "coded_data" / lang_id / "lang_setup",
+                )
+                kna = resolve_keystone_na_criteria(class_name)
+                records, warnings, bad_cells = _validate_tab(
+                    rows, expected_params, construction, param_values,
+                    keystone_active=bool(ka),
+                    keystone_na_criteria=kna,
+                )
 
                 if bad_cells:
                     try:
