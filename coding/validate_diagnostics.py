@@ -279,19 +279,22 @@ def validate_diagnostics_yaml(data: dict, lang_id: str) -> List[ValidationIssue]
 
     # ------------------------------------------------------------------
     # 6. Glottocode format + cache advisory
+    # IDs starting with 'synth' are reserved for synthetic test languages
+    # and are exempt from Glottocode format and Glottolog verification checks.
     # ------------------------------------------------------------------
-    if not _is_valid_glottocode(lang_id):
-        issues.append(ValidationIssue(
-            "warning", filename,
-            f"Language ID '{lang_id}' does not match Glottocode format "
-            f"(expected 4 lowercase letters + 4 digits, e.g. 'arao1248')"
-        ))
-    elif not _is_glottolog_verified(lang_id):
-        issues.append(ValidationIssue(
-            "warning", filename,
-            f"Language ID '{lang_id}' has not been verified against Glottolog. "
-            f"Run: python -m coding lookup-lang {lang_id}"
-        ))
+    if not lang_id.startswith("synth"):
+        if not _is_valid_glottocode(lang_id):
+            issues.append(ValidationIssue(
+                "warning", filename,
+                f"Language ID '{lang_id}' does not match Glottocode format "
+                f"(expected 4 lowercase letters + 4 digits, e.g. 'arao1248')"
+            ))
+        elif not _is_glottolog_verified(lang_id):
+            issues.append(ValidationIssue(
+                "warning", filename,
+                f"Language ID '{lang_id}' has not been verified against Glottolog. "
+                f"Run: python -m coding lookup-lang {lang_id}"
+            ))
 
     # ------------------------------------------------------------------
     # 7. Required classes must be present
@@ -420,14 +423,16 @@ def validate_diagnostics_df(df, lang_id: str) -> List[ValidationIssue]:
 
     # ------------------------------------------------------------------
     # 6. Glottocode format + cache advisory
+    # IDs starting with 'synth' are reserved for synthetic test languages
+    # and are exempt from Glottocode format and Glottolog verification checks.
     # ------------------------------------------------------------------
-    if not _is_valid_glottocode(lang_id):
+    if not lang_id.startswith("synth") and not _is_valid_glottocode(lang_id):
         issues.append(ValidationIssue(
             "warning", f"diagnostics_{lang_id}.tsv",
             f"Language ID '{lang_id}' does not match Glottocode format "
             f"(expected 4 lowercase letters + 4 digits, e.g. 'arao1248')"
         ))
-    elif not _is_glottolog_verified(lang_id):
+    elif not lang_id.startswith("synth") and not _is_glottolog_verified(lang_id):
         issues.append(ValidationIssue(
             "warning", f"diagnostics_{lang_id}.tsv",
             f"Language ID '{lang_id}' has not been verified against Glottolog. "
