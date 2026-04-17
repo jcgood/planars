@@ -14,7 +14,6 @@ Commands:
     import-sheets                Download filled sheets to TSVs
     validate-coding              Re-validate annotation sheets and update cell highlighting
     restructure-sheets           Archive and regenerate sheets after structural changes (--rename-class, --rename-map, --rename-element)
-    populate-sheets              Upload legacy TSV data to sheets (one-time utility)
     check-codebook               Check consistency between schema files and analysis modules
     generate-rule-update-prompt  Generate coordinator-facing Claude prompt for stale qualification rules
     integrity-check              Full project-wide integrity check (all languages, all schemas)
@@ -44,7 +43,6 @@ _COMMANDS = {
     "import-sheets":               "coding.import_sheets",
     "validate-coding":             "coding.validate_coding",
     "restructure-sheets":          "coding.restructure_sheets",
-    "populate-sheets":             "coding.populate_sheets",
     "check-codebook":              "coding.check_codebook",
     "generate-rule-update-prompt": "coding.generate_rule_update_prompt",
     "integrity-check":             "coding.integrity_check",

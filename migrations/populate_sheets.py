@@ -1,15 +1,36 @@
 #!/usr/bin/env python3
-"""One-time script to populate Google Sheets with data from existing filled TSVs.
+"""One-time migration: upload legacy filled TSVs to Google Sheets annotation tabs.
 
-Run from the repo root:
-    python -m coding populate-sheets
+Motivation: When the Google Sheets annotation workflow was first set up, some
+languages already had annotation data in local TSVs (from a previous format).
+This script uploaded that legacy data into the newly created Sheet tabs so that
+annotators could continue from their existing work rather than starting over.
 
-For each construction in sheets_manifest.json, searches numbered output folders
-for a matching filled TSV (any suffix: _filled, _fill, _full) and uploads its
-criterion values to the corresponding sheet tab. Picks the TSV with the fewest
-blank criterion cells when multiple candidates exist.
+Run: Early 2026, after the initial generate-sheets run that created the
+annotation spreadsheets. Run once per language as sheets were created.
 
-Skips constructions where no TSV is found or all candidates are fully blank.
+Usage (no dry-run mode — all operations are live writes to Google Sheets):
+    python migrations/populate_sheets.py
+
+How it works:
+- Reads sheets_manifest.json for the list of languages, classes, and constructions.
+- Searches numbered output folders in the repo root for TSV files matching the
+  pattern {class}_{lang}_{construction}_{filled|fill|full}.tsv.
+- Picks the candidate with the fewest blank criterion cells when multiple exist.
+- Uploads criterion values to the matching sheet tab, matching rows by
+  (Element, Position_Number).
+- Unnamed trailing columns in legacy TSVs are concatenated with ' | ' into
+  the Comments column.
+
+Post-run checks:
+    python -m coding validate-coding
+    python -m coding import-sheets --apply  # confirm round-trip is clean
+
+Notes:
+- Uses its own OAuth client (pre-dates the coding.drive module); credentials
+  are read from PLANARS_OAUTH_CREDENTIALS or ~/.config/planars/oauth_credentials.json.
+- The .worksheet() call is not wrapped with _with_retry; this is acceptable for
+  a one-time historical script.
 """
 from __future__ import annotations
 
@@ -171,12 +192,6 @@ def _upload_tsv_to_tab(ws: gspread.Worksheet, tsv_path: Path) -> int:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
-    """Entry point for `python -m coding populate-sheets` (one-time legacy upload).
-
-    Reads sheets_manifest.json, searches numbered output folders for filled TSVs
-    matching each construction, selects the candidate with the fewest blank cells,
-    and uploads criterion values to the corresponding sheet tab.
-    """
     if not MANIFEST_PATH.exists():
         raise SystemExit(
             f"sheets_manifest.json not found at {MANIFEST_PATH}.\n"
