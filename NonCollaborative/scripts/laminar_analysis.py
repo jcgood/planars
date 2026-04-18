@@ -1,5 +1,5 @@
 """
-laminar_analysis.py — Constituency domain analysis via laminar family decomposition.
+laminar_analysis.py — Constituency domain analysis via laminar family enumeration.
 
 ════════════════════════════════════════════════════════════════════════════════
 Background
@@ -16,33 +16,41 @@ three hypotheses developed in Good, "Domains of linearization, constituency,
 and wordhood in Chichewa":
 
   1. Tree hypothesis — The domains of constituency diagnostics should nest
-     within each other. If all observed spans form a single rooted laminar
-     family, the hypothesis is fully supported. The minimum number of laminar
-     families needed quantifies how close the data is to tree-structured.
+     within each other. If all observed spans form a single laminar family,
+     the hypothesis is fully supported. The number of maximal laminar families
+     quantifies the space of consistent tree interpretations.
 
   2. Morphosyntax/phonology divide hypothesis — Deviations from nesting are
      tolerated between morphosyntactic and phonological diagnostics, but not
-     within either class. Tested by checking whether conflicts (spans that
-     cannot coexist in any laminar family) occur across domain types or
-     within them.
+     within either class. Tested by checking whether conflicts occur across
+     domain types or within them.
 
   3. Word hypothesis — A set of diagnostics will converge on a consistently
      small span identifiable as the word domain. Spans appearing in every
-     laminar family are the most-converged candidates; convergence counts
-     (how many distinct tests produce the same span) quantify this.
+     maximal family are the most structurally robust candidates.
 
 ════════════════════════════════════════════════════════════════════════════════
 Problem statement
 ════════════════════════════════════════════════════════════════════════════════
 
-Given a set of observed constituency domain spans over a planar structure
-of N positions (with positions numbered 1..N), find the minimum number of
-rooted laminar families — each rooted at the full span [1..N] — such that
-every observed span appears in at least one family.
+Given a set of observed constituency domain spans over a planar structure of N
+positions (numbered 1..N), enumerate ALL MAXIMAL LAMINAR FAMILIES rooted at
+the full span [1..N].
 
-Spans may appear in multiple families. That is intentional: a span appearing
-in every minimal covering family is a robust structural finding, independent
-of how conflicts between other spans are resolved.
+A maximal laminar family is a set of spans such that:
+  (a) every pair of spans is either nested or disjoint (no partial overlaps);
+  (b) it is impossible to add any further observed span without creating a
+      partial overlap — it is "greedy" in the sense that every compatible
+      span is included.
+
+A span appears in a family if and only if it is compatible (nested or
+disjoint) with every other span in that family. Each span may appear in
+multiple families; appearing in ALL families is the strongest finding.
+
+This is equivalent to enumerating all MAXIMAL INDEPENDENT SETS of the conflict
+graph (the graph whose nodes are observed spans and whose edges connect pairs
+of spans that partially overlap). Each maximal independent set is a maximal
+set of mutually compatible spans, i.e., a valid laminar family.
 
 ════════════════════════════════════════════════════════════════════════════════
 Algorithm overview (four phases)
@@ -56,43 +64,37 @@ Phase 1 — Conflict detection
   Collect all conflict pairs. Complexity: O(n²) for n spans. Fast for the
   data sizes in this project (typically < 100 spans per language).
 
-Phase 2 — Minimum family count via graph coloring
-  Build a conflict graph (nodes = spans, edges = conflicts) and find its
-  chromatic number — the minimum number of colors such that no two conflicting
-  spans share a color. Each color class is one valid laminar family.
+Phase 2 — Enumerate all maximal laminar families
+  Use the Bron-Kerbosch algorithm to enumerate all maximal independent sets
+  of the conflict graph. Each maximal independent set is one valid maximal
+  laminar family.
 
-  This works because minimum families needed = chromatic number:
-    - Any valid graph coloring gives a cover: each color class is a set of
-      mutually non-conflicting spans, i.e., a valid laminar family.
-    - Any cover gives a valid coloring: assign each span the index of the
-      first family containing it. Adjacent spans (in the conflict graph)
-      cannot share a family index, so this is a proper coloring.
+  Bron-Kerbosch with pivoting maintains three sets at each recursive call:
+    R = current independent set (committed spans, all mutually compatible)
+    P = candidates (compatible with all of R, not yet decided)
+    X = excluded (compatible with all of R, but already processed — used to
+        detect non-maximality: if X is non-empty at a leaf, we can still
+        extend R and have NOT found a maximal set)
 
-  Algorithm: DSatur (Degree of SATURation). Colors vertices greedily in
-  order of decreasing saturation (number of distinct colors already used by
-  neighbors), breaking ties by degree. For the small, typically sparse
-  conflict graphs in this data, DSatur finds the chromatic number exactly.
-  For larger or denser graphs, pair with backtracking for guaranteed minimum.
+  When P and X are both empty, R is a maximal independent set. Report it.
+
+  The root [1..N] is always compatible with every other span (they are all
+  contained in [1..N]), so it is placed directly into the starting R set and
+  added to every reported family.
 
 Phase 3 — Tree construction
-  For each color class (set of mutually non-conflicting spans):
-    - Add the root [1..N] if not already present.
+  For each maximal laminar family:
+    - Spans are already mutually compatible, so parent assignment is unique.
     - Sort spans by size, largest first.
     - Assign each span's parent as the smallest span that properly contains it.
-  This is always unique and well-defined because the family is laminar.
   Complexity: O(n²) per family, trivial for these data sizes.
 
 Phase 4 — Analysis
-  - Number of families needed → quantitative test of the Tree hypothesis.
+  - Number of distinct maximal families → quantitative test of Tree hypothesis.
     One family = data is perfectly laminar = full support for Tree hypothesis.
-    Each additional family required represents an unresolvable structural
-    conflict in the data.
-  - Spans appearing in all families → high-convergence candidates for the
-    word domain (Tree hypothesis + Word hypothesis).
+    More families = data is consistent with more interpretations.
+  - Spans appearing in all families → high-convergence word-domain candidates.
   - Conflict types → test of the morphosyntax/phonology divide hypothesis.
-    Conflicts only between domain types: divide hypothesis supported.
-    Conflicts within a domain type: divide hypothesis challenged for that type.
-  - Conflict graph structure → summary of how close the data is to laminar.
 
 ════════════════════════════════════════════════════════════════════════════════
 Comparison to treeTraversal.py
@@ -118,12 +120,19 @@ Key mathematical reference
 ════════════════════════════════════════════════════════════════════════════════
 
 The equivalence between rooted laminar families and rooted trees is classical.
-The correspondence between trees and hierarchies (laminar families over a
-finite ground set) is covered in:
+The correspondence is covered in:
   Semple, C. & Steel, M. (2003). Phylogenetics. Oxford University Press.
   Bui-Xuan, B.-M., Habib, M. & Rao, M. (2012). Tree-representation of set
     families and applications to combinatorial decompositions. European Journal
     of Combinatorics 33(5), 688–711.
+
+The Bron-Kerbosch algorithm for enumerating maximal cliques (here applied to
+maximal independent sets via the conflict graph) is described in:
+  Bron, C. & Kerbosch, J. (1973). Finding all cliques of an undirected graph.
+    Communications of the ACM 16(9), 575–577.
+  Tomita, E., Tanaka, A. & Takahashi, H. (2006). The worst-case time complexity
+    for generating all maximal cliques. Theoretical Computer Science 363, 28–42.
+
 See NonCollaborative/REFERENCES.md for the full bibliography.
 """
 
@@ -290,7 +299,7 @@ def find_conflicts(spans: list[Span]) -> dict[Span, set[Span]]:
     Complexity: O(n²) for n spans — trivial for data sizes in this project.
 
     Returns: adjacency dict mapping each span to its set of conflicting spans.
-             Spans with no conflicts are not present as keys.
+             Only spans involved in at least one conflict appear as keys.
     """
     adjacency: dict[Span, set[Span]] = defaultdict(set)
     for i, a in enumerate(spans):
@@ -302,97 +311,137 @@ def find_conflicts(spans: list[Span]) -> dict[Span, set[Span]]:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Phase 2: Minimum family count via graph coloring (DSatur)
+# Phase 2: Enumerate all maximal laminar families (Bron-Kerbosch)
 # ══════════════════════════════════════════════════════════════════════════════
 
-def dsatur_coloring(spans: list[Span],
-                    adjacency: dict[Span, set[Span]]) -> dict[Span, int]:
-    """Find a graph coloring using the DSatur algorithm.
+MAX_FAMILIES = 500  # safeguard: abort enumeration beyond this count
 
-    The minimum number of laminar families needed to cover all observed spans
-    equals the chromatic number of the conflict graph — the minimum number of
-    colors such that no two conflicting spans share a color. Each color class
-    is one valid laminar family. See module docstring for the proof.
+class _TooManyFamilies(Exception):
+    pass
 
-    DSatur (Degree of SATURation) colors vertices greedily in order of
-    decreasing saturation (number of distinct colors already used by
-    neighbors), breaking ties by degree. This heuristic is exact for many
-    graph classes and in practice for the small, sparse conflict graphs
-    typical of this data. For denser graphs, backtracking is needed for a
-    guaranteed minimum; DSatur then serves as the upper bound.
+
+def _bron_kerbosch(R: frozenset, P: frozenset, X: frozenset,
+                   adjacency: dict, results: list) -> None:
+    """Recursive Bron-Kerbosch for maximal independent sets.
+
+    Maintains three sets:
+      R = current independent set (all mutually compatible spans)
+      P = candidate spans (compatible with all of R, not yet decided)
+      X = excluded spans (compatible with all of R, already processed;
+          if X is non-empty at termination, R is not maximal)
+
+    When P and X are both empty, R is a maximal independent set. Report it.
+
+    'Compatible' here means NOT in the conflict graph — i.e., nested or
+    disjoint. Conflicting neighbors of a span v are removed from P and X
+    when v is added to R.
+
+    Pivoting: choose pivot u from P ∪ X to minimise branching. We pick the
+    vertex with the most neighbors in P (maximises pruning).
+
+    Raises _TooManyFamilies after MAX_FAMILIES results to prevent runaway
+    enumeration on pathological inputs.
+    """
+    if not P and not X:
+        results.append(frozenset(R))
+        if len(results) >= MAX_FAMILIES:
+            raise _TooManyFamilies()
+        return
+
+    if not P:
+        return
+
+    # Pivot: choose u in P ∪ X with the most neighbors in P (most pruning)
+    all_candidates = P | X
+    pivot = max(all_candidates,
+                key=lambda u: len(adjacency.get(u, set()) & P))
+
+    # Expand on vertices in P that do NOT conflict with the pivot.
+    # (Conflicting with pivot = pivot is already in X or excluded from this
+    # branch, so we only recurse on vertices that don't conflict with pivot —
+    # this is the standard Tomita-style pivot optimisation.)
+    pivot_conflicts = adjacency.get(pivot, frozenset())
+    for v in list(P - pivot_conflicts):
+        v_conflicts = adjacency.get(v, frozenset())
+        new_P = P & (frozenset(P) - v_conflicts) - {v}
+        new_X = X - v_conflicts
+        _bron_kerbosch(R | {v}, new_P, new_X, adjacency, results)
+        P = P - {v}
+        X = X | {v}
+
+
+def enumerate_maximal_laminar_families(
+        spans: list[Span],
+        adjacency: dict[Span, set[Span]],
+        n_positions: int,
+) -> tuple[list[frozenset[Span]], bool]:
+    """Enumerate all maximal laminar families rooted at [1..N].
+
+    A maximal laminar family is a maximal independent set of the conflict
+    graph — a set of mutually compatible spans to which no further observed
+    span can be added without creating a conflict.
+
+    The root [1..N] is compatible with every observed span (all spans are
+    contained in the root), so it is always included in the starting set R
+    and appears in every reported family. If [1..N] is not in the observed
+    spans, a synthetic root is added with convergence=0.
 
     Args:
-        spans: All observed spans.
-        adjacency: Conflict graph adjacency dict from find_conflicts().
+        spans: All observed spans (output of load_spans).
+        adjacency: Conflict graph from find_conflicts.
+        n_positions: Total positions in the planar structure.
 
     Returns:
-        Dict mapping each span to a color index (int, 0-based).
-        All spans with no conflicts receive color 0.
+        (families, truncated) where:
+          families — list of frozensets, each a maximal laminar family
+                     (including the root span)
+          truncated — True if enumeration was halted at MAX_FAMILIES
     """
-    if not spans:
-        return {}
+    # Identify or synthesise the root span
+    root_match = next((s for s in spans
+                       if s.left == 1 and s.right == n_positions), None)
+    if root_match is not None:
+        root = root_match
+        non_root_spans = [s for s in spans if s != root]
+    else:
+        root = Span(1, n_positions,
+                    labels=("(root)",),
+                    domain_types=frozenset(["(synthetic)"]),
+                    convergence=0)
+        non_root_spans = spans
 
-    color: dict[Span, int] = {}
-    # saturation[s] = set of colors already used by s's neighbors
-    saturation: dict[Span, set[int]] = defaultdict(set)
+    # The root is compatible with everything, so we seed R = {root}
+    # and let Bron-Kerbosch freely include all compatible non-root spans.
+    # No non-root span conflicts with the root (they are all nested in it),
+    # so P starts as the full set of non-root spans.
+    results: list[frozenset[Span]] = []
+    truncated = False
 
-    def degree(s: Span) -> int:
-        return len(adjacency.get(s, set()))
+    try:
+        _bron_kerbosch(
+            R=frozenset({root}),
+            P=frozenset(non_root_spans),
+            X=frozenset(),
+            adjacency=adjacency,
+            results=results,
+        )
+    except _TooManyFamilies:
+        truncated = True
 
-    # Seed: start with the highest-degree vertex
-    first = max(spans, key=degree)
-    color[first] = 0
-    for neighbor in adjacency.get(first, set()):
-        saturation[neighbor].add(0)
+    # Each result already contains the root (it was in the seed R).
+    # Sort families for deterministic output: by size (descending), then
+    # by the sorted tuple of (left, right) of their spans.
+    results.sort(key=lambda fam: (
+        -len(fam),
+        tuple(sorted((s.left, s.right) for s in fam)),
+    ))
 
-    while len(color) < len(spans):
-        # Pick the uncolored vertex with the highest saturation;
-        # break ties by degree (denser neighborhoods constrain color choice more)
-        uncolored = [s for s in spans if s not in color]
-        current = max(uncolored,
-                      key=lambda s: (len(saturation[s]), degree(s)))
-
-        # Assign the lowest color index not used by any neighbor
-        used = saturation[current]
-        c = 0
-        while c in used:
-            c += 1
-        color[current] = c
-
-        for neighbor in adjacency.get(current, set()):
-            if neighbor not in color:
-                saturation[neighbor].add(c)
-
-    return color
-
-
-def group_by_color(coloring: dict[Span, int]) -> dict[int, list[Span]]:
-    """Group spans by their assigned color (family index)."""
-    groups: dict[int, list[Span]] = defaultdict(list)
-    for span, c in coloring.items():
-        groups[c].append(span)
-    return dict(groups)
+    return results, truncated
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Phase 3: Tree construction
 # ══════════════════════════════════════════════════════════════════════════════
-
-def ensure_root(family_spans: list[Span], n_positions: int) -> list[Span]:
-    """Ensure the laminar family includes a root spanning all positions.
-
-    The root [1..N] is required: every valid laminar family in this analysis
-    must be rooted at the full planar structure. If no observed span covers
-    [1..N], a synthetic root is added with convergence=0.
-    """
-    root_span = Span(1, n_positions,
-                     labels=("(root)",),
-                     domain_types=frozenset(["(synthetic)"]),
-                     convergence=0)
-    if any(s.left == 1 and s.right == n_positions for s in family_spans):
-        return family_spans
-    return family_spans + [root_span]
-
 
 def build_parent_map(family_spans: list[Span]) -> dict[Span, Span | None]:
     """Build the parent map for a laminar family tree.
@@ -537,22 +586,32 @@ def report_conflicts(adjacency: dict[Span, set[Span]],
                   f"  vs  {b.short()} [{'/'.join(sorted(b.domain_types))}]")
 
 
-def report_families(families: dict[int, list[Span]],
-                    n_positions: int) -> dict[Span, int]:
-    """Print each laminar family as a tree, return span→family_count mapping."""
+def report_families(families: list[frozenset[Span]],
+                    n_positions: int,
+                    truncated: bool) -> dict[Span, int]:
+    """Print each maximal laminar family as a tree.
+
+    Returns a mapping from span → number of families in which it appears.
+    This count is the primary measure of structural robustness: a span
+    appearing in all families is present regardless of how conflicts are
+    resolved elsewhere in the tree.
+    """
     span_family_count: dict[Span, int] = defaultdict(int)
 
-    print(f"\nLaminar families found: {len(families)}")
-    for idx, spans_in_family in sorted(families.items()):
-        family_with_root = ensure_root(spans_in_family, n_positions)
-        parent_map = build_parent_map(family_with_root)
-        children = get_children(parent_map)
-        root = max(family_with_root, key=lambda s: s.size)
+    n = len(families)
+    trunc_note = f" (enumeration halted at {MAX_FAMILIES})" if truncated else ""
+    print(f"\nMaximal laminar families: {n}{trunc_note}")
 
-        print(f"\n─── Family {idx + 1} ({len(family_with_root)} spans) ───")
+    for idx, family_set in enumerate(families):
+        family_list = sorted(family_set, key=lambda s: s.size, reverse=True)
+        parent_map = build_parent_map(family_list)
+        children = get_children(parent_map)
+        root = max(family_list, key=lambda s: s.size)
+
+        print(f"\n─── Tree {idx + 1} ({len(family_list)} spans) ───")
         print(format_tree_text(root, children))
 
-        for s in spans_in_family:
+        for s in family_set:
             span_family_count[s] += 1
 
     return dict(span_family_count)
@@ -560,39 +619,42 @@ def report_families(families: dict[int, list[Span]],
 
 def report_convergence(span_family_count: dict[Span, int],
                        n_families: int) -> None:
-    """Report which spans appear in multiple families.
+    """Report which spans appear in how many families.
 
     Spans in all families are the most structurally robust findings —
     they are present regardless of how conflicts between other spans are
     resolved. These are the strongest word domain candidates.
-    """
-    print("\nSpan occurrence across families:")
-    print(f"  (max possible = {n_families})")
 
-    by_count = defaultdict(list)
+    Spans in only one family are structurally contingent — they can be
+    included in a consistent tree, but only under one particular resolution
+    of the conflict structure.
+    """
+    print(f"\nSpan occurrence across {n_families} maximal trees:")
+
+    by_count: dict[int, list[Span]] = defaultdict(list)
     for span, count in span_family_count.items():
         by_count[count].append(span)
 
     for count in sorted(by_count.keys(), reverse=True):
         spans = sorted(by_count[count], key=lambda s: s.size)
-        label = "← in ALL families" if count == n_families else ""
+        label = "← in ALL trees" if count == n_families else ""
         for s in spans:
             print(f"  {count}/{n_families}  {s}  {label}")
 
 
-def generate_r_script(families: dict[int, list[Span]],
+def generate_r_script(families: list[frozenset[Span]],
                       n_positions: int,
                       span_family_count: dict[Span, int],
                       output_dir: str,
                       tpfx: str = "",
                       color: str = "black") -> None:
-    """Write a ggtree R script for visualising the laminar families.
+    """Write a ggtree R script for visualising the maximal laminar families.
 
     Each family produces one proper branching tree (via a correct recursive
     Newick encoder), unlike treeTraversal.py which produced one chain per
-    'tree' and overlaid them. Branch thickness is scaled by convergence count
-    (square-root scaled to compress the range), so stronger spans appear
-    with heavier lines.
+    'tree' and overlaid them. Branch thickness is scaled by how many families
+    a span appears in (sqrt-scaled to compress the range): spans present in
+    all trees appear with the heaviest lines.
     """
     n_families = len(families)
     if n_families == 0:
@@ -612,19 +674,19 @@ def generate_r_script(families: dict[int, list[Span]],
         print("", file=rout)
 
         plot_names = []
-        for idx, spans_in_family in sorted(families.items()):
-            family_with_root = ensure_root(spans_in_family, n_positions)
-            parent_map = build_parent_map(family_with_root)
+        for idx, family_set in enumerate(families):
+            family_list = sorted(family_set, key=lambda s: s.size, reverse=True)
+            parent_map = build_parent_map(family_list)
             children_map = get_children(parent_map)
-            root = max(family_with_root, key=lambda s: s.size)
+            root = max(family_list, key=lambda s: s.size)
 
             newick = span_to_newick(root, children_map) + ";"
             tree_var = f"{tpfx}tree{idx + 1}"
             print(f'{tree_var} <- read.tree(text="{newick}")', file=rout)
 
-            # Strength mapping: branch thickness = sqrt(convergence)
-            # Each span in the family gets a strength; ungrouped positions get 0.5
-            sorted_spans = sorted(spans_in_family, key=lambda s: s.left)
+            # Branch thickness = sqrt(number of families span appears in).
+            # Spans in all families = heaviest lines; contingent spans = thinner.
+            sorted_spans = sorted(family_list, key=lambda s: s.left)
             labelstart = 97  # 'a'
             domains_r = [
                 f"{chr(labelstart + i)} = c({s.left}, {s.right})"
@@ -699,8 +761,8 @@ def main(domain_file: str = "domains_nyan1308.tsv",
         tpfx:        Variable-name prefix for R output (e.g. "phon").
 
     Returns:
-        Dict with keys: spans, conflicts, families, span_family_count,
-        n_families. Useful for programmatic access and testing.
+        Dict with keys: spans, adjacency, families, span_family_count,
+        n_families, truncated. Useful for programmatic access and testing.
     """
     if output_dir is None:
         output_dir = os.getcwd()
@@ -718,21 +780,23 @@ def main(domain_file: str = "domains_nyan1308.tsv",
     print()
     report_conflicts(adjacency, spans)
 
-    # ── Phase 2: minimum coloring ─────────────────────────────────────────────
-    print("\nPhase 2 — Graph coloring (minimum laminar families)")
-    coloring = dsatur_coloring(spans, adjacency)
-    families = group_by_color(coloring)
+    # ── Phase 2: enumerate all maximal laminar families ───────────────────────
+    print("\nPhase 2 — Enumerating all maximal laminar families (Bron-Kerbosch)")
+    families, truncated = enumerate_maximal_laminar_families(spans, adjacency, n_positions)
     n_families = len(families)
-    print(f"           Minimum families needed: {n_families}")
 
-    if n_families == 1:
+    if truncated:
+        print(f"           WARNING: enumeration halted at {MAX_FAMILIES} families.")
+        print(f"           The conflict structure may be more complex than expected.")
+    elif n_families == 1:
+        print(f"           Found {n_families} maximal family.")
         print("           → Tree hypothesis: FULLY SUPPORTED (data is perfectly laminar)")
     else:
-        print(f"           → Tree hypothesis: {n_families} trees required to cover all spans")
+        print(f"           Found {n_families} maximal families.")
 
     # ── Phase 3 + 4: build trees and report ──────────────────────────────────
     print("\nPhase 3 — Tree structures")
-    span_family_count = report_families(families, n_positions)
+    span_family_count = report_families(families, n_positions, truncated)
 
     print("\nPhase 4 — Cross-family analysis")
     report_convergence(span_family_count, n_families)
@@ -747,6 +811,7 @@ def main(domain_file: str = "domains_nyan1308.tsv",
         "families": families,
         "span_family_count": span_family_count,
         "n_families": n_families,
+        "truncated": truncated,
     }
 
 
