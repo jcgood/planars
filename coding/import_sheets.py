@@ -740,7 +740,7 @@ def main() -> None:
                               f" (set to 'ready-for-review' in Status tab, or use --ignore-status)")
                         continue
 
-                rows = ws.get_all_values()
+                rows = _with_retry(ws.get_all_values)
 
                 # Determine expected params from header row (skip structural and trailing cols)
                 expected_params = (
