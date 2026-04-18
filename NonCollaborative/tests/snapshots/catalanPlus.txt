@@ -1,0 +1,2 @@
+TIMEOUT: catalanPlus.tsv did not complete within 120s
+Known hang in current (pre-refactor) code.

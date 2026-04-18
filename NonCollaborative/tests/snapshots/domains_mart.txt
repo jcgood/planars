@@ -1,0 +1,6 @@
+Mismatch between stored size and calculated size Test_Labels    mart1259_all
+Domain_Type             all
+Left_Edge                 1
+Right_Edge               27
+Size                     28
+Name: 12, dtype: object

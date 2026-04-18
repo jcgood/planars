@@ -1,0 +1,2 @@
+TIMEOUT: domains_chac.tsv did not complete within 30s
+Known hang in current (pre-refactor) code.
