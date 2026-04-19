@@ -314,7 +314,7 @@ def find_conflicts(spans: list[Span]) -> dict[Span, set[Span]]:
 # Phase 2: Enumerate all maximal laminar families (Bron-Kerbosch)
 # ══════════════════════════════════════════════════════════════════════════════
 
-MAX_FAMILIES = 500  # safeguard: abort enumeration beyond this count
+MAX_FAMILIES = 1000  # safeguard: abort enumeration beyond this count
 
 class _TooManyFamilies(Exception):
     pass
@@ -322,22 +322,29 @@ class _TooManyFamilies(Exception):
 
 def _bron_kerbosch(R: frozenset, P: frozenset, X: frozenset,
                    adjacency: dict, results: list) -> None:
-    """Recursive Bron-Kerbosch for maximal independent sets.
+    """Recursive Bron-Kerbosch for maximal independent sets (MIS) in the
+    conflict graph G.
+
+    Equivalently: finds maximal cliques in the compatibility graph G^c, where
+    G^c has an edge between two spans iff they are nested or disjoint.
 
     Maintains three sets:
       R = current independent set (all mutually compatible spans)
       P = candidate spans (compatible with all of R, not yet decided)
       X = excluded spans (compatible with all of R, already processed;
-          if X is non-empty at termination, R is not maximal)
+          non-empty X at a leaf means R is not maximal)
 
     When P and X are both empty, R is a maximal independent set. Report it.
 
-    'Compatible' here means NOT in the conflict graph — i.e., nested or
-    disjoint. Conflicting neighbors of a span v are removed from P and X
-    when v is added to R.
+    When adding v to R, the new P and X are restricted to spans compatible
+    with v — i.e., spans NOT in adjacency[v] (the conflict neighbours of v).
 
-    Pivoting: choose pivot u from P ∪ X to minimise branching. We pick the
-    vertex with the most neighbors in P (maximises pruning).
+    Non-pivoted version: iterate over every vertex in P in turn. This is
+    straightforwardly correct. The pivot optimisation for MIS requires
+    iterating over the CONFLICT-neighbours of the pivot (not the compatible
+    ones), which is the opposite of the clique-graph intuition and easy to
+    get wrong; the non-pivoted version avoids that risk and is fast enough
+    for the graph sizes in this project (typically < 100 spans per language).
 
     Raises _TooManyFamilies after MAX_FAMILIES results to prevent runaway
     enumeration on pathological inputs.
@@ -348,22 +355,11 @@ def _bron_kerbosch(R: frozenset, P: frozenset, X: frozenset,
             raise _TooManyFamilies()
         return
 
-    if not P:
-        return
-
-    # Pivot: choose u in P ∪ X with the most neighbors in P (most pruning)
-    all_candidates = P | X
-    pivot = max(all_candidates,
-                key=lambda u: len(adjacency.get(u, set()) & P))
-
-    # Expand on vertices in P that do NOT conflict with the pivot.
-    # (Conflicting with pivot = pivot is already in X or excluded from this
-    # branch, so we only recurse on vertices that don't conflict with pivot —
-    # this is the standard Tomita-style pivot optimisation.)
-    pivot_conflicts = adjacency.get(pivot, frozenset())
-    for v in list(P - pivot_conflicts):
+    for v in list(P):
         v_conflicts = adjacency.get(v, frozenset())
-        new_P = P & (frozenset(P) - v_conflicts) - {v}
+        # new_P: candidates compatible with v (remove v and v's conflict neighbours)
+        new_P = (P - v_conflicts) - {v}
+        # new_X: excluded spans that are also compatible with v
         new_X = X - v_conflicts
         _bron_kerbosch(R | {v}, new_P, new_X, adjacency, results)
         P = P - {v}
@@ -588,13 +584,21 @@ def report_conflicts(adjacency: dict[Span, set[Span]],
 
 def report_families(families: list[frozenset[Span]],
                     n_positions: int,
-                    truncated: bool) -> dict[Span, int]:
+                    truncated: bool,
+                    show_trees: bool = True,
+                    max_trees_to_show: int = 20) -> dict[Span, int]:
     """Print each maximal laminar family as a tree.
 
     Returns a mapping from span → number of families in which it appears.
     This count is the primary measure of structural robustness: a span
     appearing in all families is present regardless of how conflicts are
     resolved elsewhere in the tree.
+
+    Args:
+        show_trees: If True, print indented tree structure for each family.
+                    If False (or if n > max_trees_to_show), print only the
+                    span list. Full trees can be inspected in the R output.
+        max_trees_to_show: Automatically suppress tree bodies above this count.
     """
     span_family_count: dict[Span, int] = defaultdict(int)
 
@@ -602,14 +606,26 @@ def report_families(families: list[frozenset[Span]],
     trunc_note = f" (enumeration halted at {MAX_FAMILIES})" if truncated else ""
     print(f"\nMaximal laminar families: {n}{trunc_note}")
 
+    verbose = show_trees and (n <= max_trees_to_show)
+    if not verbose and show_trees:
+        print(f"  (tree bodies suppressed for {n} > {max_trees_to_show} families;"
+              f" see R output for full visualisation)")
+
     for idx, family_set in enumerate(families):
         family_list = sorted(family_set, key=lambda s: s.size, reverse=True)
-        parent_map = build_parent_map(family_list)
-        children = get_children(parent_map)
-        root = max(family_list, key=lambda s: s.size)
 
-        print(f"\n─── Tree {idx + 1} ({len(family_list)} spans) ───")
-        print(format_tree_text(root, children))
+        if verbose:
+            parent_map = build_parent_map(family_list)
+            children = get_children(parent_map)
+            root = max(family_list, key=lambda s: s.size)
+            print(f"\n─── Tree {idx + 1} ({len(family_list)} spans) ───")
+            print(format_tree_text(root, children))
+        else:
+            span_labels = " ".join(
+                f"[{s.left}–{s.right}]"
+                for s in sorted(family_list, key=lambda s: s.size, reverse=True)
+            )
+            print(f"  Tree {idx + 1:3d} ({len(family_list):2d} spans): {span_labels}")
 
         for s in family_set:
             span_family_count[s] += 1
@@ -747,7 +763,9 @@ def main(domain_file: str = "domains_nyan1308.tsv",
          output_dir: str | None = None,
          subset: list[str] | None = None,
          color: str = "black",
-         tpfx: str = "") -> dict:
+         tpfx: str = "",
+         show_trees: bool = True,
+         max_trees_to_show: int = 20) -> dict:
     """Run the full laminar family analysis for one domain file.
 
     Args:
@@ -759,6 +777,9 @@ def main(domain_file: str = "domains_nyan1308.tsv",
                      ["morphosyntactic"]). None = all types.
         color:       Branch color for the ggtree output.
         tpfx:        Variable-name prefix for R output (e.g. "phon").
+        show_trees:  If True, print indented tree structure in Phase 3.
+                     Automatically suppressed when n > max_trees_to_show.
+        max_trees_to_show: Threshold above which tree bodies are suppressed.
 
     Returns:
         Dict with keys: spans, adjacency, families, span_family_count,
@@ -796,7 +817,10 @@ def main(domain_file: str = "domains_nyan1308.tsv",
 
     # ── Phase 3 + 4: build trees and report ──────────────────────────────────
     print("\nPhase 3 — Tree structures")
-    span_family_count = report_families(families, n_positions, truncated)
+    span_family_count = report_families(
+        families, n_positions, truncated,
+        show_trees=show_trees, max_trees_to_show=max_trees_to_show,
+    )
 
     print("\nPhase 4 — Cross-family analysis")
     report_convergence(span_family_count, n_families)
