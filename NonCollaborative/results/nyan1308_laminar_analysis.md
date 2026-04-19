@@ -140,6 +140,42 @@ The 64 families found only by the correct Bron-Kerbosch algorithm were missed
 by treeTraversal.py because it does not enumerate all combinations — it
 follows a single greedy path per starting configuration.
 
+### Why treeTraversal.py produces non-maximal families: a concrete example
+
+The 11 non-maximal TT chains all have the same underlying cause: treeTraversal.py
+follows **one path** from root to leaf through the containment structure, and never
+looks sideways for spans that would fit alongside the chain members at the same
+hierarchical level.
+
+TT6 illustrates this clearly. Its chain is:
+
+> [1–22] → [2–22] → [3–21] → [5–21] → [5–19] → [5–18] → [9–18] → [9–17] → [10–17] → [10–16] → [13–15]
+
+This is a perfectly valid laminar family — all spans are nested. But inside
+[5–18] (Neg1–2P), positions 5–8 (Neg1, SM, Neg2, TAM) are left completely
+uncovered by any span in the chain. The observed spans [5–6] and [6–8] both
+sit in that gap. Neither conflicts with [9–18]: [5–6] ends at position 6 and
+[6–8] ends at position 8, both before [9–18] starts at position 9. Either
+one could be added as a **sibling** of [9–18] under [5–18] — which is exactly
+what makes TT6 non-maximal.
+
+treeTraversal.py doesn't find [5–6] or [6–8] because once it descends from
+[5–18] to [9–18], it never looks sideways for other spans that could sit
+alongside [9–18] at the same level.
+
+Note: [5–6] and [6–8] *do* conflict with each other (they partially overlap),
+so only one can appear in any single maximal family. But that conflict is
+irrelevant here — what matters is that each of them is individually compatible
+with everything already in TT6. By following a single chain, treeTraversal.py
+never has to make that choice, and so makes neither.
+
+The general pattern: a valid laminar family is a *path* through the containment
+structure; a maximal laminar family is a *branching tree* that includes every
+compatible span regardless of which branch it lives on. TT12 is the closest
+to maximal among the 11 — it is missing only [9–10], which nests cleanly
+inside [6–10] and is disjoint from [6–8]. TT15 and TT16 are the most
+incomplete, each missing over a dozen compatible spans.
+
 ---
 
 ## Algorithm notes
