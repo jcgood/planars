@@ -2,9 +2,9 @@ Synth0001 Metrical Stress Domain
 ================================
 
 NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
-  accented: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (109 total)
-  independence: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (109 total)
-  obligatory: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (109 total)
+  accented: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
+  independence: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
+  obligatory: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
 
 Keystone position: 23 (v:verbstem)
 
