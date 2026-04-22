@@ -261,6 +261,8 @@ Commit frequently — after each logical unit of work rather than accumulating c
 - Documentation is updated to reflect completed changes
 - A self-contained refactor is done
 
+**Push after every commit** (or at the end of every session at the latest). Commits that sit unpushed don't trigger CI, don't back up work, and accumulate into confusing batches. `git push` after `git commit` is the default; skip it only when a commit is explicitly a work-in-progress checkpoint not ready for CI.
+
 Separate `coded_data/` annotation changes from tooling/library changes into distinct commits — they have different authors (human annotators vs. code changes) and different review needs.
 
 ## In-progress annotation work
