@@ -98,7 +98,7 @@ strong	v:nominal	21
 [syn-]	v:latinprefix	22			
 [tele-]	v:latinprefix	22			
 [up-]	v:latinprefix	22			
-KEYSTONE	v:verbstem	23	n
+KEYSTONE	v:verbstem	23	n		
 [-ed]	v:verbinflection	24			
 [-ing]	v:verbinflection	24			
 [-s]	v:verbinflection	24			
@@ -108,3 +108,4 @@ VERBPART	v:obj-part	25
 Ad-VP	v:ad-VP6	26			
 PP	v:PP	27			
 AD-S	v:rightedge	28			
+AD-VP	v:ad-VP6	26			
