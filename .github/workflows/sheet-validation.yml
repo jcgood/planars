@@ -75,6 +75,17 @@ jobs:
           import re
           text = open('/tmp/report.txt').read()
           lines = text.splitlines()
+
+          # Detect an unhandled exception (infrastructure crash, not a data error)
+          has_traceback = 'Traceback (most recent call last):' in text
+          exc_line = ''
+          if has_traceback:
+              for line in reversed(lines):
+                  line = line.strip()
+                  if line and not line.startswith('Connecting') and not line.startswith('Warning'):
+                      exc_line = line
+                      break
+
           errors = []
           current_lang = None
           current_class = None
@@ -95,20 +106,35 @@ jobs:
               elif m := re.match(r'^\s{4}\[(ERROR|WARNING)\] .+?: (.+)', line):
                   if current_lang and current_class:
                       errors.append(f"- **{current_lang}** / {current_class}: {m.group(2)}")
+
           with open('/tmp/issue_body.md', 'w') as f:
               f.write("## What's wrong\n\n")
-              if errors:
+              if has_traceback:
+                  f.write("The validation script crashed with an unhandled exception — "
+                          "this is an infrastructure error, not a data coding problem.\n\n")
+                  if exc_line:
+                      f.write(f"```\n{exc_line}\n```\n\n")
+                  f.write("_No annotation data needs to be corrected._\n")
+              elif errors:
                   f.write('\n'.join(errors[:20]) + '\n')
                   if len(errors) > 20:
                       f.write(f"\n_…and {len(errors) - 20} more — see full log._\n")
               else:
                   f.write("_(Error details could not be extracted — see full log.)_\n")
+
               f.write("\n## What to do\n\n")
-              f.write(
-                  "Open the affected sheet, find the highlighted pink cells, "
-                  "and correct the values to one of the allowed options listed above. "
-                  "The issue closes automatically when the next validation run passes.\n"
-              )
+              if has_traceback:
+                  f.write(
+                      "This is likely a transient API error. "
+                      "No action is needed — the issue will close automatically "
+                      "when the next scheduled validation run completes without crashing.\n"
+                  )
+              else:
+                  f.write(
+                      "Open the affected sheet, find the highlighted pink cells, "
+                      "and correct the values to one of the allowed options listed above. "
+                      "The issue closes automatically when the next validation run passes.\n"
+                  )
               f.write("\n## Full log\n\n")
               f.write("<details><summary>Show full validation output</summary>\n\n```\n")
               f.write(text)

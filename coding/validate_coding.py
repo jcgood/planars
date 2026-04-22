@@ -25,7 +25,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
-from .drive import _get_clients, _load_manifest_from_drive, _open_spreadsheet
+from .drive import _get_clients, _load_manifest_from_drive, _open_spreadsheet, _with_retry
 from .generate_sheets import _STATUS_TAB
 from .make_forms import (
     _infer_language_id_from_planar_filename,
@@ -75,12 +75,12 @@ def highlight_cells(ws, bad_cells: List[Tuple[int, int]]) -> None:
         }
         for r, c in bad_cells
     ]
-    ws.spreadsheet.batch_update({"requests": requests})
+    _with_retry(lambda: ws.spreadsheet.batch_update({"requests": requests}))
 
 
 def clear_highlights(ws) -> None:
     """Clear all pink highlighting from a worksheet by resetting backgrounds to white."""
-    ws.spreadsheet.batch_update({"requests": [{
+    body = {"requests": [{
         "repeatCell": {
             "range": {
                 "sheetId": ws.id,
@@ -92,7 +92,8 @@ def clear_highlights(ws) -> None:
             "cell": {"userEnteredFormat": {"backgroundColor": _WHITE}},
             "fields": "userEnteredFormat.backgroundColor",
         }
-    }]})
+    }]}
+    _with_retry(lambda: ws.spreadsheet.batch_update(body))
 
 
 # ---------------------------------------------------------------------------
