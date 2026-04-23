@@ -238,6 +238,120 @@ def _build_rows(
 
 
 # ---------------------------------------------------------------------------
+# Nonpermutability pair generation (Option C)
+# ---------------------------------------------------------------------------
+
+def _read_position_types(planar_path: Path, lang_id: str) -> Dict[int, str]:
+    """Return {position_number: "Slot" | "Zone"} for the given language.
+
+    Reads the Position_Type column from the planar TSV. Used by
+    _build_nonperm_pairs to identify which positions permit variable ordering.
+    """
+    df = pd.read_csv(planar_path, sep="\t", dtype=str, keep_default_na=False)
+    df = df[df["Language_ID"] == lang_id]
+    return {int(row["Position"]): row["Position_Type"] for _, row in df.iterrows()}
+
+
+def _build_nonperm_pairs(
+    element_index, lang_id: str, pos_type: Dict[int, str]
+) -> List[List[str]]:
+    """Generate candidate variable-order element pairs (Option C algorithm).
+
+    A pair (A, B) is included as a candidate if the planar structure permits
+    either relative ordering. Pairs whose order is always fixed by structure
+    are excluded. The keystone (v:verbstem) is never included in any pair.
+
+    Inclusion rules:
+    - INCLUDE if A and B share a Zone position (within-zone permutation).
+    - EXCLUDE if all of A's positions are strictly before all of B's, or vice versa.
+    - EXCLUDE if A and B occupy exactly the same Slot position(s) only (same slot,
+      fixed co-occurrence order by convention).
+    - INCLUDE otherwise (A's positions straddle B's, or B's straddle A's).
+
+    Returns sorted [[Element_A, Element_B], ...] rows (no scopal — annotators fill that in).
+    """
+    _keystone = load_planar_schema().get("keystone_position_name", "v:verbstem")
+
+    # Build element → set of positions, excluding keystone
+    elem_positions: Dict[str, set] = {}
+    for _, (pos, pos_name, lang, element) in element_index.items():
+        if lang != lang_id:
+            continue
+        if pos_name.strip().lower() == _keystone:
+            continue
+        elem_positions.setdefault(element, set()).add(pos)
+
+    elements = sorted(elem_positions.keys())
+    pairs = []
+    for i, a in enumerate(elements):
+        for b in elements[i + 1:]:
+            pos_a = elem_positions[a]
+            pos_b = elem_positions[b]
+            shared = pos_a & pos_b
+
+            # Shared Zone: variable ordering within the zone
+            if any(pos_type.get(p) == "Zone" for p in shared):
+                pairs.append([a, b])
+                continue
+
+            # Fixed order: all of A strictly before all of B (or vice versa)
+            if max(pos_a) < min(pos_b) or max(pos_b) < min(pos_a):
+                continue
+
+            # Same Slot(s) only, no Zone, no straddling: fixed by convention
+            if pos_a == pos_b and all(pos_type.get(p) == "Slot" for p in pos_a):
+                continue
+
+            # Straddling or complex overlap: variable order is structurally possible
+            pairs.append([a, b])
+
+    return pairs
+
+
+def _populate_tab_pairs(
+    spreadsheet: gspread.Spreadsheet,
+    tab_name: str,
+    param_names: List[str],
+    param_values: Dict[str, List[str]],
+    pairs: List[List[str]],
+) -> gspread.Worksheet:
+    """Create or clear a worksheet tab and populate it with pair rows.
+
+    Like _populate_tab() but for the nonpermutability pair-row format:
+    columns are Element_A, Element_B, then criterion columns, then trailing
+    columns. No Position_Name, Position_Number, or keystone row.
+
+    Args:
+        spreadsheet: the parent gspread Spreadsheet.
+        tab_name: worksheet title to create or clear.
+        param_names: ordered list of criterion column names (e.g. ["scopal"]).
+        param_values: dict mapping criterion name to list of allowed values.
+        pairs: candidate pair rows from _build_nonperm_pairs (no header).
+
+    Returns:
+        The populated gspread Worksheet.
+    """
+    try:
+        ws = _with_retry(lambda: spreadsheet.worksheet(tab_name))
+        ws.clear()
+    except gspread.WorksheetNotFound:
+        ws = spreadsheet.add_worksheet(
+            title=tab_name, rows=len(pairs) + 2, cols=len(param_names) + 4
+        )
+
+    all_cols = param_names + _TRAILING_COLS
+    header = ["Element_A", "Element_B"] + all_cols
+    all_rows = [header] + [
+        [a, b] + [""] * len(all_cols) for a, b in pairs
+    ]
+    ws.update(all_rows, "A1")
+    per_col_values = [param_values.get(p, ["y", "n"]) for p in param_names]
+    # Param columns start at index 2 (after Element_A, Element_B)
+    _format_and_validate(ws, len(pairs), per_col_values, col_start=2)
+    return ws
+
+
+# ---------------------------------------------------------------------------
 # Status tab
 # ---------------------------------------------------------------------------
 
@@ -323,6 +437,7 @@ def _format_and_validate(
     worksheet: gspread.Worksheet,
     num_data_rows: int,
     param_values: List[List[str]],
+    col_start: int = 3,
 ) -> None:
     """Freeze and bold the header row; apply per-column dropdown validation.
 
@@ -338,7 +453,9 @@ def _format_and_validate(
         worksheet: the gspread Worksheet to format.
         num_data_rows: number of data rows (excluding header) to validate.
         param_values: list of allowed-value lists, one entry per param column,
-            in the same order as the columns (starting at column index 3).
+            in the same order as the columns.
+        col_start: 0-based column index where param columns begin (default 3
+            for standard element-row sheets; 2 for pair-row sheets).
     """
     sheet_id = worksheet.id
     requests = [
@@ -367,10 +484,8 @@ def _format_and_validate(
             }
         },
     ]
-    # One validation request per param column (non-strict so NA in keystone rows is tolerated).
-    # Columns 0–2 are structural (Element, Position_Name, Position_Number); params start at 3.
     for col_offset, values in enumerate(param_values):
-        col_idx = 3 + col_offset
+        col_idx = col_start + col_offset
         requests.append({
             "setDataValidation": {
                 "range": {
@@ -450,6 +565,7 @@ def _create_analysis_sheet(
     class_name: str,
     constructions: List[Tuple[str, List[str], Dict[str, List[str]]]],
     element_index,
+    planar_path: Path,
 ) -> Dict:
     """Create a Google Sheet for one analysis class with one tab per construction."""
     sheet_title = f"{class_name}_{lang_id}"
@@ -463,11 +579,19 @@ def _create_analysis_sheet(
     tab_names = []
 
     for construction, param_names, param_values in constructions:
-        ka = resolve_keystone_active(lang_id, class_name, construction, data_dir=planar_dir) or False
-        rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
-        _populate_tab(spreadsheet, construction, param_names, param_values, rows)
-        tab_names.append(construction)
-        print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
+        if class_name == "nonpermutability":
+            pos_type = _read_position_types(planar_path, lang_id)
+            pairs = _build_nonperm_pairs(element_index, lang_id, pos_type)
+            _populate_tab_pairs(spreadsheet, construction, param_names, param_values, pairs)
+            tab_names.append(construction)
+            print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
+        else:
+            ka = resolve_keystone_active(lang_id, class_name, construction,
+                                         data_dir=planar_path.parent) or False
+            rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
+            _populate_tab(spreadsheet, construction, param_names, param_values, rows)
+            tab_names.append(construction)
+            print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
 
     # Remove the default empty sheet if it wasn't one of our tabs
     if default_ws.title not in tab_names:
@@ -760,7 +884,8 @@ def main() -> None:
         # Create one sheet per new analysis class
         for class_name, constructions in classes_to_create.items():
             sheet_info = _create_analysis_sheet(
-                gc, drive, folder_id, lang_id, class_name, constructions, element_index
+                gc, drive, folder_id, lang_id, class_name, constructions, element_index,
+                planar_path=planar_file,
             )
             lang_data["sheets"][class_name] = sheet_info
             print(f"    URL: {sheet_info['url']}\n")
