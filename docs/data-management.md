@@ -80,10 +80,10 @@ docs/                           Documentation (this directory)
 
 Each language has a `lang_setup/` directory containing:
 
-- `planar_{lang_id}-{date}.tsv` — the planar structure
+- `planar_{lang_id}.tsv` — the planar structure (archived versions: `planar_{lang_id}_{date}.tsv`, date = when superseded)
 - `diagnostics_{lang_id}.tsv` — which analyses to run and with which diagnostic criteria
 
-The language ID is inferred from the planar filename: `planar_stan1293-20260209.tsv` → `stan1293`.
+The language ID is inferred from the planar filename: `planar_stan1293.tsv` → `stan1293`. Archived planar files carry a datestamp suffix; the inference handles both forms.
 
 ### Planar structure TSV
 

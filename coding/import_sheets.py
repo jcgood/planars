@@ -514,33 +514,37 @@ def _download_lang_setup_sheets(
                 for i in issues:
                     print(f"  [planar] WARNING: {i}")
 
+                out_path = planar_dir / f"planar_{lang_id}.tsv"
                 existing = sorted(planar_dir.glob("planar_*.tsv")) if planar_dir.exists() else []
-                if existing:
-                    old_df = pd.read_csv(existing[-1], sep="\t", dtype=str).fillna("")
+                old_file = existing[-1] if existing else None
+                if old_file:
+                    old_df = pd.read_csv(old_file, sep="\t", dtype=str).fillna("")
                     s, p = _detect_planar_changes(old_df, new_df, lang_id)
                     safe_cmds |= s
                     pending   += p
-                    out_path = existing[-1]   # overwrite most recent file in place
                     content_changed = not old_df.reset_index(drop=True).equals(
                         new_df.reset_index(drop=True)
                     )
                     if apply:
                         if content_changed:
                             if timestamp:
-                                archived = _archive_tsv(out_path, timestamp)
+                                archived = _archive_tsv(old_file, timestamp)
                                 print(f"  [planar] Archived existing → archive/{archived.name}")
+                            if old_file != out_path:
+                                old_file.unlink()
                             planar_dir.mkdir(parents=True, exist_ok=True)
                             new_df.to_csv(out_path, sep="\t", index=False)
                             print(f"  [planar] Downloaded → {out_path.name}")
                         else:
-                            print(f"  [planar] No changes → {out_path.name}")
+                            if old_file != out_path:
+                                old_file.rename(out_path)
+                                print(f"  [planar] Renamed → {out_path.name}")
+                            else:
+                                print(f"  [planar] No changes → {out_path.name}")
                     else:
                         action = "Would overwrite (changed)" if content_changed else "No changes"
                         print(f"  [planar] {action} → {out_path.name}")
                 else:
-                    from datetime import date
-                    today    = date.today().strftime("%Y%m%d")
-                    out_path = planar_dir / f"planar_{lang_id}-{today}.tsv"
                     if apply:
                         planar_dir.mkdir(parents=True, exist_ok=True)
                         new_df.to_csv(out_path, sep="\t", index=False)
