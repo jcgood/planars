@@ -51,9 +51,10 @@ ERROR_DIR    = ROOT / "import_errors"
 PENDING_PATH = ROOT / "pending_changes.json"
 
 # Re-export constants so external code that imported them directly still works.
-_STRUCTURAL_COLS  = _val._STRUCTURAL_COLS
-_TRAILING_COLS    = _val._TRAILING_COLS
-_DEFAULT_EXPECTED = _val._DEFAULT_EXPECTED
+_STRUCTURAL_COLS      = _val._STRUCTURAL_COLS
+_PAIR_STRUCTURAL_COLS = _val._PAIR_STRUCTURAL_COLS
+_TRAILING_COLS        = _val._TRAILING_COLS
+_DEFAULT_EXPECTED     = _val._DEFAULT_EXPECTED
 
 
 # ---------------------------------------------------------------------------
@@ -93,6 +94,22 @@ def _validate_tab(
         keystone_active=keystone_active,
         keystone_na_criteria=keystone_na_criteria,
     )
+    warnings  = [str(i) for i in issues]
+    bad_cells = [i.cell for i in issues if i.cell is not None]
+    return records, warnings, bad_cells
+
+
+def _validate_pair_tab(
+    rows: List[List[str]],
+    expected_params: List[str],
+    tab_name: str,
+    param_values: Dict[str, List[str]] = None,
+) -> Tuple[List[Dict], List[str], List[Tuple[int, int]]]:
+    """Delegate to validate.validate_pair_rows for nonpermutability pair-row sheets.
+
+    Returns (records, warnings, bad_cells) in the same format as _validate_tab.
+    """
+    records, issues = _val.validate_pair_rows(rows, expected_params, tab_name, param_values)
     warnings  = [str(i) for i in issues]
     bad_cells = [i.cell for i in issues if i.cell is not None]
     return records, warnings, bad_cells
@@ -746,26 +763,33 @@ def main() -> None:
 
                 rows = _with_retry(ws.get_all_values)
 
-                # Determine expected params from header row (skip structural and trailing cols)
-                expected_params = (
-                    [c for c in rows[0] if c not in _STRUCTURAL_COLS and c not in _TRAILING_COLS] if rows else []
-                )
                 header = rows[0] if rows else []
 
                 # Per-param allowed values from manifest (if present)
                 construction_params = sheet_info.get("construction_params", {})
                 param_values = construction_params.get(construction, {}).get("param_values")
 
-                ka = resolve_keystone_active(
-                    lang_id, class_name, construction,
-                    data_dir=ROOT / "coded_data" / lang_id / "lang_setup",
-                )
-                kna = resolve_keystone_na_criteria(class_name)
-                records, warnings, bad_cells = _validate_tab(
-                    rows, expected_params, construction, param_values,
-                    keystone_active=bool(ka),
-                    keystone_na_criteria=kna,
-                )
+                if class_name == "nonpermutability":
+                    expected_params = (
+                        [c for c in header if c not in _PAIR_STRUCTURAL_COLS and c not in _TRAILING_COLS]
+                    )
+                    records, warnings, bad_cells = _validate_pair_tab(
+                        rows, expected_params, construction, param_values,
+                    )
+                else:
+                    expected_params = (
+                        [c for c in header if c not in _STRUCTURAL_COLS and c not in _TRAILING_COLS]
+                    )
+                    ka = resolve_keystone_active(
+                        lang_id, class_name, construction,
+                        data_dir=ROOT / "coded_data" / lang_id / "lang_setup",
+                    )
+                    kna = resolve_keystone_na_criteria(class_name)
+                    records, warnings, bad_cells = _validate_tab(
+                        rows, expected_params, construction, param_values,
+                        keystone_active=bool(ka),
+                        keystone_na_criteria=kna,
+                    )
 
                 if bad_cells:
                     try:
@@ -804,13 +828,19 @@ def main() -> None:
 
                 _write_tsv(out_path, header, records)
 
-                # Count non-keystone rows that still have at least one blank param cell,
-                # so the status line can warn the user about incomplete annotations.
-                blank_count = sum(
-                    1 for r in records
-                    if r.get("Position_Name", "").lower() != "v:verbstem"
-                    and any(r.get(p, "") == "" for p in expected_params)
-                )
+                # Count rows with at least one blank param cell (for status line).
+                # Pair-row sheets have no keystone; element-row sheets exclude it.
+                if class_name == "nonpermutability":
+                    blank_count = sum(
+                        1 for r in records
+                        if any(r.get(p, "") == "" for p in expected_params)
+                    )
+                else:
+                    blank_count = sum(
+                        1 for r in records
+                        if r.get("Position_Name", "").lower() != "v:verbstem"
+                        and any(r.get(p, "") == "" for p in expected_params)
+                    )
                 status = f"{len(records)} rows"
                 if blank_count:
                     status += f", {blank_count} blank param cells"
