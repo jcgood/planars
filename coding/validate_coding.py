@@ -42,8 +42,9 @@ from .schemas import load_diagnostic_criteria, load_planar_schema
 # Constants
 # ---------------------------------------------------------------------------
 
-_STRUCTURAL_COLS  = {"Element", "Position_Name", "Position_Number"}
-_TRAILING_COLS    = load_planar_schema().get("trailing_columns", ["Source", "Comments"])
+_STRUCTURAL_COLS      = {"Element", "Position_Name", "Position_Number"}
+_PAIR_STRUCTURAL_COLS = {"Element_A", "Element_B"}
+_TRAILING_COLS        = load_planar_schema().get("trailing_columns", ["Source", "Comments"])
 _DEFAULT_EXPECTED = set(load_diagnostic_criteria().get("default_allowed_values", ["y", "n", "na", "?"]))
 
 _PINK  = {"red": 1.0, "green": 0.8, "blue": 0.8}
@@ -298,6 +299,105 @@ def revalidate_sheet(
 
 
 # ---------------------------------------------------------------------------
+# Pair-row sheet validation (nonpermutability)
+# ---------------------------------------------------------------------------
+
+def validate_pair_rows(
+    rows: List[List[str]],
+    expected_params: List[str],
+    tab_name: str,
+    param_values: Dict[str, List[str]] = None,
+) -> Tuple[List[Dict], List[ValidationIssue]]:
+    """Validate pair-row annotation sheets (nonpermutability class).
+
+    Structural columns are Element_A and Element_B — no Position_Name,
+    Position_Number, or keystone. Returns (records, issues).
+    """
+    issues: List[ValidationIssue] = []
+
+    if not rows:
+        return [], [ValidationIssue("error", tab_name, "sheet is empty")]
+
+    header    = rows[0]
+    data_rows = rows[1:]
+
+    for col in ("Element_A", "Element_B"):
+        if col not in header:
+            issues.append(ValidationIssue("error", tab_name, f"missing structural column '{col}'"))
+
+    actual_params = [c for c in header if c not in _PAIR_STRUCTURAL_COLS and c not in _TRAILING_COLS]
+    if actual_params != expected_params:
+        issues.append(ValidationIssue(
+            "warning", tab_name,
+            f"criterion columns differ from manifest — "
+            f"expected {expected_params}, got {actual_params}"
+        ))
+
+    col_index  = {name: i for i, name in enumerate(header)}
+    param_cols = [c for c in header if c not in _PAIR_STRUCTURAL_COLS and c not in _TRAILING_COLS]
+
+    records = []
+    for row_num, row in enumerate(data_rows, start=2):
+        while len(row) < len(header):
+            row.append("")
+
+        record = {col: row[col_index[col]] for col in header if col in col_index}
+        label  = f"{record.get('Element_A', '?')} × {record.get('Element_B', '?')}"
+
+        for param in param_cols:
+            val = record.get(param, "").strip().lower()
+            record[param] = val
+
+            allowed = (
+                {v.lower() for v in (param_values or {}).get(param, [])} | {"na", "?"}
+                if param_values and param in param_values
+                else _DEFAULT_EXPECTED
+            )
+
+            if val == "":
+                issues.append(ValidationIssue(
+                    "warning",
+                    f"{tab_name} row {row_num} '{label}'",
+                    f"blank value in '{param}'",
+                    cell=(row_num - 1, col_index[param]),
+                ))
+            elif val not in allowed:
+                issues.append(ValidationIssue(
+                    "warning",
+                    f"{tab_name} row {row_num} '{label}'",
+                    f"unexpected value '{val}' in '{param}' (allowed: {sorted(allowed)})",
+                    cell=(row_num - 1, col_index[param]),
+                ))
+
+        records.append(record)
+
+    return records, issues
+
+
+def revalidate_pair_sheet(
+    ws,
+    lang_id: str,
+    class_name: str,
+    construction: str,
+    expected_params: List[str],
+    param_values: Dict[str, List[str]] = None,
+) -> List[ValidationIssue]:
+    """Read a local pair-row TSV, validate it, update cell highlighting, return issues.
+
+    Like revalidate_sheet() but for nonpermutability pair-row sheets (Element_A,
+    Element_B structural columns; no keystone).
+
+    Raises FileNotFoundError if the local TSV does not exist.
+    """
+    rows = _read_tsv_rows(lang_id, class_name, construction)
+    _, issues = validate_pair_rows(rows, expected_params, construction, param_values)
+    bad_cells = [issue.cell for issue in issues if issue.cell is not None]
+    clear_highlights(ws)
+    highlight_cells(ws, bad_cells)
+    return issues
+
+
+# ---------------------------------------------------------------------------
 # CLI helpers
 # ---------------------------------------------------------------------------
 
@@ -386,23 +486,33 @@ def main() -> None:
                 if construction == _STATUS_TAB:
                     continue
                 info = param_map.get(class_name, {}).get(construction, {})
-                ka = resolve_keystone_active(lang_id, class_name, construction,
-                                            data_dir=CODED_DATA / lang_id / "lang_setup")
-                if ka is None:
-                    print(f"  [{class_name}/{construction}] WARNING: keystone_active unresolved — treating as False")
-                    ka = False
-                kna = resolve_keystone_na_criteria(class_name)
                 try:
-                    issues = revalidate_sheet(
-                        ws,
-                        lang_id,
-                        class_name,
-                        construction,
-                        info.get("params", []),
-                        info.get("values", {}),
-                        keystone_active=ka,
-                        keystone_na_criteria=kna,
-                    )
+                    if class_name == "nonpermutability":
+                        issues = revalidate_pair_sheet(
+                            ws,
+                            lang_id,
+                            class_name,
+                            construction,
+                            info.get("params", []),
+                            info.get("values", {}),
+                        )
+                    else:
+                        ka = resolve_keystone_active(lang_id, class_name, construction,
+                                                    data_dir=CODED_DATA / lang_id / "lang_setup")
+                        if ka is None:
+                            print(f"  [{class_name}/{construction}] WARNING: keystone_active unresolved — treating as False")
+                            ka = False
+                        kna = resolve_keystone_na_criteria(class_name)
+                        issues = revalidate_sheet(
+                            ws,
+                            lang_id,
+                            class_name,
+                            construction,
+                            info.get("params", []),
+                            info.get("values", {}),
+                            keystone_active=ka,
+                            keystone_na_criteria=kna,
+                        )
                 except FileNotFoundError as e:
                     print(f"  [{class_name}/{construction}] ERROR: {e}")
                     total_missing += 1
