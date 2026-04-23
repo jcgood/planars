@@ -162,6 +162,22 @@ def _section_planar(lang_ids: List[str]) -> Tuple[int, int]:
         total_e += e
         total_w += w
 
+        # Nonpermutability staleness: candidate pairs are derived from the planar
+        # at generate-sheets time. If the planar has been modified since the last
+        # import, the pairs in the sheet (and local TSVs) may no longer match the
+        # current planar structure.
+        nonperm_dir = CODED_DATA / lang_id / "nonpermutability"
+        if nonperm_dir.exists():
+            nonperm_tsvs = sorted(nonperm_dir.glob("*.tsv"))
+            planar_mtime = planar_path.stat().st_mtime
+            stale = [t for t in nonperm_tsvs if t.stat().st_mtime < planar_mtime]
+            if stale:
+                for tsv in stale:
+                    print(_warn(f"{lang}  —  nonpermutability/{tsv.name} predates current planar"))
+                print(_sub("→ Candidate pairs may be stale. Regenerate with: python -m coding generate-sheets"))
+                print(_sub("  (nonpermutability pairs are derived from the planar structure, not annotated directly)"))
+                total_w += len(stale)
+
     return total_e, total_w
 
 
