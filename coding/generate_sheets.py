@@ -761,6 +761,10 @@ def main() -> None:
     - Uploads the merged manifest.json manifest to Drive after each language.
     - Regenerates contributor notebooks at the end.
     """
+    if "--push-manifest" in sys.argv:
+        push_manifest()
+        return
+
     force = "--force" in sys.argv
 
     planar_files = sorted(CODED_DATA.glob("*/lang_setup/planar_*.tsv"))
