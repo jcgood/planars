@@ -158,10 +158,12 @@ Uses a **pair-row sheet**: each row is a (Element_A, Element_B) pair with a `sco
 
 ### Free occurrence
 
-Five criteria: `free`, `left-edge-of-free-form`, `right-edge-of-free-form`, `dependent-on-left`, `dependent-on-right`. The keystone row carries a real `free` value (`keystone_active_default: true`), but `left-edge-of-free-form` and `right-edge-of-free-form` are always `na` on the keystone (self-referential). Two spans:
+Five criteria: `free`, `left-edge-of-free-form`, `right-edge-of-free-form`, `dependent-on-left`, `dependent-on-right`. The keystone row carries a real `free` value (`keystone_active_default: true`), but all annotation columns are always `na` on the keystone (it is the anchor, not a dependent). Two spans:
 
 - **Minimal**: if keystone `free=y`, the keystone position alone; if `free=n`, the span from the keystone's `dependent-on-left` to `dependent-on-right` positions.
 - **Maximal**: from the leftmost to rightmost free-occurrence-internal position. A position is internal if any element has `left-edge-of-free-form=y` (left of keystone), `right-edge-of-free-form=y` (right of keystone), or a `dependent-on-left`/`dependent-on-right` value equal to the keystone position number.
+
+All four annotation columns (`left-edge-of-free-form`, `right-edge-of-free-form`, `dependent-on-left`, `dependent-on-right`) apply to **bound elements only** (`free=n`). Free elements (`free=y`) receive `na` in all annotation columns — they are filtered out of additional annotation at sheet generation time.
 
 `free` is **pre-filled from the noninterruption sheet** at generation time — annotate noninterruption before generating the free_occurrence sheet. `integrity-check` warns when `free` values differ across sheets (e.g. after a noninterruption edit).
 

@@ -139,31 +139,38 @@ def derive_nonpermutability_domains(
     fixed-order by structure. scopal=y means variable order carries an obligatory
     scope difference; scopal=n means freely variable (no meaning difference).
 
-    Three span types
-    ----------------
-    Strict non-permutable span (structurally derived, no annotation needed):
+    Qualification rule (mirrors diagnostic_classes.yaml)
+    -----------------------------------------------------
+    Three span types (all strict — non-permutability domains are inherently
+    contiguous). Qualification is evaluated per-position w.r.t. the keystone anchor.
+
+    STRICT NON-PERMUTABLE SPAN (structurally derived; no annotation required):
       A position qualifies iff:
-        1. It is a Slot (Zones are always excluded).
-        2. All elements at that position appear in only one position (no multi-slot
-           elements — their order is variable by structural definition).
-      The span is the largest contiguous chain of qualifying positions from keystone
-      outward; the first gap or non-qualifying position halts expansion.
+        (1) It is a Slot (Zones are always excluded).
+        (2) All elements at that position appear in only one position in the planar
+            (multi-slot elements have structurally variable order, so they cannot
+            anchor a strictly fixed chain).
+      The span is the largest contiguous chain of qualifying positions from the
+      keystone outward; the first gap or non-qualifying position halts expansion.
 
-    Minimal flexible non-permutable span (annotation-based):
-      Extends the strict span through additional contiguous positions that are not
-      free-permutable. A position is free-permutable if ANY element at that position
-      appears in a pair with scopal=n (freely variable order). The minimal span
-      contains no free-permutable positions.
+    FREE-PERMUTABLE POSITION (blocking condition; derived from annotation):
+      A position is free-permutable if ANY element at that position appears in a
+      pair with scopal=n (freely variable order, no scope difference).
+      An element appearing in both scopal=n and scopal=y pairs is treated as
+      partially non-permutable; its position is free-permutable for the minimal
+      span but may be interior in the maximal span.
 
-    Maximal flexible non-permutable span (annotation-based):
-      Like minimal, but free-permutable positions are allowed in the interior.
-      The span is the largest contiguous region from keystone where the outermost
-      (edge) positions are not free-permutable.
+    MINIMAL FLEXIBLE NON-PERMUTABLE SPAN:
+      Extends the strict span outward through additional contiguous positions that
+      are not free-permutable. No free-permutable positions appear anywhere in
+      the span. Computed as strict_span(all_positions - free_permutable_positions).
 
-    Note on partial non-permutability (Adam Tallman, issue #116):
-      An element appearing in both scopal=y and scopal=n pairs is "partially
-      non-permutable" — its position is free-permutable (excluded from the minimal
-      span) but may be included in the maximal span as an interior position.
+    MAXIMAL FLEXIBLE NON-PERMUTABLE SPAN:
+      Extends the minimal span outward through free-permutable interior positions,
+      as long as the outermost (edge) positions of the span are not free-permutable.
+      Computed by walking outward from keystone through all positions (including
+      free-permutable), stopping only at structural gaps, and recording the outermost
+      non-free-permutable position as the span edge.
 
     Args:
         tsv_path:    Path to the pair TSV (Element_A, Element_B, scopal, ...).

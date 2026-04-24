@@ -267,7 +267,7 @@ Results are also available via the coordinator and contributor Colab notebooks. 
 
 Some criteria appear in more than one sheet. Currently:
 
-- **`free`** appears in both `noninterruption` and `free_occurrence`. The `free_occurrence` sheet is generated with `free` **pre-filled from the noninterruption TSV** — annotate noninterruption first, then generate the free_occurrence sheet. Elements with `free=n` get `na` pre-filled in the left/right edge columns (not applicable for bound elements); elements with `free=y` get `na` in the dependency columns.
+- **`free`** appears in both `noninterruption` and `free_occurrence`. The `free_occurrence` sheet is generated with `free` **pre-filled from the noninterruption TSV** — annotate noninterruption first, then generate the free_occurrence sheet. Free elements (`free=y`) receive `na` in all annotation columns; bound elements (`free=n`) have all annotation columns left blank to fill in.
 
 If noninterruption is updated after the free_occurrence sheet is generated, the two sheets can drift. `python -m coding integrity-check` includes a **CROSS-SHEET CONSISTENCY** section that compares `free` values and reports mismatches as warnings. A mismatch usually means noninterruption was corrected after free_occurrence was generated — update the free_occurrence sheet to match, or regenerate it.
 

@@ -292,7 +292,7 @@ def _check_chart_keys() -> List[str]:
     _freeoc_pd = __import__("pandas")
     _freeoc_data_df = _freeoc_pd.DataFrame([
         {"Position_Number": 4, "Element": "elem-L",
-         "free": "y", "left-edge-of-free-form": "y", "right-edge-of-free-form": "na",
+         "free": "y", "left-edge-of-free-form": "na", "right-edge-of-free-form": "na",
          "dependent-on-left": "na", "dependent-on-right": "na"},
         {"Position_Number": 6, "Element": "elem-R",
          "free": "n", "left-edge-of-free-form": "na", "right-edge-of-free-form": "y",

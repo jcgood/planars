@@ -251,10 +251,10 @@ def _prefill_free_occurrence_rows(
     Reads noninterruption/general.tsv and sets 'free' for each element. Then
     applies conditional na values so annotators only fill in the columns that
     are relevant to each element:
-      - free=y rows: dependent-on-left and dependent-on-right → 'na'
-      - free=n rows: left-edge-of-free-form and right-edge-of-free-form → 'na'
-      - keystone row: left-edge-of-free-form and right-edge-of-free-form → 'na'
-        (self-referential; free value still pulled from noninterruption)
+      - free=y rows: ALL annotation columns → 'na' (free elements filtered out)
+      - free=n rows: ALL annotation columns left blank for annotators
+      - keystone row: ALL annotation columns → 'na' (self-referential anchor;
+        free value still pulled from noninterruption)
 
     Warns if the noninterruption TSV is missing or elements are absent from it.
     """
@@ -305,15 +305,15 @@ def _prefill_free_occurrence_rows(
         is_keystone = pos_name.strip().lower() == "v:verbstem"
 
         if is_keystone:
-            # Keystone: pull free from noninterruption; edge cols always na.
+            # Keystone: pull free from noninterruption; all annotation cols na
+            # (keystone is the anchor — edge and dependency columns are self-referential).
             if free_col is not None and free_map:
                 ks_free = free_map.get(element, "")
                 if ks_free:
                     row[free_col] = ks_free
-            if left_col is not None:
-                row[left_col] = "na"
-            if right_col is not None:
-                row[right_col] = "na"
+            for col in (left_col, right_col, dep_left_col, dep_right_col):
+                if col is not None:
+                    row[col] = "na"
         else:
             free_val = free_map.get(element, "")
             if not free_val and free_map:
@@ -323,15 +323,11 @@ def _prefill_free_occurrence_rows(
                 row[free_col] = free_val
 
             if free_val == "y":
-                if dep_left_col is not None:
-                    row[dep_left_col] = "na"
-                if dep_right_col is not None:
-                    row[dep_right_col] = "na"
-            elif free_val == "n":
-                if left_col is not None:
-                    row[left_col] = "na"
-                if right_col is not None:
-                    row[right_col] = "na"
+                # Free elements: all annotation columns are na (filtered out).
+                for col in (left_col, right_col, dep_left_col, dep_right_col):
+                    if col is not None:
+                        row[col] = "na"
+            # free=n: leave all annotation columns blank for annotators.
 
         updated.append(row)
 

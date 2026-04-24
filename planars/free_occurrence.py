@@ -36,25 +36,36 @@ def derive_free_occurrence_spans(
     Qualification rules designed in issue #99 (Apr 2026).
 
     Data model: element rows with five criterion columns.
-    free: re-coded independently (use noninterruption as reference).
-    left-edge-of-free-form / right-edge-of-free-form: always na on keystone.
-    dependent-on-left / dependent-on-right: position number (as string) or na.
+    free: pre-filled from noninterruption/general.tsv at sheet generation time.
+    All annotation columns (left-edge-of-free-form, right-edge-of-free-form,
+    dependent-on-left, dependent-on-right) apply to bound elements (free=n) only;
+    free elements (free=y) receive na in all annotation columns. The keystone
+    always has na in all annotation columns (it is the anchor, not a dependent).
 
-    Two span types
-    --------------
-    Maximal free occurrence span:
-      leftmost to rightmost free-occurrence-internal position.
-      A position is internal if any element satisfies:
-        1. Position is left of keystone AND left-edge-of-free-form=y.
-        2. Position is right of keystone AND right-edge-of-free-form=y.
-        3. dependent-on-left or dependent-on-right = str(keystone_pos).
-      The keystone itself is always internal.
+    Qualification rule (mirrors diagnostic_classes.yaml)
+    -----------------------------------------------------
+    A position is free-occurrence-internal if ANY of the following hold:
+      1. It is to the left of the anchor (keystone) and left-edge-of-free-form=y for
+         at least one element.
+      2. It is to the right of the anchor and right-edge-of-free-form=y for at least
+         one element.
+      3. At least one of its elements has dependent-on-left or dependent-on-right
+         referencing the anchor's position number.
+
+    Maximal free occurrence span = leftmost to rightmost free-occurrence-internal
+    position.
 
     Minimal free occurrence span:
-      - If keystone free=y: span is (keystone_pos, keystone_pos).
-      - If keystone free=n: span extends to the keystone's dependent-on-left and/or
-        dependent-on-right positions (positions the keystone must co-occur with).
-        If neither dependency is given, defaults to the keystone position alone.
+      - If the keystone element is free (free=y): the span is the keystone position
+        alone (the single-free-form utterance is just the anchor).
+      - If the keystone is bound (free=n): the span is determined by the positions the
+        keystone depends on (dependent-on-left, dependent-on-right), since the keystone
+        requires those positions in order to be realized.
+
+    Note: Adam Tallman (2026-04-24, issue #99) confirmed that all annotation columns
+    (left-edge-of-free-form, right-edge-of-free-form, dependent-on-left,
+    dependent-on-right) apply only to bound elements (free=n); free elements (free=y)
+    receive na in all annotation columns.
 
     Args:
         tsv_path: Path to the filled free_occurrence TSV.

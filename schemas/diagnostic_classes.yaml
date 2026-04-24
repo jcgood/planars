@@ -260,8 +260,10 @@ classes:
       straddles morphosyntactic and phonological criteria (Tallman et al. 2024, ch. 1).
     specificity: general
     required_criteria: [free, left-edge-of-free-form, right-edge-of-free-form, dependent-on-left, dependent-on-right]
-    # free is re-coded independently in the free_occurrence sheet (use noninterruption as
-    # reference; differences flagged by integrity-check as warnings). See issue #99.
+    # free is pre-filled from noninterruption/general.tsv at sheet generation time.
+    # All annotation columns (left-edge-of-free-form, right-edge-of-free-form,
+    # dependent-on-left, dependent-on-right) apply to bound elements (free=n) only;
+    # free elements (free=y) receive na in all annotation columns. See issue #99.
     qualification_rule: >
       A position is free-occurrence-internal if ANY of the following hold:
         1. It is to the left of the anchor (keystone) and left-edge-of-free-form=y for
@@ -281,14 +283,14 @@ classes:
           keystone depends on (dependent-on-left, dependent-on-right), since the keystone
           requires those positions in order to be realized.
 
-      Note: Adam Tallman (2026-04-23, issue #99) clarified that these domains refer to
-      spans where it is possible to have exactly one single free form — "at least one free
-      element" was a misformulation. The dependency columns (dependent-on-left/right) are
-      only required for bound elements; free elements receive na.
-    qualification_rule_hash: "01ba4c81"
+      Note: Adam Tallman (2026-04-24, issue #99) confirmed that all annotation columns
+      (left-edge-of-free-form, right-edge-of-free-form, dependent-on-left,
+      dependent-on-right) apply only to bound elements (free=n); free elements (free=y)
+      receive na in all annotation columns.
+    qualification_rule_hash: "c9a14b77"
     status: "[AUTO-DERIVED]"
     keystone_active_default: true
-    keystone_na_criteria: [left-edge-of-free-form, right-edge-of-free-form]
+    keystone_na_criteria: [left-edge-of-free-form, right-edge-of-free-form, dependent-on-left, dependent-on-right]
     collection_required: "y"
     criterion_set_status: stable
 
