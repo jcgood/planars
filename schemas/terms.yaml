@@ -178,22 +178,22 @@ chart_labels:
           the first position where ALL elements have obligatory = y AND independence = y.
 
   nonpermutability:
-    - label: "nonperm strict complete"
+    - label: "nonperm strict"
       meaning: >
-        Strict (absolutely fixed order) non-permutability domain, complete positions:
-        ALL elements in each position have permutable=n.
-    - label: "nonperm strict partial"
+        Strict non-permutability domain (structurally derived): the largest contiguous
+        span from keystone where every position is a Slot and all its elements appear
+        in exactly one position. No annotation required; derived from the planar structure.
+    - label: "nonperm flexible minimal"
       meaning: >
-        Strict non-permutability domain, partial positions:
-        AT LEAST ONE element has permutable=n.
-    - label: "nonperm flexible complete"
+        Minimal flexible non-permutability domain: extends the strict span through
+        additional contiguous positions that contain no free-permutable elements
+        (i.e., no element appears in a scopal=n variable-order pair). No
+        free-permutable positions occur anywhere inside the span.
+    - label: "nonperm flexible maximal"
       meaning: >
-        Flexible (fixed or scopal) non-permutability domain, complete positions:
-        ALL elements have permutable=n OR (permutable=y AND scopal=y).
-    - label: "nonperm flexible partial"
-      meaning: >
-        Flexible non-permutability domain, partial positions:
-        AT LEAST ONE element has permutable=n OR (permutable=y AND scopal=y).
+        Maximal flexible non-permutability domain: extends the minimal span through
+        free-permutable interior positions, as long as the outermost (edge) positions
+        of the span are not free-permutable.
 
   free_occurrence:
     - label: "free strict complete"
@@ -338,10 +338,9 @@ span_label_map:
     maximal_complete_span: "metr maximal complete"
 
   nonpermutability:
-    strict_complete_span:   "nonperm strict complete"
-    strict_partial_span:    "nonperm strict partial"
-    flexible_complete_span: "nonperm flexible complete"
-    flexible_partial_span:  "nonperm flexible partial"
+    strict_span:           "nonperm strict"
+    minimal_flexible_span: "nonperm flexible minimal"
+    maximal_flexible_span: "nonperm flexible maximal"
 
   subspanrepetition:
     categories:

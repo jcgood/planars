@@ -203,38 +203,49 @@ classes:
       among verbal elements; the non-permutability domain tests the span over which
       linear ordering is strictly or conditionally fixed.
     specificity: general
-    required_criteria: [permutable, scopal]
+    # Sheet format: pair rows (Element_A, Element_B, scopal) — NOT element rows.
+    # generate-sheets uses Option C: all structurally variable pairs are enumerated
+    # as candidates; annotators fill in scopal for each. Pairs not in the sheet are
+    # implicitly fixed-order by structural definition.
+    required_criteria: [scopal]
     optional_criteria: []
     qualification_rule: >
-      Two domain types, each with complete and partial position sets = 4 strict spans.
-      Both use strict span only (no loose span) — a non-permutable domain is inherently
-      contiguous.
+      Three span types (all strict — non-permutability domains are inherently
+      contiguous). Qualification is evaluated per-position w.r.t. the keystone anchor.
 
-      Complete vs. partial:
-        partial:  any element in the position satisfies the qualification rule
-                  (easier to qualify → larger domain).
-        complete: all elements in the position satisfy the qualification rule
-                  (harder to qualify → smaller domain).
+      STRICT NON-PERMUTABLE SPAN (structurally derived; no annotation required):
+        A position qualifies iff:
+          (1) It is a Slot (Zones are always excluded).
+          (2) All elements at that position appear in only one position in the planar
+              (multi-slot elements have structurally variable order, so they cannot
+              anchor a strictly fixed chain).
+        The span is the largest contiguous chain of qualifying positions from the
+        keystone outward; the first gap or non-qualifying position halts expansion.
 
-      Strict non-permutability — blocked by: permutable=y AND scopal=n.
-        Positions where ALL (complete) or ANY (partial) elements have permutable=n.
-        Identifies spans with absolutely fixed ordering under all circumstances.
+      FREE-PERMUTABLE POSITION (blocking condition; derived from annotation):
+        A position is free-permutable if ANY element at that position appears in a
+        pair with scopal=n (freely variable order, no scope difference).
+        An element appearing in both scopal=n and scopal=y pairs is treated as
+        partially non-permutable; its position is free-permutable for the minimal
+        span but may be interior in the maximal span.
 
-      Flexible non-permutability — blocked by: permutable=y AND scopal=n.
-        Positions where ALL (complete) or ANY (partial) elements have
-        permutable=n OR (permutable=y AND scopal=y). Extends the strict domain
-        to include positions whose elements can permute but only with a scopal
-        interpretation difference (fixed vs. scope-varying ordering counts
-        as "non-permutable" under this interpretation).
-    qualification_rule_hash: "c14de1a8"
-    criterion_set_status: "[PROVISIONAL]"  # Known gaps: verb-class-conditioned permutability
-      # (issue #67) and fluid/multi-position formatives (issue #66) may require additional
-      # parameters once the linguistic questions are resolved.
-    # Note: zone-internal permutability (variable ordering NOT conditioned by scope, e.g.,
-    # Quechua TAME zone, Mocoví trlocdir) annotates as permutable=y, scopal=n — these
-    # positions fall outside both strict and flexible domains. Confirmed across 5+ languages.
-    status: "[AUTO-DERIVED: likely stable — qualification rules confirmed across 5+ language
-      chapters (ch. 3, 6, 8, 9, 12, 14, 16); coordinator sign-off needed to remove AUTO-DERIVED]"
+      MINIMAL FLEXIBLE NON-PERMUTABLE SPAN:
+        Extends the strict span outward through additional contiguous positions that
+        are not free-permutable. No free-permutable positions appear anywhere in
+        the span. Computed as strict_span(all_positions - free_permutable_positions).
+
+      MAXIMAL FLEXIBLE NON-PERMUTABLE SPAN:
+        Extends the minimal span outward through free-permutable interior positions,
+        as long as the outermost (edge) positions of the span are not free-permutable.
+        Computed by walking outward from keystone through all positions (including
+        free-permutable), stopping only at structural gaps, and recording the outermost
+        non-free-permutable position as the span edge.
+    qualification_rule_hash: "6edfcae4"
+    criterion_set_status: stable
+    status: "[AUTO-DERIVED: NEEDS REVIEW — qualification rule redesigned Apr 2026 (issue
+      #116) to use pair-row annotation. Previous 4-span model (permutable/scopal per
+      element) replaced by 3-span model (scopal per pair; strict span now structurally
+      derived). Coordinator sign-off needed before promoting to stable.]"
     keystone_active_default: false
     collection_required: "y"
 
@@ -244,32 +255,47 @@ classes:
     applicability: universal
     applicability_conditions: >
       Applies to every verbal planar structure. All languages have free and bound
-      elements; the free occurrence domain identifies the span of positions containing
-      elements that can constitute a standalone utterance. Classified as indeterminate
-      because free occurrence straddles morphosyntactic and phonological criteria
-      (Tallman et al. 2024, ch. 1).
+      elements; the free occurrence domain identifies the span of positions that can
+      contain a single free form. Classified as indeterminate because free occurrence
+      straddles morphosyntactic and phonological criteria (Tallman et al. 2024, ch. 1).
     specificity: general
-    required_criteria: [free]
-    optional_criteria: [multiple]  # present when noninterruption is run on the same sheet
+    required_criteria: [free, left-edge-of-free-form, right-edge-of-free-form, dependent-on-left, dependent-on-right]
+    # NEEDS REVIEW (issue #99): whether free is re-coded here or derived from the noninterruption sheet.
+    # If derived, required_criteria should drop free and the module must read two TSVs at runtime.
     qualification_rule: >
-      The free occurrence domain = positions where free=y.
-      Four span variants (strict/loose × complete/partial) = 4 spans total.
-        complete: ALL elements in the position have free=y.
-        partial:  AT LEAST ONE element in the position has free=y.
-      Both strict and loose spans are computed (unlike noninterruption, which uses
-      strict-only, free occurrence domains need not be contiguous).
+      [NEEDS REVIEW — see issue #99; open questions: sheet architecture, whether free is
+      re-coded or cross-sheet, and whether the module reads one TSV or two]
 
-      Note on minimal vs. maximal free occurrence (Tallman et al. 2024, ch. 1):
-      The Introduction distinguishes the minimal free occurrence domain (the smallest
-      span that can stand as an independent utterance) from the maximal free occurrence
-      domain (the largest such span). In the planar framework these correspond to the
-      strict complete span (conservative/minimal) and the loose partial span
-      (liberal/maximal) respectively. No additional criterion is needed.
-    qualification_rule_hash: "101625a7"
-    status: stable
+      A position is free-occurrence-internal if ANY of the following hold:
+        1. It is to the left of the anchor (keystone) and left-edge-of-free-form=y for
+           at least one element.
+        2. It is to the right of the anchor and right-edge-of-free-form=y for at least
+           one element.
+        3. At least one of its elements has dependent-on-left or dependent-on-right
+           referencing the anchor's position number.
+
+      Maximal free occurrence span = leftmost to rightmost free-occurrence-internal
+      position.
+
+      Minimal free occurrence span:
+        - If the keystone element is free (free=y): the span is the keystone position
+          alone (the single-free-form utterance is just the anchor).
+        - If the keystone is bound (free=n): the span is determined by the positions the
+          keystone depends on (dependent-on-left, dependent-on-right), since the keystone
+          requires those positions in order to be realized.
+
+      Note: Adam Tallman (2026-04-23, issue #99) clarified that these domains refer to
+      spans where it is possible to have exactly one single free form — "at least one free
+      element" was a misformulation. The dependency columns (dependent-on-left/right) are
+      only required for bound elements; free elements receive na.
+    qualification_rule_hash: "fdcbd26e"
+    status: "[NEEDS REVIEW — original design (reuse noninterruption sheet, 4 strict/loose \xD7
+      complete/partial spans) was incorrect. Redesigned April 2026 (issue #99) with
+      dependency columns and min/max fracture structure. Module rewrite pending Adam's
+      answers on cross-sheet architecture. Do not use for annotation until resolved.]"
     keystone_active_default: false
     collection_required: "y"
-    criterion_set_status: stable
+    criterion_set_status: "[NEEDS REVIEW — four new criteria added 2026-04-23; see issue #99]"
 
   - name: proform
     display_name: "Proform"

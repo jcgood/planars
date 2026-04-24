@@ -264,11 +264,28 @@ def _check_chart_keys() -> List[str]:
            _make_minimal_tsv(["widescope_left", "widescope_right", "fillable_botheither_conjunct"]),
            subspanrepetition._REQUIRED_CRITERIA)
 
-    # nonpermutability (strict+flexible × complete/partial — all strict spans)
+    # nonpermutability: pair-row model; synthetic _data 6-tuple instead of element TSV.
     nonperm_keys = [k for k, _ in _NONPERM_SPANS]
-    _check("nonpermutability", nonpermutability.derive_nonpermutability_domains, nonperm_keys,
-           _make_minimal_tsv(list(nonpermutability._REQUIRED_CRITERIA)),
-           nonpermutability._REQUIRED_CRITERIA)
+    _nonperm_pair_df = __import__("pandas").DataFrame(
+        [{"Element_A": "a", "Element_B": "b", "scopal": "y"}]
+    )
+    _nonperm_data = (
+        _nonperm_pair_df,
+        5,                          # keystone_pos
+        {4: "v:left1", 5: "v:verbstem", 6: "v:right1"},  # pos_to_name
+        {4: "Slot", 6: "Slot"},     # pos_type
+        {4: ["a"], 6: ["b"]},       # pos_to_elements
+        {"a": {4}, "b": {6}},       # elem_to_positions
+    )
+    try:
+        _nonperm_result = nonpermutability.derive_nonpermutability_domains(
+            _data=_nonperm_data, strict=False
+        )
+        for key in nonperm_keys:
+            if key not in _nonperm_result:
+                errors.append(f"[nonpermutability] chart references key '{key}' not in result dict")
+    except Exception as e:
+        errors.append(f"[nonpermutability] could not run derive function: {e}")
 
     # simple 4-span modules (strict/loose × complete/partial)
     simple_cases = [

@@ -311,7 +311,11 @@ def _collect_spans_sheets(gc, manifest, lang_id: Optional[str] = None):
                 required = set(
                     construction_params.get(construction, {}).get("param_names", [])
                 )
-                loaded = load_filled_sheet(ws, required_criteria=required, strict=False)
+                try:
+                    loaded = load_filled_sheet(ws, required_criteria=required, strict=False)
+                except Exception as e:
+                    print(f"  WARNING: could not parse {class_name}/{construction} sheet for {lid}: {e}")
+                    continue
                 result = derive_fn(_data=loaded, strict=False)
                 rows.extend(row_fn(result, lid))
                 if lid not in lang_meta:

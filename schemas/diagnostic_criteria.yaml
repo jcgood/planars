@@ -176,55 +176,97 @@ analyses:
 
   - name: nonpermutability
     description: >
-      [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design and qualification rules were
-      automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13
-      (Araona) and the intro §Fracturing. Verify before use.
+      [AUTO-DERIVED: NEEDS REVIEW] Qualification rule redesigned Apr 2026 (issue #116)
+      to use a pair-row annotation model. The old per-element permutable/scopal
+      column model has been replaced. Verify before use.
 
       Tests which positions fall within the non-permutability domain of the verbal
-      planar structure — a span where elements occur in a fixed linear order relative
-      to one another. Two domain types are derived based on how strictly "fixed order"
-      is interpreted (Tallman et al. 2024, intro §Fracturing).
+      planar structure. The annotation sheet lists PAIRS of elements that can be
+      variably ordered (Option C enumeration from the planar structure). Annotators
+      assess scopal for each pair. Strict non-permutability is derived from the planar
+      structure, not annotated. Three span types result (strict, minimal flexible,
+      maximal flexible). See schemas/diagnostic_classes.yaml for the full qualification
+      rule and schemas/terms.yaml for span label definitions.
     diagnostic_criteria:
-
-      - name: permutable
-        values: [y, n]
-        description: >
-          Whether the element's position can vary relative to elements of adjacent
-          positions. n = fixed order (the element never swaps position with neighboring
-          elements); y = variable order (the element can appear in different linear
-          positions). Fixed-order elements (permutable=n) qualify for both the strict
-          and flexible non-permutability domains.
 
       - name: scopal
         values: [y, n]
         description: >
-          If permutable=y, whether variable ordering is associated with an obligatory
-          difference in semantic scope. y = scopal permutation (the element qualifies
-          for the flexible non-permutability domain); n = free permutation with no
-          meaning difference (the element does not qualify for either domain).
-          When permutable=n, this value is irrelevant (use n).
+          Pair-level criterion: whether the variable ordering of (Element_A, Element_B)
+          is associated with an obligatory difference in semantic scope.
+          y = scopal permutation (the two orders carry different scope readings; the
+              pair is non-permutable under the flexible interpretation).
+          n = free permutation (the two orders are semantically equivalent; the pair
+              is freely permutable and excluded from both strict and flexible domains).
+          An element appearing in one scopal=y pair and one scopal=n pair is treated as
+          partially non-permutable (Adam Tallman, issue #116, Apr 2026).
 
   - name: free_occurrence
     description: >
-      [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design and qualification rules were
-      automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13
-      (Araona) §Free occurrence. Verify before use.
+      [NEEDS REVIEW — redesigned in issue #99; open questions on sheet architecture
+      and cross-sheet free criterion dependency remain; see issue #99 comments 2026-04-23]
 
-      Tests which positions contain free forms — elements that can constitute a
-      standalone utterance independently of the verbal head. The free occurrence
-      domain identifies the span of positions where free forms occur (free=y).
-      Classified as an indeterminate domain (Tallman et al. 2024) because free
-      occurrence sits between morphosyntactic and phonological criteria.
+      Tests which positions are free-occurrence-internal — i.e., which positions can
+      be part of a span containing exactly one free form. A position is
+      free-occurrence-internal if (a) it is to the left of the anchor (keystone) and
+      left-edge-of-free-form=y, (b) to the right of the anchor and
+      right-edge-of-free-form=y, or (c) dependent on the anchor via dependent-on-left
+      or dependent-on-right. The maximal span runs from the leftmost to rightmost such
+      position. The minimal span is the keystone alone (if free) or the positions the
+      keystone depends on (if bound). Classified as indeterminate (Tallman et al. 2024)
+      because free occurrence straddles morphosyntactic and phonological criteria.
     diagnostic_criteria:
 
       - name: free
         values: [y, n]
         description: >
           Whether the element is morphosyntactically free — i.e., it can occur as a
-          standalone utterance independently of the verbal head. Bound elements
-          (free=n) cannot occur independently. This is the same criterion used in
-          noninterruption; if both analyses are run, a single sheet with both
-          `free` and `multiple` columns covers both.
+          standalone utterance independently of the verbal head, passing the minimal
+          free form test. Bound elements (free=n) cannot occur independently.
+          [NEEDS REVIEW: open question (#99) whether this is re-coded here or derived
+          from the noninterruption sheet.]
+
+      - name: left-edge-of-free-form
+        values: [y, n]
+        description: >
+          Whether this element can be the first element in an utterance that is a
+          single free form (i.e., the minimal free occurrence domain can begin here).
+          Only asked for elements to the left of the keystone anchor. Bound elements
+          (free=n) that cannot serve as the left edge of any free-form utterance
+          receive n; free elements that can begin a standalone utterance receive y.
+
+      - name: right-edge-of-free-form
+        values: [y, n]
+        description: >
+          Whether this element can be the last element in an utterance that is a
+          single free form (i.e., the minimal free occurrence domain can end here).
+          Only asked for elements to the right of the keystone anchor. Bound elements
+          (free=n) that cannot serve as the right edge of any free-form utterance
+          receive n; free elements that can end a standalone utterance receive y.
+
+      - name: dependent-on-left
+        values: [na, "<position_number>"]
+        description: >
+          For bound elements (free=n) only: the position number to the LEFT of this
+          element that this element must attach to in order to be realized. na for
+          free elements or bound elements with no left dependency. Can reference up
+          to one position (for elements that depend on two positions, use both
+          dependent-on-left and dependent-on-right). Position numbers must match
+          Position_Number values in the planar structure.
+          [NEEDS REVIEW: position_ref type — not a fixed value set; validated by
+          cross-referencing the planar structure.]
+
+      - name: dependent-on-right
+        values: [na, "<position_number>"]
+        description: >
+          For bound elements (free=n) only: the position number to the RIGHT of this
+          element that this element must attach to in order to be realized. na for
+          free elements or bound elements with no right dependency. Can reference up
+          to one position (for elements that depend on two positions, use both
+          dependent-on-left and dependent-on-right). Position numbers must match
+          Position_Number values in the planar structure.
+          [NEEDS REVIEW: position_ref type — not a fixed value set; validated by
+          cross-referencing the planar structure.]
 
   # aspiration is retired as of issue #100 — now handled by segmental
   # (construction aspiration_prominence). Criteria moved to segmental section below.

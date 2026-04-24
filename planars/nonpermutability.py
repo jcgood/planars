@@ -1,109 +1,271 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
-from planars.io import load_filled_tsv
-from planars.spans import fmt_span, strict_span, position_sets_from_element_mask
+import pandas as pd
 
-_REQUIRED_CRITERIA = {"permutable", "scopal"}
+from planars.spans import fmt_span, strict_span
 
+_REQUIRED_CRITERIA = {"scopal"}
+_KEYSTONE_NAME = "v:verbstem"
+_TRAILING_COLS = {"Source", "Comments"}
+
+
+# ---------------------------------------------------------------------------
+# Planar helpers
+# ---------------------------------------------------------------------------
+
+def _split_elements(raw: str) -> List[str]:
+    """Brace-aware comma split for element strings."""
+    parts: List[str] = []
+    current: List[str] = []
+    depth = 0
+    for ch in raw:
+        if ch == "{":
+            depth += 1
+            current.append(ch)
+        elif ch == "}":
+            depth -= 1
+            current.append(ch)
+        elif ch == "," and depth == 0:
+            parts.append("".join(current).strip())
+            current = []
+        else:
+            current.append(ch)
+    if current:
+        parts.append("".join(current).strip())
+    return [p for p in parts if p]
+
+
+def _load_planar(planar_path: Path, lang_id: str):
+    """Read planar TSV; return planar data structures needed for span derivation.
+
+    Returns:
+        keystone_pos     : int
+        pos_to_name      : {pos: name}
+        pos_type         : {pos: "Slot"|"Zone"}
+        pos_to_elements  : {pos: [elem, ...]}  (keystone excluded)
+        elem_to_positions: {elem: set(pos)}    (keystone excluded)
+        all_positions    : set of all position numbers (keystone included)
+    """
+    df = pd.read_csv(planar_path, sep="\t", dtype=str, keep_default_na=False)
+    df = df[df["Language_ID"] == lang_id]
+
+    pos_to_name: Dict[int, str] = {}
+    pos_type: Dict[int, str] = {}
+    pos_to_elements: Dict[int, List[str]] = {}
+    elem_to_positions: Dict[str, Set[int]] = {}
+    keystone_pos: Optional[int] = None
+
+    for _, row in df.iterrows():
+        pos = int(row["Position"])
+        pname = row["Position_Name"].strip()
+        ptype = row["Position_Type"].strip()
+        pos_to_name[pos] = pname
+        pos_type[pos] = ptype
+
+        elements = _split_elements(row.get("Elements", "") or "")
+
+        if pname.lower() == _KEYSTONE_NAME:
+            keystone_pos = pos
+            continue
+
+        pos_to_elements[pos] = elements
+        for elem in elements:
+            elem_to_positions.setdefault(elem, set()).add(pos)
+
+    if keystone_pos is None:
+        raise ValueError(f"No keystone row (Position_Name == '{_KEYSTONE_NAME}') in planar.")
+
+    return keystone_pos, pos_to_name, pos_type, pos_to_elements, elem_to_positions
+
+
+# ---------------------------------------------------------------------------
+# Maximal flexible span computation
+# ---------------------------------------------------------------------------
+
+def _maximal_flexible_span(
+    all_positions: Set[int],
+    free_perm_positions: Set[int],
+    keystone_pos: int,
+) -> Tuple[int, int]:
+    """Largest contiguous span from keystone where edge positions are not free-permutable.
+
+    Walks outward through all positions (including free-permutable ones), stops only
+    at structural gaps. The edge of the returned span is always a non-free-permutable
+    position. If all positions on one side are free-permutable, that edge stays at
+    the keystone.
+    """
+    left_edge = keystone_pos
+    prev = keystone_pos
+    for pos in sorted([p for p in all_positions if p < keystone_pos], reverse=True):
+        if pos != prev - 1:
+            break
+        prev = pos
+        if pos not in free_perm_positions:
+            left_edge = pos
+
+    right_edge = keystone_pos
+    prev = keystone_pos
+    for pos in sorted([p for p in all_positions if p > keystone_pos]):
+        if pos != prev + 1:
+            break
+        prev = pos
+        if pos not in free_perm_positions:
+            right_edge = pos
+
+    return left_edge, right_edge
+
+
+# ---------------------------------------------------------------------------
+# Main derive function
+# ---------------------------------------------------------------------------
 
 def derive_nonpermutability_domains(
     tsv_path: Optional[Path] = None,
     strict: bool = True,
     *,
-    _data: Optional[Tuple] = None,
+    planar_path: Optional[Path] = None,
+    _data=None,
 ) -> Dict[str, object]:
-    """Derive non-permutability spans from a filled nonpermutability TSV.
+    """Derive non-permutability spans from a filled nonpermutability pair TSV.
 
-    [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design and qualification rules were
-    automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13
-    (Araona) and the intro §Fracturing. Verify before use for annotation or analysis.
+    [AUTO-DERIVED: NEEDS REVIEW] Qualification rules designed in issue #116 (Apr 2026).
+    Verify before use for annotation or analysis.
 
-    Two domain types, each with complete/partial qualification = 4 strict spans:
+    Data model: pair rows (Element_A, Element_B, scopal). Each row asserts that
+    the two named elements can be variably ordered. Pairs not listed are assumed
+    fixed-order by structure. scopal=y means variable order carries an obligatory
+    scope difference; scopal=n means freely variable (no meaning difference).
 
-    Strict non-permutability — positions where elements have absolutely fixed order:
-      complete: ALL elements have permutable=n
-      partial:  >=1 element has permutable=n
+    Three span types
+    ----------------
+    Strict non-permutable span (structurally derived, no annotation needed):
+      A position qualifies iff:
+        1. It is a Slot (Zones are always excluded).
+        2. All elements at that position appear in only one position (no multi-slot
+           elements — their order is variable by structural definition).
+      The span is the largest contiguous chain of qualifying positions from keystone
+      outward; the first gap or non-qualifying position halts expansion.
 
-    Flexible non-permutability — positions where order is fixed OR variable only
-    with an obligatory scope difference (scopal permutation):
-      complete: ALL elements have permutable=n OR (permutable=y AND scopal=y)
-      partial:  >=1 element has permutable=n OR (permutable=y AND scopal=y)
+    Minimal flexible non-permutable span (annotation-based):
+      Extends the strict span through additional contiguous positions that are not
+      free-permutable. A position is free-permutable if ANY element at that position
+      appears in a pair with scopal=n (freely variable order). The minimal span
+      contains no free-permutable positions.
 
-    Diagnostic criteria
-    -------------------
-    permutable : y/n — whether the element's position can vary relative to adjacent
-                 positions. n = fixed order (qualifies for both domains).
-    scopal     : y/n — if permutable=y, whether variable ordering is associated with
-                 a difference in semantic scope. y = scopal (qualifies for flexible
-                 domain only); n = free permutation (does not qualify for either domain).
+    Maximal flexible non-permutable span (annotation-based):
+      Like minimal, but free-permutable positions are allowed in the interior.
+      The span is the largest contiguous region from keystone where the outermost
+      (edge) positions are not free-permutable.
 
-    Qualification rule (mirrors diagnostic_classes.yaml)
-    ----------------------------------------------------
-    Two domain types, each with complete and partial position sets = 4 strict spans.
-    Both use strict span only (no loose span) — a non-permutable domain is inherently
-    contiguous.
-    Complete vs. partial:
-      partial:  any element in the position satisfies the qualification rule
-                (easier to qualify → larger domain).
-      complete: all elements in the position satisfy the qualification rule
-                (harder to qualify → smaller domain).
+    Note on partial non-permutability (Adam Tallman, issue #116):
+      An element appearing in both scopal=y and scopal=n pairs is "partially
+      non-permutable" — its position is free-permutable (excluded from the minimal
+      span) but may be included in the maximal span as an interior position.
 
-    Strict non-permutability — blocked by: permutable=y AND scopal=n.
-      Positions where ALL (complete) or ANY (partial) elements have permutable=n.
-      Identifies spans with absolutely fixed ordering under all circumstances.
+    Args:
+        tsv_path:    Path to the pair TSV (Element_A, Element_B, scopal, ...).
+        strict:      If True, raise on missing scopal values; otherwise leave blanks.
+        planar_path: Optional explicit path to planar TSV. If None, derived from
+                     tsv_path: coded_data/{lang_id}/lang_setup/planar_{lang_id}.tsv.
+        _data:       Not yet supported for this module (pair-row sheets require a
+                     separate loading path). Will raise NotImplementedError.
 
-    Flexible non-permutability — blocked by: permutable=y AND scopal=n.
-      Positions where ALL (complete) or ANY (partial) elements have
-      permutable=n OR (permutable=y AND scopal=y). Extends the strict domain
-      to include positions whose elements can permute but only with a scopal
-      interpretation difference (fixed vs. scope-varying ordering counts
-      as "non-permutable" under this interpretation).
-
-    Returns a dict with keystone_position, position_number_to_name, element_table,
-    missing_data, and positions and spans for each of the four combinations.
+    Returns dict with:
+        keystone_position, position_number_to_name, pair_table, missing_data,
+        strict_positions, free_permutable_positions,
+        strict_span, minimal_flexible_span, maximal_flexible_span.
     """
     if _data is not None:
-        data_df, keystone_pos, pos_to_name, _, _ = _data
+        # _data = (pair_df, keystone_pos, pos_to_name, pos_type,
+        #          pos_to_elements, elem_to_positions)
+        # Used for synthetic testing; live-sheet loading is not yet supported.
+        pair_df, keystone_pos, pos_to_name, pos_type, pos_to_elements, elem_to_positions = _data
     else:
-        data_df, keystone_pos, pos_to_name, _, _ = load_filled_tsv(tsv_path, _REQUIRED_CRITERIA, strict=strict)
+        lang_id = tsv_path.parent.parent.name
+        if planar_path is None:
+            planar_path = tsv_path.parent.parent / "lang_setup" / f"planar_{lang_id}.tsv"
+        keystone_pos, pos_to_name, pos_type, pos_to_elements, elem_to_positions = \
+            _load_planar(planar_path, lang_id)
+        pair_df = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
 
-    missing_data = {}
+    all_positions = set(pos_to_name.keys())
+
+    trailing = _TRAILING_COLS
+    param_cols = [c for c in pair_df.columns if c not in {"Element_A", "Element_B"} and c not in trailing]
+
+    missing_data: Dict[str, list] = {}
     if not strict:
-        for c in sorted(_REQUIRED_CRITERIA):
-            blank_els = data_df.loc[data_df[c] == "", "Element"].tolist()
-            if blank_els:
-                missing_data[c] = blank_els
+        for col in param_cols:
+            blanks = [
+                f"{r['Element_A']} × {r['Element_B']}"
+                for _, r in pair_df.iterrows()
+                if r.get(col, "") == ""
+            ]
+            if blanks:
+                missing_data[col] = blanks
+    elif "scopal" in param_cols:
+        blank_pairs = [
+            f"{r['Element_A']} × {r['Element_B']}"
+            for _, r in pair_df.iterrows()
+            if r.get("scopal", "") == ""
+        ]
+        if blank_pairs:
+            raise ValueError(f"Missing scopal values for: {blank_pairs}")
 
-    # Strict domain: element must have absolutely fixed order (permutable=n).
-    data_df["is_strict_nonpermutable"] = data_df["permutable"] == "n"
+    # Build pair lookup: element → frozenset of (partner, scopal) tuples.
+    elem_scopal: Dict[str, list] = {}
+    for _, row in pair_df.iterrows():
+        ea, eb, sc = row.get("Element_A", ""), row.get("Element_B", ""), row.get("scopal", "")
+        if ea:
+            elem_scopal.setdefault(ea, []).append(sc)
+        if eb:
+            elem_scopal.setdefault(eb, []).append(sc)
 
-    # Flexible domain: element has fixed order OR variable order with obligatory
-    # scope difference (scopal permutation is still considered "non-permutable"
-    # under the flexible interpretation).
-    data_df["is_flexible_nonpermutable"] = (
-        (data_df["permutable"] == "n") |
-        ((data_df["permutable"] == "y") & (data_df["scopal"] == "y"))
+    # Free-permutable elements: appear in any scopal=n pair.
+    free_perm_elems: Set[str] = {
+        elem for elem, scopals in elem_scopal.items() if "n" in scopals
+    }
+
+    # Free-permutable positions: any element at the position is free-permutable.
+    non_keystone_positions = set(pos_to_elements.keys())
+    free_perm_positions: Set[int] = {
+        pos for pos in non_keystone_positions
+        if any(e in free_perm_elems for e in pos_to_elements.get(pos, []))
+    }
+
+    # Strict non-permutable positions (structural).
+    # Condition 1: Slot. Condition 2: all elements appear in exactly one position.
+    strict_positions: Set[int] = {
+        pos for pos in non_keystone_positions
+        if pos_type.get(pos) == "Slot"
+        and all(len(elem_to_positions.get(e, set())) == 1 for e in pos_to_elements.get(pos, []))
+    }
+
+    # Spans.
+    strict_span_result = strict_span(strict_positions, keystone_pos)
+
+    # Minimal flexible: strict span extended through non-free-permutable positions.
+    minimal_flex_qual = non_keystone_positions - free_perm_positions
+    minimal_flex_span_result = strict_span(minimal_flex_qual, keystone_pos)
+
+    # Maximal flexible: can pass through free-permutable interior positions.
+    maximal_flex_span_result = _maximal_flexible_span(
+        all_positions, free_perm_positions, keystone_pos
     )
 
-    strict_partial,   strict_complete   = position_sets_from_element_mask(data_df, data_df["is_strict_nonpermutable"])
-    flexible_partial, flexible_complete = position_sets_from_element_mask(data_df, data_df["is_flexible_nonpermutable"])
-
     return {
-        "keystone_position": keystone_pos,
-        "position_number_to_name": pos_to_name,
-        "element_table": data_df,
-        "missing_data": missing_data,
-        "strict_complete_positions":   sorted(strict_complete),
-        "strict_partial_positions":    sorted(strict_partial),
-        "flexible_complete_positions": sorted(flexible_complete),
-        "flexible_partial_positions":  sorted(flexible_partial),
-        "strict_complete_span":        strict_span(strict_complete,   keystone_pos),
-        "strict_partial_span":         strict_span(strict_partial,    keystone_pos),
-        "flexible_complete_span":      strict_span(flexible_complete, keystone_pos),
-        "flexible_partial_span":       strict_span(flexible_partial,  keystone_pos),
+        "keystone_position":        keystone_pos,
+        "position_number_to_name":  pos_to_name,
+        "pair_table":               pair_df,
+        "missing_data":             missing_data,
+        "strict_positions":         sorted(strict_positions),
+        "free_permutable_positions": sorted(free_perm_positions),
+        "strict_span":              strict_span_result,
+        "minimal_flexible_span":    minimal_flex_span_result,
+        "maximal_flexible_span":    maximal_flex_span_result,
     }
 
 
@@ -112,31 +274,28 @@ def format_result(result: Dict[str, object]) -> str:
     p = result["position_number_to_name"]
     fmt = lambda span: fmt_span(span, p)
     lines = []
+
     missing = result.get("missing_data", {})
     if missing:
-        lines.append("NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.")
-        for col, elements in missing.items():
-            preview = elements[:5]
-            suffix = f" … ({len(elements)} total)" if len(elements) > 5 else ""
+        lines.append("NOTE: Some pairs have unannotated scopal values.")
+        for col, pairs in missing.items():
+            preview = pairs[:5]
+            suffix = f" … ({len(pairs)} total)" if len(pairs) > 5 else ""
             lines.append(f"  {col}: {preview}{suffix}")
         lines.append("")
+
     lines += [
         f"Keystone position: {result['keystone_position']} ({p.get(result['keystone_position'], '?')})",
         "",
-        f"Strict non-permutability complete positions:   {result['strict_complete_positions']}",
-        f"Strict non-permutability partial positions:    {result['strict_partial_positions']}",
-        f"Flexible non-permutability complete positions: {result['flexible_complete_positions']}",
-        f"Flexible non-permutability partial positions:  {result['flexible_partial_positions']}",
+        f"Strictly non-permutable positions (structural): {result['strict_positions']}",
+        f"Free-permutable positions (scopal=n pairs):     {result['free_permutable_positions']}",
         "",
-        f"Strict non-permutability complete span:   {fmt(result['strict_complete_span'])}",
-        f"Strict non-permutability partial span:    {fmt(result['strict_partial_span'])}",
-        f"Flexible non-permutability complete span: {fmt(result['flexible_complete_span'])}",
-        f"Flexible non-permutability partial span:  {fmt(result['flexible_partial_span'])}",
+        f"Strict non-permutable span:           {fmt(result['strict_span'])}",
+        f"Minimal flexible non-permutable span: {fmt(result['minimal_flexible_span'])}",
+        f"Maximal flexible non-permutable span: {fmt(result['maximal_flexible_span'])}",
     ]
     return "\n".join(lines)
 
 
-# Standard entry point used by generate_notebooks.py to call each module's main
-# derive function without a per-module name mapping. New analysis modules must
-# define this alias pointing to their primary derive function.
+# Standard entry point used by generate_notebooks.py.
 derive = derive_nonpermutability_domains

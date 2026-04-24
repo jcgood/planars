@@ -67,11 +67,7 @@ _STANDARD_KEYS = {
 }
 
 _MODULES = [
-    ("planars.nonpermutability", "derive_nonpermutability_domains",
-     ["permutable", "scopal"],
-     {"strict_complete_span", "strict_partial_span",
-      "flexible_complete_span", "flexible_partial_span"}),
-
+    # nonpermutability uses a pair-row data model: see TestNonpermutabilitySmoke below.
     ("planars.free_occurrence",  "derive_free_occurrence_spans",
      ["free"],
      {"strict_complete_span", "loose_complete_span",
@@ -198,3 +194,78 @@ class TestSmokeModule:
         mod = importlib.import_module(mod_name)
         assert callable(getattr(mod, "derive", None)), \
             f"{mod_name} is missing a `derive` alias"
+
+
+# ---------------------------------------------------------------------------
+# Nonpermutability: pair-row data model — separate smoke test
+# ---------------------------------------------------------------------------
+
+def _make_nonperm_data(all_y: bool = True) -> tuple:
+    """Build a minimal synthetic _data 6-tuple for nonpermutability.
+
+    pair_df has two pairs with scopal set to 'y' or 'n'.
+    Planar has 5 positions (3..7), keystone at 5. Positions 4 and 6 are
+    Slots with single unique elements; positions 3 and 7 are Zones.
+    """
+    value = "y" if all_y else "n"
+    pair_df = pd.DataFrame([
+        {"Element_A": "elem-L", "Element_B": "elem-R", "scopal": value},
+    ])
+    keystone_pos = _K
+    pos_to_name = _POS_TO_NAME
+    pos_type = {3: "Zone", 4: "Slot", 5: "Slot", 6: "Slot", 7: "Zone"}
+    pos_to_elements = {
+        3: ["zone-L"],
+        4: ["elem-L"],
+        6: ["elem-R"],
+        7: ["zone-R"],
+    }
+    elem_to_positions = {
+        "zone-L": {3},
+        "elem-L": {4},
+        "elem-R": {6},
+        "zone-R": {7},
+    }
+    return (pair_df, keystone_pos, pos_to_name, pos_type, pos_to_elements, elem_to_positions)
+
+
+class TestNonpermutabilitySmoke:
+    def _derive(self, all_y: bool = True):
+        import planars.nonpermutability as mod
+        data = _make_nonperm_data(all_y=all_y)
+        result = mod.derive_nonpermutability_domains(_data=data, strict=False)
+        return result, mod
+
+    def test_returns_dict(self):
+        result, _ = self._derive()
+        assert isinstance(result, dict)
+
+    def test_expected_keys_present(self):
+        result, _ = self._derive()
+        expected = {
+            "keystone_position", "position_number_to_name", "pair_table",
+            "missing_data", "strict_positions", "free_permutable_positions",
+            "strict_span", "minimal_flexible_span", "maximal_flexible_span",
+        }
+        missing = expected - set(result.keys())
+        assert not missing, f"Missing keys: {missing}"
+
+    def test_span_invariants(self):
+        result, _ = self._derive()
+        for key in ("strict_span", "minimal_flexible_span", "maximal_flexible_span"):
+            l, r = result[key]
+            assert l <= r, f"{key}: left ({l}) > right ({r})"
+
+    def test_format_result_returns_string(self):
+        result, mod = self._derive()
+        out = mod.format_result(result)
+        assert isinstance(out, str)
+        assert out.strip()
+
+    def test_all_n_does_not_raise(self):
+        result, _ = self._derive(all_y=False)
+        assert isinstance(result, dict)
+
+    def test_derive_alias_exists(self):
+        import planars.nonpermutability as mod
+        assert callable(getattr(mod, "derive", None))
