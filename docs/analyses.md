@@ -163,7 +163,7 @@ Five criteria: `free`, `left-edge-of-free-form`, `right-edge-of-free-form`, `dep
 - **Minimal**: if keystone `free=y`, the keystone position alone; if `free=n`, the span from the keystone's `dependent-on-left` to `dependent-on-right` positions.
 - **Maximal**: from the leftmost to rightmost free-occurrence-internal position. A position is internal if any element has `left-edge-of-free-form=y` (left of keystone), `right-edge-of-free-form=y` (right of keystone), or a `dependent-on-left`/`dependent-on-right` value equal to the keystone position number.
 
-`free` is re-coded independently in the `free_occurrence` sheet (use the `noninterruption` sheet as a reference). `integrity-check` warns when `free` values differ across sheets for the same element.
+`free` is **pre-filled from the noninterruption sheet** at generation time — annotate noninterruption before generating the free_occurrence sheet. `integrity-check` warns when `free` values differ across sheets (e.g. after a noninterruption edit).
 
 `dependent-on-left` and `dependent-on-right` hold a position number as a string, or `na`. These are position references, not fixed criterion values — `validate-coding` does not currently validate them against the planar structure.
 

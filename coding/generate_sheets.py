@@ -238,6 +238,111 @@ def _build_rows(
 
 
 # ---------------------------------------------------------------------------
+# Free occurrence pre-filling
+# ---------------------------------------------------------------------------
+
+def _prefill_free_occurrence_rows(
+    rows: List[List[object]],
+    param_names: List[str],
+    lang_id: str,
+) -> List[List[object]]:
+    """Pre-fill free_occurrence rows from the noninterruption TSV.
+
+    Reads noninterruption/general.tsv and sets 'free' for each element. Then
+    applies conditional na values so annotators only fill in the columns that
+    are relevant to each element:
+      - free=y rows: dependent-on-left and dependent-on-right → 'na'
+      - free=n rows: left-edge-of-free-form and right-edge-of-free-form → 'na'
+      - keystone row: left-edge-of-free-form and right-edge-of-free-form → 'na'
+        (self-referential; free value still pulled from noninterruption)
+
+    Warns if the noninterruption TSV is missing or elements are absent from it.
+    """
+    ni_path = CODED_DATA / lang_id / "noninterruption" / "general.tsv"
+
+    free_map: Dict[str, str] = {}
+    if ni_path.exists():
+        try:
+            ni_df = pd.read_csv(ni_path, sep="\t", dtype=str, keep_default_na=False)
+            if "free" in ni_df.columns and "Element" in ni_df.columns:
+                free_map = {
+                    row["Element"]: row["free"]
+                    for _, row in ni_df.iterrows()
+                    if row.get("free", "") not in ("", "NA")
+                }
+                if not free_map:
+                    print("    [WARNING] noninterruption/general.tsv exists but 'free' column is blank.")
+                    print("              Annotate noninterruption first, then regenerate this sheet.")
+            else:
+                print("    [WARNING] noninterruption/general.tsv is missing 'free' or 'Element' column.")
+                print("              free column will be left blank for manual entry.")
+        except Exception as exc:
+            print(f"    [WARNING] Could not read noninterruption/general.tsv: {exc}")
+            print("              free column will be left blank for manual entry.")
+    else:
+        print("    [WARNING] noninterruption/general.tsv not found.")
+        print("              Annotate noninterruption first, then regenerate this sheet.")
+        print("              free column will be left blank for manual entry.")
+
+    base = 3  # Element, Position_Name, Position_Number
+
+    def _col(name: str):
+        return base + param_names.index(name) if name in param_names else None
+
+    free_col     = _col("free")
+    left_col     = _col("left-edge-of-free-form")
+    right_col    = _col("right-edge-of-free-form")
+    dep_left_col = _col("dependent-on-left")
+    dep_right_col = _col("dependent-on-right")
+
+    missing: List[str] = []
+    updated: List[List[object]] = []
+
+    for row in rows:
+        row = list(row)
+        element  = str(row[0])
+        pos_name = str(row[1]) if len(row) > 1 else ""
+        is_keystone = pos_name.strip().lower() == "v:verbstem"
+
+        if is_keystone:
+            # Keystone: pull free from noninterruption; edge cols always na.
+            if free_col is not None and free_map:
+                ks_free = free_map.get(element, "")
+                if ks_free:
+                    row[free_col] = ks_free
+            if left_col is not None:
+                row[left_col] = "na"
+            if right_col is not None:
+                row[right_col] = "na"
+        else:
+            free_val = free_map.get(element, "")
+            if not free_val and free_map:
+                missing.append(element)
+
+            if free_col is not None:
+                row[free_col] = free_val
+
+            if free_val == "y":
+                if dep_left_col is not None:
+                    row[dep_left_col] = "na"
+                if dep_right_col is not None:
+                    row[dep_right_col] = "na"
+            elif free_val == "n":
+                if left_col is not None:
+                    row[left_col] = "na"
+                if right_col is not None:
+                    row[right_col] = "na"
+
+        updated.append(row)
+
+    if missing:
+        print(f"    [WARNING] Elements not found in noninterruption TSV: {missing}")
+        print("              free column left blank for those elements.")
+
+    return updated
+
+
+# ---------------------------------------------------------------------------
 # Nonpermutability pair generation (Option C)
 # ---------------------------------------------------------------------------
 
@@ -589,6 +694,8 @@ def _create_analysis_sheet(
             ka = resolve_keystone_active(lang_id, class_name, construction,
                                          data_dir=planar_path.parent) or False
             rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
+            if class_name == "free_occurrence":
+                rows = _prefill_free_occurrence_rows(rows, param_names, lang_id)
             _populate_tab(spreadsheet, construction, param_names, param_values, rows)
             tab_names.append(construction)
             print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
@@ -928,13 +1035,6 @@ def main() -> None:
     print(f"drive_config.json written.")
 
     print(f"\nShare each language folder with your specialist (see folder URLs above).")
-
-    print(
-        "\n⚠  drive_config.json was updated. If you have the scheduled sheet-validation\n"
-        "   workflow enabled, update the PLANARS_DRIVE_CONFIG GitHub secret with the\n"
-        "   new contents of drive_config.json:\n"
-        "   GitHub → Settings → Secrets and variables → Actions → PLANARS_DRIVE_CONFIG"
-    )
 
     from .generate_notebooks import regenerate_notebooks
     regenerate_notebooks()

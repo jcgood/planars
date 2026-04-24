@@ -265,11 +265,11 @@ Results are also available via the coordinator and contributor Colab notebooks. 
 
 #### Cross-sheet criterion consistency
 
-Some criteria are annotated independently in more than one sheet. Currently:
+Some criteria appear in more than one sheet. Currently:
 
-- **`free`** appears in both `noninterruption` and `free_occurrence`. The two are coded separately — use the `noninterruption` sheet as a reference, but re-code independently in `free_occurrence` (the framing differs slightly: noninterruption asks whether an element is free in context; free_occurrence asks whether it can appear as the sole free form in an utterance). Differences are expected to be rare.
+- **`free`** appears in both `noninterruption` and `free_occurrence`. The `free_occurrence` sheet is generated with `free` **pre-filled from the noninterruption TSV** — annotate noninterruption first, then generate the free_occurrence sheet. Elements with `free=n` get `na` pre-filled in the left/right edge columns (not applicable for bound elements); elements with `free=y` get `na` in the dependency columns.
 
-`python -m coding integrity-check` includes a **CROSS-SHEET CONSISTENCY** section that compares `free` values for the same element across both sheets and reports mismatches as warnings. Warnings do not block analysis but should be reviewed — an unexpected difference usually means one sheet needs correction.
+If noninterruption is updated after the free_occurrence sheet is generated, the two sheets can drift. `python -m coding integrity-check` includes a **CROSS-SHEET CONSISTENCY** section that compares `free` values and reports mismatches as warnings. A mismatch usually means noninterruption was corrected after free_occurrence was generated — update the free_occurrence sheet to match, or regenerate it.
 
 ### Updating a qualification rule
 
