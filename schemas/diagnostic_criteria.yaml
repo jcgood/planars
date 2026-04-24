@@ -190,16 +190,24 @@ analyses:
     diagnostic_criteria:
 
       - name: scopal
-        values: [y, n]
+        values: [y, n, both]
         description: >
-          Pair-level criterion: whether the variable ordering of (Element_A, Element_B)
-          is associated with an obligatory difference in semantic scope.
-          y = scopal permutation (the two orders carry different scope readings; the
-              pair is non-permutable under the flexible interpretation).
-          n = free permutation (the two orders are semantically equivalent; the pair
-              is freely permutable and excluded from both strict and flexible domains).
-          An element appearing in one scopal=y pair and one scopal=n pair is treated as
-          partially non-permutable (Adam Tallman, issue #116, Apr 2026).
+          Used in two annotation stages (issue #116, Apr 2026):
+
+          STAGE 1 (prescreening sheet — element-level, values y/n/both):
+            y    = element's variable orderings are always scopally conditioned.
+            n    = element has no meaningful variable ordering; filtered from Stage 2.
+            both = element has mixed orderings (some scopal, some freely variable);
+                   included in Stage 2.
+
+          STAGE 2 (general/pairs sheet — pair-level, values y/n only):
+            Pair-level criterion: whether the variable ordering of (Element_A, Element_B)
+            carries an obligatory difference in semantic scope.
+            y = scopal permutation (the two orders have different scope readings).
+            n = free permutation (the two orders are semantically equivalent; the pair
+                is freely permutable and excluded from flexible domains).
+            An element appearing in one scopal=y pair and one scopal=n pair is treated
+            as partially non-permutable.
 
   - name: free_occurrence
     description: >

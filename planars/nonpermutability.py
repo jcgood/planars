@@ -134,10 +134,13 @@ def derive_nonpermutability_domains(
     [AUTO-DERIVED: NEEDS REVIEW] Qualification rules designed in issue #116 (Apr 2026).
     Verify before use for annotation or analysis.
 
-    Data model: pair rows (Element_A, Element_B, scopal). Each row asserts that
-    the two named elements can be variably ordered. Pairs not listed are assumed
-    fixed-order by structure. scopal=y means variable order carries an obligatory
-    scope difference; scopal=n means freely variable (no meaning difference).
+    Data model: pair rows (Element_A, Element_B, scopal) from Stage 2 of the
+    two-stage annotation workflow. Stage 1 (prescreening) filters elements with
+    scopal=n (no meaningful variable ordering) before Stage 2 is generated.
+    Each pair row asserts that the two elements can be variably ordered.
+    Pairs not listed are assumed fixed-order by structure.
+    scopal=y means variable order carries an obligatory scope difference;
+    scopal=n means freely variable (no meaning difference).
 
     Qualification rule (mirrors diagnostic_classes.yaml)
     -----------------------------------------------------

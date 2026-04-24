@@ -150,7 +150,11 @@ Returns 4 strict spans (2 domain types × complete/partial). No loose spans — 
 
 ### Nonpermutability
 
-Uses a **pair-row sheet**: each row is a (Element_A, Element_B) pair with a `scopal` column rather than a standard element row. Three spans:
+Two-stage annotation workflow:
+
+**Stage 1 — prescreening sheet** (element rows, `scopal={y,n,both}`): identifies which elements participate in any meaningful variable ordering. Elements with `scopal=n` are filtered out of Stage 2. Elements with `scopal=both` have mixed orderings (some scopal, some freely variable) and are included in Stage 2. Annotate Stage 1 before generating Stage 2.
+
+**Stage 2 — pairs sheet** (`general` construction, pair rows): each row is a (Element_A, Element_B) pair with `scopal={y,n}`. Generated from the Option C structural enumeration, filtered to exclude pairs where either element has `scopal=n` from Stage 1. Three spans:
 
 - **Strict**: structurally derived (no annotation needed) — contiguous Slots from keystone where all elements appear in exactly one position.
 - **Minimal flexible**: extends the strict span through positions with no free-permutable elements (no element in a `scopal=n` pair).

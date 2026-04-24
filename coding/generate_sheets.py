@@ -409,6 +409,33 @@ def _build_nonperm_pairs(
     return pairs
 
 
+def _filter_nonperm_pairs_by_prescreening(
+    pairs: List[List[str]], lang_id: str
+) -> List[List[str]]:
+    """Filter candidate pairs by removing elements with scopal=n in prescreening.tsv.
+
+    If prescreening.tsv does not exist, returns the full list with a note
+    reminding the coordinator to annotate prescreening first.
+    """
+    prescreening_path = CODED_DATA / lang_id / "nonpermutability" / "prescreening.tsv"
+    if not prescreening_path.exists():
+        print("    [NOTE] prescreening.tsv not found — generating unfiltered pair list.")
+        print("          Annotate prescreening first, then re-run generate-sheets to get")
+        print("          a filtered pairs sheet.")
+        return pairs
+
+    df = pd.read_csv(prescreening_path, sep="\t", dtype=str, keep_default_na=False)
+    excluded = {
+        row["Element"]
+        for _, row in df.iterrows()
+        if row.get("scopal", "").strip() == "n"
+    }
+    filtered = [p for p in pairs if p[0] not in excluded and p[1] not in excluded]
+    print(f"    [prescreening] {len(excluded)} element(s) with scopal=n excluded")
+    print(f"    [prescreening] {len(pairs)} → {len(filtered)} pairs after filtering")
+    return filtered
+
+
 def _populate_tab_pairs(
     spreadsheet: gspread.Spreadsheet,
     tab_name: str,
@@ -679,10 +706,27 @@ def _create_analysis_sheet(
     default_ws = spreadsheet.sheet1
     tab_names = []
 
+    # For nonpermutability, override prescreening param_values to {y, n, both}.
+    # The diagnostics YAML records [y, n] for scopal (used by the pairs tab);
+    # prescreening needs the third value so the manifest stores the right dropdown.
+    if class_name == "nonpermutability":
+        constructions = [
+            (c, pn, {"scopal": ["y", "n", "both"]} if c == "prescreening" else pv)
+            for c, pn, pv in constructions
+        ]
+
     for construction, param_names, param_values in constructions:
-        if class_name == "nonpermutability":
+        if class_name == "nonpermutability" and construction == "prescreening":
+            # Step 1: element-level pre-filter sheet.
+            rows = _build_rows(element_index, lang_id, param_names, keystone_active=False)
+            _populate_tab(spreadsheet, construction, param_names, param_values, rows)
+            tab_names.append(construction)
+            print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
+        elif class_name == "nonpermutability":
+            # Step 2: candidate pair sheet (general), filtered if prescreening.tsv exists.
             pos_type = _read_position_types(planar_path, lang_id)
             pairs = _build_nonperm_pairs(element_index, lang_id, pos_type)
+            pairs = _filter_nonperm_pairs_by_prescreening(pairs, lang_id)
             _populate_tab_pairs(spreadsheet, construction, param_names, param_values, pairs)
             tab_names.append(construction)
             print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
