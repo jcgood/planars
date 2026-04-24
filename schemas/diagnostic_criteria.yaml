@@ -203,9 +203,6 @@ analyses:
 
   - name: free_occurrence
     description: >
-      [NEEDS REVIEW — redesigned in issue #99; open questions on sheet architecture
-      and cross-sheet free criterion dependency remain; see issue #99 comments 2026-04-23]
-
       Tests which positions are free-occurrence-internal — i.e., which positions can
       be part of a span containing exactly one free form. A position is
       free-occurrence-internal if (a) it is to the left of the anchor (keystone) and
@@ -223,8 +220,8 @@ analyses:
           Whether the element is morphosyntactically free — i.e., it can occur as a
           standalone utterance independently of the verbal head, passing the minimal
           free form test. Bound elements (free=n) cannot occur independently.
-          [NEEDS REVIEW: open question (#99) whether this is re-coded here or derived
-          from the noninterruption sheet.]
+          Re-coded independently in the free_occurrence sheet (use noninterruption as
+          reference; integrity-check warns on discrepancies). See issue #99.
 
       - name: left-edge-of-free-form
         values: [y, n]

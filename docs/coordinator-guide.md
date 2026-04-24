@@ -263,6 +263,14 @@ python -m planars segmental         coded_data/stan1293/segmental/aspiration_pro
 
 Results are also available via the coordinator and contributor Colab notebooks. See the [Notebooks guide](notebooks.md).
 
+#### Cross-sheet criterion consistency
+
+Some criteria are annotated independently in more than one sheet. Currently:
+
+- **`free`** appears in both `noninterruption` and `free_occurrence`. The two are coded separately — use the `noninterruption` sheet as a reference, but re-code independently in `free_occurrence` (the framing differs slightly: noninterruption asks whether an element is free in context; free_occurrence asks whether it can appear as the sole free form in an utterance). Differences are expected to be rare.
+
+`python -m coding integrity-check` includes a **CROSS-SHEET CONSISTENCY** section that compares `free` values for the same element across both sheets and reports mismatches as warnings. Warnings do not block analysis but should be reviewed — an unexpected difference usually means one sheet needs correction.
+
 ### Updating a qualification rule
 
 A **qualification rule** is the formal description of how span computations work for an analysis class — which criterion values cause a position to qualify, whether strict or loose spans are computed, and what blocking conditions apply. The rule text lives in `schemas/diagnostic_classes.yaml` under `qualification_rule:`, and the Python module in `planars/` must implement exactly that rule.

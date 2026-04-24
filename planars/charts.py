@@ -24,6 +24,7 @@ from planars.reports import (
     _METRICAL_BLOCKED_SPANS,
     _SIMPLE_SPANS,
     _NONPERM_SPANS,
+    _FREEOC_SPANS,
 )
 
 

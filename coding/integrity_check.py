@@ -3,12 +3,13 @@
 
 Runs six sections of checks and prints a structured report:
 
-  PLANAR STRUCTURE       — validates planar_*.tsv for each language
-  DIAGNOSTICS            — validates diagnostics_*.tsv for each language
-  CODEBOOK CONSISTENCY   — cross-checks diagnostics TSVs against schema files
-  ANALYSIS CONSISTENCY   — validates analysis modules match diagnostic_criteria.yaml
-  ANNOTATION SHEETS      — checks live sheet structure (requires --sheets)
-  NEEDS REVIEW           — surfaces [NEEDS REVIEW] / [PLACEHOLDER] markers
+  PLANAR STRUCTURE        — validates planar_*.tsv for each language
+  DIAGNOSTICS             — validates diagnostics_*.tsv for each language
+  CODEBOOK CONSISTENCY    — cross-checks diagnostics TSVs against schema files
+  ANALYSIS CONSISTENCY    — validates analysis modules match diagnostic_criteria.yaml
+  CROSS-SHEET CONSISTENCY — checks free values agree across related annotation sheets
+  ANNOTATION SHEETS       — checks live sheet structure (requires --sheets)
+  NEEDS REVIEW            — surfaces [NEEDS REVIEW] / [PLACEHOLDER] markers
 
 Exit code 0 if no errors; 1 if any errors (warnings do not fail).
 
@@ -403,6 +404,60 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
     return total_e, total_w
 
 
+def _section_cross_sheet_consistency(lang_ids: List[str]) -> Tuple[int, int]:
+    """Check that free values agree between noninterruption and free_occurrence sheets.
+
+    free is re-coded independently in each sheet (use noninterruption as reference).
+    Differences are expected to be rare but warrant coordinator review. Reported as
+    warnings, not errors — divergent coding does not block analysis.
+    """
+    print(_section("CROSS-SHEET CONSISTENCY"))
+
+    from planars.io import load_filled_tsv
+
+    total_w = 0
+    any_checked = False
+
+    for lang_id in lang_ids:
+        ni_path = CODED_DATA / lang_id / "noninterruption" / "general.tsv"
+        fo_path = CODED_DATA / lang_id / "free_occurrence" / "general.tsv"
+        if not ni_path.exists() or not fo_path.exists():
+            continue
+
+        any_checked = True
+        label = f"{lang_id}: noninterruption vs free_occurrence (free column)"
+        try:
+            ni_data, _, _, _, _ = load_filled_tsv(ni_path, {"free"}, strict=False)
+            fo_data, _, _, _, _ = load_filled_tsv(fo_path, {"free"}, strict=False)
+        except Exception as exc:
+            print(_warn(f"{label} — could not load: {exc}"))
+            total_w += 1
+            continue
+
+        ni_free = ni_data.set_index("Element")["free"].to_dict() if "free" in ni_data.columns else {}
+        fo_free = fo_data.set_index("Element")["free"].to_dict() if "free" in fo_data.columns else {}
+
+        mismatches = []
+        for elem in sorted(set(ni_free) & set(fo_free)):
+            nv, fv = ni_free[elem], fo_free[elem]
+            if nv not in ("", "na", "?") and fv not in ("", "na", "?") and nv != fv:
+                mismatches.append(f"{elem}: noninterruption={nv!r}, free_occurrence={fv!r}")
+
+        if mismatches:
+            print(_warn(f"{label}"))
+            for m in mismatches:
+                print(_sub(m))
+            print(_sub("→ Verify in the annotation sheets; update the incorrect value."))
+            total_w += len(mismatches)
+        else:
+            print(_ok(label))
+
+    if not any_checked:
+        print("  (no languages have both noninterruption and free_occurrence TSVs)")
+
+    return 0, total_w
+
+
 def _section_needs_review(codebook: dict, diag_classes: dict) -> None:
     print(_section("NEEDS REVIEW / PLACEHOLDERS"))
 
@@ -515,6 +570,9 @@ def main() -> None:
     total_e += e; total_w += w
 
     e, w = _section_analysis(codebook)
+    total_e += e; total_w += w
+
+    e, w = _section_cross_sheet_consistency(lang_ids)
     total_e += e; total_w += w
 
     if args.sheets:

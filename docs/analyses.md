@@ -105,8 +105,8 @@ Some analyses (stress, aspiration) use a **blocked span** instead: expand from t
 | `subspanrepetition` | `widescope_left`, `widescope_right`, `fillable_botheither_conjunct` | 20 (5 categories × 4) | stable |
 | `noninterruption` | `free`, `multiple` | 4 strict spans (2 domain types × complete/partial) | stable |
 | `metrical` | `accented`, `obligatory`, `independence`, `left-interaction`, `right-interaction` (blocked-span); `applies` (positive-qual) | 4 (2 domain types × complete/partial) | stable † |
-| `nonpermutability` | `permutable`, `scopal` | 4 strict spans (2 domain types × complete/partial) | [AUTO-DERIVED] ‡ |
-| `free_occurrence` | `free` | 4 (strict/loose × complete/partial) | stable |
+| `nonpermutability` | `scopal` (pair-level) | 3 spans (strict, minimal flexible, maximal flexible) | [AUTO-DERIVED] ‡ |
+| `free_occurrence` | `free`, `left-edge-of-free-form`, `right-edge-of-free-form`, `dependent-on-left`, `dependent-on-right` | 2 spans (minimal, maximal) | [AUTO-DERIVED] |
 | `segmental` | `aspirated` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] ‡ |
 | `tonal` | `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
 | `tonosegmental` | `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
@@ -150,12 +150,22 @@ Returns 4 strict spans (2 domain types × complete/partial). No loose spans — 
 
 ### Nonpermutability
 
-Two domain types:
+Uses a **pair-row sheet**: each row is a (Element_A, Element_B) pair with a `scopal` column rather than a standard element row. Three spans:
 
-- **Strict**: absolutely fixed order (`permutable=n`)
-- **Flexible**: fixed OR variable-with-scope (`permutable=n` OR (`permutable=y AND scopal=y`))
+- **Strict**: structurally derived (no annotation needed) — contiguous Slots from keystone where all elements appear in exactly one position.
+- **Minimal flexible**: extends the strict span through positions with no free-permutable elements (no element in a `scopal=n` pair).
+- **Maximal flexible**: extends through free-permutable interior positions as long as the outermost edge positions are not free-permutable.
 
-Each with complete/partial × strict spans = 4 spans total.
+### Free occurrence
+
+Five criteria: `free`, `left-edge-of-free-form`, `right-edge-of-free-form`, `dependent-on-left`, `dependent-on-right`. The keystone row carries a real `free` value (`keystone_active_default: true`), but `left-edge-of-free-form` and `right-edge-of-free-form` are always `na` on the keystone (self-referential). Two spans:
+
+- **Minimal**: if keystone `free=y`, the keystone position alone; if `free=n`, the span from the keystone's `dependent-on-left` to `dependent-on-right` positions.
+- **Maximal**: from the leftmost to rightmost free-occurrence-internal position. A position is internal if any element has `left-edge-of-free-form=y` (left of keystone), `right-edge-of-free-form=y` (right of keystone), or a `dependent-on-left`/`dependent-on-right` value equal to the keystone position number.
+
+`free` is re-coded independently in the `free_occurrence` sheet (use the `noninterruption` sheet as a reference). `integrity-check` warns when `free` values differ across sheets for the same element.
+
+`dependent-on-left` and `dependent-on-right` hold a position number as a string, or `na`. These are position references, not fixed criterion values — `validate-coding` does not currently validate them against the planar structure.
 
 ### Biuniqueness
 

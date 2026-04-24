@@ -196,14 +196,18 @@ chart_labels:
         of the span are not free-permutable.
 
   free_occurrence:
-    - label: "free strict complete"
-      meaning: Strict span over complete positions where all elements are free forms (free=y).
-    - label: "free loose complete"
-      meaning: Loose span over complete positions where all elements are free forms.
-    - label: "free strict partial"
-      meaning: Strict span over partial positions where at least one element is a free form.
-    - label: "free loose partial"
-      meaning: Loose span over partial positions where at least one element is a free form.
+    - label: "free-occ minimal"
+      meaning: >
+        Minimal free occurrence span: if the keystone is free (free=y), just the keystone
+        position alone; if the keystone is bound (free=n), the span from the keystone's
+        left-dependent position to its right-dependent position (the positions the keystone
+        requires in order to be realized as a single-free-form utterance).
+    - label: "free-occ maximal"
+      meaning: >
+        Maximal free occurrence span: from the leftmost to rightmost free-occurrence-internal
+        position, where a position is internal if any element has left-edge-of-free-form=y
+        (left of keystone), right-edge-of-free-form=y (right of keystone), or a
+        dependent-on-left/right reference pointing to the keystone.
 
   biuniqueness:
     - label: "biuniq strict complete"
@@ -298,7 +302,6 @@ span_label_map:
     loose_partial_span:   "loose partial"
 
   simple_analyses:
-    - free_occurrence
     - biuniqueness
     - repair
     - segmental
@@ -313,7 +316,7 @@ span_label_map:
   # Short prefix overrides for simple analyses where the full analysis name
   # is too long for chart labels. Omitted entries use the full analysis name.
   simple_prefix_overrides:
-    free_occurrence: free
+    free_occurrence: "free-occ"
     biuniqueness:    biuniq
     segmental:       seg
     pausing:         pause
@@ -341,6 +344,10 @@ span_label_map:
     strict_span:           "nonperm strict"
     minimal_flexible_span: "nonperm flexible minimal"
     maximal_flexible_span: "nonperm flexible maximal"
+
+  free_occurrence:
+    minimal_span: "minimal"
+    maximal_span: "maximal"
 
   subspanrepetition:
     categories:

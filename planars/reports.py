@@ -75,6 +75,7 @@ _CISC_SPANS           = list(_span_map.get("ciscategorial", {}).items())
 _NONINT_SPANS         = list(_span_map.get("noninterruption", {}).items())
 _METRICAL_BLOCKED_SPANS = list(_span_map.get("metrical", {}).items())
 _NONPERM_SPANS        = list(_span_map.get("nonpermutability", {}).items())
+_FREEOC_SPANS         = list(_span_map.get("free_occurrence", {}).items())
 
 # Standard 4-span pattern shared by most simple modules.
 _SIMPLE_SPANS         = list(_span_map.get("simple_variants", {}).items())
@@ -166,7 +167,7 @@ _CLASS_HANDLERS = {
     "noninterruption":   (_nonint.derive_noninterruption_domains,     _rows_from_nonint),
     "metrical":          (_metrical.derive_metrical_domains,           _rows_from_metrical),
     "nonpermutability":  (_nonperm.derive_nonpermutability_domains,   _make_simple_rows("nonpermutability", _NONPERM_SPANS)),
-    "free_occurrence":   (_freeoc.derive_free_occurrence_spans,       _make_simple_rows("free_occurrence")),
+    "free_occurrence":   (_freeoc.derive_free_occurrence_spans,       _make_simple_rows("free_occurrence", _FREEOC_SPANS)),
     "biuniqueness":      (_biuniq.derive_biuniqueness_domains,        _make_simple_rows("biuniqueness")),
     "repair":            (_repair.derive_repair_domains,              _make_simple_rows("repair")),
     "segmental":         (_segmental.derive_segmental_domains,        _make_simple_rows("segmental")),

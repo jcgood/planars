@@ -216,7 +216,7 @@ def _check_chart_keys() -> List[str]:
     )
     from planars.charts import (
         _CISC_SPANS, _NONINT_SPANS, _METRICAL_BLOCKED_SPANS,
-        _SUBSPAN_CATS, _SUBSPAN_VARIANTS, _SIMPLE_SPANS, _NONPERM_SPANS,
+        _SUBSPAN_CATS, _SUBSPAN_VARIANTS, _SIMPLE_SPANS, _NONPERM_SPANS, _FREEOC_SPANS,
     )
     from planars.io import load_filled_tsv
 
@@ -287,9 +287,41 @@ def _check_chart_keys() -> List[str]:
     except Exception as e:
         errors.append(f"[nonpermutability] could not run derive function: {e}")
 
+    # free_occurrence: 2-span model (minimal/maximal); keystone_df carries free value.
+    _freeoc_keys = [k for k, _ in _FREEOC_SPANS]
+    _freeoc_pd = __import__("pandas")
+    _freeoc_data_df = _freeoc_pd.DataFrame([
+        {"Position_Number": 4, "Element": "elem-L",
+         "free": "y", "left-edge-of-free-form": "y", "right-edge-of-free-form": "na",
+         "dependent-on-left": "na", "dependent-on-right": "na"},
+        {"Position_Number": 6, "Element": "elem-R",
+         "free": "n", "left-edge-of-free-form": "na", "right-edge-of-free-form": "y",
+         "dependent-on-left": "na", "dependent-on-right": "na"},
+    ])
+    _freeoc_keystone_df = _freeoc_pd.DataFrame([
+        {"Position_Number": 5, "Element": "v:verbstem",
+         "free": "y", "left-edge-of-free-form": "na", "right-edge-of-free-form": "na",
+         "dependent-on-left": "na", "dependent-on-right": "na"},
+    ])
+    _freeoc_data = (
+        _freeoc_data_df,
+        5,                                        # keystone_pos
+        {4: "v:left1", 5: "v:verbstem", 6: "v:right1"},  # pos_to_name
+        list(free_occurrence._REQUIRED_CRITERIA),  # criterion_cols
+        _freeoc_keystone_df,
+    )
+    try:
+        _freeoc_result = free_occurrence.derive_free_occurrence_spans(
+            _data=_freeoc_data, strict=False
+        )
+        for key in _freeoc_keys:
+            if key not in _freeoc_result:
+                errors.append(f"[free_occurrence] chart references key '{key}' not in result dict")
+    except Exception as e:
+        errors.append(f"[free_occurrence] could not run derive function: {e}")
+
     # simple 4-span modules (strict/loose × complete/partial)
     simple_cases = [
-        ("free_occurrence",       free_occurrence.derive_free_occurrence_spans,  free_occurrence._REQUIRED_CRITERIA),
         ("biuniqueness",          biuniqueness.derive_biuniqueness_domains,      biuniqueness._REQUIRED_CRITERIA),
         ("repair",                repair.derive_repair_domains,                  repair._REQUIRED_CRITERIA),
         ("segmental",             segmental.derive_segmental_domains,        segmental._REQUIRED_CRITERIA),
