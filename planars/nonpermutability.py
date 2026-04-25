@@ -216,7 +216,7 @@ def derive_nonpermutability_domains(
                 source_set = {
                     r["Element"].strip()
                     for _, r in pre_df.iterrows()
-                    if r.get("scopal", "").strip() != "n"
+                    if r.get("scopal", "").strip() not in ("n", "na")
                 }
                 dep_set = set()
                 for col in ("Element_A", "Element_B"):

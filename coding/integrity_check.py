@@ -512,7 +512,7 @@ def _section_dependent_construction_staleness(
                     source_set = {
                         r["Element"].strip()
                         for _, r in src_df.iterrows()
-                        if r.get(filter_crit, "").strip() != "n"
+                        if r.get(filter_crit, "").strip() not in ("n", "na")
                     }
                 elif "Element" in src_df.columns:
                     source_set = set(src_df["Element"].str.strip())

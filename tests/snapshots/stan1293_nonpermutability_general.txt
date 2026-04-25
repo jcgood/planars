@@ -1,10 +1,8 @@
 English Nonpermutability General
 ================================
 
-WARNING: general.tsv is out of sync with element_prescreening.tsv — run python -m coding generate-sheets --lang stan1293
-
 NOTE: Some pairs have unannotated scopal values.
-  scopal: ['-ed × -s', '-ed × AD-S', '-ed × AD-V', '-ed × AD-VP', '-ing × -s'] … (555 total)
+  scopal: ['AD-S × AD-V', 'AD-S × AD-VP', 'AD-S × NP{P,T}', 'AD-S × NP{R}', 'AD-S × PP'] … (555 total)
 
 Keystone position: 30 (v:verbstem)
 

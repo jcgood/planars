@@ -374,14 +374,19 @@ def _build_nonperm_pairs(
     """
     _keystone = load_planar_schema().get("keystone_position_name", "v:verbstem")
 
-    # Build element → set of positions, excluding keystone
+    # Build element → set of positions, excluding keystone.
+    # Apply the same bracket-wrapping used when writing element_prescreening rows
+    # so that pair element names are consistent with those in element_prescreening.tsv.
+    def _wrap(e: str) -> str:
+        return f"[{e}]" if (e.startswith("-") or e.endswith("-")) else e
+
     elem_positions: Dict[str, set] = {}
     for _, (pos, pos_name, lang, element) in element_index.items():
         if lang != lang_id:
             continue
         if pos_name.strip().lower() == _keystone:
             continue
-        elem_positions.setdefault(element, set()).add(pos)
+        elem_positions.setdefault(_wrap(element), set()).add(pos)
 
     elements = sorted(elem_positions.keys())
     pairs = []
