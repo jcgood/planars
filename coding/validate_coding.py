@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
 from .drive import _get_clients, _load_manifest_from_drive, _open_spreadsheet, _with_retry
-from .generate_sheets import _STATUS_TAB
+from .generate_sheets import _INSTRUCTIONS_TAB, _STATUS_TAB
 from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
@@ -483,7 +483,7 @@ def main() -> None:
 
             for ws in ss.worksheets():
                 construction = ws.title
-                if construction == _STATUS_TAB:
+                if construction in (_STATUS_TAB, _INSTRUCTIONS_TAB):
                     continue
                 info = param_map.get(class_name, {}).get(construction, {})
                 try:
