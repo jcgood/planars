@@ -295,6 +295,7 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 | `data-overwrite` | Filed by `data-refresh.yml` when human commits appear overwritten by today's Sheet import. Check `git log`/`git show` in planars-data to verify. Auto-closed when clean. |
 | `stale-manifest` | Filed by `data-refresh.yml` when manifest entries have no matching class in `diagnostics_{lang}.yaml`. Resolve: `prune-manifest --apply`. Auto-closed when clean. |
 | `integrity-error` | Filed by `data-refresh.yml` when `integrity-check` detects errors. Run `integrity-check` locally for details. Auto-closed when clean. |
+| `dependent-stale` | Filed by `data-refresh.yml` when a dependent construction (e.g. nonpermutability `general`) is out of sync with its source (e.g. `element_prescreening`). Resolve: `generate-sheets --lang LANG --regen-construction CLASS:CONSTRUCTION`. Auto-closed when in sync. |
 | `collaborator-notes` | Filed by `data-refresh.yml` when a collaborator's notes doc has new content. Resolve: paste the Claude prompt from the issue body, review proposed issues, file warranted ones, then close this issue. |
 
 ## Work phases

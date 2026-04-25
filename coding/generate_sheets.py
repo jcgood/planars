@@ -30,7 +30,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -443,6 +443,7 @@ def _populate_tab_pairs(
     param_names: List[str],
     param_values: Dict[str, List[str]],
     pairs: List[List[str]],
+    prefill: Optional[Dict[Tuple[str, str], Dict[str, str]]] = None,
 ) -> gspread.Worksheet:
     """Create or clear a worksheet tab and populate it with pair rows.
 
@@ -451,11 +452,13 @@ def _populate_tab_pairs(
     columns. No Position_Name, Position_Number, or keystone row.
 
     Args:
-        spreadsheet: the parent gspread Spreadsheet.
-        tab_name: worksheet title to create or clear.
-        param_names: ordered list of criterion column names (e.g. ["scopal"]).
+        spreadsheet:  the parent gspread Spreadsheet.
+        tab_name:     worksheet title to create or clear.
+        param_names:  ordered list of criterion column names (e.g. ["scopal"]).
         param_values: dict mapping criterion name to list of allowed values.
-        pairs: candidate pair rows from _build_nonperm_pairs (no header).
+        pairs:        candidate pair rows from _build_nonperm_pairs (no header).
+        prefill:      optional {(Element_A, Element_B): {col: val}} dict; when
+                      provided, retained pairs are pre-filled with existing values.
 
     Returns:
         The populated gspread Worksheet.
@@ -470,10 +473,12 @@ def _populate_tab_pairs(
 
     all_cols = param_names + _TRAILING_COLS
     header = ["Element_A", "Element_B"] + all_cols
-    all_rows = [header] + [
-        [a, b] + [""] * len(all_cols) for a, b in pairs
-    ]
-    ws.update(all_rows, "A1")
+    data_rows = []
+    for pair in pairs:
+        a, b = pair[0], pair[1]
+        pre = (prefill or {}).get((a, b), {})
+        data_rows.append([a, b] + [pre.get(c, "") for c in all_cols])
+    ws.update([header] + data_rows, "A1")
     per_col_values = [param_values.get(p, ["y", "n"]) for p in param_names]
     # Param columns start at index 2 (after Element_A, Element_B)
     _format_and_validate(ws, len(pairs), per_col_values, col_start=2)
@@ -860,6 +865,138 @@ def _create_analysis_sheet(
 
 
 # ---------------------------------------------------------------------------
+# Construction regeneration (--regen-construction / --regen-dependents)
+# ---------------------------------------------------------------------------
+
+def _regen_construction(
+    gc: gspread.Client,
+    lang_id: str,
+    class_name: str,
+    construction_name: str,
+    manifest_class_info: dict,
+) -> None:
+    """Regenerate a dependent construction tab in an existing spreadsheet.
+
+    Reads the current tab content from the live Sheet so any unimported
+    annotations are preserved. Retained pairs keep their existing values;
+    removed pairs are dropped (they will surface as destructive changes on the
+    next import-sheets --apply run); added pairs get blank rows.
+
+    Args:
+        gc:                   authenticated gspread Client.
+        lang_id:              language ID (e.g. 'stan1293').
+        class_name:           analysis class (e.g. 'nonpermutability').
+        construction_name:    dependent construction to regenerate (e.g. 'general').
+        manifest_class_info:  the sheet entry from the manifest for this class.
+    """
+    spreadsheet_id = manifest_class_info.get("spreadsheet_id")
+    if not spreadsheet_id:
+        raise SystemExit(f"  No spreadsheet_id in manifest for {lang_id}/{class_name}")
+    spreadsheet = gc.open_by_key(spreadsheet_id)
+
+    # Read existing tab annotations from the live Sheet.
+    existing: Dict[Tuple[str, str], Dict[str, str]] = {}
+    try:
+        ws = _with_retry(lambda: spreadsheet.worksheet(construction_name))
+        rows = _with_retry(ws.get_all_values)
+        if rows and len(rows) > 1:
+            hdr = rows[0]
+            for row in rows[1:]:
+                if len(row) >= 2 and row[0] and row[1]:
+                    existing[(row[0], row[1])] = dict(zip(hdr[2:], row[2:]))
+    except gspread.WorksheetNotFound:
+        pass
+
+    # Get param_names and param_values from the manifest.
+    cp = manifest_class_info.get("construction_params", {}).get(construction_name, {})
+    param_names  = cp.get("param_names",  ["scopal"])
+    param_values = cp.get("param_values", {"scopal": ["y", "n"]})
+
+    # Generate new filtered pair list.
+    planar_path   = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
+    element_index = build_element_index(f"planar_{lang_id}.tsv", planar_path.parent)
+    pos_type      = _read_position_types(planar_path, lang_id)
+    pairs         = _build_nonperm_pairs(element_index, lang_id, pos_type)
+    pairs         = _filter_nonperm_pairs_by_prescreening(pairs, lang_id)
+
+    new_pair_set = {(p[0], p[1]) for p in pairs}
+    old_pair_set = set(existing.keys())
+    retained = old_pair_set & new_pair_set
+    removed  = old_pair_set - new_pair_set
+    added    = new_pair_set - old_pair_set
+
+    _populate_tab_pairs(spreadsheet, construction_name, param_names, param_values,
+                        pairs, prefill=existing)
+
+    print(f"    {construction_name}: {len(retained)} retained, {len(added)} added, "
+          f"{len(removed)} removed")
+    if removed:
+        print(f"    Removed pairs will surface via import-sheets --apply → apply-pending.")
+
+
+def _regen_dependents_simple(gc: gspread.Client, manifest: dict) -> None:
+    """Regenerate dependent constructions where the dependent TSV has no annotation data.
+
+    Safe to automate: only fires when the dependent TSV does not exist or contains
+    no annotated values. If the dependent TSV has data, skips and lets
+    integrity-check flag it for manual coordinator action.
+    """
+    dc_classes = {c["name"]: c for c in load_diagnostic_classes().get("classes", [])}
+
+    for cls_name, cls_entry in dc_classes.items():
+        constructions_schema = cls_entry.get("constructions", [])
+        deps = [
+            (c["depends_on"], c["name"])
+            for c in constructions_schema
+            if c.get("depends_on") and c.get("staleness_check") == "element_set"
+        ]
+        if not deps:
+            continue
+
+        for lang_id in sorted(d.name for d in CODED_DATA.iterdir()
+                               if d.is_dir() and not d.name.startswith(".")):
+            lang_manifest = manifest.get(lang_id, {})
+            cls_info = lang_manifest.get("sheets", {}).get(cls_name)
+            if not cls_info:
+                continue
+
+            for source_name, dep_name in deps:
+                source_path = CODED_DATA / lang_id / cls_name / f"{source_name}.tsv"
+                dep_path    = CODED_DATA / lang_id / cls_name / f"{dep_name}.tsv"
+
+                if not source_path.exists():
+                    continue  # source not yet imported; nothing to do
+
+                # Safe to auto-regenerate only when no annotation data exists yet.
+                has_data = False
+                if dep_path.exists():
+                    try:
+                        dep_df = pd.read_csv(dep_path, sep="\t", dtype=str,
+                                             keep_default_na=False)
+                        # Any non-blank, non-'?' criterion value counts as data.
+                        for col in dep_df.columns:
+                            if col not in {"Element_A", "Element_B"} and col not in set(_TRAILING_COLS):
+                                if dep_df[col].str.strip().isin(["y", "n", "both", "na"]).any():
+                                    has_data = True
+                                    break
+                    except Exception:
+                        has_data = True  # treat unreadable as has_data to be safe
+
+                if has_data:
+                    print(f"  [{lang_id}/{cls_name}/{dep_name}] has annotation data — "
+                          f"skipping auto-regeneration. Run:\n"
+                          f"    python -m coding generate-sheets --lang {lang_id} "
+                          f"--regen-construction {cls_name}:{dep_name}")
+                    continue
+
+                print(f"  [{lang_id}/{cls_name}/{dep_name}] regenerating from {source_name}…")
+                try:
+                    _regen_construction(gc, lang_id, cls_name, dep_name, cls_info)
+                except Exception as exc:
+                    print(f"  ERROR: {exc}")
+
+
+# ---------------------------------------------------------------------------
 # Safety checks
 # ---------------------------------------------------------------------------
 
@@ -901,6 +1038,47 @@ def main() -> None:
     """
     if "--push-manifest" in sys.argv:
         push_manifest()
+        return
+
+    # --regen-construction CLASS:CONSTRUCTION [--lang LANG_ID]
+    # Regenerate a specific dependent construction tab in an existing sheet.
+    # Bypasses --force protection (no new sheet is created).
+    if "--regen-construction" in sys.argv:
+        idx = sys.argv.index("--regen-construction")
+        spec = sys.argv[idx + 1] if idx + 1 < len(sys.argv) else ""
+        if ":" not in spec:
+            raise SystemExit("Usage: --regen-construction CLASS_NAME:CONSTRUCTION_NAME")
+        class_name, construction_name = spec.split(":", 1)
+        lang_idx = sys.argv.index("--lang") if "--lang" in sys.argv else -1
+        lang_filter = sys.argv[lang_idx + 1] if lang_idx >= 0 else None
+
+        print("Connecting to Google APIs...")
+        gc, drive = _get_clients()
+        config = _load_drive_config()
+        file_id = config.get("_planars_config_file_id")
+        manifest = _download_file_json(drive, file_id) if file_id else {}
+
+        langs = [lang_filter] if lang_filter else sorted(
+            d.name for d in CODED_DATA.iterdir() if d.is_dir() and not d.name.startswith(".")
+        )
+        for lang_id in langs:
+            cls_info = manifest.get(lang_id, {}).get("sheets", {}).get(class_name)
+            if not cls_info:
+                print(f"  {lang_id}/{class_name}: not in manifest — skipping")
+                continue
+            print(f"\n{lang_id}/{class_name}/{construction_name}")
+            _regen_construction(gc, lang_id, class_name, construction_name, cls_info)
+        return
+
+    # --regen-dependents
+    # CI path: regenerate dependent constructions where no annotation data exists yet.
+    if "--regen-dependents" in sys.argv:
+        print("Connecting to Google APIs...")
+        gc, drive = _get_clients()
+        config = _load_drive_config()
+        file_id = config.get("_planars_config_file_id")
+        manifest = _download_file_json(drive, file_id) if file_id else {}
+        _regen_dependents_simple(gc, manifest)
         return
 
     force = "--force" in sys.argv

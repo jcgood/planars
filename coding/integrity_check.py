@@ -472,7 +472,7 @@ def _section_dependent_construction_staleness(
     """
     print(_section("DEPENDENT CONSTRUCTION STALENESS"))
 
-    total_w = 0
+    total_e = 0
     any_checked = False
 
     for cls_name, cls_entry in diag_classes.items():
@@ -504,7 +504,7 @@ def _section_dependent_construction_staleness(
                     dep_df = pd.read_csv(dep_path,    sep="\t", dtype=str, keep_default_na=False)
                 except Exception as exc:
                     print(_warn(f"{label} — could not load: {exc}"))
-                    total_w += 1
+                    total_e += 1
                     continue
 
                 # Source set: elements where the filter criterion ≠ 'n' (n = excluded).
@@ -518,7 +518,7 @@ def _section_dependent_construction_staleness(
                     source_set = set(src_df["Element"].str.strip())
                 else:
                     print(_warn(f"{label} — source TSV missing Element column"))
-                    total_w += 1
+                    total_e += 1
                     continue
 
                 # Dependent set: all elements appearing in pair columns.
@@ -535,7 +535,7 @@ def _section_dependent_construction_staleness(
                 added   = source_set - dep_set
 
                 if removed or added:
-                    print(_warn(label))
+                    print(_fail(label))
                     if removed:
                         preview = sorted(removed)[:5]
                         suffix = " …" if len(removed) > 5 else ""
@@ -544,15 +544,16 @@ def _section_dependent_construction_staleness(
                         preview = sorted(added)[:5]
                         suffix = " …" if len(added) > 5 else ""
                         print(_sub(f"now in scope but absent from pairs ({len(added)}): {preview}{suffix}"))
-                    print(_sub(f"→ Run: python -m coding generate-sheets --lang {lang_id}"))
-                    total_w += 1
+                    print(_sub(f"→ Run: python -m coding generate-sheets --lang {lang_id} "
+                               f"--regen-construction {cls_name}:{dep_name}"))
+                    total_e += 1
                 else:
                     print(_ok(label))
 
     if not any_checked:
         print("  (no languages have dependent construction TSV pairs to check)")
 
-    return 0, total_w
+    return total_e, 0
 
 
 def _section_needs_review(codebook: dict, diag_classes: dict) -> None:
@@ -613,6 +614,13 @@ def main() -> None:
         help="Fast standalone check: flag manifest classes absent from diagnostics YAML. "
              "Requires Drive access but makes no Sheet API calls. Used by data-refresh.",
     )
+    parser.add_argument(
+        "--check-dependents",
+        action="store_true",
+        help="Fast standalone check: flag dependent constructions whose element sets "
+             "are out of sync with their source construction TSV. Used by data-refresh "
+             "to file a dedicated dependent-stale issue.",
+    )
     args = parser.parse_args()
 
     # Discover language IDs
@@ -644,6 +652,14 @@ def main() -> None:
             sys.exit(1)
         else:
             print("No stale manifest entries.")
+        return
+
+    # --check-dependents: lightweight standalone mode for dependent construction staleness.
+    if args.check_dependents:
+        diag_classes = _load_diagnostic_classes()
+        e, _ = _section_dependent_construction_staleness(lang_ids, diag_classes)
+        if e:
+            sys.exit(1)
         return
 
     # Header

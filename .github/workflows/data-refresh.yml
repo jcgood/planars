@@ -196,6 +196,63 @@ jobs:
         run: python -m coding sync-params --apply
         continue-on-error: true
 
+      - name: Regenerate dependent constructions (simple case)
+        # After prescreening is imported, automatically regenerate the general
+        # (pair-row) tab with a filtered pair list. Only fires when the dependent
+        # TSV has no annotation data yet — safe to automate with no data loss.
+        # If the dependent TSV already has annotations, skips and lets the
+        # dependent-stale check below file an issue for coordinator action.
+        run: python -m coding generate-sheets --regen-dependents
+        continue-on-error: true
+
+      - name: Check for stale dependent constructions
+        id: check_dependents
+        run: python -m coding integrity-check --check-dependents > /tmp/dependents_report.txt 2>&1
+        continue-on-error: true
+
+      - name: File or update GitHub issue if dependent construction stale
+        if: steps.check_dependents.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 << 'PYEOF'
+          text = open('/tmp/dependents_report.txt').read()
+          errors = [l.strip()[1:].strip() for l in text.splitlines() if l.strip().startswith('✗')]
+          with open('/tmp/dependents_stale_body.md', 'w') as f:
+              f.write("## What's wrong\n\n")
+              if errors:
+                  f.write('\n'.join(f"- {e}" for e in errors) + '\n')
+              else:
+                  f.write("_(Details could not be extracted — see full log.)_\n")
+              f.write("\n## What to do\n\n")
+              f.write("The `element_prescreening` annotation has changed since the `general` "
+                      "(pair-row) tab was last generated. The pair list needs to be regenerated "
+                      "to reflect the current prescreening decisions.\n\n")
+              f.write("**This requires coordinator action** because the general tab may already "
+                      "have annotation data that needs to be reviewed.\n\n")
+              f.write("Run the following command for each affected language "
+                      "(shown in the errors above):\n\n")
+              f.write("```bash\n")
+              f.write("python -m coding generate-sheets --lang LANG_ID "
+                      "--regen-construction nonpermutability:general\n")
+              f.write("```\n\n")
+              f.write("Then run `python -m coding import-sheets --apply` to import the "
+                      "updated sheet. Any removed pairs will appear in `apply-pending` "
+                      "for review before the TSV is updated.\n\n")
+              f.write("The issue closes automatically when the element sets are back in sync.\n")
+              f.write("\n## Full log\n\n")
+              f.write("<details><summary>Show full check output</summary>\n\n```\n")
+              f.write(text)
+              f.write("\n```\n\n</details>\n")
+          PYEOF
+          bash .github/scripts/manage_issue.sh file dependent-stale "Dependent construction stale — regeneration needed ($(date -u +%Y-%m-%d))" /tmp/dependents_stale_body.md
+
+      - name: Close open dependent-stale issue if all clear
+        if: steps.check_dependents.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash .github/scripts/manage_issue.sh close dependent-stale "Dependent constructions in sync on $(date -u +%Y-%m-%d) — closing."
+
       - name: Check for diagnostics YAML drift
         id: diag_drift
         run: |
