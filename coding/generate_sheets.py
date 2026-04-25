@@ -610,7 +610,7 @@ def _create_status_tab(
 
     if _STATUS_TAB in existing:
         ws = existing[_STATUS_TAB]
-        rows = ws.get_all_values()
+        rows = _with_retry(ws.get_all_values)
         current_constructions = {r[0] for r in rows[1:] if r} if len(rows) > 1 else set()
         missing = [c for c in construction_names if c not in current_constructions]
         if missing:
