@@ -974,23 +974,13 @@ def _regen_dependents_simple(gc: gspread.Client, manifest: dict) -> None:
                 if not source_path.exists():
                     continue  # source not yet imported; nothing to do
 
-                # Safe to auto-regenerate only when no annotation data exists yet.
-                has_data = False
+                # Safe to auto-regenerate only when the dependent TSV does not
+                # yet exist. Once the TSV exists (even with blank annotation
+                # values), the row structure was deliberately generated; skip
+                # to avoid overwriting it on every data-refresh run. Staleness
+                # is detected separately by integrity-check → dependent-stale.
                 if dep_path.exists():
-                    try:
-                        dep_df = pd.read_csv(dep_path, sep="\t", dtype=str,
-                                             keep_default_na=False)
-                        # Any non-blank, non-'?' criterion value counts as data.
-                        for col in dep_df.columns:
-                            if col not in {"Element_A", "Element_B"} and col not in set(_TRAILING_COLS):
-                                if dep_df[col].str.strip().isin(["y", "n", "both", "na"]).any():
-                                    has_data = True
-                                    break
-                    except Exception:
-                        has_data = True  # treat unreadable as has_data to be safe
-
-                if has_data:
-                    print(f"  [{lang_id}/{cls_name}/{dep_name}] has annotation data — "
+                    print(f"  [{lang_id}/{cls_name}/{dep_name}] already exists — "
                           f"skipping auto-regeneration. Run:\n"
                           f"    python -m coding generate-sheets --lang {lang_id} "
                           f"--regen-construction {cls_name}:{dep_name}")
