@@ -306,11 +306,13 @@ def _prefill_free_occurrence_rows(
         is_keystone = pos_name.strip().lower() == "v:verbstem"
 
         if is_keystone:
-            # Keystone: pull free from noninterruption; all annotation cols na
-            # (keystone is the anchor — edge and dependency columns are self-referential).
+            # Keystone: pull free from noninterruption ONLY if it's a real value (y/n).
+            # noninterruption marks the keystone na for free (not applicable there);
+            # free_occurrence needs a real y/n to compute the minimal span, so leave
+            # it blank here if the noninterruption value is na or missing.
             if free_col is not None and free_map:
                 ks_free = free_map.get(element, "")
-                if ks_free:
+                if ks_free and ks_free not in ("na", "n/a"):
                     row[free_col] = ks_free
             for col in (left_col, right_col, dep_left_col, dep_right_col):
                 if col is not None:
