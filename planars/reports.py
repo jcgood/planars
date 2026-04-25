@@ -180,6 +180,13 @@ _CLASS_HANDLERS = {
     "idiom":             (_idiom.derive_idiom_domains,                _make_simple_rows("idiom")),
 }
 
+# For classes with multi-construction workflows, only these constructions
+# produce span rows. Others (e.g. element_prescreening) are upstream inputs
+# and must not be passed to the class's derive function.
+_REPORTABLE_CONSTRUCTIONS: Dict[str, frozenset] = {
+    "nonpermutability": _nonperm._SNAPSHOT_CONSTRUCTIONS,
+}
+
 
 # ---------------------------------------------------------------------------
 # Span collection (primary analytical output)
@@ -267,7 +274,10 @@ def _collect_spans_local(repo_root: Path, lang_id: Optional[str] = None):
             class_dir = lang_dir / class_name
             if not class_dir.exists():
                 continue
+            allowed = _REPORTABLE_CONSTRUCTIONS.get(class_name)
             for tsv in sorted(class_dir.glob("*.tsv")):
+                if allowed is not None and tsv.stem not in allowed:
+                    continue
                 result = derive_fn(tsv, strict=False)
                 rows.extend(row_fn(result, lid))
                 if lid not in lang_meta:
@@ -303,7 +313,10 @@ def _collect_spans_sheets(gc, manifest, lang_id: Optional[str] = None):
                 print(f"  WARNING: could not open {class_name} sheet for {lid}: {e}")
                 continue
             construction_params = sheet_info.get("construction_params", {})
+            allowed = _REPORTABLE_CONSTRUCTIONS.get(class_name)
             for construction in sheet_info["constructions"]:
+                if allowed is not None and construction not in allowed:
+                    continue
                 try:
                     ws = ss.worksheet(construction)
                 except Exception:
