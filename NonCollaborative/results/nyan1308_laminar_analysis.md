@@ -176,6 +176,43 @@ to maximal among the 11 — it is missing only [9–10], which nests cleanly
 inside [6–10] and is disjoint from [6–8]. TT15 and TT16 are the most
 incomplete, each missing over a dozen compatible spans.
 
+### Why treeTraversal missed 64 maximal families
+
+The 5 maximal families that treeTraversal *did* find (TT1–4, TT9) are pure
+chains: every span in the family properly contains the next, with no disjoint
+siblings at the same level. These chains happen to be maximal because the
+observed spans leave no compatible span out. The 64 missed families all
+require at least one pair of **disjoint sibling spans at different size
+levels** — and treeTraversal's core algorithm structurally cannot produce these.
+
+The `traverse()` function works size-first: it iterates from the largest
+observed span down to the smallest, at each step identifying spans of the
+*current size* that fit inside the *current parent*, then recursing. When
+treeTraversal encounters two spans that are disjoint and could sit side by side
+as siblings under a common parent, it processes them in separate recursive
+branches — one spawns from the left path, one from the right — and the two
+paths never reunite in the same output tree.
+
+A concrete example: among the four laminar families found by the earlier
+(pre-BK-fix) algorithm, Lam3 requires both [5–13] (Neg1–CAUS, size 9) and
+[17–19] (FV–Enc, size 3) as disjoint siblings under [5–19] (Neg1–Enc). In
+treeTraversal's traversal, [5–13] appears at size 9 and [17–19] appears at
+size 3 — different iterations. The algorithm descends from [5–19] into [5–13]
+(size 9) and follows that chain all the way down; it never backtracks to place
+[17–19] alongside [5–13] as a sibling. TT9 is the [5–13] chain; TT16 is a
+separate chain that starts with [17–19]. Lam3 is the tree that merges both
+paths — and treeTraversal never constructs it.
+
+The same logic applies to the other 63 missed families. Each one requires
+disjoint spans (e.g., [5–6] and [9–17], or [6–8] and [13–15]) to coexist as
+siblings under a shared ancestor, and treeTraversal always resolves the
+branching point by following exactly one path downward.
+
+In short: treeTraversal's 16 output trees are 16 distinct *linear paths*
+through the containment structure. The 69 Bron-Kerbosch families enumerate
+all valid *branching combinations* of those paths — a much larger space that
+treeTraversal, by design, never explores.
+
 ---
 
 ## Algorithm notes

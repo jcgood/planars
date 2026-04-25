@@ -755,6 +755,235 @@ def generate_r_script(families: list[frozenset[Span]],
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# Overlay: multi-domain-type forest visualization
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Standard colors matching the spanchart convention
+OVERLAY_GROUPS: list[tuple[list[str], str, str]] = [
+    (["morphosyntactic"], "#EE6677", "morsyn"),
+    (["tonosegmental"],   "#228833",  "tono"),
+    (["phonological"],    "#4477AA",  "phon"),
+    (["intonational"],    "#CCBB44",  "inton"),
+]
+
+_NYAN1308_POS_LABELS: dict[int, str] = {
+    1: "QM",    2: "PreSbj", 3: "Sbj",   4: "PostSbj",
+    5: "Neg1",  6: "SM",     7: "Neg2",  8: "TAM",
+    9: "OM",   10: "Root",  11: "Ext",  12: "STAT",
+   13: "CAUS", 14: "APPL",  15: "REC",  16: "PASS",
+   17: "FV",   18: "2P",    19: "Enc",  20: "Obj1",
+   21: "Obj2", 22: "PostObj",
+}
+
+
+def generate_r_overlay_script(
+        subsets: list[tuple[list, dict, str, str]],
+        output_dir: str,
+        output_name: str = "laminar_overlay.r",
+        pos_labels: dict[int, str] | None = None,
+) -> None:
+    """Write a ggtree R script that overlays trees from multiple domain-type groups.
+
+    Each group is drawn in its own color; all trees are stacked in one panel
+    using patchwork's area() overlay. This is the computed equivalent of
+    allsubtypes-forest-byhand.r — same visual logic, trees from the algorithm.
+
+    Alpha is computed from the total tree count so the combined overlay
+    approaches opacity. Branch thickness encodes within-group frequency
+    (sqrt-scaled).
+
+    Args:
+        subsets: List of (families, span_family_count, color, tpfx) tuples.
+        output_dir: Where to write the R script.
+        output_name: R script filename.
+        pos_labels: Position number → label. If given, the first tree shows
+                    tip labels as 'N\\nName'; all other trees suppress them.
+    """
+    n_total = sum(len(fams) for fams, _, _, _ in subsets if fams)
+    if n_total == 0:
+        return
+
+    # Alpha: chosen so all trees together approach opacity
+    alphaval = round((1 - 0.01 ** (1 / n_total)) / 2, 6)
+
+    rout_path = os.path.join(output_dir, output_name)
+    pdf_path = rout_path[:-2] + ".pdf" if rout_path.endswith(".r") else rout_path + ".pdf"
+    all_plot_names: list[str] = []
+    first_written = False
+
+    with open(rout_path, "w") as rout:
+        print("library(ape)", file=rout)
+        print("library(ggplot2)", file=rout)
+        print("library(ggtree)", file=rout)
+        print("library(patchwork)", file=rout)
+        print("", file=rout)
+
+        if pos_labels:
+            pairs = ", ".join(
+                f'"{k}" = "{v}"' for k, v in sorted(pos_labels.items())
+            )
+            print(f"posLabel <- list({pairs})", file=rout)
+            print("", file=rout)
+
+        print(f"alphaval <- {alphaval}", file=rout)
+        print("", file=rout)
+
+        for families, span_family_count, color, tpfx in subsets:
+            if not families:
+                continue
+
+            print(f"# ── {tpfx}: {len(families)} families ──", file=rout)
+
+            for idx, family_set in enumerate(families):
+                family_list = sorted(family_set, key=lambda s: s.size, reverse=True)
+                parent_map = build_parent_map(family_list)
+                children_map = get_children(parent_map)
+                root = max(family_list, key=lambda s: s.size)
+
+                newick = span_to_newick(root, children_map) + ";"
+                tree_var    = f"{tpfx}tree{idx + 1}"
+                grouped_var = f"{tree_var}grouped"
+                strength_var = f"{tpfx}smap{idx + 1}"
+                plot_var    = f"{tpfx}treeplot{idx + 1}"
+
+                print(f'{tree_var} <- read.tree(text="{newick}")', file=rout)
+
+                sorted_spans = sorted(family_list, key=lambda s: s.left)
+                domains_r = [
+                    f"{chr(97 + i)} = c({s.left}, {s.right})"
+                    for i, s in enumerate(sorted_spans)
+                ]
+                print(
+                    f'{grouped_var} <- groupOTU({tree_var},'
+                    f' list({", ".join(domains_r)}))',
+                    file=rout,
+                )
+
+                strength_vals = ", ".join(
+                    str(round(span_family_count.get(s, 1) ** 0.5, 4))
+                    for s in sorted_spans
+                )
+                print(f"{strength_var} <- c(0.5, {strength_vals})", file=rout)
+
+                # Tip labels on first tree only
+                if not first_written and pos_labels:
+                    geom_tip = (
+                        '  geom_tiplab(geom="label", size=3.5, angle=0,\n'
+                        '    offset=-1, hjust=0.5, alpha=1, label.size=0,\n'
+                        '    lineheight=0.9,\n'
+                        '    aes(label=paste(label, posLabel[label], sep="\\n"))) +'
+                    )
+                elif not first_written:
+                    geom_tip = (
+                        '  geom_tiplab(geom="label", size=5, angle=0,\n'
+                        '    offset=-1, hjust=0.5, alpha=1) +'
+                    )
+                else:
+                    geom_tip = (
+                        '  geom_tiplab(geom="label", size=5, angle=0,\n'
+                        '    offset=-1, hjust=0.5, alpha=0) +'
+                    )
+
+                print(
+                    f'{plot_var} <- ggtree({grouped_var},\n'
+                    f'  aes(size=({strength_var}[group])),\n'
+                    f'  layout="slanted", ladderize=FALSE,\n'
+                    f'  alpha=alphaval, color="{color}") +\n'
+                    f'  layout_dendrogram() +\n'
+                    f'{geom_tip}\n'
+                    f'  theme(panel.background=element_blank(),\n'
+                    f'    plot.background=element_blank(),\n'
+                    f'    legend.position="none") +\n'
+                    f'  scale_size_identity()',
+                    file=rout,
+                )
+                print("", file=rout)
+
+                all_plot_names.append(plot_var)
+                first_written = True
+
+        n_plots = len(all_plot_names)
+        print("treelayout <- c(", file=rout)
+        for _ in range(n_plots - 1):
+            print("  area(t=1, l=1, b=5, r=1),", file=rout)
+        print("  area(t=1, l=1, b=5, r=1))", file=rout)
+        print("", file=rout)
+
+        joined = " +\n  ".join(all_plot_names)
+        print(
+            f"forest <- (\n  {joined} +\n  plot_layout(design=treelayout))",
+            file=rout,
+        )
+        bg_theme = "theme(plot.background=element_rect(fill='grey95'))"
+        print(f"print(forest & {bg_theme})", file=rout)
+        print(
+            f'ggsave("{pdf_path}", forest & {bg_theme}, width=20, height=14)',
+            file=rout,
+        )
+
+    print(f"\nR overlay script written to: {rout_path}")
+
+
+def run_domain_overlay(
+        domain_file: str = "domains_nyan1308.tsv",
+        domains_dir: str | None = None,
+        output_dir: str | None = None,
+        overlay_groups: list | None = None,
+        pos_labels: dict[int, str] | None = None,
+        output_name: str | None = None,
+) -> None:
+    """Run laminar analysis per domain type and write a combined colored overlay.
+
+    Each domain type is analyzed independently (Bron-Kerbosch); all trees are
+    overlaid in one panel, colored by domain type. Computed equivalent of
+    allsubtypes-forest-byhand.r.
+
+    n_positions is derived from the full unfiltered dataset so subset analyses
+    always produce trees spanning the complete planar structure — even when a
+    subset's spans don't reach the last position (e.g. tonosegmental stops at 17).
+    """
+    if domains_dir is None:
+        domains_dir = os.path.join(os.path.dirname(__file__), "..", "domains")
+    if output_dir is None:
+        output_dir = os.path.join(os.path.dirname(__file__), "..", "results")
+    if overlay_groups is None:
+        overlay_groups = OVERLAY_GROUPS
+    if pos_labels is None and "nyan1308" in domain_file:
+        pos_labels = _NYAN1308_POS_LABELS
+    if output_name is None:
+        lang_id = domain_file.replace("domains_", "").replace(".tsv", "")
+        output_name = f"{lang_id}_laminar_overlay.r"
+
+    # True n_positions from the full dataset — not derived from any subset
+    _, n_positions = load_spans(domain_file, domains_dir)
+    print(f"\n═══ Domain overlay: {domain_file} ({n_positions} positions) ═══")
+
+    subsets = []
+    for type_filter, color, tpfx in overlay_groups:
+        print(f"\n── {tpfx} ({color}) ──")
+        spans, _ = load_spans(domain_file, domains_dir, subset=type_filter)
+        if not spans:
+            print("   No spans — skipping.")
+            continue
+        print(f"   {len(spans)} unique spans")
+        adjacency = find_conflicts(spans)
+        families, truncated = enumerate_maximal_laminar_families(
+            spans, adjacency, n_positions,
+        )
+        if truncated:
+            print(f"   WARNING: enumeration halted at {MAX_FAMILIES} families.")
+        else:
+            print(f"   {len(families)} maximal families")
+        span_family_count: dict[Span, int] = defaultdict(int)
+        for fam in families:
+            for s in fam:
+                span_family_count[s] += 1
+        subsets.append((families, dict(span_family_count), color, tpfx))
+
+    generate_r_overlay_script(subsets, output_dir, output_name, pos_labels)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # Main entry point
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -848,3 +1077,4 @@ if __name__ == "__main__":
     #   main(subset=["phonological", "tonosegmental"], color="#4477AA", tpfx="phon")
     #   main(subset=["intonational"], color="#228833", tpfx="inton")
     main()
+    run_domain_overlay()
