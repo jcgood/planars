@@ -63,7 +63,7 @@
 #                            keystone, which is undefined for the keystone itself.
 #                            Omit the field (or leave empty) when no such criteria exist.
 #   constructions            Optional list of named constructions for classes that have
-#                            internal construction dependencies (e.g., a prescreening tab
+#                            internal construction dependencies (e.g., an element_prescreening tab
 #                            that gates pair generation). Each entry may have:
 #                              name             machine name (matches diagnostics_{lang}.yaml)
 #                              row_type         element | pair_rows

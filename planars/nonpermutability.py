@@ -135,7 +135,7 @@ def derive_nonpermutability_domains(
     Verify before use for annotation or analysis.
 
     Data model: pair rows (Element_A, Element_B, scopal) from Stage 2 of the
-    two-stage annotation workflow. Stage 1 (prescreening) filters elements with
+    two-stage annotation workflow. Stage 1 (element_prescreening) filters elements with
     scopal=n (no meaningful variable ordering) before Stage 2 is generated.
     Each pair row asserts that the two elements can be variably ordered.
     Pairs not listed are assumed fixed-order by structure.
