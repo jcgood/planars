@@ -67,7 +67,7 @@ def _get_current_params(ws: gspread.Worksheet) -> Tuple[List[str], int]:
     Fixed columns: Element (0), Position_Name (1), Position_Number (2).
     Param columns follow; trailing columns (Comments) come last.
     """
-    header = ws.row_values(1)
+    header = _with_retry(lambda: ws.row_values(1))
     fixed_count = 3  # Element, Position_Name, Position_Number
     params = []
     comments_col = len(header)  # default: insert at end if Comments not found
@@ -85,7 +85,7 @@ def _get_current_params(ws: gspread.Worksheet) -> Tuple[List[str], int]:
 
 def _rename_column(ws: gspread.Worksheet, old_name: str, new_name: str) -> bool:
     """Rename a column header in-place. Returns True if found and renamed."""
-    header = ws.row_values(1)
+    header = _with_retry(lambda: ws.row_values(1))
     try:
         col_1based = header.index(old_name) + 1
     except ValueError:
@@ -294,7 +294,7 @@ def _apply_split_to_sheet(
     _split_{old_name} so annotators can remap values before cleanup.
     Returns True if old_name was found.
     """
-    header = ws.row_values(1)
+    header = _with_retry(lambda: ws.row_values(1))
     if old_name not in header:
         return False
     _, comments_col = _get_current_params(ws)
@@ -316,7 +316,7 @@ def _apply_merge_to_sheet(
     _merged_{old1}/_merged_{old2} so annotators can remap values.
     Returns (old1_found, old2_found).
     """
-    header = ws.row_values(1)
+    header = _with_retry(lambda: ws.row_values(1))
     old1_found = old1 in header
     old2_found = old2 in header
     if not old1_found and not old2_found:
@@ -345,7 +345,7 @@ def _build_dropdown_refresh_requests(
     """
     if not stale_params:
         return []
-    header = ws.row_values(1)
+    header = _with_retry(lambda: ws.row_values(1))
     num_rows = ws.row_count
     requests = []
     for param in stale_params:
@@ -687,7 +687,7 @@ def main() -> None:
                     if remove and apply:
                         print(f"  [{class_name}/{construction}] Removing params: {removed_params}")
                         # Re-read header after any insertions above so indices are current.
-                        header = ws.row_values(1)
+                        header = _with_retry(lambda: ws.row_values(1))
                         # Delete columns right-to-left to preserve indices during deletion.
                         for param in sorted(removed_params, key=lambda p: header.index(p), reverse=True):
                             col_idx = header.index(param)  # 0-based

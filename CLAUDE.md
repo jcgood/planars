@@ -316,7 +316,7 @@ Renaming a class: update `diagnostics_{lang_id}.tsv` to use the new name first, 
 
 **Contributor tooling** — Changes to sheet structure need `update-sheets` or `restructure-sheets` to propagate.
 
-**Audit** — Use `integrity-check` (summary) and `check-codebook` (detail). Verify inline comments and docstrings match current behavior. A good starting point after a gap.
+**Audit** — Start by triggering the data refresh workflow (`gh workflow run data-refresh.yml`), then wait for it to complete and review any newly filed issues. This catches problems that only surface during the live Sheet-reading steps (cascading validation errors, rate-limit failures, drift between Sheet state and local YAML) and is more complete than running `integrity-check` locally alone. Then run `integrity-check` (summary) and `check-codebook` (detail) locally. Verify inline comments and docstrings match current behavior. A good starting point after a gap. Claude can trigger the workflow and interpret the results.
 
 **Refactoring** — Track targets in a dedicated issue. Run a pass after major feature additions.
 

@@ -11,6 +11,11 @@ _REQUIRED_CRITERIA = {"scopal"}
 _KEYSTONE_NAME = "v:verbstem"
 _TRAILING_COLS = {"Source", "Comments"}
 
+# Only the pair-row (general) construction can be derived by this module.
+# element_prescreening uses a different schema (Element, scopal) and is not
+# a valid input to derive_nonpermutability_domains.
+_SNAPSHOT_CONSTRUCTIONS = frozenset({"general"})
+
 
 # ---------------------------------------------------------------------------
 # Planar helpers

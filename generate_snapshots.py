@@ -31,7 +31,7 @@ _CAMEL_RE   = re.compile(r"(?<=[a-z])(?=[A-Z])")
 _ANALYSIS_SKIP = {"charts", "cli", "io", "spans"}
 
 
-def _build_handlers() -> list[tuple[str, object, object]]:
+def _build_handlers() -> list[tuple[str, object, object, frozenset | None]]:
     handlers = []
     planars_dir = ROOT / "planars"
     for path in sorted(planars_dir.glob("*.py")):
@@ -40,7 +40,8 @@ def _build_handlers() -> list[tuple[str, object, object]]:
         try:
             mod = importlib.import_module(f"planars.{path.stem}")
             if hasattr(mod, "derive") and hasattr(mod, "format_result"):
-                handlers.append((path.stem, mod.derive, mod.format_result))
+                snap = getattr(mod, "_SNAPSHOT_CONSTRUCTIONS", None)
+                handlers.append((path.stem, mod.derive, mod.format_result, snap))
         except Exception:
             pass
     return handlers
@@ -49,15 +50,19 @@ def _build_handlers() -> list[tuple[str, object, object]]:
 _CLASS_HANDLERS = _build_handlers()
 
 # Build the task list: one entry per (tsv_path, derive_fn, fmt_fn).
+# If a module defines _SNAPSHOT_CONSTRUCTIONS, only TSVs whose stem matches
+# one of those names are included (guards against multi-format class dirs like
+# nonpermutability, where element_prescreening.tsv uses a different schema).
 TASKS = [
     (tsv_path, derive_fn, fmt_fn)
-    for class_name, derive_fn, fmt_fn in _CLASS_HANDLERS
+    for class_name, derive_fn, fmt_fn, snap_constructions in _CLASS_HANDLERS
     for lang_dir in sorted((ROOT / "coded_data").iterdir())
     if lang_dir.is_dir()
     for tsv_path in sorted((lang_dir / class_name).glob("*.tsv"))
     if (lang_dir / class_name).exists()
     and _FILLED_RE.search(tsv_path.name)
     and not _LEGACY_RE.search(tsv_path.name)
+    and (snap_constructions is None or tsv_path.stem in snap_constructions)
 ]
 
 

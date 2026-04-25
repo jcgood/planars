@@ -77,6 +77,26 @@ def _known_analysis_classes() -> Set[str]:
     return classes
 
 
+def _schema_defined_constructions() -> Dict[str, Set[str]]:
+    """Return {class_name: set_of_construction_names} for classes with schema-defined constructions.
+
+    Only includes classes where diagnostic_classes.yaml defines a structured constructions
+    block (list of dicts). These classes control their own construction set at the schema
+    level (e.g. nonpermutability's two-stage workflow), so per-language YAMLs may list
+    multiple constructions without triggering the 'general must be alone' rule.
+    """
+    data = load_diagnostic_classes()
+    result: Dict[str, Set[str]] = {}
+    for cls in data.get("classes", []):
+        name = cls.get("name", "")
+        if not name:
+            continue
+        constructions = cls.get("constructions")
+        if isinstance(constructions, list) and constructions and isinstance(constructions[0], dict):
+            result[name] = {c.get("name", "") for c in constructions if isinstance(c, dict)}
+    return result
+
+
 def _diagnostic_class_allowed_criteria() -> Dict[str, Set[str]]:
     """Return {class_name: set_of_allowed_param_names} from diagnostic_classes.yaml.
 
@@ -177,10 +197,11 @@ def validate_diagnostics_yaml(data: dict, lang_id: str) -> List[ValidationIssue]
         issues.append(ValidationIssue("error", filename, "Missing or empty 'classes' mapping"))
         return issues
 
-    known_criteria   = _codebook_criterion_names()
-    known_classes    = _known_analysis_classes()
-    allowed_by_class = _diagnostic_class_allowed_criteria()
-    required_classes = _required_collection_classes()
+    known_criteria        = _codebook_criterion_names()
+    known_classes         = _known_analysis_classes()
+    allowed_by_class      = _diagnostic_class_allowed_criteria()
+    required_classes      = _required_collection_classes()
+    schema_constructions  = _schema_defined_constructions()
 
     for class_name, class_data in classes.items():
         location = f"{filename} [{class_name}]"
@@ -199,7 +220,18 @@ def validate_diagnostics_yaml(data: dict, lang_id: str) -> List[ValidationIssue]
             ))
             constructions = []
 
-        if "general" in constructions and len(constructions) > 1:
+        if class_name in schema_constructions:
+            # Class has schema-defined constructions (e.g. nonpermutability's two-stage
+            # workflow). Validate against the schema's list instead of the general rule.
+            allowed = schema_constructions[class_name]
+            unknown = [c for c in constructions if c not in allowed]
+            if unknown:
+                issues.append(ValidationIssue(
+                    "error", location,
+                    f"construction(s) {unknown} not defined for '{class_name}' in "
+                    f"diagnostic_classes.yaml (allowed: {sorted(allowed)})"
+                ))
+        elif "general" in constructions and len(constructions) > 1:
             issues.append(ValidationIssue(
                 "error", location,
                 f"'general' must be the only construction when used, but found: {constructions}"
@@ -392,6 +424,8 @@ def validate_diagnostics_df(df, lang_id: str) -> List[ValidationIssue]:
     # ------------------------------------------------------------------
     # 5. Construction naming
     # ------------------------------------------------------------------
+    schema_constructions = _schema_defined_constructions()
+
     for i, row in df.iterrows():
         class_name     = str(row.get("Class", "")).strip()
         constructions  = [c.strip() for c in str(row.get("Constructions", "")).split(",") if c.strip()]
@@ -404,7 +438,16 @@ def validate_diagnostics_df(df, lang_id: str) -> List[ValidationIssue]:
             ))
             continue
 
-        if "general" in constructions and len(constructions) > 1:
+        if class_name in schema_constructions:
+            allowed = schema_constructions[class_name]
+            unknown = [c for c in constructions if c not in allowed]
+            if unknown:
+                issues.append(ValidationIssue(
+                    "error", location,
+                    f"construction(s) {unknown} not defined for '{class_name}' in "
+                    f"diagnostic_classes.yaml (allowed: {sorted(allowed)})"
+                ))
+        elif "general" in constructions and len(constructions) > 1:
             issues.append(ValidationIssue(
                 "error", location,
                 f"'general' must be the only construction when used, "

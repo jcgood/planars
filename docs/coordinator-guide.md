@@ -457,7 +457,27 @@ Only classes with actual changes are archived; unchanged classes are left untouc
 
 ### Health checks
 
-Two commands cover project health at different levels of detail. Run both after any significant change — new language, schema edit, or module addition.
+#### Audit procedure
+
+Run this sequence after any major change or after a gap between sessions:
+
+1. **Trigger the data refresh** — this is the most complete health check because it exercises the full Sheet-reading pipeline, not just local files:
+   ```bash
+   gh workflow run data-refresh.yml
+   ```
+   Wait for the run to complete (usually 2–3 minutes), then check the Issues tab for any newly filed labels (`integrity-error`, `dependent-stale`, `diagnostics-drift`, `import-error`, `sheet-validation`). Claude can trigger this and interpret the results for you.
+
+2. **Run local health checks:**
+   ```bash
+   python -m coding integrity-check
+   python -m coding check-codebook
+   ```
+
+3. **Review inline comments and docstrings** in any recently changed analysis modules to confirm they still describe current behavior.
+
+Triggering the data refresh catches issues that local `integrity-check` misses: cascading validation errors that only surface during YAML sync, Sheet→YAML drift that hasn't been committed, and `continue-on-error` step failures (like API rate limit hits) that don't file issues but leave things partially unprocessed.
+
+#### Running the checks
 
 ```bash
 python -m coding integrity-check                      # full health report — all languages, all schemas
@@ -465,7 +485,7 @@ python -m coding integrity-check --lang arao1248      # one language only
 python -m coding integrity-check --sheets             # also validate live Google Sheets structure
 ```
 
-`integrity-check` runs six sections: PLANAR STRUCTURE, DIAGNOSTICS, CODEBOOK CONSISTENCY, ANALYSIS CONSISTENCY, ANNOTATION SHEETS (with `--sheets`), and NEEDS REVIEW. Use it as the first tool when starting an audit or after any major change.
+`integrity-check` runs six sections: PLANAR STRUCTURE, DIAGNOSTICS, CODEBOOK CONSISTENCY, ANALYSIS CONSISTENCY, ANNOTATION SHEETS (with `--sheets`), and NEEDS REVIEW. Run it after triggering the data refresh (see Audit procedure above) to get the full picture — the data refresh catches Sheet-level issues that `integrity-check` alone misses.
 
 ```bash
 python -m coding check-codebook
