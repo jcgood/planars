@@ -70,7 +70,13 @@ def _load_planar(planar_path: Path, lang_id: str):
         pos_to_name[pos] = pname
         pos_type[pos] = ptype
 
-        elements = _split_elements(row.get("Elements", "") or "")
+        raw_elements = _split_elements(row.get("Elements", "") or "")
+        # Apply the same bracket-wrapping used in Google Sheets to match
+        # element names in imported TSVs (element_prescreening, general).
+        elements = [
+            f"[{e}]" if (e.startswith("-") or e.endswith("-")) else e
+            for e in raw_elements
+        ]
 
         if pname.lower() == _KEYSTONE_NAME:
             keystone_pos = pos
@@ -84,6 +90,32 @@ def _load_planar(planar_path: Path, lang_id: str):
         raise ValueError(f"No keystone row (Position_Name == '{_KEYSTONE_NAME}') in planar.")
 
     return keystone_pos, pos_to_name, pos_type, pos_to_elements, elem_to_positions
+
+
+def structurally_expected_pair_elements(planar_path: Path, lang_id: str) -> Set[str]:
+    """Return elements that can appear in at least one nonpermutability pair.
+
+    An element is expected if it would be included in at least one pair by
+    _build_nonperm_pairs (i.e., it is not excluded because it shares only a
+    same Slot position with every other element or has fixed structural order
+    with all others). Uses bracket-wrapped names to match imported TSV format.
+    """
+    _, _, pos_type, _, elem_to_positions = _load_planar(planar_path, lang_id)
+    all_elems = list(elem_to_positions.keys())
+    expected: Set[str] = set()
+    for i, ea in enumerate(all_elems):
+        for eb in all_elems[i + 1:]:
+            pa, pb = elem_to_positions[ea], elem_to_positions[eb]
+            shared = pa & pb
+            if any(pos_type.get(p) == "Zone" for p in shared):
+                expected.add(ea); expected.add(eb)
+            elif max(pa) < min(pb) or max(pb) < min(pa):
+                continue
+            elif pa == pb and all(pos_type.get(p) == "Slot" for p in pa):
+                continue
+            else:
+                expected.add(ea); expected.add(eb)
+    return expected
 
 
 # ---------------------------------------------------------------------------
@@ -213,11 +245,30 @@ def derive_nonpermutability_domains(
         if prescreening_path.exists():
             pre_df = pd.read_csv(prescreening_path, sep="\t", dtype=str, keep_default_na=False)
             if "Element" in pre_df.columns and "scopal" in pre_df.columns:
+                # Elements expected in pairs: structurally reachable by the
+                # pair algorithm (i.e., not excluded for being same-Slot only).
+                structurally_expected: Set[str] = set()
+                all_elems = list(elem_to_positions.keys())
+                for i, ea in enumerate(all_elems):
+                    for eb in all_elems[i + 1:]:
+                        pa, pb = elem_to_positions[ea], elem_to_positions[eb]
+                        shared = pa & pb
+                        if any(pos_type.get(p) == "Zone" for p in shared):
+                            structurally_expected.add(ea)
+                            structurally_expected.add(eb)
+                        elif max(pa) < min(pb) or max(pb) < min(pa):
+                            continue
+                        elif pa == pb and all(pos_type.get(p) == "Slot" for p in pa):
+                            continue
+                        else:
+                            structurally_expected.add(ea)
+                            structurally_expected.add(eb)
+
                 source_set = {
                     r["Element"].strip()
                     for _, r in pre_df.iterrows()
                     if r.get("scopal", "").strip() not in ("n", "na")
-                }
+                } & structurally_expected
                 dep_set = set()
                 for col in ("Element_A", "Element_B"):
                     if col in pair_df.columns:
