@@ -1,0 +1,9 @@
+English Free Occurrence General
+===============================
+
+Keystone position: 30 (v:verbstem)
+
+Free-occurrence-internal positions: [30]
+
+Minimal free occurrence span: positions 30–30  (v:verbstem → v:verbstem)
+Maximal free occurrence span: positions 30–30  (v:verbstem → v:verbstem)
