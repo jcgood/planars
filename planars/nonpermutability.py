@@ -188,6 +188,8 @@ def derive_nonpermutability_domains(
         strict_positions, free_permutable_positions,
         strict_span, minimal_flexible_span, maximal_flexible_span.
     """
+    stale_dependent: Optional[str] = None
+
     if _data is not None:
         # _data = (pair_df, keystone_pos, pos_to_name, pos_type,
         #          pos_to_elements, elem_to_positions)
@@ -200,6 +202,27 @@ def derive_nonpermutability_domains(
         keystone_pos, pos_to_name, pos_type, pos_to_elements, elem_to_positions = \
             _load_planar(planar_path, lang_id)
         pair_df = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
+
+        # Staleness check: compare element sets against element_prescreening.tsv.
+        prescreening_path = tsv_path.parent / "element_prescreening.tsv"
+        if prescreening_path.exists():
+            pre_df = pd.read_csv(prescreening_path, sep="\t", dtype=str, keep_default_na=False)
+            if "Element" in pre_df.columns and "scopal" in pre_df.columns:
+                source_set = {
+                    r["Element"].strip()
+                    for _, r in pre_df.iterrows()
+                    if r.get("scopal", "").strip() != "n"
+                }
+                dep_set = set()
+                for col in ("Element_A", "Element_B"):
+                    if col in pair_df.columns:
+                        dep_set.update(pair_df[col].str.strip())
+                dep_set.discard("")
+                if dep_set and source_set != dep_set:
+                    stale_dependent = (
+                        "general.tsv is out of sync with element_prescreening.tsv — "
+                        "run python -m coding generate-sheets --lang " + lang_id
+                    )
 
     all_positions = set(pos_to_name.keys())
 
@@ -267,15 +290,16 @@ def derive_nonpermutability_domains(
     )
 
     return {
-        "keystone_position":        keystone_pos,
-        "position_number_to_name":  pos_to_name,
-        "pair_table":               pair_df,
-        "missing_data":             missing_data,
-        "strict_positions":         sorted(strict_positions),
-        "free_permutable_positions": sorted(free_perm_positions),
-        "strict_span":              strict_span_result,
-        "minimal_flexible_span":    minimal_flex_span_result,
-        "maximal_flexible_span":    maximal_flex_span_result,
+        "keystone_position":           keystone_pos,
+        "position_number_to_name":     pos_to_name,
+        "pair_table":                  pair_df,
+        "missing_data":                missing_data,
+        "strict_positions":            sorted(strict_positions),
+        "free_permutable_positions":   sorted(free_perm_positions),
+        "strict_span":                 strict_span_result,
+        "minimal_flexible_span":       minimal_flex_span_result,
+        "maximal_flexible_span":       maximal_flex_span_result,
+        "stale_dependent_construction": stale_dependent,
     }
 
 
@@ -284,6 +308,11 @@ def format_result(result: Dict[str, object]) -> str:
     p = result["position_number_to_name"]
     fmt = lambda span: fmt_span(span, p)
     lines = []
+
+    stale = result.get("stale_dependent_construction")
+    if stale:
+        lines.append(f"WARNING: {stale}")
+        lines.append("")
 
     missing = result.get("missing_data", {})
     if missing:

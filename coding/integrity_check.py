@@ -458,6 +458,103 @@ def _section_cross_sheet_consistency(lang_ids: List[str]) -> Tuple[int, int]:
     return 0, total_w
 
 
+def _section_dependent_construction_staleness(
+    lang_ids: List[str],
+    diag_classes: dict,
+) -> Tuple[int, int]:
+    """Check for stale dependent constructions using element-set comparison.
+
+    For each class with constructions[].depends_on and staleness_check=element_set:
+    compare the in-scope element set from the source TSV against the element set
+    in the dependent (pair-row) TSV. Any difference means the dependent needs
+    to be regenerated — either because an element was promoted (n→y) or demoted
+    (y→n) in the source sheet since the dependent was last generated.
+    """
+    print(_section("DEPENDENT CONSTRUCTION STALENESS"))
+
+    total_w = 0
+    any_checked = False
+
+    for cls_name, cls_entry in diag_classes.items():
+        constructions_schema = cls_entry.get("constructions", [])
+        deps = [
+            (c["depends_on"], c["name"])
+            for c in constructions_schema
+            if c.get("depends_on") and c.get("staleness_check") == "element_set"
+        ]
+        if not deps:
+            continue
+
+        required_criteria = cls_entry.get("required_criteria", [])
+        filter_crit = required_criteria[0] if required_criteria else None
+
+        for lang_id in lang_ids:
+            for source_name, dep_name in deps:
+                source_path = CODED_DATA / lang_id / cls_name / f"{source_name}.tsv"
+                dep_path    = CODED_DATA / lang_id / cls_name / f"{dep_name}.tsv"
+
+                if not source_path.exists() or not dep_path.exists():
+                    continue
+
+                any_checked = True
+                label = f"{_lang_label(lang_id)}: {cls_name}/{source_name} → {dep_name}"
+
+                try:
+                    src_df = pd.read_csv(source_path, sep="\t", dtype=str, keep_default_na=False)
+                    dep_df = pd.read_csv(dep_path,    sep="\t", dtype=str, keep_default_na=False)
+                except Exception as exc:
+                    print(_warn(f"{label} — could not load: {exc}"))
+                    total_w += 1
+                    continue
+
+                # Source set: elements where the filter criterion ≠ 'n' (n = excluded).
+                if filter_crit and filter_crit in src_df.columns and "Element" in src_df.columns:
+                    source_set = {
+                        r["Element"].strip()
+                        for _, r in src_df.iterrows()
+                        if r.get(filter_crit, "").strip() != "n"
+                    }
+                elif "Element" in src_df.columns:
+                    source_set = set(src_df["Element"].str.strip())
+                else:
+                    print(_warn(f"{label} — source TSV missing Element column"))
+                    total_w += 1
+                    continue
+
+                # Dependent set: all elements appearing in pair columns.
+                dep_set: set = set()
+                for col in ("Element_A", "Element_B"):
+                    if col in dep_df.columns:
+                        dep_set.update(dep_df[col].str.strip())
+                dep_set.discard("")
+
+                if not dep_set:
+                    continue  # dependent not yet populated; skip
+
+                removed = dep_set - source_set
+                added   = source_set - dep_set
+
+                if removed or added:
+                    print(_warn(label))
+                    if removed:
+                        preview = sorted(removed)[:5]
+                        suffix = " …" if len(removed) > 5 else ""
+                        print(_sub(f"now excluded but still in pairs ({len(removed)}): {preview}{suffix}"))
+                    if added:
+                        preview = sorted(added)[:5]
+                        suffix = " …" if len(added) > 5 else ""
+                        print(_sub(f"now in scope but absent from pairs ({len(added)}): {preview}{suffix}"))
+                    print(_sub(f"→ Run: python -m coding generate-sheets --lang {lang_id}"))
+                    total_w += 1
+                else:
+                    print(_ok(label))
+
+    if not any_checked:
+        print("  (no languages have dependent construction TSV pairs to check)")
+
+    return 0, total_w
+
+
 def _section_needs_review(codebook: dict, diag_classes: dict) -> None:
     print(_section("NEEDS REVIEW / PLACEHOLDERS"))
 
@@ -573,6 +670,9 @@ def main() -> None:
     total_e += e; total_w += w
 
     e, w = _section_cross_sheet_consistency(lang_ids)
+    total_e += e; total_w += w
+
+    e, w = _section_dependent_construction_staleness(lang_ids, diag_classes)
     total_e += e; total_w += w
 
     if args.sheets:
