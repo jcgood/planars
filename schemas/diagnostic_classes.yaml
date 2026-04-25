@@ -62,6 +62,19 @@
 #                            whether an element's stress is independent *of* the
 #                            keystone, which is undefined for the keystone itself.
 #                            Omit the field (or leave empty) when no such criteria exist.
+#   constructions            Optional list of named constructions for classes that have
+#                            internal construction dependencies (e.g., a prescreening tab
+#                            that gates pair generation). Each entry may have:
+#                              name             machine name (matches diagnostics_{lang}.yaml)
+#                              row_type         element | pair_rows
+#                              depends_on       name of the construction this depends on
+#                              staleness_check  element_set (compare element sets to detect drift)
+#                            Only needed for general-specificity classes with multi-stage
+#                            workflows. construction_specific classes define constructions
+#                            per-language in diagnostics_{lang}.yaml.
+#   sheet_instructions       Optional free-text guidance for the Instructions tab generated
+#                            by generate-sheets. Written for annotators (John-level). If
+#                            absent, only generic dependency-order instructions are shown.
 #   status                   stable | "[NEEDS REVIEW]" | "[PLACEHOLDER]"
 #   criterion_set_status     stable | "[PROVISIONAL]" (expected to grow as more languages
 #                            are analyzed; note explains known gaps or open questions)
@@ -204,13 +217,35 @@ classes:
       linear ordering is strictly or conditionally fixed.
     specificity: general
     # Two-stage annotation (issue #116):
-    #   Stage 1 (prescreening construction): element-level sheet, scopal={y,n,both}.
+    #   Stage 1 (element_prescreening construction): element-level sheet, scopal={y,n,both}.
     #     y = only scopally-conditioned variable orderings; n = no meaningful variable
     #     ordering (element filtered from pair sheet); both = mixed.
     #   Stage 2 (general construction): pair-row sheet (Element_A, Element_B, scopal={y,n}).
     #     Option C pairs, filtered to exclude pairs where either element has scopal=n
     #     from Stage 1. Generate Stage 2 only after Stage 1 is imported.
     # Pairs not in Stage 2 are implicitly fixed-order by structural definition.
+    constructions:
+      - name: element_prescreening
+        row_type: element
+      - name: general
+        row_type: pair_rows
+        depends_on: element_prescreening
+        staleness_check: element_set
+    sheet_instructions: >
+      STEP 1 — element_prescreening: For each element, annotate scopal with one value:
+        y    = this element always participates in fixed-order (scopally meaningful) pairs
+        n    = this element has no meaningful variable ordering; it will be EXCLUDED from
+               the pair list in Step 2
+        both = this element has mixed behavior: some pairs are scopal, some are freely variable
+      When finished, mark element_prescreening as "ready-for-review" in the Status tab.
+      The coordinator will then regenerate the general tab with a filtered pair list.
+
+      STEP 2 — general: Do NOT annotate this tab until the coordinator confirms it has been
+      regenerated after Step 1 is complete. Once regenerated, annotate each pair:
+        scopal = y  means these two elements must appear in a fixed order (the order
+                    carries an obligatory scope difference)
+        scopal = n  means these two elements can appear in either order freely (no
+                    scope difference)
     required_criteria: [scopal]
     optional_criteria: []
     qualification_rule: >

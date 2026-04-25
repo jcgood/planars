@@ -57,7 +57,7 @@ from .drive import (
 )
 from .glottolog import cached_entry as _cached_glottolog, get_metadata as _fetch_glottolog
 from planars.languages import get_display_name as _get_display_name
-from .schemas import load_planar_schema
+from .schemas import load_planar_schema, load_diagnostic_classes
 from .make_forms import (
     build_element_index,
     _infer_language_id_from_planar_filename,
@@ -73,6 +73,7 @@ CODED_DATA = ROOT / "coded_data"
 _TRAILING_COLS = load_planar_schema().get("trailing_columns", ["Source", "Comments"])
 _STATUS_TAB = "Status"
 _STATUS_VALUES = ["in-progress", "ready-for-review"]
+_INSTRUCTIONS_TAB = "Instructions"
 
 
 def _create_or_update_tsv_sheet(
@@ -412,15 +413,15 @@ def _build_nonperm_pairs(
 def _filter_nonperm_pairs_by_prescreening(
     pairs: List[List[str]], lang_id: str
 ) -> List[List[str]]:
-    """Filter candidate pairs by removing elements with scopal=n in prescreening.tsv.
+    """Filter candidate pairs by removing elements with scopal=n in element_prescreening.tsv.
 
-    If prescreening.tsv does not exist, returns the full list with a note
-    reminding the coordinator to annotate prescreening first.
+    If element_prescreening.tsv does not exist, returns the full list with a note
+    reminding the coordinator to annotate element_prescreening first.
     """
-    prescreening_path = CODED_DATA / lang_id / "nonpermutability" / "prescreening.tsv"
+    prescreening_path = CODED_DATA / lang_id / "nonpermutability" / "element_prescreening.tsv"
     if not prescreening_path.exists():
-        print("    [NOTE] prescreening.tsv not found — generating unfiltered pair list.")
-        print("          Annotate prescreening first, then re-run generate-sheets to get")
+        print("    [NOTE] element_prescreening.tsv not found — generating unfiltered pair list.")
+        print("          Annotate element_prescreening first, then re-run generate-sheets to get")
         print("          a filtered pairs sheet.")
         return pairs
 
@@ -431,8 +432,8 @@ def _filter_nonperm_pairs_by_prescreening(
         if row.get("scopal", "").strip() == "n"
     }
     filtered = [p for p in pairs if p[0] not in excluded and p[1] not in excluded]
-    print(f"    [prescreening] {len(excluded)} element(s) with scopal=n excluded")
-    print(f"    [prescreening] {len(pairs)} → {len(filtered)} pairs after filtering")
+    print(f"    [element_prescreening] {len(excluded)} element(s) with scopal=n excluded")
+    print(f"    [element_prescreening] {len(pairs)} → {len(filtered)} pairs after filtering")
     return filtered
 
 
@@ -477,6 +478,100 @@ def _populate_tab_pairs(
     # Param columns start at index 2 (after Element_A, Element_B)
     _format_and_validate(ws, len(pairs), per_col_values, col_start=2)
     return ws
+
+
+# ---------------------------------------------------------------------------
+# Instructions tab (for classes with dependent constructions)
+# ---------------------------------------------------------------------------
+
+def _maybe_create_instructions_tab(
+    spreadsheet: gspread.Spreadsheet,
+    class_name: str,
+) -> None:
+    """Add an Instructions tab if the class has any construction with depends_on."""
+    classes = {c["name"]: c for c in load_diagnostic_classes().get("classes", [])}
+    class_entry = classes.get(class_name, {})
+    constructions_schema = class_entry.get("constructions", [])
+    if not any(c.get("depends_on") for c in constructions_schema):
+        return
+    _create_instructions_tab(spreadsheet, class_entry, constructions_schema)
+
+
+def _create_instructions_tab(
+    spreadsheet: gspread.Spreadsheet,
+    class_entry: dict,
+    constructions_schema: list,
+) -> None:
+    """Create a read-only Instructions tab explaining the multi-stage annotation workflow."""
+    display_name = class_entry.get("display_name", class_entry.get("name", "")).upper()
+    sheet_instructions = class_entry.get("sheet_instructions", "").strip()
+
+    rows: List[List[str]] = []
+    rows.append([f"{display_name} — ANNOTATION INSTRUCTIONS"])
+    rows.append([""])
+
+    # Generic dependency-order section
+    step = 1
+    for c in constructions_schema:
+        name = c.get("name", "")
+        depends_on = c.get("depends_on")
+        row_type = c.get("row_type", "element")
+
+        rows.append([f"STEP {step} — {name}"])
+        if row_type == "pair_rows" and depends_on:
+            rows.append([f"  This tab is generated after {depends_on} is imported."])
+            rows.append([f"  Do NOT annotate it until the coordinator confirms regeneration is complete."])
+        else:
+            rows.append([f"  Annotate each element row in this tab."])
+            if depends_on is None and any(cc.get("depends_on") == name for cc in constructions_schema):
+                rows.append([f"  When finished: mark '{name}' as 'ready-for-review' in the Status tab."])
+                rows.append([f"  The coordinator will then regenerate the dependent tab."])
+        rows.append([""])
+        step += 1
+
+    # Class-specific guidance from sheet_instructions field
+    if sheet_instructions:
+        rows.append(["DETAILS"])
+        rows.append([""])
+        for line in sheet_instructions.splitlines():
+            rows.append([line])
+
+    existing = {ws.title: ws for ws in _with_retry(spreadsheet.worksheets)}
+    if _INSTRUCTIONS_TAB in existing:
+        ws = existing[_INSTRUCTIONS_TAB]
+        ws.clear()
+        ws.update(rows, "A1")
+    else:
+        ws = spreadsheet.add_worksheet(
+            title=_INSTRUCTIONS_TAB, rows=len(rows) + 2, cols=1
+        )
+        ws.update(rows, "A1")
+
+    sheet_id = ws.id
+    bold_rows = [0] + [i for i, r in enumerate(rows) if r and (r[0].startswith("STEP ") or r[0] == "DETAILS")]
+    requests = [
+        {"repeatCell": {
+            "range": {"sheetId": sheet_id, "startRowIndex": r, "endRowIndex": r + 1,
+                      "startColumnIndex": 0, "endColumnIndex": 1},
+            "cell": {"userEnteredFormat": {"textFormat": {"bold": True}}},
+            "fields": "userEnteredFormat.textFormat.bold",
+        }}
+        for r in bold_rows
+    ] + [
+        {"repeatCell": {
+            "range": {"sheetId": sheet_id},
+            "cell": {"userEnteredFormat": {"wrapStrategy": "WRAP"}},
+            "fields": "userEnteredFormat.wrapStrategy",
+        }},
+        {"updateDimensionProperties": {
+            "range": {"sheetId": sheet_id, "dimension": "COLUMNS",
+                      "startIndex": 0, "endIndex": 1},
+            "properties": {"pixelSize": 620},
+            "fields": "pixelSize",
+        }},
+    ]
+    spreadsheet.batch_update({"requests": requests})
+    print(f"    Instructions tab created")
 
 
 # ---------------------------------------------------------------------------
@@ -706,17 +801,17 @@ def _create_analysis_sheet(
     default_ws = spreadsheet.sheet1
     tab_names = []
 
-    # For nonpermutability, override prescreening param_values to {y, n, both}.
+    # For nonpermutability, override element_prescreening param_values to {y, n, both}.
     # The diagnostics YAML records [y, n] for scopal (used by the pairs tab);
-    # prescreening needs the third value so the manifest stores the right dropdown.
+    # element_prescreening needs the third value so the manifest stores the right dropdown.
     if class_name == "nonpermutability":
         constructions = [
-            (c, pn, {"scopal": ["y", "n", "both"]} if c == "prescreening" else pv)
+            (c, pn, {"scopal": ["y", "n", "both"]} if c == "element_prescreening" else pv)
             for c, pn, pv in constructions
         ]
 
     for construction, param_names, param_values in constructions:
-        if class_name == "nonpermutability" and construction == "prescreening":
+        if class_name == "nonpermutability" and construction == "element_prescreening":
             # Step 1: element-level pre-filter sheet.
             rows = _build_rows(element_index, lang_id, param_names, keystone_active=False)
             _populate_tab(spreadsheet, construction, param_names, param_values, rows)
@@ -743,6 +838,9 @@ def _create_analysis_sheet(
     # Remove the default empty sheet if it wasn't one of our tabs
     if default_ws.title not in tab_names:
         spreadsheet.del_worksheet(default_ws)
+
+    # Add Instructions tab before Status if this class has dependent constructions
+    _maybe_create_instructions_tab(spreadsheet, class_name)
 
     # Add Status tab last
     _create_status_tab(spreadsheet, tab_names)
