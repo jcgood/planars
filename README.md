@@ -43,7 +43,7 @@ For diagnostic criterion definitions and qualification rules, see `schemas/diagn
 
 **Citing the planars toolkit:**
 
-> Good, Jeff & Adam J. R. Tallman. 2026. *planars*: A Python toolkit for deriving morphosyntactic constituency spans from annotated planar structures (version 0.1.0a11). GitHub repository. https://github.com/jcgood/planars
+> Good, Jeff & Adam J. R. Tallman. 2026. *planars*: A Python toolkit for deriving morphosyntactic constituency spans from annotated planar structures (version 0.1.0a19). GitHub repository. https://github.com/jcgood/planars
 
 A `CITATION.cff` file is included in the repository root for citation manager import. A Zenodo DOI will be added when the repository is formally archived at release.
 

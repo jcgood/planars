@@ -7,8 +7,8 @@ authors:
     given-names: Jeff
   - family-names: Tallman
     given-names: Adam J. R.
-version: 0.1.0a11
-date-released: "2026-03-23"
+version: 0.1.0a19
+date-released: "2026-04-25"
 url: "https://github.com/jcgood/planars"
 license: MIT
 repository-code: "https://github.com/jcgood/planars"
