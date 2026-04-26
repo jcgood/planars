@@ -32,7 +32,7 @@ Run from the repo root:
 
 What this does per spreadsheet:
   1. Downloads current annotations from each tab
-  2. [--apply] Moves the spreadsheet to archive/v{N}/ in Drive
+  2. [--apply] Moves the spreadsheet to _archived/ in Drive (renamed to include _v{N})
   3. [--apply] Creates a new spreadsheet from the updated planar structure
   4. Carries over annotations matched by (Element, Position_Name)
   5. Leaves unmatched rows blank for re-annotation
@@ -436,7 +436,7 @@ def _rename_class_for_language(
     else:
         print(f"    no local TSVs for {old_class}/")
 
-    print(f"    would archive: {old_class}_{lang_id} (v{version}) to archive/v{version}/")
+    print(f"    would archive: {old_class}_{lang_id} → _archived/{old_class}_{lang_id}_v{version}")
     print(f"    would create: {new_class}_{lang_id} (v{new_version})")
     print(f"    would update manifest: {old_class} -> {new_class}")
 
@@ -447,10 +447,13 @@ def _rename_class_for_language(
 
     # Archive old sheet
     if folder_id:
-        archive_id = _get_or_create_subfolder(drive, folder_id, "archive")
-        ver_folder_id = _get_or_create_subfolder(drive, archive_id, f"v{version}")
-        _move_to_folder(drive, ss.id, ver_folder_id)
-        print(f"    Archived {old_class}_{lang_id} to archive/v{version}/")
+        archive_id = _get_or_create_subfolder(drive, folder_id, "_archived")
+        drive.files().update(
+            fileId=ss.id,
+            body={"name": f"{old_class}_{lang_id}_v{version}"},
+        ).execute()
+        _move_to_folder(drive, ss.id, archive_id)
+        print(f"    Archived {old_class}_{lang_id} → _archived/{old_class}_{lang_id}_v{version}")
 
     # Create new sheet
     sheet_title = f"{new_class}_{lang_id}"
@@ -529,7 +532,7 @@ def main() -> None:
     """Entry point for `python -m coding restructure-sheets`.
 
     For each class in the manifest, downloads current annotations, optionally
-    archives the existing spreadsheet to archive/v{N}/ in Drive, creates a new
+    archives the existing spreadsheet to _archived/ in Drive (renamed to include _v{N}), creates a new
     spreadsheet from the updated planar structure, and carries over matching
     annotations by (Element, Position_Name). Unmatched rows are left blank for
     re-annotation. Updates the manifest on Drive and locally.
@@ -655,10 +658,13 @@ def main() -> None:
             # Step 3: Archive existing sheet
             new_version = version + 1
             if folder_id:
-                archive_id = _get_or_create_subfolder(drive, folder_id, "archive")
-                ver_folder_id = _get_or_create_subfolder(drive, archive_id, f"v{version}")
-                _move_to_folder(drive, ss.id, ver_folder_id)
-                print(f"    Archived to archive/v{version}/")
+                archive_id = _get_or_create_subfolder(drive, folder_id, "_archived")
+                drive.files().update(
+                    fileId=ss.id,
+                    body={"name": f"{class_name}_{lang_id}_v{version}"},
+                ).execute()
+                _move_to_folder(drive, ss.id, archive_id)
+                print(f"    Archived to _archived/{class_name}_{lang_id}_v{version}")
 
             # Step 4: Create new sheet and populate with carry-over
             sheet_title = f"{class_name}_{lang_id}"
