@@ -481,7 +481,7 @@ def main() -> None:
                 print(f"  [{class_name}] could not open spreadsheet: {e}")
                 continue
 
-            for ws in ss.worksheets():
+            for ws in _with_retry(lambda: ss.worksheets()):
                 construction = ws.title
                 if construction in (_STATUS_TAB, _INSTRUCTIONS_TAB):
                     continue
