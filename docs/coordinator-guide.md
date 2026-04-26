@@ -368,6 +368,22 @@ python -m coding generate-sheets      # creates annotation sheets for the new cl
 python -m coding sync-params --apply  # if existing sheets need the new criteria columns
 ```
 
+#### Two-stage annotation workflows (e.g. nonpermutability)
+
+Some classes have a multi-stage annotation structure where one construction must be completed before another can be generated. The nonpermutability class uses this pattern:
+
+1. Annotate the `element_prescreening` sheet (`scopal={y,n,both}` per element) and mark it `ready-for-review`.
+2. Run `python -m coding import-sheets` to download it locally.
+3. Regenerate the dependent `general` (pair-row) sheet filtered by the prescreening results:
+
+```bash
+python -m coding generate-sheets --lang LANG_ID --regen-construction nonpermutability:general
+```
+
+If `integrity-check` or `data-refresh` files a **`dependent-stale`** issue, it means the `general` sheet is out of sync with the current `element_prescreening.tsv` (e.g. after a correction). Re-run the command above to regenerate it. The issue closes automatically when the element sets are back in sync.
+
+`data-refresh` will auto-regenerate the dependent construction if the dependent TSV does not yet exist locally. Once the TSV exists (even with blank values), auto-regeneration is skipped and the issue body will tell you which manual command to run.
+
 #### Updating diagnostic criteria
 
 **Adding new criteria** — edit `diagnostics_{lang_id}.yaml` and commit. The daily `data-refresh.yml` runs `sync-params --apply` automatically, so the new column will appear in annotation sheets within 24 hours. No manual action needed.
