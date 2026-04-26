@@ -806,6 +806,31 @@ def _create_analysis_sheet(
     sheet_title = f"{class_name}_{lang_id}"
     print(f"  Creating: {sheet_title}")
 
+    # Guard: abort if a same-named spreadsheet already exists in the folder but is not
+    # registered in the manifest.  _check_force_against_existing_sheets only fires when the
+    # manifest already has an entry for this class; this check covers the case where the
+    # manifest entry is absent (e.g. after prune-manifest or during debugging iterations).
+    existing = drive.files().list(
+        q=(
+            f"'{folder_id}' in parents"
+            f" and name='{sheet_title}'"
+            " and mimeType='application/vnd.google-apps.spreadsheet'"
+            " and trashed=false"
+        ),
+        fields="files(id, name)",
+        pageSize=5,
+    ).execute().get("files", [])
+    if existing:
+        ids = ", ".join(f["id"] for f in existing)
+        raise SystemExit(
+            f"\nERROR: A spreadsheet named \"{sheet_title}\" already exists in the Drive "
+            f"folder but is not registered in the manifest for {lang_id}.\n"
+            f"  Existing file ID(s): {ids}\n\n"
+            f"To resolve, either:\n"
+            f"  (a) Register the existing sheet: add its spreadsheet_id to the manifest, or\n"
+            f"  (b) Move it to _archived/ in Drive, then re-run generate-sheets\n"
+        )
+
     spreadsheet = gc.create(sheet_title)
     _move_to_folder(drive, spreadsheet.id, folder_id)
     _share_anyone_with_link(drive, spreadsheet.id)

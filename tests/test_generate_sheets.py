@@ -2,6 +2,7 @@
 
 Covers:
   - _check_force_against_existing_sheets: blocks --force when sheets exist
+  - _create_analysis_sheet (Drive name guard): aborts when same-named sheet already in folder
   - _build_nonperm_pairs: pair generation algorithm (exclusion rules, bracket-wrapping)
   - _filter_nonperm_pairs_by_prescreening: scopal=n excluded; na/blank kept
   - _prefill_free_occurrence_rows: keystone and non-keystone pre-fill logic
@@ -63,6 +64,63 @@ class TestCheckForceAgainstExistingSheets:
         out = capsys.readouterr().out
         assert "ciscategorial" in out
         assert "stress" in out
+
+
+# ---------------------------------------------------------------------------
+# _create_analysis_sheet — Drive name guard
+# ---------------------------------------------------------------------------
+
+class TestCreateAnalysisSheetDriveNameGuard:
+    """_create_analysis_sheet must abort when a same-named sheet already exists in Drive."""
+
+    def _make_drive(self, existing_files):
+        """Build a minimal Drive mock whose files().list().execute() returns existing_files."""
+        list_result = MagicMock()
+        list_result.execute.return_value = {"files": existing_files}
+        files_mock = MagicMock()
+        files_mock.list.return_value = list_result
+        drive = MagicMock()
+        drive.files.return_value = files_mock
+        return drive
+
+    def test_aborts_when_same_named_sheet_exists(self, monkeypatch):
+        drive = self._make_drive([{"id": "orphan123", "name": "nonpermutability_stan1293"}])
+        gc = MagicMock()
+        with pytest.raises(SystemExit) as exc_info:
+            _gs._create_analysis_sheet(
+                gc, drive, "folder_abc", "stan1293", "nonpermutability", [], {}, Path("/fake")
+            )
+        msg = str(exc_info.value)
+        assert "nonpermutability_stan1293" in msg
+        assert "orphan123" in msg
+        gc.create.assert_not_called()
+
+    def test_error_message_names_resolution_steps(self, monkeypatch):
+        drive = self._make_drive([{"id": "orphan123", "name": "nonpermutability_stan1293"}])
+        gc = MagicMock()
+        with pytest.raises(SystemExit) as exc_info:
+            _gs._create_analysis_sheet(
+                gc, drive, "folder_abc", "stan1293", "nonpermutability", [], {}, Path("/fake")
+            )
+        msg = str(exc_info.value)
+        assert "_archived/" in msg
+
+    def test_proceeds_when_folder_is_empty(self, monkeypatch, tmp_path):
+        drive = self._make_drive([])
+        ss = MagicMock()
+        ss.sheet1 = MagicMock()
+        ss.worksheets.return_value = [ss.sheet1]
+        gc = MagicMock()
+        gc.create.return_value = ss
+        # Pass empty constructions — we only care that gc.create is reached.
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        try:
+            _gs._create_analysis_sheet(
+                gc, drive, "folder_abc", "stan1293", "ciscategorial", [], {}, Path("/fake")
+            )
+        except Exception:
+            pass  # downstream sheet-building may fail; we only care create was called
+        gc.create.assert_called_once()
 
 
 # ---------------------------------------------------------------------------
