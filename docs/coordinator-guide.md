@@ -187,6 +187,8 @@ python -m coding generate-sheets           # creates sheets for new classes only
 python -m coding generate-sheets --force   # blocked with a hard error if annotation sheets already exist
 ```
 
+**If `generate-sheets` aborts with "already exists in the Drive folder but is not registered in the manifest":** a spreadsheet with that name is in Drive but not in `drive_config.json`. This usually means a previous run created an orphaned sheet (e.g. after clearing the manifest during debugging). Resolve by either (a) locating the sheet in Drive, opening `drive_config.json`, and adding its ID under the correct class, or (b) moving the sheet to `_archived/` in the language's Drive folder and re-running `generate-sheets`.
+
 Creates one Google Sheets file per analysis class with one tab per construction. Each tab has per-criterion dropdown validation, an optional **Source** column (page or section reference justifying each annotation, e.g. `§4.3`, `p. 217`, `Table 6.2`), and a free-text **Comments** column. Source comes before Comments; both are free-text and not validated. Each spreadsheet also gets a **Status tab** (always the last tab) with one row per construction and a dropdown (`in-progress` / `ready-for-review`). Also runs `generate-notebooks` automatically at the end.
 
 At the start of each run, the current Drive manifest is backed up to `manifest_backup.json` (gitignored) in the repo root. If something goes wrong during a run, this file can be used to recover sheet IDs without needing to access Drive directly.
