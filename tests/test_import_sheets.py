@@ -20,6 +20,9 @@ import pandas as pd
 from coding.import_sheets import (
     _archive_tsv,
     _check_coded_data_clean,
+    _detect_diagnostics_changes,
+    _detect_planar_changes,
+    _tsv_content_changed,
     _verify_manifest_sheet_ids,
     _check_yaml_drift,
 )
@@ -274,3 +277,171 @@ class TestCheckYamlDrift:
         result = _check_yaml_drift("lang0001", tsv_df)
         assert len(result) == 1
         assert result[0]["kind"] == "unknown_criterion"
+
+
+# ---------------------------------------------------------------------------
+# _tsv_content_changed
+# ---------------------------------------------------------------------------
+
+def _write_tsv_file(path: Path, header: list[str], records: list[dict]) -> None:
+    import csv
+    with path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=header, delimiter="\t",
+                                extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(records)
+
+
+class TestTsvContentChanged:
+    def test_returns_false_when_identical(self, tmp_path):
+        header = ["Element", "criterion"]
+        records = [{"Element": "a", "criterion": "y"}, {"Element": "b", "criterion": "n"}]
+        p = tmp_path / "data.tsv"
+        _write_tsv_file(p, header, records)
+        assert _tsv_content_changed(p, header, records) is False
+
+    def test_returns_true_when_value_differs(self, tmp_path):
+        header = ["Element", "criterion"]
+        old_records = [{"Element": "a", "criterion": "y"}]
+        new_records = [{"Element": "a", "criterion": "n"}]
+        p = tmp_path / "data.tsv"
+        _write_tsv_file(p, header, old_records)
+        assert _tsv_content_changed(p, header, new_records) is True
+
+    def test_returns_true_when_row_added(self, tmp_path):
+        header = ["Element", "criterion"]
+        old_records = [{"Element": "a", "criterion": "y"}]
+        new_records = [{"Element": "a", "criterion": "y"}, {"Element": "b", "criterion": "n"}]
+        p = tmp_path / "data.tsv"
+        _write_tsv_file(p, header, old_records)
+        assert _tsv_content_changed(p, header, new_records) is True
+
+    def test_returns_true_when_file_missing(self, tmp_path):
+        header = ["Element", "criterion"]
+        records = [{"Element": "a", "criterion": "y"}]
+        p = tmp_path / "nonexistent.tsv"
+        assert _tsv_content_changed(p, header, records) is True
+
+    def test_handles_column_reorder(self, tmp_path):
+        # File written with columns in different order — both reindexed to header.
+        file_header = ["criterion", "Element"]
+        new_header = ["Element", "criterion"]
+        records = [{"Element": "a", "criterion": "y"}]
+        p = tmp_path / "data.tsv"
+        _write_tsv_file(p, file_header, records)
+        assert _tsv_content_changed(p, new_header, records) is False
+
+
+# ---------------------------------------------------------------------------
+# _detect_planar_changes
+# ---------------------------------------------------------------------------
+
+def _planar_df(positions: list[tuple[str, str]]) -> "pd.DataFrame":
+    import pandas as pd
+    nums, names = zip(*positions) if positions else ([], [])
+    return pd.DataFrame({"Position": list(nums), "Position_Name": list(names)})
+
+
+class TestDetectPlanarChanges:
+    def test_no_change_returns_empty(self):
+        df = _planar_df([("1", "p1"), ("2", "p2")])
+        safe, pending = _detect_planar_changes(df, df, "lang0001")
+        assert safe == set()
+        assert pending == []
+
+    def test_pure_addition_at_end_queues_update_sheets(self):
+        old = _planar_df([("1", "p1"), ("2", "p2")])
+        new = _planar_df([("1", "p1"), ("2", "p2"), ("3", "p3")])
+        safe, pending = _detect_planar_changes(old, new, "lang0001")
+        assert any("update-sheets" in cmd for cmd in safe)
+        assert pending == []
+
+    def test_pure_addition_inserted_in_middle_queues_update_sheets(self):
+        # New position inserted between existing ones — old positions still in order.
+        old = _planar_df([("1", "p1"), ("3", "p3")])
+        new = _planar_df([("1", "p1"), ("2", "p2"), ("3", "p3")])
+        safe, pending = _detect_planar_changes(old, new, "lang0001")
+        assert any("update-sheets" in cmd for cmd in safe)
+        assert pending == []
+
+    def test_deletion_produces_pending(self):
+        old = _planar_df([("1", "p1"), ("2", "p2")])
+        new = _planar_df([("1", "p1")])
+        safe, pending = _detect_planar_changes(old, new, "lang0001")
+        assert len(pending) == 1
+        assert pending[0]["change_type"] == "planar_deletion_or_reorder"
+
+    def test_reorder_produces_pending(self):
+        old = _planar_df([("1", "p1"), ("2", "p2")])
+        new = _planar_df([("2", "p2"), ("1", "p1")])
+        safe, pending = _detect_planar_changes(old, new, "lang0001")
+        assert len(pending) == 1
+        assert pending[0]["change_type"] == "planar_deletion_or_reorder"
+
+    def test_addition_with_removal_produces_pending(self):
+        # Adding p3 while removing p2 is not a safe-add — it goes to pending.
+        old = _planar_df([("1", "p1"), ("2", "p2")])
+        new = _planar_df([("1", "p1"), ("3", "p3")])
+        safe, pending = _detect_planar_changes(old, new, "lang0001")
+        assert len(pending) == 1
+
+
+# ---------------------------------------------------------------------------
+# _detect_diagnostics_changes
+# ---------------------------------------------------------------------------
+
+def _diag_df(rows: list[dict]) -> "pd.DataFrame":
+    import pandas as pd
+    cols = ["Class", "Language", "Constructions", "Criteria"]
+    return pd.DataFrame(rows, columns=cols)
+
+
+def _row_diag(cls: str, constructions: str = "general", criteria: str = "V-combines") -> dict:
+    return {"Class": cls, "Language": "lang0001",
+            "Constructions": constructions, "Criteria": criteria}
+
+
+class TestDetectDiagnosticsChanges:
+    def test_no_change_returns_empty(self):
+        df = _diag_df([_row_diag("ciscategorial")])
+        safe, pending = _detect_diagnostics_changes(df, df, "lang0001")
+        assert safe == set()
+        assert pending == []
+
+    def test_new_class_queues_generate_sheets(self):
+        old = _diag_df([_row_diag("ciscategorial")])
+        new = _diag_df([_row_diag("ciscategorial"), _row_diag("noninterruption")])
+        safe, pending = _detect_diagnostics_changes(old, new, "lang0001")
+        assert any("generate-sheets" in cmd for cmd in safe)
+
+    def test_removed_class_produces_pending(self):
+        old = _diag_df([_row_diag("ciscategorial"), _row_diag("noninterruption")])
+        new = _diag_df([_row_diag("ciscategorial")])
+        safe, pending = _detect_diagnostics_changes(old, new, "lang0001")
+        assert any(p["change_type"] == "diagnostics_class_removed" for p in pending)
+
+    def test_new_construction_produces_pending(self):
+        old = _diag_df([_row_diag("nonpermutability", constructions="element_prescreening")])
+        new = _diag_df([_row_diag("nonpermutability",
+                                  constructions="element_prescreening, general")])
+        safe, pending = _detect_diagnostics_changes(old, new, "lang0001")
+        assert any(p["change_type"] == "diagnostics_new_construction" for p in pending)
+
+    def test_removed_construction_produces_pending(self):
+        old = _diag_df([_row_diag("nonpermutability",
+                                  constructions="element_prescreening, general")])
+        new = _diag_df([_row_diag("nonpermutability", constructions="element_prescreening")])
+        safe, pending = _detect_diagnostics_changes(old, new, "lang0001")
+        assert any(p["change_type"] == "diagnostics_construction_removed" for p in pending)
+
+    def test_added_criterion_queues_sync_params(self):
+        old = _diag_df([_row_diag("ciscategorial", criteria="V-combines")])
+        new = _diag_df([_row_diag("ciscategorial", criteria="V-combines, N-combines")])
+        safe, pending = _detect_diagnostics_changes(old, new, "lang0001")
+        assert any("sync-params" in cmd for cmd in safe)
+
+    def test_removed_criterion_produces_pending(self):
+        old = _diag_df([_row_diag("ciscategorial", criteria="V-combines, N-combines")])
+        new = _diag_df([_row_diag("ciscategorial", criteria="V-combines")])
+        safe, pending = _detect_diagnostics_changes(old, new, "lang0001")
+        assert any(p["change_type"] == "diagnostics_criteria_removed" for p in pending)
