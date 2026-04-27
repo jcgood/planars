@@ -310,6 +310,12 @@ def main() -> None:
                     continue
 
                 header = rows[0] if rows else []
+
+                # Pair-row tabs (e.g. nonpermutability/general) use Element_A/Element_B
+                # instead of Element/Position_Name. Row structure is managed by
+                # --regen-construction, not update-sheets. Skip row updates entirely.
+                is_pair_row = "Element_A" in header or "Element_B" in header
+
                 missing_trailing = [col for col in _TRAILING_COLS if col not in header]
                 if missing_trailing:
                     any_changes = True
@@ -319,6 +325,11 @@ def main() -> None:
                         # Re-fetch rows so _compute_missing_rows sees the updated header
                         rows = _with_retry(ws.get_all_values)
                         num_data_rows = max(0, len(rows) - 1)
+
+                if is_pair_row:
+                    if not missing_trailing:
+                        print(f"    [{construction}] up to date (pair-row tab — row updates skipped)")
+                    continue
 
                 missing_rows = _compute_missing_rows(
                     ws, element_index, manifest_lang, param_names
