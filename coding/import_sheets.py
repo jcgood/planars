@@ -495,6 +495,166 @@ def _notify_pending_changes(entries: List[Dict]) -> None:
         body_file.unlink(missing_ok=True)
 
 
+def _detect_collaborator_anomalies(
+    out_path: Path,
+    header: List[str],
+    records: List[Dict],
+    expected_params: List[str],
+    lang_id: str,
+    class_name: str,
+    construction: str,
+) -> List[str]:
+    """Detect structural anomalies in an in-progress sheet vs the existing local TSV.
+
+    Checks:
+      A: Missing rows — (Element, Position_Number) keys present in local TSV
+         but absent from the downloaded sheet.
+      B: Missing/renamed param columns — columns in the local TSV header that
+         no longer appear in the downloaded sheet.
+      D: >10% annotated-cell decrease — significant value loss in matching rows.
+
+    Returns a list of human-readable anomaly description strings (empty if none).
+    Skips the check if no local TSV exists yet (first backup).
+    """
+    if not out_path.exists():
+        return []
+    try:
+        old_df = pd.read_csv(out_path, sep="\t", dtype=str, keep_default_na=False)
+    except Exception:
+        return []
+
+    anomalies: List[str] = []
+
+    # A: Missing rows
+    if "Element" in old_df.columns and "Position_Number" in old_df.columns:
+        old_keys = {
+            (str(r["Element"]).strip(), str(r["Position_Number"]).strip())
+            for _, r in old_df.iterrows()
+        }
+        new_keys = {
+            (r.get("Element", "").strip(), r.get("Position_Number", "").strip())
+            for r in records
+        }
+        missing = old_keys - new_keys
+        if missing:
+            samples = sorted(f"{el} (pos {pos})" for el, pos in missing)
+            suffix = "..." if len(samples) > 5 else ""
+            anomalies.append(
+                f"Missing rows: {len(missing)} row(s) present in local TSV absent from "
+                f"sheet: {', '.join(samples[:5])}{suffix}"
+            )
+
+    # B: Missing/renamed param columns
+    if expected_params:
+        trailing_set = set(_TRAILING_COLS)
+        old_params = [
+            c for c in old_df.columns
+            if c not in _STRUCTURAL_COLS and c not in trailing_set
+        ]
+        missing_cols = [c for c in old_params if c not in header]
+        if missing_cols:
+            anomalies.append(
+                f"Missing columns: param column(s) in local TSV absent from sheet: "
+                f"{missing_cols}"
+            )
+
+    # D: >10% annotated-cell decrease (restricted to rows present in both)
+    if expected_params and "Element" in old_df.columns and "Position_Number" in old_df.columns:
+        old_key_to_row: Dict[tuple, object] = {}
+        for _, row in old_df.iterrows():
+            if str(row.get("Position_Name", "")).lower() == "v:verbstem":
+                continue
+            key = (str(row.get("Element", "")).strip(), str(row.get("Position_Number", "")).strip())
+            old_key_to_row[key] = row
+
+        new_key_to_row: Dict[tuple, Dict] = {}
+        for r in records:
+            if r.get("Position_Name", "").lower() == "v:verbstem":
+                continue
+            key = (r.get("Element", "").strip(), r.get("Position_Number", "").strip())
+            new_key_to_row[key] = r
+
+        common_keys = set(old_key_to_row) & set(new_key_to_row)
+        if common_keys:
+            old_params_in_df = [p for p in expected_params if p in old_df.columns]
+            old_annotated = sum(
+                1 for key in common_keys
+                for p in old_params_in_df
+                if str(old_key_to_row[key].get(p, "")).strip() not in ("", "na", "?")
+            )
+            new_annotated = sum(
+                1 for key in common_keys
+                for p in expected_params
+                if new_key_to_row[key].get(p, "").strip() not in ("", "na", "?")
+            )
+            if old_annotated > 0:
+                decrease = (old_annotated - new_annotated) / old_annotated
+                if decrease > 0.10:
+                    anomalies.append(
+                        f"Annotated-cell decrease: {old_annotated} → {new_annotated} "
+                        f"({decrease:.0%} decrease, threshold 10%)"
+                    )
+
+    return anomalies
+
+
+def _notify_collaborator_check(entries: List[Dict]) -> None:
+    """Create or update a GitHub collaborator-check issue for in-progress anomalies.
+
+    Anomalies (missing rows, missing columns, >10% cell decrease) in in-progress
+    sheets are coordinator-facing signals, not blocking errors. The coordinator
+    should verify with the collaborator whether the change was intentional.
+    """
+    import subprocess as _sp
+    try:
+        _sp.run(["gh", "auth", "status"], capture_output=True, check=True)
+    except Exception:
+        return
+
+    lines = [
+        f"{len(entries)} in-progress sheet(s) have structural anomalies that warrant a "
+        f"check with the collaborator. These sheets are still marked `in-progress` so "
+        f"no pipeline action is blocked — but the coordinator should verify that the "
+        f"changes are intentional.\n"
+    ]
+    for e in entries:
+        lines.append(f"### {e['lang_id']} / {e['class_name']} / {e['construction']}")
+        for a in e["anomalies"]:
+            lines.append(f"- {a}")
+        lines.append("")
+
+    body = "\n".join(lines)
+    body_file = ROOT / "collaborator_check_issue.tmp"
+    body_file.write_text(body, encoding="utf-8")
+
+    try:
+        result = _sp.run(
+            ["gh", "issue", "list", "--label", "collaborator-check",
+             "--state", "open", "--json", "number", "--jq", ".[0].number"],
+            capture_output=True, text=True,
+        )
+        existing_num = result.stdout.strip()
+        if existing_num and existing_num != "null":
+            _sp.run(
+                ["gh", "issue", "comment", existing_num, "--body-file", str(body_file)],
+                check=True,
+            )
+            print(f"   GitHub issue #{existing_num} updated (collaborator-check).")
+        else:
+            r = _sp.run(
+                ["gh", "issue", "create",
+                 "--title", "In-progress sheet anomalies — verify with collaborator",
+                 "--label", "collaborator-check",
+                 "--body-file", str(body_file)],
+                capture_output=True, text=True, check=True,
+            )
+            print(f"   GitHub issue created: {r.stdout.strip()}")
+    except Exception as exc:
+        print(f"   (Could not create GitHub issue: {exc})")
+    finally:
+        body_file.unlink(missing_ok=True)
+
+
 def _download_lang_setup_sheets(
     gc: gspread.Client,
     lang_id: str,
@@ -718,10 +878,12 @@ def main() -> None:
         _verify_manifest_sheet_ids(drive, manifest)
 
     total_files = 0
+    in_progress_files = 0
     total_warnings = 0
     all_safe_cmds: Set[str] = set()
     all_pending: List[Dict] = []
     all_drift: List[Dict] = []
+    all_collaborator_check: List[Dict] = []
 
     for lang_id, lang_data in manifest.items():
         if lang_filter and lang_id != lang_filter:
@@ -753,13 +915,14 @@ def main() -> None:
                     total_warnings += 1
                     continue
 
-                # Check annotation status before importing
+                # Determine tab status. In-progress sheets are imported for backup
+                # and validation (pink highlighting), but pipeline warnings are
+                # suppressed and anomalies are raised as collaborator-check rather
+                # than pending-changes. --ignore-status treats all tabs as ready.
+                tab_status = "ready-for-review"
                 if not ignore_status and status_map:
                     tab_status = status_map.get(construction, "in-progress")
-                    if tab_status != "ready-for-review":
-                        print(f"    [{construction}] status: {tab_status!r} — skipping"
-                              f" (set to 'ready-for-review' in Status tab, or use --ignore-status)")
-                        continue
+                in_progress = (tab_status != "ready-for-review")
 
                 rows = _with_retry(ws.get_all_values)
 
@@ -797,18 +960,22 @@ def main() -> None:
                     except Exception as e:
                         print(f"    WARNING: could not highlight cells: {e}")
 
-                # Suppress per-cell blank warnings from the report — blank cells
-                # are expected during annotation and the count already appears in
-                # the status line below. Only surface structural and invalid-value
-                # warnings individually.
-                blocking_warnings = [w for w in warnings if "blank value" not in w]
-                for w in blocking_warnings:
-                    print(f"    WARNING: {w}")
-                    lang_warning_lines.append(f"[{class_name}/{construction}] {w}")
-                total_warnings += len(blocking_warnings)
+                # For ready-for-review tabs, surface blocking warnings (structural
+                # and invalid-value). For in-progress tabs, suppress all warnings —
+                # partial or invalid annotation is expected and not yet actionable.
+                if not in_progress:
+                    blocking_warnings = [w for w in warnings if "blank value" not in w]
+                    for w in blocking_warnings:
+                        print(f"    WARNING: {w}")
+                        lang_warning_lines.append(f"[{class_name}/{construction}] {w}")
+                    total_warnings += len(blocking_warnings)
+                else:
+                    print(f"    [{construction}] status: {tab_status!r} — importing for backup")
 
                 out_path = _get_output_path(lang_id, class_name, construction)
                 out_name = out_path.name
+                dest = f"coded_data/{lang_id}/{class_name}/{out_name}"
+                label = " [backup]" if in_progress else ""
 
                 if not apply:
                     if out_path.exists():
@@ -816,13 +983,29 @@ def main() -> None:
                         action = "Would overwrite (changed)" if changed else "No changes"
                     else:
                         action = "Would create"
-                    print(f"    [{construction}] {action} → coded_data/{lang_id}/{class_name}/{out_name}")
+                    print(f"    [{construction}]{label} {action} → {dest}")
                     continue
 
                 if out_path.exists():
                     if not force and not _tsv_content_changed(out_path, header, records):
-                        print(f"    [{construction}] No changes → coded_data/{lang_id}/{class_name}/{out_name}")
+                        print(f"    [{construction}]{label} No changes → {dest}")
                         continue
+
+                    if in_progress:
+                        anomalies = _detect_collaborator_anomalies(
+                            out_path, header, records, expected_params,
+                            lang_id, class_name, construction,
+                        )
+                        if anomalies:
+                            all_collaborator_check.append({
+                                "lang_id": lang_id,
+                                "class_name": class_name,
+                                "construction": construction,
+                                "anomalies": anomalies,
+                            })
+                            for a in anomalies:
+                                print(f"    [{construction}] ANOMALY: {a}")
+
                     archived = _archive_tsv(out_path, timestamp)
                     print(f"    [{construction}] Archived existing → coded_data/{lang_id}/archive/{class_name}/{archived.name}")
 
@@ -844,14 +1027,18 @@ def main() -> None:
                 status = f"{len(records)} rows"
                 if blank_count:
                     status += f", {blank_count} blank param cells"
-                print(f"    [{construction}] {status} → coded_data/{lang_id}/{class_name}/{out_name}")
-                total_files += 1
+                print(f"    [{construction}]{label} {status} → {dest}")
+                if in_progress:
+                    in_progress_files += 1
+                else:
+                    total_files += 1
 
         if lang_warning_lines:
             report_path = _write_error_report(lang_id, lang_warning_lines, timestamp)
             print(f"\n  Error report: {report_path.relative_to(ROOT)}")
 
-    print(f"\nDone. {total_files} file(s) written, {total_warnings} warning(s).")
+    backup_part = f", {in_progress_files} in-progress backup(s)" if in_progress_files else ""
+    print(f"\nDone. {total_files} file(s) written{backup_part}, {total_warnings} warning(s).")
 
     # Sync glottolog + meta from languages.yaml into the Drive manifest.
     # Read fresh each run — not via coding.schemas cached loader — because
@@ -897,6 +1084,17 @@ def main() -> None:
             print(f"\n⚠  {len(all_pending)} destructive change(s) detected (dry run — pass --apply to write pending_changes.json):")
             for e in all_pending:
                 print(f"   {e.get('lang_id', '?')}: {e.get('description', '')}")
+
+    # Raise collaborator-check issue if any in-progress anomalies were detected.
+    if all_collaborator_check:
+        if apply:
+            print(f"\n⚠  {len(all_collaborator_check)} in-progress sheet(s) have anomalies — verify with collaborator")
+            _notify_collaborator_check(all_collaborator_check)
+        else:
+            print(f"\n⚠  {len(all_collaborator_check)} in-progress sheet(s) have anomalies (dry run):")
+            for e in all_collaborator_check:
+                print(f"   {e['lang_id']}/{e['class_name']}/{e['construction']}: "
+                      f"{len(e['anomalies'])} anomaly(s)")
 
     # Write ambiguous YAML drift entries for coordinator review.
     if all_drift:
