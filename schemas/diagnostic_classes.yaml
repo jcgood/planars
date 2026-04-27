@@ -285,7 +285,7 @@ classes:
       #116) to use pair-row annotation. Previous 4-span model (permutable/scopal per
       element) replaced by 3-span model (scopal per pair; strict span now structurally
       derived). Coordinator sign-off needed before promoting to stable.]"
-    keystone_active_default: false
+    keystone_active_default: true
     collection_required: "y"
 
   - name: free_occurrence
