@@ -46,6 +46,9 @@ _STRUCTURAL_COLS      = {"Element", "Position_Name", "Position_Number"}
 _PAIR_STRUCTURAL_COLS = {"Element_A", "Element_B"}
 _TRAILING_COLS        = load_planar_schema().get("trailing_columns", ["Source", "Comments"])
 _DEFAULT_EXPECTED = set(load_diagnostic_criteria().get("default_allowed_values", ["y", "n", "na", "?"]))
+# Placeholder used in diagnostic_criteria.yaml for criteria that accept any
+# non-negative integer (e.g. dependent-on-left, dependent-on-right).
+_POSITION_NUMBER_PLACEHOLDER = "<position_number>"
 
 _PINK  = {"red": 1.0, "green": 0.8, "blue": 0.8}
 _WHITE = {"red": 1.0, "green": 1.0, "blue": 1.0}
@@ -154,6 +157,7 @@ def validate_annotation_rows(
                 if param_values and param in param_values
                 else _DEFAULT_EXPECTED
             )
+            accepts_pos_num = _POSITION_NUMBER_PLACEHOLDER in allowed
 
             if is_keystone:
                 _na_criteria = keystone_na_criteria or []
@@ -173,7 +177,7 @@ def validate_annotation_rows(
                             f"'na' in '{param}' but keystone is active — expected a real annotation value",
                             cell=(row_num - 1, col_index[param]),
                         ))
-                    elif val not in allowed:
+                    elif val not in allowed and not (accepts_pos_num and val.isdigit()):
                         issues.append(ValidationIssue(
                             "warning",
                             f"{tab_name} row {row_num} '{record.get('Element', '?')}'",
@@ -200,7 +204,7 @@ def validate_annotation_rows(
                         f"blank value in '{param}'",
                         cell=(row_num - 1, col_index[param]),
                     ))
-                elif val not in allowed:
+                elif val not in allowed and not (accepts_pos_num and val.isdigit()):
                     issues.append(ValidationIssue(
                         "warning",
                         f"{tab_name} row {row_num} '{record.get('Element', '?')}'",

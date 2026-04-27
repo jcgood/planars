@@ -67,3 +67,36 @@ def test_keystone_active_na_on_na_criterion_is_valid():
         keystone_na_criteria=["aspirated"],
     )
     assert issues == []
+
+
+# ---------------------------------------------------------------------------
+# Position-number placeholder: dependent-on-left / dependent-on-right
+# ---------------------------------------------------------------------------
+
+_FREE_HEADER = ["Element", "Position_Name", "Position_Number", "free", "dependent-on-left", "dependent-on-right"]
+_FREE_PV = {"free": ["y", "n"], "dependent-on-left": ["na", "<position_number>"], "dependent-on-right": ["na", "<position_number>"]}
+
+def test_position_number_value_is_valid():
+    """An integer position number in dependent-on-left/right is accepted without a warning."""
+    rows = [
+        _FREE_HEADER,
+        ["KEYSTONE", "v:verbstem", "30", "na", "na", "na"],
+        ["elem-a",   "v:left",     "1",  "n",  "5",  "na"],
+        ["elem-b",   "v:right",    "35", "n",  "na", "30"],
+    ]
+    _, issues = validate_annotation_rows(rows, ["free", "dependent-on-left", "dependent-on-right"],
+                                         "general", _FREE_PV)
+    pos_issues = [i for i in issues if "dependent-on" in i.message and "unexpected value" in i.message]
+    assert pos_issues == []
+
+
+def test_non_integer_position_value_warns():
+    """A non-integer, non-na value in dependent-on-left still triggers a warning."""
+    rows = [
+        _FREE_HEADER,
+        ["KEYSTONE", "v:verbstem", "30", "na", "na",    "na"],
+        ["elem-a",   "v:left",     "1",  "n",  "left",  "na"],
+    ]
+    _, issues = validate_annotation_rows(rows, ["free", "dependent-on-left", "dependent-on-right"],
+                                         "general", _FREE_PV)
+    assert any("unexpected value" in i.message and "dependent-on-left" in i.message for i in issues)
