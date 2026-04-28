@@ -6,11 +6,14 @@ Checks:
   3. Chart span label keys match the keys returned by each derive function
   4. diagnostics_{lang_id}.tsv class names and required criteria match diagnostic_classes.yaml
   5. Qualification rule drift: bidirectional module/YAML correspondence, hash sentinel, docstring mirror
+  6. Per-language criterion value sets vs global schema (hard error: lang declares unknown value;
+     warning: schema allows a value the language YAML doesn't declare — may mean the YAML was not
+     updated after a new value was added to the schema)
 
 Informational reports (not errors):
-  6. keystone_active_default "[NEEDS REVIEW]" for active (lang, class) pairs with no override
-  7. Schema stubs: classes in diagnostic_classes.yaml with no language coverage
-  8. Coverage matrix: language × class grid (✓ = active, - = not collected)
+  7. keystone_active_default "[NEEDS REVIEW]" for active (lang, class) pairs with no override
+  8. Schema stubs: classes in diagnostic_classes.yaml with no language coverage
+  9. Coverage matrix: language × class grid (✓ = active, - = not collected)
 
 Run:
     python -m coding check-codebook
@@ -439,6 +442,60 @@ def _check_qualification_rule_drift(diag_classes: dict) -> List[str]:
     return errors
 
 
+def _check_lang_yaml_criterion_values(codebook: dict) -> List[str]:
+    """Check per-language diagnostics YAMLs against global criterion value sets.
+
+    Hard errors (added to all_errors, cause exit 1):
+      Language YAML declares a value not present in the global schema — the annotator
+      dropdown would accept it but the schema doesn't recognise it.
+
+    Warnings (printed, not exit 1):
+      Global schema allows a value that the language YAML doesn't declare — the YAML
+      may not have been updated after the schema gained a new value.
+    """
+    import yaml as _yaml
+
+    schema_values: dict[str, dict[str, frozenset]] = {}
+    for analysis in codebook.get("analyses", []):
+        crit_map = {}
+        for crit in analysis.get("diagnostic_criteria", []):
+            vals = crit.get("values", [])
+            if vals:
+                crit_map[crit["name"]] = frozenset(str(v) for v in vals)
+        if crit_map:
+            schema_values[analysis["name"]] = crit_map
+
+    errors = []
+    for yaml_path in sorted((ROOT / "coded_data").glob("*/lang_setup/diagnostics_*.yaml")):
+        lang = yaml_path.parent.parent.name
+        data = _yaml.safe_load(yaml_path.read_text(encoding="utf-8")) or {}
+        for class_name, class_entry in (data.get("classes") or {}).items():
+            if not isinstance(class_entry, dict):
+                continue
+            for crit_name, lang_vals in (class_entry.get("criteria") or {}).items():
+                if not isinstance(lang_vals, list):
+                    continue
+                schema_set = (schema_values.get(class_name) or {}).get(crit_name)
+                if schema_set is None:
+                    continue  # not in schema — caught by other checks
+                lang_set = frozenset(str(v) for v in lang_vals)
+                lang_extra = lang_set - schema_set
+                if lang_extra:
+                    errors.append(
+                        f"[{lang}/{class_name}] '{crit_name}' declares value(s) not in "
+                        f"diagnostic_criteria.yaml: {sorted(lang_extra)}"
+                    )
+                schema_extra = schema_set - lang_set
+                if schema_extra:
+                    print(
+                        f"  ⚠  [{lang}/{class_name}] '{crit_name}': schema allows "
+                        f"{sorted(schema_extra)} but diagnostics_{lang}.yaml only declares "
+                        f"{sorted(lang_set)} — update the YAML if annotators may use "
+                        f"these values"
+                    )
+    return errors
+
+
 def _report_keystone_active_unresolved(
     diag_classes: dict,
     coverage: dict[str, list[str]],
@@ -588,16 +645,18 @@ def _report_coverage_matrix(
 def main() -> None:
     """Entry point for `python -m coding check-codebook`.
 
-    Runs five consistency checks (exit 1 if any fail) then three informational reports:
+    Runs six consistency checks (exit 1 if any fail) then three informational reports:
     1. Every _REQUIRED_CRITERIA criterion in each analysis module is in diagnostic_criteria.yaml.
     2. Every criterion name in diagnostics_{lang_id}.tsv files is in diagnostic_criteria.yaml.
     3. Every span key referenced in charts.py exists in the corresponding derive result.
     4. diagnostics_{lang_id}.tsv class names and required criteria match diagnostic_classes.yaml.
     5. Qualification rule drift: bidirectional module/YAML correspondence, hash sentinel,
        docstring mirror.
-    6. keystone_active_default "[NEEDS REVIEW]" for active classes with no language override.
-    7. Schema stubs: classes with no language coverage (ready-to-paste TSV rows).
-    8. Coverage matrix: language × class grid.
+    6. Per-language criterion value sets vs global schema (hard error: unknown value declared;
+       warning: schema has values not declared in language YAML).
+    7. keystone_active_default "[NEEDS REVIEW]" for active classes with no language override.
+    8. Schema stubs: classes with no language coverage (ready-to-paste TSV rows).
+    9. Coverage matrix: language × class grid.
     """
     codebook = _load_codebook()
     diag_classes = _load_diagnostic_classes()
@@ -618,6 +677,9 @@ def main() -> None:
     print("5. Checking qualification rule drift (hash sentinel + docstring) ...")
     all_errors.extend(_check_qualification_rule_drift(diag_classes))
 
+    print("6. Checking per-language criterion value sets vs global schema ...")
+    all_errors.extend(_check_lang_yaml_criterion_values(codebook))
+
     coverage = _collect_coverage()
     lang_ids = sorted({l for langs in coverage.values() for l in langs})
 
@@ -625,11 +687,11 @@ def main() -> None:
     _report_needs_review(codebook, diag_classes)
 
     print()
-    print("6. keystone_active_default [NEEDS REVIEW] for active classes:")
+    print("7. keystone_active_default [NEEDS REVIEW] for active classes:")
     _report_keystone_active_unresolved(diag_classes, coverage)
 
     print()
-    print("6b. Open policy questions — classes with unresolved keystone_active_default (no active instances yet):")
+    print("7b. Open policy questions — classes with unresolved keystone_active_default (no active instances yet):")
     pending_defaults = sorted(
         name for name, cls in diag_classes.items()
         if "[NEEDS REVIEW]" in str(cls.get("keystone_active_default", ""))
@@ -640,14 +702,14 @@ def main() -> None:
         for name in pending_defaults:
             print(f"    [{name}] add keystone_active: true/false to diagnostics_{{lang_id}}.yaml at onboarding")
     else:
-        print("  All classes with [NEEDS REVIEW] keystone_active_default already have active instances (see section 6).")
+        print("  All classes with [NEEDS REVIEW] keystone_active_default already have active instances (see section 7).")
 
     print()
-    print("7. Schema stubs (classes with no language coverage):")
+    print("8. Schema stubs (classes with no language coverage):")
     _report_schema_stubs(diag_classes, coverage)
 
     print()
-    print("8. Coverage matrix:")
+    print("9. Coverage matrix:")
     _report_coverage_matrix(diag_classes, coverage, lang_ids)
 
     print()

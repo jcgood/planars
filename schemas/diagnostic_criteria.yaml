@@ -412,7 +412,7 @@ analyses:
       domain type (Tallman et al. 2024, discussion ch. 17).
     diagnostic_criteria:
       - name: aspirated
-        values: [y, n]
+        values: [y, n, both]
         description: >
           [NEEDS REVIEW] Whether the segmental phonological process applies to this
           element's position. y = this position is within the domain of the process.
