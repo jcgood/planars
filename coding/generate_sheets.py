@@ -470,12 +470,13 @@ def _populate_tab_pairs(
     Returns:
         The populated gspread Worksheet.
     """
+    num_cols = 2 + len(param_names) + len(_TRAILING_COLS)  # Element_A, Element_B, params, trailing
     try:
         ws = _with_retry(lambda: spreadsheet.worksheet(tab_name))
-        ws.clear()
+        _reset_worksheet(ws, len(pairs), num_cols)
     except gspread.WorksheetNotFound:
         ws = spreadsheet.add_worksheet(
-            title=tab_name, rows=len(pairs) + 2, cols=len(param_names) + 4
+            title=tab_name, rows=len(pairs) + 2, cols=num_cols
         )
 
     all_cols = param_names + _TRAILING_COLS
@@ -668,6 +669,39 @@ def _create_status_tab(
 # Sheet formatting and validation
 # ---------------------------------------------------------------------------
 
+def _reset_worksheet(ws: gspread.Worksheet, num_data_rows: int, num_cols: int) -> None:
+    """Clear values, reset all cell formatting, and resize to exact dimensions.
+
+    ws.clear() alone only erases cell values — background colors (e.g. pink
+    highlights written by validate-coding) and extra rows/columns left over from
+    a previously larger dataset both persist. This function fully resets the
+    worksheet so the next write starts from a clean slate.
+    """
+    ws.clear()
+    sheet_id = ws.id
+    ws.spreadsheet.batch_update({"requests": [
+        {
+            "repeatCell": {
+                "range": {"sheetId": sheet_id},
+                "cell": {"userEnteredFormat": {}},
+                "fields": "userEnteredFormat",
+            }
+        },
+        {
+            "updateSheetProperties": {
+                "properties": {
+                    "sheetId": sheet_id,
+                    "gridProperties": {
+                        "rowCount": max(num_data_rows + 1, 2),
+                        "columnCount": max(num_cols, 1),
+                    },
+                },
+                "fields": "gridProperties.rowCount,gridProperties.columnCount",
+            }
+        },
+    ]})
+
+
 def _format_and_validate(
     worksheet: gspread.Worksheet,
     num_data_rows: int,
@@ -770,12 +804,13 @@ def _populate_tab(
     Returns:
         The populated gspread Worksheet.
     """
+    num_cols = 3 + len(param_names) + len(_TRAILING_COLS)  # Element, Position_Name, Position_Number, params, trailing
     try:
         ws = _with_retry(lambda: spreadsheet.worksheet(tab_name))
-        ws.clear()
+        _reset_worksheet(ws, len(rows), num_cols)
     except gspread.WorksheetNotFound:
         ws = spreadsheet.add_worksheet(
-            title=tab_name, rows=len(rows) + 2, cols=len(param_names) + 3
+            title=tab_name, rows=len(rows) + 2, cols=num_cols
         )
 
     all_cols = param_names + _TRAILING_COLS
