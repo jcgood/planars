@@ -519,8 +519,12 @@ def _section_dependent_construction_staleness(
                     if cls_name == "nonpermutability":
                         try:
                             from planars.nonpermutability import structurally_expected_pair_elements
+                            from .make_forms import resolve_keystone_active
                             planar_path = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
-                            source_set &= structurally_expected_pair_elements(planar_path, lang_id)
+                            ka = resolve_keystone_active(lang_id, cls_name, source_name) or False
+                            source_set &= structurally_expected_pair_elements(
+                                planar_path, lang_id, keystone_active=ka
+                            )
                         except Exception:
                             pass
                 elif "Element" in src_df.columns:

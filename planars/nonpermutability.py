@@ -43,15 +43,15 @@ def _split_elements(raw: str) -> List[str]:
     return [p for p in parts if p]
 
 
-def _load_planar(planar_path: Path, lang_id: str):
+def _load_planar(planar_path: Path, lang_id: str, keystone_active: bool = False):
     """Read planar TSV; return planar data structures needed for span derivation.
 
     Returns:
         keystone_pos     : int
         pos_to_name      : {pos: name}
         pos_type         : {pos: "Slot"|"Zone"}
-        pos_to_elements  : {pos: [elem, ...]}  (keystone excluded)
-        elem_to_positions: {elem: set(pos)}    (keystone excluded)
+        pos_to_elements  : {pos: [elem, ...]}  (keystone excluded unless keystone_active)
+        elem_to_positions: {elem: set(pos)}    (keystone excluded unless keystone_active)
         all_positions    : set of all position numbers (keystone included)
     """
     df = pd.read_csv(planar_path, sep="\t", dtype=str, keep_default_na=False)
@@ -80,7 +80,8 @@ def _load_planar(planar_path: Path, lang_id: str):
 
         if pname.lower() == _KEYSTONE_NAME:
             keystone_pos = pos
-            continue
+            if not keystone_active:
+                continue
 
         pos_to_elements[pos] = elements
         for elem in elements:
@@ -92,15 +93,20 @@ def _load_planar(planar_path: Path, lang_id: str):
     return keystone_pos, pos_to_name, pos_type, pos_to_elements, elem_to_positions
 
 
-def structurally_expected_pair_elements(planar_path: Path, lang_id: str) -> Set[str]:
+def structurally_expected_pair_elements(
+    planar_path: Path, lang_id: str, keystone_active: bool = False
+) -> Set[str]:
     """Return elements that can appear in at least one nonpermutability pair.
 
     An element is expected if it would be included in at least one pair by
     _build_nonperm_pairs (i.e., it is not excluded because it shares only a
     same Slot position with every other element or has fixed structural order
     with all others). Uses bracket-wrapped names to match imported TSV format.
+
+    When keystone_active is True, keystone elements are included in the
+    candidate set (same behaviour as _build_nonperm_pairs with keystone_active=True).
     """
-    _, _, pos_type, _, elem_to_positions = _load_planar(planar_path, lang_id)
+    _, _, pos_type, _, elem_to_positions = _load_planar(planar_path, lang_id, keystone_active)
     all_elems = list(elem_to_positions.keys())
     expected: Set[str] = set()
     for i, ea in enumerate(all_elems):
@@ -264,16 +270,22 @@ def derive_nonpermutability_domains(
                             structurally_expected.add(ea)
                             structurally_expected.add(eb)
 
-                source_set = {
-                    r["Element"].strip()
-                    for _, r in pre_df.iterrows()
-                    if r.get("scopal", "").strip() not in ("n", "na")
-                } & structurally_expected
                 dep_set = set()
                 for col in ("Element_A", "Element_B"):
                     if col in pair_df.columns:
                         dep_set.update(pair_df[col].str.strip())
                 dep_set.discard("")
+
+                # Elements in dep_set that aren't in elem_to_positions are keystone
+                # elements included because keystone_active=True — treat them as
+                # structurally reachable so they don't trigger a false stale warning.
+                structurally_expected |= dep_set - set(elem_to_positions.keys())
+
+                source_set = {
+                    r["Element"].strip()
+                    for _, r in pre_df.iterrows()
+                    if r.get("scopal", "").strip() not in ("n", "na")
+                } & structurally_expected
                 if dep_set and source_set != dep_set:
                     stale_dependent = (
                         "general.tsv is out of sync with element_prescreening.tsv — "
