@@ -3,7 +3,7 @@ English Free Occurrence General
 
 Keystone position: 30 (v:verbstem)
 
-Free-occurrence-internal positions: [30]
+Free-occurrence-internal positions: [3, 8, 18, 22, 28, 29, 30, 31, 33]
 
 Minimal free occurrence span: positions 30–30  (v:verbstem → v:verbstem)
-Maximal free occurrence span: positions 30–30  (v:verbstem → v:verbstem)
+Maximal free occurrence span: positions 3–33  (v:frontedauxiliary → v:obj-part)
