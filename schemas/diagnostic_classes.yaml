@@ -246,6 +246,7 @@ classes:
                     carries an obligatory scope difference)
         scopal = n  means these two elements can appear in either order freely (no
                     scope difference)
+    keystone_active_default: true
     required_criteria: [scopal]
     optional_criteria: []
     qualification_rule: >

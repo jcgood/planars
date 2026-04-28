@@ -356,14 +356,20 @@ def _read_position_types(planar_path: Path, lang_id: str) -> Dict[int, str]:
     return {int(row["Position"]): row["Position_Type"] for _, row in df.iterrows()}
 
 
-def _build_nonperm_pairs(
-    element_index, lang_id: str, pos_type: Dict[int, str]
+def _build_nonperm_pairs(  # noqa: too-many-branches
+    element_index, lang_id: str, pos_type: Dict[int, str],
+    keystone_active: bool = False,
 ) -> List[List[str]]:
     """Generate candidate variable-order element pairs (Option C algorithm).
 
     A pair (A, B) is included as a candidate if the planar structure permits
     either relative ordering. Pairs whose order is always fixed by structure
-    are excluded. The keystone (v:verbstem) is never included in any pair.
+    are excluded.
+
+    When keystone_active is False (default), the keystone (v:verbstem) is
+    excluded from all pairs. When True, the keystone is included so that its
+    variable ordering relative to other elements (e.g. verb–adverb permutation)
+    can be annotated.
 
     Inclusion rules:
     - INCLUDE if A and B share a Zone position (within-zone permutation).
@@ -376,7 +382,7 @@ def _build_nonperm_pairs(
     """
     _keystone = load_planar_schema().get("keystone_position_name", "v:verbstem")
 
-    # Build element → set of positions, excluding keystone.
+    # Build element → set of positions. Skip keystone unless keystone_active.
     # Apply the same bracket-wrapping used when writing element_prescreening rows
     # so that pair element names are consistent with those in element_prescreening.tsv.
     def _wrap(e: str) -> str:
@@ -386,7 +392,7 @@ def _build_nonperm_pairs(
     for _, (pos, pos_name, lang, element) in element_index.items():
         if lang != lang_id:
             continue
-        if pos_name.strip().lower() == _keystone:
+        if pos_name.strip().lower() == _keystone and not keystone_active:
             continue
         elem_positions.setdefault(_wrap(element), set()).add(pos)
 
@@ -885,14 +891,19 @@ def _create_analysis_sheet(
     for construction, param_names, param_values in constructions:
         if class_name == "nonpermutability" and construction == "element_prescreening":
             # Step 1: element-level pre-filter sheet.
-            rows = _build_rows(element_index, lang_id, param_names, keystone_active=False)
+            ka = resolve_keystone_active(lang_id, class_name, construction,
+                                         data_dir=planar_path.parent) or False
+            rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
             _populate_tab(spreadsheet, construction, param_names, param_values, rows)
             tab_names.append(construction)
             print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
         elif class_name == "nonpermutability":
             # Step 2: candidate pair sheet (general), filtered if prescreening.tsv exists.
+            ka = resolve_keystone_active(lang_id, class_name, construction,
+                                         data_dir=planar_path.parent) or False
             pos_type = _read_position_types(planar_path, lang_id)
-            pairs = _build_nonperm_pairs(element_index, lang_id, pos_type)
+            pairs = _build_nonperm_pairs(element_index, lang_id, pos_type,
+                                         keystone_active=ka)
             pairs = _filter_nonperm_pairs_by_prescreening(pairs, lang_id)
             _populate_tab_pairs(spreadsheet, construction, param_names, param_values, pairs)
             tab_names.append(construction)
@@ -983,7 +994,10 @@ def _regen_construction(
     planar_path   = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
     element_index = build_element_index(f"planar_{lang_id}.tsv", planar_path.parent)
     pos_type      = _read_position_types(planar_path, lang_id)
-    pairs         = _build_nonperm_pairs(element_index, lang_id, pos_type)
+    ka            = resolve_keystone_active(lang_id, class_name, construction_name,
+                                            data_dir=planar_path.parent) or False
+    pairs         = _build_nonperm_pairs(element_index, lang_id, pos_type,
+                                         keystone_active=ka)
     pairs         = _filter_nonperm_pairs_by_prescreening(pairs, lang_id)
 
     new_pair_set = {(p[0], p[1]) for p in pairs}
