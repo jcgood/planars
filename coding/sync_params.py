@@ -64,11 +64,12 @@ _TRAILING_SET = set(_TRAILING_COLS)
 def _get_current_params(ws: gspread.Worksheet) -> Tuple[List[str], int]:
     """Return (param_names, comments_col_0based) from the header row.
 
-    Fixed columns: Element (0), Position_Name (1), Position_Number (2).
-    Param columns follow; trailing columns (Comments) come last.
+    Element-by-position tabs: Element (0), Position_Name (1), Position_Number (2) → fixed_count=3.
+    Pairs tabs (Element_A / Element_B): fixed_count=2.
+    Param columns follow; trailing columns (Source, Comments) come last.
     """
     header = _with_retry(lambda: ws.row_values(1))
-    fixed_count = 3  # Element, Position_Name, Position_Number
+    fixed_count = 2 if header and header[0] == "Element_A" else 3
     params = []
     comments_col = len(header)  # default: insert at end if Comments not found
     for i in range(fixed_count, len(header)):
