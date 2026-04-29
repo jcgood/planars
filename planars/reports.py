@@ -322,6 +322,40 @@ def _collect_spans_sheets(gc, manifest, lang_id: Optional[str] = None):
                 except Exception:
                     print(f"  WARNING: tab '{construction}' not found in {class_name} sheet")
                     continue
+
+                # Nonpermutability general uses a pairs schema (Element_A, Element_B)
+                # that load_filled_sheet cannot parse. Reconstruct the planar structures
+                # from the manifest entry written by generate-sheets / import-sheets.
+                if class_name == "nonpermutability" and "planar" in lang_data:
+                    try:
+                        raw_rows = ws.get_all_values()
+                        header = raw_rows[0] if raw_rows else []
+                        if header and header[0] == "Element_A":
+                            pair_df = (pd.DataFrame(raw_rows[1:], columns=header)
+                                       if len(raw_rows) > 1
+                                       else pd.DataFrame(columns=header))
+                            planar = lang_data["planar"]
+                            keystone_pos = planar["keystone_pos"]
+                            pos_to_name = {p["pos"]: p["name"] for p in planar["positions"]}
+                            pos_type    = {p["pos"]: p["type"] for p in planar["positions"]}
+                            pos_to_elements = {p["pos"]: p["elements"] for p in planar["positions"]}
+                            elem_to_positions: dict = {}
+                            for p in planar["positions"]:
+                                for e in p["elements"]:
+                                    elem_to_positions.setdefault(e, set()).add(p["pos"])
+                            _data = (pair_df, keystone_pos, pos_to_name, pos_type,
+                                     pos_to_elements, elem_to_positions)
+                            result = derive_fn(_data=_data, strict=False)
+                            rows.extend(row_fn(result, lid))
+                            if lid not in lang_meta:
+                                lang_meta[lid] = {
+                                    "keystone_pos": result["keystone_position"],
+                                    "pos_to_name":  result["position_number_to_name"],
+                                }
+                    except Exception as e:
+                        print(f"  WARNING: could not derive {class_name}/{construction} for {lid}: {e}")
+                    continue  # skip standard load_filled_sheet path
+
                 required = set(
                     construction_params.get(construction, {}).get("param_names", [])
                 )

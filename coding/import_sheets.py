@@ -45,6 +45,7 @@ from .make_forms import (
     _diff_diagnostics_tsv_yaml,
     resolve_keystone_active,
     resolve_keystone_na_criteria,
+    planar_to_manifest_dict,
 )
 
 ERROR_DIR    = ROOT / "import_errors"
@@ -1065,6 +1066,13 @@ def main() -> None:
                entry.get("meta") != lang_entry.get("meta"):
                 entry["glottolog"] = lang_entry.get("glottolog", {})
                 entry["meta"] = lang_entry.get("meta", {})
+                manifest_changed = True
+        # Refresh planar structure so Colab source='sheets' can derive nonpermutability spans.
+        planar_file = CODED_DATA / lid / "lang_setup" / f"planar_{lid}.tsv"
+        if planar_file.exists():
+            new_planar = planar_to_manifest_dict(planar_file, lid)
+            if entry.get("planar") != new_planar:
+                entry["planar"] = new_planar
                 manifest_changed = True
     if manifest_changed and apply:
         drive_cfg = _load_drive_config()

@@ -63,6 +63,7 @@ from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
     resolve_keystone_active,
+    planar_to_manifest_dict,
 )
 
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
@@ -1376,6 +1377,7 @@ def main() -> None:
         if existing_notes_doc_id:
             lang_data["notes_doc_id"] = existing_notes_doc_id
         lang_data.update(input_sheet_info)  # store planar/diagnostics spreadsheet IDs
+        lang_data["planar"] = planar_to_manifest_dict(planar_file, lang_id)
 
         _sync_language_metadata(lang_data, lang_id)
 
