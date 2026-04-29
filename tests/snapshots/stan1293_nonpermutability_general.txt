@@ -2,13 +2,14 @@ English Nonpermutability General
 ================================
 
 NOTE: Some pairs have unannotated scopal values.
-  scopal: ['AD-S × KEYSTONE', 'AD-VP × KEYSTONE']
+  scopal: ['AD-S × AD-VP', 'AD-S × KEYSTONE', 'AD-S × can', 'AD-S × could', 'AD-S × may'] … (23 total)
+  scopal.1: ['AD-S × AD-VP', 'AD-S × KEYSTONE', 'AD-S × can', 'AD-S × could', 'AD-S × may'] … (23 total)
 
 Keystone position: 30 (v:verbstem)
 
 Strictly non-permutable positions (structural): [2, 5, 12, 27, 34]
-Free-permutable positions (scopal=n pairs):     [3, 6, 7, 8, 9, 11, 14, 16, 19, 21, 23, 25, 35, 37]
+Free-permutable positions (scopal=n pairs):     []
 
 Strict non-permutable span:           positions 30–30  (v:verbstem → v:verbstem)
-Minimal flexible non-permutable span: positions 26–34  (v:ad-V2 → v:rec)
-Maximal flexible non-permutable span: positions 1–36  (v:leftedge → v:PP)
+Minimal flexible non-permutable span: positions 1–37  (v:leftedge → v:rightedge)
+Maximal flexible non-permutable span: positions 1–37  (v:leftedge → v:rightedge)
