@@ -1068,7 +1068,7 @@ def main() -> None:
                 entry["meta"] = lang_entry.get("meta", {})
                 manifest_changed = True
         # Refresh planar structure so Colab source='sheets' can derive nonpermutability spans.
-        planar_file = CODED_DATA / lid / "lang_setup" / f"planar_{lid}.tsv"
+        planar_file = ROOT / "coded_data" / lid / "lang_setup" / f"planar_{lid}.tsv"
         if planar_file.exists():
             new_planar = planar_to_manifest_dict(planar_file, lid)
             if entry.get("planar") != new_planar:
