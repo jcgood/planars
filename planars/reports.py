@@ -536,10 +536,23 @@ def language_completeness(
                     construction_params.get(construction, {}).get("param_names", [])
                 )
                 try:
-                    data_df, _, _, crit_cols, _ = load_filled_sheet(
-                        ws, required_criteria=required, strict=False
-                    )
-                    constructions[construction] = _tab_completeness(data_df, crit_cols)
+                    # Peek at header to detect pairs-format tabs (Element_A, Element_B)
+                    # before calling load_filled_sheet, which requires the standard
+                    # element-by-position schema and would error on pairs tabs.
+                    raw_rows = ws.get_all_values()
+                    header = raw_rows[0] if raw_rows else []
+                    if header and header[0] == "Element_A":
+                        df = (pd.DataFrame(raw_rows[1:], columns=header)
+                              if len(raw_rows) > 1 else pd.DataFrame(columns=header))
+                        crit_cols = [c for c in df.columns
+                                     if c not in {"Element_A", "Element_B"}
+                                     and c not in _TRAILING_COLS and c]
+                        constructions[construction] = _tab_completeness(df, crit_cols)
+                    else:
+                        data_df, _, _, crit_cols, _ = load_filled_sheet(
+                            ws, required_criteria=required, strict=False
+                        )
+                        constructions[construction] = _tab_completeness(data_df, crit_cols)
                 except Exception as e:
                     constructions[construction] = {
                         "total": 0, "filled": 0, "blank": 0, "error": str(e)

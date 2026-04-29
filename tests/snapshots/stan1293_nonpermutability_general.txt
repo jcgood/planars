@@ -1,9 +1,6 @@
 English Nonpermutability General
 ================================
 
-NOTE: Some pairs have unannotated scopal values.
-  scopal: ['AD-S × KEYSTONE', 'AD-VP × KEYSTONE']
-
 Keystone position: 30 (v:verbstem)
 
 Strictly non-permutable positions (structural): [2, 5, 12, 27, 34]
