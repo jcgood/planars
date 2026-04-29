@@ -9,6 +9,7 @@ Exits with code 0 if all snapshots match, 1 if any differ.
 from __future__ import annotations
 
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -57,6 +58,29 @@ def main() -> None:
         sys.exit(1)
     else:
         print(f"\nAll {len(TASKS)} snapshots match.")
+
+    # Check that coded_data/ (planars-data) is clean and pushed.
+    # Snapshots are generated from local TSVs; if planars-data is ahead of
+    # remote, CI will see different data and the snapshot check will fail.
+    coded_data = ROOT / "coded_data"
+    if (coded_data / ".git").exists():
+        dirty = subprocess.run(
+            ["git", "-C", str(coded_data), "status", "--porcelain"],
+            capture_output=True, text=True,
+        ).stdout.strip()
+        ahead = subprocess.run(
+            ["git", "-C", str(coded_data), "log", "@{u}..", "--oneline"],
+            capture_output=True, text=True,
+        ).stdout.strip()
+        if dirty or ahead:
+            print("\ncoded_data/ is out of sync with remote planars-data:")
+            if dirty:
+                print("  uncommitted changes — commit before pushing planars")
+            if ahead:
+                print("  unpushed commits    — push coded_data/ before pushing planars")
+            print("\nCI snapshots are built from remote planars-data.")
+            print("Sync planars-data first or CI will fail with a snapshot mismatch.")
+            sys.exit(1)
 
 
 if __name__ == "__main__":

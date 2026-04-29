@@ -1039,6 +1039,11 @@ def main() -> None:
 
     backup_part = f", {in_progress_files} in-progress backup(s)" if in_progress_files else ""
     print(f"\nDone. {total_files} file(s) written{backup_part}, {total_warnings} warning(s).")
+    if apply and (total_files > 0 or in_progress_files > 0):
+        print("\nNext: commit and push coded_data/ before pushing planars:")
+        print("  git -C coded_data add -A")
+        print("  git -C coded_data commit -m 'data(...): ...'")
+        print("  git -C coded_data push")
 
     # Sync glottolog + meta from languages.yaml into the Drive manifest.
     # Read fresh each run — not via coding.schemas cached loader — because
