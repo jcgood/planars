@@ -59,6 +59,22 @@ def main() -> None:
     else:
         print(f"\nAll {len(TASKS)} snapshots match.")
 
+    # Warn if planars/ library files changed but pyproject.toml version did not.
+    # Colab installs planars from GitHub; without a version bump pip won't reinstall.
+    planars_changed = subprocess.run(
+        ["git", "diff", "origin/main..HEAD", "--name-only", "--", "planars/"],
+        capture_output=True, text=True,
+    ).stdout.strip()
+    version_changed = subprocess.run(
+        ["git", "diff", "origin/main..HEAD", "--name-only", "--", "pyproject.toml"],
+        capture_output=True, text=True,
+    ).stdout.strip()
+    if planars_changed and not version_changed:
+        print("\nWARNING: planars/ changed but pyproject.toml version was not bumped.")
+        print("  Colab notebooks install planars from GitHub; without a version bump")
+        print("  pip will serve the cached old version to notebook users.")
+        print("  Bump the version in pyproject.toml before pushing.")
+
     # Check that coded_data/ (planars-data) is clean and pushed.
     # Snapshots are generated from local TSVs; if planars-data is ahead of
     # remote, CI will see different data and the snapshot check will fail.
