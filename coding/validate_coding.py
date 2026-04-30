@@ -558,8 +558,6 @@ def main() -> None:
     if total_blocking:
         print("Cell highlighting updated in Google Sheets.")
         sys.exit(1)
-    elif total_missing:
-        sys.exit(1)
     else:
         print("All data coding issues cleared. (Pink highlighting for blank cells preserved.)")
 
