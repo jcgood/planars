@@ -304,8 +304,17 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
         print(_fail(f"Could not connect to Google Sheets: {exc}"))
         return 1, 0
 
-    _STRUCTURAL = {"Element", "Position_Name", "Position_Number"}
-    _TRAILING   = set(load_planar_schema().get("trailing_columns", ["Source", "Comments"]))
+    _STRUCTURAL       = {"Element", "Position_Name", "Position_Number"}
+    _PAIR_STRUCTURAL  = {"Element_A", "Position_A", "Element_B", "Position_B", "Direction"}
+    _TRAILING         = set(load_planar_schema().get("trailing_columns", ["Source", "Comments"]))
+
+    # Build a set of (class_name, construction_name) pairs that use pair_rows layout.
+    _diag_classes = _load_diagnostic_classes()
+    _pair_constructions: set[tuple[str, str]] = set()
+    for cls_name, cls_data in _diag_classes.items():
+        for con in cls_data.get("constructions", []):
+            if isinstance(con, dict) and con.get("row_type") == "pair_rows":
+                _pair_constructions.add((cls_name, con["name"]))
 
     total_e = total_w = 0
 
@@ -378,7 +387,8 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
                     continue
 
                 expected = construction_params.get(construction, {}).get("param_names", [])
-                actual   = [c for c in header if c not in _STRUCTURAL and c not in _TRAILING]
+                _skip = (_STRUCTURAL | _PAIR_STRUCTURAL) if (class_name, construction) in _pair_constructions else _STRUCTURAL
+                actual   = [c for c in header if c not in _skip and c not in _TRAILING]
 
                 # Warn on stale lifecycle columns left from --split or --merge operations.
                 stale = [c for c in actual if c.startswith("_split_") or c.startswith("_merged_")]
