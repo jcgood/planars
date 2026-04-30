@@ -36,16 +36,29 @@ from .make_forms import (
 from .validate import ValidationIssue
 from .validate_planar import validate_planar_df
 from .validate_diagnostics import validate_diagnostics_df
-from .schemas import load_diagnostic_criteria, load_planar_schema
+from .schemas import load_diagnostic_criteria, load_planar_schema, load_diagnostic_classes
 
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
 
 _STRUCTURAL_COLS      = {"Element", "Position_Name", "Position_Number"}
-_PAIR_STRUCTURAL_COLS = {"Element_A", "Position_A", "Position_B", "Direction"}
+_PAIR_STRUCTURAL_COLS = {"Element_A", "Element_B", "Position_A", "Position_B", "Direction"}
 _TRAILING_COLS        = load_planar_schema().get("trailing_columns", ["Source", "Comments"])
 _DEFAULT_EXPECTED = set(load_diagnostic_criteria().get("default_allowed_values", ["y", "n", "na", "?"]))
+
+# Per-construction criterion for coreference pair sheets, derived from schema.
+# prescreening always uses referential=[y,n]; each pair construction uses its own criterion.
+def _build_coreference_params() -> Dict[str, dict]:
+    _dc = {c["name"]: c for c in load_diagnostic_classes().get("classes", [])}
+    result = {"prescreening": {"params": ["referential"], "values": {"referential": ["y", "n"]}}}
+    for con in (_dc.get("coreference", {}).get("constructions") or []):
+        if isinstance(con, dict) and "criterion" in con:
+            crit = con["criterion"]
+            result[con["name"]] = {"params": [crit], "values": {crit: ["y", "n"]}}
+    return result
+
+_COREFERENCE_CONSTRUCTION_PARAMS: Dict[str, dict] = _build_coreference_params()
 # Placeholder used in diagnostic_criteria.yaml for criteria that accept any
 # non-negative integer (e.g. dependent-on-left, dependent-on-right).
 _POSITION_NUMBER_PLACEHOLDER = "<position_number>"
@@ -497,7 +510,10 @@ def main() -> None:
                 construction = ws.title
                 if construction in (_STATUS_TAB, _INSTRUCTIONS_TAB):
                     continue
-                info = param_map.get(class_name, {}).get(construction, {})
+                if class_name == "coreference" and construction in _COREFERENCE_CONSTRUCTION_PARAMS:
+                    info = _COREFERENCE_CONSTRUCTION_PARAMS[construction]
+                else:
+                    info = param_map.get(class_name, {}).get(construction, {})
                 try:
                     is_pair_sheet = (
                         (class_name == "nonpermutability" and construction != "element_prescreening")
