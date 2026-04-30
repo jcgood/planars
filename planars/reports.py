@@ -360,13 +360,13 @@ def _collect_spans_sheets(gc, manifest, lang_id: Optional[str] = None):
                         print(f"  WARNING: could not derive {class_name}/{construction} for {lid}: {e}")
                     continue  # skip standard load_filled_sheet path
 
-                # Coreference uses pair rows (Element_A, ..., reflexive_allowed, ...);
-                # positions are derived from the manifest planar entry via elem_to_positions.
+                # Coreference uses pair rows (Element_A, Position_A, Position_B, Direction,
+                # <criterion>); positions are derived from the manifest planar entry.
                 if class_name == "coreference" and "planar" in lang_data:
                     try:
                         raw_rows = ws.get_all_values()
                         header = raw_rows[0] if raw_rows else []
-                        if header and "Element_A" in header and "Element_B" in header:
+                        if header and "Element_A" in header and "Position_B" in header:
                             pair_df = (pd.DataFrame(raw_rows[1:], columns=header)
                                        if len(raw_rows) > 1
                                        else pd.DataFrame(columns=header))

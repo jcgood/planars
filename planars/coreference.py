@@ -13,6 +13,8 @@ _REQUIRED_CRITERIA: Set[str] = {"reflexive_allowed"}
 
 _SNAPSHOT_CONSTRUCTIONS = frozenset({"reflexivization"})
 
+_PAIR_CRITERIA = {"reflexive_allowed", "pronoun_allowed", "np_allowed"}
+
 
 def _split_elements(raw: str) -> List[str]:
     """Split comma-separated elements string, ignoring commas inside braces."""
@@ -140,10 +142,13 @@ def derive_coreference_domains(
     bindee_positions: Set[int] = set()
     bad_rows: List[str] = []
 
+    pair_cols = set(pair_df.columns) if hasattr(pair_df, "columns") else set()
+    criterion_col = next((c for c in _PAIR_CRITERIA if c in pair_cols), "reflexive_allowed")
+
     for _, row in pair_df.iterrows():
         ea      = row.get("Element_A", "").strip()
         pos_b_s = row.get("Position_B", "").strip()
-        allowed = row.get("reflexive_allowed", "").strip().lower()
+        allowed = row.get(criterion_col, "").strip().lower()
 
         if allowed != "y":
             continue
