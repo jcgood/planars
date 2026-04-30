@@ -504,10 +504,11 @@ def _filter_reflex_pairs_by_prescreening(
         CODED_DATA / lang_id / "reflexivization" / "coreference_prescreening.tsv"
     )
     if not prescreening_path.exists():
-        print("    [NOTE] coreference_prescreening.tsv not found — generating unfiltered pair list.")
-        print("          Annotate coreference_prescreening first, then re-run generate-sheets")
-        print("          to get a filtered pairs sheet.")
-        return pairs
+        print("    [NOTE] coreference_prescreening.tsv not found — pair tab left blank.")
+        print("          Annotate coreference_prescreening first, then re-run:")
+        print(f"          python -m coding generate-sheets --lang {lang_id} "
+              "--regen-construction reflexivization:<construction>")
+        return []
 
     df = pd.read_csv(prescreening_path, sep="\t", dtype=str, keep_default_na=False)
     excluded = {
@@ -1088,18 +1089,26 @@ def _regen_construction(
 
     # Get param_names and param_values from the manifest.
     cp = manifest_class_info.get("construction_params", {}).get(construction_name, {})
-    param_names  = cp.get("param_names",  ["scopal"])
-    param_values = cp.get("param_values", {"scopal": ["y", "n"]})
+    if class_name == "reflexivization":
+        param_names  = cp.get("param_names",  ["reflexivizes"])
+        param_values = cp.get("param_values", {"reflexivizes": ["y", "n"]})
+    else:
+        param_names  = cp.get("param_names",  ["scopal"])
+        param_values = cp.get("param_values", {"scopal": ["y", "n"]})
 
     # Generate new filtered pair list.
     planar_path   = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
     element_index = build_element_index(f"planar_{lang_id}.tsv", planar_path.parent)
-    pos_type      = _read_position_types(planar_path, lang_id)
     ka            = resolve_keystone_active(lang_id, class_name, construction_name,
                                             data_dir=planar_path.parent) or False
-    pairs         = _build_nonperm_pairs(element_index, lang_id, pos_type,
-                                         keystone_active=ka)
-    pairs         = _filter_nonperm_pairs_by_prescreening(pairs, lang_id)
+    if class_name == "reflexivization":
+        pairs = _build_reflex_pairs(element_index, lang_id, keystone_active=ka)
+        pairs = _filter_reflex_pairs_by_prescreening(pairs, lang_id)
+    else:
+        pos_type = _read_position_types(planar_path, lang_id)
+        pairs    = _build_nonperm_pairs(element_index, lang_id, pos_type,
+                                        keystone_active=ka)
+        pairs    = _filter_nonperm_pairs_by_prescreening(pairs, lang_id)
 
     new_pair_set = {(p[0], p[1]) for p in pairs}
     old_pair_set = set(existing.keys())

@@ -311,6 +311,26 @@ classes:
     #   Stage 2 (main construction): pair-row sheet; columns are Element_A, Element_B,
     #     reflexivizes, Source, Comments. Element_A = antecedent (binder); Element_B = anaphor
     #     (bindee). reflexivizes=y means the binding relation holds for this pair.
+    constructions:
+      - name: coreference_prescreening
+        row_type: element
+      - name: pronominal_reflexivization
+        row_type: pair_rows
+        depends_on: coreference_prescreening
+        staleness_check: element_set
+    sheet_instructions: >
+      STEP 1 — coreference_prescreening: For each element, annotate coreference_eligible:
+        y = this element can participate in a coreference relation (as antecedent or anaphor)
+        n = this element cannot participate; it will be EXCLUDED from the pair list in Step 2
+      When finished, mark coreference_prescreening as "ready-for-review" in the Status tab.
+      The coordinator will then regenerate the main construction tab with a filtered pair list.
+
+      STEP 2 — (main construction): Do NOT annotate this tab until the coordinator confirms
+      it has been regenerated from the prescreening results. The coordinator will run:
+        python -m coding generate-sheets --lang LANG_ID --regen-construction reflexivization:CONSTRUCTION_NAME
+      to regenerate the pair list, then mark it "ready-for-review" in the Status tab.
+      Each row represents a potential antecedent-anaphor pair (Element_A → Element_B).
+      Mark reflexivizes=y if the binding relation holds; n if it does not.
     required_criteria: [reflexivizes]
     optional_criteria: []
     qualification_rule: >
