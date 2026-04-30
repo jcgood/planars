@@ -935,7 +935,7 @@ def main() -> None:
 
                 is_pair_tab = (
                     (class_name == "nonpermutability" and construction != "element_prescreening")
-                    or (class_name == "reflexivization" and construction != "coreference_prescreening")
+                    or (class_name == "coreference" and construction != "prescreening")
                 )
                 if is_pair_tab:
                     expected_params = (

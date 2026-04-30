@@ -9,9 +9,9 @@ from planars.spans import fmt_span, loose_span, strict_span
 
 _KEYSTONE_NAME = "v:verbstem"
 _TRAILING_COLS = {"Source", "Comments"}
-_REQUIRED_CRITERIA: Set[str] = {"reflexivizes"}
+_REQUIRED_CRITERIA: Set[str] = {"reflexive_allowed"}
 
-_SNAPSHOT_CONSTRUCTIONS = frozenset({"pronominal_reflexivization"})
+_SNAPSHOT_CONSTRUCTIONS = frozenset({"reflexivization"})
 
 
 def _split_elements(raw: str) -> List[str]:
@@ -36,7 +36,7 @@ def _split_elements(raw: str) -> List[str]:
     return [p for p in parts if p]
 
 
-def _load_planar_for_reflexivization(
+def _load_planar_for_coreference(
     planar_path: Path, lang_id: str
 ):
     """Return (keystone_pos, pos_to_name, elem_to_positions) from a planar TSV.
@@ -68,35 +68,35 @@ def _load_planar_for_reflexivization(
     return keystone_pos, pos_to_name, elem_to_positions
 
 
-def derive_reflexivization_domains(
+def derive_coreference_domains(
     tsv_path: Optional[Path] = None,
     strict: bool = True,
     *,
     planar_path: Optional[Path] = None,
     _data=None,
 ) -> Dict[str, object]:
-    """Derive binding domain spans from a filled reflexivization pair TSV.
+    """Derive binding domain spans from a filled coreference pair TSV.
 
     [AUTO-DERIVED: NEEDS REVIEW] Qualification rules proposed in issue #163 (Apr 2026).
     Coordinator linguistic sign-off required before promoting to stable.
 
-    Data model: pair rows (Element_A, Element_B, reflexivizes) where Element_A is the
-    antecedent (binder) and Element_B is the anaphor (bindee). Only pairs with
-    reflexivizes=y contribute to span computation. Rows with reflexivizes=n confirm
-    that the binding relation does not hold for that pair. Rows with coreference_eligible=n
-    in the upstream prescreening sheet are excluded before pair rows are generated.
+    Data model: pair rows (Element_A, Position_A, Element_B, Position_B, Direction,
+    reflexive_allowed) where Element_A is the antecedent (binder) and Element_B is the
+    anaphor (bindee). Only pairs with reflexive_allowed=y contribute to span computation.
+    Rows with referential=n in the upstream prescreening sheet are excluded before pair
+    rows are generated.
 
     Qualification rule (mirrors diagnostic_classes.yaml)
     -----------------------------------------------------
-    Prescreening: elements are annotated coreference_eligible=y (can participate as binder
-    or bindee in this construction) or =n (cannot). Only eligible elements generate pair rows.
+    Prescreening: elements are annotated referential=y (can participate as binder
+    or bindee in this construction) or =n (cannot). Only referential elements generate pair rows.
 
     Each pair row (Element_A, Element_B) represents a potential coreference relation where
     Element_A is the antecedent (binder) and Element_B is the anaphor (bindee). The annotator
-    marks reflexivizes=y if the construction exhibits anaphoric binding for this pair, or =n.
+    marks reflexive_allowed=y if the construction exhibits anaphoric binding for this pair, or =n.
 
-    Binder positions: the set of positions for Element_A across all pairs with reflexivizes=y.
-    Bindee positions: the set of positions for Element_B across all pairs with reflexivizes=y.
+    Binder positions: the set of positions for Element_A across all pairs with reflexive_allowed=y.
+    Bindee positions: the set of positions for Element_B across all pairs with reflexive_allowed=y.
 
     BINDER DOMAIN (strict): contiguous expansion from keystone through binder positions.
     BINDER DOMAIN (loose):  leftmost to rightmost binder position (gaps allowed).
@@ -111,7 +111,7 @@ def derive_reflexivization_domains(
     without presupposing tree structure (see issue #163).
 
     Args:
-        tsv_path:    Path to pair TSV (Element_A, Element_B, reflexivizes, ...).
+        tsv_path:    Path to pair TSV (Element_A, ..., reflexive_allowed, ...).
         strict:      If True, raise on unknown elements.
         planar_path: Optional explicit path to planar TSV. If None, derived from tsv_path.
         _data:       (pair_df, keystone_pos, pos_to_name, elem_to_positions) for Colab.
@@ -130,7 +130,7 @@ def derive_reflexivization_domains(
             planar_path = (
                 tsv_path.parent.parent / "lang_setup" / f"planar_{lang_id}.tsv"
             )
-        keystone_pos, pos_to_name, elem_to_positions = _load_planar_for_reflexivization(
+        keystone_pos, pos_to_name, elem_to_positions = _load_planar_for_coreference(
             planar_path, lang_id
         )
         pair_df = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
@@ -142,9 +142,9 @@ def derive_reflexivization_domains(
     for _, row in pair_df.iterrows():
         ea = row.get("Element_A", "").strip()
         eb = row.get("Element_B", "").strip()
-        reflex = row.get("reflexivizes", "").strip().lower()
+        allowed = row.get("reflexive_allowed", "").strip().lower()
 
-        if reflex != "y":
+        if allowed != "y":
             continue
 
         unknown = []
@@ -186,7 +186,7 @@ def derive_reflexivization_domains(
 
 
 def format_result(result: Dict[str, object]) -> str:
-    """Format a derive_reflexivization_domains result as a human-readable string."""
+    """Format a derive_coreference_domains result as a human-readable string."""
     p = result["position_number_to_name"]
     fmt = lambda span: fmt_span(span, p)
 
@@ -226,4 +226,4 @@ def format_result(result: Dict[str, object]) -> str:
 
 
 # Standard entry point used by generate_notebooks.py.
-derive = derive_reflexivization_domains
+derive = derive_coreference_domains

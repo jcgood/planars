@@ -289,8 +289,8 @@ classes:
     keystone_active_default: true
     collection_required: "y"
 
-  - name: reflexivization
-    display_name: "Reflexivization"
+  - name: coreference
+    display_name: "Coreference"
     domain_type: morphosyntactic
     applicability: conditional
     applicability_conditions: >
@@ -301,48 +301,51 @@ classes:
       these are theoretically informative cases, not reasons to exclude the diagnostic.
     specificity: construction_specific
     known_constructions:
-      - coreference_prescreening       # upstream prescreening: which elements can participate
+      - prescreening               # upstream prescreening: which elements are referential
+      - reflexivization            # Principle A: reflexive_allowed=y/n (anaphors)
+      - pronominalization          # Principle B: pronoun_allowed=y/n (pronouns)
+      - np_reference               # Principle C: np_allowed=y/n (referring expressions)
       - morphological_reflexive_voice  # verb carries reflexive marker; keystone often bindee
-      - pronominal_reflexivization     # reflexive pronoun at argument position; most common case
-      - reciprocal                     # reciprocal constructions
+      - reciprocal                 # reciprocal constructions
     # Two-stage workflow (mirrors nonpermutability):
-    #   Stage 1 (coreference_prescreening): standard element sheet; annotator marks
-    #     coreference_eligible=y/n for each element. Elements with n are excluded from pairs.
-    #   Stage 2 (main construction): pair-row sheet; columns are Element_A, Element_B,
-    #     reflexivizes, Source, Comments. Element_A = antecedent (binder); Element_B = anaphor
-    #     (bindee). reflexivizes=y means the binding relation holds for this pair.
+    #   Stage 1 (prescreening): standard element sheet; annotator marks
+    #     referential=y/n for each element. Elements with n are excluded from pairs.
+    #   Stage 2 (main construction): pair-row sheet; columns are Element_A, Position_A,
+    #     Element_B, Position_B, Direction, <criterion>, Source, Comments.
+    #     Element_A = antecedent (binder); Element_B = anaphor (bindee).
     constructions:
-      - name: coreference_prescreening
+      - name: prescreening
         row_type: element
-      - name: pronominal_reflexivization
+      - name: reflexivization
         row_type: pair_rows
-        depends_on: coreference_prescreening
+        depends_on: prescreening
         staleness_check: element_set
     sheet_instructions: >
-      STEP 1 — coreference_prescreening: For each element, annotate coreference_eligible:
-        y = this element can participate in a coreference relation (as antecedent or anaphor)
+      STEP 1 — prescreening: For each element, annotate referential:
+        y = this element is a referential expression (NP, pronoun) that can enter coreference
         n = this element cannot participate; it will be EXCLUDED from the pair list in Step 2
-      When finished, mark coreference_prescreening as "ready-for-review" in the Status tab.
+      When finished, mark prescreening as "ready-for-review" in the Status tab.
       The coordinator will then regenerate the main construction tab with a filtered pair list.
 
       STEP 2 — (main construction): Do NOT annotate this tab until the coordinator confirms
       it has been regenerated from the prescreening results. The coordinator will run:
-        python -m coding generate-sheets --lang LANG_ID --regen-construction reflexivization:CONSTRUCTION_NAME
+        python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:CONSTRUCTION_NAME
       to regenerate the pair list, then mark it "ready-for-review" in the Status tab.
       Each row represents a potential antecedent-anaphor pair (Element_A → Element_B).
-      Mark reflexivizes=y if the binding relation holds; n if it does not.
-    required_criteria: [reflexivizes]
+      For reflexivization: mark reflexive_allowed=y if a reflexive in Element_B's position
+      can be bound by an antecedent in Element_A's position; n if it cannot.
+    required_criteria: [reflexive_allowed]
     optional_criteria: []
     qualification_rule: >
-      Prescreening: elements are annotated coreference_eligible=y (can participate as binder
-      or bindee in this construction) or =n (cannot). Only eligible elements generate pair rows.
+      Prescreening: elements are annotated referential=y (can participate as binder
+      or bindee in this construction) or =n (cannot). Only referential elements generate pair rows.
 
       Each pair row (Element_A, Element_B) represents a potential coreference relation where
       Element_A is the antecedent (binder) and Element_B is the anaphor (bindee). The annotator
-      marks reflexivizes=y if the construction exhibits anaphoric binding for this pair, or =n.
+      marks reflexive_allowed=y if the construction exhibits anaphoric binding for this pair, or =n.
 
-      Binder positions: the set of positions for Element_A across all pairs with reflexivizes=y.
-      Bindee positions: the set of positions for Element_B across all pairs with reflexivizes=y.
+      Binder positions: the set of positions for Element_A across all pairs with reflexive_allowed=y.
+      Bindee positions: the set of positions for Element_B across all pairs with reflexive_allowed=y.
 
       BINDER DOMAIN (strict): contiguous expansion from keystone through binder positions.
       BINDER DOMAIN (loose):  leftmost to rightmost binder position (gaps allowed).
@@ -355,12 +358,12 @@ classes:
         Shared positions (either role):            appear in both sets.
       The asymmetry between binder-only and bindee-only positions approximates c-command
       without presupposing tree structure (see issue #163).
-    qualification_rule_hash: "a7f5230a"
+    qualification_rule_hash: "c5264573"
     keystone_active_default: true
     # Keystone (verb) is the natural bindee in morphological reflexive voice constructions.
     status: "[AUTO-DERIVED: NEEDS REVIEW — proposed in issue #163 (Apr 2026). Pair-row
-      operationalization of binder/bindee domains with reflexivizes=y/n criterion and
-      upstream coreference_prescreening stage. Coordinator sign-off required before
+      operationalization of binder/bindee domains with reflexive_allowed=y/n criterion and
+      upstream prescreening (referential=y/n) stage. Coordinator sign-off required before
       promoting to stable.]"
     criterion_set_status: "[NEEDS REVIEW]"
     collection_required: "[NEEDS COORDINATOR INPUT]"

@@ -44,7 +44,7 @@ from planars import subspanrepetition as _subspan
 from planars import noninterruption as _nonint
 from planars import metrical as _metrical
 from planars import nonpermutability as _nonperm
-from planars import reflexivization as _reflex
+from planars import coreference as _coreference
 from planars import free_occurrence as _freeoc
 from planars import biuniqueness as _biuniq
 from planars import repair as _repair
@@ -76,7 +76,7 @@ _CISC_SPANS           = list(_span_map.get("ciscategorial", {}).items())
 _NONINT_SPANS         = list(_span_map.get("noninterruption", {}).items())
 _METRICAL_BLOCKED_SPANS = list(_span_map.get("metrical", {}).items())
 _NONPERM_SPANS        = list(_span_map.get("nonpermutability", {}).items())
-_REFLEX_SPANS         = list(_span_map.get("reflexivization", {}).items())
+_COREFERENCE_SPANS         = list(_span_map.get("coreference", {}).items())
 _FREEOC_SPANS         = list(_span_map.get("free_occurrence", {}).items())
 
 # Standard 4-span pattern shared by most simple modules.
@@ -169,7 +169,7 @@ _CLASS_HANDLERS = {
     "noninterruption":   (_nonint.derive_noninterruption_domains,     _rows_from_nonint),
     "metrical":          (_metrical.derive_metrical_domains,           _rows_from_metrical),
     "nonpermutability":  (_nonperm.derive_nonpermutability_domains,   _make_simple_rows("nonpermutability", _NONPERM_SPANS)),
-    "reflexivization":   (_reflex.derive_reflexivization_domains,     _make_simple_rows("reflexivization", _REFLEX_SPANS)),
+    "coreference":       (_coreference.derive_coreference_domains,    _make_simple_rows("coreference", _COREFERENCE_SPANS)),
     "free_occurrence":   (_freeoc.derive_free_occurrence_spans,       _make_simple_rows("free_occurrence", _FREEOC_SPANS)),
     "biuniqueness":      (_biuniq.derive_biuniqueness_domains,        _make_simple_rows("biuniqueness")),
     "repair":            (_repair.derive_repair_domains,              _make_simple_rows("repair")),
@@ -188,7 +188,7 @@ _CLASS_HANDLERS = {
 # and must not be passed to the class's derive function.
 _REPORTABLE_CONSTRUCTIONS: Dict[str, frozenset] = {
     "nonpermutability": _nonperm._SNAPSHOT_CONSTRUCTIONS,
-    "reflexivization":  _reflex._SNAPSHOT_CONSTRUCTIONS,
+    "coreference":      _coreference._SNAPSHOT_CONSTRUCTIONS,
 }
 
 
@@ -360,9 +360,9 @@ def _collect_spans_sheets(gc, manifest, lang_id: Optional[str] = None):
                         print(f"  WARNING: could not derive {class_name}/{construction} for {lid}: {e}")
                     continue  # skip standard load_filled_sheet path
 
-                # Reflexivization uses pair rows (Element_A, Element_B, reflexivizes);
+                # Coreference uses pair rows (Element_A, ..., reflexive_allowed, ...);
                 # positions are derived from the manifest planar entry via elem_to_positions.
-                if class_name == "reflexivization" and "planar" in lang_data:
+                if class_name == "coreference" and "planar" in lang_data:
                     try:
                         raw_rows = ws.get_all_values()
                         header = raw_rows[0] if raw_rows else []

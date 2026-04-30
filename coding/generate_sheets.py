@@ -531,32 +531,32 @@ def _build_reflex_pairs(
 def _filter_reflex_pairs_by_prescreening(
     pairs: List[List[str]], lang_id: str
 ) -> List[List[str]]:
-    """Filter candidate pairs by removing elements with coreference_eligible=n.
+    """Filter candidate pairs by removing elements with referential=n.
 
-    Reads coreference_prescreening.tsv from the reflexivization class directory.
+    Reads prescreening.tsv from the coreference class directory.
     If the file does not exist, returns empty list with instructions.
     Each pair is [Element_A, Position_A, Element_B, Position_B, Direction].
     """
     prescreening_path = (
-        CODED_DATA / lang_id / "reflexivization" / "coreference_prescreening.tsv"
+        CODED_DATA / lang_id / "coreference" / "prescreening.tsv"
     )
     if not prescreening_path.exists():
-        print("    [NOTE] coreference_prescreening.tsv not found — pair tab left blank.")
-        print("          Annotate coreference_prescreening first, then re-run:")
+        print("    [NOTE] prescreening.tsv not found — pair tab left blank.")
+        print("          Annotate prescreening first, then re-run:")
         print(f"          python -m coding generate-sheets --lang {lang_id} "
-              "--regen-construction reflexivization:<construction>")
+              "--regen-construction coreference:<construction>")
         return []
 
     df = pd.read_csv(prescreening_path, sep="\t", dtype=str, keep_default_na=False)
     excluded = {
         row["Element"]
         for _, row in df.iterrows()
-        if row.get("coreference_eligible", "").strip() == "n"
+        if row.get("referential", "").strip() == "n"
     }
     # p[0] = Element_A, p[2] = Element_B (5-column format)
     filtered = [p for p in pairs if p[0] not in excluded and p[2] not in excluded]
-    print(f"    [coreference_prescreening] {len(excluded)} element(s) excluded")
-    print(f"    [coreference_prescreening] {len(pairs)} → {len(filtered)} pairs after filtering")
+    print(f"    [prescreening] {len(excluded)} element(s) excluded")
+    print(f"    [prescreening] {len(pairs)} → {len(filtered)} pairs after filtering")
     return filtered
 
 
@@ -1046,15 +1046,15 @@ def _create_analysis_sheet(
             for c, pn, pv in constructions
         ]
 
-    # For reflexivization, override coreference_prescreening to use its own criterion.
-    # The diagnostics YAML records reflexivizes=[y, n] (the pair-level criterion);
-    # coreference_prescreening uses a separate coreference_eligible=[y, n] criterion.
-    if class_name == "reflexivization":
+    # For coreference, override prescreening to use its own criterion.
+    # The diagnostics YAML records the pair-level criteria (reflexive_allowed, etc.);
+    # the prescreening tab uses a separate referential=[y, n] criterion.
+    if class_name == "coreference":
         constructions = [
             (c,
-             ["coreference_eligible"],
-             {"coreference_eligible": ["y", "n"]})
-            if c == "coreference_prescreening"
+             ["referential"],
+             {"referential": ["y", "n"]})
+            if c == "prescreening"
             else (c, pn, pv)
             for c, pn, pv in constructions
         ]
@@ -1079,7 +1079,7 @@ def _create_analysis_sheet(
             _populate_tab_pairs(spreadsheet, construction, param_names, param_values, pairs)
             tab_names.append(construction)
             print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
-        elif class_name == "reflexivization" and construction == "coreference_prescreening":
+        elif class_name == "coreference" and construction == "prescreening":
             # Stage 1: element-level prescreening sheet.
             ka = resolve_keystone_active(lang_id, class_name, construction,
                                          data_dir=planar_path.parent) or False
@@ -1087,8 +1087,8 @@ def _create_analysis_sheet(
             _populate_tab(spreadsheet, construction, param_names, param_values, rows)
             tab_names.append(construction)
             print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
-        elif class_name == "reflexivization":
-            # Stage 2: pair sheet filtered by coreference_prescreening.
+        elif class_name == "coreference":
+            # Stage 2: pair sheet filtered by prescreening.
             ka = resolve_keystone_active(lang_id, class_name, construction,
                                          data_dir=planar_path.parent) or False
             pos_type = _read_position_types(planar_path, lang_id)
@@ -1168,7 +1168,7 @@ def _regen_construction(
         rows = _with_retry(ws.get_all_values)
         if rows and len(rows) > 1:
             hdr = rows[0]
-            is_new_reflex_fmt = class_name == "reflexivization" and "Position_A" in hdr
+            is_new_reflex_fmt = class_name == "coreference" and "Position_A" in hdr
             for row in rows[1:]:
                 if is_new_reflex_fmt:
                     # New format: Element_A, Position_A, Element_B, Position_B, Direction, ...
@@ -1182,9 +1182,9 @@ def _regen_construction(
 
     # Get param_names and param_values from the manifest.
     cp = manifest_class_info.get("construction_params", {}).get(construction_name, {})
-    if class_name == "reflexivization":
-        param_names  = cp.get("param_names",  ["reflexivizes"])
-        param_values = cp.get("param_values", {"reflexivizes": ["y", "n"]})
+    if class_name == "coreference":
+        param_names  = cp.get("param_names",  ["reflexive_allowed"])
+        param_values = cp.get("param_values", {"reflexive_allowed": ["y", "n"]})
     else:
         param_names  = cp.get("param_names",  ["scopal"])
         param_values = cp.get("param_values", {"scopal": ["y", "n"]})
@@ -1195,14 +1195,14 @@ def _regen_construction(
     ka            = resolve_keystone_active(lang_id, class_name, construction_name,
                                             data_dir=planar_path.parent) or False
     pos_type = _read_position_types(planar_path, lang_id)
-    if class_name == "reflexivization":
+    if class_name == "coreference":
         pairs = _build_reflex_pairs(element_index, lang_id, pos_type, keystone_active=ka)
         pairs = _filter_reflex_pairs_by_prescreening(pairs, lang_id)
     else:
         pairs = _build_nonperm_pairs(element_index, lang_id, pos_type, keystone_active=ka)
         pairs = _filter_nonperm_pairs_by_prescreening(pairs, lang_id)
 
-    if class_name == "reflexivization":
+    if class_name == "coreference":
         # Key: (elem_a, elem_b, direction) for new-format sheets; (elem_a, elem_b) for old.
         new_pair_set = {(p[0], p[2], p[4]) for p in pairs}
     else:
@@ -1212,7 +1212,7 @@ def _regen_construction(
     removed  = old_pair_set - new_pair_set
     added    = new_pair_set - old_pair_set
 
-    if class_name == "reflexivization":
+    if class_name == "coreference":
         _populate_tab_reflex_pairs(spreadsheet, construction_name, param_names,
                                    param_values, pairs, prefill=existing)
     else:

@@ -493,7 +493,7 @@ def main() -> None:
                 try:
                     is_pair_sheet = (
                         (class_name == "nonpermutability" and construction != "element_prescreening")
-                        or (class_name == "reflexivization" and construction != "coreference_prescreening")
+                        or (class_name == "coreference" and construction != "prescreening")
                     )
                     if is_pair_sheet:
                         issues = revalidate_pair_sheet(
