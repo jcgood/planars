@@ -40,9 +40,9 @@ def test_compute_hash_whitespace_insensitive():
 # Live YAML: _collect_wanted and _current_hashes
 # ---------------------------------------------------------------------------
 
-def test_collect_wanted_covers_all_16_classes():
+def test_collect_wanted_covers_all_17_classes():
     wanted = _collect_wanted(None)
-    assert len(wanted) == 16
+    assert len(wanted) == 17
 
 
 def test_collect_wanted_hashes_are_8_chars():

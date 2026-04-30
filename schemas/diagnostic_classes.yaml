@@ -289,6 +289,61 @@ classes:
     keystone_active_default: true
     collection_required: "y"
 
+  - name: reflexivization
+    display_name: "Reflexivization"
+    domain_type: morphosyntactic
+    applicability: conditional
+    applicability_conditions: >
+      Applicable when the language has morphological reflexive voice marking on the
+      verb, pronominal reflexive constructions, or reciprocal constructions where
+      the binding domain can be operationalized as a set of position pairs. Languages
+      with heavy argument incorporation or scrambling may yield ambiguous results —
+      these are theoretically informative cases, not reasons to exclude the diagnostic.
+    specificity: construction_specific
+    known_constructions:
+      - morphological_reflexive_voice  # verb carries reflexive marker; keystone often bindee
+      - pronominal_anaphora            # reflexive pronoun at argument position; most common case
+      - reciprocal                     # reciprocal constructions
+    # Each construction uses pair-row annotation:
+    #   Element_A, Position_A, Element_B, Position_B, Source, Comments
+    # Position_A = binder (antecedent); Position_B = bindee (anaphor).
+    # Each row asserts an attested binding relation. Rows absent from the sheet
+    # are implied non-binding for this construction.
+    required_criteria: []
+    optional_criteria: []
+    qualification_rule: >
+      Binder positions: the set of positions appearing as Position_A (antecedent)
+      in at least one pair row.
+
+      Bindee positions: the set of positions appearing as Position_B (anaphor)
+      in at least one pair row.
+
+      BINDER DOMAIN (strict): contiguous expansion from keystone through binder positions.
+      BINDER DOMAIN (loose):  leftmost to rightmost binder position (gaps allowed).
+      BINDEE DOMAIN (strict): contiguous expansion from keystone through bindee positions.
+      BINDEE DOMAIN (loose):  leftmost to rightmost bindee position (gaps allowed).
+
+      Asymmetry (secondary output):
+        Binder-only positions (structurally high): appear as Position_A but not Position_B.
+        Bindee-only positions (structurally low):  appear as Position_B but not Position_A.
+        Shared positions (either role):            appear in both.
+
+      The asymmetry between binder-only and bindee-only positions approximates the
+      c-command hierarchy without presupposing tree structure (see issue #163 for
+      theoretical discussion). Both individual domain spans and the asymmetry are
+      reported; neither in isolation is the primary output.
+    qualification_rule_hash: "0a42dcc5"
+    keystone_active_default: true
+    # Keystone (verb) is the natural bindee in morphological reflexive voice constructions.
+    status: "[AUTO-DERIVED: NEEDS REVIEW — proposed in issue #163 (Apr 2026). Pair-row
+      operationalization of binder/bindee domains. The binder-domain/bindee-domain
+      asymmetry approximates c-command without presupposing tree structure. Coordinator
+      linguistic sign-off required before promoting to stable.]"
+    criterion_set_status: stable
+    # No per-pair criteria beyond presence/absence; construction type is encoded
+    # in the construction name (morphological_reflexive_voice vs. pronominal_anaphora).
+    collection_required: "[NEEDS COORDINATOR INPUT]"
+
   - name: free_occurrence
     display_name: "Free Occurrence"
     domain_type: indeterminate

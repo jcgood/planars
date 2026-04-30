@@ -361,3 +361,9 @@ span_label_map:
       loose_complete:  "loose complete"
       strict_partial:  "strict partial"
       loose_partial:   "loose partial"
+
+  reflexivization:
+    binder_strict_span: "reflex binder strict"
+    binder_loose_span:  "reflex binder loose"
+    bindee_strict_span: "reflex bindee strict"
+    bindee_loose_span:  "reflex bindee loose"
