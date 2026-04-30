@@ -1320,9 +1320,20 @@ def _add_constructions_to_existing_sheet(
 
     # Refresh Instructions and Status tabs.
     _maybe_create_instructions_tab(ss, class_name)
-    all_tab_titles = [ws.title for ws in _with_retry(lambda: ss.worksheets())]
-    non_system = [t for t in all_tab_titles if t not in ("Status", "Instructions")]
+    all_ws = _with_retry(lambda: ss.worksheets())
+    non_system = [t for t in [ws.title for ws in all_ws] if t not in ("Status", "Instructions")]
     _create_status_tab(ss, non_system)
+
+    # Reorder: construction tabs → Instructions → Status (new tabs were appended at end).
+    all_ws = _with_retry(lambda: ss.worksheets())
+    ws_by_title = {ws.title: ws for ws in all_ws}
+    system_order = [_INSTRUCTIONS_TAB, _STATUS_TAB]
+    ordered = (
+        [ws_by_title[t] for t in non_system if t in ws_by_title]
+        + [ws_by_title[t] for t in system_order if t in ws_by_title]
+    )
+    if [ws.title for ws in all_ws] != [ws.title for ws in ordered]:
+        ss.reorder_worksheets(ordered)
 
     return construction_params
 
