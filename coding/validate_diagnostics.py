@@ -250,11 +250,18 @@ def validate_diagnostics_yaml(data: dict, lang_id: str) -> List[ValidationIssue]
         # 3. criteria
         # ------------------------------------------------------------------
         criteria = class_data.get("criteria")
-        if not isinstance(criteria, dict) or not criteria:
+        schema_requires_criteria = bool(allowed_by_class.get(class_name))
+        if criteria is None:
+            criteria = {}
+        if not isinstance(criteria, dict):
+            issues.append(ValidationIssue(
+                "error", location, "'criteria' must be a mapping"
+            ))
+            criteria = {}
+        elif not criteria and schema_requires_criteria:
             issues.append(ValidationIssue(
                 "error", location, "'criteria' must be a non-empty mapping"
             ))
-            criteria = {}
 
         for crit_name, crit_values in criteria.items():
             if not isinstance(crit_values, list) or not crit_values:
