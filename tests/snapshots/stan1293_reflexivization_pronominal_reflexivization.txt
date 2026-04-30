@@ -1,0 +1,16 @@
+English Reflexivization Pronominal Reflexivization
+==================================================
+
+Keystone position: 30 (v:verbstem)
+
+Binder positions (antecedent): []
+Bindee positions (anaphor):    []
+
+Binder-only positions (structurally high): []
+Bindee-only positions (structurally low):  []
+Shared positions (either role):            []
+
+Binder domain (strict): positions 30–30  (v:verbstem → v:verbstem)
+Binder domain (loose):  positions 30–30  (v:verbstem → v:verbstem)
+Bindee domain (strict): positions 30–30  (v:verbstem → v:verbstem)
+Bindee domain (loose):  positions 30–30  (v:verbstem → v:verbstem)

@@ -14,10 +14,35 @@ _REQUIRED_CRITERIA: Set[str] = {"reflexivizes"}
 _SNAPSHOT_CONSTRUCTIONS = frozenset({"pronominal_reflexivization"})
 
 
+def _split_elements(raw: str) -> List[str]:
+    """Split comma-separated elements string, ignoring commas inside braces."""
+    parts: List[str] = []
+    current: List[str] = []
+    depth = 0
+    for ch in raw:
+        if ch == "{":
+            depth += 1
+            current.append(ch)
+        elif ch == "}":
+            depth -= 1
+            current.append(ch)
+        elif ch == "," and depth == 0:
+            parts.append("".join(current).strip())
+            current = []
+        else:
+            current.append(ch)
+    if current:
+        parts.append("".join(current).strip())
+    return [p for p in parts if p]
+
+
 def _load_planar_for_reflexivization(
     planar_path: Path, lang_id: str
 ):
-    """Return (keystone_pos, pos_to_name, elem_to_positions) from a planar TSV."""
+    """Return (keystone_pos, pos_to_name, elem_to_positions) from a planar TSV.
+
+    The planar TSV has one row per position with a comma-separated Elements column.
+    """
     df = pd.read_csv(planar_path, sep="\t", dtype=str, keep_default_na=False)
     df = df[df["Language_ID"] == lang_id]
     keystone_pos: Optional[int] = None
@@ -30,11 +55,11 @@ def _load_planar_for_reflexivization(
     for _, row in df.iterrows():
         pos = int(row["Position"])
         pname = row["Position_Name"].strip()
-        elem = _wrap(row["Element"].strip())
         pos_to_name[pos] = pname
-        elem_to_positions.setdefault(elem, set()).add(pos)
         if pname.lower() == _KEYSTONE_NAME:
             keystone_pos = pos
+        for elem_plain in _split_elements((row.get("Elements", "") or "").strip()):
+            elem_to_positions.setdefault(_wrap(elem_plain), set()).add(pos)
 
     if keystone_pos is None:
         raise ValueError(

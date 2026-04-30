@@ -452,44 +452,80 @@ def _filter_nonperm_pairs_by_prescreening(
 
 
 def _build_reflex_pairs(
-    element_index, lang_id: str, keystone_active: bool = False,
+    element_index, lang_id: str, pos_type: Dict[int, str],
+    keystone_active: bool = False,
 ) -> List[List[str]]:
     """Generate all ordered element pairs for reflexivization annotation.
 
-    Returns sorted [[Element_A, Element_B], ...] where Element_A is the antecedent
-    (binder) and Element_B is the anaphor (bindee). Both orderings (A→B and B→A) are
-    included so the annotator can indicate which direction binding holds.
+    Returns [[Element_A, Position_A, Element_B, Position_B, Direction], ...]
+    sorted by (pos_b_num − pos_a_num) descending (greatest forward span first).
+    Position_A and Position_B are position names (e.g. 'v:nominal').
+    Direction is 'forward' when pos_b > pos_a, 'backward' when pos_b < pos_a.
+
+    For elements that share a Zone position (can co-occur), two rows are generated
+    per canonical (alphabetically-first, alphabetically-second) pair: one 'forward'
+    (A binds B) and one 'backward' (B binds A). Zone same-position pairs are placed
+    at span=0 in the sort order, between forward and backward cross-position pairs.
+
+    For elements at the same Slot position(s) only, no row is generated.
 
     When keystone_active is False (default), the keystone is excluded from pairs.
-    When True, the keystone is included (e.g. for morphological_reflexive_voice where
-    the keystone verb carries the reflexive marker and is the natural bindee).
     """
     _keystone = load_planar_schema().get("keystone_position_name", "v:verbstem")
 
     def _wrap(e: str) -> str:
         return f"[{e}]" if (e.startswith("-") or e.endswith("-")) else e
 
-    elem_positions: Dict[str, set] = {}
+    # elem → set of (pos_num, pos_name)
+    elem_pos_info: Dict[str, set] = {}
     for _, (pos, pos_name, lang, element) in element_index.items():
         if lang != lang_id:
             continue
         if pos_name.strip().lower() == _keystone and not keystone_active:
             continue
-        elem_positions.setdefault(_wrap(element), set()).add(pos)
+        elem_pos_info.setdefault(_wrap(element), set()).add((pos, pos_name))
 
-    elements = sorted(elem_positions.keys())
-    pairs = []
-    for a in elements:
-        for b in elements:
+    elements = sorted(elem_pos_info.keys())
+    rows = []  # each: [elem_a, pos_a_name, elem_b, pos_b_name, direction, sort_key]
+
+    for i, a in enumerate(elements):
+        pos_info_a = elem_pos_info[a]
+        pos_nums_a = {p for p, _ in pos_info_a}
+
+        for j, b in enumerate(elements):
             if a == b:
                 continue
-            # Skip pairs where A and B are at the same position(s) only —
-            # a reflexive relation requires distinct positions.
-            if elem_positions[a] == elem_positions[b]:
-                continue
-            pairs.append([a, b])
+            pos_info_b = elem_pos_info[b]
+            pos_nums_b = {p for p, _ in pos_info_b}
+            shared = pos_nums_a & pos_nums_b
+            shared_zones = {p for p in shared if pos_type.get(p) == "Zone"}
 
-    return pairs
+            if shared_zones:
+                # Generate one forward + one backward row per unordered canonical pair.
+                # Only emit for (a < b) to avoid duplicating the unordered pair.
+                if a < b:
+                    for zone_pos in sorted(shared_zones):
+                        zone_name = next(name for p, name in pos_info_a if p == zone_pos)
+                        rows.append([a, zone_name, b, zone_name, "forward", 0])
+                        rows.append([a, zone_name, b, zone_name, "backward", 0])
+                continue
+
+            # Same Slot position(s) only: skip.
+            if pos_nums_a == pos_nums_b:
+                continue
+
+            # Cross-position pair: use minimum position as representative.
+            pos_a_num, pos_a_name = min(pos_info_a, key=lambda x: x[0])
+            pos_b_num, pos_b_name = min(pos_info_b, key=lambda x: x[0])
+
+            if pos_a_num == pos_b_num:
+                continue
+
+            direction = "forward" if pos_b_num > pos_a_num else "backward"
+            rows.append([a, pos_a_name, b, pos_b_name, direction, pos_b_num - pos_a_num])
+
+    rows.sort(key=lambda r: r[5], reverse=True)
+    return [r[:5] for r in rows]
 
 
 def _filter_reflex_pairs_by_prescreening(
@@ -498,7 +534,8 @@ def _filter_reflex_pairs_by_prescreening(
     """Filter candidate pairs by removing elements with coreference_eligible=n.
 
     Reads coreference_prescreening.tsv from the reflexivization class directory.
-    If the file does not exist, returns the full list with a reminder.
+    If the file does not exist, returns empty list with instructions.
+    Each pair is [Element_A, Position_A, Element_B, Position_B, Direction].
     """
     prescreening_path = (
         CODED_DATA / lang_id / "reflexivization" / "coreference_prescreening.tsv"
@@ -516,7 +553,8 @@ def _filter_reflex_pairs_by_prescreening(
         for _, row in df.iterrows()
         if row.get("coreference_eligible", "").strip() == "n"
     }
-    filtered = [p for p in pairs if p[0] not in excluded and p[1] not in excluded]
+    # p[0] = Element_A, p[2] = Element_B (5-column format)
+    filtered = [p for p in pairs if p[0] not in excluded and p[2] not in excluded]
     print(f"    [coreference_prescreening] {len(excluded)} element(s) excluded")
     print(f"    [coreference_prescreening] {len(pairs)} → {len(filtered)} pairs after filtering")
     return filtered
@@ -568,6 +606,54 @@ def _populate_tab_pairs(
     per_col_values = [param_values.get(p, ["y", "n"]) for p in param_names]
     # Param columns start at index 2 (after Element_A, Element_B)
     _format_and_validate(ws, len(pairs), per_col_values, col_start=2)
+    return ws
+
+
+def _populate_tab_reflex_pairs(
+    spreadsheet: gspread.Spreadsheet,
+    tab_name: str,
+    param_names: List[str],
+    param_values: Dict[str, List[str]],
+    pairs: List[List[str]],
+    prefill: Optional[Dict] = None,
+) -> gspread.Worksheet:
+    """Create or clear a worksheet tab and populate it with reflexivization pair rows.
+
+    Column format: Element_A, Position_A, Element_B, Position_B, Direction,
+    then criterion columns, then trailing columns.
+    Position_A, Position_B, and Direction are structural (pre-filled, read-only).
+
+    Args:
+        prefill: {(elem_a, elem_b, direction): {col: val}} from a new-format sheet,
+                 or {(elem_a, elem_b): {col: val}} from an old-format sheet.
+                 The new-format key is tried first, then the old-format key, so
+                 annotations are preserved across the format migration.
+    """
+    _REFLEX_STRUCT = ["Element_A", "Position_A", "Element_B", "Position_B", "Direction"]
+    num_cols = len(_REFLEX_STRUCT) + len(param_names) + len(_TRAILING_COLS)
+    try:
+        ws = _with_retry(lambda: spreadsheet.worksheet(tab_name))
+        _reset_worksheet(ws, len(pairs), num_cols)
+    except gspread.WorksheetNotFound:
+        ws = spreadsheet.add_worksheet(
+            title=tab_name, rows=len(pairs) + 2, cols=num_cols
+        )
+
+    all_cols = param_names + _TRAILING_COLS
+    header = _REFLEX_STRUCT + all_cols
+    data_rows = []
+    for pair in pairs:
+        elem_a, pos_a, elem_b, pos_b, direction = pair
+        pre = (
+            (prefill or {}).get((elem_a, elem_b, direction))
+            or (prefill or {}).get((elem_a, elem_b), {})
+        )
+        data_rows.append([elem_a, pos_a, elem_b, pos_b, direction]
+                         + [pre.get(c, "") for c in all_cols])
+    ws.update([header] + data_rows, "A1")
+    per_col_values = [param_values.get(p, ["y", "n"]) for p in param_names]
+    # Param columns start at index 5 (after the 5 structural columns).
+    _format_and_validate(ws, len(pairs), per_col_values, col_start=5)
     return ws
 
 
@@ -1005,9 +1091,10 @@ def _create_analysis_sheet(
             # Stage 2: pair sheet filtered by coreference_prescreening.
             ka = resolve_keystone_active(lang_id, class_name, construction,
                                          data_dir=planar_path.parent) or False
-            pairs = _build_reflex_pairs(element_index, lang_id, keystone_active=ka)
+            pos_type = _read_position_types(planar_path, lang_id)
+            pairs = _build_reflex_pairs(element_index, lang_id, pos_type, keystone_active=ka)
             pairs = _filter_reflex_pairs_by_prescreening(pairs, lang_id)
-            _populate_tab_pairs(spreadsheet, construction, param_names, param_values, pairs)
+            _populate_tab_reflex_pairs(spreadsheet, construction, param_names, param_values, pairs)
             tab_names.append(construction)
             print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
         else:
@@ -1075,15 +1162,21 @@ def _regen_construction(
     spreadsheet = gc.open_by_key(spreadsheet_id)
 
     # Read existing tab annotations from the live Sheet.
-    existing: Dict[Tuple[str, str], Dict[str, str]] = {}
+    existing: Dict = {}
     try:
         ws = _with_retry(lambda: spreadsheet.worksheet(construction_name))
         rows = _with_retry(ws.get_all_values)
         if rows and len(rows) > 1:
             hdr = rows[0]
+            is_new_reflex_fmt = class_name == "reflexivization" and "Position_A" in hdr
             for row in rows[1:]:
-                if len(row) >= 2 and row[0] and row[1]:
-                    existing[(row[0], row[1])] = dict(zip(hdr[2:], row[2:]))
+                if is_new_reflex_fmt:
+                    # New format: Element_A, Position_A, Element_B, Position_B, Direction, ...
+                    if len(row) >= 5 and row[0] and row[2]:
+                        existing[(row[0], row[2], row[4])] = dict(zip(hdr[5:], row[5:]))
+                else:
+                    if len(row) >= 2 and row[0] and row[1]:
+                        existing[(row[0], row[1])] = dict(zip(hdr[2:], row[2:]))
     except gspread.WorksheetNotFound:
         pass
 
@@ -1101,23 +1194,30 @@ def _regen_construction(
     element_index = build_element_index(f"planar_{lang_id}.tsv", planar_path.parent)
     ka            = resolve_keystone_active(lang_id, class_name, construction_name,
                                             data_dir=planar_path.parent) or False
+    pos_type = _read_position_types(planar_path, lang_id)
     if class_name == "reflexivization":
-        pairs = _build_reflex_pairs(element_index, lang_id, keystone_active=ka)
+        pairs = _build_reflex_pairs(element_index, lang_id, pos_type, keystone_active=ka)
         pairs = _filter_reflex_pairs_by_prescreening(pairs, lang_id)
     else:
-        pos_type = _read_position_types(planar_path, lang_id)
-        pairs    = _build_nonperm_pairs(element_index, lang_id, pos_type,
-                                        keystone_active=ka)
-        pairs    = _filter_nonperm_pairs_by_prescreening(pairs, lang_id)
+        pairs = _build_nonperm_pairs(element_index, lang_id, pos_type, keystone_active=ka)
+        pairs = _filter_nonperm_pairs_by_prescreening(pairs, lang_id)
 
-    new_pair_set = {(p[0], p[1]) for p in pairs}
+    if class_name == "reflexivization":
+        # Key: (elem_a, elem_b, direction) for new-format sheets; (elem_a, elem_b) for old.
+        new_pair_set = {(p[0], p[2], p[4]) for p in pairs}
+    else:
+        new_pair_set = {(p[0], p[1]) for p in pairs}
     old_pair_set = set(existing.keys())
     retained = old_pair_set & new_pair_set
     removed  = old_pair_set - new_pair_set
     added    = new_pair_set - old_pair_set
 
-    _populate_tab_pairs(spreadsheet, construction_name, param_names, param_values,
-                        pairs, prefill=existing)
+    if class_name == "reflexivization":
+        _populate_tab_reflex_pairs(spreadsheet, construction_name, param_names,
+                                   param_values, pairs, prefill=existing)
+    else:
+        _populate_tab_pairs(spreadsheet, construction_name, param_names, param_values,
+                            pairs, prefill=existing)
 
     print(f"    {construction_name}: {len(retained)} retained, {len(added)} added, "
           f"{len(removed)} removed")

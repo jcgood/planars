@@ -43,7 +43,7 @@ from .schemas import load_diagnostic_criteria, load_planar_schema
 # ---------------------------------------------------------------------------
 
 _STRUCTURAL_COLS      = {"Element", "Position_Name", "Position_Number"}
-_PAIR_STRUCTURAL_COLS = {"Element_A", "Element_B"}
+_PAIR_STRUCTURAL_COLS = {"Element_A", "Position_A", "Element_B", "Position_B", "Direction"}
 _TRAILING_COLS        = load_planar_schema().get("trailing_columns", ["Source", "Comments"])
 _DEFAULT_EXPECTED = set(load_diagnostic_criteria().get("default_allowed_values", ["y", "n", "na", "?"]))
 # Placeholder used in diagnostic_criteria.yaml for criteria that accept any
