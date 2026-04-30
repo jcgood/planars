@@ -188,6 +188,7 @@ _CLASS_HANDLERS = {
 # and must not be passed to the class's derive function.
 _REPORTABLE_CONSTRUCTIONS: Dict[str, frozenset] = {
     "nonpermutability": _nonperm._SNAPSHOT_CONSTRUCTIONS,
+    "reflexivization":  _reflex._SNAPSHOT_CONSTRUCTIONS,
 }
 
 
@@ -359,21 +360,28 @@ def _collect_spans_sheets(gc, manifest, lang_id: Optional[str] = None):
                         print(f"  WARNING: could not derive {class_name}/{construction} for {lid}: {e}")
                     continue  # skip standard load_filled_sheet path
 
-                # Reflexivization uses pair rows (Element_A, Position_A, Element_B,
-                # Position_B); positions are explicit so only keystone_pos and
-                # pos_to_name are needed from the manifest planar entry.
+                # Reflexivization uses pair rows (Element_A, Element_B, reflexivizes);
+                # positions are derived from the manifest planar entry via elem_to_positions.
                 if class_name == "reflexivization" and "planar" in lang_data:
                     try:
                         raw_rows = ws.get_all_values()
                         header = raw_rows[0] if raw_rows else []
-                        if header and header[0] == "Element_A":
+                        if header and "Element_A" in header and "Element_B" in header:
                             pair_df = (pd.DataFrame(raw_rows[1:], columns=header)
                                        if len(raw_rows) > 1
                                        else pd.DataFrame(columns=header))
                             planar = lang_data["planar"]
                             keystone_pos = planar["keystone_pos"]
                             pos_to_name = {p["pos"]: p["name"] for p in planar["positions"]}
-                            _data = (pair_df, keystone_pos, pos_to_name)
+
+                            def _wrap(e):
+                                return f"[{e}]" if (e.startswith("-") or e.endswith("-")) else e
+
+                            elem_to_positions: dict = {}
+                            for p in planar["positions"]:
+                                for elem in p.get("elements", []):
+                                    elem_to_positions.setdefault(_wrap(elem), set()).add(p["pos"])
+                            _data = (pair_df, keystone_pos, pos_to_name, elem_to_positions)
                             result = derive_fn(_data=_data, strict=False)
                             rows.extend(row_fn(result, lid))
                             if lid not in lang_meta:

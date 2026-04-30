@@ -933,7 +933,11 @@ def main() -> None:
                 construction_params = sheet_info.get("construction_params", {})
                 param_values = construction_params.get(construction, {}).get("param_values")
 
-                if class_name == "nonpermutability" and construction != "element_prescreening":
+                is_pair_tab = (
+                    (class_name == "nonpermutability" and construction != "element_prescreening")
+                    or (class_name == "reflexivization" and construction != "coreference_prescreening")
+                )
+                if is_pair_tab:
                     expected_params = (
                         [c for c in header if c not in _PAIR_STRUCTURAL_COLS and c not in _TRAILING_COLS]
                     )
@@ -1014,7 +1018,7 @@ def main() -> None:
 
                 # Count rows with at least one blank param cell (for status line).
                 # Pair-row sheets have no keystone; element-row sheets exclude it.
-                if class_name == "nonpermutability" and construction != "element_prescreening":
+                if is_pair_tab:
                     blank_count = sum(
                         1 for r in records
                         if any(r.get(p, "") == "" for p in expected_params)

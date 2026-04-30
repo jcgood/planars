@@ -451,6 +451,76 @@ def _filter_nonperm_pairs_by_prescreening(
     return filtered
 
 
+def _build_reflex_pairs(
+    element_index, lang_id: str, keystone_active: bool = False,
+) -> List[List[str]]:
+    """Generate all ordered element pairs for reflexivization annotation.
+
+    Returns sorted [[Element_A, Element_B], ...] where Element_A is the antecedent
+    (binder) and Element_B is the anaphor (bindee). Both orderings (A→B and B→A) are
+    included so the annotator can indicate which direction binding holds.
+
+    When keystone_active is False (default), the keystone is excluded from pairs.
+    When True, the keystone is included (e.g. for morphological_reflexive_voice where
+    the keystone verb carries the reflexive marker and is the natural bindee).
+    """
+    _keystone = load_planar_schema().get("keystone_position_name", "v:verbstem")
+
+    def _wrap(e: str) -> str:
+        return f"[{e}]" if (e.startswith("-") or e.endswith("-")) else e
+
+    elem_positions: Dict[str, set] = {}
+    for _, (pos, pos_name, lang, element) in element_index.items():
+        if lang != lang_id:
+            continue
+        if pos_name.strip().lower() == _keystone and not keystone_active:
+            continue
+        elem_positions.setdefault(_wrap(element), set()).add(pos)
+
+    elements = sorted(elem_positions.keys())
+    pairs = []
+    for a in elements:
+        for b in elements:
+            if a == b:
+                continue
+            # Skip pairs where A and B are at the same position(s) only —
+            # a reflexive relation requires distinct positions.
+            if elem_positions[a] == elem_positions[b]:
+                continue
+            pairs.append([a, b])
+
+    return pairs
+
+
+def _filter_reflex_pairs_by_prescreening(
+    pairs: List[List[str]], lang_id: str
+) -> List[List[str]]:
+    """Filter candidate pairs by removing elements with coreference_eligible=n.
+
+    Reads coreference_prescreening.tsv from the reflexivization class directory.
+    If the file does not exist, returns the full list with a reminder.
+    """
+    prescreening_path = (
+        CODED_DATA / lang_id / "reflexivization" / "coreference_prescreening.tsv"
+    )
+    if not prescreening_path.exists():
+        print("    [NOTE] coreference_prescreening.tsv not found — generating unfiltered pair list.")
+        print("          Annotate coreference_prescreening first, then re-run generate-sheets")
+        print("          to get a filtered pairs sheet.")
+        return pairs
+
+    df = pd.read_csv(prescreening_path, sep="\t", dtype=str, keep_default_na=False)
+    excluded = {
+        row["Element"]
+        for _, row in df.iterrows()
+        if row.get("coreference_eligible", "").strip() == "n"
+    }
+    filtered = [p for p in pairs if p[0] not in excluded and p[1] not in excluded]
+    print(f"    [coreference_prescreening] {len(excluded)} element(s) excluded")
+    print(f"    [coreference_prescreening] {len(pairs)} → {len(filtered)} pairs after filtering")
+    return filtered
+
+
 def _populate_tab_pairs(
     spreadsheet: gspread.Spreadsheet,
     tab_name: str,
@@ -889,6 +959,19 @@ def _create_analysis_sheet(
             for c, pn, pv in constructions
         ]
 
+    # For reflexivization, override coreference_prescreening to use its own criterion.
+    # The diagnostics YAML records reflexivizes=[y, n] (the pair-level criterion);
+    # coreference_prescreening uses a separate coreference_eligible=[y, n] criterion.
+    if class_name == "reflexivization":
+        constructions = [
+            (c,
+             ["coreference_eligible"],
+             {"coreference_eligible": ["y", "n"]})
+            if c == "coreference_prescreening"
+            else (c, pn, pv)
+            for c, pn, pv in constructions
+        ]
+
     for construction, param_names, param_values in constructions:
         if class_name == "nonpermutability" and construction == "element_prescreening":
             # Step 1: element-level pre-filter sheet.
@@ -906,6 +989,23 @@ def _create_analysis_sheet(
             pairs = _build_nonperm_pairs(element_index, lang_id, pos_type,
                                          keystone_active=ka)
             pairs = _filter_nonperm_pairs_by_prescreening(pairs, lang_id)
+            _populate_tab_pairs(spreadsheet, construction, param_names, param_values, pairs)
+            tab_names.append(construction)
+            print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
+        elif class_name == "reflexivization" and construction == "coreference_prescreening":
+            # Stage 1: element-level prescreening sheet.
+            ka = resolve_keystone_active(lang_id, class_name, construction,
+                                         data_dir=planar_path.parent) or False
+            rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
+            _populate_tab(spreadsheet, construction, param_names, param_values, rows)
+            tab_names.append(construction)
+            print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
+        elif class_name == "reflexivization":
+            # Stage 2: pair sheet filtered by coreference_prescreening.
+            ka = resolve_keystone_active(lang_id, class_name, construction,
+                                         data_dir=planar_path.parent) or False
+            pairs = _build_reflex_pairs(element_index, lang_id, keystone_active=ka)
+            pairs = _filter_reflex_pairs_by_prescreening(pairs, lang_id)
             _populate_tab_pairs(spreadsheet, construction, param_names, param_values, pairs)
             tab_names.append(construction)
             print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")

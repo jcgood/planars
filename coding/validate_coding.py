@@ -491,7 +491,11 @@ def main() -> None:
                     continue
                 info = param_map.get(class_name, {}).get(construction, {})
                 try:
-                    if class_name == "nonpermutability" and construction != "element_prescreening":
+                    is_pair_sheet = (
+                        (class_name == "nonpermutability" and construction != "element_prescreening")
+                        or (class_name == "reflexivization" and construction != "coreference_prescreening")
+                    )
+                    if is_pair_sheet:
                         issues = revalidate_pair_sheet(
                             ws,
                             lang_id,

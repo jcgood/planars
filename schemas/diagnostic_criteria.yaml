@@ -461,6 +461,30 @@ analyses:
           Whether the intonational pattern applies to this element's position.
           y = this position is within the intonational domain.
 
+  - name: reflexivization
+    description: >
+      [AUTO-DERIVED: NEEDS REVIEW] Tests which spans encompass the binding domains for
+      anaphoric/reflexive constructions. Uses a two-stage workflow: upstream
+      coreference_prescreening identifies eligible elements, then pair rows annotate
+      whether each eligible antecedent-anaphor pair exhibits reflexive binding.
+    diagnostic_criteria:
+      - name: coreference_eligible
+        values: [y, n]
+        description: >
+          Prescreening criterion (coreference_prescreening construction only).
+          Whether this element can participate in a coreference relation (either as
+          antecedent or anaphor) in this construction.
+          y = element can participate; n = element cannot participate.
+          Elements with n are excluded from the pair-row sheet.
+      - name: reflexivizes
+        values: [y, n]
+        description: >
+          Pair-row criterion (main construction). Whether reflexive/anaphoric binding
+          holds between Element_A (antecedent) and Element_B (anaphor) in this
+          construction.
+          y = binding holds for this antecedent-anaphor pair.
+          n = binding does not hold for this pair.
+
 # ---------------------------------------------------------------------------
 # SHARED CRITERION VALUES
 # ---------------------------------------------------------------------------

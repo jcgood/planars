@@ -301,22 +301,28 @@ classes:
       these are theoretically informative cases, not reasons to exclude the diagnostic.
     specificity: construction_specific
     known_constructions:
+      - coreference_prescreening       # upstream prescreening: which elements can participate
       - morphological_reflexive_voice  # verb carries reflexive marker; keystone often bindee
-      - pronominal_reflexivization      # reflexive pronoun at argument position; most common case
+      - pronominal_reflexivization     # reflexive pronoun at argument position; most common case
       - reciprocal                     # reciprocal constructions
-    # Each construction uses pair-row annotation:
-    #   Element_A, Position_A, Element_B, Position_B, Source, Comments
-    # Position_A = binder (antecedent); Position_B = bindee (anaphor).
-    # Each row asserts an attested binding relation. Rows absent from the sheet
-    # are implied non-binding for this construction.
-    required_criteria: []
+    # Two-stage workflow (mirrors nonpermutability):
+    #   Stage 1 (coreference_prescreening): standard element sheet; annotator marks
+    #     coreference_eligible=y/n for each element. Elements with n are excluded from pairs.
+    #   Stage 2 (main construction): pair-row sheet; columns are Element_A, Element_B,
+    #     reflexivizes, Source, Comments. Element_A = antecedent (binder); Element_B = anaphor
+    #     (bindee). reflexivizes=y means the binding relation holds for this pair.
+    required_criteria: [reflexivizes]
     optional_criteria: []
     qualification_rule: >
-      Binder positions: the set of positions appearing as Position_A (antecedent)
-      in at least one pair row.
+      Prescreening: elements are annotated coreference_eligible=y (can participate as binder
+      or bindee in this construction) or =n (cannot). Only eligible elements generate pair rows.
 
-      Bindee positions: the set of positions appearing as Position_B (anaphor)
-      in at least one pair row.
+      Each pair row (Element_A, Element_B) represents a potential coreference relation where
+      Element_A is the antecedent (binder) and Element_B is the anaphor (bindee). The annotator
+      marks reflexivizes=y if the construction exhibits anaphoric binding for this pair, or =n.
+
+      Binder positions: the set of positions for Element_A across all pairs with reflexivizes=y.
+      Bindee positions: the set of positions for Element_B across all pairs with reflexivizes=y.
 
       BINDER DOMAIN (strict): contiguous expansion from keystone through binder positions.
       BINDER DOMAIN (loose):  leftmost to rightmost binder position (gaps allowed).
@@ -324,24 +330,19 @@ classes:
       BINDEE DOMAIN (loose):  leftmost to rightmost bindee position (gaps allowed).
 
       Asymmetry (secondary output):
-        Binder-only positions (structurally high): appear as Position_A but not Position_B.
-        Bindee-only positions (structurally low):  appear as Position_B but not Position_A.
-        Shared positions (either role):            appear in both.
-
-      The asymmetry between binder-only and bindee-only positions approximates the
-      c-command hierarchy without presupposing tree structure (see issue #163 for
-      theoretical discussion). Both individual domain spans and the asymmetry are
-      reported; neither in isolation is the primary output.
-    qualification_rule_hash: "0a42dcc5"
+        Binder-only positions (structurally high): appear as binder position but not bindee position.
+        Bindee-only positions (structurally low):  appear as bindee position but not binder position.
+        Shared positions (either role):            appear in both sets.
+      The asymmetry between binder-only and bindee-only positions approximates c-command
+      without presupposing tree structure (see issue #163).
+    qualification_rule_hash: "a7f5230a"
     keystone_active_default: true
     # Keystone (verb) is the natural bindee in morphological reflexive voice constructions.
     status: "[AUTO-DERIVED: NEEDS REVIEW — proposed in issue #163 (Apr 2026). Pair-row
-      operationalization of binder/bindee domains. The binder-domain/bindee-domain
-      asymmetry approximates c-command without presupposing tree structure. Coordinator
-      linguistic sign-off required before promoting to stable.]"
-    criterion_set_status: stable
-    # No per-pair criteria beyond presence/absence; construction type is encoded
-    # in the construction name (morphological_reflexive_voice vs. pronominal_anaphora).
+      operationalization of binder/bindee domains with reflexivizes=y/n criterion and
+      upstream coreference_prescreening stage. Coordinator sign-off required before
+      promoting to stable.]"
+    criterion_set_status: "[NEEDS REVIEW]"
     collection_required: "[NEEDS COORDINATOR INPUT]"
 
   - name: free_occurrence
