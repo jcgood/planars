@@ -302,7 +302,7 @@ classes:
     specificity: construction_specific
     known_constructions:
       - morphological_reflexive_voice  # verb carries reflexive marker; keystone often bindee
-      - pronominal_anaphora            # reflexive pronoun at argument position; most common case
+      - pronominal_reflexivization      # reflexive pronoun at argument position; most common case
       - reciprocal                     # reciprocal constructions
     # Each construction uses pair-row annotation:
     #   Element_A, Position_A, Element_B, Position_B, Source, Comments
