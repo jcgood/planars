@@ -455,19 +455,14 @@ def _build_reflex_pairs(
     element_index, lang_id: str, pos_type: Dict[int, str],
     keystone_active: bool = False,
 ) -> List[List[str]]:
-    """Generate all ordered element pairs for reflexivization annotation.
+    """Generate (Element_A, Position_A, Position_B, Direction) rows for coreference annotation.
 
-    Returns [[Element_A, Position_A, Element_B, Position_B, Direction], ...]
+    Returns [[elem_a, pos_a_str, pos_b_str, direction], ...]
     sorted by (pos_b_num − pos_a_num) descending (greatest forward span first).
-    Position_A and Position_B are position names (e.g. 'v:nominal').
-    Direction is 'forward' when pos_b > pos_a, 'backward' when pos_b < pos_a.
-
-    For elements that share a Zone position (can co-occur), two rows are generated
-    per canonical (alphabetically-first, alphabetically-second) pair: one 'forward'
-    (A binds B) and one 'backward' (B binds A). Zone same-position pairs are placed
-    at span=0 in the sort order, between forward and backward cross-position pairs.
-
-    For elements at the same Slot position(s) only, no row is generated.
+    Position columns use combined format "N (name)" e.g. "5 (v:npsubj1)".
+    Direction: 'forward' (pos_b > pos_a), 'backward' (pos_b < pos_a),
+               'same' (same Zone position — antecedent and anaphor co-occur).
+    Same-Slot same-position pairs are excluded.
 
     When keystone_active is False (default), the keystone is excluded from pairs.
     """
@@ -476,70 +471,61 @@ def _build_reflex_pairs(
     def _wrap(e: str) -> str:
         return f"[{e}]" if (e.startswith("-") or e.endswith("-")) else e
 
-    # elem → set of (pos_num, pos_name)
-    elem_pos_info: Dict[str, set] = {}
+    def _pos_str(num: int, name: str) -> str:
+        return f"{num} ({name})"
+
+    # elem → (pos_num, pos_name) using minimum position number
+    elem_pos: Dict[str, Tuple[int, str]] = {}
+    # all positions in this language: pos_num → pos_name
+    all_pos: Dict[int, str] = {}
+
     for _, (pos, pos_name, lang, element) in element_index.items():
         if lang != lang_id:
             continue
         if pos_name.strip().lower() == _keystone and not keystone_active:
             continue
-        elem_pos_info.setdefault(_wrap(element), set()).add((pos, pos_name))
+        e = _wrap(element)
+        if e not in elem_pos or pos < elem_pos[e][0]:
+            elem_pos[e] = (pos, pos_name)
+        all_pos[pos] = pos_name
 
-    elements = sorted(elem_pos_info.keys())
-    rows = []  # each: [elem_a, pos_a_name, elem_b, pos_b_name, direction, sort_key]
+    rows = []  # each: [elem_a, pos_a_str, pos_b_str, direction, sort_key]
 
-    for i, a in enumerate(elements):
-        pos_info_a = elem_pos_info[a]
-        pos_nums_a = {p for p, _ in pos_info_a}
+    for elem_a, (pos_a_num, pos_a_name) in sorted(elem_pos.items()):
+        pos_a_str = _pos_str(pos_a_num, pos_a_name)
 
-        for j, b in enumerate(elements):
-            if a == b:
-                continue
-            pos_info_b = elem_pos_info[b]
-            pos_nums_b = {p for p, _ in pos_info_b}
-            shared = pos_nums_a & pos_nums_b
-            shared_zones = {p for p in shared if pos_type.get(p) == "Zone"}
-
-            if shared_zones:
-                # Generate one forward + one backward row per unordered canonical pair.
-                # Only emit for (a < b) to avoid duplicating the unordered pair.
-                if a < b:
-                    for zone_pos in sorted(shared_zones):
-                        zone_name = next(name for p, name in pos_info_a if p == zone_pos)
-                        rows.append([a, zone_name, b, zone_name, "forward", 0])
-                        rows.append([a, zone_name, b, zone_name, "backward", 0])
-                continue
-
-            # Same Slot position(s) only: skip.
-            if pos_nums_a == pos_nums_b:
-                continue
-
-            # Cross-position pair: use minimum position as representative.
-            pos_a_num, pos_a_name = min(pos_info_a, key=lambda x: x[0])
-            pos_b_num, pos_b_name = min(pos_info_b, key=lambda x: x[0])
+        for pos_b_num in sorted(all_pos):
+            pos_b_name = all_pos[pos_b_num]
+            pos_b_str  = _pos_str(pos_b_num, pos_b_name)
 
             if pos_a_num == pos_b_num:
+                if pos_type.get(pos_a_num) == "Zone":
+                    rows.append([elem_a, pos_a_str, pos_b_str, "same", 0])
+                # Same Slot position: skip (elements cannot co-occur).
                 continue
 
             direction = "forward" if pos_b_num > pos_a_num else "backward"
-            rows.append([a, pos_a_name, b, pos_b_name, direction, pos_b_num - pos_a_num])
+            rows.append([elem_a, pos_a_str, pos_b_str, direction,
+                         pos_b_num - pos_a_num])
 
-    rows.sort(key=lambda r: r[5], reverse=True)
-    return [r[:5] for r in rows]
+    rows.sort(key=lambda r: r[4], reverse=True)
+    return [r[:4] for r in rows]
 
 
 def _filter_reflex_pairs_by_prescreening(
     pairs: List[List[str]], lang_id: str
 ) -> List[List[str]]:
-    """Filter candidate pairs by removing elements with referential=n.
+    """Filter candidate pairs using prescreening annotations.
 
     Reads prescreening.tsv from the coreference class directory.
     If the file does not exist, returns empty list with instructions.
-    Each pair is [Element_A, Position_A, Element_B, Position_B, Direction].
+    Each pair is [Element_A, Position_A, Position_B, Direction].
+
+    Removes rows where:
+      - Element_A has referential=n (cannot serve as binder), or
+      - Position_B has no referential=y elements (no potential anaphor at that position).
     """
-    prescreening_path = (
-        CODED_DATA / lang_id / "coreference" / "prescreening.tsv"
-    )
+    prescreening_path = CODED_DATA / lang_id / "coreference" / "prescreening.tsv"
     if not prescreening_path.exists():
         print("    [NOTE] prescreening.tsv not found — pair tab left blank.")
         print("          Annotate prescreening first, then re-run:")
@@ -548,14 +534,30 @@ def _filter_reflex_pairs_by_prescreening(
         return []
 
     df = pd.read_csv(prescreening_path, sep="\t", dtype=str, keep_default_na=False)
-    excluded = {
+
+    excluded_elements: set = {
         row["Element"]
         for _, row in df.iterrows()
         if row.get("referential", "").strip() == "n"
     }
-    # p[0] = Element_A, p[2] = Element_B (5-column format)
-    filtered = [p for p in pairs if p[0] not in excluded and p[2] not in excluded]
-    print(f"    [prescreening] {len(excluded)} element(s) excluded")
+    referential_positions: set = set()
+    for _, row in df.iterrows():
+        if row.get("referential", "").strip() == "y":
+            try:
+                referential_positions.add(int(row["Position_Number"]))
+            except (ValueError, KeyError):
+                pass
+
+    def _pos_num(pos_str: str) -> int:
+        return int(pos_str.split()[0])
+
+    # p[0] = Element_A, p[2] = Position_B (combined "N (name)" string)
+    filtered = [
+        p for p in pairs
+        if p[0] not in excluded_elements
+        and _pos_num(p[2]) in referential_positions
+    ]
+    print(f"    [prescreening] {len(excluded_elements)} element(s) excluded")
     print(f"    [prescreening] {len(pairs)} → {len(filtered)} pairs after filtering")
     return filtered
 
@@ -617,19 +619,18 @@ def _populate_tab_reflex_pairs(
     pairs: List[List[str]],
     prefill: Optional[Dict] = None,
 ) -> gspread.Worksheet:
-    """Create or clear a worksheet tab and populate it with reflexivization pair rows.
+    """Create or clear a worksheet tab and populate it with coreference pair rows.
 
-    Column format: Element_A, Position_A, Element_B, Position_B, Direction,
+    Column format: Element_A, Position_A, Position_B, Direction,
     then criterion columns, then trailing columns.
-    Position_A, Position_B, and Direction are structural (pre-filled, read-only).
+    Position columns use combined "N (name)" format; Direction is structural.
 
     Args:
-        prefill: {(elem_a, elem_b, direction): {col: val}} from a new-format sheet,
-                 or {(elem_a, elem_b): {col: val}} from an old-format sheet.
-                 The new-format key is tried first, then the old-format key, so
-                 annotations are preserved across the format migration.
+        prefill: {(elem_a, pos_b_str, direction): {col: val}} — annotations
+                 keyed by (Element_A, Position_B, Direction) to carry over when
+                 regenerating an existing tab.
     """
-    _REFLEX_STRUCT = ["Element_A", "Position_A", "Element_B", "Position_B", "Direction"]
+    _REFLEX_STRUCT = ["Element_A", "Position_A", "Position_B", "Direction"]
     num_cols = len(_REFLEX_STRUCT) + len(param_names) + len(_TRAILING_COLS)
     try:
         ws = _with_retry(lambda: spreadsheet.worksheet(tab_name))
@@ -643,17 +644,14 @@ def _populate_tab_reflex_pairs(
     header = _REFLEX_STRUCT + all_cols
     data_rows = []
     for pair in pairs:
-        elem_a, pos_a, elem_b, pos_b, direction = pair
-        pre = (
-            (prefill or {}).get((elem_a, elem_b, direction))
-            or (prefill or {}).get((elem_a, elem_b), {})
-        )
-        data_rows.append([elem_a, pos_a, elem_b, pos_b, direction]
+        elem_a, pos_a, pos_b, direction = pair
+        pre = (prefill or {}).get((elem_a, pos_b, direction), {})
+        data_rows.append([elem_a, pos_a, pos_b, direction]
                          + [pre.get(c, "") for c in all_cols])
     ws.update([header] + data_rows, "A1")
     per_col_values = [param_values.get(p, ["y", "n"]) for p in param_names]
-    # Param columns start at index 5 (after the 5 structural columns).
-    _format_and_validate(ws, len(pairs), per_col_values, col_start=5)
+    # Param columns start at index 4 (after the 4 structural columns).
+    _format_and_validate(ws, len(pairs), per_col_values, col_start=4)
     return ws
 
 
@@ -1168,12 +1166,12 @@ def _regen_construction(
         rows = _with_retry(ws.get_all_values)
         if rows and len(rows) > 1:
             hdr = rows[0]
-            is_new_reflex_fmt = class_name == "coreference" and "Position_A" in hdr
+            is_reflex_fmt = class_name == "coreference" and "Position_A" in hdr and "Element_B" not in hdr
             for row in rows[1:]:
-                if is_new_reflex_fmt:
-                    # New format: Element_A, Position_A, Element_B, Position_B, Direction, ...
-                    if len(row) >= 5 and row[0] and row[2]:
-                        existing[(row[0], row[2], row[4])] = dict(zip(hdr[5:], row[5:]))
+                if is_reflex_fmt:
+                    # Format: Element_A, Position_A, Position_B, Direction, ...
+                    if len(row) >= 4 and row[0] and row[2]:
+                        existing[(row[0], row[2], row[3])] = dict(zip(hdr[4:], row[4:]))
                 else:
                     if len(row) >= 2 and row[0] and row[1]:
                         existing[(row[0], row[1])] = dict(zip(hdr[2:], row[2:]))
@@ -1203,8 +1201,8 @@ def _regen_construction(
         pairs = _filter_nonperm_pairs_by_prescreening(pairs, lang_id)
 
     if class_name == "coreference":
-        # Key: (elem_a, elem_b, direction) for new-format sheets; (elem_a, elem_b) for old.
-        new_pair_set = {(p[0], p[2], p[4]) for p in pairs}
+        # Key: (elem_a, pos_b_str, direction)
+        new_pair_set = {(p[0], p[2], p[3]) for p in pairs}
     else:
         new_pair_set = {(p[0], p[1]) for p in pairs}
     old_pair_set = set(existing.keys())

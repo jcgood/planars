@@ -80,23 +80,24 @@ def derive_coreference_domains(
     [AUTO-DERIVED: NEEDS REVIEW] Qualification rules proposed in issue #163 (Apr 2026).
     Coordinator linguistic sign-off required before promoting to stable.
 
-    Data model: pair rows (Element_A, Position_A, Element_B, Position_B, Direction,
-    reflexive_allowed) where Element_A is the antecedent (binder) and Element_B is the
-    anaphor (bindee). Only pairs with reflexive_allowed=y contribute to span computation.
-    Rows with referential=n in the upstream prescreening sheet are excluded before pair
-    rows are generated.
+    Data model: pair rows (Element_A, Position_A, Position_B, Direction,
+    reflexive_allowed) where Element_A is the antecedent (binder) at Position_A, and
+    Position_B is the structural position of the anaphor (bindee). Only pairs with
+    reflexive_allowed=y contribute to span computation. Rows with referential=n in the
+    upstream prescreening sheet are excluded before pair rows are generated.
 
     Qualification rule (mirrors diagnostic_classes.yaml)
     -----------------------------------------------------
     Prescreening: elements are annotated referential=y (can participate as binder
     or bindee in this construction) or =n (cannot). Only referential elements generate pair rows.
 
-    Each pair row (Element_A, Element_B) represents a potential coreference relation where
-    Element_A is the antecedent (binder) and Element_B is the anaphor (bindee). The annotator
-    marks reflexive_allowed=y if the construction exhibits anaphoric binding for this pair, or =n.
+    Each pair row (Element_A, Position_A, Position_B) represents a potential coreference
+    relation where Element_A is the antecedent (binder) at Position_A, and Position_B is
+    the structural position of the anaphor (bindee). The annotator marks reflexive_allowed=y
+    if the construction exhibits anaphoric binding for this pair, or =n.
 
     Binder positions: the set of positions for Element_A across all pairs with reflexive_allowed=y.
-    Bindee positions: the set of positions for Element_B across all pairs with reflexive_allowed=y.
+    Bindee positions: the set of Position_B values across all pairs with reflexive_allowed=y.
 
     BINDER DOMAIN (strict): contiguous expansion from keystone through binder positions.
     BINDER DOMAIN (loose):  leftmost to rightmost binder position (gaps allowed).
@@ -140,24 +141,25 @@ def derive_coreference_domains(
     bad_rows: List[str] = []
 
     for _, row in pair_df.iterrows():
-        ea = row.get("Element_A", "").strip()
-        eb = row.get("Element_B", "").strip()
+        ea      = row.get("Element_A", "").strip()
+        pos_b_s = row.get("Position_B", "").strip()
         allowed = row.get("reflexive_allowed", "").strip().lower()
 
         if allowed != "y":
             continue
 
-        unknown = []
         if ea not in elem_to_positions:
-            unknown.append(f"Element_A '{ea}' not in planar")
-        if eb not in elem_to_positions:
-            unknown.append(f"Element_B '{eb}' not in planar")
-        if unknown:
-            bad_rows.extend(unknown)
+            bad_rows.append(f"Element_A '{ea}' not in planar")
+            continue
+
+        try:
+            pos_b_num = int(pos_b_s.split()[0])
+        except (ValueError, IndexError):
+            bad_rows.append(f"Could not parse Position_B '{pos_b_s}'")
             continue
 
         binder_positions.update(elem_to_positions[ea])
-        bindee_positions.update(elem_to_positions[eb])
+        bindee_positions.add(pos_b_num)
 
     if bad_rows and strict:
         raise ValueError(f"Unknown elements in pair rows: {bad_rows}")

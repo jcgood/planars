@@ -305,7 +305,7 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
         return 1, 0
 
     _STRUCTURAL       = {"Element", "Position_Name", "Position_Number"}
-    _PAIR_STRUCTURAL  = {"Element_A", "Position_A", "Element_B", "Position_B", "Direction"}
+    _PAIR_STRUCTURAL  = {"Element_A", "Position_A", "Position_B", "Direction"}
     _TRAILING         = set(load_planar_schema().get("trailing_columns", ["Source", "Comments"]))
 
     # Build a set of (class_name, construction_name) pairs that use pair_rows layout.
