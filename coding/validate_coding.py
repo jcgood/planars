@@ -312,10 +312,12 @@ def validate_pair_rows(
     tab_name: str,
     param_values: Dict[str, List[str]] = None,
 ) -> Tuple[List[Dict], List[ValidationIssue]]:
-    """Validate pair-row annotation sheets (nonpermutability class).
+    """Validate pair-row annotation sheets (nonpermutability, coreference).
 
-    Structural columns are Element_A and Element_B — no Position_Name,
-    Position_Number, or keystone. Returns (records, issues).
+    Structural columns depend on the sheet type — nonpermutability uses
+    Element_A/Element_B; coreference uses Element_A/Position_A/Position_B/Direction.
+    All required structural cols are checked via _PAIR_STRUCTURAL_COLS intersection.
+    Returns (records, issues).
     """
     issues: List[ValidationIssue] = []
 
@@ -325,9 +327,12 @@ def validate_pair_rows(
     header    = rows[0]
     data_rows = rows[1:]
 
-    for col in ("Element_A", "Element_B"):
-        if col not in header:
-            issues.append(ValidationIssue("error", tab_name, f"missing structural column '{col}'"))
+    header_set = set(header)
+    present_structural = header_set & _PAIR_STRUCTURAL_COLS
+    if not present_structural:
+        for col in ("Element_A", "Element_B"):
+            if col not in header_set:
+                issues.append(ValidationIssue("error", tab_name, f"missing structural column '{col}'"))
 
     actual_params = [c for c in header if c not in _PAIR_STRUCTURAL_COLS and c not in _TRAILING_COLS]
     if actual_params != expected_params:
@@ -346,7 +351,10 @@ def validate_pair_rows(
             row.append("")
 
         record = {col: row[col_index[col]] for col in header if col in col_index}
-        label  = f"{record.get('Element_A', '?')} × {record.get('Element_B', '?')}"
+        if "Position_B" in col_index:
+            label = f"{record.get('Element_A', '?')} → pos {record.get('Position_B', '?')}"
+        else:
+            label = f"{record.get('Element_A', '?')} × {record.get('Element_B', '?')}"
 
         for param in param_cols:
             val = record.get(param, "").strip().lower()
@@ -388,8 +396,8 @@ def revalidate_pair_sheet(
 ) -> List[ValidationIssue]:
     """Read a local pair-row TSV, validate it, update cell highlighting, return issues.
 
-    Like revalidate_sheet() but for nonpermutability pair-row sheets (Element_A,
-    Element_B structural columns; no keystone).
+    Like revalidate_sheet() but for pair-row sheets (nonpermutability: Element_A/
+    Element_B; coreference: Element_A/Position_A/Position_B/Direction; no keystone).
 
     Raises FileNotFoundError if the local TSV does not exist.
     """

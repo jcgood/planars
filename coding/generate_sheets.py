@@ -1044,18 +1044,27 @@ def _create_analysis_sheet(
             for c, pn, pv in constructions
         ]
 
-    # For coreference, override prescreening to use its own criterion.
-    # The diagnostics YAML records the pair-level criteria (reflexive_allowed, etc.);
-    # the prescreening tab uses a separate referential=[y, n] criterion.
+    # For coreference, each construction uses a specific criterion derived from the schema
+    # (diagnostic_classes.yaml constructions[].criterion). The diagnostics YAML records
+    # all pair-level criteria at the class level, so we remap here per construction.
+    # prescreening always uses referential=[y, n] regardless of the class criteria.
+    _dc_classes = {c["name"]: c for c in load_diagnostic_classes().get("classes", [])}
+    _COREFERENCE_PAIR_CRITERION = {
+        con["name"]: con["criterion"]
+        for con in (_dc_classes.get("coreference", {}).get("constructions") or [])
+        if isinstance(con, dict) and "criterion" in con
+    }
     if class_name == "coreference":
-        constructions = [
-            (c,
-             ["referential"],
-             {"referential": ["y", "n"]})
-            if c == "prescreening"
-            else (c, pn, pv)
-            for c, pn, pv in constructions
-        ]
+        new_constructions = []
+        for c, pn, pv in constructions:
+            if c == "prescreening":
+                new_constructions.append((c, ["referential"], {"referential": ["y", "n"]}))
+            elif c in _COREFERENCE_PAIR_CRITERION:
+                crit = _COREFERENCE_PAIR_CRITERION[c]
+                new_constructions.append((c, [crit], {crit: pv.get(crit, ["y", "n"])}))
+            else:
+                new_constructions.append((c, pn, pv))
+        constructions = new_constructions
 
     for construction, param_names, param_values in constructions:
         if class_name == "nonpermutability" and construction == "element_prescreening":
@@ -1181,8 +1190,15 @@ def _regen_construction(
     # Get param_names and param_values from the manifest.
     cp = manifest_class_info.get("construction_params", {}).get(construction_name, {})
     if class_name == "coreference":
-        param_names  = cp.get("param_names",  ["reflexive_allowed"])
-        param_values = cp.get("param_values", {"reflexive_allowed": ["y", "n"]})
+        _dc = {c["name"]: c for c in load_diagnostic_classes().get("classes", [])}
+        _pair_crit = {
+            con["name"]: con["criterion"]
+            for con in (_dc.get("coreference", {}).get("constructions") or [])
+            if isinstance(con, dict) and "criterion" in con
+        }
+        _default_crit = _pair_crit.get(construction_name, "reflexive_allowed")
+        param_names  = cp.get("param_names",  [_default_crit])
+        param_values = cp.get("param_values", {_default_crit: ["y", "n"]})
     else:
         param_names  = cp.get("param_names",  ["scopal"])
         param_values = cp.get("param_values", {"scopal": ["y", "n"]})
@@ -1221,6 +1237,94 @@ def _regen_construction(
           f"{len(removed)} removed")
     if removed:
         print(f"    Removed pairs will surface via import-sheets --apply → apply-pending.")
+
+
+def _add_constructions_to_existing_sheet(
+    gc: gspread.Client,
+    spreadsheet_id: str,
+    class_name: str,
+    new_constructions: List[Tuple[str, List[str], Dict[str, List[str]]]],
+    lang_id: str,
+    element_index,
+    planar_path: Path,
+) -> Dict:
+    """Add new construction tabs to an already-existing spreadsheet.
+
+    Used when a class already has a sheet but new constructions have been added
+    to the diagnostics YAML since the sheet was created. Applies the same
+    class-specific overrides as _create_analysis_sheet.
+
+    Returns construction_params dict for the newly added tabs only.
+    """
+    ss = _with_retry(lambda: gc.open_by_key(spreadsheet_id))
+
+    # Apply class-specific overrides to new constructions.
+    if class_name == "nonpermutability":
+        new_constructions = [
+            (c, pn, {"scopal": ["y", "n", "both"]} if c == "element_prescreening" else pv)
+            for c, pn, pv in new_constructions
+        ]
+    if class_name == "coreference":
+        _dc = {c["name"]: c for c in load_diagnostic_classes().get("classes", [])}
+        _pair_crit = {
+            con["name"]: con["criterion"]
+            for con in (_dc.get("coreference", {}).get("constructions") or [])
+            if isinstance(con, dict) and "criterion" in con
+        }
+        updated = []
+        for c, pn, pv in new_constructions:
+            if c == "prescreening":
+                updated.append((c, ["referential"], {"referential": ["y", "n"]}))
+            elif c in _pair_crit:
+                crit = _pair_crit[c]
+                updated.append((c, [crit], {crit: pv.get(crit, ["y", "n"])}))
+            else:
+                updated.append((c, pn, pv))
+        new_constructions = updated
+
+    pos_type = _read_position_types(planar_path, lang_id)
+    construction_params: Dict = {}
+
+    for construction, param_names, param_values in new_constructions:
+        ka = resolve_keystone_active(lang_id, class_name, construction,
+                                     data_dir=planar_path.parent) or False
+        if class_name == "nonpermutability" and construction == "element_prescreening":
+            rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
+            _populate_tab(ss, construction, param_names, param_values, rows)
+            print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
+        elif class_name == "nonpermutability":
+            pairs = _build_nonperm_pairs(element_index, lang_id, pos_type, keystone_active=ka)
+            pairs = _filter_nonperm_pairs_by_prescreening(pairs, lang_id)
+            _populate_tab_pairs(ss, construction, param_names, param_values, pairs)
+            print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
+        elif class_name == "coreference" and construction == "prescreening":
+            rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
+            _populate_tab(ss, construction, param_names, param_values, rows)
+            print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
+        elif class_name == "coreference":
+            pairs = _build_reflex_pairs(element_index, lang_id, pos_type, keystone_active=ka)
+            pairs = _filter_reflex_pairs_by_prescreening(pairs, lang_id)
+            _populate_tab_reflex_pairs(ss, construction, param_names, param_values, pairs)
+            print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
+        else:
+            rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
+            if class_name == "free_occurrence":
+                rows = _prefill_free_occurrence_rows(rows, param_names, lang_id)
+            _populate_tab(ss, construction, param_names, param_values, rows)
+            print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
+
+        construction_params[construction] = {
+            "param_names": param_names,
+            "param_values": param_values,
+        }
+
+    # Refresh Instructions and Status tabs.
+    _maybe_create_instructions_tab(ss, class_name)
+    all_tab_titles = [ws.title for ws in _with_retry(lambda: ss.worksheets())]
+    non_system = [t for t in all_tab_titles if t not in ("Status", "Instructions")]
+    _create_status_tab(ss, non_system)
+
+    return construction_params
 
 
 def _regen_dependents_simple(gc: gspread.Client, manifest: dict) -> None:
@@ -1552,10 +1656,34 @@ def main() -> None:
             existing_sheets = existing_lang_data.get("sheets", {})
             new_class_names = [c for c in all_classes if c not in existing_sheets]
             if not new_class_names:
-                print(
-                    f"  All classes already have sheets. Skipping {lang_id}.\n"
-                    "  (use --force to regenerate)"
-                )
+                # Even when all classes exist, new constructions may have been added
+                # to an existing class's diagnostics YAML. Add their tabs now.
+                added_any = False
+                for cls, constructions_list in all_classes.items():
+                    existing_cls_info = existing_sheets.get(cls, {})
+                    existing_cons = set(existing_cls_info.get("constructions", []))
+                    new_cons = [(c, pn, pv) for c, pn, pv in constructions_list
+                                if c not in existing_cons]
+                    if not new_cons:
+                        continue
+                    added_any = True
+                    print(f"  [{cls}] new construction(s): {[c for c,_,_ in new_cons]}")
+                    ss_id = existing_cls_info["spreadsheet_id"]
+                    _planar_path = planar_dir / f"planar_{lang_id}.tsv"
+                    new_params = _add_constructions_to_existing_sheet(
+                        gc, ss_id, cls, new_cons, lang_id, element_index, _planar_path,
+                    )
+                    existing_cls_info.setdefault("constructions", []).extend(
+                        [c for c, _, _ in new_cons]
+                    )
+                    existing_cls_info.setdefault("construction_params", {}).update(new_params)
+                    existing_lang_data["sheets"][cls] = existing_cls_info
+
+                if not added_any:
+                    print(
+                        f"  All classes already have sheets. Skipping {lang_id}.\n"
+                        "  (use --force to regenerate)"
+                    )
                 existing_lang_data["folder_id"] = folder_id
                 if existing_notes_doc_id:
                     existing_lang_data["notes_doc_id"] = existing_notes_doc_id

@@ -320,22 +320,37 @@ classes:
         row_type: pair_rows
         depends_on: prescreening
         staleness_check: element_set
+        criterion: reflexive_allowed
+      - name: pronominalization
+        row_type: pair_rows
+        depends_on: prescreening
+        staleness_check: element_set
+        criterion: pronoun_allowed
+      - name: np_reference
+        row_type: pair_rows
+        depends_on: prescreening
+        staleness_check: element_set
+        criterion: np_allowed
     sheet_instructions: >
       STEP 1 — prescreening: For each element, annotate referential:
         y = this element is a referential expression (NP, pronoun) that can enter coreference
         n = this element cannot participate; it will be EXCLUDED from the pair list in Step 2
       When finished, mark prescreening as "ready-for-review" in the Status tab.
-      The coordinator will then regenerate the main construction tab with a filtered pair list.
+      The coordinator will then regenerate each pair construction tab from the prescreening results.
 
-      STEP 2 — (main construction): Do NOT annotate this tab until the coordinator confirms
-      it has been regenerated from the prescreening results. The coordinator will run:
+      STEP 2 — (pair constructions): Do NOT annotate until the coordinator confirms regeneration.
+      The coordinator runs:
         python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:CONSTRUCTION_NAME
-      to regenerate the pair list, then mark it "ready-for-review" in the Status tab.
-      Each row represents a potential antecedent-anaphor pair (Element_A → Element_B).
-      For reflexivization: mark reflexive_allowed=y if a reflexive in Element_B's position
-      can be bound by an antecedent in Element_A's position; n if it cannot.
+      Each row (Element_A, Position_A, Position_B, Direction) represents a potential
+      antecedent-anaphor pair. Position columns use "N (name)" format e.g. "5 (v:npsubj1)".
+      For reflexivization:   mark reflexive_allowed=y if a reflexive at Position_B can be
+                             bound by Element_A at Position_A; n if it cannot. (Principle A)
+      For pronominalization: mark pronoun_allowed=y if a pronoun at Position_B can be
+                             bound by Element_A at Position_A; n if it cannot. (Principle B)
+      For np_reference:      mark np_allowed=y if an NP at Position_B can corefer with
+                             Element_A at Position_A; n if it cannot. (Principle C)
     required_criteria: [reflexive_allowed]
-    optional_criteria: []
+    optional_criteria: [pronoun_allowed, np_allowed]
     qualification_rule: >
       Prescreening: elements are annotated referential=y (can participate as binder
       or bindee in this construction) or =n (cannot). Only referential elements generate pair rows.
