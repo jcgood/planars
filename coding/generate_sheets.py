@@ -1207,7 +1207,7 @@ def main() -> None:
         # Validate diagnostics_{lang_id}.tsv; warn but do not block sheet generation.
         diag_path = planar_dir / f"diagnostics_{lang_id}.tsv"
         if diag_path.exists():
-            diag_df = pd.read_csv(diag_path, sep="\t")
+            diag_df = pd.read_csv(diag_path, sep="\t", dtype=str, keep_default_na=False)
             diag_issues = _val_diag.validate_diagnostics_df(diag_df, lang_id)
             if diag_issues:
                 print(f"  Diagnostics validation ({len(diag_issues)} issue(s)):")

@@ -456,8 +456,6 @@ def _read_diagnostics_for_language(
             raise ValueError("Diagnostics file has a row with empty Class.")
         if not constructions:
             continue
-        if not criterion_names:
-            raise ValueError(f"Diagnostics row for class '{class_name}' has no Criteria.")
 
         for construction in constructions:
             out.append((class_name, construction, criterion_names, criterion_values))
