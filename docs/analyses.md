@@ -106,6 +106,7 @@ Some analyses (stress, aspiration) use a **blocked span** instead: expand from t
 | `noninterruption` | `free`, `multiple` | 4 strict spans (2 domain types × complete/partial) | stable |
 | `metrical` | `accented`, `obligatory`, `independence`, `left-interaction`, `right-interaction` (blocked-span); `applies` (positive-qual) | 4 (2 domain types × complete/partial) | stable † |
 | `nonpermutability` | `scopal` (pair-level) | 3 spans (strict, minimal flexible, maximal flexible) | [AUTO-DERIVED] ‡ |
+| `coreference` | `referential` (prescreening); `reflexive_allowed`, `pronoun_allowed`, `np_allowed` (pair-level, per construction) | 4 spans per construction (binder strict/loose + bindee strict/loose) | [AUTO-DERIVED: NEEDS REVIEW] § |
 | `free_occurrence` | `free`, `left-edge-of-free-form`, `right-edge-of-free-form`, `dependent-on-left`, `dependent-on-right` | 2 spans (minimal, maximal) | [AUTO-DERIVED] |
 | `segmental` | `aspirated` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] ‡ |
 | `tonal` | `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
@@ -125,6 +126,8 @@ Some analyses (stress, aspiration) use a **blocked span** instead: expand from t
 ‡ Likely stable based on cross-language evidence (see `schemas/diagnostic_classes.yaml`), but coordinator sign-off still needed.
 
 ¶ Not included in the langsci/291 published database (ch. 17, line 543). Prospective class.
+
+§ Qualification rules proposed Apr 2026 (issue #163). Coordinator linguistic sign-off required before promoting to stable.
 
 ---
 
@@ -172,6 +175,31 @@ All four annotation columns (`left-edge-of-free-form`, `right-edge-of-free-form`
 `free` is **pre-filled from the noninterruption sheet** at generation time — annotate noninterruption before generating the free_occurrence sheet. `integrity-check` warns when `free` values differ across sheets (e.g. after a noninterruption edit).
 
 `dependent-on-left` and `dependent-on-right` hold a position number as a string, or `na`. These are position references, not fixed criterion values — `validate-coding` does not currently validate them against the planar structure.
+
+### Coreference
+
+Three-stage annotation workflow corresponding to Principles A, B, and C:
+
+**Stage 1 — prescreening sheet** (`prescreening` construction, element rows, `referential={y,n}`): identifies which elements can participate as binder or bindee. Only `referential=y` elements generate pair rows in Stages 2–4.
+
+**Stages 2–4 — pair sheets** (one per construction):
+
+- `reflexivization` (Principle A) — criterion `reflexive_allowed={y,n}`
+- `pronominalization` (Principle B) — criterion `pronoun_allowed={y,n}`
+- `np_reference` (Principle C) — criterion `np_allowed={y,n}`
+
+Each pair sheet has rows `(Element_A, Position_A, Position_B, Direction, <criterion>)`. `Element_A` is the antecedent (binder) at `Position_A`; `Position_B` is the structural position of the anaphor (bindee). The annotator marks the criterion `=y` if the construction is allowed for that pair, `=n` if not.
+
+Four spans are derived per construction:
+
+- **Binder domain (strict)**: contiguous expansion from keystone through binder positions (positions of `Element_A` where criterion=y).
+- **Binder domain (loose)**: leftmost to rightmost binder position (gaps allowed).
+- **Bindee domain (strict)**: contiguous expansion from keystone through bindee positions (`Position_B` values where criterion=y).
+- **Bindee domain (loose)**: leftmost to rightmost bindee position (gaps allowed).
+
+Asymmetry outputs (binder-only, bindee-only, shared positions) approximate c-command without presupposing tree structure.
+
+Annotate `prescreening` before generating pair sheets; `--regen-construction coreference:<construction>` regenerates any pair sheet filtered to referential elements.
 
 ### Biuniqueness
 
