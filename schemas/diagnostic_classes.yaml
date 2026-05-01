@@ -288,6 +288,7 @@ classes:
       derived). Coordinator sign-off needed before promoting to stable.]"
     keystone_active_default: true
     collection_required: "y"
+    include_planar_reference_tab: true
 
   - name: coreference
     display_name: "Coreference"
@@ -383,6 +384,7 @@ classes:
       promoting to stable.]"
     criterion_set_status: "[NEEDS REVIEW]"
     collection_required: "[NEEDS COORDINATOR INPUT]"
+    include_planar_reference_tab: true
 
   - name: free_occurrence
     display_name: "Free Occurrence"

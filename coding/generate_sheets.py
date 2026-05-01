@@ -86,6 +86,9 @@ _TRAILING_COLS = load_planar_schema().get("trailing_columns", ["Source", "Commen
 _STATUS_TAB = "Status"
 _STATUS_VALUES = ["in-progress", "ready-for-review"]
 _INSTRUCTIONS_TAB = "Instructions"
+_PLANAR_REF_TAB = "Planar Structure"
+# System tabs always appear at the end of the sheet, in this order:
+_SYSTEM_TAB_ORDER = [_PLANAR_REF_TAB, _INSTRUCTIONS_TAB, _STATUS_TAB]
 
 
 def _create_or_update_tsv_sheet(
@@ -761,6 +764,85 @@ def _create_instructions_tab(
 
 
 # ---------------------------------------------------------------------------
+# Planar structure reference tab
+# ---------------------------------------------------------------------------
+
+def _create_planar_reference_tab(
+    spreadsheet: gspread.Spreadsheet,
+    planar_path: Path,
+    lang_id: str,
+) -> None:
+    """Create or refresh a read-only Planar Structure reference tab.
+
+    Displays position number, name, type, and element inventory so annotators
+    can look up position information without leaving the spreadsheet.
+    """
+    df = pd.read_csv(planar_path, sep="\t", dtype=str, keep_default_na=False)
+    df = df[df["Language_ID"] == lang_id].copy()
+    df = df.sort_values("Position", key=lambda s: pd.to_numeric(s, errors="coerce"))
+
+    header = ["Position", "Position_Name", "Position_Type", "Elements"]
+    rows: List[List[str]] = [header]
+    for _, row in df.iterrows():
+        rows.append([
+            row.get("Position", ""),
+            row.get("Position_Name", ""),
+            row.get("Position_Type", ""),
+            row.get("Elements", ""),
+        ])
+
+    try:
+        ws = _with_retry(lambda: spreadsheet.worksheet(_PLANAR_REF_TAB))
+        ws.clear()
+    except gspread.WorksheetNotFound:
+        ws = spreadsheet.add_worksheet(
+            title=_PLANAR_REF_TAB, rows=len(rows) + 2, cols=len(header) + 1
+        )
+
+    ws.update(rows, "A1")
+    sheet_id = ws.id
+    _with_retry(lambda: spreadsheet.batch_update({"requests": [
+        {"updateSheetProperties": {
+            "properties": {"sheetId": sheet_id, "gridProperties": {"frozenRowCount": 1}},
+            "fields": "gridProperties.frozenRowCount",
+        }},
+        {"repeatCell": {
+            "range": {"sheetId": sheet_id, "startRowIndex": 0, "endRowIndex": 1},
+            "cell": {"userEnteredFormat": {"textFormat": {"bold": True}}},
+            "fields": "userEnteredFormat.textFormat.bold",
+        }},
+    ]}))
+
+
+def _maybe_create_planar_reference_tab(
+    spreadsheet: gspread.Spreadsheet,
+    class_name: str,
+    planar_path: Path,
+    lang_id: str,
+) -> bool:
+    """Create a Planar Structure tab if the class opts in via diagnostic_classes.yaml.
+
+    Returns True if the tab was created.
+    """
+    classes = {c["name"]: c for c in load_diagnostic_classes().get("classes", [])}
+    if classes.get(class_name, {}).get("include_planar_reference_tab"):
+        _create_planar_reference_tab(spreadsheet, planar_path, lang_id)
+        return True
+    return False
+
+
+def _reorder_system_tabs(spreadsheet: gspread.Spreadsheet) -> None:
+    """Reorder tabs so system tabs appear last: Planar Structure → Instructions → Status."""
+    all_ws = _with_retry(lambda: spreadsheet.worksheets())
+    ws_by_title = {ws.title: ws for ws in all_ws}
+    non_system = [ws for ws in all_ws if ws.title not in _SYSTEM_TAB_ORDER]
+    system = [ws_by_title[t] for t in _SYSTEM_TAB_ORDER if t in ws_by_title]
+    ordered = non_system + system
+    if [ws.title for ws in all_ws] != [ws.title for ws in ordered]:
+        _with_retry(lambda: spreadsheet.reorder_worksheets(ordered))
+
+
+# ---------------------------------------------------------------------------
 # Status tab
 # ---------------------------------------------------------------------------
 
@@ -1129,11 +1211,13 @@ def _create_analysis_sheet(
     if default_ws.title not in tab_names:
         spreadsheet.del_worksheet(default_ws)
 
-    # Add Instructions tab before Status if this class has dependent constructions
+    # Add system tabs (Planar Structure → Instructions → Status) and reorder.
+    created_ref = _maybe_create_planar_reference_tab(spreadsheet, class_name, planar_path, lang_id)
+    if created_ref:
+        print(f"    Tab: {_PLANAR_REF_TAB} (planar reference)")
     _maybe_create_instructions_tab(spreadsheet, class_name)
-
-    # Add Status tab last
     _create_status_tab(spreadsheet, tab_names)
+    _reorder_system_tabs(spreadsheet)
 
     # Build per-construction param_values map for the manifest
     construction_params = {
@@ -1403,22 +1487,16 @@ def _add_constructions_to_existing_sheet(
             "param_values": param_values,
         }
 
-    # Refresh Instructions and Status tabs.
+    # Refresh system tabs and reorder: constructions → Planar Structure → Instructions → Status.
+    planar_path = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
+    created_ref = _maybe_create_planar_reference_tab(ss, class_name, planar_path, lang_id)
+    if created_ref:
+        print(f"    Tab: {_PLANAR_REF_TAB} (planar reference)")
     _maybe_create_instructions_tab(ss, class_name)
     all_ws = _with_retry(lambda: ss.worksheets())
-    non_system = [t for t in [ws.title for ws in all_ws] if t not in ("Status", "Instructions")]
+    non_system = [t for t in [ws.title for ws in all_ws] if t not in _SYSTEM_TAB_ORDER]
     _create_status_tab(ss, non_system)
-
-    # Reorder: construction tabs → Instructions → Status (new tabs were appended at end).
-    all_ws = _with_retry(lambda: ss.worksheets())
-    ws_by_title = {ws.title: ws for ws in all_ws}
-    system_order = [_INSTRUCTIONS_TAB, _STATUS_TAB]
-    ordered = (
-        [ws_by_title[t] for t in non_system if t in ws_by_title]
-        + [ws_by_title[t] for t in system_order if t in ws_by_title]
-    )
-    if [ws.title for ws in all_ws] != [ws.title for ws in ordered]:
-        ss.reorder_worksheets(ordered)
+    _reorder_system_tabs(ss)
 
     return construction_params
 

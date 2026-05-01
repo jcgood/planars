@@ -68,7 +68,13 @@ from .drive import (
     _load_manifest_from_drive, _upload_planars_config, _load_drive_config, _save_drive_config,
     _with_retry,
 )
-from .generate_sheets import _build_rows, _format_and_validate, _TRAILING_COLS
+from .generate_sheets import (
+    _build_rows,
+    _format_and_validate,
+    _maybe_create_planar_reference_tab,
+    _reorder_system_tabs,
+    _TRAILING_COLS,
+)
 
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
 CODED_DATA = ROOT / "coded_data"
@@ -536,6 +542,7 @@ def _rename_class_for_language(
     specs: list,
     apply: bool,
     folder_id: Optional[str],
+    planar_path: Optional[Path] = None,
 ) -> bool:
     """Rename one analysis class for one language.
 
@@ -655,6 +662,12 @@ def _rename_class_for_language(
     if default_ws.title not in tab_names:
         new_ss.del_worksheet(default_ws)
 
+    if planar_path:
+        created_ref = _maybe_create_planar_reference_tab(new_ss, new_class, planar_path, lang_id)
+        if created_ref:
+            print(f"    Tab: Planar Structure (planar reference)")
+        _reorder_system_tabs(new_ss)
+
     # Rename local TSV directory in-place (preserves git history)
     if old_dir.exists():
         if new_dir.exists():
@@ -744,9 +757,10 @@ def main() -> None:
             folder_url = lang_data.get("folder_url", "")
             folder_id = _folder_id_from_url(folder_url) if folder_url else None
             for old_class, new_class in rename_class_map.items():
+                planar_path = planar_file.parent / f"planar_{lang_id}.tsv"
                 changed = _rename_class_for_language(
                     gc, drive, manifest, lang_id, old_class, new_class,
-                    element_index, specs, apply, folder_id,
+                    element_index, specs, apply, folder_id, planar_path,
                 )
                 if changed:
                     any_changes = True
@@ -890,6 +904,12 @@ def main() -> None:
 
             if default_ws.title not in tab_names:
                 new_ss.del_worksheet(default_ws)
+
+            planar_path = planar_file.parent / f"planar_{lang_id}.tsv"
+            created_ref = _maybe_create_planar_reference_tab(new_ss, class_name, planar_path, lang_id)
+            if created_ref:
+                print(f"    Tab: Planar Structure (planar reference)")
+            _reorder_system_tabs(new_ss)
 
             restructured_classes.add((lang_id, class_name))
 

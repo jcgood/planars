@@ -17,13 +17,17 @@ import pytest
 
 import coding.generate_sheets as _gs
 from coding.generate_sheets import (
+    _PLANAR_REF_TAB,
+    _SYSTEM_TAB_ORDER,
     _build_nonperm_pairs,
     _check_force_against_existing_sheets,
     _filter_nonperm_pairs_by_prescreening,
+    _maybe_create_planar_reference_tab,
     _parse_pos_cell,
     _prefill_free_occurrence_rows,
     _regen_dependents_simple,
     _remap_coreference_prefill,
+    _reorder_system_tabs,
 )
 
 
@@ -497,3 +501,121 @@ class TestRemapCoreferencePreFill:
         existing = {("NP", "bad-cell", "forward"): {"reflexive_allowed": "y"}}
         result = _remap_coreference_prefill(existing, {5: 6}, [])
         assert ("NP", "bad-cell", "forward") in result
+
+
+# ---------------------------------------------------------------------------
+# _maybe_create_planar_reference_tab
+# ---------------------------------------------------------------------------
+
+def _make_planar_tsv(tmp_path: Path, lang_id: str) -> Path:
+    """Write a minimal planar TSV for testing."""
+    p = tmp_path / f"planar_{lang_id}.tsv"
+    p.write_text(
+        "Language_ID\tPosition\tPosition_Name\tPosition_Type\tElements\n"
+        f"{lang_id}\t1\tv:verbstem\tverb\tm1\n"
+        f"{lang_id}\t2\tv:subj\tnoun\tm2 m3\n",
+        encoding="utf-8",
+    )
+    return p
+
+
+class TestMaybeCreatePlanarReferenceTab:
+    def _fake_classes(self, class_name: str, include: bool) -> dict:
+        return {"classes": [{"name": class_name, "include_planar_reference_tab": include}]}
+
+    def test_returns_true_when_flag_set(self, tmp_path, monkeypatch):
+        planar = _make_planar_tsv(tmp_path, "lang0001")
+        monkeypatch.setattr(_gs, "load_diagnostic_classes",
+                            lambda: self._fake_classes("nonpermutability", True))
+        ss = MagicMock()
+        ss.worksheets.return_value = []
+        result = _maybe_create_planar_reference_tab(ss, "nonpermutability", planar, "lang0001")
+        assert result is True
+
+    def test_returns_false_when_flag_absent(self, tmp_path, monkeypatch):
+        planar = _make_planar_tsv(tmp_path, "lang0001")
+        monkeypatch.setattr(_gs, "load_diagnostic_classes",
+                            lambda: self._fake_classes("ciscategorial", False))
+        ss = MagicMock()
+        result = _maybe_create_planar_reference_tab(ss, "ciscategorial", planar, "lang0001")
+        assert result is False
+
+    def test_returns_false_for_unknown_class(self, tmp_path, monkeypatch):
+        planar = _make_planar_tsv(tmp_path, "lang0001")
+        monkeypatch.setattr(_gs, "load_diagnostic_classes",
+                            lambda: {"classes": []})
+        ss = MagicMock()
+        result = _maybe_create_planar_reference_tab(ss, "nonpermutability", planar, "lang0001")
+        assert result is False
+
+    def test_calls_create_when_flag_set(self, tmp_path, monkeypatch):
+        planar = _make_planar_tsv(tmp_path, "lang0001")
+        monkeypatch.setattr(_gs, "load_diagnostic_classes",
+                            lambda: self._fake_classes("coreference", True))
+        ss = MagicMock()
+        ss.worksheets.return_value = []
+        with patch.object(_gs, "_create_planar_reference_tab") as mock_create:
+            _maybe_create_planar_reference_tab(ss, "coreference", planar, "lang0001")
+        mock_create.assert_called_once_with(ss, planar, "lang0001")
+
+    def test_does_not_call_create_when_flag_absent(self, tmp_path, monkeypatch):
+        planar = _make_planar_tsv(tmp_path, "lang0001")
+        monkeypatch.setattr(_gs, "load_diagnostic_classes",
+                            lambda: self._fake_classes("ciscategorial", False))
+        ss = MagicMock()
+        with patch.object(_gs, "_create_planar_reference_tab") as mock_create:
+            _maybe_create_planar_reference_tab(ss, "ciscategorial", planar, "lang0001")
+        mock_create.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# _reorder_system_tabs
+# ---------------------------------------------------------------------------
+
+def _mock_ws(title: str) -> MagicMock:
+    ws = MagicMock()
+    ws.title = title
+    return ws
+
+
+class TestReorderSystemTabs:
+    def test_system_tabs_sent_to_end(self):
+        """Status/Instructions/Planar Structure must end up after annotation tabs."""
+        ann1 = _mock_ws("reflexivization")
+        ann2 = _mock_ws("pronominalization")
+        status = _mock_ws("Status")
+        instructions = _mock_ws("Instructions")
+        planar = _mock_ws(_PLANAR_REF_TAB)
+        ss = MagicMock()
+        ss.worksheets.return_value = [status, instructions, planar, ann1, ann2]
+        _reorder_system_tabs(ss)
+        final_order = ss.reorder_worksheets.call_args[0][0]
+        titles = [ws.title for ws in final_order]
+        assert titles == ["reflexivization", "pronominalization", _PLANAR_REF_TAB, "Instructions", "Status"]
+
+    def test_already_ordered_no_reorder_call(self):
+        """If tabs already in correct order, reorder_worksheets is not called."""
+        ann = _mock_ws("general")
+        planar = _mock_ws(_PLANAR_REF_TAB)
+        instructions = _mock_ws("Instructions")
+        status = _mock_ws("Status")
+        ss = MagicMock()
+        ss.worksheets.return_value = [ann, planar, instructions, status]
+        _reorder_system_tabs(ss)
+        ss.reorder_worksheets.assert_not_called()
+
+    def test_partial_system_tabs_handled(self):
+        """Works when only some system tabs are present (e.g. no Planar Structure)."""
+        ann = _mock_ws("ciscategorial")
+        status = _mock_ws("Status")
+        ss = MagicMock()
+        ss.worksheets.return_value = [status, ann]
+        _reorder_system_tabs(ss)
+        final_order = ss.reorder_worksheets.call_args[0][0]
+        titles = [ws.title for ws in final_order]
+        assert titles == ["ciscategorial", "Status"]
+
+    def test_system_tab_order_constant(self):
+        """_SYSTEM_TAB_ORDER must end with Status (the very last tab)."""
+        assert _SYSTEM_TAB_ORDER[-1] == "Status"
+        assert _PLANAR_REF_TAB in _SYSTEM_TAB_ORDER
