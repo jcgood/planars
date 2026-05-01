@@ -370,9 +370,11 @@ python -m coding generate-sheets      # creates annotation sheets for the new cl
 python -m coding sync-params --apply  # if existing sheets need the new criteria columns
 ```
 
-#### Two-stage annotation workflows (e.g. nonpermutability)
+#### Multi-stage annotation workflows (nonpermutability and coreference)
 
-Some classes have a multi-stage annotation structure where one construction must be completed before another can be generated. The nonpermutability class uses this pattern:
+Some classes have a multi-stage annotation structure where one construction must be completed before another can be generated.
+
+**Nonpermutability** (2 stages):
 
 1. Annotate the `element_prescreening` sheet (`scopal={y,n,both}` per element) and mark it `ready-for-review`.
 2. Run `python -m coding import-sheets` to download it locally.
@@ -382,9 +384,25 @@ Some classes have a multi-stage annotation structure where one construction must
 python -m coding generate-sheets --lang LANG_ID --regen-construction nonpermutability:general
 ```
 
-If `integrity-check` or `data-refresh` files a **`dependent-stale`** issue, it means the `general` sheet is out of sync with the current `element_prescreening.tsv` (e.g. after a correction). Re-run the command above to regenerate it. The issue closes automatically when the element sets are back in sync.
+**Coreference** (4 stages — one prescreening + three pair constructions):
 
-`data-refresh` will auto-regenerate the dependent construction if the dependent TSV does not yet exist locally. Once the TSV exists (even with blank values), auto-regeneration is skipped and the issue body will tell you which manual command to run.
+1. Annotate the `prescreening` sheet (`referential={y,n}` per element) and mark it `ready-for-review`. This identifies which elements can participate as binder or bindee.
+2. Run `python -m coding import-sheets` to download it locally.
+3. Regenerate each pair construction filtered to referential elements:
+
+```bash
+python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:reflexivization
+python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:pronominalization
+python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:np_reference
+```
+
+Each pair sheet uses its own criterion column: `reflexive_allowed` (Principle A), `pronoun_allowed` (Principle B), `np_allowed` (Principle C).
+
+4. Annotate each pair sheet and mark `ready-for-review` when done.
+
+**For both classes:** if `integrity-check` or `data-refresh` files a **`dependent-stale`** issue, the pair sheet is out of sync with the current prescreening TSV (e.g. after a correction). Re-run the relevant `--regen-construction` command. The issue closes automatically when the element sets are back in sync.
+
+`data-refresh` will auto-regenerate a dependent construction if the dependent TSV does not yet exist locally. Once the TSV exists (even with blank values), auto-regeneration is skipped and the issue body will tell you which manual command to run.
 
 #### Updating diagnostic criteria
 
