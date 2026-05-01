@@ -48,6 +48,7 @@ from .make_forms import (
     _dump_diagnostics_yaml,
     _resolve_diagnostics_yaml_path,
 )
+from .schemas import load_diagnostic_classes as _load_dc
 from .drive import (
     _get_clients, _load_manifest_from_drive, _upload_planars_config,
     _load_drive_config, _save_drive_config, _open_spreadsheet, _with_retry,
@@ -521,6 +522,23 @@ def main() -> None:
         expected: Dict[str, Dict[str, Tuple[List[str], Dict[str, List[str]]]]] = {}
         for class_name, construction, param_names, param_values in specs:
             expected.setdefault(class_name, {})[construction] = (param_names, param_values)
+
+        # Coreference override: prescreening uses referential=[y,n]; each pair
+        # construction uses only its own criterion (not all class-level criteria).
+        if "coreference" in expected:
+            _dc = {c["name"]: c for c in _load_dc().get("classes", [])}
+            _pair_crit = {
+                con["name"]: con["criterion"]
+                for con in (_dc.get("coreference", {}).get("constructions") or [])
+                if isinstance(con, dict) and "criterion" in con
+            }
+            for con_name, crit in _pair_crit.items():
+                if con_name in expected["coreference"]:
+                    expected["coreference"][con_name] = ([crit], {crit: ["y", "n"]})
+            if "prescreening" in expected["coreference"]:
+                expected["coreference"]["prescreening"] = (
+                    ["referential"], {"referential": ["y", "n"]}
+                )
 
         print(f"\nLanguage: {lang_id}")
         print(f"Mode:     {'apply' if apply else 'dry run'}")
