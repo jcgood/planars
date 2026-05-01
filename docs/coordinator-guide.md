@@ -404,6 +404,15 @@ Each pair sheet uses its own criterion column: `reflexive_allowed` (Principle A)
 
 `data-refresh` will auto-regenerate a dependent construction if the dependent TSV does not yet exist locally. Once the TSV exists (even with blank values), auto-regeneration is skipped and the issue body will tell you which manual command to run.
 
+**If position numbers shifted** (a position was inserted or deleted in the planar structure), existing coreference pair annotations would be lost on the next `--regen-construction` because the row keys change. Use `--pos-remap OLD:NEW` (repeatable) to carry annotations over:
+
+```bash
+python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:reflexivization \
+    --pos-remap 5:6 --pos-remap 34:35
+```
+
+The mapping comes from comparing the old and new planar TSV — add one `--pos-remap` for each position whose number changed. Positions whose numbers are stable need no entry.
+
 #### Updating diagnostic criteria
 
 **Adding new criteria** — edit `diagnostics_{lang_id}.yaml` and commit. The daily `data-refresh.yml` runs `sync-params --apply` automatically, so the new column will appear in annotation sheets within 24 hours. No manual action needed.

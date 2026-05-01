@@ -11,6 +11,16 @@ newly added aspiration class). Existing sheets are left untouched.
 
 To sync param column changes to existing sheets: python -m coding sync-params --apply
 
+To regenerate a dependent pair construction after prescreening is annotated:
+    python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:reflexivization
+    python -m coding generate-sheets --lang LANG_ID --regen-construction nonpermutability:general
+
+If position numbers have shifted since the pair tab was last generated (e.g. a position
+was inserted or deleted), add --pos-remap OLD:NEW (repeatable) to carry over existing
+annotations to the new row numbers:
+    python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:reflexivization \
+        --pos-remap 5:6 --pos-remap 34:35
+
 Requires:
     pip install gspread google-auth google-api-python-client
 
