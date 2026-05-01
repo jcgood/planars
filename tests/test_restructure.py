@@ -4,9 +4,13 @@ from __future__ import annotations
 import pytest
 
 from coding.restructure_sheets import (
+    _apply_rename_to_position_cell,
+    _cascade_rename_pair_tsv,
     _compute_stats,
+    _count_pair_rename_impacts,
     _lookup_existing,
     _parse_flag_map,
+    _parse_position_cell,
     _preflight_rename_class,
 )
 
@@ -231,3 +235,137 @@ def test_preflight_parse_rename_class_flag():
     """--rename-class uses the same _parse_flag_map as --rename-map."""
     result = _parse_flag_map(["--rename-class", "stress:metrical"], "--rename-class")
     assert result == {"stress": "metrical"}
+
+
+# ---------------------------------------------------------------------------
+# _parse_position_cell
+# ---------------------------------------------------------------------------
+
+def test_parse_position_cell_typical():
+    assert _parse_position_cell("5 (v:npsubj1)") == (5, "v:npsubj1")
+
+
+def test_parse_position_cell_leading_zeros_not_expected():
+    assert _parse_position_cell("30 (v:verbstem)") == (30, "v:verbstem")
+
+
+def test_parse_position_cell_name_with_colon():
+    assert _parse_position_cell("12 (v:obj:dative)") == (12, "v:obj:dative")
+
+
+def test_parse_position_cell_plain_number_fails():
+    assert _parse_position_cell("5") is None
+
+
+def test_parse_position_cell_empty_fails():
+    assert _parse_position_cell("") is None
+
+
+def test_parse_position_cell_no_parens_fails():
+    assert _parse_position_cell("5 v:npsubj1") is None
+
+
+def test_parse_position_cell_extra_whitespace():
+    assert _parse_position_cell("  7 (v:aux)  ") == (7, "v:aux")
+
+
+# ---------------------------------------------------------------------------
+# _apply_rename_to_position_cell
+# ---------------------------------------------------------------------------
+
+def test_apply_rename_changes_name():
+    new_cell, changed = _apply_rename_to_position_cell("5 (v:npsubj1)", {"v:npsubj1": "v:subj1"})
+    assert new_cell == "5 (v:subj1)"
+    assert changed is True
+
+
+def test_apply_rename_number_preserved():
+    new_cell, _ = _apply_rename_to_position_cell("34 (v:npobj1)", {"v:npobj1": "v:obj1"})
+    assert new_cell.startswith("34 ")
+
+
+def test_apply_rename_no_match_unchanged():
+    new_cell, changed = _apply_rename_to_position_cell("5 (v:npsubj1)", {"v:other": "v:new"})
+    assert new_cell == "5 (v:npsubj1)"
+    assert changed is False
+
+
+def test_apply_rename_unparseable_unchanged():
+    new_cell, changed = _apply_rename_to_position_cell("", {"v:old": "v:new"})
+    assert new_cell == ""
+    assert changed is False
+
+
+# ---------------------------------------------------------------------------
+# _cascade_rename_pair_tsv
+# ---------------------------------------------------------------------------
+
+def _make_pair_tsv(tmp_path, rows):
+    """Write a minimal pair TSV and return its path."""
+    import pandas as pd
+    p = tmp_path / "reflexivization.tsv"
+    df = pd.DataFrame(rows)
+    df.to_csv(p, sep="\t", index=False)
+    return p
+
+
+def test_cascade_rename_pair_tsv_updates_position_a(tmp_path):
+    p = _make_pair_tsv(tmp_path, [
+        {"Element_A": "NP", "Position_A": "5 (v:npsubj1)", "Position_B": "34 (v:npobj1)",
+         "Direction": "forward", "reflexive_allowed": "y"},
+    ])
+    changed = _cascade_rename_pair_tsv(p, {"v:npsubj1": "v:subj1"})
+    assert changed == 1
+    import pandas as pd
+    df = pd.read_csv(p, sep="\t", dtype=str, keep_default_na=False)
+    assert df["Position_A"].iloc[0] == "5 (v:subj1)"
+    assert df["Position_B"].iloc[0] == "34 (v:npobj1)"  # untouched
+
+
+def test_cascade_rename_pair_tsv_updates_position_b(tmp_path):
+    p = _make_pair_tsv(tmp_path, [
+        {"Element_A": "NP", "Position_A": "5 (v:npsubj1)", "Position_B": "34 (v:npobj1)",
+         "Direction": "forward", "reflexive_allowed": "y"},
+    ])
+    changed = _cascade_rename_pair_tsv(p, {"v:npobj1": "v:obj1"})
+    assert changed == 1
+    import pandas as pd
+    df = pd.read_csv(p, sep="\t", dtype=str, keep_default_na=False)
+    assert df["Position_B"].iloc[0] == "34 (v:obj1)"
+
+
+def test_cascade_rename_pair_tsv_both_columns(tmp_path):
+    p = _make_pair_tsv(tmp_path, [
+        {"Element_A": "NP", "Position_A": "5 (v:npsubj1)", "Position_B": "34 (v:npobj1)",
+         "Direction": "forward", "reflexive_allowed": "y"},
+        {"Element_A": "VP", "Position_A": "5 (v:npsubj1)", "Position_B": "20 (v:aux)",
+         "Direction": "forward", "reflexive_allowed": "n"},
+    ])
+    changed = _cascade_rename_pair_tsv(p, {"v:npsubj1": "v:subj1", "v:npobj1": "v:obj1"})
+    assert changed == 3  # 2 Position_A cells + 1 Position_B cell
+
+
+def test_cascade_rename_pair_tsv_no_match(tmp_path):
+    p = _make_pair_tsv(tmp_path, [
+        {"Element_A": "NP", "Position_A": "5 (v:npsubj1)", "Position_B": "34 (v:npobj1)",
+         "Direction": "forward", "reflexive_allowed": "y"},
+    ])
+    changed = _cascade_rename_pair_tsv(p, {"v:other": "v:new"})
+    assert changed == 0
+
+
+def test_cascade_rename_pair_tsv_missing_file(tmp_path):
+    missing = tmp_path / "nonexistent.tsv"
+    assert _cascade_rename_pair_tsv(missing, {"v:old": "v:new"}) == 0
+
+
+def test_count_pair_rename_impacts(tmp_path):
+    p = _make_pair_tsv(tmp_path, [
+        {"Element_A": "NP", "Position_A": "5 (v:npsubj1)", "Position_B": "34 (v:npobj1)",
+         "Direction": "forward", "reflexive_allowed": "y"},
+        {"Element_A": "VP", "Position_A": "5 (v:npsubj1)", "Position_B": "20 (v:aux)",
+         "Direction": "forward", "reflexive_allowed": "n"},
+    ])
+    assert _count_pair_rename_impacts(p, {"v:npsubj1": "v:subj1"}) == 2
+    assert _count_pair_rename_impacts(p, {"v:npsubj1": "v:subj1", "v:npobj1": "v:obj1"}) == 3
+    assert _count_pair_rename_impacts(p, {"v:other": "v:new"}) == 0

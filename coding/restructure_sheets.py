@@ -47,9 +47,12 @@ Authentication: same OAuth2 setup as generate_sheets.py.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
+
+import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -307,6 +310,172 @@ def _compute_stats(
 
 
 # ---------------------------------------------------------------------------
+# Pair-row cascade rename helpers (for coreference and similar classes)
+# ---------------------------------------------------------------------------
+
+_PAIR_POS_COLS = ("Position_A", "Position_B")
+
+
+def _parse_position_cell(cell: str) -> Optional[Tuple[int, str]]:
+    """Parse '5 (v:npsubj1)' → (5, 'v:npsubj1'). Returns None on failure."""
+    m = re.match(r"^(\d+)\s+\((.+)\)\s*$", cell.strip())
+    if m:
+        return int(m.group(1)), m.group(2)
+    return None
+
+
+def _apply_rename_to_position_cell(
+    cell: str, rename_map: Dict[str, str]
+) -> Tuple[str, bool]:
+    """Apply rename_map to a combined position cell. Returns (new_cell, changed)."""
+    parsed = _parse_position_cell(cell)
+    if parsed is None:
+        return cell, False
+    num, name = parsed
+    new_name = rename_map.get(name, name)
+    if new_name == name:
+        return cell, False
+    return f"{num} ({new_name})", True
+
+
+def _get_pair_row_constructions() -> Dict[str, Set[str]]:
+    """Return {class_name: {construction_name}} for all pair-row constructions."""
+    from .schemas import load_diagnostic_classes
+    dc = load_diagnostic_classes()
+    result: Dict[str, Set[str]] = {}
+    for cls in dc.get("classes", []):
+        pair_cons = {
+            con["name"]
+            for con in (cls.get("constructions") or [])
+            if isinstance(con, dict) and con.get("row_type") == "pair_rows"
+        }
+        if pair_cons:
+            result[cls["name"]] = pair_cons
+    return result
+
+
+def _count_pair_rename_impacts(tsv_path: Path, rename_map: Dict[str, str]) -> int:
+    """Count how many Position_A/Position_B cells in a local TSV would be renamed."""
+    if not tsv_path.exists():
+        return 0
+    df = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
+    return sum(
+        1
+        for col in _PAIR_POS_COLS
+        if col in df.columns
+        for val in df[col]
+        if _apply_rename_to_position_cell(val, rename_map)[1]
+    )
+
+
+def _cascade_rename_pair_tsv(tsv_path: Path, rename_map: Dict[str, str]) -> int:
+    """Update position name components in Position_A/Position_B cells of a local TSV.
+
+    Parses each combined 'N (name)' cell and replaces the name component when it
+    appears in rename_map.  Returns the count of cell values changed.
+    """
+    if not tsv_path.exists():
+        return 0
+    df = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
+    changed = 0
+    for col in _PAIR_POS_COLS:
+        if col not in df.columns:
+            continue
+        for i, val in df[col].items():
+            new_val, did_change = _apply_rename_to_position_cell(val, rename_map)
+            if did_change:
+                df.at[i, col] = new_val
+                changed += 1
+    if changed:
+        df.to_csv(tsv_path, sep="\t", index=False)
+    return changed
+
+
+def _cascade_rename_pair_tab(
+    ws: gspread.Worksheet, rename_map: Dict[str, str]
+) -> int:
+    """Update position name components in Position_A/Position_B cells of a Drive tab.
+
+    Updates cells in-place via batch_update.  Returns the count of cell values changed.
+    """
+    all_values = _with_retry(lambda: ws.get_all_values())
+    if not all_values:
+        return 0
+    header = all_values[0]
+    col_indices = {col: header.index(col) for col in _PAIR_POS_COLS if col in header}
+    if not col_indices:
+        return 0
+
+    updates: List[Dict] = []
+    for row_idx, row in enumerate(all_values[1:], start=2):
+        for col_name, col_idx in col_indices.items():
+            cell_val = row[col_idx] if col_idx < len(row) else ""
+            new_val, changed = _apply_rename_to_position_cell(cell_val, rename_map)
+            if changed:
+                col_letter = gspread.utils.rowcol_to_a1(1, col_idx + 1)[:-1]
+                updates.append({"range": f"{col_letter}{row_idx}", "values": [[new_val]]})
+
+    if updates:
+        _with_retry(lambda: ws.spreadsheet.values_batch_update({
+            "valueInputOption": "RAW",
+            "data": updates,
+        }))
+    return len(updates)
+
+
+def _copy_pair_tab_with_rename(
+    old_ss: gspread.Spreadsheet,
+    new_ss: gspread.Spreadsheet,
+    tab_name: str,
+    rename_map: Dict[str, str],
+    param_names: List[str],
+    param_values: Dict[str, List[str]],
+) -> Tuple[int, int]:
+    """Copy a pair tab from old_ss to new_ss with rename_map applied to position cells.
+
+    Used when a class sheet is being archived+recreated and the class has pair
+    constructions that should be preserved (not regenerated from the planar structure).
+    Returns (rows_copied, cells_renamed).
+    """
+    try:
+        old_ws = _with_retry(lambda: old_ss.worksheet(tab_name))
+        all_values = _with_retry(lambda: old_ws.get_all_values())
+    except gspread.WorksheetNotFound:
+        all_values = []
+
+    if not all_values:
+        new_ss.add_worksheet(title=tab_name, rows=10, cols=len(param_names) + 6)
+        return 0, 0
+
+    header = all_values[0]
+    col_indices = {col: header.index(col) for col in _PAIR_POS_COLS if col in header}
+    renamed = 0
+    new_data = [header]
+    for row in all_values[1:]:
+        new_row = list(row)
+        for col_name, col_idx in col_indices.items():
+            if col_idx < len(new_row):
+                new_val, changed = _apply_rename_to_position_cell(new_row[col_idx], rename_map)
+                if changed:
+                    new_row[col_idx] = new_val
+                    renamed += 1
+        new_data.append(new_row)
+
+    try:
+        ws = _with_retry(lambda: new_ss.worksheet(tab_name))
+        ws.clear()
+    except gspread.WorksheetNotFound:
+        ws = new_ss.add_worksheet(
+            title=tab_name, rows=len(new_data) + 2, cols=len(header) + 2
+        )
+
+    ws.update(new_data, "A1")
+    per_col = [param_values.get(p, ["y", "n"]) for p in param_names]
+    _format_and_validate(ws, len(new_data) - 1, per_col, col_start=4)
+    return len(new_data) - 1, renamed
+
+
+# ---------------------------------------------------------------------------
 # Class rename helpers
 # ---------------------------------------------------------------------------
 
@@ -557,6 +726,8 @@ def main() -> None:
         raise SystemExit("No planar_*.tsv found in coded_data/*/lang_setup/")
 
     any_changes = False
+    pair_row_constructions = _get_pair_row_constructions()
+    restructured_classes: Set[Tuple[str, str]] = set()
 
     # --rename-class pass: runs before the main restructure loop so the manifest
     # reflects the new class names when the main loop processes each language.
@@ -630,9 +801,21 @@ def main() -> None:
                     all_annotations[construction] = {}
                     print(f"    [{construction}] tab not found")
 
-            # Step 2: Compute and report stats per tab; decide if this class needs restructuring
+            # Step 2: Compute and report stats per tab; decide if this class needs restructuring.
+            # Pair-row constructions (coreference) are excluded from the element-criterion
+            # restructure path and are reported separately.
             class_needs_restructure = False
             for construction, param_names, param_values in constructions_list:
+                if construction in pair_row_constructions.get(class_name, set()):
+                    if rename_map:
+                        tsv_path = CODED_DATA / lang_id / class_name / f"{construction}.tsv"
+                        n_cells = _count_pair_rename_impacts(tsv_path, rename_map)
+                        if n_cells:
+                            print(f"    [{construction}] (pair tab) rename {n_cells} position cell(s)")
+                            any_changes = True
+                        else:
+                            print(f"    [{construction}] (pair tab) no position renames needed")
+                    continue
                 rows = _build_rows(element_index, lang_id, param_names)
                 existing = all_annotations.get(construction, {})
                 carried, renamed, new_count, dropped = _compute_stats(rows, existing, rename_map, element_rename_map)
@@ -678,6 +861,20 @@ def main() -> None:
             new_construction_params = {}
 
             for construction, param_names, param_values in constructions_list:
+                if construction in pair_row_constructions.get(class_name, set()):
+                    # Pair-row constructions are copied from the archived sheet with
+                    # rename_map applied to Position_A/Position_B cells; they are not
+                    # regenerated from the planar structure.
+                    rows_copied, cells_renamed = _copy_pair_tab_with_rename(
+                        ss, new_ss, construction, rename_map, param_names, param_values
+                    )
+                    tab_names.append(construction)
+                    new_construction_params[construction] = {
+                        "param_names": param_names,
+                        "param_values": param_values,
+                    }
+                    print(f"    [{construction}] (pair tab) copied {rows_copied} rows, {cells_renamed} cell(s) renamed")
+                    continue
                 rows = _build_rows(element_index, lang_id, param_names)
                 existing = all_annotations.get(construction, {})
                 carried, new_count, dropped_count = _write_tab_with_carryover(
@@ -694,6 +891,8 @@ def main() -> None:
             if default_ws.title not in tab_names:
                 new_ss.del_worksheet(default_ws)
 
+            restructured_classes.add((lang_id, class_name))
+
             # Step 5: Update manifest
             manifest[lang_id]["sheets"][class_name] = {
                 "spreadsheet_id": new_ss.id,
@@ -703,6 +902,40 @@ def main() -> None:
                 "version": new_version,
             }
             print(f"    New sheet (v{new_version}): {new_ss.url}")
+
+    # Cascade rename to pair tabs that were NOT covered by the archive+recreate path
+    # (i.e., the class sheet was unchanged except for position name cells in pair tabs).
+    # For classes that WERE archived+recreated, _copy_pair_tab_with_rename already
+    # handled the Drive sheet; we still update local TSVs for those classes here.
+    if rename_map and pair_row_constructions:
+        for planar_file in planar_files:
+            lang_id = _infer_language_id_from_planar_filename(planar_file.name)
+            lang_data = manifest.get(lang_id, {})
+            for class_name, pair_cons in pair_row_constructions.items():
+                sheet_info = lang_data.get("sheets", {}).get(class_name)
+                for construction in sorted(pair_cons):
+                    tsv_path = CODED_DATA / lang_id / class_name / f"{construction}.tsv"
+                    if apply:
+                        tsv_changed = _cascade_rename_pair_tsv(tsv_path, rename_map)
+                        if tsv_changed:
+                            print(
+                                f"\n  [{lang_id} {class_name}/{construction}]"
+                                f" local TSV: updated {tsv_changed} position cell(s)"
+                            )
+                    if apply and (lang_id, class_name) not in restructured_classes:
+                        if not sheet_info:
+                            continue
+                        ss_pair = _open_spreadsheet(gc, sheet_info["spreadsheet_id"])
+                        try:
+                            ws = _with_retry(lambda: ss_pair.worksheet(construction))
+                            sheet_changed = _cascade_rename_pair_tab(ws, rename_map)
+                            if sheet_changed:
+                                print(
+                                    f"  [{lang_id} {class_name}/{construction}]"
+                                    f" Drive tab: updated {sheet_changed} position cell(s)"
+                                )
+                        except gspread.WorksheetNotFound:
+                            pass
 
     if apply:
         # Update local manifest (gitignored reference copy)
