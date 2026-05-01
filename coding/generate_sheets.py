@@ -28,6 +28,7 @@ Authentication (OAuth2 — recommended for personal Google accounts):
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -1142,12 +1143,76 @@ def _create_analysis_sheet(
 # Construction regeneration (--regen-construction / --regen-dependents)
 # ---------------------------------------------------------------------------
 
+def _parse_pos_cell(cell: str) -> Optional[Tuple[int, str]]:
+    """Parse a combined position cell '5 (v:npsubj1)' → (5, 'v:npsubj1').
+
+    Returns None if the cell value does not match the expected format.
+    Used for position-number remapping when the planar structure is renumbered.
+    """
+    m = re.match(r"^(\d+)\s+\((.+)\)\s*$", cell.strip())
+    if m:
+        return int(m.group(1)), m.group(2)
+    return None
+
+
+def _remap_coreference_prefill(
+    existing: Dict[Tuple[str, str, str], Dict[str, str]],
+    pos_num_remap: Dict[int, int],
+    new_pairs: List[List[str]],
+) -> Dict[Tuple[str, str, str], Dict[str, str]]:
+    """Remap old coreference annotation keys to new keys after position renumbering.
+
+    When the planar structure is renumbered (positions inserted/deleted), the
+    combined Position_B cells in the stored annotations carry old position numbers.
+    This function translates old keys (elem_a, old_pos_b_str, old_direction) to new
+    keys (elem_a, new_pos_b_str, new_direction) so that prefill lookup succeeds.
+
+    The new direction is taken from the freshly generated pair list (which has already
+    computed direction from the updated position numbers), so direction is correctly
+    updated even when both pos_a and pos_b shift.
+
+    Args:
+        existing:      annotation dict keyed by (Element_A, Position_B, Direction).
+        pos_num_remap: {old_pos_num: new_pos_num} — typically derived from a planar diff.
+        new_pairs:     freshly generated pair rows [[elem_a, pos_a_str, pos_b_str, dir], ...].
+
+    Returns:
+        New annotation dict with remapped keys.  Entries whose Position_B number is not
+        in pos_num_remap are kept with their original key (safe fallback).
+    """
+    if not pos_num_remap:
+        return existing
+
+    # Build lookup: (elem_a, new_pos_b_num) → new_direction from generated pairs.
+    pair_direction: Dict[Tuple[str, int], str] = {}
+    for pair in new_pairs:
+        elem_a, _pos_a_str, pos_b_str, direction = pair
+        parsed = _parse_pos_cell(pos_b_str)
+        if parsed:
+            pair_direction[(elem_a, parsed[0])] = direction
+
+    remapped: Dict[Tuple[str, str, str], Dict[str, str]] = {}
+    for (elem_a, pos_b_str, old_direction), vals in existing.items():
+        parsed = _parse_pos_cell(pos_b_str)
+        if parsed is None or parsed[0] not in pos_num_remap:
+            remapped[(elem_a, pos_b_str, old_direction)] = vals
+            continue
+        old_pos_b_num, pos_b_name = parsed
+        new_pos_b_num = pos_num_remap[old_pos_b_num]
+        new_pos_b_str = f"{new_pos_b_num} ({pos_b_name})"
+        new_direction = pair_direction.get((elem_a, new_pos_b_num), old_direction)
+        remapped[(elem_a, new_pos_b_str, new_direction)] = vals
+
+    return remapped
+
+
 def _regen_construction(
     gc: gspread.Client,
     lang_id: str,
     class_name: str,
     construction_name: str,
     manifest_class_info: dict,
+    pos_num_remap: Optional[Dict[int, int]] = None,
 ) -> None:
     """Regenerate a dependent construction tab in an existing spreadsheet.
 
@@ -1162,6 +1227,11 @@ def _regen_construction(
         class_name:           analysis class (e.g. 'nonpermutability').
         construction_name:    dependent construction to regenerate (e.g. 'general').
         manifest_class_info:  the sheet entry from the manifest for this class.
+        pos_num_remap:        optional {old_pos_num: new_pos_num} for carrying over
+                              annotations when position numbers have shifted (e.g. after
+                              a position was inserted or deleted in the planar).  Pass via
+                              --pos-remap old:new on the CLI.  Only applies to coreference
+                              pair constructions; ignored for nonpermutability.
     """
     spreadsheet_id = manifest_class_info.get("spreadsheet_id")
     if not spreadsheet_id:
@@ -1215,6 +1285,11 @@ def _regen_construction(
     else:
         pairs = _build_nonperm_pairs(element_index, lang_id, pos_type, keystone_active=ka)
         pairs = _filter_nonperm_pairs_by_prescreening(pairs, lang_id)
+
+    # For coreference pair tabs, remap old annotation keys when position numbers
+    # have shifted (e.g. after a planar insertion/deletion).
+    if class_name == "coreference" and pos_num_remap:
+        existing = _remap_coreference_prefill(existing, pos_num_remap, pairs)
 
     if class_name == "coreference":
         # Key: (elem_a, pos_b_str, direction)
@@ -1446,6 +1521,27 @@ def main() -> None:
         lang_idx = sys.argv.index("--lang") if "--lang" in sys.argv else -1
         lang_filter = sys.argv[lang_idx + 1] if lang_idx >= 0 else None
 
+        # --pos-remap OLD_NUM:NEW_NUM (repeatable) — for renumbered positions.
+        pos_num_remap: Dict[int, int] = {}
+        argv = sys.argv[:]
+        i = 0
+        while i < len(argv):
+            if argv[i] == "--pos-remap" and i + 1 < len(argv):
+                pair = argv[i + 1]
+                if ":" not in pair:
+                    raise SystemExit("--pos-remap requires 'old_num:new_num' format")
+                old_s, new_s = pair.split(":", 1)
+                try:
+                    pos_num_remap[int(old_s.strip())] = int(new_s.strip())
+                except ValueError:
+                    raise SystemExit(f"--pos-remap values must be integers, got: {pair!r}")
+                i += 2
+            else:
+                i += 1
+
+        if pos_num_remap:
+            print(f"Position number remap: {pos_num_remap}")
+
         print("Connecting to Google APIs...")
         gc, drive = _get_clients()
         config = _load_drive_config()
@@ -1461,7 +1557,8 @@ def main() -> None:
                 print(f"  {lang_id}/{class_name}: not in manifest — skipping")
                 continue
             print(f"\n{lang_id}/{class_name}/{construction_name}")
-            _regen_construction(gc, lang_id, class_name, construction_name, cls_info)
+            _regen_construction(gc, lang_id, class_name, construction_name, cls_info,
+                                pos_num_remap=pos_num_remap or None)
         return
 
     # --regen-dependents

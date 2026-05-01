@@ -20,8 +20,10 @@ from coding.generate_sheets import (
     _build_nonperm_pairs,
     _check_force_against_existing_sheets,
     _filter_nonperm_pairs_by_prescreening,
+    _parse_pos_cell,
     _prefill_free_occurrence_rows,
     _regen_dependents_simple,
+    _remap_coreference_prefill,
 )
 
 
@@ -396,3 +398,102 @@ class TestRegenDependentsSimple:
         with patch.object(_gs, "_regen_construction") as mock_regen:
             _regen_dependents_simple(MagicMock(), {})  # empty manifest
         mock_regen.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# _parse_pos_cell
+# ---------------------------------------------------------------------------
+
+class TestParsePosCell:
+    def test_typical(self):
+        assert _parse_pos_cell("5 (v:npsubj1)") == (5, "v:npsubj1")
+
+    def test_large_number(self):
+        assert _parse_pos_cell("34 (v:npobj1)") == (34, "v:npobj1")
+
+    def test_name_with_colon(self):
+        assert _parse_pos_cell("12 (v:obj:dative)") == (12, "v:obj:dative")
+
+    def test_plain_number_fails(self):
+        assert _parse_pos_cell("5") is None
+
+    def test_no_parens_fails(self):
+        assert _parse_pos_cell("5 v:npsubj1") is None
+
+    def test_empty_fails(self):
+        assert _parse_pos_cell("") is None
+
+    def test_strips_whitespace(self):
+        assert _parse_pos_cell("  7 (v:aux)  ") == (7, "v:aux")
+
+
+# ---------------------------------------------------------------------------
+# _remap_coreference_prefill
+# ---------------------------------------------------------------------------
+
+def _make_pairs(*rows):
+    """Build a new_pairs list from (elem_a, pos_a_str, pos_b_str, direction) tuples."""
+    return [list(r) for r in rows]
+
+
+class TestRemapCoreferencePreFill:
+    def test_empty_remap_returns_existing_unchanged(self):
+        existing = {("NP", "34 (v:npobj1)", "forward"): {"reflexive_allowed": "y"}}
+        result = _remap_coreference_prefill(existing, {}, [])
+        assert result == existing
+
+    def test_basic_remap_updates_pos_b_number(self):
+        existing = {("NP", "34 (v:npobj1)", "forward"): {"reflexive_allowed": "y"}}
+        new_pairs = _make_pairs(("NP", "5 (v:npsubj1)", "35 (v:npobj1)", "forward"))
+        result = _remap_coreference_prefill(existing, {34: 35}, new_pairs)
+        assert ("NP", "35 (v:npobj1)", "forward") in result
+        assert ("NP", "34 (v:npobj1)", "forward") not in result
+
+    def test_remap_preserves_annotation_values(self):
+        existing = {("NP", "34 (v:npobj1)", "forward"): {"reflexive_allowed": "y"}}
+        new_pairs = _make_pairs(("NP", "5 (v:npsubj1)", "35 (v:npobj1)", "forward"))
+        result = _remap_coreference_prefill(existing, {34: 35}, new_pairs)
+        assert result[("NP", "35 (v:npobj1)", "forward")] == {"reflexive_allowed": "y"}
+
+    def test_remap_preserves_name_component(self):
+        existing = {("NP", "34 (v:npobj1)", "forward"): {"reflexive_allowed": "n"}}
+        new_pairs = _make_pairs(("NP", "5 (v:npsubj1)", "35 (v:npobj1)", "forward"))
+        result = _remap_coreference_prefill(existing, {34: 35}, new_pairs)
+        key = ("NP", "35 (v:npobj1)", "forward")
+        assert key in result
+        # Name component preserved, only number changed
+        assert "v:npobj1" in key[1]
+
+    def test_remap_updates_direction_from_new_pairs(self):
+        # pos_a=5 → 35, pos_b=34 → 3: direction flips forward→backward
+        existing = {("NP", "34 (v:npobj1)", "forward"): {"reflexive_allowed": "y"}}
+        new_pairs = _make_pairs(("NP", "35 (v:npsubj1)", "3 (v:npobj1)", "backward"))
+        result = _remap_coreference_prefill(existing, {34: 3}, new_pairs)
+        assert ("NP", "3 (v:npobj1)", "backward") in result
+
+    def test_unmapped_position_kept_as_is(self):
+        existing = {("NP", "34 (v:npobj1)", "forward"): {"reflexive_allowed": "y"}}
+        new_pairs = _make_pairs(("NP", "5 (v:npsubj1)", "34 (v:npobj1)", "forward"))
+        # pos 34 not in remap → unchanged
+        result = _remap_coreference_prefill(existing, {99: 100}, new_pairs)
+        assert ("NP", "34 (v:npobj1)", "forward") in result
+
+    def test_multiple_remaps(self):
+        existing = {
+            ("NP", "5 (v:npsubj1)",  "forward"): {"reflexive_allowed": "y"},
+            ("VP", "34 (v:npobj1)", "backward"): {"reflexive_allowed": "n"},
+        }
+        new_pairs = _make_pairs(
+            ("NP", "1 (v:start)", "6 (v:npsubj1)",  "forward"),
+            ("VP", "1 (v:start)", "35 (v:npobj1)", "backward"),
+        )
+        result = _remap_coreference_prefill(existing, {5: 6, 34: 35}, new_pairs)
+        assert ("NP", "6 (v:npsubj1)",  "forward")  in result
+        assert ("VP", "35 (v:npobj1)", "backward") in result
+        assert ("NP", "5 (v:npsubj1)",  "forward")  not in result
+        assert ("VP", "34 (v:npobj1)", "backward") not in result
+
+    def test_unparseable_cell_kept_as_is(self):
+        existing = {("NP", "bad-cell", "forward"): {"reflexive_allowed": "y"}}
+        result = _remap_coreference_prefill(existing, {5: 6}, [])
+        assert ("NP", "bad-cell", "forward") in result
