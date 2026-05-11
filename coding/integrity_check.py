@@ -8,7 +8,7 @@ Runs six sections of checks and prints a structured report:
   CODEBOOK CONSISTENCY    — cross-checks diagnostics TSVs against schema files
   ANALYSIS CONSISTENCY    — validates analysis modules match diagnostic_criteria.yaml
   CROSS-SHEET CONSISTENCY — checks free values agree across related annotation sheets
-  ANNOTATION SHEETS       — checks live sheet structure (requires --sheets)
+  ANNOTATION SHEETS       — checks live sheet structure and dropdown drift (requires --sheets)
   NEEDS REVIEW            — surfaces [NEEDS REVIEW] / [PLACEHOLDER] markers
 
 Exit code 0 if no errors; 1 if any errors (warnings do not fail).
@@ -262,6 +262,66 @@ def _section_analysis(codebook: dict) -> Tuple[int, int]:
     return len(errs_req) + len(errs_keys), 0
 
 
+def _stale_manifest_param_values(
+    manifest: dict,
+    lang_ids: List[str],
+) -> List[Tuple[str, str, str, dict, dict]]:
+    """Return (lang_id, class_name, construction, stored, fresh) for param_values mismatches.
+
+    Compares the allowed-value lists stored in the Drive manifest against what
+    the current diagnostics YAML would produce.  No Sheet API calls.
+    """
+    from .refresh_dropdowns import _fresh_param_values, _coreference_pair_criterion_map
+    from .make_forms import _read_diagnostics_for_language
+
+    try:
+        coref_pair_map = _coreference_pair_criterion_map()
+    except Exception:
+        return []
+
+    results = []
+    for lang_id in lang_ids:
+        sheets_info = manifest.get(lang_id, {}).get("sheets", {})
+        if not sheets_info:
+            continue
+
+        lang_setup_dir = CODED_DATA / lang_id / "lang_setup"
+        if not lang_setup_dir.exists():
+            continue
+
+        try:
+            diag_rows = _read_diagnostics_for_language(lang_id, lang_setup_dir)
+        except Exception:
+            continue
+
+        class_criteria_map: dict = {}
+        for cls, _con, _crit_names, crit_values in diag_rows:
+            if cls not in class_criteria_map:
+                class_criteria_map[cls] = crit_values
+
+        for class_name, sheet_info in sheets_info.items():
+            cp_map = sheet_info.get("construction_params", {})
+            class_criteria = class_criteria_map.get(class_name, {})
+
+            for construction in sheet_info.get("constructions", []):
+                if construction == "Status":
+                    continue
+                cp = cp_map.get(construction, {})
+                param_names = cp.get("param_names", [])
+                if not param_names:
+                    continue
+
+                fresh = _fresh_param_values(
+                    lang_id, class_name, construction,
+                    param_names, class_criteria, coref_pair_map,
+                )
+                stored = cp.get("param_values", {})
+                if fresh != stored:
+                    results.append((lang_id, class_name, construction, stored, fresh))
+
+    return results
+
+
 def _stale_manifest_classes(manifest: dict, lang_ids: List[str]) -> List[Tuple[str, str]]:
     """Return (lang_id, class_name) pairs that are in the manifest but absent from diagnostics.
 
@@ -352,6 +412,15 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
         for _, stale_cls in _stale_manifest_classes(manifest, [lang_id]):
             print(_warn(f"{lang} · {stale_cls}  —  in manifest but not in diagnostics"))
             print(_sub(f"→ run: python -m coding prune-manifest --apply"))
+            total_w += 1
+
+        # Check for stale param_values (criterion allowed-value lists).
+        for _, stale_cls, stale_con, stored, fresh in _stale_manifest_param_values(manifest, [lang_id]):
+            print(_warn(f"{lang} · {stale_cls} · {stale_con}  —  param_values out of sync with YAML"))
+            for param in sorted(fresh):
+                if stored.get(param) != fresh[param]:
+                    print(_sub(f"{param}: stored={stored.get(param)!r}  →  fresh={fresh[param]!r}"))
+            print(_sub("→ run: python -m coding refresh-dropdowns --apply"))
             total_w += 1
 
         for class_name, sheet_info in sorted(sheets_info.items()):
