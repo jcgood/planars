@@ -150,7 +150,7 @@ tinyhtml5==2.1.0
     # via weasyprint
 uritemplate==4.2.0
     # via google-api-python-client
-urllib3==2.6.3
+urllib3==2.7.0
     # via requests
 virtualenv==21.2.0
     # via pre-commit
