@@ -113,7 +113,7 @@ def _apply_hashes(wanted: dict[str, str], current: dict[str, str | None]) -> Non
                     if key.startswith("qualification_rule_hash:"):
                         # Replace the existing hash value
                         hash_inserted = True
-                        out.append(f"{'  ' * (qr_block_indent // 2)}    qualification_rule_hash: \"{expected}\"\n")
+                        out.append(f"{' ' * qr_block_indent}qualification_rule_hash: \"{expected}\"\n")
                         i += 1
                         continue
                     else:
