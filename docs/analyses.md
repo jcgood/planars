@@ -117,7 +117,7 @@ Some analyses (stress, aspiration) use a **blocked span** instead: expand from t
 | `pausing` | `pause_domain` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
 | `idiom` | `idiomatic` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
 | `play_language` | `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
-| `proform` | `substitutable` | 4 (strict/loose × complete/partial) | [NEEDS REVIEW] ¶ |
+| `proform` | `shareable_proform_replace` | 4 (strict/loose × complete/partial) | [NEEDS REVIEW] ¶ |
 
 **Status key:** `stable` — confirmed and coordinator-approved. `[AUTO-DERIVED]` — diagnostic criterion design derived from reading Tallman et al. 2024; not yet coordinator-approved. `[NEEDS REVIEW]` — specific known concerns beyond AUTO-DERIVED. Only a coordinator should promote a module out of AUTO-DERIVED status.
 
@@ -200,6 +200,23 @@ Four spans are derived per construction:
 Asymmetry outputs (binder-only, bindee-only, shared positions) approximate c-command without presupposing tree structure.
 
 Annotate `prescreening` before generating pair sheets; `--regen-construction coreference:<construction>` regenerates any pair sheet filtered to referential elements.
+
+### Proform
+
+Tests which spans can be replaced by a proform (pro-verb/pro-VP, e.g. "do so"). The first construction is `do_so_substitution`; `vp_ellipsis` (same logic, same criterion) is deferred until Adam is ready to annotate.
+
+**Two-tier qualification rule** — `shareable_proform_replace` takes three values:
+
+- `y` — element is always inside the proform span (strictly qualifies)
+- `both` — element is optionally inside the span (adjunct-style; loosely qualifies)
+- `n` — element is never inside the span
+
+A position **strictly qualifies** (complete) when ALL elements = `y`. A position **loosely qualifies** (partial) when ANY element = `y` or `both`. Standard strict/loose × complete/partial span computation then applies on top:
+
+- **Strict complete span** — contiguous from keystone through positions where all elements = `y` (Adam's "strict replaceable" span)
+- **Loose partial span** — farthest position on each side where any element = `y` or `both` (Adam's "loose replaceable" span)
+
+**Known limitation:** the "do so" test cannot detect discontinuous constituencies (e.g. "John drank tea in Leipzig on Tuesday and Balthasar did so too in Zurich" — the discontinuous span in brackets is not captured). This is a recognized limitation of the test in the constituency literature and does not affect how planars records results.
 
 ### Biuniqueness
 

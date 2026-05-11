@@ -6,7 +6,7 @@ from typing import Dict, Optional, Tuple
 from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, loose_span, position_sets_from_element_mask
 
-_REQUIRED_CRITERIA = {"substitutable"}
+_REQUIRED_CRITERIA = {"shareable_proform_replace"}
 
 
 def derive_proform_domains(
@@ -17,34 +17,35 @@ def derive_proform_domains(
 ) -> Dict[str, object]:
     """Derive proform substitution domains from a filled proform TSV.
 
-    [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design was automatically derived from
-    the description in Tallman et al. 2024 (langsci/291), Discussion ch. 17 only —
-    no concrete language data was reviewed. Diagnostic criterion design is speculative.
-    Verify thoroughly before use.
+    [NEEDS REVIEW] Criterion design confirmed by Adam Tallman (May 2026);
+    not yet validated against annotation data.
 
     The proform domain identifies the span of positions that can be replaced
-    by a proform (pronoun, pro-verb, pro-VP, etc.). An element is substitutable
-    if a proform can stand in for it — i.e., the element's position falls
-    within the span that the proform substitutes for. Classified as a
+    by a proform (pro-verb, pro-VP, e.g. "do so"). Classified as a
     morphosyntactic domain type (Tallman et al. 2024).
 
-    A position is complete if ALL its elements are substitutable
-    (substitutable=y). A position is partial if AT LEAST ONE element is
-    (substitutable=y).
+    Two-tier qualification rule
+    ---------------------------
+    shareable_proform_replace=y    → element strictly qualifies
+    shareable_proform_replace=both → element loosely qualifies (adjunct-style:
+                                     optionally inside or outside the "do so" span)
+    shareable_proform_replace=n    → element does not qualify
+
+    A position strictly qualifies (complete) when ALL elements = y.
+    A position loosely qualifies (partial) when ANY element = y or both.
+
+    Strict span uses complete positions; loose span uses partial positions
+    (which subsumes complete).
 
     Four span variants (strict/loose × complete/partial) = 4 spans total.
 
-    Diagnostic criterion
-    --------------------
-    substitutable : y/n — whether a proform can replace this element / whether
-                    this element's position is within the proform substitution
-                    domain.
-
     Qualification rule (mirrors diagnostic_classes.yaml)
     ----------------------------------------------------
-    A position qualifies if it contains an element where substitutable=y. Complete
-    qualification: ALL elements have substitutable=y. Partial qualification: at
-    least one element has substitutable=y.
+    Two-tier qualification. Strict (complete) qualification: ALL elements in the
+    position have shareable_proform_replace=y. Loose (partial) qualification: at
+    least one element has shareable_proform_replace=y or shareable_proform_replace=both.
+    Positions where all elements are n do not qualify. Strict span uses complete
+    positions; loose span uses partial positions (which subsumes complete).
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
     missing_data, complete_positions, partial_positions, and four span keys.
@@ -56,15 +57,18 @@ def derive_proform_domains(
 
     missing_data = {}
     if not strict:
-        blank_els = data_df.loc[data_df["substitutable"] == "", "Element"].tolist()
+        blank_els = data_df.loc[data_df["shareable_proform_replace"] == "", "Element"].tolist()
         if blank_els:
-            missing_data["substitutable"] = blank_els
+            missing_data["shareable_proform_replace"] = blank_els
 
-    data_df["is_substitutable"] = data_df["substitutable"] == "y"
+    # Strict (complete) qualification: element always replaceable
+    is_strong = data_df["shareable_proform_replace"] == "y"
 
-    partial_positions, complete_positions = position_sets_from_element_mask(
-        data_df, data_df["is_substitutable"]
-    )
+    # Loose (partial) qualification: element always or optionally replaceable
+    is_weak = data_df["shareable_proform_replace"].isin(["y", "both"])
+
+    _, complete_positions = position_sets_from_element_mask(data_df, is_strong)
+    partial_positions, _ = position_sets_from_element_mask(data_df, is_weak)
 
     return {
         "keystone_position": keystone_pos,
@@ -96,8 +100,8 @@ def format_result(result: Dict[str, object]) -> str:
     lines += [
         f"Keystone position: {result['keystone_position']} ({p.get(result['keystone_position'], '?')})",
         "",
-        f"Proform substitution complete positions: {result['complete_positions']}",
-        f"Proform substitution partial positions:  {result['partial_positions']}",
+        f"Proform substitution complete positions (all elements y):   {result['complete_positions']}",
+        f"Proform substitution partial positions  (any element y/both): {result['partial_positions']}",
         "",
         f"Strict complete proform span: {fmt(result['strict_complete_span'])}",
         f"Loose complete proform span:  {fmt(result['loose_complete_span'])}",

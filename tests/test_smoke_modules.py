@@ -111,7 +111,7 @@ _MODULES = [
       "strict_partial_span",  "loose_partial_span"}),
 
     ("planars.proform",          "derive_proform_domains",
-     ["substitutable"],
+     ["shareable_proform_replace"],
      {"strict_complete_span", "loose_complete_span",
       "strict_partial_span",  "loose_partial_span"}),
 

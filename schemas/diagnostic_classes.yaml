@@ -440,20 +440,22 @@ classes:
       etc.) that can replace a contiguous span within the verbal planar structure. The
       proform domain is the span the proform substitutes for.
     specificity: construction_specific
-    required_criteria: [substitutable]
+    required_criteria: [shareable_proform_replace]
     optional_criteria: []
+    known_constructions: [do_so_substitution, vp_ellipsis]
     qualification_rule: >
-      A position qualifies if it contains an element where substitutable=y. Complete
-      qualification: ALL elements have substitutable=y. Partial qualification: at
-      least one element has substitutable=y.
-    qualification_rule_hash: "8dd2b0d4"
-    criterion_set_status: "[PROVISIONAL]"  # Class itself is [NEEDS REVIEW]; criterion set
-      # may need refinement once real annotation data exists. Proform type (pronoun,
-      # pro-verb, pro-VP) may warrant a criterion distinguishing substitution scope.
+      Two-tier qualification. Strict (complete) qualification: ALL elements in the
+      position have shareable_proform_replace=y. Loose (partial) qualification: at
+      least one element has shareable_proform_replace=y or shareable_proform_replace=both.
+      Positions where all elements are n do not qualify. Strict span uses complete
+      positions; loose span uses partial positions (which subsumes complete).
+    qualification_rule_hash: "4f6689ff"
+    criterion_set_status: "[NEEDS REVIEW]"  # Criterion design confirmed by Adam Tallman
+      # (May 2026); not yet validated against annotation data.
     status: "[NEEDS REVIEW]"  # Ch. 17 line 543 explicitly states proform was NOT included in
     # the published database: "There are other tests that have not yet been included in the
-    # database (e.g. proform replacement)." No evidence in 10 reviewed language chapters.
-    # Prospective class — applicable only where proform substitution can be elicited.
+    # database (e.g. proform replacement)." Criterion design confirmed; annotation for
+    # stan1293 do_so_substitution in progress.
     keystone_active_default: false
     collection_required: "y"
 

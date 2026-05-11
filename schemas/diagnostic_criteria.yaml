@@ -343,21 +343,18 @@ analyses:
 
   - name: proform
     description: >
-      [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design was automatically derived from
-      the description in Tallman et al. 2024 (langsci/291), Discussion ch. 17 only —
-      no concrete language data was reviewed. Diagnostic criterion design is speculative.
-      Verify thoroughly before use.
-
-      Tests which spans can be replaced by a proform (pronoun, pro-verb, pro-VP,
-      etc.). The proform domain is the span that the proform substitutes for.
-      Classified as a morphosyntactic domain type (Tallman et al. 2024, discussion
-      ch. 17).
+      [NEEDS REVIEW] Tests which spans can be replaced by a proform (pro-verb/pro-VP,
+      e.g. "do so"). The proform domain is the span the proform substitutes for.
+      Criterion design confirmed by Adam Tallman (May 2026). Classified as a
+      morphosyntactic domain type (Tallman et al. 2024, discussion ch. 17).
     diagnostic_criteria:
-      - name: substitutable
-        values: [y, n]
+      - name: shareable_proform_replace
+        values: [y, n, both]
         description: >
-          Whether a proform can replace elements at this position — i.e., whether
-          this position falls within the span the proform substitutes for.
+          Whether a proform can replace this element. y = always replaceable (element's
+          position is always within the proform span); n = never replaceable; both =
+          optionally replaceable (e.g. adjuncts that may or may not be included in the
+          "do so" span).
 
   - name: play_language
     description: >
