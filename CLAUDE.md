@@ -177,7 +177,7 @@ Criteria default to `[y, n]`; non-default values are listed explicitly in the YA
 
 `python -m coding sync-diagnostics-yaml` regenerates TSVs from all YAMLs (dry-run; `--apply` to write; `--lang` to restrict). `--from-tsv` diffs a TSV against the YAML and categorises changes as deterministic (auto-applied) or ambiguous (written to `diagnostics_drift.json`). When `import-sheets` downloads a changed diagnostics TSV it runs this diff automatically; ambiguous results appear in the daily `diagnostics-drift` GitHub issue if any are found.
 
-`python -m coding generate-sheets` applies per-column dropdown validation and appends a free-text `Comments` column to every tab. `python -m coding import-sheets` validates each criterion against its allowed set (always also accepts `na` and `?`) and passes Comments through unchanged.
+`python -m coding generate-sheets` applies per-column dropdown validation and appends a free-text `Comments` column to every tab. `python -m coding import-sheets` validates each criterion against its allowed set (always also accepts `na`, `?`, and `untestable`) and passes Comments through unchanged.
 
 `python -m coding update-sheets` brings existing sheets up to date when new elements are added to the planar structure. Always dry-run first.
 

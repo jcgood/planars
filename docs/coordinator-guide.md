@@ -197,15 +197,18 @@ At the start of each run, the current Drive manifest is backed up to `manifest_b
 
 Collaborators fill in values in the shared Google Sheets. See the [Collaborator guide](collaborator-guide.md). Keystone rows (`v:verbstem`) are pre-filled with `NA` and should not be changed.
 
-**Blank / `?` / `NA` semantics** — these three values are distinct and should not be used interchangeably:
+**Blank / `?` / `NA` / `untestable` semantics** — these four values are distinct and should not be used interchangeably:
 
 | Value | Meaning | Import behavior |
 |-------|---------|-----------------|
 | blank | Not yet annotated — annotator has not examined this element | Warning on import; excluded from span computations |
 | `?` | Uncertain — source was consulted but answer could not be determined | Warning on import; excluded from span computations |
-| `NA` | Not applicable — keystone row only (`v:verbstem`) | Silently accepted; keystone excluded from span expansion by design |
+| `NA` | Not applicable — criterion inapplicable by design for this position | Silently accepted; excluded from span computations |
+| `untestable` | Untestable — the required construction cannot appear for independent reasons | Silently accepted; excluded from span computations |
 
 The blank/`?` distinction matters for data quality: a `?` is a positive annotation of uncertainty ("I looked and could not decide"), while a blank means the cell has not been filled. Both are flagged on import, but they are semantically different — especially for cross-database comparison.
+
+The `NA`/`untestable` distinction also matters: `NA` means the criterion is inapplicable *by design* for that position (e.g. the keystone), whereas `untestable` means annotation was *attempted* but the required construction cannot appear for independent grammatical reasons. `untestable` appears in every criterion dropdown; `NA` does not (annotators type it manually for keystone rows).
 
 When a construction is complete, the collaborator sets its row in the **Status tab** to `ready-for-review`. This signals to the coordinator that the construction is ready to import.
 

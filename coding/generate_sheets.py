@@ -1010,6 +1010,7 @@ def _format_and_validate(
     ]
     for col_offset, values in enumerate(param_values):
         col_idx = col_start + col_offset
+        dropdown_values = list(values) + ["untestable"]
         requests.append({
             "setDataValidation": {
                 "range": {
@@ -1022,7 +1023,7 @@ def _format_and_validate(
                 "rule": {
                     "condition": {
                         "type": "ONE_OF_LIST",
-                        "values": [{"userEnteredValue": v} for v in values],
+                        "values": [{"userEnteredValue": v} for v in dropdown_values],
                     },
                     "showCustomUi": True,
                     "strict": False,
