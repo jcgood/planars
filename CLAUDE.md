@@ -54,6 +54,7 @@ python -m coding validate-coding          # re-validate + update pink highlights
 python -m coding sync-params              # sync criterion columns (--apply, --rename, --split, --merge, --remove)
 python -m coding update-sheets            # add missing rows/columns (--apply)
 python -m coding restructure-sheets       # archive + regenerate after planar changes (--apply, --rename-map, --rename-element, --rename-class)
+python -m coding refresh-dropdowns        # refresh criterion dropdown validation on existing sheets (--apply, --lang)
 python -m coding prune-manifest           # archive retired class TSVs and remove stale manifest entries (--apply, --all)
 
 # Collaborator notes
