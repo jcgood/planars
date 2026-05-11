@@ -474,21 +474,21 @@ analyses:
           y = element is referential; n = element is not referential.
           Elements with n are excluded from all pair-row sheets.
       - name: reflexive_allowed
-        values: [y, n]
+        values: [y, n, untestable]
         description: >
           Pair-row criterion (reflexivization construction; Principle A). Whether a reflexive
           in Element_B's position can be bound by an antecedent in Element_A's position.
           y = reflexive binding holds for this antecedent-anaphor pair.
           n = reflexive binding does not hold for this pair.
       - name: pronoun_allowed
-        values: [y, n]
+        values: [y, n, untestable]
         description: >
           Pair-row criterion (pronominalization construction; Principle B). Whether a pronoun
           in Element_B's position can be coreferential with an antecedent in Element_A's position.
           y = pronominal coreference holds for this pair.
           n = pronominal coreference does not hold for this pair.
       - name: np_allowed
-        values: [y, n]
+        values: [y, n, untestable]
         description: >
           Pair-row criterion (np_reference construction; Principle C). Whether a full NP
           in Element_B's position can be coreferential with an antecedent in Element_A's position.
@@ -501,7 +501,7 @@ analyses:
 
 # Machine-readable set of values always accepted by validate_coding.py,
 # regardless of per-criterion allowed values.
-default_allowed_values: [y, n, na, "?", untestable]
+default_allowed_values: [y, n, na, "?"]
 
 shared_values:
 

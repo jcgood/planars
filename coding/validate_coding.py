@@ -166,7 +166,7 @@ def validate_annotation_rows(
             record[param] = val
 
             allowed = (
-                {v.lower() for v in (param_values or {}).get(param, [])} | {"na", "?", "untestable"}
+                {v.lower() for v in (param_values or {}).get(param, [])} | {"na", "?"}
                 if param_values and param in param_values
                 else _DEFAULT_EXPECTED
             )
@@ -374,7 +374,7 @@ def validate_pair_rows(
             record[param] = val
 
             allowed = (
-                {v.lower() for v in (param_values or {}).get(param, [])} | {"na", "?", "untestable"}
+                {v.lower() for v in (param_values or {}).get(param, [])} | {"na", "?"}
                 if param_values and param in param_values
                 else _DEFAULT_EXPECTED
             )
