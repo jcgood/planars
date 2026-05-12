@@ -203,7 +203,7 @@ Annotate `prescreening` before generating pair sheets; `--regen-construction cor
 
 ### Proform
 
-Tests which spans can be replaced by a proform (pro-verb/pro-VP, e.g. "do so"). The first construction is `do_so_substitution`; `vp_ellipsis` (same logic, same criterion) is deferred until Adam is ready to annotate.
+Tests which spans can be replaced by a proform (pro-verb/pro-VP, e.g. "do so"). Two constructions: `do_so_substitution` and `vp_ellipsis` (same logic, same criterion `shareable_proform_replace`).
 
 **Two-tier qualification rule** — `shareable_proform_replace` takes three values:
 

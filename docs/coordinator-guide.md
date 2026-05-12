@@ -208,7 +208,7 @@ Collaborators fill in values in the shared Google Sheets. See the [Collaborator 
 
 The blank/`?` distinction matters for data quality: a `?` is a positive annotation of uncertainty ("I looked and could not decide"), while a blank means the cell has not been filled. Both are flagged on import, but they are semantically different — especially for cross-database comparison.
 
-The `NA`/`untestable` distinction also matters: `NA` means the criterion is inapplicable *by design* for that position (e.g. the keystone), whereas `untestable` means annotation was *attempted* but the required construction cannot appear for independent grammatical reasons. `untestable` appears in every criterion dropdown; `NA` does not (annotators type it manually for keystone rows).
+The `NA`/`untestable` distinction also matters: `NA` means the criterion is inapplicable *by design* for that position (e.g. the keystone), whereas `untestable` means annotation was *attempted* but the required construction cannot appear for independent grammatical reasons. `untestable` is opt-in — it appears in a criterion's dropdown only when listed in that criterion's `values` in `diagnostics_{lang_id}.yaml` (currently: coreference pair criteria). `NA` does not appear in any dropdown (annotators type it manually for keystone rows).
 
 When a construction is complete, the collaborator sets its row in the **Status tab** to `ready-for-review`. This signals to the coordinator that the construction is ready to import.
 
