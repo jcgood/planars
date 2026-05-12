@@ -66,11 +66,11 @@ def _get_current_params(ws: gspread.Worksheet) -> Tuple[List[str], int]:
     """Return (param_names, comments_col_0based) from the header row.
 
     Element-by-position tabs: Element (0), Position_Name (1), Position_Number (2) → fixed_count=3.
-    Pairs tabs (Element_A / Element_B): fixed_count=2.
+    Pair tabs: Element_A (0), Position_A (1), Position_B (2), Direction (3) → fixed_count=4.
     Param columns follow; trailing columns (Source, Comments) come last.
     """
     header = _with_retry(lambda: ws.row_values(1))
-    fixed_count = 2 if header and header[0] == "Element_A" else 3
+    fixed_count = 4 if header and header[0] == "Element_A" else 3
     params = []
     comments_col = len(header)  # default: insert at end if Comments not found
     for i in range(fixed_count, len(header)):
