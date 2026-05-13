@@ -85,7 +85,7 @@ terms:
     definition: >
       A construction in which a contiguous subspan of the planar structure occurs
       more than once (e.g. coordination, complementation, serial verb constructions).
-      Fractured into minimal (narrowscope) and maximal (widescope) versions.
+      Fractured into minimal (narrow-scope) and maximal (wide-scope) versions.
 
   - term: wide scope
     definition: >
@@ -96,7 +96,7 @@ terms:
   - term: narrow scope
     definition: >
       A property of an element confined to a single conjunct in a subspan repetition
-      construction, with no scope over repeated spans. Narrowscope elements define
+      construction, with no scope over repeated spans. Narrow-scope elements define
       the minimal subspan repetition domain.
 
   - term: non-interruption domain
