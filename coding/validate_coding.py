@@ -285,6 +285,36 @@ def _read_tsv_rows(lang_id: str, class_name: str, construction: str) -> List[Lis
     return [list(df.columns)] + df.values.tolist()
 
 
+def _check_header_sync(
+    ws,
+    lang_id: str,
+    class_name: str,
+    construction: str,
+) -> Optional[ValidationIssue]:
+    """Return a warning if the live Sheet header differs from the local TSV header.
+
+    Reads the TSV header raw (without pandas column deduplication) so that a
+    duplicate column in the Sheet shows up as a mismatch against the clean TSV,
+    catching sheet corruption before it propagates into the committed data.
+    Returns None if the TSV does not exist (already reported as missing elsewhere).
+    """
+    tsv_path = CODED_DATA / lang_id / class_name / f"{construction}.tsv"
+    if not tsv_path.exists():
+        return None
+    with tsv_path.open() as f:
+        tsv_header = f.readline().rstrip("\n").split("\t")
+    sheet_header = _with_retry(lambda: ws.row_values(1))
+    # gspread may pad with trailing empty strings for empty cells; trim to TSV width.
+    sheet_header = sheet_header[:len(tsv_header)]
+    if sheet_header != tsv_header:
+        return ValidationIssue(
+            "warning", construction,
+            f"live Sheet header differs from local TSV — "
+            f"Sheet: {sheet_header}, TSV: {tsv_header}",
+        )
+    return None
+
+
 def revalidate_sheet(
     ws,
     lang_id: str,
@@ -545,6 +575,9 @@ def main() -> None:
                             keystone_active=ka,
                             keystone_na_criteria=kna,
                         )
+                    header_issue = _check_header_sync(ws, lang_id, class_name, construction)
+                    if header_issue:
+                        issues = [header_issue] + issues
                 except FileNotFoundError as e:
                     print(f"  [{class_name}/{construction}] ERROR: {e}")
                     total_missing += 1
