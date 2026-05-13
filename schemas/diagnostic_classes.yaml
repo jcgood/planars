@@ -137,7 +137,7 @@ classes:
       - asyndetic clause combination   # e.g., Mocoví
       - asyndetic verb-verb linkage    # complement clause juxtaposition; e.g., Mixtec AVVL
       # Overt coordinators
-      - and-coordination               # e.g., Araona, Mixtec ta, Chorote jla'yi ti/ka
+      - and-coordination               # e.g., Araona, Mixtec ta, Chorote jla'yi ti/ka; subsumes right-node raising (RNR), which is recoded as and-coordination
       - or-coordination                # e.g., Mixtec an, Chorote ni'ne ti/ka
       - and-then clause linkage        # e.g., Mocoví kan
       - syndetic coordination          # overt coordinator; e.g., Chatino lóʔō
