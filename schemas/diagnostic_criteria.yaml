@@ -349,12 +349,13 @@ analyses:
       morphosyntactic domain type (Tallman et al. 2024, discussion ch. 17).
     diagnostic_criteria:
       - name: shareable_proform_replace
-        values: [y, n, both]
+        values: [y, n, both, unclear]
         description: >
           Whether a proform can replace this element. y = always replaceable (element's
           position is always within the proform span); n = never replaceable; both =
           optionally replaceable (e.g. adjuncts that may or may not be included in the
-          "do so" span).
+          "do so" span); unclear = applicability of the test to this position is
+          uncertain at this time.
 
   - name: play_language
     description: >
@@ -539,6 +540,17 @@ shared_values:
       to the domain being probed). Distinct from NA (criterion inapplicable by
       design) and from "?" (annotator uncertain). A positive annotation act.
       Excluded from span computations.
+
+  - value: "unclear"
+    meaning: >
+      Unclear applicability — it is uncertain whether the test can apply to
+      this position at this time. Distinct from "untestable" (which is a
+      confident negative judgment about applicability) and from "?"
+      (which means the test was attempted but the answer is indeterminate).
+      Indicates that the applicability question itself is unresolved, not just
+      the answer. May become resolvable with more data or analysis. Excluded
+      from span computations. Opt-in: must be listed in a criterion's values
+      to be accepted during validation.
 
   - value: ""
     meaning: >

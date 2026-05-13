@@ -543,7 +543,9 @@ def main() -> None:
             }
             for con_name, crit in _pair_crit.items():
                 if con_name in expected["coreference"]:
-                    expected["coreference"][con_name] = ([crit], {crit: ["y", "n"]})
+                    orig_values = expected["coreference"][con_name][1]
+                    crit_values = orig_values.get(crit, ["y", "n"])
+                    expected["coreference"][con_name] = ([crit], {crit: crit_values})
             if "prescreening" in expected["coreference"]:
                 expected["coreference"]["prescreening"] = (
                     ["referential"], {"referential": ["y", "n"]}
