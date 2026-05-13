@@ -3,7 +3,6 @@ English Nonpermutability General
 
 NOTE: Some pairs have unannotated scopal values.
   scopal: ['AD-S × AD-VP', 'AD-S × KEYSTONE', 'AD-S × can', 'AD-S × could', 'AD-S × may'] … (23 total)
-  scopal.1: ['AD-S × AD-VP', 'AD-S × KEYSTONE', 'AD-S × can', 'AD-S × could', 'AD-S × may'] … (23 total)
 
 Keystone position: 30 (v:verbstem)
 

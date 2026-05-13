@@ -57,6 +57,13 @@ from .generate_sheets import CODED_DATA, _TRAILING_COLS
 
 _TRAILING_SET = set(_TRAILING_COLS)
 
+# Structural columns that are never param columns, across all sheet types.
+# Element-by-position: Element, Position_Name, Position_Number.
+# Nonpermutability pairs: Element_A, Element_B.
+# Coreference pairs: Element_A, Position_A, Position_B, Direction.
+_STRUCTURAL_SET = {"Element", "Position_Name", "Position_Number",
+                   "Element_A", "Element_B", "Position_A", "Position_B", "Direction"}
+
 
 # ---------------------------------------------------------------------------
 # Sheet introspection
@@ -65,19 +72,21 @@ _TRAILING_SET = set(_TRAILING_COLS)
 def _get_current_params(ws: gspread.Worksheet) -> Tuple[List[str], int]:
     """Return (param_names, comments_col_0based) from the header row.
 
-    Element-by-position tabs: Element (0), Position_Name (1), Position_Number (2) → fixed_count=3.
-    Pair tabs: Element_A (0), Position_A (1), Position_B (2), Direction (3) → fixed_count=4.
-    Param columns follow; trailing columns (Source, Comments) come last.
+    Param columns are those that are neither structural nor trailing — identified
+    by exclusion rather than by a fixed positional offset. This handles both
+    nonpermutability pair sheets (Element_A, Element_B — 2 fixed cols) and
+    coreference pair sheets (Element_A, Position_A, Position_B, Direction — 4
+    fixed cols) without needing to distinguish between them.
     """
     header = _with_retry(lambda: ws.row_values(1))
-    fixed_count = 4 if header and header[0] == "Element_A" else 3
     params = []
     comments_col = len(header)  # default: insert at end if Comments not found
-    for i in range(fixed_count, len(header)):
-        if header[i] in _TRAILING_SET:
+    for i, col in enumerate(header):
+        if col in _TRAILING_SET:
             comments_col = i
             break
-        params.append(header[i])
+        if col not in _STRUCTURAL_SET:
+            params.append(col)
     return params, comments_col
 
 
