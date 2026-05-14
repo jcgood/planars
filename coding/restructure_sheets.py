@@ -48,7 +48,9 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
+from datetime import date
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -716,6 +718,45 @@ def _parse_flag_map(argv: List[str], flag: str) -> Dict[str, str]:
     return result
 
 
+def _autocommit_tsvs(tsv_paths: List[Path], lang_ids: List[str]) -> None:
+    """Commit and push newly written TSVs to planars-data (coded_data/)."""
+    if not tsv_paths:
+        return
+    rel_paths = [str(p.relative_to(CODED_DATA)) for p in tsv_paths]
+    langs = ", ".join(sorted(set(lang_ids)))
+    msg = f"data: restructure {langs} TSVs after planar changes {date.today().isoformat()}"
+
+    print(f"\n--- Committing {len(tsv_paths)} TSV(s) to planars-data ---")
+    add = subprocess.run(
+        ["git", "-C", str(CODED_DATA), "add"] + rel_paths,
+        capture_output=True, text=True,
+    )
+    if add.returncode != 0:
+        print(f"  WARNING: git add failed: {add.stderr.strip()}")
+        return
+
+    commit = subprocess.run(
+        ["git", "-C", str(CODED_DATA), "commit", "-m", msg],
+        capture_output=True, text=True,
+    )
+    if commit.returncode != 0:
+        if "nothing to commit" in commit.stdout:
+            print("  TSVs unchanged — nothing to commit.")
+        else:
+            print(f"  WARNING: git commit failed: {commit.stderr.strip()}")
+        return
+    print(f"  {commit.stdout.splitlines()[0]}")
+
+    push = subprocess.run(
+        ["git", "-C", str(CODED_DATA), "push"],
+        capture_output=True, text=True,
+    )
+    if push.returncode != 0:
+        print(f"  WARNING: git push failed: {push.stderr.strip()}")
+    else:
+        print(f"  pushed planars-data")
+
+
 def main() -> None:
     """Entry point for `python -m coding restructure-sheets`.
 
@@ -750,6 +791,7 @@ def main() -> None:
         raise SystemExit("No planar_*.tsv found in coded_data/*/lang_setup/")
 
     any_changes = False
+    written_tsvs: List[Path] = []
     pair_row_constructions = _get_pair_row_constructions()
     restructured_classes: Set[Tuple[str, str]] = set()
 
@@ -907,6 +949,7 @@ def main() -> None:
                     new_ss, construction, param_names, param_values, rows, existing,
                     rename_map, element_rename_map, tsv_path=tsv_path,
                 )
+                written_tsvs.append(tsv_path)
                 tab_names.append(construction)
                 new_construction_params[construction] = {
                     "param_names": param_names,
@@ -950,6 +993,7 @@ def main() -> None:
                     if apply:
                         tsv_changed = _cascade_rename_pair_tsv(tsv_path, rename_map)
                         if tsv_changed:
+                            written_tsvs.append(tsv_path)
                             print(
                                 f"\n  [{lang_id} {class_name}/{construction}]"
                                 f" local TSV: updated {tsv_changed} position cell(s)"
@@ -1001,6 +1045,7 @@ def main() -> None:
         print("\n--- Revalidating sheets ---")
         from .validate_coding import revalidate_sheets
         revalidate_sheets(lang_ids=processed_lang_ids)
+        _autocommit_tsvs(written_tsvs, processed_lang_ids)
 
 
 if __name__ == "__main__":
