@@ -69,6 +69,9 @@ jobs:
         #   lang_setup/diagnostics_*  — derived artifacts regenerated from YAML
         #     by sync-diagnostics-yaml; coordinator intent lives in the YAML, not
         #     the TSV, so a refresh updating the TSV is correct, not an overwrite.
+        #   lang_setup/planar_*       — planar TSVs are imported from the planar
+        #     Google Sheet by import-planar; the Sheet is the source of truth, so
+        #     a refresh updating the TSV is correct, not an overwrite.
         id: pre_import
         working-directory: coded_data
         run: |
@@ -78,15 +81,71 @@ jobs:
             git diff --name-only "$LAST_BOT" HEAD \
               | grep -v "^notes_state\.json$" \
               | grep -v "lang_setup/diagnostics_" \
+              | grep -v "lang_setup/planar_" \
               > /tmp/human_committed_files.txt || true
           else
             git ls-files \
               | grep -v "^notes_state\.json$" \
               | grep -v "lang_setup/diagnostics_" \
+              | grep -v "lang_setup/planar_" \
               > /tmp/human_committed_files.txt || true
           fi
           echo "Human-committed files at risk of overwrite:"
           cat /tmp/human_committed_files.txt || echo "(none)"
+
+      - name: Import planar from Google Sheets
+        id: import_planar
+        run: python -m coding import-planar --apply > /tmp/planar_report.txt 2>&1
+        continue-on-error: true
+
+      - name: Build and file planar-changed issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 << 'PYEOF'
+          import json, os
+          from pathlib import Path
+
+          changes_file = Path("/tmp/planar_changes.json")
+          if not changes_file.exists():
+              exit(0)
+          changes = json.loads(changes_file.read_text())
+          if not changes:
+              exit(0)
+
+          lines = [
+              "## Planar structure changed\n\n",
+              "One or more language planars were updated from Google Sheets. "
+              "Annotation sheets need to be updated to match.\n",
+          ]
+          for lang_id, info in changes.items():
+              lines.append(f"\n### {lang_id}\n\n")
+              diff = info["diff"]
+              for n, name in diff.get("added", {}).items():
+                  lines.append(f"- `+` position {n} (`{name}`) — added\n")
+              for n, name in diff.get("deleted", {}).items():
+                  lines.append(f"- `-` position {n} (`{name}`) — removed\n")
+              for n, pair in diff.get("renamed", {}).items():
+                  lines.append(f"- `~` position {n}: `{pair[0]}` → `{pair[1]}`\n")
+              if not any([diff.get("added"), diff.get("deleted"), diff.get("renamed")]):
+                  lines.append("- (content-only changes — elements, examples, or notes)\n")
+              lines.append(f"\n**Command to run:**\n```\n{info['recommendation']}\n```\n")
+          lines.append(
+              "\nClose this issue after running the recommended command "
+              "and verifying annotation sheets are up to date.\n"
+          )
+          Path("/tmp/planar_changed_body.md").write_text("".join(lines))
+          PYEOF
+
+          if [ -f /tmp/planar_changed_body.md ]; then
+            bash .github/scripts/manage_issue.sh file planar-changed \
+              "Planar structure changed — annotation sheets need updating ($(date -u +%Y-%m-%d))" \
+              /tmp/planar_changed_body.md
+          elif [ "${{ steps.import_planar.outcome }}" = "success" ]; then
+            bash .github/scripts/manage_issue.sh close planar-changed \
+              "No planar changes detected on $(date -u +%Y-%m-%d) — closing."
+          fi
 
       - name: Import annotation data from Google Sheets
         id: import_sheets

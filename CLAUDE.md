@@ -47,6 +47,8 @@ Full command reference with flags: [docs/coordinator-guide.md](docs/coordinator-
 python -m coding generate-sheets          # create annotation sheets (--force blocked if sheets exist)
 python -m coding import-sheets            # dry run: show what would be written
 python -m coding import-sheets --apply    # download filled sheets → TSVs (--overwrite-existing to re-download)
+python -m coding import-planar            # dry run: show planar spreadsheet changes vs local TSV
+python -m coding import-planar --apply    # download planar spreadsheet → planar_{lang}.tsv
 python -m coding apply-pending            # review destructive changes written by import-sheets
 python -m coding validate-coding          # re-validate + update pink highlights (--lang for one)
 
@@ -294,6 +296,7 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 | `import-error` | Filed by `data-refresh.yml` when `import-sheets --apply` exits non-zero. Issue body contains the failure output. Auto-closed when import succeeds. |
 | `codebook-error` | Filed by `data-refresh.yml` (and CI on every push) when `check-codebook` finds schema inconsistencies. Auto-closed when check passes. |
 | `data-overwrite` | Filed by `data-refresh.yml` when human commits appear overwritten by today's Sheet import. Check `git log`/`git show` in planars-data to verify. Auto-closed when clean. |
+| `planar-changed` | Filed by `data-refresh.yml` when a language's planar spreadsheet differs from the local TSV. Resolve: run the command in the issue body (`update-sheets --apply` for additions, `restructure-sheets --pos-remap ... --apply` for renumbering). Close manually after verifying sheets are up to date. |
 | `stale-manifest` | Filed by `data-refresh.yml` when manifest entries have no matching class in `diagnostics_{lang}.yaml`. Resolve: `prune-manifest --apply`. Auto-closed when clean. |
 | `integrity-error` | Filed by `data-refresh.yml` when `integrity-check` detects errors. Run `integrity-check` locally for details. Auto-closed when clean. |
 | `dependent-stale` | Filed by `data-refresh.yml` when a dependent construction (e.g. nonpermutability `general`) is out of sync with its source (e.g. `element_prescreening`). Resolve: `generate-sheets --lang LANG --regen-construction CLASS:CONSTRUCTION`. Auto-closed when in sync. |

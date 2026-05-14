@@ -23,6 +23,7 @@ Commands:
     prune-manifest               Archive retired class TSVs and remove stale manifest entries
     check-notes                  Check collaborator notes docs for new content and file issues
     refresh-dropdowns            Refresh criterion dropdown validation on existing sheets
+    import-planar                Download planar spreadsheet from Drive and sync to local TSV
 
 Each command accepts the same flags as the original script. Use --help on any
 command for details, or see CLAUDE.md.
@@ -53,6 +54,7 @@ _COMMANDS = {
     "prune-manifest":              "coding.prune_manifest",
     "check-notes":                 "coding.check_notes",
     "refresh-dropdowns":           "coding.refresh_dropdowns",
+    "import-planar":               "coding.import_planar",
 }
 
 
