@@ -6,9 +6,9 @@ NOTE: Some pairs have unannotated scopal values.
 
 Keystone position: 30 (v:verbstem)
 
-Strictly non-permutable positions (structural): [2, 5, 12, 27, 34]
+Strictly non-permutable positions (structural): [2, 5, 12, 27]
 Free-permutable positions (scopal=n pairs):     []
 
 Strict non-permutable span:           positions 30–30  (v:verbstem → v:verbstem)
-Minimal flexible non-permutable span: positions 1–37  (v:leftedge → v:rightedge)
-Maximal flexible non-permutable span: positions 1–37  (v:leftedge → v:rightedge)
+Minimal flexible non-permutable span: positions 1–38  (v:leftedge → v:rightedge)
+Maximal flexible non-permutable span: positions 1–38  (v:leftedge → v:rightedge)

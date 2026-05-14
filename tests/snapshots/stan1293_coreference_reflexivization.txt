@@ -3,14 +3,14 @@ English Coreference Reflexivization
 
 Keystone position: 30 (v:verbstem)
 
-Binder positions (antecedent): [2, 5, 33]
+Binder positions (antecedent): [2, 5, 34]
 Bindee positions (anaphor):    [33, 34]
 
 Binder-only positions (structurally high): [2, 5]
-Bindee-only positions (structurally low):  [34]
-Shared positions (either role):            [33]
+Bindee-only positions (structurally low):  [33]
+Shared positions (either role):            [34]
 
 Binder domain (strict): positions 30–30  (v:verbstem → v:verbstem)
-Binder domain (loose):  positions 2–33  (v:frontedXP → v:obj-part)
+Binder domain (loose):  positions 2–34  (v:frontedXP → v:obj-part)
 Bindee domain (strict): positions 30–30  (v:verbstem → v:verbstem)
-Bindee domain (loose):  positions 30–34  (v:verbstem → v:rec)
+Bindee domain (loose):  positions 30–34  (v:verbstem → v:obj-part)

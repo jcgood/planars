@@ -13,4 +13,4 @@ Shared positions (either role):            []
 Binder domain (strict): positions 30–30  (v:verbstem → v:verbstem)
 Binder domain (loose):  positions 27–30  (v:nominal → v:verbstem)
 Bindee domain (strict): positions 30–30  (v:verbstem → v:verbstem)
-Bindee domain (loose):  positions 30–33  (v:verbstem → v:obj-part)
+Bindee domain (loose):  positions 30–33  (v:verbstem → v:obj-R)
