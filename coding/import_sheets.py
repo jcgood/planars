@@ -1144,6 +1144,12 @@ def main() -> None:
             for cmd in sorted(all_safe_cmds):
                 print(f"  {cmd}")
 
+    if apply and (total_files > 0 or in_progress_files > 0):
+        print("\n--- Revalidating sheets ---")
+        from .validate_coding import revalidate_sheets
+        lang_ids = [lang_filter] if lang_filter else None
+        revalidate_sheets(lang_ids=lang_ids)
+
 
 if __name__ == "__main__":
     main()
