@@ -156,7 +156,7 @@ analyses:
           versus "[pick] the ball [up]".
 
       - name: independence
-        values: [y, n]
+        values: [y, n, na]
         description: >
           Whether the element's stress is independent of the keystone. Can be
           operationalized as: can this element be accented when the keystone is
@@ -234,7 +234,7 @@ analyses:
           noninterruption edit). See issue #99.
 
       - name: left-edge-of-free-form
-        values: [y, n]
+        values: [y, n, na]
         description: >
           Whether this element can be the first element in an utterance that is a
           single free form (i.e., the minimal free occurrence domain can begin here).
@@ -243,7 +243,7 @@ analyses:
           receive n; free elements that can begin a standalone utterance receive y.
 
       - name: right-edge-of-free-form
-        values: [y, n]
+        values: [y, n, na]
         description: >
           Whether this element can be the last element in an utterance that is a
           single free form (i.e., the minimal free occurrence domain can end here).
