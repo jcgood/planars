@@ -135,6 +135,7 @@ def import_planar(lang_ids: list[str] | None = None, apply: bool = False) -> lis
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
 
     all_changes: dict[str, dict] = {}
+    written_files: list[Path] = []
 
     for lang_id, lang_cfg in cfg.items():
         if lang_id.startswith("_"):
@@ -190,9 +191,16 @@ def import_planar(lang_ids: list[str] | None = None, apply: bool = False) -> lis
             print(f"  archived → archive/lang_setup/{archived.name}")
             new_df.to_csv(tsv_path, sep="\t", index=False)
             print(f"  wrote planar_{lang_id}.tsv")
+            written_files.extend([tsv_path, archived])
 
     if apply and all_changes:
         Path("/tmp/planar_changes.json").write_text(json.dumps(all_changes, indent=2))
+        from .drive import _autocommit_data
+        langs = ", ".join(sorted(all_changes.keys()))
+        _autocommit_data(
+            written_files,
+            f"data: import planar for {langs} from Google Sheets {datetime.now(timezone.utc).date().isoformat()}",
+        )
     elif not apply and all_changes:
         print("\nDry run — rerun with --apply to write changes.")
 

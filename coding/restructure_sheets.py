@@ -48,7 +48,6 @@ from __future__ import annotations
 
 import json
 import re
-import subprocess
 import sys
 from datetime import date
 from pathlib import Path
@@ -66,6 +65,7 @@ from .make_forms import (
     _read_diagnostics_for_language,
 )
 from .drive import (
+    _autocommit_data,
     _get_clients, _move_to_folder, _share_anyone_with_link, _open_spreadsheet,
     _load_manifest_from_drive, _upload_planars_config, _load_drive_config, _save_drive_config,
     _with_retry,
@@ -718,44 +718,6 @@ def _parse_flag_map(argv: List[str], flag: str) -> Dict[str, str]:
     return result
 
 
-def _autocommit_tsvs(tsv_paths: List[Path], lang_ids: List[str]) -> None:
-    """Commit and push newly written TSVs to planars-data (coded_data/)."""
-    if not tsv_paths:
-        return
-    rel_paths = [str(p.relative_to(CODED_DATA)) for p in tsv_paths]
-    langs = ", ".join(sorted(set(lang_ids)))
-    msg = f"data: restructure {langs} TSVs after planar changes {date.today().isoformat()}"
-
-    print(f"\n--- Committing {len(tsv_paths)} TSV(s) to planars-data ---")
-    add = subprocess.run(
-        ["git", "-C", str(CODED_DATA), "add"] + rel_paths,
-        capture_output=True, text=True,
-    )
-    if add.returncode != 0:
-        print(f"  WARNING: git add failed: {add.stderr.strip()}")
-        return
-
-    commit = subprocess.run(
-        ["git", "-C", str(CODED_DATA), "commit", "-m", msg],
-        capture_output=True, text=True,
-    )
-    if commit.returncode != 0:
-        if "nothing to commit" in commit.stdout:
-            print("  TSVs unchanged — nothing to commit.")
-        else:
-            print(f"  WARNING: git commit failed: {commit.stderr.strip()}")
-        return
-    print(f"  {commit.stdout.splitlines()[0]}")
-
-    push = subprocess.run(
-        ["git", "-C", str(CODED_DATA), "push"],
-        capture_output=True, text=True,
-    )
-    if push.returncode != 0:
-        print(f"  WARNING: git push failed: {push.stderr.strip()}")
-    else:
-        print(f"  pushed planars-data")
-
 
 def main() -> None:
     """Entry point for `python -m coding restructure-sheets`.
@@ -1045,7 +1007,11 @@ def main() -> None:
         print("\n--- Revalidating sheets ---")
         from .validate_coding import revalidate_sheets
         revalidate_sheets(lang_ids=processed_lang_ids)
-        _autocommit_tsvs(written_tsvs, processed_lang_ids)
+        langs = ", ".join(sorted(set(processed_lang_ids)))
+        _autocommit_data(
+            written_tsvs,
+            f"data: restructure {langs} TSVs after planar changes {date.today().isoformat()}",
+        )
 
 
 if __name__ == "__main__":

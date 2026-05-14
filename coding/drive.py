@@ -15,9 +15,10 @@ import io
 import json
 import os
 import re
+import subprocess
 import time
 from pathlib import Path
-from typing import Callable, Dict, TypeVar
+from typing import Callable, Dict, List, TypeVar
 
 import gspread
 from googleapiclient.discovery import build as google_build
@@ -355,3 +356,51 @@ def _append_to_notes_doc(docs, doc_id: str, text: str) -> None:
             ]
         },
     ).execute()
+
+
+# ---------------------------------------------------------------------------
+# planars-data git helper
+# ---------------------------------------------------------------------------
+
+CODED_DATA = ROOT / "coded_data"
+
+
+def _autocommit_data(paths: List[Path], message: str) -> None:
+    """Stage the given paths in coded_data/, commit, and push to planars-data.
+
+    Called by import-planar and restructure-sheets after writing local TSVs
+    so that planars-data stays in sync and the pre-push hook on planars passes.
+    """
+    if not paths:
+        return
+    rel_paths = [str(p.relative_to(CODED_DATA)) for p in paths]
+    print(f"\n--- Committing {len(paths)} file(s) to planars-data ---")
+
+    add = subprocess.run(
+        ["git", "-C", str(CODED_DATA), "add"] + rel_paths,
+        capture_output=True, text=True,
+    )
+    if add.returncode != 0:
+        print(f"  WARNING: git add failed: {add.stderr.strip()}")
+        return
+
+    commit = subprocess.run(
+        ["git", "-C", str(CODED_DATA), "commit", "-m", message],
+        capture_output=True, text=True,
+    )
+    if commit.returncode != 0:
+        if "nothing to commit" in commit.stdout:
+            print("  files unchanged — nothing to commit.")
+        else:
+            print(f"  WARNING: git commit failed: {commit.stderr.strip()}")
+        return
+    print(f"  {commit.stdout.splitlines()[0]}")
+
+    push = subprocess.run(
+        ["git", "-C", str(CODED_DATA), "push"],
+        capture_output=True, text=True,
+    )
+    if push.returncode != 0:
+        print(f"  WARNING: git push failed: {push.stderr.strip()}")
+    else:
+        print("  pushed planars-data")
