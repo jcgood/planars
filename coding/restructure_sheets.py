@@ -213,6 +213,7 @@ def _write_tab_with_carryover(
     existing: Dict[Tuple[str, str], Dict[str, str]],
     rename_map: Dict[str, str],
     element_rename_map: Dict[str, str] = {},
+    tsv_path: Optional[Path] = None,
 ) -> Tuple[int, int, int]:
     """Create/clear a tab and populate it, carrying over matching annotations.
 
@@ -254,6 +255,11 @@ def _write_tab_with_carryover(
     # Count existing annotations that were not matched by any row in the new structure.
     # These correspond to positions/elements that were removed from the planar file.
     dropped = sum(1 for k in existing if k not in reachable_old_keys)
+
+    if tsv_path is not None:
+        tsv_path.parent.mkdir(parents=True, exist_ok=True)
+        header = all_rows[0]
+        pd.DataFrame(all_rows[1:], columns=header).to_csv(tsv_path, sep="\t", index=False)
 
     try:
         ws = _with_retry(lambda: spreadsheet.worksheet(tab_name))
@@ -896,9 +902,10 @@ def main() -> None:
                     continue
                 rows = _build_rows(element_index, lang_id, param_names)
                 existing = all_annotations.get(construction, {})
+                tsv_path = CODED_DATA / lang_id / class_name / f"{construction}.tsv"
                 carried, new_count, dropped_count = _write_tab_with_carryover(
                     new_ss, construction, param_names, param_values, rows, existing,
-                    rename_map, element_rename_map,
+                    rename_map, element_rename_map, tsv_path=tsv_path,
                 )
                 tab_names.append(construction)
                 new_construction_params[construction] = {
