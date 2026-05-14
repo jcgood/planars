@@ -104,7 +104,7 @@ def _diff_positions(old_df: pd.DataFrame, new_df: pd.DataFrame) -> dict:
 
 def _recommend(diff: dict, lang_id: str) -> str:
     if diff["deleted"] or diff["renamed"] or diff["remaps"]:
-        flags = " ".join(f"--pos-remap {o}:{n}" for o, n in diff["remaps"])
+        flags = " ".join(f"--rename-map {o}:{n}" for o, n in diff["remaps"])
         note = "  # verify remap flags before running" if diff["remaps"] else ""
         cmd = f"python -m coding restructure-sheets --lang {lang_id}"
         if flags:
