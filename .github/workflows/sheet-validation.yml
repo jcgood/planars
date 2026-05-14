@@ -122,6 +122,9 @@ jobs:
               else:
                   f.write("_(Error details could not be extracted — see full log.)_\n")
 
+              has_header_mismatch = any('header differs' in e for e in errors)
+              has_value_errors = any('header differs' not in e for e in errors)
+
               f.write("\n## What to do\n\n")
               if has_traceback:
                   f.write(
@@ -130,11 +133,21 @@ jobs:
                       "when the next scheduled validation run completes without crashing.\n"
                   )
               else:
-                  f.write(
-                      "Open the affected sheet, find the highlighted pink cells, "
-                      "and correct the values to one of the allowed options listed above. "
-                      "The issue closes automatically when the next validation run passes.\n"
-                  )
+                  if has_header_mismatch:
+                      f.write(
+                          "**Column structure mismatch:** one or more sheets have columns "
+                          "that differ from the local TSV (an extra, missing, or renamed column). "
+                          "Open the affected sheet, compare its header row to the TSV header shown "
+                          "above, and fix the column structure directly in the Sheet "
+                          "(add, delete, or rename the column as needed).\n\n"
+                      )
+                  if has_value_errors:
+                      f.write(
+                          "**Invalid cell values:** open the affected sheet, find the highlighted "
+                          "pink cells, and correct the values to one of the allowed options listed "
+                          "above.\n\n"
+                      )
+                  f.write("The issue closes automatically when the next validation run passes.\n")
               f.write("\n## Full log\n\n")
               f.write("<details><summary>Show full validation output</summary>\n\n```\n")
               f.write(text)
