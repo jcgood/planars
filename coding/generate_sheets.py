@@ -445,6 +445,10 @@ def _filter_nonperm_pairs_by_prescreening(
 
     If element_prescreening.tsv does not exist, returns the full list with a note
     reminding the coordinator to annotate element_prescreening first.
+
+    Aborts (and files a GitHub issue) if any element has divergent scopal values across
+    positions — e.g. scopal=n at one position and scopal=y at another. This is an
+    unresolved linguistics question; see issue #228.
     """
     prescreening_path = CODED_DATA / lang_id / "nonpermutability" / "element_prescreening.tsv"
     if not prescreening_path.exists():
@@ -454,6 +458,58 @@ def _filter_nonperm_pairs_by_prescreening(
         return pairs
 
     df = pd.read_csv(prescreening_path, sep="\t", dtype=str, keep_default_na=False)
+
+    # Guard: detect elements whose scopal values diverge across positions.
+    divergent = []
+    for elem, group in df.groupby("Element"):
+        vals = {v.strip() for v in group["scopal"]}
+        if "n" in vals and vals & {"y", "both"}:
+            rows = [
+                f"  {row.get('Position_Name', '?')} (pos {row.get('Position_Number', '?')}): "
+                f"scopal={row['scopal'].strip() or '(blank)'}"
+                for _, row in group.iterrows()
+            ]
+            divergent.append((elem, rows))
+
+    if divergent:
+        import subprocess as _sp
+        lines = [
+            f"[{lang_id}] `element_prescreening` has element(s) with divergent `scopal` values "
+            f"across positions (e.g. `scopal=n` at one position, `scopal=y` or `both` at another). "
+            f"Pair generation cannot proceed until this is resolved. See issue #228 for context.\n",
+            "**Affected elements:**",
+        ]
+        for elem, rows in divergent:
+            lines.append(f"\n**{elem}**")
+            lines.extend(rows)
+        lines += [
+            "",
+            "**Action required:** Decide whether `scopal` is a property of an element globally "
+            "or per position, update `element_prescreening` accordingly, then re-run:",
+            f"`python -m coding generate-sheets --lang {lang_id} --regen-construction nonpermutability:general`",
+        ]
+        body = "\n".join(lines)
+        body_file = ROOT / "nonperm_scopal_conflict.tmp"
+        body_file.write_text(body, encoding="utf-8")
+        try:
+            _sp.run(["gh", "auth", "status"], capture_output=True, check=True)
+            r = _sp.run(
+                ["gh", "issue", "create",
+                 "--title", f"[{lang_id}] nonpermutability: element has divergent scopal values by position",
+                 "--label", "diagnostics",
+                 "--body-file", str(body_file)],
+                capture_output=True, text=True, check=True,
+            )
+            print(f"   GitHub issue created: {r.stdout.strip()}")
+        except Exception as exc:
+            print(f"   (Could not create GitHub issue: {exc})")
+        finally:
+            body_file.unlink(missing_ok=True)
+        raise SystemExit(
+            f"  Aborting: element_prescreening for {lang_id} has elements with divergent scopal\n"
+            f"  values across positions. See the GitHub issue above and issue #228 for context."
+        )
+
     excluded = {
         row["Element"]
         for _, row in df.iterrows()
