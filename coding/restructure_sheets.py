@@ -730,11 +730,16 @@ def main() -> None:
     rename_map         = _parse_flag_map(sys.argv[1:], "--rename-map")
     element_rename_map = _parse_flag_map(sys.argv[1:], "--rename-element")
     rename_class_map   = _parse_flag_map(sys.argv[1:], "--rename-class")
+    lang_idx = sys.argv.index("--lang") if "--lang" in sys.argv else -1
+    lang_filter = sys.argv[lang_idx + 1] if lang_idx >= 0 else None
 
     gc, drive = _get_clients()
     manifest = _load_manifest_from_drive(drive)
 
     planar_files = sorted(CODED_DATA.glob("*/lang_setup/planar_*.tsv"))
+    if lang_filter:
+        planar_files = [f for f in planar_files
+                        if _infer_language_id_from_planar_filename(f.name) == lang_filter]
     if not planar_files:
         raise SystemExit("No planar_*.tsv found in coded_data/*/lang_setup/")
 
