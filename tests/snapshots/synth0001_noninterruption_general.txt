@@ -2,8 +2,8 @@ Synth0001 Noninterruption General
 =================================
 
 NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
-  free: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
-  multiple: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
+  free: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (109 total)
+  multiple: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (109 total)
 
 Keystone position: 23 (v:verbstem)
 

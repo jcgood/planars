@@ -2,9 +2,9 @@ Synth0001 Subspanrepetition That-Comp
 =====================================
 
 NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
-  fillable_botheither_conjunct: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
-  widescope_left: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
-  widescope_right: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
+  fillable_botheither_conjunct: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (109 total)
+  widescope_left: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (109 total)
+  widescope_right: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (109 total)
 
 Keystone position: 23 (v:verbstem)
 
