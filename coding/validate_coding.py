@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
 from .drive import _get_clients, _load_manifest_from_drive, _open_spreadsheet, _with_retry
-from .generate_sheets import _INSTRUCTIONS_TAB, _STATUS_TAB
+from .generate_sheets import _INSTRUCTIONS_TAB, _PLANAR_REF_TAB, _STATUS_TAB
 from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
@@ -537,7 +537,7 @@ def revalidate_sheets(
 
             for ws in _with_retry(lambda: ss.worksheets()):
                 construction = ws.title
-                if construction in (_STATUS_TAB, _INSTRUCTIONS_TAB):
+                if construction in (_STATUS_TAB, _INSTRUCTIONS_TAB, _PLANAR_REF_TAB):
                     continue
                 if class_name == "coreference" and construction in _COREFERENCE_CONSTRUCTION_PARAMS:
                     info = _COREFERENCE_CONSTRUCTION_PARAMS[construction]

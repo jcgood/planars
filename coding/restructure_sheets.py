@@ -64,6 +64,7 @@ from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
 )
+from .schemas import load_diagnostic_classes
 from .drive import (
     _autocommit_data,
     _get_clients, _move_to_folder, _share_anyone_with_link, _open_spreadsheet,
@@ -794,6 +795,32 @@ def main() -> None:
         for class_name, construction, param_names, param_values in specs:
             classes.setdefault(class_name, []).append((construction, param_names, param_values))
 
+        # Mirror the special-case criterion overrides from generate_sheets.py so that
+        # restructure produces the same param_names/param_values as initial generation.
+        _dc_classes_map = {c["name"]: c for c in load_diagnostic_classes().get("classes", [])}
+        _coreference_pair_criterion = {
+            con["name"]: con["criterion"]
+            for con in (_dc_classes_map.get("coreference", {}).get("constructions") or [])
+            if isinstance(con, dict) and "criterion" in con
+        }
+        for _cls, _cons in list(classes.items()):
+            if _cls == "nonpermutability":
+                classes[_cls] = [
+                    (c, pn, {"scopal": ["y", "n", "both"]} if c == "element_prescreening" else pv)
+                    for c, pn, pv in _cons
+                ]
+            elif _cls == "coreference":
+                _new: List[Tuple[str, List[str], Dict[str, List[str]]]] = []
+                for c, pn, pv in _cons:
+                    if c == "prescreening":
+                        _new.append((c, ["referential"], {"referential": ["y", "n"]}))
+                    elif c in _coreference_pair_criterion:
+                        crit = _coreference_pair_criterion[c]
+                        _new.append((c, [crit], {crit: pv.get(crit, ["y", "n"])}))
+                    else:
+                        _new.append((c, pn, pv))
+                classes[_cls] = _new
+
         print(f"\n{'DRY RUN — ' if not apply else ''}Language: {lang_id}")
         if rename_map:
             for old, new in rename_map.items():
@@ -938,6 +965,9 @@ def main() -> None:
                 "construction_params": new_construction_params,
                 "version": new_version,
             }
+            # Write local manifest copy immediately so it survives if a later API
+            # error prevents the final upload block from running.
+            MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
             print(f"    New sheet (v{new_version}): {new_ss.url}")
 
     # Cascade rename to pair tabs that were NOT covered by the archive+recreate path
@@ -976,12 +1006,10 @@ def main() -> None:
                             pass
 
     if apply:
-        # Update local manifest (gitignored reference copy)
+        # Update local manifest and upload to Drive.
         MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-        # Upload the merged manifest.json to Drive.
         config = _load_drive_config()
         for lid, ld in manifest.items():
-            # Ensure folder_id is present (derive from folder_url if missing).
             if "folder_id" not in ld:
                 folder_url = ld.get("folder_url", "")
                 if folder_url:
