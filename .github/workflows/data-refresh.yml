@@ -39,6 +39,7 @@ jobs:
           repository: jcgood/planars-data
           token: ${{ secrets.PLANARS_DATA_TOKEN }}
           path: coded_data
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
