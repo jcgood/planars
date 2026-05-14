@@ -476,17 +476,16 @@ def _load_param_map(lang_id: str) -> Dict[str, Dict[str, dict]]:
 # Command entry point
 # ---------------------------------------------------------------------------
 
-def main() -> None:
-    args = sys.argv[1:]
-    lang_filter = args[args.index("--lang") + 1] if "--lang" in args else None
-    verbose = "--verbose" in args
+def revalidate_sheets(
+    lang_ids: list[str] | None = None,
+    verbose: bool = False,
+) -> int:
+    """Revalidate annotation sheets for the given languages (all if None).
 
-    pending = ROOT / "pending_changes.json"
-    if pending.exists() and pending.stat().st_size > 2:
-        print("WARNING: Pending destructive changes require coordinator approval.")
-        print("         Run: python -m coding apply-pending\n")
-
-    print("Connecting to Google APIs...")
+    Returns the number of blocking issues found.  Updates pink highlighting
+    in Sheets as a side effect.  Called by restructure_sheets after --apply
+    to refresh highlighting on newly created sheets.
+    """
     gc, drive = _get_clients()
     manifest = _load_manifest_from_drive(drive)
     if not manifest:
@@ -497,7 +496,7 @@ def main() -> None:
     total_missing = 0
 
     for lang_id, lang_data in sorted(manifest.items()):
-        if lang_filter and lang_id != lang_filter:
+        if lang_ids and lang_id not in lang_ids:
             continue
 
         param_map = _load_param_map(lang_id)
@@ -614,9 +613,26 @@ def main() -> None:
         print(f"{total_missing} construction(s) skipped — no local TSV. Run `python -m coding import-sheets` first.")
     if total_blocking:
         print("Cell highlighting updated in Google Sheets.")
-        sys.exit(1)
     else:
         print("All data coding issues cleared. (Pink highlighting for blank cells preserved.)")
+    return total_blocking
+
+
+def main() -> None:
+    args = sys.argv[1:]
+    lang_filter = args[args.index("--lang") + 1] if "--lang" in args else None
+    verbose = "--verbose" in args
+
+    pending = ROOT / "pending_changes.json"
+    if pending.exists() and pending.stat().st_size > 2:
+        print("WARNING: Pending destructive changes require coordinator approval.")
+        print("         Run: python -m coding apply-pending\n")
+
+    print("Connecting to Google APIs...")
+    lang_ids = [lang_filter] if lang_filter else None
+    blocking = revalidate_sheets(lang_ids=lang_ids, verbose=verbose)
+    if blocking:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -988,6 +988,12 @@ def main() -> None:
         print("\nDone.")
         from .generate_notebooks import regenerate_notebooks
         regenerate_notebooks()
+        processed_lang_ids = [
+            _infer_language_id_from_planar_filename(f.name) for f in planar_files
+        ]
+        print("\n--- Revalidating sheets ---")
+        from .validate_coding import revalidate_sheets
+        revalidate_sheets(lang_ids=processed_lang_ids)
 
 
 if __name__ == "__main__":
