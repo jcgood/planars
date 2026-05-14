@@ -1,9 +1,12 @@
 English Free Occurrence General
 ===============================
 
+NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
+  free: ['NP{R}']
+
 Keystone position: 30 (v:verbstem)
 
-Free-occurrence-internal positions: [3, 8, 18, 22, 28, 29, 30, 31, 33]
+Free-occurrence-internal positions: [3, 8, 18, 22, 28, 29, 30, 31, 34]
 
 Minimal free occurrence span: positions 30–30  (v:verbstem → v:verbstem)
-Maximal free occurrence span: positions 3–33  (v:frontedauxiliary → v:obj-part)
+Maximal free occurrence span: positions 3–34  (v:frontedauxiliary → v:obj-part)

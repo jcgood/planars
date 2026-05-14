@@ -1,12 +1,15 @@
 English Proform Do So Substitution
 ==================================
 
+NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
+  shareable_proform_replace: ['NP{R}']
+
 Keystone position: 30 (v:verbstem)
 
 Proform substitution complete positions (all elements y):   []
-Proform substitution partial positions  (any element y/both): [3, 6, 7, 14, 16, 17, 19, 21, 23, 25, 26, 32, 33, 35, 36, 37]
+Proform substitution partial positions  (any element y/both): [3, 6, 7, 14, 16, 17, 19, 21, 23, 25, 26, 32, 34, 36, 37, 38]
 
 Strict complete proform span: positions 30–30  (v:verbstem → v:verbstem)
 Loose complete proform span:  positions 30–30  (v:verbstem → v:verbstem)
 Strict partial proform span:  positions 30–30  (v:verbstem → v:verbstem)
-Loose partial proform span:   positions 3–37  (v:frontedauxiliary → v:rightedge)
+Loose partial proform span:   positions 3–38  (v:frontedauxiliary → v:rightedge)

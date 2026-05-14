@@ -2,7 +2,7 @@ English Proform Vp Ellipsis
 ===========================
 
 NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
-  shareable_proform_replace: ['NP{S,A,P}', 'QWORDS', 'be', 'can', 'could'] … (122 total)
+  shareable_proform_replace: ['NP{S,A,P}', 'QWORDS', 'be', 'can', 'could'] … (123 total)
 
 Keystone position: 30 (v:verbstem)
 

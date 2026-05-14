@@ -73,6 +73,7 @@ from .drive import (
 )
 from .generate_sheets import (
     _build_rows,
+    _create_status_tab,
     _format_and_validate,
     _maybe_create_planar_reference_tab,
     _reorder_system_tabs,
@@ -953,6 +954,7 @@ def main() -> None:
             created_ref = _maybe_create_planar_reference_tab(new_ss, class_name, planar_path, lang_id)
             if created_ref:
                 print(f"    Tab: Planar Structure (planar reference)")
+            _create_status_tab(new_ss, tab_names)
             _reorder_system_tabs(new_ss)
 
             restructured_classes.add((lang_id, class_name))
