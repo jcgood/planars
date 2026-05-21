@@ -36,12 +36,12 @@ _T = TypeVar("_T")
 # ---------------------------------------------------------------------------
 
 def _with_retry(fn: Callable[[], _T], retries: int = 5) -> _T:
-    """Call fn() with exponential backoff on retryable API errors (429, 503)."""
+    """Call fn() with exponential backoff on retryable API errors (429, 500, 503)."""
     for attempt in range(retries):
         try:
             return fn()
         except gspread.exceptions.APIError as e:
-            if e.response.status_code in (429, 503) and attempt < retries - 1:
+            if e.response.status_code in (429, 500, 503) and attempt < retries - 1:
                 wait = 15 * (attempt + 1)
                 print(f"    (API error {e.response.status_code} — waiting {wait}s before retry {attempt + 2}/{retries})")
                 time.sleep(wait)
