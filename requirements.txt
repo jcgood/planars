@@ -57,7 +57,7 @@ httplib2==0.31.2
     #   google-auth-httplib2
 identify==2.6.18
     # via pre-commit
-idna==3.11
+idna==3.18
     # via requests
 iniconfig==2.3.0
     # via pytest
