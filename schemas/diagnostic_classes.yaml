@@ -621,8 +621,11 @@ classes:
     specificity: construction_specific
     known_constructions:
       # One TSV per segmental process. Non-exhaustive examples.
-      - aspiration_prominence          # prosodically conditioned aspiration; e.g., English
-      - aspiration_fusion              # aspiration-related segmental process; e.g., Yukuna ch. 11
+      # Each construction uses its own criteria (see construction_criteria in
+      # diagnostics_{lang_id}.yaml); criteria are NOT shared across constructions.
+      - aspiration_prominence          # prosodically conditioned aspiration; criterion: aspirated; e.g., English
+      - aspiration_fusion              # aspiration-related segmental process; criterion: aspirated; e.g., Yukuna ch. 11
+      - flapping                       # flapping domain (t/d→ɾ); criteria: flapping_left, flapping_internal, flapping_right; e.g., English
       # Vowel processes
       - vowel syncope domain           # e.g., Araona: vcore-tamesuf
       - vowel elision domain           # hiatus resolution; e.g., Chatino verbal prefix domain
@@ -646,21 +649,39 @@ classes:
       - nasality spreading domain      # e.g., Chatino: positions 13-17
       - palatalization domain          # e.g., Chatino coronal, Chorote, Mocoví
       - fortition domain               # palatal fortition; e.g., Mebengokre aj-verb
-    required_criteria: [aspirated]
-    optional_criteria: []
+    # required_criteria is empty because criteria are construction-specific: each
+    # construction listed in known_constructions uses its own criterion set (declared
+    # via construction_criteria in diagnostics_{lang_id}.yaml).  All known criteria
+    # are listed in optional_criteria so check-codebook can validate them when present.
+    required_criteria: []
+    optional_criteria: [aspirated, flapping_left, flapping_internal, flapping_right]
     qualification_rule: >
-      Positive-qualification path (aspirated criterion):
-        A position qualifies if it contains an element where aspirated=y.
-        Complete: ALL elements in the position have aspirated=y.
-        Partial: at least one element has aspirated=y.
+      Construction-specific positive-qualification path:
+
+        Each construction declares its own criteria via construction_criteria in
+        diagnostics_{lang_id}.yaml. An element qualifies when ALL of its
+        construction's criteria are in {y, both}:
+
+        Single-criterion constructions (e.g. aspiration_prominence):
+          aspirated ∈ {y, both} → element qualifies.
+
+        Multi-criterion chain constructions (e.g. flapping):
+          ALL of flapping_left, flapping_internal, flapping_right ∈ {y, both}
+          → element qualifies (the flapping chain is unbroken at this element).
+          n or na at any criterion breaks the chain.
+
+        both counts as qualifying in all cases: it indicates variable application
+        of the process. The strong/weak distinction (y-only vs y/both) is latent
+        in the annotation data and can be derived analytically.
+
+        Complete: ALL elements in the position qualify.
+        Partial: at least one element qualifies.
         Returns four spans (strict/loose × complete/partial).
-    qualification_rule_hash: "8a46562f"
+    qualification_rule_hash: "b180dfa7"
     # Formal abstract type in ch. 17 database schema.
     status: "[AUTO-DERIVED: likely stable — confirmed across 10+ language chapters; formal
       abstract type in ch. 17; coordinator sign-off needed to remove AUTO-DERIVED]"
-    keystone_active_default: true  # The verbstem's segmental properties (e.g. aspirated=y/n)
-      # are real annotation data worth collecting. Note: segmental.py does not yet include
-      # keystone_df in domain qualification — Phase B of #104 will fix this.
+    keystone_active_default: true
     collection_required: "n"
 
   - name: tonal

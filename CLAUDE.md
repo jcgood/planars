@@ -130,9 +130,9 @@ Late aggregation, autotypology (dynamic schema), definition files vs. data files
 `coding/` contains the coordinator tooling:
 - `drive.py`: Shared Drive/Sheets client helpers — OAuth2 auth, config load/save, manifest upload/download, and `_with_retry(fn)` for 429/500/503 backoff.
 - `schemas.py`: Cached loaders for `load_diagnostic_classes()` and `load_diagnostic_criteria()`; `languages.yaml` excluded (read fresh by callers).
-- `make_forms.py`: `build_element_index`, `_read_diagnostics_for_language` — utilities used by other scripts. Also provides `resolve_keystone_active` and `resolve_keystone_na_criteria` — used by `generate_sheets.py` and `validate_coding.py` to determine per-class keystone behavior from `diagnostic_classes.yaml`.
+- `make_forms.py`: `build_element_index`, `_read_diagnostics_for_language` — utilities used by other scripts. Also provides `resolve_keystone_active` and `resolve_keystone_na_criteria`. Handles `construction_criteria` — emits one TSV row per construction for classes that use it.
 - `generate_sheets.py`: Creates annotation sheets; validates planar/diagnostics first; **`--force` aborts if any language already has sheet IDs in the manifest** (annotation data is irreplaceable); each spreadsheet gets a `Status` tab with `in-progress`/`ready-for-review` dropdowns. Supports two-stage pair-sheet workflows for **nonpermutability** (`element_prescreening` first, then `--regen-construction nonpermutability:general`) and **coreference** (`prescreening` first, then `--regen-construction coreference:reflexivization` etc. for each pair construction). `_regen_dependents_simple` runs automatically during `data-refresh`. Pass `--pos-remap OLD_NUM:NEW_NUM` (repeatable) when position numbers have shifted.
-- `update_sheets.py`: Adds missing rows/trailing columns to existing sheets; ensures Status tab exists and is last.
+- `update_sheets.py`: Adds missing rows/trailing columns to existing sheets; ensures Status tab exists and is last. Also detects and creates new construction tabs for constructions in the diagnostics YAML not yet in the manifest; updates the manifest on Drive.
 - `sync_params.py`: Syncs criterion columns when `diagnostics_{lang_id}.yaml` changes; supports rename, split, merge, remove; regenerates YAML afterward.
 - `sync_diagnostics_yaml.py`: Syncs YAML → TSV (default), YAML → Sheet (`--to-sheet`), or diffs TSV → YAML (`--from-tsv`) writing ambiguous differences to `diagnostics_drift.json`.
 - `sync_qualification_hashes.py`: Stamps `qualification_rule_hash` in `diagnostic_classes.yaml` after module review; run as the final step of the qualification rule update workflow.
@@ -176,6 +176,8 @@ classes:
 
 Criteria default to `[y, n]`; non-default values are listed explicitly in the YAML and encoded as brace syntax in the TSV (`accented{y/n/both}`). `coding/make_forms.py` reads YAML first and falls back to TSV if no YAML exists (backward compatibility for languages not yet migrated).
 
+When constructions within the same class have non-overlapping criteria (e.g. `segmental`'s `aspiration_prominence` vs. `flapping`), use `construction_criteria` — a per-construction dict — instead of `criteria`. Produces one TSV row per construction so each Sheet tab only shows its own columns. `update-sheets --apply` creates missing tabs and updates the manifest.
+
 `python -m coding sync-diagnostics-yaml` regenerates TSVs from all YAMLs (dry-run; `--apply` to write; `--lang` to restrict). `--from-tsv` diffs a TSV against the YAML and categorises changes as deterministic (auto-applied) or ambiguous (written to `diagnostics_drift.json`). When `import-sheets` downloads a changed diagnostics TSV it runs this diff automatically; ambiguous results appear in the daily `diagnostics-drift` GitHub issue if any are found.
 
 `python -m coding generate-sheets` applies per-column dropdown validation and appends a free-text `Comments` column to every tab. `python -m coding import-sheets` validates each criterion against its allowed set (always also accepts `na` and `?`; `untestable` is accepted only when listed in the criterion's `values` in the YAML) and passes Comments through unchanged.
@@ -190,15 +192,13 @@ Language IDs in this project are Glottocodes (e.g., `arao1248`, `stan1293`). Glo
 
 **Convention:** wherever a language ID appears in user-facing output — notebook headers, chart titles, report tables, Drive folder names, terminal output — prefer the `Name [glottocode]` format (e.g., `Araona [arao1248]`) over the bare Glottocode. The canonical helper for this is `planars.languages.get_display_name(glottocode)`.
 
-Metadata is also written into `manifest.json` on Drive (by `generate-sheets` and `import-sheets`) so the data lives near the annotation sheets. `schemas/languages.yaml` is the source of truth; the Drive manifest carries a synced copy. `lookup-lang` scaffolds the `meta` block for new languages; `integrity-check --sheets` warns when `source` or `author` are blank in `languages.yaml`.
-
-Run `lookup-lang` before `generate-sheets` when onboarding a new language.
+`schemas/languages.yaml` is the source of truth; the manifest carries a synced copy written by `generate-sheets`/`import-sheets`. Run `lookup-lang` before `generate-sheets` when onboarding a new language; `integrity-check --sheets` warns if `source` or `author` are blank.
 
 ## schemas/ package
 
-`schemas/` is a Python package (it has `__init__.py`) so that its YAML files are delivered to Colab when planars is installed via `pip install`. Files are readable via `importlib.resources`. `pyproject.toml` includes `schemas*` in `packages.find` and lists `schemas = ["*.yaml"]` in `package-data`. Documentation for each file lives in `schemas/__init__.py`.
+`schemas/` is a Python package so its YAML files are delivered to Colab via `pip install` (`importlib.resources`). `pyproject.toml` includes `schemas*` in `packages.find`. Documentation for each file lives in `schemas/__init__.py`.
 
-`schemas/languages.yaml` is the source of truth for per-language metadata. Glottolog fields (`name`, `iso639_3`, `family`, coordinates) are written/refreshed by `python -m coding lookup-lang <glottocode>`. Project metadata (`language`, `glottocode`, `source`, `author`, `annotator`, `annotation_status`, `notes`) is hand-edited by coordinators. Valid `annotation_status` values: `planned | in-progress | complete`. The Drive manifest carries a copy written by `generate-sheets`; always edit `languages.yaml`, not the manifest. `planars/languages.py` provides `get_display_name(glottocode)` → `"Name [glottocode]"` for use in notebooks and charts. Note: `lookup-lang` rewrites `languages.yaml` using PyYAML, which strips YAML comments — documentation lives in `schemas/__init__.py` for this reason.
+`schemas/languages.yaml` is the source of truth for per-language metadata. Glottolog fields are written/refreshed by `python -m coding lookup-lang <glottocode>`; project metadata (`source`, `author`, `annotator`, `annotation_status`, `notes`) is hand-edited. Valid `annotation_status` values: `planned | in-progress | complete`. Always edit `languages.yaml`, not the manifest. `planars/languages.py` provides `get_display_name(glottocode)` → `"Name [glottocode]"` for use in notebooks and charts.
 
 ## Codebook and diagnostic classes
 

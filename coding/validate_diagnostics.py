@@ -247,10 +247,12 @@ def validate_diagnostics_yaml(data: dict, lang_id: str) -> List[ValidationIssue]
                 seen[name] = j
 
         # ------------------------------------------------------------------
-        # 3. criteria
+        # 3. criteria / construction_criteria
         # ------------------------------------------------------------------
         criteria = class_data.get("criteria")
+        construction_criteria = class_data.get("construction_criteria")
         schema_requires_criteria = bool(allowed_by_class.get(class_name))
+
         if criteria is None:
             criteria = {}
         if not isinstance(criteria, dict):
@@ -258,23 +260,57 @@ def validate_diagnostics_yaml(data: dict, lang_id: str) -> List[ValidationIssue]
                 "error", location, "'criteria' must be a mapping"
             ))
             criteria = {}
-        elif not criteria and schema_requires_criteria:
+        elif not criteria and not construction_criteria and schema_requires_criteria:
+            # Neither shared nor per-construction criteria provided.
             issues.append(ValidationIssue(
-                "error", location, "'criteria' must be a non-empty mapping"
+                "error", location, "'criteria' must be a non-empty mapping (or use 'construction_criteria')"
             ))
 
-        for crit_name, crit_values in criteria.items():
-            if not isinstance(crit_values, list) or not crit_values:
+        def _validate_crit_dict(crit_dict: dict, loc: str) -> None:
+            """Validate one criteria mapping (shared or per-construction)."""
+            for crit_name, crit_values in crit_dict.items():
+                if not isinstance(crit_values, list) or not crit_values:
+                    issues.append(ValidationIssue(
+                        "error", loc,
+                        f"Criterion '{crit_name}' must have a non-empty list of allowed values"
+                    ))
+                if known_criteria and crit_name not in known_criteria:
+                    issues.append(ValidationIssue(
+                        "warning", loc,
+                        f"Diagnostic criterion '{crit_name}' is not defined in diagnostic_criteria.yaml"
+                    ))
+                if allowed_by_class and class_name in allowed_by_class:
+                    allowed = allowed_by_class[class_name]
+                    if crit_name not in allowed:
+                        issues.append(ValidationIssue(
+                            "warning", loc,
+                            f"Diagnostic criterion '{crit_name}' is not in the allowed set for "
+                            f"class '{class_name}' in diagnostic_classes.yaml "
+                            f"(allowed: {sorted(allowed)})"
+                        ))
+
+        _validate_crit_dict(criteria, location)
+
+        # construction_criteria: optional dict mapping construction names to their
+        # own criteria dicts.  Enables per-construction criteria when constructions
+        # within a class use non-overlapping criterion sets (e.g. segmental classes
+        # where aspiration_prominence uses 'aspirated' and flapping uses three
+        # directional criteria).  Each construction's dict is validated identically
+        # to the shared criteria dict.
+        if construction_criteria is not None:
+            if not isinstance(construction_criteria, dict):
                 issues.append(ValidationIssue(
-                    "error", location,
-                    f"Criterion '{crit_name}' must have a non-empty list of allowed values"
+                    "error", location, "'construction_criteria' must be a mapping"
                 ))
-            # Criterion names vs. codebook
-            if known_criteria and crit_name not in known_criteria:
-                issues.append(ValidationIssue(
-                    "warning", location,
-                    f"Diagnostic criterion '{crit_name}' is not defined in diagnostic_criteria.yaml"
-                ))
+            else:
+                for con_name, cc in construction_criteria.items():
+                    cc_loc = f"{location} [construction_criteria.{con_name}]"
+                    if not isinstance(cc, dict):
+                        issues.append(ValidationIssue(
+                            "error", cc_loc, "must be a mapping of criterion name → allowed values"
+                        ))
+                    else:
+                        _validate_crit_dict(cc, cc_loc)
 
         # ------------------------------------------------------------------
         # 4. Class names vs. analysis modules
@@ -301,20 +337,6 @@ def validate_diagnostics_yaml(data: dict, lang_id: str) -> List[ValidationIssue]
                     f"'keystone_active' must be a bool (true/false) or a dict mapping "
                     f"construction names to bool; got: {ka!r}"
                 ))
-
-        # ------------------------------------------------------------------
-        # 6. Schema conformance
-        # ------------------------------------------------------------------
-        if allowed_by_class and class_name in allowed_by_class:
-            allowed = allowed_by_class[class_name]
-            for crit_name in criteria:
-                if crit_name not in allowed:
-                    issues.append(ValidationIssue(
-                        "warning", location,
-                        f"Diagnostic criterion '{crit_name}' is not in the allowed set for "
-                        f"class '{class_name}' in diagnostic_classes.yaml "
-                        f"(allowed: {sorted(allowed)})"
-                    ))
 
     # ------------------------------------------------------------------
     # 6. Glottocode format + cache advisory

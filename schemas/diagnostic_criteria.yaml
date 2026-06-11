@@ -397,23 +397,58 @@ analyses:
 
   - name: segmental
     description: >
-      [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design and qualification rules were
-      automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13
-      (Araona) §Vowel syncope and ch. 2 (Cup'ik) §Segmental domains. Verify before use.
-
       Tests which span is governed by a segmental (non-prosodic) phonological process.
       Examples: vowel deletion/coalescence at position junctures (Araona: vowel syncope
       domain vcore–tamesuf), consonant coalescence (Cup'ik: uvular-velar coalescence
-      domain vbase–pn4), nasality spreading, palatalization, aspiration. Each
+      domain vbase–pn4), nasality spreading, palatalization, aspiration, flapping. Each
       process is annotated in its own TSV (one construction per file). Multiple segmental
       processes in one language may identify different spans. Classified as a phonological
       domain type (Tallman et al. 2024, discussion ch. 17).
+
+      Criteria are construction-specific: single-criterion constructions (e.g.
+      aspiration_prominence) use one criterion (aspirated); multi-criterion chain
+      constructions (e.g. flapping) use a directional set (flapping_left,
+      flapping_internal, flapping_right). See construction_criteria in
+      diagnostics_{lang_id}.yaml and qualification_rule in diagnostic_classes.yaml.
     diagnostic_criteria:
       - name: aspirated
-        values: [y, n, both]
+        values: [y, n, both, na]
         description: >
-          [NEEDS REVIEW] Whether the segmental phonological process applies to this
-          element's position. y = this position is within the domain of the process.
+          Whether aspiration applies to this element's position. y = this position is
+          within the aspiration domain (aspiration is obligatory or prominent here).
+          both = aspiration is variable at this position (aspirated and unaspirated
+          variants both occur). na = not applicable (position irrelevant to the
+          aspiration process, e.g. positions that categorically never host aspirates).
+
+      - name: flapping_internal
+        values: [y, n, both, na]
+        description: >
+          Whether flapping applies within this position (between elements of the same
+          slot). y = flapping always applies internally. both = flapping variably
+          applies internally (both flapped and unflapped variants occur). n = flapping
+          does not apply internally. na = not applicable (e.g. a single-element
+          position has no internal juncture, or this position is irrelevant to the
+          flapping process).
+
+      - name: flapping_left
+        values: [y, n, both, na]
+        description: >
+          Whether flapping applies at the juncture between this position and the
+          adjacent position to its left. y = flapping always applies at this left
+          juncture. both = flapping variably applies (both flapped and unflapped
+          variants occur at this juncture). n = flapping does not apply. na = no
+          left neighbor exists (absolute left edge of the structure) or this position
+          is irrelevant to the flapping process.
+
+      - name: flapping_right
+        values: [y, n, both, na]
+        description: >
+          Whether flapping applies at the juncture between this position and the
+          adjacent position to its right. y = flapping always applies at this right
+          juncture. both = flapping variably applies (both flapped and unflapped
+          variants occur at this juncture). n = flapping does not apply. na = no
+          right neighbor exists (absolute right edge of the structure) or this position
+          is irrelevant to the flapping process.
 
   # suprasegmental is retired as of issue #100. Constructions redistributed to:
   #   metrical (stress_domain) — uses accented/obligatory/independence (blocked-span)

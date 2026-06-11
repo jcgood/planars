@@ -25,9 +25,25 @@ ROOT = Path(__file__).resolve().parent.parent
 
 import gspread
 
-from .make_forms import build_element_index, _infer_language_id_from_planar_filename
-from .drive import _get_clients, _load_manifest_from_drive, _open_spreadsheet, _with_retry
-from .generate_sheets import _create_status_tab, _move_status_tab_to_end, _TRAILING_COLS
+from .make_forms import (
+    build_element_index,
+    _infer_language_id_from_planar_filename,
+    _read_diagnostics_for_language,
+)
+from .drive import (
+    _get_clients,
+    _load_drive_config,
+    _load_manifest_from_drive,
+    _open_spreadsheet,
+    _upload_planars_config,
+    _with_retry,
+)
+from .generate_sheets import (
+    _add_constructions_to_existing_sheet,
+    _create_status_tab,
+    _move_status_tab_to_end,
+    _TRAILING_COLS,
+)
 
 CODED_DATA = ROOT / "coded_data"
 _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
@@ -266,7 +282,7 @@ def main() -> None:
     for planar_file in planar_files:
         lid = _infer_language_id_from_planar_filename(planar_file.name)
         ei = build_element_index(planar_file.name, planar_file.parent)
-        lang_planar_data[lid] = (ei, _build_planar_pos_map(ei, lid))
+        lang_planar_data[lid] = (ei, _build_planar_pos_map(ei, lid), planar_file)
 
     print(f"{'DRY RUN — ' if not apply else ''}Languages: {list(lang_planar_data.keys())}")
     if not apply:
@@ -274,12 +290,13 @@ def main() -> None:
 
     any_changes = False
     any_drift = False
+    manifest_modified = False
 
     for manifest_lang, lang_data in manifest.items():
         if manifest_lang not in lang_planar_data:
             print(f"\n  [{manifest_lang}] No local planar file found — skipping")
             continue
-        element_index, planar_pos_map = lang_planar_data[manifest_lang]
+        element_index, planar_pos_map, planar_path = lang_planar_data[manifest_lang]
 
         for class_name, sheet_info in lang_data["sheets"].items():
             print(f"\n  {class_name}")
@@ -349,10 +366,54 @@ def main() -> None:
                 if apply and (missing_rows or missing_trailing):
                     print(f"    [{construction}] done")
 
-            # Ensure Status tab exists and is last
+            # Detect constructions in the diagnostics YAML that are not yet in the
+            # manifest (i.e. added after the sheet was first generated).  Create a
+            # tab for each and update the manifest entry in memory.
+            lang_setup_dir = CODED_DATA / manifest_lang / "lang_setup"
+            try:
+                yaml_constructions = {
+                    construction: (param_names, param_values)
+                    for cls, construction, param_names, param_values
+                    in _read_diagnostics_for_language(manifest_lang, lang_setup_dir)
+                    if cls == class_name
+                }
+            except Exception:
+                yaml_constructions = {}
+
+            new_construction_names = sorted(set(yaml_constructions) - set(constructions))
+            if new_construction_names:
+                new_for_class = [
+                    (c, yaml_constructions[c][0], yaml_constructions[c][1])
+                    for c in new_construction_names
+                ]
+                for c, pn, _ in new_for_class:
+                    action = "Adding" if apply else "Would add"
+                    print(f"    [{c}] {action} new tab ({len(pn)} criterion/criteria)")
+                    any_changes = True
+                if apply:
+                    new_params = _add_constructions_to_existing_sheet(
+                        gc, sheet_info["spreadsheet_id"], class_name,
+                        new_for_class, manifest_lang, element_index, planar_path,
+                    )
+                    sheet_info["constructions"].extend(new_construction_names)
+                    sheet_info.setdefault("construction_params", {}).update(new_params)
+                    manifest_modified = True
+
+            # Ensure Status tab exists and is last (reflects any new tabs added above)
             if apply:
-                _create_status_tab(ss, constructions)
+                all_constructions = list(constructions) + new_construction_names if new_construction_names else constructions
+                _create_status_tab(ss, all_constructions)
                 _move_status_tab_to_end(ss)
+
+    if manifest_modified:
+        drive_config = _load_drive_config()
+        root_folder_id = drive_config.get("_root_folder_id", "")
+        existing_file_id = drive_config.get("_planars_config_file_id", "")
+        if apply:
+            _upload_planars_config(drive, manifest, root_folder_id, existing_file_id)
+            print("\nManifest updated on Drive.")
+        else:
+            print("\nWould update manifest on Drive (new tabs detected).")
 
     if any_drift:
         print("\nSome sheets are out of sync with the planar structure.")

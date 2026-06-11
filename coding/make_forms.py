@@ -319,31 +319,60 @@ def resolve_keystone_na_criteria(
 # TSV ↔ YAML serializers
 # ---------------------------------------------------------------------------
 
+def _encode_criteria_dict(criteria_dict: Dict[str, List[str]]) -> List[str]:
+    """Encode a {name: values} criteria dict to brace-syntax strings.
+
+    Criteria with the default [y, n] values are emitted as plain names;
+    all others use the ``name{v1/v2/...}`` brace syntax.
+    """
+    parts = []
+    for crit_name, crit_values in criteria_dict.items():
+        if list(crit_values) == ["y", "n"]:
+            parts.append(crit_name)
+        else:
+            parts.append(f"{crit_name}{{{'/'.join(crit_values)}}}")
+    return parts
+
+
 def _yaml_to_tsv_df(yaml_data: dict, lang_id: str) -> pd.DataFrame:
     """Convert a diagnostics YAML dict to a TSV-format DataFrame.
 
     The returned DataFrame has columns: Class, Language, Constructions, Criteria.
     Criteria with non-default values are encoded with brace syntax (e.g.
     ``accented{y/n/both}``); default [y, n] criteria use plain names.
+
+    For classes that use ``construction_criteria`` (per-construction criteria),
+    one row is emitted per construction so that each row's Criteria column
+    carries only the criteria relevant to that construction.  Classes that use
+    the shared ``criteria`` key (the common case) emit a single row with all
+    constructions comma-separated, preserving backward compatibility.
     """
     rows = []
     for class_name, class_data in yaml_data.get("classes", {}).items():
         constructions = class_data.get("constructions", [])
         criteria_dict: Dict[str, List[str]] = class_data.get("criteria", {})
+        construction_criteria: Dict[str, Dict[str, List[str]]] = class_data.get("construction_criteria", {})
 
-        criteria_parts = []
-        for crit_name, crit_values in criteria_dict.items():
-            if list(crit_values) == ["y", "n"]:
-                criteria_parts.append(crit_name)
-            else:
-                criteria_parts.append(f"{crit_name}{{{'/'.join(crit_values)}}}")
-
-        rows.append({
-            "Class": class_name,
-            "Language": lang_id,
-            "Constructions": ", ".join(constructions),
-            "Criteria": ", ".join(criteria_parts),
-        })
+        if construction_criteria:
+            # Per-construction criteria: one row per construction with its own criteria.
+            # Constructions not listed in construction_criteria fall back to the class-level
+            # criteria dict (which may be empty if all constructions have their own entries).
+            for construction in constructions:
+                cc = construction_criteria.get(construction, criteria_dict)
+                rows.append({
+                    "Class": class_name,
+                    "Language": lang_id,
+                    "Constructions": construction,
+                    "Criteria": ", ".join(_encode_criteria_dict(cc)),
+                })
+        else:
+            # Shared criteria: one row per class with all constructions (existing behavior).
+            rows.append({
+                "Class": class_name,
+                "Language": lang_id,
+                "Constructions": ", ".join(constructions),
+                "Criteria": ", ".join(_encode_criteria_dict(criteria_dict)),
+            })
     return pd.DataFrame(rows, columns=["Class", "Language", "Constructions", "Criteria"])
 
 
@@ -354,6 +383,10 @@ def _tsv_df_to_yaml(df: pd.DataFrame, lang_id: str) -> dict:
     changes back into YAML.  Each TSV row (one per class) becomes a class
     entry; constructions are expanded into a list; criteria brace syntax is
     decoded into explicit value lists.
+
+    When multiple rows share the same Class (produced by ``_yaml_to_tsv_df``
+    for classes with ``construction_criteria``), the rows are merged back into
+    a ``construction_criteria`` dict so the round-trip is lossless.
     """
     classes: Dict[str, Any] = {}
     for _, row in df.iterrows():
@@ -364,11 +397,29 @@ def _tsv_df_to_yaml(df: pd.DataFrame, lang_id: str) -> dict:
         class_name = str(row.get("Class", "")).strip()
         constructions = _parse_csv_list(str(row.get("Constructions", "")))
         criterion_names, criterion_values = _parse_criterion_specs(str(row.get("Criteria", "")))
+        crit_dict = {name: criterion_values[name] for name in criterion_names}
 
-        classes[class_name] = {
-            "constructions": constructions,
-            "criteria": {name: criterion_values[name] for name in criterion_names},
-        }
+        if class_name not in classes:
+            classes[class_name] = {
+                "constructions": list(constructions),
+                "criteria": crit_dict,
+            }
+        else:
+            # Second (or later) row for the same class: convert to construction_criteria.
+            existing = classes[class_name]
+            if "construction_criteria" not in existing:
+                # Promote the first row's entry to construction_criteria format.
+                prev_constructions = existing.get("constructions", [])
+                prev_criteria = existing.get("criteria", {})
+                existing["construction_criteria"] = {
+                    c: dict(prev_criteria) for c in prev_constructions
+                }
+                existing.pop("criteria", None)
+            # Append this row's construction(s) with their per-construction criteria.
+            for c in constructions:
+                existing["construction_criteria"][c] = crit_dict
+                if c not in existing["constructions"]:
+                    existing["constructions"].append(c)
 
     return {"language": lang_id, "classes": classes}
 
@@ -512,6 +563,8 @@ def _diff_diagnostics_tsv_yaml(
                 known_criteria.add(crit["name"])
 
     # --- parse TSV into normalised structure ---
+    # Multiple rows for the same class (produced by construction_criteria classes) are
+    # merged: constructions are unioned and criteria are aggregated into a flat dict.
     tsv_classes: Dict[str, Dict] = {}
     for _, row in tsv_df.iterrows():
         lang = str(row.get("Language", "")).strip()
@@ -520,16 +573,26 @@ def _diff_diagnostics_tsv_yaml(
         class_name = str(row.get("Class", "")).strip()
         constructions = set(_parse_csv_list(str(row.get("Constructions", ""))))
         crit_names, crit_values = _parse_criterion_specs(str(row.get("Criteria", "")))
-        tsv_classes[class_name] = {
-            "constructions": constructions,
-            "criteria": {n: crit_values[n] for n in crit_names},
-        }
+        row_criteria = {n: crit_values[n] for n in crit_names}
+        if class_name not in tsv_classes:
+            tsv_classes[class_name] = {
+                "constructions": constructions,
+                "criteria": row_criteria,
+            }
+        else:
+            tsv_classes[class_name]["constructions"].update(constructions)
+            tsv_classes[class_name]["criteria"].update(row_criteria)
 
     # --- parse YAML into normalised structure ---
+    # For classes with construction_criteria, flatten all per-construction criteria
+    # into a single aggregate dict for diff purposes (construction-level attribution
+    # is preserved in the YAML itself; the diff only tracks presence/absence/values).
     yaml_classes: Dict[str, Dict] = {}
     for class_name, class_data in (yaml_data.get("classes") or {}).items():
         constructions = set(class_data.get("constructions") or [])
         criteria = dict(class_data.get("criteria") or {})
+        for cc in (class_data.get("construction_criteria") or {}).values():
+            criteria.update(cc)
         yaml_classes[class_name] = {
             "constructions": constructions,
             "criteria": criteria,

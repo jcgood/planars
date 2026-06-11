@@ -116,7 +116,11 @@ def test_yaml_to_tsv_df_non_default_values():
 # ---------------------------------------------------------------------------
 
 def test_tsv_df_to_yaml_round_trip():
-    """TSV → YAML → TSV round-trip preserves class/construction/criteria."""
+    """TSV → YAML → TSV round-trip preserves class/construction/criteria.
+
+    Classes with construction_criteria emit one row per construction in both
+    df and df2, so we compare by (Class, Constructions) rather than Class alone.
+    """
     df = pd.read_csv(
         Path(__file__).parent.parent / "coded_data" / "stan1293" / "lang_setup" / "diagnostics_stan1293.tsv",
         sep="\t", dtype=str, keep_default_na=False,
@@ -125,9 +129,16 @@ def test_tsv_df_to_yaml_round_trip():
     df2 = _yaml_to_tsv_df(yaml_data, "stan1293")
 
     assert set(df["Class"]) == set(df2["Class"])
+    # Index df2 by (Class, Constructions) for O(1) lookup; construction-criteria
+    # classes have one row per construction so this key is unique.
+    df2_index = {
+        (r["Class"], r["Constructions"]): r
+        for _, r in df2.iterrows()
+    }
     for _, row in df.iterrows():
-        row2 = df2[df2["Class"] == row["Class"]].iloc[0]
-        assert row["Constructions"] == row2["Constructions"]
+        key = (row["Class"], row["Constructions"])
+        assert key in df2_index, f"Row {key} missing from round-tripped DataFrame"
+        assert row["Criteria"] == df2_index[key]["Criteria"]
 
 
 # ---------------------------------------------------------------------------
