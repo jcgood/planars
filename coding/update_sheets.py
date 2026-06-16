@@ -40,6 +40,7 @@ from .drive import (
 )
 from .generate_sheets import (
     _add_constructions_to_existing_sheet,
+    _build_criterion_notes,
     _create_status_tab,
     _move_status_tab_to_end,
     _TRAILING_COLS,
@@ -189,6 +190,46 @@ def _add_trailing_columns(
         header.insert(insert_before_idx if insert_before_idx is not None else len(header), col_name)
 
     return header
+
+
+# ---------------------------------------------------------------------------
+# Header note helpers
+# ---------------------------------------------------------------------------
+
+def _write_header_notes(ws: gspread.Worksheet, param_names: List[str]) -> bool:
+    """Write criterion description notes to header cells for element-row tabs.
+
+    Looks up each criterion in diagnostic_criteria.yaml and writes the prose
+    description as a hover note on the corresponding header cell.  Idempotent —
+    safe to call on tabs that already have notes (overwrites with the same text).
+
+    Returns True if any notes were written, False if the codebook had no
+    descriptions for any of the criteria.
+    """
+    notes = _build_criterion_notes(param_names)
+    sheet_id = ws.id
+    requests = []
+    col_start = 3  # Element, Position_Name, Position_Number, then params
+    for col_offset, note in enumerate(notes):
+        if note:
+            col_idx = col_start + col_offset
+            requests.append({
+                "repeatCell": {
+                    "range": {
+                        "sheetId": sheet_id,
+                        "startRowIndex": 0,
+                        "endRowIndex": 1,
+                        "startColumnIndex": col_idx,
+                        "endColumnIndex": col_idx + 1,
+                    },
+                    "cell": {"note": note},
+                    "fields": "note",
+                }
+            })
+    if requests:
+        _with_retry(lambda: ws.spreadsheet.batch_update({"requests": requests}))
+        return True
+    return False
 
 
 # ---------------------------------------------------------------------------
@@ -347,6 +388,12 @@ def main() -> None:
                     if not missing_trailing:
                         print(f"    [{construction}] up to date (pair-row tab — row updates skipped)")
                     continue
+
+                # Write criterion notes to all element-row tabs on every apply
+                # (idempotent — safe to rewrite; skipped in dry-run to avoid
+                # an extra API call just to read existing note text for comparison).
+                if apply:
+                    _write_header_notes(ws, param_names)
 
                 missing_rows = _compute_missing_rows(
                     ws, element_index, manifest_lang, param_names

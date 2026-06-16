@@ -68,7 +68,7 @@ from .drive import (
 )
 from .glottolog import cached_entry as _cached_glottolog, get_metadata as _fetch_glottolog
 from planars.languages import get_display_name as _get_display_name
-from .schemas import load_planar_schema, load_diagnostic_classes
+from .schemas import load_planar_schema, load_diagnostic_classes, load_diagnostic_criteria
 from .make_forms import (
     build_element_index,
     _infer_language_id_from_planar_filename,
@@ -1013,18 +1013,38 @@ def _reset_worksheet(ws: gspread.Worksheet, num_data_rows: int, num_cols: int) -
     ]})
 
 
+def _build_criterion_notes(param_names: List[str]) -> List[Optional[str]]:
+    """Return one note string per criterion name, or None if not in codebook.
+
+    Looks up each criterion in diagnostic_criteria.yaml and returns the prose
+    description, whitespace-normalised. Used to populate Google Sheets header
+    cell notes so annotators can hover over a column name to read its definition.
+    """
+    cb = load_diagnostic_criteria()
+    index: Dict[str, str] = {}
+    for analysis in cb.get("analyses", []):
+        for crit in analysis.get("diagnostic_criteria", []):
+            if isinstance(crit, dict) and "name" in crit:
+                desc = crit.get("description", "").strip()
+                if desc:
+                    index[crit["name"]] = " ".join(desc.split())
+    return [index.get(p) for p in param_names]
+
+
 def _format_and_validate(
     worksheet: gspread.Worksheet,
     num_data_rows: int,
     param_values: List[List[str]],
     col_start: int = 3,
+    param_notes: Optional[List[Optional[str]]] = None,
 ) -> None:
-    """Freeze and bold the header row; apply per-column dropdown validation.
+    """Freeze and bold the header row; apply per-column dropdown validation and notes.
 
     Sends a single batch_update to the Sheets API containing:
     - a freeze request for the header row
     - a bold request for the header row
     - one dropdown validation rule per param column
+    - one header-cell note per param column (if param_notes is provided)
 
     Validation is non-strict (showCustomUi=True, strict=False) so annotators
     can also type 'NA' in keystone rows without triggering a validation error.
@@ -1036,6 +1056,10 @@ def _format_and_validate(
             in the same order as the columns.
         col_start: 0-based column index where param columns begin (default 3
             for standard element-row sheets; 2 for pair-row sheets).
+        param_notes: optional list of note strings (one per param column, None
+            to skip a column). When provided, each note is written to the
+            corresponding header cell so annotators can hover to read the
+            criterion definition.
     """
     sheet_id = worksheet.id
     requests = [
@@ -1085,6 +1109,23 @@ def _format_and_validate(
                 },
             }
         })
+    if param_notes:
+        for col_offset, note in enumerate(param_notes):
+            if note:
+                col_idx = col_start + col_offset
+                requests.append({
+                    "repeatCell": {
+                        "range": {
+                            "sheetId": sheet_id,
+                            "startRowIndex": 0,
+                            "endRowIndex": 1,
+                            "startColumnIndex": col_idx,
+                            "endColumnIndex": col_idx + 1,
+                        },
+                        "cell": {"note": note},
+                        "fields": "note",
+                    }
+                })
     worksheet.spreadsheet.batch_update({"requests": requests})
 
 
@@ -1130,7 +1171,8 @@ def _populate_tab(
     all_rows = [header] + [[str(v) for v in row] + [""] * len(_TRAILING_COLS) for row in rows]
     ws.update(all_rows, "A1")
     per_col_values = [param_values.get(p, ["y", "n"]) for p in param_names]
-    _format_and_validate(ws, len(rows), per_col_values)
+    per_col_notes = _build_criterion_notes(param_names)
+    _format_and_validate(ws, len(rows), per_col_values, param_notes=per_col_notes)
     return ws
 
 
