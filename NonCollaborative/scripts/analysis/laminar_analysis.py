@@ -328,6 +328,12 @@ def _bron_kerbosch(R: frozenset, P: frozenset, X: frozenset,
     Equivalently: finds maximal cliques in the compatibility graph G^c, where
     G^c has an edge between two spans iff they are nested or disjoint.
 
+    VERIFICATION: This implementation has been independently verified against
+    NetworkX's nx.find_cliques() on the complement graph. Both algorithms
+    produce identical results. See ../verification/verify_chichewa.py for the
+    NetworkX implementation used for verification (69 families on Chichewa
+    [nyan1308]).
+
     Maintains three sets:
       R = current independent set (all mutually compatible spans)
       P = candidate spans (compatible with all of R, not yet decided)
