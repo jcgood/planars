@@ -2,17 +2,17 @@ English Segmental Flapping
 ==========================
 
 NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
-  flapping_left: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (129 total)
-  flapping_internal: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (129 total)
-  flapping_right: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (129 total)
+  flapping_left: ['AD-VP', 'can', 'could', 'may', 'might'] … (105 total)
+  flapping_internal: ['AD-VP', 'can', 'could', 'may', 'might'] … (105 total)
+  flapping_right: ['AD-VP', 'can', 'could', 'may', 'might'] … (105 total)
 
 Keystone position: 30 (v:verbstem)
 Criteria: flapping_left, flapping_internal, flapping_right
 
-Segmental domain complete positions: []
-Segmental domain partial positions:  []
+Segmental domain complete positions: [2, 5, 6]
+Segmental domain partial positions:  [2, 5, 6]
 
 Strict complete segmental span: positions 30–30  (v:verbstem → v:verbstem)
-Loose complete segmental span:  positions 30–30  (v:verbstem → v:verbstem)
+Loose complete segmental span:  positions 2–30  (v:frontedXP → v:verbstem)
 Strict partial segmental span:  positions 30–30  (v:verbstem → v:verbstem)
-Loose partial segmental span:   positions 30–30  (v:verbstem → v:verbstem)
+Loose partial segmental span:   positions 2–30  (v:frontedXP → v:verbstem)
