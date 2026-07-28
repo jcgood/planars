@@ -83,6 +83,7 @@ from .drive import (
     _with_retry,
 )
 from .generate_sheets import (
+    _build_criterion_notes,
     _build_rows,
     _create_status_tab,
     _format_and_validate,
@@ -304,7 +305,8 @@ def _write_tab_with_carryover(
 
     ws.update(all_rows, "A1")
     per_col_values = [param_values.get(p, ["y", "n"]) for p in param_names]
-    _format_and_validate(ws, len(rows), per_col_values)
+    per_col_notes = _build_criterion_notes(param_names)
+    _format_and_validate(ws, len(rows), per_col_values, param_notes=per_col_notes)
 
     return carried, new, dropped
 
@@ -582,6 +584,7 @@ def _rename_class_for_language(
     apply: bool,
     folder_id: Optional[str],
     planar_path: Optional[Path] = None,
+    sheet_links: Optional[List[Tuple[str, str, str]]] = None,
 ) -> bool:
     """Rename one analysis class for one language.
 
@@ -725,6 +728,8 @@ def _rename_class_for_language(
         "version": new_version,
     }
     print(f"    Manifest: {old_class} -> {new_class} (v{new_version}): {new_ss.url}")
+    if sheet_links is not None:
+        sheet_links.append((lang_id, new_class, new_ss.url))
     return True
 
 
@@ -857,6 +862,7 @@ def main() -> None:
     written_tsvs: List[Path] = []
     pair_row_constructions = _get_pair_row_constructions()
     restructured_classes: Set[Tuple[str, str]] = set()
+    sheet_links: List[Tuple[str, str, str]] = []  # (lang_id, class_name, url), for the summary
 
     # --rename-class pass: runs before the main restructure loop so the manifest
     # reflects the new class names when the main loop processes each language.
@@ -877,6 +883,7 @@ def main() -> None:
                 changed = _rename_class_for_language(
                     gc, drive, manifest, lang_id, old_class, new_class,
                     element_index, specs, apply, folder_id, planar_path,
+                    sheet_links=sheet_links,
                 )
                 if changed:
                     any_changes = True
@@ -1076,6 +1083,7 @@ def main() -> None:
             # error prevents the final upload block from running.
             MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
             print(f"    New sheet (v{new_version}): {new_ss.url}")
+            sheet_links.append((lang_id, class_name, new_ss.url))
 
     # Cascade rename to pair tabs that were NOT covered by the archive+recreate path
     # (i.e., the class sheet was unchanged except for position name cells in pair tabs).
@@ -1147,6 +1155,11 @@ def main() -> None:
             written_tsvs,
             f"data: restructure {langs} TSVs after planar changes {date.today().isoformat()}",
         )
+
+        if sheet_links:
+            print("\n--- Affected sheets ---")
+            for lang_id, class_name, url in sheet_links:
+                print(f"  [{lang_id}] {class_name}: {url}")
 
 
 if __name__ == "__main__":
