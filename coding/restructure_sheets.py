@@ -863,6 +863,7 @@ def main() -> None:
     pair_row_constructions = _get_pair_row_constructions()
     restructured_classes: Set[Tuple[str, str]] = set()
     sheet_links: List[Tuple[str, str, str]] = []  # (lang_id, class_name, url), for the summary
+    lang_folder_urls: Dict[str, str] = {}  # lang_id -> Drive folder url (stable across restructures)
 
     # --rename-class pass: runs before the main restructure loop so the manifest
     # reflects the new class names when the main loop processes each language.
@@ -944,6 +945,8 @@ def main() -> None:
         lang_data = manifest.get(lang_id, {})
         folder_url = lang_data.get("folder_url", "")
         folder_id = _folder_id_from_url(folder_url) if folder_url else None
+        if folder_url:
+            lang_folder_urls[lang_id] = folder_url
 
         for class_name, constructions_list in classes.items():
             sheet_info = lang_data.get("sheets", {}).get(class_name)
@@ -1156,8 +1159,17 @@ def main() -> None:
             f"data: restructure {langs} TSVs after planar changes {date.today().isoformat()}",
         )
 
+        if lang_folder_urls:
+            print("\n--- Bookmark this instead ---")
+            print("  Every sheet below just got a NEW URL (restructure-sheets always creates a")
+            print("  fresh spreadsheet and archives the old one) — any previously bookmarked")
+            print("  sheet links are now stale. The Drive folder link does NOT change across")
+            print("  restructures, so it's the one worth bookmarking long-term:")
+            for lang_id, folder_url in lang_folder_urls.items():
+                print(f"  [{lang_id}] {folder_url}")
+
         if sheet_links:
-            print("\n--- Affected sheets ---")
+            print("\n--- Affected sheets (new URLs — old bookmarks to these classes are stale) ---")
             for lang_id, class_name, url in sheet_links:
                 print(f"  [{lang_id}] {class_name}: {url}")
 
