@@ -16,12 +16,23 @@ Run from the repo root:
     python -m coding restructure-sheets --rename-element Ad-VP:AD-VP --apply
     python -m coding restructure-sheets --rename-element Ad-VP:AD-VP --rename-element Ad-V:AD-V --apply
 
+    # Split one element into several finer-grained replacements (e.g. a generic
+    # placeholder replaced by specific forms) so re-annotators get a pointer back
+    # to the old judgment instead of having to hunt for it:
+    python -m coding restructure-sheets --split-element "PRON{P,T}:me,you,him,her,it,us,them" --apply
+
     # Rename an analysis class across all languages (renames sheet, local TSV dir, manifest):
     python -m coding restructure-sheets --rename-class old_class:new_class --apply
     python -m coding restructure-sheets --rename-class old:new1 --rename-class old2:new2 --apply
 
     --rename-map takes "old_pos_name:new_pos_name" and can be repeated.
     --rename-element takes "old_element:new_element" and can be repeated.
+    --split-element takes "old_element:new1,new2,..." (comma-separated, at least 2 targets)
+      and can be repeated. There's no principled 1:1 value to carry over from one generic
+      old element to several specific new ones, so new rows are left blank as usual — but
+      if the old element had existing annotations, each new row's Comments cell gets a
+      breadcrumb note pointing back to the archived sheet so re-annotators aren't working
+      from memory. An element cannot appear in both --rename-element and --split-element.
     --rename-class takes "old_class_name:new_class_name" and can be repeated.
     Without these flags, renamed positions/elements are treated as drops + new blank rows.
 
@@ -218,17 +229,28 @@ def _write_tab_with_carryover(
     rename_map: Dict[str, str],
     element_rename_map: Dict[str, str] = {},
     tsv_path: Optional[Path] = None,
+    split_element_map: Dict[str, List[str]] = {},
 ) -> Tuple[int, int, int]:
     """Create/clear a tab and populate it, carrying over matching annotations.
 
     Matching is by (Element, Position_Name), with optional rename_map (old→new
     position renames) and element_rename_map (old→new element label renames).
 
+    split_element_map ({old_element: [new1, new2, ...]}) marks elements being split
+    into several finer-grained replacements. There's no principled value to carry
+    over 1:1 for these (a generic annotation doesn't tell us how each new element
+    individually behaves), so they're left as new blank rows — but if the old
+    element had existing annotations, the new row's Comments cell gets a breadcrumb
+    pointing back to it, since that data is only recoverable from the archived sheet.
+
     Returns:
         (carried_count, new_count, dropped_count)
     """
     old_for_new    = {v: k for k, v in rename_map.items()}
     old_el_for_new = {v: k for k, v in element_rename_map.items()}
+    new_to_old_split: Dict[str, str] = {
+        n: old for old, news in split_element_map.items() for n in news
+    }
     all_cols = param_names + _TRAILING_COLS
     header = ["Element", "Position_Name", "Position_Number"] + all_cols
 
@@ -252,6 +274,13 @@ def _write_tab_with_carryover(
         else:
             param_vals = ["NA"] * len(param_names) if is_keystone else [""] * len(param_names)
             trailing_vals = [""] * len(_TRAILING_COLS)
+            split_source = new_to_old_split.get(element)
+            if split_source is not None and existing.get((split_source, pos_name)) is not None:
+                if "Comments" in _TRAILING_COLS:
+                    c_idx = _TRAILING_COLS.index("Comments")
+                    trailing_vals[c_idx] = (
+                        f"[split from {split_source} — see archived sheet for prior judgment]"
+                    )
             new += 1
 
         all_rows.append([element, pos_name, pos_num] + param_vals + trailing_vals)
@@ -720,6 +749,62 @@ def _parse_flag_map(argv: List[str], flag: str) -> Dict[str, str]:
     return result
 
 
+def _parse_split_flag_map(argv: List[str], flag: str) -> Dict[str, List[str]]:
+    """Parse all occurrences of --flag old:new1,new2,... into {old: [new1, new2, ...]}.
+
+    Requires at least 2 comma-separated targets per occurrence — a single
+    replacement is a rename, not a split, and should use --rename-element instead.
+    """
+    result: Dict[str, List[str]] = {}
+    i = 0
+    while i < len(argv):
+        if argv[i] == flag and i + 1 < len(argv):
+            pair = argv[i + 1]
+            if ":" not in pair:
+                raise SystemExit(f"{flag} requires 'old:new1,new2,...' format, got: {pair!r}")
+            old, news = pair.split(":", 1)
+            targets = [n.strip() for n in news.split(",") if n.strip()]
+            if len(targets) < 2:
+                raise SystemExit(
+                    f"{flag} requires at least 2 comma-separated replacement elements, "
+                    f"got: {pair!r}\n"
+                    f"  (a single replacement is a rename — use --rename-element instead)"
+                )
+            result[old.strip()] = targets
+            i += 2
+        else:
+            i += 1
+    return result
+
+
+def _describe_split_impacts(
+    rows: List[List[object]],
+    existing: Dict[Tuple[str, str], Dict[str, str]],
+    split_element_map: Dict[str, List[str]],
+) -> List[str]:
+    """Return human-readable lines describing split-element impacts for a dry run/apply report.
+
+    For each old_element -> [new1, new2, ...] mapping, reports how many of the new
+    elements are present in the new row set and whether the old element had existing
+    annotations (meaning the new rows will carry a breadcrumb Comments note).
+    """
+    lines: List[str] = []
+    for old, news in split_element_map.items():
+        old_positions = {pn for (el, pn) in existing if el == old}
+        if not old_positions:
+            continue
+        news_present = [
+            n for n in news
+            if any(str(r[0]) == n and str(r[1]) in old_positions for r in rows)
+        ]
+        if news_present:
+            lines.append(
+                f"split: {old} -> {', '.join(news)} "
+                f"({len(news_present)} new, breadcrumbed to archived sheet)"
+            )
+    return lines
+
+
 
 def main() -> None:
     """Entry point for `python -m coding restructure-sheets`.
@@ -736,11 +821,25 @@ def main() -> None:
     carried over, renames coded_data/{lang}/{old}/ to coded_data/{lang}/{new}/,
     and updates the manifest.  diagnostics_{lang_id}.tsv must be updated to use
     the new name BEFORE running this command (enforced by pre-flight checks).
+
+    With --split-element old:new1,new2,..., retires one element in favor of several
+    finer-grained replacements within the same position. New rows are left blank
+    (no principled 1:1 value to carry over from a generic annotation), but each
+    gets a Comments breadcrumb pointing back to the archived sheet if the old
+    element had existing data, so re-annotators have a pointer to the prior
+    judgment instead of needing to remember or hunt for it.
     """
     apply = "--apply" in sys.argv
     rename_map         = _parse_flag_map(sys.argv[1:], "--rename-map")
     element_rename_map = _parse_flag_map(sys.argv[1:], "--rename-element")
     rename_class_map   = _parse_flag_map(sys.argv[1:], "--rename-class")
+    split_element_map  = _parse_split_flag_map(sys.argv[1:], "--split-element")
+    conflict = set(split_element_map) & set(element_rename_map)
+    if conflict:
+        raise SystemExit(
+            f"Element(s) {sorted(conflict)} appear in both --rename-element and "
+            f"--split-element — pick one treatment per element."
+        )
     lang_idx = sys.argv.index("--lang") if "--lang" in sys.argv else -1
     lang_filter = sys.argv[lang_idx + 1] if lang_idx >= 0 else None
 
@@ -829,6 +928,9 @@ def main() -> None:
         if element_rename_map:
             for old, new in element_rename_map.items():
                 print(f"  rename element:  {old!r} -> {new!r}")
+        if split_element_map:
+            for old, news in split_element_map.items():
+                print(f"  split element:   {old!r} -> {', '.join(news)}")
         if not apply:
             print("(run with --apply to archive old sheets and regenerate)")
 
@@ -884,6 +986,8 @@ def main() -> None:
                     dropped_labels = [f"{el}@{pn}" for el, pn in dropped]
                     parts.append(f"drop {len(dropped)} ({', '.join(dropped_labels)})")
                 print(f"    [{construction}] {'; '.join(parts)}")
+                for split_line in _describe_split_impacts(rows, existing, split_element_map):
+                    print(f"    [{construction}] {split_line}")
                 if renamed or new_count or dropped:
                     class_needs_restructure = True
                     any_changes = True
@@ -938,6 +1042,7 @@ def main() -> None:
                 carried, new_count, dropped_count = _write_tab_with_carryover(
                     new_ss, construction, param_names, param_values, rows, existing,
                     rename_map, element_rename_map, tsv_path=tsv_path,
+                    split_element_map=split_element_map,
                 )
                 written_tsvs.append(tsv_path)
                 tab_names.append(construction)

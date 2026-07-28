@@ -8,9 +8,11 @@ from coding.restructure_sheets import (
     _cascade_rename_pair_tsv,
     _compute_stats,
     _count_pair_rename_impacts,
+    _describe_split_impacts,
     _lookup_existing,
     _parse_flag_map,
     _parse_position_cell,
+    _parse_split_flag_map,
     _preflight_rename_class,
 )
 
@@ -59,6 +61,81 @@ def test_parse_flag_map_ignores_other_flags():
 def test_parse_flag_map_missing_colon_raises():
     with pytest.raises(SystemExit):
         _parse_flag_map(["--rename-map", "nocolon"], FLAG)
+
+
+# ---------------------------------------------------------------------------
+# _parse_split_flag_map
+# ---------------------------------------------------------------------------
+
+SPLIT_FLAG = "--split-element"
+
+
+def test_parse_split_flag_map_empty():
+    assert _parse_split_flag_map([], SPLIT_FLAG) == {}
+
+
+def test_parse_split_flag_map_basic():
+    result = _parse_split_flag_map(["--split-element", "PRON:me,you,him"], SPLIT_FLAG)
+    assert result == {"PRON": ["me", "you", "him"]}
+
+
+def test_parse_split_flag_map_strips_whitespace():
+    result = _parse_split_flag_map(["--split-element", "PRON: me , you ,him"], SPLIT_FLAG)
+    assert result == {"PRON": ["me", "you", "him"]}
+
+
+def test_parse_split_flag_map_multiple_occurrences():
+    result = _parse_split_flag_map(
+        ["--split-element", "A:a1,a2", "--split-element", "B:b1,b2"], SPLIT_FLAG
+    )
+    assert result == {"A": ["a1", "a2"], "B": ["b1", "b2"]}
+
+
+def test_parse_split_flag_map_missing_colon_raises():
+    with pytest.raises(SystemExit):
+        _parse_split_flag_map(["--split-element", "nocolon"], SPLIT_FLAG)
+
+
+def test_parse_split_flag_map_single_target_raises():
+    """A single replacement is a rename, not a split — should point at --rename-element."""
+    with pytest.raises(SystemExit):
+        _parse_split_flag_map(["--split-element", "PRON:me"], SPLIT_FLAG)
+
+
+def test_parse_split_flag_map_ignores_other_flags():
+    result = _parse_split_flag_map(["--apply", "--split-element", "A:a1,a2"], SPLIT_FLAG)
+    assert result == {"A": ["a1", "a2"]}
+
+
+# ---------------------------------------------------------------------------
+# _describe_split_impacts
+# ---------------------------------------------------------------------------
+
+def test_describe_split_impacts_reports_when_old_had_data():
+    existing = _existing(("PRON{P,T}", "v:obj-part", {"free": "y"}))
+    rows = _rows(
+        ("NP{P,T}", "v:obj-part", "34"),
+        ("me", "v:obj-part", "34"),
+        ("you", "v:obj-part", "34"),
+    )
+    lines = _describe_split_impacts(rows, existing, {"PRON{P,T}": ["me", "you", "him"]})
+    assert len(lines) == 1
+    assert "PRON{P,T} -> me, you, him" in lines[0]
+    assert "2 new" in lines[0]
+    assert "breadcrumbed" in lines[0]
+
+
+def test_describe_split_impacts_silent_when_old_had_no_data():
+    existing = _existing(("NP{P,T}", "v:obj-part", {"free": "y"}))
+    rows = _rows(("me", "v:obj-part", "34"), ("you", "v:obj-part", "34"))
+    lines = _describe_split_impacts(rows, existing, {"PRON{P,T}": ["me", "you"]})
+    assert lines == []
+
+
+def test_describe_split_impacts_no_split_map():
+    existing = _existing(("PRON{P,T}", "v:obj-part", {"free": "y"}))
+    rows = _rows(("me", "v:obj-part", "34"))
+    assert _describe_split_impacts(rows, existing, {}) == []
 
 
 # ---------------------------------------------------------------------------

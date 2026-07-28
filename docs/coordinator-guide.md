@@ -499,9 +499,12 @@ python -m coding restructure-sheets                                            #
 python -m coding restructure-sheets --apply                                    # archive old sheets, regenerate
 python -m coding restructure-sheets --rename-map "old_pos:new_pos" --apply    # carry over renamed positions
 python -m coding restructure-sheets --rename-element Ad-VP:AD-VP --apply      # carry over renamed elements
+python -m coding restructure-sheets --split-element "PRON{P,T}:me,you,him,her,it,us,them" --apply  # split one element into several
 ```
 
 Only classes with actual changes are archived; unchanged classes are left untouched. Automatically regenerates and uploads notebooks afterward.
+
+`--split-element old:new1,new2,...` retires one element in favor of several finer-grained replacements within the same position (e.g. a generic placeholder like `PRON{P,T}` replaced by specific pronoun forms). There's no principled way to carry a generic annotation over 1:1 to several specific new elements, so the new rows are left blank as usual — but if the old element had existing annotations, each new row's `Comments` cell gets a breadcrumb note pointing back to the archived sheet, so re-annotators have a pointer to the prior judgment instead of having to remember it or hunt through Drive. Requires at least 2 comma-separated replacement elements; an element cannot appear in both `--rename-element` and `--split-element`.
 
 #### Refreshing dropdowns after criterion value changes
 
