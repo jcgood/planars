@@ -7,6 +7,10 @@ Covers:
   - _filter_nonperm_pairs_by_prescreening: scopal=n excluded; na/blank kept
   - _prefill_free_occurrence_rows: keystone and non-keystone pre-fill logic
   - _regen_dependents_simple: skips when dep TSV exists; regenerates when absent
+  - _phrasal_accent_obligatory_core / _phrasal_accent_obligatory_positions /
+    _build_phrasal_accent_pairs: issue #237's two-tier obligatory-core adjacency
+    algorithm (free_occurrence-derived core near the keystone, coordinator-confirmed
+    fallback list outside it)
 """
 from __future__ import annotations
 
@@ -17,13 +21,17 @@ import pytest
 
 import coding.generate_sheets as _gs
 from coding.generate_sheets import (
+    _OBLIGATORY_POSITIONS_DEFAULT,
     _PLANAR_REF_TAB,
     _SYSTEM_TAB_ORDER,
     _build_nonperm_pairs,
+    _build_phrasal_accent_pairs,
     _check_force_against_existing_sheets,
     _filter_nonperm_pairs_by_prescreening,
     _maybe_create_planar_reference_tab,
     _parse_pos_cell,
+    _phrasal_accent_obligatory_core,
+    _phrasal_accent_obligatory_positions,
     _prefill_free_occurrence_rows,
     _regen_dependents_simple,
     _remap_coreference_prefill,
@@ -619,3 +627,298 @@ class TestReorderSystemTabs:
         """_SYSTEM_TAB_ORDER must end with Status (the very last tab)."""
         assert _SYSTEM_TAB_ORDER[-1] == "Status"
         assert _PLANAR_REF_TAB in _SYSTEM_TAB_ORDER
+
+
+# ---------------------------------------------------------------------------
+# Phrasal accent pair generation (issue #237 — two-tier obligatory-core)
+# ---------------------------------------------------------------------------
+
+def _write_free_occurrence(tmp_path: Path, lang_id: str, rows: list[dict]) -> None:
+    d = tmp_path / lang_id / "free_occurrence"
+    d.mkdir(parents=True)
+    path = d / "general.tsv"
+    header = "\t".join(rows[0].keys())
+    lines = [header] + ["\t".join(r.values()) for r in rows]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _write_phrasal_prescreening(tmp_path: Path, lang_id: str, rows: list[dict]) -> None:
+    d = tmp_path / lang_id / "phrasal_accent"
+    d.mkdir(parents=True)
+    path = d / "prescreening.tsv"
+    header = "\t".join(rows[0].keys())
+    lines = [header] + ["\t".join(r.values()) for r in rows]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+class TestObligatoryPositionsDefault:
+    def test_contains_keystone_and_subject(self):
+        # Starting list per issue #237's tentative example set — a first guess,
+        # not a validated coordinator decision (see the constant's docstring).
+        assert _OBLIGATORY_POSITIONS_DEFAULT == {"v:verbstem", "v:npsubj1"}
+
+
+class TestPhrasalAccentObligatoryCore:
+    def test_no_free_occurrence_file_returns_keystone_alone(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        assert _phrasal_accent_obligatory_core("lang0001", 3) == (3, 3)
+
+    def test_keystone_free_y_returns_keystone_alone(self, tmp_path, monkeypatch):
+        # free=y: the keystone has no structural dependents to seed the core with.
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        _write_free_occurrence(tmp_path, "lang0001", [
+            {"Element": "vs", "Position_Name": "v:verbstem", "Position_Number": "3",
+             "free": "y", "dependent-on-left": "na", "dependent-on-right": "na"},
+        ])
+        assert _phrasal_accent_obligatory_core("lang0001", 3) == (3, 3)
+
+    def test_keystone_bound_with_dependents_returns_dependency_range(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        _write_free_occurrence(tmp_path, "lang0001", [
+            {"Element": "vs", "Position_Name": "v:verbstem", "Position_Number": "3",
+             "free": "n", "dependent-on-left": "2", "dependent-on-right": "4"},
+        ])
+        assert _phrasal_accent_obligatory_core("lang0001", 3) == (2, 4)
+
+    def test_keystone_bound_one_sided_dependency(self, tmp_path, monkeypatch):
+        # Only dependent-on-right set: left edge collapses to the keystone itself.
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        _write_free_occurrence(tmp_path, "lang0001", [
+            {"Element": "vs", "Position_Name": "v:verbstem", "Position_Number": "3",
+             "free": "n", "dependent-on-left": "na", "dependent-on-right": "5"},
+        ])
+        assert _phrasal_accent_obligatory_core("lang0001", 3) == (3, 5)
+
+    def test_keystone_bound_no_dependents_returns_keystone_alone(self, tmp_path, monkeypatch):
+        # free=n but dependent-on-left/right are blank/na: no dependents recorded.
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        _write_free_occurrence(tmp_path, "lang0001", [
+            {"Element": "vs", "Position_Name": "v:verbstem", "Position_Number": "3",
+             "free": "n", "dependent-on-left": "na", "dependent-on-right": "na"},
+        ])
+        assert _phrasal_accent_obligatory_core("lang0001", 3) == (3, 3)
+
+    def test_missing_keystone_row_returns_keystone_alone(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        _write_free_occurrence(tmp_path, "lang0001", [
+            {"Element": "a", "Position_Name": "p1", "Position_Number": "1",
+             "free": "n", "dependent-on-left": "na", "dependent-on-right": "na"},
+        ])
+        assert _phrasal_accent_obligatory_core("lang0001", 3) == (3, 3)
+
+
+class TestPhrasalAccentObligatoryPositions:
+    def test_core_range_all_obligatory(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        _write_free_occurrence(tmp_path, "lang0001", [
+            {"Element": "vs", "Position_Name": "v:verbstem", "Position_Number": "3",
+             "free": "n", "dependent-on-left": "2", "dependent-on-right": "4"},
+        ])
+        all_positions = {1: "p1", 2: "p2", 3: "v:verbstem", 4: "p4", 5: "p5"}
+        result = _phrasal_accent_obligatory_positions("lang0001", 3, all_positions)
+        assert result == {2, 3, 4}
+
+    def test_default_list_adds_positions_outside_core(self, tmp_path, monkeypatch):
+        # No free_occurrence data -> core is just the keystone (pos 3). Position 2
+        # is named v:npsubj1, which is in the tier-2 default list, so it's still
+        # obligatory even though it falls outside the (trivial) core.
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        all_positions = {1: "p1", 2: "v:npsubj1", 3: "v:verbstem", 4: "p4"}
+        result = _phrasal_accent_obligatory_positions("lang0001", 3, all_positions)
+        assert result == {2, 3}
+
+    def test_positions_not_in_core_or_default_list_are_not_obligatory(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        all_positions = {1: "p1", 2: "p2", 3: "v:verbstem", 4: "p4"}
+        result = _phrasal_accent_obligatory_positions("lang0001", 3, all_positions)
+        assert result == {3}
+
+
+class TestBuildPhrasalAccentPairs:
+    """Fixture planar structure used throughout (unless overridden per test):
+
+        1: p1 (element a)     4: p4 (element c)
+        2: p2 (element b)     5: p5 (element d)
+        3: v:verbstem (element vs)   <- keystone
+
+    All positions are Slots unless a test overrides pos_type.
+    """
+
+    def _pos_type(self, n: int = 5) -> dict:
+        return {i: "Slot" for i in range(1, n + 1)}
+
+    def _ei(self, entries: list) -> dict:
+        return {f"{e}@{p}": (p, n, "lang0001", e) for p, n, e in entries}
+
+    def test_missing_prescreening_returns_empty(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        ei = self._ei([(1, "p1", "a"), (2, "p2", "b")])
+        assert _build_phrasal_accent_pairs(ei, "lang0001", {1: "Slot", 2: "Slot"}) == []
+
+    def test_accented_n_excludes_element(self, tmp_path, monkeypatch):
+        # keystone placed away (pos 99) from a/b/c so it never sits "between" them
+        # and blocks nothing here -- this test is purely about accented=n filtering.
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        _write_phrasal_prescreening(tmp_path, "lang0001", [
+            {"Element": "a", "accented": "y"},
+            {"Element": "b", "accented": "n"},
+            {"Element": "c", "accented": "y"},
+        ])
+        ei = self._ei([(1, "p1", "a"), (2, "p2", "b"), (4, "p4", "c"), (99, "v:verbstem", "vs")])
+        pos_type = {1: "Slot", 2: "Slot", 4: "Slot", 99: "Slot"}
+        pairs = _build_phrasal_accent_pairs(ei, "lang0001", pos_type)
+        flat = [e for pair in pairs for e in pair]
+        assert "b" not in flat
+        assert ["a", "c"] in pairs  # confirms pairs were actually generated
+
+    def test_accented_both_included(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        _write_phrasal_prescreening(tmp_path, "lang0001", [
+            {"Element": "a", "accented": "both"},
+            {"Element": "c", "accented": "y"},
+        ])
+        ei = self._ei([(1, "p1", "a"), (4, "p4", "c"), (99, "v:verbstem", "vs")])
+        pos_type = {1: "Slot", 4: "Slot", 99: "Slot"}
+        pairs = _build_phrasal_accent_pairs(ei, "lang0001", pos_type)
+        assert ["a", "c"] in pairs
+
+    def test_keystone_excluded_by_default(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        _write_phrasal_prescreening(tmp_path, "lang0001", [
+            {"Element": "a", "accented": "y"},
+            {"Element": "vs", "accented": "y"},
+        ])
+        ei = self._ei([(1, "p1", "a"), (3, "v:verbstem", "vs")])
+        pairs = _build_phrasal_accent_pairs(ei, "lang0001", {1: "Slot", 3: "Slot"})
+        flat = [e for pair in pairs for e in pair]
+        assert "vs" not in flat
+
+    def test_keystone_included_when_active(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        _write_phrasal_prescreening(tmp_path, "lang0001", [
+            {"Element": "a", "accented": "y"},
+            {"Element": "vs", "accented": "y"},
+        ])
+        ei = self._ei([(1, "p1", "a"), (2, "p2", "unused"), (3, "v:verbstem", "vs")])
+        pairs = _build_phrasal_accent_pairs(
+            ei, "lang0001", {1: "Slot", 2: "Slot", 3: "Slot"}, keystone_active=True
+        )
+        # Nothing obligatory strictly between pos 1 and pos 3 other than the
+        # keystone's own position (endpoints are never checked against
+        # themselves), so a-vs should be a candidate pair.
+        assert ["a", "vs"] in pairs or ["vs", "a"] in pairs
+
+    def test_keystone_always_blocks_pairs_that_straddle_it(self, tmp_path, monkeypatch):
+        # No free_occurrence data -> core is just the keystone position (3), but
+        # that alone is enough to block any pair straddling it, since the
+        # keystone is trivially always present.
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        _write_phrasal_prescreening(tmp_path, "lang0001", [
+            {"Element": "a", "accented": "y"},
+            {"Element": "c", "accented": "y"},
+        ])
+        ei = self._ei([(1, "p1", "a"), (3, "v:verbstem", "vs"), (4, "p4", "c")])
+        pairs = _build_phrasal_accent_pairs(ei, "lang0001", self._pos_type())
+        assert ["a", "c"] not in pairs
+
+    def test_skippable_position_does_not_block_adjacency(self, tmp_path, monkeypatch):
+        # b sits strictly between a and c but is not in the obligatory set (no
+        # free_occurrence core, not on the tier-2 default list) -- a and c can
+        # become linearly adjacent once b is absent. Keystone placed away (pos
+        # 99) so it doesn't itself block a-c.
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        _write_phrasal_prescreening(tmp_path, "lang0001", [
+            {"Element": "a", "accented": "y"},
+            {"Element": "c", "accented": "y"},
+        ])
+        ei = self._ei([(1, "p1", "a"), (2, "p2", "b"), (4, "p4", "c"), (99, "v:verbstem", "vs")])
+        pos_type = {1: "Slot", 2: "Slot", 4: "Slot", 99: "Slot"}
+        pairs = _build_phrasal_accent_pairs(ei, "lang0001", pos_type)
+        assert ["a", "c"] in pairs
+
+    def test_tier2_default_list_blocks_adjacency_outside_core(self, tmp_path, monkeypatch):
+        # No free_occurrence data -> core is just the keystone. Position 2 is
+        # named v:npsubj1 (tier-2 default list) and sits between a (pos 1) and
+        # c (pos 4), so it blocks adjacency even though it's outside the core.
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        _write_phrasal_prescreening(tmp_path, "lang0001", [
+            {"Element": "a", "accented": "y"},
+            {"Element": "c", "accented": "y"},
+        ])
+        ei = self._ei([(1, "p1", "a"), (2, "v:npsubj1", "subj"), (3, "v:verbstem", "vs"),
+                        (4, "p4", "c")])
+        pairs = _build_phrasal_accent_pairs(ei, "lang0001", self._pos_type())
+        assert ["a", "c"] not in pairs
+
+    def test_free_occurrence_core_extends_obligatory_range(self, tmp_path, monkeypatch):
+        # Keystone depends on positions 2-4 (free_occurrence data) -> the whole
+        # range is obligatory, so a (pos 1) and d (pos 5) cannot become adjacent.
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        _write_free_occurrence(tmp_path, "lang0001", [
+            {"Element": "vs", "Position_Name": "v:verbstem", "Position_Number": "3",
+             "free": "n", "dependent-on-left": "2", "dependent-on-right": "4"},
+        ])
+        _write_phrasal_prescreening(tmp_path, "lang0001", [
+            {"Element": "a", "accented": "y"},
+            {"Element": "d", "accented": "y"},
+        ])
+        ei = self._ei([(1, "p1", "a"), (3, "v:verbstem", "vs"), (5, "p5", "d")])
+        pairs = _build_phrasal_accent_pairs(ei, "lang0001", self._pos_type())
+        assert ["a", "d"] not in pairs
+
+    def test_same_zone_position_included(self, tmp_path, monkeypatch):
+        # Same-position (Zone) pairs don't go through the "strictly between"
+        # check at all, so the keystone at pos 2 is harmless here regardless
+        # of its obligatory status.
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        _write_phrasal_prescreening(tmp_path, "lang0001", [
+            {"Element": "a", "accented": "y"},
+            {"Element": "b", "accented": "y"},
+        ])
+        ei = self._ei([(1, "p1", "a"), (1, "p1", "b"), (2, "v:verbstem", "vs")])
+        pairs = _build_phrasal_accent_pairs(ei, "lang0001", {1: "Zone", 2: "Slot"})
+        assert pairs == [["a", "b"]]
+
+    def test_same_slot_position_excluded(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        _write_phrasal_prescreening(tmp_path, "lang0001", [
+            {"Element": "a", "accented": "y"},
+            {"Element": "b", "accented": "y"},
+        ])
+        ei = self._ei([(1, "p1", "a"), (1, "p1", "b"), (2, "v:verbstem", "vs")])
+        pairs = _build_phrasal_accent_pairs(ei, "lang0001", {1: "Slot", 2: "Slot"})
+        assert pairs == []
+
+    def test_hyphenated_elements_bracket_wrapped(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        _write_phrasal_prescreening(tmp_path, "lang0001", [
+            {"Element": "[-ed]", "accented": "y"},
+            {"Element": "[-ing]", "accented": "y"},
+        ])
+        ei = self._ei([(1, "p1", "-ed"), (1, "p1", "-ing"), (2, "v:verbstem", "vs")])
+        pairs = _build_phrasal_accent_pairs(ei, "lang0001", {1: "Zone", 2: "Slot"})
+        assert pairs == [["[-ed]", "[-ing]"]]
+
+    def test_other_lang_elements_excluded(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        _write_phrasal_prescreening(tmp_path, "lang0001", [
+            {"Element": "a", "accented": "y"},
+        ])
+        ei = {
+            "a@1": (1, "p1", "lang0001", "a"),
+            "b@1": (1, "p1", "other9999", "b"),
+            "vs@2": (2, "v:verbstem", "lang0001", "vs"),
+        }
+        pairs = _build_phrasal_accent_pairs(ei, "lang0001", {1: "Zone", 2: "Slot"})
+        assert pairs == []
+
+    def test_no_keystone_position_returns_empty(self, tmp_path, monkeypatch):
+        # Defensive: a planar structure with no v:verbstem position at all.
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        _write_phrasal_prescreening(tmp_path, "lang0001", [
+            {"Element": "a", "accented": "y"},
+            {"Element": "b", "accented": "y"},
+        ])
+        ei = self._ei([(1, "p1", "a"), (2, "p2", "b")])
+        pairs = _build_phrasal_accent_pairs(ei, "lang0001", {1: "Slot", 2: "Slot"})
+        assert pairs == []
