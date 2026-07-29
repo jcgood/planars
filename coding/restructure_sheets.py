@@ -91,6 +91,12 @@ from .generate_sheets import (
     _reorder_system_tabs,
     _TRAILING_COLS,
 )
+from .notify import (
+    build_change_comment,
+    changed_lang_ids,
+    ensure_notification_issue,
+    post_notification_comment,
+)
 
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
 CODED_DATA = ROOT / "coded_data"
@@ -1172,6 +1178,40 @@ def main() -> None:
             print("\n--- Affected sheets (new URLs — old bookmarks to these classes are stale) ---")
             for lang_id, class_name, url in sheet_links:
                 print(f"  [{lang_id}] {class_name}: {url}")
+
+        # Notify each affected language's tracking issue. The printing above does
+        # NOT reach Adam -- he works through his own separate Claude Code instance
+        # and never watches this terminal. A GitHub issue comment does, because he
+        # can subscribe to just the languages he annotates. Same content as the
+        # "Affected sheets" / "Bookmark this instead" blocks above, new sink.
+        # See coding/notify.py for the one-issue-per-language design rationale.
+        if sheet_links:
+            print("\n--- Notifying language tracking issues ---")
+            manifest_dirty = False
+            for notify_lang_id in changed_lang_ids(sheet_links):
+                lang_sheet_links = [
+                    (class_name, url)
+                    for lid, class_name, url in sheet_links
+                    if lid == notify_lang_id
+                ]
+                folder_url = lang_folder_urls.get(notify_lang_id)
+                issue_number, created = ensure_notification_issue(notify_lang_id, manifest)
+                manifest_dirty = manifest_dirty or created
+                body = build_change_comment(notify_lang_id, lang_sheet_links, folder_url)
+                post_notification_comment(issue_number, body)
+                print(f"  [{notify_lang_id}] commented on issue #{issue_number}")
+            if manifest_dirty:
+                # A new notification issue was created for at least one language --
+                # persist the updated manifest the same way the rest of this
+                # command already does (MANIFEST_PATH.write_text + _upload_planars_config).
+                MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+                config = _load_drive_config()
+                existing_file_id = config.get("_planars_config_file_id")
+                root_folder_id = config.get("_root_folder_id")
+                file_id = _upload_planars_config(drive, manifest, root_folder_id, existing_file_id)
+                config["_planars_config_file_id"] = file_id
+                _save_drive_config(config)
+                print("  Manifest updated on Drive (new notification_issue number(s)).")
 
 
 if __name__ == "__main__":
