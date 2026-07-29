@@ -24,6 +24,7 @@ Commands:
     check-notes                  Check collaborator notes docs for new content and file issues
     refresh-dropdowns            Refresh criterion dropdown validation on existing sheets
     import-planar                Download planar spreadsheet from Drive and sync to local TSV
+    generate-status-sheet        Generate locked, read-only per-language Annotation Status sheets
 
 Each command accepts the same flags as the original script. Use --help on any
 command for details, or see CLAUDE.md.
@@ -55,6 +56,7 @@ _COMMANDS = {
     "check-notes":                 "coding.check_notes",
     "refresh-dropdowns":           "coding.refresh_dropdowns",
     "import-planar":               "coding.import_planar",
+    "generate-status-sheet":       "coding.generate_status_sheet",
 }
 
 
