@@ -1,6 +1,9 @@
 English Coreference Reflexivization
 ===================================
 
+NOTE: Some pairs have unknown elements.
+  unknown_elements: ["Element_A 'PRON{P,T}' not in planar"]
+
 Keystone position: 30 (v:verbstem)
 
 Binder positions (antecedent): [2, 5, 34]
