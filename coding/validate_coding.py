@@ -240,7 +240,15 @@ def annotation_status(
     """Return completeness/validity counts for one annotation sheet tab.
 
     Returns {'total': int, 'filled': int, 'blank': int, 'invalid': int}.
-    Keystone rows (v:verbstem) are excluded from all counts.
+    Keystone rows (v:verbstem) are excluded from all counts unless
+    keystone_active is True, in which case they count for every param except
+    those in keystone_na_criteria — this must mirror validate_annotation_rows'
+    per-cell logic exactly (same rows/params it can raise a "blank value"
+    issue for), otherwise total and blank drift apart and filled can go
+    negative. That drift was invisible for every previously-onboarded
+    keystone-active class (metrical) because their keystone rows were already
+    fully annotated by the time this ran; it first surfaced with
+    phrasal_accent, whose keystone row started out blank.
     """
     if not rows or len(rows) < 2:
         return {"total": 0, "filled": 0, "blank": 0, "invalid": 0}
@@ -249,11 +257,15 @@ def annotation_status(
     param_cols = [c for c in header if c not in _STRUCTURAL_COLS and c not in _TRAILING_COLS]
     n_params = len(param_cols)
     pos_idx = header.index("Position_Name") if "Position_Name" in header else -1
-    n_data_rows = sum(
-        1 for row in rows[1:]
-        if not (pos_idx >= 0 and len(row) > pos_idx and row[pos_idx].lower() == _KEYSTONE_NAME)
-    )
-    total = n_data_rows * n_params
+    na_criteria = set(keystone_na_criteria or [])
+    total = 0
+    for row in rows[1:]:
+        is_keystone = pos_idx >= 0 and len(row) > pos_idx and row[pos_idx].lower() == _KEYSTONE_NAME
+        if is_keystone:
+            if keystone_active:
+                total += sum(1 for p in param_cols if p not in na_criteria)
+        else:
+            total += n_params
 
     _, issues = validate_annotation_rows(
         rows, expected_params, "", param_values,
