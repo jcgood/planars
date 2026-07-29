@@ -10,7 +10,6 @@ from __future__ import annotations
 from coding.generate_status_sheet import (
     _GRAY,
     _GREEN,
-    _RED,
     _YELLOW,
     _build_row_skeletons,
     _completeness_pct,
@@ -50,22 +49,17 @@ def test_status_color_none_is_gray():
     assert _status_color(None) == _GRAY
 
 
-def test_status_color_below_50_is_red():
-    assert _status_color(0) == _RED
-    assert _status_color(49.9) == _RED
-
-
-def test_status_color_50_boundary_is_yellow():
+def test_status_color_below_100_is_yellow():
+    assert _status_color(0) == _YELLOW
     assert _status_color(50) == _YELLOW
-
-
-def test_status_color_between_50_and_90_is_yellow():
     assert _status_color(75) == _YELLOW
     assert _status_color(89.9) == _YELLOW
+    assert _status_color(99.9) == _YELLOW
 
 
-def test_status_color_90_boundary_is_green():
-    assert _status_color(90) == _GREEN
+def test_status_color_90_boundary_is_yellow():
+    # 90% used to be the green cutoff; it no longer is -- only 100% is green.
+    assert _status_color(90) == _YELLOW
 
 
 def test_status_color_100_is_green():
@@ -108,15 +102,22 @@ def test_row_status_pair_ignores_status_dict():
 
 
 def test_row_status_element_row_uses_status_dict():
+    # 128/142 is 90.1% -- not fully complete, so yellow, not green.
     text, color = _row_status(False, {"total": 142, "filled": 128, "blank": 14, "invalid": 0})
     assert text == "128/142 filled (90%)"
+    assert color == _YELLOW
+
+
+def test_row_status_element_row_fully_complete_is_green():
+    text, color = _row_status(False, {"total": 100, "filled": 100, "blank": 0, "invalid": 0})
+    assert text == "100/100 filled (100%)"
     assert color == _GREEN
 
 
-def test_row_status_element_row_low_completeness_is_red():
+def test_row_status_element_row_low_completeness_is_yellow():
     text, color = _row_status(False, {"total": 100, "filled": 10, "blank": 90, "invalid": 0})
     assert text == "10/100 filled (10%)"
-    assert color == _RED
+    assert color == _YELLOW
 
 
 def test_row_status_element_row_missing_keys_defaults_to_zero():
