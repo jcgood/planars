@@ -58,6 +58,19 @@ jobs:
           printf '%s' "$OAUTH_CREDS" > ~/.config/planars/oauth_credentials.json
           printf '%s' "$OAUTH_TOKEN" > ~/.config/gspread/authorized_user.json
 
+      - name: Configure git identity for coded_data
+        # import-planar and restructure-sheets call drive._autocommit_data(),
+        # which commits+pushes directly to coded_data/ as soon as they write a
+        # changed file — before the later "Commit and push planars-data changes"
+        # step ever runs. Without an identity configured this early, that inline
+        # commit fails silently (a WARNING line, not a raised error), leaving
+        # coded_data/ dirty for the "Import annotation data" step right after,
+        # which then aborts on its uncommitted-changes guard (#245).
+        working-directory: coded_data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Record planars-data state before import
         # Gap 2 (#121): snapshot the planars-data HEAD and the set of files
         # touched by human (non-bot) commits since the last data-refresh run.
