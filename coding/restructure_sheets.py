@@ -78,11 +78,12 @@ from .make_forms import (
 from .schemas import load_diagnostic_classes
 from .drive import (
     _autocommit_data,
-    _get_clients, _move_to_folder, _share_anyone_with_link, _open_spreadsheet,
+    _get_clients, _move_to_folder, _share_with_person, _remove_anyone_permission, _open_spreadsheet,
     _load_manifest_from_drive, _upload_planars_config, _load_drive_config, _save_drive_config,
     _with_retry,
 )
 from .generate_sheets import (
+    _annotator_email,
     _build_criterion_notes,
     _build_rows,
     _create_status_tab,
@@ -174,6 +175,20 @@ def _lookup_existing(
 def _folder_id_from_url(folder_url: str) -> str:
     """Extract the Drive folder ID from a Drive folder URL (last path segment)."""
     return folder_url.rstrip("/").rsplit("/", 1)[-1]
+
+
+def _lock_archived_sheet(drive, file_id: str, lang_id: str) -> None:
+    """Remove any 'anyone' permission from a just-archived sheet and share it
+    read-only with the language's annotator, if one is on file.
+
+    Archived sheets carry real prior judgments (--split-element's breadcrumb
+    notes point back to them) so the annotator still needs to be able to open
+    and read them — just not edit them, since they're no longer the live copy.
+    """
+    _remove_anyone_permission(drive, file_id)
+    email = _annotator_email(lang_id)
+    if email:
+        _share_with_person(drive, file_id, email, role="reader")
 
 
 def _get_or_create_subfolder(drive, parent_id: str, name: str) -> str:
@@ -671,6 +686,7 @@ def _rename_class_for_language(
             body={"name": f"{old_class}_{lang_id}_v{version}"},
         ).execute()
         _move_to_folder(drive, ss.id, archive_id)
+        _lock_archived_sheet(drive, ss.id, lang_id)
         print(f"    Archived {old_class}_{lang_id} → _archived/{old_class}_{lang_id}_v{version}")
 
     # Create new sheet
@@ -678,7 +694,9 @@ def _rename_class_for_language(
     new_ss = gc.create(sheet_title)
     if folder_id:
         _move_to_folder(drive, new_ss.id, folder_id)
-        _share_anyone_with_link(drive, new_ss.id)
+        email = _annotator_email(lang_id)
+        if email:
+            _share_with_person(drive, new_ss.id, email, role="writer")
 
     default_ws = _with_retry(lambda: new_ss.sheet1)
     tab_names = []
@@ -1018,6 +1036,7 @@ def main() -> None:
                     body={"name": f"{class_name}_{lang_id}_v{version}"},
                 ).execute()
                 _move_to_folder(drive, ss.id, archive_id)
+                _lock_archived_sheet(drive, ss.id, lang_id)
                 print(f"    Archived to _archived/{class_name}_{lang_id}_v{version}")
 
             # Step 4: Create new sheet and populate with carry-over
@@ -1025,7 +1044,9 @@ def main() -> None:
             new_ss = gc.create(sheet_title)
             if folder_id:
                 _move_to_folder(drive, new_ss.id, folder_id)
-                _share_anyone_with_link(drive, new_ss.id)
+                email = _annotator_email(lang_id)
+                if email:
+                    _share_with_person(drive, new_ss.id, email, role="writer")
 
             default_ws = _with_retry(lambda: new_ss.sheet1)
             tab_names = []

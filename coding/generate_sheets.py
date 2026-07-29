@@ -60,6 +60,7 @@ from .drive import (
     _download_file_json,
     _get_or_create_folder,
     _share_anyone_with_link,
+    _share_with_person,
     _move_to_folder,
     _with_retry,
     _get_docs_client,
@@ -67,7 +68,19 @@ from .drive import (
     DRIVE_CONFIG_PATH,
 )
 from .glottolog import cached_entry as _cached_glottolog, get_metadata as _fetch_glottolog
-from planars.languages import get_display_name as _get_display_name
+from planars.languages import get_display_name as _get_display_name, get_entry as _get_language_entry
+
+
+def _annotator_email(lang_id: str) -> Optional[str]:
+    """Return the annotator's email for lang_id from languages.yaml, or None if unset.
+
+    Used to share annotation sheets/folders with a named person instead of
+    "anyone with the link" — see _share_with_person's docstring for why.
+    """
+    entry = _get_language_entry(lang_id)
+    if not entry:
+        return None
+    return entry.get("meta", {}).get("annotator_email") or None
 from .schemas import load_planar_schema, load_diagnostic_classes, load_diagnostic_criteria
 from .make_forms import (
     build_element_index,
@@ -97,12 +110,14 @@ def _create_or_update_tsv_sheet(
     folder_id: str,
     name: str,
     tsv_path: Path,
+    lang_id: str,
     existing_id: str = None,
 ) -> Tuple[str, str]:
     """Create or overwrite a Google Sheet with the contents of a TSV file.
 
     If existing_id is given, clears and rewrites that sheet; otherwise creates a new one,
-    moves it to folder_id, and shares it with anyone-with-link as editor.
+    moves it to folder_id, and shares it with the language's annotator (if one is on
+    file in languages.yaml) as a named editor.
 
     Returns (spreadsheet_id, url).
     """
@@ -116,7 +131,9 @@ def _create_or_update_tsv_sheet(
     else:
         ss = gc.create(name)
         _move_to_folder(drive, ss.id, folder_id)
-        _share_anyone_with_link(drive, ss.id)
+        email = _annotator_email(lang_id)
+        if email:
+            _share_with_person(drive, ss.id, email, role="writer")
         ws = _with_retry(lambda: ss.sheet1)
 
     _with_retry(lambda: ws.update(all_rows, "A1"))
@@ -179,6 +196,7 @@ def _upload_lang_setup_as_sheets(
                 gc, drive, folder_id,
                 name=f"planar_{lang_id}",
                 tsv_path=planar_path,
+                lang_id=lang_id,
                 existing_id=existing_id,
             )
             result["planar_spreadsheet_id"]  = sheet_id
@@ -198,6 +216,7 @@ def _upload_lang_setup_as_sheets(
                 gc, drive, folder_id,
                 name=f"diagnostics_{lang_id}",
                 tsv_path=diag_path,
+                lang_id=lang_id,
                 existing_id=existing_id,
             )
             result["diagnostics_spreadsheet_id"]  = sheet_id
@@ -1221,7 +1240,9 @@ def _create_analysis_sheet(
 
     spreadsheet = gc.create(sheet_title)
     _move_to_folder(drive, spreadsheet.id, folder_id)
-    _share_anyone_with_link(drive, spreadsheet.id)
+    email = _annotator_email(lang_id)
+    if email:
+        _share_with_person(drive, spreadsheet.id, email, role="writer")
 
     default_ws = spreadsheet.sheet1
     tab_names = []
@@ -1830,10 +1851,12 @@ def main() -> None:
 
         # Resolve/create Drive folder.
         folder_id = _get_or_create_folder(drive, lang_id, parent_id=root_folder_id)
-        try:
-            _share_anyone_with_link(drive, folder_id)
-        except Exception as _share_err:
-            print(f"  [WARNING] Could not share folder for {lang_id}: {_share_err}")
+        email = _annotator_email(lang_id)
+        if email:
+            try:
+                _share_with_person(drive, folder_id, email, role="reader")
+            except Exception as _share_err:
+                print(f"  [WARNING] Could not share folder for {lang_id}: {_share_err}")
         folder_url = f"https://drive.google.com/drive/folders/{folder_id}"
         print(f"Folder:      {folder_url}")
 
