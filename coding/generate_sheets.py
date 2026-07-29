@@ -41,7 +41,7 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -69,6 +69,7 @@ from .drive import (
 )
 from .glottolog import cached_entry as _cached_glottolog, get_metadata as _fetch_glottolog
 from planars.languages import get_display_name as _get_display_name, get_entry as _get_language_entry
+from planars.free_occurrence import _parse_pos_ref
 
 
 def _annotator_email(lang_id: str) -> Optional[str]:
@@ -649,6 +650,203 @@ def _filter_reflex_pairs_by_prescreening(
     print(f"    [prescreening] {len(excluded_elements)} element(s) excluded")
     print(f"    [prescreening] {len(pairs)} → {len(filtered)} pairs after filtering")
     return filtered
+
+
+# ---------------------------------------------------------------------------
+# Phrasal accent pair generation (issue #237 — two-tier obligatory-core compromise)
+# ---------------------------------------------------------------------------
+
+# Coordinator-confirmed "obligatory positions" list — issue #237's tier-2 fallback,
+# used for any position that falls OUTSIDE the free_occurrence-derived obligatory
+# core (see _phrasal_accent_obligatory_core). Every other non-keystone Slot is
+# treated as potentially absent when deciding whether two accent-eligible elements
+# can become linearly adjacent.
+#
+# THIS IS A FIRST GUESS, NOT A VALIDATED COORDINATOR DECISION. It is lifted
+# directly from issue #237's original tentative example set ("verbstem, subject,
+# maybe verb inflection") and is expected to need per-language correction as real
+# phrasal_accent data comes back. Edit freely — this constant is deliberately kept
+# separate from the adjacency logic below so it can be adjusted without needing to
+# understand the rest of the algorithm. v:verbstem is included trivially (the
+# keystone is always present by definition); v:npsubj1 (subject) is the other
+# member of the original tentative list.
+_OBLIGATORY_POSITIONS_DEFAULT = {"v:verbstem", "v:npsubj1"}
+_OBLIGATORY_POSITIONS_DEFAULT_NORM = {p.strip().lower() for p in _OBLIGATORY_POSITIONS_DEFAULT}
+
+
+def _phrasal_accent_obligatory_core(lang_id: str, keystone_pos: int) -> Tuple[int, int]:
+    """Return the (left, right) Position_Number range of the obligatory core.
+
+    Tier 1 of issue #237's adjacency algorithm: reuses free_occurrence's minimal
+    free-occurrence span logic (planars/free_occurrence.py lines ~114-140) rather
+    than reimplementing it. For a bound keystone (free=n), the positions it
+    structurally depends on (dependent-on-left/dependent-on-right) are exactly the
+    positions that must be present whenever the keystone is realized — i.e. they
+    can never be dropped, so they always block adjacency between elements on
+    either side of them. That set is already annotated (no new annotation burden)
+    once free_occurrence/general.tsv exists.
+
+    Falls back to the keystone position alone (a trivial single-position "core")
+    when free_occurrence/general.tsv doesn't exist yet, the keystone row is
+    missing, or the keystone is free (free=y, i.e. no structural dependents) —
+    in all of these cases tier 2 (_OBLIGATORY_POSITIONS_DEFAULT) does all the
+    obligatory-position work outside the keystone itself.
+    """
+    fo_path = CODED_DATA / lang_id / "free_occurrence" / "general.tsv"
+    if not fo_path.exists():
+        return (keystone_pos, keystone_pos)
+
+    try:
+        df = pd.read_csv(fo_path, sep="\t", dtype=str, keep_default_na=False)
+    except Exception:
+        return (keystone_pos, keystone_pos)
+
+    if "Position_Name" not in df.columns:
+        return (keystone_pos, keystone_pos)
+
+    _keystone = load_planar_schema().get("keystone_position_name", "v:verbstem")
+    ks_rows = df[df["Position_Name"].str.strip().str.lower() == _keystone]
+    if ks_rows.empty:
+        return (keystone_pos, keystone_pos)
+    ks_row = ks_rows.iloc[0]
+
+    if ks_row.get("free", "").strip() != "n":
+        # free=y, blank, na, or unannotated: no structural dependents to seed
+        # the core with — tier 2 handles everything outside the keystone itself.
+        return (keystone_pos, keystone_pos)
+
+    dep_l = _parse_pos_ref(ks_row.get("dependent-on-left", ""))
+    dep_r = _parse_pos_ref(ks_row.get("dependent-on-right", ""))
+    left  = dep_l if dep_l is not None else keystone_pos
+    right = dep_r if dep_r is not None else keystone_pos
+    return (min(left, keystone_pos), max(right, keystone_pos))
+
+
+def _phrasal_accent_obligatory_positions(
+    lang_id: str, keystone_pos: int, all_positions: Dict[int, str],
+) -> Set[int]:
+    """Union tier-1 (obligatory core) and tier-2 (coordinator list) obligatory positions.
+
+    A position is obligatory (can never be dropped, so it always blocks adjacency
+    between elements on either side of it) if EITHER:
+      - it falls inside the free_occurrence-derived obligatory core, or
+      - its Position_Name is in _OBLIGATORY_POSITIONS_DEFAULT.
+    """
+    core_lo, core_hi = _phrasal_accent_obligatory_core(lang_id, keystone_pos)
+    obligatory = {p for p in all_positions if core_lo <= p <= core_hi}
+    for pos_num, pos_name in all_positions.items():
+        if pos_name.strip().lower() in _OBLIGATORY_POSITIONS_DEFAULT_NORM:
+            obligatory.add(pos_num)
+    return obligatory
+
+
+def _build_phrasal_accent_pairs(
+    element_index, lang_id: str, pos_type: Dict[int, str],
+    keystone_active: bool = False,
+) -> List[List[str]]:
+    """Generate candidate joint_accent element pairs for phrasal_accent's `general` tab.
+
+    Candidates are accent-eligible elements (accented=y or both in
+    phrasal_accent/prescreening.tsv) restricted to pairs that can become linearly
+    adjacent once optional intervening material is absent — issue #237's two-tier
+    "obligatory core" compromise:
+
+      Tier 1 (near the keystone): _phrasal_accent_obligatory_core reuses
+        free_occurrence's already-annotated dependent-on-left/dependent-on-right
+        data for a bound keystone to find the obligatory core — the contiguous
+        Position_Number range the keystone structurally requires in order to be
+        uttered at all. Every position inside that range is obligatory.
+
+      Tier 2 (outside the core): _OBLIGATORY_POSITIONS_DEFAULT, a
+        coordinator-confirmed starting list of positions treated as always
+        present. Every other non-keystone Slot is treated as potentially absent.
+
+    Two elements are a candidate pair if no obligatory position (by either tier)
+    falls strictly between their Position_Numbers, OR they share a Zone position
+    (co-occurring elements can be linearly adjacent to each other within the
+    zone). Same-Slot pairs are excluded — elements at the same Slot are
+    alternatives, never co-occurring, so "adjacent" is undefined for them.
+
+    Unlike nonpermutability's structural pair list (meaningful even before
+    prescreening is annotated), the accent-eligible/ineligible distinction here
+    is not a narrowing filter on an otherwise-valid set — without it there is no
+    way to know which elements are even pairing candidates. So if
+    phrasal_accent/prescreening.tsv does not exist yet, this prints a note and
+    returns [] (mirroring _filter_reflex_pairs_by_prescreening's behavior)
+    rather than generating an unfiltered (and here, meaningless) pair list.
+
+    Does NOT implement corrective-accent exclusion — that's an annotation-time
+    instruction to the annotator (see the class's sheet_instructions in
+    diagnostic_classes.yaml), not a property of which structural pairs exist.
+
+    Returns sorted [[Element_A, Element_B], ...] rows (no joint_accent —
+    annotators fill that in).
+    """
+    _keystone = load_planar_schema().get("keystone_position_name", "v:verbstem")
+
+    prescreening_path = CODED_DATA / lang_id / "phrasal_accent" / "prescreening.tsv"
+    if not prescreening_path.exists():
+        print("    [NOTE] phrasal_accent/prescreening.tsv not found — pair tab left blank.")
+        print("          Annotate prescreening first, then re-run:")
+        print(f"          python -m coding generate-sheets --lang {lang_id} "
+              "--regen-construction phrasal_accent:general")
+        return []
+
+    presc_df = pd.read_csv(prescreening_path, sep="\t", dtype=str, keep_default_na=False)
+    eligible_elements = {
+        row["Element"]
+        for _, row in presc_df.iterrows()
+        if row.get("accented", "").strip() in ("y", "both")
+    }
+
+    def _wrap(e: str) -> str:
+        return f"[{e}]" if (e.startswith("-") or e.endswith("-")) else e
+
+    # element -> set of positions, accent-eligible elements only. all_positions
+    # covers every position in the language's planar structure regardless of
+    # eligibility — needed to compute the obligatory-position set, since a
+    # position occupied only by ineligible elements can still block adjacency.
+    elem_positions: Dict[str, set] = {}
+    all_positions: Dict[int, str] = {}
+    keystone_pos: Optional[int] = None
+
+    for _, (pos, pos_name, lang, element) in element_index.items():
+        if lang != lang_id:
+            continue
+        all_positions[pos] = pos_name
+        if pos_name.strip().lower() == _keystone:
+            keystone_pos = pos
+            if not keystone_active:
+                continue
+        wrapped = _wrap(element)
+        if wrapped in eligible_elements:
+            elem_positions.setdefault(wrapped, set()).add(pos)
+
+    if keystone_pos is None:
+        print(f"    [WARNING] No {_keystone} position found for {lang_id}; "
+              "cannot compute the obligatory core.")
+        return []
+
+    obligatory = _phrasal_accent_obligatory_positions(lang_id, keystone_pos, all_positions)
+
+    def _adjacent(pos_a: int, pos_b: int) -> bool:
+        if pos_a == pos_b:
+            return pos_type.get(pos_a) == "Zone"
+        lo, hi = min(pos_a, pos_b), max(pos_a, pos_b)
+        return not any(lo < p < hi for p in obligatory)
+
+    elements = sorted(elem_positions.keys())
+    pairs = []
+    for i, a in enumerate(elements):
+        for b in elements[i + 1:]:
+            if any(_adjacent(pa, pb) for pa in elem_positions[a] for pb in elem_positions[b]):
+                pairs.append([a, b])
+
+    print(f"    [prescreening] {len(eligible_elements)} accent-eligible element(s)")
+    print(f"    [obligatory core] {_keystone} core positions "
+          f"{_phrasal_accent_obligatory_core(lang_id, keystone_pos)}")
+    print(f"    [adjacency] {len(pairs)} candidate pairs")
+    return pairs
 
 
 def _populate_tab_pairs(
@@ -1278,6 +1476,36 @@ def _create_analysis_sheet(
                 new_constructions.append((c, pn, pv))
         constructions = new_constructions
 
+    # For phrasal_accent, apply the same defensive remap as coreference above: the
+    # schema declares a `criterion` per construction (prescreening reuses metrical's
+    # `accented`; general uses the new `joint_accent`, per diagnostic_classes.yaml
+    # issue #237). If the language's diagnostics YAML already uses construction_criteria
+    # (the recommended pattern for classes whose constructions have non-overlapping
+    # criteria — see CLAUDE.md), this remap is a no-op; it only does real work if a
+    # coordinator instead declared both criteria under the class-level shared `criteria`
+    # key, in which case it splits them back apart per construction the same way the
+    # coreference block does above.
+    _PHRASAL_ACCENT_PAIR_CRITERION = {
+        con["name"]: con["criterion"]
+        for con in (_dc_classes.get("phrasal_accent", {}).get("constructions") or [])
+        if isinstance(con, dict) and "criterion" in con
+    }
+    if class_name == "phrasal_accent":
+        new_constructions = []
+        for c, pn, pv in constructions:
+            if c == "prescreening":
+                new_constructions.append(
+                    (c, ["accented"], {"accented": pv.get("accented", ["y", "n", "both"])})
+                )
+            elif c in _PHRASAL_ACCENT_PAIR_CRITERION:
+                crit = _PHRASAL_ACCENT_PAIR_CRITERION[c]
+                new_constructions.append(
+                    (c, [crit], {crit: pv.get(crit, ["always", "sometimes", "never"])})
+                )
+            else:
+                new_constructions.append((c, pn, pv))
+        constructions = new_constructions
+
     for construction, param_names, param_values in constructions:
         if class_name == "nonpermutability" and construction == "element_prescreening":
             # Step 1: element-level pre-filter sheet.
@@ -1314,6 +1542,26 @@ def _create_analysis_sheet(
             pairs = _build_reflex_pairs(element_index, lang_id, pos_type, keystone_active=ka)
             pairs = _filter_reflex_pairs_by_prescreening(pairs, lang_id)
             _populate_tab_reflex_pairs(spreadsheet, construction, param_names, param_values, pairs)
+            tab_names.append(construction)
+            print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
+        elif class_name == "phrasal_accent" and construction == "prescreening":
+            # Stage 1: element-level prescreening sheet (reuses metrical's `accented`).
+            ka = resolve_keystone_active(lang_id, class_name, construction,
+                                         data_dir=planar_path.parent) or False
+            rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
+            _populate_tab(spreadsheet, construction, param_names, param_values, rows)
+            tab_names.append(construction)
+            print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
+        elif class_name == "phrasal_accent":
+            # Stage 2: pair sheet restricted to accent-eligible x accent-eligible
+            # elements, adjacency-filtered via the two-tier obligatory-core
+            # compromise (issue #237).
+            ka = resolve_keystone_active(lang_id, class_name, construction,
+                                         data_dir=planar_path.parent) or False
+            pos_type = _read_position_types(planar_path, lang_id)
+            pairs = _build_phrasal_accent_pairs(element_index, lang_id, pos_type,
+                                                keystone_active=ka)
+            _populate_tab_pairs(spreadsheet, construction, param_names, param_values, pairs)
             tab_names.append(construction)
             print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
         else:
@@ -1444,7 +1692,8 @@ def _regen_construction(
                               annotations when position numbers have shifted (e.g. after
                               a position was inserted or deleted in the planar).  Pass via
                               --pos-remap old:new on the CLI.  Only applies to coreference
-                              pair constructions; ignored for nonpermutability.
+                              pair constructions; ignored for nonpermutability and
+                              phrasal_accent.
     """
     spreadsheet_id = manifest_class_info.get("spreadsheet_id")
     if not spreadsheet_id:
@@ -1482,6 +1731,9 @@ def _regen_construction(
         _default_crit = _pair_crit.get(construction_name, "reflexive_allowed")
         param_names  = cp.get("param_names",  [_default_crit])
         param_values = cp.get("param_values", {_default_crit: ["y", "n"]})
+    elif class_name == "phrasal_accent":
+        param_names  = cp.get("param_names",  ["joint_accent"])
+        param_values = cp.get("param_values", {"joint_accent": ["always", "sometimes", "never"]})
     else:
         param_names  = cp.get("param_names",  ["scopal"])
         param_values = cp.get("param_values", {"scopal": ["y", "n"]})
@@ -1495,6 +1747,8 @@ def _regen_construction(
     if class_name == "coreference":
         pairs = _build_reflex_pairs(element_index, lang_id, pos_type, keystone_active=ka)
         pairs = _filter_reflex_pairs_by_prescreening(pairs, lang_id)
+    elif class_name == "phrasal_accent":
+        pairs = _build_phrasal_accent_pairs(element_index, lang_id, pos_type, keystone_active=ka)
     else:
         pairs = _build_nonperm_pairs(element_index, lang_id, pos_type, keystone_active=ka)
         pairs = _filter_nonperm_pairs_by_prescreening(pairs, lang_id)
@@ -1570,6 +1824,27 @@ def _add_constructions_to_existing_sheet(
                 updated.append((c, pn, pv))
         new_constructions = updated
 
+    # Defensive remap mirroring the coreference block above — see the matching
+    # comment in _create_analysis_sheet for why this is a no-op when the language
+    # YAML already uses construction_criteria (issue #237).
+    if class_name == "phrasal_accent":
+        _dc = {c["name"]: c for c in load_diagnostic_classes().get("classes", [])}
+        _pair_crit = {
+            con["name"]: con["criterion"]
+            for con in (_dc.get("phrasal_accent", {}).get("constructions") or [])
+            if isinstance(con, dict) and "criterion" in con
+        }
+        updated = []
+        for c, pn, pv in new_constructions:
+            if c == "prescreening":
+                updated.append((c, ["accented"], {"accented": pv.get("accented", ["y", "n", "both"])}))
+            elif c in _pair_crit:
+                crit = _pair_crit[c]
+                updated.append((c, [crit], {crit: pv.get(crit, ["always", "sometimes", "never"])}))
+            else:
+                updated.append((c, pn, pv))
+        new_constructions = updated
+
     pos_type = _read_position_types(planar_path, lang_id)
     construction_params: Dict = {}
 
@@ -1593,6 +1868,15 @@ def _add_constructions_to_existing_sheet(
             pairs = _build_reflex_pairs(element_index, lang_id, pos_type, keystone_active=ka)
             pairs = _filter_reflex_pairs_by_prescreening(pairs, lang_id)
             _populate_tab_reflex_pairs(ss, construction, param_names, param_values, pairs)
+            print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
+        elif class_name == "phrasal_accent" and construction == "prescreening":
+            rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
+            _populate_tab(ss, construction, param_names, param_values, rows)
+            print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
+        elif class_name == "phrasal_accent":
+            pairs = _build_phrasal_accent_pairs(element_index, lang_id, pos_type,
+                                                keystone_active=ka)
+            _populate_tab_pairs(ss, construction, param_names, param_values, pairs)
             print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
         else:
             rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
