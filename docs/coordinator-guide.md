@@ -520,6 +520,18 @@ python -m coding refresh-dropdowns --lang stan1293 --apply   # one language only
 
 This is safer than `restructure-sheets` (no archiving, no data changes, no new URLs). After `--apply`, the Drive manifest is updated with the new allowed-value lists so future runs see the change.
 
+#### Collaborator status pages
+
+Adam needs to find current Sheet links and completion status without hunting through Drive or asking the coordinator each time. `generate-status-sheet` builds one locked, read-only `status_{lang_id}` spreadsheet per language listing every construction from `diagnostics_{lang_id}.yaml`, with a completeness percentage, a color-coded status cell, and a direct link to that construction's live tab:
+
+```bash
+python -m coding generate-status-sheet                       # dry run — all languages
+python -m coding generate-status-sheet --lang stan1293        # dry run — one language
+python -m coding generate-status-sheet --lang stan1293 --apply
+```
+
+The spreadsheets live in a freestanding top-level "Annotation Status" Drive folder — deliberately **not** nested inside the project's root folder, whose inherited "anyone with the link = editor" permission can't be removed at the child level (a separate, unresolved problem). The freestanding folder starts with a clean permission slate, so it and every status spreadsheet can actually be locked read-only for Adam (`adamjamesrosstallman@gmail.com`) with no "anyone" grant. Re-running `--apply` overwrites the existing `status_{lang_id}` spreadsheet in place rather than minting a new URL, since there's no annotation history to preserve. As of this writing it is coordinator-triggered only — not yet wired into `data-refresh.yml` or any other automation.
+
 ### Health checks
 
 #### Audit procedure
