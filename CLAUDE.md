@@ -47,6 +47,7 @@ python -m coding import-sheets            # dry run: show what would be written
 python -m coding import-sheets --apply    # download filled sheets → TSVs (--overwrite-existing to re-download)
 python -m coding import-planar            # dry run: show planar spreadsheet changes vs local TSV
 python -m coding import-planar --apply    # download planar spreadsheet → planar_{lang}.tsv
+python -m coding import-planar --to-sheet --apply  # push local planar_{lang}.tsv → Drive spreadsheet (auto-run by restructure-sheets --apply)
 python -m coding apply-pending            # review destructive changes written by import-sheets
 python -m coding validate-coding          # re-validate + update pink highlights (--lang for one)
 

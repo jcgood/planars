@@ -1,17 +1,35 @@
-"""import-planar — download the planar spreadsheet from Drive and sync to local TSV.
+"""import-planar — sync the planar spreadsheet between Drive and local TSV.
 
 Run from the repo root:
+    # Sheet -> TSV (default direction): download and sync locally
     python -m coding import-planar              # dry run: show what would change
     python -m coding import-planar --apply      # write updated planar TSVs
     python -m coding import-planar --lang LANG  # restrict to one language
 
-Reads the planar spreadsheet for each language (identified by planar_spreadsheet_id
-in drive_config.json), compares to the local planar_{lang_id}.tsv, and writes
-updated TSVs when content has changed.  Archives the old file before overwriting.
+    # TSV -> Sheet: push local planar TSV changes up to the Drive spreadsheet
+    python -m coding import-planar --to-sheet             # dry run (all languages)
+    python -m coding import-planar --to-sheet --apply     # upload to Sheet
+    python -m coding import-planar --to-sheet --lang LANG
 
-When --apply is used and changes are found, writes /tmp/planar_changes.json with
-structured diff information used by the data-refresh workflow to build the
-planar-changed issue body.
+Sheet -> TSV (default):
+    Reads the planar spreadsheet for each language (identified by
+    planar_spreadsheet_id in drive_config.json), compares to the local
+    planar_{lang_id}.tsv, and writes updated TSVs when content has changed.
+    Archives the old file before overwriting.
+
+    When --apply is used and changes are found, writes /tmp/planar_changes.json
+    with structured diff information used by the data-refresh workflow to build
+    the planar-changed issue body.
+
+TSV -> Sheet (--to-sheet):
+    The mirror direction, for when planar_{lang_id}.tsv is edited locally (e.g.
+    by restructure-sheets --split-element/--rename-map/--rename-class, which
+    read the local TSV as their source of truth). Uploads local content to the
+    Drive spreadsheet so it doesn't go stale and get silently reverted by the
+    next scheduled import-planar --apply (see issue #248 — that's exactly what
+    happened to the #236 pronoun split). restructure-sheets --apply calls this
+    automatically; run it by hand only if you edited the planar TSV some other
+    way.
 """
 from __future__ import annotations
 
@@ -207,9 +225,94 @@ def import_planar(lang_ids: list[str] | None = None, apply: bool = False) -> lis
     return list(all_changes.keys())
 
 
+# ---------------------------------------------------------------------------
+# TSV -> Sheet (push local planar changes up to Drive)
+# ---------------------------------------------------------------------------
+
+def push_planar_to_sheet(lang_id: str, gc, cfg: dict, apply: bool) -> bool:
+    """Push local planar_{lang_id}.tsv to the Drive planar spreadsheet.
+
+    Mirror of the download direction in import_planar(): reads the local TSV,
+    diffs it against the live Sheet, and on apply clears+rewrites the Sheet to
+    match. Returns True if a change was made (or would be, in dry-run).
+    """
+    from .drive import _open_spreadsheet, _with_retry
+
+    lang_cfg = cfg.get(lang_id, {})
+    sheet_id = lang_cfg.get("planar_spreadsheet_id")
+    if not sheet_id:
+        print(f"  [{lang_id}] No planar_spreadsheet_id in drive_config.json — skipping")
+        return False
+
+    tsv_path = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
+    if not tsv_path.exists():
+        print(f"  [{lang_id}] No local planar TSV — skipping")
+        return False
+
+    local_df = pd.read_csv(tsv_path, sep="\t", dtype=str).fillna("")
+
+    try:
+        ss = _open_spreadsheet(gc, sheet_id)
+        ws = _with_retry(lambda: ss.sheet1)
+        sheet_df = _read_sheet_df(ws, list(local_df.columns))
+    except Exception as exc:
+        print(f"  [{lang_id}] ERROR reading planar sheet: {exc}")
+        return False
+
+    if _normalize(local_df).equals(_normalize(sheet_df)):
+        print(f"  [{lang_id}] Sheet already up to date")
+        return False
+
+    diff = _diff_positions(sheet_df, local_df)
+    for n, name in diff["added"].items():
+        print(f"  [{lang_id}]   + position {n} ({name})")
+    for n, name in diff["deleted"].items():
+        print(f"  [{lang_id}]   - position {n} ({name})")
+    for n, (old_name, new_name) in diff["renamed"].items():
+        print(f"  [{lang_id}]   ~ position {n}: {old_name} -> {new_name}")
+    if not any([diff["added"], diff["deleted"], diff["renamed"]]):
+        print(f"  [{lang_id}]   (content-only changes)")
+
+    if apply:
+        new_rows = [list(local_df.columns)] + [list(row) for _, row in local_df.iterrows()]
+        _with_retry(ws.clear)
+        _with_retry(lambda: ws.update(new_rows, "A1"))
+        print(f"  [{lang_id}] Updated -> planar Sheet")
+    else:
+        print(f"  [{lang_id}] Would update -> planar Sheet (use --apply to write)")
+
+    return True
+
+
+def push_planars_to_sheets(lang_ids: list[str] | None = None, apply: bool = False) -> list[str]:
+    """Push local planar TSVs to their Drive spreadsheets for all (or selected) languages.
+
+    Returns list of language IDs whose Sheet changed (or would change).
+    """
+    from .drive import _get_clients, _load_drive_config
+
+    cfg = _load_drive_config()
+    gc, _ = _get_clients()
+
+    changed = []
+    for lang_id in cfg:
+        if lang_id.startswith("_"):
+            continue
+        if lang_ids and lang_id not in lang_ids:
+            continue
+        print(f"\n{lang_id}", flush=True)
+        if push_planar_to_sheet(lang_id, gc, cfg, apply):
+            changed.append(lang_id)
+
+    if not apply and changed:
+        print("\nDry run — rerun with --apply to write changes.")
+
+    return changed
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(
-        description="Download planar spreadsheet from Drive and sync to local TSV."
+        description="Sync the planar spreadsheet between Drive and local TSV."
     )
     ap.add_argument(
         "--lang", metavar="LANG_ID", action="append", dest="langs",
@@ -219,6 +322,14 @@ def main() -> None:
         "--apply", action="store_true",
         help="write changes (default: dry run)",
     )
+    ap.add_argument(
+        "--to-sheet", action="store_true",
+        help="push local planar TSV changes up to the Drive spreadsheet "
+             "(default direction is Sheet -> TSV)",
+    )
     args = ap.parse_args()
-    import_planar(lang_ids=args.langs, apply=args.apply)
+    if args.to_sheet:
+        push_planars_to_sheets(lang_ids=args.langs, apply=args.apply)
+    else:
+        import_planar(lang_ids=args.langs, apply=args.apply)
     sys.exit(0)

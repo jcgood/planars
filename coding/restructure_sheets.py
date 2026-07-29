@@ -1186,6 +1186,16 @@ def main() -> None:
             f"data: restructure {langs} TSVs after planar changes {date.today().isoformat()}",
         )
 
+        # restructure-sheets reads planar_{lang_id}.tsv as its source of truth but
+        # never writes it — so if it was edited locally (directly, or by a future
+        # tool) before this run, the master planar Sheet is now stale and the next
+        # scheduled import-planar --apply would silently revert it (issue #248,
+        # exactly what happened to the #236 pronoun split). Push it back in sync
+        # here so that can't happen again.
+        print("\n--- Syncing planar Sheet ---")
+        from .import_planar import push_planars_to_sheets
+        push_planars_to_sheets(lang_ids=sorted(set(processed_lang_ids)), apply=True)
+
         if lang_folder_urls:
             print("\n--- Bookmark this instead ---")
             print("  Every sheet below just got a NEW URL (restructure-sheets always creates a")
