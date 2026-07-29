@@ -1,15 +1,15 @@
 """Tests for coding/import_sheets.py — data-protection helpers.
 
-Covers the three safety functions added to prevent annotation data loss:
+Covers two of the safety functions added to prevent annotation data loss:
   - _archive_tsv: copies a TSV to archive/ before overwriting
-  - _check_coded_data_clean: aborts when coded_data/ has uncommitted TSV changes
-    (lives in coding/drive.py — shared by import-sheets, update-sheets,
-    sync-params, and generate-sheets --regen-dependents)
   - _verify_manifest_sheet_ids: aborts when any manifest sheet ID is inaccessible
+
+_check_coded_data_clean now lives in coding/drive.py (shared by import-sheets,
+update-sheets, sync-params, and generate-sheets --regen-dependents) — its
+tests moved to tests/test_drive.py.
 """
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -19,7 +19,6 @@ import textwrap
 
 import pandas as pd
 
-from coding.drive import _check_coded_data_clean
 from coding.import_sheets import (
     _archive_tsv,
     _detect_diagnostics_changes,
@@ -102,67 +101,6 @@ class TestArchiveTsv:
         result = _archive_tsv(tsv, "ts")
         assert isinstance(result, Path)
         assert result.exists()
-
-
-# ---------------------------------------------------------------------------
-# _check_coded_data_clean
-# ---------------------------------------------------------------------------
-
-def _make_git_repo(path: Path) -> None:
-    """Initialise a bare git repo at path with a committed TSV."""
-    subprocess.run(["git", "init", str(path)], check=True, capture_output=True)
-    subprocess.run(
-        ["git", "-C", str(path), "config", "user.email", "test@example.com"],
-        check=True, capture_output=True,
-    )
-    subprocess.run(
-        ["git", "-C", str(path), "config", "user.name", "Test"],
-        check=True, capture_output=True,
-    )
-    tsv = path / "general.tsv"
-    tsv.write_text("Position\tval\n1\ty\n", encoding="utf-8")
-    subprocess.run(["git", "-C", str(path), "add", "."], check=True, capture_output=True)
-    subprocess.run(
-        ["git", "-C", str(path), "commit", "-m", "init"],
-        check=True, capture_output=True,
-    )
-
-
-class TestCheckCodedDataClean:
-    def test_passes_when_no_git_repo(self, tmp_path):
-        # Should silently skip if coded_data/ is not a git repo.
-        _check_coded_data_clean(coded_data_dir=tmp_path)  # no error
-
-    def test_passes_on_clean_repo(self, tmp_path):
-        _make_git_repo(tmp_path)
-        _check_coded_data_clean(coded_data_dir=tmp_path)  # no error
-
-    def test_aborts_on_modified_tsv(self, tmp_path):
-        _make_git_repo(tmp_path)
-        (tmp_path / "general.tsv").write_text("Position\tval\n1\tn\n", encoding="utf-8")
-        with pytest.raises(SystemExit):
-            _check_coded_data_clean(coded_data_dir=tmp_path)
-
-    def test_aborts_on_new_untracked_tsv(self, tmp_path):
-        _make_git_repo(tmp_path)
-        (tmp_path / "new_construction.tsv").write_text("x\n", encoding="utf-8")
-        with pytest.raises(SystemExit):
-            _check_coded_data_clean(coded_data_dir=tmp_path)
-
-    def test_passes_when_only_non_tsv_dirty(self, tmp_path):
-        _make_git_repo(tmp_path)
-        (tmp_path / "notes.txt").write_text("scratch\n", encoding="utf-8")
-        _check_coded_data_clean(coded_data_dir=tmp_path)  # no error — .txt, not .tsv
-
-    def test_passes_after_committing_changes(self, tmp_path):
-        _make_git_repo(tmp_path)
-        (tmp_path / "general.tsv").write_text("updated\n", encoding="utf-8")
-        subprocess.run(["git", "-C", str(tmp_path), "add", "."], check=True, capture_output=True)
-        subprocess.run(
-            ["git", "-C", str(tmp_path), "commit", "-m", "update"],
-            check=True, capture_output=True,
-        )
-        _check_coded_data_clean(coded_data_dir=tmp_path)  # no error after commit
 
 
 # ---------------------------------------------------------------------------

@@ -443,6 +443,18 @@ def _autocommit_data(paths: List[Path], message: str) -> None:
 
     Called by import-planar and restructure-sheets after writing local TSVs
     so that planars-data stays in sync and the pre-push hook on planars passes.
+
+    Raises SystemExit if `add` or `commit` fails (excluding the harmless
+    "nothing to commit" case) — a write that reached disk but not git leaves
+    coded_data/ exactly as dirty as a partial revert, which is what let
+    update-sheets write bogus rows to 16 live sheets on 2026-07-29 (issue
+    #248's stray-row incident): this function's commit silently failed
+    (git identity wasn't configured yet in that run), printed a WARNING
+    nobody was watching, and returned as if nothing had gone wrong. A push
+    failure, by contrast, does NOT raise — the commit already succeeded
+    locally, so coded_data/ is clean by every check that matters (git status
+    doesn't care about ahead/behind vs. the remote); only the remote lags
+    until someone retries `git push` by hand.
     """
     if not paths:
         return
@@ -454,8 +466,9 @@ def _autocommit_data(paths: List[Path], message: str) -> None:
         capture_output=True, text=True,
     )
     if add.returncode != 0:
-        print(f"  WARNING: git add failed: {add.stderr.strip()}")
-        return
+        print(f"ERROR: git add failed in coded_data/: {add.stderr.strip()}")
+        print("Local files were written to disk but NOT staged for commit.")
+        raise SystemExit(1)
 
     commit = subprocess.run(
         ["git", "-C", str(CODED_DATA), "commit", "-m", message],
@@ -464,9 +477,10 @@ def _autocommit_data(paths: List[Path], message: str) -> None:
     if commit.returncode != 0:
         if "nothing to commit" in commit.stdout:
             print("  files unchanged — nothing to commit.")
-        else:
-            print(f"  WARNING: git commit failed: {commit.stderr.strip()}")
-        return
+            return
+        print(f"ERROR: git commit failed in coded_data/: {commit.stderr.strip()}")
+        print("Local files were written to disk but NOT committed — coded_data/ is now dirty.")
+        raise SystemExit(1)
     print(f"  {commit.stdout.splitlines()[0]}")
 
     push = subprocess.run(

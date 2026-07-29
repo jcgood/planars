@@ -16,6 +16,7 @@ kaleido          # plotly image/PDF export backend
 # Dev / CI
 pytest
 pre-commit
+jsonschema        # validates data_dependency_schema/*.yaml against their JSON Schemas
 
 # Editable install of planars itself
 -e .
