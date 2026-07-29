@@ -50,7 +50,7 @@ from .make_forms import (
 )
 from .schemas import load_diagnostic_classes as _load_dc
 from .drive import (
-    _get_clients, _load_manifest_from_drive, _upload_planars_config,
+    _check_coded_data_clean, _get_clients, _load_manifest_from_drive, _upload_planars_config,
     _load_drive_config, _save_drive_config, _open_spreadsheet, _with_retry,
 )
 from .generate_sheets import CODED_DATA, _TRAILING_COLS
@@ -477,6 +477,12 @@ def main() -> None:
     renames = _parse_renames()
     splits  = _parse_splits()
     merges  = _parse_merges()
+
+    if apply:
+        # See update_sheets.py's guard for why: a prior step's failed
+        # auto-commit can leave coded_data/ (including the diagnostics/planar
+        # TSVs this command reads) in a stale, partially-reverted state.
+        _check_coded_data_clean(extensions=(".tsv",))
 
     planar_files = sorted(CODED_DATA.glob("*/lang_setup/planar_*.tsv"))
     if not planar_files:

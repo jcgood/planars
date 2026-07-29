@@ -18,7 +18,7 @@ import re
 import subprocess
 import time
 from pathlib import Path
-from typing import Callable, Dict, List, TypeVar
+from typing import Callable, Dict, List, Optional, TypeVar
 
 import gspread
 from googleapiclient.discovery import build as google_build
@@ -397,6 +397,45 @@ def _append_to_notes_doc(docs, doc_id: str, text: str) -> None:
 # ---------------------------------------------------------------------------
 
 CODED_DATA = ROOT / "coded_data"
+
+
+def _check_coded_data_clean(coded_data_dir: Optional[Path] = None, extensions: tuple = (".tsv",)) -> None:
+    """Abort if the coded_data/ git repo has uncommitted changes to matching files.
+
+    Protects any command that reads coded_data/ as its source of truth from
+    acting on a partially-written or reverted state — e.g. import-planar's
+    inline auto-commit (_autocommit_data, below) silently failing partway
+    through a run and leaving a stale planar_{lang_id}.tsv on disk for later
+    steps to read (see issue #248 and the stray-row cleanup that followed it:
+    update-sheets --apply ran against exactly such a leftover reverted planar
+    and wrote bogus rows to 16 live sheets because it had no such guard).
+
+    Originally import-sheets-only; centralized here so any command reading
+    coded_data/ can call it. Silently skips if coded_data/ is not a git repo
+    (e.g. CI environments that check out the data separately).
+
+    coded_data_dir: override path for testing (defaults to CODED_DATA).
+    extensions: only uncommitted paths ending in one of these count as dirty.
+    """
+    coded_data = coded_data_dir or CODED_DATA
+    if not (coded_data / ".git").exists():
+        return
+    result = subprocess.run(
+        ["git", "-C", str(coded_data), "status", "--porcelain"],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        return  # git not available or not a repo; skip check
+    dirty_lines = [
+        line for line in result.stdout.splitlines()
+        if line.strip() and line[3:].strip().endswith(extensions)
+    ]
+    if dirty_lines:
+        print("ERROR: coded_data/ has uncommitted changes:")
+        for line in dirty_lines:
+            print(f"  {line}")
+        print("Commit or stash these changes before running this command.")
+        raise SystemExit(1)
 
 
 def _autocommit_data(paths: List[Path], message: str) -> None:

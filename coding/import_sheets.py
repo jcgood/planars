@@ -21,7 +21,6 @@ from __future__ import annotations
 import csv
 import json
 import shutil
-import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -33,7 +32,7 @@ import pandas as pd
 import gspread
 
 from .drive import (
-    _get_clients, _load_manifest_from_drive, _open_spreadsheet,
+    _check_coded_data_clean, _get_clients, _load_manifest_from_drive, _open_spreadsheet,
     _upload_planars_config, _load_drive_config, _save_drive_config,
     _with_retry,
 )
@@ -815,36 +814,6 @@ def _verify_manifest_sheet_ids(drive, manifest: Dict) -> None:
         print("The manifest may be stale or point to deleted/moved sheets.")
         print("→ Run: python -m coding integrity-check --sheets")
         print("  This will list which spreadsheet IDs are unreachable and what to do next.")
-        raise SystemExit(1)
-
-
-def _check_coded_data_clean(coded_data_dir: Optional[Path] = None) -> None:
-    """Abort if coded_data/ git repo has uncommitted changes to annotation TSVs.
-
-    Protects against import-sheets overwriting local edits that have not yet
-    been committed. Silently skips the check if coded_data/ is not a git repo
-    (e.g. CI environments that check out the data separately).
-
-    coded_data_dir: override path for testing (defaults to ROOT/coded_data).
-    """
-    coded_data = coded_data_dir or ROOT / "coded_data"
-    if not (coded_data / ".git").exists():
-        return
-    result = subprocess.run(
-        ["git", "-C", str(coded_data), "status", "--porcelain"],
-        capture_output=True, text=True,
-    )
-    if result.returncode != 0:
-        return  # git not available or not a repo; skip check
-    dirty_lines = [
-        line for line in result.stdout.splitlines()
-        if line.strip() and line[3:].strip().endswith(".tsv")
-    ]
-    if dirty_lines:
-        print("ERROR: coded_data/ has uncommitted changes to annotation TSVs:")
-        for line in dirty_lines:
-            print(f"  {line}")
-        print("Commit or stash these changes before running import-sheets.")
         raise SystemExit(1)
 
 

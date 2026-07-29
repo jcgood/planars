@@ -31,6 +31,7 @@ from .make_forms import (
     _read_diagnostics_for_language,
 )
 from .drive import (
+    _check_coded_data_clean,
     _get_clients,
     _load_drive_config,
     _load_manifest_from_drive,
@@ -310,6 +311,14 @@ def main() -> None:
     In dry-run mode (no --apply) only prints what would change.
     """
     apply = "--apply" in sys.argv
+
+    if apply:
+        # planar_{lang_id}.tsv (read below) can be left in a reverted/stale
+        # state mid-run if an earlier step's auto-commit failed silently —
+        # see issue #248's stray-row incident, where this exact gap let
+        # update-sheets write bogus rows to 16 live sheets from a stale
+        # planar file. Refuse to proceed rather than risk repeating that.
+        _check_coded_data_clean(extensions=(".tsv",))
 
     gc, drive = _get_clients()
     manifest = _load_manifest_from_drive(drive)

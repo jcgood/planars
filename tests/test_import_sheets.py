@@ -3,6 +3,8 @@
 Covers the three safety functions added to prevent annotation data loss:
   - _archive_tsv: copies a TSV to archive/ before overwriting
   - _check_coded_data_clean: aborts when coded_data/ has uncommitted TSV changes
+    (lives in coding/drive.py — shared by import-sheets, update-sheets,
+    sync-params, and generate-sheets --regen-dependents)
   - _verify_manifest_sheet_ids: aborts when any manifest sheet ID is inaccessible
 """
 from __future__ import annotations
@@ -17,9 +19,9 @@ import textwrap
 
 import pandas as pd
 
+from coding.drive import _check_coded_data_clean
 from coding.import_sheets import (
     _archive_tsv,
-    _check_coded_data_clean,
     _detect_diagnostics_changes,
     _detect_planar_changes,
     _tsv_content_changed,
