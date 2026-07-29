@@ -40,9 +40,9 @@ def test_compute_hash_whitespace_insensitive():
 # Live YAML: _collect_wanted and _current_hashes
 # ---------------------------------------------------------------------------
 
-def test_collect_wanted_covers_all_17_classes():
+def test_collect_wanted_covers_all_18_classes():
     wanted = _collect_wanted(None)
-    assert len(wanted) == 17
+    assert len(wanted) == 18
 
 
 def test_collect_wanted_hashes_are_8_chars():
@@ -92,6 +92,31 @@ classes:
     status: stable
 """
 
+# Regression fixture for a real bug: a class with a two-stage `constructions:` list
+# (nested "- name: prescreening" / "- name: general" entries) whose qualification_rule
+# comes AFTER that list. The nested entries are indented like top-level class boundaries
+# ("- name: ...") and were being misdetected as one, silently resetting current_class
+# before the real qualification_rule field was ever reached — so no hash got inserted,
+# with no error raised. Any two-stage class (coreference, nonpermutability, and now
+# phrasal_accent) has this exact shape.
+_TWO_STAGE_YAML_NO_HASH = """\
+classes:
+
+  - name: twostageclass
+    specificity: general
+    constructions:
+      - name: prescreening
+        row_type: element
+      - name: general
+        row_type: pair_rows
+        depends_on: prescreening
+        criterion: joint_accent
+    required_criteria: [joint_accent]
+    qualification_rule: >
+      [DEFERRED] Derivation not yet decided.
+    status: "[NEEDS REVIEW]"
+"""
+
 
 def test_apply_hashes_updates_existing(tmp_path, monkeypatch):
     yaml_path = tmp_path / "diagnostic_classes.yaml"
@@ -122,6 +147,27 @@ def test_apply_hashes_inserts_missing(tmp_path, monkeypatch):
 
     updated = yaml_path.read_text()
     assert f'qualification_rule_hash: "{expected}"' in updated
+
+
+def test_apply_hashes_two_stage_class_nested_names_not_mistaken_for_boundaries(tmp_path, monkeypatch):
+    """Regression test: nested `- name:` entries inside `constructions:` (indent 6)
+    must not be mistaken for top-level class boundaries (indent 2), or the real
+    qualification_rule field after them never gets its hash inserted."""
+    yaml_path = tmp_path / "diagnostic_classes.yaml"
+    yaml_path.write_text(_TWO_STAGE_YAML_NO_HASH)
+
+    import coding.sync_qualification_hashes as sqh
+    monkeypatch.setattr(sqh, "CLASSES_YAML", yaml_path)
+
+    rule = "[DEFERRED] Derivation not yet decided."
+    expected = _compute_hash(rule)
+    sqh._apply_hashes({"twostageclass": expected}, {"twostageclass": None})
+
+    updated = yaml_path.read_text()
+    assert f'qualification_rule_hash: "{expected}"' in updated
+    # The nested construction names must survive untouched.
+    assert "- name: prescreening" in updated
+    assert "- name: general" in updated
 
 
 def test_apply_hashes_preserves_surrounding_content(tmp_path, monkeypatch):

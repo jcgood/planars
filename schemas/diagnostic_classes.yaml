@@ -608,6 +608,85 @@ classes:
     collection_required: "n"
 
 
+  - name: phrasal_accent
+    display_name: "Phrasal (Pitch) Accent Grouping"
+    domain_type: phonological
+    applicability: conditional
+    applicability_conditions: >
+      Applicable when the language has a stress-accent or pitch-accent system where
+      individual accent-bearing elements can group together under a single phrasal
+      pitch accent (one element's accent subordinates to a neighboring element's,
+      rather than each retaining an independent accent). See issue #237.
+    specificity: general
+    # Two-stage annotation (issue #237):
+    #   Stage 1 (prescreening construction): element-level sheet, reuses the existing
+    #     `accented` criterion (y/n/both) from the metrical class as-is — restricts the
+    #     candidate pair set to accent-eligible elements. Elements coded accented=n are
+    #     excluded from Stage 2 pairing (they can never independently host a pitch
+    #     accent, so their combination behavior is trivial by definition).
+    #     By explicit coordinator decision (2026-07-28): prescreening applies to every
+    #     planar element — category placeholders (e.g. NP{S,A}) and specific
+    #     non-category elements (e.g. individual pronouns) alike — rather than
+    #     restricting to formative-level elements only. This intersects with the open
+    #     question in issue #239 (elements conflate multiple levels of representation);
+    #     this class proceeds inclusively for now rather than waiting on that resolving,
+    #     and the resulting data is itself a concrete test case for #239's question of
+    #     whether category-level judgments behave differently from formative-level ones.
+    #   Stage 2 (general construction): pair-row sheet (Element_A, Element_B,
+    #     joint_accent={always,sometimes,never}), restricted to accent-eligible ×
+    #     accent-eligible pairs surviving Stage 1.
+    #   Domain/span derivation from joint_accent data is deliberately deferred — the
+    #   coordinator wants the coding scheme validated against real data before
+    #   committing to a derivation method (interval-consistency vs. graph-based were
+    #   both discussed; neither has been chosen). See issue #237 discussion.
+    constructions:
+      - name: prescreening
+        row_type: element
+      - name: general
+        row_type: pair_rows
+        depends_on: prescreening
+        staleness_check: element_set
+        criterion: joint_accent
+    sheet_instructions: >
+      STEP 1 — prescreening: For each element, annotate accented (same criterion
+      metrical uses):
+        y    = this element can always independently carry a phrasal pitch accent
+        n    = this element can never independently carry a phrasal pitch accent;
+               it will be EXCLUDED from the pair list in Step 2
+        both = variably accent-bearing depending on context
+      When finished, mark prescreening as "ready-for-review" in the Status tab.
+      The coordinator will then regenerate the general tab with a filtered pair list.
+
+      STEP 2 — general: Do NOT annotate this tab until the coordinator confirms it has
+      been regenerated after Step 1 is complete. Once regenerated, annotate each pair
+      of linearly adjacent accent-eligible elements:
+        joint_accent = always     one member obligatorily deaccents next to the other
+        joint_accent = never      both always retain independent accents when adjacent
+        joint_accent = sometimes  depends on focus/givenness/speech register
+      Corrective accent (e.g. "HE did it, not SHE") is out of scope — do not code
+      pairs elicited or observed under a correction context (see issue #237 for the
+      literature distinguishing corrective from contrastive/ordinary accent).
+    required_criteria: [joint_accent]
+    optional_criteria: []
+    qualification_rule: >
+      [DEFERRED — issue #237] Domain/span derivation from joint_accent pairwise data
+      has not been decided yet; the coordinator wants the coding scheme validated
+      against real data first. No spans are computed by this class until a derivation
+      method is chosen and this rule is filled in. No planars/phrasal_accent.py module
+      exists yet for the same reason — writing derivation logic ahead of that decision
+      would just be thrown away or risk becoming a silently-wrong default.
+    qualification_rule_hash: "79bb5fda"
+    criterion_set_status: "[NEEDS REVIEW]"  # accented is reused as-is from metrical
+      # (stable there); joint_accent is new and unvalidated against real data.
+    status: "[NEEDS REVIEW]"  # Derivation undecided; coding scheme itself pending real
+      # annotation. Requires Adam's sign-off per the module-review workflow before any
+      # promotion. See issue #237.
+    keystone_active_default: true  # Mirrors metrical: the verbstem has real
+      # accentuation properties that plausibly participate in phrasal grouping.
+      # Tentative pending the deferred qualification rule.
+    collection_required: "n"
+
+
   - name: segmental
     display_name: "Segmental"
     domain_type: phonological

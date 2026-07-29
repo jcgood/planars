@@ -73,8 +73,13 @@ def _apply_hashes(wanted: dict[str, str], current: dict[str, str | None]) -> Non
         line = lines[i]
         stripped = line.rstrip("\n")
 
-        # Detect class boundaries (lines like "  - name: classname")
-        if stripped.lstrip().startswith("- name:"):
+        # Detect class boundaries (lines like "  - name: classname", indent 2).
+        # Must NOT match nested "- name:" entries inside a class's own `constructions:`
+        # list (e.g. "      - name: prescreening" at indent 6) — those aren't new
+        # classes, and treating them as one silently drops current_class before the
+        # real qualification_rule field is ever reached, so no hash gets inserted.
+        line_indent = len(stripped) - len(stripped.lstrip())
+        if stripped.lstrip().startswith("- name:") and line_indent == 2:
             # Flush any pending insert before moving to a new class
             if pending_insert is not None:
                 out.append(pending_insert)
