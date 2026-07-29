@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/planars/data_dependency_schema/fact_record.schema.json",
+  "title": "planars data dependency fact record list",
+  "description": "A list of fact records documenting planars' data-dependency graph -- every case where the same fact is recorded in more than one place (a Drive Sheet, a local TSV, a schema YAML, a manifest, a GitHub issue, ...) and needs an explicit authority/cascade relationship written down. See SCHEMA.md for the full field-by-field specification and rationale.",
+  "type": "array",
+  "items": { "$ref": "#/$defs/factRecord" },
+  "$defs": {
+    "entity": {
+      "type": "string",
+      "enum": [
+        "planar_sheet",
+        "diagnostics_sheet",
+        "annotation_sheet",
+        "status_sheet",
+        "collaborator_doc",
+        "planar_tsv",
+        "diagnostics_yaml",
+        "diagnostics_tsv",
+        "construction_tsv",
+        "schema_yaml",
+        "derived_artifact",
+        "manifest",
+        "code_comment",
+        "github_issue",
+        "filename_convention"
+      ]
+    },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entity", "detail"],
+      "properties": {
+        "entity": { "$ref": "#/$defs/entity" },
+        "detail": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The specific file/field/attribute where this fact is recorded, in free text. When two locations share the same entity (e.g. a source construction_tsv and a dependent construction_tsv), use detail to disambiguate which one is meant by 'authoritative' below."
+        }
+      }
+    },
+    "cascade": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["direction", "mechanism"],
+      "properties": {
+        "direction": {
+          "type": "string",
+          "enum": ["automatic", "manual", "bidirectional"],
+          "description": "automatic: a tool regenerates the non-authoritative copy. manual: a human must propagate the change by hand. bidirectional: edits can legitimately originate at either location, each with its own reconciliation path."
+        },
+        "mechanism": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The concrete script, function, or manual process that performs (or should perform) the cascade. Name the actual command/module, not just 'a script handles this.'"
+        }
+      }
+    },
+    "driftRisk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["possible", "note"],
+      "properties": {
+        "possible": { "type": "boolean" },
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "description": "How drift can happen (or, if possible is false, why it can't)."
+        },
+        "caught_by": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What actually catches drift if it happens: a specific integrity-check/check-codebook section, a GitHub issue label, a human review step, or an honest 'nothing yet'."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "possible": { "const": true } },
+            "required": ["possible"]
+          },
+          "then": { "required": ["caught_by"] }
+        }
+      ]
+    },
+    "factRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "description",
+        "locations",
+        "authoritative",
+        "cascade",
+        "drift_risk"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "A short, stable, snake_case identifier for the fact."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A one-line, human-readable statement of what the fact is."
+        },
+        "locations": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/location" },
+          "description": "Every place this fact is recorded. See SCHEMA.md's 'Known limitation' note: this schema cannot mechanically enforce that 'authoritative' below is one of these entities' values -- that is a documented limitation, checked by convention/review instead."
+        },
+        "authoritative": { "$ref": "#/$defs/entity" },
+        "cascade": { "$ref": "#/$defs/cascade" },
+        "drift_risk": { "$ref": "#/$defs/driftRisk" }
+      }
+    }
+  }
+}

@@ -1,0 +1,64 @@
+# planars' shared command-precondition registry. Distinct from facts.yaml:
+# these aren't the same fact recorded in multiple places, they're invariants
+# that more than one coding/ command assumes hold before it runs, discovered
+# because writing facts.yaml surfaced that this class of dependency doesn't
+# fit the fact-record shape. See SCHEMA.md.
+
+- id: coded_data_clean_tree
+  description: >-
+    coded_data/ has no uncommitted changes before a command reads/writes it
+    as ground truth (planar TSVs, diagnostics TSVs/YAML, construction TSVs).
+  required_by:
+    - "import_sheets.py (import-sheets --apply)"
+    - "update_sheets.py (update-sheets --apply)"
+    - "sync_params.py (sync-params --apply)"
+    - "generate_sheets.py (--regen-dependents)"
+  enforced_by: >-
+    drive._check_coded_data_clean() -- called at the top of each apply path
+    above; raises SystemExit(1) if coded_data/ has uncommitted changes
+    matching the given extensions (default: .tsv).
+  failure_symptom: >-
+    a command reads a stale/reverted file as current and acts on it -- e.g.
+    update-sheets wrote a blank retired-element row to 16 live sheets on
+    2026-07-29 because it read a reverted planar_stan1293.tsv left on disk by
+    import-planar's failed auto-commit (see
+    coded_data_git_identity_configured, below).
+  established: >-
+    2026-07-29, after the #248 stray-row incident. Previously only
+    import_sheets.py had this guard; centralized into drive.py and wired
+    into the other three commands the same day.
+
+- id: coded_data_git_identity_configured
+  description: >-
+    coded_data/'s git user.name/user.email are set before any code path
+    calls drive._autocommit_data() against it.
+  required_by:
+    - "import_planar.py (import-planar --apply, via _autocommit_data)"
+    - "restructure_sheets.py (--apply, via _autocommit_data)"
+  enforced_by: >-
+    Two layers: (1) .github/workflows/data-refresh.yml's "Configure git
+    identity for coded_data" step runs immediately after credentials are
+    written, before any command touches coded_data/, so the identity is
+    normally already present by the time _autocommit_data runs in CI. (2)
+    drive._autocommit_data() itself now raises SystemExit on a failed
+    `git add`/`git commit` (added 2026-07-29) instead of printing a WARNING
+    and returning, so any cause of a failed commit -- not just a missing
+    identity -- is caught at its actual source rather than relying on a
+    downstream command to notice the resulting dirty tree.
+  failure_symptom: >-
+    Before the 2026-07-29 fix: git commit failed with "please tell me who
+    you are"; _autocommit_data printed a WARNING and returned silently,
+    leaving coded_data/ dirty for the next command to trip over
+    (coded_data_clean_tree, above). Exactly what happened on 2026-07-29
+    (#245): the workflow originally configured git identity only in the
+    final "commit and push" step, far too late for import-planar's own
+    inline commit. Since the fix, an add/commit failure now raises
+    immediately from within _autocommit_data itself, regardless of cause.
+  established: >-
+    2026-07-29, after the #248 stray-row incident. The raise-on-failure fix
+    (layer 2) was added the same day this precondition was first written
+    down: documenting "enforced_by: workflow ordering only" made the
+    remaining gap (a silently-swallowed commit failure inside
+    _autocommit_data) visible enough to close immediately rather than
+    leaving it as a known-but-undocumented weak point -- exactly the outcome
+    this registry exists to produce.

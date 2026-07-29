@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/planars/data_dependency_schema/precondition_record.schema.json",
+  "title": "planars shared command precondition record list",
+  "description": "A list of precondition records documenting invariants that more than one coding/ command assumes hold before it runs -- distinct from fact_record.schema.json, which is about the same FACT living in multiple LOCATIONS. A precondition is not a fact copied anywhere; it's operational state (a clean git tree, a configured identity) that several commands independently depend on without any single place declaring the dependency. See SCHEMA.md for rationale.",
+  "type": "array",
+  "items": { "$ref": "#/$defs/preconditionRecord" },
+  "$defs": {
+    "preconditionRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "description",
+        "required_by",
+        "enforced_by",
+        "failure_symptom"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "A short, stable, snake_case identifier for the precondition."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A one-line, human-readable statement of what must be true."
+        },
+        "required_by": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Every module/command that assumes this precondition holds, as 'module.py (command --flag)' strings. If a new command starts sharing this assumption, add it here AND wire in the actual check named in enforced_by -- this list existing is not itself protection."
+        },
+        "enforced_by": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The concrete function/check that verifies this precondition before the command proceeds, or an honest 'nothing yet' if no command currently checks it. Naming 'nothing yet' explicitly is far more useful than omitting the field."
+        },
+        "failure_symptom": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What actually happens when this precondition is violated -- concrete enough that a future incident can be matched back to this record by its symptoms, not just its cause."
+        },
+        "established": {
+          "type": "string",
+          "description": "When and why this record was written -- typically a date and an issue reference. Optional but strongly encouraged: this is what makes the record useful to a future reader trying to understand why a check exists."
+        },
+        "gap": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional. A known, still-open weakness in how this precondition is enforced -- e.g. a check that exists but isn't called from every place it should be, or a failure mode that's caught downstream rather than at its actual source. Use this the same way drift_risk.caught_by's 'nothing yet' is used in fact_record.schema.json: to make a recognized gap trackable instead of silently re-discovered."
+        }
+      }
+    }
+  }
+}

@@ -197,6 +197,10 @@ Language IDs in this project are Glottocodes (e.g., `arao1248`, `stan1293`). Glo
 
 `migrations/` contains one-time data migration scripts kept for historical reference. Each script should have a module-level docstring documenting what it does, why it was needed, when it was run, how to invoke it (dry-run and apply), and what to check afterward. See `migrations/README.md` for the full convention.
 
+## data_dependency_schema/
+
+A living registry of two kinds of cross-cutting dependency: **facts** recorded in more than one place (`facts.yaml`, validated against `fact_record.schema.json` — e.g. a language's planar structure existing as both a live Sheet and a local TSV, with an `authoritative` source and a `cascade` mechanism between them) and **shared command preconditions** (`preconditions.yaml`, validated against `precondition_record.schema.json` — invariants like "`coded_data/` must be a clean git tree" that several unrelated `coding/` commands assume without any one place declaring the dependency). Grew out of the 2026-07-29 planar-Sheet-revert incident (#244/#245/#248), where exactly this class of undocumented dependency caused a silent data revert. See `data_dependency_schema/SCHEMA.md` for the full field-by-field spec and rationale; `tests/test_data_dependency_schema.py` validates both registries. When a bug traces back to an undocumented authority/cascade relationship or shared precondition, write the record as part of the fix, not as follow-up.
+
 ## NonCollaborative/
 
 Personal R/Python working area (scripts, prototypes, domain TSVs, older files) — not part of the analysis pipeline.
@@ -219,6 +223,7 @@ Keep the following files up to date as the project evolves. Check each one at th
 | `docs/tooling-design.md` | Coordinator UX checklist or design patterns change — this is the operational companion to the philosophy section above |
 | `notebooks/templates/*.ipynb` | Any notebook template boilerplate changes — then run `generate-notebooks --apply` |
 | `pyproject.toml` version | Any change to `planars/` library code (Colab installs from GitHub, not PyPI) |
+| `data_dependency_schema/facts.yaml` / `preconditions.yaml` | A bug traces back to an undocumented authority/cascade relationship or shared command precondition — write the record as part of the fix, not as follow-up. See `data_dependency_schema/SCHEMA.md`. |
 
 When in doubt, update. These files are the primary onboarding resource for collaborators and future contributors.
 
