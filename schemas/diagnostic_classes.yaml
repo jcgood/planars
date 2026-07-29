@@ -666,8 +666,14 @@ classes:
       Corrective accent (e.g. "HE did it, not SHE") is out of scope — do not code
       pairs elicited or observed under a correction context (see issue #237 for the
       literature distinguishing corrective from contrastive/ordinary accent).
-    required_criteria: [joint_accent]
-    optional_criteria: []
+    required_criteria: []  # empty because criteria are construction-specific (mirrors
+      # segmental's pattern): prescreening uses accented, general uses joint_accent --
+      # neither is required on every row/construction of this class, so both go in
+      # optional_criteria instead, declared via construction_criteria in
+      # diagnostics_{lang_id}.yaml. required_criteria is checked uniformly per TSV
+      # row by check-codebook, which would incorrectly flag prescreening rows as
+      # missing joint_accent (and vice versa) if either were required here.
+    optional_criteria: [accented, joint_accent]
     qualification_rule: >
       [DEFERRED — issue #237] Domain/span derivation from joint_accent pairwise data
       has not been decided yet; the coordinator wants the coding scheme validated
