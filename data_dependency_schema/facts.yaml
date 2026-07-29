@@ -155,3 +155,82 @@
       diverge (manually closed/deleted, or manifest hand-edited),
       ensure_notification_issue could create a duplicate or post nowhere.
     caught_by: "nothing yet -- not checked by integrity-check today."
+
+- id: status_sheet_completeness
+  description: a language's per-construction annotation completeness percentage, as shown on its locked status spreadsheet
+  locations:
+    - {entity: construction_tsv, detail: "the actual annotated cell values counted by validate_coding.annotation_status()"}
+    - {entity: status_sheet, detail: "the completeness percentage and color-coded status cell generate_status_sheet.py writes per construction"}
+  authoritative: construction_tsv
+  cascade:
+    direction: manual
+    mechanism: >-
+      python -m coding generate-status-sheet --apply recomputes and rewrites
+      the status sheet from current construction_tsv/annotation_sheet state.
+      Not run automatically by data-refresh.yml or any other workflow --
+      coordinator-triggered only (see coding/CLAUDE.md's generate_status_sheet.py entry).
+  drift_risk:
+    possible: true
+    note: >-
+      Every annotation change (import-sheets pulling in new judgments, a
+      construction being added/removed) leaves the status sheet showing a
+      stale percentage until someone remembers to re-run generate-status-sheet
+      by hand. There's no trigger tying the two together.
+    caught_by: "nothing yet -- not checked by integrity-check, not wired into data-refresh.yml."
+
+- id: manifest_class_registration
+  description: which analysis classes have a registered annotation spreadsheet for a language
+  locations:
+    - {entity: diagnostics_yaml, detail: "which classes are declared for the language"}
+    - {entity: manifest, detail: "sheets_manifest.json's per-language sheets dict -- one entry per class with a live spreadsheet"}
+  authoritative: diagnostics_yaml
+  cascade:
+    direction: manual
+    mechanism: >-
+      A class removed from diagnostics_yaml leaves a stale manifest entry
+      until a coordinator runs prune-manifest --apply (archives the TSVs,
+      moves the Drive spreadsheet to _archived/, removes the manifest
+      entry). A class added to diagnostics_yaml needs generate-sheets to
+      create the corresponding spreadsheet and manifest entry in the first
+      place -- nothing detects a newly-declared class automatically.
+  drift_risk:
+    possible: true
+    note: >-
+      Retiring a class in diagnostics_yaml without running prune-manifest
+      leaves data-refresh.yml re-importing (and re-checking) a Sheet nobody
+      intends to keep using, indefinitely.
+    caught_by: >-
+      integrity-check's stale manifest entry check (_stale_manifest_classes),
+      run in the default per-language section and daily via data-refresh.yml,
+      filed as stale-manifest.
+
+- id: manifest_dropdown_values
+  description: >-
+    a construction's allowed dropdown values per criterion, as the manifest
+    believes they currently are vs. what the diagnostics YAML would produce
+  locations:
+    - {entity: diagnostics_yaml, detail: "each criterion's current allowed-value list (e.g. y/n vs y/n/both)"}
+    - {entity: manifest, detail: "sheets_manifest.json's construction_params[construction].param_values -- a staleness reference, not a live copy of the Sheet's actual validation rule"}
+  authoritative: diagnostics_yaml
+  cascade:
+    direction: manual
+    mechanism: >-
+      sync-params --refresh-dropdowns --apply pushes the current
+      YAML-derived allowed values to the live Sheet's dropdown validation
+      AND updates the manifest's stored param_values to match. Nothing runs
+      this automatically -- a criterion's value list can change in the YAML
+      with no corresponding sheet/manifest update until a coordinator
+      notices and runs it.
+  drift_risk:
+    possible: true
+    note: >-
+      manifest_dropdown_values tracks the manifest's belief about the
+      Sheet, not the Sheet's actual live validation rule -- a coordinator
+      editing dropdown values directly in the Sheets UI (bypassing
+      sync-params entirely) would go undetected by this check, which only
+      compares the manifest against the YAML.
+    caught_by: >-
+      integrity-check's default per-language section
+      (_stale_manifest_param_values), run daily via data-refresh.yml,
+      surfaced as a generic integrity-error rather than a dedicated label
+      the way stale-manifest is.

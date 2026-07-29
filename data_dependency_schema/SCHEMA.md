@@ -199,8 +199,11 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
    the fix — not as follow-up. That is exactly the moment the relationship is
    best understood, and exactly the moment this schema is meant to catch.
 2. **Don't try to be exhaustive.** `facts.yaml`/`preconditions.yaml` started
-   from six and two records respectively, drawn from what the 2026-07-29
-   incident and existing `CLAUDE.md` prose already made visible. Add
+   from six and two records respectively (later grown to nine and three by a
+   deliberate sweep of `CLAUDE.md` and `coding/*.py` for dependencies with
+   real, existing evidence — a dedicated check already catching drift, or a
+   documented gotcha — rather than speculative ones), drawn from what the
+   2026-07-29 incident and existing `CLAUDE.md` prose already made visible. Add
    incrementally.
 3. **For a new fact**: pick (or extend) an entity from the vocabulary above,
    name every location, decide authority, name the real cascade mechanism (or

@@ -62,3 +62,24 @@
     _autocommit_data) visible enough to close immediately rather than
     leaving it as a known-but-undocumented weak point -- exactly the outcome
     this registry exists to produce.
+
+- id: check_notes_documents_scope_authorized
+  description: >-
+    the cached OAuth token at ~/.config/gspread/authorized_user.json (or the
+    GOOGLE_OAUTH_TOKEN secret in CI) includes the Google Docs `documents`
+    scope, not just the Sheets/Drive scopes every other command needs.
+  required_by:
+    - "check_notes.py (check-notes --apply, reads/writes the per-language collaborator notes Google Doc)"
+  enforced_by: >-
+    Nothing automated. A one-time manual re-authorization step, documented
+    in docs/coordinator-guide.md's "Re-authorization after scope changes":
+    delete the cached token and re-run a non-destructive command to trigger
+    a fresh browser auth flow, then update the GOOGLE_OAUTH_TOKEN GitHub
+    secret so scheduled runs pick it up too.
+  failure_symptom: >-
+    check-notes fails with a Docs API permission/scope error while every
+    other command (generate-sheets, import-sheets, update-sheets,
+    sync-params, restructure-sheets) keeps working fine, since none of them
+    touch the Docs API -- this is the one command with a strictly wider
+    scope requirement than the rest, and nothing checks for it up front.
+  established: "documented in docs/coordinator-guide.md since the documents scope was added for collaborator notes; recorded here 2026-07-29"

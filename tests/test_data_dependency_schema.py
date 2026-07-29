@@ -48,6 +48,9 @@ def test_facts_have_expected_ids():
         "qualification_rule_semantics",
         "dependent_construction_element_scope",
         "sheet_change_notification_state",
+        "status_sheet_completeness",
+        "manifest_class_registration",
+        "manifest_dropdown_values",
     }
 
 
@@ -129,6 +132,7 @@ def test_preconditions_have_expected_ids():
     assert ids == {
         "coded_data_clean_tree",
         "coded_data_git_identity_configured",
+        "check_notes_documents_scope_authorized",
     }
 
 
