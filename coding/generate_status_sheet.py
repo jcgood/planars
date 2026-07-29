@@ -81,7 +81,6 @@ _ADAM_EMAIL = "adamjamesrosstallman@gmail.com"
 # by validate_coding.py's pink-cell error highlighting.
 _GREEN  = {"red": 0.72, "green": 0.88, "blue": 0.72}
 _YELLOW = {"red": 1.00, "green": 0.95, "blue": 0.60}
-_RED    = {"red": 0.96, "green": 0.78, "blue": 0.78}
 _GRAY   = {"red": 0.90, "green": 0.90, "blue": 0.90}
 
 _HEADER = ["Class", "Construction", "Status"]
@@ -101,16 +100,18 @@ def _completeness_pct(filled: int, total: int) -> Optional[float]:
 def _status_color(pct: Optional[float]) -> Dict[str, float]:
     """Map a completeness percentage to a pastel background color.
 
-    Thresholds: >=90% green, >=50% yellow, <50% red. None (no annotatable
-    cells, or no live sheet found) is neutral gray.
+    Two tiers plus gray: a construction is either fully done (100% -> green)
+    or not yet done (anything below 100% -> yellow). There is no separate
+    "close but not done" red tier -- the status text next to the cell already
+    shows the actual percentage, so a third color wouldn't add information,
+    it would just make "not 100% yet" look more alarming than it is at, say,
+    95%. None (no annotatable cells, or no live sheet found) is neutral gray.
     """
     if pct is None:
         return _GRAY
-    if pct >= 90:
+    if pct >= 100:
         return _GREEN
-    if pct >= 50:
-        return _YELLOW
-    return _RED
+    return _YELLOW
 
 
 def _status_text(filled: int, total: int) -> str:
@@ -357,7 +358,7 @@ def _write_status_sheet(
     data_rows = []
     for r in rows:
         construction_cell = (
-            f'=HYPERLINK("{r["link"]}", "📊 {r["construction"]}")'
+            f'=HYPERLINK("{r["link"]}", "{r["construction"]}")'
             if r["link"] else r["construction"]
         )
         data_rows.append([r["class_name"], construction_cell, r["status_text"]])
