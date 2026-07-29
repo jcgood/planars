@@ -147,3 +147,23 @@ def test_build_change_comment_no_sheets_no_folder_still_returns_heading():
     comment = build_change_comment("stan1293", [], None)
     assert comment.strip() != ""
     assert "Affected sheets" not in comment
+
+
+def test_build_change_comment_includes_status_sheet_url_when_given():
+    comment = build_change_comment(
+        "stan1293",
+        [("ciscategorial", "https://sheets/1")],
+        None,
+        status_sheet_url="https://sheets/status_stan1293",
+    )
+    assert "https://sheets/status_stan1293" in comment
+    assert "Status/links page" in comment
+
+
+def test_build_change_comment_omits_status_sheet_section_when_absent():
+    comment = build_change_comment(
+        "stan1293",
+        [("ciscategorial", "https://sheets/1")],
+        None,
+    )
+    assert "Status/links page" not in comment

@@ -1216,9 +1216,10 @@ def main() -> None:
                     if lid == notify_lang_id
                 ]
                 folder_url = lang_folder_urls.get(notify_lang_id)
+                status_sheet_url = manifest.get(notify_lang_id, {}).get("status_sheet_url")
                 issue_number, created = ensure_notification_issue(notify_lang_id, manifest)
                 manifest_dirty = manifest_dirty or created
-                body = build_change_comment(notify_lang_id, lang_sheet_links, folder_url)
+                body = build_change_comment(notify_lang_id, lang_sheet_links, folder_url, status_sheet_url)
                 post_notification_comment(issue_number, body)
                 print(f"  [{notify_lang_id}] commented on issue #{issue_number}")
             if manifest_dirty:

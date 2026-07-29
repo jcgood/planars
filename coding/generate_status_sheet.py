@@ -40,6 +40,7 @@ Authentication: same OAuth2 setup as generate_sheets.py.
 """
 from __future__ import annotations
 
+import json
 import sys
 from datetime import date
 from pathlib import Path
@@ -47,6 +48,7 @@ from typing import Dict, List, Optional, Set, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
+MANIFEST_PATH = ROOT / "sheets_manifest.json"
 
 import gspread
 
@@ -59,6 +61,9 @@ from .drive import (
     _remove_anyone_permission,
     _move_to_folder,
     _with_retry,
+    _upload_planars_config,
+    _load_drive_config,
+    _save_drive_config,
 )
 from .make_forms import (
     _read_diagnostics_for_language,
@@ -424,6 +429,7 @@ def main() -> None:
     gc, drive = _get_clients()
     manifest = _load_manifest_from_drive(drive)
     pair_row_constructions = _get_pair_row_constructions()
+    manifest_dirty = False
 
     lang_ids = [lang_filter] if lang_filter else sorted(manifest.keys())
 
@@ -475,10 +481,25 @@ def main() -> None:
         action = "Created" if created else "Updated"
         print(f"    {action}: {ss.url}")
 
+        # Persist so other commands (coding/notify.py's sheet-change comments)
+        # can link to this without a live Drive search each time.
+        if lang_data.get("status_sheet_url") != ss.url:
+            lang_data["status_sheet_url"] = ss.url
+            manifest_dirty = True
+
     if not apply:
         print("\nRun with --apply to create/update the sheet(s) on Drive.")
     else:
         print("\nDone.")
+        if manifest_dirty:
+            MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+            config = _load_drive_config()
+            existing_file_id = config.get("_planars_config_file_id")
+            root_folder_id = config.get("_root_folder_id")
+            file_id = _upload_planars_config(drive, manifest, root_folder_id, existing_file_id)
+            config["_planars_config_file_id"] = file_id
+            _save_drive_config(config)
+            print("Manifest updated on Drive (status_sheet_url).")
 
 
 if __name__ == "__main__":

@@ -104,6 +104,7 @@ def build_change_comment(
     lang_id: str,
     lang_sheet_links: List[Tuple[str, str]],  # [(class_name, url), ...]
     folder_url: Optional[str],
+    status_sheet_url: Optional[str] = None,
 ) -> str:
     """Markdown comment body summarizing one language's sheet changes.
 
@@ -111,8 +112,19 @@ def build_change_comment(
     output restructure_sheets.py already prints at the end of a run -- this
     is a new sink for that same data (a GitHub comment reaches the
     annotator; stdout does not), not a rebuild of it.
+
+    status_sheet_url, if given (from manifest[lang_id]["status_sheet_url"],
+    set by generate_status_sheet.py), is the locked read-only status_{lang_id}
+    sheet with per-construction completeness and links -- included every time
+    so it isn't a one-off mention that gets buried, the same reasoning that
+    applies to the folder link below.
     """
     lines = [f"## Sheet updates — {lang_id}", ""]
+    if status_sheet_url:
+        lines += [
+            f"**Status/links page (locked, read-only):** {status_sheet_url}",
+            "",
+        ]
     if folder_url:
         lines += [
             "Every sheet below just got a **new URL** (restructure-sheets "
