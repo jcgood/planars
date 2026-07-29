@@ -84,7 +84,7 @@ _YELLOW = {"red": 1.00, "green": 0.95, "blue": 0.60}
 _RED    = {"red": 0.96, "green": 0.78, "blue": 0.78}
 _GRAY   = {"red": 0.90, "green": 0.90, "blue": 0.90}
 
-_HEADER = ["Class", "Construction", "Status", "Tab Link"]
+_HEADER = ["Class", "Construction", "Status"]
 
 
 # ---------------------------------------------------------------------------
@@ -318,10 +318,18 @@ def _lock_read_only(drive, file_id: str) -> None:
 # ---------------------------------------------------------------------------
 
 def _banner_rows(lang_id: str, folder_url: str) -> List[List[str]]:
-    """Locked notice + last-regenerated date + a link back to the live annotation folder."""
+    """Locked notice + last-regenerated date + a link to the live annotation folder.
+
+    The link's visible text is a short label (display name only, via the
+    project's "Name [glottocode]" convention), not the raw URL -- showing the
+    URL as text alongside the same URL as the link target is redundant, reads
+    as a wall of text in a merged cell, and (per the sheet author's
+    intent) that raw-URL text is itself an unlinked string Sheets can end up
+    auto-detecting and adding its own preview affordance to.
+    """
     display = get_display_name(lang_id)
     today = date.today().isoformat()
-    folder_link_text = f"Live annotation folder (edit annotations here): {folder_url}"
+    folder_link_text = f"📁 Annotation folder for {display}"
     return [
         [f"LOCKED — read-only status page for {display}. Do not edit; this sheet is "
          f"regenerated automatically and any edits here will be overwritten."],
@@ -342,10 +350,17 @@ def _write_status_sheet(
     banner = _banner_rows(lang_id, folder_url)
     header_row_idx = len(banner)  # 0-based index of the header row, after banner+blank spacer
 
+    # The construction name itself is the link (rather than a separate "Tab Link"
+    # column repeating identical "Open tab" text in every row) -- each cell's
+    # visible text is already distinct (the construction name), so the link
+    # doesn't need its own column to read as informative.
     data_rows = []
     for r in rows:
-        link_cell = f'=HYPERLINK("{r["link"]}", "Open tab")' if r["link"] else ""
-        data_rows.append([r["class_name"], r["construction"], r["status_text"], link_cell])
+        construction_cell = (
+            f'=HYPERLINK("{r["link"]}", "📊 {r["construction"]}")'
+            if r["link"] else r["construction"]
+        )
+        data_rows.append([r["class_name"], construction_cell, r["status_text"]])
 
     all_rows = banner + [_HEADER] + data_rows
     n_cols = len(_HEADER)
@@ -380,22 +395,27 @@ def _write_status_sheet(
             }}
             for i in range(len(banner) - 1)
         ],
-        # Reasonable column widths.
+        # Column widths -- generous, plus wrap (below) as a safety net so nothing
+        # gets clipped even where a value runs longer than expected (e.g. a long
+        # class or construction name).
         {"updateDimensionProperties": {
             "range": {"sheetId": ws.id, "dimension": "COLUMNS", "startIndex": 0, "endIndex": 1},
-            "properties": {"pixelSize": 160}, "fields": "pixelSize",
-        }},
-        {"updateDimensionProperties": {
-            "range": {"sheetId": ws.id, "dimension": "COLUMNS", "startIndex": 1, "endIndex": 2},
             "properties": {"pixelSize": 200}, "fields": "pixelSize",
         }},
         {"updateDimensionProperties": {
-            "range": {"sheetId": ws.id, "dimension": "COLUMNS", "startIndex": 2, "endIndex": 3},
-            "properties": {"pixelSize": 220}, "fields": "pixelSize",
+            "range": {"sheetId": ws.id, "dimension": "COLUMNS", "startIndex": 1, "endIndex": 2},
+            "properties": {"pixelSize": 260}, "fields": "pixelSize",
         }},
         {"updateDimensionProperties": {
-            "range": {"sheetId": ws.id, "dimension": "COLUMNS", "startIndex": 3, "endIndex": 4},
-            "properties": {"pixelSize": 140}, "fields": "pixelSize",
+            "range": {"sheetId": ws.id, "dimension": "COLUMNS", "startIndex": 2, "endIndex": 3},
+            "properties": {"pixelSize": 260}, "fields": "pixelSize",
+        }},
+        # Wrap text in every cell (banner + header + data) so long content never
+        # gets silently clipped, regardless of the fixed widths above.
+        {"repeatCell": {
+            "range": {"sheetId": ws.id},
+            "cell": {"userEnteredFormat": {"wrapStrategy": "WRAP"}},
+            "fields": "userEnteredFormat.wrapStrategy",
         }},
     ]
 
