@@ -257,12 +257,46 @@ def _get_or_create_folder(drive, name: str, parent_id: str = None) -> str:
 
 
 def _share_anyone_with_link(drive, file_id: str) -> None:
-    """Share a file or folder with anyone who has the link as editor."""
+    """Share a file or folder with anyone who has the link as editor.
+
+    Used only for content meant to be open to any collaborator without an
+    invite (e.g. the freeform Notes doc). Annotation sheets and language
+    folders use _share_with_person instead — see that function's docstring.
+    """
     drive.permissions().create(
         fileId=file_id,
         body={"type": "anyone", "role": "writer"},
         fields="id",
     ).execute()
+
+
+def _share_with_person(drive, file_id: str, email: str, role: str = "writer") -> None:
+    """Share a file or folder with one specific person, no 'anyone' grant involved.
+
+    Used for annotation sheets, planar/diagnostics reference sheets, and language
+    folders — these carry unpublished research data, so access is restricted to
+    named individuals rather than "anyone with the link" (a link is not access
+    control: it can leak via a forwarded message, a public comment, a screenshot).
+    role is "writer" for content someone needs to edit (live annotation sheets)
+    or "reader" for content they only need to view (archived sheets, folders).
+    """
+    drive.permissions().create(
+        fileId=file_id,
+        body={"type": "user", "role": role, "emailAddress": email},
+        fields="id",
+        sendNotificationEmail=False,
+    ).execute()
+
+
+def _remove_anyone_permission(drive, file_id: str) -> None:
+    """Remove the 'anyone with the link' permission from a file or folder, if present.
+
+    Safe to call on a file that never had one — silently does nothing.
+    """
+    perms = drive.permissions().list(fileId=file_id, fields="permissions(id,type)").execute()
+    for p in perms.get("permissions", []):
+        if p.get("type") == "anyone":
+            drive.permissions().delete(fileId=file_id, permissionId=p["id"]).execute()
 
 
 def _move_to_folder(drive, file_id: str, folder_id: str) -> None:
