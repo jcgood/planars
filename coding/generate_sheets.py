@@ -21,6 +21,16 @@ annotations to the new row numbers:
     python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:reflexivization \
         --pos-remap 5:6 --pos-remap 34:35
 
+--regen-construction ABORTS instead of writing if it would silently drop an annotated
+pair-row (a retired element still had a real judgment attached) -- no confirmation step
+exists after this point, the row would just be gone from the Sheet. If the element was
+renamed or split, run restructure-sheets --rename-element/--split-element first (issue
+#241); that carries the judgment forward and this check then passes cleanly, since the
+old rows are already gone by the time --regen-construction runs. If the drop really is
+intentional (e.g. a prescreening scope change, not a rename/split), add --confirm-drop:
+    python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:reflexivization \
+        --confirm-drop
+
 Requires:
     pip install gspread google-auth google-api-python-client
 
@@ -1668,6 +1678,50 @@ def _remap_coreference_prefill(
     return remapped
 
 
+def _find_annotated_drops(
+    removed: Set[Tuple],
+    existing: Dict[Tuple, Dict[str, str]],
+    criterion_col: str,
+) -> List[Tuple[Tuple, str, str, str]]:
+    """Return the subset of `removed` pair-keys that carry real annotation.
+
+    _regen_construction overwrites the live Sheet with only the newly computed
+    candidate pair set -- anything in `removed` is gone from the Sheet the
+    instant it runs, with no confirmation step (the later import-sheets ->
+    apply-pending flow only syncs the *local TSV* to match the already-
+    overwritten Sheet; it is not a gate on the original write). This is the
+    check that makes that write refuse to happen when it would silently
+    destroy a real judgment -- see issue #241's design discussion.
+
+    Returns a list of (key, criterion_value, source, comments) for every
+    dropped pair whose criterion column is non-blank, i.e. actually annotated
+    (not just an unfilled placeholder row).
+    """
+    drops = []
+    for key in removed:
+        vals = existing.get(key, {})
+        crit_val = (vals.get(criterion_col) or "").strip()
+        if crit_val:
+            drops.append((key, crit_val, vals.get("Source", ""), vals.get("Comments", "")))
+    return drops
+
+
+def _format_annotated_drop(class_name: str, key: Tuple, crit_val: str, source: str, comments: str) -> str:
+    """Human-readable one-line description of a dropped annotated pair, for the abort message."""
+    if class_name == "coreference":
+        elem_a, pos_b, direction = key
+        identity = f"{elem_a!r} -> pos_b={pos_b} ({direction})"
+    else:
+        elem_a, elem_b = key
+        identity = f"{elem_a!r} x {elem_b!r}"
+    line = f"  {identity}: {crit_val!r}"
+    if source:
+        line += f"; Source: {source}"
+    if comments:
+        line += f"; Comments: {comments}"
+    return line
+
+
 def _regen_construction(
     gc: gspread.Client,
     lang_id: str,
@@ -1675,13 +1729,26 @@ def _regen_construction(
     construction_name: str,
     manifest_class_info: dict,
     pos_num_remap: Optional[Dict[int, int]] = None,
+    confirm_drop: bool = False,
 ) -> None:
     """Regenerate a dependent construction tab in an existing spreadsheet.
 
     Reads the current tab content from the live Sheet so any unimported
     annotations are preserved. Retained pairs keep their existing values;
-    removed pairs are dropped (they will surface as destructive changes on the
-    next import-sheets --apply run); added pairs get blank rows.
+    added pairs get blank rows. Removed pairs are dropped from the Sheet by
+    this call, immediately, with no further confirmation step downstream --
+    if any dropped pair carries a real (non-blank) annotation, this function
+    raises SystemExit instead of writing, unless confirm_drop=True (see
+    issue #241: an earlier version of this function let --regen-construction
+    silently destroy annotated judgments whenever an element was retired
+    without --split-element having been run first; call order should never
+    be a precondition for not losing data). The error lists exactly what
+    would be dropped so the coordinator can either run
+    restructure-sheets --split-element/--rename-element first (if the
+    element was renamed or split -- this naturally clears the guard, since
+    the old rows are already gone from `existing` by the time this runs) or
+    re-run with confirm_drop=True (--confirm-drop on the CLI) if the drop is
+    a legitimate scope change, not data loss.
 
     Args:
         gc:                   authenticated gspread Client.
@@ -1695,6 +1762,7 @@ def _regen_construction(
                               --pos-remap old:new on the CLI.  Only applies to coreference
                               pair constructions; ignored for nonpermutability and
                               phrasal_accent.
+        confirm_drop:         must be True to proceed if any dropped pair is annotated.
     """
     spreadsheet_id = manifest_class_info.get("spreadsheet_id")
     if not spreadsheet_id:
@@ -1768,6 +1836,22 @@ def _regen_construction(
     retained = old_pair_set & new_pair_set
     removed  = old_pair_set - new_pair_set
     added    = new_pair_set - old_pair_set
+
+    annotated_drops = _find_annotated_drops(removed, existing, param_names[0])
+    if annotated_drops and not confirm_drop:
+        lines = [_format_annotated_drop(class_name, *drop) for drop in annotated_drops]
+        raise SystemExit(
+            f"ABORTED: regenerating {lang_id}/{class_name}/{construction_name} would "
+            f"silently drop {len(annotated_drops)} annotated pair-row(s) — no confirmation "
+            f"step exists after this point, they would just be gone from the Sheet:\n"
+            + "\n".join(lines)
+            + "\n\nIf the retired element was renamed or split, run "
+              "restructure-sheets --rename-element/--split-element first — that carries "
+              "the judgment forward (as a breadcrumb for splits, verbatim for renames) and "
+              "this check will then pass cleanly, since the old rows will already be gone. "
+              "If this drop is intentional (e.g. a real prescreening scope change, not a "
+              "rename/split), re-run with --confirm-drop to proceed."
+        )
 
     if class_name == "coreference":
         _populate_tab_reflex_pairs(spreadsheet, construction_name, param_names,
@@ -2034,6 +2118,8 @@ def main() -> None:
         if pos_num_remap:
             print(f"Position number remap: {pos_num_remap}")
 
+        confirm_drop = "--confirm-drop" in sys.argv
+
         print("Connecting to Google APIs...")
         gc, drive = _get_clients()
         config = _load_drive_config()
@@ -2050,7 +2136,7 @@ def main() -> None:
                 continue
             print(f"\n{lang_id}/{class_name}/{construction_name}")
             _regen_construction(gc, lang_id, class_name, construction_name, cls_info,
-                                pos_num_remap=pos_num_remap or None)
+                                pos_num_remap=pos_num_remap or None, confirm_drop=confirm_drop)
         return
 
     # --regen-dependents

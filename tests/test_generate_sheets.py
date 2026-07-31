@@ -28,6 +28,8 @@ from coding.generate_sheets import (
     _build_phrasal_accent_pairs,
     _check_force_against_existing_sheets,
     _filter_nonperm_pairs_by_prescreening,
+    _find_annotated_drops,
+    _format_annotated_drop,
     _maybe_create_planar_reference_tab,
     _parse_pos_cell,
     _phrasal_accent_obligatory_core,
@@ -922,3 +924,81 @@ class TestBuildPhrasalAccentPairs:
         ei = self._ei([(1, "p1", "a"), (2, "p2", "b")])
         pairs = _build_phrasal_accent_pairs(ei, "lang0001", {1: "Slot", 2: "Slot"})
         assert pairs == []
+
+
+class TestFindAnnotatedDrops:
+    """--regen-construction's guard against silently destroying annotated pair-rows
+    (issue #241): a removed pair-row is only "safe" to drop if it was never
+    annotated. See also test_restructure.py's _apply_split_to_pair_rows tests --
+    the split-cascade path clears these from `existing` before this check ever
+    runs, which is why running --split-element first makes the guard pass cleanly.
+    """
+
+    def test_annotated_drop_is_flagged(self):
+        removed = {("PRON{P,T}", "34 (v:rec)", "forward")}
+        existing = {
+            ("PRON{P,T}", "34 (v:rec)", "forward"): {
+                "reflexive_allowed": "y", "Source": "Lasnik", "Comments": "",
+            },
+        }
+        drops = _find_annotated_drops(removed, existing, "reflexive_allowed")
+        assert len(drops) == 1
+        key, crit_val, source, comments = drops[0]
+        assert key == ("PRON{P,T}", "34 (v:rec)", "forward")
+        assert crit_val == "y"
+        assert source == "Lasnik"
+
+    def test_blank_criterion_is_not_flagged(self):
+        removed = {("PRON{P,T}", "34 (v:rec)", "forward")}
+        existing = {
+            ("PRON{P,T}", "34 (v:rec)", "forward"): {"reflexive_allowed": "", "Source": ""},
+        }
+        assert _find_annotated_drops(removed, existing, "reflexive_allowed") == []
+
+    def test_missing_criterion_column_is_not_flagged(self):
+        removed = {("PRON{P,T}", "34 (v:rec)", "forward")}
+        existing = {("PRON{P,T}", "34 (v:rec)", "forward"): {"Source": "note"}}
+        assert _find_annotated_drops(removed, existing, "reflexive_allowed") == []
+
+    def test_key_not_in_removed_is_ignored(self):
+        removed = set()
+        existing = {("x", "y"): {"scopal": "y"}}
+        assert _find_annotated_drops(removed, existing, "scopal") == []
+
+    def test_nonpermutability_shape_two_tuple_key(self):
+        removed = {("PRON{P,T}", "not")}
+        existing = {("PRON{P,T}", "not"): {"scopal": "n", "Source": "", "Comments": "checked"}}
+        drops = _find_annotated_drops(removed, existing, "scopal")
+        assert len(drops) == 1
+        assert drops[0][0] == ("PRON{P,T}", "not")
+        assert drops[0][3] == "checked"
+
+    def test_multiple_removed_only_annotated_ones_flagged(self):
+        removed = {("a", "b"), ("c", "d")}
+        existing = {
+            ("a", "b"): {"scopal": "y"},
+            ("c", "d"): {"scopal": ""},
+        }
+        drops = _find_annotated_drops(removed, existing, "scopal")
+        assert [d[0] for d in drops] == [("a", "b")]
+
+
+class TestFormatAnnotatedDrop:
+    def test_coreference_shape_includes_direction(self):
+        line = _format_annotated_drop(
+            "coreference", ("PRON{P,T}", "34 (v:rec)", "forward"), "y", "Lasnik", ""
+        )
+        assert "PRON{P,T}" in line
+        assert "34 (v:rec)" in line
+        assert "forward" in line
+        assert "Lasnik" in line
+
+    def test_nonpermutability_shape_shows_both_elements(self):
+        line = _format_annotated_drop("nonpermutability", ("PRON{P,T}", "not"), "n", "", "")
+        assert "PRON{P,T}" in line
+        assert "not" in line
+
+    def test_omits_empty_source_and_comments(self):
+        line = _format_annotated_drop("nonpermutability", ("a", "b"), "y", "", "")
+        assert "Source" not in line
+        assert "Comments" not in line
