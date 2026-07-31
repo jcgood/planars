@@ -314,6 +314,16 @@ def build_plan(
         else:
             plan.append((dst_path, text.replace(SRC_LANG, DST_LANG)))
 
+    # lang_setup/*.yaml — e.g. diagnostics_{lang_id}.yaml, the coordinator-
+    # facing source of truth diagnostics_{lang_id}.tsv is derived from
+    # (data_dependency_schema's diagnostics_scope fact). Plain lang-ID
+    # substitution, same as non-Element-keyed TSVs above -- copying the TSV
+    # without also copying the YAML it's derived from would leave synth0001
+    # with a derived artifact and no source of truth backing it.
+    for yml in sorted(src_pi.glob("*.yaml")):
+        dst_path = dst_pi / yml.name.replace(SRC_LANG, DST_LANG)
+        plan.append((dst_path, yml.read_text().replace(SRC_LANG, DST_LANG)))
+
     # filled TSVs under class directories — drop rows, renumber, flip values
     for class_dir in sorted(src_root.iterdir()):
         if not class_dir.is_dir() or class_dir.name in ("lang_setup", "archive", ".DS_Store"):

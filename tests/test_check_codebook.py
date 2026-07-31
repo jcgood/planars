@@ -11,6 +11,7 @@ from coding.check_codebook import (
     _check_qualification_rule_drift,
     _discover_analysis_modules,
     _report_keystone_active_unresolved,
+    _check_diagnostics_yaml_exists,
 )
 
 
@@ -26,6 +27,36 @@ def _write_diagnostics(tmp_path, lang_id: str, classes: list[str]) -> None:
     for cls in classes:
         lines.append(f"{cls}\t{lang_id}\tgeneral\tfree")
     (d / f"diagnostics_{lang_id}.tsv").write_text("\n".join(lines) + "\n")
+
+
+# ---------------------------------------------------------------------------
+# _check_diagnostics_yaml_exists
+# ---------------------------------------------------------------------------
+
+def test_diagnostics_yaml_exists_no_error(tmp_path):
+    _write_diagnostics(tmp_path, "lang0001", ["ciscategorial"])
+    yaml_path = tmp_path / "coded_data" / "lang0001" / "lang_setup" / "diagnostics_lang0001.yaml"
+    yaml_path.write_text("language: lang0001\nclasses: {}\n")
+    assert _check_diagnostics_yaml_exists(tmp_path) == []
+
+
+def test_diagnostics_yaml_missing_is_hard_error(tmp_path):
+    _write_diagnostics(tmp_path, "lang0001", ["ciscategorial"])
+    errors = _check_diagnostics_yaml_exists(tmp_path)
+    assert len(errors) == 1
+    assert "lang0001" in errors[0]
+    assert "diagnostics_lang0001.yaml" in errors[0]
+
+
+def test_diagnostics_yaml_missing_for_one_of_several_langs(tmp_path):
+    _write_diagnostics(tmp_path, "lang0001", ["ciscategorial"])
+    _write_diagnostics(tmp_path, "lang0002", ["ciscategorial"])
+    (tmp_path / "coded_data" / "lang0002" / "lang_setup" / "diagnostics_lang0002.yaml").write_text(
+        "language: lang0002\nclasses: {}\n"
+    )
+    errors = _check_diagnostics_yaml_exists(tmp_path)
+    assert len(errors) == 1
+    assert "lang0001" in errors[0]
 
 
 # ---------------------------------------------------------------------------

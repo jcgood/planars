@@ -496,6 +496,34 @@ def _check_lang_yaml_criterion_values(codebook: dict) -> List[str]:
     return errors
 
 
+def _check_diagnostics_yaml_exists(root: Path = ROOT) -> List[str]:
+    """Every language with a diagnostics_{lang_id}.tsv must have a matching
+    diagnostics_{lang_id}.yaml.
+
+    diagnostics_{lang_id}.yaml is the coordinator-facing source of truth;
+    diagnostics_{lang_id}.tsv is a derived artifact regenerated from it by
+    sync-diagnostics-yaml (data_dependency_schema's diagnostics_scope fact).
+    A TSV with no backing YAML has no source of truth behind it -- it could
+    be legitimately hand-derived once and never touched again, or it could
+    be silently stale, and there is no way to tell the difference. Hard
+    error, not a warning: this is a total loss of provenance, not drift in
+    an otherwise-intact relationship.
+    """
+    errors = []
+    for tsv_path in sorted((root / "coded_data").glob("*/lang_setup/diagnostics_*.tsv")):
+        lang = tsv_path.parent.parent.name
+        yaml_path = tsv_path.with_suffix(".yaml")
+        if not yaml_path.exists():
+            errors.append(
+                f"[{lang}] diagnostics_{lang}.tsv exists but diagnostics_{lang}.yaml "
+                f"does not — the TSV is a derived artifact with no source of truth "
+                f"backing it. Regenerate the YAML (or, if this TSV predates the "
+                f"YAML-first workflow, write one by hand and run "
+                f"sync-diagnostics-yaml --from-tsv to reconcile)."
+            )
+    return errors
+
+
 def _report_keystone_active_unresolved(
     diag_classes: dict,
     coverage: dict[str, list[str]],
@@ -645,7 +673,7 @@ def _report_coverage_matrix(
 def main() -> None:
     """Entry point for `python -m coding check-codebook`.
 
-    Runs six consistency checks (exit 1 if any fail) then three informational reports:
+    Runs seven consistency checks (exit 1 if any fail) then three informational reports:
     1. Every _REQUIRED_CRITERIA criterion in each analysis module is in diagnostic_criteria.yaml.
     2. Every criterion name in diagnostics_{lang_id}.tsv files is in diagnostic_criteria.yaml.
     3. Every span key referenced in charts.py exists in the corresponding derive result.
@@ -654,9 +682,11 @@ def main() -> None:
        docstring mirror.
     6. Per-language criterion value sets vs global schema (hard error: unknown value declared;
        warning: schema has values not declared in language YAML).
-    7. keystone_active_default "[NEEDS REVIEW]" for active classes with no language override.
-    8. Schema stubs: classes with no language coverage (ready-to-paste TSV rows).
-    9. Coverage matrix: language × class grid.
+    7. Every diagnostics_{lang_id}.tsv has a matching diagnostics_{lang_id}.yaml (the source
+       of truth it's derived from) — hard error if the YAML is missing entirely.
+    8. keystone_active_default "[NEEDS REVIEW]" for active classes with no language override.
+    9. Schema stubs: classes with no language coverage (ready-to-paste TSV rows).
+    10. Coverage matrix: language × class grid.
     """
     codebook = _load_codebook()
     diag_classes = _load_diagnostic_classes()
@@ -680,6 +710,9 @@ def main() -> None:
     print("6. Checking per-language criterion value sets vs global schema ...")
     all_errors.extend(_check_lang_yaml_criterion_values(codebook))
 
+    print("7. Checking every diagnostics_{lang_id}.tsv has a matching .yaml ...")
+    all_errors.extend(_check_diagnostics_yaml_exists())
+
     coverage = _collect_coverage()
     lang_ids = sorted({l for langs in coverage.values() for l in langs})
 
@@ -687,11 +720,11 @@ def main() -> None:
     _report_needs_review(codebook, diag_classes)
 
     print()
-    print("7. keystone_active_default [NEEDS REVIEW] for active classes:")
+    print("8. keystone_active_default [NEEDS REVIEW] for active classes:")
     _report_keystone_active_unresolved(diag_classes, coverage)
 
     print()
-    print("7b. Open policy questions — classes with unresolved keystone_active_default (no active instances yet):")
+    print("8b. Open policy questions — classes with unresolved keystone_active_default (no active instances yet):")
     pending_defaults = sorted(
         name for name, cls in diag_classes.items()
         if "[NEEDS REVIEW]" in str(cls.get("keystone_active_default", ""))
@@ -705,11 +738,11 @@ def main() -> None:
         print("  All classes with [NEEDS REVIEW] keystone_active_default already have active instances (see section 7).")
 
     print()
-    print("8. Schema stubs (classes with no language coverage):")
+    print("9. Schema stubs (classes with no language coverage):")
     _report_schema_stubs(diag_classes, coverage)
 
     print()
-    print("9. Coverage matrix:")
+    print("10. Coverage matrix:")
     _report_coverage_matrix(diag_classes, coverage, lang_ids)
 
     print()

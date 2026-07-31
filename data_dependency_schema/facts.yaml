@@ -52,12 +52,26 @@
       A coordinator can edit diagnostics_yaml locally and forget to run
       sync-diagnostics-yaml --apply before committing, or a collaborator can
       edit diagnostics_sheet directly and have it silently overwritten by the
-      next --to-sheet push.
+      next --to-sheet push. A third, more severe case: diagnostics_yaml can go
+      missing entirely while diagnostics_tsv survives -- not drift between two
+      live copies, but total loss of the authoritative source with the
+      derived artifact left behind as if nothing were wrong.
+      coding.make_forms._read_diagnostics_for_language() falls back to
+      reading diagnostics_tsv directly whenever diagnostics_yaml.exists() is
+      false (originally meant only for languages never migrated to the
+      YAML-first workflow), so this failure mode produces no error anywhere
+      in the ordinary pipeline -- it was only found because a test-fixture
+      regeneration (tests/make_synthetic_lang.py --clean --apply) deleted
+      synth0001's YAML and the script never regenerated one (see #254).
     caught_by: >-
       data-refresh.yml's "Regenerate diagnostics TSVs from YAML" step catches
       the first case; sync-diagnostics-yaml --from-tsv's ambiguous-drift
       detection (filed as diagnostics-drift) partially catches the second --
-      only for changes it can't auto-resolve.
+      only for changes it can't auto-resolve. The third case (missing YAML)
+      is now caught by check-codebook's check 7
+      (_check_diagnostics_yaml_exists): hard error if any
+      diagnostics_{lang_id}.tsv has no matching .yaml. Runs in CI on every
+      push per check-codebook's own invocation.
 
 - id: languages_metadata
   description: a language's Glottolog metadata plus project metadata (source, author, annotation_status)
