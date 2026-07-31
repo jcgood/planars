@@ -2,15 +2,15 @@ Synth0001 Segmental Aspiration Prominence
 =========================================
 
 NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
-  aspirated: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (108 total)
+  aspirated: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (141 total)
 
-Keystone position: 23 (v:verbstem)
+Keystone position: 30 (v:verbstem)
 Criteria: aspirated
 
 Segmental domain complete positions: []
 Segmental domain partial positions:  []
 
-Strict complete segmental span: positions 23–23  (v:verbstem → v:verbstem)
-Loose complete segmental span:  positions 23–23  (v:verbstem → v:verbstem)
-Strict partial segmental span:  positions 23–23  (v:verbstem → v:verbstem)
-Loose partial segmental span:   positions 23–23  (v:verbstem → v:verbstem)
+Strict complete segmental span: positions 30–30  (v:verbstem → v:verbstem)
+Loose complete segmental span:  positions 30–30  (v:verbstem → v:verbstem)
+Strict partial segmental span:  positions 30–30  (v:verbstem → v:verbstem)
+Loose partial segmental span:   positions 30–30  (v:verbstem → v:verbstem)

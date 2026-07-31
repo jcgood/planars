@@ -1,19 +1,16 @@
 Synth0001 Coreference Np Reference
 ==================================
 
-NOTE: Some pairs have unknown elements.
-  unknown_elements: ["Element_A 'NP{R}' not in planar"]
+Keystone position: 30 (v:verbstem)
 
-Keystone position: 23 (v:verbstem)
-
-Binder positions (antecedent): [5, 21, 25]
+Binder positions (antecedent): [5, 27, 33, 34, 35]
 Bindee positions (anaphor):    [2, 5, 27, 33, 34]
 
-Binder-only positions (structurally high): [21, 25]
-Bindee-only positions (structurally low):  [2, 27, 33, 34]
-Shared positions (either role):            [5]
+Binder-only positions (structurally high): [35]
+Bindee-only positions (structurally low):  [2]
+Shared positions (either role):            [5, 27, 33, 34]
 
-Binder domain (strict): positions 23–23  (v:verbstem → v:verbstem)
-Binder domain (loose):  positions 5–25  (v:npsubj1 → v:obj-part)
-Bindee domain (strict): positions 23–23  (v:verbstem → v:verbstem)
-Bindee domain (loose):  positions 2–34  (v:frontedXP → ?)
+Binder domain (strict): positions 30–30  (v:verbstem → v:verbstem)
+Binder domain (loose):  positions 5–35  (v:npsubj1 → v:rec)
+Bindee domain (strict): positions 30–30  (v:verbstem → v:verbstem)
+Bindee domain (loose):  positions 2–34  (v:frontedXP → v:obj-part)
