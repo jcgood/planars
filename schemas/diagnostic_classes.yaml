@@ -231,6 +231,7 @@ classes:
         row_type: pair_rows
         depends_on: element_prescreening
         staleness_check: element_set
+        criterion: scopal
     sheet_instructions: >
       STEP 1 — element_prescreening: For each element, annotate scopal with one value:
         y    = this element always participates in fixed-order (scopally meaningful) pairs

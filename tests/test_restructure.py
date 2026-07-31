@@ -5,6 +5,7 @@ import pytest
 
 from coding.restructure_sheets import (
     _apply_rename_to_position_cell,
+    _apply_split_to_pair_rows,
     _cascade_rename_pair_tsv,
     _compute_stats,
     _count_pair_rename_impacts,
@@ -13,6 +14,7 @@ from coding.restructure_sheets import (
     _parse_flag_map,
     _parse_position_cell,
     _parse_split_flag_map,
+    _pair_construction_criterion,
     _preflight_rename_class,
 )
 
@@ -446,3 +448,143 @@ def test_count_pair_rename_impacts(tmp_path):
     assert _count_pair_rename_impacts(p, {"v:npsubj1": "v:subj1"}) == 2
     assert _count_pair_rename_impacts(p, {"v:npsubj1": "v:subj1", "v:npobj1": "v:obj1"}) == 3
     assert _count_pair_rename_impacts(p, {"v:other": "v:new"}) == 0
+
+
+# ---------------------------------------------------------------------------
+# _pair_construction_criterion
+# ---------------------------------------------------------------------------
+
+def test_pair_construction_criterion_coreference():
+    assert _pair_construction_criterion("coreference", "reflexivization") == "reflexive_allowed"
+    assert _pair_construction_criterion("coreference", "pronominalization") == "pronoun_allowed"
+    assert _pair_construction_criterion("coreference", "np_reference") == "np_allowed"
+
+
+def test_pair_construction_criterion_nonpermutability():
+    assert _pair_construction_criterion("nonpermutability", "general") == "scopal"
+
+
+def test_pair_construction_criterion_unknown_returns_none():
+    assert _pair_construction_criterion("nonpermutability", "nonexistent") is None
+    assert _pair_construction_criterion("nonexistent_class", "general") is None
+
+
+# ---------------------------------------------------------------------------
+# _apply_split_to_pair_rows (issue #241's resolved design, policy (b))
+# ---------------------------------------------------------------------------
+
+_COREF_HEADER = ["Element_A", "Position_A", "Position_B", "Direction", "reflexive_allowed", "Source", "Comments"]
+_NONPERM_HEADER = ["Element_A", "Element_B", "scopal", "Source", "Comments"]
+
+
+def test_apply_split_element_a_side_coreference_shape_fans_out_blank():
+    # Real-world shape: the citation lives in Source (index 5), Comments (index 6)
+    # starts empty -- matches the actual stan1293 PRON{P,T} reflexivization row.
+    rows = [
+        ["PRON{P,T}", "33 (v:obj-part)", "34 (v:rec)", "forward", "y",
+         "Lasnik example", ""],
+    ]
+    new_rows, fanned, manual = _apply_split_to_pair_rows(
+        _COREF_HEADER, rows, {"PRON{P,T}": ["me", "you", "him"]}, "reflexive_allowed"
+    )
+    assert fanned == 3
+    assert manual == 0
+    assert [r[0] for r in new_rows] == ["me", "you", "him"]
+    # Position_A/Position_B/Direction unchanged; criterion blanked; old Source
+    # quoted into Comments; Source itself cleared for a fresh citation.
+    for r in new_rows:
+        assert r[1] == "33 (v:obj-part)"
+        assert r[2] == "34 (v:rec)"
+        assert r[3] == "forward"
+        assert r[4] == ""  # criterion left blank, never carried forward
+        assert r[5] == ""  # old Source cleared, not duplicated
+        assert "PRON{P,T}" in r[6]
+        assert "reflexive_allowed='y'" in r[6]
+        assert "Lasnik example" in r[6]
+
+
+def test_apply_split_nonpermutability_shape_element_a_side():
+    rows = [["PRON{P,T}", "not", "n", "", ""]]
+    new_rows, fanned, manual = _apply_split_to_pair_rows(
+        _NONPERM_HEADER, rows, {"PRON{P,T}": ["me", "you"]}, "scopal"
+    )
+    assert fanned == 2
+    assert manual == 0
+    assert [r[0] for r in new_rows] == ["me", "you"]
+    assert all(r[1] == "not" for r in new_rows)  # Element_B untouched
+    assert all(r[2] == "" for r in new_rows)  # scopal blanked
+
+
+def test_apply_split_nonpermutability_shape_element_b_side():
+    rows = [["not", "PRON{P,T}", "y", "", ""]]
+    new_rows, fanned, manual = _apply_split_to_pair_rows(
+        _NONPERM_HEADER, rows, {"PRON{P,T}": ["me", "you"]}, "scopal"
+    )
+    assert fanned == 2
+    assert [r[1] for r in new_rows] == ["me", "you"]
+    assert all(r[0] == "not" for r in new_rows)  # Element_A untouched
+    assert all(r[2] == "" for r in new_rows)
+
+
+def test_apply_split_self_pair_flagged_not_guessed():
+    rows = [["PRON{P,T}", "PRON{P,T}", "n", "", ""]]
+    new_rows, fanned, manual = _apply_split_to_pair_rows(
+        _NONPERM_HEADER, rows, {"PRON{P,T}": ["me", "you"]}, "scopal"
+    )
+    assert fanned == 0
+    assert manual == 1
+    assert new_rows == rows  # left untouched, not guessed at
+
+
+def test_apply_split_no_match_leaves_row_unchanged():
+    rows = [["not", "and", "y", "", ""]]
+    new_rows, fanned, manual = _apply_split_to_pair_rows(
+        _NONPERM_HEADER, rows, {"PRON{P,T}": ["me", "you"]}, "scopal"
+    )
+    assert fanned == 0
+    assert manual == 0
+    assert new_rows == rows
+
+
+def test_apply_split_empty_map_is_noop():
+    rows = [["PRON{P,T}", "and", "y", "", ""]]
+    new_rows, fanned, manual = _apply_split_to_pair_rows(_NONPERM_HEADER, rows, {}, "scopal")
+    assert new_rows == rows
+    assert fanned == 0
+    assert manual == 0
+
+
+def test_apply_split_no_element_a_column_is_noop():
+    header = ["Position_A", "Position_B", "Direction", "reflexive_allowed"]
+    rows = [["5 (v:x)", "6 (v:y)", "forward", "y"]]
+    new_rows, fanned, manual = _apply_split_to_pair_rows(
+        header, rows, {"PRON{P,T}": ["me", "you"]}, "reflexive_allowed"
+    )
+    assert new_rows == rows
+    assert fanned == 0
+
+
+def test_apply_split_no_criterion_col_still_fans_out():
+    """criterion_col=None (construction has no declared criterion) shouldn't crash --
+    still fans out, just without a criterion value in the breadcrumb."""
+    rows = [["PRON{P,T}", "and", "y", "", "existing note"]]
+    new_rows, fanned, manual = _apply_split_to_pair_rows(
+        _NONPERM_HEADER, rows, {"PRON{P,T}": ["me", "you"]}, None
+    )
+    assert fanned == 2
+    for r in new_rows:
+        assert "existing note" in r[4]
+        assert "scopal" not in r[4]
+
+
+def test_apply_split_multiple_rows_only_matching_ones_split():
+    rows = [
+        ["PRON{P,T}", "not", "n", "", ""],
+        ["and", "not", "y", "", ""],
+    ]
+    new_rows, fanned, manual = _apply_split_to_pair_rows(
+        _NONPERM_HEADER, rows, {"PRON{P,T}": ["me", "you", "him"]}, "scopal"
+    )
+    assert fanned == 3
+    assert len(new_rows) == 4  # 3 fanned + 1 untouched
+    assert new_rows[-1] == ["and", "not", "y", "", ""]

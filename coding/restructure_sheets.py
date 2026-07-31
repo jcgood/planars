@@ -33,6 +33,17 @@ Run from the repo root:
       if the old element had existing annotations, each new row's Comments cell gets a
       breadcrumb note pointing back to the archived sheet so re-annotators aren't working
       from memory. An element cannot appear in both --rename-element and --split-element.
+      Also cascades into every pair-row construction (nonpermutability's `general`,
+      coreference's three, and any future one — found generically via row_type:
+      pair_rows, not hardcoded by class name) that references the retired element in
+      Element_A/Element_B: each old pair-row fans out into one new row per replacement
+      element, left BLANK (never pre-filled with the old value, even though it's often
+      linguistically the same fact — a coordinator happening to know the language
+      doesn't scale to contributor languages nobody on the team speaks), with the old
+      row's criterion value, Source, and Comments quoted verbatim into the new row's
+      Comments cell. A row where BOTH sides of a pair are the retired element (a
+      self-pair) is left untouched and flagged for manual review instead of guessed at.
+      See issues #241/#262 for the design discussion this resolves.
     --rename-class takes "old_class_name:new_class_name" and can be repeated.
     Without these flags, renamed positions/elements are treated as drops + new blank rows.
 
@@ -422,6 +433,122 @@ def _get_pair_row_constructions() -> Dict[str, Set[str]]:
     return result
 
 
+def _pair_construction_criterion(class_name: str, construction: str) -> Optional[str]:
+    """Return the single annotated criterion column name for a pair-row construction.
+
+    Every pair_rows construction declares this explicitly in diagnostic_classes.yaml
+    (criterion: <name>) -- never inferred/guessed, per the project's "explicit
+    registration, never silent default" convention (see #241's design discussion).
+    Returns None if the construction isn't found or has no criterion field.
+    """
+    dc = load_diagnostic_classes()
+    for cls in dc.get("classes", []):
+        if cls.get("name") != class_name:
+            continue
+        for con in (cls.get("constructions") or []):
+            if isinstance(con, dict) and con.get("name") == construction:
+                return con.get("criterion")
+    return None
+
+
+# Element-identity columns pair-row TSVs may use to name a specific element:
+# Element_A + Element_B (nonpermutability/general, phrasal_accent/general -- two
+# named elements, no position columns) or Element_A alone (coreference's three
+# pair constructions -- one named element, Position_A/Position_B/Direction locate
+# it and its counterpart structurally, not by element identity).
+_PAIR_ELEMENT_COLS = ("Element_A", "Element_B")
+
+
+def _apply_split_to_pair_rows(
+    header: List[str],
+    data_rows: List[List[str]],
+    split_element_map: Dict[str, List[str]],
+    criterion_col: Optional[str],
+) -> Tuple[List[List[str]], int, int]:
+    """Fan out pair-row(s) referencing a retired (split) element into one row per
+    replacement element, per issue #241's resolved design (policy (b)).
+
+    For each data row where Element_A or Element_B (whichever are present in header)
+    equals an element being split, generates one new row per replacement element
+    with that column substituted, the criterion column BLANKED (never carried
+    forward as a live default -- a coordinator happening to know the language
+    doesn't scale to contributor languages nobody on the team speaks, see #262).
+    The old row's criterion value, Source, and Comments are quoted verbatim into
+    the new row's Comments cell (Source is cleared on the new row, ready for a
+    fresh citation) so the prior judgment is visible right where the new decision
+    needs to be made instead of requiring a hunt through an archived sheet.
+
+    A row where BOTH Element_A and Element_B match an element being split (a
+    self-pair) is left untouched but counted separately -- fanning out both sides
+    at once has no principled combination to prefer over any other, so it's
+    reported for manual review rather than guessed at.
+
+    No-ops (returns data_rows unchanged) if split_element_map is empty or the
+    header has no Element_A column at all (not an element-identified pair shape).
+
+    Returns (new_data_rows, n_fanned_out, n_needs_manual_review).
+    """
+    if not split_element_map or "Element_A" not in header:
+        return data_rows, 0, 0
+
+    col_idx = {c: i for i, c in enumerate(header)}
+    a_idx = col_idx["Element_A"]
+    b_idx = col_idx.get("Element_B")
+    comments_idx = col_idx.get("Comments")
+    source_idx = col_idx.get("Source")
+    crit_idx = col_idx.get(criterion_col) if criterion_col else None
+
+    new_rows: List[List[str]] = []
+    n_fanned = 0
+    n_manual = 0
+    for row in data_rows:
+        padded = list(row) + [""] * (len(header) - len(row))
+        a_val = padded[a_idx]
+        b_val = padded[b_idx] if b_idx is not None else None
+        a_hit = a_val in split_element_map
+        b_hit = b_val is not None and b_val in split_element_map
+
+        if a_hit and b_hit:
+            new_rows.append(row)
+            n_manual += 1
+            continue
+        if not a_hit and not b_hit:
+            new_rows.append(row)
+            continue
+
+        old_el = a_val if a_hit else b_val
+        old_crit_val = padded[crit_idx] if crit_idx is not None else ""
+        old_comment = padded[comments_idx] if comments_idx is not None else ""
+        old_source = padded[source_idx] if source_idx is not None else ""
+        crit_part = (
+            f"{criterion_col}={old_crit_val!r}" if criterion_col else None
+        )
+        breadcrumb = f"[carried from split of {old_el!r}]"
+        if crit_part:
+            breadcrumb += f" {crit_part}"
+        if old_source:
+            breadcrumb += f"; old Source: {old_source}"
+        if old_comment:
+            breadcrumb += f"; old Comments: {old_comment}"
+
+        for new_el in split_element_map[old_el]:
+            new_row = list(padded)
+            if a_hit:
+                new_row[a_idx] = new_el
+            else:
+                new_row[b_idx] = new_el
+            if crit_idx is not None:
+                new_row[crit_idx] = ""
+            if source_idx is not None:
+                new_row[source_idx] = ""
+            if comments_idx is not None:
+                new_row[comments_idx] = breadcrumb
+            new_rows.append(new_row)
+            n_fanned += 1
+
+    return new_rows, n_fanned, n_manual
+
+
 def _count_pair_rename_impacts(tsv_path: Path, rename_map: Dict[str, str]) -> int:
     """Count how many Position_A/Position_B cells in a local TSV would be renamed."""
     if not tsv_path.exists():
@@ -434,6 +561,20 @@ def _count_pair_rename_impacts(tsv_path: Path, rename_map: Dict[str, str]) -> in
         for val in df[col]
         if _apply_rename_to_position_cell(val, rename_map)[1]
     )
+
+
+def _count_pair_split_impacts(
+    tsv_path: Path, split_element_map: Dict[str, List[str]], criterion_col: Optional[str]
+) -> Tuple[int, int]:
+    """Count how many local-TSV rows a split would fan out (and how many need manual
+    review as self-pairs), for the dry-run report. See _apply_split_to_pair_rows."""
+    if not tsv_path.exists() or not split_element_map:
+        return 0, 0
+    df = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
+    _, fanned, manual = _apply_split_to_pair_rows(
+        list(df.columns), df.values.tolist(), split_element_map, criterion_col
+    )
+    return fanned, manual
 
 
 def _cascade_rename_pair_tsv(tsv_path: Path, rename_map: Dict[str, str]) -> int:
@@ -498,12 +639,16 @@ def _copy_pair_tab_with_rename(
     rename_map: Dict[str, str],
     param_names: List[str],
     param_values: Dict[str, List[str]],
-) -> Tuple[int, int]:
-    """Copy a pair tab from old_ss to new_ss with rename_map applied to position cells.
+    split_element_map: Dict[str, List[str]] = {},
+    criterion_col: Optional[str] = None,
+) -> Tuple[int, int, int, int]:
+    """Copy a pair tab from old_ss to new_ss with rename_map applied to position cells
+    and split_element_map applied to Element_A/Element_B cells (see
+    _apply_split_to_pair_rows, issue #241).
 
     Used when a class sheet is being archived+recreated and the class has pair
     constructions that should be preserved (not regenerated from the planar structure).
-    Returns (rows_copied, cells_renamed).
+    Returns (rows_copied, cells_renamed, rows_split, rows_needing_manual_review).
     """
     try:
         old_ws = _with_retry(lambda: old_ss.worksheet(tab_name))
@@ -513,7 +658,7 @@ def _copy_pair_tab_with_rename(
 
     if not all_values:
         new_ss.add_worksheet(title=tab_name, rows=10, cols=len(param_names) + 6)
-        return 0, 0
+        return 0, 0, 0, 0
 
     header = all_values[0]
     col_indices = {col: header.index(col) for col in _PAIR_POS_COLS if col in header}
@@ -529,6 +674,10 @@ def _copy_pair_tab_with_rename(
                     renamed += 1
         new_data.append(new_row)
 
+    new_data[1:], split_fanned, split_manual = _apply_split_to_pair_rows(
+        header, new_data[1:], split_element_map, criterion_col
+    )
+
     try:
         ws = _with_retry(lambda: new_ss.worksheet(tab_name))
         ws.clear()
@@ -540,7 +689,7 @@ def _copy_pair_tab_with_rename(
     ws.update(new_data, "A1")
     per_col = [param_values.get(p, ["y", "n"]) for p in param_names]
     _format_and_validate(ws, len(new_data) - 1, per_col, col_start=4)
-    return len(new_data) - 1, renamed
+    return len(new_data) - 1, renamed, split_fanned, split_manual
 
 
 # ---------------------------------------------------------------------------
@@ -856,7 +1005,9 @@ def main() -> None:
     (no principled 1:1 value to carry over from a generic annotation), but each
     gets a Comments breadcrumb pointing back to the archived sheet if the old
     element had existing data, so re-annotators have a pointer to the prior
-    judgment instead of needing to remember or hunt for it.
+    judgment instead of needing to remember or hunt for it. This also cascades
+    into every pair-row construction referencing the retired element (see
+    _apply_split_to_pair_rows) -- not just the "home" element-row construction.
     """
     apply = "--apply" in sys.argv
     rename_map         = _parse_flag_map(sys.argv[1:], "--rename-map")
@@ -1006,8 +1157,22 @@ def main() -> None:
                         if n_cells:
                             print(f"    [{construction}] (pair tab) rename {n_cells} position cell(s)")
                             any_changes = True
+                            class_needs_restructure = True
                         else:
                             print(f"    [{construction}] (pair tab) no position renames needed")
+                    if split_element_map:
+                        tsv_path = CODED_DATA / lang_id / class_name / f"{construction}.tsv"
+                        criterion_col = _pair_construction_criterion(class_name, construction)
+                        n_fanned, n_manual = _count_pair_split_impacts(
+                            tsv_path, split_element_map, criterion_col
+                        )
+                        if n_fanned or n_manual:
+                            msg = f"    [{construction}] (pair tab) split would fan out {n_fanned} row(s)"
+                            if n_manual:
+                                msg += f", {n_manual} self-pair row(s) need manual review"
+                            print(msg)
+                            any_changes = True
+                            class_needs_restructure = True
                     continue
                 rows = _build_rows(element_index, lang_id, param_names)
                 existing = all_annotations.get(construction, {})
@@ -1061,17 +1226,25 @@ def main() -> None:
             for construction, param_names, param_values in constructions_list:
                 if construction in pair_row_constructions.get(class_name, set()):
                     # Pair-row constructions are copied from the archived sheet with
-                    # rename_map applied to Position_A/Position_B cells; they are not
-                    # regenerated from the planar structure.
-                    rows_copied, cells_renamed = _copy_pair_tab_with_rename(
-                        ss, new_ss, construction, rename_map, param_names, param_values
+                    # rename_map applied to Position_A/Position_B cells and
+                    # split_element_map applied to Element_A/Element_B cells; they
+                    # are not regenerated from the planar structure.
+                    criterion_col = _pair_construction_criterion(class_name, construction)
+                    rows_copied, cells_renamed, rows_split, rows_manual = _copy_pair_tab_with_rename(
+                        ss, new_ss, construction, rename_map, param_names, param_values,
+                        split_element_map=split_element_map, criterion_col=criterion_col,
                     )
                     tab_names.append(construction)
                     new_construction_params[construction] = {
                         "param_names": param_names,
                         "param_values": param_values,
                     }
-                    print(f"    [{construction}] (pair tab) copied {rows_copied} rows, {cells_renamed} cell(s) renamed")
+                    msg = f"    [{construction}] (pair tab) copied {rows_copied} rows, {cells_renamed} cell(s) renamed"
+                    if rows_split:
+                        msg += f", {rows_split} row(s) split (blank, old judgment quoted in Comments)"
+                    if rows_manual:
+                        msg += f", {rows_manual} self-pair row(s) on a split element — NEEDS MANUAL REVIEW, not auto-handled"
+                    print(msg)
                     continue
                 rows = _build_rows(element_index, lang_id, param_names)
                 existing = all_annotations.get(construction, {})
