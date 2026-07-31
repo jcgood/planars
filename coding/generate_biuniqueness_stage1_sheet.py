@@ -1,0 +1,291 @@
+#!/usr/bin/env python3
+"""Generate the Stage 1 biuniqueness/allomorphy screening sheet (issue #254 Part 2c).
+
+Background: the biuniqueness/allomorphy mechanism (#249, #58, #254) is being built
+and tested entirely on `synth0001` before touching real data. Part 2a added the
+Biuniqueness_Scope structural column to planar_{lang_id}.tsv (filled / open_category /
+excluded, per element); Part 2b backfilled it on synth0001. This script reads those
+flags and writes Stage 1: a real Drive Sheet where the coordinator and Adam do a first
+coarse pass over every in-scope element.
+
+Deliberately NOT routed through the standard diagnostics_{lang_id}.yaml /
+generate_sheets.py class/construction pipeline: that pipeline's row shape is
+Position-keyed with y/n-style criteria feeding a qualification_rule/span computation
+(see diagnostic_classes.yaml). The allomorphy tables being built toward here
+(`allomorphs_{lang_id}.tsv` / `allomorph_forms_{lang_id}.tsv`, see #249) are
+Element-keyed lexicon facts with no span computation defined yet (#254 Part 2i is an
+open problem, not solved by this script) — a structurally different kind of sheet.
+This mirrors generate_status_sheet.py's precedent: a purpose-built, non-standard
+sheet generator living outside the normal diagnostics pipeline, reusing drive.py's
+primitives directly rather than the per-class machinery in generate_sheets.py.
+
+Row shape: one row per (Position_Name, Element) pair where Biuniqueness_Scope is not
+"excluded". Two annotation columns cover both scope values, since which one applies is
+row-dependent (see banner written into the sheet):
+    - Biuniqueness_Scope == "filled":        fill has_allomorphs (y/n); leave Members blank.
+    - Biuniqueness_Scope == "open_category":  fill Members (comma-separated candidate
+                                               forms); leave has_allomorphs blank. Stage 2
+                                               (#254 Part 2e, not yet built) expands each
+                                               listed member into its own row.
+
+Run from the repo root:
+    python -m coding generate-biuniqueness-stage1-sheet --lang synth0001            # dry run
+    python -m coding generate-biuniqueness-stage1-sheet --lang synth0001 --apply
+
+Re-running with --apply overwrites the existing biuniqueness_stage1_{lang_id}
+spreadsheet in place (found by name within the language's Drive folder) rather than
+minting a new URL, same convention as generate_status_sheet.py.
+
+Sharing: shared as writer with Adam's email (adamjamesrosstallman@gmail.com) — issue
+#254 Part 2d/2j explicitly names Adam as exercising this flow. synth0001 has no
+per-language annotator_email in languages.yaml (it's a synthetic test language, not a
+real onboarded one), so the usual _annotator_email() lookup doesn't apply here.
+
+Authentication: same OAuth2 setup as generate_sheets.py.
+"""
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+from typing import Dict, List, Tuple
+
+ROOT = Path(__file__).resolve().parent.parent
+CODED_DATA = ROOT / "coded_data"
+MANIFEST_PATH = ROOT / "sheets_manifest.json"
+
+import gspread
+import pandas as pd
+
+from .drive import (
+    _get_clients,
+    _load_manifest_from_drive,
+    _open_spreadsheet,
+    _move_to_folder,
+    _share_with_person,
+    _with_retry,
+    _upload_planars_config,
+    _load_drive_config,
+    _save_drive_config,
+)
+from .validate_planar import _tokenize_elements
+
+_ADAM_EMAIL = "adamjamesrosstallman@gmail.com"
+_HEADER = ["Position_Name", "Element", "Biuniqueness_Scope", "has_allomorphs", "Members", "Notes"]
+_HAS_ALLOMORPHS_COL = _HEADER.index("has_allomorphs")
+
+
+# ---------------------------------------------------------------------------
+# Pure logic: no API calls (unit tested)
+# ---------------------------------------------------------------------------
+
+def _build_stage1_rows(planar_df: pd.DataFrame) -> List[Dict[str, str]]:
+    """Return one row dict per (Position_Name, Element) with Biuniqueness_Scope != excluded.
+
+    Raises ValueError if the Biuniqueness_Scope column is absent (backfill not run
+    yet — see migrations/backfill_biuniqueness_scope_synth0001.py, #254 Part 2b) or
+    has drifted out of token-alignment with Elements.
+    """
+    if "Biuniqueness_Scope" not in planar_df.columns:
+        raise ValueError(
+            "planar_df has no Biuniqueness_Scope column — run the Part 2b backfill "
+            "migration for this language first (see #254)"
+        )
+
+    rows: List[Dict[str, str]] = []
+    for _, row in planar_df.iterrows():
+        position_name = str(row.get("Position_Name", "")).strip()
+        elements = _tokenize_elements(str(row.get("Elements", "")).strip())
+        scopes = _tokenize_elements(str(row.get("Biuniqueness_Scope", "")).strip())
+        if len(elements) != len(scopes):
+            raise ValueError(
+                f"row '{position_name}': Elements has {len(elements)} token(s) but "
+                f"Biuniqueness_Scope has {len(scopes)} — backfill has drifted; "
+                f"re-run the migration or fix by hand"
+            )
+        for element, scope in zip(elements, scopes):
+            if scope == "excluded":
+                continue
+            rows.append({"position_name": position_name, "element": element, "scope": scope})
+    return rows
+
+
+def _rows_to_sheet_values(rows: List[Dict[str, str]]) -> List[List[str]]:
+    """Header + data rows; has_allomorphs/Members/Notes start blank for annotation."""
+    return [_HEADER] + [
+        [r["position_name"], r["element"], r["scope"], "", "", ""]
+        for r in rows
+    ]
+
+
+def _banner_rows() -> List[List[str]]:
+    """Instructions written above the header row (issue #254 Part 2c/2d)."""
+    return [
+        ["STAGE 1 — biuniqueness/allomorphy screening (issue #254 Part 2). "
+         "For each row below, fill in ONE of the two annotation columns depending "
+         "on that row's Biuniqueness_Scope:"],
+        ["  Biuniqueness_Scope = 'filled':        fill has_allomorphs (y/n). Leave Members blank."],
+        ["  Biuniqueness_Scope = 'open_category':  fill Members with a comma-separated list of "
+         "specific candidate forms in this category worth checking (e.g. for AD-S: probably, "
+         "certainly, ...). Leave has_allomorphs blank."],
+        ["Use Notes for anything else worth flagging. Message the coordinator when this tab is done."],
+        [""],
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Drive helpers (API calls — not unit tested; see docs/tooling-design.md)
+# ---------------------------------------------------------------------------
+
+def _get_or_create_stage1_spreadsheet(
+    gc: gspread.Client, drive, folder_id: str, name: str
+) -> Tuple[gspread.Spreadsheet, bool]:
+    """Find or create the Stage 1 spreadsheet by name inside folder_id.
+
+    Reused on re-runs so the URL stays stable across regenerations, same
+    convention as generate_status_sheet.py's _get_or_create_status_spreadsheet.
+    Returns (spreadsheet, created).
+    """
+    existing = drive.files().list(
+        q=(
+            f"name='{name}' and '{folder_id}' in parents"
+            " and mimeType='application/vnd.google-apps.spreadsheet'"
+            " and trashed=false"
+        ),
+        fields="files(id)",
+    ).execute().get("files", [])
+    if existing:
+        return _open_spreadsheet(gc, existing[0]["id"]), False
+    ss = gc.create(name)
+    _move_to_folder(drive, ss.id, folder_id)
+    return ss, True
+
+
+def _write_stage1_sheet(ss: gspread.Spreadsheet, rows: List[Dict[str, str]]) -> gspread.Worksheet:
+    """Write banner + header + data rows, freeze/bold the header, and add the
+    has_allomorphs y/n dropdown. Existing content is cleared first so re-running
+    reflects the current planar structure (matches _reset_worksheet's approach
+    in generate_sheets.py) — annotators re-annotate after a structural change,
+    same as every other sheet-generation path in this project.
+    """
+    ws = _with_retry(lambda: ss.sheet1)
+    if ws.title != "Stage1":
+        _with_retry(lambda: ws.update_title("Stage1"))
+    ws.clear()
+
+    banner = _banner_rows()
+    header_row_idx = len(banner)
+    values = banner + _rows_to_sheet_values(rows)
+    n_cols = len(_HEADER)
+    n_data_rows = len(rows)
+
+    _with_retry(lambda: ws.resize(rows=max(len(values) + 2, 10), cols=n_cols))
+    _with_retry(lambda: ws.update(values, "A1", raw=False))
+
+    requests = [
+        {"updateSheetProperties": {
+            "properties": {"sheetId": ws.id, "gridProperties": {"frozenRowCount": header_row_idx + 1}},
+            "fields": "gridProperties.frozenRowCount",
+        }},
+        {"repeatCell": {
+            "range": {"sheetId": ws.id, "startRowIndex": header_row_idx, "endRowIndex": header_row_idx + 1},
+            "cell": {"userEnteredFormat": {"textFormat": {"bold": True}}},
+            "fields": "userEnteredFormat.textFormat.bold",
+        }},
+        {"repeatCell": {
+            "range": {"sheetId": ws.id, "startRowIndex": 0, "endRowIndex": 1,
+                      "startColumnIndex": 0, "endColumnIndex": n_cols},
+            "cell": {"userEnteredFormat": {"textFormat": {"bold": True}}},
+            "fields": "userEnteredFormat.textFormat.bold",
+        }},
+        *[
+            {"mergeCells": {
+                "range": {"sheetId": ws.id, "startRowIndex": i, "endRowIndex": i + 1,
+                          "startColumnIndex": 0, "endColumnIndex": n_cols},
+                "mergeType": "MERGE_ALL",
+            }}
+            for i in range(len(banner) - 1)
+        ],
+        {"setDataValidation": {
+            "range": {
+                "sheetId": ws.id,
+                "startRowIndex": header_row_idx + 1, "endRowIndex": header_row_idx + 1 + n_data_rows,
+                "startColumnIndex": _HAS_ALLOMORPHS_COL, "endColumnIndex": _HAS_ALLOMORPHS_COL + 1,
+            },
+            "rule": {
+                "condition": {"type": "ONE_OF_LIST", "values": [{"userEnteredValue": v} for v in ("y", "n")]},
+                "showCustomUi": True,
+                "strict": False,
+            },
+        }},
+        {"repeatCell": {
+            "range": {"sheetId": ws.id},
+            "cell": {"userEnteredFormat": {"wrapStrategy": "WRAP"}},
+            "fields": "userEnteredFormat.wrapStrategy",
+        }},
+    ]
+    _with_retry(lambda: ss.batch_update({"requests": requests}))
+    return ws
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+def main() -> None:
+    """Entry point for `python -m coding generate-biuniqueness-stage1-sheet`."""
+    apply = "--apply" in sys.argv
+    if "--lang" not in sys.argv:
+        raise SystemExit("Usage: generate-biuniqueness-stage1-sheet --lang LANG_ID [--apply]")
+    lang_id = sys.argv[sys.argv.index("--lang") + 1]
+
+    lang_setup_dir = CODED_DATA / lang_id / "lang_setup"
+    planar_path = lang_setup_dir / f"planar_{lang_id}.tsv"
+    if not planar_path.exists():
+        raise SystemExit(f"No planar_{lang_id}.tsv found under {lang_setup_dir}")
+
+    planar_df = pd.read_csv(planar_path, sep="\t", dtype=str, keep_default_na=False)
+    try:
+        rows = _build_stage1_rows(planar_df)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from None
+
+    n_filled = sum(1 for r in rows if r["scope"] == "filled")
+    n_open = sum(1 for r in rows if r["scope"] == "open_category")
+    print(f"{'DRY RUN — ' if not apply else ''}Stage 1 sheet for {lang_id}: "
+          f"{len(rows)} row(s) ({n_filled} filled, {n_open} open_category)")
+    for r in rows:
+        print(f"    {r['position_name']:24s} {r['element']:20s} {r['scope']}")
+
+    if not apply:
+        print("\nRun with --apply to create/update the sheet on Drive.")
+        return
+
+    gc, drive = _get_clients()
+    manifest = _load_manifest_from_drive(drive)
+    lang_data = manifest.get(lang_id)
+    if not lang_data or not lang_data.get("folder_id"):
+        raise SystemExit(f"No Drive folder found for {lang_id} in the manifest — run generate-sheets first.")
+
+    sheet_name = f"biuniqueness_stage1_{lang_id}"
+    ss, created = _get_or_create_stage1_spreadsheet(gc, drive, lang_data["folder_id"], sheet_name)
+    _write_stage1_sheet(ss, rows)
+    _share_with_person(drive, ss.id, _ADAM_EMAIL, role="writer")
+    action = "Created" if created else "Updated"
+    print(f"\n{action}: {ss.url}")
+
+    if lang_data.get("biuniqueness_stage1_spreadsheet_id") != ss.id:
+        lang_data["biuniqueness_stage1_spreadsheet_id"] = ss.id
+        lang_data["biuniqueness_stage1_url"] = ss.url
+        MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+        config = _load_drive_config()
+        existing_file_id = config.get("_planars_config_file_id")
+        root_folder_id = config.get("_root_folder_id")
+        file_id = _upload_planars_config(drive, manifest, root_folder_id, existing_file_id)
+        config["_planars_config_file_id"] = file_id
+        _save_drive_config(config)
+        print("Manifest updated on Drive (biuniqueness_stage1_spreadsheet_id/url).")
+
+
+if __name__ == "__main__":
+    main()
