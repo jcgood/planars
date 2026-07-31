@@ -3,11 +3,11 @@ Synth0001 Nonpermutability General
 
 WARNING: general.tsv is out of sync with element_prescreening.tsv — run python -m coding generate-sheets --lang synth0001
 
-Keystone position: 30 (v:verbstem)
+Keystone position: 23 (v:verbstem)
 
-Strictly non-permutable positions (structural): [2, 12, 27]
-Free-permutable positions (scopal=n pairs):     [3, 6, 7, 8, 9, 10, 11, 14, 15, 16, 19, 20, 21, 23, 24, 25, 36, 38]
+Strictly non-permutable positions (structural): [2, 5, 10, 14, 21]
+Free-permutable positions (scopal=n pairs):     [3, 6, 7, 8, 9, 11, 12, 13, 16, 17, 19, 20, 26, 28]
 
-Strict non-permutable span:           positions 30–30  (v:verbstem → v:verbstem)
-Minimal flexible non-permutable span: positions 26–35  (v:ad-V2 → v:rec)
-Maximal flexible non-permutable span: positions 1–37  (v:leftedge → v:PP)
+Strict non-permutable span:           positions 23–23  (v:verbstem → v:verbstem)
+Minimal flexible non-permutable span: positions 21–25  (v:nominal → v:obj-part)
+Maximal flexible non-permutable span: positions 1–27  (v:leftedge → v:PP)
