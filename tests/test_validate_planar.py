@@ -110,3 +110,49 @@ def test_element_types_count_mismatch_is_an_error():
     df = _base_rows(row)
     errors = _errors(df)
     assert any("stay aligned" in e.message for e in errors)
+
+
+# ---------------------------------------------------------------------------
+# Biuniqueness_Scope drift (issue #254 Part 2a)
+# ---------------------------------------------------------------------------
+
+def test_biuniqueness_scope_absent_is_not_flagged():
+    """No Biuniqueness_Scope column at all -> no drift errors (not yet backfilled)."""
+    row = {
+        "Position": "2", "Position_Name": "v:test", "Position_Type": "Slot",
+        "Elements": "he, PRON, NP{S,A}", "Class_Type": "open",
+    }
+    df = _base_rows(row)
+    assert not any("Biuniqueness_Scope" in e.message for e in _errors(df))
+
+
+def test_biuniqueness_scope_matching_is_clean():
+    row = {
+        "Position": "2", "Position_Name": "v:test", "Position_Type": "Slot",
+        "Elements": "he, PRON, NP{S,A}", "Class_Type": "open",
+        "Biuniqueness_Scope": "filled, open_category, excluded",
+    }
+    df = _base_rows(row)
+    assert not any("Biuniqueness_Scope" in e.message for e in _errors(df))
+
+
+def test_biuniqueness_scope_mismatch_is_an_error():
+    row = {
+        "Position": "2", "Position_Name": "v:test", "Position_Type": "Slot",
+        "Elements": "he, PRON, NP{S,A}", "Class_Type": "open",
+        "Biuniqueness_Scope": "open_category, filled, excluded",  # first two swapped
+    }
+    df = _base_rows(row)
+    errors = _errors(df)
+    assert any("Biuniqueness_Scope" in e.message and "recomputing" in e.message for e in errors)
+
+
+def test_biuniqueness_scope_count_mismatch_is_an_error():
+    row = {
+        "Position": "2", "Position_Name": "v:test", "Position_Type": "Slot",
+        "Elements": "he, PRON, NP{S,A}", "Class_Type": "open",
+        "Biuniqueness_Scope": "filled, open_category",  # only two, Elements has three
+    }
+    df = _base_rows(row)
+    errors = _errors(df)
+    assert any("stay aligned" in e.message for e in errors)

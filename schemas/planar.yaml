@@ -53,6 +53,24 @@ structural_columns:
       files as of issue #249 — validation of the underlying typography/registry rules
       does not require this column to be present; only the drift check does.
 
+  - name: Biuniqueness_Scope
+    description: >
+      Per-element flag for biuniqueness/allomorphy relevance (issue #254 Part 2a,
+      Stage 0 of the biuniqueness/allomorphy Sheet pipeline), aligned token-for-token
+      with Elements (same comma/brace tokenization, same order). Built entirely on top
+      of Element_Types + the same ALL-CAPS typography rule used there — no independent
+      registry data. Values: "filled" (a concrete listed form, e.g. "do", "-ed" — a
+      direct candidate for Stage 1's has_allomorphs annotation), "open_category" (an
+      ALL CAPS category placeholder standing for an open/closed class of formatives,
+      e.g. PRON, VERBPART — not itself annotable; needs Stage 2 to expand it into
+      specific member forms before Stage 1's question applies to any of them), or
+      "excluded" (embedded_structure or reserved elements — allomorphy is a morph-level
+      phenomenon and does not apply to an embedded planar structure like NP{S,A} or to
+      the KEYSTONE placeholder). Computed by coding.make_forms.classify_biuniqueness_scope().
+      validate_planar.py recomputes and flags drift, same pattern as Element_Types.
+      NOT YET BACKFILLED into existing planar_{lang_id}.tsv files — mirrors
+      Element_Types' rollout; synth0001 backfill is issue #254 Part 2b.
+
 # The Position_Name value that identifies the keystone row.
 # Used by validate_planar.py, validate_coding.py, and planars/io.py.
 keystone_position_name: "v:verbstem"

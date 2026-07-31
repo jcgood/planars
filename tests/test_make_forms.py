@@ -16,6 +16,7 @@ from coding.make_forms import (
     _diff_diagnostics_tsv_yaml,
     _apply_yaml_diff,
     classify_element,
+    classify_biuniqueness_scope,
 )
 
 
@@ -349,3 +350,46 @@ def test_classify_element_real_schema_smoke():
     assert classify_element("I") == "formative"
     assert classify_element("he") == "formative"
     assert classify_element("KEYSTONE") == "reserved"
+
+
+# ---------------------------------------------------------------------------
+# classify_biuniqueness_scope (issue #254 Part 2a)
+# ---------------------------------------------------------------------------
+
+def test_classify_biuniqueness_scope_embedded_structure_is_excluded():
+    assert classify_biuniqueness_scope("NP{S,A}", _PLANAR_SCHEMA) == "excluded"
+    assert classify_biuniqueness_scope("NP", _PLANAR_SCHEMA) == "excluded"
+
+
+def test_classify_biuniqueness_scope_keystone_is_excluded():
+    assert classify_biuniqueness_scope("KEYSTONE", _PLANAR_SCHEMA) == "excluded"
+
+
+def test_classify_biuniqueness_scope_registered_all_caps_formative_is_open_category():
+    assert classify_biuniqueness_scope("PRON", _PLANAR_SCHEMA) == "open_category"
+    assert classify_biuniqueness_scope("AD-S", _PLANAR_SCHEMA) == "open_category"
+
+
+def test_classify_biuniqueness_scope_concrete_forms_are_filled():
+    assert classify_biuniqueness_scope("he", _PLANAR_SCHEMA) == "filled"
+    assert classify_biuniqueness_scope("-ed", _PLANAR_SCHEMA) == "filled"
+    assert classify_biuniqueness_scope("not", _PLANAR_SCHEMA) == "filled"
+
+
+def test_classify_biuniqueness_scope_capitalization_exception_is_filled():
+    """'I' is all-uppercase by typography but a listed exception, so it's a
+    concrete form (filled), not a category placeholder."""
+    assert classify_biuniqueness_scope("I", _PLANAR_SCHEMA) == "filled"
+
+
+def test_classify_biuniqueness_scope_unregistered_all_caps_is_unknown():
+    assert classify_biuniqueness_scope("FOOBAR", _PLANAR_SCHEMA) == "unknown"
+
+
+def test_classify_biuniqueness_scope_real_schema_smoke():
+    """Sanity check against the actual schemas/planar.yaml, not a fixture."""
+    assert classify_biuniqueness_scope("NP{S,A}") == "excluded"
+    assert classify_biuniqueness_scope("KEYSTONE") == "excluded"
+    assert classify_biuniqueness_scope("I") == "filled"
+    assert classify_biuniqueness_scope("he") == "filled"
+    assert classify_biuniqueness_scope("PRON") == "open_category"

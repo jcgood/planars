@@ -77,6 +77,43 @@ def classify_element(token: str, planar_schema: Dict | None = None) -> str:
     return _registry_element_types(planar_schema).get(stripped, "unknown")
 
 
+def classify_biuniqueness_scope(token: str, planar_schema: Dict | None = None) -> str:
+    """Classify a single Elements-cell token for the Biuniqueness_Scope column
+    (issue #254 Part 2a — Stage 0 of the biuniqueness/allomorphy Sheet pipeline).
+
+    Returns one of:
+        "filled"          — a concrete listed form (formative, not an ALL CAPS
+                             category placeholder) — a direct candidate for Stage 1's
+                             has_allomorphs annotation.
+        "open_category"   — a formative ALL CAPS category placeholder (e.g. PRON,
+                             VERBPART) standing for an open/closed class of forms —
+                             not itself annotable; needs Stage 2 to expand it into
+                             specific member forms first.
+        "excluded"         — embedded_structure (stands for a whole embedded planar
+                             structure, not a morph) or reserved (KEYSTONE) — biuniqueness/
+                             allomorphy is a morph-level phenomenon and applies to neither.
+        "unknown"          — the token's Element_Types classification is itself
+                             "unknown" (unregistered ALL CAPS label) — never silently
+                             defaulted; register the label in planar.yaml first.
+
+    Built entirely on top of classify_element() and the same typography rule it uses —
+    no independent registry data (see planar.yaml's Biuniqueness_Scope description).
+    """
+    if planar_schema is None:
+        planar_schema = load_planar_schema()
+
+    element_type = classify_element(token, planar_schema)
+    if element_type in ("embedded_structure", "reserved"):
+        return "excluded"
+    if element_type == "unknown":
+        return "unknown"
+
+    stripped = _BRACE_SUFFIX_RE.sub("", token.strip())
+    if stripped in _formative_exceptions(planar_schema):
+        return "filled"
+    return "open_category" if stripped.isupper() else "filled"
+
+
 def _resolve_path(filename: str, data_dir: Path | str) -> Path:
     """Resolve a filename against data_dir."""
     return Path(data_dir) / filename

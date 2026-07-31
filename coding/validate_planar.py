@@ -11,7 +11,7 @@ from typing import Dict, List
 
 from .validate import ValidationIssue
 from .schemas import load_planar_schema
-from .make_forms import classify_element
+from .make_forms import classify_element, classify_biuniqueness_scope
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -65,6 +65,43 @@ def _validate_element_types_drift(row, row_idx: int, pos_name: str, tokens: List
                 f"typography/registry gives '{recomputed}' — Elements may have changed "
                 f"without Element_Types being regenerated, or the label's registry entry "
                 f"changed underneath it"
+            ))
+    return issues
+
+
+def _validate_biuniqueness_scope_drift(row, row_idx: int, pos_name: str, tokens: List[str]) -> List[ValidationIssue]:
+    """Check the optional Biuniqueness_Scope column against a freshly recomputed
+    classification of Elements. Biuniqueness_Scope is not yet backfilled into
+    existing planar_{lang_id}.tsv files (see issue #254 Part 2a), so this is a
+    no-op wherever the column is absent — it only fires once a language has
+    adopted it. Mirrors _validate_element_types_drift.
+    """
+    issues: List[ValidationIssue] = []
+    raw = row.get("Biuniqueness_Scope")
+    if raw is None:
+        return issues
+    raw = str(raw).strip()
+    if not raw:
+        return issues
+
+    stored = _tokenize_elements(raw)
+    if len(stored) != len(tokens):
+        issues.append(ValidationIssue(
+            "error", f"row {row_idx + 2} '{pos_name}'",
+            f"Biuniqueness_Scope has {len(stored)} token(s) but Elements has {len(tokens)} — "
+            f"they must stay aligned one-for-one"
+        ))
+        return issues
+
+    for element, stored_scope in zip(tokens, stored):
+        recomputed = classify_biuniqueness_scope(element)
+        if stored_scope != recomputed:
+            issues.append(ValidationIssue(
+                "error", f"row {row_idx + 2} '{pos_name}'",
+                f"Biuniqueness_Scope says '{element}' is '{stored_scope}' but recomputing "
+                f"from Element_Types/typography gives '{recomputed}' — Elements may have "
+                f"changed without Biuniqueness_Scope being regenerated, or the label's "
+                f"registry entry changed underneath it"
             ))
     return issues
 
@@ -222,6 +259,7 @@ def validate_planar_df(df) -> List[ValidationIssue]:
                 ))
 
         issues.extend(_validate_element_types_drift(row, i, pos_name, tokens))
+        issues.extend(_validate_biuniqueness_scope_drift(row, i, pos_name, tokens))
 
         if ct == "list":
             caps = [t for t in tokens if _is_all_caps_token(t)]
