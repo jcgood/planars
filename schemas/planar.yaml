@@ -41,6 +41,18 @@ structural_columns:
       further left; higher numbers are further right. The keystone (v:verbstem)
       anchors all span computations.
 
+  - name: Element_Types
+    description: >
+      Per-element classification, aligned token-for-token with Elements
+      (same comma/brace tokenization, same order): "formative", "embedded_structure",
+      or "reserved" (KEYSTONE only). Computed by coding.make_forms.classify_element()
+      from the typography + registry rules below, then written into the TSV as an
+      explicit, visible fact rather than left as something only derivable by running
+      code. validate_planar.py recomputes and flags drift if this column disagrees
+      with the Elements column. NOT YET BACKFILLED into existing planar_{lang_id}.tsv
+      files as of issue #249 — validation of the underlying typography/registry rules
+      does not require this column to be present; only the drift check does.
+
 # The Position_Name value that identifies the keystone row.
 # Used by validate_planar.py, validate_coding.py, and planars/io.py.
 keystone_position_name: "v:verbstem"
@@ -86,16 +98,22 @@ element_conventions:
     phrase_types:
       - label: NP
         gloss: Noun phrase (any grammatical role unless further specified in braces)
+        element_type: embedded_structure
       - label: PP
         gloss: Adpositional phrase (prepositional or postpositional)
+        element_type: embedded_structure
       - label: S
         gloss: Clause / sentence
+        element_type: embedded_structure
       - label: AP
         gloss: Adjective phrase
+        element_type: embedded_structure
       - label: ADVP
         gloss: Adverb phrase (when scope is unspecified; prefer AD-S / AD-VP / AD-V when scope is known)
+        element_type: embedded_structure
       - label: VP
         gloss: Verb phrase
+        element_type: embedded_structure
 
     adverb_scope_labels:
       note: >
@@ -104,22 +122,36 @@ element_conventions:
       items:
         - label: AD-S
           gloss: Sentence-scoped adverb (modifies the entire clause)
+          element_type: formative
         - label: AD-VP
           gloss: VP-scoped adverb (modifies the verb phrase)
+          element_type: formative
         - label: AD-V
           gloss: V-scoped adverb (modifies the verb stem only)
+          element_type: formative
 
     other_labels:
       - label: PRON
         gloss: Pronoun
+        element_type: formative
       - label: CONJUNCT
         gloss: Coordinating conjunction or conjunct (use when the full list is open-ended)
+        element_type: formative
       - label: QWORDS
         gloss: Question words / wh-words (interrogative expressions)
+        element_type: formative
+      - label: INTERROGATIVES
+        gloss: Constituent interrogatives (arao1248-specific synonym of QWORDS; kept as its own label since it's already in committed annotation data)
+        element_type: formative
+      - label: ADVERBIALS
+        gloss: Adverbial elements, scope unspecified (arao1248-specific; see AD-S/AD-VP/AD-V for scope-marked equivalents)
+        element_type: formative
       - label: VERBPART
         gloss: Verbal particle
+        element_type: formative
       - label: KEYSTONE
         gloss: Reserved. Marks the v:verbstem position in the Elements column.
+        element_type: reserved
 
     brace_role_labels:
       note: >
@@ -140,3 +172,42 @@ element_conventions:
           gloss: Recipient / Goal
         - label: O
           gloss: Object (when A/P distinction is not made)
+
+# ---------------------------------------------------------------------------
+# ELEMENT TYPE CLASSIFICATION (formative vs. embedded_structure)
+# ---------------------------------------------------------------------------
+# Source of truth for coding.make_forms.classify_element(). Deliberately
+# explicit rather than left as an inferrable side effect of the ALL CAPS
+# convention above: an unregistered ALL CAPS token is a validation error
+# ("unknown"), never a silent default to "formative".
+
+element_type_conventions:
+
+  typography_rule: >
+    A token (brace-enclosed role suffix stripped, e.g. the "{S,A}" in
+    "NP{S,A}") is a category-label CANDIDATE if every cased character in it
+    is uppercase, tested with Python's Unicode-aware str.isupper() — never
+    an ASCII-only [A-Z] regex/character class, since formatives annotated
+    for future languages may use non-ASCII orthographies (e.g. Cyrillic,
+    Devanagari, IPA) and must not be miscategorized because a check assumed
+    Latin letters. A category-label candidate MUST have a matching `label`
+    entry with an explicit `element_type` under standard_labels above
+    (phrase_types, adverb_scope_labels, or other_labels) — if it does not,
+    classification is "unknown", which validate_planar.py treats as an
+    error requiring the coordinator to register the label, not something
+    to guess about. A token that is not a category-label candidate (i.e.
+    not all-uppercase, in any script) is always "formative".
+
+  formative_capitalization_exceptions:
+    note: >
+      Ordinary lexical formatives that are conventionally capitalized in
+      their language's orthography despite not being category labels, so
+      they would otherwise wrongly test as ALL-CAPS category-label
+      candidates under the typography_rule above (e.g. English "I" is a
+      single uppercase letter but is the 1sg pronoun, not a code). Listed
+      here explicitly, per language, rather than handled by a length or
+      frequency heuristic.
+    items:
+      - form: "I"
+        language: stan1293
+        gloss: 1sg pronoun; capitalized by English orthographic convention only.

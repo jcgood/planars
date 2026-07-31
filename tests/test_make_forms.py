@@ -15,6 +15,7 @@ from coding.make_forms import (
     _dump_diagnostics_yaml,
     _diff_diagnostics_tsv_yaml,
     _apply_yaml_diff,
+    classify_element,
 )
 
 
@@ -277,3 +278,74 @@ def test_apply_yaml_diff_does_not_mutate_original():
                 "criterion": "A-combines", "values": ["y", "n"]}]
     _apply_yaml_diff(yaml_data, changes)
     assert set(yaml_data["classes"]["ciscategorial"]["criteria"].keys()) == original_criteria
+
+
+# ---------------------------------------------------------------------------
+# classify_element
+# ---------------------------------------------------------------------------
+
+_PLANAR_SCHEMA = {
+    "element_conventions": {
+        "standard_labels": {
+            "phrase_types": [
+                {"label": "NP", "element_type": "embedded_structure"},
+            ],
+            "adverb_scope_labels": [
+                {"label": "AD-S", "element_type": "formative"},
+            ],
+            "other_labels": [
+                {"label": "PRON", "element_type": "formative"},
+                {"label": "KEYSTONE", "element_type": "reserved"},
+            ],
+        }
+    },
+    "element_type_conventions": {
+        "formative_capitalization_exceptions": {
+            "items": [{"form": "I", "language": "stan1293"}],
+        }
+    },
+}
+
+
+def test_classify_element_embedded_structure():
+    assert classify_element("NP{S,A}", _PLANAR_SCHEMA) == "embedded_structure"
+    assert classify_element("NP", _PLANAR_SCHEMA) == "embedded_structure"
+
+
+def test_classify_element_registered_formative_label():
+    assert classify_element("PRON", _PLANAR_SCHEMA) == "formative"
+    assert classify_element("AD-S", _PLANAR_SCHEMA) == "formative"
+
+
+def test_classify_element_keystone_is_reserved():
+    assert classify_element("KEYSTONE", _PLANAR_SCHEMA) == "reserved"
+
+
+def test_classify_element_lowercase_and_hyphenated_forms_are_formative():
+    assert classify_element("he", _PLANAR_SCHEMA) == "formative"
+    assert classify_element("-ed", _PLANAR_SCHEMA) == "formative"
+    assert classify_element("not", _PLANAR_SCHEMA) == "formative"
+
+
+def test_classify_element_unicode_formative_not_misclassified():
+    """A non-ASCII formative must not be caught by an ASCII-only caps check."""
+    assert classify_element("наш", _PLANAR_SCHEMA) == "formative"
+    assert classify_element("日本語", _PLANAR_SCHEMA) == "formative"
+
+
+def test_classify_element_capitalization_exception():
+    """'I' is all-uppercase by the typography rule but is a listed exception."""
+    assert classify_element("I", _PLANAR_SCHEMA) == "formative"
+
+
+def test_classify_element_unregistered_all_caps_is_unknown():
+    """An ALL CAPS token with no registry entry must never silently default."""
+    assert classify_element("FOOBAR", _PLANAR_SCHEMA) == "unknown"
+
+
+def test_classify_element_real_schema_smoke():
+    """Sanity check against the actual schemas/planar.yaml, not a fixture."""
+    assert classify_element("NP{S,A}") == "embedded_structure"
+    assert classify_element("I") == "formative"
+    assert classify_element("he") == "formative"
+    assert classify_element("KEYSTONE") == "reserved"

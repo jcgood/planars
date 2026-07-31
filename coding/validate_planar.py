@@ -11,6 +11,7 @@ from typing import Dict, List
 
 from .validate import ValidationIssue
 from .schemas import load_planar_schema
+from .make_forms import classify_element
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -20,13 +21,52 @@ _VALID_POSITION_TYPES = {"Zone", "Slot"}
 _VALID_CLASS_TYPES    = {"open", "list", "closed"}
 _KEYSTONE_NAME        = load_planar_schema().get("keystone_position_name", "v:verbstem")
 
-# ALL CAPS label: starts with an uppercase letter, contains only uppercase
-# letters, digits, hyphens, underscores, and optional brace-enclosed suffixes.
-_ALL_CAPS_RE = re.compile(r'^[A-Z][A-Z0-9\-_]*(\{[^}]*\})?$')
+_BRACE_SUFFIX_RE = re.compile(r'\{[^}]*\}$')
 
 
 def _is_all_caps_token(token: str) -> bool:
-    return bool(_ALL_CAPS_RE.match(token.strip()))
+    """Unicode-aware ALL CAPS check (str.isupper(), not an ASCII [A-Z] test) —
+    a brace-enclosed role suffix (e.g. the "{S,A}" in "NP{S,A}") is stripped
+    first. Must not assume Latin script: future formatives may be non-ASCII.
+    """
+    stripped = _BRACE_SUFFIX_RE.sub("", token.strip())
+    return bool(stripped) and stripped.isupper()
+
+
+def _validate_element_types_drift(row, row_idx: int, pos_name: str, tokens: List[str]) -> List[ValidationIssue]:
+    """Check the optional Element_Types column against a freshly recomputed
+    classification of Elements. Element_Types is not yet backfilled into
+    existing planar_{lang_id}.tsv files (see issue #249), so this is a no-op
+    wherever the column is absent — it only fires once a language has adopted it.
+    """
+    issues: List[ValidationIssue] = []
+    raw = row.get("Element_Types")
+    if raw is None:
+        return issues
+    raw = str(raw).strip()
+    if not raw:
+        return issues
+
+    stored = _tokenize_elements(raw)
+    if len(stored) != len(tokens):
+        issues.append(ValidationIssue(
+            "error", f"row {row_idx + 2} '{pos_name}'",
+            f"Element_Types has {len(stored)} token(s) but Elements has {len(tokens)} — "
+            f"they must stay aligned one-for-one"
+        ))
+        return issues
+
+    for element, stored_type in zip(tokens, stored):
+        recomputed = classify_element(element)
+        if stored_type != recomputed:
+            issues.append(ValidationIssue(
+                "error", f"row {row_idx + 2} '{pos_name}'",
+                f"Element_Types says '{element}' is '{stored_type}' but recomputing from "
+                f"typography/registry gives '{recomputed}' — Elements may have changed "
+                f"without Element_Types being regenerated, or the label's registry entry "
+                f"changed underneath it"
+            ))
+    return issues
 
 
 def _tokenize_elements(s: str) -> List[str]:
@@ -167,6 +207,21 @@ def validate_planar_df(df) -> List[ValidationIssue]:
         tokens = _tokenize_elements(elements_str)
         if not tokens:
             continue
+
+        # Element type classification: an ALL CAPS token with no registered
+        # element_type is a real gap, not something to default silently —
+        # see schemas/planar.yaml's element_type_conventions.
+        for t in tokens:
+            if classify_element(t) == "unknown":
+                issues.append(ValidationIssue(
+                    "error", f"row {i + 2} '{pos_name}'",
+                    f"Element '{t}' looks like an ALL CAPS category label but has no "
+                    f"element_type registered in schemas/planar.yaml's standard_labels — "
+                    f"add it there (or, if it's an ordinary capitalized formative, add it "
+                    f"to formative_capitalization_exceptions) before using it"
+                ))
+
+        issues.extend(_validate_element_types_drift(row, i, pos_name, tokens))
 
         if ct == "list":
             caps = [t for t in tokens if _is_all_caps_token(t)]

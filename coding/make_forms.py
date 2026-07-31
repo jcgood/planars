@@ -1,12 +1,81 @@
 from __future__ import annotations
 
 import copy
+import re
 from difflib import get_close_matches
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 import pandas as pd
 import yaml
+
+from .schemas import load_planar_schema
+
+_BRACE_SUFFIX_RE = re.compile(r'\{[^}]*\}$')
+
+
+def _registry_element_types(planar_schema: Dict) -> Dict[str, str]:
+    """Flatten element_conventions.standard_labels.* into {label: element_type}."""
+    standard_labels = (planar_schema.get("element_conventions") or {}).get("standard_labels") or {}
+    out: Dict[str, str] = {}
+    for group_name in ("phrase_types", "adverb_scope_labels", "other_labels"):
+        group = standard_labels.get(group_name)
+        items = group.get("items") if isinstance(group, dict) else group
+        for item in items or []:
+            label = item.get("label")
+            element_type = item.get("element_type")
+            if label and element_type:
+                out[label] = element_type
+    return out
+
+
+def _formative_exceptions(planar_schema: Dict) -> set:
+    """Literal forms exempted from the ALL CAPS -> category-label rule (e.g. 'I')."""
+    conventions = planar_schema.get("element_type_conventions") or {}
+    exceptions = conventions.get("formative_capitalization_exceptions") or {}
+    return {item["form"] for item in (exceptions.get("items") or []) if item.get("form")}
+
+
+def classify_element(token: str, planar_schema: Dict | None = None) -> str:
+    """Classify a single Elements-cell token per schemas/planar.yaml's element_type rules.
+
+    Returns one of:
+        "formative"           — a bottom-level unit (concrete form, in any script,
+                                 or a non-phrasal category placeholder like PRON).
+        "embedded_structure"  — stands for an entire embedded planar structure
+                                 (e.g. NP{S,A}), with its own internal positions.
+        "reserved"             — the special KEYSTONE marker.
+        "unknown"              — looks like an ALL CAPS category label by typography
+                                 but has no matching entry in planar.yaml's
+                                 standard_labels. Never silently defaulted to
+                                 "formative" — callers should treat this as an
+                                 error requiring the label to be registered.
+
+    Typography check is Unicode-aware (str.isupper(), not an ASCII [A-Z] test):
+    a brace-suffix-stripped token counts as an ALL CAPS category-label candidate
+    if every cased character in it is uppercase, regardless of script. This
+    matters because formatives (returned as "formative") may be non-ASCII in
+    future languages and must not be misclassified by an ASCII-only check.
+    formative_capitalization_exceptions in planar.yaml carves out ordinary
+    lexical items conventionally capitalized in their own orthography (e.g.
+    English "I") so they aren't mistaken for category-label candidates.
+    """
+    if planar_schema is None:
+        planar_schema = load_planar_schema()
+
+    stripped = _BRACE_SUFFIX_RE.sub("", token.strip())
+
+    if stripped in _formative_exceptions(planar_schema):
+        return "formative"
+
+    if stripped == "KEYSTONE":
+        return "reserved"
+
+    if not stripped.isupper():
+        return "formative"
+
+    return _registry_element_types(planar_schema).get(stripped, "unknown")
+
 
 def _resolve_path(filename: str, data_dir: Path | str) -> Path:
     """Resolve a filename against data_dir."""
