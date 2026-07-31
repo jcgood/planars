@@ -1,0 +1,19 @@
+Synth0001 Coreference Pronominalization
+=======================================
+
+NOTE: Some pairs have unknown elements.
+  unknown_elements: ["Element_A 'PRON{P,T}' not in planar", "Element_A 'PRON{P,T}' not in planar", "Element_A 'PRON{P,T}' not in planar"]
+
+Keystone position: 30 (v:verbstem)
+
+Binder positions (antecedent): [2, 5, 27, 34]
+Bindee positions (anaphor):    [2, 5, 27, 33, 34]
+
+Binder-only positions (structurally high): []
+Bindee-only positions (structurally low):  [33]
+Shared positions (either role):            [2, 5, 27, 34]
+
+Binder domain (strict): positions 30–30  (v:verbstem → v:verbstem)
+Binder domain (loose):  positions 2–34  (v:frontedXP → v:obj-part)
+Bindee domain (strict): positions 30–30  (v:verbstem → v:verbstem)
+Bindee domain (loose):  positions 2–34  (v:frontedXP → v:obj-part)
