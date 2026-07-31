@@ -26,12 +26,32 @@
       Before #248, the local-edit direction had no push mechanism at all; the
       next scheduled import-planar --apply silently reverted it, because it
       had no way to know planar_sheet was now stale. Exactly what happened on
-      2026-07-29 to #236's pronoun split (see #244/#245).
+      2026-07-29 to #236's pronoun split (see #244/#245). #248's fix only
+      covered restructure-sheets, though -- tests/make_synthetic_lang.py is a
+      second, independent planar_tsv writer (edits synth0001's planar_tsv
+      directly to regenerate the synthetic test dataset) that was never wired
+      into the same push. On 2026-07-31 its --full-copy regeneration (#254
+      Part 1) went un-pushed, the next scheduled import-planar --apply
+      reverted planar_tsv back to the old ~28-position structure, and that
+      cascaded into 7 downstream construction_tsvs and the diagnostics_tsv
+      also getting resynced to the stale shape (#256/#258/#259/#257,
+      remediated in planars-data commit 94fea13). A one-time migration script
+      (migrations/backfill_biuniqueness_scope_synth0001.py, planars#254 Part
+      2b) hit the identical gap the same day, editing planar_tsv directly
+      with no push. Fixed going forward by adding the same
+      push_planars_to_sheets() call make_synthetic_lang.py's --apply path
+      (mirrors restructure_sheets.py). General lesson: any script that edits
+      planar_tsv directly needs this push, not just restructure-sheets --
+      check for it by name in a new script rather than assuming the risk is
+      already covered project-wide.
     caught_by: >-
       nothing yet beyond the daily import-planar --apply step noticing a diff
       and filing a planar-changed issue -- which can't distinguish "the Sheet
       legitimately changed" from "the TSV was edited locally and never
-      pushed," since both look identical from import-planar's side.
+      pushed," since both look identical from import-planar's side. This is
+      still true even after the 2026-07-31 fix: it stops make_synthetic_lang.py
+      from causing new drift, but doesn't add detection for a *future* script
+      that writes planar_tsv directly and forgets the same push.
 
 - id: diagnostics_scope
   description: which classes/constructions/criteria are in scope for a language's diagnostics

@@ -36,6 +36,13 @@ Usage:
     python tests/make_synthetic_lang.py --full-copy --apply  # no position drop
     python tests/make_synthetic_lang.py --clean        # remove synth0001 (dry run)
     python tests/make_synthetic_lang.py --clean --apply  # actually remove it
+
+--apply (not --clean) also pushes the regenerated planar structure to the live
+Drive planar spreadsheet (requires Drive credentials -- same OAuth2 setup as
+generate_sheets.py), mirroring restructure_sheets.py's push since issue #248.
+Without this, the live Sheet is left stale and the next scheduled
+`import-planar --apply` silently reverts the regeneration -- exactly what
+happened on 2026-07-31 (see issue #256 and its cascade).
 """
 
 from __future__ import annotations
@@ -426,6 +433,18 @@ def main() -> None:
             print(f"    {f}")
     if not args.apply:
         print("\nRun with --apply to write files.")
+        return
+
+    # This writes planar_{DST_LANG}.tsv locally with no other cascade to the
+    # live Drive planar spreadsheet -- unlike restructure_sheets.py, which has
+    # pushed automatically since issue #248. Without this, the live Sheet is
+    # left stale and the next scheduled `import-planar --apply` silently
+    # reverts this regeneration back to the old structure, exactly what
+    # happened on 2026-07-31 (see planars#256/#258/#259/#257 and the fix in
+    # planars-data commit 94fea13). Mirrors restructure_sheets.py's call.
+    print("\n--- Syncing planar Sheet ---")
+    from coding.import_planar import push_planars_to_sheets
+    push_planars_to_sheets(lang_ids=[DST_LANG], apply=True)
 
 
 if __name__ == "__main__":
