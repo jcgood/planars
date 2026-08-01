@@ -410,19 +410,27 @@ def _write_planar(tmp_path: Path, rows: str) -> Path:
     return d
 
 
-def test_build_element_index_open_list_closed_mixed_all_index_the_same_way(tmp_path):
+def test_build_element_index_open_list_mixed_all_index_the_same_way(tmp_path):
     rows = (
         "lang0001\tverbal\t1\tSlot\tv:a\tFOO\topen\n"
-        "lang0001\tverbal\t2\tSlot\tv:b\tbar\tlist\n"
-        "lang0001\tverbal\t3\tSlot\tv:c\tbaz\tclosed\n"
-        "lang0001\tverbal\t4\tSlot\tv:d\tNP, he, she\tmixed\n"
+        "lang0001\tverbal\t2\tSlot\tv:b\tbar, baz\tlist\n"
+        "lang0001\tverbal\t3\tSlot\tv:c\tNP, he, she\tmixed\n"
     )
     data_dir = _write_planar(tmp_path, rows)
     index = build_element_index("planar_lang0001.tsv", data_dir)
     assert "FOO@1" in index
-    assert "bar@2" in index
-    assert "baz@3" in index
-    assert "NP@4" in index and "he@4" in index and "she@4" in index
+    assert "bar@2" in index and "baz@2" in index
+    assert "NP@3" in index and "he@3" in index and "she@3" in index
+
+
+def test_build_element_index_single_element_list_is_valid(tmp_path):
+    """list has no minimum element count -- a single-item list is normal,
+    not something that needs a separate 'closed' Class_Type (removed; it
+    was never actually distinguished from list in any check)."""
+    rows = "lang0001\tverbal\t1\tSlot\tv:a\tonly-one\tlist\n"
+    data_dir = _write_planar(tmp_path, rows)
+    index = build_element_index("planar_lang0001.tsv", data_dir)
+    assert "only-one@1" in index
 
 
 def test_build_element_index_unknown_class_type_raises(tmp_path):

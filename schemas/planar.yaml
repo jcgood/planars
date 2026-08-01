@@ -86,7 +86,8 @@ trailing_columns: [Source, Comments]
 # Conventions for the Elements column in planar structure TSVs.
 # The Class_Type column determines which convention applies.
 #
-#   list   — an exhaustive enumeration of morphemes or forms
+#   list   — an exhaustive enumeration of morphemes or forms, of any size
+#             (including a single element -- there's no minimum count).
 #             Elements are lower-case orthographic/transcribed representations.
 #             Example: "-ed, -s, -ing"
 #
@@ -95,9 +96,6 @@ trailing_columns: [Source, Comments]
 #             brace notation.  Lower-case items may appear alongside ALL CAPS
 #             labels as shorthand for "additional closed-class items not listed".
 #             Example: "NP{S,A}, CONJUNCT, tso"
-#
-#   closed — a finite but not exhaustively listed set of forms
-#             Behaviour between list and open; conventions as for list.
 #
 #   mixed  — a position that genuinely accepts, as true alternatives in the
 #             same slot, either an open/productive category (ALL CAPS label)

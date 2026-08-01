@@ -198,3 +198,27 @@ def test_open_still_flags_the_same_lowercase_elements():
     df = _base_rows(row)
     warnings = _warnings(df)
     assert any("not ALL CAPS" in w.message and "'he'" in w.message for w in warnings)
+
+
+# ---------------------------------------------------------------------------
+# Class_Type: closed removed — folded into list (no minimum element count)
+# ---------------------------------------------------------------------------
+
+def test_closed_is_no_longer_a_valid_class_type():
+    row = {
+        "Position": "2", "Position_Name": "v:test", "Position_Type": "Slot",
+        "Elements": "foo", "Class_Type": "closed",
+    }
+    df = _base_rows(row)
+    errors = _errors(df)
+    assert any("must be one of" in e.message and "closed" in e.message for e in errors)
+
+
+def test_list_with_a_single_element_is_not_flagged():
+    row = {
+        "Position": "2", "Position_Name": "v:test", "Position_Type": "Slot",
+        "Elements": "foo", "Class_Type": "list",
+    }
+    df = _base_rows(row)
+    assert _errors(df) == []
+    assert _warnings(df) == []
