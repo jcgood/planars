@@ -26,6 +26,7 @@ Commands:
     import-planar                Download planar spreadsheet from Drive and sync to local TSV
     generate-status-sheet        Generate locked, read-only per-language Annotation Status sheets
     generate-biuniqueness-stage1-sheet  Generate the Stage 1 biuniqueness/allomorphy screening sheet
+    capture-drive-state          Record live Drive/Sheets state to local test fixtures (READ-ONLY)
 
 Each command accepts the same flags as the original script. Use --help on any
 command for details, or see CLAUDE.md.
@@ -37,6 +38,7 @@ from pathlib import Path
 _ROOT = Path(__file__).resolve().parent.parent
 
 _COMMANDS = {
+    "capture-drive-state":         "coding.capture_drive_state",
     "generate-sheets":             "coding.generate_sheets",
     "generate-notebooks":          "coding.generate_notebooks",
     "generate-reports":            "coding.generate_reports",
