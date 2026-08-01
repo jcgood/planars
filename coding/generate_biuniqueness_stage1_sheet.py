@@ -265,7 +265,7 @@ def main() -> None:
     manifest = _load_manifest_from_drive(drive)
     lang_data = manifest.get(lang_id)
     if not lang_data or not lang_data.get("folder_id"):
-        raise SystemExit(f"No Drive folder found for {lang_id} in the manifest — run generate-sheets first.")
+        raise SystemExit(f"No Drive folder found for {lang_id} in the manifest — run python -m coding generate-sheets --apply first.")
 
     sheet_name = f"biuniqueness_stage1_{lang_id}"
     ss, created = _get_or_create_stage1_spreadsheet(gc, drive, lang_data["folder_id"], sheet_name)

@@ -42,7 +42,8 @@ Full command reference with flags: [docs/coordinator-guide.md](docs/coordinator-
 
 ```bash
 # Sheet lifecycle
-python -m coding generate-sheets          # create annotation sheets (--force blocked if sheets exist)
+python -m coding generate-sheets          # dry run: show what would be created
+python -m coding generate-sheets --apply  # create annotation sheets (--force to overwrite existing)
 python -m coding import-sheets            # dry run: show what would be written
 python -m coding import-sheets --apply    # download filled sheets → TSVs (--overwrite-existing to re-download)
 python -m coding import-planar            # dry run: show planar spreadsheet changes vs local TSV

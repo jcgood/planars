@@ -278,7 +278,7 @@ def main() -> None:
         gc, drive = _get_clients()
         manifest = _load_manifest_from_drive(drive)
         if not manifest:
-            raise SystemExit("No manifest found. Run generate-sheets first.")
+            raise SystemExit("No manifest found. Run python -m coding generate-sheets --apply first.")
         languages = [lang_filter] if lang_filter else list(manifest.keys())
         changed = 0
         for lang_id in sorted(languages):

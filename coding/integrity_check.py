@@ -184,7 +184,7 @@ def _section_planar(lang_ids: List[str]) -> Tuple[int, int]:
             if stale:
                 for tsv in stale:
                     print(_warn(f"{lang}  —  nonpermutability/{tsv.name} predates current planar"))
-                print(_sub("→ Candidate pairs may be stale. Regenerate with: python -m coding generate-sheets"))
+                print(_sub("→ Candidate pairs may be stale. Regenerate with: python -m coding generate-sheets --apply"))
                 print(_sub("  (nonpermutability pairs are derived from the planar structure, not annotated directly)"))
                 total_w += len(stale)
 

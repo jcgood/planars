@@ -1126,7 +1126,7 @@ def main() -> None:
         for class_name, constructions_list in classes.items():
             sheet_info = lang_data.get("sheets", {}).get(class_name)
             if not sheet_info:
-                print(f"\n  {class_name}: not in manifest, skipping (run python -m coding generate-sheets first)")
+                print(f"\n  {class_name}: not in manifest, skipping (run python -m coding generate-sheets --apply first)")
                 continue
 
             version = sheet_info.get("version", 1)

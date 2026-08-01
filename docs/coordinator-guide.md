@@ -163,9 +163,9 @@ git pull
 
 3. Generate annotation sheets and notebooks:
    ```bash
-   python -m coding generate-sheets
+   python -m coding generate-sheets --apply
    ```
-   This creates one Google Sheets file per analysis class, uploads contributor and coordinator Colab notebooks to Drive, creates editable Google Sheets for the planar structure and diagnostics files, and updates the Drive manifest. On re-runs, only classes not yet in the manifest are created.
+   This creates one Google Sheets file per analysis class, uploads contributor and coordinator Colab notebooks to Drive, creates editable Google Sheets for the planar structure and diagnostics files, and updates the Drive manifest. On re-runs, only classes not yet in the manifest are created. Omit `--apply` first to see a dry-run report of what would be created.
 
 4. If this is the first language in the project, run `setup-root-folder` once after `generate-sheets` — see [Drive folder structure](#drive-folder-structure) below.
 
@@ -183,11 +183,12 @@ git pull
 #### 1. Generate annotation forms
 
 ```bash
-python -m coding generate-sheets           # creates sheets for new classes only
-python -m coding generate-sheets --force   # blocked with a hard error if annotation sheets already exist
+python -m coding generate-sheets                    # dry run: show what would be created
+python -m coding generate-sheets --apply             # creates sheets for new classes only
+python -m coding generate-sheets --force --apply     # blocked with a hard error if annotation sheets already exist
 ```
 
-**If `generate-sheets` aborts with "already exists in the Drive folder but is not registered in the manifest":** a spreadsheet with that name is in Drive but not in `drive_config.json`. This usually means a previous run created an orphaned sheet (e.g. after clearing the manifest during debugging). Resolve by either (a) locating the sheet in Drive, opening `drive_config.json`, and adding its ID under the correct class, or (b) moving the sheet to `_archived/` in the language's Drive folder and re-running `generate-sheets`.
+**If `generate-sheets --apply` aborts with "already exists in the Drive folder but is not registered in the manifest":** a spreadsheet with that name is in Drive but not in `drive_config.json`. This usually means a previous run created an orphaned sheet (e.g. after clearing the manifest during debugging). Resolve by either (a) locating the sheet in Drive, opening `drive_config.json`, and adding its ID under the correct class, or (b) moving the sheet to `_archived/` in the language's Drive folder and re-running `generate-sheets --apply`.
 
 Creates one Google Sheets file per analysis class with one tab per construction. Each tab has per-criterion dropdown validation, an optional **Source** column (page or section reference justifying each annotation, e.g. `§4.3`, `p. 217`, `Table 6.2`), and a free-text **Comments** column. Source comes before Comments; both are free-text and not validated. Each spreadsheet also gets a **Status tab** (always the last tab) with one row per construction and a dropdown (`in-progress` / `ready-for-review`). Also runs `generate-notebooks` automatically at the end.
 
@@ -240,7 +241,7 @@ python -m coding import-sheets --apply --overwrite-existing  # re-download and o
 Dry-run by default — pass `--apply` to write any TSVs. Skips existing annotation TSVs unless `--overwrite-existing` is also passed; when overwriting, the existing TSV is automatically archived to `archive/` first. On each run, `import-sheets` also:
 
 - **Downloads and validates** the planar structure and diagnostics Sheets for each language, writing them to `coded_data/{lang_id}/lang_setup/`.
-- **Auto-applies safe downstream commands** (`update-sheets --apply`, `sync-params --apply`, `generate-sheets`) when additive changes are detected (new positions, new criteria, new construction tabs).
+- **Auto-applies safe downstream commands** (`update-sheets --apply`, `sync-params --apply`, `generate-sheets --apply`) when additive changes are detected (new positions, new criteria, new construction tabs).
 - **Writes destructive changes** (planar deletions/reorders, criterion renames/removals, new constructions within existing classes) to `pending_changes.json` for coordinator review rather than applying them immediately.
 
 After import, review and apply any pending changes:
@@ -369,8 +370,8 @@ To resolve a `diagnostics-drift` issue:
 After step 4 above:
 
 ```bash
-python -m coding generate-sheets      # creates annotation sheets for the new class
-python -m coding sync-params --apply  # if existing sheets need the new criteria columns
+python -m coding generate-sheets --apply  # creates annotation sheets for the new class
+python -m coding sync-params --apply      # if existing sheets need the new criteria columns
 ```
 
 #### Multi-stage annotation workflows (nonpermutability and coreference)
@@ -604,12 +605,15 @@ Each checker has a defined scope. New validation belongs in one of these tools, 
 A `Makefile` in the repo root provides short aliases for all common commands. Run `make help` for the full list. Examples:
 
 ```bash
-make generate-sheets      # python -m coding generate-sheets
-make import-sheets        # python -m coding import-sheets
-make update-sheets        # python -m coding update-sheets --apply
-make update-sheets-dry    # python -m coding update-sheets  (dry run)
-make restructure-sheets   # python -m coding restructure-sheets --apply  ⚠ destructive
-make integrity-check      # python -m coding integrity-check
+make generate-sheets        # python -m coding generate-sheets  (dry run)
+make generate-sheets-apply  # python -m coding generate-sheets --apply
+make import-sheets          # python -m coding import-sheets  (dry run)
+make import-sheets-apply    # python -m coding import-sheets --apply
+make update-sheets          # python -m coding update-sheets  (dry run)
+make update-sheets-apply    # python -m coding update-sheets --apply
+make restructure-sheets       # python -m coding restructure-sheets  (dry run)
+make restructure-sheets-apply # python -m coding restructure-sheets --apply  ⚠ destructive
+make integrity-check        # python -m coding integrity-check
 make lookup-lang LANG=arao1248
 make test
 make snapshots

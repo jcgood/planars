@@ -30,7 +30,7 @@ The coordinator is a scientist doing work that a well-funded project would distr
 
 **Dry-run by default; explicit opt-in for destructive actions.** Any command that archives, overwrites, or deletes should require an explicit flag (`--apply`, `--force`) and should describe the consequences in the dry-run output before the coordinator opts in.
 
-**Full commands everywhere.** This applies to: error messages, issue bodies, `apply-pending` prompts, `integrity-check` next-step lines, generated Claude prompts, and all documentation steps. Use `python -m coding generate-sheets --force`, not "generate-sheets --force" or "run the generate-sheets command with force."
+**Full commands everywhere.** This applies to: error messages, issue bodies, `apply-pending` prompts, `integrity-check` next-step lines, generated Claude prompts, and all documentation steps. Use `python -m coding generate-sheets --force --apply`, not "generate-sheets --force" or "run the generate-sheets command with force."
 
 ## What Claude's role is in this workflow
 

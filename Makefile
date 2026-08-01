@@ -6,7 +6,7 @@
 # Use the -apply variant to execute: e.g. make update-sheets-apply
 
 .PHONY: help \
-        generate-sheets import-sheets apply-pending validate-coding \
+        generate-sheets generate-sheets-apply import-sheets apply-pending validate-coding \
         update-sheets update-sheets-apply \
         sync-params sync-params-apply \
         sync-diagnostics-yaml sync-diagnostics-yaml-apply \
@@ -20,7 +20,8 @@
 
 help:
 	@echo "Sheet lifecycle:"
-	@echo "  generate-sheets             Create annotation sheets for new classes"
+	@echo "  generate-sheets             Dry run: show what would be created"
+	@echo "  generate-sheets-apply       Create annotation sheets for new classes"
 	@echo "  import-sheets               Dry run: show what would be imported"
 	@echo "  import-sheets-apply         Download filled sheets → TSVs"
 	@echo "  apply-pending               Review and apply pending destructive changes"
@@ -58,6 +59,9 @@ help:
 
 generate-sheets:
 	python -m coding generate-sheets
+
+generate-sheets-apply:
+	python -m coding generate-sheets --apply
 
 import-sheets:
 	python -m coding import-sheets

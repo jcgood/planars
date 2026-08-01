@@ -103,7 +103,7 @@ def _handle_new_construction(entry: Dict, all_flag: bool) -> Tuple[bool, Dict]:
         print(f"    4. Re-run: python -m coding import-sheets --apply")
         print()
         print(f"  Option 2 — Recreate the sheet from scratch:")
-        print(f"    python -m coding generate-sheets --force")
+        print(f"    python -m coding generate-sheets --force --apply")
         print(f"    WARNING: --force archives ALL existing annotations for '{cls}'")
         print(f"    and recreates the sheet. Only use this if annotations are expendable.")
         print()

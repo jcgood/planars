@@ -2,12 +2,16 @@
 """Generate Google Sheets annotation forms from planar structure and diagnostics.
 
 Run from the repo root:
-    python -m coding generate-sheets           # create sheets for new classes only
-    python -m coding generate-sheets --force   # blocked with a hard error if annotation sheets already exist
+    python -m coding generate-sheets                    # dry run — report what would be created
+    python -m coding generate-sheets --apply             # create sheets for new classes only
+    python -m coding generate-sheets --apply --force     # blocked with a hard error if annotation sheets already exist
 
-On the first run, creates one Google Sheet per analysis class with one tab per construction.
-On subsequent runs, only creates sheets for classes not yet in the Drive manifest (e.g. a
-newly added aspiration class). Existing sheets are left untouched.
+Dry-run by default, like every other mutating command in this project (see
+docs/tooling-design.md) — no Drive writes happen without --apply. On the first run
+(with --apply), creates one Google Sheet per analysis class with one tab per
+construction. On subsequent runs, only creates sheets for classes not yet in the
+Drive manifest (e.g. a newly added aspiration class). Existing sheets are left
+untouched.
 
 To sync param column changes to existing sheets: python -m coding sync-params --apply
 
@@ -484,7 +488,7 @@ def _filter_nonperm_pairs_by_prescreening(
     prescreening_path = CODED_DATA / lang_id / "nonpermutability" / "element_prescreening.tsv"
     if not prescreening_path.exists():
         print("    [NOTE] element_prescreening.tsv not found — generating unfiltered pair list.")
-        print("          Annotate element_prescreening first, then re-run generate-sheets to get")
+        print("          Annotate element_prescreening first, then re-run generate-sheets --apply to get")
         print("          a filtered pairs sheet.")
         return pairs
 
@@ -1444,7 +1448,7 @@ def _create_analysis_sheet(
             f"  Existing file ID(s): {ids}\n\n"
             f"To resolve, either:\n"
             f"  (a) Register the existing sheet: add its spreadsheet_id to the manifest, or\n"
-            f"  (b) Move it to _archived/ in Drive, then re-run generate-sheets\n"
+            f"  (b) Move it to _archived/ in Drive, then re-run generate-sheets --apply\n"
         )
 
     spreadsheet = gc.create(sheet_title)
@@ -2045,6 +2049,63 @@ def _regen_dependents_simple(gc: gspread.Client, manifest: dict) -> None:
 # Safety checks
 # ---------------------------------------------------------------------------
 
+def _plan_language_creation(
+    all_classes: Dict[str, List[Tuple[str, List[str], Dict[str, List[str]]]]],
+    existing_lang_data: Dict,
+    force: bool,
+) -> Dict:
+    """Determine what generate-sheets would create/update for one language, using
+    only already-fetched manifest data (existing_lang_data) -- no live Drive calls.
+
+    This is the dry-run/--apply gate's pure-logic core (issue: generate-sheets had
+    no dry-run mode at all before this, unlike every other mutating command in the
+    project -- see docs/tooling-design.md's "dry-run by default" principle). Used
+    both to decide whether main()'s dry-run branch has anything to report for this
+    language, and to build that report.
+
+    Returns a dict:
+        needs_folder / needs_notes_doc / needs_planar_sheet / needs_diagnostics_sheet: bool
+            (the latter two are True whenever force=True, matching
+            _upload_lang_setup_as_sheets' own "existing_id and not force: skip" logic --
+            caller further ANDs needs_diagnostics_sheet with whether a diagnostics TSV
+            exists locally, since that's a local-file fact this function doesn't have)
+        new_classes: sorted list of class names with no existing sheet at all
+        new_constructions: {class_name: [construction, ...]} for constructions newly
+            added to an EXISTING class's sheet (not counted again under new_classes)
+        anything: True if any of the above would cause a write
+    """
+    existing_sheets = existing_lang_data.get("sheets", {})
+    new_classes = sorted(c for c in all_classes if c not in existing_sheets)
+
+    new_constructions: Dict[str, List[str]] = {}
+    for cls, constructions_list in all_classes.items():
+        if cls in new_classes:
+            continue  # whole class is new; its constructions are covered there
+        existing_cons = set(existing_sheets.get(cls, {}).get("constructions", []))
+        added = [c for c, _, _ in constructions_list if c not in existing_cons]
+        if added:
+            new_constructions[cls] = added
+
+    needs_folder             = not bool(existing_lang_data.get("folder_id"))
+    needs_notes_doc           = not bool(existing_lang_data.get("notes_doc_id"))
+    needs_planar_sheet        = force or not bool(existing_lang_data.get("planar_spreadsheet_id"))
+    needs_diagnostics_sheet   = force or not bool(existing_lang_data.get("diagnostics_spreadsheet_id"))
+
+    anything = (
+        needs_folder or needs_notes_doc or needs_planar_sheet or needs_diagnostics_sheet
+        or bool(new_classes) or bool(new_constructions)
+    )
+    return {
+        "needs_folder": needs_folder,
+        "needs_notes_doc": needs_notes_doc,
+        "needs_planar_sheet": needs_planar_sheet,
+        "needs_diagnostics_sheet": needs_diagnostics_sheet,
+        "new_classes": new_classes,
+        "new_constructions": new_constructions,
+        "anything": anything,
+    }
+
+
 def _check_force_against_existing_sheets(
     lang_id: str, force: bool, existing_lang_data: Dict
 ) -> None:
@@ -2073,7 +2134,17 @@ def _check_force_against_existing_sheets(
 def main() -> None:
     """Entry point for `python -m coding generate-sheets`.
 
-    Iterates over all planar_*.tsv files in coded_data/*/lang_setup/ and for each language:
+    Dry-run by default: without --apply, reports what would be created/updated per
+    language (_plan_language_creation, using only already-fetched manifest data —
+    no Drive writes) and moves on. This did not exist before -- generate-sheets was
+    the one mutating command in the project with no dry-run gate at all, unlike
+    restructure-sheets/sync-params/update-sheets/sync-diagnostics-yaml, in direct
+    tension with docs/tooling-design.md's "dry-run by default" principle. Fixed
+    after an accidental live creation during a session that assumed omitting
+    --apply was safe, by analogy with every other command.
+
+    With --apply, iterates over all planar_*.tsv files in coded_data/*/lang_setup/
+    and for each language:
     - Creates planar_*.tsv and diagnostics_{lang_id}.tsv as editable Google Sheets (source of
       truth). Skips files whose sheet IDs are already in the manifest unless --force.
     - Creates one annotation Google Sheet per analysis class (skipping existing ones unless
@@ -2157,6 +2228,7 @@ def main() -> None:
         return
 
     force = "--force" in sys.argv
+    apply = "--apply" in sys.argv
 
     planar_files = sorted(CODED_DATA.glob("*/lang_setup/planar_*.tsv"))
     if not planar_files:
@@ -2226,8 +2298,54 @@ def main() -> None:
 
         print(f"Classes:     {list(all_classes.keys())}")
 
+        # Load existing data early (from the manifest already fetched above -- no
+        # live call yet) so we can plan what would be created/updated before
+        # touching Drive at all.
+        existing_lang_data: Dict = merged_config.get(lang_id, {})
+        if not existing_lang_data and lang_id in config:
+            # Migration: try old-format per-language manifest file
+            old_fid = config[lang_id].get("manifest_file_id")
+            if old_fid:
+                try:
+                    existing_lang_data = _download_file_json(drive, old_fid)
+                except Exception:
+                    pass
+
+        # Dry-run gate: report what would happen using only manifest/local data,
+        # with no Drive writes, unless --apply is given. See docs/tooling-design.md's
+        # "dry-run by default" principle -- generate-sheets previously had no such
+        # gate at all, unlike every other mutating command in this project.
+        diag_path_exists = diag_path.exists()
+        plan = _plan_language_creation(all_classes, existing_lang_data, force)
+        plan_anything = plan["anything"] or (plan["needs_diagnostics_sheet"] and diag_path_exists)
+        if plan_anything and not apply:
+            print("  DRY RUN — would create/update:")
+            if plan["needs_folder"]:
+                print(f"    Drive folder for {lang_id}")
+            if plan["needs_notes_doc"]:
+                print(f"    Collaborator notes doc")
+            if plan["needs_planar_sheet"]:
+                action = "Overwrite" if existing_lang_data.get("planar_spreadsheet_id") else "Create"
+                print(f"    {action} planar sheet")
+            if plan["needs_diagnostics_sheet"] and diag_path_exists:
+                action = "Overwrite" if existing_lang_data.get("diagnostics_spreadsheet_id") else "Create"
+                print(f"    {action} diagnostics sheet")
+            if plan["new_classes"]:
+                print(f"    New class sheet(s): {plan['new_classes']}")
+            if plan["new_constructions"]:
+                for cls, cons in plan["new_constructions"].items():
+                    print(f"    New construction(s) in existing '{cls}' sheet: {cons}")
+            print("  Run with --apply to make these changes.")
+            continue
+        if not plan_anything:
+            print(f"  All classes already have sheets. Skipping {lang_id}.\n"
+                  "  (use --force to regenerate)")
+            continue
+
         # Resolve/create Drive folder.
-        folder_id = _get_or_create_folder(drive, lang_id, parent_id=root_folder_id)
+        folder_id = existing_lang_data.get("folder_id") or _get_or_create_folder(
+            drive, lang_id, parent_id=root_folder_id
+        )
         email = _annotator_email(lang_id)
         if email:
             try:
@@ -2240,7 +2358,7 @@ def main() -> None:
         # Create collaborator notes doc if not already in the manifest.
         # _get_display_name reads glottolog_cache.json — run `lookup-lang <lang_id>`
         # first if the cache is empty (doc will fall back to notes_{lang_id} otherwise).
-        existing_notes_doc_id = merged_config.get(lang_id, {}).get("notes_doc_id") or config.get(lang_id, {}).get("notes_doc_id")
+        existing_notes_doc_id = existing_lang_data.get("notes_doc_id") or config.get(lang_id, {}).get("notes_doc_id")
         if not existing_notes_doc_id:
             try:
                 existing_notes_doc_id = _create_notes_doc(drive, lang_id, folder_id, _get_display_name(lang_id))
@@ -2250,17 +2368,6 @@ def main() -> None:
                 existing_notes_doc_id = None
         else:
             print(f"Notes doc:   (existing) https://docs.google.com/document/d/{existing_notes_doc_id}")
-
-        # Load existing data early so we can look up existing planar/diagnostics sheet IDs.
-        existing_lang_data: Dict = merged_config.get(lang_id, {})
-        if not existing_lang_data and lang_id in config:
-            # Migration: try old-format per-language manifest file
-            old_fid = config[lang_id].get("manifest_file_id")
-            if old_fid:
-                try:
-                    existing_lang_data = _download_file_json(drive, old_fid)
-                except Exception:
-                    pass
 
         # Safety check: if the manifest has no entry for this language but
         # drive_config.json shows it was previously set up (has a folder_id),
@@ -2442,6 +2549,10 @@ def main() -> None:
         _save_drive_config(config)
         print(f"manifest.json updated on Drive (id: {existing_config_file_id})")
 
+    if not apply:
+        print("\nRun with --apply to make these changes.")
+        return
+
     # Upload merged config once more after the loop to capture any skipped languages
     # that were added to merged_config but didn't trigger an in-loop upload.
     final_file_id = _upload_planars_config(
@@ -2471,7 +2582,7 @@ def push_manifest() -> None:
     if not MANIFEST_PATH.exists():
         raise SystemExit(
             "sheets_manifest.json not found. Nothing to push.\n"
-            "Run python -m coding generate-sheets first to create sheets."
+            "Run python -m coding generate-sheets --apply first to create sheets."
         )
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     print("Connecting to Google APIs...")

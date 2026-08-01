@@ -11,6 +11,8 @@ Covers:
     _build_phrasal_accent_pairs: issue #237's two-tier obligatory-core adjacency
     algorithm (free_occurrence-derived core near the keystone, coordinator-confirmed
     fallback list outside it)
+  - _plan_language_creation: generate-sheets' dry-run planning core -- what would
+    be created/updated for one language, from manifest data only, no Drive calls
 """
 from __future__ import annotations
 
@@ -34,6 +36,7 @@ from coding.generate_sheets import (
     _parse_pos_cell,
     _phrasal_accent_obligatory_core,
     _phrasal_accent_obligatory_positions,
+    _plan_language_creation,
     _prefill_free_occurrence_rows,
     _regen_dependents_simple,
     _remap_coreference_prefill,
@@ -1002,3 +1005,109 @@ class TestFormatAnnotatedDrop:
         line = _format_annotated_drop("nonpermutability", ("a", "b"), "y", "", "")
         assert "Source" not in line
         assert "Comments" not in line
+
+
+class TestPlanLanguageCreation:
+    """generate-sheets' dry-run gate: what would be created, from manifest data only.
+
+    Fixes the gap where generate-sheets had no --apply/dry-run distinction at all
+    (unlike every other mutating command) -- an accidental live sheet creation during
+    a session surfaced this. See docs/tooling-design.md's "dry-run by default"
+    principle and coding/CLAUDE.md's generate_sheets.py entry.
+    """
+
+    _ALL_CLASSES = {
+        "ciscategorial": [("general", ["V-combines"], {"V-combines": ["y", "n"]})],
+        "coreference": [
+            ("prescreening", ["referential"], {"referential": ["y", "n"]}),
+            ("reflexivization", ["reflexive_allowed"], {"reflexive_allowed": ["y", "n"]}),
+        ],
+    }
+
+    def test_brand_new_language_needs_everything(self):
+        plan = _plan_language_creation(self._ALL_CLASSES, {}, force=False)
+        assert plan["needs_folder"]
+        assert plan["needs_notes_doc"]
+        assert plan["needs_planar_sheet"]
+        assert plan["needs_diagnostics_sheet"]
+        assert plan["new_classes"] == ["ciscategorial", "coreference"]
+        assert plan["new_constructions"] == {}
+        assert plan["anything"]
+
+    def test_fully_existing_language_needs_nothing(self):
+        existing_lang_data = {
+            "folder_id": "f1",
+            "notes_doc_id": "n1",
+            "planar_spreadsheet_id": "p1",
+            "diagnostics_spreadsheet_id": "d1",
+            "sheets": {
+                "ciscategorial": {"constructions": ["general"]},
+                "coreference": {"constructions": ["prescreening", "reflexivization"]},
+            },
+        }
+        plan = _plan_language_creation(self._ALL_CLASSES, existing_lang_data, force=False)
+        assert not plan["needs_folder"]
+        assert not plan["needs_notes_doc"]
+        assert not plan["needs_planar_sheet"]
+        assert not plan["needs_diagnostics_sheet"]
+        assert plan["new_classes"] == []
+        assert plan["new_constructions"] == {}
+        assert not plan["anything"]
+
+    def test_new_class_on_existing_language(self):
+        """The exact scenario that motivated this: synth0001 already had some
+        classes' sheets, but nonpermutability/coreference/etc. had never been
+        created at all."""
+        existing_lang_data = {
+            "folder_id": "f1", "notes_doc_id": "n1",
+            "planar_spreadsheet_id": "p1", "diagnostics_spreadsheet_id": "d1",
+            "sheets": {"ciscategorial": {"constructions": ["general"]}},
+        }
+        plan = _plan_language_creation(self._ALL_CLASSES, existing_lang_data, force=False)
+        assert plan["new_classes"] == ["coreference"]
+        assert plan["new_constructions"] == {}
+        assert plan["anything"]
+        assert not plan["needs_folder"]  # folder already exists -- must not be recreated
+
+    def test_new_construction_on_existing_class(self):
+        existing_lang_data = {
+            "folder_id": "f1", "notes_doc_id": "n1",
+            "planar_spreadsheet_id": "p1", "diagnostics_spreadsheet_id": "d1",
+            "sheets": {
+                "ciscategorial": {"constructions": ["general"]},
+                "coreference": {"constructions": ["prescreening"]},  # reflexivization missing
+            },
+        }
+        plan = _plan_language_creation(self._ALL_CLASSES, existing_lang_data, force=False)
+        assert plan["new_classes"] == []
+        assert plan["new_constructions"] == {"coreference": ["reflexivization"]}
+        assert plan["anything"]
+
+    def test_force_requires_planar_and_diagnostics_sheet_even_if_present(self):
+        existing_lang_data = {
+            "folder_id": "f1", "notes_doc_id": "n1",
+            "planar_spreadsheet_id": "p1", "diagnostics_spreadsheet_id": "d1",
+            "sheets": {
+                "ciscategorial": {"constructions": ["general"]},
+                "coreference": {"constructions": ["prescreening", "reflexivization"]},
+            },
+        }
+        plan = _plan_language_creation(self._ALL_CLASSES, existing_lang_data, force=True)
+        assert plan["needs_planar_sheet"]
+        assert plan["needs_diagnostics_sheet"]
+        assert plan["anything"]
+        # force doesn't fabricate new classes/constructions that don't exist
+        assert plan["new_classes"] == []
+        assert plan["new_constructions"] == {}
+
+    def test_missing_folder_alone_is_enough_to_need_action(self):
+        existing_lang_data = {
+            "notes_doc_id": "n1", "planar_spreadsheet_id": "p1", "diagnostics_spreadsheet_id": "d1",
+            "sheets": {
+                "ciscategorial": {"constructions": ["general"]},
+                "coreference": {"constructions": ["prescreening", "reflexivization"]},
+            },
+        }
+        plan = _plan_language_creation(self._ALL_CLASSES, existing_lang_data, force=False)
+        assert plan["needs_folder"]
+        assert plan["anything"]

@@ -195,7 +195,7 @@ def main() -> None:
     if not MANIFEST_PATH.exists():
         raise SystemExit(
             f"sheets_manifest.json not found at {MANIFEST_PATH}.\n"
-            "Run python -m coding generate-sheets first."
+            "Run python -m coding generate-sheets --apply first."
         )
 
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))

@@ -182,7 +182,7 @@ def _load_manifest_from_drive(drive) -> Dict:
     config = _load_drive_config()
     if not config:
         raise SystemExit(
-            "drive_config.json not found. Run: python -m coding generate-sheets"
+            "drive_config.json not found. Run: python -m coding generate-sheets --apply"
         )
 
     # New merged format: single manifest.json with full manifest data.
@@ -198,7 +198,7 @@ def _load_manifest_from_drive(drive) -> Dict:
 
     # Old format fallback: per-language manifest_{lang_id}.json files.
     print("  Note: loading per-language manifests (pre-#30 format).")
-    print("  Run python -m coding generate-sheets to upgrade to merged manifest.json.")
+    print("  Run python -m coding generate-sheets --apply to upgrade to merged manifest.json.")
     manifest: Dict = {}
     for lang_id, lang_config in config.items():
         if lang_id.startswith("_") or not isinstance(lang_config, dict):
@@ -212,7 +212,7 @@ def _load_manifest_from_drive(drive) -> Dict:
     if not manifest:
         raise SystemExit(
             "No manifest data found in drive_config.json. "
-            "Run python -m coding generate-sheets first."
+            "Run python -m coding generate-sheets --apply first."
         )
     return manifest
 

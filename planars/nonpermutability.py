@@ -290,6 +290,7 @@ def derive_nonpermutability_domains(
                     stale_dependent = (
                         "general.tsv is out of sync with element_prescreening.tsv — "
                         "run python -m coding generate-sheets --lang " + lang_id
+                        + " --regen-construction nonpermutability:general"
                     )
 
     all_positions = set(pos_to_name.keys())

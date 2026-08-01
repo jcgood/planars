@@ -70,7 +70,7 @@ def main():
 
     manifest = _load_manifest_from_drive(drive)
     if not manifest:
-        raise SystemExit("No manifest found. Run generate-sheets first.")
+        raise SystemExit("No manifest found. Run python -m coding generate-sheets --apply first.")
 
     total = 0
     for lang_id, lang_data in sorted(manifest.items()):

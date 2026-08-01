@@ -327,7 +327,7 @@ def _run_generation(apply: bool) -> None:
     if not config_file_id:
         raise SystemExit(
             "No _planars_config_file_id in drive_config.json. "
-            "Run python -m coding generate-sheets first."
+            "Run python -m coding generate-sheets --apply first."
         )
 
     if not apply:

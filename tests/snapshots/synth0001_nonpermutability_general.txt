@@ -1,7 +1,7 @@
 Synth0001 Nonpermutability General
 ==================================
 
-WARNING: general.tsv is out of sync with element_prescreening.tsv — run python -m coding generate-sheets --lang synth0001
+WARNING: general.tsv is out of sync with element_prescreening.tsv — run python -m coding generate-sheets --lang synth0001 --regen-construction nonpermutability:general
 
 Keystone position: 30 (v:verbstem)
 

@@ -297,7 +297,7 @@ def _detect_diagnostics_changes(
     for cls in sorted(all_classes):
         if cls not in old_by_class:
             print(f"  [diagnostics] New class '{cls}' — queuing generate-sheets")
-            safe_cmds.add("python -m coding generate-sheets")
+            safe_cmds.add("python -m coding generate-sheets --apply")
             continue
         if cls not in new_by_class:
             pending.append({
@@ -354,7 +354,7 @@ def _detect_diagnostics_changes(
                 f"Options:\n"
                 f"  1. Open the Google Sheet for '{cls}' / '{lang_id}' and add the tab(s)\n"
                 f"     manually, then set each to 'ready-for-review'.\n"
-                f"  2. Or run: python -m coding generate-sheets --force\n"
+                f"  2. Or run: python -m coding generate-sheets --force --apply\n"
                 f"     WARNING: --force archives ALL existing annotations for '{cls}'\n"
                 f"     and recreates the sheet from scratch.\n"
                 f"This entry will remain open until the tab(s) are verified in the Sheet."
