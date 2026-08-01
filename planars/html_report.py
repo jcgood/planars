@@ -309,4 +309,11 @@ def render_language_report_pdf(data: dict) -> bytes:
     """
     html = render_language_report(data, static=True)
     from weasyprint import HTML  # noqa: PLC0415
-    return HTML(string=html).write_pdf()
+    # presentational_hints=False (WeasyPrint's own default, made explicit here)
+    # closes off GHSA-jhhc-3hcp-qhm5 (CSS injection via HTML presentational
+    # attributes, e.g. <body background="...">) -- that vulnerability only
+    # fires when presentational_hints=True, and has no patched WeasyPrint
+    # release as of this writing. Pinning the safe default explicitly means
+    # a future WeasyPrint version changing its default can't silently
+    # reopen this.
+    return HTML(string=html).write_pdf(presentational_hints=False)
