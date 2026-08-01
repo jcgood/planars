@@ -35,8 +35,9 @@ of this state would be exactly the defect this project is trying to remove.
 | Design record + plan written | done | `7b995b9`, `f20478e` |
 | Phase 2 — hidden-fact inventory | **done** → `docs/hidden-facts-inventory.md` | `e27bbe3` |
 | Phase 0a — protocol surface enumeration | **done** → `docs/drive-protocol-surface.md` | `b978101`..`46bf833` |
-| Phase 0a — `capture-drive-state` command | not started | — |
-| Phase 0a — fixture capture run (read-only, live) | not started | — |
+| Phase 0a — protocol proposal reviewed | **done** — accepted, see decisions log | — |
+| Phase 0a — `capture-drive-state` command | **done** | `c87ae7d` |
+| Phase 0a — fixture capture run (read-only, live) | in progress | — |
 | Phase 0a — fake backend | not started | — |
 | Phase 0b/1 — file 1 of 11 (pattern-setting migration) | not started | — |
 | Phase 0b/1 — files 2–11 | not started | — |
@@ -98,6 +99,25 @@ correct behavior.
 first file migration are done rather than delegated, because their correctness
 is only visible by reading. That investment is what makes phases 2, 5, 6, and 8
 cheaply delegable later.
+
+**2026-08-01 — protocol proposal accepted as the basis for the seam.** Its six
+design stances were reviewed and none rejected. The consequential ones:
+handles are modelled as objects rather than a flat function list (long
+read-mutate-reread chains in `sync_params.py` and `restructure_sheets.py` would
+otherwise have to re-thread IDs they already hold); mutations must be visible to
+the next read on the same handle; `batch_update` and `values_batch_update` stay
+*two distinct methods* (they are different Sheets endpoints behind
+similar-sounding gspread names, and merging them is the single most likely way a
+fake silently diverges); structural requests stay generic
+(`apply_sheet_requests`) rather than one method per request type, while
+gspread's convenience methods stay individually named because callers reason
+about their differing indexing conventions.
+
+**Deferred:** collapsing the four duplicate "create-or-update a Drive file"
+implementations and the two "get-or-create folder" implementations. They are
+genuine duplication and belong in the inventory, but collapsing them changes
+behaviour and there are no goldens yet, so they wait until after 0b/1 rather
+than riding along with the seam migration.
 
 **2026-08-01 — the `untestable` trap was fixed immediately rather than deferred
 to Phase 3.** A deliberate exception to Phase 2's inventory-only rule, taken
