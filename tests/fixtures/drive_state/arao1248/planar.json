@@ -1,0 +1,252 @@
+{
+  "role": "planar",
+  "spreadsheet_id": "1hM2L5bLbt8gsOdb4FgMc0uS2652Gia1W66FrpJuVuPI",
+  "title": "planar_arao1248",
+  "tab_order": [
+    "Sheet1"
+  ],
+  "worksheets": [
+    {
+      "title": "Sheet1",
+      "sheet_id": 0,
+      "row_count": 1000,
+      "col_count": 26,
+      "values": [
+        [
+          "Language_ID",
+          "Planar_Type",
+          "Position",
+          "Position_Type",
+          "Position_Name",
+          "Elements",
+          "Class_Type",
+          "Example",
+          "Notes"
+        ],
+        [
+          "arao1248",
+          "verbal",
+          "1",
+          "Zone",
+          "v:leftXP",
+          "NP{NP,PP,S}, ADVERBIALS, INTERROGATIVES",
+          "open",
+          "[jico] tso pa neti bewewe",
+          "Constituent interrogatives, focused NPs, subordinated/coordinated clauses; motivates P2 zone (position 2) as elements after first XP"
+        ],
+        [
+          "arao1248",
+          "verbal",
+          "2",
+          "Zone",
+          "v:P2",
+          "po, pojo, tso, pa, tokwe, dipa, sha",
+          "list",
+          "pona tsidi-a [tokwe] [pa] wada todi-lipi laba ti -ta -iki",
+          "Wackernagel-like particles occurring after first XP; no fixed ordering among themselves; free forms"
+        ],
+        [
+          "arao1248",
+          "verbal",
+          "3",
+          "Zone",
+          "v:midXP",
+          "NP{NP,PP,S}, ADVERBIALS",
+          "open",
+          "pona tsidi-a tokwe pa [wada todi-lipi] laba ti -ta -iki",
+          "Free argument NPs/PPs of any grammatical role; free constituent order derived from zones 1 and 3"
+        ],
+        [
+          "arao1248",
+          "verbal",
+          "4",
+          "Slot",
+          "v:prefix",
+          "e-, pi-, ja-, tsi-, pa-, ke-, noma-, shoma-, sho-",
+          "list",
+          "[pi-] watsi iji -ma",
+          "Left edge of maximal free occurrence domain (vpref–connect3). e-=empty/morphome; pi-...-ma=negative circumfix; ja-...-ti=interactional circumfix; tsi-=slowly; pa-=posterior; ke-=interrogative; noma-=in vain; shoma-=apart; sho-=still"
+        ],
+        [
+          "arao1248",
+          "verbal",
+          "5",
+          "Slot",
+          "v:noun.incorp",
+          "shoa, sha, haha, watsi",
+          "list",
+          "yama akwi-limi pa- [sha] iji",
+          "Incorporated noun roots; closed class; phonologically identical to free nouns; no modifiers when incorporated; bear part-whole relation to P argument"
+        ],
+        [
+          "arao1248",
+          "verbal",
+          "6",
+          "Slot",
+          "v:verbstem",
+          "KEYSTONE",
+          "open",
+          "olo",
+          "Minimal free occurrence domain (vcore–vcore); bare verb root can be elliptical utterance; e.g. ba=see/feel, di=eat, olo=fall, iji=tie, kwaiya=arrive, oto=cough, piye=shoot"
+        ],
+        [
+          "arao1248",
+          "verbal",
+          "7",
+          "Zone",
+          "v:adv.suf",
+          "-shawiya, -shana, -jajo, -shao, -yoa, -wiki, -sisa, -wena, -tseiye, -niapona, -jaena, -weya, -sa, -pe, -pasi, -titi",
+          "list",
+          "loe -shawiya -sisa -ta / loe -sisa -shawiya -ta",
+          "Zone: elements variably order among themselves but not with adjacent positions. Motion: -shawiya=do&go, -shana=going, -jajo=arrive&do, -shao=come&do, -wiki=going:P. Time of day: -sisa=at night, -wena=in morning, -tseiye=during day, -niapona=at dusk. Aspectual: -jaena=start, -weya=finish. Manner: -sa=in vain, -pe=completely, -pasi=short time, -titi=slowly. -me (causative) can also variably appear here (see pos 11)."
+        ],
+        [
+          "arao1248",
+          "verbal",
+          "8",
+          "Slot",
+          "v:expressive",
+          "-shodi, -limi",
+          "list",
+          "kwe -shana [-limi] -ta",
+          "Must follow adv.suf zone (pos 7); -shodi=in pain/pity, -limi=affectionate/small. Reverse order (*limi-shana-ta) ungrammatical."
+        ],
+        [
+          "arao1248",
+          "verbal",
+          "9",
+          "Slot",
+          "v:frustrative",
+          "-sawa",
+          "list",
+          "loe -shawiya [-sawa] -ta",
+          "-sawa=with difficulty/almost/counterfactual. Must follow adv.suf (pos 7) and expressive (pos 8)."
+        ],
+        [
+          "arao1248",
+          "verbal",
+          "10",
+          "Slot",
+          "v:interactional",
+          "-ti",
+          "list",
+          "ja- zamojo -shodi [-ti]",
+          "Suffixal piece of interactional circumfix ja-...-ti. Must follow expressive (pos 8) and frustrative (pos 9). Left edge of non-interruption by free form combinations domain (vpref–auxiliary includes this)."
+        ],
+        [
+          "arao1248",
+          "verbal",
+          "11",
+          "Slot",
+          "v:causative",
+          "-eme, -pe",
+          "list",
+          "ja- bailia -ti [-me]",
+          "Causative and completive; -eme=causative (also -me allomorph), -pe=completive. This position captures ordering when causative follows interactional -ti. When causative precedes -ti it occupies adv.suf zone (pos 7)."
+        ],
+        [
+          "arao1248",
+          "verbal",
+          "12",
+          "Slot",
+          "v:3A",
+          "-ta, -me",
+          "list",
+          "lale -tso jelo [-ta] -iki",
+          "-ta=3A (third person A, third person plural A/S); -me=causative marker (possibly same form as -eme above but distinct function here as 3A per Table 1)"
+        ],
+        [
+          "arao1248",
+          "verbal",
+          "13",
+          "Slot",
+          "v:finality",
+          "-ibo, -iba",
+          "list",
+          "kwaiya -ti [-ibo] tso kwae",
+          "-ibo/-iba=finality/relevance marker. Must follow interactional -ti (pos 10). Suffixal piece of negative circumfix (pi-...-ma) can follow this position."
+        ],
+        [
+          "arao1248",
+          "verbal",
+          "14",
+          "Slot",
+          "v:tame.suf",
+          "-iki, -ja, -asha, -isa, -ani, -bade, -neti, -ma, -toa, -tame, -ke, -yoa, -odi, -tso",
+          "list",
+          "pi- olo [-ma] tsio",
+          "Right edge of narrow maximal ciscategorial domain (vpref–tamesuf) and minimal tso-marked subspan repetition domain. Temporal: -iki=recent past 1, -ja=recent past 2/lying, -asha=distant past, -isa=remote past. Posture: -ani=sitting, -bade=hanging, -neti=standing. Negation: -ma (right part of pi-...-ma circumfix). Motion: -yoa=wandering. Modal: -toa=possibility, -tame=counterfactual, -ke=imperative. -odi=freq/always (transcategorial). -tso=prior event/clause linker (suffix form)."
+        ],
+        [
+          "arao1248",
+          "verbal",
+          "15",
+          "Slot",
+          "v:aspect",
+          "-we, -isha",
+          "list",
+          "pi- a -ma [-we]",
+          "Right edge of narrow maximal ciscategorial domain (vpref–aspect) and maximal auxiliary subspan repetition domain. -we=still/limitative, -isha=again/habitual. -isha takes its own L+H* pitch accent independent of host."
+        ],
+        [
+          "arao1248",
+          "verbal",
+          "16",
+          "Slot",
+          "v:auxiliary",
+          "e-po, e-a",
+          "list",
+          "dea esi-po oto [e-po]",
+          "Auxiliary verbs; e-po=intransitive (do/be/go), e-a=transitive (do/say). Cannot be separated from main verb by NP. Can host positions vpref, ti, ta, tamesuf, and advsuf. Right edge of non-interruption by free form combinations domain."
+        ],
+        [
+          "arao1248",
+          "verbal",
+          "17",
+          "Slot",
+          "v:connector",
+          "tsio, po",
+          "list",
+          "(nai) pi- olo -ma [tsio]",
+          "Right edge of maximal free occurrence domain (vpref–connect3) and maximal tso-marked subspan repetition domain. tsio=while/when (bound per text). po=so/therefore. Also within L+H* pitch domain."
+        ],
+        [
+          "arao1248",
+          "verbal",
+          "18",
+          "Zone",
+          "v:rightXP",
+          "NP{NP,PP,Adv}",
+          "open",
+          "jico tso pa neti [bewewe]",
+          "Post-verbal argument NPs/PPs/adverbials; free forms. Arguments cannot appear post-verbally in dependent clauses (tso-marked and tsio-marked clauses)."
+        ]
+      ],
+      "_shape": {
+        "n_rows": 19,
+        "row_widths": [
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9
+        ],
+        "ragged": false
+      }
+    }
+  ]
+}

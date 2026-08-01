@@ -1,0 +1,115 @@
+{
+  "role": "diagnostics",
+  "spreadsheet_id": "1L-J3EWgZRMnqIaaXmlpBAVZt98wgmbdlyI2DhJOHhjQ",
+  "title": "diagnostics_synth0001",
+  "tab_order": [
+    "Sheet1"
+  ],
+  "worksheets": [
+    {
+      "title": "Sheet1",
+      "sheet_id": 0,
+      "row_count": 1000,
+      "col_count": 26,
+      "values": [
+        [
+          "Class",
+          "Language",
+          "Constructions",
+          "Criteria"
+        ],
+        [
+          "ciscategorial",
+          "synth0001",
+          "general",
+          "V-combines, N-combines, A-combines"
+        ],
+        [
+          "subspanrepetition",
+          "synth0001",
+          "andCoordination, control, thatCOMP, asyndeticPart",
+          "widescope_right, widescope_left, fillable_botheither_conjunct"
+        ],
+        [
+          "noninterruption",
+          "synth0001",
+          "general",
+          "free, multiple"
+        ],
+        [
+          "metrical",
+          "synth0001",
+          "stress_domain",
+          "accented{y/n/both}, obligatory, independence{y/n/na}, left-interaction, right-interaction"
+        ],
+        [
+          "nonpermutability",
+          "synth0001",
+          "element_prescreening, general",
+          "scopal{y/n/both}"
+        ],
+        [
+          "segmental",
+          "synth0001",
+          "aspiration_prominence",
+          "aspirated{y/n/both/na}"
+        ],
+        [
+          "segmental",
+          "synth0001",
+          "flapping",
+          "flapping_left{y/n/both/na}, flapping_internal{y/n/both/na}, flapping_right{y/n/both/na}"
+        ],
+        [
+          "free_occurrence",
+          "synth0001",
+          "general",
+          "free, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}"
+        ],
+        [
+          "coreference",
+          "synth0001",
+          "prescreening, reflexivization, pronominalization, np_reference",
+          "reflexive_allowed{y/n/untestable}, pronoun_allowed{y/n/untestable}, np_allowed{y/n/untestable}"
+        ],
+        [
+          "proform",
+          "synth0001",
+          "do_so_substitution, vp_ellipsis",
+          "shareable_proform_replace{y/n/both/unclear}"
+        ],
+        [
+          "phrasal_accent",
+          "synth0001",
+          "prescreening",
+          "accented{y/n/both}"
+        ],
+        [
+          "phrasal_accent",
+          "synth0001",
+          "general",
+          "joint_accent{always/sometimes/never}"
+        ]
+      ],
+      "_shape": {
+        "n_rows": 13,
+        "row_widths": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "ragged": false
+      }
+    }
+  ]
+}

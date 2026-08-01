@@ -1,0 +1,6604 @@
+{
+  "role": "class:coreference",
+  "spreadsheet_id": "131F4ZVngUR2Sgu3Zmtfb_1ff-JT4L8dT1mNOk12M0zA",
+  "title": "coreference_stan1293",
+  "tab_order": [
+    "prescreening",
+    "reflexivization",
+    "pronominalization",
+    "np_reference",
+    "Planar Structure",
+    "Status"
+  ],
+  "worksheets": [
+    {
+      "title": "prescreening",
+      "sheet_id": 1109636608,
+      "row_count": 144,
+      "col_count": 6,
+      "values": [
+        [
+          "Element",
+          "Position_Name",
+          "Position_Number",
+          "referential",
+          "Source",
+          "Comments"
+        ],
+        [
+          "also",
+          "v:leftedge",
+          "1",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "and",
+          "v:leftedge",
+          "1",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "CONJUNCT",
+          "v:leftedge",
+          "1",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "then",
+          "v:leftedge",
+          "1",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "NP{S,A,P}",
+          "v:frontedXP",
+          "2",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "QWORDS",
+          "v:frontedXP",
+          "2",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "be",
+          "v:frontedauxiliary",
+          "3",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "can",
+          "v:frontedauxiliary",
+          "3",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "could",
+          "v:frontedauxiliary",
+          "3",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "do",
+          "v:frontedauxiliary",
+          "3",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "have",
+          "v:frontedauxiliary",
+          "3",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "may",
+          "v:frontedauxiliary",
+          "3",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "might",
+          "v:frontedauxiliary",
+          "3",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "must",
+          "v:frontedauxiliary",
+          "3",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "ought",
+          "v:frontedauxiliary",
+          "3",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "shall",
+          "v:frontedauxiliary",
+          "3",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "should",
+          "v:frontedauxiliary",
+          "3",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "will",
+          "v:frontedauxiliary",
+          "3",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "would",
+          "v:frontedauxiliary",
+          "3",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[-n]",
+          "v:frontedauxiliaryinflection",
+          "4",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[-s]",
+          "v:frontedauxiliaryinflection",
+          "4",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[-v]",
+          "v:frontedauxiliaryinflection",
+          "4",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "he",
+          "v:npsubj1",
+          "5",
+          "",
+          "",
+          "[new: pronoun-specific row added alongside NP{S,A}, see issue #236]"
+        ],
+        [
+          "I",
+          "v:npsubj1",
+          "5",
+          "",
+          "",
+          "[new: pronoun-specific row added alongside NP{S,A}, see issue #236]"
+        ],
+        [
+          "it",
+          "v:npsubj1",
+          "5",
+          "",
+          "",
+          "[new: pronoun-specific row added alongside NP{S,A}, see issue #236]"
+        ],
+        [
+          "NP{S,A}",
+          "v:npsubj1",
+          "5",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "she",
+          "v:npsubj1",
+          "5",
+          "",
+          "",
+          "[new: pronoun-specific row added alongside NP{S,A}, see issue #236]"
+        ],
+        [
+          "they",
+          "v:npsubj1",
+          "5",
+          "",
+          "",
+          "[new: pronoun-specific row added alongside NP{S,A}, see issue #236]"
+        ],
+        [
+          "we",
+          "v:npsubj1",
+          "5",
+          "",
+          "",
+          "[new: pronoun-specific row added alongside NP{S,A}, see issue #236]"
+        ],
+        [
+          "you",
+          "v:npsubj1",
+          "5",
+          "",
+          "",
+          "[new: pronoun-specific row added alongside NP{S,A}, see issue #236]"
+        ],
+        [
+          "AD-S",
+          "v:ad-S1",
+          "6",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "AD-VP",
+          "v:ad-VP1",
+          "7",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "can",
+          "v:modal1",
+          "8",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "could",
+          "v:modal1",
+          "8",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "may",
+          "v:modal1",
+          "8",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "might",
+          "v:modal1",
+          "8",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "must",
+          "v:modal1",
+          "8",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "shall",
+          "v:modal1",
+          "8",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "should",
+          "v:modal1",
+          "8",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "will",
+          "v:modal1",
+          "8",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "would",
+          "v:modal1",
+          "8",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "AD-S",
+          "v:sd-S2",
+          "9",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "not",
+          "v:neg1",
+          "10",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "AD-VP",
+          "v:ad-VP2",
+          "11",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "ha",
+          "v:perfect",
+          "12",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[-s]",
+          "v:perfectinflection",
+          "13",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[-ve]",
+          "v:perfectinflection",
+          "13",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "AD-S",
+          "v:ad-S3",
+          "14",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "not",
+          "v:neg2",
+          "15",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "AD-VP",
+          "v:ad-VP3",
+          "16",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "AD-V",
+          "v:ad-V1",
+          "17",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[be-]",
+          "v:passive",
+          "18",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "AD-S",
+          "v:ad-S4",
+          "19",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "not",
+          "v:neg3",
+          "20",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "AD-VP",
+          "v:ad-VP4",
+          "21",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "be",
+          "v:progressive",
+          "22",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "AD-S",
+          "v:ad-S5",
+          "23",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "not",
+          "v:neg4",
+          "24",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "AD-VP",
+          "v:ad-VP5",
+          "25",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "AD-V",
+          "v:ad-V2",
+          "26",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "air",
+          "v:nominal",
+          "27",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "baby",
+          "v:nominal",
+          "27",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "breast",
+          "v:nominal",
+          "27",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "care",
+          "v:nominal",
+          "27",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "child",
+          "v:nominal",
+          "27",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "cross",
+          "v:nominal",
+          "27",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "dog",
+          "v:nominal",
+          "27",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "eye",
+          "v:nominal",
+          "27",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "fact",
+          "v:nominal",
+          "27",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "grounds",
+          "v:nominal",
+          "27",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "hand",
+          "v:nominal",
+          "27",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "house",
+          "v:nominal",
+          "27",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "lip",
+          "v:nominal",
+          "27",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "name",
+          "v:nominal",
+          "27",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "nanny",
+          "v:nominal",
+          "27",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "pet",
+          "v:nominal",
+          "27",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "pressure",
+          "v:nominal",
+          "27",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "rough",
+          "v:nominal",
+          "27",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "sound",
+          "v:nominal",
+          "27",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "spell",
+          "v:nominal",
+          "27",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "spin",
+          "v:nominal",
+          "27",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "stone",
+          "v:nominal",
+          "27",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "strong",
+          "v:nominal",
+          "27",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[de-]",
+          "v:productiveprefix",
+          "28",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[dis-]",
+          "v:productiveprefix",
+          "28",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[mis-]",
+          "v:productiveprefix",
+          "28",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[out-]",
+          "v:productiveprefix",
+          "28",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[over-]",
+          "v:productiveprefix",
+          "28",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[post-]",
+          "v:productiveprefix",
+          "28",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[pre-]",
+          "v:productiveprefix",
+          "28",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[re-]",
+          "v:productiveprefix",
+          "28",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[un-]",
+          "v:productiveprefix",
+          "28",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[under-]",
+          "v:productiveprefix",
+          "28",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[ab-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[ad-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[ante-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[be-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[cata-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[circum-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[co-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[contra-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[dia-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[dis-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[down-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[en-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[epi-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[eu-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[ex-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[fore-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[inter-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[intra-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[mis-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[ob-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[para-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[per-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[pro-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[se-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[sub-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[sup-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[sur-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[syn-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[tele-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[up-]",
+          "v:latinprefix",
+          "29",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "KEYSTONE",
+          "v:verbstem",
+          "30",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[-ed]",
+          "v:verbinflection",
+          "31",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[-ing]",
+          "v:verbinflection",
+          "31",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "[-s]",
+          "v:verbinflection",
+          "31",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "AD-V",
+          "v:ad-V3",
+          "32",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "NP{R}",
+          "v:obj-R",
+          "33",
+          "",
+          "",
+          ""
+        ],
+        [
+          "her",
+          "v:obj-part",
+          "34",
+          "",
+          "",
+          "[split from PRON{P,T} — see archived sheet for prior judgment]"
+        ],
+        [
+          "him",
+          "v:obj-part",
+          "34",
+          "",
+          "",
+          "[split from PRON{P,T} — see archived sheet for prior judgment]"
+        ],
+        [
+          "it",
+          "v:obj-part",
+          "34",
+          "",
+          "",
+          "[split from PRON{P,T} — see archived sheet for prior judgment]"
+        ],
+        [
+          "me",
+          "v:obj-part",
+          "34",
+          "",
+          "",
+          "[split from PRON{P,T} — see archived sheet for prior judgment]"
+        ],
+        [
+          "NP{P,T}",
+          "v:obj-part",
+          "34",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "them",
+          "v:obj-part",
+          "34",
+          "",
+          "",
+          "[split from PRON{P,T} — see archived sheet for prior judgment]"
+        ],
+        [
+          "us",
+          "v:obj-part",
+          "34",
+          "",
+          "",
+          "[split from PRON{P,T} — see archived sheet for prior judgment]"
+        ],
+        [
+          "VERBPART",
+          "v:obj-part",
+          "34",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "you",
+          "v:obj-part",
+          "34",
+          "",
+          "",
+          "[split from PRON{P,T} — see archived sheet for prior judgment]"
+        ],
+        [
+          "NP{R}",
+          "v:rec",
+          "35",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "AD-VP",
+          "v:ad-VP6",
+          "36",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "PP",
+          "v:PP",
+          "37",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "AD-S",
+          "v:rightedge",
+          "38",
+          "n",
+          "",
+          ""
+        ]
+      ],
+      "_shape": {
+        "n_rows": 143,
+        "row_widths": [
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6
+        ],
+        "ragged": false
+      }
+    },
+    {
+      "title": "reflexivization",
+      "sheet_id": 1231223567,
+      "row_count": 164,
+      "col_count": 7,
+      "values": [
+        [
+          "Element_A",
+          "Position_A",
+          "Position_B",
+          "Direction",
+          "reflexive_allowed",
+          "Source",
+          "Comments"
+        ],
+        [
+          "NP{S,A,P}",
+          "2 (v:frontedXP)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          "*then Sarah, John spoke to herself (otherwise not sure how to construct this sentence, but I perhaps needed to think harder about fronted NPs in this position)"
+        ],
+        [
+          "QWORDS",
+          "2 (v:frontedXP)",
+          "35 (v:rec)",
+          "forward",
+          "y",
+          "",
+          "Whom has spoken to himself."
+        ],
+        [
+          "NP{S,A,P}",
+          "2 (v:frontedXP)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          "*Then, Sarah, John saw herself"
+        ],
+        [
+          "QWORDS",
+          "2 (v:frontedXP)",
+          "34 (v:obj-part)",
+          "forward",
+          "y",
+          "",
+          "Then, who has seen himself"
+        ],
+        [
+          "I",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "NP{S,A}",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "he",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "it",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='y'; old Source: Yes, this is the classic example from Lasnik that  motivated the vP-shell I think"
+        ],
+        [
+          "she",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "they",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "we",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "you",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='y'; old Source: Yes, this is the classic example from Lasnik that  motivated the vP-shell I think"
+        ],
+        [
+          "I",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "NP{S,A}",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "he",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "it",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "she",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "they",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "we",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "you",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "NP{S,A,P}",
+          "2 (v:frontedXP)",
+          "27 (v:nominal)",
+          "forward",
+          "n",
+          "",
+          "This should not have been a possiblity to begin with, since we can't get the reflexive here."
+        ],
+        [
+          "QWORDS",
+          "2 (v:frontedXP)",
+          "27 (v:nominal)",
+          "forward",
+          "n",
+          "",
+          "This should not have been a possiblity to begin with, since we can't get the reflexive here."
+        ],
+        [
+          "I",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "NP{S,A}",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "n",
+          "",
+          "This should not have been a possiblity to begin with, since we can't get the reflexive here."
+        ],
+        [
+          "he",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "it",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "she",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "they",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "we",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "you",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "air",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          "*Martin air-conditioned itself, Martin airbrushed itself"
+        ],
+        [
+          "baby",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          "*Martin babysat himself"
+        ],
+        [
+          "breast",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "care",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "child",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "cross",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "dog",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "eye",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "fact",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "grounds",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "hand",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "house",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "lip",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "name",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "nanny",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pet",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pressure",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "rough",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "sound",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spell",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spin",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "stone",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "air",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "baby",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "breast",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "care",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "child",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "cross",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "dog",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "eye",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "fact",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "grounds",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "hand",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "house",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "lip",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "name",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "nanny",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pet",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pressure",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "rough",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "sound",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spell",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spin",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "stone",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "NP{S,A,P}",
+          "2 (v:frontedXP)",
+          "5 (v:npsubj1)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "QWORDS",
+          "2 (v:frontedXP)",
+          "5 (v:npsubj1)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "NP{R}",
+          "33 (v:obj-R)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "NP{P,T}",
+          "34 (v:obj-part)",
+          "35 (v:rec)",
+          "forward",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "NP{R}",
+          "33 (v:obj-R)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "her",
+          "34 (v:obj-part)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='y'; old Source: Yes, this is the classic example from Lasnik that  motivated the vP-shell I think"
+        ],
+        [
+          "him",
+          "34 (v:obj-part)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='y'; old Source: Yes, this is the classic example from Lasnik that  motivated the vP-shell I think"
+        ],
+        [
+          "me",
+          "34 (v:obj-part)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='y'; old Source: Yes, this is the classic example from Lasnik that  motivated the vP-shell I think"
+        ],
+        [
+          "them",
+          "34 (v:obj-part)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='y'; old Source: Yes, this is the classic example from Lasnik that  motivated the vP-shell I think"
+        ],
+        [
+          "us",
+          "34 (v:obj-part)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='y'; old Source: Yes, this is the classic example from Lasnik that  motivated the vP-shell I think"
+        ],
+        [
+          "NP{P,T}",
+          "34 (v:obj-part)",
+          "34 (v:obj-part)",
+          "same",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "her",
+          "34 (v:obj-part)",
+          "34 (v:obj-part)",
+          "same",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "him",
+          "34 (v:obj-part)",
+          "34 (v:obj-part)",
+          "same",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "me",
+          "34 (v:obj-part)",
+          "34 (v:obj-part)",
+          "same",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "them",
+          "34 (v:obj-part)",
+          "34 (v:obj-part)",
+          "same",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "us",
+          "34 (v:obj-part)",
+          "34 (v:obj-part)",
+          "same",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "I",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "NP{S,A}",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "he",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "it",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "she",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "they",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "we",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "you",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "NP{R}",
+          "33 (v:obj-R)",
+          "27 (v:nominal)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "NP{P,T}",
+          "34 (v:obj-part)",
+          "27 (v:nominal)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "her",
+          "34 (v:obj-part)",
+          "27 (v:nominal)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "him",
+          "34 (v:obj-part)",
+          "27 (v:nominal)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "me",
+          "34 (v:obj-part)",
+          "27 (v:nominal)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "them",
+          "34 (v:obj-part)",
+          "27 (v:nominal)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "us",
+          "34 (v:obj-part)",
+          "27 (v:nominal)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "air",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "baby",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "breast",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "care",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "child",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "cross",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "dog",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "eye",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "fact",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "grounds",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "hand",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "house",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "lip",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "name",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "nanny",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pet",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pressure",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "rough",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "sound",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spell",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spin",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "stone",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "air",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "baby",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "breast",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "care",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "child",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "cross",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "dog",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "eye",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "fact",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "grounds",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "hand",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "house",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "lip",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "name",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "nanny",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pet",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pressure",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "rough",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "sound",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spell",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spin",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "stone",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "NP{R}",
+          "33 (v:obj-R)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "NP{P,T}",
+          "34 (v:obj-part)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "her",
+          "34 (v:obj-part)",
+          "5 (v:npsubj1)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "him",
+          "34 (v:obj-part)",
+          "5 (v:npsubj1)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "me",
+          "34 (v:obj-part)",
+          "5 (v:npsubj1)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "them",
+          "34 (v:obj-part)",
+          "5 (v:npsubj1)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "us",
+          "34 (v:obj-part)",
+          "5 (v:npsubj1)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "NP{R}",
+          "33 (v:obj-R)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "NP{P,T}",
+          "34 (v:obj-part)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "her",
+          "34 (v:obj-part)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "him",
+          "34 (v:obj-part)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "me",
+          "34 (v:obj-part)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "them",
+          "34 (v:obj-part)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ],
+        [
+          "us",
+          "34 (v:obj-part)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] reflexive_allowed='n'"
+        ]
+      ],
+      "_shape": {
+        "n_rows": 164,
+        "row_widths": [
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7
+        ],
+        "ragged": false
+      }
+    },
+    {
+      "title": "pronominalization",
+      "sheet_id": 1756251763,
+      "row_count": 164,
+      "col_count": 7,
+      "values": [
+        [
+          "Element_A",
+          "Position_A",
+          "Position_B",
+          "Direction",
+          "pronoun_allowed",
+          "Source",
+          "Comments"
+        ],
+        [
+          "NP{S,A,P}",
+          "2 (v:frontedXP)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          "I struggle with the test sentences here."
+        ],
+        [
+          "QWORDS",
+          "2 (v:frontedXP)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          "Who has John spoken to him"
+        ],
+        [
+          "NP{S,A,P}",
+          "2 (v:frontedXP)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "QWORDS",
+          "2 (v:frontedXP)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "I",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "NP{S,A}",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "he",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "it",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "she",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "they",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "we",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "you",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "I",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "NP{S,A}",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "he",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "it",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "she",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "they",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "we",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "you",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "NP{S,A,P}",
+          "2 (v:frontedXP)",
+          "27 (v:nominal)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "QWORDS",
+          "2 (v:frontedXP)",
+          "27 (v:nominal)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "I",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "NP{S,A}",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "he",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "it",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "she",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "they",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "we",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "you",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "air",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "baby",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          "In fact, in this case it appears to be obligatory"
+        ],
+        [
+          "breast",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "care",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "child",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "cross",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "dog",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          "I was dogsitting him, but *I dog-tracked him, I dogeared him"
+        ],
+        [
+          "eye",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "fact",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          "I fact-checked it"
+        ],
+        [
+          "grounds",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "hand",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "house",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "lip",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "name",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "nanny",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pet",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pressure",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "rough",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "sound",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spell",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spin",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "stone",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "air",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "baby",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "breast",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "care",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "child",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "cross",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "dog",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "eye",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "fact",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "grounds",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "hand",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "house",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "lip",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "name",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "nanny",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pet",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pressure",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "rough",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "sound",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spell",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spin",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "stone",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "y",
+          "",
+          "??I stone-cut it!!"
+        ],
+        [
+          "NP{S,A,P}",
+          "2 (v:frontedXP)",
+          "5 (v:npsubj1)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "QWORDS",
+          "2 (v:frontedXP)",
+          "5 (v:npsubj1)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "NP{R}",
+          "33 (v:obj-R)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "NP{P,T}",
+          "34 (v:obj-part)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "NP{R}",
+          "33 (v:obj-R)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "her",
+          "34 (v:obj-part)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "him",
+          "34 (v:obj-part)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "me",
+          "34 (v:obj-part)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "them",
+          "34 (v:obj-part)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "us",
+          "34 (v:obj-part)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "NP{P,T}",
+          "34 (v:obj-part)",
+          "34 (v:obj-part)",
+          "same",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "her",
+          "34 (v:obj-part)",
+          "34 (v:obj-part)",
+          "same",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "him",
+          "34 (v:obj-part)",
+          "34 (v:obj-part)",
+          "same",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "me",
+          "34 (v:obj-part)",
+          "34 (v:obj-part)",
+          "same",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "them",
+          "34 (v:obj-part)",
+          "34 (v:obj-part)",
+          "same",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "us",
+          "34 (v:obj-part)",
+          "34 (v:obj-part)",
+          "same",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "I",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "NP{S,A}",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "he",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "it",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "she",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "they",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "we",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "you",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "NP{R}",
+          "33 (v:obj-R)",
+          "27 (v:nominal)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "NP{P,T}",
+          "34 (v:obj-part)",
+          "27 (v:nominal)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "her",
+          "34 (v:obj-part)",
+          "27 (v:nominal)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "him",
+          "34 (v:obj-part)",
+          "27 (v:nominal)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "me",
+          "34 (v:obj-part)",
+          "27 (v:nominal)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "them",
+          "34 (v:obj-part)",
+          "27 (v:nominal)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "us",
+          "34 (v:obj-part)",
+          "27 (v:nominal)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "air",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "baby",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "breast",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "care",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "child",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "cross",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "dog",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "eye",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "fact",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "grounds",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "hand",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "house",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "lip",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "name",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "nanny",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pet",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pressure",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "rough",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "sound",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spell",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spin",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "stone",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "air",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "baby",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "breast",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "care",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "child",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "cross",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "dog",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "eye",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "fact",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "grounds",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "hand",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "house",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "lip",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "name",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "nanny",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pet",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pressure",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "rough",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "sound",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spell",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spin",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "stone",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "NP{R}",
+          "33 (v:obj-R)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "NP{P,T}",
+          "34 (v:obj-part)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "her",
+          "34 (v:obj-part)",
+          "5 (v:npsubj1)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "him",
+          "34 (v:obj-part)",
+          "5 (v:npsubj1)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "me",
+          "34 (v:obj-part)",
+          "5 (v:npsubj1)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "them",
+          "34 (v:obj-part)",
+          "5 (v:npsubj1)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "us",
+          "34 (v:obj-part)",
+          "5 (v:npsubj1)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "NP{R}",
+          "33 (v:obj-R)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "NP{P,T}",
+          "34 (v:obj-part)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "her",
+          "34 (v:obj-part)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "him",
+          "34 (v:obj-part)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "me",
+          "34 (v:obj-part)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "them",
+          "34 (v:obj-part)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ],
+        [
+          "us",
+          "34 (v:obj-part)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] pronoun_allowed='n'"
+        ]
+      ],
+      "_shape": {
+        "n_rows": 164,
+        "row_widths": [
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7
+        ],
+        "ragged": false
+      }
+    },
+    {
+      "title": "np_reference",
+      "sheet_id": 1749267875,
+      "row_count": 164,
+      "col_count": 7,
+      "values": [
+        [
+          "Element_A",
+          "Position_A",
+          "Position_B",
+          "Direction",
+          "np_allowed",
+          "Source",
+          "Comments"
+        ],
+        [
+          "NP{S,A,P}",
+          "2 (v:frontedXP)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "QWORDS",
+          "2 (v:frontedXP)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "NP{S,A,P}",
+          "2 (v:frontedXP)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "QWORDS",
+          "2 (v:frontedXP)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "I",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "NP{S,A}",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "he",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "it",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "she",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "they",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "we",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "you",
+          "5 (v:npsubj1)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "I",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "NP{S,A}",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "he",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "it",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "she",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "they",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "we",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "you",
+          "5 (v:npsubj1)",
+          "34 (v:obj-part)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "NP{S,A,P}",
+          "2 (v:frontedXP)",
+          "27 (v:nominal)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "QWORDS",
+          "2 (v:frontedXP)",
+          "27 (v:nominal)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "I",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "NP{S,A}",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "he",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "it",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "she",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "they",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "we",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "you",
+          "5 (v:npsubj1)",
+          "27 (v:nominal)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "air",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "baby",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "breast",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "care",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "child",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "cross",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "dog",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "eye",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "fact",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "grounds",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "hand",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "house",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "lip",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "name",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "nanny",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pet",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pressure",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "rough",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "sound",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spell",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spin",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "stone",
+          "27 (v:nominal)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "air",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "baby",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "breast",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "care",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "child",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "cross",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "dog",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "y",
+          "",
+          ""
+        ],
+        [
+          "eye",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "fact",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "grounds",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "hand",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "house",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "lip",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "name",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "nanny",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pet",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pressure",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "rough",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "sound",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spell",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spin",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "stone",
+          "27 (v:nominal)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "NP{S,A,P}",
+          "2 (v:frontedXP)",
+          "5 (v:npsubj1)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "QWORDS",
+          "2 (v:frontedXP)",
+          "5 (v:npsubj1)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "NP{R}",
+          "33 (v:obj-R)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "NP{P,T}",
+          "34 (v:obj-part)",
+          "35 (v:rec)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "NP{R}",
+          "33 (v:obj-R)",
+          "34 (v:obj-part)",
+          "forward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "her",
+          "34 (v:obj-part)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "him",
+          "34 (v:obj-part)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "me",
+          "34 (v:obj-part)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "them",
+          "34 (v:obj-part)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "us",
+          "34 (v:obj-part)",
+          "35 (v:rec)",
+          "forward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "NP{P,T}",
+          "34 (v:obj-part)",
+          "34 (v:obj-part)",
+          "same",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "her",
+          "34 (v:obj-part)",
+          "34 (v:obj-part)",
+          "same",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "him",
+          "34 (v:obj-part)",
+          "34 (v:obj-part)",
+          "same",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "me",
+          "34 (v:obj-part)",
+          "34 (v:obj-part)",
+          "same",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "them",
+          "34 (v:obj-part)",
+          "34 (v:obj-part)",
+          "same",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "us",
+          "34 (v:obj-part)",
+          "34 (v:obj-part)",
+          "same",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "I",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "NP{S,A}",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "he",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "it",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "she",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "they",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "we",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          ""
+        ],
+        [
+          "you",
+          "5 (v:npsubj1)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "NP{R}",
+          "33 (v:obj-R)",
+          "27 (v:nominal)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "NP{P,T}",
+          "34 (v:obj-part)",
+          "27 (v:nominal)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "her",
+          "34 (v:obj-part)",
+          "27 (v:nominal)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "him",
+          "34 (v:obj-part)",
+          "27 (v:nominal)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "me",
+          "34 (v:obj-part)",
+          "27 (v:nominal)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "them",
+          "34 (v:obj-part)",
+          "27 (v:nominal)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "us",
+          "34 (v:obj-part)",
+          "27 (v:nominal)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "air",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "baby",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "breast",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "care",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "child",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "cross",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "dog",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "eye",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "fact",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "grounds",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "hand",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "house",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "lip",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "name",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "nanny",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pet",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pressure",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "rough",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "sound",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spell",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spin",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "stone",
+          "27 (v:nominal)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "air",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "baby",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "breast",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "care",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "child",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "cross",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "dog",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "eye",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "fact",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "grounds",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "hand",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "house",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "lip",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "name",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "nanny",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pet",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "pressure",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "rough",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "sound",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spell",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "spin",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "stone",
+          "27 (v:nominal)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "NP{R}",
+          "33 (v:obj-R)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "NP{P,T}",
+          "34 (v:obj-part)",
+          "5 (v:npsubj1)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "her",
+          "34 (v:obj-part)",
+          "5 (v:npsubj1)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "him",
+          "34 (v:obj-part)",
+          "5 (v:npsubj1)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "me",
+          "34 (v:obj-part)",
+          "5 (v:npsubj1)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "them",
+          "34 (v:obj-part)",
+          "5 (v:npsubj1)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "us",
+          "34 (v:obj-part)",
+          "5 (v:npsubj1)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "NP{R}",
+          "33 (v:obj-R)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "NP{P,T}",
+          "34 (v:obj-part)",
+          "2 (v:frontedXP)",
+          "backward",
+          "n",
+          "",
+          ""
+        ],
+        [
+          "her",
+          "34 (v:obj-part)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "him",
+          "34 (v:obj-part)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "me",
+          "34 (v:obj-part)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "them",
+          "34 (v:obj-part)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ],
+        [
+          "us",
+          "34 (v:obj-part)",
+          "2 (v:frontedXP)",
+          "backward",
+          "",
+          "",
+          "[carried from split of 'PRON{P,T}'] np_allowed='n'"
+        ]
+      ],
+      "_shape": {
+        "n_rows": 164,
+        "row_widths": [
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7
+        ],
+        "ragged": false
+      }
+    },
+    {
+      "title": "Planar Structure",
+      "sheet_id": 531688209,
+      "row_count": 41,
+      "col_count": 5,
+      "values": [
+        [
+          "Position",
+          "Position_Name",
+          "Position_Type",
+          "Elements"
+        ],
+        [
+          "1",
+          "v:leftedge",
+          "Zone",
+          "and, also, then, CONJUNCT"
+        ],
+        [
+          "2",
+          "v:frontedXP",
+          "Slot",
+          "QWORDS, NP{S,A,P}"
+        ],
+        [
+          "3",
+          "v:frontedauxiliary",
+          "Slot",
+          "be, have, do, can, could, may, might, must, shall, should, will, would, ought"
+        ],
+        [
+          "4",
+          "v:frontedauxiliaryinflection",
+          "Slot",
+          "-n, -s, -v "
+        ],
+        [
+          "5",
+          "v:npsubj1",
+          "Slot",
+          "NP{S,A}, I, you, he, she, it, we, they"
+        ],
+        [
+          "6",
+          "v:ad-S1",
+          "Slot",
+          "AD-S"
+        ],
+        [
+          "7",
+          "v:ad-VP1",
+          "Slot",
+          "AD-VP"
+        ],
+        [
+          "8",
+          "v:modal1",
+          "Slot",
+          "can, could, may, might, must, shall, should, will, would"
+        ],
+        [
+          "9",
+          "v:sd-S2",
+          "Slot",
+          "AD-S"
+        ],
+        [
+          "10",
+          "v:neg1",
+          "Slot",
+          "not"
+        ],
+        [
+          "11",
+          "v:ad-VP2",
+          "Slot",
+          "AD-VP"
+        ],
+        [
+          "12",
+          "v:perfect",
+          "Slot",
+          "ha"
+        ],
+        [
+          "13",
+          "v:perfectinflection",
+          "Slot",
+          "-ve, -s"
+        ],
+        [
+          "14",
+          "v:ad-S3",
+          "Slot",
+          "AD-S"
+        ],
+        [
+          "15",
+          "v:neg2",
+          "Slot",
+          "not"
+        ],
+        [
+          "16",
+          "v:ad-VP3",
+          "Slot",
+          "AD-VP"
+        ],
+        [
+          "17",
+          "v:ad-V1",
+          "Slot",
+          "AD-V"
+        ],
+        [
+          "18",
+          "v:passive",
+          "Slot",
+          "be-"
+        ],
+        [
+          "19",
+          "v:ad-S4",
+          "Slot",
+          "AD-S"
+        ],
+        [
+          "20",
+          "v:neg3",
+          "Slot",
+          "not"
+        ],
+        [
+          "21",
+          "v:ad-VP4",
+          "Slot",
+          "AD-VP"
+        ],
+        [
+          "22",
+          "v:progressive",
+          "Slot",
+          "be"
+        ],
+        [
+          "23",
+          "v:ad-S5",
+          "Slot",
+          "AD-S"
+        ],
+        [
+          "24",
+          "v:neg4",
+          "Slot",
+          "not"
+        ],
+        [
+          "25",
+          "v:ad-VP5",
+          "Slot",
+          "AD-VP"
+        ],
+        [
+          "26",
+          "v:ad-V2",
+          "Slot",
+          "AD-V"
+        ],
+        [
+          "27",
+          "v:nominal",
+          "Slot",
+          "baby, house, pet, dog, child, nanny, grounds, care, hand, breast, lip, eye, name, sound, fact, spell, cross, strong, rough, stone, air, spin, pressure"
+        ],
+        [
+          "28",
+          "v:productiveprefix",
+          "Zone",
+          "re-, un-, dis-, mis-, over-, under-, de-, out-, pre-, post-"
+        ],
+        [
+          "29",
+          "v:latinprefix",
+          "Slot",
+          "dis-, mis-, up-, down-, fore-, co-, en-, ex-, sub-, pro-, per-, sur-, contra-, ab-, ad-, ob-, sup-, cata-, dia-, epi-, para-, se-, tele-, ante-, circum-, eu-, inter-, intra-, syn-, be-, "
+        ],
+        [
+          "30",
+          "v:verbstem",
+          "Slot",
+          "KEYSTONE"
+        ],
+        [
+          "31",
+          "v:verbinflection",
+          "Slot",
+          "-ed, -s, -ing"
+        ],
+        [
+          "32",
+          "v:ad-V3",
+          "Slot",
+          "AD-V"
+        ],
+        [
+          "33",
+          "v:obj-R",
+          "Slot",
+          "NP{R}"
+        ],
+        [
+          "34",
+          "v:obj-part",
+          "Zone",
+          "NP{P,T}, VERBPART, me, you, him, her, it, us, them"
+        ],
+        [
+          "35",
+          "v:rec",
+          "Slot",
+          "NP{R}"
+        ],
+        [
+          "36",
+          "v:ad-VP6",
+          "Slot",
+          "AD-VP"
+        ],
+        [
+          "37",
+          "v:PP",
+          "Zone",
+          "PP"
+        ],
+        [
+          "38",
+          "v:rightedge",
+          "Zone",
+          "AD-S"
+        ]
+      ],
+      "_shape": {
+        "n_rows": 39,
+        "row_widths": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "ragged": false
+      }
+    },
+    {
+      "title": "Status",
+      "sheet_id": 419439021,
+      "row_count": 6,
+      "col_count": 2,
+      "values": [
+        [
+          "Construction",
+          "Status"
+        ],
+        [
+          "prescreening",
+          "in-progress"
+        ],
+        [
+          "reflexivization",
+          "in-progress"
+        ],
+        [
+          "pronominalization",
+          "in-progress"
+        ],
+        [
+          "np_reference",
+          "in-progress"
+        ]
+      ],
+      "_shape": {
+        "n_rows": 5,
+        "row_widths": [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        "ragged": false
+      }
+    }
+  ]
+}

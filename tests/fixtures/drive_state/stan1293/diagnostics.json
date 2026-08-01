@@ -1,0 +1,115 @@
+{
+  "role": "diagnostics",
+  "spreadsheet_id": "1lFgsWrMO5mS4meixITG51T3JcmfW3UcIvfxK_ohyg3Q",
+  "title": "diagnostics_stan1293",
+  "tab_order": [
+    "Sheet1"
+  ],
+  "worksheets": [
+    {
+      "title": "Sheet1",
+      "sheet_id": 0,
+      "row_count": 1000,
+      "col_count": 26,
+      "values": [
+        [
+          "Class",
+          "Language",
+          "Constructions",
+          "Criteria"
+        ],
+        [
+          "ciscategorial",
+          "stan1293",
+          "general",
+          "V-combines, N-combines, A-combines"
+        ],
+        [
+          "subspanrepetition",
+          "stan1293",
+          "andCoordination, control, thatCOMP, asyndeticPart",
+          "widescope_right, widescope_left, fillable_botheither_conjunct"
+        ],
+        [
+          "noninterruption",
+          "stan1293",
+          "general",
+          "free, multiple"
+        ],
+        [
+          "metrical",
+          "stan1293",
+          "stress_domain",
+          "accented{y/n/both}, obligatory, independence{y/n/na}, left-interaction, right-interaction"
+        ],
+        [
+          "nonpermutability",
+          "stan1293",
+          "element_prescreening, general",
+          "scopal{y/n/both}"
+        ],
+        [
+          "segmental",
+          "stan1293",
+          "aspiration_prominence",
+          "aspirated{y/n/both/na}"
+        ],
+        [
+          "segmental",
+          "stan1293",
+          "flapping",
+          "flapping_left{y/n/both/na}, flapping_internal{y/n/both/na}, flapping_right{y/n/both/na}"
+        ],
+        [
+          "free_occurrence",
+          "stan1293",
+          "general",
+          "free, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}"
+        ],
+        [
+          "coreference",
+          "stan1293",
+          "prescreening, reflexivization, pronominalization, np_reference",
+          "reflexive_allowed{y/n/untestable}, pronoun_allowed{y/n/untestable}, np_allowed{y/n/untestable}"
+        ],
+        [
+          "proform",
+          "stan1293",
+          "do_so_substitution, vp_ellipsis",
+          "shareable_proform_replace{y/n/both/unclear}"
+        ],
+        [
+          "phrasal_accent",
+          "stan1293",
+          "prescreening",
+          "accented{y/n/both}"
+        ],
+        [
+          "phrasal_accent",
+          "stan1293",
+          "general",
+          "joint_accent{always/sometimes/never}"
+        ]
+      ],
+      "_shape": {
+        "n_rows": 13,
+        "row_widths": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "ragged": false
+      }
+    }
+  ]
+}

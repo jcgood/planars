@@ -1,0 +1,52 @@
+{
+  "role": "diagnostics",
+  "spreadsheet_id": "1A0r232Wdi3bpBj7ZcIPVcrSi9uQ9z0mc-7TYQfluO-s",
+  "title": "diagnostics_arao1248",
+  "tab_order": [
+    "Sheet1"
+  ],
+  "worksheets": [
+    {
+      "title": "Sheet1",
+      "sheet_id": 0,
+      "row_count": 1000,
+      "col_count": 26,
+      "values": [
+        [
+          "Class",
+          "Language",
+          "Constructions",
+          "Criteria"
+        ],
+        [
+          "ciscategorial",
+          "arao1248",
+          "general",
+          "V-combines, N-combines, A-combines, PRED-combines"
+        ],
+        [
+          "noninterruption",
+          "arao1248",
+          "general",
+          "free, multiple"
+        ],
+        [
+          "subspanrepetition",
+          "arao1248",
+          "auxiliary_construction, tso_clause_linkage",
+          "widescope_right, widescope_left, fillable_botheither_conjunct"
+        ]
+      ],
+      "_shape": {
+        "n_rows": 4,
+        "row_widths": [
+          4,
+          4,
+          4,
+          4
+        ],
+        "ragged": false
+      }
+    }
+  ]
+}

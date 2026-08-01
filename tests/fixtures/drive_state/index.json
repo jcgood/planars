@@ -1,0 +1,239 @@
+{
+  "captured_at": "2026-08-01T23:39:09.819806+00:00",
+  "note": "Raw recorded API responses. Do not normalise, pad, or tidy — see coding/capture_drive_state.py for why raggedness is load-bearing.",
+  "spreadsheets": [
+    {
+      "lang_id": "arao1248",
+      "role": "planar",
+      "spreadsheet_id": "1hM2L5bLbt8gsOdb4FgMc0uS2652Gia1W66FrpJuVuPI",
+      "path": "tests/fixtures/drive_state/arao1248/planar.json",
+      "tabs": 1,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "arao1248",
+      "role": "diagnostics",
+      "spreadsheet_id": "1A0r232Wdi3bpBj7ZcIPVcrSi9uQ9z0mc-7TYQfluO-s",
+      "path": "tests/fixtures/drive_state/arao1248/diagnostics.json",
+      "tabs": 1,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "arao1248",
+      "role": "class:ciscategorial",
+      "spreadsheet_id": "1BTORcAYwVZGEf_rftRxXAsC4wMeVunozbhoiu_3Pnxc",
+      "path": "tests/fixtures/drive_state/arao1248/class_ciscategorial.json",
+      "tabs": 2,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "arao1248",
+      "role": "class:noninterruption",
+      "spreadsheet_id": "135LNV3BEF-g86pMZiZZjGY3IaMb-sZ7Jl0hh3LRbbBo",
+      "path": "tests/fixtures/drive_state/arao1248/class_noninterruption.json",
+      "tabs": 2,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "arao1248",
+      "role": "class:subspanrepetition",
+      "spreadsheet_id": "12negOahPnlSq02aET6kuU_NCkC5T2u8XeJaxg1nJQ70",
+      "path": "tests/fixtures/drive_state/arao1248/class_subspanrepetition.json",
+      "tabs": 3,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "stan1293",
+      "role": "planar",
+      "spreadsheet_id": "1nmaNay3ne53-Gkm4wBTOy7vebYcX70WPvCwfvjT5Tc0",
+      "path": "tests/fixtures/drive_state/stan1293/planar.json",
+      "tabs": 1,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "stan1293",
+      "role": "diagnostics",
+      "spreadsheet_id": "1lFgsWrMO5mS4meixITG51T3JcmfW3UcIvfxK_ohyg3Q",
+      "path": "tests/fixtures/drive_state/stan1293/diagnostics.json",
+      "tabs": 1,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "stan1293",
+      "role": "class:ciscategorial",
+      "spreadsheet_id": "1O3d4Bj4n28hkWWBQOl7RX95Bb4SkR27-RF6mSQ6-9rc",
+      "path": "tests/fixtures/drive_state/stan1293/class_ciscategorial.json",
+      "tabs": 2,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "stan1293",
+      "role": "class:coreference",
+      "spreadsheet_id": "131F4ZVngUR2Sgu3Zmtfb_1ff-JT4L8dT1mNOk12M0zA",
+      "path": "tests/fixtures/drive_state/stan1293/class_coreference.json",
+      "tabs": 6,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "stan1293",
+      "role": "class:free_occurrence",
+      "spreadsheet_id": "1L3kfV-g278NMxbdqfu2sN343nmKp1r-29jq60fr9YsQ",
+      "path": "tests/fixtures/drive_state/stan1293/class_free_occurrence.json",
+      "tabs": 2,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "stan1293",
+      "role": "class:metrical",
+      "spreadsheet_id": "1yVggyBZ9whjWwihiQbc98aTMx9CRn9JQKfLEM8JZfTg",
+      "path": "tests/fixtures/drive_state/stan1293/class_metrical.json",
+      "tabs": 2,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "stan1293",
+      "role": "class:noninterruption",
+      "spreadsheet_id": "1-rqDe52YRJsTrQjNe7HxPncDHky9FLm6CaJ9cBLZaX0",
+      "path": "tests/fixtures/drive_state/stan1293/class_noninterruption.json",
+      "tabs": 2,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "stan1293",
+      "role": "class:nonpermutability",
+      "spreadsheet_id": "1sb0DJzFKY-j7sA1kjLqGUqtdsG2JJX0vW-rRALWV7Ic",
+      "path": "tests/fixtures/drive_state/stan1293/class_nonpermutability.json",
+      "tabs": 4,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "stan1293",
+      "role": "class:phrasal_accent",
+      "spreadsheet_id": "12f_cgmKuKNEnHWUJGQX5QiaHeAVCIxMyYMS3mFe-mVs",
+      "path": "tests/fixtures/drive_state/stan1293/class_phrasal_accent.json",
+      "tabs": 4,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "stan1293",
+      "role": "class:proform",
+      "spreadsheet_id": "1LJjSOkoblAre6v257wW1ENUMM7SDC_JbfhlN3HMwQJY",
+      "path": "tests/fixtures/drive_state/stan1293/class_proform.json",
+      "tabs": 3,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "stan1293",
+      "role": "class:segmental",
+      "spreadsheet_id": "19uDRX9flfQFk-MSCsvFy_SG3zubz0Kxowo4y7pyJUOM",
+      "path": "tests/fixtures/drive_state/stan1293/class_segmental.json",
+      "tabs": 3,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "stan1293",
+      "role": "class:subspanrepetition",
+      "spreadsheet_id": "1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4",
+      "path": "tests/fixtures/drive_state/stan1293/class_subspanrepetition.json",
+      "tabs": 5,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "synth0001",
+      "role": "planar",
+      "spreadsheet_id": "16OFIc1O-RkT9Ex9pZajA2h1G4c8F-SYbAz3OX6hpIgs",
+      "path": "tests/fixtures/drive_state/synth0001/planar.json",
+      "tabs": 1,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "synth0001",
+      "role": "diagnostics",
+      "spreadsheet_id": "1L-J3EWgZRMnqIaaXmlpBAVZt98wgmbdlyI2DhJOHhjQ",
+      "path": "tests/fixtures/drive_state/synth0001/diagnostics.json",
+      "tabs": 1,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "synth0001",
+      "role": "class:ciscategorial",
+      "spreadsheet_id": "1u6QnuCcS0t4j04f7cFjyVOcEz8_vifBwFaDqTmTnRJU",
+      "path": "tests/fixtures/drive_state/synth0001/class_ciscategorial.json",
+      "tabs": 2,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "synth0001",
+      "role": "class:coreference",
+      "spreadsheet_id": "1kk_8HWJ38EbssJSFD84E2V3-Q_0rifCntD12mEIvmgc",
+      "path": "tests/fixtures/drive_state/synth0001/class_coreference.json",
+      "tabs": 7,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "synth0001",
+      "role": "class:free_occurrence",
+      "spreadsheet_id": "1k6SdfzR80JsiNSsvT1WWxc8B3yqJdVVWxujNgbtvgyw",
+      "path": "tests/fixtures/drive_state/synth0001/class_free_occurrence.json",
+      "tabs": 2,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "synth0001",
+      "role": "class:metrical",
+      "spreadsheet_id": "1AYWa7GeTmhZvN0Xmuy02hnQ-DeWNojcHuPXmwkcxREk",
+      "path": "tests/fixtures/drive_state/synth0001/class_metrical.json",
+      "tabs": 2,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "synth0001",
+      "role": "class:noninterruption",
+      "spreadsheet_id": "1p0vGD608hBKMhm1ekbJW1qY0FxMLd6QqSSsSAoJGwvY",
+      "path": "tests/fixtures/drive_state/synth0001/class_noninterruption.json",
+      "tabs": 2,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "synth0001",
+      "role": "class:nonpermutability",
+      "spreadsheet_id": "1zqFkv9ekZqCMj_xzh7G3P6ZeP0xLnVKvQH4gcUdxfOo",
+      "path": "tests/fixtures/drive_state/synth0001/class_nonpermutability.json",
+      "tabs": 5,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "synth0001",
+      "role": "class:phrasal_accent",
+      "spreadsheet_id": "12vQsG2qQOlsLCWHwD-6R-dNSfpBCZkPZ51PSnayqtTc",
+      "path": "tests/fixtures/drive_state/synth0001/class_phrasal_accent.json",
+      "tabs": 3,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "synth0001",
+      "role": "class:proform",
+      "spreadsheet_id": "1PW32nQwWrNo0PhUiNTo_o_YzHr3BfxYBUyfpqPmGx8M",
+      "path": "tests/fixtures/drive_state/synth0001/class_proform.json",
+      "tabs": 3,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "synth0001",
+      "role": "class:segmental",
+      "spreadsheet_id": "11z4k-Fr9oJv__eaTYrJdN9t87SjYPT1v--ANz1De244",
+      "path": "tests/fixtures/drive_state/synth0001/class_segmental.json",
+      "tabs": 3,
+      "ragged_tabs": 0
+    },
+    {
+      "lang_id": "synth0001",
+      "role": "class:subspanrepetition",
+      "spreadsheet_id": "12mNaEIfKP7Sf1RlnJ11CbG-lzGSOjovLel29AcZXvfg",
+      "path": "tests/fixtures/drive_state/synth0001/class_subspanrepetition.json",
+      "tabs": 5,
+      "ragged_tabs": 0
+    }
+  ],
+  "failed": []
+}
