@@ -218,3 +218,65 @@ one of the longest-lived single Spreadsheet handles across the eleven files.
   reached only on tabs *without* drift, and a fake exercising this file's
   write paths must construct fixtures where structural drift is absent.
 
+### `coding/sync_params.py` (805 lines)
+
+Column-level structural editing: insert/rename/delete criterion columns,
+split/merge criteria, refresh dropdown validation. The most write-operation-
+diverse of the eleven files — introduces several request shapes and gspread
+convenience methods not seen elsewhere.
+
+| Operation | Call sites | Args / return usage | Retry | R/W |
+|---|---|---|---|---|
+| `ws.row_values(1)` — **new operation** | `:81, :99, :308, :330, :359, :726` (all wrapped, `_with_retry(lambda: ws.row_values(1))`); `:592, :613, :633` (**bare, unwrapped**, inline in `main()`) | Returns the header row only, as `List[str]` — 1-based row argument (gspread convention: row 1 is the first row). Used purely to check column presence (`in` tests) or build `header.index(name)` lookups. **Same call, inconsistent retry coverage** depending on whether it's inside a helper function (wrapped) or inline in `main()`'s loop body (bare) — six of nine call sites are unwrapped. | Inconsistent (6/9 sites bare) | Read |
+| `ws.update_cell(1, col_1based, new_name)` — **new operation** | `:104` (`_rename_column`) | Single-cell write, explicitly `(row, col)` **1-based** for both axes (`col_1based = header.index(old_name) + 1`, comment makes the 1-indexing explicit) — a second, independent 1-indexing convention alongside `update_sheets.py`'s `insert_cols(col=)`. Return value ignored. **Not wrapped.** | No | Write |
+| `spreadsheet.batch_update({"requests": [{"insertDimension": {...}}]})` — **new request shape** | `:225` (`_insert_param_columns`) | `insertDimension` (not `insertRange`/`repeatCell`/`setDataValidation` seen elsewhere) with `"inheritFromBefore": False` — inserts blank columns at a computed 0-based `startIndex`/`endIndex` *before* the Comments column. Distinct Sheets API request type from anything in `generate_sheets.py`/`update_sheets.py`. **Not wrapped.** | No | Write |
+| `ws.get_all_values()` | `:238` | Bare (unwrapped), used only to compute `num_rows` and locate the keystone row (`v:verbstem`) by scanning `row[1]`; **assumes column 1 (0-based) is `Position_Name`,** i.e. hardcodes the standard element-row layout rather than reading it from the header — will misbehave silently if called on a pair-row tab (not currently done, but nothing in this function guards against it) | **No** | Read |
+| `gspread.utils.rowcol_to_a1(1, insert_at + 1)` | `:257` | **Not an API call** — pure client-side coordinate-to-A1-notation conversion utility. Included here because it feeds directly into the next operation and because a protocol/fake needs equivalent coordinate math if it accepts non-A1 range args anywhere. `insert_at + 1` is again a 0-based→1-based conversion at the call site. | N/A | N/A |
+| `ws.update(grid, start_cell)` — **different range semantics than every other `update()` call site in the 11 files** | `:258` | Unlike every `ws.update(rows, "A1")` call in `generate_sheets.py`/`update_sheets.py` (always anchored at the top-left), this is anchored at a **computed non-A1 start cell** (e.g. `"D1"`) — because it's writing only the newly-inserted columns' values, not the whole sheet body. This is the one call site that actually exercises `update()`'s general range-anchoring semantics rather than always writing the full sheet from A1. A fake that only implements "replace the whole body from A1" (which would cover every other call site in this inventory) will not cover this one. | No | Write |
+| `spreadsheet.batch_update({"requests": [...]})` — `setDataValidation` | `:285` (new-column dropdowns, bare), `:699` (`ws.spreadsheet.batch_update`, refresh-dropdowns path, bare), `:772` (same, second `refresh_dropdowns` call site further down, bare) | Same `setDataValidation` shape as `generate_sheets.py`, but issued as a follow-up batch after `_insert_param_columns`'s structural batch — i.e. **two separate `batch_update` calls in sequence for what is conceptually one logical column-insert operation** (insert dimension, then write values via `update()`, then validate) — three round trips for one user-facing action. Worth flagging for the protocol design as a candidate for a single composite operation. | No (any site) | Write |
+| `ws.row_count` | `:360` (`_build_dropdown_refresh_requests`) | Property access (gspread caches this from the worksheet's `gridProperties.rowCount` at fetch time — **not guaranteed to reflect rows added by an intervening write on the same handle**, unlike a fresh `get_all_values()` call; potential staleness a fake must decide how to model) | N/A | Read (cached) |
+| `spreadsheet.batch_update({"requests": [{"deleteDimension": {...}}]})` — **new request shape** | `:730` (`ws.spreadsheet.batch_update`, inside the `--remove` column-deletion loop) | `deleteDimension` on `COLUMNS`, one request per removed column, called **once per column inside a loop, right-to-left by index** (`sorted(removed_params, key=lambda p: header.index(p), reverse=True)`) specifically so earlier deletions don't shift the indices used by later ones within the same loop — this ordering dependency is load-bearing and easy to get wrong in a fake that doesn't shift subsequent column indices after a delete. **Not batched into one request with multiple ranges even though that's expressible** — N separate API calls for N column removals. | No | Write |
+| `_open_spreadsheet(gc, id)` | `:578` | Held live across the per-class, per-construction loop (same shape as `update_sheets.py`) | Yes (inherited) | Read |
+| `ss.worksheet(name)` | `:582` (wrapped, catches `WorksheetNotFound`) | Same idiom | Wrapped | Read |
+| `_get_current_params(ws)` / `_apply_split_to_sheet` / `_apply_merge_to_sheet` / `_insert_param_columns` (local helpers) | `:311-312, :336, :616, :639, :714` | Each of these composes 2-4 of the primitive calls above (row_values read → insert columns → update grid → validate → rename) as one logical "apply this structural edit" step | Mixed (see primitives) | Read+Write |
+| `_load_drive_config()` / `_upload_planars_config(...)` / `_save_drive_config(...)` | `:780-788` | End-of-run manifest sync, same pattern as `import_sheets.py`/`update_sheets.py`, gated on `apply and manifest_changed` | No (inherited) | Write |
+
+**Live-object-held-across-many-ops:** `ws` is held and mutated repeatedly
+within a single construction's processing block — rename, then split, then
+merge, then insert-new-params, then maybe remove-params, then maybe
+refresh-dropdowns, all against the same `Worksheet` object, with **re-reads
+of `ws.row_values(1)` interleaved between mutations** (e.g. `:726` re-reads
+after `_insert_param_columns` may have already run at `:714`, precisely so
+`header.index(param)` reflects post-insert column positions before deleting).
+This file has the highest read-after-write-through-the-same-handle density of
+the eleven files — a fake's mutation model must make every write immediately
+visible to the next read on that same worksheet handle, or this file's own
+internal index bookkeeping (which assumes that) will silently corrupt column
+positions.
+
+**Subtlety flags specific to this file:**
+- Two *different* 1-based-indexing conventions exist side by side:
+  `ws.update_cell(row, col)` (both axes 1-based) here, vs.
+  `update_sheets.py`'s `ws.insert_cols(col=...)` (column only, 1-based) vs.
+  everything else in the inventory using 0-based `startColumnIndex` in raw
+  Sheets API request bodies. A fake needs to track, per gspread *method*
+  (not per Sheets API request type), which indexing convention applies —
+  there is no single global rule.
+- `:258`'s `ws.update(grid, start_cell)` is the **only** call site among all
+  eleven files that writes to a computed, non-`"A1"` anchor. Every other
+  `update()` call in the inventory writes the full sheet body from the top-left.
+  A protocol method modeled only on "replace whole body" will not cover this file.
+- The three-round-trip insert (`insertDimension` → `update` values → `setDataValidation`)
+  and the N-round-trip delete (one `deleteDimension` per column) are both
+  candidates for a single composite "insert column(s) with values and
+  validation" / "remove column(s)" protocol method — but Phase 0a's job is
+  only to note that the current code makes them as separate calls, not to
+  decide whether the protocol should collapse them.
+- `_insert_param_columns` (`:209`) hardcodes column-1 (`row[1]`, 0-based) as
+  `Position_Name` when scanning for the keystone row (`:245`) — this silently
+  assumes the standard element-row layout. It is never called on a pair-row
+  tab in current usage (pair-row tabs don't get param-column inserts through
+  this path in the observed call graph), but nothing enforces that, so a fake
+  used to test this function against a pair-row fixture would expose a latent
+  bug rather than a modeling gap in the fake itself.
+
