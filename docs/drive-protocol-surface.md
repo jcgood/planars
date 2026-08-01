@@ -414,6 +414,33 @@ dashboard).
   currently does, but the manifest's `status_sheet_url` is written verbatim to
   Drive for Adam to click).
 
+### `coding/generate_biuniqueness_stage1_sheet.py` (291 lines)
+
+Structurally a near-duplicate of `generate_status_sheet.py`'s Drive-writing
+code (same find-or-create-by-name pattern, same `update_title`/`resize`/
+`update(..., raw=False)`/`mergeCells`/banner-row shape) — the module docstring
+says as much (`"mirrors generate_status_sheet.py's precedent"`). Rather than
+re-tabulate identical call shapes, this entry lists only the calls and the
+**one behavioral delta** from that file.
+
+| Operation | Call sites | Args / return usage | Retry | R/W |
+|---|---|---|---|---|
+| `drive.files().list(...)` / `gc.create(...)` / `_move_to_folder(...)` | `:149-161` (`_get_or_create_stage1_spreadsheet`) | Identical shape to `generate_status_sheet.py:284-296`'s `_get_or_create_status_spreadsheet` — **fourth** independent "find-by-name-in-folder" implementation in the inventory | No | Read then maybe Write |
+| `ws = ss.sheet1` / `ws.update_title("Stage1")` | `:171-173` | Same pattern as `generate_status_sheet.py:347-349` | Wrapped | Read/Write |
+| `ws.clear()` — **behavioral delta from `generate_status_sheet.py`** | `:174` (bare, unwrapped) | `generate_status_sheet.py`'s `_write_status_sheet` does **not** call `ws.clear()` at all before its `resize`+`update` (relies on resize+full overwrite alone); this file explicitly clears first. Two sibling files, written to the same pattern, differ on whether an explicit `clear()` precedes the resize/rewrite — worth flagging alongside the other "same operation, different-file idiom" findings (`ws.clear()` bare vs. `_reset_worksheet` in `restructure_sheets.py`/`generate_sheets.py`). | No | Write |
+| `ws.resize(rows=, cols=)` | `:182` (wrapped) | Same as `generate_status_sheet.py:368` | Wrapped | Write |
+| `ws.update(values, "A1", raw=False)` | `:183` (wrapped) | Same `raw=False` formula-write concern as `generate_status_sheet.py:369` — though this sheet's data rows are plain strings (no `HYPERLINK` formulas built into `_rows_to_sheet_values`), so `raw=False` is currently a no-op in practice here; only the **banner** rows would matter if they ever gained a formula, which they don't today. Still worth the fake supporting `raw=False` correctly since the call is made regardless. | Wrapped | Write |
+| `spreadsheet.batch_update({"requests": [...]})` | `:227` (wrapped) | Same request-shape family as `generate_status_sheet.py` (freeze, bold ×2, `mergeCells`, one `setDataValidation` for the `has_allomorphs` y/n dropdown, `wrapStrategy`) — no per-row background-color requests here (this sheet has no color-coding), so one flat batch of a fixed number of requests regardless of row count, unlike `generate_status_sheet.py`'s N-requests-per-row pattern | Wrapped | Write |
+| `_share_with_person(drive, id, email, role="writer")` | `:273` | Hardcoded to Adam's email (`_ADAM_EMAIL`) rather than `_annotator_email(lang_id)` — deliberate, per the module docstring (`synth0001` has no `annotator_email` in `languages.yaml`) | No (inherited) | Write |
+| `_load_manifest_from_drive` / `_upload_planars_config` | `:265, :284` | Same end-of-run manifest-sync pattern (`biuniqueness_stage1_spreadsheet_id`/`url` fields), gated on the value actually changing | No (inherited) | Read / Write |
+
+**Subtlety flags specific to this file:** none beyond what's already flagged
+under `generate_status_sheet.py` — its main value for the inventory is
+confirming that `raw=False` and the `mergeCells`/banner-row pattern are a
+**repeated idiom** (two independent call sites), not a one-off, which raises
+the priority of getting both right in a fake/protocol rather than treating
+them as edge cases.
+
 ### `coding/restructure_sheets.py` (1423 lines)
 
 The most consequential file in the inventory — archive/recreate cycles, the
