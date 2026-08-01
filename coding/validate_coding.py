@@ -27,6 +27,7 @@ CODED_DATA = ROOT / "coded_data"
 
 from .drive import _get_clients, _load_manifest_from_drive, _open_spreadsheet, _with_retry
 from .generate_sheets import _INSTRUCTIONS_TAB, _PLANAR_REF_TAB, _STATUS_TAB
+from .restructure_sheets import _get_pair_row_constructions
 from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
@@ -507,6 +508,16 @@ def revalidate_sheets(
     total_sheets = 0
     total_missing = 0
 
+    # Schema-driven, not hardcoded per class name -- a pair-row construction
+    # (Element_A/Element_B rows instead of the standard Element/Position_Name/
+    # Position_Number structure) is whatever diagnostic_classes.yaml marks
+    # row_type: pair_rows. Before this, the check below hardcoded just
+    # "nonpermutability" and "coreference", so phrasal_accent/general (added
+    # for issue #237) fell through to the standard-structure validator and
+    # failed with spurious "missing structural column" errors even though its
+    # pair-row structure is correct and already registered in the schema.
+    pair_row_constructions = _get_pair_row_constructions()
+
     for lang_id, lang_data in sorted(manifest.items()):
         if lang_ids and lang_id not in lang_ids:
             continue
@@ -556,10 +567,7 @@ def revalidate_sheets(
                 else:
                     info = param_map.get(class_name, {}).get(construction, {})
                 try:
-                    is_pair_sheet = (
-                        (class_name == "nonpermutability" and construction != "element_prescreening")
-                        or (class_name == "coreference" and construction != "prescreening")
-                    )
+                    is_pair_sheet = construction in pair_row_constructions.get(class_name, set())
                     if is_pair_sheet:
                         issues = revalidate_pair_sheet(
                             ws,

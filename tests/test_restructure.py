@@ -10,6 +10,7 @@ from coding.restructure_sheets import (
     _compute_stats,
     _count_pair_rename_impacts,
     _describe_split_impacts,
+    _get_pair_row_constructions,
     _lookup_existing,
     _parse_flag_map,
     _parse_position_cell,
@@ -588,3 +589,29 @@ def test_apply_split_multiple_rows_only_matching_ones_split():
     assert fanned == 3
     assert len(new_rows) == 4  # 3 fanned + 1 untouched
     assert new_rows[-1] == ["and", "not", "y", "", ""]
+
+
+# ---------------------------------------------------------------------------
+# _get_pair_row_constructions
+# ---------------------------------------------------------------------------
+
+def test_get_pair_row_constructions_covers_all_registered_classes():
+    """Every class/construction validate_coding.py's is_pair_sheet check relies on
+    this generic, schema-driven set instead of a hardcoded per-class-name check.
+
+    Regression for the bug behind issue #260's 2026-08-01 failure: phrasal_accent's
+    `general` tab is a pair-row sheet (row_type: pair_rows in diagnostic_classes.yaml,
+    issue #237) but validate_coding.py's is_pair_sheet check only recognized
+    "nonpermutability" and "coreference" by name, so phrasal_accent/general fell
+    through to the standard-structure validator and failed with spurious "missing
+    structural column" errors. This asserts the schema-driven set actually contains
+    every pair-row construction currently registered, so a future addition can't
+    silently repeat the same gap.
+    """
+    result = _get_pair_row_constructions()
+    assert "phrasal_accent" in result
+    assert "general" in result["phrasal_accent"]
+    assert "nonpermutability" in result
+    assert "general" in result["nonpermutability"]
+    assert "coreference" in result
+    assert {"reflexivization", "pronominalization", "np_reference"} <= result["coreference"]
