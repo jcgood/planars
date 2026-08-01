@@ -891,6 +891,26 @@ specifically asked for them to be flagged prominently, not buried in file
 sections — this is the section to read before writing a single line of the
 fake.
 
+> **CORRECTION (2026-08-01, after the live capture).** The hypothesis in item 1
+> below — that partially-filled annotation tabs come back *ragged* — is
+> **empirically false**. All 80 captured tabs are internally rectangular: every
+> row within a response has identical width. The real hazard is different but
+> adjacent: `get_all_values()` pads to the **used range**, and the used range can
+> be **narrower than the declared grid width** (`col_count`). 10 of 80 captured
+> tabs are narrower than their declared grid.
+>
+> So `generate_sheets.py`'s `len(row) >= N` guards are not dead code and were not
+> mistaken — they defend against *short* responses, which are real, rather than
+> *ragged* ones, which are not. And `import_sheets.py`'s unguarded
+> `DataFrame(rows[1:], columns=rows[0])` is safe against raggedness but would
+> still misalign if the used range were ever narrower than its header row.
+>
+> **Consequence for the fake:** pad to used-range width, allow that width to be
+> less than `col_count`, and do *not* bother synthesising genuinely ragged
+> fixtures — reality does not produce them. This is precisely why the plan
+> requires building the fake from recorded responses rather than from inference:
+> the inference below was reasonable and wrong, and only the recording settled it.
+
 **1. `get_all_values()` / `row_values()` padding and ragged rows.**
 `validate_coding.py:320-321` is the only place in the codebase that states
 this explicitly in a comment: *"gspread may pad with trailing empty strings

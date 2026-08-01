@@ -37,7 +37,7 @@ of this state would be exactly the defect this project is trying to remove.
 | Phase 0a — protocol surface enumeration | **done** → `docs/drive-protocol-surface.md` | `b978101`..`46bf833` |
 | Phase 0a — protocol proposal reviewed | **done** — accepted, see decisions log | — |
 | Phase 0a — `capture-drive-state` command | **done** | `c87ae7d` |
-| Phase 0a — fixture capture run (read-only, live) | in progress | — |
+| Phase 0a — fixture capture run (read-only, live) | **done** — 29 sheets, 80 tabs | `b40cd64` |
 | Phase 0a — fake backend | not started | — |
 | Phase 0b/1 — file 1 of 11 (pattern-setting migration) | not started | — |
 | Phase 0b/1 — files 2–11 | not started | — |
@@ -99,6 +99,25 @@ correct behavior.
 first file migration are done rather than delegated, because their correctness
 is only visible by reading. That investment is what makes phases 2, 5, 6, and 8
 cheaply delegable later.
+
+**2026-08-01 — the ragged-row hypothesis is empirically false; the fake is
+simpler than predicted.** The protocol enumeration predicted that
+partially-filled annotation tabs return *ragged* rows and that a fake would need
+to reproduce raggedness selectively. The live capture falsifies this: all 80
+tabs are internally rectangular. The real hazard is that `get_all_values()` pads
+to the **used range**, which can be **narrower than the declared `col_count`** —
+true of 10 of 80 tabs.
+
+Consequences: the fake pads to used-range width, must allow that width to be
+less than `col_count`, and need not synthesise ragged fixtures.
+`generate_sheets.py`'s `len(row) >= N` guards are not dead code — they defend
+against short responses, which are real, not ragged ones, which are not.
+
+This is the clearest vindication so far of the rule that the fake be built from
+recorded responses rather than inference: the inference was careful, plausible,
+and wrong, and only the recording settled it. The correction is annotated inline
+at `docs/drive-protocol-surface.md` § "Subtleties most likely to be guessed
+wrong" so the falsified claim isn't left standing in a reference doc.
 
 **2026-08-01 — protocol proposal accepted as the basis for the seam.** Its six
 design stances were reviewed and none rejected. The consequential ones:
