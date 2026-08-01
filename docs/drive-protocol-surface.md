@@ -441,6 +441,50 @@ confirming that `raw=False` and the `mergeCells`/banner-row pattern are a
 the priority of getting both right in a fake/protocol rather than treating
 them as edge cases.
 
+### `coding/generate_notebooks.py` (456 lines)
+
+**Never touches gspread at all.** This is the one file in the eleven whose
+entire Drive footprint is the raw `googleapiclient` Drive v3 service
+(`drive.files()`, `drive.permissions()`) — no `Spreadsheet`/`Worksheet`
+objects anywhere, because it uploads `.ipynb` JSON blobs as opaque file
+content, not spreadsheet cells. Worth flagging structurally: a protocol
+surface built only around gspread-shaped operations (open/worksheet/update/
+batch_update) would miss this file's needs entirely — it needs generic
+"create/update a Drive file with arbitrary bytes and a mimetype" as a
+first-class operation.
+
+| Operation | Call sites | Args / return usage | Retry | R/W |
+|---|---|---|---|---|
+| `drive.files().update(fileId=, body={"name": filename}, media_body=media)` — inside `_upload_file` | `:221-225` | **Third independent implementation of "create-or-update a Drive file with content"** (alongside `drive.py`'s `_upload_planars_config` and `refresh_dropdowns.py`'s inline duplicate) — this one is at least written as a reusable helper (`_upload_file`, parameterized by filename/mimetype/folder/existing-id) rather than hardcoded to manifest.json, but it is still a third, independent piece of code doing conceptually the same thing. Also updates the file's `name` on every update call (the other two don't rename on update). Return value discarded (existing ID reused). **Not wrapped in `_with_retry`.** | No | Write |
+| `drive.files().create(body={"name":, "parents":[folder_id]}, media_body=media, fields="id")` — inside `_upload_file` | `:228-233` | Create path of the same helper; `result["id"]` is the only field consumed | No | Write |
+| `drive.permissions().create(fileId=, body={"type":"anyone","role":"reader"}, fields="id")` — `_set_viewer_permissions` | `:238-242` | **Near-duplicate of `drive.py`'s `_share_anyone_with_link`**, which is the identical call with `"role":"writer"` instead of `"reader"` — a second independent (if trivially small) reimplementation of the same permission-grant shape rather than a call to the shared helper with a `role` parameter (which `_share_anyone_with_link` doesn't currently expose, unlike `_share_with_person`, which does take `role=`). | No | Write |
+| `_get_clients()` | `:348` | Only `drive` (the Drive service) is used from the returned `(gc, drive)` pair — `gc` is discarded (`_, drive = _get_clients()`) since this file never touches gspread | — | — |
+
+**Live-object-held-across-many-ops:** none in the gspread sense — no
+`Spreadsheet`/`Worksheet` objects exist in this file at all. The closest
+analogue is `drive_config` (a local dict, not a live handle), which is read
+once, mutated in memory across the whole run (one notebook type at a time,
+four passes: contributor/validation/report/coordinator), and saved once at
+the end via `_save_drive_config` (`:432`) — a local file write, not a Drive
+call, so failure mid-run leaves Drive-uploaded notebooks whose file IDs never
+made it into `drive_config.json`, silently orphaning them from future
+`--apply` runs' update-in-place logic (they'd just get re-created under a
+new file ID next time, rather than erroring).
+
+**Subtlety flags specific to this file:**
+- This file is the strongest argument in the whole inventory for **not**
+  designing the protocol surface exclusively around Sheets-shaped operations.
+  "Upload arbitrary file content to a Drive folder, by mimetype, with
+  create-or-update-by-existing-id semantics" is a distinct primitive from
+  anything involving worksheets, and it's used by this file, `drive.py`'s
+  manifest helpers, and `refresh_dropdowns.py`'s inline duplicate — three
+  call sites, one real underlying operation, currently three implementations.
+- `_upload_file`'s update path renames the file on every call
+  (`body={"name": filename}`) while `_upload_planars_config`'s update path
+  does not touch the name at all — a real behavioral difference between the
+  two "upload or update a Drive file" implementations, not just duplicated
+  code that happens to agree.
+
 ### `coding/restructure_sheets.py` (1423 lines)
 
 The most consequential file in the inventory — archive/recreate cycles, the
