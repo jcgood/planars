@@ -15,6 +15,7 @@ from coding.make_forms import (
     _dump_diagnostics_yaml,
     _diff_diagnostics_tsv_yaml,
     _apply_yaml_diff,
+    build_element_index,
     classify_element,
     classify_biuniqueness_scope,
 )
@@ -393,3 +394,39 @@ def test_classify_biuniqueness_scope_real_schema_smoke():
     assert classify_biuniqueness_scope("I") == "filled"
     assert classify_biuniqueness_scope("he") == "filled"
     assert classify_biuniqueness_scope("PRON") == "open_category"
+
+
+# ---------------------------------------------------------------------------
+# build_element_index — Class_Type branches (issue #270's "mixed" addition)
+# ---------------------------------------------------------------------------
+
+_INDEX_HEADER = "Language_ID\tPlanar_Type\tPosition\tPosition_Type\tPosition_Name\tElements\tClass_Type\n"
+
+
+def _write_planar(tmp_path: Path, rows: str) -> Path:
+    d = tmp_path
+    path = d / "planar_lang0001.tsv"
+    path.write_text(_INDEX_HEADER + rows, encoding="utf-8")
+    return d
+
+
+def test_build_element_index_open_list_closed_mixed_all_index_the_same_way(tmp_path):
+    rows = (
+        "lang0001\tverbal\t1\tSlot\tv:a\tFOO\topen\n"
+        "lang0001\tverbal\t2\tSlot\tv:b\tbar\tlist\n"
+        "lang0001\tverbal\t3\tSlot\tv:c\tbaz\tclosed\n"
+        "lang0001\tverbal\t4\tSlot\tv:d\tNP, he, she\tmixed\n"
+    )
+    data_dir = _write_planar(tmp_path, rows)
+    index = build_element_index("planar_lang0001.tsv", data_dir)
+    assert "FOO@1" in index
+    assert "bar@2" in index
+    assert "baz@3" in index
+    assert "NP@4" in index and "he@4" in index and "she@4" in index
+
+
+def test_build_element_index_unknown_class_type_raises(tmp_path):
+    rows = "lang0001\tverbal\t1\tSlot\tv:a\tFOO\tbogus\n"
+    data_dir = _write_planar(tmp_path, rows)
+    with pytest.raises(ValueError, match="Unexpected Class_Type"):
+        build_element_index("planar_lang0001.tsv", data_dir)

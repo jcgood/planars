@@ -246,13 +246,11 @@ def build_element_index(planar_filename: str, data_dir: Path | str) -> ElementIn
         if not elements_raw:
             continue
 
-        # Both "open" and "list" class types enumerate individual elements;
-        # the distinction matters for form generation but not for indexing.
-        if class_type == "open":
-            for element_plain in _split_elements(elements_raw):
-                add_element(element_plain, pos, position_name)
-
-        elif class_type == "list":
+        # "open", "list", "closed", and "mixed" class types all enumerate
+        # individual elements the same way for indexing purposes -- the
+        # distinction between them matters for form generation and ALL-CAPS
+        # convention checking (validate_planar.py), not here.
+        if class_type in ("open", "list", "closed", "mixed"):
             for element_plain in _split_elements(elements_raw):
                 add_element(element_plain, pos, position_name)
 

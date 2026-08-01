@@ -99,6 +99,22 @@ trailing_columns: [Source, Comments]
 #   closed — a finite but not exhaustively listed set of forms
 #             Behaviour between list and open; conventions as for list.
 #
+#   mixed  — a position that genuinely accepts, as true alternatives in the
+#             same slot, either an open/productive category (ALL CAPS label)
+#             or one or more items from an exhaustively-enumerated closed
+#             lexical paradigm (lower-case, nothing left unlisted). Distinct
+#             from open's lower-case shorthand, which implies a partial,
+#             unlisted sample -- mixed's lower-case items are the complete
+#             set. No ALL-CAPS convention is enforced on either form. Use
+#             this only when the closed set is genuinely exhaustive; if it's
+#             a representative sample with more unlisted members, use open
+#             instead. Introduced for issue #270 (stan1293/synth0001's
+#             v:npsubj1, v:obj-part: NP alongside the complete pronoun
+#             paradigm). "Quantifying" degrees of mixedness (e.g. tracking
+#             which sub-parts are open vs. closed) is deliberately deferred;
+#             this is a coarse first-pass category.
+#             Example: "NP{S,A}, I, you, he, she, it, we, they"
+#
 # ALL CAPS label notation:
 #   LABEL         — plain category label
 #   LABEL{X,Y}    — LABEL restricted to roles/subtypes X and Y

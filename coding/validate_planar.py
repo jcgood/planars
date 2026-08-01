@@ -18,7 +18,7 @@ from .make_forms import classify_element, classify_biuniqueness_scope
 # ---------------------------------------------------------------------------
 
 _VALID_POSITION_TYPES = {"Zone", "Slot"}
-_VALID_CLASS_TYPES    = {"open", "list", "closed"}
+_VALID_CLASS_TYPES    = {"open", "list", "closed", "mixed"}
 _KEYSTONE_NAME        = load_planar_schema().get("keystone_position_name", "v:verbstem")
 
 _BRACE_SUFFIX_RE = re.compile(r'\{[^}]*\}$')
@@ -143,11 +143,14 @@ def validate_planar_df(df) -> List[ValidationIssue]:
     - Position_Name values are unique
     - Exactly one v:verbstem (keystone) row exists
     - Position_Type is Zone or Slot for every row
-    - Class_Type is open, list, or closed for every row
+    - Class_Type is open, list, closed, or mixed for every row
     - Element convention consistency:
         list  → warn if ALL elements are ALL CAPS (probably should be open)
         open  → warn if ANY element is not ALL CAPS; distinguish between
                 simple casing errors and collapses with existing labels
+        mixed → no ALL-CAPS convention enforced (a genuine open category and
+                an exhaustively-enumerated closed lexical set are both valid
+                in the same row; see issue #270)
     """
     issues: List[ValidationIssue] = []
 
@@ -286,5 +289,12 @@ def validate_planar_df(df) -> List[ValidationIssue]:
                         f"Type 'open' element '{t}' is not ALL CAPS — "
                         f"open positions should use ALL CAPS labels (e.g. '{normalized}')"
                     ))
+        elif ct == "mixed":
+            # A genuine open category (ALL CAPS) and an exhaustively-enumerated
+            # closed lexical set (lowercase) are both legitimate alternatives in
+            # the same row -- unlike 'open', where lowercase items are only
+            # allowed as shorthand for a partial, unlisted sample. No ALL-CAPS
+            # convention applies to either form here. See issue #270.
+            pass
 
     return issues
