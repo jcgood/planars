@@ -1,15 +1,24 @@
 #!/usr/bin/env python3
 """Project-wide integrity check for the planars annotation pipeline.
 
-Runs six sections of checks and prints a structured report:
+Runs eight sections of checks and prints a structured report:
 
-  PLANAR STRUCTURE        — validates planar_*.tsv for each language
-  DIAGNOSTICS             — validates diagnostics_*.tsv for each language
-  CODEBOOK CONSISTENCY    — cross-checks diagnostics TSVs against schema files
-  ANALYSIS CONSISTENCY    — validates analysis modules match diagnostic_criteria.yaml
-  CROSS-SHEET CONSISTENCY — checks free values agree across related annotation sheets
-  ANNOTATION SHEETS       — checks live sheet structure and dropdown drift (requires --sheets)
-  NEEDS REVIEW            — surfaces [NEEDS REVIEW] / [PLACEHOLDER] markers
+  PLANAR STRUCTURE               — validates planar_*.tsv for each language
+  DIAGNOSTICS                    — validates diagnostics_*.tsv for each language
+  CODEBOOK CONSISTENCY           — cross-checks diagnostics TSVs against schema files
+  ANALYSIS CONSISTENCY           — validates analysis modules match diagnostic_criteria.yaml
+  CROSS-SHEET CONSISTENCY        — checks free values agree across related annotation sheets
+  DEPENDENT CONSTRUCTION STALENESS — pair-row constructions (nonpermutability/general,
+                                    coreference's three) checked against their prescreening
+                                    source by element identity AND, since issue #241, by
+                                    position number: a pair-row can be element-identity-correct
+                                    and still reference a position number superseded by a
+                                    structural change elsewhere in the planar (see
+                                    _find_stale_position_cells/_suggest_position_remap) --
+                                    invisible to element-set comparison alone. When recoverable,
+                                    prints ready-to-use --pos-remap flags.
+  ANNOTATION SHEETS              — checks live sheet structure and dropdown drift (requires --sheets)
+  NEEDS REVIEW                   — surfaces [NEEDS REVIEW] / [PLACEHOLDER] markers
 
 Exit code 0 if no errors; 1 if any errors (warnings do not fail).
 
@@ -537,6 +546,81 @@ def _section_cross_sheet_consistency(lang_ids: List[str]) -> Tuple[int, int]:
     return 0, total_w
 
 
+def _planar_position_names(lang_id: str) -> dict:
+    """{Position (int) -> Position_Name} for a language's current planar structure."""
+    path = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
+    if not path.exists():
+        return {}
+    df = pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False)
+    out = {}
+    for _, row in df.iterrows():
+        try:
+            out[int(row["Position"])] = row["Position_Name"].strip()
+        except (ValueError, KeyError):
+            continue
+    return out
+
+
+def _find_stale_position_cells(
+    df: pd.DataFrame, position_names: dict, cols: Tuple[str, ...] = ("Position_A", "Position_B")
+) -> List[Tuple[int, str]]:
+    """Return sorted, deduplicated (old_num, old_name) pairs for every
+    Position_A/Position_B cell (format "N (name)") whose embedded number no
+    longer names the same position in the current planar structure.
+
+    This catches a class of drift that pure element-identity comparison
+    (source_set/dep_set above) cannot see at all: a pair-row can reference an
+    element that's still validly in scope, at a position number that's since
+    been superseded by a structural insertion/deletion elsewhere in the
+    planar -- the row looks fine by element identity, but silently points at
+    the wrong (or a since-repurposed) position. Discovered 2026-07-31 when
+    stan1293's coreference pairs turned out to reference v:obj-part/v:rec by
+    position numbers that predate v:obj-R's insertion, apparently since the
+    sheets were first generated -- invisible to every check before this one,
+    including the guard in generate_sheets.py's _regen_construction, which
+    only surfaces it as a side effect of someone actually trying to
+    regenerate (see issue #241 discussion). This is the proactive version.
+    """
+    from .restructure_sheets import _parse_position_cell
+    stale = set()
+    for col in cols:
+        if col not in df.columns:
+            continue
+        for val in df[col]:
+            parsed = _parse_position_cell(val)
+            if parsed is None:
+                continue
+            num, name = parsed
+            if position_names.get(num) != name:
+                stale.add((num, name))
+    return sorted(stale)
+
+
+def _suggest_position_remap(
+    stale_cells: List[Tuple[int, str]], position_names: dict
+) -> Tuple[dict, List[Tuple[int, str]]]:
+    """Split stale (old_num, old_name) pairs into a recoverable remap and an
+    unresolvable leftover.
+
+    remap: {old_num: new_num} wherever old_name still exists somewhere in the
+    current planar (just renumbered) -- directly usable as --pos-remap flags.
+    unresolvable: (old_num, old_name) pairs whose name isn't in the current
+    planar at all -- not a renumbering, the position was genuinely renamed or
+    removed; --pos-remap can't fix these, needs coordinator judgment
+    (--rename-map, or accept the loss via --confirm-drop).
+    """
+    name_to_current_num = {name: num for num, name in position_names.items()}
+    remap: dict = {}
+    unresolvable: List[Tuple[int, str]] = []
+    for old_num, old_name in stale_cells:
+        new_num = name_to_current_num.get(old_name)
+        if new_num is not None:
+            remap[old_num] = new_num
+        else:
+            unresolvable.append((old_num, old_name))
+    return remap, unresolvable
+
+
 def _section_dependent_construction_staleness(
     lang_ids: List[str],
     diag_classes: dict,
@@ -648,7 +732,16 @@ def _section_dependent_construction_staleness(
                 removed = dep_set - source_set
                 added   = source_set - dep_set
 
-                if removed or added:
+                # Position-number drift: independent of element-identity comparison
+                # above (see _find_stale_position_cells's docstring) -- a pair-row
+                # can be element-identity-correct and still reference the wrong
+                # position number if the planar structure changed shape (insertion/
+                # deletion) since the pair-row was last generated.
+                position_names = _planar_position_names(lang_id)
+                stale_cells = _find_stale_position_cells(dep_df, position_names)
+                pos_remap, pos_unresolvable = _suggest_position_remap(stale_cells, position_names)
+
+                if removed or added or pos_remap or pos_unresolvable:
                     print(_fail(label))
                     if removed:
                         preview = sorted(removed)[:5]
@@ -658,8 +751,25 @@ def _section_dependent_construction_staleness(
                         preview = sorted(added)[:5]
                         suffix = " …" if len(added) > 5 else ""
                         print(_sub(f"now in scope but absent from pairs ({len(added)}): {preview}{suffix}"))
-                    print(_sub(f"→ Run: python -m coding generate-sheets --lang {lang_id} "
-                               f"--regen-construction {cls_name}:{dep_name}"))
+                    if pos_remap:
+                        remap_preview = ", ".join(f"{o}→{n}" for o, n in sorted(pos_remap.items())[:5])
+                        suffix = " …" if len(pos_remap) > 5 else ""
+                        print(_sub(f"position number(s) stale, renumbered since last generated "
+                                   f"({len(pos_remap)}): {remap_preview}{suffix}"))
+                    if pos_unresolvable:
+                        preview = sorted(pos_unresolvable)[:5]
+                        suffix = " …" if len(pos_unresolvable) > 5 else ""
+                        print(_sub(f"position number(s) stale, no matching name in current planar "
+                                   f"— not fixable by --pos-remap ({len(pos_unresolvable)}): "
+                                   f"{preview}{suffix}"))
+                    if pos_remap and not (removed or added or pos_unresolvable):
+                        remap_flags = " ".join(f"--pos-remap {o}:{n}" for o, n in sorted(pos_remap.items()))
+                        print(_sub(f"→ Run: python -m coding generate-sheets --lang {lang_id} "
+                                   f"--regen-construction {cls_name}:{dep_name} {remap_flags}"))
+                    else:
+                        print(_sub(f"→ Run: python -m coding generate-sheets --lang {lang_id} "
+                                   f"--regen-construction {cls_name}:{dep_name}"
+                                   + (" (add --pos-remap flags first — see above)" if pos_remap else "")))
                     total_e += 1
                 else:
                     print(_ok(label))

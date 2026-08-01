@@ -1,19 +1,16 @@
 English Coreference Reflexivization
 ===================================
 
-NOTE: Some pairs have unknown elements.
-  unknown_elements: ["Element_A 'PRON{P,T}' not in planar"]
-
 Keystone position: 30 (v:verbstem)
 
 Binder positions (antecedent): [2, 5, 34]
-Bindee positions (anaphor):    [33, 34]
+Bindee positions (anaphor):    [34, 35]
 
 Binder-only positions (structurally high): [2, 5]
-Bindee-only positions (structurally low):  [33]
+Bindee-only positions (structurally low):  [35]
 Shared positions (either role):            [34]
 
 Binder domain (strict): positions 30–30  (v:verbstem → v:verbstem)
 Binder domain (loose):  positions 2–34  (v:frontedXP → v:obj-part)
 Bindee domain (strict): positions 30–30  (v:verbstem → v:verbstem)
-Bindee domain (loose):  positions 30–34  (v:verbstem → v:obj-part)
+Bindee domain (loose):  positions 30–35  (v:verbstem → v:rec)

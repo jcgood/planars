@@ -4,13 +4,13 @@ English Coreference Pronominalization
 Keystone position: 30 (v:verbstem)
 
 Binder positions (antecedent): [27]
-Bindee positions (anaphor):    [33]
+Bindee positions (anaphor):    [34]
 
 Binder-only positions (structurally high): [27]
-Bindee-only positions (structurally low):  [33]
+Bindee-only positions (structurally low):  [34]
 Shared positions (either role):            []
 
 Binder domain (strict): positions 30–30  (v:verbstem → v:verbstem)
 Binder domain (loose):  positions 27–30  (v:nominal → v:verbstem)
 Bindee domain (strict): positions 30–30  (v:verbstem → v:verbstem)
-Bindee domain (loose):  positions 30–33  (v:verbstem → v:obj-R)
+Bindee domain (loose):  positions 30–34  (v:verbstem → v:obj-part)

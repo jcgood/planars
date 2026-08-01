@@ -3,6 +3,9 @@ English Nonpermutability General
 
 WARNING: general.tsv is out of sync with element_prescreening.tsv — run python -m coding generate-sheets --lang stan1293
 
+NOTE: Some pairs have unannotated scopal values.
+  scopal: ['AD-S × her', 'AD-S × him', 'AD-S × it', 'AD-S × me', 'AD-S × them'] … (112 total)
+
 Keystone position: 30 (v:verbstem)
 
 Strictly non-permutable positions (structural): [2, 12, 27]

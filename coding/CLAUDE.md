@@ -23,7 +23,7 @@
 - `generate_notebooks.py`: Generates per-language contributor, validation, and report notebooks, plus the coordinator notebook.
 - `generate_reports.py`: Generates and uploads `report_{lang_id}.pdf` directly (no Colab; used by nightly GitHub Action).
 - `check_codebook.py`: Consistency check between diagnostic_criteria.yaml, diagnostic_classes.yaml, analysis modules, and diagnostics_{lang_id}.tsv.
-- `integrity_check.py`: Full project-wide health report; `--lang` restricts per-language sections; `--sheets` includes live Sheets structural validation.
+- `integrity_check.py`: Full project-wide health report; `--lang` restricts per-language sections; `--sheets` includes live Sheets structural validation. Its DEPENDENT CONSTRUCTION STALENESS section checks pair-row constructions against their prescreening source two ways: element identity (pre-existing) and, since issue #241, position number (`_find_stale_position_cells`/`_suggest_position_remap`/`_planar_position_names`) — a pair-row can be element-identity-correct and still reference a position number superseded by a structural change elsewhere in the planar, invisible to element-set comparison alone (discovered when stan1293's coreference pairs turned out to reference pre-`v:obj-R`-insertion position numbers, apparently since the sheets were first generated). When recoverable, prints ready-to-use `--pos-remap` flags for `generate-sheets --regen-construction`.
 - `glottolog.py`: Fetches and caches Glottolog metadata to `glottolog_cache.json` and `schemas/languages.yaml`; provides `is_valid_format()` and `cached_entry()`.
 - `populate_sheets.py`: One-time utility for uploading legacy TSV data.
 - `setup_root_folder.py`: One-time Drive folder setup (run once after first `generate-sheets`).
