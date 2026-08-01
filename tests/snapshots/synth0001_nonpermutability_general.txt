@@ -4,13 +4,13 @@ Synth0001 Nonpermutability General
 WARNING: general.tsv is out of sync with element_prescreening.tsv — run python -m coding generate-sheets --lang synth0001 --regen-construction nonpermutability:general
 
 NOTE: Some pairs have unannotated scopal values.
-  scopal: ['AD-S × AD-VP', 'AD-S × KEYSTONE', 'AD-S × [-ed]', 'AD-S × [cata-]', 'AD-S × [de-]'] … (231 total)
+  scopal: ['AD-S × [-ed]', 'AD-S × [cata-]', 'AD-S × [de-]', 'AD-S × [intra-]', 'AD-S × [ob-]'] … (208 total)
 
 Keystone position: 30 (v:verbstem)
 
 Strictly non-permutable positions (structural): [2, 12, 27]
-Free-permutable positions (scopal=n pairs):     []
+Free-permutable positions (scopal=n pairs):     [3, 6, 7, 8, 9, 10, 11, 14, 15, 16, 19, 20, 21, 23, 24, 25, 36, 38]
 
 Strict non-permutable span:           positions 30–30  (v:verbstem → v:verbstem)
-Minimal flexible non-permutable span: positions 1–38  (v:leftedge → v:rightedge)
-Maximal flexible non-permutable span: positions 1–38  (v:leftedge → v:rightedge)
+Minimal flexible non-permutable span: positions 26–35  (v:ad-V2 → v:rec)
+Maximal flexible non-permutable span: positions 1–37  (v:leftedge → v:PP)

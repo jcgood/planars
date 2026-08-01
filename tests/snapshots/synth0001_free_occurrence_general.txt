@@ -2,11 +2,11 @@ Synth0001 Free Occurrence General
 =================================
 
 NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
-  free: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (141 total)
+  free: ['he', 'I', 'it', 'she', 'they'] … (15 total)
 
 Keystone position: 30 (v:verbstem)
 
-Free-occurrence-internal positions: [30]
+Free-occurrence-internal positions: [3, 4, 8, 18, 20, 22, 28, 29, 30, 31, 34]
 
 Minimal free occurrence span: positions 30–30  (v:verbstem → v:verbstem)
-Maximal free occurrence span: positions 30–30  (v:verbstem → v:verbstem)
+Maximal free occurrence span: positions 3–34  (v:frontedauxiliary → v:obj-part)
