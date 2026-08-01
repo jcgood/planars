@@ -326,6 +326,37 @@ cells pink) to reproduce the visible end state correctly.
   discussion, since it means not every command needs (or should default to)
   a live read path even where one exists.
 
+### `coding/refresh_dropdowns.py` (200 lines)
+
+Smallest of the eleven files — refreshes dropdown validation only, no data or
+structural changes. Notable mainly for **not** reusing the shared manifest-
+upload helper.
+
+| Operation | Call sites | Args / return usage | Retry | R/W |
+|---|---|---|---|---|
+| `gc.open_by_key(spreadsheet_id)` — **bare, not via `_open_spreadsheet`** | `:128` | Third distinct way of opening a spreadsheet seen in the inventory: `_open_spreadsheet(gc, id)` (wrapped, most files), bare `gc.open_by_key(...)` unwrapped (`generate_sheets.py:1800`), and here, bare `gc.open_by_key` wrapped only in a local `try/except Exception` that logs and `continue`s rather than retrying. **Not wrapped in `_with_retry` at all.** | No | Read |
+| `ss.worksheet(name)` | `:161` (`_with_retry(lambda c=construction: ss.worksheet(c))`, wrapped, but catches bare `Exception` rather than `gspread.WorksheetNotFound` specifically — the only file in the inventory to do so) | Broader exception handling than every other call site's `except gspread.WorksheetNotFound` idiom — would also silently swallow, e.g., a network error as "tab not found" | Wrapped, but with the wrong exception granularity | Read |
+| `ws.row_values(1)` | `:166` (wrapped) | Feeds `_detect_col_start`, a **new heuristic** not seen elsewhere: scans the header for the first column matching a name in `param_names`, falling back to a hardcoded `3` (standard element-row layout) if none match — i.e. this file derives `col_start` dynamically per-tab rather than assuming a fixed offset the way `generate_sheets.py`/`update_sheets.py` do. | Wrapped | Read |
+| `ws.row_count` | `:169` | Cached property, same caveat as `sync_params.py`'s use — feeds `num_rows` for the validation range | N/A | Read (cached) |
+| `_format_and_validate(ws, ...)` (generate_sheets.py) | `:170` | Reused directly; see that file's table for the underlying `batch_update`/`setDataValidation` shape | Inherited | Write |
+| `drive.files().update(fileId=manifest_file_id, media_body=MediaIoBaseUpload(...))` — **independent, fourth manifest-write implementation** | `:192-195` | **Does not call `_upload_planars_config`.** Reimplements the same "upload JSON as manifest.json" operation inline, using `MediaIoBaseUpload` directly, duplicating `drive.py`'s `_upload_planars_config` logic (minus its key-reordering step and its create-if-missing fallback — this version has no create path at all; if `manifest_file_id` is unset it just prints a warning and gives up, `:197-198`). This is a clear "same fact, no single owner" instance per the design doc's diagnosis: the manifest-upload operation now has **two** independent implementations in the codebase (`drive.py`'s and this one), not counting the read side. **Not wrapped in `_with_retry`.** | No | Write |
+
+**Live-object-held-across-many-ops:** `ss` (from bare `gc.open_by_key` at
+`:128`) is held across the per-construction loop for one class, same shape as
+other files, but opened without the shared retry helper.
+
+**Subtlety flags specific to this file:**
+- The manifest-upload duplication here is the clearest concrete instance in
+  the whole inventory of the "replicated fact with no single owner" pattern
+  `data-layer-design.md` opens with — worth flagging prominently for whoever
+  reviews this document, since it's an actual latent bug risk (this path
+  skips `_upload_planars_config`'s key-reordering and has no create-if-missing
+  fallback) as well as a protocol-design argument.
+- `except Exception` (not `gspread.WorksheetNotFound`) at `:161-164` means a
+  transient API error here is currently indistinguishable from "tab genuinely
+  doesn't exist" — a fake built to distinguish these cases correctly would
+  expose that this file's error handling is looser than its siblings.
+
 ### `coding/restructure_sheets.py` (1423 lines)
 
 The most consequential file in the inventory — archive/recreate cycles, the
