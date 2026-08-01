@@ -1,6 +1,8 @@
 # Data layer: implementation plan
 
-**Status:** not started. Written 2026-08-01.
+**Status:** in progress — see [data-layer-progress.md](data-layer-progress.md)
+for what is done, what is in flight, and what to do next. That file is the
+authoritative state record; this one is the spec.
 **Rationale:** [data-layer-design.md](data-layer-design.md) — read that first.
 **Tracking issue:** #271
 
