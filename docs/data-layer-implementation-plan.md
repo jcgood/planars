@@ -32,57 +32,80 @@ agent drafts and presents options; Jeff decides. All others are fully delegable.
 
 ---
 
-## Phase 0 — Drive seam, state capture, and a fake backend
+## Phases 0 and 1 — seam, fake, and characterization tests (interleaved)
 
-**Goal.** Make every Drive-touching command runnable end-to-end with no network.
+> **Ordering note.** These two phases cannot be run in sequence. Golden tests
+> require the seam (so commands can run offline); safely migrating callers to
+> the seam requires golden tests (to prove behavior didn't change). The
+> resolution is to build the infrastructure once, then migrate callers **one
+> file at a time, capturing that file's goldens immediately after each
+> migration**, so each file is locked before the next is touched. Do not
+> attempt "migrate all eleven, then write tests."
 
-**Why.** Eleven files in `coding/` currently call gspread directly
-(`generate_sheets`, `import_sheets`, `update_sheets`, `sync_params`,
-`restructure_sheets`, `validate_coding`, `refresh_dropdowns`,
-`generate_status_sheet`, `generate_biuniqueness_stage1_sheet`,
-`generate_notebooks`, `generate_reports`). There are no end-to-end tests for any
-command that touches Drive — which is exactly where every serious incident has
-occurred. Nothing else in this plan can be verified until this exists.
+### Phase 0a — protocol, capture, and fake *(no caller changes)*
+
+**Goal.** Build the offline infrastructure without modifying any command.
+
+**Why.** Eleven files in `coding/` call gspread directly (`generate_sheets`,
+`import_sheets`, `update_sheets`, `sync_params`, `restructure_sheets`,
+`validate_coding`, `refresh_dropdowns`, `generate_status_sheet`,
+`generate_biuniqueness_stage1_sheet`, `generate_notebooks`,
+`generate_reports`). There are no end-to-end tests for any command that touches
+Drive — exactly where every serious incident has occurred. Nothing else in this
+plan is verifiable until this exists.
 
 **Scope.**
 - Define a narrow backend protocol covering only the operations actually used
   (open spreadsheet, list/add/delete worksheets, get values, update range,
   batch_update, set validation, format cells, reorder tabs, Drive file
-  create/move/list/permissions).
-- Route all eleven files through it. Keep `_with_retry` semantics.
+  create/move/list/permissions). Derive the list by reading the eleven files —
+  do not design it speculatively.
 - Add `python -m coding capture-drive-state` — **read-only** — dumping live
   structure and content for all languages to versioned fixtures.
-- Implement an in-memory fake backend that serves those fixtures and records
-  all mutations for assertion.
+- Implement an in-memory fake serving those fixtures and recording all
+  mutations for assertion.
 
-**Done when.** Every command in `coding/` can be invoked in a test against the
-fake, including `--apply` paths, with no network access. `capture-drive-state`
-has been run once and its fixtures committed.
+**Build the fake from recorded real responses, not from the gspread docs.**
+Capture actual return values during a read-only run and have the fake replay
+them. Its subtleties — 1-indexing, `get_all_values` padding, `update` range
+semantics, what `worksheets()` returns — are exactly what gets guessed wrong,
+and a wrong fake silently invalidates every test built on top of it.
 
-**Non-goals.** No behavior changes. No refactoring of command logic. The fake
-need not be a faithful Google emulator — only faithful for operations used.
+**Done when.** Fixtures are captured and committed; the fake serves them; a
+smoke test exercises every protocol operation against the fake. No command has
+been modified.
 
----
+**Non-goals.** No caller changes. The fake need not be a faithful Google
+emulator — only faithful for operations actually used.
 
-## Phase 1 — Characterization (golden-master) tests
+### Phase 0b/1 — migrate callers and capture goldens, one file at a time
 
-**Goal.** Lock in current behavior byte-for-byte before anything changes.
+**Goal.** Route each file through the seam and lock its behavior, incrementally.
 
-**Why.** This is the mechanism that guarantees constraint #2 (Adam's data). The
-standard technique for safely refactoring untested code is to capture existing
-outputs as golden files first, then assert they never change.
+**Per-file procedure — repeat for each of the eleven:**
 
-**Scope.** For every command, against Phase 0 fixtures, capture as golden files:
-generated sheet structures (headers, row contents, dropdown validation, tab
-order), TSV outputs, manifest states, and the full mutation log the fake
-recorded.
+1. **Before migrating**, run that file's dry-run/read-only paths against real
+   Drive and save the output.
+2. Migrate the file to the seam. Preserve `_with_retry` semantics exactly.
+3. Run the same dry-run paths against the fake (serving fixtures captured from
+   the same Drive state) and assert the output matches step 1. This is the
+   check that the migration didn't change read behavior.
+4. Capture goldens for all of that file's commands, including `--apply` paths:
+   generated sheet structures (headers, row contents, dropdown validation, tab
+   order), TSV outputs, manifest states, and the fake's full mutation log.
+5. Have a human review the mutation log for `--apply` paths once, before it
+   becomes a golden. Write paths have no pre-migration baseline to diff
+   against, so this review is the only thing standing between a migration bug
+   and it being enshrined as "correct."
 
-**Done when.** A test asserts each command's complete output against its golden
-file, and deliberately perturbing any generator makes a golden test fail.
+**Done when.** All eleven files route through the seam; every command runs
+end-to-end against the fake with no network; each command has goldens; and
+deliberately perturbing any generator makes a golden test fail.
 
-**Non-goals.** Do not fix anything a golden test reveals as odd. Record current
-behavior, including behavior that looks wrong; note oddities in the tracking
-issue for separate triage.
+**Non-goals.** No behavior changes. No refactoring of command logic beyond the
+call-site substitution. Do not fix anything a golden reveals as odd — record
+current behavior including behavior that looks wrong, and note oddities in the
+tracking issue for separate triage.
 
 ---
 
@@ -163,6 +186,12 @@ Absorb the operational knowledge currently in `CLAUDE.md` and
 command has one (so a new command cannot be added without declaring itself);
 and the narrative topology in `CLAUDE.md` is replaced by a pointer to generated
 output.
+
+**Coordinator reviews two things, not one:** authority assignments *and every
+idempotency claim*. A false "this operation is idempotent" is load-bearing —
+Phases 7 and 8 build recovery logic on top of those claims, so a wrong one
+produces recovery that corrupts rather than repairs. Every idempotency claim
+must either be reviewed or have a Phase 8 test proving it.
 
 **Non-goals.** Do not yet *enforce* preconditions at runtime — that is Phase 5.
 
@@ -265,12 +294,52 @@ path is removed, and a full daily refresh cycle completes clean.
 
 ---
 
+## Working with agents
+
+**Phases are not work units.** Phase 0b/1 is eleven files; Phase 2 is the whole
+of `coding/` and `planars/`. Decompose into units of roughly one to three files
+before handing anything off. Each unit needs its own scope, done-criteria, and
+non-goals — a unit that can't state its own done-criteria isn't ready to
+delegate.
+
+**Delegate in proportion to machine-verifiability, not to how routine the work
+feels.** The cost of delegation is review, and review only gets cheap when the
+done-criteria are checkable by running something rather than by reading a diff.
+Phase 8 (does the test exist, does it pass, does removing the guard make it
+fail) is close to free to verify. Phase 0a is not — a subtly wrong fake looks
+correct on inspection and invalidates everything downstream. Supervise where
+correctness is only visible by reading.
+
+**This inverts the usual instinct.** Rather than delegating the boring
+foundation and supervising the interesting parts, invest supervision *early* —
+0a and the first two or three file migrations — because that is what buys
+cheap, aggressive delegation for phases 2, 5, 6, and 8 afterward. Verification
+machinery is the thing that makes delegation pay.
+
+**Every agent starts cold.** Point briefs at specific files, not at "the docs" —
+this repo's `CLAUDE.md` files are large and an agent that reads everything
+spends its budget before starting. A useful brief names: the one phase section
+it implements, `docs/data-layer-design.md` for rationale, the specific source
+files in scope, and the non-goals.
+
+**Constrain writes.** Agents on phases 0–8 should not push to `main`, commit to
+`coded_data/`, or make any live Drive call other than the read-only
+`capture-drive-state`. Worktree isolation is a good default so work can be
+reviewed before it lands. Note that `coded_data/` is a separate nested repo that
+the outer repo ignores, so a worktree may not have it — and much of the existing
+test suite reads it. Verify how that behaves on the first agent run before
+assuming a green suite means anything.
+
+---
+
 ## Sequencing notes
 
-- Phases 0–2 are pure infrastructure, zero risk, fully delegable, and can start
-  immediately.
+- Phases 0–2 are pure infrastructure and zero risk to real data, and can start
+  immediately. Note that "zero risk" is not the same as "fully delegable" —
+  see *Working with agents* above; 0a in particular warrants close review.
+- Phase 2 is independent of 0 and 1 and can run concurrently with them.
 - Phase 3 is the highest-value and highest-risk phase; it is deliberately gated
-  behind Phase 1's golden tests.
+  behind the goldens from 0b/1.
 - Phases 4 and 6 can proceed in parallel once 0–2 are done.
 - Phase 9 must not begin until 8 is complete.
 - Provenance capture (a stated top-tier value with no current mechanism) should
