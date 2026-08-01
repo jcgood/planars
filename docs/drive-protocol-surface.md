@@ -357,6 +357,63 @@ other files, but opened without the shared retry helper.
   doesn't exist" — a fake built to distinguish these cases correctly would
   expose that this file's error handling is looser than its siblings.
 
+### `coding/generate_status_sheet.py` (527 lines)
+
+Builds a read-only, locked status dashboard sheet per language, in a
+freestanding Drive folder chosen specifically to route around an inherited-
+permission limitation of the Sheets/Drive API (see module docstring,
+`:11-21` — a genuine API constraint, not a design preference: "Google's API
+refuses to remove an *inherited* permission at a child level"). Introduces
+several operations not seen elsewhere: `update_title`, `resize`, `mergeCells`,
+and the `raw=False` argument to `update()`.
+
+| Operation | Call sites | Args / return usage | Retry | R/W |
+|---|---|---|---|---|
+| `drive.files().list(q=..., fields="files(id)")` | `:284-291` (`_get_or_create_status_spreadsheet`) | **Third** independent "find by name in folder" Drive query in the inventory (alongside `drive.py`'s `_get_or_create_folder` and `restructure_sheets.py`'s `_get_or_create_subfolder`) — same shape, requesting only `id` this time (not even `name`). Read, then `_open_spreadsheet` if found. | No | Read |
+| `gc.create(name)` / `_move_to_folder(...)` | `:294-295` | Create-if-not-found path of the same helper | No | Write |
+| `drive.permissions().list(fileId=, fields="permissions(emailAddress)")` | `:304-306` (`_already_shared`) | **Second** distinct use of `permissions().list` in the inventory (first is `drive.py`'s `_remove_anyone_permission`, which requests `permissions(id,type)`); this one requests `permissions(emailAddress)` instead — same underlying call, different `fields` projection, called to avoid piling up duplicate share grants on repeated `--apply` runs | No | Read |
+| `_remove_anyone_permission` / `_share_with_person` (drive.py, via local `_lock_read_only` wrapper) | `:310-314`, called at `:465, :501` | Standard reuse | No (inherited) | Write |
+| `ws = ss.sheet1` | `:347` (`_with_retry(lambda: ss.sheet1)`) | | Wrapped | Read |
+| `ws.update_title("Status")` — **new operation** | `:349` (`_with_retry(lambda: ws.update_title("Status"))`) | Renames the default `Sheet1` tab in place rather than creating/deleting a differently-named tab — the only file in the inventory that renames a tab instead of add/delete. Conditional on `ws.title != "Status"` so it's a no-op on re-runs. | Wrapped | Write |
+| `ws.resize(rows=, cols=)` — **new operation** | `:368` (`_with_retry(lambda: ws.resize(rows=max(len(all_rows)+2, 10), cols=n_cols))`) | Explicit grid resize as its own call, called *before* `update()` writes values — contrast with `generate_sheets.py`'s `_reset_worksheet`, which folds the equivalent resize into the same `batch_update` that also clears formatting; here it's a separate gspread convenience method. | Wrapped | Write |
+| `ws.update(all_rows, "A1", raw=False)` — **new argument, `raw=False`** | `:369` (`_with_retry(lambda: ws.update(all_rows, "A1", raw=False))`) | **Every other `update()` call site in the inventory omits `raw`** (gspread default `raw=True`, values written literally as strings). Here `raw=False` is required so that Sheets parses the embedded `=HYPERLINK(...)` formula strings in `data_rows`/`banner` as actual formulas rather than literal text — a real, load-bearing difference in write semantics that a fake must model (does the fake even distinguish formula-string cells from literal-string cells, or store both as opaque strings?). Silently getting this wrong wouldn't error, it would just make the sheet display broken raw formula text — the kind of divergence that's easy to miss without a byte-level golden. | Wrapped | Write |
+| `spreadsheet.batch_update({"requests": [...]})` | `:434` (`_with_retry(lambda: ss.batch_update({"requests": requests}))`) | Largest single request list in the inventory: freeze, bold (x2), **`mergeCells`** (new request type, once per banner row), column-width `updateDimensionProperties` (x3), `wrapStrategy` `repeatCell`, plus one `repeatCell` background-color request **per data row** (`:423-432`, one request per construction row, similar in spirit to `validate_coding.py`'s per-cell `updateCells` but using `repeatCell` on a 1-row range instead) — potentially dozens of requests in one call for a language with many constructions, still one round trip. | Wrapped | Write |
+| `_get_or_create_folder(drive, name)` (drive.py, no `parent_id`) | `:463` | **The only call site in the inventory that omits `parent_id`**, i.e. searches/creates at Drive-root level rather than inside a language folder — deliberately, per the module docstring's explanation of the inherited-permission problem | No (inherited) | Read then maybe Write |
+| `ss.worksheet(construction)` | `:244` (`_gather_status_rows`, wrapped, catches `WorksheetNotFound`) | Standard idiom | Wrapped | Read |
+| `ws.get_all_values()` | `:257` (`_with_retry(lambda w=ws: w.get_all_values())`) | Feeds `annotation_status()` (from `validate_coding.py`) for the completeness percentage — this is the one file that *does* read live cell values from Sheets for a completeness computation (contrast `validate_coding.py`, which deliberately reads local TSVs instead) | Wrapped | Read |
+| `_open_spreadsheet(gc, id)` | `:233` | **Cached per class_name within one language's processing** (`open_spreadsheets` dict, `:218, :231-236`) so a class spreadsheet shared by multiple constructions is opened only once — the one file in the inventory that explicitly deduplicates opens within a single run, worth noting as a pattern other files could adopt | Yes (inherited) | Read |
+| `_upload_planars_config(...)` | `:520` | End-of-run manifest sync (`status_sheet_url` field), gated on `manifest_dirty` | No (inherited) | Write |
+
+**Live-object-held-across-many-ops:** `ss` per status spreadsheet is held from
+find-or-create through the single `_write_status_sheet` call (resize → update
+values → one big batch_update) → the lock-read-only permission calls — a
+shorter chain than `restructure_sheets.py`'s but still a create-then-multi-
+write-then-permission sequence with no rollback if it fails partway (lower
+stakes here since there's no annotation data at risk, only a regenerable
+dashboard).
+
+**Subtlety flags specific to this file:**
+- `raw=False` on `update()` is the single most easily-missed argument
+  difference in the whole inventory — it changes what the write *means*
+  (formula vs. literal string), not just its target range, and every other
+  call site in the other ten files omits it. A protocol method signature that
+  doesn't expose a raw/formula distinction will not be able to express this
+  call correctly.
+- `ws.resize()` as a standalone gspread method (vs. folding grid-size changes
+  into a `batch_update` `updateSheetProperties` request, as `generate_sheets.py`
+  does) is a second gspread-convenience-method-vs-raw-request-object split,
+  alongside `update_sheets.py`'s `insert_cols`/`update_cell` and
+  `sync_params.py`'s `row_values`. A protocol design should decide once
+  whether to model these as convenience calls or normalize everything through
+  raw batch requests — the current code does both, inconsistently, depending
+  on which file/author touched it.
+- Link construction (`f"{ss.url}#gid={ws.id}"`, `:250`) treats `ws.id` (the
+  Sheets API's internal numeric sheet ID) as directly usable in a URL
+  fragment — correct for real Google Sheets, but a detail a fake's worksheet
+  IDs need to preserve if anything downstream ever parses these links (nothing
+  currently does, but the manifest's `status_sheet_url` is written verbatim to
+  Drive for Adam to click).
+
 ### `coding/restructure_sheets.py` (1423 lines)
 
 The most consequential file in the inventory — archive/recreate cycles, the
