@@ -268,3 +268,42 @@
       (_stale_manifest_param_values), run daily via data-refresh.yml,
       surfaced as a generic integrity-error rather than a dedicated label
       the way stale-manifest is.
+
+- id: pair_row_position_numbers
+  description: the position NUMBER embedded in a pair-row construction's Position_A/Position_B cells (format "N (name)") must match the current planar structure's numbering for that position name
+  locations:
+    - {entity: annotation_sheet, detail: "live pair-row tabs -- nonpermutability/general is Element_A/Element_B-only and unaffected; coreference's three constructions use Element_A + Position_A/Position_B/Direction and are the ones exposed"}
+    - {entity: construction_tsv, detail: "coded_data/{lang}/coreference/{reflexivization,pronominalization,np_reference}.tsv -- local copies of the above"}
+    - {entity: planar_tsv, detail: "coded_data/{lang}/lang_setup/planar_{lang_id}.tsv -- current source of truth for which number a position name has"}
+  authoritative: planar_tsv
+  cascade:
+    direction: manual
+    mechanism: >-
+      restructure-sheets --rename-map cascades a position NAME change into
+      pair-row Position_A/Position_B cells automatically
+      (_cascade_rename_pair_tsv/_cascade_rename_pair_tab). Nothing cascades
+      a position NUMBER change from an insertion or deletion elsewhere in
+      the planar shifting everything after it -- that requires a
+      coordinator to explicitly pass --pos-remap OLD:NEW to
+      generate-sheets --regen-construction, and until issue #241 nothing
+      told them to, or what the correct mapping was.
+  drift_risk:
+    possible: true
+    note: >-
+      Discovered 2026-07-31: stan1293's coreference pair-rows (including a
+      cited Lasnik reflexivization judgment) referenced v:obj-part/v:rec by
+      position numbers that predate v:obj-R's insertion into the planar --
+      apparently since the coreference sheets were first generated, since
+      v:obj-R has existed in every tracked planar_stan1293.tsv commit back
+      to this repo's March 2026 start. 53 annotated pair-rows were one
+      --regen-construction away from being silently dropped with no trace
+      (see #241's data-loss guard, which is what surfaced this) before it
+      was caught and recovered via --pos-remap. synth0001 has the
+      identical drift as of this writing (low-stakes, no real annotation
+      to lose).
+    caught_by: >-
+      integrity-check's DEPENDENT CONSTRUCTION STALENESS section, since
+      issue #241 (_find_stale_position_cells/_suggest_position_remap).
+      Before that, nothing checked this at all -- element-set comparison
+      alone cannot see it, since the element itself is often still validly
+      in scope, just paired via a stale position number.
