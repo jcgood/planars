@@ -104,6 +104,14 @@ first file migration are done rather than delegated, because their correctness
 is only visible by reading. That investment is what makes phases 2, 5, 6, and 8
 cheaply delegable later.
 
+**2026-08-01 — agent briefs must require incremental *commits*, not just
+incremental writes.** The protocol-enumeration agent stalled roughly three
+files into an eleven-file pass with all of its analysis uncommitted in the
+working tree. It was resumed rather than relaunched (context intact, far
+cheaper) and instructed to commit per file. Telling an agent to "write
+incrementally" is not enough — unstaged work is not recoverable work. Folded
+into the plan's *Working with agents* section for all future briefs.
+
 ---
 
 ## Open questions for Jeff

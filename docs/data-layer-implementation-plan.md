@@ -332,6 +332,19 @@ the outer repo ignores, so a worktree may not have it — and much of the existi
 test suite reads it. Verify how that behaves on the first agent run before
 assuming a green suite means anything.
 
+**Require incremental commits in the brief.** Instruct agents to commit each
+unit of output as it is produced, not once at the end, and to ensure any stop
+leaves work committed rather than sitting in the working tree. Agents can pause
+or fail mid-task with substantial analysis done and nothing durable — this
+happened on the very first agent run of this plan, which stalled several files
+into an eleven-file enumeration with everything uncommitted. "Write
+incrementally" is not sufficient on its own; unstaged files are not recoverable
+work.
+
+**A stalled agent should be resumed, not relaunched.** Its context is intact,
+so resuming costs a fraction of starting over and avoids re-doing completed
+analysis.
+
 ---
 
 ## Sequencing notes
