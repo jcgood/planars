@@ -167,3 +167,54 @@ metadata sync at the very end (`_upload_planars_config`, gated by `--apply`).
   for. A protocol surface needs `open` + `get_worksheet_by_title` (with a
   not-found signal) as separate from `list_worksheets`.
 
+### `coding/update_sheets.py` (488 lines)
+
+Additive-only: appends missing rows/columns and creates newly-declared
+construction tabs on sheets that already exist. Never deletes or overwrites
+existing annotated cells (only appends). Reuses `generate_sheets.py`'s
+`_format_and_validate`, `_add_constructions_to_existing_sheet`,
+`_build_criterion_notes`, `_create_status_tab`, `_move_status_tab_to_end` —
+i.e. this file's write surface is largely *calls into* `generate_sheets.py`
+rather than its own gspread calls, so those operations are not re-listed here
+(see the `generate_sheets.py` table above for their call/args/retry details);
+only genuinely new operations and this file's own direct call sites are
+tabulated.
+
+| Operation | Call sites | Args / return usage | Retry | R/W |
+|---|---|---|---|---|
+| `ws.insert_cols([col_data], col=insert_col_1)` | `:190` (`_add_trailing_columns`) | **New operation, not seen elsewhere in the 11 files.** `col_data` is a single column's full value list (`[col_name] + [""] * (num_rows-1)`); `col=` is **1-based** (comment at `:185` calls this out explicitly: `"gspread uses 1-based column indices"`). Inserted at a computed position to keep `_TRAILING_COLS` order stable relative to whichever trailing columns already exist. Return value ignored. **Not wrapped in `_with_retry`.** | No | Write |
+| `ws.spreadsheet.batch_update({"requests": [...]})` | `:231` (`_write_header_notes`, wrapped) | Writes header-cell notes only (`repeatCell`/`note` requests), reusing the same shape as `generate_sheets.py`'s note-writing code but as an independent request list, not a shared call | Wrapped (`_with_retry(lambda: ...)`) | Write |
+| `_open_spreadsheet(gc, id)` | `:353` | Held live across the whole per-language, per-class, per-construction nested loop | Yes (inherited) | Read |
+| `ss.worksheet(name)` | `:360` (wrapped, catches `WorksheetNotFound` → skip with print, no error) | Same idiom as other files | Wrapped | Read |
+| `ws.get_all_values()` | `:247` (`_compute_missing_rows`), `:366` (initial read), `:393` (**re-read after `_add_trailing_columns` mutates the sheet**, specifically to see the updated header before `_compute_missing_rows` runs) | The `:393` re-read is notable: it is a *read that exists only because a prior write in the same request sequence isn't reflected in an object already held in memory* — i.e. the code cannot assume `ws`'s in-memory state tracks the live sheet after a mutation, it must re-fetch. A protocol/fake pair needs to get this right: a mutation via one call must be visible to the *next* read call on the same handle, not just to a fresh `open`. | Wrapped (all 3) | Read |
+| `ws.append_rows(rows, value_input_option="RAW")` | `:289` (`_apply_missing_rows`) | Same call shape as `generate_sheets.py:1194`; appends element rows for planar positions/elements missing from an existing tab | No | Write |
+| `_add_constructions_to_existing_sheet(gc, spreadsheet_id, ...)` (generate_sheets.py) | `:450` | Called with a raw `spreadsheet_id` string (not a held `Spreadsheet` object) — internally re-opens via `_with_retry(lambda: gc.open_by_key(...))` (see `generate_sheets.py:1916`), so this is a fresh open, not a reuse of the `ss` object already open at `:353` in the same iteration. Minor inefficiency (double-open of the same spreadsheet within one loop body) worth flagging for the protocol design — a caching/handle-reuse layer could remove it. | Inherited (yes, via `generate_sheets.py:1916`) | Write |
+| `_create_status_tab(ss, ...)` / `_move_status_tab_to_end(ss)` (generate_sheets.py) | `:461-462` | Reuses the already-open `ss` correctly here (unlike the `_add_constructions_to_existing_sheet` call just above it) | Inherited (mixed — see `generate_sheets.py` table) | Write |
+| `_load_drive_config()` / `_upload_planars_config(...)` | `:465-469` | Manifest write, gated on `manifest_modified and apply`; mirrors `import_sheets.py`'s end-of-run manifest sync pattern | No (inherited) | Write |
+
+**Live-object-held-across-many-ops:** `ss` (`Spreadsheet`, from `:353`) is held
+across the entire nested `class → construction` loop body for one language —
+tab lookup, drift check, trailing-column insert, header-note write, missing-row
+append, and (for new constructions) the Status-tab refresh at the end. This is
+one of the longest-lived single Spreadsheet handles across the eleven files.
+
+**Subtlety flags:**
+- `_add_trailing_columns`'s 1-based `col=` argument to `insert_cols` is the
+  clearest 1-indexing trap in the whole codebase — every other write operation
+  found so far (`update`, `append_rows`, `batch_update` requests) either uses
+  A1 notation or 0-based `startColumnIndex`/`endColumnIndex` in the Sheets API
+  request objects. `insert_cols`'s `col` parameter is gspread's own
+  convenience wrapper and is 1-based, breaking that pattern. A fake that
+  applies a single indexing convention uniformly across all write operations
+  will get this one wrong.
+- The `:366` → `:391` (write) → `:393` (re-read) sequence is this file's
+  clearest instance of "operations that must be read-after-write consistent
+  through the same handle," which matters for how a fake models mutation
+  visibility (must not require a fresh `open()` to see your own write).
+- `_check_structural_drift` (called at `:370`, pure local comparison against
+  already-fetched `rows`) is not a Drive call itself, but gates whether this
+  file will *ever* reach its write paths for a given tab — worth noting
+  because it means most of this file's write operations are conditionally
+  reached only on tabs *without* drift, and a fake exercising this file's
+  write paths must construct fixtures where structural drift is absent.
+
