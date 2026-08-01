@@ -1,0 +1,278 @@
+# Data layer: implementation plan
+
+**Status:** not started. Written 2026-08-01.
+**Rationale:** [data-layer-design.md](data-layer-design.md) — read that first.
+**Tracking issue:** #271
+
+This plan is written to be handed to agents one phase at a time. Each phase is
+scoped, has explicit done-criteria, and states what it must *not* do.
+
+---
+
+## Ground rules — apply to every phase
+
+1. **No writes to live Google Drive until Phase 9.** Phases 0–8 are entirely
+   local. An agent that finds itself needing `--apply` against real Drive has
+   misread its scope and should stop.
+2. **Adam's annotation data must not change.** Any phase that could alter
+   generated sheet content is gated behind the Phase 1 golden tests.
+3. **`coded_data/` is never modified** except where a phase says so explicitly.
+4. **Derive, don't duplicate.** If a phase would create a second copy of a fact
+   that already exists somewhere, stop and raise it — that is the exact defect
+   this work exists to remove.
+5. **Prefer extending `data_dependency_schema/` over inventing a new registry.**
+   Its records already carry `locations` / `authoritative` / `cascade` /
+   `drift_risk` and are the right shape.
+6. Every phase ends with `pytest` green and the work committed and pushed.
+   Run test suites with `run_in_background`.
+
+**Decision ownership.** Phases marked *coordinator decides* contain judgment
+calls about linguistics or authority that an agent must not resolve alone — the
+agent drafts and presents options; Jeff decides. All others are fully delegable.
+
+---
+
+## Phase 0 — Drive seam, state capture, and a fake backend
+
+**Goal.** Make every Drive-touching command runnable end-to-end with no network.
+
+**Why.** Eleven files in `coding/` currently call gspread directly
+(`generate_sheets`, `import_sheets`, `update_sheets`, `sync_params`,
+`restructure_sheets`, `validate_coding`, `refresh_dropdowns`,
+`generate_status_sheet`, `generate_biuniqueness_stage1_sheet`,
+`generate_notebooks`, `generate_reports`). There are no end-to-end tests for any
+command that touches Drive — which is exactly where every serious incident has
+occurred. Nothing else in this plan can be verified until this exists.
+
+**Scope.**
+- Define a narrow backend protocol covering only the operations actually used
+  (open spreadsheet, list/add/delete worksheets, get values, update range,
+  batch_update, set validation, format cells, reorder tabs, Drive file
+  create/move/list/permissions).
+- Route all eleven files through it. Keep `_with_retry` semantics.
+- Add `python -m coding capture-drive-state` — **read-only** — dumping live
+  structure and content for all languages to versioned fixtures.
+- Implement an in-memory fake backend that serves those fixtures and records
+  all mutations for assertion.
+
+**Done when.** Every command in `coding/` can be invoked in a test against the
+fake, including `--apply` paths, with no network access. `capture-drive-state`
+has been run once and its fixtures committed.
+
+**Non-goals.** No behavior changes. No refactoring of command logic. The fake
+need not be a faithful Google emulator — only faithful for operations used.
+
+---
+
+## Phase 1 — Characterization (golden-master) tests
+
+**Goal.** Lock in current behavior byte-for-byte before anything changes.
+
+**Why.** This is the mechanism that guarantees constraint #2 (Adam's data). The
+standard technique for safely refactoring untested code is to capture existing
+outputs as golden files first, then assert they never change.
+
+**Scope.** For every command, against Phase 0 fixtures, capture as golden files:
+generated sheet structures (headers, row contents, dropdown validation, tab
+order), TSV outputs, manifest states, and the full mutation log the fake
+recorded.
+
+**Done when.** A test asserts each command's complete output against its golden
+file, and deliberately perturbing any generator makes a golden test fail.
+
+**Non-goals.** Do not fix anything a golden test reveals as odd. Record current
+behavior, including behavior that looks wrong; note oddities in the tracking
+issue for separate triage.
+
+---
+
+## Phase 2 — Hidden-fact inventory
+
+**Goal.** Produce the inventory nobody currently has: every schema fact that
+lives only in a tool body.
+
+**Why.** Facts have been migrated into YAML reactively, one per bug. Without an
+inventory there is no way to know how many remain, so there is no way to know
+when this work is done.
+
+**Scope.** Read every file in `coding/` and `planars/` and record each instance
+of: hardcoded class or construction names; hardcoded criterion names; hardcoded
+column vocabularies; hardcoded file paths encoding structure; hardcoded value
+semantics (e.g. "`scopal=n` means exclude"); magic defaults and fallback lists.
+
+Known starting points: `_STRUCTURAL_COLS` / `_PAIR_STRUCTURAL_COLS` in
+`validate_coding.py`; the `prescreening` entry in
+`_build_coreference_params`; `_filter_nonperm_pairs_by_prescreening`'s
+`scopal` handling and path; `_OBLIGATORY_POSITIONS_DEFAULT`;
+`_COREFERENCE_CONSTRUCTION_PARAMS`.
+
+**Done when.** `docs/hidden-facts-inventory.md` exists, listing each fact with
+its location, whether an authoritative source already exists elsewhere, and a
+derivable / must-declare classification.
+
+**Non-goals.** Do not fix anything. This phase only inventories.
+
+---
+
+## Phase 3 — Schema reorganization *(coordinator decides)*
+
+**Goal.** Split `schemas/` into research-facing and administrative sections, and
+relocate inventoried facts into it.
+
+**Why.** Addresses the differential-rate problem directly. Fast-moving research
+content and slow-moving conventions currently share fields; that shearing is
+what generates bugs.
+
+**Scope.** Apply the research / administrative split. Move Phase 2's derivable
+facts into schema files and make the tools read them.
+
+**The most valuable output is not the tidiness.** It is the list of fields that
+*resist* classification — a field that won't go cleanly into either section is
+one where a research fact and an administrative fact are welded together.
+`Class_Type` is the known example. Treat every such field as a defect site and
+report it; do not silently force a classification.
+
+**Done when.** Every Phase 1 golden test still passes **byte-identical**, the
+split is applied, and resistant fields are catalogued in the tracking issue.
+
+**Non-goals.** No intended behavior changes whatsoever. If the split implies a
+desirable behavior change, that is a *separate, later, deliberate* step — not
+part of this phase.
+
+---
+
+## Phase 4 — Topology declaration *(coordinator decides authority)*
+
+**Goal.** Make the relational knowledge currently narrated in `CLAUDE.md`
+explicit, machine-readable, and inspectable.
+
+**Why.** This is where comprehension load actually lives, and it is the highest-
+value half of the registry.
+
+**Scope.** Extend `data_dependency_schema/` (10 facts, 3 preconditions today) to
+cover, for every command: side effects; idempotency; preconditions; authoritative
+store per fact touched; cascade triggered; and required ordering relative to
+other commands.
+
+Absorb the operational knowledge currently in `CLAUDE.md` and
+`coding/CLAUDE.md` — e.g. `--regen-construction` bypassing `--apply`;
+`restructure-sheets --split-element` before `--regen-construction`;
+`prune-manifest` for retirement but never for rename.
+
+**Done when.** Every `coding/` command has a record; a test asserts every
+command has one (so a new command cannot be added without declaring itself);
+and the narrative topology in `CLAUDE.md` is replaced by a pointer to generated
+output.
+
+**Non-goals.** Do not yet *enforce* preconditions at runtime — that is Phase 5.
+
+---
+
+## Phase 5 — Derived registry, argparse, and call validation
+
+**Goal.** A generated, always-accurate operation inventory, plus validated calls.
+
+**Why.** The succession artifact. Must be *derived*: a hand-authored registry is
+worse than none, because a stale map gets trusted.
+
+**Scope.**
+- Standardize on `argparse` everywhere. `generate_sheets.py` currently scans
+  `sys.argv` by hand, which is the source of the silent-unknown-flag failure
+  mode; `import_planar.py` already uses argparse and is the model.
+- Generate the mechanical registry from signatures, type hints, and docstrings,
+  joined with Phase 4's declarations. Never hand-authored.
+- Enforce Phase 4's preconditions at call time.
+
+**Done when.** `python -m coding registry` emits the full inventory; a test
+asserts it is regenerable and current; unknown flags are hard errors everywhere;
+declared preconditions are checked before execution.
+
+---
+
+## Phase 6 — Data contracts at boundaries
+
+**Goal.** Declare expected input/output shapes on the highest-traffic functions.
+
+**Why.** Local documentation that cannot go stale, plus real bug-catching. Be
+realistic about reach: contracts catch structural and cross-row invariants
+(they would have caught the scopal divergence, and would have turned the
+phrasal_accent failure into a clear error). They do **not** catch ontological
+errors like the pronoun bug, nor authority/ordering failures, nor idempotency
+failures.
+
+**Scope.** Introduce `pandera` (DataFrames) and/or `pydantic` (dicts/JSON) on
+the boundaries that matter first: planar load, filled-TSV load, pair-row load,
+manifest read/write. Do not attempt full coverage in one pass.
+
+**Done when.** The chosen boundaries have contracts, tests prove violations
+raise clearly, and every Phase 1 golden test still passes.
+
+---
+
+## Phase 7 — Recoverability for multi-step operations
+
+**Goal.** Close the transaction gap.
+
+**Why.** `restructure-sheets --apply` performs roughly seven sequential side
+effects — archive sheet, create sheet, carry annotations, rename local TSV
+directory, update manifest, push planar to Drive, notify GitHub issue — with no
+rollback. Failure at step five leaves steps one to four applied to live data.
+#248 is exactly this story.
+
+**Scope.** Journal each step of a multi-step operation before performing it;
+support resume and rollback; make each step individually idempotent where
+possible (using Phase 4's idempotency declarations).
+
+**Done when.** Multi-step operations can be interrupted at any step and either
+resumed or rolled back to a consistent state, proven by Phase 8's tests.
+
+---
+
+## Phase 8 — Fault-injection stress testing
+
+**Goal.** Prove the system survives partial failure before it goes near real data.
+
+**Scope.** Using the Phase 0 fake: inject failure at every step of every
+multi-step operation and assert consistent recovery. Inject API failures (429,
+500, timeout, partial writes). Assert idempotency claims by running every
+idempotent operation twice. Simulate concurrent human edits during a
+programmatic operation — Adam editing a sheet mid-`restructure` is a real
+scenario. Simulate the `coded_data`-dirty and stale-replica conditions behind
+#245 and #248.
+
+**Done when.** Every multi-step operation has fault-injection coverage at every
+step, and every idempotency claim in Phase 4 has a test proving it.
+
+---
+
+## Phase 9 — Staged cutover *(coordinator decides; only phase touching live Drive)*
+
+**Goal.** Go live without risking annotation data.
+
+**Scope, strictly in order:**
+
+1. **Shadow reads.** New path reads real Drive, compares against the old path's
+   results, writes nothing. Run for several days; investigate every divergence.
+2. **Write cutover, one command at a time**, lowest-risk first. Suggested order:
+   read-only/reporting commands → additive commands (`update-sheets`,
+   `sync-params`) → generative (`generate-sheets`) → destructive
+   (`restructure-sheets`, `prune-manifest`) last.
+3. **Confirm with Adam before any step that could touch sheets he is actively
+   annotating**, and prefer a window when he is not mid-pass.
+
+**Done when.** All commands run through the new path in production, the old
+path is removed, and a full daily refresh cycle completes clean.
+
+---
+
+## Sequencing notes
+
+- Phases 0–2 are pure infrastructure, zero risk, fully delegable, and can start
+  immediately.
+- Phase 3 is the highest-value and highest-risk phase; it is deliberately gated
+  behind Phase 1's golden tests.
+- Phases 4 and 6 can proceed in parallel once 0–2 are done.
+- Phase 9 must not begin until 8 is complete.
+- Provenance capture (a stated top-tier value with no current mechanism) should
+  be folded into Phase 5 — every registered call recording what it did is
+  nearly free once the chokepoint exists.
