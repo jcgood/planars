@@ -407,14 +407,17 @@ Each pair sheet uses its own criterion column: `reflexive_allowed` (Principle A)
 
 `data-refresh` will auto-regenerate a dependent construction if the dependent TSV does not yet exist locally. Once the TSV exists (even with blank values), auto-regeneration is skipped and the issue body will tell you which manual command to run.
 
-**If position numbers shifted** (a position was inserted or deleted in the planar structure), existing coreference pair annotations would be lost on the next `--regen-construction` because the row keys change. Use `--pos-remap OLD:NEW` (repeatable) to carry annotations over:
+**`--regen-construction` refuses to silently drop annotated pairs.** If regenerating would remove a pair-row that has a real (non-blank) criterion value, it aborts instead of writing, listing exactly what would be lost (element, value, Source, Comments) rather than letting it vanish from the Sheet with the only trace being a later `import-sheets` → `apply-pending` diff. Two ways this comes up:
+
+- **The element was renamed or split** — run `restructure-sheets --rename-element`/`--split-element` first (see below); that carries the judgment forward and the guard then passes cleanly, since the old rows are already gone by the time `--regen-construction` runs.
+- **The position numbers shifted** (a position was inserted or deleted elsewhere in the planar structure) — the annotation is for a still-valid element, just filed under a stale position number. `integrity-check`'s DEPENDENT CONSTRUCTION STALENESS section detects this proactively (not just when you happen to hit the guard) and prints the exact `--pos-remap` flags to use — no need to compare old and new planar TSVs by hand:
 
 ```bash
 python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:reflexivization \
     --pos-remap 5:6 --pos-remap 34:35
 ```
 
-The mapping comes from comparing the old and new planar TSV — add one `--pos-remap` for each position whose number changed. Positions whose numbers are stable need no entry.
+If the drop really is intentional — a genuine prescreening scope change, not a rename/split/renumbering — re-run with `--confirm-drop` to proceed anyway.
 
 #### Updating diagnostic criteria
 
@@ -507,6 +510,8 @@ Only classes with actual changes are archived; unchanged classes are left untouc
 **`--apply` also pushes `planar_{lang_id}.tsv` back to the master planar Google Sheet.** `restructure-sheets` reads the local planar TSV as its source of truth but never writes it, so if you edited it directly (by hand, or the TSV was updated some other way) before running this command, the master Sheet is now stale — and the next scheduled `import-planar --apply` would otherwise silently revert your edit. `--apply` runs `import-planar --to-sheet --apply` automatically at the end so this can't happen. If you ever edit `planar_{lang_id}.tsv` *without* going through `restructure-sheets` afterward, run `python -m coding import-planar --to-sheet --apply` yourself to keep the Sheet in sync.
 
 `--split-element old:new1,new2,...` retires one element in favor of several finer-grained replacements within the same position (e.g. a generic placeholder like `PRON{P,T}` replaced by specific pronoun forms). There's no principled way to carry a generic annotation over 1:1 to several specific new elements, so the new rows are left blank as usual — but if the old element had existing annotations, each new row's `Comments` cell gets a breadcrumb note pointing back to the archived sheet, so re-annotators have a pointer to the prior judgment instead of having to remember it or hunt through Drive. Requires at least 2 comma-separated replacement elements; an element cannot appear in both `--rename-element` and `--split-element`.
+
+**This also cascades into every pair-row construction that references the retired element** (`nonpermutability`'s `general`, `coreference`'s three constructions, and any future pair-row diagnostic — found generically, not hardcoded by class name), not just the element's "home" construction. Each old pair-row involving the retired element fans out into one new row per replacement element, left blank, with the old row's criterion value, `Source`, and `Comments` quoted verbatim into the new row's `Comments` cell — the same blank-plus-breadcrumb policy as above, just extended to pairs. A pair where *both* sides are the retired element (a self-pair) is left untouched and flagged for manual review rather than guessed at.
 
 **Tell annotators to bookmark the Drive folder, not individual sheet links.** Every class spreadsheet gets a brand-new URL each time `restructure-sheets --apply` runs (the old one is archived, a new one is created) — any sheet link an annotator has bookmarked from before a restructure is now stale, pointing at an archived, no-longer-live copy. The failure mode is silent: a stale link still opens a perfectly normal-looking spreadsheet, just one that's disconnected from the manifest, so annotation done there would never reach `import-sheets`. The language's top-level Drive folder URL, by contrast, never changes — restructures only move old spreadsheets into an `_archived/` subfolder *within* it and create new ones directly in it. `restructure-sheets --apply` prints this folder link (labeled "Bookmark this instead") alongside the per-class sheet links in its final summary specifically so this doesn't need to be remembered separately each time.
 
