@@ -280,6 +280,52 @@ positions.
   used to test this function against a pair-row fixture would expose a latent
   bug rather than a modeling gap in the fake itself.
 
+### `coding/validate_coding.py` (659 lines)
+
+Reads annotation content from **local TSVs**, not from Sheets (deliberately —
+see module docstring) — so this file's only Drive/Sheets I/O is opening
+spreadsheets/tabs to discover structure, and writing pink/white cell
+highlighting. It never reads cell *values* from a live Sheet for validation
+purposes.
+
+| Operation | Call sites | Args / return usage | Retry | R/W |
+|---|---|---|---|---|
+| `ws.spreadsheet.batch_update({"requests": [{"updateCells": {...}}]})` — **new request shape** | `:80-96` (`highlight_cells`, wrapped) | `updateCells` (not `repeatCell`) — **one request per bad cell** (`bad_cells` is a list of `(row_idx, col_idx)` pairs, each becoming its own `updateCells` request in a single `requests` array), setting `userEnteredFormat.backgroundColor` to pink. Distinct from `repeatCell`, which applies one format to a *range*; `updateCells` here is used for a scattered, non-contiguous set of individual cells all in one batch call — still one API round trip even if hundreds of cells are bad, since they're all in the same `requests` list. | Wrapped | Write |
+| `ws.spreadsheet.batch_update(body)` — `repeatCell` over the full used range | `:99-114` (`clear_highlights`, wrapped) | Resets `backgroundColor` to white across `startRowIndex=0..ws.row_count`, `startColumnIndex=0..ws.col_count` — **reads `ws.row_count`/`ws.col_count` as the range bounds**, i.e. trusts the cached worksheet dimensions rather than fetching current values first. Called **before** `highlight_cells` on every revalidation (`:356-357`, `:463-464`) — clear-then-repaint, not diffed against previous highlight state. | Wrapped | Write |
+| `ws.row_values(1)` | `:319` (`_check_header_sync`, wrapped) | Compares live Sheet header against local TSV header; **explicitly documents gspread's padding behavior**: `"gspread may pad with trailing empty strings for empty cells; trim to TSV width"` (`:320-321`) — this is the clearest first-hand statement in the whole codebase of what `get_all_values`/`row_values` padding actually does, and exactly the subtlety the plan calls out by name. A fake must reproduce this padding (trailing empty-string fill to the sheet's used-range width) for this comparison to mean anything. | Wrapped | Read |
+| `_open_spreadsheet(gc, id)` | `:556` (wrapped in a local `try/except Exception`, not raised — logs and `continue`s to the next class on any failure, including non-transient ones) | | Yes (inherited); **caller then swallows every exception type**, not just expected ones — a 429 that exhausts `_with_retry`'s retries would be silently downgraded to a "could not open spreadsheet" skip rather than surfaced as a real failure requiring re-run | Read |
+| `ss.worksheets()` | `:561` (`_with_retry(lambda: ss.worksheets())`) | Iterates **every tab** in the spreadsheet (not just tabs listed in the manifest's `constructions`), explicitly to catch tabs the manifest doesn't know about; skips `_STATUS_TAB`/`_INSTRUCTIONS_TAB`/`_PLANAR_REF_TAB` by title. Order returned is whatever `worksheets()` returns — not otherwise relied on here. | Wrapped | Read |
+| `_read_tsv_rows(...)` (local file, not Drive) | `:285-298` | Not a Drive call — included to make explicit that the *validated data* never comes from a live API call in this file, only from `coded_data/` TSVs already on disk | — | Local file read |
+
+**Live-object-held-across-many-ops:** `ws` is passed into `revalidate_sheet`/
+`revalidate_pair_sheet`, which each do a local-TSV read, a pure-Python
+validation pass, then two Sheets writes on the same handle (`clear_highlights`
+then `highlight_cells`) — always in that order, always both, never just one.
+A fake needs "last write wins" semantics for overlapping format ranges applied
+in sequence on the same worksheet (clear-white-everything, then paint specific
+cells pink) to reproduce the visible end state correctly.
+
+**Subtlety flags specific to this file:**
+- `updateCells` (per-cell writes, one request per bad cell in a single batch)
+  vs. `repeatCell` (one request, one contiguous range) are two different ways
+  to write cell formatting that this codebase uses side by side within the
+  same file for two different purposes (paint scattered bad cells vs. reset a
+  whole rectangular range) — a fake needs to support both request shapes
+  under the same `batch_update`/`spreadsheet.batch_update` umbrella (unlike
+  `values_batch_update`, these two really are the same underlying gspread
+  method with different request payloads, not a naming collision).
+- `clear_highlights` bounds its reset range with `ws.row_count`/`ws.col_count`
+  — cached grid-dimension properties, not a fresh read. If a fake's cached
+  dimensions drift from its actual data range (e.g. after a resize elsewhere
+  in the same test), this reset could clear less or more than intended; worth
+  a fixture-consistency note for whoever builds the fake.
+- This is the one file in the inventory whose docstring explicitly reasons
+  about *why* it avoids one of the read operations entirely ("Reads cell
+  values from local TSVs ... rather than re-fetching them from Google
+  Sheets") — worth preserving that design rationale in the protocol design
+  discussion, since it means not every command needs (or should default to)
+  a live read path even where one exists.
+
 ### `coding/restructure_sheets.py` (1423 lines)
 
 The most consequential file in the inventory — archive/recreate cycles, the
