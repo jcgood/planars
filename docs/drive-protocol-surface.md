@@ -603,3 +603,393 @@ well-defined partial-failure story, not just individual call wrappers.
   (`generate_sheets.py`, where tabs are *reused*, not freshly created, so
   leftover pink highlighting from `validate-coding` would otherwise persist).
 
+---
+
+## Proposed minimal protocol
+
+**This is a proposal for review, not a decision.** Phase 0a's job was
+enumeration; the actual protocol module (`drive_backend.py` or similar) is a
+separate, later piece of work. Everything below is derived directly from the
+call-site tables above — every method listed exists because at least one call
+site in part 1 needs it, and every call site in part 1 should be coverable by
+at least one method below. Where the current code does something in an
+inconsistent or duplicated way (four manifest-upload implementations, two
+get-or-create-folder implementations, mixed 1-based/0-based indexing), the
+proposal picks one shape and notes what it's collapsing — but that collapse
+is itself a design decision for the reviewer to accept or reject, not
+something Phase 0a is authorized to have already decided.
+
+### Design stance the proposal takes (flag these first — they're judgment calls)
+
+1. **Model live handles as objects, not a flat function list.** The
+   "live-object-held-across-many-ops" notes under nearly every file (longest
+   chains: `restructure_sheets.py`'s archive-then-recreate, `sync_params.py`'s
+   read-mutate-reread-mutate sequences) mean the protocol needs `Spreadsheet`-
+   and `Worksheet`-shaped handles that callers hold and pass around, not just
+   stateless `(spreadsheet_id, ...) -> result` functions. A purely functional
+   surface would force every call site to re-thread IDs it already has in hand.
+2. **Mutations must be visible to the next read on the same handle.**
+   `update_sheets.py:391→393` and `sync_params.py`'s interleaved
+   read-mutate-reread all depend on this. The fake's model (and, if it proxies
+   a cache, the real backend's) must not require a fresh `open()` to observe a
+   write just made through the same handle.
+3. **Keep `batch_update` (structural requests) and `values_batch_update`
+   (range value writes) as two distinct methods**, not one generic "batch"
+   call — see the naming-collision flag under `restructure_sheets.py`. Getting
+   this merge wrong is the single most likely way a fake silently diverges
+   from the real API.
+4. **Expose raw Sheets API request objects for `batch_update`, rather than a
+   method per request type.** The eleven files collectively use at least nine
+   distinct request types (`updateSheetProperties`, `repeatCell`,
+   `setDataValidation`, `insertDimension`, `deleteDimension`,
+   `updateDimensionProperties`, `updateCells`, `mergeCells`, plus whatever
+   `docs.documents().batchUpdate`'s `insertText` counts as in the Docs API).
+   Wrapping each in its own protocol method would be nine-plus methods for
+   what is, mechanically, one call shape (`{"requests": [...]}`) — the
+   protocol proposal below keeps `apply_sheet_requests(spreadsheet, requests)`
+   generic and lets callers build request dicts, matching current practice,
+   rather than inventing a `freeze_header()`/`set_dropdown()`/`merge_cells()`
+   proliferation that the real code doesn't have either. This is the opposite
+   choice from (5) below for gspread's *convenience methods* — worth the
+   reviewer's explicit attention, since it means the protocol is not uniform
+   in how "close to the wire" it sits.
+5. **Keep gspread's convenience methods (`row_values`, `update_cell`,
+   `insert_cols`, `resize`, `update_title`, `append_rows`) as named protocol
+   methods, not requests**, because callers already reason about them as
+   distinct operations with distinct (and inconsistent!) indexing conventions
+   — collapsing them into raw request objects would just relocate the
+   indexing bugs rather than fix them. See the indexing table below.
+6. **Collapse the four manifest/file-upload implementations and the two
+   get-or-create-folder implementations into one method each**, per
+   `data-layer-design.md`'s "derive, don't duplicate" principle — but expose
+   the axes they currently disagree on (rename-on-update, reassert-permission,
+   create-if-missing-fallback, key-reordering) as explicit parameters rather
+   than silently picking one file's behavior as canonical. See the dedicated
+   "Duplicate implementations to collapse" subsection below.
+
+### Proposed method signatures
+
+Grouped by the object they operate on. **[R]**/**[W]** marks read/write;
+**[R/W]** marks a method that reads then conditionally writes.
+
+**Session**
+
+- `connect() -> (client, drive_service)` **[—]** — covers `_get_clients()`.
+  No retry needed (auth, not data).
+
+**Spreadsheet lifecycle**
+
+- `create_spreadsheet(name: str) -> Spreadsheet` **[W]** — covers
+  `gc.create(name)` (7 call sites across `generate_sheets.py`,
+  `restructure_sheets.py`, `generate_status_sheet.py`,
+  `generate_biuniqueness_stage1_sheet.py`).
+- `open_spreadsheet(spreadsheet_id: str) -> Spreadsheet` **[R]** — covers
+  `_open_spreadsheet`/`gc.open_by_key` (all variants: wrapped via
+  `_open_spreadsheet`, bare `gc.open_by_key`, and the `refresh_dropdowns.py`
+  bare-with-broad-except variant). **Always wrapped in retry** — this
+  collapses the three inconsistently-retried call idioms found in part 1 into
+  one, always-retried path. Raises a distinguishable not-found/no-access error
+  (several callers currently catch bare `Exception` around this call and
+  should be able to catch something narrower once the protocol exists).
+- `spreadsheet.id -> str`, `spreadsheet.url -> str` **[R]** (cached
+  attributes, not calls) — covers every `.id`/`.url` property read.
+- `list_worksheets(spreadsheet) -> List[Worksheet]` **[R]** — covers
+  `spreadsheet.worksheets()`. **Order matters and must be preserved**: current
+  order is the tab order used for drift-detection/reordering logic in
+  `generate_sheets.py`. See the "what `worksheets()` returns" subtlety below.
+- `get_worksheet(spreadsheet, title: str) -> Worksheet` **[R]**, raising a
+  distinguishable **not-found** condition — covers every
+  `spreadsheet.worksheet(name)` / try-except-`WorksheetNotFound` call site
+  (the single most common idiom in the inventory, ~15+ call sites). The
+  protocol's not-found signal must be narrow enough that callers can keep
+  distinguishing "tab genuinely absent" from "transient API error" —
+  `refresh_dropdowns.py`'s bare `except Exception` around this call is a bug
+  this protocol should make easy to avoid, not easy to keep making.
+- `add_worksheet(spreadsheet, title: str, rows: int, cols: int) -> Worksheet`
+  **[W]** — covers `spreadsheet.add_worksheet(...)` (6+ call sites).
+- `delete_worksheet(spreadsheet, worksheet)` **[W]** — covers
+  `spreadsheet.del_worksheet(ws)`.
+- `reorder_worksheets(spreadsheet, ordered: List[Worksheet])` **[W]** —
+  covers `spreadsheet.reorder_worksheets(...)`.
+
+**Worksheet content**
+
+- `get_all_values(worksheet) -> List[List[str]]` **[R]** — covers
+  `ws.get_all_values()`. **Must reproduce gspread's ragged-row padding
+  exactly** — see the dedicated subtlety subsection below; this is the
+  single highest-risk operation for a naive fake per the plan's own callout.
+- `row_values(worksheet, row: int) -> List[str]` **[R]** — covers
+  `ws.row_values(1)` (9 call sites, all currently row 1 / the header). `row`
+  is **1-based**, matching gspread; the protocol should keep this convention
+  rather than silently 0-basing it, since every current caller already writes
+  `row_values(1)` expecting "first row."
+- `update(worksheet, values: List[List[str]], range_start: str = "A1", raw: bool = True)`
+  **[W]** — covers every `ws.update(...)` call site. **`range_start` is an
+  A1-notation anchor** (top-left cell of the write); every call site except
+  `sync_params.py:258` uses `"A1"` (whole-body replace), and that one site
+  uses a computed anchor (e.g. `"D1"`) to write only inserted columns. `raw`
+  defaults `True` (values written literally); `generate_status_sheet.py`/
+  `generate_biuniqueness_stage1_sheet.py` pass `raw=False` so embedded
+  `=HYPERLINK(...)` strings are parsed as formulas — **this parameter is not
+  optional to support**, it changes write semantics, not just presentation.
+- `update_cell(worksheet, row: int, col: int, value: str)` **[W]** — covers
+  `ws.update_cell(1, col_1based, new_name)`. **Both `row` and `col` are
+  1-based** (gspread convention, made explicit in `sync_params.py`'s own
+  comment). Note this is a *different* 1-basing convention from `insert_cols`
+  below in the sense that it's easy to conflate "this method is 1-based" with
+  "gspread is 1-based everywhere" — it is not; see the indexing table.
+- `insert_cols(worksheet, columns: List[List[str]], col: int)` **[W]** —
+  covers `ws.insert_cols([col_data], col=insert_col_1)`. **`col` is
+  1-based.** `columns` is a list of full column value-lists (one column per
+  list, `[header] + [value, value, ...]`), inserted starting at `col`.
+- `append_rows(worksheet, rows: List[List[str]], value_input_option: str = "RAW")`
+  **[W]** — covers `ws.append_rows(...)` (2 call sites).
+- `clear(worksheet)` **[W]** — covers bare `ws.clear()`. **Only clears
+  values**, not formatting or grid size — this is real Sheets API behavior
+  (see `generate_sheets.py`'s `_reset_worksheet` docstring), and the protocol
+  method should be documented as such rather than silently "fixed" to also
+  reset formatting, since some call sites (`restructure_sheets.py`) rely on
+  `clear()` *not* touching formatting on a tab that's about to be fully
+  overwritten anyway.
+- `resize(worksheet, rows: int, cols: int)` **[W]** — covers `ws.resize(...)`.
+- `update_title(worksheet, title: str)` **[W]** — covers `ws.update_title(...)`.
+- `worksheet.id`, `worksheet.title`, `worksheet.row_count`, `worksheet.col_count`
+  **[R]** (cached attributes) — `row_count`/`col_count` are **not guaranteed
+  fresh after an intervening write on the same handle** in current gspread
+  usage (flagged under `sync_params.py` and `refresh_dropdowns.py`); the
+  protocol should document whether its own handles refresh these eagerly or
+  require an explicit re-fetch, since production code currently assumes the
+  latter (stale-cached) behavior in at least two places.
+
+**Structural/formatting requests (raw passthrough, per design stance #4)**
+
+- `apply_sheet_requests(spreadsheet, requests: List[dict])` **[W]** — covers
+  every `spreadsheet.batch_update({"requests": [...]})` / `ws.spreadsheet.batch_update(...)`
+  call site (by far the most call sites of any single operation in the
+  inventory — freeze/bold, `setDataValidation`, `repeatCell`, `updateCells`,
+  `mergeCells`, `insertDimension`, `deleteDimension`,
+  `updateDimensionProperties`, `updateSheetProperties`). Request dicts are
+  passed through verbatim; the protocol does not need to understand their
+  contents, only route them to the right spreadsheet. **This is the method
+  every naive fake will get wrong first** — see the "batch_update request
+  shapes" subtlety below.
+- `write_value_ranges(spreadsheet, data: List[dict], value_input_option: str = "RAW")`
+  **[W]** — covers the **one** `values_batch_update` call site
+  (`restructure_sheets.py:628-631`). **Deliberately a separate method name
+  from `apply_sheet_requests`**, per design stance #3 — `data` is a list of
+  `{"range": "D5", "values": [[...]]}` dicts (A1-notation ranges + literal
+  values), a completely different contract from `requests`.
+
+**Drive files**
+
+- `list_files(query: str, fields: str, page_size: Optional[int] = None) -> List[dict]`
+  **[R]** — covers every `drive.files().list(...)` call site (5+ independent
+  implementations of "find file(s) by name/parent/mimetype", see the
+  duplication subsection below). `query` is passed through as a raw Drive
+  query string; **the current code builds these with f-string interpolation
+  of names/IDs with no escaping** (flagged under `generate_sheets.py`) — not
+  a live bug today (names are internally generated) but worth the protocol
+  layer at least documenting the risk rather than inheriting it silently.
+- `get_file(file_id: str, fields: str) -> dict` **[R]** — covers
+  `drive.files().get(fileId=..., fields=...)` (both `import_sheets.py`'s
+  existence check and `_move_to_folder`'s parent lookup).
+- `create_file(name: str, parents: List[str], content: Optional[bytes] = None, mimetype: Optional[str] = None) -> str`
+  **[W]** — covers `drive.files().create(...)`, both the metadata-only form
+  (folders, Docs) and the media-upload form (manifest.json, notebooks, PDFs).
+- `update_file(file_id: str, name: Optional[str] = None, content: Optional[bytes] = None, mimetype: Optional[str] = None)`
+  **[W]** — covers `drive.files().update(...)` for both rename-only
+  (`restructure_sheets.py`'s archive rename) and content-replace
+  (manifest/notebook/PDF updates) uses. **`name` must be optional and
+  independent of content-replace** — see the duplication subsection: current
+  implementations disagree on whether an update renames the file, and the
+  protocol needs to let each caller choose rather than hardcoding one answer.
+- `move_file(file_id: str, new_parent_id: str)` **[W]** — covers
+  `_move_to_folder` (itself a `get` + `update` pair; the protocol can either
+  keep that as two primitive calls or fold it into one method — folding is
+  recommended since every current call site uses it as a single logical
+  action and no caller needs the intermediate `parents` read).
+- `download_file_json(file_id: str) -> dict` **[R]** — covers
+  `_download_file_json` (chunked `MediaIoBaseDownload` + `json.loads`).
+- `get_or_create_folder(name: str, parent_id: Optional[str] = None) -> str`
+  **[R/W]** — covers `drive.py`'s `_get_or_create_folder` **and**
+  `restructure_sheets.py`'s parallel `_get_or_create_subfolder` (see
+  duplication subsection — these should become one method, not two).
+  `parent_id=None` searches/creates at Drive-root level (used once, by
+  `generate_status_sheet.py`, for the freestanding "Annotation Status" folder
+  — a deliberate escape from an inherited-permission API limitation, not an
+  oversight, and the protocol must preserve the ability to do this).
+
+**Permissions**
+
+- `list_permissions(file_id: str, fields: str) -> List[dict]` **[R]** —
+  covers both `drive.permissions().list(...)` call sites (`fields` differs
+  per caller: `permissions(id,type)` vs. `permissions(emailAddress)` — keep
+  `fields` as a parameter rather than hardcoding one projection).
+- `create_permission(file_id: str, type: str, role: str, email: Optional[str] = None, notify: bool = True)`
+  **[W]** — covers all three `drive.permissions().create(...)` shapes found
+  (`_share_anyone_with_link`, `_share_with_person`,
+  `generate_notebooks.py`'s `_set_viewer_permissions`) as one parameterized
+  method rather than three near-identical helpers differing only in
+  `type`/`role`/`sendNotificationEmail`.
+- `delete_permission(file_id: str, permission_id: str)` **[W]** — covers
+  `drive.permissions().delete(...)` inside `_remove_anyone_permission`.
+
+**Google Docs (collaborator notes)**
+
+- `get_doc_text(doc_id: str) -> str` **[R]** — covers `_read_notes_doc_text`
+  (fetch + walk `body.content[].paragraph.elements[].textRun.content`).
+- `append_doc_text(doc_id: str, text: str)` **[W]** — covers
+  `_append_to_notes_doc` (get, to find `endIndex`, then `batchUpdate` with an
+  `insertText` request). Note this method internally does a **read then a
+  write** — the protocol can either expose that as one composite call (as
+  proposed here, matching current usage) or split it, but every current
+  caller wants the composite behavior, so splitting would only add call sites
+  without adding flexibility anyone uses today.
+
+### Duplicate implementations to collapse (candidates, not decisions)
+
+The inventory found the same conceptual operation implemented independently
+multiple times. Collapsing these is exactly what `data-layer-design.md`
+argues for ("derive, don't duplicate" / "a fact recorded in more than one
+place, with no single owner"), but *which* behavior becomes canonical is a
+design decision, not something this enumeration should pre-decide:
+
+1. **"Create-or-update a Drive file with content"** — four independent
+   implementations: `drive.py`'s `_upload_planars_config` (reorders manifest
+   keys; update never renames; create sets no permission),
+   `refresh_dropdowns.py`'s inline duplicate (no key-reordering, no
+   create-fallback), `generate_notebooks.py`'s `_upload_file` +
+   `_set_viewer_permissions` (update renames; permission reasserted every
+   run), `generate_reports.py`'s `_upload_pdf` (update renames; permission
+   set only on create). A single `update_file`/`create_file` pair (proposed
+   above) needs explicit parameters for: rename-on-update (yes/no),
+   reassert-permission (always/create-only/never), and whether a
+   create-if-missing fallback exists when the "existing" ID doesn't resolve.
+2. **"Find-or-create a folder by name inside a parent"** — two
+   implementations: `drive.py`'s `_get_or_create_folder` (requests
+   `files(id, name)`) and `restructure_sheets.py`'s `_get_or_create_subfolder`
+   (requests `files(id)`, otherwise identical). Trivially collapsible.
+3. **"Find a spreadsheet by name inside a folder"** — a related but distinct
+   pattern (returns/creates a *spreadsheet*, not a folder) appearing
+   independently in `generate_status_sheet.py`'s
+   `_get_or_create_status_spreadsheet` and
+   `generate_biuniqueness_stage1_sheet.py`'s `_get_or_create_stage1_spreadsheet`
+   — identical bodies, different function names. Should become one method
+   parameterized by name/folder, built from `list_files` + `create_spreadsheet`
+   + `open_spreadsheet` primitives above.
+4. **"Grant `anyone`-with-link access"** — `drive.py`'s
+   `_share_anyone_with_link` (hardcoded `role="writer"`, used for the notes
+   doc) vs. `generate_notebooks.py`'s `_set_viewer_permissions` (hardcoded
+   `role="reader"`, used for notebooks/PDFs) — same call shape, should be one
+   `create_permission(..., type="anyone", role=...)` call with `role` exposed,
+   not two hardcoded wrappers.
+
+### Subtleties most likely to be guessed wrong (per the plan's explicit callout)
+
+These are elevated from the per-file tables above because the plan
+specifically asked for them to be flagged prominently, not buried in file
+sections — this is the section to read before writing a single line of the
+fake.
+
+**1. `get_all_values()` / `row_values()` padding and ragged rows.**
+`validate_coding.py:320-321` is the only place in the codebase that states
+this explicitly in a comment: *"gspread may pad with trailing empty strings
+for empty cells; trim to TSV width."* Three different downstream idioms
+depend on getting this right, and they are **inconsistent with each other**,
+which is itself informative about what the real API actually does:
+- `generate_sheets.py` (`:1191, :1807`) and `restructure_sheets.py` (`:145`)
+  defensively check `len(row) >= N` / `len(row) <= max(...)` before indexing
+  — written by someone who has seen ragged rows in practice.
+- `import_sheets.py`'s `_read_sheet_as_df` (`:185-191`) has **no such guard**
+  and feeds `get_all_values()` straight into a `pandas.DataFrame` constructor
+  with the header row as columns — this would raise or silently misalign
+  columns on a genuinely ragged response.
+- The fact that `import_sheets.py`'s ungarded code is apparently never seen
+  to fail in production suggests real Sheets responses for *that specific
+  case* (a fully-written sheet1 reference tab) come back rectangular, while
+  responses for partially-filled annotation tabs (the case the guarded code
+  handles) do not. **A fake needs to reproduce this distinction** — i.e. pad
+  ragged rows to the *used-range* width, not to a fixed header width, and the
+  used range itself needs to be able to be genuinely ragged in fixtures that
+  exercise the guarded code paths, and rectangular in fixtures that exercise
+  `import_sheets.py`'s path — a uniformly-ragged or uniformly-rectangular
+  fake would fail to exercise one code path or the other realistically.
+
+**2. `update()` range/anchor semantics.**
+Every `update()` call site in the inventory except exactly one
+(`sync_params.py:258`) writes the **full sheet body starting at `"A1"`** —
+i.e., in practice, "range" in this codebase almost always means "replace
+everything from the top-left." The one exception writes only newly-inserted
+columns at a computed anchor (e.g. `"D1"`). A fake built only against the
+dominant pattern (which is what 95%+ of call sites would suggest) will not
+cover `sync_params.py`'s column-insert path. Separately: `raw=True` (default,
+implicit at every site except two) vs. `raw=False` (both
+`generate_status_sheet.py` and `generate_biuniqueness_stage1_sheet.py`) is a
+write-semantics fork, not a presentation detail — `raw=False` cells
+containing `=HYPERLINK(...)` must be interpreted as formulas by anything that
+later reads them back, which nothing in the current test suite exercises
+(there are no goldens yet for either status-sheet generator).
+
+**3. What `worksheets()` returns.**
+Returns the live tab order, used by `generate_sheets.py`'s
+`_reorder_system_tabs`/`_move_status_tab_to_end` to detect drift and
+re-order. A fake that returns tabs in creation order, alphabetical order, or
+any order other than "whatever order they'd currently appear in the Sheets
+UI" will make every reorder-detection code path either falsely fire (thinks
+reordering is needed when it isn't) or falsely stay silent (thinks tabs are
+already in order when they aren't) — and either failure mode is silent, not
+an exception, so it wouldn't be caught by anything except a golden that
+specifically checks tab order after a mutating operation.
+
+**4. `batch_update` request shapes.**
+Nine-plus distinct request types are used across the eleven files
+(enumerated under design stance #4 above). None of them are validated by the
+calling code before being sent — they're just built as dicts and shipped.
+This means **the fake's correctness on this operation is entirely about
+faithfully modeling each request type's *effect***, not about validating
+request shape (the real API does that; a fake that's lenient about malformed
+requests where the real API would reject them will hide bugs). The two
+request types most likely to be under-modeled because they're rare (one call
+site each) are `mergeCells` (`generate_status_sheet.py`,
+`generate_biuniqueness_stage1_sheet.py`) and `updateCells` (per-cell,
+non-contiguous writes in `validate_coding.py`'s pink-highlight logic) —
+both are easy to skip if a fake-builder samples "the common cases" rather
+than reading every request type actually used.
+
+**5. 1-indexing vs. 0-indexing has no single rule — it varies by gspread
+*method*, not by axis or by file.** Consolidated from the per-file tables:
+
+| Call | Row index | Column index |
+|---|---|---|
+| `ws.row_values(row)` | 1-based | — |
+| `ws.update_cell(row, col)` | 1-based | 1-based |
+| `ws.insert_cols(cols, col=)` | — | 1-based |
+| `gspread.utils.rowcol_to_a1(row, col)` | 1-based | 1-based |
+| Sheets API request `startRowIndex`/`startColumnIndex` (inside any `batch_update` request) | 0-based | 0-based |
+
+The rule is: **gspread's own convenience methods are 1-based; raw Sheets API
+request objects (everything inside a `batch_update` `requests` list) are
+0-based.** This is a real, learnable rule, but it is never stated anywhere in
+the current codebase — every call site just gets it right (or, in
+`update_sheets.py:185`'s case, right with an explicit comment) locally. A
+protocol/fake needs to enforce or at least document this split explicitly,
+because it is the single most mechanical way to introduce an off-by-one that
+would only surface as "wrote to the wrong column" with no error.
+
+**6. Live handles spanning irreversible operations.**
+Not a single-call subtlety but a design-level one, repeated from stance #1:
+`restructure_sheets.py`'s archive-then-recreate (open `ss`, download every
+tab, rename+move `ss` — destructive — then separately create and populate
+`new_ss`, then write the manifest) is the clearest case, but similar chains
+exist in `sync_params.py` (rename → split → merge → insert → maybe-delete,
+all on one `ws`, with re-reads interleaved) and `update_sheets.py`
+(mutate-then-immediately-reread-the-same-handle at `:391→393`). None of these
+are journaled; none have partial-failure recovery today. A protocol that
+only supports single request/response pairs, with no notion of a session or
+handle spanning multiple calls with a defined partial-failure story, would
+force every one of these call sites to be rewritten just to fit the seam —
+which is explicitly out of scope for the *migration* phase (Phase 0b/1's
+non-goal is "no refactoring of command logic beyond the call-site
+substitution"). The handle-based object model in design stance #1 exists
+specifically so migration can be a mechanical substitution, not a rewrite.
+
