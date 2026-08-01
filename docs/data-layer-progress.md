@@ -52,28 +52,32 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
 ## Next action
 
-**Not blocked.** In order:
+**Not blocked.** Steps 1–3 (protocol review, `capture-drive-state`, fixture
+capture) are complete. Remaining:
 
-1. Review the proposed protocol in `docs/drive-protocol-surface.md` (its
-   "proposed minimal protocol" section) and make the design call on its shape.
-   Not delegable — see *Working with agents* in the plan. Note it flags four
-   independent reimplementations of "create-or-update a Drive file" and two of
-   "get-or-create folder" as collapse candidates; decide whether collapsing
-   them is in scope for the seam or a follow-on, since collapsing changes
-   behavior and there are no goldens yet.
-2. Write `python -m coding capture-drive-state` (read-only). It must record
-   **raw API responses**, not just parsed content — the fake is to be built
-   from recorded real responses rather than from the gspread docs.
-3. Run it once against live Drive. Read-only; safe. Commit fixtures.
-4. Build the fake from those recordings. Smoke-test every protocol operation.
-   Pay particular attention to the subtleties the enumeration flagged:
-   ragged-row padding, `update()` range and `raw=` semantics, `worksheets()`
-   ordering, `batch_update` vs `values_batch_update` (two different endpoints
-   behind similar names), and the 1-indexing-varies-by-method table.
-5. Migrate **one** file end-to-end using the per-file procedure in the plan
+1. **Build the backend protocol module and the fake**, from the recorded
+   fixtures in `tests/fixtures/drive_state/`. The accepted protocol shape is
+   `docs/drive-protocol-surface.md` § "Proposed method signatures"; the design
+   stances behind it are logged below.
+
+   Read that doc's § "Subtleties most likely to be guessed wrong" **including
+   the correction block at its head** before writing a line of the fake. The
+   established facts: responses are rectangular, never ragged; padding is to
+   the *used range*, which may be narrower than `col_count` (10 of 80 tabs);
+   `worksheets()` order is live tab order and must not be sorted;
+   `batch_update` and `values_batch_update` stay distinct; mutations must be
+   visible to the next read on the same handle.
+
+   Smoke-test every protocol operation against the fake.
+
+2. **Migrate one file end-to-end** using the per-file procedure in the plan
    (pre-migration dry-run baseline → migrate → diff against fake → capture
-   goldens → human review of the `--apply` mutation log). This establishes the
-   pattern; the remaining ten then go to agents.
+   goldens → human review of the `--apply` mutation log). Suggested first
+   file: `refresh_dropdowns.py` — smallest Drive-touching caller at 200 lines.
+   This establishes the pattern; the remaining ten then go to agents.
+
+Steps 1 and 2 are the front-loaded supervision the plan calls for — do them
+by hand, not by agent. Everything after is delegable.
 
 ---
 
