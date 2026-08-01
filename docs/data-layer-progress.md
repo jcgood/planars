@@ -33,8 +33,8 @@ of this state would be exactly the defect this project is trying to remove.
 | Unit | Status | Commit |
 |---|---|---|
 | Design record + plan written | done | `7b995b9`, `f20478e` |
-| Phase 2 — hidden-fact inventory | in flight (agent) | — |
-| Phase 0a — protocol surface enumeration | in flight (agent) | — |
+| Phase 2 — hidden-fact inventory | **done** → `docs/hidden-facts-inventory.md` | `e27bbe3` |
+| Phase 0a — protocol surface enumeration | **done** → `docs/drive-protocol-surface.md` | `b978101`..`46bf833` |
 | Phase 0a — `capture-drive-state` command | not started | — |
 | Phase 0a — fixture capture run (read-only, live) | not started | — |
 | Phase 0a — fake backend | not started | — |
@@ -44,36 +44,31 @@ of this state would be exactly the defect this project is trying to remove.
 
 ### In flight
 
-Two Sonnet agents launched 2026-08-01:
-
-1. **Phase 2 inventory** → produces `docs/hidden-facts-inventory.md`.
-   Read-only analysis of `coding/` and `planars/`; forbidden from fixing
-   anything. Commits, does not push.
-2. **Protocol surface enumeration** → produces
-   `docs/drive-protocol-surface.md`. Static reading of the eleven
-   Drive-touching files plus `drive.py`; produces an inventory and a *proposed*
-   protocol only, explicitly forbidden from writing the protocol module or
-   modifying any source file. Commits, does not push.
-
-If a session ends before these land, check for those two files and any
-uncommitted work in the repo before relaunching — the agents were instructed to
-write incrementally, so partial output may exist.
+*(nothing — both launched agents completed 2026-08-01; scope verified, only
+their own doc files touched, `coded_data/` untouched, tree clean)*
 
 ---
 
 ## Next action
 
-**Blocked on:** the protocol-surface enumeration landing.
+**Not blocked.** In order:
 
-Once it does, in order:
-
-1. Review the proposed protocol; make the design call on its shape (this is a
-   design decision, not delegable — see *Working with agents* in the plan).
+1. Review the proposed protocol in `docs/drive-protocol-surface.md` (its
+   "proposed minimal protocol" section) and make the design call on its shape.
+   Not delegable — see *Working with agents* in the plan. Note it flags four
+   independent reimplementations of "create-or-update a Drive file" and two of
+   "get-or-create folder" as collapse candidates; decide whether collapsing
+   them is in scope for the seam or a follow-on, since collapsing changes
+   behavior and there are no goldens yet.
 2. Write `python -m coding capture-drive-state` (read-only). It must record
    **raw API responses**, not just parsed content — the fake is to be built
    from recorded real responses rather than from the gspread docs.
 3. Run it once against live Drive. Read-only; safe. Commit fixtures.
 4. Build the fake from those recordings. Smoke-test every protocol operation.
+   Pay particular attention to the subtleties the enumeration flagged:
+   ragged-row padding, `update()` range and `raw=` semantics, `worksheets()`
+   ordering, `batch_update` vs `values_batch_update` (two different endpoints
+   behind similar names), and the 1-indexing-varies-by-method table.
 5. Migrate **one** file end-to-end using the per-file procedure in the plan
    (pre-migration dry-run baseline → migrate → diff against fake → capture
    goldens → human review of the `--apply` mutation log). This establishes the
@@ -116,5 +111,29 @@ into the plan's *Working with agents* section for all future briefs.
 
 ## Open questions for Jeff
 
-*(none currently — Phase 3 and 4 will raise the research/administrative
-classification and the authority assignments)*
+**1. Fix the `untestable` trap now, or leave it for Phase 3?** *(awaiting
+decision)*
+
+Found by the Phase 2 inventory and verified independently. Both
+`schemas/diagnostic_criteria.yaml` and `coded_data/stan1293/lang_setup/diagnostics_stan1293.yaml`
+define `reflexive_allowed` / `pronoun_allowed` / `np_allowed` as
+`[y, n, untestable]`. But `coding/validate_coding.py:59` reads the criterion
+*name* from the schema and then hardcodes its *values* as `["y", "n"]`, and
+`validate_pair_rows` computes `allowed = param_values + {na, ?}` — so
+`untestable` validates as an invalid value on coreference pair sheets.
+Meanwhile the dropdowns are built from the per-language YAML, so they offer it.
+
+The tool offers a value and then marks it pink as wrong, and `validate-coding`
+exits 1, which would file a `sheet-validation` issue.
+
+**Not currently firing** — no annotation TSV contains `untestable` yet. It is a
+trap, not an active failure. But coreference judgments genuinely can be
+untestable, and it's in the dropdown, so it springs the first time Adam uses it.
+
+The fix is small and can only make validation *more permissive* (it cannot
+newly reject anything), so it is low-risk despite there being no goldens yet.
+Argument for waiting: Phase 2 is inventory-only by design, and this is a
+deliberate exception to that.
+
+*(Phases 3 and 4 will separately raise the research/administrative
+classification and the authority assignments.)*
