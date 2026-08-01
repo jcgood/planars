@@ -116,9 +116,7 @@ jobs:
                       f.write(f"```\n{exc_line}\n```\n\n")
                   f.write("_No annotation data needs to be corrected._\n")
               elif errors:
-                  f.write('\n'.join(errors[:20]) + '\n')
-                  if len(errors) > 20:
-                      f.write(f"\n_…and {len(errors) - 20} more — see full log._\n")
+                  f.write('\n'.join(errors) + '\n')
               else:
                   f.write("_(Error details could not be extracted — see full log.)_\n")
 
