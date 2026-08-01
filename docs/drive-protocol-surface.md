@@ -280,3 +280,84 @@ positions.
   used to test this function against a pair-row fixture would expose a latent
   bug rather than a modeling gap in the fake itself.
 
+### `coding/restructure_sheets.py` (1423 lines)
+
+The most consequential file in the inventory — archive/recreate cycles, the
+only file that calls `values_batch_update` (a *different* gspread method from
+`batch_update`), and the multi-step operation the design doc names by name as
+the source of the #248-class incidents (`docs/data-layer-design.md`'s
+`restructure-sheets --apply performs 7 sequential side effects with no
+rollback`). Reuses `generate_sheets.py` helpers heavily (`_build_rows`,
+`_create_status_tab`, `_format_and_validate`, `_maybe_create_planar_reference_tab`,
+`_reorder_system_tabs`, `_build_criterion_notes` — not re-tabulated; see that
+file's section) but also introduces its own direct gspread/Drive calls.
+
+| Operation | Call sites | Args / return usage | Retry | R/W |
+|---|---|---|---|---|
+| `ws.get_all_values()` | `:129` (`_download_tab_annotations`, **bare**), `:610` (`_cascade_rename_pair_tab`, wrapped via `_with_retry(lambda: ws.get_all_values())`), `:655` (`_copy_pair_tab_with_rename`, wrapped) | `:129` builds a `{(element,pos_name): {col:val}}` dict from raw rows with an explicit `len(row) <= max(el_idx,pos_name_idx)` ragged-row guard before indexing — a third distinct ragged-row-handling idiom (compare `generate_sheets.py`'s `len(row) >= N` and `import_sheets.py`'s lack of any guard) | Inconsistent (1 of 3 bare) | Read |
+| `spreadsheet.worksheet(name)` | `:331, :654, :682, :795, :1141, :1316` (all wrapped, all the same try/`WorksheetNotFound` idiom) | Consistent with the rest of the inventory | All wrapped | Read |
+| `spreadsheet.add_worksheet(...)` | `:334, :660, :685` | Same shape as elsewhere | No | Write |
+| `ws.clear()` | `:332, :683` | Bare `clear()`, **not** the full `_reset_worksheet` treatment used in `generate_sheets.py` (no explicit format/grid-size reset) — this file relies on the subsequent `ws.update(...)` overwriting old values but does **not** explicitly clear old cell formatting/grid size the way `generate_sheets.py` does. Worth flagging: two different "clear a tab before rewriting" idioms exist across the eleven files, one thorough (`_reset_worksheet`) and one not (bare `.clear()` here). | No | Write |
+| `ws.update(rows, "A1")` | `:338` (`_write_tab_with_carryover`), `:689` (`_copy_pair_tab_with_rename`) | Same A1-anchored-full-body pattern as `generate_sheets.py` | No | Write |
+| `spreadsheet.del_worksheet(ws)` | `:878, :1266` | Removes leftover default `Sheet1` after tab population, same pattern as `generate_sheets.py:1620` | No | Write |
+| `gc.create(name)` | `:849, :1215` | New spreadsheet for the recreated class sheet (archive+recreate step) | No | Write |
+| `new_ss.sheet1` | `:856, :1222` (both `_with_retry(lambda: new_ss.sheet1)`) | Read the default tab to know what to delete later | Wrapped | Read |
+| `drive.files().update(fileId=ss.id, body={"name": ...})` — **rename, not move** | `:839-842, :1205-1208` | Renames the spreadsheet file to `{class}_{lang_id}_v{N}` as the archive step's first act, **before** `_move_to_folder` moves it into `_archived/` — two separate Drive writes (`files().update` for rename, then `_move_to_folder`'s own `files().get`+`files().update` for the parent-folder change) for one conceptual "archive" action. **Not wrapped in `_with_retry`.** | No | Write |
+| `_move_to_folder(drive, id, folder_id)` (drive.py) | `:843, :851, :1209, :1217` | Archive-move and new-sheet-move, both directions | No (inherited) | Write |
+| `_lock_archived_sheet(drive, id, lang_id)` (local helper, wraps `_remove_anyone_permission` + `_share_with_person`) | `:844, :1210` | See drive.py table for the two calls this makes | No (inherited) | Write |
+| `_get_or_create_subfolder(drive, parent_id, name)` — **new helper, structurally identical to `drive.py`'s `_get_or_create_folder` but reimplemented locally rather than reused** | `:211-232`, called at `:838, :1204` | `drive.files().list(q=...)` then maybe `drive.files().create(body=..., fields="id")` — same shape as `_get_or_create_folder` in `drive.py`, but a **separate, parallel implementation** (only fields requested differ: `"files(id)"` here vs. `"files(id, name)"` in `drive.py`). This is exactly the kind of "same fact, no single owner" duplication the design doc's diagnosis section is about — flagged here because a protocol method for "get-or-create folder" should replace both, not just this file's copy. | No | Read then maybe Write |
+| `drive.files().create(body={..., "mimeType": "...folder", "parents": [...]}, fields="id")` | `:224-231` (inside `_get_or_create_subfolder`) | Duplicate of `_get_or_create_folder`'s create path, see above | No | Write |
+| `_share_with_person(drive, id, email, role=)` | `:854, :1220` | Same as elsewhere | No (inherited) | Write |
+| `gspread.utils.rowcol_to_a1(1, col_idx + 1)[:-1]` | `:624` | **Pure utility**, used to extract just the column letter (strips the trailing row digit off `"D1"` → `"D"`) for building a `{col_letter}{row_idx}` range string for `values_batch_update`. Fragile in general (`[:-1]` assumes a single-digit row number, safe here only because row 1 is hardcoded) — not a bug at the current call site but a sharp edge if reused elsewhere. | N/A | N/A |
+| `ws.spreadsheet.values_batch_update({"valueInputOption": "RAW", "data": [{"range": ..., "values": [[...]]}]})` — **new gspread method, distinct from `spreadsheet.batch_update`** | `:628-631` (`_cascade_rename_pair_tab`, wrapped: `_with_retry(lambda: ...)`) | **This is `spreadsheets.values.batchUpdate` (per-cell/per-range value writes), not `spreadsheets.batchUpdate` (structural/formatting requests) — two different Sheets API endpoints exposed as two different gspread methods with similar names but incompatible request shapes.** This is the only call site among all eleven files that uses `values_batch_update`; every other batch write in the inventory uses `batch_update`. A protocol/fake that conflates the two (e.g. one generic "batch write" method) will not correctly model this call — its `data` list of `{range, values}` dicts is a different contract from a `requests` list of typed request objects. | Wrapped | Write |
+| `_open_spreadsheet(gc, id)` | `:791, :1135, :1314` | Held live across the whole archive-download-recreate sequence per class per language — the longest-lived handle in the inventory, spanning a read (download annotations) → compute (stats) → **destructive** write (archive+rename+move) → another write (create new sheet, populate tabs) sequence, entirely within one `main()` loop iteration, no journaling or resumability | Yes (inherited) | Read |
+| `MANIFEST_PATH.write_text(...)` | `:1287, :1328, :1412` | Not a Drive call — local `sheets_manifest.json` write, done **immediately after each class's manifest update** (`:1287`, inside the per-class loop) specifically so partial progress survives a mid-run crash — same defensive pattern as `generate_sheets.py`'s per-language `_upload_planars_config` call | — | Local file write |
+| `_upload_planars_config(...)` | `:1339, :1416` | End-of-run Drive manifest sync (plus a second one if new notification issues were created) | No (inherited) | Write |
+
+**Live-object-held-across-many-ops:** this file has the inventory's clearest
+example of a single object spanning a genuinely multi-step, partially
+irreversible operation: `ss` (opened at `:791`/`:1135`) is read from (download
+every tab's annotations), then — if `apply` — its underlying spreadsheet file
+is **renamed and moved** (archived) via Drive calls that operate on `ss.id`,
+while a *second*, unrelated `Spreadsheet` object `new_ss` (from `gc.create(...)`
+at `:849`/`:1215`) is populated and becomes the new manifest entry. There is no
+rollback if population of `new_ss` fails partway through after `ss` has
+already been archived — this is precisely the "7 sequential side effects, no
+rollback" scenario `data-layer-design.md` names, and it is the reason Phase 7
+(recoverability) exists as a separate later phase. A protocol seam here needs
+to support: open A, read A, mutate A (rename+move), create B, populate B
+across N tab-writes, update a manifest — as one logical unit with a
+well-defined partial-failure story, not just individual call wrappers.
+
+**Subtlety flags specific to this file:**
+- **`values_batch_update` vs. `batch_update`** is the single most likely
+  naming collision to trip up a fake or a protocol design — they sound like
+  the same operation and are not. Any protocol method name needs to
+  disambiguate this explicitly (e.g. `write_cell_ranges` vs.
+  `apply_sheet_requests`), not use "batch update" as a generic name.
+- **Two independent "get-or-create folder" implementations** exist
+  (`drive.py:_get_or_create_folder` and this file's `_get_or_create_subfolder`)
+  doing the same Drive query/create shape with slightly different `fields`
+  values. A fake needs both call shapes to work identically even though the
+  production code never unified them — and the protocol design should
+  probably collapse them into one method, per `data-layer-design.md`'s
+  "derive, don't duplicate" principle.
+- **Archive-then-create is not atomic and not journaled.** The rename
+  (`drive.files().update`) happens, then the move (`_move_to_folder`), then
+  the permission lock (`_lock_archived_sheet`), then a brand-new spreadsheet
+  is created and populated tab-by-tab, then the manifest is updated — six-plus
+  Drive round trips per class per language, any one of which can fail after
+  the archive step has already destroyed the "current" status of the old
+  sheet. This is the file the design doc's `#248 is exactly this story`
+  sentence is about.
+- `ws.clear()` here (bare) vs. `_reset_worksheet()` in `generate_sheets.py`
+  (clear + explicit grid/format reset) is a second instance (after
+  `update_sheets.py`'s `insert_cols` 1-indexing) of the same operation being
+  done two different ways in two files — a fake needs to decide whether
+  `clear()` alone resets formatting/grid size or not, and current production
+  code depends on the answer being "no" in some places (this file, apparently
+  tolerating leftover formatting on a *freshly created* worksheet, where it
+  wouldn't matter) and needing it to be handled explicitly elsewhere
+  (`generate_sheets.py`, where tabs are *reused*, not freshly created, so
+  leftover pink highlighting from `validate-coding` would otherwise persist).
+
