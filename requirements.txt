@@ -55,7 +55,7 @@ googleapis-common-protos==1.73.0
     # via google-api-core
 gspread==6.2.1
     # via -r requirements.in
-httplib2==0.31.2
+httplib2==0.32.0
     # via
     #   google-api-python-client
     #   google-auth-httplib2
@@ -115,7 +115,7 @@ protobuf==6.33.5
     #   google-api-core
     #   googleapis-common-protos
     #   proto-plus
-pyasn1==0.6.3
+pyasn1==0.6.4
     # via pyasn1-modules
 pyasn1-modules==0.4.2
     # via google-auth
