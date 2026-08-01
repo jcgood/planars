@@ -485,6 +485,43 @@ new file ID next time, rather than erroring).
   two "upload or update a Drive file" implementations, not just duplicated
   code that happens to agree.
 
+### `coding/generate_reports.py` (127 lines)
+
+Smallest file in the inventory. Like `generate_notebooks.py`, **never touches
+gspread** — pure Drive-file upload, this time for PDF bytes rather than
+`.ipynb` JSON. Its own local `_upload_pdf` is a fourth independent
+create-or-update-Drive-file implementation.
+
+| Operation | Call sites | Args / return usage | Retry | R/W |
+|---|---|---|---|---|
+| `drive.files().update(fileId=, body={"name": filename}, media_body=media)` | `:47-51` (`_upload_pdf`) | **Fourth** independent "create-or-update a Drive file" implementation (after `drive.py`'s `_upload_planars_config`, `refresh_dropdowns.py`'s inline duplicate, `generate_notebooks.py`'s `_upload_file`). Same rename-on-update behavior as `generate_notebooks.py`'s version. `media_body=MediaIoBaseUpload(..., resumable=False)` — the only call site in the inventory that explicitly sets `resumable=False`; every other `MediaIoBaseUpload` use in the codebase (`drive.py`'s manifest upload, `generate_notebooks.py`'s notebook upload) leaves it at the library default. Worth a note for a fake: if resumable-upload semantics are ever modeled, this is the one call that opts out. **Not wrapped in `_with_retry`.** | No | Write |
+| `drive.files().create(body={"name":, "parents":[folder_id]}, media_body=media, fields="id")` | `:54-58` | Same shape as elsewhere | No | Write |
+| `drive.permissions().create(fileId=, body={"type":"anyone","role":"reader"}, fields="id")` — **behavioral delta from `generate_notebooks.py`** | `:60-64` | **Only called on the create branch** (inside the `else:` at `:53-65`) — unlike `generate_notebooks.py`'s `_set_viewer_permissions`, which this file's sibling calls unconditionally after every upload (both create and update paths, `generate_notebooks.py:370` runs after every `_upload_file` regardless of whether it created or updated). This file's PDF permission is set once at creation and never reasserted on subsequent updates — if the "anyone with link, reader" grant is ever accidentally removed from a report PDF, `generate-reports --apply` will silently fail to restore it on the next run (it will just update the PDF content in place, permission untouched), whereas the equivalent notebook would self-heal. A behavioral inconsistency worth flagging for the protocol design (should "upload or update + ensure viewer permission" be one composite operation, applied uniformly?). | No | Write |
+| `_get_clients()` | `:85` | Same discard-`gc` pattern as `generate_notebooks.py:348` | — | — |
+
+**Live-object-held-across-many-ops:** none — same as `generate_notebooks.py`,
+no gspread objects exist in this file. `drive_config` is mutated in memory
+across the per-language loop and saved once at the end (`:117`); a failure
+partway through leaves already-uploaded PDFs' `report_file_id`s unpersisted,
+same orphaning risk as `generate_notebooks.py`.
+
+**Subtlety flags specific to this file:**
+- The create-only permission-set (vs. `generate_notebooks.py`'s
+  every-time permission-set) is the clearest concrete "two implementations of
+  the same conceptual operation, differing in behavior in a way that matters"
+  finding among the four independent Drive-file-upload implementations found
+  across the eleven files. Listed together, the four are: `drive.py`'s
+  `_upload_planars_config` (update never renames; create sets no permission —
+  manifest.json is never meant to be publicly viewable), `refresh_dropdowns.py`'s
+  inline duplicate (same, minus the key-reordering and create-fallback),
+  `generate_notebooks.py`'s `_upload_file`+`_set_viewer_permissions` (update
+  renames; permission set unconditionally every run), and this file's
+  `_upload_pdf` (update renames; permission set only on create). A single
+  protocol method for "create-or-update a Drive file" would need an explicit,
+  named parameter for each of these axes (rename-on-update: yes/no;
+  reassert-permission: always/on-create-only/never) rather than letting each
+  caller reinvent the combination it happens to want.
+
 ### `coding/restructure_sheets.py` (1423 lines)
 
 The most consequential file in the inventory — archive/recreate cycles, the
