@@ -14,6 +14,17 @@ Copies coded_data/stan1293 to coded_data/synth0001 with two kinds of changes:
   Parametric: ~25% of y/n parameter values in filled TSVs are flipped
   (same seed), independent of --full-copy.
 
+  Scopal consistency: the per-row flip above operates independently per row,
+  which can leave one Element with scopal=n at one position and scopal=y/both
+  at another in nonpermutability/element_prescreening.tsv -- a combination
+  generate_sheets.py's divergent-scopal guard (issue #228) rejects outright,
+  aborting sheet creation until a coordinator resolves it by hand (as happened
+  for real in issue #267, which turned out to be exactly this generation
+  artifact rather than a genuine linguistic question -- see #267's closing
+  comment). _resolve_scopal_divergence() runs a post-flip pass that detects any
+  Element left divergent and picks one value for all of its rows (seeded, so
+  reproducible), so regenerating synth0001 can never reintroduce this again.
+
 Filled/annotated TSVs come in three row shapes, each handled differently when
 positions are dropped:
   - Position_Number column (ordinary per-element rows): row is dropped if its
@@ -234,6 +245,58 @@ def _transform_filled_tsv(
     return "".join(out), n_kept, n_dropped, n_flips
 
 
+def _resolve_scopal_divergence(text: str, rng: random.Random) -> tuple[str, list[str]]:
+    """Force `scopal` to be consistent per Element in element_prescreening.tsv.
+
+    generate_sheets.py's nonpermutability pair-generation guard aborts sheet
+    creation if any Element has scopal=n at one position and scopal=y/both at
+    another (issue #228) -- a real coordinator decision for genuine annotation
+    data, but meaningless noise here: the per-row flip in _transform_filled_tsv
+    has no notion of "this Element's other rows", so it can independently flip
+    one row of a previously-consistent Element and break the invariant. For
+    each Element left divergent after flipping, picks one of its observed
+    values at random (seeded rng, so reproducible) and applies it to all of
+    that Element's rows -- restoring the invariant the same way a coordinator
+    would (pick one), but automatically, since these values carry no real
+    linguistic content to adjudicate.
+
+    Returns (new_text, notes) where notes is one string per Element fixed,
+    e.g. "AD-V: n/y/y -> n".  Only applies to files with both an `Element` and
+    a `scopal` column; other files pass through unchanged with no notes.
+    """
+    lines = text.splitlines(keepends=True)
+    if not lines:
+        return text, []
+    header = lines[0].rstrip("\n").split("\t")
+    if "Element" not in header or "scopal" not in header:
+        return text, []
+    ei, si = header.index("Element"), header.index("scopal")
+
+    rows = []
+    for line in lines[1:]:
+        parts = line.rstrip("\n").split("\t")
+        while len(parts) < len(header):
+            parts.append("")
+        rows.append(parts)
+
+    by_element: dict[str, list[int]] = {}
+    for i, parts in enumerate(rows):
+        by_element.setdefault(parts[ei], []).append(i)
+
+    notes: list[str] = []
+    for element, row_idxs in sorted(by_element.items()):
+        observed = [rows[i][si].strip() for i in row_idxs]
+        vals = set(observed)
+        if "n" in vals and vals & {"y", "both"}:
+            resolved = rng.choice(sorted(vals))
+            for i in row_idxs:
+                rows[i][si] = resolved
+            notes.append(f"{element}: {'/'.join(observed)} -> {resolved}")
+
+    out = [lines[0]] + ["\t".join(r) + "\n" for r in rows]
+    return "".join(out), notes
+
+
 # ---------------------------------------------------------------------------
 # Plan builder
 # ---------------------------------------------------------------------------
@@ -276,15 +339,18 @@ def build_plan(
     dst_root: Path,
     pos_map: dict[int, int],
     rng: random.Random,
-) -> tuple[list[tuple[Path, str]], dict[str, tuple[int, int, int]]]:
-    """Return (plan, stats).
+) -> tuple[list[tuple[Path, str]], dict[str, tuple[int, int, int]], list[str]]:
+    """Return (plan, stats, scopal_notes).
 
     plan is a list of (dst_path, content) pairs. stats maps each filled TSV's
     relative destination path to (n_kept, n_dropped, n_flips); files with no
     row-level dropping (plain lang-ID substitution only) aren't stat-tracked.
+    scopal_notes lists any Elements whose scopal value was forced consistent
+    by _resolve_scopal_divergence (see that function's docstring).
     """
     plan: list[tuple[Path, str]] = []
     stats: dict[str, tuple[int, int, int]] = {}
+    scopal_notes: list[str] = []
     src_pi = src_root / "lang_setup"
     dst_pi = dst_root / "lang_setup"
 
@@ -339,11 +405,13 @@ def build_plan(
             content, n_kept, n_dropped, n_flips = _transform_filled_tsv(
                 tsv.read_text(), pos_map, rng, element_positions
             )
+            content, notes = _resolve_scopal_divergence(content, rng)
+            scopal_notes.extend(f"{class_dir.name}/{tsv.name}: {note}" for note in notes)
             dst_path = dst_root / class_dir.name / tsv.name
             plan.append((dst_path, content))
             stats[str(dst_path.relative_to(dst_root.parent))] = (n_kept, n_dropped, n_flips)
 
-    return plan, stats
+    return plan, stats, scopal_notes
 
 
 # ---------------------------------------------------------------------------
@@ -399,7 +467,7 @@ def main() -> None:
           f"keystone renumbered to {new_keystone}")
     print(f"Old→new map: {pos_map}\n")
 
-    plan, stats = build_plan(src_root, dst_root, pos_map, rng)
+    plan, stats, scopal_notes = build_plan(src_root, dst_root, pos_map, rng)
 
     for dst, content in plan:
         rel = dst.relative_to(REPO_ROOT)
@@ -431,6 +499,11 @@ def main() -> None:
               f"may no longer exercise the code paths they're meant to test:")
         for f in empty_files:
             print(f"    {f}")
+    if scopal_notes:
+        print(f"\nScopal divergence resolved for {len(scopal_notes)} element(s) "
+              f"(would otherwise abort generate-sheets — see issue #228):")
+        for note in scopal_notes:
+            print(f"    {note}")
     if not args.apply:
         print("\nRun with --apply to write files.")
         return
