@@ -99,6 +99,21 @@ first file migration are done rather than delegated, because their correctness
 is only visible by reading. That investment is what makes phases 2, 5, 6, and 8
 cheaply delegable later.
 
+**2026-08-01 — the `untestable` trap was fixed immediately rather than deferred
+to Phase 3.** A deliberate exception to Phase 2's inventory-only rule, taken
+because the fix can only *widen* an allowed-value set (it cannot newly reject
+anything already annotated) and because the failure it prevents is
+collaborator-facing: the dropdown offered a value that validation then flagged
+pink. Criterion values now come from `schemas.criterion_values()` rather than
+being restated in `validate_coding.py`.
+
+One hardcode deliberately left in place: coreference `prescreening` is
+`row_type: element` and declares no `criterion` in `diagnostic_classes.yaml`,
+so its criterion *name* (`referential`) still has to be named in code. Removing
+it means adding `criterion: referential` to the schema, which changes sheet
+generation — that wants goldens first, so it belongs to Phase 3. Catalogued in
+`docs/hidden-facts-inventory.md`.
+
 **2026-08-01 — agent briefs must require incremental *commits*, not just
 incremental writes.** The protocol-enumeration agent stalled roughly three
 files into an eleven-file pass with all of its analysis uncommitted in the
@@ -111,29 +126,5 @@ into the plan's *Working with agents* section for all future briefs.
 
 ## Open questions for Jeff
 
-**1. Fix the `untestable` trap now, or leave it for Phase 3?** *(awaiting
-decision)*
-
-Found by the Phase 2 inventory and verified independently. Both
-`schemas/diagnostic_criteria.yaml` and `coded_data/stan1293/lang_setup/diagnostics_stan1293.yaml`
-define `reflexive_allowed` / `pronoun_allowed` / `np_allowed` as
-`[y, n, untestable]`. But `coding/validate_coding.py:59` reads the criterion
-*name* from the schema and then hardcodes its *values* as `["y", "n"]`, and
-`validate_pair_rows` computes `allowed = param_values + {na, ?}` — so
-`untestable` validates as an invalid value on coreference pair sheets.
-Meanwhile the dropdowns are built from the per-language YAML, so they offer it.
-
-The tool offers a value and then marks it pink as wrong, and `validate-coding`
-exits 1, which would file a `sheet-validation` issue.
-
-**Not currently firing** — no annotation TSV contains `untestable` yet. It is a
-trap, not an active failure. But coreference judgments genuinely can be
-untestable, and it's in the dropdown, so it springs the first time Adam uses it.
-
-The fix is small and can only make validation *more permissive* (it cannot
-newly reject anything), so it is low-risk despite there being no goldens yet.
-Argument for waiting: Phase 2 is inventory-only by design, and this is a
-deliberate exception to that.
-
-*(Phases 3 and 4 will separately raise the research/administrative
-classification and the authority assignments.)*
+*(none currently — Phases 3 and 4 will raise the research/administrative
+classification and the authority assignments)*

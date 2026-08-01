@@ -37,7 +37,12 @@ from .make_forms import (
 from .validate import ValidationIssue
 from .validate_planar import validate_planar_df
 from .validate_diagnostics import validate_diagnostics_df
-from .schemas import load_diagnostic_criteria, load_planar_schema, load_diagnostic_classes
+from .schemas import (
+    criterion_values,
+    load_diagnostic_criteria,
+    load_planar_schema,
+    load_diagnostic_classes,
+)
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -49,14 +54,37 @@ _TRAILING_COLS        = load_planar_schema().get("trailing_columns", ["Source", 
 _DEFAULT_EXPECTED = set(load_diagnostic_criteria().get("default_allowed_values", ["y", "n", "na", "?"]))
 
 # Per-construction criterion for coreference pair sheets, derived from schema.
-# prescreening always uses referential=[y,n]; each pair construction uses its own criterion.
+# Each coreference construction annotates exactly one criterion, but the
+# per-language diagnostics YAML lists all of them together under the class, so
+# param_map alone would put every criterion column on every construction's tab.
+# This narrows each construction to its own criterion.
+#
+# Both the criterion NAME and its allowed VALUES come from the schema. The
+# values were previously hardcoded as ["y", "n"], which silently overrode
+# diagnostic_criteria.yaml's [y, n, untestable] for reflexive_allowed /
+# pronoun_allowed / np_allowed -- so the generated dropdowns offered
+# "untestable" (they are built from the per-language YAML) while validation
+# rejected it and highlighted the cell pink. Never restate a criterion's values
+# here; ask the schema.
+def _entry_for(crit: str) -> dict:
+    """Build a {params, values} entry for a single criterion, values from schema."""
+    vals = criterion_values(crit)
+    # No declared values -> omit the key so validation falls back to defaults,
+    # rather than asserting an empty allowed-set that rejects everything.
+    return {"params": [crit], "values": {crit: vals}} if vals else {"params": [crit]}
+
+
 def _build_coreference_params() -> Dict[str, dict]:
     _dc = {c["name"]: c for c in load_diagnostic_classes().get("classes", [])}
-    result = {"prescreening": {"params": ["referential"], "values": {"referential": ["y", "n"]}}}
+    # prescreening is row_type: element and declares no `criterion` in
+    # diagnostic_classes.yaml, so its criterion NAME still has to be named here.
+    # That remaining hardcode is catalogued in docs/hidden-facts-inventory.md and
+    # belongs to Phase 3; resolving it means adding `criterion: referential` to
+    # the schema, which changes sheet generation and wants goldens first.
+    result: Dict[str, dict] = {"prescreening": _entry_for("referential")}
     for con in (_dc.get("coreference", {}).get("constructions") or []):
         if isinstance(con, dict) and "criterion" in con:
-            crit = con["criterion"]
-            result[con["name"]] = {"params": [crit], "values": {crit: ["y", "n"]}}
+            result[con["name"]] = _entry_for(con["criterion"])
     return result
 
 _COREFERENCE_CONSTRUCTION_PARAMS: Dict[str, dict] = _build_coreference_params()

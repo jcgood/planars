@@ -12,7 +12,7 @@ languages.yaml loads it directly at the point of use.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 
 import yaml
 
@@ -72,3 +72,25 @@ def load_diagnostic_criteria() -> Dict:
         else:
             _diagnostic_criteria_cache = {}
     return _diagnostic_criteria_cache
+
+
+def criterion_values(criterion_name: str) -> List[str] | None:
+    """Return a criterion's declared ``values`` list from diagnostic_criteria.yaml.
+
+    Returns None if the criterion is not found or declares no values, so callers
+    can distinguish "not in the schema" from "declared as an empty list".
+
+    Exists so that a criterion's allowed values are read from the schema rather
+    than restated in code. Restating them is not hypothetical: validate_coding.py
+    hardcoded ``["y", "n"]`` for the coreference pair criteria while
+    diagnostic_criteria.yaml declared them ``[y, n, untestable]``, so the sheets
+    offered ``untestable`` in their dropdowns and validation then flagged it as
+    an invalid value. See docs/data-layer-design.md for why this class of
+    duplication is the project's dominant failure mode.
+    """
+    for analysis in load_diagnostic_criteria().get("analyses", []) or []:
+        for crit in analysis.get("diagnostic_criteria", []) or []:
+            if isinstance(crit, dict) and crit.get("name") == criterion_name:
+                vals = crit.get("values")
+                return list(vals) if vals else None
+    return None

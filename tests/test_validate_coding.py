@@ -1,7 +1,12 @@
 """Tests for coding/validate_coding.py — validate_annotation_rows."""
 from __future__ import annotations
 
-from coding.validate_coding import validate_annotation_rows
+from coding.schemas import criterion_values
+from coding.validate_coding import (
+    _COREFERENCE_CONSTRUCTION_PARAMS,
+    validate_annotation_rows,
+    validate_pair_rows,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -100,3 +105,64 @@ def test_non_integer_position_value_warns():
     _, issues = validate_annotation_rows(rows, ["free", "dependent-on-left", "dependent-on-right"],
                                          "general", _FREE_PV)
     assert any("unexpected value" in i.message and "dependent-on-left" in i.message for i in issues)
+
+
+# ---------------------------------------------------------------------------
+# Criterion values come from the schema, never restated in code
+# ---------------------------------------------------------------------------
+
+def test_criterion_values_reads_schema():
+    assert criterion_values("reflexive_allowed") == ["y", "n", "untestable"]
+    assert criterion_values("referential") == ["y", "n"]
+
+
+def test_criterion_values_unknown_returns_none():
+    """None rather than [] so callers can distinguish 'absent' from 'empty'."""
+    assert criterion_values("no_such_criterion_anywhere") is None
+
+
+def test_coreference_pair_params_carry_untestable():
+    """Regression: these were hardcoded ["y", "n"], overriding the schema's
+    [y, n, untestable]. Dropdowns are built from the per-language YAML and so
+    offered "untestable", which validation then flagged pink."""
+    for construction, crit in [
+        ("reflexivization", "reflexive_allowed"),
+        ("pronominalization", "pronoun_allowed"),
+        ("np_reference", "np_allowed"),
+    ]:
+        vals = _COREFERENCE_CONSTRUCTION_PARAMS[construction]["values"][crit]
+        assert "untestable" in vals, f"{construction}/{crit} lost untestable"
+
+
+def test_coreference_prescreening_still_resolves():
+    """prescreening is row_type: element and declares no `criterion` in
+    diagnostic_classes.yaml, so the constructions loop does not pick it up.
+    Without an explicit entry it falls through to the per-language param map
+    and wrongly inherits all three pair criteria as its columns."""
+    entry = _COREFERENCE_CONSTRUCTION_PARAMS["prescreening"]
+    assert entry["params"] == ["referential"]
+    assert entry["values"]["referential"] == ["y", "n"]
+
+
+_PAIR_HEADER = ["Element_A", "Position_A", "Element_B", "Position_B",
+                "Direction", "reflexive_allowed", "Source", "Comments"]
+
+
+def _pair_rows(value: str) -> list[list[str]]:
+    return [_PAIR_HEADER, ["a", "1", "b", "2", "A>B", value, "", ""]]
+
+
+def test_untestable_accepted_on_coreference_pair_sheet():
+    """End-to-end: the value the dropdown offers must validate cleanly."""
+    info = _COREFERENCE_CONSTRUCTION_PARAMS["reflexivization"]
+    _, issues = validate_pair_rows(_pair_rows("untestable"), info["params"],
+                                   "reflexivization", info["values"])
+    assert [i for i in issues if "unexpected value" in i.message] == []
+
+
+def test_genuinely_invalid_value_still_rejected_on_pair_sheet():
+    """Confirms the fix widened the allowed set rather than disabling the check."""
+    info = _COREFERENCE_CONSTRUCTION_PARAMS["reflexivization"]
+    _, issues = validate_pair_rows(_pair_rows("maybe"), info["params"],
+                                   "reflexivization", info["values"])
+    assert any("unexpected value" in i.message for i in issues)
