@@ -264,6 +264,65 @@ class TestFilterNonpermPairsByPrescreening:
         result = _filter_nonperm_pairs_by_prescreening(pairs, "lang0001")
         assert result == pairs
 
+    def _completed(self, stdout: str = "") -> MagicMock:
+        proc = MagicMock()
+        proc.stdout = stdout
+        return proc
+
+    def test_divergent_scopal_creates_issue_when_none_open(self, tmp_path, monkeypatch):
+        # Regression guard for #266/#267: two duplicate issues were filed because
+        # this path unconditionally created a new issue with no check for an
+        # already-open one. This case is the "nothing open yet" branch.
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        self._write_prescreening(tmp_path, "lang0001", [
+            {"Element": "a", "scopal": "n"},
+            {"Element": "a", "scopal": "y"},
+        ])
+        calls = []
+
+        def fake_run(args, **kwargs):
+            calls.append(args)
+            if args[:3] == ["gh", "issue", "list"]:
+                return self._completed("[]")
+            return self._completed("https://github.com/x/y/issues/1")
+
+        with patch("subprocess.run", side_effect=fake_run):
+            with pytest.raises(SystemExit):
+                _filter_nonperm_pairs_by_prescreening([["a", "b"]], "lang0001")
+
+        create_calls = [c for c in calls if c[:3] == ["gh", "issue", "create"]]
+        edit_calls = [c for c in calls if c[:3] == ["gh", "issue", "edit"]]
+        assert len(create_calls) == 1
+        assert len(edit_calls) == 0
+
+    def test_divergent_scopal_edits_existing_issue_instead_of_duplicating(self, tmp_path, monkeypatch):
+        # The dedup fix's core behavior: when an open issue with the exact same
+        # title already exists, update it in place rather than filing a duplicate.
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        self._write_prescreening(tmp_path, "lang0001", [
+            {"Element": "a", "scopal": "n"},
+            {"Element": "a", "scopal": "y"},
+        ])
+        import json
+        title = "[lang0001] nonpermutability: element has divergent scopal values by position"
+        calls = []
+
+        def fake_run(args, **kwargs):
+            calls.append(args)
+            if args[:3] == ["gh", "issue", "list"]:
+                return self._completed(json.dumps([{"number": 42, "title": title}]))
+            return self._completed("")
+
+        with patch("subprocess.run", side_effect=fake_run):
+            with pytest.raises(SystemExit):
+                _filter_nonperm_pairs_by_prescreening([["a", "b"]], "lang0001")
+
+        create_calls = [c for c in calls if c[:3] == ["gh", "issue", "create"]]
+        edit_calls = [c for c in calls if c[:3] == ["gh", "issue", "edit"]]
+        assert len(create_calls) == 0
+        assert len(edit_calls) == 1
+        assert edit_calls[0][:4] == ["gh", "issue", "edit", "42"]
+
 
 # ---------------------------------------------------------------------------
 # _prefill_free_occurrence_rows

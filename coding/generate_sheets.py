@@ -524,20 +524,46 @@ def _filter_nonperm_pairs_by_prescreening(
             f"`python -m coding generate-sheets --lang {lang_id} --regen-construction nonpermutability:general`",
         ]
         body = "\n".join(lines)
+        title = f"[{lang_id}] nonpermutability: element has divergent scopal values by position"
         body_file = ROOT / "nonperm_scopal_conflict.tmp"
         body_file.write_text(body, encoding="utf-8")
         try:
             _sp.run(["gh", "auth", "status"], capture_output=True, check=True)
-            r = _sp.run(
-                ["gh", "issue", "create",
-                 "--title", f"[{lang_id}] nonpermutability: element has divergent scopal values by position",
-                 "--label", "diagnostics",
-                 "--body-file", str(body_file)],
+            # This guard fires from three independent call sites (initial sheet
+            # creation, --regen-construction, --add-constructions-to-existing-sheet),
+            # so a single work session can easily trip it more than once for the
+            # same language before the underlying data is fixed. Find-or-edit by
+            # exact title (not just the "diagnostics" label, which is shared with
+            # unrelated issues) so repeated trips update one issue in place instead
+            # of piling up duplicates -- see issue #269, filed after #266/#267 were
+            # both created for the same synth0001 divergence three minutes apart.
+            existing = _sp.run(
+                ["gh", "issue", "list", "--label", "diagnostics", "--state", "open",
+                 "--json", "number,title"],
                 capture_output=True, text=True, check=True,
             )
-            print(f"   GitHub issue created: {r.stdout.strip()}")
+            import json as _json
+            match = next(
+                (i["number"] for i in _json.loads(existing.stdout) if i["title"] == title),
+                None,
+            )
+            if match is not None:
+                _sp.run(
+                    ["gh", "issue", "edit", str(match), "--body-file", str(body_file)],
+                    capture_output=True, text=True, check=True,
+                )
+                print(f"   GitHub issue #{match} updated (already open for this language)")
+            else:
+                r = _sp.run(
+                    ["gh", "issue", "create",
+                     "--title", title,
+                     "--label", "diagnostics",
+                     "--body-file", str(body_file)],
+                    capture_output=True, text=True, check=True,
+                )
+                print(f"   GitHub issue created: {r.stdout.strip()}")
         except Exception as exc:
-            print(f"   (Could not create GitHub issue: {exc})")
+            print(f"   (Could not create/update GitHub issue: {exc})")
         finally:
             body_file.unlink(missing_ok=True)
         raise SystemExit(
