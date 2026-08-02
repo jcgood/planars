@@ -1,0 +1,11 @@
+SUMMARY
+     3  create_file
+     3  create_permission
+
+DRIVE OPERATIONS
+  create_file: file_id='fake_file_0001', name='report_arao1248.pdf', parents=['1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'], mimetype='application/pdf', bytes=17
+  create_permission: file_id='fake_file_0001', type='anyone', role='reader', notify=False
+  create_file: file_id='fake_file_0003', name='report_stan1293.pdf', parents=['1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'], mimetype='application/pdf', bytes=17
+  create_permission: file_id='fake_file_0003', type='anyone', role='reader', notify=False
+  create_file: file_id='fake_file_0005', name='report_synth0001.pdf', parents=['1F9y3SyErwY7ieexHGUmv3k17TNFd2hOH'], mimetype='application/pdf', bytes=18
+  create_permission: file_id='fake_file_0005', type='anyone', role='reader', notify=False

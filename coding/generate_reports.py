@@ -24,45 +24,41 @@ Authentication: same OAuth2 setup as generate_sheets.py.
 """
 from __future__ import annotations
 
-import io
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
-from googleapiclient.http import MediaIoBaseUpload
-
 from planars.reports import language_report_data
 from planars.html_report import render_language_report_pdf
-from .drive import _get_clients, _load_drive_config, _save_drive_config
+from .drive import _load_drive_config, _save_drive_config
+from .drive_backend import get_backend
 
 
-def _upload_pdf(drive, pdf_bytes: bytes, filename: str, folder_id: str, existing_file_id: str | None) -> str:
-    """Upload (create or update) a PDF file in Drive. Returns the file ID."""
-    media = MediaIoBaseUpload(
-        io.BytesIO(pdf_bytes), mimetype="application/pdf", resumable=False
-    )
+def _upload_pdf(backend, pdf_bytes: bytes, filename: str, folder_id: str, existing_file_id: str | None) -> str:
+    """Upload (create or update) a PDF file in Drive. Returns the file ID.
+
+    Two behaviours here differ from the project's three other "create-or-update
+    a Drive file" implementations, and both are preserved deliberately (see
+    docs/drive-protocol-surface.md § "Duplicate implementations to collapse"):
+    the update path renames the file, and the "anyone with the link, reader"
+    grant is set **only on create**. The latter means a report whose permission
+    is removed by hand is never restored — unlike a notebook, which
+    generate_notebooks.py reasserts on every run. Collapsing the four into one
+    parameterised call is a later change, gated on all four having goldens.
+
+    (The old code passed resumable=False to MediaIoBaseUpload; that is also the
+    library default, which the seam uses, so the upload is unchanged.)
+    """
     if existing_file_id:
-        drive.files().update(
-            fileId=existing_file_id,
-            body={"name": filename},
-            media_body=media,
-        ).execute()
+        backend.update_file(existing_file_id, name=filename,
+                            content=pdf_bytes, mimetype="application/pdf")
         return existing_file_id
-    else:
-        result = drive.files().create(
-            body={"name": filename, "parents": [folder_id]},
-            media_body=media,
-            fields="id",
-        ).execute()
-        file_id = result["id"]
-        drive.permissions().create(
-            fileId=file_id,
-            body={"type": "anyone", "role": "reader"},
-            fields="id",
-        ).execute()
-        return file_id
+    file_id = backend.create_file(filename, parents=[folder_id],
+                                  content=pdf_bytes, mimetype="application/pdf")
+    backend.create_permission(file_id, type="anyone", role="reader")
+    return file_id
 
 
 def _run(apply: bool) -> None:
@@ -82,7 +78,7 @@ def _run(apply: bool) -> None:
         return
 
     drive_config = _load_drive_config()
-    _, drive = _get_clients()
+    backend = get_backend()
 
     for lang_id in lang_ids:
         folder_id = drive_config.get(lang_id, {}).get("folder_id")
@@ -104,7 +100,7 @@ def _run(apply: bool) -> None:
         existing = lang_cfg.get("report_file_id") or lang_cfg.get("report_html_file_id")
 
         try:
-            file_id = _upload_pdf(drive, pdf_bytes, filename, folder_id, existing)
+            file_id = _upload_pdf(backend, pdf_bytes, filename, folder_id, existing)
         except Exception as e:
             print(f"upload ERROR: {e}")
             continue

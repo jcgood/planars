@@ -1,0 +1,63 @@
+SUMMARY
+    36  batch_request
+     1  update_file
+     8    └─ repeatCell
+    20    └─ setDataValidation
+     8    └─ updateSheetProperties
+
+DRIVE OPERATIONS
+  update_file: file_id='fake_manifest_file', bytes=49954
+
+SHEET OPERATIONS
+
+  stan1293/class:segmental  tab=flapping
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (flapping_left) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (flapping_internal) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (flapping_right) rows 1-143 -> ['y', 'n'] (strict=False)
+
+  stan1293/class:phrasal_accent  tab=general
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (joint_accent) rows 1-143 -> ['y', 'n'] (strict=False)
+
+  synth0001/class:segmental  tab=flapping
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (flapping_left) rows 1-144 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (flapping_internal) rows 1-144 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (flapping_right) rows 1-144 -> ['y', 'n'] (strict=False)
+
+  synth0001/class:coreference  tab=prescreening
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (referential) rows 1-144 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (Source) rows 1-144 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (Comments) rows 1-144 -> ['y', 'n'] (strict=False)
+
+  synth0001/class:coreference  tab=reflexivization
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 4 (reflexive_allowed) rows 1-608 -> ['y', 'n', 'untestable'] (strict=False)
+    setDataValidation: col 5 (pronoun_allowed) rows 1-608 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 6 (np_allowed) rows 1-608 -> ['y', 'n'] (strict=False)
+
+  synth0001/class:coreference  tab=pronominalization
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 4 (reflexive_allowed) rows 1-608 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (pronoun_allowed) rows 1-608 -> ['y', 'n', 'untestable'] (strict=False)
+    setDataValidation: col 6 (np_allowed) rows 1-608 -> ['y', 'n'] (strict=False)
+
+  synth0001/class:coreference  tab=np_reference
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 4 (reflexive_allowed) rows 1-608 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (pronoun_allowed) rows 1-608 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 6 (np_allowed) rows 1-608 -> ['y', 'n', 'untestable'] (strict=False)
+
+  synth0001/class:phrasal_accent  tab=general
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 2 (joint_accent) rows 1-2 -> ['y', 'n'] (strict=False)

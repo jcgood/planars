@@ -40,8 +40,9 @@ of this state would be exactly the defect this project is trying to remove.
 | Phase 0a — fixture capture run (read-only, live) | **done** — 29 sheets, 80 tabs | `b40cd64` |
 | Phase 0a — protocol module (`coding/drive_backend.py`) | **done** | this commit |
 | Phase 0a — fake backend (`tests/fake_drive.py`) + smoke tests | **done** — 62 tests | this commit |
-| Phase 0b/1 — file 1 of 11: `refresh_dropdowns.py` | **done** — goldens captured; `--apply` mutation log **awaits Jeff's review** | this commit |
-| Phase 0b/1 — files 2–11 | not started | — |
+| Phase 0b/1 — file 1 of 11: `refresh_dropdowns.py` | **done** — goldens captured, mutation log reviewed and accepted | `5ca369d` |
+| Phase 0b/1 — file 2 of 11: `generate_reports.py` | **done** — goldens captured, pre/post diff clean | this commit |
+| Phase 0b/1 — files 3–11 | not started | — |
 | Phases 3–9 | not started | — |
 
 ### In flight
@@ -53,27 +54,25 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
 ## Next action
 
-**One thing needs Jeff, and it does not block the next migration.**
+**Not blocked.**
 
-**For Jeff:** review the `--apply` mutation log now committed as a golden at
-`tests/goldens/refresh_dropdowns/apply_mutations.json` (36 requests: 20
-`setDataValidation`, 8 `updateSheetProperties` freeze-header, 8 `repeatCell`
-bold-header; no cell-value writes; one manifest update). The plan asks for a
-human to review a write path's log *before* it becomes a golden, because write
-paths have no pre-migration baseline. Here a baseline was obtainable after all
-(see the per-file procedure note below) and it matched exactly, so the review is
-confirmatory rather than the only barrier — but it is still owed.
+1. **Files 3–11**, one at a time, goldens captured immediately after each.
+   Delegable to agents now that the pattern exists (files 1 and 2 are the
+   worked examples: one gspread-heavy, one Drive-files-only). Remaining, in
+   suggested order: `generate_notebooks.py` (no gspread at all — closest to
+   file 2, and shares the "upload a file, set a permission" shape),
+   `validate_coding.py`, `update_sheets.py`, `import_sheets.py`,
+   `sync_params.py`, `generate_status_sheet.py`,
+   `generate_biuniqueness_stage1_sheet.py`, `generate_sheets.py`,
+   `restructure_sheets.py`. The last two are the largest and should go last,
+   after every helper they share has already moved.
 
-Then, in order:
-
-1. **Files 2–11**, one at a time, goldens captured immediately after each.
-   Delegable to agents now that the pattern exists. Suggested order, easiest
-   first: `generate_reports.py` (127 lines, Drive-file upload only),
-   `generate_notebooks.py` (no gspread at all), `validate_coding.py`,
-   `update_sheets.py`, `import_sheets.py`, `sync_params.py`,
-   `generate_status_sheet.py`, `generate_biuniqueness_stage1_sheet.py`,
-   `generate_sheets.py`, `restructure_sheets.py`. The last two are the largest
-   and should go last, after every helper they share has already moved.
+   Watch for, in each: a `_save_drive_config` call (must be patched in tests —
+   the real `drive_config.json` holds live IDs and a test that clobbers it
+   breaks the coordinator's access to their own Drive) and any expensive or
+   non-deterministic pure-computation step (PDF rendering, notebook JSON) that
+   should be stubbed so the golden locks the *Drive interaction*, which is what
+   the migration touches, rather than output already covered elsewhere.
 
 2. Phases 3–9 per the plan.
 
@@ -98,6 +97,31 @@ This gives write paths a real before/after diff rather than review alone, which
 is a stronger check than the plan assumed was available. The shims live in the
 scratchpad, not the repo — they are per-file throwaways, and committing them
 would create a second, decaying description of each command's client usage.
+
+**Weight the automated evidence, not the human review.** The plan made human
+review of the `--apply` mutation log the primary barrier for write paths. File
+1 showed that is the wrong place to put the load: reviewing file 1's log meant
+resolving opaque `sheetId`s and 0-based column indices against the fixtures
+before it said anything at all, and the coordinator's honest response on
+accepting it was that it was hard to judge. That is a fair reading of the
+artifact, not a gap in diligence — and a review step that cannot be performed
+confidently is not a safety mechanism, it is a formality that looks like one.
+
+So for files 2–11 the order of evidence is:
+
+1. the pre/post mutation-log diff (mechanical, exact, and the thing that
+   actually proves the migration changed nothing);
+2. property assertions that survive regeneration — for file 1: the dry run
+   mutates nothing, `--apply` writes no cell value, every captured tab reads
+   back byte-identical afterwards, a second `--apply` is a no-op. These are
+   worth more than the golden text, because they state the command's promise
+   rather than its current output;
+3. human review last, on a *rendered* digest (tab titles and column headers
+   resolved, not raw IDs), and framed as "does this match what the command is
+   supposed to do", not "verify these 36 entries".
+
+Both bugs behind #272 were found by (3) done on a rendered digest — raw JSON
+had hidden the second one entirely. Render before asking anyone to read.
 
 ---
 

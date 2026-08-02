@@ -40,6 +40,7 @@ import pytest
 
 from coding import drive, drive_backend, refresh_dropdowns
 from fake_drive import FakeDriveBackend, MANIFEST_FILE_ID
+from render_mutations import render
 
 ROOT = Path(__file__).resolve().parent.parent
 GOLDEN_DIR = ROOT / "tests" / "goldens" / "refresh_dropdowns"
@@ -129,6 +130,16 @@ def test_apply_mutation_log(fake, monkeypatch):
     run(["refresh-dropdowns", "--apply"], monkeypatch)
     check_golden("apply_mutations.json",
                  json.dumps(fake.mutations, indent=2) + "\n")
+
+
+def test_apply_mutation_digest(fake, monkeypatch):
+    """The same log, rendered for a human: tab titles and column headers resolved.
+
+    This is the artifact to review, not the raw JSON — raw IDs and 0-based
+    column indices hid one of the two bugs in #272 through a first reading.
+    """
+    run(["refresh-dropdowns", "--apply"], monkeypatch)
+    check_golden("apply_digest.txt", render(fake.mutations))
 
 
 def test_apply_never_writes_a_cell_value(fake, monkeypatch):

@@ -1,0 +1,7 @@
+Report generation
+Languages: ['arao1248', 'stan1293', 'synth0001']
+  [arao1248] Collecting data... created. https://drive.google.com/file/d/fake_file_0001/view
+  [stan1293] Collecting data... created. https://drive.google.com/file/d/fake_file_0003/view
+  [synth0001] Collecting data... created. https://drive.google.com/file/d/fake_file_0005/view
+
+Done. drive_config.json updated.

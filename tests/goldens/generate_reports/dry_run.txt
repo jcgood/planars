@@ -1,0 +1,7 @@
+DRY RUN — Report generation
+Languages: ['arao1248', 'stan1293', 'synth0001']
+  report_arao1248.pdf
+  report_stan1293.pdf
+  report_synth0001.pdf
+
+Run with --apply to generate and upload.
