@@ -30,7 +30,7 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 0b/1 — migrating callers, 7 of 18 done (started 2026-08-01)
+**Phase:** 0b/1 — migrating callers, 8 of 18 done (started 2026-08-01)
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
 **Last worked:** 2026-08-02
@@ -72,6 +72,7 @@ the same day — see the decisions log.
 | Phase 0b/1 — file 5: `prune_manifest.py` | **done** — snapshots captured, pre/post diff clean |
 | Phase 0b/1 — file 6: `check_notes.py` | **done** — snapshots captured, pre/post diff clean; Docs part of the doorway now covered |
 | Phase 0b/1 — file 7: `generate_biuniqueness_allomorphy_sheet.py` | **done** — snapshots captured, pre/post diff clean; first to create a spreadsheet and share it with a named person |
+| Phase 0b/1 — file 8: `sync_diagnostics_yaml.py` | **done** — snapshots captured, pre/post diff clean; first writer to a reference sheet |
 | Phase 0b/1 — remaining files | not started — see § "Migration order" |
 | Phases 3–9 | not started |
 
@@ -86,11 +87,11 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
 **Not blocked.**
 
-1. **The remaining eleven files**, one at a time, snapshots captured
+1. **The remaining files**, one at a time, snapshots captured
    immediately after each. See § "Migration order" below.
-   Delegable to agents now that the pattern exists (the four done are the
-   worked examples: one Sheets-heavy, one Drive-files-only, one
-   folders-and-sharing, one read-only).
+   Delegable to agents now that the pattern exists (the eight done are the
+   worked examples: Sheets-heavy, Drive-files-only, folders-and-sharing,
+   read-only, Docs, sheet creation, and reference-sheet overwrite).
 
    Watch for, in each: a `_save_drive_config` call (must be patched in tests —
    the real `drive_config.json` holds live IDs and a test that clobbers it
@@ -122,7 +123,7 @@ current job and all three would otherwise be remembered by nobody.
 
 ### Migration order
 
-Eleven files remain of eighteen that touch Drive. The plan's list of eleven
+Ten files remain of eighteen that touch Drive. The plan's list of eleven
 was hand-written and never checked against the code; a scan on 2026-08-02
 replaced it with a derived one in `tests/test_doorway_coverage.py`.
 
@@ -144,7 +145,7 @@ the doorway has been exercised before the destructive commands are touched.
 | ~~3~~ | ~~`prune_manifest.py`~~ | done |
 | ~~4~~ | ~~`check_notes.py`~~ | done |
 | ~~5~~ | ~~`generate_biuniqueness_allomorphy_sheet.py`~~ | done |
-| 6 | `sync_diagnostics_yaml.py` | First writer to a reference sheet |
+| ~~6~~ | ~~`sync_diagnostics_yaml.py`~~ | done |
 | 7 | `import_planar.py` | Reads *and* writes the planar sheet — the #248 command. Do it while the pattern is fresh, not last |
 | 8 | `generate_notebooks.py` | File uploads; closest sibling to `generate_reports`, already done |
 | 9 | `update_sheets.py` | Appends to live annotation sheets. First real risk to Adam's data |
@@ -187,8 +188,8 @@ better than expected and should be reused for files 2–11:
 
 This gives write paths a real before/after diff rather than review alone, which
 is a stronger check than the plan assumed was available. It has held for every
-file since: `generate_reports`, `setup_root_folder`, and `apply_pending` all
-came back byte-identical on the first try. The shims live in the scratchpad,
+file since: `generate_reports`, `setup_root_folder`, `apply_pending` and
+`sync_diagnostics_yaml` all came back byte-identical on the first try. The shims live in the scratchpad,
 not the repo — they are per-file throwaways, and committing them would create a
 second, decaying description of each command's client usage.
 
@@ -288,9 +289,43 @@ asks Drive for and when — which is precisely what the before/after diff is
 there to hold still. `test_the_warning_does_not_stop_the_prune` pins the
 current order so the change is visible when it happens.
 
+**5. `sync-diagnostics-yaml --to-sheet` writes the right thing but does not
+always say what it changed** (found 2026-08-02, file 8, not filed). The
+"removed / added / changed" list it prints before uploading is keyed on the
+`Class` column alone, and several classes have one row per construction —
+`stan1293` has two `segmental` rows and two `phrasal_accent` rows. When the
+only difference is in the *second* row of such a class, the class name appears
+on both sides, and the changed-row comparison looks at `.iloc[0]`, the first
+row, which is identical. So the coordinator is told "Would update → diagnostics
+Sheet" with nothing named at all.
+
+Nothing is written wrongly: the whole-table comparison that decides *whether*
+to upload is correct, and the upload replaces the sheet with the YAML's
+content either way. What is lost is the chance to look at the change before
+approving it. The fix is to compare on (Class, Constructions) rather than
+Class. Recorded rather than fixed, following the rule below.
+`test_a_change_to_a_second_row_of_a_class_is_written_but_not_named` pins the
+current output so the change is visible when it happens.
+
 ---
 
 ## Decisions log
+
+**2026-08-02 — file 8 dropped a parameter rather than keeping the migration
+purely a call-site substitution.** `_sync_to_sheet` took a `gc` client and
+passed it to one call, `_open_spreadsheet(gc, diag_id)`. Through the doorway
+there is nothing to pass, so the parameter went. It is a private function with
+one caller inside the same file, so this is not the cross-file rewrite the
+phase forbids — but it is worth naming as the boundary: a *signature* may
+change when the thing it threaded through no longer exists, a *call site in
+another file* may not.
+
+Also worth noting for the files still to come: the upload direction used to
+build both clients eagerly, before it knew whether it had anything to do.
+`get_doorway()` builds them on first use, which here is the manifest download a
+line later. No output moved, and the fifteen-scenario pre/post diff was
+byte-identical — but on a command that can exit before touching Drive at all,
+this is the difference between prompting for OAuth and not.
 
 **2026-08-02 — the fake was writing acknowledgment lines in the wrong place,
 and it would have hidden a daily duplicate-issue loop.** Found on file 6, by a

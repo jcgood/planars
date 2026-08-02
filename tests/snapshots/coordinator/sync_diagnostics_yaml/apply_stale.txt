@@ -1,0 +1,7 @@
+Connecting to Google APIs...
+  [stan1293]   - removed: a_class_the_yaml_never_heard_of
+  [stan1293]   + added:   ciscategorial
+  [stan1293]   ~ changed: subspanrepetition
+  [stan1293] Updated → diagnostics Sheet
+
+Done: 1 Sheet(s) updated.

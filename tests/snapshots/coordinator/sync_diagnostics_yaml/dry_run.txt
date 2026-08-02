@@ -1,0 +1,8 @@
+Dry run — use --apply to write changes.
+
+Connecting to Google APIs...
+  [arao1248] Sheet already up to date
+  [stan1293] Sheet already up to date
+  [synth0001] Sheet already up to date
+
+Dry run complete: 0 Sheet(s) would be updated.

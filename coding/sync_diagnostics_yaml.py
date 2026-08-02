@@ -172,7 +172,7 @@ def _sync_from_tsv(lang_id: str, apply: bool, drift_entries: List[Dict]) -> bool
     return bool(deterministic)
 
 
-def _sync_to_sheet(lang_id: str, gc, manifest: dict, apply: bool) -> bool:
+def _sync_to_sheet(lang_id: str, manifest: dict, apply: bool) -> bool:
     """Sync YAML → Google Sheet for one language.
 
     Reads the YAML, generates the TSV representation, compares it against the
@@ -185,7 +185,8 @@ def _sync_to_sheet(lang_id: str, gc, manifest: dict, apply: bool) -> bool:
 
     Returns True if changes were made (or would be).
     """
-    from .drive import _open_spreadsheet, _with_retry
+    from .drive import _with_retry
+    from .drive_doorway import get_doorway
 
     lang_data = manifest.get(lang_id, {})
     diag_id = lang_data.get("diagnostics_spreadsheet_id")
@@ -214,7 +215,7 @@ def _sync_to_sheet(lang_id: str, gc, manifest: dict, apply: bool) -> bool:
     new_df = _yaml_to_tsv_df(yaml_data, lang_id)
 
     try:
-        ss = _open_spreadsheet(gc, diag_id)
+        ss = get_doorway().open_spreadsheet(diag_id)
         current_rows = _with_retry(ss.sheet1.get_all_values)
     except Exception as e:
         print(f"  [{lang_id}] Could not read Sheet: {e}")
@@ -273,16 +274,16 @@ def main() -> None:
 
     if to_sheet:
         # Upload direction requires Google API access.
-        from .drive import _get_clients, _load_manifest_from_drive
+        from .drive import load_manifest
+        from .drive_doorway import get_doorway
         print("Connecting to Google APIs...")
-        gc, drive = _get_clients()
-        manifest = _load_manifest_from_drive(drive)
+        manifest = load_manifest(get_doorway())
         if not manifest:
             raise SystemExit("No manifest found. Run python -m coding generate-sheets --apply first.")
         languages = [lang_filter] if lang_filter else list(manifest.keys())
         changed = 0
         for lang_id in sorted(languages):
-            changed += _sync_to_sheet(lang_id, gc, manifest, apply)
+            changed += _sync_to_sheet(lang_id, manifest, apply)
         print()
         if apply:
             print(f"Done: {changed} Sheet(s) updated.")
