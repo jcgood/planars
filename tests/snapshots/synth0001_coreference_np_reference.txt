@@ -3,14 +3,14 @@ Synth0001 Coreference Np Reference
 
 Keystone position: 30 (v:verbstem)
 
-Binder positions (antecedent): []
-Bindee positions (anaphor):    []
+Binder positions (antecedent): [5, 27, 34]
+Bindee positions (anaphor):    [2, 5, 27, 34]
 
 Binder-only positions (structurally high): []
-Bindee-only positions (structurally low):  []
-Shared positions (either role):            []
+Bindee-only positions (structurally low):  [2]
+Shared positions (either role):            [5, 27, 34]
 
 Binder domain (strict): positions 30–30  (v:verbstem → v:verbstem)
-Binder domain (loose):  positions 30–30  (v:verbstem → v:verbstem)
+Binder domain (loose):  positions 5–34  (v:npsubj1 → v:obj-part)
 Bindee domain (strict): positions 30–30  (v:verbstem → v:verbstem)
-Bindee domain (loose):  positions 30–30  (v:verbstem → v:verbstem)
+Bindee domain (loose):  positions 2–34  (v:frontedXP → v:obj-part)

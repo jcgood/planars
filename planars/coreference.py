@@ -4,6 +4,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set
 
 import pandas as pd
+import yaml
+from importlib.resources import files as _res_files
 
 from planars.spans import fmt_span, loose_span, strict_span
 
@@ -14,6 +16,63 @@ _REQUIRED_CRITERIA: Set[str] = {"reflexive_allowed"}
 _SNAPSHOT_CONSTRUCTIONS = frozenset({"reflexivization", "pronominalization", "np_reference"})
 
 _PAIR_CRITERIA = {"reflexive_allowed", "pronoun_allowed", "np_allowed"}
+
+# Which criterion each pair construction is about. Source of truth is
+# schemas/diagnostic_classes.yaml's per-construction `criterion` field; this
+# map is derived from it at import time, not restated.
+_CONSTRUCTION_CRITERION: Dict[str, str] = {}
+
+
+def _construction_criterion_map() -> Dict[str, str]:
+    """{construction_name: criterion} for coreference, from the schema."""
+    global _CONSTRUCTION_CRITERION
+    if not _CONSTRUCTION_CRITERION:
+        text = (_res_files("schemas")
+                .joinpath("diagnostic_classes.yaml").read_text(encoding="utf-8"))
+        classes = {c["name"]: c for c in (yaml.safe_load(text) or {}).get("classes", [])}
+        _CONSTRUCTION_CRITERION = {
+            con["name"]: con["criterion"]
+            for con in (classes.get("coreference", {}).get("constructions") or [])
+            if isinstance(con, dict) and "criterion" in con
+        }
+    return _CONSTRUCTION_CRITERION
+
+
+def _criterion_column(tsv_path: Path, pair_cols: Set[str]) -> str:
+    """Return the criterion column this construction's judgments live in.
+
+    The construction is what decides: ``reflexivization.tsv`` is about
+    ``reflexive_allowed`` whatever else the sheet happens to carry. Identity
+    comes from the filename (which encodes the construction, per the project's
+    ``{construction}.tsv`` convention) resolved through
+    ``diagnostic_classes.yaml``.
+
+    This used to be ``next(c for c in _PAIR_CRITERIA if c in pair_cols)`` —
+    pick whichever of the three criterion columns is present. That is correct
+    only while a tab carries exactly one of them. When a tab carries all three
+    (as synth0001's coreference tabs did after 2026-08-02's import), ``next()``
+    over a **set** returns an arbitrary member, and Python randomises string
+    hashing per process — so the same file analysed twice gave different
+    answers, silently. Two of the three snapshots failed on any given run, and
+    *which* two changed between runs.
+
+    Falls back to the single criterion column present (the one-criterion-per-tab
+    layout), then to ``reflexive_allowed``, so a tab whose name is not a known
+    construction still behaves as before.
+    """
+    construction = tsv_path.stem
+    declared = _construction_criterion_map().get(construction)
+    if declared and declared in pair_cols:
+        return declared
+    present = sorted(_PAIR_CRITERIA & pair_cols)
+    if len(present) == 1:
+        return present[0]
+    if declared:
+        return declared
+    # Sorted, so that an ambiguous tab is at least deterministic rather than
+    # randomised — a wrong-but-stable answer is debuggable; a wrong-and-shifting
+    # one is what made this bug invisible for as long as it was.
+    return present[0] if present else "reflexive_allowed"
 
 
 def _split_elements(raw: str) -> List[str]:
@@ -143,7 +202,7 @@ def derive_coreference_domains(
     bad_rows: List[str] = []
 
     pair_cols = set(pair_df.columns) if hasattr(pair_df, "columns") else set()
-    criterion_col = next((c for c in _PAIR_CRITERIA if c in pair_cols), "reflexive_allowed")
+    criterion_col = _criterion_column(tsv_path, pair_cols)
 
     for _, row in pair_df.iterrows():
         ea      = row.get("Element_A", "").strip()
