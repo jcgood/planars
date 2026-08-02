@@ -91,6 +91,14 @@ from .drive import (
 WorksheetNotFound = gspread.exceptions.WorksheetNotFound
 APIError = gspread.exceptions.APIError
 
+# open_spreadsheet raises these two for "no such spreadsheet" and "you are not
+# shared on it". They come from gspread, not from us: open_by_key turns a 404
+# into SpreadsheetNotFound and a 403 into Python's own PermissionError, so a
+# caller that wants to tell those apart from a dropped connection catches them
+# by name. Named here so that stays true of the fake as well.
+SpreadsheetNotFound = gspread.exceptions.SpreadsheetNotFound
+NoAccess = PermissionError
+
 
 # ---------------------------------------------------------------------------
 # Protocols

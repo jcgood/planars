@@ -170,10 +170,31 @@ def test_transcript_of_the_new_construction_conversation(env):
         run([construction_entry(True, SUBSPAN,
                                 ["auxiliary_construction", "not_yet_added"])],
             ["y"]).output,
-        run([construction_entry(True, "no_such_sheet", ["auxiliary_construction"])],
-            ["y"]).output,
     ]
     check_snapshot("new_construction.txt", "\n".join(parts))
+
+
+def test_transcript_of_the_four_ways_a_check_can_fail(env, monkeypatch):
+    """All four on one page, which is where they have to look different.
+
+    Before this, every one of them printed the same sentence and asked the same
+    question, so the page could not tell the coordinator whether the entry was
+    wrong, their access was wrong, or the wifi was.
+    """
+    doorway, run = env
+    entry = construction_entry(True, SUBSPAN, ["auxiliary_construction"])
+    parts = [run([construction_entry(True, "", ["auxiliary_construction"])], ["n"]).output,
+             run([construction_entry(True, "no_such_sheet", ["auxiliary_construction"])],
+                 ["n"]).output]
+
+    monkeypatch.setattr(doorway, "open_spreadsheet", unreachable(PermissionError()))
+    parts.append(run([entry], ["n"]).output)
+
+    monkeypatch.setattr(doorway, "open_spreadsheet",
+                        unreachable(ConnectionError("network is down")))
+    parts.append(run([entry], ["n"]).output)
+
+    check_snapshot("cannot_check.txt", "\n".join(parts))
 
 
 # ---------------------------------------------------------------------------
@@ -278,21 +299,123 @@ def test_a_tab_absent_from_a_different_sheet_reads_as_absent(env):
 
 # ---------------------------------------------------------------------------
 # When Drive cannot answer
+#
+# Four different reasons, and they used to print one sentence between them. A
+# stale spreadsheet ID read exactly like a dropped connection, and either way
+# the coordinator was asked to confirm from memory.
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("spreadsheet_id", ["no_such_sheet", ""])
-def test_an_unanswerable_check_asks_instead_of_deciding(env, spreadsheet_id):
-    """A sheet that cannot be reached, and an entry that never recorded an ID.
+def unreachable(exc: Exception):
+    """Make the doorway fail the way Drive would."""
+    def refuse(*args, **kwargs):
+        raise exc
+    return refuse
 
-    Both hand the question back rather than guessing — and both let the
-    coordinator close the entry on their own word, which is the only way a
-    lost spreadsheet ID can ever be cleared.
+
+def test_a_spreadsheet_id_pointing_nowhere_says_so(env):
+    _, run = env
+    entry = construction_entry(True, "no_such_sheet", ["auxiliary_construction"])
+    out = run([entry], ["n"]).output
+    assert "Drive has no spreadsheet with the ID recorded on this entry" in out
+    assert "no_such_sheet" in out
+    assert "python -m coding integrity-check --sheets" in out
+    # Not the same question as "have the tabs been added" — they cannot have been.
+    assert "Close this entry anyway?" in out
+
+
+def test_an_entry_with_no_spreadsheet_id_names_the_sheet_to_look_in(env):
+    """Nothing to check against, so the coordinator is told where to look."""
+    _, run = env
+    entry = construction_entry(True, "", ["auxiliary_construction"])
+    out = run([entry], ["n"]).output
+    assert "never recorded which spreadsheet to look in" in out
+    assert "'subspanrepetition_arao1248'" in out       # the Sheet's real name
+    assert "'arao1248' folder on Drive" in out
+    assert "Mark as resolved?" in out
+
+
+def test_a_sheet_not_shared_with_this_account_says_what_to_ask_for(env, monkeypatch):
+    doorway, run = env
+    monkeypatch.setattr(doorway, "open_spreadsheet", unreachable(PermissionError()))
+    entry = construction_entry(True, SUBSPAN, ["auxiliary_construction"])
+    out = run([entry], ["n"]).output
+    assert "Drive refused access" in out
+    assert "Ask whoever owns it to share" in out
+
+
+def test_a_dropped_connection_says_the_entry_is_fine(env, monkeypatch):
+    """The one case where nothing is wrong and trying again later is the fix."""
+    doorway, run = env
+    monkeypatch.setattr(doorway, "open_spreadsheet",
+                        unreachable(ConnectionError("network is down")))
+    entry = construction_entry(True, SUBSPAN, ["auxiliary_construction"])
+    out = run([entry], ["n"]).output
+    assert "Could not reach Drive to check" in out
+    assert "Nothing is wrong with the entry itself" in out
+    # The question admits what it is asking for.
+    assert "Mark as resolved without checking?" in out
+
+
+def fail_reading_tab_names(doorway, monkeypatch, exc: Exception):
+    """Let the spreadsheet open, then fail on the call that lists its tabs."""
+    real_open = doorway.open_spreadsheet
+
+    def open_then_fail(spreadsheet_id):
+        ss = real_open(spreadsheet_id)
+        monkeypatch.setattr(ss, "worksheets", unreachable(exc))
+        return ss
+
+    monkeypatch.setattr(doorway, "open_spreadsheet", open_then_fail)
+
+
+@pytest.mark.parametrize("code,expected", [
+    (404, "Drive has no spreadsheet with the ID recorded on this entry"),
+    (403, "Drive refused access"),
+    (400, "Could not reach Drive to check"),
+])
+def test_a_failure_while_reading_tab_names_is_told_apart_by_its_status(
+        env, monkeypatch, code, expected):
+    """The second call reports a vanished sheet as a status code, not a type.
+
+    Opening the spreadsheet and listing its tabs are two calls, and only the
+    first turns 404 and 403 into exceptions of their own. Without the status
+    check, a sheet deleted between the two would read as a network problem.
+    """
+    from fake_drive import api_error
+
+    doorway, run = env
+    fail_reading_tab_names(doorway, monkeypatch, api_error(code, "boom"))
+    entry = construction_entry(True, SUBSPAN, ["auxiliary_construction"])
+    assert expected in run([entry], ["n"]).output
+
+
+def test_a_busy_drive_is_retried_first_and_only_then_reported(env, monkeypatch):
+    """429 and friends are Drive asking to wait, not an answer about the entry."""
+    import coding.drive as drive_module
+    from fake_drive import api_error
+
+    doorway, run = env
+    waits: List[int] = []
+    monkeypatch.setattr(drive_module.time, "sleep", waits.append)
+    fail_reading_tab_names(doorway, monkeypatch, api_error(429, "rate limited"))
+
+    entry = construction_entry(True, SUBSPAN, ["auxiliary_construction"])
+    out = run([entry], ["n"]).output
+    assert len(waits) == 4                       # five attempts, four waits
+    assert "Could not reach Drive to check" in out
+
+
+@pytest.mark.parametrize("spreadsheet_id", ["no_such_sheet", ""])
+def test_an_unanswerable_check_still_asks_rather_than_deciding(env, spreadsheet_id):
+    """However it failed, the coordinator can always clear the entry themselves.
+
+    That matters: an entry naming a spreadsheet nobody can reach would
+    otherwise be stuck open forever.
     """
     _, run = env
     entry = construction_entry(True, spreadsheet_id, ["auxiliary_construction"])
     assert run([entry], ["y"]).remaining == []
     assert run([entry], ["n"]).remaining == [entry]
-    assert "Could not verify" in run([entry], ["n"]).output
 
 
 # ---------------------------------------------------------------------------

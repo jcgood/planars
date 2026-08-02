@@ -19,7 +19,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 PENDING_PATH = ROOT / "pending_changes.json"
@@ -44,27 +44,108 @@ def _run_command(cmd: str) -> int:
     return result.returncode
 
 
-def _verify_construction_tabs(spreadsheet_id: str, constructions: List[str]) -> Optional[Dict[str, bool]]:
+# How a look at the Google Sheet turned out. Only CHECKED carries an answer
+# about the tabs; the other four are reasons no check happened, and each one
+# needs a different thing from the coordinator.
+CHECKED = "checked"
+NO_ID_RECORDED = "no_id_recorded"
+SHEET_NOT_FOUND = "sheet_not_found"
+NO_ACCESS = "no_access"
+DRIVE_UNREACHABLE = "drive_unreachable"
+
+
+def _verify_construction_tabs(spreadsheet_id: str,
+                              constructions: List[str]) -> Tuple[str, Dict[str, bool]]:
     """Check whether each construction tab exists in the Google Sheet.
 
-    Returns a dict mapping construction name → True/False, or None if
-    Drive verification was unavailable (auth failure, network error, etc.).
+    Returns (outcome, tabs). ``tabs`` maps construction name → present, and
+    says anything only when the outcome is CHECKED.
+
+    The four ways of not getting an answer used to be one: any failure at all
+    meant "could not verify", so a spreadsheet ID pointing at a sheet that no
+    longer exists read exactly like a dropped connection. Both then asked the
+    coordinator to confirm from memory, and a "yes" closed the entry with
+    nothing checked — see docs/data-layer-progress.md, finding 3.
     """
     if not spreadsheet_id:
-        return None
-    try:
-        # Imported here, not at the top of the file, so that a run with nothing
-        # to verify — the common case — never signs in to Google at all.
-        from .drive import _with_retry
-        from .drive_doorway import get_doorway
+        return NO_ID_RECORDED, {}
 
+    # Imported here, not at the top of the file, so that a run with nothing
+    # to verify — the common case — never signs in to Google at all.
+    from .drive import _with_retry
+    from .drive_doorway import APIError, NoAccess, SpreadsheetNotFound, get_doorway
+
+    try:
         # open_spreadsheet retries by itself; opening used not to. Reading tab
         # names is idempotent, so the extra attempts can only help.
         ss = get_doorway().open_spreadsheet(spreadsheet_id)
         existing_titles = {ws.title for ws in _with_retry(ss.worksheets)}
-        return {c: c in existing_titles for c in constructions}
+    except SpreadsheetNotFound:
+        return SHEET_NOT_FOUND, {}
+    except NoAccess:
+        return NO_ACCESS, {}
+    except APIError as e:
+        # Reading the tab names is a second call, and it reports a vanished or
+        # unshared sheet as a plain status code rather than by exception type.
+        code = getattr(getattr(e, "response", None), "status_code", None)
+        if code == 404:
+            return SHEET_NOT_FOUND, {}
+        if code == 403:
+            return NO_ACCESS, {}
+        return DRIVE_UNREACHABLE, {}
     except Exception:
-        return None
+        return DRIVE_UNREACHABLE, {}
+
+    return CHECKED, {c: c in existing_titles for c in constructions}
+
+
+def _unchecked_report(outcome: str, entry: Dict) -> Tuple[List[str], str]:
+    """What to tell the coordinator when the Sheet could not be checked.
+
+    Returns (lines to print, the question to ask). The question differs on
+    purpose: "have the tabs been added" is answerable when Drive merely could
+    not be reached, and is not answerable at all when the sheet the entry names
+    no longer exists.
+    """
+    cls = entry.get("class_name", "?")
+    lang_id = entry.get("lang_id", "?")
+    constructions = entry.get("new_constructions", [])
+    sheet_name = f"{cls}_{lang_id}"
+
+    if outcome == NO_ID_RECORDED:
+        return ([
+            "  This entry never recorded which spreadsheet to look in, so the",
+            "  tab(s) cannot be checked for you.",
+            f"  The Sheet for this class is named '{sheet_name}', in the",
+            f"  '{lang_id}' folder on Drive.",
+            f"  Have tab(s) {constructions} been added there and set to",
+            "  'ready-for-review'?",
+        ], "Mark as resolved?")
+
+    if outcome == SHEET_NOT_FOUND:
+        return ([
+            "  Drive has no spreadsheet with the ID recorded on this entry",
+            f"  ({entry.get('spreadsheet_id', '')}).",
+            "  It was deleted, or replaced by a newer sheet — so the entry is",
+            "  pointing at the wrong place, and adding a tab cannot fix that.",
+            "  → Run: python -m coding integrity-check --sheets",
+            "    It lists which spreadsheet IDs are unreachable and what to do",
+            "    next. Close this entry only if the work it describes is done.",
+        ], "Close this entry anyway?")
+
+    if outcome == NO_ACCESS:
+        return ([
+            "  Drive refused access to that spreadsheet — the Google account",
+            "  this command signed in as is not shared on it.",
+            f"  The Sheet is named '{sheet_name}'. Ask whoever owns it to share",
+            "  it, then run: python -m coding apply-pending",
+        ], "Close this entry anyway?")
+
+    return ([
+        "  Could not reach Drive to check (no network, or sign-in failed).",
+        "  Nothing is wrong with the entry itself — running",
+        "  python -m coding apply-pending again later will check properly.",
+    ], "Mark as resolved without checking?")
 
 
 def _handle_new_construction(entry: Dict, all_flag: bool) -> Tuple[bool, Dict]:
@@ -122,14 +203,14 @@ def _handle_new_construction(entry: Dict, all_flag: bool) -> Tuple[bool, Dict]:
     # instructions already shown — try to verify via Drive
     print()
     print(f"  Checking Google Sheet for tab(s): {constructions} ...")
-    result = _verify_construction_tabs(spreadsheet_id, constructions)
+    outcome, result = _verify_construction_tabs(spreadsheet_id, constructions)
 
-    if result is None:
-        print("  Could not verify (Drive unavailable or spreadsheet ID not recorded).")
-        print("  Please confirm manually: have all the tab(s) been added to the Sheet")
-        print(f"  and set to 'ready-for-review'? Constructions: {constructions}")
+    if outcome != CHECKED:
+        lines, question = _unchecked_report(outcome, entry)
+        for line in lines:
+            print(line)
         try:
-            confirm = input("  Mark as resolved? [y/N] ").strip().lower()
+            confirm = input(f"  {question} [y/N] ").strip().lower()
         except (EOFError, KeyboardInterrupt):
             confirm = "n"
         return confirm == "y", entry
@@ -141,7 +222,8 @@ def _handle_new_construction(entry: Dict, all_flag: bool) -> Tuple[bool, Dict]:
         print(f"  Found in Sheet:   {present}")
     if missing:
         print(f"  Not found in Sheet: {missing}")
-        print("  Action still needed — add the missing tab(s) and re-run apply-pending.")
+        print("  Action still needed — add the missing tab(s), then run:")
+        print("    python -m coding apply-pending")
         return False, entry
 
     print("  All tab(s) found in Sheet.")

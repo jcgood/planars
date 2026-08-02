@@ -1,0 +1,63 @@
+1 pending change(s):
+
+[1/1]  arao1248  —  New construction(s) in class 'subspanrepetition': ['auxiliary_construction']
+  Type:    diagnostics_new_construction
+  Class 'subspanrepetition': new construction(s)
+
+  Checking Google Sheet for tab(s): ['auxiliary_construction'] ...
+  This entry never recorded which spreadsheet to look in, so the
+  tab(s) cannot be checked for you.
+  The Sheet for this class is named 'subspanrepetition_arao1248', in the
+  'arao1248' folder on Drive.
+  Have tab(s) ['auxiliary_construction'] been added there and set to
+  'ready-for-review'?
+  Mark as resolved? [y/N] n
+
+Applied 0 of 1 change(s). 1 still pending.
+
+1 pending change(s):
+
+[1/1]  arao1248  —  New construction(s) in class 'subspanrepetition': ['auxiliary_construction']
+  Type:    diagnostics_new_construction
+  Class 'subspanrepetition': new construction(s)
+
+  Checking Google Sheet for tab(s): ['auxiliary_construction'] ...
+  Drive has no spreadsheet with the ID recorded on this entry
+  (no_such_sheet).
+  It was deleted, or replaced by a newer sheet — so the entry is
+  pointing at the wrong place, and adding a tab cannot fix that.
+  → Run: python -m coding integrity-check --sheets
+    It lists which spreadsheet IDs are unreachable and what to do
+    next. Close this entry only if the work it describes is done.
+  Close this entry anyway? [y/N] n
+
+Applied 0 of 1 change(s). 1 still pending.
+
+1 pending change(s):
+
+[1/1]  arao1248  —  New construction(s) in class 'subspanrepetition': ['auxiliary_construction']
+  Type:    diagnostics_new_construction
+  Class 'subspanrepetition': new construction(s)
+
+  Checking Google Sheet for tab(s): ['auxiliary_construction'] ...
+  Drive refused access to that spreadsheet — the Google account
+  this command signed in as is not shared on it.
+  The Sheet is named 'subspanrepetition_arao1248'. Ask whoever owns it to share
+  it, then run: python -m coding apply-pending
+  Close this entry anyway? [y/N] n
+
+Applied 0 of 1 change(s). 1 still pending.
+
+1 pending change(s):
+
+[1/1]  arao1248  —  New construction(s) in class 'subspanrepetition': ['auxiliary_construction']
+  Type:    diagnostics_new_construction
+  Class 'subspanrepetition': new construction(s)
+
+  Checking Google Sheet for tab(s): ['auxiliary_construction'] ...
+  Could not reach Drive to check (no network, or sign-in failed).
+  Nothing is wrong with the entry itself — running
+  python -m coding apply-pending again later will check properly.
+  Mark as resolved without checking? [y/N] n
+
+Applied 0 of 1 change(s). 1 still pending.

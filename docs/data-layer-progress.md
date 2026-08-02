@@ -19,6 +19,12 @@ of this state would be exactly the defect this project is trying to remove.
 - Never let it describe intent — only what is actually true in the repo now.
 - Record decisions that aren't in the plan doc under *Decisions log*, with the
   reasoning. A decision recoverable only from a chat transcript is lost.
+- **Don't write commit hashes here.** A commit cannot contain its own hash, so
+  every one of them cost a second commit to fill in afterwards — and a hash is
+  the one fact git already keeps perfectly. To see the work behind any line
+  below, in order:
+
+      git log --oneline --grep '#271'
 
 ---
 
@@ -37,24 +43,28 @@ runs, fixed). Open and needing a decision: **#275** (stan1293's
 duplicated Drive helpers — blocked until every Drive-writing command has
 snapshots), **#273** (verified false alarm, safe to close).
 
+Also fixed, no issue filed: `apply-pending` gave one answer to four different
+questions when it could not check a Sheet. Found by file 4's snapshot, fixed
+the same day — see the decisions log.
+
 ### Status by unit
 
-| Unit | Status | Commit |
-|---|---|---|
-| Design record + plan written | done | `7b995b9`, `f20478e` |
-| Phase 2 — hidden-fact inventory | **done** → `docs/hidden-facts-inventory.md` | `e27bbe3` |
-| Phase 0a — protocol surface enumeration | **done** → `docs/drive-protocol-surface.md` | `b978101`..`46bf833` |
-| Phase 0a — protocol proposal reviewed | **done** — accepted, see decisions log | — |
-| Phase 0a — `capture-drive-state` command | **done** | `c87ae7d` |
-| Phase 0a — fixture capture run (read-only, live) | **done** — 29 sheets, 80 tabs | `b40cd64` |
-| Phase 0a — doorway module (`coding/drive_doorway.py`) | **done** | `05be9af`, renamed `2706965` |
-| Phase 0a — fake doorway (`tests/fake_drive.py`) + smoke tests | **done** — 62 tests | `05be9af` |
-| Phase 0b/1 — file 1 of 17: `refresh_dropdowns.py` | **done** — snapshots captured, mutation log reviewed and accepted | `5ca369d` |
-| Phase 0b/1 — file 2 of 17: `generate_reports.py` | **done** — snapshots captured, pre/post diff clean | `62047c3` |
-| Phase 0b/1 — file 3 of 17: `setup_root_folder.py` | **done** — snapshots captured, pre/post diff clean | `3d70069` |
-| Phase 0b/1 — file 4 of 17: `apply_pending.py` | **done** — snapshots captured, pre/post diff clean | `f7bc5fa` |
-| Phase 0b/1 — files 5–17 | not started — see § "Migration order" | — |
-| Phases 3–9 | not started | — |
+| Unit | Status |
+|---|---|
+| Design record + plan written | done |
+| Phase 2 — hidden-fact inventory | **done** → `docs/hidden-facts-inventory.md` |
+| Phase 0a — protocol surface enumeration | **done** → `docs/drive-protocol-surface.md` |
+| Phase 0a — protocol proposal reviewed | **done** — accepted, see decisions log |
+| Phase 0a — `capture-drive-state` command | **done** |
+| Phase 0a — fixture capture run (read-only, live) | **done** — 29 sheets, 80 tabs |
+| Phase 0a — doorway module (`coding/drive_doorway.py`) | **done** |
+| Phase 0a — fake doorway (`tests/fake_drive.py`) + smoke tests | **done** — 62 tests |
+| Phase 0b/1 — file 1 of 17: `refresh_dropdowns.py` | **done** — snapshots captured, mutation log reviewed and accepted |
+| Phase 0b/1 — file 2 of 17: `generate_reports.py` | **done** — snapshots captured, pre/post diff clean |
+| Phase 0b/1 — file 3 of 17: `setup_root_folder.py` | **done** — snapshots captured, pre/post diff clean |
+| Phase 0b/1 — file 4 of 17: `apply_pending.py` | **done** — snapshots captured, pre/post diff clean |
+| Phase 0b/1 — files 5–17 | not started — see § "Migration order" |
+| Phases 3–9 | not started |
 
 ### In flight
 
@@ -94,8 +104,8 @@ the doorway has been exercised before the destructive commands are touched.
 
 | # | file | why here |
 |---|---|---|
-| ~~1~~ | ~~`setup_root_folder.py`~~ | done — `3d70069` |
-| ~~2~~ | ~~`apply_pending.py`~~ | done — `f7bc5fa` |
+| ~~1~~ | ~~`setup_root_folder.py`~~ | done |
+| ~~2~~ | ~~`apply_pending.py`~~ | done |
 | 3 | `prune_manifest.py` | First file-move, but only of already-retired sheets |
 | 4 | `check_notes.py` | The only user of Google Docs — that part of the doorway is untested |
 | 5 | `generate_biuniqueness_stage1_sheet.py` | Near-twin of `generate_status_sheet`; do the smaller one first |
@@ -216,24 +226,54 @@ for a tab's criterion columns when the sheet header is.** That is this project's
 recurring defect shape, so #272 suggests deriving the column set rather than
 patching the two symptoms.
 
-**3. `apply-pending` cannot tell a wrong spreadsheet ID from a bad connection**
-(found 2026-08-02, file 4, not filed). `_verify_construction_tabs` catches every
-exception and returns "could not verify", so a stale or mistyped
-`spreadsheet_id` — a sheet that was archived, or an entry written before the ID
-was recorded — reads exactly like a network blip. Both then ask the coordinator
-to confirm from memory, and a "y" closes the entry with nothing checked.
-
-Low severity: the entry it closes is a reminder to add a tab, not data, and the
-next `import-sheets` re-files it if the tab really is missing. But it is the
-same shape as the two above — one answer standing in for two different
-questions — and separating "Drive said no such file" from "Drive did not
-answer" is a few lines. Recorded now because the snapshot that shows it
-(`new_construction.txt`, fourth block) makes the two indistinguishable on the
-page, which is the point.
+**3. `apply-pending` could not tell a wrong spreadsheet ID from a bad
+connection** (found 2026-08-02, file 4). **Fixed the same day** — see the
+decisions log entry below. Kept here because the sequence is the point: the
+snapshot showed it, and the snapshot now proves the fix
+(`tests/snapshots/coordinator/apply_pending/cannot_check.txt`).
 
 ---
 
 ## Decisions log
+
+**2026-08-02 — commit hashes are no longer written into this file.** Every one
+of them cost a second commit, because a commit cannot contain its own hash, and
+git already keeps the fact perfectly. `git log --oneline --grep '#271'` lists
+the work behind every line above, in order, and cannot go stale. The hashes
+that were here are in that log.
+
+**2026-08-02 — `apply-pending`'s Sheet check was fixed straight after being
+found, unlike the other two findings.** The other two are deferred because
+fixing them would change what a command writes, and the before/after diff is
+what proves a migration changed nothing. This one only changes what the command
+*says* when it cannot check, so the diff was never at risk.
+
+The old code caught every failure alike and printed "could not verify (Drive
+unavailable or spreadsheet ID not recorded)", then asked "Mark as resolved?".
+Four different situations, one sentence, one question — and answering yes
+closed the entry with nothing checked. They are now told apart, because each
+one needs something different: an entry with no spreadsheet ID recorded is told
+which Sheet to look in by name; an ID pointing at a sheet that no longer exists
+is told the entry is aimed at the wrong place and pointed at
+`python -m coding integrity-check --sheets`, the same command `import-sheets`
+already gives for a stale manifest; a sheet the signed-in account is not shared
+on is told to ask for access; and a dropped connection is told that nothing is
+wrong and to run the command again later.
+
+The question changes with the situation too. "Have the tabs been added" is
+answerable when Drive merely could not be reached, and is not answerable at all
+when the sheet the entry names is gone, so those ask "Close this entry anyway?"
+instead. All four still let the coordinator clear the entry themselves —
+otherwise an entry naming an unreachable spreadsheet would be stuck open
+forever.
+
+`SpreadsheetNotFound` and `NoAccess` are now named in `drive_doorway.py`
+alongside `WorksheetNotFound` and `APIError`, for the same stated reason: a
+caller telling failures apart needs the fake to raise what the real thing
+raises. gspread turns a 404 into `SpreadsheetNotFound` and a 403 into Python's
+own `PermissionError` when *opening*, but reading the tab names afterwards is a
+second call that reports both as plain status codes, so the code checks for
+those too.
 
 **2026-08-01 — the manifest is now a captured fixture, and `capture-drive-state`
 records it going forward.** The fake needs the manifest: it is what every
