@@ -1,8 +1,16 @@
 name: Sheet validation
 
 # Runs daily to detect unauthorized or accidental edits to annotation sheets.
-# On failure: creates a GitHub issue (or comments on an existing open one).
-# On success after failure: closes the open issue automatically.
+#
+# Issue handling (see coding/validation_report.py, and issue #260 for why):
+#   - Errors and crashes get an issue; advisory warnings do not, since a known
+#     recurring warning would otherwise hold an issue open indefinitely.
+#   - Each report carries a fingerprint of what is wrong. Same fingerprint on a
+#     later run means the same problem recurring, so it is added as a comment.
+#     A different fingerprint means the open issue is about something else, so
+#     it is closed as superseded and a new one is filed.
+#   - The issue title names the problem, not just the date.
+#   - No errors: any open issue is closed.
 #
 # Required secrets (Settings → Secrets and variables → Actions):
 #   PLANARS_DATA_TOKEN       — PAT with read access to jcgood/planars-data
@@ -68,114 +76,58 @@ jobs:
           cat /tmp/report.txt >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
-      - name: Build structured issue body for sheet validation
-        if: steps.validate.outcome == 'failure'
-        run: |
-          python3 << 'PYEOF'
-          import re
-          text = open('/tmp/report.txt').read()
-          lines = text.splitlines()
-
-          # Detect an unhandled exception (infrastructure crash, not a data error)
-          has_traceback = 'Traceback (most recent call last):' in text
-          exc_line = ''
-          if has_traceback:
-              for line in reversed(lines):
-                  line = line.strip()
-                  if line and not line.startswith('Connecting') and not line.startswith('Warning'):
-                      exc_line = line
-                      break
-
-          errors = []
-          current_lang = None
-          current_class = None
-          for line in lines:
-              # Language header: Glottocode pattern (4 letters + 4 digits)
-              if re.match(r'^[a-z]+\d{4}$', line.strip()):
-                  current_lang = line.strip()
-                  current_class = None
-              # Planar / diagnostics validation sections
-              elif re.match(r'^\s{2}Planar validation \(\d+ issue', line):
-                  current_class = 'planar'
-              elif re.match(r'^\s{2}Diagnostics validation \(\d+ issue', line):
-                  current_class = 'diagnostics'
-              # Sheet class/construction with issues
-              elif m := re.match(r'^\s{2}\[(\S+/\S+)\] \d+ issue', line):
-                  current_class = m.group(1)
-              # ERROR or WARNING detail line (both are data coding issues)
-              elif m := re.match(r'^\s{4}\[(ERROR|WARNING)\] .+?: (.+)', line):
-                  if current_lang and current_class:
-                      errors.append(f"- **{current_lang}** / {current_class}: {m.group(2)}")
-
-          with open('/tmp/issue_body.md', 'w') as f:
-              f.write("## What's wrong\n\n")
-              if has_traceback:
-                  f.write("The validation script crashed with an unhandled exception — "
-                          "this is an infrastructure error, not a data coding problem.\n\n")
-                  if exc_line:
-                      f.write(f"```\n{exc_line}\n```\n\n")
-                  f.write("_No annotation data needs to be corrected._\n")
-              elif errors:
-                  f.write('\n'.join(errors) + '\n')
-              else:
-                  f.write("_(Error details could not be extracted — see full log.)_\n")
-
-              has_header_mismatch = any('header differs' in e for e in errors)
-              has_value_errors = any('header differs' not in e for e in errors)
-
-              f.write("\n## What to do\n\n")
-              if has_traceback:
-                  f.write(
-                      "This is likely a transient API error. "
-                      "No action is needed — the issue will close automatically "
-                      "when the next scheduled validation run completes without crashing.\n"
-                  )
-              else:
-                  if has_header_mismatch:
-                      f.write(
-                          "**Column structure mismatch:** one or more sheets have columns "
-                          "that differ from the local TSV (an extra, missing, or renamed column). "
-                          "Open the affected sheet, compare its header row to the TSV header shown "
-                          "above, and fix the column structure directly in the Sheet "
-                          "(add, delete, or rename the column as needed).\n\n"
-                      )
-                  if has_value_errors:
-                      f.write(
-                          "**Invalid cell values:** open the affected sheet, find the highlighted "
-                          "pink cells, and correct the values to one of the allowed options listed "
-                          "above.\n\n"
-                      )
-                  f.write("The issue closes automatically when the next validation run passes.\n")
-              f.write("\n## Full log\n\n")
-              f.write("<details><summary>Show full validation output</summary>\n\n```\n")
-              f.write(text)
-              f.write("\n```\n\n</details>\n")
-          PYEOF
-
-      - name: File or update GitHub issue if issues found
-        if: steps.validate.outcome == 'failure'
+      # The open issue's body is fetched first so its fingerprint can be
+      # compared against this run's: same problem recurring, or a different one?
+      - name: Fetch the open validation issue, if any
+        id: existing
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          OPEN_COUNT=$(gh issue list --label sheet-validation --state open --json number --jq length)
-          if [ "$OPEN_COUNT" -eq 0 ]; then
-            gh issue create \
-              --title "Sheet validation issues detected $(date -u +%Y-%m-%d)" \
-              --label sheet-validation \
-              --body-file /tmp/issue_body.md
+          NUM=$(gh issue list --label sheet-validation --state open --json number --jq '.[0].number // empty')
+          echo "number=$NUM" >> $GITHUB_OUTPUT
+          if [ -n "$NUM" ]; then
+            gh issue view "$NUM" --json body --jq .body > /tmp/previous_body.md
           else
-            ISSUE_NUM=$(gh issue list --label sheet-validation --state open --json number --jq '.[0].number')
-            gh issue comment "$ISSUE_NUM" --body-file /tmp/issue_body.md
+            : > /tmp/previous_body.md
           fi
 
-      - name: Close open validation issue if all clear
-        if: steps.validate.outcome == 'success'
+      # Parsing, classification, and fingerprinting live in a tested module —
+      # see coding/validation_report.py for why (issue #260).
+      - name: Classify the validation report
+        id: report
+        run: |
+          python -m coding validation-report /tmp/report.txt \
+            --out /tmp/issue_body.md \
+            --previous-body /tmp/previous_body.md \
+            --date "$(date -u +%Y-%m-%d)" >> $GITHUB_OUTPUT
+
+      # Errors and crashes warrant an issue. Advisory warnings do not: a
+      # recurring known-and-tracked warning would hold an issue open forever,
+      # which is exactly what happened to #260.
+      - name: File, update, or supersede the validation issue
+        if: steps.report.outputs.should_file == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NUM: ${{ steps.existing.outputs.number }}
+          TITLE: ${{ steps.report.outputs.title }}
         run: |
-          OPEN_COUNT=$(gh issue list --label sheet-validation --state open --json number --jq length)
-          if [ "$OPEN_COUNT" -gt 0 ]; then
-            ISSUE_NUM=$(gh issue list --label sheet-validation --state open --json number --jq '.[0].number')
-            gh issue comment "$ISSUE_NUM" --body "Sheet validation passed on $(date -u +%Y-%m-%d) — closing."
-            gh issue close "$ISSUE_NUM"
+          if [ -z "$NUM" ]; then
+            gh issue create --title "$TITLE" --label sheet-validation --body-file /tmp/issue_body.md
+          elif [ "${{ steps.report.outputs.same_problem }}" = "true" ]; then
+            gh issue comment "$NUM" --body-file /tmp/issue_body.md
+          else
+            gh issue comment "$NUM" --body \
+              "The problem this issue reports is no longer what validation finds. Closing as superseded; a new issue has been filed for the current one."
+            gh issue close "$NUM"
+            gh issue create --title "$TITLE" --label sheet-validation --body-file /tmp/issue_body.md
           fi
+
+      - name: Close the validation issue if there are no errors
+        if: steps.report.outputs.should_file == 'false' && steps.existing.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NUM: ${{ steps.existing.outputs.number }}
+        run: |
+          gh issue comment "$NUM" --body \
+            "Sheet validation found no errors on $(date -u +%Y-%m-%d) (${{ steps.report.outputs.warnings }} advisory warning(s), which do not block) — closing."
+          gh issue close "$NUM"

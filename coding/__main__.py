@@ -48,6 +48,7 @@ _COMMANDS = {
     "update-sheets":               "coding.update_sheets",
     "import-sheets":               "coding.import_sheets",
     "validate-coding":             "coding.validate_coding",
+    "validation-report":           "coding.validation_report",
     "restructure-sheets":          "coding.restructure_sheets",
     "check-codebook":              "coding.check_codebook",
     "generate-rule-update-prompt": "coding.generate_rule_update_prompt",

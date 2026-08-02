@@ -265,7 +265,7 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 | Label | Meaning |
 |-------|---------|
 | `diagnostics` | Requires linguistic validation from Adam before implementation. Filter: `gh issue list --label diagnostics` |
-| `sheet-validation` | Filed by `sheet-validation.yml` when `validate-coding` finds invalid cell values. Resolve: fix values in Sheet. Auto-closed when clean. |
+| `sheet-validation` | Filed by `sheet-validation.yml` when `validate-coding` finds **errors** (or crashes). Advisory warnings never file or hold open an issue — they appear as context only. One open issue per *problem*, not per label: a later run reporting the same problem comments on it, a run reporting a different one closes it as superseded and files a new one. Auto-closed when no errors remain. |
 | `sheet-drift` | Filed by `data-refresh.yml` when sheets are out of sync with the data model. Resolve: `update-sheets --apply`. Auto-closed when clean. |
 | `pending-changes` | Filed by `import-sheets` when destructive changes land in `pending_changes.json`. Resolve: `apply-pending`. |
 | `diagnostics-drift` | Filed by `data-refresh.yml` when `import-sheets` finds ambiguous TSV→YAML differences. Resolve: edit YAML, run `sync-diagnostics-yaml --apply`. Auto-closed when clear. |
