@@ -488,8 +488,8 @@ classes:
     keystone_active_default: false
     collection_required: "n"
 
-  - name: biuniqueness
-    display_name: "Biuniqueness"
+  - name: biuniqueness_exponence
+    display_name: "Biuniqueness — extended exponence"
     domain_type: indeterminate
     applicability: conditional
     applicability_conditions: >
@@ -499,12 +499,19 @@ classes:
       leftmost piece of the discontinuous morpheme to the rightmost. Each circumfix
       or extended exponent group is annotated in its own TSV. Classified as indeterminate
       (Tallman et al. 2024).
-      NOTE: This class covers only the circumfixal/extended-exponent type (e.g., Araona
-      pi-...-ma). Non-automatic allomorphy (TAM-conditioned suppletion, inflectional-class
-      allomorphy, valency allomorphy, etc.) is a distinct biuniqueness deviation confirmed
-      across many languages: Zapotec (ch. 07), Yukuna (ch. 11), Kiowa (ch. 04), Mixtec
-      (tonal inflection classes), Chatino (TAM tonal alternations), Chorote (causative/
+      NOTE: Biuniqueness — a one-to-one match between form and meaning — can fail in
+      two directions, and this class covers only one of them: extended exponence, where
+      one meaning is carried by several pieces at once in different positions (e.g.
+      Araona pi-...-ma). The other is non-automatic allomorphy (TAM-conditioned
+      suppletion, inflectional-class allomorphy, valency allomorphy, etc.), where one
+      meaning is carried by different forms depending on context — confirmed across many
+      languages: Zapotec (ch. 07), Yukuna (ch. 11), Kiowa (ch. 04), Mixtec (tonal
+      inflection classes), Chatino (TAM tonal alternations), Chorote (causative/
       antipassive allomorphy), Mocoví (3rd-person prefix sets) — see issue #58.
+      Allomorphy is not a class here: it is being screened first via
+      coding/generate_biuniqueness_allomorphy_stage1_sheet.py, and how it feeds a span
+      is still open (issue #254 Part 2i). This class was named plain "biuniqueness"
+      until 2026-08-02, which read as if it covered the family rather than one member.
     specificity: construction_specific
     known_constructions:
       # One TSV per discontinuous morpheme or extended exponent group.

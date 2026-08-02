@@ -310,7 +310,7 @@ analyses:
   # aspiration is retired as of issue #100 — now handled by segmental
   # (construction aspiration_prominence). Criteria moved to segmental section below.
 
-  - name: biuniqueness
+  - name: biuniqueness_exponence
     description: >
       [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design and qualification rules were
       automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13

@@ -209,14 +209,14 @@ chart_labels:
         (left of keystone), right-edge-of-free-form=y (right of keystone), or a
         dependent-on-left/right reference pointing to the keystone.
 
-  biuniqueness:
-    - label: "biuniq strict complete"
+  biuniqueness_exponence:
+    - label: "biuniq-exp strict complete"
       meaning: Strict span over complete positions where all elements are pieces of the extended exponent (biunique=n).
-    - label: "biuniq loose complete"
+    - label: "biuniq-exp loose complete"
       meaning: Loose span over complete positions where all elements are pieces of the extended exponent.
-    - label: "biuniq strict partial"
+    - label: "biuniq-exp strict partial"
       meaning: Strict span over partial positions where at least one element is a piece of the extended exponent.
-    - label: "biuniq loose partial"
+    - label: "biuniq-exp loose partial"
       meaning: Loose span over partial positions where at least one element is a piece of the extended exponent. The primary domain span — extends from the prefixal piece to the suffixal piece.
 
   repair:
@@ -286,7 +286,7 @@ chart_labels:
 # section above is the human-readable glossary; the two should agree but
 # the span_label_map governs what appears in actual chart output.
 #
-# Simple analyses (free_occurrence, biuniqueness, repair, segmental, tonal,
+# Simple analyses (free_occurrence, biuniqueness_exponence, repair, segmental, tonal,
 # tonosegmental, intonational, pausing, proform, play_language, idiom) all use
 # the standard 4-span pattern with label = "{analysis_name} {variant}".
 # Their result keys and variant suffixes are in simple_variants; their names
@@ -302,7 +302,7 @@ span_label_map:
     loose_partial_span:   "loose partial"
 
   simple_analyses:
-    - biuniqueness
+    - biuniqueness_exponence
     - repair
     - segmental
     - tonal
@@ -317,7 +317,7 @@ span_label_map:
   # is too long for chart labels. Omitted entries use the full analysis name.
   simple_prefix_overrides:
     free_occurrence: "free-occ"
-    biuniqueness:    biuniq
+    biuniqueness_exponence: biuniq-exp
     segmental:       seg
     pausing:         pause
     play_language:   play

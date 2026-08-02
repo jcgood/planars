@@ -112,7 +112,7 @@ Some analyses (stress, aspiration) use a **blocked span** instead: expand from t
 | `tonal` | `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
 | `tonosegmental` | `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
 | `intonational` | `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
-| `biuniqueness` | `biunique` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
+| `biuniqueness_exponence` | `biunique` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
 | `repair` | `restart` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
 | `pausing` | `pause_domain` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
 | `idiom` | `idiomatic` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |

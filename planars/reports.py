@@ -46,7 +46,7 @@ from planars import metrical as _metrical
 from planars import nonpermutability as _nonperm
 from planars import coreference as _coreference
 from planars import free_occurrence as _freeoc
-from planars import biuniqueness as _biuniq
+from planars import biuniqueness_exponence as _biuniq
 from planars import repair as _repair
 from planars import segmental as _segmental
 from planars import tonal as _tonal
@@ -171,7 +171,7 @@ _CLASS_HANDLERS = {
     "nonpermutability":  (_nonperm.derive_nonpermutability_domains,   _make_simple_rows("nonpermutability", _NONPERM_SPANS)),
     "coreference":       (_coreference.derive_coreference_domains,    _make_simple_rows("coreference", _COREFERENCE_SPANS)),
     "free_occurrence":   (_freeoc.derive_free_occurrence_spans,       _make_simple_rows("free_occurrence", _FREEOC_SPANS)),
-    "biuniqueness":      (_biuniq.derive_biuniqueness_domains,        _make_simple_rows("biuniqueness")),
+    "biuniqueness_exponence": (_biuniq.derive_biuniqueness_exponence_domains, _make_simple_rows("biuniqueness_exponence")),
     "repair":            (_repair.derive_repair_domains,              _make_simple_rows("repair")),
     "segmental":         (_segmental.derive_segmental_domains,        _make_simple_rows("segmental")),
     "tonal":             (_tonal.derive_tonal_domains,                _make_simple_rows("tonal")),

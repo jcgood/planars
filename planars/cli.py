@@ -12,7 +12,7 @@ Where <analysis> is one of:
     aspiration
     nonpermutability
     free_occurrence
-    biuniqueness
+    biuniqueness_exponence
     repair
     segmental
     suprasegmental
@@ -37,7 +37,7 @@ from planars import stress as _stress
 from planars import aspiration as _aspiration
 from planars import nonpermutability as _nonperm
 from planars import free_occurrence as _freeoc
-from planars import biuniqueness as _biuniq
+from planars import biuniqueness_exponence as _biuniq
 from planars import repair as _repair
 from planars import segmental as _segmental
 from planars import suprasegmental as _supra
@@ -54,7 +54,7 @@ _ANALYSES = {
     "aspiration":        (_aspiration.derive_aspiration_domains,   _aspiration.format_result),
     "nonpermutability":  (_nonperm.derive,   _nonperm.format_result),
     "free_occurrence":   (_freeoc.derive,    _freeoc.format_result),
-    "biuniqueness":      (_biuniq.derive,    _biuniq.format_result),
+    "biuniqueness_exponence": (_biuniq.derive, _biuniq.format_result),
     "repair":            (_repair.derive,    _repair.format_result),
     "segmental":         (_segmental.derive, _segmental.format_result),
     "suprasegmental":    (_supra.derive,     _supra.format_result),

@@ -233,7 +233,7 @@ def test_qr_drift_no_rule_skipped(monkeypatch):
 def test_qr_drift_module_with_no_yaml_class_is_hard_error(monkeypatch):
     import coding.check_codebook as ccb
     # Module is discovered but not in diag_classes → hard error
-    monkeypatch.setattr(ccb, "_discover_analysis_modules", lambda: {"biuniqueness"})
+    monkeypatch.setattr(ccb, "_discover_analysis_modules", lambda: {"biuniqueness_exponence"})
     errors = _check_qualification_rule_drift({})
     assert len(errors) == 1
     assert "no entry in diagnostic_classes.yaml" in errors[0]

@@ -9,13 +9,27 @@ from planars.spans import fmt_span, strict_span, loose_span, position_sets_from_
 _REQUIRED_CRITERIA = {"biunique"}
 
 
-def derive_biuniqueness_domains(
+def derive_biuniqueness_exponence_domains(
     tsv_path: Optional[Path] = None,
     strict: bool = True,
     *,
     _data: Optional[Tuple] = None,
 ) -> Dict[str, object]:
-    """Derive biuniqueness (extended exponence) domains from a filled biuniqueness TSV.
+    """Derive extended-exponence domains from a filled biuniqueness_exponence TSV.
+
+    One of two biuniqueness deviations, and the only one this module covers.
+    Biuniqueness is a one-to-one match between form and meaning; it can fail in
+    two directions, and they are annotated separately:
+
+    - **extended exponence** (here) — one meaning carried by several pieces at
+      once, in different positions. Circumfixes are the two-piece case.
+    - **allomorphy** — one meaning carried by different forms depending on
+      context. Screened by
+      ``coding/generate_biuniqueness_allomorphy_stage1_sheet.py``; it has no
+      span computation yet (issue #254 Part 2i) and so is not a class here.
+
+    The class was called plain ``biuniqueness`` until 2026-08-02, which read as
+    if it covered the family rather than one member of it.
 
     [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design and qualification rules were
     automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13
@@ -90,7 +104,7 @@ def derive_biuniqueness_domains(
 
 
 def format_result(result: Dict[str, object]) -> str:
-    """Format a derive_biuniqueness_domains result dict as a human-readable string."""
+    """Format a derive_biuniqueness_exponence_domains result dict as a human-readable string."""
     p = result["position_number_to_name"]
     fmt = lambda span: fmt_span(span, p)
     lines = []
@@ -119,4 +133,4 @@ def format_result(result: Dict[str, object]) -> str:
 # Standard entry point used by generate_notebooks.py to call each module's main
 # derive function without a per-module name mapping. New analysis modules must
 # define this alias pointing to their primary derive function.
-derive = derive_biuniqueness_domains
+derive = derive_biuniqueness_exponence_domains

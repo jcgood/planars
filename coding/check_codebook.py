@@ -70,7 +70,7 @@ def _check_required_criteria(codebook: dict) -> List[str]:
     }
     for name in [
         "subspanrepetition", "noninterruption", "metrical",
-        "nonpermutability", "free_occurrence", "biuniqueness", "repair",
+        "nonpermutability", "free_occurrence", "biuniqueness_exponence", "repair",
         "segmental", "tonal", "tonosegmental", "intonational",
         "pausing", "proform", "play_language", "idiom",
     ]:
@@ -213,7 +213,7 @@ def _check_chart_keys() -> List[str]:
     """
     from planars import (
         ciscategorial, subspanrepetition, noninterruption,
-        metrical, nonpermutability, free_occurrence, biuniqueness, repair,
+        metrical, nonpermutability, free_occurrence, biuniqueness_exponence, repair,
         segmental, tonal, tonosegmental, intonational,
         pausing, proform, play_language, idiom,
     )
@@ -325,7 +325,8 @@ def _check_chart_keys() -> List[str]:
 
     # simple 4-span modules (strict/loose × complete/partial)
     simple_cases = [
-        ("biuniqueness",          biuniqueness.derive_biuniqueness_domains,      biuniqueness._REQUIRED_CRITERIA),
+        ("biuniqueness_exponence", biuniqueness_exponence.derive_biuniqueness_exponence_domains,
+         biuniqueness_exponence._REQUIRED_CRITERIA),
         ("repair",                repair.derive_repair_domains,                  repair._REQUIRED_CRITERIA),
         ("segmental",             segmental.derive_segmental_domains,        segmental._REQUIRED_CRITERIA),
         ("tonal",                 tonal.derive_tonal_domains,                tonal._REQUIRED_CRITERIA),

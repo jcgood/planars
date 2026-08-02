@@ -30,7 +30,7 @@ planars/                        Core library
   aspiration.py                 }
   nonpermutability.py           }
   free_occurrence.py            }
-  biuniqueness.py               }
+  biuniqueness_exponence.py     }
   repair.py                     }
   segmental.py                  }
   suprasegmental.py             }

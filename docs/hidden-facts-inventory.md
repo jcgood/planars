@@ -106,7 +106,7 @@ inventory (as opposed to D0's structural/UI fact) — the criteria a class
 requires are exactly the "fast-moving research frontier" tier
 `data-layer-design.md` names as the most bug-prone to freeze into code.
 **Where:**
-  `planars/biuniqueness.py:9` (`{biunique}`),
+  `planars/biuniqueness_exponence.py:9` (`{biunique}`),
   `planars/free_occurrence.py:11-17`,
   `planars/intonational.py:9` (`{applies}`),
   `planars/idiom.py:9` (`{idiomatic}`),

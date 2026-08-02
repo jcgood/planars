@@ -1,7 +1,7 @@
 """Smoke tests for analysis modules with no coded data (#93).
 
 Covers the modules that have no annotation TSVs in coded_data/:
-  nonpermutability, free_occurrence, biuniqueness, repair, segmental,
+  nonpermutability, free_occurrence, biuniqueness_exponence, repair, segmental,
   tonal, tonosegmental, intonational, pausing, proform, play_language, idiom
 
 Each test passes a minimal synthetic _data tuple (no file I/O) and verifies:
@@ -58,7 +58,7 @@ def _make_data(criteria: list[str], all_y: bool = True) -> tuple:
 
 # Keys that every module's result dict must contain.
 # complete_positions / partial_positions are intentionally excluded: some modules
-# (nonpermutability, biuniqueness) use domain-specific names for their position sets.
+# (nonpermutability, biuniqueness_exponence) use domain-specific names for their position sets.
 _STANDARD_KEYS = {
     "keystone_position",
     "position_number_to_name",
@@ -75,7 +75,7 @@ _MODULES = [
       "dependent-on-left", "dependent-on-right"],
      {"minimal_span", "maximal_span"}),
 
-    ("planars.biuniqueness",     "derive_biuniqueness_domains",
+    ("planars.biuniqueness_exponence", "derive_biuniqueness_exponence_domains",
      ["biunique"],
      {"strict_complete_span", "loose_complete_span",
       "strict_partial_span",  "loose_partial_span"}),
