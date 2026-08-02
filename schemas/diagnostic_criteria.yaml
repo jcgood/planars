@@ -226,13 +226,13 @@ analyses:
         description: >
           Used in two annotation stages (issue #116, Apr 2026):
 
-          STAGE 1 (element_prescreening sheet — element-level, values y/n/both):
+          element_prescreening sheet (element-level, values y/n/both):
             y    = element's variable orderings are always scopally conditioned.
-            n    = element has no meaningful variable ordering; filtered from Stage 2.
+            n    = element has no meaningful variable ordering; filtered from the pair sheet.
             both = element has mixed orderings (some scopal, some freely variable);
-                   included in Stage 2.
+                   included on the pair sheet.
 
-          STAGE 2 (general/pairs sheet — pair-level, values y/n only):
+          general/pairs sheet (pair-level, values y/n only):
             Pair-level criterion: whether the variable ordering of (Element_A, Element_B)
             carries an obligatory difference in semantic scope.
             y = scopal permutation (the two orders have different scope readings).

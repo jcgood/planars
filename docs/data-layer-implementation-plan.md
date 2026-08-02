@@ -51,7 +51,7 @@ agent drafts and presents options; Jeff decides. All others are fully delegable.
 **Why.** Eleven files in `coding/` call gspread directly (`generate_sheets`,
 `import_sheets`, `update_sheets`, `sync_params`, `restructure_sheets`,
 `validate_coding`, `refresh_dropdowns`, `generate_status_sheet`,
-`generate_biuniqueness_allomorphy_stage1_sheet`, `generate_notebooks`,
+`generate_biuniqueness_allomorphy_sheet`, `generate_notebooks`,
 `generate_reports`). There are no end-to-end tests for any command that touches
 Drive — exactly where every serious incident has occurred. Nothing else in this
 plan is verifiable until this exists.

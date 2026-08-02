@@ -1,12 +1,27 @@
 #!/usr/bin/env python3
-"""Generate the Stage 1 biuniqueness/allomorphy screening sheet (issue #254 Part 2c).
+"""Generate the allomorphy prescreening sheet (issue #254 Part 2c).
 
 Background: the biuniqueness/allomorphy mechanism (#249, #58, #254) is being built
-and tested entirely on `synth0001` before touching real data. Part 2a added the
-Biuniqueness_Scope structural column to planar_{lang_id}.tsv (filled / open_category /
-excluded, per element); Part 2b backfilled it on synth0001. This script reads those
-flags and writes Stage 1: a real Drive Sheet where the coordinator and Adam do a first
-coarse pass over every in-scope element.
+and tested entirely on `synth0001` before touching real data. The
+Biuniqueness_Scope column in planar_{lang_id}.tsv (filled / open_category /
+excluded, per element) decides which elements appear here; it was added by #254
+Part 2a and backfilled onto synth0001 by Part 2b. This script reads those flags and
+writes the prescreening tab: a real Drive Sheet where the coordinator and Adam do a
+first coarse pass over every in-scope element.
+
+Prescreening, not "Stage 1"
+---------------------------
+#254 describes this pipeline as Stage 0 → 1 → 2, and that numbering collides with
+the one already in diagnostic_classes.yaml, where "Stage 1" glosses the
+*prescreening* construction of nonpermutability, coreference and phrasal_accent —
+their first step, not their second. This pipeline counted the planar column as
+Stage 0, so its Stage 1 was the second step: same label, off by one, two pipelines.
+
+Renamed 2026-08-02 to the word the project already had. It is the same job those
+prescreening tabs do — an element-level first pass whose answers decide what rows
+the next sheet has — so it takes the same name, and the numbering goes away with
+it. What #254 calls Stage 0 is just the planar column; what it calls Stage 2 will
+be a second tab in this spreadsheet, named when Part 2e builds it.
 
 Which biuniqueness deviation this is
 ------------------------------------
@@ -34,8 +49,8 @@ Three reasons, in order of how hard they are to work around:
 2. `Members` grows the inventory rather than filtering it. A prescreening tab
    narrows an existing row set (which elements are accent-eligible, so which
    pairs to generate). `Members` asks for forms that are not in the planar at
-   all, and Stage 2 (#254 Part 2e) turns each into its own row. Nothing in the
-   pipeline lets an annotation add lexical items downstream.
+   all, and the member-expansion tab (#254 Part 2e) turns each into its own row.
+   Nothing in the pipeline lets an annotation add lexical items downstream.
 3. Which column applies depends on the row. `filled` rows want has_allomorphs,
    `open_category` rows want Members. The diagnostics YAML gives one criterion
    set per construction, applied to every row alike; `construction_criteria`
@@ -47,23 +62,24 @@ become a construction. `Members` probably never fits.
 The cost of staying outside: none of the standard machinery applies. import-sheets
 does not collect this sheet, validate-coding does not check it, it is not under
 the manifest's `sheets`, and nothing archives it on change. It is write-only
-until Stage 2 exists. Mirrors generate_status_sheet.py's precedent of a
-purpose-built generator using drive.py's primitives directly.
+until the member-expansion tab exists. Mirrors generate_status_sheet.py's
+precedent of a purpose-built generator using drive.py's primitives directly.
 
 Row shape: one row per (Position_Name, Element) pair where Biuniqueness_Scope is not
 "excluded". Two annotation columns cover both scope values, since which one applies is
 row-dependent (see banner written into the sheet):
     - Biuniqueness_Scope == "filled":        fill has_allomorphs (y/n); leave Members blank.
     - Biuniqueness_Scope == "open_category":  fill Members (comma-separated candidate
-                                               forms); leave has_allomorphs blank. Stage 2
-                                               (#254 Part 2e, not yet built) expands each
-                                               listed member into its own row.
+                                               forms); leave has_allomorphs blank. The
+                                               member-expansion tab (#254 Part 2e, not yet
+                                               built) turns each listed member into its
+                                               own row.
 
 Run from the repo root:
-    python -m coding generate-biuniqueness-allomorphy-stage1-sheet --lang synth0001            # dry run
-    python -m coding generate-biuniqueness-allomorphy-stage1-sheet --lang synth0001 --apply
+    python -m coding generate-biuniqueness-allomorphy-sheet --lang synth0001            # dry run
+    python -m coding generate-biuniqueness-allomorphy-sheet --lang synth0001 --apply
 
-Re-running with --apply overwrites the existing biuniqueness_allomorphy_stage1_{lang_id}
+Re-running with --apply overwrites the existing biuniqueness_allomorphy_{lang_id}
 spreadsheet in place (found by name within the language's Drive folder) rather than
 minting a new URL, same convention as generate_status_sheet.py.
 
@@ -110,7 +126,7 @@ _HAS_ALLOMORPHS_COL = _HEADER.index("has_allomorphs")
 # Pure logic: no API calls (unit tested)
 # ---------------------------------------------------------------------------
 
-def _build_stage1_rows(planar_df: pd.DataFrame) -> List[Dict[str, str]]:
+def _build_prescreening_rows(planar_df: pd.DataFrame) -> List[Dict[str, str]]:
     """Return one row dict per (Position_Name, Element) with Biuniqueness_Scope != excluded.
 
     Raises ValueError if the Biuniqueness_Scope column is absent (backfill not run
@@ -152,7 +168,8 @@ def _rows_to_sheet_values(rows: List[Dict[str, str]]) -> List[List[str]]:
 def _banner_rows() -> List[List[str]]:
     """Instructions written above the header row (issue #254 Part 2c/2d)."""
     return [
-        ["STAGE 1 — allomorphy screening (a biuniqueness deviation; issue #254 Part 2). "
+        ["ALLOMORPHY PRESCREENING — a first pass over every in-scope element "
+         "(allomorphy is a biuniqueness deviation; issue #254 Part 2). "
          "For each row below, fill in ONE of the two annotation columns depending "
          "on that row's Biuniqueness_Scope:"],
         ["  Biuniqueness_Scope = 'filled':        fill has_allomorphs (y/n). Leave Members blank."],
@@ -168,10 +185,10 @@ def _banner_rows() -> List[List[str]]:
 # Drive helpers (API calls — not unit tested; see docs/tooling-design.md)
 # ---------------------------------------------------------------------------
 
-def _get_or_create_stage1_spreadsheet(
+def _get_or_create_allomorphy_spreadsheet(
     gc: gspread.Client, drive, folder_id: str, name: str
 ) -> Tuple[gspread.Spreadsheet, bool]:
-    """Find or create the Stage 1 spreadsheet by name inside folder_id.
+    """Find or create the allomorphy spreadsheet by name inside folder_id.
 
     Reused on re-runs so the URL stays stable across regenerations, same
     convention as generate_status_sheet.py's _get_or_create_status_spreadsheet.
@@ -192,7 +209,7 @@ def _get_or_create_stage1_spreadsheet(
     return ss, True
 
 
-def _write_stage1_sheet(ss: gspread.Spreadsheet, rows: List[Dict[str, str]]) -> gspread.Worksheet:
+def _write_prescreening_tab(ss: gspread.Spreadsheet, rows: List[Dict[str, str]]) -> gspread.Worksheet:
     """Write banner + header + data rows, freeze/bold the header, and add the
     has_allomorphs y/n dropdown. Existing content is cleared first so re-running
     reflects the current planar structure (matches _reset_worksheet's approach
@@ -200,8 +217,8 @@ def _write_stage1_sheet(ss: gspread.Spreadsheet, rows: List[Dict[str, str]]) -> 
     same as every other sheet-generation path in this project.
     """
     ws = _with_retry(lambda: ss.sheet1)
-    if ws.title != "Stage1":
-        _with_retry(lambda: ws.update_title("Stage1"))
+    if ws.title != "prescreening":
+        _with_retry(lambda: ws.update_title("prescreening"))
     ws.clear()
 
     banner = _banner_rows()
@@ -264,10 +281,10 @@ def _write_stage1_sheet(ss: gspread.Spreadsheet, rows: List[Dict[str, str]]) -> 
 # ---------------------------------------------------------------------------
 
 def main() -> None:
-    """Entry point for `python -m coding generate-biuniqueness-allomorphy-stage1-sheet`."""
+    """Entry point for `python -m coding generate-biuniqueness-allomorphy-sheet`."""
     apply = "--apply" in sys.argv
     if "--lang" not in sys.argv:
-        raise SystemExit("Usage: generate-biuniqueness-allomorphy-stage1-sheet --lang LANG_ID [--apply]")
+        raise SystemExit("Usage: generate-biuniqueness-allomorphy-sheet --lang LANG_ID [--apply]")
     lang_id = sys.argv[sys.argv.index("--lang") + 1]
 
     lang_setup_dir = CODED_DATA / lang_id / "lang_setup"
@@ -277,13 +294,13 @@ def main() -> None:
 
     planar_df = pd.read_csv(planar_path, sep="\t", dtype=str, keep_default_na=False)
     try:
-        rows = _build_stage1_rows(planar_df)
+        rows = _build_prescreening_rows(planar_df)
     except ValueError as exc:
         raise SystemExit(str(exc)) from None
 
     n_filled = sum(1 for r in rows if r["scope"] == "filled")
     n_open = sum(1 for r in rows if r["scope"] == "open_category")
-    print(f"{'DRY RUN — ' if not apply else ''}Stage 1 sheet for {lang_id}: "
+    print(f"{'DRY RUN — ' if not apply else ''}Allomorphy prescreening for {lang_id}: "
           f"{len(rows)} row(s) ({n_filled} filled, {n_open} open_category)")
     for r in rows:
         print(f"    {r['position_name']:24s} {r['element']:20s} {r['scope']}")
@@ -298,16 +315,16 @@ def main() -> None:
     if not lang_data or not lang_data.get("folder_id"):
         raise SystemExit(f"No Drive folder found for {lang_id} in the manifest — run python -m coding generate-sheets --apply first.")
 
-    sheet_name = f"biuniqueness_allomorphy_stage1_{lang_id}"
-    ss, created = _get_or_create_stage1_spreadsheet(gc, drive, lang_data["folder_id"], sheet_name)
-    _write_stage1_sheet(ss, rows)
+    sheet_name = f"biuniqueness_allomorphy_{lang_id}"
+    ss, created = _get_or_create_allomorphy_spreadsheet(gc, drive, lang_data["folder_id"], sheet_name)
+    _write_prescreening_tab(ss, rows)
     _share_with_person(drive, ss.id, _ADAM_EMAIL, role="writer")
     action = "Created" if created else "Updated"
     print(f"\n{action}: {ss.url}")
 
-    if lang_data.get("biuniqueness_allomorphy_stage1_spreadsheet_id") != ss.id:
-        lang_data["biuniqueness_allomorphy_stage1_spreadsheet_id"] = ss.id
-        lang_data["biuniqueness_allomorphy_stage1_url"] = ss.url
+    if lang_data.get("biuniqueness_allomorphy_spreadsheet_id") != ss.id:
+        lang_data["biuniqueness_allomorphy_spreadsheet_id"] = ss.id
+        lang_data["biuniqueness_allomorphy_url"] = ss.url
         MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
         config = _load_drive_config()
         existing_file_id = config.get("_planars_config_file_id")
@@ -315,7 +332,7 @@ def main() -> None:
         file_id = _upload_planars_config(drive, manifest, root_folder_id, existing_file_id)
         config["_planars_config_file_id"] = file_id
         _save_drive_config(config)
-        print("Manifest updated on Drive (biuniqueness_allomorphy_stage1_spreadsheet_id/url).")
+        print("Manifest updated on Drive (biuniqueness_allomorphy_spreadsheet_id/url).")
 
 
 if __name__ == "__main__":

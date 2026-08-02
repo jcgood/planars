@@ -55,15 +55,17 @@ structural_columns:
 
   - name: Biuniqueness_Scope
     description: >
-      Per-element flag for biuniqueness/allomorphy relevance (issue #254 Part 2a,
-      Stage 0 of the biuniqueness/allomorphy Sheet pipeline), aligned token-for-token
+      Per-element flag for biuniqueness/allomorphy relevance (issue #254 Part 2a).
+      Decides which elements appear on the allomorphy prescreening sheet, built by
+      `python -m coding generate-biuniqueness-allomorphy-sheet`. Aligned token-for-token
       with Elements (same comma/brace tokenization, same order). Built entirely on top
       of Element_Types + the same ALL-CAPS typography rule used there — no independent
       registry data. Values: "filled" (a concrete listed form, e.g. "do", "-ed" — a
-      direct candidate for Stage 1's has_allomorphs annotation), "open_category" (an
+      direct candidate for the has_allomorphs question), "open_category" (an
       ALL CAPS category placeholder standing for an open/closed class of formatives,
-      e.g. PRON, VERBPART — not itself annotable; needs Stage 2 to expand it into
-      specific member forms before Stage 1's question applies to any of them), or
+      e.g. PRON, VERBPART — not itself annotable; its Members must be expanded into
+      specific member forms before the has_allomorphs question applies to any of
+      them, which is #254 Part 2e's job), or
       "excluded" (embedded_structure or reserved elements — allomorphy is a morph-level
       phenomenon and does not apply to an embedded planar structure like NP{S,A} or to
       the KEYSTONE placeholder). Computed by coding.make_forms.classify_biuniqueness_scope().

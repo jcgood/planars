@@ -217,13 +217,13 @@ classes:
       linear ordering is strictly or conditionally fixed.
     specificity: general
     # Two-stage annotation (issue #116):
-    #   Stage 1 (element_prescreening construction): element-level sheet, scopal={y,n,both}.
+    #   First, element_prescreening: element-level sheet, scopal={y,n,both}.
     #     y = only scopally-conditioned variable orderings; n = no meaningful variable
     #     ordering (element filtered from pair sheet); both = mixed.
-    #   Stage 2 (general construction): pair-row sheet (Element_A, Element_B, scopal={y,n}).
+    #   Then the general construction: pair-row sheet (Element_A, Element_B, scopal={y,n}).
     #     Option C pairs, filtered to exclude pairs where either element has scopal=n
-    #     from Stage 1. Generate Stage 2 only after Stage 1 is imported.
-    # Pairs not in Stage 2 are implicitly fixed-order by structural definition.
+    #     in element_prescreening. Generate it only after that tab is imported.
+    # Pairs not on the pair sheet are implicitly fixed-order by structural definition.
     constructions:
       - name: element_prescreening
         row_type: element
@@ -310,9 +310,9 @@ classes:
       - morphological_reflexive_voice  # verb carries reflexive marker; keystone often bindee
       - reciprocal                 # reciprocal constructions
     # Two-stage workflow (mirrors nonpermutability):
-    #   Stage 1 (prescreening): standard element sheet; annotator marks
+    #   First, prescreening: standard element sheet; annotator marks
     #     referential=y/n for each element. Elements with n are excluded from pairs.
-    #   Stage 2 (main construction): pair-row sheet; columns are Element_A, Position_A,
+    #   Then the main construction: pair-row sheet; columns are Element_A, Position_A,
     #     Element_B, Position_B, Direction, <criterion>, Source, Comments.
     #     Element_A = antecedent (binder); Element_B = anaphor (bindee).
     constructions:
@@ -627,10 +627,10 @@ classes:
       rather than each retaining an independent accent). See issue #237.
     specificity: general
     # Two-stage annotation (issue #237):
-    #   Stage 1 (prescreening construction): element-level sheet, reuses the existing
+    #   First, the prescreening construction: element-level sheet, reuses the existing
     #     `accented` criterion (y/n/both) from the metrical class as-is — restricts the
     #     candidate pair set to accent-eligible elements. Elements coded accented=n are
-    #     excluded from Stage 2 pairing (they can never independently host a pitch
+    #     excluded from pairing (they can never independently host a pitch
     #     accent, so their combination behavior is trivial by definition).
     #     By explicit coordinator decision (2026-07-28): prescreening applies to every
     #     planar element — category placeholders (e.g. NP{S,A}) and specific
@@ -640,9 +640,9 @@ classes:
     #     this class proceeds inclusively for now rather than waiting on that resolving,
     #     and the resulting data is itself a concrete test case for #239's question of
     #     whether category-level judgments behave differently from formative-level ones.
-    #   Stage 2 (general construction): pair-row sheet (Element_A, Element_B,
+    #   Then the general construction: pair-row sheet (Element_A, Element_B,
     #     joint_accent={always,sometimes,never}), restricted to accent-eligible ×
-    #     accent-eligible pairs surviving Stage 1.
+    #     accent-eligible pairs surviving prescreening.
     #   Domain/span derivation from joint_accent data is deliberately deferred — the
     #   coordinator wants the coding scheme validated against real data before
     #   committing to a derivation method (interval-consistency vs. graph-based were

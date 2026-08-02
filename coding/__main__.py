@@ -25,7 +25,7 @@ Commands:
     refresh-dropdowns            Refresh criterion dropdown validation on existing sheets
     import-planar                Download planar spreadsheet from Drive and sync to local TSV
     generate-status-sheet        Generate locked, read-only per-language Annotation Status sheets
-    generate-biuniqueness-allomorphy-stage1-sheet  Generate the Stage 1 biuniqueness/allomorphy screening sheet
+    generate-biuniqueness-allomorphy-sheet  Generate the Stage 1 biuniqueness/allomorphy screening sheet
     capture-drive-state          Record live Drive/Sheets state to local test fixtures (READ-ONLY)
 
 Each command accepts the same flags as the original script. Use --help on any
@@ -61,7 +61,7 @@ _COMMANDS = {
     "refresh-dropdowns":           "coding.refresh_dropdowns",
     "import-planar":               "coding.import_planar",
     "generate-status-sheet":       "coding.generate_status_sheet",
-    "generate-biuniqueness-allomorphy-stage1-sheet": "coding.generate_biuniqueness_allomorphy_stage1_sheet",
+    "generate-biuniqueness-allomorphy-sheet": "coding.generate_biuniqueness_allomorphy_sheet",
 }
 
 

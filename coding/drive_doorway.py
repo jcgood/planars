@@ -144,7 +144,7 @@ class WorksheetHandle(Protocol):
         the columns it inserted.
 
         ``raw=False`` (``generate_status_sheet.py``,
-        ``generate_biuniqueness_allomorphy_stage1_sheet.py``) makes Sheets *parse* the
+        ``generate_biuniqueness_allomorphy_sheet.py``) makes Sheets *parse* the
         values, so an embedded ``=HYPERLINK(...)`` becomes a formula rather
         than literal text. That is a change in what the write means, not in
         how it displays.
