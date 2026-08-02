@@ -38,8 +38,9 @@ of this state would be exactly the defect this project is trying to remove.
 | Phase 0a — protocol proposal reviewed | **done** — accepted, see decisions log | — |
 | Phase 0a — `capture-drive-state` command | **done** | `c87ae7d` |
 | Phase 0a — fixture capture run (read-only, live) | **done** — 29 sheets, 80 tabs | `b40cd64` |
-| Phase 0a — fake backend | not started | — |
-| Phase 0b/1 — file 1 of 11 (pattern-setting migration) | not started | — |
+| Phase 0a — protocol module (`coding/drive_backend.py`) | **done** | this commit |
+| Phase 0a — fake backend (`tests/fake_drive.py`) + smoke tests | **done** — 62 tests | this commit |
+| Phase 0b/1 — file 1 of 11 (pattern-setting migration) | in progress — `refresh_dropdowns.py` | — |
 | Phase 0b/1 — files 2–11 | not started | — |
 | Phases 3–9 | not started | — |
 
@@ -52,36 +53,70 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
 ## Next action
 
-**Not blocked.** Steps 1–3 (protocol review, `capture-drive-state`, fixture
-capture) are complete. Remaining:
+**Not blocked.** The seam and the fake exist and are tested. Remaining:
 
-1. **Build the backend protocol module and the fake**, from the recorded
-   fixtures in `tests/fixtures/drive_state/`. The accepted protocol shape is
-   `docs/drive-protocol-surface.md` § "Proposed method signatures"; the design
-   stances behind it are logged below.
+1. **Migrate `refresh_dropdowns.py`** (file 1 of 11) using the per-file
+   procedure in the plan: pre-migration dry-run baseline → migrate → diff
+   against the fake → capture goldens → human review of the `--apply`
+   mutation log. This establishes the pattern; the remaining ten are then
+   delegable to agents.
 
-   Read that doc's § "Subtleties most likely to be guessed wrong" **including
-   the correction block at its head** before writing a line of the fake. The
-   established facts: responses are rectangular, never ragged; padding is to
-   the *used range*, which may be narrower than `col_count` (10 of 80 tabs);
-   `worksheets()` order is live tab order and must not be sorted;
-   `batch_update` and `values_batch_update` stay distinct; mutations must be
-   visible to the next read on the same handle.
+   Note on step 1 of that procedure: the "run the dry-run against real Drive
+   and save the output" baseline **cannot be taken for this file** — its
+   dry-run path reads the live manifest, and no live call other than
+   `capture-drive-state` is permitted before Phase 9. Substitute: drive the
+   *pre-migration* code and the *post-migration* code from the same seeded
+   fake (the pre-migration code takes `gc`/`drive` objects, which the fake can
+   satisfy well enough for its read path) and diff those two outputs. Record
+   in the golden whichever substitution is used.
 
-   Smoke-test every protocol operation against the fake.
+2. Files 2–11, one at a time, goldens captured immediately after each.
 
-2. **Migrate one file end-to-end** using the per-file procedure in the plan
-   (pre-migration dry-run baseline → migrate → diff against fake → capture
-   goldens → human review of the `--apply` mutation log). Suggested first
-   file: `refresh_dropdowns.py` — smallest Drive-touching caller at 200 lines.
-   This establishes the pattern; the remaining ten then go to agents.
-
-Steps 1 and 2 are the front-loaded supervision the plan calls for — do them
-by hand, not by agent. Everything after is delegable.
+Step 1 is the front-loaded supervision the plan calls for — done by hand, not
+by agent. Everything after is delegable.
 
 ---
 
 ## Decisions log
+
+**2026-08-01 — handle method names mirror gspread, deviating from the accepted
+proposal's renames.** The reviewed proposal named the two batch endpoints
+`apply_sheet_requests` and `write_value_ranges`. `coding/drive_backend.py`
+instead keeps gspread's own `batch_update` / `values_batch_update`, and mirrors
+gspread's names for every handle method. Reason: the migration proceeds one file
+at a time, and helpers are shared *across* migrated and unmigrated files —
+`generate_sheets._format_and_validate` is called by four of the eleven callers
+and calls `worksheet.spreadsheet.batch_update(...)` itself. Under the renamed
+protocol that helper would have to speak two vocabularies at once for the length
+of the migration, or every one of its callers would have to migrate together,
+which is precisely the cross-file rewrite Phase 0b/1's non-goals forbid.
+Mirroring also lets `GspreadBackend` return raw gspread objects as handles,
+adding no wrapper code on the path that touches live data.
+
+The disambiguation the rename was protecting is preserved another way: the fake
+**rejects a wrong-shaped body** on either method (`batch_update` given `data`,
+or `values_batch_update` given `requests`), so conflating the two endpoints
+fails loudly instead of silently. Reversible if Jeff prefers the renames — it is
+a mechanical rename of two methods plus the shared helper.
+
+**2026-08-01 — the fake raises on anything it does not model.** Unknown
+`batch_update` request types, unparseable Drive `q` clauses, and wrong-shaped
+batch bodies all raise rather than no-op. A fake that silently ignores an
+unmodelled request produces a *passing* golden for a command that would have
+done something different live — which would make the golden actively harmful
+rather than merely incomplete. Eight request types are modelled, matching what
+the eleven caller files actually send.
+
+**2026-08-01 — one live oddity found while modelling, recorded not fixed.**
+`restructure_sheets._cascade_rename_pair_tab` builds `values_batch_update`
+ranges with no sheet prefix (`"D5"`, from `rowcol_to_a1(...)[:-1]`). The Sheets
+values API resolves an unprefixed range against the **first sheet** of the
+spreadsheet, not against the tab the caller is holding — so that cascade writes
+to sheet1 whenever the pair tab is not first. The fake reproduces this
+faithfully (`test_unprefixed_values_range_resolves_against_the_first_sheet`).
+Not fixed: Phase 0b/1's non-goal is explicit that current behaviour is recorded
+as-is, including behaviour that looks wrong. Belongs to triage on #271 once
+`restructure_sheets.py` has goldens.
 
 **2026-08-01 — Phases 0 and 1 interleaved rather than sequenced.** As first
 written they were circular: goldens need the seam, and safely migrating to the
