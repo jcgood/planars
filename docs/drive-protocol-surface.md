@@ -848,6 +848,10 @@ Grouped by the object they operate on. **[R]**/**[W]** marks read/write;
 
 ### Duplicate implementations to collapse (candidates, not decisions)
 
+> **Now tracked as issue #276**, which owns this work and carries the
+> precondition (every Drive-writing command needs snapshots first). The
+> inventory below is the evidence; the issue is where the decision gets made.
+
 The inventory found the same conceptual operation implemented independently
 multiple times. Collapsing these is exactly what `data-layer-design.md`
 argues for ("derive, don't duplicate" / "a fact recorded in more than one

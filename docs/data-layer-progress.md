@@ -314,11 +314,10 @@ fake silently diverges); structural requests stay generic
 gspread's convenience methods stay individually named because callers reason
 about their differing indexing conventions.
 
-**Deferred:** collapsing the four duplicate "create-or-update a Drive file"
-implementations and the two "get-or-create folder" implementations. They are
-genuine duplication and belong in the inventory, but collapsing them changes
-behaviour and there are no snapshots yet, so they wait until after 0b/1 rather
-than riding along with the seam migration.
+**Deferred:** collapsing the duplicated Drive helpers — now **issue #276**,
+which owns this and lists all four groups and the axes they disagree on. Do
+not restate it here or in code comments; point at the number. Precondition:
+every Drive-writing command has snapshots first.
 
 **2026-08-01 — the `untestable` trap was fixed immediately rather than deferred
 to Phase 3.** A deliberate exception to Phase 2's inventory-only rule, taken

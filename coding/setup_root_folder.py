@@ -78,10 +78,8 @@ def _set_viewer_permissions(backend, file_id: str) -> None:
     """Share a file or folder as view-only with anyone who has the link.
 
     Called unconditionally on every run, so a re-run adds another "anyone"
-    grant rather than checking for one first. Preserved as-is: it is how this
-    command has always behaved, and generate_status_sheet.py's ``_already_shared``
-    shows the project knows the alternative. Worth revisiting together with the
-    other duplicated sharing helpers, not here.
+    grant rather than checking for one first. Preserved as-is; tracked in
+    issue #276 with the other duplicated Drive helpers.
     """
     backend.create_permission(file_id, type="anyone", role="reader")
 
