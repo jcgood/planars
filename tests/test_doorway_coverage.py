@@ -42,7 +42,6 @@ _EXEMPT = {
 # Files still to migrate, smallest first. Ordering rationale is in
 # docs/data-layer-progress.md § "Migration order".
 _REMAINING = {
-    "check_notes.py",
     "generate_biuniqueness_stage1_sheet.py",
     "sync_diagnostics_yaml.py",
     "import_planar.py",

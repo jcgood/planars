@@ -817,6 +817,12 @@ class FakeDriveDoorway:
         self._files[file_id] = _DriveFile(
             file_id, name, mimetype or "application/octet-stream",
             list(parents or []), content)
+        if mimetype == _DOC_MIME:
+            # Creating a file with the Docs mimetype creates a real, empty,
+            # readable document — there is no separate "make it a Doc" step.
+            # Without this, a Doc created through create_file rather than
+            # create_doc would exist in Drive but 404 on the next read.
+            self._docs.setdefault(file_id, "")
         self._record("create_file", file_id=file_id, name=name,
                      parents=list(parents or []), mimetype=mimetype,
                      bytes=len(content) if content is not None else None)
@@ -890,9 +896,9 @@ class FakeDriveDoorway:
 
     # -- docs ---------------------------------------------------------------
     def create_doc(self, name: str, parent_id: str) -> str:
+        # One Drive call, one entry in the log — create_file has already
+        # recorded it. Same reasoning as get_or_create_folder above.
         doc_id = self.create_file(name, [parent_id], mimetype=_DOC_MIME)
-        self._docs[doc_id] = ""
-        self._record("create_doc", file_id=doc_id, name=name, parent=parent_id)
         return doc_id
 
     def get_doc_text(self, doc_id: str) -> str:
@@ -901,6 +907,19 @@ class FakeDriveDoorway:
         return self._docs[doc_id]
 
     def append_doc_text(self, doc_id: str, text: str) -> None:
+        """Append a line, landing where the live helper lands it.
+
+        ``drive._append_to_notes_doc`` inserts at ``endIndex - 1``, which is
+        *before* the document's final newline — a Google Doc always ends with
+        one. Appending after it instead leaves a blank line, and that blank
+        line is not cosmetic: ``check-notes`` hashes the doc to decide whether
+        a collaborator has written anything new, so a stray blank line would
+        make every daily run see its own last acknowledgment as new content and
+        report it again.
+        """
         current = self.get_doc_text(doc_id)
-        self._docs[doc_id] = current + "\n" + text
+        if current.endswith("\n"):
+            self._docs[doc_id] = current + text + "\n"
+        else:
+            self._docs[doc_id] = current + "\n" + text
         self._record("append_doc_text", file_id=doc_id, text=text)

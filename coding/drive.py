@@ -386,10 +386,9 @@ def _create_notes_doc(drive, lang_id: str, folder_id: str, display_name: str = "
 
     Returns the new document's file ID.
     """
-    doc_name = f"{display_name} — Annotation Notes" if display_name else f"notes_{lang_id}"
     result = drive.files().create(
         body={
-            "name": doc_name,
+            "name": _notes_doc_name(lang_id, display_name),
             "mimeType": "application/vnd.google-apps.document",
             "parents": [folder_id],
         },
@@ -397,6 +396,24 @@ def _create_notes_doc(drive, lang_id: str, folder_id: str, display_name: str = "
     ).execute()
     doc_id = result["id"]
     _share_anyone_with_link(drive, doc_id)
+    return doc_id
+
+
+def _notes_doc_name(lang_id: str, display_name: str = "") -> str:
+    """What a language's notes doc is called on Drive."""
+    return f"{display_name} — Annotation Notes" if display_name else f"notes_{lang_id}"
+
+
+def create_notes_doc(doorway, lang_id: str, folder_id: str,
+                     display_name: str = "") -> str:
+    """``_create_notes_doc`` through a ``drive_doorway.DriveDoorway``.
+
+    Same name, same "anyone with the link can edit" grant. That grant is
+    deliberate and unusual — see ``_share_anyone_with_link`` — so it stays
+    beside the creation rather than being left to the caller to remember.
+    """
+    doc_id = doorway.create_doc(_notes_doc_name(lang_id, display_name), folder_id)
+    doorway.create_permission(doc_id, type="anyone", role="writer")
     return doc_id
 
 

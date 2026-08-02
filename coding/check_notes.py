@@ -137,17 +137,16 @@ def main() -> None:
         print()
 
     from .drive import (
-        _get_clients, _get_docs_client, _load_manifest_from_drive,
-        _read_notes_doc_text, _strip_acknowledgment_lines, _append_to_notes_doc,
-        _upload_planars_config, _load_drive_config, _save_drive_config,
+        load_manifest, _strip_acknowledgment_lines,
+        upload_manifest, _load_drive_config, _save_drive_config,
         _ACK_PREFIX,
     )
+    from .drive_doorway import get_doorway
     from planars.languages import get_display_name, get_entry
 
     print("Connecting to Google APIs...")
-    gc, drive = _get_clients()
-    docs = _get_docs_client(gc)
-    manifest = _load_manifest_from_drive(drive)
+    doorway = get_doorway()
+    manifest = load_manifest(doorway)
     config = _load_drive_config()
     root_folder_id = config.get("_root_folder_id")
     existing_config_file_id = config.get("_planars_config_file_id")
@@ -178,9 +177,10 @@ def main() -> None:
                 print(f"[{lang_id}] No folder_id in manifest — skipping")
                 continue
             if apply:
-                from .drive import _create_notes_doc
+                from .drive import create_notes_doc
                 try:
-                    doc_id = _create_notes_doc(drive, lang_id, folder_id, get_display_name(lang_id))
+                    doc_id = create_notes_doc(doorway, lang_id, folder_id,
+                                              get_display_name(lang_id))
                     lang_data["notes_doc_id"] = doc_id
                     manifest[lang_id]["notes_doc_id"] = doc_id
                     config.setdefault(lang_id, {})["notes_doc_id"] = doc_id
@@ -202,7 +202,7 @@ def main() -> None:
         display_name = get_display_name(lang_id)
 
         try:
-            raw_text = _read_notes_doc_text(docs, doc_id)
+            raw_text = doorway.get_doc_text(doc_id)
         except Exception as e:
             print(f"[{lang_id}] Could not read notes doc: {e}")
             continue
@@ -254,7 +254,7 @@ def main() -> None:
         for lang_id, doc_id, new_hash in to_acknowledge:
             if apply:
                 try:
-                    _append_to_notes_doc(docs, doc_id, ack_text)
+                    doorway.append_doc_text(doc_id, ack_text)
                     print(f"[{lang_id}] Acknowledgment appended to notes doc.")
                 except Exception as e:
                     print(f"[{lang_id}] Could not append acknowledgment: {e}")
@@ -268,7 +268,7 @@ def main() -> None:
         _save_notes_state(state)
         print("\nnotes_state.json updated.")
         if manifest_dirty and root_folder_id and existing_config_file_id:
-            _upload_planars_config(drive, manifest, root_folder_id, existing_config_file_id)
+            upload_manifest(doorway, manifest, root_folder_id, existing_config_file_id)
             _save_drive_config(config)
             print("Drive manifest updated with new notes_doc_id(s).")
 

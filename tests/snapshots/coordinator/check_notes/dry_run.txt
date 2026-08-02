@@ -1,0 +1,18 @@
+DRY RUN — pass --apply to file issues, write back to docs, and save state.
+
+Connecting to Google APIs...
+[arao1248] New notes detected (Adam Tallman).
+
+Filing/updating issue for: Adam Tallman
+  [dry run] Would file/update issue with body:
+  ## Collaborator notes — Adam Tallman — DATE
+  
+  ### Araona [arao1248]
+  
+  Position 14 looks wrong to me — the stem boundary sits left of where
+  the tone rule wants it. Also: is 'both' allowed for accented?
+  
+  ---
+  
+  ## Ready-to-paste Claude prompt
+  ...

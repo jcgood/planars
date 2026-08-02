@@ -30,7 +30,7 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 0b/1 — migrating callers, 5 of 17 done (started 2026-08-01)
+**Phase:** 0b/1 — migrating callers, 6 of 17 done (started 2026-08-01)
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
 **Last worked:** 2026-08-02
@@ -70,7 +70,8 @@ the same day — see the decisions log.
 | Phase 0b/1 — file 3 of 17: `setup_root_folder.py` | **done** — snapshots captured, pre/post diff clean |
 | Phase 0b/1 — file 4 of 17: `apply_pending.py` | **done** — snapshots captured, pre/post diff clean |
 | Phase 0b/1 — file 5 of 17: `prune_manifest.py` | **done** — snapshots captured, pre/post diff clean |
-| Phase 0b/1 — files 6–17 | not started — see § "Migration order" |
+| Phase 0b/1 — file 6 of 17: `check_notes.py` | **done** — snapshots captured, pre/post diff clean; Docs part of the doorway now covered |
+| Phase 0b/1 — files 7–17 | not started — see § "Migration order" |
 | Phases 3–9 | not started |
 
 ### In flight
@@ -84,7 +85,7 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
 **Not blocked.**
 
-1. **The remaining twelve files**, one at a time, snapshots captured
+1. **The remaining eleven files**, one at a time, snapshots captured
    immediately after each. See § "Migration order" below.
    Delegable to agents now that the pattern exists (the four done are the
    worked examples: one Sheets-heavy, one Drive-files-only, one
@@ -114,7 +115,7 @@ the doorway has been exercised before the destructive commands are touched.
 | ~~1~~ | ~~`setup_root_folder.py`~~ | done |
 | ~~2~~ | ~~`apply_pending.py`~~ | done |
 | ~~3~~ | ~~`prune_manifest.py`~~ | done |
-| 4 | `check_notes.py` | The only user of Google Docs — that part of the doorway is untested |
+| ~~4~~ | ~~`check_notes.py`~~ | done |
 | 5 | `generate_biuniqueness_stage1_sheet.py` | Near-twin of `generate_status_sheet`; do the smaller one first |
 | 6 | `sync_diagnostics_yaml.py` | First writer to a reference sheet |
 | 7 | `import_planar.py` | Reads *and* writes the planar sheet — the #248 command. Do it while the pattern is fresh, not last |
@@ -263,6 +264,42 @@ current order so the change is visible when it happens.
 ---
 
 ## Decisions log
+
+**2026-08-02 — the fake was writing acknowledgment lines in the wrong place,
+and it would have hidden a daily duplicate-issue loop.** Found on file 6, by a
+test rather than by the pre/post diff — the diff could not see it, because both
+sides used the same fake.
+
+`check-notes` decides whether a collaborator has written anything new by
+hashing their doc. It also *writes into that doc*, appending "notes transferred
+to coordinator", so the hash deliberately ignores acknowledgment lines. The
+live helper inserts at `endIndex - 1` — **before** the document's final
+newline, which a Google Doc always has. The fake appended after everything,
+leaving a blank line behind. A blank line survives acknowledgment-stripping, so
+the hash changed anyway, so the next run would see new content, file again, and
+append again — one duplicate report per day, growing forever.
+
+The command is correct; the fake was not. Fixed to insert where the live helper
+inserts. Recorded because of what it says about the method rather than the bug:
+**a pre/post diff cannot catch a fake that is wrong in the same way on both
+sides.** It proves a migration changed nothing; it says nothing about whether
+the thing being preserved was right. Tests that state the command's promise —
+here, "an acknowledgment does not look like new notes tomorrow" — are what
+catch this class, which is why the evidence order above puts property
+assertions above snapshot text.
+
+Two smaller fake corrections in the same file: `create_doc` was double-logging
+the way `get_or_create_folder` was (same fix), and a file created with the Docs
+mimetype now registers as a readable empty document, because that is what one
+Drive call actually produces — there is no second step that turns a file into a
+Doc. Without it, a Doc created through `create_file` existed in Drive but 404'd
+on the next read.
+
+`drive.py` gained `create_notes_doc(doorway, ...)`, sharing the doc's naming
+rule with `_create_notes_doc` and keeping the "anyone with the link can edit"
+grant beside the creation. That grant is the loosest sharing in the project and
+deliberately so — collaborators must reach their notes doc without an invite —
+so it should not be left to each caller to remember.
 
 **2026-08-02 — the pre-migration harness reached live Drive once, on file 5.
 Read-only, nothing changed, and the harness now cannot do it again.**
