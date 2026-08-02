@@ -346,3 +346,50 @@
       faithful to the fixtures, not that the fixtures are faithful to Drive.
       Re-running capture-drive-state --apply and inspecting git diff on
       tests/fixtures/drive_state/ is the only check, and it is manual.
+
+- id: pair_row_construction_set
+  description: which constructions are annotated as pair rows (Element_A/Element_B) rather than element rows
+  locations:
+    - {entity: schema_yaml, detail: "schemas/diagnostic_classes.yaml -- each construction's row_type: pair_rows|element"}
+    - {entity: annotation_sheet, detail: "the tab's own header row, which is what the annotator actually sees and fills in"}
+    - {entity: construction_tsv, detail: "coded_data/{lang}/{class}/{construction}.tsv -- the header written by import-sheets from the tab"}
+  authoritative: schema_yaml
+  cascade:
+    direction: automatic
+    mechanism: >-
+      generate-sheets builds each tab's header from row_type when the tab is
+      created or regenerated (--regen-construction CLASS:CONSTRUCTION).
+      import-sheets copies the tab's header straight into the TSV. Readers ask
+      restructure_sheets._get_pair_row_constructions(), which derives the set
+      from diagnostic_classes.yaml -- validate_coding.py, generate_status_sheet.py
+      and (since 2026-08-02) import_sheets.py all route on that call rather than
+      naming the classes themselves.
+  drift_risk:
+    possible: true
+    note: >-
+      A sheet created before its construction's row_type was settled keeps the
+      old header indefinitely: nothing regenerates a tab on its own, because
+      doing so would discard annotations. stan1293's phrasal_accent/general is
+      exactly this -- element rows, created before #237 settled the pair-row
+      design, still element rows today (#275; resolved as "the sheet is stale",
+      rebuild pending prescreening annotation).
+
+      The worse failure, and the reason this record exists, is a reader holding
+      its own copy of the set. import_sheets.py decided pair-vs-element from a
+      class list written into the routing itself ("nonpermutability" and
+      "coreference"), which omitted phrasal_accent, while validate_coding.py
+      derived the same fact from the schema. So the two commands disagreed
+      about one tab: validate-coding read it as pair rows and reported the
+      mismatch, import-sheets read it as element rows and did not. Had the
+      sheet been rebuilt with pair rows while that hardcode was still in place,
+      import-sheets would have treated Element_A and Element_B as criterion
+      columns and written them into the TSV lowercased. Found while cleaning up
+      #275's warning cascade, fixed the same day, before the rebuild that would
+      have triggered it.
+    caught_by: >-
+      validate-coding, which reports a sheet whose header is not the shape its
+      row_type declares -- once per tab, naming both the rebuild command and
+      the schema field, since 2026-08-02. Nothing checks that a *reader* derives
+      the set rather than restating it; tests/test_import_sheets.py asserts it
+      for import_sheets.py specifically, by inspecting the source for the
+      hardcoded class name.

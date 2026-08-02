@@ -146,6 +146,46 @@ def clear_highlights(ws) -> None:
 # Annotation sheet validation
 # ---------------------------------------------------------------------------
 
+def _plain_records(header: List[str], data_rows: List[List[str]]) -> List[Dict]:
+    """Row dicts with every value exactly as the sheet holds it.
+
+    Used when the sheet's shape is not the one expected, so no column can be
+    read as a criterion. The values still have to come back: `import-sheets`
+    writes whatever it is handed straight to the TSV, so returning nothing here
+    would empty a live annotation file.
+    """
+    records = []
+    for row in data_rows:
+        row = list(row) + [""] * (len(header) - len(row))
+        records.append({name: row[i] for i, name in enumerate(header)})
+    return records
+
+
+def _wrong_shape(tab_name: str, header: List[str], expected: str,
+                 class_name: Optional[str], lang_id: Optional[str]) -> ValidationIssue:
+    """One error saying the sheet is not the shape the schema says it is.
+
+    Said once, and then nothing else is checked. Before this, a sheet whose
+    rows were not the expected shape had every cell checked anyway against a
+    column map built for the other shape — so `stan1293`'s phrasal_accent
+    sheet reported 2 real errors under 427 complaints that element names and
+    position numbers are not `y`/`n` (issue #275).
+    """
+    lang = f"--lang {lang_id} " if lang_id else "--lang LANG "
+    target = f"{class_name}:{tab_name}" if class_name else "CLASS:CONSTRUCTION"
+    rebuild = f"python -m coding generate-sheets {lang}--regen-construction {target}"
+    return ValidationIssue(
+        "error", tab_name,
+        f"the sheet's rows are not the shape this construction is supposed to "
+        f"have. Expected {expected}; the sheet's columns are {header}. "
+        f"Nothing else was checked, because every value would have been read "
+        f"from the wrong column.\n"
+        f"    → Either rebuild the sheet:  {rebuild}\n"
+        f"      or correct row_type for this construction in "
+        f"schemas/diagnostic_classes.yaml, if the sheet is the one that is right."
+    )
+
+
 def validate_annotation_rows(
     rows: List[List[str]],
     expected_params: List[str],
@@ -153,6 +193,8 @@ def validate_annotation_rows(
     param_values: Dict[str, List[str]] = None,
     keystone_active: bool = False,
     keystone_na_criteria: List[str] = None,
+    class_name: Optional[str] = None,
+    lang_id: Optional[str] = None,
 ) -> Tuple[List[Dict], List[ValidationIssue]]:
     """Validate annotation sheet rows.
 
@@ -165,6 +207,12 @@ def validate_annotation_rows(
 
     header    = rows[0]
     data_rows = rows[1:]
+
+    if not set(header) & _STRUCTURAL_COLS:
+        return (_plain_records(header, data_rows),
+                [_wrong_shape(tab_name, header,
+                              "element rows (Element, Position_Name, Position_Number)",
+                              class_name, lang_id)])
 
     for col in ("Element", "Position_Name", "Position_Number"):
         if col not in header:
@@ -379,6 +427,7 @@ def revalidate_sheet(
         rows, expected_params, construction, param_values,
         keystone_active=keystone_active,
         keystone_na_criteria=keystone_na_criteria,
+        class_name=class_name, lang_id=lang_id,
     )
     bad_cells = [issue.cell for issue in issues if issue.cell is not None]
     clear_highlights(ws)
@@ -395,6 +444,8 @@ def validate_pair_rows(
     expected_params: List[str],
     tab_name: str,
     param_values: Dict[str, List[str]] = None,
+    class_name: Optional[str] = None,
+    lang_id: Optional[str] = None,
 ) -> Tuple[List[Dict], List[ValidationIssue]]:
     """Validate pair-row annotation sheets (nonpermutability, coreference).
 
@@ -411,12 +462,10 @@ def validate_pair_rows(
     header    = rows[0]
     data_rows = rows[1:]
 
-    header_set = set(header)
-    present_structural = header_set & _PAIR_STRUCTURAL_COLS
-    if not present_structural:
-        for col in ("Element_A", "Element_B"):
-            if col not in header_set:
-                issues.append(ValidationIssue("error", tab_name, f"missing structural column '{col}'"))
+    if not set(header) & _PAIR_STRUCTURAL_COLS:
+        return (_plain_records(header, data_rows),
+                [_wrong_shape(tab_name, header,
+                              "pair rows (Element_A, Element_B)", class_name, lang_id)])
 
     actual_params = [c for c in header if c not in _PAIR_STRUCTURAL_COLS and c not in _TRAILING_COLS]
     if actual_params != expected_params:
@@ -486,7 +535,8 @@ def revalidate_pair_sheet(
     Raises FileNotFoundError if the local TSV does not exist.
     """
     rows = _read_tsv_rows(lang_id, class_name, construction)
-    _, issues = validate_pair_rows(rows, expected_params, construction, param_values)
+    _, issues = validate_pair_rows(rows, expected_params, construction, param_values,
+                                   class_name=class_name, lang_id=lang_id)
     bad_cells = [issue.cell for issue in issues if issue.cell is not None]
     clear_highlights(ws)
     highlight_cells(ws, bad_cells)

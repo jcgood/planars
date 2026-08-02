@@ -385,3 +385,30 @@ class TestDetectDiagnosticsChanges:
         new = _diag_df([_row_diag("ciscategorial", criteria="V-combines")])
         safe, pending = _detect_diagnostics_changes(old, new, "lang0001")
         assert any(p["change_type"] == "diagnostics_criteria_removed" for p in pending)
+
+
+# ---------------------------------------------------------------------------
+# Which constructions have pair rows is one fact, in one place (issue #275)
+# ---------------------------------------------------------------------------
+
+def test_import_sheets_reads_the_pair_row_list_from_the_schema():
+    """It used to name the classes itself, and left phrasal_accent out.
+
+    validate-coding has read this from schemas/diagnostic_classes.yaml since
+    the row_type field was added, so the two commands disagreed about
+    phrasal_accent/general: one treated it as pair rows, the other as element
+    rows. Two places holding the same fact is the failure this project keeps
+    repeating, so there is now only one.
+    """
+    import inspect
+
+    from coding.restructure_sheets import _get_pair_row_constructions
+
+    source = inspect.getsource(_is.main)
+    assert "pair_row_constructions.get(class_name" in source, (
+        "import-sheets no longer derives pair-row routing from the schema")
+    assert 'class_name == "nonpermutability"' not in source, (
+        "the hardcoded class list is back")
+
+    # And the schema does list the one that was missing.
+    assert "general" in _get_pair_row_constructions()["phrasal_accent"]

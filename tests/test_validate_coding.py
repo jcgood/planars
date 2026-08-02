@@ -166,3 +166,69 @@ def test_genuinely_invalid_value_still_rejected_on_pair_sheet():
     _, issues = validate_pair_rows(_pair_rows("maybe"), info["params"],
                                    "reflexivization", info["values"])
     assert any("unexpected value" in i.message for i in issues)
+
+
+# ---------------------------------------------------------------------------
+# A sheet whose rows are not the shape the schema says (issue #275)
+#
+# stan1293's phrasal_accent/general has element rows while the schema says
+# pair rows. The validator used to report that twice and then check all 142
+# rows against a column map built for the other shape, objecting once per cell
+# that element names and position numbers are not y/n — 2 real errors under
+# 427 lines of noise.
+# ---------------------------------------------------------------------------
+
+_ELEMENT_SHAPED = [
+    ["Element", "Position_Name", "Position_Number", "joint_accent", "Source", "Comments"],
+    ["also", "v:leftedge", "1", "", "", ""],
+    ["CONJUNCT", "v:leftedge", "1", "", "", ""],
+]
+
+
+def test_element_rows_where_pair_rows_are_expected_report_once():
+    _, issues = validate_pair_rows(_ELEMENT_SHAPED, ["joint_accent"], "general")
+    assert len(issues) == 1
+    assert issues[0].level == "error"
+    assert "not the shape" in issues[0].message
+
+
+def test_pair_rows_where_element_rows_are_expected_report_once():
+    """The same mistake the other way round, which was equally unguarded."""
+    _, issues = validate_annotation_rows(_pair_rows("y"), ["reflexive_allowed"],
+                                         "reflexivization")
+    assert len(issues) == 1
+    assert issues[0].level == "error"
+
+
+def test_the_error_says_which_command_would_rebuild_the_sheet():
+    """Nobody should have to remember the flags from the message alone."""
+    _, issues = validate_pair_rows(_ELEMENT_SHAPED, ["joint_accent"], "general",
+                                   class_name="phrasal_accent", lang_id="stan1293")
+    assert ("python -m coding generate-sheets --lang stan1293 "
+            "--regen-construction phrasal_accent:general") in issues[0].message
+    # And names the other possibility, since the schema may be the wrong one.
+    assert "schemas/diagnostic_classes.yaml" in issues[0].message
+
+
+def test_the_rows_still_come_back_untouched():
+    """The reason this stops at reporting instead of returning nothing.
+
+    import-sheets writes whatever the validator hands back straight to the
+    TSV. Returning no rows for a mis-shaped sheet would empty a live
+    annotation file — and 'CONJUNCT' must not come back lowercased either,
+    which is what happened when its column was read as a criterion.
+    """
+    records, _ = validate_pair_rows(_ELEMENT_SHAPED, ["joint_accent"], "general")
+    assert len(records) == len(_ELEMENT_SHAPED) - 1
+    assert records[1]["Element"] == "CONJUNCT"
+    assert records[0] == {"Element": "also", "Position_Name": "v:leftedge",
+                          "Position_Number": "1", "joint_accent": "",
+                          "Source": "", "Comments": ""}
+
+
+def test_a_correctly_shaped_sheet_is_still_checked_cell_by_cell():
+    """The stop only fires on a shape mismatch, not on a bad value."""
+    info = _COREFERENCE_CONSTRUCTION_PARAMS["reflexivization"]
+    _, issues = validate_pair_rows(_pair_rows("maybe"), info["params"],
+                                   "reflexivization", info["values"])
+    assert any("unexpected value" in i.message for i in issues)

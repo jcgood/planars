@@ -37,6 +37,7 @@ from .drive import (
     _with_retry,
 )
 from .generate_sheets import _STATUS_TAB, _STATUS_VALUES
+from .restructure_sheets import _get_pair_row_constructions
 from . import validate_coding as _val
 from .validate_planar import validate_planar_df as _validate_planar_df
 from .validate_diagnostics import validate_diagnostics_df as _validate_diagnostics_df
@@ -84,6 +85,8 @@ def _validate_tab(
     param_values: Dict[str, List[str]] = None,
     keystone_active: bool = False,
     keystone_na_criteria: List[str] = None,
+    class_name: str = None,
+    lang_id: str = None,
 ) -> Tuple[List[Dict], List[str], List[Tuple[int, int]]]:
     """Delegate to validate.validate_annotation_rows (kept for backwards compatibility).
 
@@ -93,6 +96,7 @@ def _validate_tab(
         rows, expected_params, tab_name, param_values,
         keystone_active=keystone_active,
         keystone_na_criteria=keystone_na_criteria,
+        class_name=class_name, lang_id=lang_id,
     )
     warnings  = [str(i) for i in issues]
     bad_cells = [i.cell for i in issues if i.cell is not None]
@@ -104,12 +108,15 @@ def _validate_pair_tab(
     expected_params: List[str],
     tab_name: str,
     param_values: Dict[str, List[str]] = None,
+    class_name: str = None,
+    lang_id: str = None,
 ) -> Tuple[List[Dict], List[str], List[Tuple[int, int]]]:
     """Delegate to validate.validate_pair_rows for nonpermutability pair-row sheets.
 
     Returns (records, warnings, bad_cells) in the same format as _validate_tab.
     """
-    records, issues = _val.validate_pair_rows(rows, expected_params, tab_name, param_values)
+    records, issues = _val.validate_pair_rows(rows, expected_params, tab_name, param_values,
+                                              class_name=class_name, lang_id=lang_id)
     warnings  = [str(i) for i in issues]
     bad_cells = [i.cell for i in issues if i.cell is not None]
     return records, warnings, bad_cells
@@ -854,6 +861,7 @@ def main() -> None:
     all_pending: List[Dict] = []
     all_drift: List[Dict] = []
     all_collaborator_check: List[Dict] = []
+    pair_row_constructions = _get_pair_row_constructions()
 
     for lang_id, lang_data in manifest.items():
         if lang_filter and lang_id != lang_filter:
@@ -902,16 +910,21 @@ def main() -> None:
                 construction_params = sheet_info.get("construction_params", {})
                 param_values = construction_params.get(construction, {}).get("param_values")
 
-                is_pair_tab = (
-                    (class_name == "nonpermutability" and construction != "element_prescreening")
-                    or (class_name == "coreference" and construction != "prescreening")
-                )
+                # Which constructions have pair rows comes from the schema, not
+                # from a list written out here. This used to name only
+                # nonpermutability and coreference, and so missed
+                # phrasal_accent/general — which validate-coding, reading the
+                # schema, treated as pair rows all along. Two places deciding
+                # the same thing and disagreeing is the defect this project
+                # keeps hitting; validate_coding.py:547 is the pattern copied.
+                is_pair_tab = construction in pair_row_constructions.get(class_name, set())
                 if is_pair_tab:
                     expected_params = (
                         [c for c in header if c not in _PAIR_STRUCTURAL_COLS and c not in _TRAILING_COLS]
                     )
                     records, warnings, bad_cells = _validate_pair_tab(
                         rows, expected_params, construction, param_values,
+                        class_name=class_name, lang_id=lang_id,
                     )
                 else:
                     expected_params = (
@@ -926,6 +939,7 @@ def main() -> None:
                         rows, expected_params, construction, param_values,
                         keystone_active=bool(ka),
                         keystone_na_criteria=kna,
+                        class_name=class_name, lang_id=lang_id,
                     )
 
                 if bad_cells:
