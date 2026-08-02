@@ -31,54 +31,59 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-from .drive import _get_clients, _load_drive_config, _save_drive_config, _move_to_folder
+from .drive import _load_drive_config, _save_drive_config
+from .drive_backend import get_backend
 
 _ROOT_FOLDER_NAME = "ConstituencyTypology"
+_FOLDER_MIME = "application/vnd.google-apps.folder"
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _get_or_create_root_folder(drive) -> str:
+def _get_or_create_root_folder(backend) -> str:
     """Find or create the ConstituencyTypology folder at the Drive root level.
 
     Searches Drive for a folder with the right name that has no parent in our
     namespace (i.e. lives at the top level of My Drive). If multiple matches
     exist, returns the first. If none exist, creates one.
 
+    Kept as its own find-then-create rather than calling the seam's
+    ``get_or_create_folder``, which would do the same two calls but cannot
+    report which of the two happened — and this command's whole output is an
+    account of what it found versus what it changed.
+
     Returns:
         The folder ID.
     """
-    results = drive.files().list(
+    files = backend.list_files(
         q=(
             f"name='{_ROOT_FOLDER_NAME}'"
-            " and mimeType='application/vnd.google-apps.folder'"
+            f" and mimeType='{_FOLDER_MIME}'"
             " and trashed=false"
         ),
         fields="files(id, name)",
-    ).execute()
-    files = results.get("files", [])
+    )
     if files:
         folder_id = files[0]["id"]
         print(f"Found existing folder '{_ROOT_FOLDER_NAME}' (id: {folder_id})")
         return folder_id
-    folder = drive.files().create(
-        body={"name": _ROOT_FOLDER_NAME, "mimeType": "application/vnd.google-apps.folder"},
-        fields="id",
-    ).execute()
-    folder_id = folder["id"]
+    folder_id = backend.create_file(_ROOT_FOLDER_NAME, mimetype=_FOLDER_MIME)
     print(f"Created folder '{_ROOT_FOLDER_NAME}' (id: {folder_id})")
     return folder_id
 
 
-def _set_viewer_permissions(drive, file_id: str) -> None:
-    """Share a file or folder as view-only with anyone who has the link."""
-    drive.permissions().create(
-        fileId=file_id,
-        body={"type": "anyone", "role": "reader"},
-        fields="id",
-    ).execute()
+def _set_viewer_permissions(backend, file_id: str) -> None:
+    """Share a file or folder as view-only with anyone who has the link.
+
+    Called unconditionally on every run, so a re-run adds another "anyone"
+    grant rather than checking for one first. Preserved as-is: it is how this
+    command has always behaved, and generate_status_sheet.py's ``_already_shared``
+    shows the project knows the alternative. Worth revisiting together with the
+    other duplicated sharing helpers, not here.
+    """
+    backend.create_permission(file_id, type="anyone", role="reader")
 
 
 # ---------------------------------------------------------------------------
@@ -100,14 +105,14 @@ def main() -> None:
     config = _load_drive_config()
 
     print("Connecting to Google APIs...")
-    _, drive = _get_clients()
+    backend = get_backend()
 
     # Step 1: Create or find the root folder
-    root_id = _get_or_create_root_folder(drive)
+    root_id = _get_or_create_root_folder(backend)
     folder_url = f"https://drive.google.com/drive/folders/{root_id}"
 
     # Step 2: Set Viewer permissions so coordinators can share the link
-    _set_viewer_permissions(drive, root_id)
+    _set_viewer_permissions(backend, root_id)
     print(f"Viewer permissions set on root folder.")
 
     # Step 3: Move any language folders not yet inside the root folder.
@@ -120,11 +125,11 @@ def main() -> None:
         if not lang_folder_id:
             print(f"No folder_id for '{lang_id}' in drive_config.json — skipping.")
             continue
-        file_info = drive.files().get(fileId=lang_folder_id, fields="parents").execute()
+        file_info = backend.get_file(lang_folder_id, fields="parents")
         if root_id in file_info.get("parents", []):
             print(f"Language folder '{lang_id}' already inside root folder — skipping.")
         else:
-            _move_to_folder(drive, lang_folder_id, root_id)
+            backend.move_file(lang_folder_id, root_id)
             print(f"Moved language folder '{lang_id}' (id: {lang_folder_id}) into root folder.")
 
     # Step 4: Rename any language folder that still has the old 'planars — {lang_id}'
@@ -134,24 +139,22 @@ def main() -> None:
         lang_folder_id = config[lang_id].get("folder_id")
         if not lang_folder_id:
             continue
-        file_info = drive.files().get(fileId=lang_folder_id, fields="name").execute()
+        file_info = backend.get_file(lang_folder_id, fields="name")
         current_name = file_info.get("name", "")
         if current_name == lang_id:
             print(f"Language folder '{lang_id}' already has correct name — skipping.")
         else:
-            drive.files().update(
-                fileId=lang_folder_id, body={"name": lang_id}, fields="id, name"
-            ).execute()
+            backend.update_file(lang_folder_id, name=lang_id)
             print(f"Renamed '{current_name}' → '{lang_id}'.")
 
     # Step 5a: Move manifest.json to root folder (if it exists)
     planars_config_id = config.get("_planars_config_file_id")
     if planars_config_id:
-        fi = drive.files().get(fileId=planars_config_id, fields="parents").execute()
+        fi = backend.get_file(planars_config_id, fields="parents")
         if root_id in fi.get("parents", []):
             print("manifest.json already in root folder — skipping.")
         else:
-            _move_to_folder(drive, planars_config_id, root_id)
+            backend.move_file(planars_config_id, root_id)
             print(f"Moved manifest.json (id: {planars_config_id}) to root folder.")
     else:
         print("No manifest.json found in drive_config.json — skipping.")
@@ -160,11 +163,11 @@ def main() -> None:
     # Step 5b: Move all_languages.ipynb to root folder (if it exists)
     all_langs_id = config.get("_all_languages_notebook_file_id")
     if all_langs_id:
-        fi = drive.files().get(fileId=all_langs_id, fields="parents").execute()
+        fi = backend.get_file(all_langs_id, fields="parents")
         if root_id in fi.get("parents", []):
             print("all_languages.ipynb already in root folder — skipping.")
         else:
-            _move_to_folder(drive, all_langs_id, root_id)
+            backend.move_file(all_langs_id, root_id)
             print(f"Moved all_languages.ipynb (id: {all_langs_id}) to root folder.")
     else:
         print("No all_languages.ipynb found in drive_config.json — skipping.")

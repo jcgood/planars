@@ -1,0 +1,22 @@
+Connecting to Google APIs...
+Created folder 'ConstituencyTypology' (id: fake_file_0001)
+Viewer permissions set on root folder.
+Moved language folder 'arao1248' (id: 1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU) into root folder.
+Moved language folder 'stan1293' (id: 1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3) into root folder.
+Moved language folder 'synth0001' (id: 1F9y3SyErwY7ieexHGUmv3k17TNFd2hOH) into root folder.
+Renamed 'planars — arao1248' → 'arao1248'.
+Renamed 'planars — stan1293' → 'stan1293'.
+Renamed 'planars — synth0001' → 'synth0001'.
+Moved manifest.json (id: fake_manifest_file) to root folder.
+Moved all_languages.ipynb (id: fake_notebook_file) to root folder.
+
+Done. drive_config.json updated with _root_folder_id.
+Root folder: https://drive.google.com/drive/folders/fake_file_0001
+
+Next steps:
+  - All language folders are now inside ConstituencyTypology.
+  - Existing contributor shares are unaffected (folder IDs did not change).
+  - New language folders will be created inside this root folder automatically.
+  - Share the root folder URL with coordinators who need access to all_languages.ipynb.
+  - Run python -m coding generate-notebooks --apply to regenerate notebooks
+    (confirms manifest.json points to the correct location).

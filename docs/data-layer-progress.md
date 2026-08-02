@@ -40,9 +40,10 @@ of this state would be exactly the defect this project is trying to remove.
 | Phase 0a — fixture capture run (read-only, live) | **done** — 29 sheets, 80 tabs | `b40cd64` |
 | Phase 0a — protocol module (`coding/drive_backend.py`) | **done** | this commit |
 | Phase 0a — fake backend (`tests/fake_drive.py`) + smoke tests | **done** — 62 tests | this commit |
-| Phase 0b/1 — file 1 of 11: `refresh_dropdowns.py` | **done** — snapshots captured, mutation log reviewed and accepted | `5ca369d` |
-| Phase 0b/1 — file 2 of 11: `generate_reports.py` | **done** — snapshots captured, pre/post diff clean | this commit |
-| Phase 0b/1 — files 3–11 | not started | — |
+| Phase 0b/1 — file 1 of 17: `refresh_dropdowns.py` | **done** — snapshots captured, mutation log reviewed and accepted | `5ca369d` |
+| Phase 0b/1 — file 2 of 17: `generate_reports.py` | **done** — snapshots captured, pre/post diff clean | `62047c3` |
+| Phase 0b/1 — file 3 of 17: `setup_root_folder.py` | **done** — snapshots captured, pre/post diff clean | this commit |
+| Phase 0b/1 — files 4–17 | not started — see § "Migration order" | — |
 | Phases 3–9 | not started | — |
 
 ### In flight
