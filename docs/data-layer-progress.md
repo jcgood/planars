@@ -30,7 +30,7 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 0b/1 — migrating callers, 6 of 17 done (started 2026-08-01)
+**Phase:** 0b/1 — migrating callers, 7 of 17 done (started 2026-08-01)
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
 **Last worked:** 2026-08-02
@@ -71,7 +71,8 @@ the same day — see the decisions log.
 | Phase 0b/1 — file 4 of 17: `apply_pending.py` | **done** — snapshots captured, pre/post diff clean |
 | Phase 0b/1 — file 5 of 17: `prune_manifest.py` | **done** — snapshots captured, pre/post diff clean |
 | Phase 0b/1 — file 6 of 17: `check_notes.py` | **done** — snapshots captured, pre/post diff clean; Docs part of the doorway now covered |
-| Phase 0b/1 — files 7–17 | not started — see § "Migration order" |
+| Phase 0b/1 — file 7 of 17: `generate_biuniqueness_allomorphy_sheet.py` | **done** — snapshots captured, pre/post diff clean; first to create a spreadsheet and share it with a named person |
+| Phase 0b/1 — files 8–17 | not started — see § "Migration order" |
 | Phases 3–9 | not started |
 
 ### In flight
@@ -85,7 +86,7 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
 **Not blocked.**
 
-1. **The remaining eleven files**, one at a time, snapshots captured
+1. **The remaining ten files**, one at a time, snapshots captured
    immediately after each. See § "Migration order" below.
    Delegable to agents now that the pattern exists (the four done are the
    worked examples: one Sheets-heavy, one Drive-files-only, one
@@ -102,7 +103,7 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
 ### Migration order
 
-Fifteen files remain, not the nine the plan implied — the plan's list of
+Ten files remain, not the nine the plan implied — the plan's list of
 eleven was hand-written and never checked against the code; a scan on
 2026-08-02 found seventeen files reaching Drive directly. The list is now
 derived by `tests/test_doorway_coverage.py`, so it cannot drift again.
@@ -116,7 +117,7 @@ the doorway has been exercised before the destructive commands are touched.
 | ~~2~~ | ~~`apply_pending.py`~~ | done |
 | ~~3~~ | ~~`prune_manifest.py`~~ | done |
 | ~~4~~ | ~~`check_notes.py`~~ | done |
-| 5 | `generate_biuniqueness_allomorphy_sheet.py` | Near-twin of `generate_status_sheet`; do the smaller one first |
+| ~~5~~ | ~~`generate_biuniqueness_allomorphy_sheet.py`~~ | done |
 | 6 | `sync_diagnostics_yaml.py` | First writer to a reference sheet |
 | 7 | `import_planar.py` | Reads *and* writes the planar sheet — the #248 command. Do it while the pattern is fresh, not last |
 | 8 | `generate_notebooks.py` | File uploads; closest sibling to `generate_reports`, already done |

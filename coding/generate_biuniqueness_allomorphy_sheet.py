@@ -101,20 +101,16 @@ ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
 
-import gspread
 import pandas as pd
 
 from .drive import (
-    _get_clients,
-    _load_manifest_from_drive,
-    _open_spreadsheet,
-    _move_to_folder,
-    _share_with_person,
+    load_manifest,
+    upload_manifest,
     _with_retry,
-    _upload_planars_config,
     _load_drive_config,
     _save_drive_config,
 )
+from .drive_doorway import get_doorway
 from .validate_planar import _tokenize_elements
 
 _ADAM_EMAIL = "adamjamesrosstallman@gmail.com"
@@ -186,30 +182,30 @@ def _banner_rows() -> List[List[str]]:
 # ---------------------------------------------------------------------------
 
 def _get_or_create_allomorphy_spreadsheet(
-    gc: gspread.Client, drive, folder_id: str, name: str
-) -> Tuple[gspread.Spreadsheet, bool]:
+    doorway, folder_id: str, name: str
+) -> Tuple[object, bool]:
     """Find or create the allomorphy spreadsheet by name inside folder_id.
 
     Reused on re-runs so the URL stays stable across regenerations, same
     convention as generate_status_sheet.py's _get_or_create_status_spreadsheet.
     Returns (spreadsheet, created).
     """
-    existing = drive.files().list(
+    existing = doorway.list_files(
         q=(
             f"name='{name}' and '{folder_id}' in parents"
             " and mimeType='application/vnd.google-apps.spreadsheet'"
             " and trashed=false"
         ),
         fields="files(id)",
-    ).execute().get("files", [])
+    )
     if existing:
-        return _open_spreadsheet(gc, existing[0]["id"]), False
-    ss = gc.create(name)
-    _move_to_folder(drive, ss.id, folder_id)
+        return doorway.open_spreadsheet(existing[0]["id"]), False
+    ss = doorway.create_spreadsheet(name)
+    doorway.move_file(ss.id, folder_id)
     return ss, True
 
 
-def _write_prescreening_tab(ss: gspread.Spreadsheet, rows: List[Dict[str, str]]) -> gspread.Worksheet:
+def _write_prescreening_tab(ss, rows: List[Dict[str, str]]):
     """Write banner + header + data rows, freeze/bold the header, and add the
     has_allomorphs y/n dropdown. Existing content is cleared first so re-running
     reflects the current planar structure (matches _reset_worksheet's approach
@@ -309,16 +305,20 @@ def main() -> None:
         print("\nRun with --apply to create/update the sheet on Drive.")
         return
 
-    gc, drive = _get_clients()
-    manifest = _load_manifest_from_drive(drive)
+    doorway = get_doorway()
+    manifest = load_manifest(doorway)
     lang_data = manifest.get(lang_id)
     if not lang_data or not lang_data.get("folder_id"):
         raise SystemExit(f"No Drive folder found for {lang_id} in the manifest — run python -m coding generate-sheets --apply first.")
 
     sheet_name = f"biuniqueness_allomorphy_{lang_id}"
-    ss, created = _get_or_create_allomorphy_spreadsheet(gc, drive, lang_data["folder_id"], sheet_name)
+    ss, created = _get_or_create_allomorphy_spreadsheet(
+        doorway, lang_data["folder_id"], sheet_name)
     _write_prescreening_tab(ss, rows)
-    _share_with_person(drive, ss.id, _ADAM_EMAIL, role="writer")
+    # Named person, not "anyone with the link" — see drive._share_with_person
+    # for why unpublished research data is shared this way.
+    doorway.create_permission(ss.id, type="user", role="writer",
+                              email=_ADAM_EMAIL, notify=False)
     action = "Created" if created else "Updated"
     print(f"\n{action}: {ss.url}")
 
@@ -329,7 +329,7 @@ def main() -> None:
         config = _load_drive_config()
         existing_file_id = config.get("_planars_config_file_id")
         root_folder_id = config.get("_root_folder_id")
-        file_id = _upload_planars_config(drive, manifest, root_folder_id, existing_file_id)
+        file_id = upload_manifest(doorway, manifest, root_folder_id, existing_file_id)
         config["_planars_config_file_id"] = file_id
         _save_drive_config(config)
         print("Manifest updated on Drive (biuniqueness_allomorphy_spreadsheet_id/url).")

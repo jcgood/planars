@@ -1,0 +1,8 @@
+DRY RUN — Allomorphy prescreening for synth0001: 135 row(s) (117 filled, 18 open_category)
+    v:leftedge               and                  filled
+    v:leftedge               also                 filled
+    v:leftedge               then                 filled
+    v:leftedge               CONJUNCT             open_category
+    ... 131 more rows ...
+
+Run with --apply to create/update the sheet on Drive.

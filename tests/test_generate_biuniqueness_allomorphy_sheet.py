@@ -1,9 +1,10 @@
 """Tests for the pure-logic pieces of coding/generate_biuniqueness_allomorphy_sheet.py
 (issue #254 Part 2c).
 
-No live Drive/Sheets API calls are made or mocked here — see the module's
-docstring for why _get_or_create_allomorphy_spreadsheet/_write_prescreening_tab are
-left untested (same convention as test_generate_status_sheet.py).
+No Drive calls here — this file covers the row-building logic on its own.
+The Drive side is covered by tests/test_biuniqueness_allomorphy_snapshot.py,
+which runs the whole command against the offline stand-in Drive; that became
+possible when this command moved to the doorway (#271, file 7 of 17).
 """
 from __future__ import annotations
 
