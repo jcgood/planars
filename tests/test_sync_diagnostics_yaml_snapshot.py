@@ -199,27 +199,65 @@ def test_a_second_apply_is_a_no_op(env):
     assert doorway.mutations == []
 
 
-def test_a_change_to_a_second_row_of_a_class_is_written_but_not_named(env):
-    """Pins current behaviour, which under-reports. See the progress doc, finding 5.
+def test_a_change_to_a_second_row_of_a_class_names_the_construction(env):
+    """`segmental` and `phrasal_accent` have one row per construction here.
 
-    The "removed / added / changed" list is keyed on the Class column, and
-    several classes have a row per construction — `segmental` and
-    `phrasal_accent` here. A difference confined to the second row of such a
-    class is found and written correctly, but the coordinator is told only
-    "Would update", with nothing named. Pinned so that changing it is visible.
+    Until 2026-08-02 the report compared each class's *first* row only, so an
+    edit to the second row was uploaded with nothing named at all. See the
+    progress doc, finding 5.
     """
     doorway, run = env
     ws = sheet(doorway)
     rows = ws.get_all_values()
-    assert rows[-1][0] == "phrasal_accent" and rows[-2][0] == "phrasal_accent"
+    assert rows[-1][:3] == ["phrasal_accent", LANG, "general"]
+    assert rows[-2][:3] == ["phrasal_accent", LANG, "prescreening"]
     rows[-1][-1] = "joint_accent{never}"
     ws.clear()
     ws.update(rows, "A1")
 
     out = run(["sdy", "--to-sheet", "--lang", LANG, "--apply"])
-    assert "Updated → diagnostics Sheet" in out
-    assert "changed:" not in out                     # nothing named
+    assert "~ changed: phrasal_accent / general" in out
+    assert "prescreening" not in out                  # the untouched row stays quiet
     assert sheet(doorway).get_all_values() == yaml_rows()
+
+
+def test_a_whole_row_removed_from_a_two_row_class_is_named(env):
+    """The class name survives in the other row, so this used to print nothing."""
+    doorway, run = env
+    ws = sheet(doorway)
+    rows = ws.get_all_values()
+    ws.clear()
+    ws.update(rows[:-1], "A1")                        # drop phrasal_accent / general
+
+    out = run(["sdy", "--to-sheet", "--lang", LANG])
+    assert "+ added:   phrasal_accent / general" in out
+
+
+def test_a_one_row_class_is_still_reported_by_class_alone(env):
+    """Naming its construction list would be noise, not information."""
+    doorway, run = env
+    ws = sheet(doorway)
+    rows = ws.get_all_values()
+    assert rows[1][:3] == ["ciscategorial", LANG, "general"]
+    rows[1][-1] = "V-combines"
+    ws.clear()
+    ws.update(rows, "A1")
+
+    out = run(["sdy", "--to-sheet", "--lang", LANG])
+    assert "~ changed: ciscategorial\n" in out
+
+
+def test_a_sheet_missing_the_constructions_column_still_gets_a_report(env):
+    """A mangled header must not turn the preview into an exception."""
+    doorway, run = env
+    ws = sheet(doorway)
+    rows = [row[:2] + row[3:] for row in ws.get_all_values()]
+    ws.clear()
+    ws.update(rows, "A1")
+
+    out = run(["sdy", "--to-sheet", "--lang", LANG])
+    assert "~ changed: ciscategorial" in out
+    assert "Would update → diagnostics Sheet" in out
 
 
 # ---------------------------------------------------------------------------

@@ -289,27 +289,56 @@ asks Drive for and when — which is precisely what the before/after diff is
 there to hold still. `test_the_warning_does_not_stop_the_prune` pins the
 current order so the change is visible when it happens.
 
-**5. `sync-diagnostics-yaml --to-sheet` writes the right thing but does not
-always say what it changed** (found 2026-08-02, file 8, not filed). The
-"removed / added / changed" list it prints before uploading is keyed on the
-`Class` column alone, and several classes have one row per construction —
-`stan1293` has two `segmental` rows and two `phrasal_accent` rows. When the
-only difference is in the *second* row of such a class, the class name appears
-on both sides, and the changed-row comparison looks at `.iloc[0]`, the first
-row, which is identical. So the coordinator is told "Would update → diagnostics
-Sheet" with nothing named at all.
+**5. `sync-diagnostics-yaml --to-sheet` wrote the right thing but did not
+always say what it changed** (found 2026-08-02, file 8). **Fixed the same day**
+— see the decisions log. The "removed / added / changed" list it prints before
+uploading was keyed on the `Class` column alone, and several classes have one
+row per construction, because their constructions declare different criteria:
+`stan1293` and `synth0001` each have two `segmental` rows
+(`aspiration_prominence`, `flapping`) and two `phrasal_accent` rows
+(`prescreening`, `general`). When the only difference sat in the *second* row
+of such a class, the class name appeared on both sides and the changed-row
+comparison looked at `.iloc[0]`, the first row, which was identical. So the
+coordinator was told "Would update → diagnostics Sheet" with nothing named at
+all. Deleting one row of a two-row class printed nothing either, for the same
+reason.
 
-Nothing is written wrongly: the whole-table comparison that decides *whether*
-to upload is correct, and the upload replaces the sheet with the YAML's
-content either way. What is lost is the chance to look at the change before
-approving it. The fix is to compare on (Class, Constructions) rather than
-Class. Recorded rather than fixed, following the rule below.
-`test_a_change_to_a_second_row_of_a_class_is_written_but_not_named` pins the
-current output so the change is visible when it happens.
+Nothing was ever written wrongly: the whole-table comparison that decides
+*whether* to upload sees every row, and the upload replaces the sheet with the
+YAML's content either way. What was lost was the one look at the change before
+approving it — which is the entire purpose of the dry run.
 
 ---
 
 ## Decisions log
+
+**2026-08-02 — finding 5 was fixed straight after being found, and the rule
+that decides which findings get that treatment is now stated once here.** Three
+findings have been deferred and two fixed on the spot, and the line between
+them has been redrawn in prose each time. It is this: **fix it now if it only
+changes what a command *says*; defer it if it changes what a command *writes*
+or what it asks Drive for.** The reason is the migration's evidence, not
+caution in general — the pre/post mutation diff is what proves a migration
+changed nothing, so anything that would move that diff has to wait until the
+migration it is riding on is already committed and proven.
+
+By that rule #272's two dropdown bugs and the `prune-manifest` ordering stay
+deferred, while `apply-pending`'s four-way failure message and this one were
+fixed the day they were found. Both fixes landed as their own commit *after*
+the migration commit, with the snapshot diff as the evidence — which is what
+made the change legible: finding 5's entire footprint is one new line,
+`+ added: phrasal_accent / general`, appearing in two snapshots where nothing
+had been printed before.
+
+Worth noting what the fix is not. The obvious repair was to key the report on
+(Class, Constructions) instead of Class, and that would have been a regression
+for the common case: most classes hold a single row whose `Constructions` cell
+is a *list*, so adding one construction to `subspanrepetition` would have
+changed the key and reported a removal plus an addition where "changed" is the
+truth. A class with one row on each side is therefore still reported by class
+name alone, and only a class holding several rows is reported per
+construction. `_describe_changes` is now a named function with that reasoning
+in its docstring, rather than a loop inline in the middle of an upload.
 
 **2026-08-02 — file 8 dropped a parameter rather than keeping the migration
 purely a call-site substitution.** `_sync_to_sheet` took a `gc` client and

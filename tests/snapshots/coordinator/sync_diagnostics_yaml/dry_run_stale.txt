@@ -3,6 +3,7 @@ Dry run — use --apply to write changes.
 Connecting to Google APIs...
   [stan1293]   - removed: a_class_the_yaml_never_heard_of
   [stan1293]   + added:   ciscategorial
+  [stan1293]   + added:   phrasal_accent / general
   [stan1293]   ~ changed: subspanrepetition
   [stan1293] Would update → diagnostics Sheet (use --apply to write)
 

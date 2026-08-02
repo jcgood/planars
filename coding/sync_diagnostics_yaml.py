@@ -172,6 +172,60 @@ def _sync_from_tsv(lang_id: str, apply: bool, drift_entries: List[Dict]) -> bool
     return bool(deterministic)
 
 
+def _describe_changes(current_df: pd.DataFrame, new_df: pd.DataFrame) -> List[str]:
+    """Say what would move if the Sheet were overwritten from the YAML.
+
+    This is the only look the coordinator gets before a sheet is replaced, so
+    it has to name everything that is about to change.
+
+    Most classes occupy one row. Some occupy one row per construction, because
+    their constructions ask different questions and so declare different
+    criteria — `segmental` splits into `aspiration_prominence` and `flapping`,
+    `phrasal_accent` into `prescreening` and `general`. For those, comparing
+    one row per class is not enough: until 2026-08-02 this compared each
+    class's *first* row only, so an edit to `segmental / flapping` was uploaded
+    and never mentioned, and deleting a whole row of a two-row class printed
+    nothing at all. See docs/data-layer-progress.md, finding 5.
+
+    So a class with one row on each side is still reported by class name — that
+    was right, and naming its construction list would only add noise. A class
+    with several rows is reported per construction.
+    """
+    def classes(df: pd.DataFrame) -> set:
+        return set(df.get("Class", pd.Series(dtype=str)).tolist())
+
+    def rows_of(df: pd.DataFrame, class_name: str) -> List[Dict]:
+        return [r.to_dict() for _, r in df[df["Class"] == class_name].iterrows()]
+
+    def by_construction(rows: List[Dict]) -> Dict[str, Dict]:
+        return {row["Constructions"]: row for row in rows}
+
+    # A sheet whose header is wrong enough to be missing this column still gets
+    # a report, one line per class, rather than an exception.
+    per_construction = ("Constructions" in current_df.columns
+                        and "Constructions" in new_df.columns)
+
+    current_classes, new_classes = classes(current_df), classes(new_df)
+    lines = [f"- removed: {c}" for c in sorted(current_classes - new_classes)]
+    lines += [f"+ added:   {c}" for c in sorted(new_classes - current_classes)]
+
+    for c in sorted(current_classes & new_classes):
+        old_rows, new_rows = rows_of(current_df, c), rows_of(new_df, c)
+        if not per_construction or (len(old_rows) == 1 and len(new_rows) == 1):
+            if old_rows != new_rows:
+                lines.append(f"~ changed: {c}")
+            continue
+        old_by, new_by = by_construction(old_rows), by_construction(new_rows)
+        for k in sorted(set(old_by) - set(new_by)):
+            lines.append(f"- removed: {c} / {k}")
+        for k in sorted(set(new_by) - set(old_by)):
+            lines.append(f"+ added:   {c} / {k}")
+        for k in sorted(set(old_by) & set(new_by)):
+            if old_by[k] != new_by[k]:
+                lines.append(f"~ changed: {c} / {k}")
+    return lines
+
+
 def _sync_to_sheet(lang_id: str, manifest: dict, apply: bool) -> bool:
     """Sync YAML → Google Sheet for one language.
 
@@ -228,18 +282,8 @@ def _sync_to_sheet(lang_id: str, manifest: dict, apply: bool) -> bool:
         if current_df.reset_index(drop=True).equals(new_df.reset_index(drop=True)):
             print(f"  [{lang_id}] Sheet already up to date")
             return False
-        # Show row-level diff so coordinator can review before applying.
-        current_classes = set(current_df.get("Class", pd.Series(dtype=str)).tolist())
-        new_classes = set(new_df.get("Class", pd.Series(dtype=str)).tolist())
-        for c in sorted(current_classes - new_classes):
-            print(f"  [{lang_id}]   - removed: {c}")
-        for c in sorted(new_classes - current_classes):
-            print(f"  [{lang_id}]   + added:   {c}")
-        for c in sorted(current_classes & new_classes):
-            old_row = current_df[current_df["Class"] == c].iloc[0].to_dict()
-            new_row = new_df[new_df["Class"] == c].iloc[0].to_dict()
-            if old_row != new_row:
-                print(f"  [{lang_id}]   ~ changed: {c}")
+        for line in _describe_changes(current_df, new_df):
+            print(f"  [{lang_id}]   {line}")
     else:
         print(f"  [{lang_id}]   (sheet is empty — will populate from YAML)")
 
