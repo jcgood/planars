@@ -1,6 +1,6 @@
 """Render a fake-backend mutation log as something a person can actually read.
 
-    python tests/render_mutations.py tests/goldens/refresh_dropdowns/apply_mutations.json
+    python tests/render_mutations.py tests/snapshots/coordinator/refresh_dropdowns/apply_mutations.json
 
 The raw log is faithful but opaque: spreadsheets appear as Drive IDs, tabs as
 numeric `sheetId`s, and columns as 0-based indices. Reviewing it in that form
@@ -15,7 +15,7 @@ fixtures the fake was seeded from. Reviewing writes is a step that recurs once
 per migrated file (eleven times), and the plan's per-file procedure asks a human
 to sign off on each one; this is what should be put in front of them.
 
-Used by the golden tests to produce a `*_digest.txt` alongside each raw log, so
+Used by the snapshot tests to produce a `*_digest.txt` alongside each raw log, so
 the readable form is the committed artifact and the diff a reviewer sees is a
 diff of headers and values, not of sheet IDs.
 """

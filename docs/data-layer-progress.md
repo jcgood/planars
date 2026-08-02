@@ -40,8 +40,8 @@ of this state would be exactly the defect this project is trying to remove.
 | Phase 0a — fixture capture run (read-only, live) | **done** — 29 sheets, 80 tabs | `b40cd64` |
 | Phase 0a — protocol module (`coding/drive_backend.py`) | **done** | this commit |
 | Phase 0a — fake backend (`tests/fake_drive.py`) + smoke tests | **done** — 62 tests | this commit |
-| Phase 0b/1 — file 1 of 11: `refresh_dropdowns.py` | **done** — goldens captured, mutation log reviewed and accepted | `5ca369d` |
-| Phase 0b/1 — file 2 of 11: `generate_reports.py` | **done** — goldens captured, pre/post diff clean | this commit |
+| Phase 0b/1 — file 1 of 11: `refresh_dropdowns.py` | **done** — snapshots captured, mutation log reviewed and accepted | `5ca369d` |
+| Phase 0b/1 — file 2 of 11: `generate_reports.py` | **done** — snapshots captured, pre/post diff clean | this commit |
 | Phase 0b/1 — files 3–11 | not started | — |
 | Phases 3–9 | not started | — |
 
@@ -56,25 +56,54 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
 **Not blocked.**
 
-1. **Files 3–11**, one at a time, goldens captured immediately after each.
+1. **The remaining sixteen files**, one at a time, snapshots captured
+   immediately after each. See § "Migration order" below.
    Delegable to agents now that the pattern exists (files 1 and 2 are the
-   worked examples: one gspread-heavy, one Drive-files-only). Remaining, in
-   suggested order: `generate_notebooks.py` (no gspread at all — closest to
-   file 2, and shares the "upload a file, set a permission" shape),
-   `validate_coding.py`, `update_sheets.py`, `import_sheets.py`,
-   `sync_params.py`, `generate_status_sheet.py`,
-   `generate_biuniqueness_stage1_sheet.py`, `generate_sheets.py`,
-   `restructure_sheets.py`. The last two are the largest and should go last,
-   after every helper they share has already moved.
+   worked examples: one Sheets-heavy, one Drive-files-only).
 
    Watch for, in each: a `_save_drive_config` call (must be patched in tests —
    the real `drive_config.json` holds live IDs and a test that clobbers it
    breaks the coordinator's access to their own Drive) and any expensive or
    non-deterministic pure-computation step (PDF rendering, notebook JSON) that
-   should be stubbed so the golden locks the *Drive interaction*, which is what
+   should be stubbed so the snapshot locks the *Drive interaction*, which is what
    the migration touches, rather than output already covered elsewhere.
 
 2. Phases 3–9 per the plan.
+
+### Migration order
+
+Sixteen files remain, not the nine the plan implied — the plan's list of
+eleven was hand-written and never checked against the code; a scan on
+2026-08-02 found seventeen files reaching Drive directly. The list is now
+derived by `tests/test_seam_coverage.py`, so it cannot drift again.
+
+Ordered by risk, lowest first, so that every shared helper and every part of
+the seam has been exercised before the destructive commands are touched.
+
+| # | file | why here |
+|---|---|---|
+| 1 | `setup_root_folder.py` | 191 lines, run once, nothing to lose. Exercises folders and sharing, which nothing has yet |
+| 2 | `apply_pending.py` | Opens a sheet to read tab names. Read-only |
+| 3 | `prune_manifest.py` | First file-move, but only of already-retired sheets |
+| 4 | `check_notes.py` | The only user of Google Docs — that part of the seam is untested |
+| 5 | `generate_biuniqueness_stage1_sheet.py` | Near-twin of `generate_status_sheet`; do the smaller one first |
+| 6 | `sync_diagnostics_yaml.py` | First writer to a reference sheet |
+| 7 | `import_planar.py` | Reads *and* writes the planar sheet — the #248 command. Do it while the pattern is fresh, not last |
+| 8 | `generate_notebooks.py` | File uploads; closest sibling to `generate_reports`, already done |
+| 9 | `update_sheets.py` | Appends to live annotation sheets. First real risk to Adam's data |
+| 10 | `generate_status_sheet.py` | Generated dashboard; no annotation at stake |
+| 11 | `validate_coding.py` | Writes highlighting across every sheet |
+| 12 | `integrity_check.py` | 941 lines but a small read-only Drive section |
+| 13 | `import_sheets.py` | Downloads everything; the daily refresh depends on it |
+| 14 | `sync_params.py` | Column surgery — insert, rename, delete. Highest density of read-then-write on one handle |
+| 15 | `generate_sheets.py` | 2644 lines, creates everything, and owns helpers four other files call. Late, so those callers are already migrated and proven |
+| 16 | `restructure_sheets.py` | Archive-then-rebuild with no rollback. The #248 command. Last, deliberately |
+
+Two departures from "smallest first" worth keeping: `import_planar.py` moves
+up because it is the command whose silent revert caused #248 and it deserves
+attention rather than fatigue; `generate_sheets.py` moves down because four
+other files call its helpers, and migrating it last means those callers are
+already locked down when it changes.
 
 ### The per-file procedure, as actually executed on file 1
 
@@ -91,7 +120,7 @@ better than expected and should be reused for files 2–11:
 - Diff. On `refresh_dropdowns.py` both modes' stdout were byte-identical and
   the 36 mutations matched exactly, including the manifest payload's byte
   count.
-- Only then capture goldens.
+- Only then capture snapshots.
 
 This gives write paths a real before/after diff rather than review alone, which
 is a stronger check than the plan assumed was available. The shims live in the
@@ -114,7 +143,7 @@ So for files 2–11 the order of evidence is:
 2. property assertions that survive regeneration — for file 1: the dry run
    mutates nothing, `--apply` writes no cell value, every captured tab reads
    back byte-identical afterwards, a second `--apply` is a no-op. These are
-   worth more than the golden text, because they state the command's promise
+   worth more than the snapshot text, because they state the command's promise
    rather than its current output;
 3. human review last, on a *rendered* digest (tab titles and column headers
    resolved, not raw IDs), and framed as "does this match what the command is
@@ -127,7 +156,7 @@ had hidden the second one entirely. Render before asking anyone to read.
 
 ## Findings awaiting triage
 
-Per the plan's Phase 0b/1 non-goals, a golden that reveals odd behaviour records
+Per the plan's Phase 0b/1 non-goals, a snapshot that reveals odd behaviour records
 it rather than fixing it. These are recorded, live, and not yet triaged.
 
 **Both filed as issue #272 (2026-08-01) — do not run `refresh-dropdowns --apply`
@@ -141,7 +170,7 @@ constructions". That is false for classes declaring per-construction criteria.
 `_read_diagnostics_for_language` returns the right values per construction; this
 loop discards all but the first.
 
-Live consequence, visible in `tests/goldens/refresh_dropdowns/apply.txt`: an
+Live consequence, visible in `tests/snapshots/coordinator/refresh_dropdowns/apply.txt`: an
 `--apply` run today would push
 - `stan1293`/`synth0001` `segmental.flapping`: `[y, n, both, na]` → `[y, n]`
 - `stan1293`/`synth0001` `phrasal_accent.general` `joint_accent`:
@@ -151,12 +180,12 @@ and write those wrong sets back into the manifest. Annotation data is not at
 risk — validation is non-strict (`showCustomUi=True, strict=False`) and
 `validate-coding` reads allowed values from the schemas, not the manifest — so
 the damage is that Adam would be offered the wrong options in the dropdown.
-Not fixed here: the golden's job on file 1 was to capture behaviour, and fixing
+Not fixed here: the snapshot's job on file 1 was to capture behaviour, and fixing
 it in the same change would have meant the before/after diff could no longer
 prove the migration was behaviour-preserving. Fix it as its own change, with
-the golden diff as the evidence.
+the snapshot diff as the evidence.
 
-(The `coreference.prescreening` line in the same golden, three criteria → just
+(The `coreference.prescreening` line in the same snapshot, three criteria → just
 `referential`, is *correct* — `_fresh_param_values` special-cases it.)
 
 **2. Dropdown columns are counted from the manifest, so they can land on
@@ -215,8 +244,8 @@ a mechanical rename of two methods plus the shared helper.
 **2026-08-01 — the fake raises on anything it does not model.** Unknown
 `batch_update` request types, unparseable Drive `q` clauses, and wrong-shaped
 batch bodies all raise rather than no-op. A fake that silently ignores an
-unmodelled request produces a *passing* golden for a command that would have
-done something different live — which would make the golden actively harmful
+unmodelled request produces a *passing* snapshot for a command that would have
+done something different live — which would make the snapshot actively harmful
 rather than merely incomplete. Eight request types are modelled, matching what
 the eleven caller files actually send.
 
@@ -229,12 +258,12 @@ to sheet1 whenever the pair tab is not first. The fake reproduces this
 faithfully (`test_unprefixed_values_range_resolves_against_the_first_sheet`).
 Not fixed: Phase 0b/1's non-goal is explicit that current behaviour is recorded
 as-is, including behaviour that looks wrong. Belongs to triage on #271 once
-`restructure_sheets.py` has goldens.
+`restructure_sheets.py` has snapshots.
 
 **2026-08-01 — Phases 0 and 1 interleaved rather than sequenced.** As first
-written they were circular: goldens need the seam, and safely migrating to the
-seam needs goldens. Resolved by building infrastructure first (0a, no caller
-changes) then migrating one file at a time with goldens captured immediately
+written they were circular: snapshots need the seam, and safely migrating to the
+seam needs snapshots. Resolved by building infrastructure first (0a, no caller
+changes) then migrating one file at a time with snapshots captured immediately
 after each. See `f20478e`.
 
 **2026-08-01 — the fake is built from recorded real responses.** Not from the
@@ -243,7 +272,7 @@ gspread documentation. Its subtleties (1-indexing, `get_all_values` padding,
 silently invalidate every test built on it.
 
 **2026-08-01 — human review of `--apply` mutation logs before they become
-goldens.** Write paths have no pre-migration baseline to diff against, so this
+snapshots.** Write paths have no pre-migration baseline to diff against, so this
 review is the only barrier between a migration bug and its enshrinement as
 correct behavior.
 
@@ -287,7 +316,7 @@ about their differing indexing conventions.
 **Deferred:** collapsing the four duplicate "create-or-update a Drive file"
 implementations and the two "get-or-create folder" implementations. They are
 genuine duplication and belong in the inventory, but collapsing them changes
-behaviour and there are no goldens yet, so they wait until after 0b/1 rather
+behaviour and there are no snapshots yet, so they wait until after 0b/1 rather
 than riding along with the seam migration.
 
 **2026-08-01 — the `untestable` trap was fixed immediately rather than deferred
@@ -302,7 +331,7 @@ One hardcode deliberately left in place: coreference `prescreening` is
 `row_type: element` and declares no `criterion` in `diagnostic_classes.yaml`,
 so its criterion *name* (`referential`) still has to be named in code. Removing
 it means adding `criterion: referential` to the schema, which changes sheet
-generation — that wants goldens first, so it belongs to Phase 3. Catalogued in
+generation — that wants snapshots first, so it belongs to Phase 3. Catalogued in
 `docs/hidden-facts-inventory.md`.
 
 **2026-08-01 — agent briefs must require incremental *commits*, not just

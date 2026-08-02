@@ -1,7 +1,7 @@
-"""Golden tests for `python -m coding refresh-dropdowns`, run against the fake.
+"""Snapshot tests for `python -m coding refresh-dropdowns`, run against the fake.
 
 First file migrated to the Drive seam (plan Phase 0b/1, file 1 of 11). These
-goldens lock the command's behaviour — stdout for both modes, and the full
+snapshots lock the command's behaviour — stdout for both modes, and the full
 mutation log for `--apply` — so that later migrations, or any change to the
 seam, must either preserve that behaviour or show exactly what they altered.
 
@@ -13,20 +13,20 @@ output against the migrated code's. Both modes matched exactly, with one
 intended difference recorded in docs/data-layer-progress.md: opening a
 spreadsheet now retries, because `open_spreadsheet` always retries.
 
-**The `apply.txt` golden records a real bug, deliberately.** This command
+**The `apply.txt` snapshot records a real bug, deliberately.** This command
 narrows the dropdown for every class that declares per-construction criteria
 (`segmental.flapping`, `phrasal_accent.general`), because it keeps only the
 first construction's criterion values per class. See
 docs/data-layer-progress.md § "Findings awaiting triage". Do not quietly
-correct the golden — when the bug is fixed, its diff is the evidence.
+correct the snapshot — when the bug is fixed, its diff is the evidence.
 
-**Regenerating.** These goldens depend on `diagnostics_{lang}.yaml` in
+**Regenerating.** These snapshots depend on `diagnostics_{lang}.yaml` in
 `coded_data/`, which is a setup file that changes rarely — but when it does,
 this test is *supposed* to fail. Regenerate and review the diff, same workflow
 as tests/snapshots/:
 
-    PLANARS_UPDATE_GOLDENS=1 pytest tests/test_refresh_dropdowns_golden.py
-    git diff tests/goldens/
+    PLANARS_UPDATE_SNAPSHOTS=1 pytest tests/test_refresh_dropdowns_snapshot.py
+    git diff tests/snapshots/coordinator/
 """
 from __future__ import annotations
 
@@ -43,8 +43,8 @@ from fake_drive import FakeDriveBackend, MANIFEST_FILE_ID
 from render_mutations import render
 
 ROOT = Path(__file__).resolve().parent.parent
-GOLDEN_DIR = ROOT / "tests" / "goldens" / "refresh_dropdowns"
-UPDATING = os.environ.get("PLANARS_UPDATE_GOLDENS") == "1"
+SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "refresh_dropdowns"
+UPDATING = os.environ.get("PLANARS_UPDATE_SNAPSHOTS") == "1"
 
 # The command reads each language's diagnostics YAML and planar TSV from
 # coded_data/, which is a separate repo that a bare worktree may not have.
@@ -82,19 +82,19 @@ def run(argv, monkeypatch) -> str:
     return buf.getvalue()
 
 
-def check_golden(name: str, actual: str) -> None:
-    path = GOLDEN_DIR / name
+def check_snapshot(name: str, actual: str) -> None:
+    path = SNAPSHOT_DIR / name
     if UPDATING:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(actual, encoding="utf-8")
-        pytest.skip(f"updated golden {path.relative_to(ROOT)}")
+        pytest.skip(f"updated snapshot {path.relative_to(ROOT)}")
     assert path.exists(), (
-        f"Golden missing: {path.relative_to(ROOT)}\n"
-        f"Run: PLANARS_UPDATE_GOLDENS=1 pytest {Path(__file__).relative_to(ROOT)}"
+        f"Snapshot missing: {path.relative_to(ROOT)}\n"
+        f"Run: PLANARS_UPDATE_SNAPSHOTS=1 pytest {Path(__file__).relative_to(ROOT)}"
     )
     assert actual == path.read_text(encoding="utf-8"), (
         f"Output differs from {path.name}. If intended, regenerate with "
-        f"PLANARS_UPDATE_GOLDENS=1 and review the diff."
+        f"PLANARS_UPDATE_SNAPSHOTS=1 and review the diff."
     )
 
 
@@ -103,7 +103,7 @@ def check_golden(name: str, actual: str) -> None:
 # ---------------------------------------------------------------------------
 
 def test_dry_run_output(fake, monkeypatch):
-    check_golden("dry_run.txt", run(["refresh-dropdowns"], monkeypatch))
+    check_snapshot("dry_run.txt", run(["refresh-dropdowns"], monkeypatch))
 
 
 def test_dry_run_touches_nothing(fake, monkeypatch):
@@ -123,18 +123,18 @@ def test_lang_filter_restricts_output(fake, monkeypatch):
 # ---------------------------------------------------------------------------
 
 def test_apply_output(fake, monkeypatch):
-    check_golden("apply.txt", run(["refresh-dropdowns", "--apply"], monkeypatch))
+    check_snapshot("apply.txt", run(["refresh-dropdowns", "--apply"], monkeypatch))
 
 
 def test_apply_mutation_log(fake, monkeypatch):
-    """The full write log, reviewed by a human before it became a golden.
+    """The full write log, reviewed by a human before it became a snapshot.
 
     Write paths have no pre-migration baseline to diff against, so this review
     is the only barrier between a migration bug and its enshrinement as correct
     behaviour (plan Phase 0b/1, step 5).
     """
     run(["refresh-dropdowns", "--apply"], monkeypatch)
-    check_golden("apply_mutations.json",
+    check_snapshot("apply_mutations.json",
                  json.dumps(fake.mutations, indent=2) + "\n")
 
 
@@ -145,7 +145,7 @@ def test_apply_mutation_digest(fake, monkeypatch):
     column indices hid one of the two bugs in #272 through a first reading.
     """
     run(["refresh-dropdowns", "--apply"], monkeypatch)
-    check_golden("apply_digest.txt", render(fake.mutations))
+    check_snapshot("apply_digest.txt", render(fake.mutations))
 
 
 def test_apply_never_writes_a_cell_value(fake, monkeypatch):
@@ -154,7 +154,7 @@ def test_apply_never_writes_a_cell_value(fake, monkeypatch):
     Adam's annotations are irreplaceable and annotation is in progress. A
     regression that made this command write values would be exactly the kind of
     silent data loss the data layer work exists to prevent, so it is asserted
-    structurally rather than left to golden inspection.
+    structurally rather than left to snapshot inspection.
     """
     run(["refresh-dropdowns", "--apply"], monkeypatch)
     value_writes = [m for m in fake.mutations
@@ -201,7 +201,7 @@ def test_apply_updates_the_manifest_in_place(fake, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# Issue #272 — the two bugs these goldens caught, now fixed
+# Issue #272 — the two bugs these snapshots caught, now fixed
 # ---------------------------------------------------------------------------
 
 def test_per_construction_criteria_are_not_collapsed_to_the_first(fake, monkeypatch):

@@ -80,7 +80,7 @@ def _build_coreference_params() -> Dict[str, dict]:
     # diagnostic_classes.yaml, so its criterion NAME still has to be named here.
     # That remaining hardcode is catalogued in docs/hidden-facts-inventory.md and
     # belongs to Phase 3; resolving it means adding `criterion: referential` to
-    # the schema, which changes sheet generation and wants goldens first.
+    # the schema, which changes sheet generation and wants snapshots first.
     result: Dict[str, dict] = {"prescreening": _entry_for("referential")}
     for con in (_dc.get("coreference", {}).get("constructions") or []):
         if isinstance(con, dict) and "criterion" in con:

@@ -31,7 +31,7 @@ Deliberate fidelity limits (all loud, none silent)
   codebase reads those cells back today (the status sheets are write-only), so
   this gap is recorded rather than modelled.
 - **Unknown ``batch_update`` request types raise.** Silently ignoring an
-  unmodelled request would make a golden pass while the real API did something
+  unmodelled request would make a snapshot pass while the real API did something
   the fake never did. If a new request type appears, this file must learn it.
 - **Wrong-shaped bodies raise.** ``batch_update`` given ``{"data": ...}`` or
   ``values_batch_update`` given ``{"requests": ...}`` is an error, not a
@@ -46,7 +46,7 @@ Mutation log
 ------------
 Every write appends a JSON-serialisable record to ``backend.mutations``. That
 log is what the plan's per-file procedure has a human review before it becomes
-a golden — write paths have no pre-migration baseline to diff against, so the
+a snapshot — write paths have no pre-migration baseline to diff against, so the
 review is the only barrier between a migration bug and its enshrinement.
 """
 from __future__ import annotations
@@ -460,7 +460,7 @@ class FakeSpreadsheet:
             raise NotImplementedError(
                 f"FakeSpreadsheet does not model the {kind!r} batch_update request. "
                 "Add it here rather than letting it pass silently — an unmodelled "
-                "request makes goldens agree with a fake that did nothing. "
+                "request makes snapshots agree with a fake that did nothing. "
                 f"Modelled: {sorted(m[5:] for m in dir(self) if m.startswith('_req_'))}."
             )
         handler(payload)

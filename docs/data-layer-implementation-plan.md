@@ -17,7 +17,7 @@ scoped, has explicit done-criteria, and states what it must *not* do.
    local. An agent that finds itself needing `--apply` against real Drive has
    misread its scope and should stop.
 2. **Adam's annotation data must not change.** Any phase that could alter
-   generated sheet content is gated behind the Phase 1 golden tests.
+   generated sheet content is gated behind the Phase 1 snapshot tests.
 3. **`coded_data/` is never modified** except where a phase says so explicitly.
 4. **Derive, don't duplicate.** If a phase would create a second copy of a fact
    that already exists somewhere, stop and raise it — that is the exact defect
@@ -36,11 +36,11 @@ agent drafts and presents options; Jeff decides. All others are fully delegable.
 
 ## Phases 0 and 1 — seam, fake, and characterization tests (interleaved)
 
-> **Ordering note.** These two phases cannot be run in sequence. Golden tests
+> **Ordering note.** These two phases cannot be run in sequence. Snapshot tests
 > require the seam (so commands can run offline); safely migrating callers to
-> the seam requires golden tests (to prove behavior didn't change). The
+> the seam requires snapshot tests (to prove behavior didn't change). The
 > resolution is to build the infrastructure once, then migrate callers **one
-> file at a time, capturing that file's goldens immediately after each
+> file at a time, capturing that file's snapshots immediately after each
 > migration**, so each file is locked before the next is touched. Do not
 > attempt "migrate all eleven, then write tests."
 
@@ -80,7 +80,7 @@ been modified.
 **Non-goals.** No caller changes. The fake need not be a faithful Google
 emulator — only faithful for operations actually used.
 
-### Phase 0b/1 — migrate callers and capture goldens, one file at a time
+### Phase 0b/1 — migrate callers and capture snapshots, one file at a time
 
 **Goal.** Route each file through the seam and lock its behavior, incrementally.
 
@@ -92,20 +92,31 @@ emulator — only faithful for operations actually used.
 3. Run the same dry-run paths against the fake (serving fixtures captured from
    the same Drive state) and assert the output matches step 1. This is the
    check that the migration didn't change read behavior.
-4. Capture goldens for all of that file's commands, including `--apply` paths:
+4. Capture snapshots for all of that file's commands, including `--apply` paths:
    generated sheet structures (headers, row contents, dropdown validation, tab
    order), TSV outputs, manifest states, and the fake's full mutation log.
 5. Have a human review the mutation log for `--apply` paths once, before it
-   becomes a golden. Write paths have no pre-migration baseline to diff
+   becomes a snapshot. Write paths have no pre-migration baseline to diff
    against, so this review is the only thing standing between a migration bug
    and it being enshrined as "correct."
 
-**Done when.** All eleven files route through the seam; every command runs
-end-to-end against the fake with no network; each command has goldens; and
-deliberately perturbing any generator makes a golden test fail.
+**Done when.** Every file that reaches Drive routes through the seam; every
+command runs end-to-end against the fake with no network; each command has
+snapshots; and deliberately perturbing any generator makes a snapshot test fail.
+
+**Note on "eleven".** The count above was hand-written into this plan and then
+taken as given by the Phase 0a survey, rather than derived from the code. A
+scan on 2026-08-02 found **seventeen** files in `coding/` reaching Drive
+directly, not eleven — the seven missed are `setup_root_folder`,
+`apply_pending`, `prune_manifest`, `check_notes`, `sync_diagnostics_yaml`,
+`import_planar`, and `integrity_check`. Two of those matter more than their
+size suggests: `import_planar` is the command at the centre of #248, and
+`check_notes` is the only user of Google Docs. `tests/test_seam_coverage.py`
+now derives the list, so the remaining count is answered by running the tests
+rather than by reading this sentence.
 
 **Non-goals.** No behavior changes. No refactoring of command logic beyond the
-call-site substitution. Do not fix anything a golden reveals as odd — record
+call-site substitution. Do not fix anything a snapshot reveals as odd — record
 current behavior including behavior that looks wrong, and note oddities in the
 tracking issue for separate triage.
 
@@ -157,7 +168,7 @@ one where a research fact and an administrative fact are welded together.
 `Class_Type` is the known example. Treat every such field as a defect site and
 report it; do not silently force a classification.
 
-**Done when.** Every Phase 1 golden test still passes **byte-identical**, the
+**Done when.** Every Phase 1 snapshot test still passes **byte-identical**, the
 split is applied, and resistant fields are catalogued in the tracking issue.
 
 **Non-goals.** No intended behavior changes whatsoever. If the split implies a
@@ -236,7 +247,7 @@ the boundaries that matter first: planar load, filled-TSV load, pair-row load,
 manifest read/write. Do not attempt full coverage in one pass.
 
 **Done when.** The chosen boundaries have contracts, tests prove violations
-raise clearly, and every Phase 1 golden test still passes.
+raise clearly, and every Phase 1 snapshot test still passes.
 
 ---
 
@@ -354,7 +365,7 @@ analysis.
   see *Working with agents* above; 0a in particular warrants close review.
 - Phase 2 is independent of 0 and 1 and can run concurrently with them.
 - Phase 3 is the highest-value and highest-risk phase; it is deliberately gated
-  behind the goldens from 0b/1.
+  behind the snapshots from 0b/1.
 - Phases 4 and 6 can proceed in parallel once 0–2 are done.
 - Phase 9 must not begin until 8 is complete.
 - Provenance capture (a stated top-tier value with no current mechanism) should

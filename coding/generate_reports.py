@@ -46,7 +46,7 @@ def _upload_pdf(backend, pdf_bytes: bytes, filename: str, folder_id: str, existi
     grant is set **only on create**. The latter means a report whose permission
     is removed by hand is never restored — unlike a notebook, which
     generate_notebooks.py reasserts on every run. Collapsing the four into one
-    parameterised call is a later change, gated on all four having goldens.
+    parameterised call is a later change, gated on all four having snapshots.
 
     (The old code passed resumable=False to MediaIoBaseUpload; that is also the
     library default, which the seam uses, so the upload is unchanged.)

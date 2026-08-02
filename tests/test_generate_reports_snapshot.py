@@ -1,4 +1,4 @@
-"""Golden tests for `python -m coding generate-reports`, run against the fake.
+"""Snapshot tests for `python -m coding generate-reports`, run against the fake.
 
 File 2 of 11 migrated to the Drive seam (plan Phase 0b/1). This command never
 touches gspread — its entire Drive footprint is "upload a PDF, create or update
@@ -7,7 +7,7 @@ permission grants.
 
 **PDF rendering is stubbed.** It is slow, needs system libraries, is not
 byte-stable across weasyprint versions, and already has coverage in
-tests/test_html_report.py. What these goldens lock is the Drive interaction: how
+tests/test_html_report.py. What these snapshots lock is the Drive interaction: how
 many files, into which folders, under what names, with what permissions, and
 what ends up in drive_config.json.
 
@@ -20,7 +20,7 @@ Pre-migration baseline: the unmigrated code was driven from the same fake
 through a Drive-service shim; both `--apply` paths (create and update) produced
 identical call sequences, payload sizes, names, parents, and permissions.
 
-Regenerate: `PLANARS_UPDATE_GOLDENS=1 pytest tests/test_generate_reports_golden.py`
+Regenerate: `PLANARS_UPDATE_SNAPSHOTS=1 pytest tests/test_generate_reports_snapshot.py`
 """
 from __future__ import annotations
 
@@ -37,8 +37,8 @@ from fake_drive import MANIFEST_FILE_ID, FakeDriveBackend
 from render_mutations import render
 
 ROOT = Path(__file__).resolve().parent.parent
-GOLDEN_DIR = ROOT / "tests" / "goldens" / "generate_reports"
-UPDATING = os.environ.get("PLANARS_UPDATE_GOLDENS") == "1"
+SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "generate_reports"
+UPDATING = os.environ.get("PLANARS_UPDATE_SNAPSHOTS") == "1"
 
 pytestmark = pytest.mark.skipif(
     not (ROOT / "coded_data").exists(),
@@ -77,19 +77,19 @@ def run(argv, monkeypatch) -> str:
     return buf.getvalue()
 
 
-def check_golden(name: str, actual: str) -> None:
-    path = GOLDEN_DIR / name
+def check_snapshot(name: str, actual: str) -> None:
+    path = SNAPSHOT_DIR / name
     if UPDATING:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(actual, encoding="utf-8")
-        pytest.skip(f"updated golden {path.relative_to(ROOT)}")
+        pytest.skip(f"updated snapshot {path.relative_to(ROOT)}")
     assert path.exists(), (
-        f"Golden missing: {path.relative_to(ROOT)}\n"
-        f"Run: PLANARS_UPDATE_GOLDENS=1 pytest {Path(__file__).relative_to(ROOT)}"
+        f"Snapshot missing: {path.relative_to(ROOT)}\n"
+        f"Run: PLANARS_UPDATE_SNAPSHOTS=1 pytest {Path(__file__).relative_to(ROOT)}"
     )
     assert actual == path.read_text(encoding="utf-8"), (
         f"Output differs from {path.name}. If intended, regenerate with "
-        f"PLANARS_UPDATE_GOLDENS=1 and review the diff."
+        f"PLANARS_UPDATE_SNAPSHOTS=1 and review the diff."
     )
 
 
@@ -98,7 +98,7 @@ def check_golden(name: str, actual: str) -> None:
 # ---------------------------------------------------------------------------
 
 def test_dry_run_output(env, monkeypatch):
-    check_golden("dry_run.txt", run(["generate-reports"], monkeypatch))
+    check_snapshot("dry_run.txt", run(["generate-reports"], monkeypatch))
 
 
 def test_dry_run_touches_neither_drive_nor_config(env, monkeypatch):
@@ -127,13 +127,13 @@ def test_dry_run_never_authenticates(monkeypatch):
 # ---------------------------------------------------------------------------
 
 def test_apply_create_output(env, monkeypatch):
-    check_golden("apply_create.txt", run(["generate-reports", "--apply"], monkeypatch))
+    check_snapshot("apply_create.txt", run(["generate-reports", "--apply"], monkeypatch))
 
 
 def test_apply_create_mutation_digest(env, monkeypatch):
     backend, _, _ = env
     run(["generate-reports", "--apply"], monkeypatch)
-    check_golden("apply_create_digest.txt", render(backend.mutations))
+    check_snapshot("apply_create_digest.txt", render(backend.mutations))
 
 
 def test_apply_create_uploads_one_pdf_per_language_into_its_own_folder(env, monkeypatch):

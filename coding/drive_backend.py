@@ -284,7 +284,7 @@ class DriveBackend(Protocol):
         report uploaders do), and ``restructure_sheets`` renames without
         touching content at all. The seam lets each caller choose rather than
         picking one as canonical — collapsing those four is deferred until
-        after the migration, when goldens exist to prove the collapse is safe.
+        after the migration, when snapshots exist to prove the collapse is safe.
         """
 
     def move_file(self, file_id: str, new_parent_id: str) -> None:

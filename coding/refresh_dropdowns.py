@@ -261,7 +261,7 @@ def main() -> None:
         # routes its *transport* through the seam but deliberately preserves its
         # behaviour: no key reordering, and no create-if-missing fallback, unlike
         # drive._upload_planars_config. Collapsing the four is a separate change
-        # that needs goldens for all of them first.
+        # that needs snapshots for all of them first.
         import json
         manifest_file_id = drive_config.get("_planars_config_file_id")
         if manifest_file_id:

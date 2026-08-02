@@ -348,7 +348,7 @@ def test_unprefixed_values_range_resolves_against_the_first_sheet(backend):
 
 
 def test_unknown_batch_request_type_raises(backend):
-    """An unmodelled request must never pass silently — a golden would enshrine it."""
+    """An unmodelled request must never pass silently — a snapshot would enshrine it."""
     ss = backend.create_spreadsheet("s")
     with pytest.raises(NotImplementedError, match="autoResizeDimensions"):
         ss.batch_update({"requests": [{"autoResizeDimensions": {}}]})
@@ -564,7 +564,7 @@ def test_mutation_log_is_ordered_and_json_serialisable(backend):
         "fields": "gridProperties.frozenRowCount"}}]})
     assert [m["op"] for m in backend.mutations] == [
         "create_spreadsheet", "add_worksheet", "update", "append_rows", "batch_request"]
-    json.dumps(backend.mutations)  # goldens serialise this log verbatim
+    json.dumps(backend.mutations)  # snapshots serialise this log verbatim
 
 
 def test_reads_do_not_appear_in_the_mutation_log(seeded):

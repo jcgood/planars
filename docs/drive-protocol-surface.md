@@ -376,7 +376,7 @@ and the `raw=False` argument to `update()`.
 | `ws = ss.sheet1` | `:347` (`_with_retry(lambda: ss.sheet1)`) | | Wrapped | Read |
 | `ws.update_title("Status")` — **new operation** | `:349` (`_with_retry(lambda: ws.update_title("Status"))`) | Renames the default `Sheet1` tab in place rather than creating/deleting a differently-named tab — the only file in the inventory that renames a tab instead of add/delete. Conditional on `ws.title != "Status"` so it's a no-op on re-runs. | Wrapped | Write |
 | `ws.resize(rows=, cols=)` — **new operation** | `:368` (`_with_retry(lambda: ws.resize(rows=max(len(all_rows)+2, 10), cols=n_cols))`) | Explicit grid resize as its own call, called *before* `update()` writes values — contrast with `generate_sheets.py`'s `_reset_worksheet`, which folds the equivalent resize into the same `batch_update` that also clears formatting; here it's a separate gspread convenience method. | Wrapped | Write |
-| `ws.update(all_rows, "A1", raw=False)` — **new argument, `raw=False`** | `:369` (`_with_retry(lambda: ws.update(all_rows, "A1", raw=False))`) | **Every other `update()` call site in the inventory omits `raw`** (gspread default `raw=True`, values written literally as strings). Here `raw=False` is required so that Sheets parses the embedded `=HYPERLINK(...)` formula strings in `data_rows`/`banner` as actual formulas rather than literal text — a real, load-bearing difference in write semantics that a fake must model (does the fake even distinguish formula-string cells from literal-string cells, or store both as opaque strings?). Silently getting this wrong wouldn't error, it would just make the sheet display broken raw formula text — the kind of divergence that's easy to miss without a byte-level golden. | Wrapped | Write |
+| `ws.update(all_rows, "A1", raw=False)` — **new argument, `raw=False`** | `:369` (`_with_retry(lambda: ws.update(all_rows, "A1", raw=False))`) | **Every other `update()` call site in the inventory omits `raw`** (gspread default `raw=True`, values written literally as strings). Here `raw=False` is required so that Sheets parses the embedded `=HYPERLINK(...)` formula strings in `data_rows`/`banner` as actual formulas rather than literal text — a real, load-bearing difference in write semantics that a fake must model (does the fake even distinguish formula-string cells from literal-string cells, or store both as opaque strings?). Silently getting this wrong wouldn't error, it would just make the sheet display broken raw formula text — the kind of divergence that's easy to miss without a byte-level snapshot. | Wrapped | Write |
 | `spreadsheet.batch_update({"requests": [...]})` | `:434` (`_with_retry(lambda: ss.batch_update({"requests": requests}))`) | Largest single request list in the inventory: freeze, bold (x2), **`mergeCells`** (new request type, once per banner row), column-width `updateDimensionProperties` (x3), `wrapStrategy` `repeatCell`, plus one `repeatCell` background-color request **per data row** (`:423-432`, one request per construction row, similar in spirit to `validate_coding.py`'s per-cell `updateCells` but using `repeatCell` on a 1-row range instead) — potentially dozens of requests in one call for a language with many constructions, still one round trip. | Wrapped | Write |
 | `_get_or_create_folder(drive, name)` (drive.py, no `parent_id`) | `:463` | **The only call site in the inventory that omits `parent_id`**, i.e. searches/creates at Drive-root level rather than inside a language folder — deliberately, per the module docstring's explanation of the inherited-permission problem | No (inherited) | Read then maybe Write |
 | `ss.worksheet(construction)` | `:244` (`_gather_status_rows`, wrapped, catches `WorksheetNotFound`) | Standard idiom | Wrapped | Read |
@@ -948,7 +948,7 @@ implicit at every site except two) vs. `raw=False` (both
 write-semantics fork, not a presentation detail — `raw=False` cells
 containing `=HYPERLINK(...)` must be interpreted as formulas by anything that
 later reads them back, which nothing in the current test suite exercises
-(there are no goldens yet for either status-sheet generator).
+(there are no snapshots yet for either status-sheet generator).
 
 **3. What `worksheets()` returns.**
 Returns the live tab order, used by `generate_sheets.py`'s
@@ -958,7 +958,7 @@ any order other than "whatever order they'd currently appear in the Sheets
 UI" will make every reorder-detection code path either falsely fire (thinks
 reordering is needed when it isn't) or falsely stay silent (thinks tabs are
 already in order when they aren't) — and either failure mode is silent, not
-an exception, so it wouldn't be caught by anything except a golden that
+an exception, so it wouldn't be caught by anything except a snapshot that
 specifically checks tab order after a mutating operation.
 
 **4. `batch_update` request shapes.**
