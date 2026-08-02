@@ -41,15 +41,13 @@ CODED_DATA = ROOT / "coded_data"
 MANIFEST_ARCHIVES = ROOT / "manifest_archives"
 
 from .drive import (
-    _get_clients,
-    _load_manifest_from_drive,
-    _upload_planars_config,
+    load_manifest,
+    upload_manifest,
     _load_drive_config,
     _save_drive_config,
-    _get_or_create_folder,
-    _move_to_folder,
     _with_retry,
 )
+from .drive_doorway import get_doorway
 from .import_sheets import _archive_tsv
 
 
@@ -61,7 +59,7 @@ _RECENCY_DAYS = 14  # warn if sheet was modified within this many days
 # ---------------------------------------------------------------------------
 
 def _archive_drive_sheet(
-    drive, lang_id: str, class_name: str, manifest: dict, apply: bool
+    doorway, lang_id: str, class_name: str, manifest: dict, apply: bool
 ) -> bool:
     """Move the Drive spreadsheet for a retired class into _archived/ in the language folder.
 
@@ -87,11 +85,11 @@ def _archive_drive_sheet(
 
     # Fetch sheet name and modification time for the recency check and display.
     try:
-        meta = _with_retry(lambda: drive.files().get(
-            fileId=spreadsheet_id,
+        meta = _with_retry(lambda: doorway.get_file(
+            spreadsheet_id,
             fields="name,modifiedTime",
-            supportsAllDrives=True,
-        ).execute())
+            supports_all_drives=True,
+        ))
     except Exception as exc:
         print(f"    WARNING: could not read sheet metadata for {class_name}: {exc}")
         print(f"    Skipping Drive archival — remove the sheet manually if needed.")
@@ -109,8 +107,8 @@ def _archive_drive_sheet(
             )
 
     try:
-        archived_folder_id = _get_or_create_folder(drive, "_archived", parent_id=folder_id)
-        _move_to_folder(drive, spreadsheet_id, archived_folder_id)
+        archived_folder_id = doorway.get_or_create_folder("_archived", folder_id)
+        doorway.move_file(spreadsheet_id, archived_folder_id)
         print(f"    archived Drive sheet: '{sheet_name}' → _archived/")
         return True
     except Exception as exc:
@@ -184,8 +182,8 @@ def main() -> None:
     apply = "--apply" in sys.argv
     skip_prompts = "--all" in sys.argv
 
-    gc, drive = _get_clients()
-    manifest = _load_manifest_from_drive(drive)
+    doorway = get_doorway()
+    manifest = load_manifest(doorway)
 
     stale_map = _find_stale(manifest)
 
@@ -211,7 +209,7 @@ def main() -> None:
                 )
             else:
                 print(f"    no local TSVs for {class_name}/")
-            _archive_drive_sheet(drive, lang_id, class_name, manifest, apply=False)
+            _archive_drive_sheet(doorway, lang_id, class_name, manifest, apply=False)
             print(f"    would remove from manifest: {lang_id}/{class_name}")
         print()
 
@@ -253,7 +251,7 @@ def main() -> None:
                 print(f"    removed empty directory: coded_data/{lang_id}/{class_name}/")
 
             # Move Drive sheet to _archived/ subfolder
-            _archive_drive_sheet(drive, lang_id, class_name, manifest, apply=True)
+            _archive_drive_sheet(doorway, lang_id, class_name, manifest, apply=True)
 
             # Remove from manifest
             del manifest[lang_id]["sheets"][class_name]
@@ -266,7 +264,7 @@ def main() -> None:
         drive_cfg = _load_drive_config()
         file_id = drive_cfg.get("_planars_config_file_id")
         root_id = drive_cfg.get("_root_folder_id")
-        new_id = _upload_planars_config(drive, manifest, root_id, file_id)
+        new_id = upload_manifest(doorway, manifest, root_id, file_id)
         if new_id != file_id:
             drive_cfg["_planars_config_file_id"] = new_id
             _save_drive_config(drive_cfg)

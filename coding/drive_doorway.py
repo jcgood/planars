@@ -269,7 +269,18 @@ class DriveDoorway(Protocol):
         generated. Flagged, not fixed — see the protocol surface doc.
         """
 
-    def get_file(self, file_id: str, fields: str = "id") -> Dict: ...
+    def get_file(self, file_id: str, fields: str = "id",
+                 supports_all_drives: bool = False) -> Dict:
+        """File metadata. ``fields`` is the raw Drive field mask.
+
+        ``supports_all_drives`` reaches files on a shared drive rather than in
+        My Drive. Exactly one caller sets it (``prune_manifest``, reading a
+        sheet's name and modified time), and it is carried through rather than
+        dropped — even though nothing else in the codebase sends it, including
+        ``move_file``, which ``prune_manifest`` calls on the same file moments
+        later. So a sheet on a shared drive can be read but not moved. That
+        inconsistency is recorded, not resolved, here.
+        """
 
     def create_file(self, name: str, parents: Optional[Sequence[str]] = None,
                     content: Optional[bytes] = None,
@@ -383,8 +394,12 @@ class GspreadDoorway:
             kwargs["pageSize"] = page_size
         return self.drive.files().list(**kwargs).execute().get("files", [])
 
-    def get_file(self, file_id: str, fields: str = "id") -> Dict:
-        return self.drive.files().get(fileId=file_id, fields=fields).execute()
+    def get_file(self, file_id: str, fields: str = "id",
+                 supports_all_drives: bool = False) -> Dict:
+        kwargs: Dict[str, Any] = {"fileId": file_id, "fields": fields}
+        if supports_all_drives:
+            kwargs["supportsAllDrives"] = True
+        return self.drive.files().get(**kwargs).execute()
 
     def create_file(self, name: str, parents: Optional[Sequence[str]] = None,
                     content: Optional[bytes] = None,

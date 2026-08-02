@@ -115,6 +115,30 @@ def _download_file_json(drive, file_id: str) -> Dict:
 
 
 
+def _ordered_manifest_bytes(full_config: Dict) -> bytes:
+    """The manifest as it is written to Drive, with each language's keys ordered.
+
+    Human-readable metadata comes first, so anyone opening manifest.json sees
+    the language before the machinery.
+    """
+    _KEY_ORDER = [
+        "glottolog", "meta",
+        "folder_id", "folder_url",
+        "notes_doc_id",
+        "planar_spreadsheet_id", "planar_spreadsheet_url",
+        "diagnostics_spreadsheet_id", "diagnostics_spreadsheet_url",
+        "sheets",
+    ]
+    ordered = {}
+    for lid, entry in full_config.items():
+        if isinstance(entry, dict):
+            ordered[lid] = {k: entry[k] for k in _KEY_ORDER if k in entry}
+            ordered[lid].update({k: v for k, v in entry.items() if k not in _KEY_ORDER})
+        else:
+            ordered[lid] = entry
+    return json.dumps(ordered, indent=2).encode("utf-8")
+
+
 def _upload_planars_config(
     drive, full_config: Dict, root_folder_id: str, existing_file_id: str = None
 ) -> str:
@@ -136,36 +160,56 @@ def _upload_planars_config(
     Returns:
         The Drive file ID of manifest.json.
     """
-    # Reorder each language entry so human-readable metadata comes first.
-    _KEY_ORDER = [
-        "glottolog", "meta",
-        "folder_id", "folder_url",
-        "notes_doc_id",
-        "planar_spreadsheet_id", "planar_spreadsheet_url",
-        "diagnostics_spreadsheet_id", "diagnostics_spreadsheet_url",
-        "sheets",
-    ]
-    ordered = {}
-    for lid, entry in full_config.items():
-        if isinstance(entry, dict):
-            ordered[lid] = {k: entry[k] for k in _KEY_ORDER if k in entry}
-            ordered[lid].update({k: v for k, v in entry.items() if k not in _KEY_ORDER})
-        else:
-            ordered[lid] = entry
-    content = json.dumps(ordered, indent=2).encode("utf-8")
-    media = MediaIoBaseUpload(io.BytesIO(content), mimetype="application/json")
+    content = _ordered_manifest_bytes(full_config)
+
+    def update(file_id: str) -> None:
+        media = MediaIoBaseUpload(io.BytesIO(content), mimetype="application/json")
+        drive.files().update(fileId=file_id, media_body=media).execute()
+
+    def create() -> str:
+        media = MediaIoBaseUpload(io.BytesIO(content), mimetype="application/json")
+        return drive.files().create(
+            body={"name": "manifest.json", "parents": [root_folder_id]},
+            media_body=media,
+            fields="id",
+        ).execute()["id"]
+
+    return _upload_manifest_with(update, create, existing_file_id)
+
+
+def upload_manifest(doorway, full_config: Dict, root_folder_id: str,
+                    existing_file_id: str = None) -> str:
+    """``_upload_planars_config`` through a ``drive_doorway.DriveDoorway``.
+
+    Same key reordering and same update-then-create fallback; both share one
+    body, so the manifest-writing rules exist in exactly one place. (There are
+    still three *other* independent manifest writers elsewhere in the codebase
+    — that is issue #276, not this.)
+    """
+    content = _ordered_manifest_bytes(full_config)
+    return _upload_manifest_with(
+        lambda file_id: doorway.update_file(file_id, content=content,
+                                            mimetype="application/json"),
+        lambda: doorway.create_file("manifest.json", [root_folder_id],
+                                    content=content, mimetype="application/json"),
+        existing_file_id,
+    )
+
+
+def _upload_manifest_with(update, create, existing_file_id: str = None) -> str:
+    """Update manifest.json in place if we know its ID, else create it.
+
+    The fallback matters: a failed update used to mean the manifest silently
+    stopped being written. Creating a second one is not ideal either, but it is
+    visible.
+    """
     if existing_file_id:
         try:
-            drive.files().update(fileId=existing_file_id, media_body=media).execute()
+            update(existing_file_id)
             return existing_file_id
         except Exception as e:
             print(f"  WARNING: could not update existing manifest.json ({e}); creating new file.")
-    result = drive.files().create(
-        body={"name": "manifest.json", "parents": [root_folder_id]},
-        media_body=media,
-        fields="id",
-    ).execute()
-    return result["id"]
+    return create()
 
 
 def _load_manifest_from_drive(drive) -> Dict:

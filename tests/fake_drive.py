@@ -633,6 +633,12 @@ class _DriveFile:
     parents: List[str] = field(default_factory=list)
     content: Optional[bytes] = None
     trashed: bool = False
+    # RFC 3339, as Drive returns it. Not captured by capture-drive-state, so
+    # it is None unless a test sets it — and then get_file omits the field
+    # entirely, which is what a real response does for a field never asked for.
+    # prune_manifest reads it to warn before archiving a recently-edited sheet;
+    # without it here that warning could not be exercised at all.
+    modified_time: Optional[str] = None
 
 
 class FakeDriveDoorway:
@@ -702,9 +708,11 @@ class FakeDriveDoorway:
 
     def seed_file(self, name: str, mimetype: str, parents: Sequence[str] = (),
                   content: Optional[bytes] = None,
-                  file_id: Optional[str] = None) -> str:
+                  file_id: Optional[str] = None,
+                  modified_time: Optional[str] = None) -> str:
         file_id = file_id or self._new_id("file")
-        self._files[file_id] = _DriveFile(file_id, name, mimetype, list(parents), content)
+        self._files[file_id] = _DriveFile(file_id, name, mimetype, list(parents),
+                                          content, modified_time=modified_time)
         return file_id
 
     def seed_folder(self, name: str, parent_id: Optional[str] = None,
@@ -787,10 +795,20 @@ class FakeDriveDoorway:
             matches.append({"id": f.id, "name": f.name})
         return matches[:page_size] if page_size else matches
 
-    def get_file(self, file_id: str, fields: str = "id") -> Dict[str, Any]:
+    def get_file(self, file_id: str, fields: str = "id",
+                 supports_all_drives: bool = False) -> Dict[str, Any]:
+        """Metadata. ``supports_all_drives`` is accepted and ignored.
+
+        Ignoring it is right rather than lazy: the fake has no shared drives,
+        so every file is reachable either way, and modelling a refusal would
+        invent a failure the recording never showed.
+        """
         f = self._require_file(file_id)
-        return {"id": f.id, "name": f.name, "parents": list(f.parents),
+        meta = {"id": f.id, "name": f.name, "parents": list(f.parents),
                 "trashed": f.trashed, "mimeType": f.mimetype}
+        if f.modified_time is not None:
+            meta["modifiedTime"] = f.modified_time
+        return meta
 
     def create_file(self, name: str, parents: Optional[Sequence[str]] = None,
                     content: Optional[bytes] = None,
@@ -838,10 +856,13 @@ class FakeDriveDoorway:
             f"name='{name}' and mimeType='{_FOLDER_MIME}' and trashed=false{parent_clause}")
         if found:
             return found[0]["id"]
-        file_id = self.create_file(name, [parent_id] if parent_id else [],
-                                   mimetype=_FOLDER_MIME)
-        self._record("create_folder", file_id=file_id, name=name, parent=parent_id)
-        return file_id
+        # One Drive call, one entry in the log. Creating a folder *is* creating
+        # a file with the folder mimetype — Drive has no separate endpoint — so
+        # create_file above has already recorded it. A second "create_folder"
+        # entry made one call look like two, which is exactly the wrong thing
+        # for a log whose whole job is to say what changed.
+        return self.create_file(name, [parent_id] if parent_id else [],
+                                mimetype=_FOLDER_MIME)
 
     # -- permissions --------------------------------------------------------
     def list_permissions(self, file_id: str,

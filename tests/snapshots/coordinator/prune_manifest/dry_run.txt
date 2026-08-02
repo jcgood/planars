@@ -1,0 +1,14 @@
+DRY RUN — Stale manifest entries found:
+
+  stan1293:
+    stale classes: stress
+    would archive: coded_data/stan1293/stress/general.tsv
+    would archive: coded_data/stan1293/stress/stress_domain.tsv
+    WARNING: stress/ contains annotation data.
+    If this class was renamed rather than retired, use:
+      python -m coding restructure-sheets --rename-class stress:NEW_NAME --apply
+    instead of pruning it (--rename-class preserves annotations under the new name).
+    would move Drive sheet → _archived/  (https://docs.google.com/spreadsheets/d/retired_sheet_id)
+    would remove from manifest: stan1293/stress
+
+Run with --apply to make these changes.

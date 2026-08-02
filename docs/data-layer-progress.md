@@ -30,7 +30,7 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 0b/1 — migrating callers, 4 of 17 done (started 2026-08-01)
+**Phase:** 0b/1 — migrating callers, 5 of 17 done (started 2026-08-01)
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
 **Last worked:** 2026-08-02
@@ -69,7 +69,8 @@ the same day — see the decisions log.
 | Phase 0b/1 — file 2 of 17: `generate_reports.py` | **done** — snapshots captured, pre/post diff clean |
 | Phase 0b/1 — file 3 of 17: `setup_root_folder.py` | **done** — snapshots captured, pre/post diff clean |
 | Phase 0b/1 — file 4 of 17: `apply_pending.py` | **done** — snapshots captured, pre/post diff clean |
-| Phase 0b/1 — files 5–17 | not started — see § "Migration order" |
+| Phase 0b/1 — file 5 of 17: `prune_manifest.py` | **done** — snapshots captured, pre/post diff clean |
+| Phase 0b/1 — files 6–17 | not started — see § "Migration order" |
 | Phases 3–9 | not started |
 
 ### In flight
@@ -83,7 +84,7 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
 **Not blocked.**
 
-1. **The remaining thirteen files**, one at a time, snapshots captured
+1. **The remaining twelve files**, one at a time, snapshots captured
    immediately after each. See § "Migration order" below.
    Delegable to agents now that the pattern exists (the four done are the
    worked examples: one Sheets-heavy, one Drive-files-only, one
@@ -112,7 +113,7 @@ the doorway has been exercised before the destructive commands are touched.
 |---|---|---|
 | ~~1~~ | ~~`setup_root_folder.py`~~ | done |
 | ~~2~~ | ~~`apply_pending.py`~~ | done |
-| 3 | `prune_manifest.py` | First file-move, but only of already-retired sheets |
+| ~~3~~ | ~~`prune_manifest.py`~~ | done |
 | 4 | `check_notes.py` | The only user of Google Docs — that part of the doorway is untested |
 | 5 | `generate_biuniqueness_stage1_sheet.py` | Near-twin of `generate_status_sheet`; do the smaller one first |
 | 6 | `sync_diagnostics_yaml.py` | First writer to a reference sheet |
@@ -143,6 +144,12 @@ better than expected and should be reused for files 2–11:
   thin shims for the `gc` and `drive` objects it expects (a `open_by_key` that
   returns a fake spreadsheet; a `files().update()` that records the call).
   Capture stdout and the fake's mutation log.
+- **Make every unshimmed route to Google raise**, before running anything. See
+  the 2026-08-02 decisions-log entry: patching `coding.drive._get_clients` is
+  not enough for a command that did `from .drive import _get_clients`, because
+  that binding lives in the command's own module, and the harness reached live
+  Drive on its first run. A shim that is merely absent must fail loudly, not
+  fall through to the real client.
 - Migrate. Run the same commands through the doorway against an identically
   seeded fake.
 - Diff. On `refresh_dropdowns.py` both modes' stdout were byte-identical and
@@ -238,9 +245,73 @@ decisions log entry below. Kept here because the sequence is the point: the
 snapshot showed it, and the snapshot now proves the fix
 (`tests/snapshots/coordinator/apply_pending/cannot_check.txt`).
 
+**4. `prune-manifest` prints its "edited N days ago" warning after the prompt
+it should precede** (found 2026-08-02, file 5, not filed). The warning exists
+so a coordinator does not archive a sheet somebody was still annotating — but
+`_archive_drive_sheet` only reads the sheet's modified time in `--apply` mode,
+by which point the per-class "Prune 'X'? [y/N]" has already been answered. So
+the one piece of information that should change the answer arrives after it.
+
+Nothing is lost when this bites: the sheet is moved to `_archived/`, not
+deleted, and the local TSVs are archived too. The fix is to read the modified
+time during the dry run, where every other "would do this" line already lives.
+Recorded rather than fixed, because moving the read changes what the command
+asks Drive for and when — which is precisely what the before/after diff is
+there to hold still. `test_the_warning_does_not_stop_the_prune` pins the
+current order so the change is visible when it happens.
+
 ---
 
 ## Decisions log
+
+**2026-08-02 — the pre-migration harness reached live Drive once, on file 5.
+Read-only, nothing changed, and the harness now cannot do it again.**
+`prune_manifest.py` does `from .drive import _get_clients`, which binds that
+name into *its own* module; the harness patched `coding.drive._get_clients`,
+which does not touch that binding. So the command built a real authenticated
+Drive client from the cached token and ran one `files().get` for a spreadsheet
+ID that exists only in the stand-in Drive. It 404'd. No write reached Google:
+the run went on to attempt the manifest upload, and both attempts raised
+`TypeError` inside googleapiclient's *request builder* — before any HTTP —
+because the media object was the harness's stand-in rather than a real
+`MediaUpload`. That crash is what surfaced the whole thing.
+
+Two changes came out of it. The harness replaces the binding in the command's
+own namespace, and `coding.drive._get_clients` is replaced by a function that
+**raises**, so any route not shimmed fails loudly instead of quietly working.
+The first four files happened not to need this because their Drive access all
+went through names the harness had covered — which is exactly why the guard has
+to be unconditional rather than added when it seems necessary.
+
+Worth stating plainly, because it is an argument for the work rather than
+against it: **this failure is not available to a migrated command.** Once a
+command calls `get_doorway()` there is one binding, and `set_doorway()` replaces
+it. The four files migrated before this one cannot make the mistake, and neither
+can `prune_manifest.py` now.
+
+**2026-08-02 — two small additions to the doorway and one correction to the
+fake, all made for file 5.** The doorway's `get_file` gained
+`supports_all_drives`, carried through rather than dropped: `prune_manifest` is
+the only caller that sets it, and dropping a flag on the live path is not a
+migration's business. Recorded rather than resolved: `move_file`, which
+`prune_manifest` calls on the same file moments later, has never sent it, so a
+sheet on a shared drive can be read but not moved.
+
+`drive.py` gained `upload_manifest(doorway, ...)`, sharing one body with
+`_upload_planars_config` the way `load_manifest` already shares with
+`_load_manifest_from_drive` — key ordering and the update-then-create fallback
+now exist once. This does not close #276; three other manifest writers remain.
+
+The fake was recording **two** mutations for one folder creation —
+`get_or_create_folder` logged `create_folder` on top of the `create_file` its
+own call had already logged. Nothing had exercised it before (`setup_root_folder`
+keeps its own find-then-create). Caught by the pre/post diff, which is the
+first thing that diff has actually caught. Removed: creating a folder *is*
+creating a file with the folder mimetype, and a log whose job is to say what
+changed must not turn one call into two. The fake also models `modifiedTime`
+now, so `prune_manifest`'s "edited N days ago" warning can be exercised at
+all — it is the only guard against pruning a sheet somebody was still working
+in.
 
 **2026-08-02 — commit hashes are no longer written into this file.** Every one
 of them cost a second commit, because a commit cannot contain its own hash, and
