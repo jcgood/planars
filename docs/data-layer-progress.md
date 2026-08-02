@@ -24,9 +24,18 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 0a / 2 (started 2026-08-01)
+**Phase:** 0b/1 — migrating callers, 3 of 17 done (started 2026-08-01)
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
+**Last worked:** 2026-08-02
+
+Bugs found and fixed while doing this work, all the same root cause — something
+inferred which column held a value from the wrong source: **#272** (dropdowns,
+fixed), **#274** (coreference analysis returned different answers on different
+runs, fixed). Open and needing a decision: **#275** (stan1293's
+`phrasal_accent/general` sheet shape vs. the schema), **#276** (collapse the
+duplicated Drive helpers — blocked until every Drive-writing command has
+snapshots), **#273** (verified false alarm, safe to close).
 
 ### Status by unit
 
@@ -38,11 +47,11 @@ of this state would be exactly the defect this project is trying to remove.
 | Phase 0a — protocol proposal reviewed | **done** — accepted, see decisions log | — |
 | Phase 0a — `capture-drive-state` command | **done** | `c87ae7d` |
 | Phase 0a — fixture capture run (read-only, live) | **done** — 29 sheets, 80 tabs | `b40cd64` |
-| Phase 0a — protocol module (`coding/drive_doorway.py`) | **done** | this commit |
-| Phase 0a — fake doorway (`tests/fake_drive.py`) + smoke tests | **done** — 62 tests | this commit |
+| Phase 0a — doorway module (`coding/drive_doorway.py`) | **done** | `05be9af`, renamed `2706965` |
+| Phase 0a — fake doorway (`tests/fake_drive.py`) + smoke tests | **done** — 62 tests | `05be9af` |
 | Phase 0b/1 — file 1 of 17: `refresh_dropdowns.py` | **done** — snapshots captured, mutation log reviewed and accepted | `5ca369d` |
 | Phase 0b/1 — file 2 of 17: `generate_reports.py` | **done** — snapshots captured, pre/post diff clean | `62047c3` |
-| Phase 0b/1 — file 3 of 17: `setup_root_folder.py` | **done** — snapshots captured, pre/post diff clean | this commit |
+| Phase 0b/1 — file 3 of 17: `setup_root_folder.py` | **done** — snapshots captured, pre/post diff clean | `3d70069` |
 | Phase 0b/1 — files 4–17 | not started — see § "Migration order" | — |
 | Phases 3–9 | not started | — |
 
