@@ -101,6 +101,25 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
 2. Phases 3–9 per the plan.
 
+### Held until Phase 9
+
+Live Drive writes are not permitted before then, so these are queued rather than
+forgotten. Each is small; the list exists because none of them is anybody's
+current job and all three would otherwise be remembered by nobody.
+
+- **Bin `biuniqueness_stage1_synth0001`.** The 2026-08-02 rename means the next
+  `generate-biuniqueness-allomorphy-sheet --apply` creates
+  `biuniqueness_allomorphy_synth0001` and leaves the old sheet orphaned in the
+  `synth0001` Drive folder. Synthetic test data, nothing to preserve. Coordinator
+  decision, 2026-08-02: delete it once the new one exists.
+- **Rebuild `stan1293`'s `phrasal_accent/general` with pair rows** (#275,
+  decided). Also waits on Adam annotating that class's `prescreening` tab —
+  which is the binding constraint, not Phase 9, since the pair rows are derived
+  from what he marks accented.
+- **Re-run `capture-drive-state`** if the live sheets have changed structurally
+  since 2026-08-01. The fixtures are a recording with no staleness alarm; see
+  `data_dependency_schema/facts.yaml` § `drive_state_test_fixtures`.
+
 ### Migration order
 
 Eleven files remain of eighteen that touch Drive. The plan's list of eleven
