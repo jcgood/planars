@@ -32,7 +32,7 @@ import shutil
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import yaml as _yaml
 
@@ -53,10 +53,53 @@ from .import_sheets import _archive_tsv
 
 _RECENCY_DAYS = 14  # warn if sheet was modified within this many days
 
+# One Drive read per sheet per run. The dry-run summary and the apply pass both
+# want the sheet's name and last-edit time, and asking twice for a fact that
+# cannot change mid-run is just latency. Cleared at the top of main().
+_SHEET_META: Dict[str, Optional[Dict]] = {}
+
 
 # ---------------------------------------------------------------------------
 # Drive sheet archival
 # ---------------------------------------------------------------------------
+
+def _sheet_metadata(doorway, spreadsheet_id: str, class_name: str) -> Optional[Dict]:
+    """Name and last-edit time for a sheet, or None if Drive would not say.
+
+    Read during the *dry run* as well as the apply pass, deliberately: the
+    "edited N days ago" warning below is the only thing standing between a
+    coordinator and archiving a sheet somebody is still annotating, and until
+    2026-08-02 it was read in apply mode only — which meant it printed after
+    the "Prune 'X'? [y/N]" it should have informed. See issue #277.
+    """
+    if spreadsheet_id in _SHEET_META:
+        return _SHEET_META[spreadsheet_id]
+    try:
+        meta = _with_retry(lambda: doorway.get_file(
+            spreadsheet_id,
+            fields="name,modifiedTime",
+            supports_all_drives=True,
+        ))
+    except Exception as exc:
+        print(f"    WARNING: could not read sheet metadata for {class_name}: {exc}")
+        meta = None
+    _SHEET_META[spreadsheet_id] = meta
+    return meta
+
+
+def _warn_if_recently_edited(meta: Dict, spreadsheet_id: str) -> None:
+    modified_str = meta.get("modifiedTime", "")
+    if not modified_str:
+        return
+    modified_dt = datetime.fromisoformat(modified_str.replace("Z", "+00:00"))
+    age_days = (datetime.now(timezone.utc) - modified_dt).days
+    if age_days < _RECENCY_DAYS:
+        print(
+            f"    WARNING: '{meta.get('name', spreadsheet_id)}' was edited "
+            f"{age_days} day(s) ago — check for unapplied annotation work "
+            f"before proceeding."
+        )
+
 
 def _archive_drive_sheet(
     doorway, lang_id: str, class_name: str, manifest: dict, apply: bool
@@ -78,33 +121,21 @@ def _archive_drive_sheet(
         print(f"    no folder_id in manifest for {lang_id} — skipping Drive archival")
         return False
 
+    meta = _sheet_metadata(doorway, spreadsheet_id, class_name)
+
     if not apply:
         ss_url = sheet_info.get("spreadsheet_url", spreadsheet_id)
         print(f"    would move Drive sheet → _archived/  ({ss_url})")
+        if meta:
+            _warn_if_recently_edited(meta, spreadsheet_id)
         return True
 
-    # Fetch sheet name and modification time for the recency check and display.
-    try:
-        meta = _with_retry(lambda: doorway.get_file(
-            spreadsheet_id,
-            fields="name,modifiedTime",
-            supports_all_drives=True,
-        ))
-    except Exception as exc:
-        print(f"    WARNING: could not read sheet metadata for {class_name}: {exc}")
+    if meta is None:
         print(f"    Skipping Drive archival — remove the sheet manually if needed.")
         return False
 
     sheet_name = meta.get("name", spreadsheet_id)
-    modified_str = meta.get("modifiedTime", "")
-    if modified_str:
-        modified_dt = datetime.fromisoformat(modified_str.replace("Z", "+00:00"))
-        age_days = (datetime.now(timezone.utc) - modified_dt).days
-        if age_days < _RECENCY_DAYS:
-            print(
-                f"    WARNING: '{sheet_name}' was edited {age_days} day(s) ago — "
-                f"check for unapplied annotation work before proceeding."
-            )
+    _warn_if_recently_edited(meta, spreadsheet_id)
 
     try:
         archived_folder_id = doorway.get_or_create_folder("_archived", folder_id)
@@ -182,6 +213,7 @@ def main() -> None:
     apply = "--apply" in sys.argv
     skip_prompts = "--all" in sys.argv
 
+    _SHEET_META.clear()
     doorway = get_doorway()
     manifest = load_manifest(doorway)
 

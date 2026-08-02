@@ -18,8 +18,9 @@ This script propagates diagnostic criterion changes across all downstream layers
   diagnostics_{lang_id}.tsv  — derived artifact (regenerated to match YAML after each run)
   Google Sheets              — annotation form column headers (always updated)
 
-Imported TSVs in coded_data/ are downstream of Sheets; re-run import-sheets --force after
-any lifecycle operation to bring them in sync.
+Imported TSVs in coded_data/ are downstream of Sheets; after any lifecycle operation run
+  python -m coding import-sheets --overwrite-existing --apply
+to bring them in sync.
 
 --rename renames a criterion in-place, preserving all cell values and validation.
 --split adds new1/new2 columns and renames old to _split_old; coordinator remaps values then

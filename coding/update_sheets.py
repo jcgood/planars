@@ -307,7 +307,7 @@ def main() -> None:
     Compares each sheet tab against the current planar structure and appends
     any elements that are present in the planar file but missing from the tab.
     Detects and warns about structural drift (position renumbering) without
-    attempting to fix it — use restructure-sheets for that.
+    attempting to fix it — python -m coding restructure-sheets does that.
     In dry-run mode (no --apply) only prints what would change.
     """
     apply = "--apply" in sys.argv

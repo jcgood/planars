@@ -48,7 +48,9 @@ Run from the repo root:
     Without these flags, renamed positions/elements are treated as drops + new blank rows.
 
     IMPORTANT for --rename-class: update diagnostics_{lang_id}.yaml to use the new class name
-    BEFORE running this command, then run `sync-diagnostics-yaml --apply` to regenerate the TSV.
+    BEFORE running this command, then run
+        python -m coding sync-diagnostics-yaml --apply
+    to regenerate the TSV.
     The pre-flight check will abort if the old name is still present in any language's
     diagnostics file, or if the new name is absent.
 

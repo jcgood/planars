@@ -39,6 +39,9 @@ Bugs found and fixed while doing this work, all the same root cause — somethin
 inferred which column held a value from the wrong source: **#272** (dropdowns,
 fixed), **#274** (coreference analysis returned different answers on different
 runs, fixed). **#273** closed 2026-08-02 — verified false alarm, no data lost.
+**#277** (`prune-manifest` warned that a sheet was edited recently only after
+you had already agreed to prune it, fixed) is a different shape: not a
+wrong-source bug but a right-fact-at-the-wrong-time one.
 
 Still open, none of them blocking: **#275** — decided 2026-08-02, the sheet is
 stale and `stan1293`'s `phrasal_accent/general` gets rebuilt with pair rows.
@@ -220,15 +223,25 @@ had hidden the second one entirely. Render before asking anyone to read.
 
 ---
 
-## Findings awaiting triage
+## Findings
 
 Per the plan's Phase 0b/1 non-goals, a snapshot that reveals odd behaviour records
-it rather than fixing it. These are recorded, live, and not yet triaged.
+it rather than fixing it *in the same change*. **All five findings so far have
+since been fixed** — the deferral only ever lasted until the migration each one
+was riding on had been committed and its before/after comparison taken. Nothing
+here is outstanding; the entries are kept because the sequence is the point.
 
-**Both filed as issue #272 (2026-08-01) — do not run `refresh-dropdowns --apply`
-until it is fixed.** Dry run is unaffected.
+**Do not delete this section when the migration ends without first checking that
+every finding has an issue number or a decisions-log entry.** Findings 4 and 5
+lived here alone for a day each, and a section that gets deleted is not tracking.
 
-**1. `refresh-dropdowns` narrows dropdowns for every class that uses
+**1 and 2 — issue #272, fixed and closed 2026-08-02** (`b399e32`,
+"refresh-dropdowns: read the sheet, not the manifest, for criterion columns").
+The old warning here said not to run `refresh-dropdowns --apply` until it was
+fixed; that stopped being true the moment it was, and the warning outlived it by
+a day. Both are described below as they stood when found.
+
+**1. `refresh-dropdowns` narrowed dropdowns for every class that uses
 `construction_criteria`.** `refresh_dropdowns.py:110-113`
 builds `class_criteria_map` by taking the **first construction's** criterion
 values for each class, under the comment "criteria are shared across
@@ -274,20 +287,25 @@ decisions log entry below. Kept here because the sequence is the point: the
 snapshot showed it, and the snapshot now proves the fix
 (`tests/snapshots/coordinator/apply_pending/cannot_check.txt`).
 
-**4. `prune-manifest` prints its "edited N days ago" warning after the prompt
-it should precede** (found 2026-08-02, file 5, not filed). The warning exists
+**4. `prune-manifest` printed its "edited N days ago" warning after the prompt
+it should precede** (found 2026-08-02, file 5). **Issue #277, fixed
+2026-08-02.** The warning exists
 so a coordinator does not archive a sheet somebody was still annotating — but
-`_archive_drive_sheet` only reads the sheet's modified time in `--apply` mode,
-by which point the per-class "Prune 'X'? [y/N]" has already been answered. So
-the one piece of information that should change the answer arrives after it.
+`_archive_drive_sheet` only read the sheet's modified time in `--apply` mode,
+by which point the per-class "Prune 'X'? [y/N]" had already been answered. So
+the one piece of information that should change the answer arrived after it.
 
-Nothing is lost when this bites: the sheet is moved to `_archived/`, not
-deleted, and the local TSVs are archived too. The fix is to read the modified
-time during the dry run, where every other "would do this" line already lives.
-Recorded rather than fixed, because moving the read changes what the command
-asks Drive for and when — which is precisely what the before/after diff is
-there to hold still. `test_the_warning_does_not_stop_the_prune` pins the
-current order so the change is visible when it happens.
+Nothing was lost when it bit: the sheet is moved to `_archived/`, not deleted,
+and the local TSVs are archived too. The modified time is now read during the
+dry run, where every other "would do this" line already lives, and cached so
+the apply pass does not ask twice.
+
+This one is the clearest illustration of what the deferral rule actually means.
+Moving the read changes what the command asks Drive for and when, which is
+exactly what a migration's before/after comparison is there to hold still — so
+it waited. It waited *for file 5's migration to be committed*, not for the
+whole migration to end. Once that comparison had been taken the reason expired,
+and holding the fix any longer would have been habit rather than method.
 
 **5. `sync-diagnostics-yaml --to-sheet` wrote the right thing but did not
 always say what it changed** (found 2026-08-02, file 8). **Fixed the same day**
@@ -322,8 +340,16 @@ caution in general — the pre/post mutation diff is what proves a migration
 changed nothing, so anything that would move that diff has to wait until the
 migration it is riding on is already committed and proven.
 
-By that rule #272's two dropdown bugs and the `prune-manifest` ordering stay
-deferred, while `apply-pending`'s four-way failure message and this one were
+**The deferral is only ever until *that file's* migration is committed, not
+until the migration ends.** Stating this because getting it wrong is what
+happened: #272's two dropdown bugs were correctly fixed once file 1 was done,
+but the `prune-manifest` ordering sat on for a further day after file 5 landed
+purely because nothing said the wait was over, and the warning here telling
+people not to run `refresh-dropdowns --apply` outlived its own fix by a day.
+A deferral with no expiry written next to it is indistinguishable from being
+forgotten. Every one of the five findings has now been fixed.
+
+`apply-pending`'s four-way failure message and finding 5 were
 fixed the day they were found. Both fixes landed as their own commit *after*
 the migration commit, with the snapshot diff as the evidence — which is what
 made the change legible: finding 5's entire footprint is one new line,

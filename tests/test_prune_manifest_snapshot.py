@@ -278,17 +278,28 @@ def test_a_long_untouched_sheet_is_not_flagged(env):
     assert "day(s) ago" not in out
 
 
-def test_the_warning_does_not_stop_the_prune(env):
-    """It is a warning, not a gate — recorded because it reads like a gate.
+def test_the_dry_run_flags_it_too(env):
+    """The dry run is where the decision gets made, so it has to say this."""
+    doorway, run, _, _ = env
+    doorway.file(SHEET_ID).modified_time = _recently(3)
+    out = run(["prune-manifest"], answers=[])
+    assert "was edited 3 day(s) ago" in out
 
-    The prompt has already been answered by the time this prints, so a
-    coordinator who says yes and then reads 'edited 2 days ago' has no chance
-    to change their mind. Nothing is lost (the sheet is archived, not deleted),
-    but the order is the wrong way round.
+
+def test_the_warning_comes_before_the_prompt_it_should_inform(env):
+    """Issue #277. It used to print after the answer, which is no use at all.
+
+    It stays a warning rather than a gate — the sheet is archived, not deleted,
+    and a coordinator who has read the line is entitled to go ahead. What
+    changed is that they get to read it first.
     """
     doorway, run, coded, _ = env
     doorway.file(SHEET_ID).modified_time = _recently(1)
-    run(["prune-manifest", "--apply"], ["y"])
+    out = run(["prune-manifest", "--apply"], ["y"])
+
+    warning = out.index("was edited 1 day(s) ago")
+    prompt = out.index(f"Prune '{RETIRED}' from")
+    assert warning < prompt, "the warning has to come first to be worth printing"
     assert active_tsvs(coded) == []
     assert RETIRED not in manifest_of(doorway)[LANG]["sheets"]
 

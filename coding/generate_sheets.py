@@ -28,9 +28,11 @@ annotations to the new row numbers:
 --regen-construction ABORTS instead of writing if it would silently drop an annotated
 pair-row (a retired element still had a real judgment attached) -- no confirmation step
 exists after this point, the row would just be gone from the Sheet. If the element was
-renamed or split, run restructure-sheets --rename-element/--split-element first (issue
-#241); that carries the judgment forward and this check then passes cleanly, since the
-old rows are already gone by the time --regen-construction runs. If the drop really is
+renamed or split, run one of
+    python -m coding restructure-sheets --rename-element OLD:NEW --apply
+    python -m coding restructure-sheets --split-element OLD:NEW1,NEW2 --apply
+first (issue #241); that carries the judgment forward and this check then passes cleanly,
+since the old rows are already gone by the time --regen-construction runs. If the drop really is
 intentional (e.g. a prescreening scope change, not a rename/split), add --confirm-drop:
     python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:reflexivization \
         --confirm-drop
@@ -2426,8 +2428,9 @@ def main() -> None:
             not yet in languages.yaml, falls back to glottolog_cache.json and warns.
 
             Reads languages.yaml directly by path (not via coding.schemas cached
-            loader) because lookup-lang may write a new entry earlier in the same
-            session and we need the just-written state, not a cached snapshot.
+            loader) because python -m coding lookup-lang may write a new entry
+            earlier in the same session and we need the just-written state, not
+            a cached snapshot.
             """
             import yaml as _yaml
             _lang_yaml = ROOT / "schemas" / "languages.yaml"

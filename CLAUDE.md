@@ -209,6 +209,10 @@ Personal R/Python working area (scripts, prototypes, domain TSVs, older files) �
 
 ## Documentation maintenance
 
+**A docstring or comment that no longer matches the code is a bug, not untidiness.** Fix it the moment you notice it, in the same change — never leave it for an audit. Two reasons, both specific to this project: the team is one person, so nothing else will catch it; and Claude reads docstrings and comments as a shortcut to understanding a file, so a stale one produces confidently wrong work rather than a visible error. `sync_params.py` told readers to run `import-sheets --force` for months; the flag is `--overwrite-existing` and always was.
+
+This applies to everything a reader could act on: named commands and flags, file paths, function and column names, described behaviour, and cross-references to issues or other modules. Commands in *coordinator-facing output* additionally have to be fully runnable — see `docs/tooling-design.md` checklist item 5.
+
 Keep the following files up to date as the project evolves. Check each one at the end of any session where relevant changes were made.
 
 | File | Update when |
