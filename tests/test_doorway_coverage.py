@@ -108,3 +108,27 @@ def test_progress_is_recorded_where_it_is_claimed():
     assert named == actual, (
         f"coding/CLAUDE.md says {sorted(named)}; the code says {sorted(actual)}"
     )
+
+
+def test_stated_counts_match_the_code():
+    """The progress doc says how many files are done; keep it arithmetic, not memory.
+
+    The list of remaining files has been derived since 2026-08-02, but the
+    *count* was still hand-copied into docs/data-layer-progress.md — and it went
+    stale within two days, reading "of 17" when the real total was 18. Same
+    defect as the list it replaced, one level up.
+    """
+    doc = (ROOT / "docs" / "data-layer-progress.md").read_text(encoding="utf-8")
+    match = re.search(r"migrating callers, (\d+) of (\d+) done", doc)
+    assert match, "docs/data-layer-progress.md no longer states the migration count"
+    said_done, said_total = int(match.group(1)), int(match.group(2))
+
+    migrated = {
+        path.name for path in sorted(CODING.glob("*.py"))
+        if path.name not in _EXEMPT and _uses_doorway(path.name)
+    }
+    remaining = _reaches_google_directly()
+    assert (said_done, said_total) == (len(migrated), len(migrated) + len(remaining)), (
+        f"the doc says {said_done} of {said_total}; the code says "
+        f"{len(migrated)} of {len(migrated) + len(remaining)}"
+    )

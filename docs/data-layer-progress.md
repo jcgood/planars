@@ -30,7 +30,7 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 0b/1 — migrating callers, 7 of 17 done (started 2026-08-01)
+**Phase:** 0b/1 — migrating callers, 7 of 18 done (started 2026-08-01)
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
 **Last worked:** 2026-08-02
@@ -65,14 +65,14 @@ the same day — see the decisions log.
 | Phase 0a — fixture capture run (read-only, live) | **done** — 29 sheets, 80 tabs |
 | Phase 0a — doorway module (`coding/drive_doorway.py`) | **done** |
 | Phase 0a — fake doorway (`tests/fake_drive.py`) + smoke tests | **done** — 62 tests |
-| Phase 0b/1 — file 1 of 17: `refresh_dropdowns.py` | **done** — snapshots captured, mutation log reviewed and accepted |
-| Phase 0b/1 — file 2 of 17: `generate_reports.py` | **done** — snapshots captured, pre/post diff clean |
-| Phase 0b/1 — file 3 of 17: `setup_root_folder.py` | **done** — snapshots captured, pre/post diff clean |
-| Phase 0b/1 — file 4 of 17: `apply_pending.py` | **done** — snapshots captured, pre/post diff clean |
-| Phase 0b/1 — file 5 of 17: `prune_manifest.py` | **done** — snapshots captured, pre/post diff clean |
-| Phase 0b/1 — file 6 of 17: `check_notes.py` | **done** — snapshots captured, pre/post diff clean; Docs part of the doorway now covered |
-| Phase 0b/1 — file 7 of 17: `generate_biuniqueness_allomorphy_sheet.py` | **done** — snapshots captured, pre/post diff clean; first to create a spreadsheet and share it with a named person |
-| Phase 0b/1 — files 8–17 | not started — see § "Migration order" |
+| Phase 0b/1 — file 1: `refresh_dropdowns.py` | **done** — snapshots captured, mutation log reviewed and accepted |
+| Phase 0b/1 — file 2: `generate_reports.py` | **done** — snapshots captured, pre/post diff clean |
+| Phase 0b/1 — file 3: `setup_root_folder.py` | **done** — snapshots captured, pre/post diff clean |
+| Phase 0b/1 — file 4: `apply_pending.py` | **done** — snapshots captured, pre/post diff clean |
+| Phase 0b/1 — file 5: `prune_manifest.py` | **done** — snapshots captured, pre/post diff clean |
+| Phase 0b/1 — file 6: `check_notes.py` | **done** — snapshots captured, pre/post diff clean; Docs part of the doorway now covered |
+| Phase 0b/1 — file 7: `generate_biuniqueness_allomorphy_sheet.py` | **done** — snapshots captured, pre/post diff clean; first to create a spreadsheet and share it with a named person |
+| Phase 0b/1 — remaining files | not started — see § "Migration order" |
 | Phases 3–9 | not started |
 
 ### In flight
@@ -86,7 +86,7 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
 **Not blocked.**
 
-1. **The remaining ten files**, one at a time, snapshots captured
+1. **The remaining eleven files**, one at a time, snapshots captured
    immediately after each. See § "Migration order" below.
    Delegable to agents now that the pattern exists (the four done are the
    worked examples: one Sheets-heavy, one Drive-files-only, one
@@ -103,10 +103,17 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
 ### Migration order
 
-Ten files remain, not the nine the plan implied — the plan's list of
-eleven was hand-written and never checked against the code; a scan on
-2026-08-02 found seventeen files reaching Drive directly. The list is now
-derived by `tests/test_doorway_coverage.py`, so it cannot drift again.
+Eleven files remain of eighteen that touch Drive. The plan's list of eleven
+was hand-written and never checked against the code; a scan on 2026-08-02
+replaced it with a derived one in `tests/test_doorway_coverage.py`.
+
+That scan was reported as "seventeen", and this file repeated it for two days
+before the arithmetic gave it away: seven migrated plus eleven remaining is
+eighteen, not seventeen. A hand-copied count of a derived number, going stale
+exactly as the derived list would have — the same defect one level up. The
+counts above are now checked against the code by
+`test_stated_counts_match_the_code`, and the per-file rows no longer carry a
+total at all.
 
 Ordered by risk, lowest first, so that every shared helper and every part of
 the doorway has been exercised before the destructive commands are touched.
