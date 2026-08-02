@@ -106,8 +106,11 @@ would create a second, decaying description of each command's client usage.
 Per the plan's Phase 0b/1 non-goals, a golden that reveals odd behaviour records
 it rather than fixing it. These are recorded, live, and not yet triaged.
 
-**`refresh-dropdowns` narrows dropdowns for every class that uses
-`construction_criteria` (found 2026-08-01, file-1 golden).** `refresh_dropdowns.py:110-113`
+**Both filed as issue #272 (2026-08-01) — do not run `refresh-dropdowns --apply`
+until it is fixed.** Dry run is unaffected.
+
+**1. `refresh-dropdowns` narrows dropdowns for every class that uses
+`construction_criteria`.** `refresh_dropdowns.py:110-113`
 builds `class_criteria_map` by taking the **first construction's** criterion
 values for each class, under the comment "criteria are shared across
 constructions". That is false for classes declaring per-construction criteria.
@@ -131,6 +134,20 @@ the golden diff as the evidence.
 
 (The `coreference.prescreening` line in the same golden, three criteria → just
 `referential`, is *correct* — `_fresh_param_values` special-cases it.)
+
+**2. Dropdown columns are counted from the manifest, so they can land on
+`Source`/`Comments`.** `_detect_col_start` falls back to a hardcoded column 3
+when no manifest `param_names` entry matches the live header, and the number of
+dropdowns written is `len(param_names)` — from the manifest — not the number of
+criterion columns the tab actually has. On `synth0001`/`coreference`/`prescreening`
+(header `[..., referential, Source, Comments]`, manifest still listing the three
+pair criteria) that writes y/n dropdowns onto `Source` and `Comments`. Fires only
+on `synth0001` today because `stan1293`'s entry happens to be correct.
+
+Both are the same underlying mistake: **the manifest is treated as authoritative
+for a tab's criterion columns when the sheet header is.** That is this project's
+recurring defect shape, so #272 suggests deriving the column set rather than
+patching the two symptoms.
 
 ---
 
