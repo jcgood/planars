@@ -488,8 +488,9 @@ def _filter_nonperm_pairs_by_prescreening(
     prescreening_path = CODED_DATA / lang_id / "nonpermutability" / "element_prescreening.tsv"
     if not prescreening_path.exists():
         print("    [NOTE] element_prescreening.tsv not found — generating unfiltered pair list.")
-        print("          Annotate element_prescreening first, then re-run generate-sheets --apply to get")
-        print("          a filtered pairs sheet.")
+        print("          Annotate element_prescreening first, then re-run")
+        print(f"          python -m coding generate-sheets --lang {lang_id} --apply")
+        print("          to get a filtered pairs sheet.")
         return pairs
 
     df = pd.read_csv(prescreening_path, sep="\t", dtype=str, keep_default_na=False)
@@ -1474,7 +1475,8 @@ def _create_analysis_sheet(
             f"  Existing file ID(s): {ids}\n\n"
             f"To resolve, either:\n"
             f"  (a) Register the existing sheet: add its spreadsheet_id to the manifest, or\n"
-            f"  (b) Move it to _archived/ in Drive, then re-run generate-sheets --apply\n"
+            f"  (b) Move it to _archived/ in Drive, then re-run\n"
+            f"      python -m coding generate-sheets --apply\n"
         )
 
     spreadsheet = gc.create(sheet_title)
@@ -2446,7 +2448,9 @@ def main() -> None:
                 missing = [f for f in ("source", "author") if not meta.get(f)]
                 no_name = not glottolog.get("name")
                 if missing or no_name:
-                    problems = (["name (run lookup-lang first)"] if no_name else []) + missing
+                    problems = (
+                        [f"name (run python -m coding lookup-lang {lid} first)"]
+                        if no_name else []) + missing
                     print(
                         f"  [{lid}] WARNING: languages.yaml meta incomplete "
                         f"(missing: {', '.join(problems)}).\n"

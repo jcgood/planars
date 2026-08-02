@@ -157,7 +157,7 @@ def _sync_from_tsv(lang_id: str, apply: bool, drift_entries: List[Dict]) -> bool
             yaml_path.write_text(_dump_diagnostics_yaml(new_yaml), encoding="utf-8")
             print(f"  [{lang_id}] YAML updated.")
         else:
-            print(f"  [{lang_id}] (dry run — use --apply to write)")
+            print(f"  [{lang_id}] (dry run — YAML not written)")
 
     if ambiguous:
         print(f"  [{lang_id}] Ambiguous changes ({len(ambiguous)}) — flagged for review:")
@@ -294,9 +294,26 @@ def _sync_to_sheet(lang_id: str, manifest: dict, apply: bool) -> bool:
         _with_retry(lambda: ws.update(new_rows, "A1"))
         print(f"  [{lang_id}] Updated → diagnostics Sheet")
     else:
-        print(f"  [{lang_id}] Would update → diagnostics Sheet (use --apply to write)")
+        print(f"  [{lang_id}] Would update → diagnostics Sheet")
 
     return True
+
+
+def _apply_command(from_tsv: bool, to_sheet: bool, lang_filter: Optional[str]) -> str:
+    """This same run, with --apply — the exact line to copy after a dry run.
+
+    Built from the flags actually passed rather than named as "--apply", so
+    nobody has to reassemble the invocation they just made from memory.
+    """
+    parts = ["python -m coding sync-diagnostics-yaml"]
+    if to_sheet:
+        parts.append("--to-sheet")
+    elif from_tsv:
+        parts.append("--from-tsv")
+    if lang_filter:
+        parts.append(f"--lang {lang_filter}")
+    parts.append("--apply")
+    return " ".join(parts)
 
 
 def main() -> None:
@@ -313,8 +330,9 @@ def main() -> None:
             sys.exit(1)
         lang_filter = args[idx + 1]
 
+    run_line = _apply_command(from_tsv, to_sheet, lang_filter)
     if not apply:
-        print("Dry run — use --apply to write changes.\n")
+        print("Dry run — nothing is written.\n")
 
     if to_sheet:
         # Upload direction requires Google API access.
@@ -333,6 +351,8 @@ def main() -> None:
             print(f"Done: {changed} Sheet(s) updated.")
         else:
             print(f"Dry run complete: {changed} Sheet(s) would be updated.")
+            if changed:
+                print(f"  → run: {run_line}")
         return
 
     languages = [lang_filter] if lang_filter else _discover_languages()
@@ -364,3 +384,5 @@ def main() -> None:
         print(f"Done: {changed} {direction} file(s) updated.")
     else:
         print(f"Dry run complete: {changed} {direction} file(s) would be updated.")
+        if changed:
+            print(f"  → run: {run_line}")

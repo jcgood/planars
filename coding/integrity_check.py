@@ -402,10 +402,12 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
         _KEY_META = tuple(_LANGUAGES.get("required_meta_fields", ["source", "author"]))
         missing_meta = [f for f in _KEY_META if not meta.get(f)]
         if not lang_entry:
-            print(_warn(f"{lang}  —  not in schemas/languages.yaml (run lookup-lang to add)"))
+            print(_warn(f"{lang}  —  not in schemas/languages.yaml "
+                        f"(run python -m coding lookup-lang {lang} to add)"))
             total_w += 1
         elif not meta:
-            print(_warn(f"{lang}  —  meta block missing from languages.yaml (run lookup-lang to scaffold)"))
+            print(_warn(f"{lang}  —  meta block missing from languages.yaml "
+                        f"(run python -m coding lookup-lang {lang} to scaffold)"))
             total_w += 1
         elif missing_meta:
             print(_warn(f"{lang}  —  languages.yaml meta incomplete: {', '.join(missing_meta)} not set"))
@@ -478,7 +480,8 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
                         print(_sub(f"stale {op} column '{col}'"))
                     print(_sub(f"→ Remap any cell values from the stale column(s) to the current"))
                     print(_sub(f"  criterion column(s) in the Google Sheet, then delete the stale"))
-                    print(_sub(f"  column(s) manually. Re-run integrity-check --sheets to confirm."))
+                    print(_sub(f"  column(s) manually, then re-run"))
+                    print(_sub(f"  python -m coding integrity-check --sheets to confirm."))
                     total_w += 1
                 elif actual != expected:
                     print(_warn(label))
@@ -870,7 +873,8 @@ def main() -> None:
             return
         stale = _stale_manifest_classes(manifest, lang_ids)
         if stale:
-            print(f"STALE MANIFEST ENTRIES ({len(stale)}) — run prune-manifest --apply to clean up:")
+            print(f"STALE MANIFEST ENTRIES ({len(stale)}) — "
+                  f"run python -m coding prune-manifest --apply to clean up:")
             for lang_id, cls in stale:
                 print(f"  {_lang_label(lang_id)} · {cls}")
             sys.exit(1)

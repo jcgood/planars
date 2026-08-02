@@ -1,10 +1,11 @@
-Dry run — use --apply to write changes.
+Dry run — nothing is written.
 
 Connecting to Google APIs...
   [stan1293]   - removed: a_class_the_yaml_never_heard_of
   [stan1293]   + added:   ciscategorial
   [stan1293]   + added:   phrasal_accent / general
   [stan1293]   ~ changed: subspanrepetition
-  [stan1293] Would update → diagnostics Sheet (use --apply to write)
+  [stan1293] Would update → diagnostics Sheet
 
 Dry run complete: 1 Sheet(s) would be updated.
+  → run: python -m coding sync-diagnostics-yaml --to-sheet --lang stan1293 --apply

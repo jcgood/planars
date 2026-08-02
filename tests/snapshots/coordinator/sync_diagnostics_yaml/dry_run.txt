@@ -1,4 +1,4 @@
-Dry run — use --apply to write changes.
+Dry run — nothing is written.
 
 Connecting to Google APIs...
   [arao1248] Sheet already up to date

@@ -155,7 +155,29 @@ def test_dry_run_touches_nothing(env):
 
     assert doorway.mutations == []
     assert sheet(doorway).get_all_values() == before
-    assert "use --apply to write" in out
+    # And it ends with the exact line to copy — flags included, so nobody has
+    # to reassemble the invocation they just made.
+    assert ("  → run: python -m coding sync-diagnostics-yaml "
+            f"--to-sheet --lang {LANG} --apply") in out
+
+
+@pytest.mark.parametrize("argv, expected", [
+    (["sdy", "--to-sheet"],
+     "python -m coding sync-diagnostics-yaml --to-sheet --apply"),
+    (["sdy", "--to-sheet", "--lang", LANG],
+     f"python -m coding sync-diagnostics-yaml --to-sheet --lang {LANG} --apply"),
+])
+def test_the_next_step_is_the_same_run_with_apply(env, argv, expected):
+    doorway, run = env
+    make_stale(doorway)
+    assert f"  → run: {expected}\n" in run(argv)
+
+
+def test_a_dry_run_with_nothing_to_do_offers_no_next_step(env):
+    """A `→ run:` line that changes nothing would be an instruction to churn."""
+    _, run = env
+    out = run(["sdy", "--to-sheet", "--lang", LANG])
+    assert "→ run:" not in out
 
 
 # ---------------------------------------------------------------------------
