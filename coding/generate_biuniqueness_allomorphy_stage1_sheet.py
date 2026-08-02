@@ -8,16 +8,47 @@ excluded, per element); Part 2b backfilled it on synth0001. This script reads th
 flags and writes Stage 1: a real Drive Sheet where the coordinator and Adam do a first
 coarse pass over every in-scope element.
 
-Deliberately NOT routed through the standard diagnostics_{lang_id}.yaml /
-generate_sheets.py class/construction pipeline: that pipeline's row shape is
-Position-keyed with y/n-style criteria feeding a qualification_rule/span computation
-(see diagnostic_classes.yaml). The allomorphy tables being built toward here
-(`allomorphs_{lang_id}.tsv` / `allomorph_forms_{lang_id}.tsv`, see #249) are
-Element-keyed lexicon facts with no span computation defined yet (#254 Part 2i is an
-open problem, not solved by this script) — a structurally different kind of sheet.
-This mirrors generate_status_sheet.py's precedent: a purpose-built, non-standard
-sheet generator living outside the normal diagnostics pipeline, reusing drive.py's
-primitives directly rather than the per-class machinery in generate_sheets.py.
+Which biuniqueness deviation this is
+------------------------------------
+Biuniqueness is a one-to-one match between form and meaning, and it fails in two
+directions. This screens one of them; the other is a class already:
+
+  biuniqueness_exponence   one meaning carried by several pieces at once, in
+                           different positions (circumfixes are the two-piece
+                           case). A class in diagnostic_classes.yaml, with a
+                           criterion, a qualification rule, and a span.
+  biuniqueness_allomorphy  one meaning carried by different forms depending on
+                           context. This file. Not a class — see below.
+
+Both were called "biuniqueness" until 2026-08-02, when the class took the
+narrower name it had always meant and this work took the other half.
+
+Why this isn't a class
+----------------------
+Three reasons, in order of how hard they are to work around:
+
+1. No span. Every class in diagnostic_classes.yaml earns its place by feeding a
+   qualification_rule and a span computation. How allomorphy feeds one is #254
+   Part 2i — an open question. Adding a class now would mean writing down an
+   answer nobody has.
+2. `Members` grows the inventory rather than filtering it. A prescreening tab
+   narrows an existing row set (which elements are accent-eligible, so which
+   pairs to generate). `Members` asks for forms that are not in the planar at
+   all, and Stage 2 (#254 Part 2e) turns each into its own row. Nothing in the
+   pipeline lets an annotation add lexical items downstream.
+3. Which column applies depends on the row. `filled` rows want has_allomorphs,
+   `open_category` rows want Members. The diagnostics YAML gives one criterion
+   set per construction, applied to every row alike; `construction_criteria`
+   varies by construction, nothing varies by row.
+
+If (1) is ever settled, the has_allomorphs half is prescreening-shaped and could
+become a construction. `Members` probably never fits.
+
+The cost of staying outside: none of the standard machinery applies. import-sheets
+does not collect this sheet, validate-coding does not check it, it is not under
+the manifest's `sheets`, and nothing archives it on change. It is write-only
+until Stage 2 exists. Mirrors generate_status_sheet.py's precedent of a
+purpose-built generator using drive.py's primitives directly.
 
 Row shape: one row per (Position_Name, Element) pair where Biuniqueness_Scope is not
 "excluded". Two annotation columns cover both scope values, since which one applies is
@@ -29,10 +60,10 @@ row-dependent (see banner written into the sheet):
                                                listed member into its own row.
 
 Run from the repo root:
-    python -m coding generate-biuniqueness-stage1-sheet --lang synth0001            # dry run
-    python -m coding generate-biuniqueness-stage1-sheet --lang synth0001 --apply
+    python -m coding generate-biuniqueness-allomorphy-stage1-sheet --lang synth0001            # dry run
+    python -m coding generate-biuniqueness-allomorphy-stage1-sheet --lang synth0001 --apply
 
-Re-running with --apply overwrites the existing biuniqueness_stage1_{lang_id}
+Re-running with --apply overwrites the existing biuniqueness_allomorphy_stage1_{lang_id}
 spreadsheet in place (found by name within the language's Drive folder) rather than
 minting a new URL, same convention as generate_status_sheet.py.
 
@@ -121,7 +152,7 @@ def _rows_to_sheet_values(rows: List[Dict[str, str]]) -> List[List[str]]:
 def _banner_rows() -> List[List[str]]:
     """Instructions written above the header row (issue #254 Part 2c/2d)."""
     return [
-        ["STAGE 1 — biuniqueness/allomorphy screening (issue #254 Part 2). "
+        ["STAGE 1 — allomorphy screening (a biuniqueness deviation; issue #254 Part 2). "
          "For each row below, fill in ONE of the two annotation columns depending "
          "on that row's Biuniqueness_Scope:"],
         ["  Biuniqueness_Scope = 'filled':        fill has_allomorphs (y/n). Leave Members blank."],
@@ -233,10 +264,10 @@ def _write_stage1_sheet(ss: gspread.Spreadsheet, rows: List[Dict[str, str]]) -> 
 # ---------------------------------------------------------------------------
 
 def main() -> None:
-    """Entry point for `python -m coding generate-biuniqueness-stage1-sheet`."""
+    """Entry point for `python -m coding generate-biuniqueness-allomorphy-stage1-sheet`."""
     apply = "--apply" in sys.argv
     if "--lang" not in sys.argv:
-        raise SystemExit("Usage: generate-biuniqueness-stage1-sheet --lang LANG_ID [--apply]")
+        raise SystemExit("Usage: generate-biuniqueness-allomorphy-stage1-sheet --lang LANG_ID [--apply]")
     lang_id = sys.argv[sys.argv.index("--lang") + 1]
 
     lang_setup_dir = CODED_DATA / lang_id / "lang_setup"
@@ -267,16 +298,16 @@ def main() -> None:
     if not lang_data or not lang_data.get("folder_id"):
         raise SystemExit(f"No Drive folder found for {lang_id} in the manifest — run python -m coding generate-sheets --apply first.")
 
-    sheet_name = f"biuniqueness_stage1_{lang_id}"
+    sheet_name = f"biuniqueness_allomorphy_stage1_{lang_id}"
     ss, created = _get_or_create_stage1_spreadsheet(gc, drive, lang_data["folder_id"], sheet_name)
     _write_stage1_sheet(ss, rows)
     _share_with_person(drive, ss.id, _ADAM_EMAIL, role="writer")
     action = "Created" if created else "Updated"
     print(f"\n{action}: {ss.url}")
 
-    if lang_data.get("biuniqueness_stage1_spreadsheet_id") != ss.id:
-        lang_data["biuniqueness_stage1_spreadsheet_id"] = ss.id
-        lang_data["biuniqueness_stage1_url"] = ss.url
+    if lang_data.get("biuniqueness_allomorphy_stage1_spreadsheet_id") != ss.id:
+        lang_data["biuniqueness_allomorphy_stage1_spreadsheet_id"] = ss.id
+        lang_data["biuniqueness_allomorphy_stage1_url"] = ss.url
         MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
         config = _load_drive_config()
         existing_file_id = config.get("_planars_config_file_id")
@@ -284,7 +315,7 @@ def main() -> None:
         file_id = _upload_planars_config(drive, manifest, root_folder_id, existing_file_id)
         config["_planars_config_file_id"] = file_id
         _save_drive_config(config)
-        print("Manifest updated on Drive (biuniqueness_stage1_spreadsheet_id/url).")
+        print("Manifest updated on Drive (biuniqueness_allomorphy_stage1_spreadsheet_id/url).")
 
 
 if __name__ == "__main__":

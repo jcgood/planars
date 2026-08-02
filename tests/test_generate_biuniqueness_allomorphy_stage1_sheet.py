@@ -1,4 +1,4 @@
-"""Tests for the pure-logic pieces of coding/generate_biuniqueness_stage1_sheet.py
+"""Tests for the pure-logic pieces of coding/generate_biuniqueness_allomorphy_stage1_sheet.py
 (issue #254 Part 2c).
 
 No live Drive/Sheets API calls are made or mocked here — see the module's
@@ -10,7 +10,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from coding.generate_biuniqueness_stage1_sheet import (
+from coding.generate_biuniqueness_allomorphy_stage1_sheet import (
     _HEADER,
     _banner_rows,
     _build_stage1_rows,

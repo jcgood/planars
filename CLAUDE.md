@@ -75,7 +75,7 @@ python -m coding generate-reports         # generate and upload PDF reports to D
 python -m coding lookup-lang arao1248     # fetch + cache Glottolog metadata (--refresh, --all)
 python -m coding setup-root-folder        # one-time Drive folder setup
 python -m coding generate-status-sheet    # locked read-only per-language status sheets (--apply, --lang)
-python -m coding generate-biuniqueness-stage1-sheet --lang synth0001  # Stage 1 biuniqueness/allomorphy screening sheet (--apply); synth0001-only, see issue #254
+python -m coding generate-biuniqueness-allomorphy-stage1-sheet --lang synth0001  # Stage 1 biuniqueness/allomorphy screening sheet (--apply); synth0001-only, see issue #254
 python -m planars <module> <tsv>          # run a single analysis
 
 # Testing

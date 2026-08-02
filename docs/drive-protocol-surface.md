@@ -414,7 +414,7 @@ dashboard).
   currently does, but the manifest's `status_sheet_url` is written verbatim to
   Drive for Adam to click).
 
-### `coding/generate_biuniqueness_stage1_sheet.py` (291 lines)
+### `coding/generate_biuniqueness_allomorphy_stage1_sheet.py` (291 lines)
 
 Structurally a near-duplicate of `generate_status_sheet.py`'s Drive-writing
 code (same find-or-create-by-name pattern, same `update_title`/`resize`/
@@ -432,7 +432,7 @@ re-tabulate identical call shapes, this entry lists only the calls and the
 | `ws.update(values, "A1", raw=False)` | `:183` (wrapped) | Same `raw=False` formula-write concern as `generate_status_sheet.py:369` — though this sheet's data rows are plain strings (no `HYPERLINK` formulas built into `_rows_to_sheet_values`), so `raw=False` is currently a no-op in practice here; only the **banner** rows would matter if they ever gained a formula, which they don't today. Still worth the fake supporting `raw=False` correctly since the call is made regardless. | Wrapped | Write |
 | `spreadsheet.batch_update({"requests": [...]})` | `:227` (wrapped) | Same request-shape family as `generate_status_sheet.py` (freeze, bold ×2, `mergeCells`, one `setDataValidation` for the `has_allomorphs` y/n dropdown, `wrapStrategy`) — no per-row background-color requests here (this sheet has no color-coding), so one flat batch of a fixed number of requests regardless of row count, unlike `generate_status_sheet.py`'s N-requests-per-row pattern | Wrapped | Write |
 | `_share_with_person(drive, id, email, role="writer")` | `:273` | Hardcoded to Adam's email (`_ADAM_EMAIL`) rather than `_annotator_email(lang_id)` — deliberate, per the module docstring (`synth0001` has no `annotator_email` in `languages.yaml`) | No (inherited) | Write |
-| `_load_manifest_from_drive` / `_upload_planars_config` | `:265, :284` | Same end-of-run manifest-sync pattern (`biuniqueness_stage1_spreadsheet_id`/`url` fields), gated on the value actually changing | No (inherited) | Read / Write |
+| `_load_manifest_from_drive` / `_upload_planars_config` | `:265, :284` | Same end-of-run manifest-sync pattern (`biuniqueness_allomorphy_stage1_spreadsheet_id`/`url` fields), gated on the value actually changing | No (inherited) | Read / Write |
 
 **Subtlety flags specific to this file:** none beyond what's already flagged
 under `generate_status_sheet.py` — its main value for the inventory is
@@ -682,7 +682,7 @@ Grouped by the object they operate on. **[R]**/**[W]** marks read/write;
 - `create_spreadsheet(name: str) -> Spreadsheet` **[W]** — covers
   `gc.create(name)` (7 call sites across `generate_sheets.py`,
   `restructure_sheets.py`, `generate_status_sheet.py`,
-  `generate_biuniqueness_stage1_sheet.py`).
+  `generate_biuniqueness_allomorphy_stage1_sheet.py`).
 - `open_spreadsheet(spreadsheet_id: str) -> Spreadsheet` **[R]** — covers
   `_open_spreadsheet`/`gc.open_by_key` (all variants: wrapped via
   `_open_spreadsheet`, bare `gc.open_by_key`, and the `refresh_dropdowns.py`
@@ -729,7 +729,7 @@ Grouped by the object they operate on. **[R]**/**[W]** marks read/write;
   `sync_params.py:258` uses `"A1"` (whole-body replace), and that one site
   uses a computed anchor (e.g. `"D1"`) to write only inserted columns. `raw`
   defaults `True` (values written literally); `generate_status_sheet.py`/
-  `generate_biuniqueness_stage1_sheet.py` pass `raw=False` so embedded
+  `generate_biuniqueness_allomorphy_stage1_sheet.py` pass `raw=False` so embedded
   `=HYPERLINK(...)` strings are parsed as formulas — **this parameter is not
   optional to support**, it changes write semantics, not just presentation.
 - `update_cell(worksheet, row: int, col: int, value: str)` **[W]** — covers
@@ -877,7 +877,7 @@ design decision, not something this enumeration should pre-decide:
    pattern (returns/creates a *spreadsheet*, not a folder) appearing
    independently in `generate_status_sheet.py`'s
    `_get_or_create_status_spreadsheet` and
-   `generate_biuniqueness_stage1_sheet.py`'s `_get_or_create_stage1_spreadsheet`
+   `generate_biuniqueness_allomorphy_stage1_sheet.py`'s `_get_or_create_stage1_spreadsheet`
    — identical bodies, different function names. Should become one method
    parameterized by name/folder, built from `list_files` + `create_spreadsheet`
    + `open_spreadsheet` primitives above.
@@ -948,7 +948,7 @@ columns at a computed anchor (e.g. `"D1"`). A fake built only against the
 dominant pattern (which is what 95%+ of call sites would suggest) will not
 cover `sync_params.py`'s column-insert path. Separately: `raw=True` (default,
 implicit at every site except two) vs. `raw=False` (both
-`generate_status_sheet.py` and `generate_biuniqueness_stage1_sheet.py`) is a
+`generate_status_sheet.py` and `generate_biuniqueness_allomorphy_stage1_sheet.py`) is a
 write-semantics fork, not a presentation detail — `raw=False` cells
 containing `=HYPERLINK(...)` must be interpreted as formulas by anything that
 later reads them back, which nothing in the current test suite exercises
@@ -975,7 +975,7 @@ request shape (the real API does that; a fake that's lenient about malformed
 requests where the real API would reject them will hide bugs). The two
 request types most likely to be under-modeled because they're rare (one call
 site each) are `mergeCells` (`generate_status_sheet.py`,
-`generate_biuniqueness_stage1_sheet.py`) and `updateCells` (per-cell,
+`generate_biuniqueness_allomorphy_stage1_sheet.py`) and `updateCells` (per-cell,
 non-contiguous writes in `validate_coding.py`'s pink-highlight logic) —
 both are easy to skip if a fake-builder samples "the common cases" rather
 than reading every request type actually used.

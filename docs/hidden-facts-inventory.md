@@ -392,7 +392,7 @@ a magic string) and imported, not re-typed.
 ---
 
 ### D7. `_ADAM_EMAIL` hardcoded independently in two files, duplicating `languages.yaml`'s `annotator_email`
-**What:** `generate_biuniqueness_stage1_sheet.py` and `generate_status_sheet.py`
+**What:** `generate_biuniqueness_allomorphy_stage1_sheet.py` and `generate_status_sheet.py`
 each declare their own `_ADAM_EMAIL = "adamjamesrosstallman@gmail.com"`
 constant to share/permission generated sheets. `schemas/languages.yaml`
 already stores this exact value structurally, per-language, as
@@ -404,7 +404,7 @@ language with no `languages.yaml` entry at all) rather than tied to one
 onboarded language — so this may be a deliberate exception rather than an
 oversight, but it is still two independent copies of a value one schema file
 already owns for every other consumer in the project.
-**Where:** `coding/generate_biuniqueness_stage1_sheet.py:73`;
+**Where:** `coding/generate_biuniqueness_allomorphy_stage1_sheet.py:73`;
 `coding/generate_status_sheet.py:78`
 **Authoritative source:** `schemas/languages.yaml` — `annotator_email`
 (e.g. lines 37, 54)
@@ -728,7 +728,7 @@ the existing per-class schema would misrepresent what kind of fact it is
 (exactly the "resistant field" pattern Phase 3 is told to watch for, one
 level up: an entire *sheet*, not just a field, that doesn't fit the existing
 taxonomy).
-**Where:** `coding/generate_biuniqueness_stage1_sheet.py:74-75,107-109`
+**Where:** `coding/generate_biuniqueness_allomorphy_stage1_sheet.py:74-75,107-109`
 **Authoritative source:** `Biuniqueness_Scope`'s three values
 (`filled`/`open_category`/`excluded`) are defined in `schemas/planar.yaml`
 (lines 56-72) — so the *scope* vocabulary is already owned there. Only the

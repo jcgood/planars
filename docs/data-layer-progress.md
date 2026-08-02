@@ -116,7 +116,7 @@ the doorway has been exercised before the destructive commands are touched.
 | ~~2~~ | ~~`apply_pending.py`~~ | done |
 | ~~3~~ | ~~`prune_manifest.py`~~ | done |
 | ~~4~~ | ~~`check_notes.py`~~ | done |
-| 5 | `generate_biuniqueness_stage1_sheet.py` | Near-twin of `generate_status_sheet`; do the smaller one first |
+| 5 | `generate_biuniqueness_allomorphy_stage1_sheet.py` | Near-twin of `generate_status_sheet`; do the smaller one first |
 | 6 | `sync_diagnostics_yaml.py` | First writer to a reference sheet |
 | 7 | `import_planar.py` | Reads *and* writes the planar sheet — the #248 command. Do it while the pattern is fresh, not last |
 | 8 | `generate_notebooks.py` | File uploads; closest sibling to `generate_reports`, already done |
