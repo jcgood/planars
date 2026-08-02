@@ -1,9 +1,9 @@
 """Snapshot tests for `python -m coding refresh-dropdowns`, run against the fake.
 
-First file migrated to the Drive seam (plan Phase 0b/1, file 1 of 11). These
+First file migrated to the Drive doorway (plan Phase 0b/1, file 1 of 11). These
 snapshots lock the command's behaviour — stdout for both modes, and the full
 mutation log for `--apply` — so that later migrations, or any change to the
-seam, must either preserve that behaviour or show exactly what they altered.
+doorway, must either preserve that behaviour or show exactly what they altered.
 
 **How the pre-migration baseline was taken.** The plan's per-file procedure
 asks for a real-Drive dry run before migrating. That is not permitted before
@@ -38,8 +38,8 @@ from pathlib import Path
 
 import pytest
 
-from coding import drive, drive_backend, refresh_dropdowns
-from fake_drive import FakeDriveBackend, MANIFEST_FILE_ID
+from coding import drive, drive_doorway, refresh_dropdowns
+from fake_drive import FakeDriveDoorway, MANIFEST_FILE_ID
 from render_mutations import render
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -56,16 +56,16 @@ pytestmark = pytest.mark.skipif(
 
 @pytest.fixture()
 def fake(monkeypatch):
-    """A fake backend seeded from the recorded capture, wired into the command."""
-    backend = FakeDriveBackend.from_fixtures()
-    monkeypatch.setattr(drive, "_load_drive_config", FakeDriveBackend.drive_config)
+    """A fake doorway seeded from the recorded capture, wired into the command."""
+    doorway = FakeDriveDoorway.from_fixtures()
+    monkeypatch.setattr(drive, "_load_drive_config", FakeDriveDoorway.drive_config)
     monkeypatch.setattr(refresh_dropdowns, "_load_drive_config",
-                        FakeDriveBackend.drive_config)
-    drive_backend.set_backend(backend)
+                        FakeDriveDoorway.drive_config)
+    drive_doorway.set_doorway(doorway)
     try:
-        yield backend
+        yield doorway
     finally:
-        drive_backend.reset_backend()
+        drive_doorway.reset_doorway()
 
 
 def _sheet_id(fake, lang: str, class_name: str) -> str:
@@ -183,7 +183,7 @@ def test_apply_leaves_annotation_content_byte_identical(fake, monkeypatch):
 
 
 def test_apply_updates_the_manifest_in_place(fake, monkeypatch):
-    """Manifest write goes through the seam but keeps this file's own semantics.
+    """Manifest write goes through the doorway but keeps this file's own semantics.
 
     Notably: it updates in place with no create-if-missing fallback and no key
     reordering, unlike drive._upload_planars_config. Preserved deliberately —

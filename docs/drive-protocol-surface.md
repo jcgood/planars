@@ -97,7 +97,7 @@ formatting/validation, folders, notes docs, and the manifest.
 | `_upload_planars_config(drive, config, root_folder_id, existing_file_id)` | `:2560, :2584, :2633` | Full-manifest write, called once **per language processed** (`:2560`, inside the loop — so partial progress survives a mid-run crash, per the docstring) plus once more at the end (`:2584`) and once in a separate manifest-only code path (`:2633`) | No (inherited) | Write |
 
 **Live-object-held-across-many-ops sites (the awkward cases for a protocol
-seam):** `_create_analysis_sheet` and `_add_constructions_to_existing_sheet`
+doorway):** `_create_analysis_sheet` and `_add_constructions_to_existing_sheet`
 each hold a `Spreadsheet` object across a whole sequence of tab
 creates/writes/formats/reorders before returning — this is the shape the
 protocol needs to support directly (an opaque spreadsheet handle used for many
@@ -122,7 +122,7 @@ must not be assumed to always be followed by a write.
   `_with_retry(spreadsheet.worksheets)` (passing the bound method) vs.
   `_with_retry(lambda: spreadsheet.worksheets())`. Functionally identical, but
   a protocol method needs to accommodate call-site variety like this
-  disappearing entirely (the seam should not care which idiom the old code used).
+  disappearing entirely (the doorway should not care which idiom the old code used).
 - `existing.get("folder_id")` short-circuiting `_get_or_create_folder` means the
   "list folders" Drive read is *not* always made — the fake needs a
   find-or-create path that is genuinely idempotent on repeated calls, since
@@ -566,7 +566,7 @@ at `:849`/`:1215`) is populated and becomes the new manifest entry. There is no
 rollback if population of `new_ss` fails partway through after `ss` has
 already been archived — this is precisely the "7 sequential side effects, no
 rollback" scenario `data-layer-design.md` names, and it is the reason Phase 7
-(recoverability) exists as a separate later phase. A protocol seam here needs
+(recoverability) exists as a separate later phase. A protocol doorway here needs
 to support: open A, read A, mutate A (rename+move), create B, populate B
 across N tab-writes, update a manifest — as one logical unit with a
 well-defined partial-failure story, not just individual call wrappers.
@@ -608,7 +608,7 @@ well-defined partial-failure story, not just individual call wrappers.
 ## Proposed minimal protocol
 
 **This is a proposal for review, not a decision.** Phase 0a's job was
-enumeration; the actual protocol module (`drive_backend.py` or similar) is a
+enumeration; the actual protocol module (`drive_doorway.py` or similar) is a
 separate, later piece of work. Everything below is derived directly from the
 call-site tables above — every method listed exists because at least one call
 site in part 1 needs it, and every call site in part 1 should be coverable by
@@ -631,7 +631,7 @@ something Phase 0a is authorized to have already decided.
 2. **Mutations must be visible to the next read on the same handle.**
    `update_sheets.py:391→393` and `sync_params.py`'s interleaved
    read-mutate-reread all depend on this. The fake's model (and, if it proxies
-   a cache, the real backend's) must not require a fresh `open()` to observe a
+   a cache, the live doorway's) must not require a fresh `open()` to observe a
    write just made through the same handle.
 3. **Keep `batch_update` (structural requests) and `values_batch_update`
    (range value writes) as two distinct methods**, not one generic "batch"
@@ -1011,7 +1011,7 @@ all on one `ws`, with re-reads interleaved) and `update_sheets.py`
 are journaled; none have partial-failure recovery today. A protocol that
 only supports single request/response pairs, with no notion of a session or
 handle spanning multiple calls with a defined partial-failure story, would
-force every one of these call sites to be rewritten just to fit the seam —
+force every one of these call sites to be rewritten just to fit the doorway —
 which is explicitly out of scope for the *migration* phase (Phase 0b/1's
 non-goal is "no refactoring of command logic beyond the call-site
 substitution"). The handle-based object model in design stance #1 exists

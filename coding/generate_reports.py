@@ -33,10 +33,10 @@ CODED_DATA = ROOT / "coded_data"
 from planars.reports import language_report_data
 from planars.html_report import render_language_report_pdf
 from .drive import _load_drive_config, _save_drive_config
-from .drive_backend import get_backend
+from .drive_doorway import get_doorway
 
 
-def _upload_pdf(backend, pdf_bytes: bytes, filename: str, folder_id: str, existing_file_id: str | None) -> str:
+def _upload_pdf(doorway, pdf_bytes: bytes, filename: str, folder_id: str, existing_file_id: str | None) -> str:
     """Upload (create or update) a PDF file in Drive. Returns the file ID.
 
     Two behaviours here differ from the project's three other "create-or-update
@@ -48,15 +48,15 @@ def _upload_pdf(backend, pdf_bytes: bytes, filename: str, folder_id: str, existi
     generate_notebooks.py reasserts on every run. Tracked in issue #276.
 
     (The old code passed resumable=False to MediaIoBaseUpload; that is also the
-    library default, which the seam uses, so the upload is unchanged.)
+    library default, which the doorway uses, so the upload is unchanged.)
     """
     if existing_file_id:
-        backend.update_file(existing_file_id, name=filename,
+        doorway.update_file(existing_file_id, name=filename,
                             content=pdf_bytes, mimetype="application/pdf")
         return existing_file_id
-    file_id = backend.create_file(filename, parents=[folder_id],
+    file_id = doorway.create_file(filename, parents=[folder_id],
                                   content=pdf_bytes, mimetype="application/pdf")
-    backend.create_permission(file_id, type="anyone", role="reader")
+    doorway.create_permission(file_id, type="anyone", role="reader")
     return file_id
 
 
@@ -77,7 +77,7 @@ def _run(apply: bool) -> None:
         return
 
     drive_config = _load_drive_config()
-    backend = get_backend()
+    doorway = get_doorway()
 
     for lang_id in lang_ids:
         folder_id = drive_config.get(lang_id, {}).get("folder_id")
@@ -99,7 +99,7 @@ def _run(apply: bool) -> None:
         existing = lang_cfg.get("report_file_id") or lang_cfg.get("report_html_file_id")
 
         try:
-            file_id = _upload_pdf(backend, pdf_bytes, filename, folder_id, existing)
+            file_id = _upload_pdf(doorway, pdf_bytes, filename, folder_id, existing)
         except Exception as e:
             print(f"upload ERROR: {e}")
             continue

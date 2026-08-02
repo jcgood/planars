@@ -34,11 +34,11 @@ agent drafts and presents options; Jeff decides. All others are fully delegable.
 
 ---
 
-## Phases 0 and 1 — seam, fake, and characterization tests (interleaved)
+## Phases 0 and 1 — doorway, fake, and characterization tests (interleaved)
 
 > **Ordering note.** These two phases cannot be run in sequence. Snapshot tests
-> require the seam (so commands can run offline); safely migrating callers to
-> the seam requires snapshot tests (to prove behavior didn't change). The
+> require the doorway (so commands can run offline); safely migrating callers to
+> the doorway requires snapshot tests (to prove behavior didn't change). The
 > resolution is to build the infrastructure once, then migrate callers **one
 > file at a time, capturing that file's snapshots immediately after each
 > migration**, so each file is locked before the next is touched. Do not
@@ -57,7 +57,7 @@ Drive — exactly where every serious incident has occurred. Nothing else in thi
 plan is verifiable until this exists.
 
 **Scope.**
-- Define a narrow backend protocol covering only the operations actually used
+- Define a narrow doorway protocol covering only the operations actually used
   (open spreadsheet, list/add/delete worksheets, get values, update range,
   batch_update, set validation, format cells, reorder tabs, Drive file
   create/move/list/permissions). Derive the list by reading the eleven files —
@@ -82,13 +82,13 @@ emulator — only faithful for operations actually used.
 
 ### Phase 0b/1 — migrate callers and capture snapshots, one file at a time
 
-**Goal.** Route each file through the seam and lock its behavior, incrementally.
+**Goal.** Route each file through the doorway and lock its behavior, incrementally.
 
 **Per-file procedure — repeat for each of the eleven:**
 
 1. **Before migrating**, run that file's dry-run/read-only paths against real
    Drive and save the output.
-2. Migrate the file to the seam. Preserve `_with_retry` semantics exactly.
+2. Migrate the file to the doorway. Preserve `_with_retry` semantics exactly.
 3. Run the same dry-run paths against the fake (serving fixtures captured from
    the same Drive state) and assert the output matches step 1. This is the
    check that the migration didn't change read behavior.
@@ -100,7 +100,7 @@ emulator — only faithful for operations actually used.
    against, so this review is the only thing standing between a migration bug
    and it being enshrined as "correct."
 
-**Done when.** Every file that reaches Drive routes through the seam; every
+**Done when.** Every file that reaches Drive routes through the doorway; every
 command runs end-to-end against the fake with no network; each command has
 snapshots; and deliberately perturbing any generator makes a snapshot test fail.
 
@@ -111,7 +111,7 @@ directly, not eleven — the seven missed are `setup_root_folder`,
 `apply_pending`, `prune_manifest`, `check_notes`, `sync_diagnostics_yaml`,
 `import_planar`, and `integrity_check`. Two of those matter more than their
 size suggests: `import_planar` is the command at the centre of #248, and
-`check_notes` is the only user of Google Docs. `tests/test_seam_coverage.py`
+`check_notes` is the only user of Google Docs. `tests/test_doorway_coverage.py`
 now derives the list, so the remaining count is answered by running the tests
 rather than by reading this sentence.
 

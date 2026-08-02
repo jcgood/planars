@@ -38,8 +38,8 @@ of this state would be exactly the defect this project is trying to remove.
 | Phase 0a — protocol proposal reviewed | **done** — accepted, see decisions log | — |
 | Phase 0a — `capture-drive-state` command | **done** | `c87ae7d` |
 | Phase 0a — fixture capture run (read-only, live) | **done** — 29 sheets, 80 tabs | `b40cd64` |
-| Phase 0a — protocol module (`coding/drive_backend.py`) | **done** | this commit |
-| Phase 0a — fake backend (`tests/fake_drive.py`) + smoke tests | **done** — 62 tests | this commit |
+| Phase 0a — protocol module (`coding/drive_doorway.py`) | **done** | this commit |
+| Phase 0a — fake doorway (`tests/fake_drive.py`) + smoke tests | **done** — 62 tests | this commit |
 | Phase 0b/1 — file 1 of 17: `refresh_dropdowns.py` | **done** — snapshots captured, mutation log reviewed and accepted | `5ca369d` |
 | Phase 0b/1 — file 2 of 17: `generate_reports.py` | **done** — snapshots captured, pre/post diff clean | `62047c3` |
 | Phase 0b/1 — file 3 of 17: `setup_root_folder.py` | **done** — snapshots captured, pre/post diff clean | this commit |
@@ -76,17 +76,17 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 Sixteen files remain, not the nine the plan implied — the plan's list of
 eleven was hand-written and never checked against the code; a scan on
 2026-08-02 found seventeen files reaching Drive directly. The list is now
-derived by `tests/test_seam_coverage.py`, so it cannot drift again.
+derived by `tests/test_doorway_coverage.py`, so it cannot drift again.
 
 Ordered by risk, lowest first, so that every shared helper and every part of
-the seam has been exercised before the destructive commands are touched.
+the doorway has been exercised before the destructive commands are touched.
 
 | # | file | why here |
 |---|---|---|
 | 1 | `setup_root_folder.py` | 191 lines, run once, nothing to lose. Exercises folders and sharing, which nothing has yet |
 | 2 | `apply_pending.py` | Opens a sheet to read tab names. Read-only |
 | 3 | `prune_manifest.py` | First file-move, but only of already-retired sheets |
-| 4 | `check_notes.py` | The only user of Google Docs — that part of the seam is untested |
+| 4 | `check_notes.py` | The only user of Google Docs — that part of the doorway is untested |
 | 5 | `generate_biuniqueness_stage1_sheet.py` | Near-twin of `generate_status_sheet`; do the smaller one first |
 | 6 | `sync_diagnostics_yaml.py` | First writer to a reference sheet |
 | 7 | `import_planar.py` | Reads *and* writes the planar sheet — the #248 command. Do it while the pattern is fresh, not last |
@@ -116,7 +116,7 @@ better than expected and should be reused for files 2–11:
   thin shims for the `gc` and `drive` objects it expects (a `open_by_key` that
   returns a fake spreadsheet; a `files().update()` that records the call).
   Capture stdout and the fake's mutation log.
-- Migrate. Run the same commands through the seam against an identically
+- Migrate. Run the same commands through the doorway against an identically
   seeded fake.
 - Diff. On `refresh_dropdowns.py` both modes' stdout were byte-identical and
   the 36 mutations matched exactly, including the manifest payload's byte
@@ -224,7 +224,7 @@ fact, and its whole failure mode is going quietly stale.
 
 **2026-08-01 — handle method names mirror gspread, deviating from the accepted
 proposal's renames.** The reviewed proposal named the two batch endpoints
-`apply_sheet_requests` and `write_value_ranges`. `coding/drive_backend.py`
+`apply_sheet_requests` and `write_value_ranges`. `coding/drive_doorway.py`
 instead keeps gspread's own `batch_update` / `values_batch_update`, and mirrors
 gspread's names for every handle method. Reason: the migration proceeds one file
 at a time, and helpers are shared *across* migrated and unmigrated files —
@@ -233,7 +233,7 @@ and calls `worksheet.spreadsheet.batch_update(...)` itself. Under the renamed
 protocol that helper would have to speak two vocabularies at once for the length
 of the migration, or every one of its callers would have to migrate together,
 which is precisely the cross-file rewrite Phase 0b/1's non-goals forbid.
-Mirroring also lets `GspreadBackend` return raw gspread objects as handles,
+Mirroring also lets `GspreadDoorway` return raw gspread objects as handles,
 adding no wrapper code on the path that touches live data.
 
 The disambiguation the rename was protecting is preserved another way: the fake
@@ -262,8 +262,8 @@ as-is, including behaviour that looks wrong. Belongs to triage on #271 once
 `restructure_sheets.py` has snapshots.
 
 **2026-08-01 — Phases 0 and 1 interleaved rather than sequenced.** As first
-written they were circular: snapshots need the seam, and safely migrating to the
-seam needs snapshots. Resolved by building infrastructure first (0a, no caller
+written they were circular: snapshots need the doorway, and safely migrating to the
+doorway needs snapshots. Resolved by building infrastructure first (0a, no caller
 changes) then migrating one file at a time with snapshots captured immediately
 after each. See `f20478e`.
 
@@ -301,7 +301,7 @@ and wrong, and only the recording settled it. The correction is annotated inline
 at `docs/drive-protocol-surface.md` § "Subtleties most likely to be guessed
 wrong" so the falsified claim isn't left standing in a reference doc.
 
-**2026-08-01 — protocol proposal accepted as the basis for the seam.** Its six
+**2026-08-01 — protocol proposal accepted as the basis for the doorway.** Its six
 design stances were reviewed and none rejected. The consequential ones:
 handles are modelled as objects rather than a flat function list (long
 read-mutate-reread chains in `sync_params.py` and `restructure_sheets.py` would

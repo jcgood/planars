@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
 from .drive import load_manifest, _load_drive_config
-from .drive_backend import get_backend
+from .drive_doorway import get_doorway
 from .make_forms import _read_diagnostics_for_language
 from .schemas import load_diagnostic_classes
 from .generate_sheets import _format_and_validate, _TRAILING_COLS
@@ -138,8 +138,8 @@ def main() -> None:
         idx = sys.argv.index("--lang")
         lang_filter = sys.argv[idx + 1]
 
-    backend = get_backend()
-    manifest = load_manifest(backend)
+    doorway = get_doorway()
+    manifest = load_manifest(doorway)
     drive_config = _load_drive_config()
     coref_pair_map = _coreference_pair_criterion_map()
 
@@ -193,7 +193,7 @@ def main() -> None:
 
             if apply:
                 try:
-                    ss = backend.open_spreadsheet(spreadsheet_id)
+                    ss = doorway.open_spreadsheet(spreadsheet_id)
                 except Exception as e:
                     print(f"    Could not open spreadsheet: {e}")
                     continue
@@ -258,14 +258,14 @@ def main() -> None:
         #
         # This is the fourth independent "write manifest.json" implementation in
         # the codebase (docs/drive-protocol-surface.md flags it). The migration
-        # routes its *transport* through the seam but deliberately preserves its
+        # routes its *transport* through the doorway but deliberately preserves its
         # behaviour: no key reordering, and no create-if-missing fallback, unlike
         # drive._upload_planars_config. Tracked in issue #276.
         import json
         manifest_file_id = drive_config.get("_planars_config_file_id")
         if manifest_file_id:
             content = json.dumps(manifest, indent=2).encode()
-            backend.update_file(manifest_file_id, content=content,
+            doorway.update_file(manifest_file_id, content=content,
                                 mimetype="application/json")
             print("\nManifest updated on Drive.")
         else:

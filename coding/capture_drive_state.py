@@ -6,7 +6,7 @@
     python -m coding capture-drive-state --apply --lang stan1293
 
 Phase 0a of the data layer plan (docs/data-layer-implementation-plan.md).
-Produces the fixtures the fake Drive backend replays, so every command can be
+Produces the fixtures the fake Drive doorway replays, so every command can be
 tested end-to-end with no network.
 
 **This command never writes to Drive.** It opens spreadsheets, reads values and

@@ -22,16 +22,16 @@ from typing import Set
 ROOT = Path(__file__).resolve().parent.parent
 CODING = ROOT / "coding"
 
-# Reaching Google without going through the seam.
+# Reaching Google without going through the doorway.
 _DIRECT_ACCESS = re.compile(
     r"_get_clients|_get_docs_client|_open_spreadsheet|gc\.open_by_key"
     r"|drive\.files\(\)|drive\.permissions\(\)|docs\.documents\(\)"
 )
 
-# Not commands, and legitimately below the seam.
+# Not commands, and legitimately below the doorway.
 _EXEMPT = {
-    "drive.py",           # the low-level helpers the seam itself calls
-    "drive_backend.py",   # the seam
+    "drive.py",           # the low-level helpers the doorway itself calls
+    "drive_doorway.py",   # the doorway
     "__main__.py",        # dispatch only
     # Read-only recorder that deliberately uses the low-level helpers: it
     # exists to capture raw API responses, so going through an abstraction
@@ -68,9 +68,9 @@ def _reaches_google_directly() -> Set[str]:
     }
 
 
-def _uses_seam(name: str) -> bool:
+def _uses_doorway(name: str) -> bool:
     text = (CODING / name).read_text(encoding="utf-8")
-    return "drive_backend" in text or "get_backend()" in text
+    return "drive_doorway" in text or "get_doorway()" in text
 
 
 def test_remaining_list_matches_the_code():
@@ -85,15 +85,15 @@ def test_remaining_list_matches_the_code():
 
 
 def test_migrated_files_do_not_reach_google_directly():
-    """A migrated command must not keep a private connection alongside the seam."""
+    """A migrated command must not keep a private connection alongside the doorway."""
     migrated = [
         path.name for path in sorted(CODING.glob("*.py"))
-        if path.name not in _EXEMPT and _uses_seam(path.name)
+        if path.name not in _EXEMPT and _uses_doorway(path.name)
     ]
-    assert migrated, "no command uses the seam — something is wrong with detection"
+    assert migrated, "no command uses the doorway — something is wrong with detection"
     leftovers = {name for name in migrated if name in _reaches_google_directly()}
     assert not leftovers, (
-        f"{sorted(leftovers)} use the seam but also reach Google directly. "
+        f"{sorted(leftovers)} use the doorway but also reach Google directly. "
         "A half-migrated command is worse than an unmigrated one: its writes "
         "are no longer all visible in one place."
     )
@@ -107,7 +107,7 @@ def test_progress_is_recorded_where_it_is_claimed():
     named = set(re.findall(r"`([a-z_]+\.py)`", match.group(1)))
     actual = {
         path.name for path in sorted(CODING.glob("*.py"))
-        if path.name not in _EXEMPT and _uses_seam(path.name)
+        if path.name not in _EXEMPT and _uses_doorway(path.name)
     }
     assert named == actual, (
         f"coding/CLAUDE.md says {sorted(named)}; the code says {sorted(actual)}"

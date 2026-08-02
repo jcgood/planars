@@ -1,6 +1,6 @@
-"""In-memory fake for the Drive/Sheets seam, seeded from recorded fixtures.
+"""In-memory fake for the Drive doorway, seeded from recorded fixtures.
 
-Implements ``coding.drive_backend.DriveBackend`` (and the spreadsheet/worksheet
+Implements ``coding.drive_doorway.DriveDoorway`` (and the spreadsheet/worksheet
 handle protocols) with no network, so every command can be exercised
 end-to-end in tests. Phase 0a of docs/data-layer-implementation-plan.md.
 
@@ -10,7 +10,7 @@ live API actually returned (``python -m coding capture-drive-state``). The
 behaviours below that look like guesses are not: each is stated in
 docs/drive-protocol-surface.md § "Subtleties most likely to be guessed wrong",
 and the central one — how ``get_all_values()`` shapes its response — is proved
-against all 80 captured tabs by ``test_drive_backend.py``'s replay test.
+against all 80 captured tabs by ``test_drive_doorway.py``'s replay test.
 
 What the capture settled
 ------------------------
@@ -44,7 +44,7 @@ Deliberate fidelity limits (all loud, none silent)
 
 Mutation log
 ------------
-Every write appends a JSON-serialisable record to ``backend.mutations``. That
+Every write appends a JSON-serialisable record to ``doorway.mutations``. That
 log is what the plan's per-file procedure has a human review before it becomes
 a snapshot — write paths have no pre-migration baseline to diff against, so the
 review is the only barrier between a migration bug and its enshrinement.
@@ -69,7 +69,7 @@ _DOC_MIME = "application/vnd.google-apps.document"
 
 # Stable IDs for the two Drive objects every command bootstraps from. Real IDs
 # live in the gitignored drive_config.json; tests patch _load_drive_config to
-# return FakeDriveBackend.drive_config(), which names these.
+# return FakeDriveDoorway.drive_config(), which names these.
 MANIFEST_FILE_ID = "fake_manifest_file"
 ROOT_FOLDER_ID = "fake_root_folder"
 
@@ -346,8 +346,8 @@ class FakeWorksheet:
 class FakeSpreadsheet:
     """One spreadsheet file, holding its tabs in live order."""
 
-    def __init__(self, backend: "FakeDriveBackend", spreadsheet_id: str, title: str) -> None:
-        self._backend = backend
+    def __init__(self, doorway: "FakeDriveDoorway", spreadsheet_id: str, title: str) -> None:
+        self._doorway = doorway
         self.id = spreadsheet_id
         self.title = title
         self._worksheets: List[FakeWorksheet] = []
@@ -357,7 +357,7 @@ class FakeSpreadsheet:
         return f"https://docs.google.com/spreadsheets/d/{self.id}"
 
     def _record(self, op: str, **kw) -> None:
-        self._backend._record(op, spreadsheet=self.id, **kw)
+        self._doorway._record(op, spreadsheet=self.id, **kw)
 
     def _next_sheet_id(self) -> int:
         return max((ws.id for ws in self._worksheets), default=-1) + 1
@@ -614,7 +614,7 @@ def _parse_query(q: str) -> Dict[str, Any]:
                 break
         else:
             raise NotImplementedError(
-                f"FakeDriveBackend cannot parse Drive query clause {clause!r} "
+                f"FakeDriveDoorway cannot parse Drive query clause {clause!r} "
                 f"(from q={q!r}). Teach _parse_query about it rather than "
                 "letting the query silently match nothing."
             )
@@ -622,7 +622,7 @@ def _parse_query(q: str) -> Dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# Backend
+# Doorway
 # ---------------------------------------------------------------------------
 
 @dataclass
@@ -635,8 +635,8 @@ class _DriveFile:
     trashed: bool = False
 
 
-class FakeDriveBackend:
-    """In-memory ``DriveBackend``. Deterministic IDs; records every mutation."""
+class FakeDriveDoorway:
+    """In-memory ``DriveDoorway``. Deterministic IDs; records every mutation."""
 
     def __init__(self) -> None:
         self.mutations: List[Dict[str, Any]] = []
@@ -649,7 +649,7 @@ class FakeDriveBackend:
     # -- construction -------------------------------------------------------
     @classmethod
     def from_fixtures(cls, fixture_dir: Path = FIXTURE_DIR,
-                      langs: Optional[Sequence[str]] = None) -> "FakeDriveBackend":
+                      langs: Optional[Sequence[str]] = None) -> "FakeDriveDoorway":
         """Seed from ``capture-drive-state`` output, per its ``index.json``.
 
         Loads the recorded spreadsheets, the recorded ``manifest.json`` (as a
@@ -657,27 +657,27 @@ class FakeDriveBackend:
         at the ``folder_id`` the manifest names — enough Drive shape for a
         command to bootstrap exactly as it does live.
         """
-        backend = cls()
-        backend.seed_folder("planars", file_id=ROOT_FOLDER_ID)
+        doorway = cls()
+        doorway.seed_folder("planars", file_id=ROOT_FOLDER_ID)
         index = json.loads((fixture_dir / "index.json").read_text(encoding="utf-8"))
         for entry in index["spreadsheets"]:
             if langs is not None and entry["lang_id"] not in langs:
                 continue
             path = ROOT / entry["path"]
-            backend.seed_spreadsheet(json.loads(path.read_text(encoding="utf-8")))
+            doorway.seed_spreadsheet(json.loads(path.read_text(encoding="utf-8")))
 
         manifest_path = fixture_dir / "manifest.json"
         if manifest_path.exists():
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             if langs is not None:
                 manifest = {k: v for k, v in manifest.items() if k in langs}
-            backend.seed_json_file("manifest.json", manifest, [ROOT_FOLDER_ID],
+            doorway.seed_json_file("manifest.json", manifest, [ROOT_FOLDER_ID],
                                    file_id=MANIFEST_FILE_ID)
             for lang_id, entry in manifest.items():
                 if isinstance(entry, dict) and entry.get("folder_id"):
-                    backend.seed_folder(lang_id, ROOT_FOLDER_ID,
+                    doorway.seed_folder(lang_id, ROOT_FOLDER_ID,
                                         file_id=entry["folder_id"])
-        return backend
+        return doorway
 
     @staticmethod
     def drive_config() -> Dict[str, str]:
@@ -768,7 +768,7 @@ class FakeDriveBackend:
             return self._spreadsheets[spreadsheet_id]
         except KeyError:
             raise gspread.exceptions.SpreadsheetNotFound(
-                f"fake backend has no spreadsheet {spreadsheet_id}") from None
+                f"fake doorway has no spreadsheet {spreadsheet_id}") from None
 
     # -- Drive files --------------------------------------------------------
     def list_files(self, q: str, fields: str = "files(id, name)",

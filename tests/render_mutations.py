@@ -1,4 +1,4 @@
-"""Render a fake-backend mutation log as something a person can actually read.
+"""Render a fake-doorway mutation log as something a person can actually read.
 
     python tests/render_mutations.py tests/snapshots/coordinator/refresh_dropdowns/apply_mutations.json
 

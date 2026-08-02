@@ -172,15 +172,15 @@ def _load_manifest_from_drive(drive) -> Dict:
     """Load the full manifest (all languages) from Drive.
 
     Kept for callers that still hold a raw Drive service. Files migrated to
-    the seam call ``load_manifest(backend)`` instead; both share one body, so
+    the doorway call ``load_manifest(doorway)`` instead; both share one body, so
     the manifest-loading rules exist in exactly one place.
     """
     return _load_manifest_with(lambda file_id: _download_file_json(drive, file_id))
 
 
-def load_manifest(backend) -> Dict:
-    """Load the full manifest through a ``drive_backend.DriveBackend``."""
-    return _load_manifest_with(backend.download_file_json)
+def load_manifest(doorway) -> Dict:
+    """Load the full manifest through a ``drive_doorway.DriveDoorway``."""
+    return _load_manifest_with(doorway.download_file_json)
 
 
 def _load_manifest_with(download_json: Callable[[str], Dict]) -> Dict:

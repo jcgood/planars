@@ -307,7 +307,7 @@ The coordinator is a scientist first, not a software engineer — one person doi
 
 **Write in plain language. Software jargon is a barrier here, not shorthand.** The coordinator is a linguist, not a software engineer, and the same is true of the collaborators. Anything a person reads — session summaries, GitHub issue bodies, error messages, dry-run output, commit messages, documentation, code comments — should be intelligible to someone who has never written a test.
 
-- **Define a term the first time it appears, in a few words, or use an ordinary phrase instead.** "Fixture", "golden", "mock", "seam", "idempotent", "regression", "assertion", "protocol", "CI" all read as noise. Where the project already has its own word for something, use that one: it says *snapshot*, not *golden*.
+- **Define a term the first time it appears, in a few words, or use an ordinary phrase instead.** "Fixture", "golden", "mock", "doorway", "idempotent", "regression", "assertion", "protocol", "CI" all read as noise. Where the project already has its own word for something, use that one: it says *snapshot*, not *golden*.
 - **Lead with what is broken and what it would do**, in the project's own terms — sheets, columns, annotators, positions, elements. Not with how it was discovered, or which piece of tooling surfaced it.
 - **Say what you need.** End a summary either with a specific question (with a recommendation attached) or with an explicit "nothing needed". A report the coordinator cannot act on has failed however accurate it is.
 - **Cut narration of your own process.** Report findings and decisions, not method. Detail is welcome; vocabulary and meta-commentary are not.
@@ -322,7 +322,7 @@ This is not about simplifying the content. The coordinator engages closely with 
 
 **Before proposing anything that touches `coding/`, `schemas/`, or `data_dependency_schema/` at a design level, read [`docs/data-layer-design.md`](docs/data-layer-design.md).** It records the diagnosis and constraints behind the in-progress data layer redesign (issue #271) — most importantly that every significant failure in project history has been *a fact recorded in more than one place with no single owner*, that this is a replication problem rather than a storage problem, and that design options are ranked by cost-to-comprehend rather than cost-to-build. The phased work queue is [`docs/data-layer-implementation-plan.md`](docs/data-layer-implementation-plan.md); no live Drive writes until its Phase 9. **Current state is [`docs/data-layer-progress.md`](docs/data-layer-progress.md)** — read it before resuming this work; it is the one file that says what is actually done.
 
-Drive/Sheets access is migrating behind a seam (`coding/drive_backend.py`, offline fake in `tests/fake_drive.py`). New code that touches Drive should go through `get_backend()` rather than `_get_clients()`; ten of the eleven existing callers have not migrated yet.
+Drive/Sheets access is migrating behind a doorway (`coding/drive_doorway.py`, offline fake in `tests/fake_drive.py`). New code that touches Drive should go through `get_doorway()` rather than `_get_clients()`; ten of the eleven existing callers have not migrated yet.
 
 **Before proposing or implementing any fix to a coordinator-facing workflow, apply the coordinator UX checklist in [`docs/tooling-design.md`](docs/tooling-design.md).** "Coordinator-facing" means error messages, GitHub issue bodies, `apply-pending` prompts, `integrity-check` output, generated Claude prompts, script dry-run output, and documentation steps.
 

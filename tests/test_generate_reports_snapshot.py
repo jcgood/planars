@@ -1,8 +1,8 @@
 """Snapshot tests for `python -m coding generate-reports`, run against the fake.
 
-File 2 of 11 migrated to the Drive seam (plan Phase 0b/1). This command never
+File 2 of 11 migrated to the Drive doorway (plan Phase 0b/1). This command never
 touches gspread — its entire Drive footprint is "upload a PDF, create or update
-in place" — so it locks the *other* half of the seam: Drive file operations and
+in place" — so it locks the *other* half of the doorway: Drive file operations and
 permission grants.
 
 **PDF rendering is stubbed.** It is slow, needs system libraries, is not
@@ -32,8 +32,8 @@ from pathlib import Path
 
 import pytest
 
-from coding import drive_backend, generate_reports
-from fake_drive import MANIFEST_FILE_ID, FakeDriveBackend
+from coding import drive_doorway, generate_reports
+from fake_drive import MANIFEST_FILE_ID, FakeDriveDoorway
 from render_mutations import render
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -48,9 +48,9 @@ pytestmark = pytest.mark.skipif(
 
 @pytest.fixture()
 def env(monkeypatch):
-    """Fake backend, stubbed PDF rendering, and a captured drive_config."""
-    backend = FakeDriveBackend.from_fixtures()
-    manifest = json.loads(backend.file(MANIFEST_FILE_ID).content.decode())
+    """Fake doorway, stubbed PDF rendering, and a captured drive_config."""
+    doorway = FakeDriveDoorway.from_fixtures()
+    manifest = json.loads(doorway.file(MANIFEST_FILE_ID).content.decode())
     config = {lang: {"folder_id": entry["folder_id"]}
               for lang, entry in manifest.items() if entry.get("folder_id")}
     saved: dict = {}
@@ -62,11 +62,11 @@ def env(monkeypatch):
     monkeypatch.setattr(generate_reports, "_load_drive_config",
                         lambda: json.loads(json.dumps(config)))
     monkeypatch.setattr(generate_reports, "_save_drive_config", saved.update)
-    drive_backend.set_backend(backend)
+    drive_doorway.set_doorway(doorway)
     try:
-        yield backend, config, saved
+        yield doorway, config, saved
     finally:
-        drive_backend.reset_backend()
+        drive_doorway.reset_doorway()
 
 
 def run(argv, monkeypatch) -> str:
@@ -102,22 +102,22 @@ def test_dry_run_output(env, monkeypatch):
 
 
 def test_dry_run_touches_neither_drive_nor_config(env, monkeypatch):
-    backend, _, saved = env
+    doorway, _, saved = env
     run(["generate-reports"], monkeypatch)
-    assert backend.mutations == []
+    assert doorway.mutations == []
     assert saved == {}
 
 
 def test_dry_run_never_authenticates(monkeypatch):
     """A dry run must not reach for OAuth — it has nothing to ask Drive.
 
-    Asserted without a backend installed at all, so any client construction
+    Asserted without a doorway installed at all, so any client construction
     would fail loudly rather than pop a browser auth flow.
     """
     monkeypatch.setattr(generate_reports, "language_report_data",
                         lambda *a, **k: {"lang_id": "x"})
-    drive_backend.reset_backend()
-    monkeypatch.setattr(drive_backend, "_get_clients",
+    drive_doorway.reset_doorway()
+    monkeypatch.setattr(drive_doorway, "_get_clients",
                         lambda: pytest.fail("dry run must not authenticate"))
     run(["generate-reports"], monkeypatch)
 
@@ -131,38 +131,38 @@ def test_apply_create_output(env, monkeypatch):
 
 
 def test_apply_create_mutation_digest(env, monkeypatch):
-    backend, _, _ = env
+    doorway, _, _ = env
     run(["generate-reports", "--apply"], monkeypatch)
-    check_snapshot("apply_create_digest.txt", render(backend.mutations))
+    check_snapshot("apply_create_digest.txt", render(doorway.mutations))
 
 
 def test_apply_create_uploads_one_pdf_per_language_into_its_own_folder(env, monkeypatch):
-    backend, config, saved = env
+    doorway, config, saved = env
     run(["generate-reports", "--apply"], monkeypatch)
 
-    creates = backend.mutations_of("create_file")
+    creates = doorway.mutations_of("create_file")
     assert [c["name"] for c in creates] == [
         f"report_{lang}.pdf" for lang in sorted(config)]
     for create in creates:
         lang = create["name"][len("report_"):-len(".pdf")]
         assert create["parents"] == [config[lang]["folder_id"]]
         assert create["mimetype"] == "application/pdf"
-    assert backend.mutations_of("update_file") == []
+    assert doorway.mutations_of("update_file") == []
 
 
 def test_apply_create_grants_anyone_reader_once_per_new_report(env, monkeypatch):
     """PDFs are meant to be link-shareable with non-technical collaborators."""
-    backend, config, _ = env
+    doorway, config, _ = env
     run(["generate-reports", "--apply"], monkeypatch)
-    perms = backend.mutations_of("create_permission")
+    perms = doorway.mutations_of("create_permission")
     assert len(perms) == len(config)
     assert all(p["type"] == "anyone" and p["role"] == "reader" for p in perms)
 
 
 def test_apply_records_new_file_ids_in_drive_config(env, monkeypatch):
-    backend, config, saved = env
+    doorway, config, saved = env
     run(["generate-reports", "--apply"], monkeypatch)
-    created = {c["name"]: c["file_id"] for c in backend.mutations_of("create_file")}
+    created = {c["name"]: c["file_id"] for c in doorway.mutations_of("create_file")}
     for lang in config:
         assert saved[lang]["report_file_id"] == created[f"report_{lang}.pdf"]
         assert "report_html_file_id" not in saved[lang]
@@ -174,17 +174,17 @@ def test_apply_records_new_file_ids_in_drive_config(env, monkeypatch):
 
 def test_apply_second_run_updates_in_place_keeping_the_url(env, monkeypatch):
     """The stable-URL promise: a re-run must not mint new file IDs."""
-    backend, config, saved = env
+    doorway, config, saved = env
     run(["generate-reports", "--apply"], monkeypatch)
     first_ids = {lang: saved[lang]["report_file_id"] for lang in config}
 
     monkeypatch.setattr(generate_reports, "_load_drive_config",
                         lambda: json.loads(json.dumps(saved)))
-    backend.clear_mutations()
+    doorway.clear_mutations()
     out = run(["generate-reports", "--apply"], monkeypatch)
 
-    assert backend.mutations_of("create_file") == []
-    updates = backend.mutations_of("update_file")
+    assert doorway.mutations_of("create_file") == []
+    updates = doorway.mutations_of("update_file")
     assert sorted(u["file_id"] for u in updates) == sorted(first_ids.values())
     # The update path renames on every run, unlike the manifest writer.
     assert all(u["name"] == f"report_{lang}.pdf"
@@ -199,31 +199,31 @@ def test_update_path_does_not_reassert_the_permission(env, monkeypatch):
     sets it only on create. The asymmetry is real and pre-existing — see
     _upload_pdf's docstring and docs/drive-protocol-surface.md.
     """
-    backend, config, saved = env
+    doorway, config, saved = env
     run(["generate-reports", "--apply"], monkeypatch)
     monkeypatch.setattr(generate_reports, "_load_drive_config",
                         lambda: json.loads(json.dumps(saved)))
-    backend.clear_mutations()
+    doorway.clear_mutations()
     run(["generate-reports", "--apply"], monkeypatch)
-    assert backend.mutations_of("create_permission") == []
+    assert doorway.mutations_of("create_permission") == []
 
 
 def test_legacy_report_html_file_id_is_migrated_in_place(env, monkeypatch):
     """The old key names an existing file — it must be updated, not re-created."""
-    backend, config, saved = env
+    doorway, config, saved = env
     legacy = {lang: {"folder_id": cfg["folder_id"],
                      "report_html_file_id": f"legacy_{lang}"}
               for lang, cfg in config.items()}
     for lang in config:
-        backend.seed_file(f"report_{lang}.pdf", "application/pdf",
+        doorway.seed_file(f"report_{lang}.pdf", "application/pdf",
                           [config[lang]["folder_id"]], file_id=f"legacy_{lang}")
     monkeypatch.setattr(generate_reports, "_load_drive_config",
                         lambda: json.loads(json.dumps(legacy)))
 
     run(["generate-reports", "--apply"], monkeypatch)
 
-    assert backend.mutations_of("create_file") == []
-    assert sorted(u["file_id"] for u in backend.mutations_of("update_file")) == [
+    assert doorway.mutations_of("create_file") == []
+    assert sorted(u["file_id"] for u in doorway.mutations_of("update_file")) == [
         f"legacy_{lang}" for lang in sorted(config)]
     for lang in config:
         assert saved[lang]["report_file_id"] == f"legacy_{lang}"
@@ -235,27 +235,27 @@ def test_legacy_report_html_file_id_is_migrated_in_place(env, monkeypatch):
 # ---------------------------------------------------------------------------
 
 def test_a_language_without_a_folder_id_is_skipped_not_fatal(env, monkeypatch):
-    backend, config, saved = env
+    doorway, config, saved = env
     partial = dict(config)
     partial["arao1248"] = {}
     monkeypatch.setattr(generate_reports, "_load_drive_config",
                         lambda: json.loads(json.dumps(partial)))
     out = run(["generate-reports", "--apply"], monkeypatch)
     assert "No folder_id in drive_config — skipping" in out
-    assert [c["name"] for c in backend.mutations_of("create_file")] == [
+    assert [c["name"] for c in doorway.mutations_of("create_file")] == [
         "report_stan1293.pdf", "report_synth0001.pdf"]
 
 
 def test_an_upload_failure_skips_that_language_and_continues(env, monkeypatch):
-    backend, config, saved = env
-    real_create = backend.create_file
+    doorway, config, saved = env
+    real_create = doorway.create_file
 
     def flaky(name, *a, **kw):
         if "stan1293" in name:
             raise RuntimeError("boom")
         return real_create(name, *a, **kw)
 
-    monkeypatch.setattr(backend, "create_file", flaky)
+    monkeypatch.setattr(doorway, "create_file", flaky)
     out = run(["generate-reports", "--apply"], monkeypatch)
     assert "upload ERROR: boom" in out
     # The failed language records no file ID (nothing was uploaded to point at),

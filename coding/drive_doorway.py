@@ -1,16 +1,16 @@
-"""The Drive/Sheets seam: one protocol, two implementations.
+"""The Drive doorway: one protocol, two implementations.
 
 Phase 0a of the data layer plan (docs/data-layer-implementation-plan.md). This
 module defines the *only* interface through which ``coding/`` commands should
 reach Google Drive, Sheets, and Docs. It exists so every command can be run
-end-to-end with no network — against ``tests/fake_drive.FakeDriveBackend``,
+end-to-end with no network — against ``tests/fake_drive.FakeDriveDoorway``,
 which replays the fixtures recorded by ``python -m coding capture-drive-state``.
 
 Two implementations:
 
-- ``GspreadBackend`` — the real one. Delegates to ``gspread`` and the
+- ``GspreadDoorway`` — the real one. Delegates to ``gspread`` and the
   ``googleapiclient`` Drive/Docs services, via the helpers in ``drive.py``.
-- ``FakeDriveBackend`` (in ``tests/fake_drive.py``) — in-memory, seeded from
+- ``FakeDriveDoorway`` (in ``tests/fake_drive.py``) — in-memory, seeded from
   recorded fixtures, records every mutation for assertion.
 
 Design notes (from docs/drive-protocol-surface.md § "Proposed method
@@ -36,7 +36,7 @@ unmigrated files — ``generate_sheets._format_and_validate`` is called by four
 of the eleven. Mirroring gspread's names means such a helper works unchanged
 whether it is handed a real ``gspread.Worksheet`` or a fake handle, so
 migration stays the mechanical call-site substitution the plan requires rather
-than a cross-file rewrite. It also means ``GspreadBackend`` can return raw
+than a cross-file rewrite. It also means ``GspreadDoorway`` can return raw
 gspread objects as handles, adding no wrapper code — and so no wrapper bugs —
 on the path that touches live data.
 
@@ -49,7 +49,7 @@ The disambiguation the proposal was protecting is preserved by other means:
 
 These are **different API endpoints with incompatible request shapes**, and
 merging them is the single most likely way a fake silently diverges from
-reality. ``FakeDriveBackend`` therefore rejects a body of the wrong shape on
+reality. ``FakeDriveDoorway`` therefore rejects a body of the wrong shape on
 either method, turning the hazard into a loud failure instead of a silent one.
 
 **Retry.** Only ``open_spreadsheet`` retries internally, matching
@@ -59,7 +59,7 @@ other method passes through, so call sites that wrap themselves in
 non-goal is "no behaviour changes", and this is where that bites. The
 inconsistent retry coverage catalogued in docs/drive-protocol-surface.md
 (``_verify_manifest_sheet_ids`` misreporting a 429 as a stale sheet ID, for
-instance) is a real finding, but fixing it is Phase 3 work, not the seam's.
+instance) is a real finding, but fixing it is Phase 3 work, not the doorway's.
 
 **Indexing has no single rule.** gspread's convenience methods are 1-based
 (``row_values``, ``update_cell``, ``insert_cols``); raw Sheets API request
@@ -216,7 +216,7 @@ class SpreadsheetHandle(Protocol):
         """``spreadsheets.batchUpdate`` — structural and formatting *requests*.
 
         Body is ``{"requests": [...]}``. Request dicts pass through verbatim;
-        the seam routes them, it does not interpret them. Request types used
+        the doorway routes them, it does not interpret them. Request types used
         across the eleven callers: ``updateSheetProperties``, ``repeatCell``,
         ``setDataValidation``, ``insertDimension``, ``deleteDimension``,
         ``updateDimensionProperties``, ``updateCells``, ``mergeCells``.
@@ -234,7 +234,7 @@ class SpreadsheetHandle(Protocol):
         """
 
 
-class DriveBackend(Protocol):
+class DriveDoorway(Protocol):
     """Session-level operations: spreadsheet lifecycle, Drive files, Docs."""
 
     # -- Spreadsheets -------------------------------------------------------
@@ -282,7 +282,7 @@ class DriveBackend(Protocol):
         "create-or-update a Drive file" implementations disagree on whether an
         update renames (``_upload_planars_config`` does not; the notebook and
         report uploaders do), and ``restructure_sheets`` renames without
-        touching content at all. The seam lets each caller choose rather than
+        touching content at all. The doorway lets each caller choose rather than
         picking one as canonical — collapsing those four is deferred until
         after the migration, when snapshots exist to prove the collapse is safe.
         """
@@ -320,18 +320,18 @@ class DriveBackend(Protocol):
 
 
 # ---------------------------------------------------------------------------
-# Real backend
+# The live doorway
 # ---------------------------------------------------------------------------
 
-class GspreadBackend:
-    """The live backend. Delegates to gspread / googleapiclient.
+class GspreadDoorway:
+    """The live doorway. Delegates to gspread / googleapiclient.
 
     Returns raw ``gspread.Spreadsheet`` and ``gspread.Worksheet`` objects as
     handles — they already satisfy ``SpreadsheetHandle``/``WorksheetHandle``,
     since the protocols were written to mirror gspread. No wrapper classes on
     the live path means no wrapper bugs on the live path.
 
-    Clients are built lazily so that constructing a backend (e.g. at import
+    Clients are built lazily so that constructing a doorway (e.g. at import
     time, or in a dry run that turns out to need nothing) performs no OAuth.
     """
 
@@ -464,31 +464,31 @@ class GspreadBackend:
 
 
 # ---------------------------------------------------------------------------
-# Backend selection
+# Doorway selection
 # ---------------------------------------------------------------------------
 #
-# Commands call get_backend(); tests call set_backend(FakeDriveBackend(...)).
+# Commands call get_doorway(); tests call set_doorway(FakeDriveDoorway(...)).
 # A module-level override is deliberately the whole mechanism: threading a
-# backend argument through eleven command mains would be exactly the
+# doorway argument through eleven command mains would be exactly the
 # call-site rewrite the migration is meant to avoid.
 
-_backend: Optional[DriveBackend] = None
+_doorway: Optional[DriveDoorway] = None
 
 
-def get_backend() -> DriveBackend:
-    """Return the active backend, creating the real one on first use."""
-    global _backend
-    if _backend is None:
-        _backend = GspreadBackend()
-    return _backend
+def get_doorway() -> DriveDoorway:
+    """Return the active doorway, creating the real one on first use."""
+    global _doorway
+    if _doorway is None:
+        _doorway = GspreadDoorway()
+    return _doorway
 
 
-def set_backend(backend: Optional[DriveBackend]) -> None:
-    """Install a backend (or ``None`` to reset to the real one). Tests only."""
-    global _backend
-    _backend = backend
+def set_doorway(doorway: Optional[DriveDoorway]) -> None:
+    """Install a doorway (or ``None`` to reset to the real one). Tests only."""
+    global _doorway
+    _doorway = doorway
 
 
-def reset_backend() -> None:
-    """Drop the cached backend so the next get_backend() rebuilds it."""
-    set_backend(None)
+def reset_doorway() -> None:
+    """Drop the cached doorway so the next get_doorway() rebuilds it."""
+    set_doorway(None)
