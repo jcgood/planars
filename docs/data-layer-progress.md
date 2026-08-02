@@ -38,10 +38,16 @@ of this state would be exactly the defect this project is trying to remove.
 Bugs found and fixed while doing this work, all the same root cause — something
 inferred which column held a value from the wrong source: **#272** (dropdowns,
 fixed), **#274** (coreference analysis returned different answers on different
-runs, fixed). Open and needing a decision: **#275** (stan1293's
-`phrasal_accent/general` sheet shape vs. the schema), **#276** (collapse the
-duplicated Drive helpers — blocked until every Drive-writing command has
-snapshots), **#273** (verified false alarm, safe to close).
+runs, fixed). **#273** closed 2026-08-02 — verified false alarm, no data lost.
+
+Still open, none of them blocking: **#275** — decided 2026-08-02, the sheet is
+stale and `stan1293`'s `phrasal_accent/general` gets rebuilt with pair rows.
+Both its tabs are entirely unannotated, so nothing is at stake, and the rebuild
+waits on Adam annotating `phrasal_accent/prescreening` rather than on this work
+— `general`'s pair rows are derived from which elements he marks accented, so
+rebuilding it before then produces a correctly-shaped empty tab. **#276** —
+collapse the duplicated Drive helpers, blocked until every Drive-writing
+command has snapshots.
 
 Also fixed, no issue filed: `apply-pending` gave one answer to four different
 questions when it could not check a Sheet. Found by file 4's snapshot, fixed
