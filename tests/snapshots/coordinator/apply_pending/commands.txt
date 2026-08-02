@@ -1,0 +1,41 @@
+No pending changes.
+
+1 pending change(s):
+
+[1/1]  arao1248  —  Planar structure has deleted or reordered positions
+  Type:    planar_deletion_or_reorder
+  Removed positions: ['v:oldslot']
+  Old order: a | b
+  New order: b
+  Command: python -m coding restructure-sheets --apply
+  Apply? [y/N] y
+  Running: python -m coding restructure-sheets --apply
+  Done.
+
+Applied 1 of 1 change(s). 0 still pending.
+
+1 pending change(s):
+
+[1/1]  arao1248  —  Planar structure has deleted or reordered positions
+  Type:    planar_deletion_or_reorder
+  Removed positions: ['v:oldslot']
+  Old order: a | b
+  New order: b
+  Command: python -m coding restructure-sheets --apply
+  Apply? [y/N] n
+  Skipped.
+
+Applied 0 of 1 change(s). 1 still pending.
+
+1 pending change(s):
+
+[1/1]  arao1248  —  Planar structure has deleted or reordered positions
+  Type:    planar_deletion_or_reorder
+  Removed positions: ['v:oldslot']
+  Old order: a | b
+  New order: b
+  Command: python -m coding restructure-sheets --apply
+  Running: python -m coding restructure-sheets --apply
+  Done.
+
+Applied 1 of 1 change(s). 0 still pending.

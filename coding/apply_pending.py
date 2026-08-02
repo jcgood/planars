@@ -53,9 +53,14 @@ def _verify_construction_tabs(spreadsheet_id: str, constructions: List[str]) -> 
     if not spreadsheet_id:
         return None
     try:
-        from .drive import _get_clients, _with_retry
-        gc, _ = _get_clients()
-        ss = gc.open_by_key(spreadsheet_id)
+        # Imported here, not at the top of the file, so that a run with nothing
+        # to verify — the common case — never signs in to Google at all.
+        from .drive import _with_retry
+        from .drive_doorway import get_doorway
+
+        # open_spreadsheet retries by itself; opening used not to. Reading tab
+        # names is idempotent, so the extra attempts can only help.
+        ss = get_doorway().open_spreadsheet(spreadsheet_id)
         existing_titles = {ws.title for ws in _with_retry(ss.worksheets)}
         return {c: c in existing_titles for c in constructions}
     except Exception:

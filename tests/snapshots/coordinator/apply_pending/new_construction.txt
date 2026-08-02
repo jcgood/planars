@@ -1,0 +1,70 @@
+1 pending change(s):
+
+[1/1]  arao1248  —  New construction(s) in class 'subspanrepetition': ['auxiliary_construction']
+  Type:    diagnostics_new_construction
+  Class 'subspanrepetition': new construction(s)
+
+  ⚠  This change cannot be automated without archiving existing annotations.
+     Confirming will print instructions — no command will run.
+     This entry will remain open until the tab(s) are verified in the Sheet.
+  Show instructions? [y/N] y
+
+  To add this construction, choose one of the following options:
+
+  Option 1 — Add the tab manually (recommended):
+    1. Open the Google Sheet for 'subspanrepetition' / 'arao1248'.
+    2. Add tab(s) for: ['auxiliary_construction']
+    3. Set each new tab to 'ready-for-review' in the Status tab.
+    4. Re-run: python -m coding import-sheets --apply
+
+  Option 2 — Recreate the sheet from scratch:
+    python -m coding generate-sheets --force --apply
+    WARNING: --force archives ALL existing annotations for 'subspanrepetition'
+    and recreates the sheet. Only use this if annotations are expendable.
+
+  This entry will remain open. Run `python -m coding apply-pending` again
+  after adding the tab(s) to verify and close it.
+
+Applied 0 of 1 change(s). 1 still pending.
+
+1 pending change(s):
+
+[1/1]  arao1248  —  New construction(s) in class 'subspanrepetition': ['auxiliary_construction', 'tso_clause_linkage']
+  Type:    diagnostics_new_construction
+  Class 'subspanrepetition': new construction(s)
+
+  Checking Google Sheet for tab(s): ['auxiliary_construction', 'tso_clause_linkage'] ...
+  Found in Sheet:   ['auxiliary_construction', 'tso_clause_linkage']
+  All tab(s) found in Sheet.
+  Mark as resolved? [y/N] y
+  Resolved.
+
+Applied 1 of 1 change(s). 0 still pending.
+
+1 pending change(s):
+
+[1/1]  arao1248  —  New construction(s) in class 'subspanrepetition': ['auxiliary_construction', 'not_yet_added']
+  Type:    diagnostics_new_construction
+  Class 'subspanrepetition': new construction(s)
+
+  Checking Google Sheet for tab(s): ['auxiliary_construction', 'not_yet_added'] ...
+  Found in Sheet:   ['auxiliary_construction']
+  Not found in Sheet: ['not_yet_added']
+  Action still needed — add the missing tab(s) and re-run apply-pending.
+
+Applied 0 of 1 change(s). 1 still pending.
+
+1 pending change(s):
+
+[1/1]  arao1248  —  New construction(s) in class 'subspanrepetition': ['auxiliary_construction']
+  Type:    diagnostics_new_construction
+  Class 'subspanrepetition': new construction(s)
+
+  Checking Google Sheet for tab(s): ['auxiliary_construction'] ...
+  Could not verify (Drive unavailable or spreadsheet ID not recorded).
+  Please confirm manually: have all the tab(s) been added to the Sheet
+  and set to 'ready-for-review'? Constructions: ['auxiliary_construction']
+  Mark as resolved? [y/N] y
+  Resolved.
+
+Applied 1 of 1 change(s). 0 still pending.

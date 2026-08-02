@@ -24,7 +24,7 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 0b/1 — migrating callers, 3 of 17 done (started 2026-08-01)
+**Phase:** 0b/1 — migrating callers, 4 of 17 done (started 2026-08-01)
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
 **Last worked:** 2026-08-02
@@ -52,7 +52,8 @@ snapshots), **#273** (verified false alarm, safe to close).
 | Phase 0b/1 — file 1 of 17: `refresh_dropdowns.py` | **done** — snapshots captured, mutation log reviewed and accepted | `5ca369d` |
 | Phase 0b/1 — file 2 of 17: `generate_reports.py` | **done** — snapshots captured, pre/post diff clean | `62047c3` |
 | Phase 0b/1 — file 3 of 17: `setup_root_folder.py` | **done** — snapshots captured, pre/post diff clean | `3d70069` |
-| Phase 0b/1 — files 4–17 | not started — see § "Migration order" | — |
+| Phase 0b/1 — file 4 of 17: `apply_pending.py` | **done** — snapshots captured, pre/post diff clean | — |
+| Phase 0b/1 — files 5–17 | not started — see § "Migration order" | — |
 | Phases 3–9 | not started | — |
 
 ### In flight
@@ -66,10 +67,11 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
 **Not blocked.**
 
-1. **The remaining sixteen files**, one at a time, snapshots captured
+1. **The remaining thirteen files**, one at a time, snapshots captured
    immediately after each. See § "Migration order" below.
-   Delegable to agents now that the pattern exists (files 1 and 2 are the
-   worked examples: one Sheets-heavy, one Drive-files-only).
+   Delegable to agents now that the pattern exists (the four done are the
+   worked examples: one Sheets-heavy, one Drive-files-only, one
+   folders-and-sharing, one read-only).
 
    Watch for, in each: a `_save_drive_config` call (must be patched in tests —
    the real `drive_config.json` holds live IDs and a test that clobbers it
@@ -82,7 +84,7 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
 ### Migration order
 
-Sixteen files remain, not the nine the plan implied — the plan's list of
+Fifteen files remain, not the nine the plan implied — the plan's list of
 eleven was hand-written and never checked against the code; a scan on
 2026-08-02 found seventeen files reaching Drive directly. The list is now
 derived by `tests/test_doorway_coverage.py`, so it cannot drift again.
@@ -92,8 +94,8 @@ the doorway has been exercised before the destructive commands are touched.
 
 | # | file | why here |
 |---|---|---|
-| 1 | `setup_root_folder.py` | 191 lines, run once, nothing to lose. Exercises folders and sharing, which nothing has yet |
-| 2 | `apply_pending.py` | Opens a sheet to read tab names. Read-only |
+| ~~1~~ | ~~`setup_root_folder.py`~~ | done — `3d70069` |
+| ~~2~~ | ~~`apply_pending.py`~~ | done — this commit |
 | 3 | `prune_manifest.py` | First file-move, but only of already-retired sheets |
 | 4 | `check_notes.py` | The only user of Google Docs — that part of the doorway is untested |
 | 5 | `generate_biuniqueness_stage1_sheet.py` | Near-twin of `generate_status_sheet`; do the smaller one first |
@@ -133,9 +135,11 @@ better than expected and should be reused for files 2–11:
 - Only then capture snapshots.
 
 This gives write paths a real before/after diff rather than review alone, which
-is a stronger check than the plan assumed was available. The shims live in the
-scratchpad, not the repo — they are per-file throwaways, and committing them
-would create a second, decaying description of each command's client usage.
+is a stronger check than the plan assumed was available. It has held for every
+file since: `generate_reports`, `setup_root_folder`, and `apply_pending` all
+came back byte-identical on the first try. The shims live in the scratchpad,
+not the repo — they are per-file throwaways, and committing them would create a
+second, decaying description of each command's client usage.
 
 **Weight the automated evidence, not the human review.** The plan made human
 review of the `--apply` mutation log the primary barrier for write paths. File
@@ -146,7 +150,7 @@ accepting it was that it was hard to judge. That is a fair reading of the
 artifact, not a gap in diligence — and a review step that cannot be performed
 confidently is not a safety mechanism, it is a formality that looks like one.
 
-So for files 2–11 the order of evidence is:
+So for every file after the first, the order of evidence is:
 
 1. the pre/post mutation-log diff (mechanical, exact, and the thing that
    actually proves the migration changed nothing);
@@ -211,6 +215,21 @@ Both are the same underlying mistake: **the manifest is treated as authoritative
 for a tab's criterion columns when the sheet header is.** That is this project's
 recurring defect shape, so #272 suggests deriving the column set rather than
 patching the two symptoms.
+
+**3. `apply-pending` cannot tell a wrong spreadsheet ID from a bad connection**
+(found 2026-08-02, file 4, not filed). `_verify_construction_tabs` catches every
+exception and returns "could not verify", so a stale or mistyped
+`spreadsheet_id` — a sheet that was archived, or an entry written before the ID
+was recorded — reads exactly like a network blip. Both then ask the coordinator
+to confirm from memory, and a "y" closes the entry with nothing checked.
+
+Low severity: the entry it closes is a reminder to add a tab, not data, and the
+next `import-sheets` re-files it if the tab really is missing. But it is the
+same shape as the two above — one answer standing in for two different
+questions — and separating "Drive said no such file" from "Drive did not
+answer" is a few lines. Recorded now because the snapshot that shows it
+(`new_construction.txt`, fourth block) makes the two indistinguishable on the
+page, which is the point.
 
 ---
 
