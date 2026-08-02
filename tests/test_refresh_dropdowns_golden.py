@@ -68,6 +68,12 @@ def fake(monkeypatch):
         drive_backend.reset_backend()
 
 
+def _sheet_id(fake, lang: str, class_name: str) -> str:
+    """The Drive ID of one language's class spreadsheet, from the manifest."""
+    manifest = fake.download_file_json(MANIFEST_FILE_ID)
+    return manifest[lang]["sheets"][class_name]["spreadsheet_id"]
+
+
 def run(argv, monkeypatch) -> str:
     monkeypatch.setattr("sys.argv", argv)
     buf = io.StringIO()
@@ -189,9 +195,96 @@ def test_apply_updates_the_manifest_in_place(fake, monkeypatch):
     assert fake.mutations_of("create_file") == []
 
     manifest = fake.download_file_json(MANIFEST_FILE_ID)
-    stored = (manifest["stan1293"]["sheets"]["segmental"]
-              ["construction_params"]["flapping"]["param_values"])
-    assert stored["flapping_left"] == ["y", "n"]
+    stored = (manifest["synth0001"]["sheets"]["coreference"]
+              ["construction_params"]["reflexivization"]["param_values"])
+    assert stored == {"reflexive_allowed": ["y", "n", "untestable"]}
+
+
+# ---------------------------------------------------------------------------
+# Issue #272 — the two bugs these goldens caught, now fixed
+# ---------------------------------------------------------------------------
+
+def test_per_construction_criteria_are_not_collapsed_to_the_first(fake, monkeypatch):
+    """#272 bug 1. A class's constructions can declare different criteria.
+
+    segmental has aspiration_prominence and flapping; phrasal_accent has
+    prescreening and general. Resolving every construction against the first
+    one's values narrowed flapping's dropdowns from [y, n, both, na] to [y, n]
+    and joint_accent's from [always, sometimes, never] to [y, n].
+
+    Those manifests were already correct, so with the bug fixed there is
+    nothing to change on those tabs at all — they must not be touched.
+    """
+    from coding.refresh_dropdowns import _fresh_param_values
+
+    flapping = _fresh_param_values(
+        "segmental", "flapping",
+        {"flapping_left": ["y", "n", "both", "na"],
+         "flapping_internal": ["y", "n", "both", "na"],
+         "flapping_right": ["y", "n", "both", "na"]}, {})
+    assert flapping["flapping_left"] == ["y", "n", "both", "na"]
+
+    accent = _fresh_param_values(
+        "phrasal_accent", "general",
+        {"joint_accent": ["always", "sometimes", "never"]}, {})
+    assert accent == {"joint_accent": ["always", "sometimes", "never"]}
+
+    run(["refresh-dropdowns", "--apply"], monkeypatch)
+    touched = {(m["spreadsheet"], m["payload"]["range"]["sheetId"])
+               for m in fake.mutations
+               if m["op"] == "batch_request" and m["request_type"] == "setDataValidation"}
+    for lang in ("stan1293", "synth0001"):
+        for class_name, tab in (("segmental", "flapping"),
+                                ("phrasal_accent", "general")):
+            ss = fake.spreadsheet(_sheet_id(fake, lang, class_name))
+            assert (ss.id, ss.worksheet(tab).id) not in touched
+
+
+def test_dropdowns_are_never_written_onto_source_or_comments(fake, monkeypatch):
+    """#272 bug 2. Source and Comments are free text an annotator writes prose in.
+
+    The command used to take the *number* of dropdown columns from the manifest
+    and their *start* from the header; when those disagreed it ran off the end
+    of the criteria. Column identity now comes from the sheet's own header.
+    """
+    run(["refresh-dropdowns", "--apply"], monkeypatch)
+    for m in fake.mutations:
+        if m["op"] != "batch_request" or m["request_type"] != "setDataValidation":
+            continue
+        rng = m["payload"]["range"]
+        ws = fake.spreadsheet(m["spreadsheet"])._worksheet_by_sheet_id(rng["sheetId"])
+        header = ws.row_values(1)
+        for col in range(rng["startColumnIndex"], rng["endColumnIndex"]):
+            assert header[col] not in ("Source", "Comments"), (
+                f"dropdown written onto {header[col]!r} of {ws.title}")
+
+
+def test_an_unrecognised_criterion_column_is_skipped_not_guessed(fake, monkeypatch):
+    """Belt and braces: never invent an allowed-value set for an unknown column.
+
+    If the header's criterion block contains something the diagnostics YAML
+    doesn't know about, the safe move is to write nothing to that tab and say
+    so — a guessed [y, n] is how bug 2 did its damage.
+    """
+    from coding.refresh_dropdowns import _resolve_criterion_columns
+
+    col_start, per_col, error = _resolve_criterion_columns(
+        ["Element", "Position_Name", "Position_Number", "mystery", "Source", "Comments"],
+        fresh={"accented": ["y", "n"]}, class_criteria={"accented": ["y", "n"]})
+    assert col_start is None and per_col == []
+    assert "mystery" in error and "not a criterion" in error
+
+
+def test_criterion_columns_stop_at_the_trailing_columns(fake, monkeypatch):
+    """The header, not the manifest, decides how many dropdown columns there are."""
+    from coding.refresh_dropdowns import _resolve_criterion_columns
+
+    col_start, per_col, error = _resolve_criterion_columns(
+        ["Element", "Position_Name", "Position_Number", "referential", "Source", "Comments"],
+        fresh={"referential": ["y", "n"]},
+        class_criteria={"reflexive_allowed": ["y", "n", "untestable"]})
+    assert error is None
+    assert col_start == 3 and per_col == [["y", "n"]]
 
 
 def test_apply_is_idempotent(fake, monkeypatch):

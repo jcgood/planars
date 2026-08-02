@@ -26,7 +26,7 @@ DRY RUN — Refreshing sheet dropdowns
 
   [stan1293] segmental
     aspiration_prominence: {'aspirated': ['y', 'n', 'both', 'na']} up to date
-    flapping: {'flapping_left': ['y', 'n', 'both', 'na'], 'flapping_internal': ['y', 'n', 'both', 'na'], 'flapping_right': ['y', 'n', 'both', 'na']} → {'flapping_left': ['y', 'n'], 'flapping_internal': ['y', 'n'], 'flapping_right': ['y', 'n']}
+    flapping: {'flapping_left': ['y', 'n', 'both', 'na'], 'flapping_internal': ['y', 'n', 'both', 'na'], 'flapping_right': ['y', 'n', 'both', 'na']} up to date
 
   [stan1293] metrical
     stress_domain: {'accented': ['y', 'n', 'both'], 'obligatory': ['y', 'n'], 'independence': ['y', 'n', 'na'], 'left-interaction': ['y', 'n'], 'right-interaction': ['y', 'n']} up to date
@@ -50,7 +50,7 @@ DRY RUN — Refreshing sheet dropdowns
 
   [stan1293] phrasal_accent
     prescreening: {'accented': ['y', 'n', 'both']} up to date
-    general: {'joint_accent': ['always', 'sometimes', 'never']} → {'joint_accent': ['y', 'n']}
+    general: {'joint_accent': ['always', 'sometimes', 'never']} up to date
 
   [synth0001] ciscategorial
     general: {'V-combines': ['y', 'n'], 'N-combines': ['y', 'n'], 'A-combines': ['y', 'n']} up to date
@@ -66,7 +66,7 @@ DRY RUN — Refreshing sheet dropdowns
 
   [synth0001] segmental
     aspiration_prominence: {'aspirated': ['y', 'n', 'both', 'na']} up to date
-    flapping: {'flapping_left': ['y', 'n', 'both', 'na'], 'flapping_internal': ['y', 'n', 'both', 'na'], 'flapping_right': ['y', 'n', 'both', 'na']} → {'flapping_left': ['y', 'n'], 'flapping_internal': ['y', 'n'], 'flapping_right': ['y', 'n']}
+    flapping: {'flapping_left': ['y', 'n', 'both', 'na'], 'flapping_internal': ['y', 'n', 'both', 'na'], 'flapping_right': ['y', 'n', 'both', 'na']} up to date
 
   [synth0001] metrical
     stress_domain: {'accented': ['y', 'n', 'both'], 'obligatory': ['y', 'n'], 'independence': ['y', 'n', 'na'], 'left-interaction': ['y', 'n'], 'right-interaction': ['y', 'n']} up to date
@@ -90,6 +90,6 @@ DRY RUN — Refreshing sheet dropdowns
 
   [synth0001] phrasal_accent
     prescreening: {'accented': ['y', 'n', 'both']} up to date
-    general: {'joint_accent': ['always', 'sometimes', 'never']} → {'joint_accent': ['y', 'n']}
+    general: {'joint_accent': ['always', 'sometimes', 'never']} up to date
 
 Run with --apply to push the updated dropdowns.

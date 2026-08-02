@@ -1,311 +1,6 @@
 [
   {
     "op": "batch_request",
-    "spreadsheet": "19uDRX9flfQFk-MSCsvFy_SG3zubz0Kxowo4y7pyJUOM",
-    "request_type": "updateSheetProperties",
-    "payload": {
-      "properties": {
-        "sheetId": 517086933,
-        "gridProperties": {
-          "frozenRowCount": 1
-        }
-      },
-      "fields": "gridProperties.frozenRowCount"
-    }
-  },
-  {
-    "op": "batch_request",
-    "spreadsheet": "19uDRX9flfQFk-MSCsvFy_SG3zubz0Kxowo4y7pyJUOM",
-    "request_type": "repeatCell",
-    "payload": {
-      "range": {
-        "sheetId": 517086933,
-        "startRowIndex": 0,
-        "endRowIndex": 1
-      },
-      "cell": {
-        "userEnteredFormat": {
-          "textFormat": {
-            "bold": true
-          }
-        }
-      },
-      "fields": "userEnteredFormat.textFormat.bold"
-    }
-  },
-  {
-    "op": "batch_request",
-    "spreadsheet": "19uDRX9flfQFk-MSCsvFy_SG3zubz0Kxowo4y7pyJUOM",
-    "request_type": "setDataValidation",
-    "payload": {
-      "range": {
-        "sheetId": 517086933,
-        "startRowIndex": 1,
-        "endRowIndex": 143,
-        "startColumnIndex": 3,
-        "endColumnIndex": 4
-      },
-      "rule": {
-        "condition": {
-          "type": "ONE_OF_LIST",
-          "values": [
-            {
-              "userEnteredValue": "y"
-            },
-            {
-              "userEnteredValue": "n"
-            }
-          ]
-        },
-        "showCustomUi": true,
-        "strict": false
-      }
-    }
-  },
-  {
-    "op": "batch_request",
-    "spreadsheet": "19uDRX9flfQFk-MSCsvFy_SG3zubz0Kxowo4y7pyJUOM",
-    "request_type": "setDataValidation",
-    "payload": {
-      "range": {
-        "sheetId": 517086933,
-        "startRowIndex": 1,
-        "endRowIndex": 143,
-        "startColumnIndex": 4,
-        "endColumnIndex": 5
-      },
-      "rule": {
-        "condition": {
-          "type": "ONE_OF_LIST",
-          "values": [
-            {
-              "userEnteredValue": "y"
-            },
-            {
-              "userEnteredValue": "n"
-            }
-          ]
-        },
-        "showCustomUi": true,
-        "strict": false
-      }
-    }
-  },
-  {
-    "op": "batch_request",
-    "spreadsheet": "19uDRX9flfQFk-MSCsvFy_SG3zubz0Kxowo4y7pyJUOM",
-    "request_type": "setDataValidation",
-    "payload": {
-      "range": {
-        "sheetId": 517086933,
-        "startRowIndex": 1,
-        "endRowIndex": 143,
-        "startColumnIndex": 5,
-        "endColumnIndex": 6
-      },
-      "rule": {
-        "condition": {
-          "type": "ONE_OF_LIST",
-          "values": [
-            {
-              "userEnteredValue": "y"
-            },
-            {
-              "userEnteredValue": "n"
-            }
-          ]
-        },
-        "showCustomUi": true,
-        "strict": false
-      }
-    }
-  },
-  {
-    "op": "batch_request",
-    "spreadsheet": "12f_cgmKuKNEnHWUJGQX5QiaHeAVCIxMyYMS3mFe-mVs",
-    "request_type": "updateSheetProperties",
-    "payload": {
-      "properties": {
-        "sheetId": 2121472220,
-        "gridProperties": {
-          "frozenRowCount": 1
-        }
-      },
-      "fields": "gridProperties.frozenRowCount"
-    }
-  },
-  {
-    "op": "batch_request",
-    "spreadsheet": "12f_cgmKuKNEnHWUJGQX5QiaHeAVCIxMyYMS3mFe-mVs",
-    "request_type": "repeatCell",
-    "payload": {
-      "range": {
-        "sheetId": 2121472220,
-        "startRowIndex": 0,
-        "endRowIndex": 1
-      },
-      "cell": {
-        "userEnteredFormat": {
-          "textFormat": {
-            "bold": true
-          }
-        }
-      },
-      "fields": "userEnteredFormat.textFormat.bold"
-    }
-  },
-  {
-    "op": "batch_request",
-    "spreadsheet": "12f_cgmKuKNEnHWUJGQX5QiaHeAVCIxMyYMS3mFe-mVs",
-    "request_type": "setDataValidation",
-    "payload": {
-      "range": {
-        "sheetId": 2121472220,
-        "startRowIndex": 1,
-        "endRowIndex": 143,
-        "startColumnIndex": 3,
-        "endColumnIndex": 4
-      },
-      "rule": {
-        "condition": {
-          "type": "ONE_OF_LIST",
-          "values": [
-            {
-              "userEnteredValue": "y"
-            },
-            {
-              "userEnteredValue": "n"
-            }
-          ]
-        },
-        "showCustomUi": true,
-        "strict": false
-      }
-    }
-  },
-  {
-    "op": "batch_request",
-    "spreadsheet": "11z4k-Fr9oJv__eaTYrJdN9t87SjYPT1v--ANz1De244",
-    "request_type": "updateSheetProperties",
-    "payload": {
-      "properties": {
-        "sheetId": 1056708297,
-        "gridProperties": {
-          "frozenRowCount": 1
-        }
-      },
-      "fields": "gridProperties.frozenRowCount"
-    }
-  },
-  {
-    "op": "batch_request",
-    "spreadsheet": "11z4k-Fr9oJv__eaTYrJdN9t87SjYPT1v--ANz1De244",
-    "request_type": "repeatCell",
-    "payload": {
-      "range": {
-        "sheetId": 1056708297,
-        "startRowIndex": 0,
-        "endRowIndex": 1
-      },
-      "cell": {
-        "userEnteredFormat": {
-          "textFormat": {
-            "bold": true
-          }
-        }
-      },
-      "fields": "userEnteredFormat.textFormat.bold"
-    }
-  },
-  {
-    "op": "batch_request",
-    "spreadsheet": "11z4k-Fr9oJv__eaTYrJdN9t87SjYPT1v--ANz1De244",
-    "request_type": "setDataValidation",
-    "payload": {
-      "range": {
-        "sheetId": 1056708297,
-        "startRowIndex": 1,
-        "endRowIndex": 144,
-        "startColumnIndex": 3,
-        "endColumnIndex": 4
-      },
-      "rule": {
-        "condition": {
-          "type": "ONE_OF_LIST",
-          "values": [
-            {
-              "userEnteredValue": "y"
-            },
-            {
-              "userEnteredValue": "n"
-            }
-          ]
-        },
-        "showCustomUi": true,
-        "strict": false
-      }
-    }
-  },
-  {
-    "op": "batch_request",
-    "spreadsheet": "11z4k-Fr9oJv__eaTYrJdN9t87SjYPT1v--ANz1De244",
-    "request_type": "setDataValidation",
-    "payload": {
-      "range": {
-        "sheetId": 1056708297,
-        "startRowIndex": 1,
-        "endRowIndex": 144,
-        "startColumnIndex": 4,
-        "endColumnIndex": 5
-      },
-      "rule": {
-        "condition": {
-          "type": "ONE_OF_LIST",
-          "values": [
-            {
-              "userEnteredValue": "y"
-            },
-            {
-              "userEnteredValue": "n"
-            }
-          ]
-        },
-        "showCustomUi": true,
-        "strict": false
-      }
-    }
-  },
-  {
-    "op": "batch_request",
-    "spreadsheet": "11z4k-Fr9oJv__eaTYrJdN9t87SjYPT1v--ANz1De244",
-    "request_type": "setDataValidation",
-    "payload": {
-      "range": {
-        "sheetId": 1056708297,
-        "startRowIndex": 1,
-        "endRowIndex": 144,
-        "startColumnIndex": 5,
-        "endColumnIndex": 6
-      },
-      "rule": {
-        "condition": {
-          "type": "ONE_OF_LIST",
-          "values": [
-            {
-              "userEnteredValue": "y"
-            },
-            {
-              "userEnteredValue": "n"
-            }
-          ]
-        },
-        "showCustomUi": true,
-        "strict": false
-      }
-    }
-  },
-  {
-    "op": "batch_request",
     "spreadsheet": "1kk_8HWJ38EbssJSFD84E2V3-Q_0rifCntD12mEIvmgc",
     "request_type": "updateSheetProperties",
     "payload": {
@@ -349,64 +44,6 @@
         "endRowIndex": 144,
         "startColumnIndex": 3,
         "endColumnIndex": 4
-      },
-      "rule": {
-        "condition": {
-          "type": "ONE_OF_LIST",
-          "values": [
-            {
-              "userEnteredValue": "y"
-            },
-            {
-              "userEnteredValue": "n"
-            }
-          ]
-        },
-        "showCustomUi": true,
-        "strict": false
-      }
-    }
-  },
-  {
-    "op": "batch_request",
-    "spreadsheet": "1kk_8HWJ38EbssJSFD84E2V3-Q_0rifCntD12mEIvmgc",
-    "request_type": "setDataValidation",
-    "payload": {
-      "range": {
-        "sheetId": 269706862,
-        "startRowIndex": 1,
-        "endRowIndex": 144,
-        "startColumnIndex": 4,
-        "endColumnIndex": 5
-      },
-      "rule": {
-        "condition": {
-          "type": "ONE_OF_LIST",
-          "values": [
-            {
-              "userEnteredValue": "y"
-            },
-            {
-              "userEnteredValue": "n"
-            }
-          ]
-        },
-        "showCustomUi": true,
-        "strict": false
-      }
-    }
-  },
-  {
-    "op": "batch_request",
-    "spreadsheet": "1kk_8HWJ38EbssJSFD84E2V3-Q_0rifCntD12mEIvmgc",
-    "request_type": "setDataValidation",
-    "payload": {
-      "range": {
-        "sheetId": 269706862,
-        "startRowIndex": 1,
-        "endRowIndex": 144,
-        "startColumnIndex": 5,
-        "endColumnIndex": 6
       },
       "rule": {
         "condition": {
@@ -512,6 +149,9 @@
             },
             {
               "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "untestable"
             }
           ]
         },
@@ -541,6 +181,9 @@
             },
             {
               "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "untestable"
             }
           ]
         },
@@ -604,6 +247,9 @@
             },
             {
               "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "untestable"
             }
           ]
         },
@@ -665,6 +311,9 @@
             },
             {
               "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "untestable"
             }
           ]
         },
@@ -728,6 +377,9 @@
             },
             {
               "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "untestable"
             }
           ]
         },
@@ -757,6 +409,9 @@
             },
             {
               "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "untestable"
             }
           ]
         },
@@ -789,69 +444,6 @@
             },
             {
               "userEnteredValue": "untestable"
-            }
-          ]
-        },
-        "showCustomUi": true,
-        "strict": false
-      }
-    }
-  },
-  {
-    "op": "batch_request",
-    "spreadsheet": "12vQsG2qQOlsLCWHwD-6R-dNSfpBCZkPZ51PSnayqtTc",
-    "request_type": "updateSheetProperties",
-    "payload": {
-      "properties": {
-        "sheetId": 1460134323,
-        "gridProperties": {
-          "frozenRowCount": 1
-        }
-      },
-      "fields": "gridProperties.frozenRowCount"
-    }
-  },
-  {
-    "op": "batch_request",
-    "spreadsheet": "12vQsG2qQOlsLCWHwD-6R-dNSfpBCZkPZ51PSnayqtTc",
-    "request_type": "repeatCell",
-    "payload": {
-      "range": {
-        "sheetId": 1460134323,
-        "startRowIndex": 0,
-        "endRowIndex": 1
-      },
-      "cell": {
-        "userEnteredFormat": {
-          "textFormat": {
-            "bold": true
-          }
-        }
-      },
-      "fields": "userEnteredFormat.textFormat.bold"
-    }
-  },
-  {
-    "op": "batch_request",
-    "spreadsheet": "12vQsG2qQOlsLCWHwD-6R-dNSfpBCZkPZ51PSnayqtTc",
-    "request_type": "setDataValidation",
-    "payload": {
-      "range": {
-        "sheetId": 1460134323,
-        "startRowIndex": 1,
-        "endRowIndex": 2,
-        "startColumnIndex": 2,
-        "endColumnIndex": 3
-      },
-      "rule": {
-        "condition": {
-          "type": "ONE_OF_LIST",
-          "values": [
-            {
-              "userEnteredValue": "y"
-            },
-            {
-              "userEnteredValue": "n"
             }
           ]
         },
@@ -864,6 +456,6 @@
     "op": "update_file",
     "file_id": "fake_manifest_file",
     "name": null,
-    "bytes": 49954
+    "bytes": 50306
   }
 ]
