@@ -101,6 +101,39 @@ would create a second, decaying description of each command's client usage.
 
 ---
 
+## Findings awaiting triage
+
+Per the plan's Phase 0b/1 non-goals, a golden that reveals odd behaviour records
+it rather than fixing it. These are recorded, live, and not yet triaged.
+
+**`refresh-dropdowns` narrows dropdowns for every class that uses
+`construction_criteria` (found 2026-08-01, file-1 golden).** `refresh_dropdowns.py:110-113`
+builds `class_criteria_map` by taking the **first construction's** criterion
+values for each class, under the comment "criteria are shared across
+constructions". That is false for classes declaring per-construction criteria.
+`_read_diagnostics_for_language` returns the right values per construction; this
+loop discards all but the first.
+
+Live consequence, visible in `tests/goldens/refresh_dropdowns/apply.txt`: an
+`--apply` run today would push
+- `stan1293`/`synth0001` `segmental.flapping`: `[y, n, both, na]` → `[y, n]`
+- `stan1293`/`synth0001` `phrasal_accent.general` `joint_accent`:
+  `[always, sometimes, never]` → `[y, n]`
+
+and write those wrong sets back into the manifest. Annotation data is not at
+risk — validation is non-strict (`showCustomUi=True, strict=False`) and
+`validate-coding` reads allowed values from the schemas, not the manifest — so
+the damage is that Adam would be offered the wrong options in the dropdown.
+Not fixed here: the golden's job on file 1 was to capture behaviour, and fixing
+it in the same change would have meant the before/after diff could no longer
+prove the migration was behaviour-preserving. Fix it as its own change, with
+the golden diff as the evidence.
+
+(The `coreference.prescreening` line in the same golden, three criteria → just
+`referential`, is *correct* — `_fresh_param_values` special-cases it.)
+
+---
+
 ## Decisions log
 
 **2026-08-01 — the manifest is now a captured fixture, and `capture-drive-state`

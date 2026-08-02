@@ -13,6 +13,13 @@ output against the migrated code's. Both modes matched exactly, with one
 intended difference recorded in docs/data-layer-progress.md: opening a
 spreadsheet now retries, because `open_spreadsheet` always retries.
 
+**The `apply.txt` golden records a real bug, deliberately.** This command
+narrows the dropdown for every class that declares per-construction criteria
+(`segmental.flapping`, `phrasal_accent.general`), because it keeps only the
+first construction's criterion values per class. See
+docs/data-layer-progress.md § "Findings awaiting triage". Do not quietly
+correct the golden — when the bug is fixed, its diff is the evidence.
+
 **Regenerating.** These goldens depend on `diagnostics_{lang}.yaml` in
 `coded_data/`, which is a setup file that changes rarely — but when it does,
 this test is *supposed* to fail. Regenerate and review the diff, same workflow
