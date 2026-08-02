@@ -52,7 +52,7 @@ snapshots), **#273** (verified false alarm, safe to close).
 | Phase 0b/1 — file 1 of 17: `refresh_dropdowns.py` | **done** — snapshots captured, mutation log reviewed and accepted | `5ca369d` |
 | Phase 0b/1 — file 2 of 17: `generate_reports.py` | **done** — snapshots captured, pre/post diff clean | `62047c3` |
 | Phase 0b/1 — file 3 of 17: `setup_root_folder.py` | **done** — snapshots captured, pre/post diff clean | `3d70069` |
-| Phase 0b/1 — file 4 of 17: `apply_pending.py` | **done** — snapshots captured, pre/post diff clean | — |
+| Phase 0b/1 — file 4 of 17: `apply_pending.py` | **done** — snapshots captured, pre/post diff clean | `f7bc5fa` |
 | Phase 0b/1 — files 5–17 | not started — see § "Migration order" | — |
 | Phases 3–9 | not started | — |
 
@@ -95,7 +95,7 @@ the doorway has been exercised before the destructive commands are touched.
 | # | file | why here |
 |---|---|---|
 | ~~1~~ | ~~`setup_root_folder.py`~~ | done — `3d70069` |
-| ~~2~~ | ~~`apply_pending.py`~~ | done — this commit |
+| ~~2~~ | ~~`apply_pending.py`~~ | done — `f7bc5fa` |
 | 3 | `prune_manifest.py` | First file-move, but only of already-retired sheets |
 | 4 | `check_notes.py` | The only user of Google Docs — that part of the doorway is untested |
 | 5 | `generate_biuniqueness_stage1_sheet.py` | Near-twin of `generate_status_sheet`; do the smaller one first |
