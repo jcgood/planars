@@ -67,6 +67,12 @@ _SPREADSHEET_MIME = "application/vnd.google-apps.spreadsheet"
 _FOLDER_MIME = "application/vnd.google-apps.folder"
 _DOC_MIME = "application/vnd.google-apps.document"
 
+# Stable IDs for the two Drive objects every command bootstraps from. Real IDs
+# live in the gitignored drive_config.json; tests patch _load_drive_config to
+# return FakeDriveBackend.drive_config(), which names these.
+MANIFEST_FILE_ID = "fake_manifest_file"
+ROOT_FOLDER_ID = "fake_root_folder"
+
 
 # ---------------------------------------------------------------------------
 # Errors
@@ -644,15 +650,40 @@ class FakeDriveBackend:
     @classmethod
     def from_fixtures(cls, fixture_dir: Path = FIXTURE_DIR,
                       langs: Optional[Sequence[str]] = None) -> "FakeDriveBackend":
-        """Seed from ``capture-drive-state`` output, per its ``index.json``."""
+        """Seed from ``capture-drive-state`` output, per its ``index.json``.
+
+        Loads the recorded spreadsheets, the recorded ``manifest.json`` (as a
+        downloadable Drive file under a root folder), and a folder per language
+        at the ``folder_id`` the manifest names — enough Drive shape for a
+        command to bootstrap exactly as it does live.
+        """
         backend = cls()
+        backend.seed_folder("planars", file_id=ROOT_FOLDER_ID)
         index = json.loads((fixture_dir / "index.json").read_text(encoding="utf-8"))
         for entry in index["spreadsheets"]:
             if langs is not None and entry["lang_id"] not in langs:
                 continue
             path = ROOT / entry["path"]
             backend.seed_spreadsheet(json.loads(path.read_text(encoding="utf-8")))
+
+        manifest_path = fixture_dir / "manifest.json"
+        if manifest_path.exists():
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            if langs is not None:
+                manifest = {k: v for k, v in manifest.items() if k in langs}
+            backend.seed_json_file("manifest.json", manifest, [ROOT_FOLDER_ID],
+                                   file_id=MANIFEST_FILE_ID)
+            for lang_id, entry in manifest.items():
+                if isinstance(entry, dict) and entry.get("folder_id"):
+                    backend.seed_folder(lang_id, ROOT_FOLDER_ID,
+                                        file_id=entry["folder_id"])
         return backend
+
+    @staticmethod
+    def drive_config() -> Dict[str, str]:
+        """The bootstrap dict commands read from drive_config.json."""
+        return {"_root_folder_id": ROOT_FOLDER_ID,
+                "_planars_config_file_id": MANIFEST_FILE_ID}
 
     def seed_spreadsheet(self, data: Mapping[str, Any]) -> FakeSpreadsheet:
         """Load one captured spreadsheet exactly as recorded. No tidying."""

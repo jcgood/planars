@@ -141,6 +141,13 @@ def main() -> None:
         return
 
     FIXTURE_DIR.mkdir(parents=True, exist_ok=True)
+
+    # The manifest is Drive state too, and the fake needs it: it is what every
+    # command reads to learn which spreadsheet holds which class. Recorded
+    # verbatim, same rule as everything else here.
+    (FIXTURE_DIR / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+
     captured, failed = [], []
 
     for lang_id, role, sid in targets:
@@ -169,6 +176,7 @@ def main() -> None:
         "captured_at": datetime.now(timezone.utc).isoformat(),
         "note": "Raw recorded API responses. Do not normalise, pad, or tidy — "
                 "see coding/capture_drive_state.py for why raggedness is load-bearing.",
+        "manifest": "tests/fixtures/drive_state/manifest.json",
         "spreadsheets": captured,
         "failed": failed,
     }

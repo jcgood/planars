@@ -171,6 +171,21 @@ def _upload_planars_config(
 def _load_manifest_from_drive(drive) -> Dict:
     """Load the full manifest (all languages) from Drive.
 
+    Kept for callers that still hold a raw Drive service. Files migrated to
+    the seam call ``load_manifest(backend)`` instead; both share one body, so
+    the manifest-loading rules exist in exactly one place.
+    """
+    return _load_manifest_with(lambda file_id: _download_file_json(drive, file_id))
+
+
+def load_manifest(backend) -> Dict:
+    """Load the full manifest through a ``drive_backend.DriveBackend``."""
+    return _load_manifest_with(backend.download_file_json)
+
+
+def _load_manifest_with(download_json: Callable[[str], Dict]) -> Dict:
+    """Load the full manifest, given a way to download a JSON file by ID.
+
     Tries the new merged manifest.json first. Falls back to reading the
     old per-language ``manifest_{lang_id}.json`` files if the merged format is
     not yet in place (migration path for setups predating issue #30).
@@ -189,7 +204,7 @@ def _load_manifest_from_drive(drive) -> Dict:
     file_id = config.get("_planars_config_file_id")
     if file_id:
         try:
-            full_config = _download_file_json(drive, file_id)
+            full_config = download_json(file_id)
             # Distinguish new format (has 'sheets' per language) from old (just folder_id).
             if any("sheets" in v for v in full_config.values() if isinstance(v, dict)):
                 return full_config
@@ -206,7 +221,7 @@ def _load_manifest_from_drive(drive) -> Dict:
         mfid = lang_config.get("manifest_file_id")
         if not mfid:
             continue
-        lang_data = _download_file_json(drive, mfid)
+        lang_data = download_json(mfid)
         lang_data.setdefault("folder_id", lang_config.get("folder_id", ""))
         manifest[lang_id] = lang_data
     if not manifest:

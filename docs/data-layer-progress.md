@@ -40,7 +40,7 @@ of this state would be exactly the defect this project is trying to remove.
 | Phase 0a — fixture capture run (read-only, live) | **done** — 29 sheets, 80 tabs | `b40cd64` |
 | Phase 0a — protocol module (`coding/drive_backend.py`) | **done** | this commit |
 | Phase 0a — fake backend (`tests/fake_drive.py`) + smoke tests | **done** — 62 tests | this commit |
-| Phase 0b/1 — file 1 of 11 (pattern-setting migration) | in progress — `refresh_dropdowns.py` | — |
+| Phase 0b/1 — file 1 of 11: `refresh_dropdowns.py` | **done** — goldens captured; `--apply` mutation log **awaits Jeff's review** | this commit |
 | Phase 0b/1 — files 2–11 | not started | — |
 | Phases 3–9 | not started | — |
 
@@ -53,31 +53,70 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
 ## Next action
 
-**Not blocked.** The seam and the fake exist and are tested. Remaining:
+**One thing needs Jeff, and it does not block the next migration.**
 
-1. **Migrate `refresh_dropdowns.py`** (file 1 of 11) using the per-file
-   procedure in the plan: pre-migration dry-run baseline → migrate → diff
-   against the fake → capture goldens → human review of the `--apply`
-   mutation log. This establishes the pattern; the remaining ten are then
-   delegable to agents.
+**For Jeff:** review the `--apply` mutation log now committed as a golden at
+`tests/goldens/refresh_dropdowns/apply_mutations.json` (36 requests: 20
+`setDataValidation`, 8 `updateSheetProperties` freeze-header, 8 `repeatCell`
+bold-header; no cell-value writes; one manifest update). The plan asks for a
+human to review a write path's log *before* it becomes a golden, because write
+paths have no pre-migration baseline. Here a baseline was obtainable after all
+(see the per-file procedure note below) and it matched exactly, so the review is
+confirmatory rather than the only barrier — but it is still owed.
 
-   Note on step 1 of that procedure: the "run the dry-run against real Drive
-   and save the output" baseline **cannot be taken for this file** — its
-   dry-run path reads the live manifest, and no live call other than
-   `capture-drive-state` is permitted before Phase 9. Substitute: drive the
-   *pre-migration* code and the *post-migration* code from the same seeded
-   fake (the pre-migration code takes `gc`/`drive` objects, which the fake can
-   satisfy well enough for its read path) and diff those two outputs. Record
-   in the golden whichever substitution is used.
+Then, in order:
 
-2. Files 2–11, one at a time, goldens captured immediately after each.
+1. **Files 2–11**, one at a time, goldens captured immediately after each.
+   Delegable to agents now that the pattern exists. Suggested order, easiest
+   first: `generate_reports.py` (127 lines, Drive-file upload only),
+   `generate_notebooks.py` (no gspread at all), `validate_coding.py`,
+   `update_sheets.py`, `import_sheets.py`, `sync_params.py`,
+   `generate_status_sheet.py`, `generate_biuniqueness_stage1_sheet.py`,
+   `generate_sheets.py`, `restructure_sheets.py`. The last two are the largest
+   and should go last, after every helper they share has already moved.
 
-Step 1 is the front-loaded supervision the plan calls for — done by hand, not
-by agent. Everything after is delegable.
+2. Phases 3–9 per the plan.
+
+### The per-file procedure, as actually executed on file 1
+
+Step 1 of the plan's procedure ("run the dry-run against real Drive and save
+the output") is not permitted before Phase 9. The substitute, which worked
+better than expected and should be reused for files 2–11:
+
+- Drive the **unmigrated** code from a fake seeded by `from_fixtures()`, using
+  thin shims for the `gc` and `drive` objects it expects (a `open_by_key` that
+  returns a fake spreadsheet; a `files().update()` that records the call).
+  Capture stdout and the fake's mutation log.
+- Migrate. Run the same commands through the seam against an identically
+  seeded fake.
+- Diff. On `refresh_dropdowns.py` both modes' stdout were byte-identical and
+  the 36 mutations matched exactly, including the manifest payload's byte
+  count.
+- Only then capture goldens.
+
+This gives write paths a real before/after diff rather than review alone, which
+is a stronger check than the plan assumed was available. The shims live in the
+scratchpad, not the repo — they are per-file throwaways, and committing them
+would create a second, decaying description of each command's client usage.
 
 ---
 
 ## Decisions log
+
+**2026-08-01 — the manifest is now a captured fixture, and `capture-drive-state`
+records it going forward.** The fake needs the manifest: it is what every
+command reads to learn which spreadsheet holds which class, so without it no
+command can be driven offline at all. The 2026-08-01 capture downloaded the
+manifest but did not persist it — a gap in the command, now fixed (it writes
+`tests/fixtures/drive_state/manifest.json` alongside the spreadsheets). The
+committed fixture is a byte-identical copy of the local `manifest_backup.json`
+written by `generate-sheets` at 2026-07-31 22:55, which is a *raw downloaded
+manifest before any mutation*, so it is a recording of the same kind, not a
+reconstruction. It agrees with the capture exactly: same 29 spreadsheets, same
+IDs, no additions or removals on either side. Registered in
+`data_dependency_schema/facts.yaml` as `drive_state_test_fixtures`, with the
+new `test_fixture` entity — a committed snapshot of live state is a replicated
+fact, and its whole failure mode is going quietly stale.
 
 **2026-08-01 — handle method names mirror gspread, deviating from the accepted
 proposal's renames.** The reviewed proposal named the two batch endpoints

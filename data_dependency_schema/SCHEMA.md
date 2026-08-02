@@ -70,6 +70,7 @@ inventing new terminology:
 | `code_comment` | A fact encoded as a docstring or inline comment in a `planars/*.py` or `coding/*.py` module — e.g. a qualification rule's prose description, whose sync with the schema is checked via a hash sentinel. |
 | `github_issue` | A GitHub issue used as a durable coordination/state channel — per-language notification issues, `pending-changes` tracking, drift issues. The fact's truth value literally lives in the issue's open/closed state or comment history. |
 | `filename_convention` | A fact encoded implicitly in a naming pattern — e.g. a language ID inferred from `planar_{lang_id}.tsv`; an archive file's datestamp suffix encoding when it was superseded. |
+| `test_fixture` | A recorded copy of live state committed under `tests/fixtures/` for offline testing — e.g. `tests/fixtures/drive_state/`, the raw capture of every annotation spreadsheet and the Drive manifest. Never authoritative: it is a snapshot, and its whole job is to be a faithful *stale* copy. Listed as an entity because a test asserting against a fixture that no longer resembles production is a silent failure of exactly the kind this registry exists to name. |
 
 ### Why some of these are split rather than consolidated
 

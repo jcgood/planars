@@ -1,0 +1,103 @@
+Refreshing sheet dropdowns
+
+  [arao1248] ciscategorial
+    general: {'V-combines': ['y', 'n'], 'N-combines': ['y', 'n'], 'A-combines': ['y', 'n'], 'PRED-combines': ['y', 'n']} up to date
+
+  [arao1248] noninterruption
+    general: {'free': ['y', 'n'], 'multiple': ['y', 'n']} up to date
+
+  [arao1248] subspanrepetition
+    auxiliary_construction: {'widescope_right': ['y', 'n'], 'widescope_left': ['y', 'n'], 'fillable_botheither_conjunct': ['y', 'n']} up to date
+    tso_clause_linkage: {'widescope_right': ['y', 'n'], 'widescope_left': ['y', 'n'], 'fillable_botheither_conjunct': ['y', 'n']} up to date
+
+  [stan1293] ciscategorial
+    general: {'V-combines': ['y', 'n'], 'N-combines': ['y', 'n'], 'A-combines': ['y', 'n']} up to date
+
+  [stan1293] subspanrepetition
+    andCoordination: {'widescope_right': ['y', 'n'], 'widescope_left': ['y', 'n'], 'fillable_botheither_conjunct': ['y', 'n']} up to date
+    control: {'widescope_right': ['y', 'n'], 'widescope_left': ['y', 'n'], 'fillable_botheither_conjunct': ['y', 'n']} up to date
+    thatCOMP: {'widescope_right': ['y', 'n'], 'widescope_left': ['y', 'n'], 'fillable_botheither_conjunct': ['y', 'n']} up to date
+    asyndeticPart: {'widescope_right': ['y', 'n'], 'widescope_left': ['y', 'n'], 'fillable_botheither_conjunct': ['y', 'n']} up to date
+
+  [stan1293] noninterruption
+    general: {'free': ['y', 'n'], 'multiple': ['y', 'n']} up to date
+
+  [stan1293] segmental
+    aspiration_prominence: {'aspirated': ['y', 'n', 'both', 'na']} up to date
+    flapping: {'flapping_left': ['y', 'n', 'both', 'na'], 'flapping_internal': ['y', 'n', 'both', 'na'], 'flapping_right': ['y', 'n', 'both', 'na']} → {'flapping_left': ['y', 'n'], 'flapping_internal': ['y', 'n'], 'flapping_right': ['y', 'n']}
+    flapping: refreshed
+
+  [stan1293] metrical
+    stress_domain: {'accented': ['y', 'n', 'both'], 'obligatory': ['y', 'n'], 'independence': ['y', 'n', 'na'], 'left-interaction': ['y', 'n'], 'right-interaction': ['y', 'n']} up to date
+
+  [stan1293] free_occurrence
+    general: {'free': ['y', 'n'], 'left-edge-of-free-form': ['y', 'n', 'na'], 'right-edge-of-free-form': ['y', 'n', 'na'], 'dependent-on-left': ['na', '<position_number>'], 'dependent-on-right': ['na', '<position_number>']} up to date
+
+  [stan1293] nonpermutability
+    element_prescreening: {'scopal': ['y', 'n', 'both']} up to date
+    general: {'scopal': ['y', 'n', 'both']} up to date
+
+  [stan1293] coreference
+    prescreening: {'referential': ['y', 'n']} up to date
+    reflexivization: {'reflexive_allowed': ['y', 'n', 'untestable']} up to date
+    pronominalization: {'pronoun_allowed': ['y', 'n', 'untestable']} up to date
+    np_reference: {'np_allowed': ['y', 'n', 'untestable']} up to date
+
+  [stan1293] proform
+    do_so_substitution: {'shareable_proform_replace': ['y', 'n', 'both', 'unclear']} up to date
+    vp_ellipsis: {'shareable_proform_replace': ['y', 'n', 'both', 'unclear']} up to date
+
+  [stan1293] phrasal_accent
+    prescreening: {'accented': ['y', 'n', 'both']} up to date
+    general: {'joint_accent': ['always', 'sometimes', 'never']} → {'joint_accent': ['y', 'n']}
+    general: refreshed
+
+  [synth0001] ciscategorial
+    general: {'V-combines': ['y', 'n'], 'N-combines': ['y', 'n'], 'A-combines': ['y', 'n']} up to date
+
+  [synth0001] subspanrepetition
+    andCoordination: {'widescope_right': ['y', 'n'], 'widescope_left': ['y', 'n'], 'fillable_botheither_conjunct': ['y', 'n']} up to date
+    control: {'widescope_right': ['y', 'n'], 'widescope_left': ['y', 'n'], 'fillable_botheither_conjunct': ['y', 'n']} up to date
+    thatCOMP: {'widescope_right': ['y', 'n'], 'widescope_left': ['y', 'n'], 'fillable_botheither_conjunct': ['y', 'n']} up to date
+    asyndeticPart: {'widescope_right': ['y', 'n'], 'widescope_left': ['y', 'n'], 'fillable_botheither_conjunct': ['y', 'n']} up to date
+
+  [synth0001] noninterruption
+    general: {'free': ['y', 'n'], 'multiple': ['y', 'n']} up to date
+
+  [synth0001] segmental
+    aspiration_prominence: {'aspirated': ['y', 'n', 'both', 'na']} up to date
+    flapping: {'flapping_left': ['y', 'n', 'both', 'na'], 'flapping_internal': ['y', 'n', 'both', 'na'], 'flapping_right': ['y', 'n', 'both', 'na']} → {'flapping_left': ['y', 'n'], 'flapping_internal': ['y', 'n'], 'flapping_right': ['y', 'n']}
+    flapping: refreshed
+
+  [synth0001] metrical
+    stress_domain: {'accented': ['y', 'n', 'both'], 'obligatory': ['y', 'n'], 'independence': ['y', 'n', 'na'], 'left-interaction': ['y', 'n'], 'right-interaction': ['y', 'n']} up to date
+
+  [synth0001] nonpermutability
+    element_prescreening: {'scopal': ['y', 'n', 'both']} up to date
+    general: {'scopal': ['y', 'n', 'both']} up to date
+
+  [synth0001] free_occurrence
+    general: {'free': ['y', 'n'], 'left-edge-of-free-form': ['y', 'n', 'na'], 'right-edge-of-free-form': ['y', 'n', 'na'], 'dependent-on-left': ['na', '<position_number>'], 'dependent-on-right': ['na', '<position_number>']} up to date
+
+  [synth0001] coreference
+    prescreening: {'reflexive_allowed': ['y', 'n', 'untestable'], 'pronoun_allowed': ['y', 'n', 'untestable'], 'np_allowed': ['y', 'n', 'untestable']} → {'referential': ['y', 'n']}
+    prescreening: refreshed
+    reflexivization: {'reflexive_allowed': ['y', 'n', 'untestable'], 'pronoun_allowed': ['y', 'n', 'untestable'], 'np_allowed': ['y', 'n', 'untestable']} → {'reflexive_allowed': ['y', 'n', 'untestable']}
+    reflexivization: refreshed
+    pronominalization: {'reflexive_allowed': ['y', 'n', 'untestable'], 'pronoun_allowed': ['y', 'n', 'untestable'], 'np_allowed': ['y', 'n', 'untestable']} → {'pronoun_allowed': ['y', 'n', 'untestable']}
+    pronominalization: refreshed
+    np_reference: {'reflexive_allowed': ['y', 'n', 'untestable'], 'pronoun_allowed': ['y', 'n', 'untestable'], 'np_allowed': ['y', 'n', 'untestable']} → {'np_allowed': ['y', 'n', 'untestable']}
+    np_reference: refreshed
+
+  [synth0001] proform
+    do_so_substitution: {'shareable_proform_replace': ['y', 'n', 'both', 'unclear']} up to date
+    vp_ellipsis: {'shareable_proform_replace': ['y', 'n', 'both', 'unclear']} up to date
+
+  [synth0001] phrasal_accent
+    prescreening: {'accented': ['y', 'n', 'both']} up to date
+    general: {'joint_accent': ['always', 'sometimes', 'never']} → {'joint_accent': ['y', 'n']}
+    general: refreshed
+
+Manifest updated on Drive.
+
+Done.

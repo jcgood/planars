@@ -23,7 +23,8 @@
         "manifest",
         "code_comment",
         "github_issue",
-        "filename_convention"
+        "filename_convention",
+        "test_fixture"
       ]
     },
     "location": {

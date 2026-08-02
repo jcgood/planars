@@ -307,3 +307,42 @@
       Before that, nothing checked this at all -- element-set comparison
       alone cannot see it, since the element itself is often still validly
       in scope, just paired via a stale position number.
+
+- id: drive_state_test_fixtures
+  description: >-
+    the recorded live Drive state (every annotation spreadsheet's tab order,
+    grid size, and cell values, plus the manifest) replayed by the fake Drive
+    backend in tests
+  locations:
+    - {entity: annotation_sheet, detail: "the live spreadsheets themselves -- the only real state"}
+    - {entity: manifest, detail: "manifest.json on Drive (Drive-ID bookkeeping for every language/class)"}
+    - {entity: test_fixture, detail: "tests/fixtures/drive_state/{lang}/*.json and manifest.json, written by capture-drive-state --apply"}
+  authoritative: annotation_sheet
+  cascade:
+    direction: automatic
+    mechanism: >-
+      python -m coding capture-drive-state --apply re-records every listed
+      spreadsheet and the manifest, overwriting the fixtures. Read-only against
+      Drive: it is the one live call permitted before Phase 9 of the data layer
+      plan. Nothing cascades in the other direction, by design -- the fixtures
+      are never written back.
+  drift_risk:
+    possible: true
+    note: >-
+      The fixtures are a snapshot (first taken 2026-08-01) and go stale as soon
+      as anyone annotates, which is continuously. That is acceptable for what
+      they are used for -- proving the fake reproduces real API *response
+      shapes*, which change far more slowly than cell contents -- but it is a
+      real trap in two ways. First, a test that asserts on fixture cell values
+      is asserting on 2026-08-01's annotations, not on current data. Second, a
+      structural change to the live sheets (a new tab, a renamed column, a
+      changed criterion set) makes the fixtures describe a Drive that no longer
+      exists, and every golden built on them keeps passing regardless. The
+      fixtures must not be hand-edited to "fix" such a divergence: re-run
+      capture-drive-state, which is the only thing that keeps them a recording
+      rather than a fabrication.
+    caught_by: >-
+      nothing automatically. tests/test_drive_backend.py proves the fake is
+      faithful to the fixtures, not that the fixtures are faithful to Drive.
+      Re-running capture-drive-state --apply and inspecting git diff on
+      tests/fixtures/drive_state/ is the only check, and it is manual.

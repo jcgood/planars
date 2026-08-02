@@ -1,0 +1,2154 @@
+{
+  "arao1248": {
+    "glottolog": {
+      "name": "Araona",
+      "iso639_3": "aro",
+      "family": "Pano-Tacanan",
+      "latitude": -12.4242,
+      "longitude": -67.7293
+    },
+    "meta": {
+      "language": "Araona",
+      "glottocode": "arao1248",
+      "source": "Adam Tallman, 'Graded constituency in the Araona (Takana) verb complex,' ch. 13 in Constituency and convergence in the Americas (langsci/291)",
+      "author": "Adam Tallman",
+      "annotator": "Adam Tallman",
+      "annotator_email": "adamjamesrosstallman@gmail.com",
+      "annotation_status": "in-progress",
+      "notes": ""
+    },
+    "folder_id": "1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU",
+    "folder_url": "https://drive.google.com/drive/folders/1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU",
+    "notes_doc_id": "1vfSS_YoRHDgpSG-vi1nXWR5dNCR1SAKlyMVbqhkl8Qc",
+    "planar_spreadsheet_id": "1hM2L5bLbt8gsOdb4FgMc0uS2652Gia1W66FrpJuVuPI",
+    "planar_spreadsheet_url": "https://docs.google.com/spreadsheets/d/1hM2L5bLbt8gsOdb4FgMc0uS2652Gia1W66FrpJuVuPI",
+    "diagnostics_spreadsheet_id": "1A0r232Wdi3bpBj7ZcIPVcrSi9uQ9z0mc-7TYQfluO-s",
+    "diagnostics_spreadsheet_url": "https://docs.google.com/spreadsheets/d/1A0r232Wdi3bpBj7ZcIPVcrSi9uQ9z0mc-7TYQfluO-s",
+    "sheets": {
+      "ciscategorial": {
+        "spreadsheet_id": "1BTORcAYwVZGEf_rftRxXAsC4wMeVunozbhoiu_3Pnxc",
+        "url": "https://docs.google.com/spreadsheets/d/1BTORcAYwVZGEf_rftRxXAsC4wMeVunozbhoiu_3Pnxc",
+        "constructions": [
+          "general"
+        ],
+        "construction_params": {
+          "general": {
+            "param_names": [
+              "V-combines",
+              "N-combines",
+              "A-combines",
+              "PRED-combines"
+            ],
+            "param_values": {
+              "V-combines": [
+                "y",
+                "n"
+              ],
+              "N-combines": [
+                "y",
+                "n"
+              ],
+              "A-combines": [
+                "y",
+                "n"
+              ],
+              "PRED-combines": [
+                "y",
+                "n"
+              ]
+            }
+          }
+        },
+        "version": 2
+      },
+      "noninterruption": {
+        "spreadsheet_id": "135LNV3BEF-g86pMZiZZjGY3IaMb-sZ7Jl0hh3LRbbBo",
+        "url": "https://docs.google.com/spreadsheets/d/135LNV3BEF-g86pMZiZZjGY3IaMb-sZ7Jl0hh3LRbbBo",
+        "constructions": [
+          "general"
+        ],
+        "construction_params": {
+          "general": {
+            "param_names": [
+              "free",
+              "multiple"
+            ],
+            "param_values": {
+              "free": [
+                "y",
+                "n"
+              ],
+              "multiple": [
+                "y",
+                "n"
+              ]
+            }
+          }
+        },
+        "version": 2
+      },
+      "subspanrepetition": {
+        "spreadsheet_id": "12negOahPnlSq02aET6kuU_NCkC5T2u8XeJaxg1nJQ70",
+        "url": "https://docs.google.com/spreadsheets/d/12negOahPnlSq02aET6kuU_NCkC5T2u8XeJaxg1nJQ70",
+        "constructions": [
+          "auxiliary_construction",
+          "tso_clause_linkage"
+        ],
+        "construction_params": {
+          "auxiliary_construction": {
+            "param_names": [
+              "widescope_right",
+              "widescope_left",
+              "fillable_botheither_conjunct"
+            ],
+            "param_values": {
+              "widescope_right": [
+                "y",
+                "n"
+              ],
+              "widescope_left": [
+                "y",
+                "n"
+              ],
+              "fillable_botheither_conjunct": [
+                "y",
+                "n"
+              ]
+            }
+          },
+          "tso_clause_linkage": {
+            "param_names": [
+              "widescope_right",
+              "widescope_left",
+              "fillable_botheither_conjunct"
+            ],
+            "param_values": {
+              "widescope_right": [
+                "y",
+                "n"
+              ],
+              "widescope_left": [
+                "y",
+                "n"
+              ],
+              "fillable_botheither_conjunct": [
+                "y",
+                "n"
+              ]
+            }
+          }
+        },
+        "version": 2
+      }
+    },
+    "planar": {
+      "keystone_pos": 6,
+      "positions": [
+        {
+          "pos": 1,
+          "name": "v:leftXP",
+          "type": "Zone",
+          "elements": [
+            "NP{NP,PP,S}",
+            "ADVERBIALS",
+            "INTERROGATIVES"
+          ]
+        },
+        {
+          "pos": 2,
+          "name": "v:P2",
+          "type": "Zone",
+          "elements": [
+            "po",
+            "pojo",
+            "tso",
+            "pa",
+            "tokwe",
+            "dipa",
+            "sha"
+          ]
+        },
+        {
+          "pos": 3,
+          "name": "v:midXP",
+          "type": "Zone",
+          "elements": [
+            "NP{NP,PP,S}",
+            "ADVERBIALS"
+          ]
+        },
+        {
+          "pos": 4,
+          "name": "v:prefix",
+          "type": "Slot",
+          "elements": [
+            "[e-]",
+            "[pi-]",
+            "[ja-]",
+            "[tsi-]",
+            "[pa-]",
+            "[ke-]",
+            "[noma-]",
+            "[shoma-]",
+            "[sho-]"
+          ]
+        },
+        {
+          "pos": 5,
+          "name": "v:noun.incorp",
+          "type": "Slot",
+          "elements": [
+            "shoa",
+            "sha",
+            "haha",
+            "watsi"
+          ]
+        },
+        {
+          "pos": 7,
+          "name": "v:adv.suf",
+          "type": "Zone",
+          "elements": [
+            "[-shawiya]",
+            "[-shana]",
+            "[-jajo]",
+            "[-shao]",
+            "[-yoa]",
+            "[-wiki]",
+            "[-sisa]",
+            "[-wena]",
+            "[-tseiye]",
+            "[-niapona]",
+            "[-jaena]",
+            "[-weya]",
+            "[-sa]",
+            "[-pe]",
+            "[-pasi]",
+            "[-titi]"
+          ]
+        },
+        {
+          "pos": 8,
+          "name": "v:expressive",
+          "type": "Slot",
+          "elements": [
+            "[-shodi]",
+            "[-limi]"
+          ]
+        },
+        {
+          "pos": 9,
+          "name": "v:frustrative",
+          "type": "Slot",
+          "elements": [
+            "[-sawa]"
+          ]
+        },
+        {
+          "pos": 10,
+          "name": "v:interactional",
+          "type": "Slot",
+          "elements": [
+            "[-ti]"
+          ]
+        },
+        {
+          "pos": 11,
+          "name": "v:causative",
+          "type": "Slot",
+          "elements": [
+            "[-eme]",
+            "[-pe]"
+          ]
+        },
+        {
+          "pos": 12,
+          "name": "v:3A",
+          "type": "Slot",
+          "elements": [
+            "[-ta]",
+            "[-me]"
+          ]
+        },
+        {
+          "pos": 13,
+          "name": "v:finality",
+          "type": "Slot",
+          "elements": [
+            "[-ibo]",
+            "[-iba]"
+          ]
+        },
+        {
+          "pos": 14,
+          "name": "v:tame.suf",
+          "type": "Slot",
+          "elements": [
+            "[-iki]",
+            "[-ja]",
+            "[-asha]",
+            "[-isa]",
+            "[-ani]",
+            "[-bade]",
+            "[-neti]",
+            "[-ma]",
+            "[-toa]",
+            "[-tame]",
+            "[-ke]",
+            "[-yoa]",
+            "[-odi]",
+            "[-tso]"
+          ]
+        },
+        {
+          "pos": 15,
+          "name": "v:aspect",
+          "type": "Slot",
+          "elements": [
+            "[-we]",
+            "[-isha]"
+          ]
+        },
+        {
+          "pos": 16,
+          "name": "v:auxiliary",
+          "type": "Slot",
+          "elements": [
+            "e-po",
+            "e-a"
+          ]
+        },
+        {
+          "pos": 17,
+          "name": "v:connector",
+          "type": "Slot",
+          "elements": [
+            "tsio",
+            "po"
+          ]
+        },
+        {
+          "pos": 18,
+          "name": "v:rightXP",
+          "type": "Zone",
+          "elements": [
+            "NP{NP,PP,Adv}"
+          ]
+        }
+      ]
+    }
+  },
+  "stan1293": {
+    "glottolog": {
+      "name": "English",
+      "iso639_3": "eng",
+      "family": "Indo-European",
+      "latitude": 53.0,
+      "longitude": -1.0
+    },
+    "meta": {
+      "language": "English",
+      "glottocode": "stan1293",
+      "source": "",
+      "author": "Adam Tallman",
+      "annotator": "Adam Tallman",
+      "annotator_email": "adamjamesrosstallman@gmail.com",
+      "annotation_status": "in-progress",
+      "notes": ""
+    },
+    "folder_id": "1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3",
+    "folder_url": "https://drive.google.com/drive/folders/1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3",
+    "notes_doc_id": "1XNOeEMIH5WRp0mg1c0f6aAndbY7nNQVdHNVQ70x4P3s",
+    "planar_spreadsheet_id": "1nmaNay3ne53-Gkm4wBTOy7vebYcX70WPvCwfvjT5Tc0",
+    "planar_spreadsheet_url": "https://docs.google.com/spreadsheets/d/1nmaNay3ne53-Gkm4wBTOy7vebYcX70WPvCwfvjT5Tc0",
+    "diagnostics_spreadsheet_id": "1lFgsWrMO5mS4meixITG51T3JcmfW3UcIvfxK_ohyg3Q",
+    "diagnostics_spreadsheet_url": "https://docs.google.com/spreadsheets/d/1lFgsWrMO5mS4meixITG51T3JcmfW3UcIvfxK_ohyg3Q",
+    "sheets": {
+      "ciscategorial": {
+        "spreadsheet_id": "1O3d4Bj4n28hkWWBQOl7RX95Bb4SkR27-RF6mSQ6-9rc",
+        "url": "https://docs.google.com/spreadsheets/d/1O3d4Bj4n28hkWWBQOl7RX95Bb4SkR27-RF6mSQ6-9rc",
+        "constructions": [
+          "general"
+        ],
+        "construction_params": {
+          "general": {
+            "param_names": [
+              "V-combines",
+              "N-combines",
+              "A-combines"
+            ],
+            "param_values": {
+              "V-combines": [
+                "y",
+                "n"
+              ],
+              "N-combines": [
+                "y",
+                "n"
+              ],
+              "A-combines": [
+                "y",
+                "n"
+              ]
+            }
+          }
+        },
+        "version": 2
+      },
+      "subspanrepetition": {
+        "spreadsheet_id": "1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4",
+        "url": "https://docs.google.com/spreadsheets/d/1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4",
+        "constructions": [
+          "andCoordination",
+          "control",
+          "thatCOMP",
+          "asyndeticPart"
+        ],
+        "construction_params": {
+          "andCoordination": {
+            "param_names": [
+              "widescope_right",
+              "widescope_left",
+              "fillable_botheither_conjunct"
+            ],
+            "param_values": {
+              "widescope_right": [
+                "y",
+                "n"
+              ],
+              "widescope_left": [
+                "y",
+                "n"
+              ],
+              "fillable_botheither_conjunct": [
+                "y",
+                "n"
+              ]
+            }
+          },
+          "control": {
+            "param_names": [
+              "widescope_right",
+              "widescope_left",
+              "fillable_botheither_conjunct"
+            ],
+            "param_values": {
+              "widescope_right": [
+                "y",
+                "n"
+              ],
+              "widescope_left": [
+                "y",
+                "n"
+              ],
+              "fillable_botheither_conjunct": [
+                "y",
+                "n"
+              ]
+            }
+          },
+          "thatCOMP": {
+            "param_names": [
+              "widescope_right",
+              "widescope_left",
+              "fillable_botheither_conjunct"
+            ],
+            "param_values": {
+              "widescope_right": [
+                "y",
+                "n"
+              ],
+              "widescope_left": [
+                "y",
+                "n"
+              ],
+              "fillable_botheither_conjunct": [
+                "y",
+                "n"
+              ]
+            }
+          },
+          "asyndeticPart": {
+            "param_names": [
+              "widescope_right",
+              "widescope_left",
+              "fillable_botheither_conjunct"
+            ],
+            "param_values": {
+              "widescope_right": [
+                "y",
+                "n"
+              ],
+              "widescope_left": [
+                "y",
+                "n"
+              ],
+              "fillable_botheither_conjunct": [
+                "y",
+                "n"
+              ]
+            }
+          }
+        },
+        "version": 2
+      },
+      "noninterruption": {
+        "spreadsheet_id": "1-rqDe52YRJsTrQjNe7HxPncDHky9FLm6CaJ9cBLZaX0",
+        "url": "https://docs.google.com/spreadsheets/d/1-rqDe52YRJsTrQjNe7HxPncDHky9FLm6CaJ9cBLZaX0",
+        "constructions": [
+          "general"
+        ],
+        "construction_params": {
+          "general": {
+            "param_names": [
+              "free",
+              "multiple"
+            ],
+            "param_values": {
+              "free": [
+                "y",
+                "n"
+              ],
+              "multiple": [
+                "y",
+                "n"
+              ]
+            }
+          }
+        },
+        "version": 2
+      },
+      "segmental": {
+        "spreadsheet_id": "19uDRX9flfQFk-MSCsvFy_SG3zubz0Kxowo4y7pyJUOM",
+        "url": "https://docs.google.com/spreadsheets/d/19uDRX9flfQFk-MSCsvFy_SG3zubz0Kxowo4y7pyJUOM",
+        "constructions": [
+          "aspiration_prominence",
+          "flapping"
+        ],
+        "construction_params": {
+          "aspiration_prominence": {
+            "param_names": [
+              "aspirated"
+            ],
+            "param_values": {
+              "aspirated": [
+                "y",
+                "n",
+                "both",
+                "na"
+              ]
+            }
+          },
+          "flapping": {
+            "param_names": [
+              "flapping_left",
+              "flapping_internal",
+              "flapping_right"
+            ],
+            "param_values": {
+              "flapping_left": [
+                "y",
+                "n",
+                "both",
+                "na"
+              ],
+              "flapping_internal": [
+                "y",
+                "n",
+                "both",
+                "na"
+              ],
+              "flapping_right": [
+                "y",
+                "n",
+                "both",
+                "na"
+              ]
+            }
+          }
+        },
+        "version": 2
+      },
+      "metrical": {
+        "spreadsheet_id": "1yVggyBZ9whjWwihiQbc98aTMx9CRn9JQKfLEM8JZfTg",
+        "url": "https://docs.google.com/spreadsheets/d/1yVggyBZ9whjWwihiQbc98aTMx9CRn9JQKfLEM8JZfTg",
+        "constructions": [
+          "stress_domain"
+        ],
+        "construction_params": {
+          "stress_domain": {
+            "param_names": [
+              "accented",
+              "obligatory",
+              "independence",
+              "left-interaction",
+              "right-interaction"
+            ],
+            "param_values": {
+              "accented": [
+                "y",
+                "n",
+                "both"
+              ],
+              "obligatory": [
+                "y",
+                "n"
+              ],
+              "independence": [
+                "y",
+                "n",
+                "na"
+              ],
+              "left-interaction": [
+                "y",
+                "n"
+              ],
+              "right-interaction": [
+                "y",
+                "n"
+              ]
+            }
+          }
+        },
+        "version": 2
+      },
+      "free_occurrence": {
+        "spreadsheet_id": "1L3kfV-g278NMxbdqfu2sN343nmKp1r-29jq60fr9YsQ",
+        "url": "https://docs.google.com/spreadsheets/d/1L3kfV-g278NMxbdqfu2sN343nmKp1r-29jq60fr9YsQ",
+        "constructions": [
+          "general"
+        ],
+        "construction_params": {
+          "general": {
+            "param_names": [
+              "free",
+              "left-edge-of-free-form",
+              "right-edge-of-free-form",
+              "dependent-on-left",
+              "dependent-on-right"
+            ],
+            "param_values": {
+              "free": [
+                "y",
+                "n"
+              ],
+              "left-edge-of-free-form": [
+                "y",
+                "n",
+                "na"
+              ],
+              "right-edge-of-free-form": [
+                "y",
+                "n",
+                "na"
+              ],
+              "dependent-on-left": [
+                "na",
+                "<position_number>"
+              ],
+              "dependent-on-right": [
+                "na",
+                "<position_number>"
+              ]
+            }
+          }
+        },
+        "version": 2
+      },
+      "nonpermutability": {
+        "spreadsheet_id": "1sb0DJzFKY-j7sA1kjLqGUqtdsG2JJX0vW-rRALWV7Ic",
+        "url": "https://docs.google.com/spreadsheets/d/1sb0DJzFKY-j7sA1kjLqGUqtdsG2JJX0vW-rRALWV7Ic",
+        "constructions": [
+          "element_prescreening",
+          "general"
+        ],
+        "construction_params": {
+          "element_prescreening": {
+            "param_names": [
+              "scopal"
+            ],
+            "param_values": {
+              "scopal": [
+                "y",
+                "n",
+                "both"
+              ]
+            }
+          },
+          "general": {
+            "param_names": [
+              "scopal"
+            ],
+            "param_values": {
+              "scopal": [
+                "y",
+                "n",
+                "both"
+              ]
+            }
+          }
+        },
+        "version": 2
+      },
+      "coreference": {
+        "spreadsheet_id": "131F4ZVngUR2Sgu3Zmtfb_1ff-JT4L8dT1mNOk12M0zA",
+        "url": "https://docs.google.com/spreadsheets/d/131F4ZVngUR2Sgu3Zmtfb_1ff-JT4L8dT1mNOk12M0zA",
+        "constructions": [
+          "prescreening",
+          "reflexivization",
+          "pronominalization",
+          "np_reference"
+        ],
+        "construction_params": {
+          "prescreening": {
+            "param_names": [
+              "referential"
+            ],
+            "param_values": {
+              "referential": [
+                "y",
+                "n"
+              ]
+            }
+          },
+          "reflexivization": {
+            "param_names": [
+              "reflexive_allowed"
+            ],
+            "param_values": {
+              "reflexive_allowed": [
+                "y",
+                "n",
+                "untestable"
+              ]
+            }
+          },
+          "pronominalization": {
+            "param_names": [
+              "pronoun_allowed"
+            ],
+            "param_values": {
+              "pronoun_allowed": [
+                "y",
+                "n",
+                "untestable"
+              ]
+            }
+          },
+          "np_reference": {
+            "param_names": [
+              "np_allowed"
+            ],
+            "param_values": {
+              "np_allowed": [
+                "y",
+                "n",
+                "untestable"
+              ]
+            }
+          }
+        },
+        "version": 4
+      },
+      "proform": {
+        "spreadsheet_id": "1LJjSOkoblAre6v257wW1ENUMM7SDC_JbfhlN3HMwQJY",
+        "url": "https://docs.google.com/spreadsheets/d/1LJjSOkoblAre6v257wW1ENUMM7SDC_JbfhlN3HMwQJY",
+        "constructions": [
+          "do_so_substitution",
+          "vp_ellipsis"
+        ],
+        "construction_params": {
+          "do_so_substitution": {
+            "param_names": [
+              "shareable_proform_replace"
+            ],
+            "param_values": {
+              "shareable_proform_replace": [
+                "y",
+                "n",
+                "both",
+                "unclear"
+              ]
+            }
+          },
+          "vp_ellipsis": {
+            "param_names": [
+              "shareable_proform_replace"
+            ],
+            "param_values": {
+              "shareable_proform_replace": [
+                "y",
+                "n",
+                "both",
+                "unclear"
+              ]
+            }
+          }
+        },
+        "version": 2
+      },
+      "phrasal_accent": {
+        "spreadsheet_id": "12f_cgmKuKNEnHWUJGQX5QiaHeAVCIxMyYMS3mFe-mVs",
+        "url": "https://docs.google.com/spreadsheets/d/12f_cgmKuKNEnHWUJGQX5QiaHeAVCIxMyYMS3mFe-mVs",
+        "constructions": [
+          "prescreening",
+          "general"
+        ],
+        "construction_params": {
+          "prescreening": {
+            "param_names": [
+              "accented"
+            ],
+            "param_values": {
+              "accented": [
+                "y",
+                "n",
+                "both"
+              ]
+            }
+          },
+          "general": {
+            "param_names": [
+              "joint_accent"
+            ],
+            "param_values": {
+              "joint_accent": [
+                "always",
+                "sometimes",
+                "never"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "planar": {
+      "keystone_pos": 30,
+      "positions": [
+        {
+          "pos": 1,
+          "name": "v:leftedge",
+          "type": "Zone",
+          "elements": [
+            "and",
+            "also",
+            "then",
+            "CONJUNCT"
+          ]
+        },
+        {
+          "pos": 2,
+          "name": "v:frontedXP",
+          "type": "Slot",
+          "elements": [
+            "QWORDS",
+            "NP{S,A,P}"
+          ]
+        },
+        {
+          "pos": 3,
+          "name": "v:frontedauxiliary",
+          "type": "Slot",
+          "elements": [
+            "be",
+            "have",
+            "do",
+            "can",
+            "could",
+            "may",
+            "might",
+            "must",
+            "shall",
+            "should",
+            "will",
+            "would",
+            "ought"
+          ]
+        },
+        {
+          "pos": 4,
+          "name": "v:frontedauxiliaryinflection",
+          "type": "Slot",
+          "elements": [
+            "[-n]",
+            "[-s]",
+            "[-v]"
+          ]
+        },
+        {
+          "pos": 5,
+          "name": "v:npsubj1",
+          "type": "Slot",
+          "elements": [
+            "NP{S,A}",
+            "I",
+            "you",
+            "he",
+            "she",
+            "it",
+            "we",
+            "they"
+          ]
+        },
+        {
+          "pos": 6,
+          "name": "v:ad-S1",
+          "type": "Slot",
+          "elements": [
+            "AD-S"
+          ]
+        },
+        {
+          "pos": 7,
+          "name": "v:ad-VP1",
+          "type": "Slot",
+          "elements": [
+            "AD-VP"
+          ]
+        },
+        {
+          "pos": 8,
+          "name": "v:modal1",
+          "type": "Slot",
+          "elements": [
+            "can",
+            "could",
+            "may",
+            "might",
+            "must",
+            "shall",
+            "should",
+            "will",
+            "would"
+          ]
+        },
+        {
+          "pos": 9,
+          "name": "v:sd-S2",
+          "type": "Slot",
+          "elements": [
+            "AD-S"
+          ]
+        },
+        {
+          "pos": 10,
+          "name": "v:neg1",
+          "type": "Slot",
+          "elements": [
+            "not"
+          ]
+        },
+        {
+          "pos": 11,
+          "name": "v:ad-VP2",
+          "type": "Slot",
+          "elements": [
+            "AD-VP"
+          ]
+        },
+        {
+          "pos": 12,
+          "name": "v:perfect",
+          "type": "Slot",
+          "elements": [
+            "ha"
+          ]
+        },
+        {
+          "pos": 13,
+          "name": "v:perfectinflection",
+          "type": "Slot",
+          "elements": [
+            "[-ve]",
+            "[-s]"
+          ]
+        },
+        {
+          "pos": 14,
+          "name": "v:ad-S3",
+          "type": "Slot",
+          "elements": [
+            "AD-S"
+          ]
+        },
+        {
+          "pos": 15,
+          "name": "v:neg2",
+          "type": "Slot",
+          "elements": [
+            "not"
+          ]
+        },
+        {
+          "pos": 16,
+          "name": "v:ad-VP3",
+          "type": "Slot",
+          "elements": [
+            "AD-VP"
+          ]
+        },
+        {
+          "pos": 17,
+          "name": "v:ad-V1",
+          "type": "Slot",
+          "elements": [
+            "AD-V"
+          ]
+        },
+        {
+          "pos": 18,
+          "name": "v:passive",
+          "type": "Slot",
+          "elements": [
+            "[be-]"
+          ]
+        },
+        {
+          "pos": 19,
+          "name": "v:ad-S4",
+          "type": "Slot",
+          "elements": [
+            "AD-S"
+          ]
+        },
+        {
+          "pos": 20,
+          "name": "v:neg3",
+          "type": "Slot",
+          "elements": [
+            "not"
+          ]
+        },
+        {
+          "pos": 21,
+          "name": "v:ad-VP4",
+          "type": "Slot",
+          "elements": [
+            "AD-VP"
+          ]
+        },
+        {
+          "pos": 22,
+          "name": "v:progressive",
+          "type": "Slot",
+          "elements": [
+            "be"
+          ]
+        },
+        {
+          "pos": 23,
+          "name": "v:ad-S5",
+          "type": "Slot",
+          "elements": [
+            "AD-S"
+          ]
+        },
+        {
+          "pos": 24,
+          "name": "v:neg4",
+          "type": "Slot",
+          "elements": [
+            "not"
+          ]
+        },
+        {
+          "pos": 25,
+          "name": "v:ad-VP5",
+          "type": "Slot",
+          "elements": [
+            "AD-VP"
+          ]
+        },
+        {
+          "pos": 26,
+          "name": "v:ad-V2",
+          "type": "Slot",
+          "elements": [
+            "AD-V"
+          ]
+        },
+        {
+          "pos": 27,
+          "name": "v:nominal",
+          "type": "Slot",
+          "elements": [
+            "baby",
+            "house",
+            "pet",
+            "dog",
+            "child",
+            "nanny",
+            "grounds",
+            "care",
+            "hand",
+            "breast",
+            "lip",
+            "eye",
+            "name",
+            "sound",
+            "fact",
+            "spell",
+            "cross",
+            "strong",
+            "rough",
+            "stone",
+            "air",
+            "spin",
+            "pressure"
+          ]
+        },
+        {
+          "pos": 28,
+          "name": "v:productiveprefix",
+          "type": "Zone",
+          "elements": [
+            "[re-]",
+            "[un-]",
+            "[dis-]",
+            "[mis-]",
+            "[over-]",
+            "[under-]",
+            "[de-]",
+            "[out-]",
+            "[pre-]",
+            "[post-]"
+          ]
+        },
+        {
+          "pos": 29,
+          "name": "v:latinprefix",
+          "type": "Slot",
+          "elements": [
+            "[dis-]",
+            "[mis-]",
+            "[up-]",
+            "[down-]",
+            "[fore-]",
+            "[co-]",
+            "[en-]",
+            "[ex-]",
+            "[sub-]",
+            "[pro-]",
+            "[per-]",
+            "[sur-]",
+            "[contra-]",
+            "[ab-]",
+            "[ad-]",
+            "[ob-]",
+            "[sup-]",
+            "[cata-]",
+            "[dia-]",
+            "[epi-]",
+            "[para-]",
+            "[se-]",
+            "[tele-]",
+            "[ante-]",
+            "[circum-]",
+            "[eu-]",
+            "[inter-]",
+            "[intra-]",
+            "[syn-]",
+            "[be-]"
+          ]
+        },
+        {
+          "pos": 31,
+          "name": "v:verbinflection",
+          "type": "Slot",
+          "elements": [
+            "[-ed]",
+            "[-s]",
+            "[-ing]"
+          ]
+        },
+        {
+          "pos": 32,
+          "name": "v:ad-V3",
+          "type": "Slot",
+          "elements": [
+            "AD-V"
+          ]
+        },
+        {
+          "pos": 33,
+          "name": "v:obj-R",
+          "type": "Slot",
+          "elements": [
+            "NP{R}"
+          ]
+        },
+        {
+          "pos": 34,
+          "name": "v:obj-part",
+          "type": "Zone",
+          "elements": [
+            "NP{P,T}",
+            "VERBPART",
+            "me",
+            "you",
+            "him",
+            "her",
+            "it",
+            "us",
+            "them"
+          ]
+        },
+        {
+          "pos": 35,
+          "name": "v:rec",
+          "type": "Slot",
+          "elements": [
+            "NP{R}"
+          ]
+        },
+        {
+          "pos": 36,
+          "name": "v:ad-VP6",
+          "type": "Slot",
+          "elements": [
+            "AD-VP"
+          ]
+        },
+        {
+          "pos": 37,
+          "name": "v:PP",
+          "type": "Zone",
+          "elements": [
+            "PP"
+          ]
+        },
+        {
+          "pos": 38,
+          "name": "v:rightedge",
+          "type": "Zone",
+          "elements": [
+            "AD-S"
+          ]
+        }
+      ]
+    },
+    "status_sheet_url": "https://docs.google.com/spreadsheets/d/1ebuwUDhZAfrtMix7AzocjioiqSb8-KmysL614M3lt7M",
+    "notification_issue": 243
+  },
+  "synth0001": {
+    "folder_id": "1F9y3SyErwY7ieexHGUmv3k17TNFd2hOH",
+    "folder_url": "https://drive.google.com/drive/folders/1F9y3SyErwY7ieexHGUmv3k17TNFd2hOH",
+    "notes_doc_id": "1ODW9kjqS5yd4V_95PUTaEZvPz6Yu0jgIVPt1TX-oPhM",
+    "planar_spreadsheet_id": "16OFIc1O-RkT9Ex9pZajA2h1G4c8F-SYbAz3OX6hpIgs",
+    "planar_spreadsheet_url": "https://docs.google.com/spreadsheets/d/16OFIc1O-RkT9Ex9pZajA2h1G4c8F-SYbAz3OX6hpIgs",
+    "diagnostics_spreadsheet_id": "1L-J3EWgZRMnqIaaXmlpBAVZt98wgmbdlyI2DhJOHhjQ",
+    "diagnostics_spreadsheet_url": "https://docs.google.com/spreadsheets/d/1L-J3EWgZRMnqIaaXmlpBAVZt98wgmbdlyI2DhJOHhjQ",
+    "sheets": {
+      "ciscategorial": {
+        "spreadsheet_id": "1u6QnuCcS0t4j04f7cFjyVOcEz8_vifBwFaDqTmTnRJU",
+        "url": "https://docs.google.com/spreadsheets/d/1u6QnuCcS0t4j04f7cFjyVOcEz8_vifBwFaDqTmTnRJU",
+        "constructions": [
+          "general"
+        ],
+        "construction_params": {
+          "general": {
+            "param_names": [
+              "V-combines",
+              "N-combines",
+              "A-combines"
+            ],
+            "param_values": {
+              "V-combines": [
+                "y",
+                "n"
+              ],
+              "N-combines": [
+                "y",
+                "n"
+              ],
+              "A-combines": [
+                "y",
+                "n"
+              ]
+            }
+          }
+        },
+        "version": 3
+      },
+      "subspanrepetition": {
+        "spreadsheet_id": "12mNaEIfKP7Sf1RlnJ11CbG-lzGSOjovLel29AcZXvfg",
+        "url": "https://docs.google.com/spreadsheets/d/12mNaEIfKP7Sf1RlnJ11CbG-lzGSOjovLel29AcZXvfg",
+        "constructions": [
+          "andCoordination",
+          "control",
+          "thatCOMP",
+          "asyndeticPart"
+        ],
+        "construction_params": {
+          "andCoordination": {
+            "param_names": [
+              "widescope_right",
+              "widescope_left",
+              "fillable_botheither_conjunct"
+            ],
+            "param_values": {
+              "widescope_right": [
+                "y",
+                "n"
+              ],
+              "widescope_left": [
+                "y",
+                "n"
+              ],
+              "fillable_botheither_conjunct": [
+                "y",
+                "n"
+              ]
+            }
+          },
+          "control": {
+            "param_names": [
+              "widescope_right",
+              "widescope_left",
+              "fillable_botheither_conjunct"
+            ],
+            "param_values": {
+              "widescope_right": [
+                "y",
+                "n"
+              ],
+              "widescope_left": [
+                "y",
+                "n"
+              ],
+              "fillable_botheither_conjunct": [
+                "y",
+                "n"
+              ]
+            }
+          },
+          "thatCOMP": {
+            "param_names": [
+              "widescope_right",
+              "widescope_left",
+              "fillable_botheither_conjunct"
+            ],
+            "param_values": {
+              "widescope_right": [
+                "y",
+                "n"
+              ],
+              "widescope_left": [
+                "y",
+                "n"
+              ],
+              "fillable_botheither_conjunct": [
+                "y",
+                "n"
+              ]
+            }
+          },
+          "asyndeticPart": {
+            "param_names": [
+              "widescope_right",
+              "widescope_left",
+              "fillable_botheither_conjunct"
+            ],
+            "param_values": {
+              "widescope_right": [
+                "y",
+                "n"
+              ],
+              "widescope_left": [
+                "y",
+                "n"
+              ],
+              "fillable_botheither_conjunct": [
+                "y",
+                "n"
+              ]
+            }
+          }
+        },
+        "version": 3
+      },
+      "noninterruption": {
+        "spreadsheet_id": "1p0vGD608hBKMhm1ekbJW1qY0FxMLd6QqSSsSAoJGwvY",
+        "url": "https://docs.google.com/spreadsheets/d/1p0vGD608hBKMhm1ekbJW1qY0FxMLd6QqSSsSAoJGwvY",
+        "constructions": [
+          "general"
+        ],
+        "construction_params": {
+          "general": {
+            "param_names": [
+              "free",
+              "multiple"
+            ],
+            "param_values": {
+              "free": [
+                "y",
+                "n"
+              ],
+              "multiple": [
+                "y",
+                "n"
+              ]
+            }
+          }
+        },
+        "version": 3
+      },
+      "segmental": {
+        "spreadsheet_id": "11z4k-Fr9oJv__eaTYrJdN9t87SjYPT1v--ANz1De244",
+        "url": "https://docs.google.com/spreadsheets/d/11z4k-Fr9oJv__eaTYrJdN9t87SjYPT1v--ANz1De244",
+        "constructions": [
+          "aspiration_prominence",
+          "flapping"
+        ],
+        "construction_params": {
+          "aspiration_prominence": {
+            "param_names": [
+              "aspirated"
+            ],
+            "param_values": {
+              "aspirated": [
+                "y",
+                "n",
+                "both",
+                "na"
+              ]
+            }
+          },
+          "flapping": {
+            "param_names": [
+              "flapping_left",
+              "flapping_internal",
+              "flapping_right"
+            ],
+            "param_values": {
+              "flapping_left": [
+                "y",
+                "n",
+                "both",
+                "na"
+              ],
+              "flapping_internal": [
+                "y",
+                "n",
+                "both",
+                "na"
+              ],
+              "flapping_right": [
+                "y",
+                "n",
+                "both",
+                "na"
+              ]
+            }
+          }
+        },
+        "version": 3
+      },
+      "metrical": {
+        "spreadsheet_id": "1AYWa7GeTmhZvN0Xmuy02hnQ-DeWNojcHuPXmwkcxREk",
+        "url": "https://docs.google.com/spreadsheets/d/1AYWa7GeTmhZvN0Xmuy02hnQ-DeWNojcHuPXmwkcxREk",
+        "constructions": [
+          "stress_domain"
+        ],
+        "construction_params": {
+          "stress_domain": {
+            "param_names": [
+              "accented",
+              "obligatory",
+              "independence",
+              "left-interaction",
+              "right-interaction"
+            ],
+            "param_values": {
+              "accented": [
+                "y",
+                "n",
+                "both"
+              ],
+              "obligatory": [
+                "y",
+                "n"
+              ],
+              "independence": [
+                "y",
+                "n",
+                "na"
+              ],
+              "left-interaction": [
+                "y",
+                "n"
+              ],
+              "right-interaction": [
+                "y",
+                "n"
+              ]
+            }
+          }
+        },
+        "version": 3
+      },
+      "nonpermutability": {
+        "spreadsheet_id": "1zqFkv9ekZqCMj_xzh7G3P6ZeP0xLnVKvQH4gcUdxfOo",
+        "url": "https://docs.google.com/spreadsheets/d/1zqFkv9ekZqCMj_xzh7G3P6ZeP0xLnVKvQH4gcUdxfOo",
+        "constructions": [
+          "element_prescreening",
+          "general"
+        ],
+        "construction_params": {
+          "element_prescreening": {
+            "param_names": [
+              "scopal"
+            ],
+            "param_values": {
+              "scopal": [
+                "y",
+                "n",
+                "both"
+              ]
+            }
+          },
+          "general": {
+            "param_names": [
+              "scopal"
+            ],
+            "param_values": {
+              "scopal": [
+                "y",
+                "n",
+                "both"
+              ]
+            }
+          }
+        }
+      },
+      "free_occurrence": {
+        "spreadsheet_id": "1k6SdfzR80JsiNSsvT1WWxc8B3yqJdVVWxujNgbtvgyw",
+        "url": "https://docs.google.com/spreadsheets/d/1k6SdfzR80JsiNSsvT1WWxc8B3yqJdVVWxujNgbtvgyw",
+        "constructions": [
+          "general"
+        ],
+        "construction_params": {
+          "general": {
+            "param_names": [
+              "free",
+              "left-edge-of-free-form",
+              "right-edge-of-free-form",
+              "dependent-on-left",
+              "dependent-on-right"
+            ],
+            "param_values": {
+              "free": [
+                "y",
+                "n"
+              ],
+              "left-edge-of-free-form": [
+                "y",
+                "n",
+                "na"
+              ],
+              "right-edge-of-free-form": [
+                "y",
+                "n",
+                "na"
+              ],
+              "dependent-on-left": [
+                "na",
+                "<position_number>"
+              ],
+              "dependent-on-right": [
+                "na",
+                "<position_number>"
+              ]
+            }
+          }
+        }
+      },
+      "coreference": {
+        "spreadsheet_id": "1kk_8HWJ38EbssJSFD84E2V3-Q_0rifCntD12mEIvmgc",
+        "url": "https://docs.google.com/spreadsheets/d/1kk_8HWJ38EbssJSFD84E2V3-Q_0rifCntD12mEIvmgc",
+        "constructions": [
+          "prescreening",
+          "reflexivization",
+          "pronominalization",
+          "np_reference"
+        ],
+        "construction_params": {
+          "prescreening": {
+            "param_names": [
+              "reflexive_allowed",
+              "pronoun_allowed",
+              "np_allowed"
+            ],
+            "param_values": {
+              "reflexive_allowed": [
+                "y",
+                "n",
+                "untestable"
+              ],
+              "pronoun_allowed": [
+                "y",
+                "n",
+                "untestable"
+              ],
+              "np_allowed": [
+                "y",
+                "n",
+                "untestable"
+              ]
+            }
+          },
+          "reflexivization": {
+            "param_names": [
+              "reflexive_allowed",
+              "pronoun_allowed",
+              "np_allowed"
+            ],
+            "param_values": {
+              "reflexive_allowed": [
+                "y",
+                "n",
+                "untestable"
+              ],
+              "pronoun_allowed": [
+                "y",
+                "n",
+                "untestable"
+              ],
+              "np_allowed": [
+                "y",
+                "n",
+                "untestable"
+              ]
+            }
+          },
+          "pronominalization": {
+            "param_names": [
+              "reflexive_allowed",
+              "pronoun_allowed",
+              "np_allowed"
+            ],
+            "param_values": {
+              "reflexive_allowed": [
+                "y",
+                "n",
+                "untestable"
+              ],
+              "pronoun_allowed": [
+                "y",
+                "n",
+                "untestable"
+              ],
+              "np_allowed": [
+                "y",
+                "n",
+                "untestable"
+              ]
+            }
+          },
+          "np_reference": {
+            "param_names": [
+              "reflexive_allowed",
+              "pronoun_allowed",
+              "np_allowed"
+            ],
+            "param_values": {
+              "reflexive_allowed": [
+                "y",
+                "n",
+                "untestable"
+              ],
+              "pronoun_allowed": [
+                "y",
+                "n",
+                "untestable"
+              ],
+              "np_allowed": [
+                "y",
+                "n",
+                "untestable"
+              ]
+            }
+          }
+        }
+      },
+      "proform": {
+        "spreadsheet_id": "1PW32nQwWrNo0PhUiNTo_o_YzHr3BfxYBUyfpqPmGx8M",
+        "url": "https://docs.google.com/spreadsheets/d/1PW32nQwWrNo0PhUiNTo_o_YzHr3BfxYBUyfpqPmGx8M",
+        "constructions": [
+          "do_so_substitution",
+          "vp_ellipsis"
+        ],
+        "construction_params": {
+          "do_so_substitution": {
+            "param_names": [
+              "shareable_proform_replace"
+            ],
+            "param_values": {
+              "shareable_proform_replace": [
+                "y",
+                "n",
+                "both",
+                "unclear"
+              ]
+            }
+          },
+          "vp_ellipsis": {
+            "param_names": [
+              "shareable_proform_replace"
+            ],
+            "param_values": {
+              "shareable_proform_replace": [
+                "y",
+                "n",
+                "both",
+                "unclear"
+              ]
+            }
+          }
+        }
+      },
+      "phrasal_accent": {
+        "spreadsheet_id": "12vQsG2qQOlsLCWHwD-6R-dNSfpBCZkPZ51PSnayqtTc",
+        "url": "https://docs.google.com/spreadsheets/d/12vQsG2qQOlsLCWHwD-6R-dNSfpBCZkPZ51PSnayqtTc",
+        "constructions": [
+          "prescreening",
+          "general"
+        ],
+        "construction_params": {
+          "prescreening": {
+            "param_names": [
+              "accented"
+            ],
+            "param_values": {
+              "accented": [
+                "y",
+                "n",
+                "both"
+              ]
+            }
+          },
+          "general": {
+            "param_names": [
+              "joint_accent"
+            ],
+            "param_values": {
+              "joint_accent": [
+                "always",
+                "sometimes",
+                "never"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "planar": {
+      "keystone_pos": 30,
+      "positions": [
+        {
+          "pos": 1,
+          "name": "v:leftedge",
+          "type": "Zone",
+          "elements": [
+            "and",
+            "also",
+            "then",
+            "CONJUNCT"
+          ]
+        },
+        {
+          "pos": 2,
+          "name": "v:frontedXP",
+          "type": "Slot",
+          "elements": [
+            "QWORDS",
+            "NP{S,A,P}"
+          ]
+        },
+        {
+          "pos": 3,
+          "name": "v:frontedauxiliary",
+          "type": "Slot",
+          "elements": [
+            "be",
+            "have",
+            "do",
+            "can",
+            "could",
+            "may",
+            "might",
+            "must",
+            "shall",
+            "should",
+            "will",
+            "would",
+            "ought"
+          ]
+        },
+        {
+          "pos": 4,
+          "name": "v:frontedauxiliaryinflection",
+          "type": "Slot",
+          "elements": [
+            "[-n]",
+            "[-s]",
+            "[-v]"
+          ]
+        },
+        {
+          "pos": 5,
+          "name": "v:npsubj1",
+          "type": "Slot",
+          "elements": [
+            "NP{S,A}",
+            "I",
+            "you",
+            "he",
+            "she",
+            "it",
+            "we",
+            "they"
+          ]
+        },
+        {
+          "pos": 6,
+          "name": "v:ad-S1",
+          "type": "Slot",
+          "elements": [
+            "AD-S"
+          ]
+        },
+        {
+          "pos": 7,
+          "name": "v:ad-VP1",
+          "type": "Slot",
+          "elements": [
+            "AD-VP"
+          ]
+        },
+        {
+          "pos": 8,
+          "name": "v:modal1",
+          "type": "Slot",
+          "elements": [
+            "can",
+            "could",
+            "may",
+            "might",
+            "must",
+            "shall",
+            "should",
+            "will",
+            "would"
+          ]
+        },
+        {
+          "pos": 9,
+          "name": "v:sd-S2",
+          "type": "Slot",
+          "elements": [
+            "AD-S"
+          ]
+        },
+        {
+          "pos": 10,
+          "name": "v:neg1",
+          "type": "Slot",
+          "elements": [
+            "not"
+          ]
+        },
+        {
+          "pos": 11,
+          "name": "v:ad-VP2",
+          "type": "Slot",
+          "elements": [
+            "AD-VP"
+          ]
+        },
+        {
+          "pos": 12,
+          "name": "v:perfect",
+          "type": "Slot",
+          "elements": [
+            "ha"
+          ]
+        },
+        {
+          "pos": 13,
+          "name": "v:perfectinflection",
+          "type": "Slot",
+          "elements": [
+            "[-ve]",
+            "[-s]"
+          ]
+        },
+        {
+          "pos": 14,
+          "name": "v:ad-S3",
+          "type": "Slot",
+          "elements": [
+            "AD-S"
+          ]
+        },
+        {
+          "pos": 15,
+          "name": "v:neg2",
+          "type": "Slot",
+          "elements": [
+            "not"
+          ]
+        },
+        {
+          "pos": 16,
+          "name": "v:ad-VP3",
+          "type": "Slot",
+          "elements": [
+            "AD-VP"
+          ]
+        },
+        {
+          "pos": 17,
+          "name": "v:ad-V1",
+          "type": "Slot",
+          "elements": [
+            "AD-V"
+          ]
+        },
+        {
+          "pos": 18,
+          "name": "v:passive",
+          "type": "Slot",
+          "elements": [
+            "[be-]"
+          ]
+        },
+        {
+          "pos": 19,
+          "name": "v:ad-S4",
+          "type": "Slot",
+          "elements": [
+            "AD-S"
+          ]
+        },
+        {
+          "pos": 20,
+          "name": "v:neg3",
+          "type": "Slot",
+          "elements": [
+            "not"
+          ]
+        },
+        {
+          "pos": 21,
+          "name": "v:ad-VP4",
+          "type": "Slot",
+          "elements": [
+            "AD-VP"
+          ]
+        },
+        {
+          "pos": 22,
+          "name": "v:progressive",
+          "type": "Slot",
+          "elements": [
+            "be"
+          ]
+        },
+        {
+          "pos": 23,
+          "name": "v:ad-S5",
+          "type": "Slot",
+          "elements": [
+            "AD-S"
+          ]
+        },
+        {
+          "pos": 24,
+          "name": "v:neg4",
+          "type": "Slot",
+          "elements": [
+            "not"
+          ]
+        },
+        {
+          "pos": 25,
+          "name": "v:ad-VP5",
+          "type": "Slot",
+          "elements": [
+            "AD-VP"
+          ]
+        },
+        {
+          "pos": 26,
+          "name": "v:ad-V2",
+          "type": "Slot",
+          "elements": [
+            "AD-V"
+          ]
+        },
+        {
+          "pos": 27,
+          "name": "v:nominal",
+          "type": "Slot",
+          "elements": [
+            "baby",
+            "house",
+            "pet",
+            "dog",
+            "child",
+            "nanny",
+            "grounds",
+            "care",
+            "hand",
+            "breast",
+            "lip",
+            "eye",
+            "name",
+            "sound",
+            "fact",
+            "spell",
+            "cross",
+            "strong",
+            "rough",
+            "stone",
+            "air",
+            "spin",
+            "pressure"
+          ]
+        },
+        {
+          "pos": 28,
+          "name": "v:productiveprefix",
+          "type": "Zone",
+          "elements": [
+            "[re-]",
+            "[un-]",
+            "[dis-]",
+            "[mis-]",
+            "[over-]",
+            "[under-]",
+            "[de-]",
+            "[out-]",
+            "[pre-]",
+            "[post-]"
+          ]
+        },
+        {
+          "pos": 29,
+          "name": "v:latinprefix",
+          "type": "Slot",
+          "elements": [
+            "[dis-]",
+            "[mis-]",
+            "[up-]",
+            "[down-]",
+            "[fore-]",
+            "[co-]",
+            "[en-]",
+            "[ex-]",
+            "[sub-]",
+            "[pro-]",
+            "[per-]",
+            "[sur-]",
+            "[contra-]",
+            "[ab-]",
+            "[ad-]",
+            "[ob-]",
+            "[sup-]",
+            "[cata-]",
+            "[dia-]",
+            "[epi-]",
+            "[para-]",
+            "[se-]",
+            "[tele-]",
+            "[ante-]",
+            "[circum-]",
+            "[eu-]",
+            "[inter-]",
+            "[intra-]",
+            "[syn-]",
+            "[be-]"
+          ]
+        },
+        {
+          "pos": 31,
+          "name": "v:verbinflection",
+          "type": "Slot",
+          "elements": [
+            "[-ed]",
+            "[-s]",
+            "[-ing]"
+          ]
+        },
+        {
+          "pos": 32,
+          "name": "v:ad-V3",
+          "type": "Slot",
+          "elements": [
+            "AD-V"
+          ]
+        },
+        {
+          "pos": 33,
+          "name": "v:obj-R",
+          "type": "Slot",
+          "elements": [
+            "NP{R}"
+          ]
+        },
+        {
+          "pos": 34,
+          "name": "v:obj-part",
+          "type": "Zone",
+          "elements": [
+            "NP{P,T}",
+            "VERBPART",
+            "me",
+            "you",
+            "him",
+            "her",
+            "it",
+            "us",
+            "them"
+          ]
+        },
+        {
+          "pos": 35,
+          "name": "v:rec",
+          "type": "Slot",
+          "elements": [
+            "NP{R}"
+          ]
+        },
+        {
+          "pos": 36,
+          "name": "v:ad-VP6",
+          "type": "Slot",
+          "elements": [
+            "AD-VP"
+          ]
+        },
+        {
+          "pos": 37,
+          "name": "v:PP",
+          "type": "Zone",
+          "elements": [
+            "PP"
+          ]
+        },
+        {
+          "pos": 38,
+          "name": "v:rightedge",
+          "type": "Zone",
+          "elements": [
+            "AD-S"
+          ]
+        }
+      ]
+    },
+    "biuniqueness_stage1_spreadsheet_id": "1rQ8KWqOPNN-Pt7uXDN_Afx81Tuj8XNHB2E3IoZaY7NI",
+    "biuniqueness_stage1_url": "https://docs.google.com/spreadsheets/d/1rQ8KWqOPNN-Pt7uXDN_Afx81Tuj8XNHB2E3IoZaY7NI",
+    "notification_issue": 261
+  }
+}

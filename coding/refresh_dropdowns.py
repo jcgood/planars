@@ -18,7 +18,8 @@ from typing import Dict, List
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
-from .drive import _get_clients, _load_manifest_from_drive, _save_drive_config, _load_drive_config
+from .drive import load_manifest, _load_drive_config
+from .drive_backend import get_backend
 from .make_forms import _read_diagnostics_for_language
 from .schemas import load_diagnostic_classes
 from .generate_sheets import _format_and_validate
@@ -75,8 +76,8 @@ def main() -> None:
         idx = sys.argv.index("--lang")
         lang_filter = sys.argv[idx + 1]
 
-    gc, drive = _get_clients()
-    manifest = _load_manifest_from_drive(drive)
+    backend = get_backend()
+    manifest = load_manifest(backend)
     drive_config = _load_drive_config()
     coref_pair_map = _coreference_pair_criterion_map()
 
@@ -125,7 +126,7 @@ def main() -> None:
 
             if apply:
                 try:
-                    ss = gc.open_by_key(spreadsheet_id)
+                    ss = backend.open_spreadsheet(spreadsheet_id)
                 except Exception as e:
                     print(f"    Could not open spreadsheet: {e}")
                     continue
@@ -182,17 +183,20 @@ def main() -> None:
         return
 
     if any_changes:
-        # Upload updated manifest to Drive
+        # Upload updated manifest to Drive.
+        #
+        # This is the fourth independent "write manifest.json" implementation in
+        # the codebase (docs/drive-protocol-surface.md flags it). The migration
+        # routes its *transport* through the seam but deliberately preserves its
+        # behaviour: no key reordering, and no create-if-missing fallback, unlike
+        # drive._upload_planars_config. Collapsing the four is a separate change
+        # that needs goldens for all of them first.
         import json
         manifest_file_id = drive_config.get("_planars_config_file_id")
         if manifest_file_id:
-            from googleapiclient.http import MediaIoBaseUpload
-            import io
             content = json.dumps(manifest, indent=2).encode()
-            drive.files().update(
-                fileId=manifest_file_id,
-                media_body=MediaIoBaseUpload(io.BytesIO(content), mimetype="application/json"),
-            ).execute()
+            backend.update_file(manifest_file_id, content=content,
+                                mimetype="application/json")
             print("\nManifest updated on Drive.")
         else:
             print("\n[WARNING] _planars_config_file_id not set — manifest not uploaded.")

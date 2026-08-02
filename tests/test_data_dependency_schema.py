@@ -52,6 +52,7 @@ def test_facts_have_expected_ids():
         "manifest_class_registration",
         "manifest_dropdown_values",
         "pair_row_position_numbers",
+        "drive_state_test_fixtures",
     }
 
 
