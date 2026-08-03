@@ -50,21 +50,14 @@ ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
 
-import gspread
-
 from .drive import (
-    _get_clients,
-    _load_manifest_from_drive,
-    _open_spreadsheet,
-    _get_or_create_folder,
-    _share_with_person,
-    _remove_anyone_permission,
-    _move_to_folder,
+    load_manifest,
+    upload_manifest,
     _with_retry,
-    _upload_planars_config,
     _load_drive_config,
     _save_drive_config,
 )
+from .drive_doorway import WorksheetNotFound, get_doorway
 from .make_forms import (
     _read_diagnostics_for_language,
     resolve_keystone_active,
@@ -202,7 +195,7 @@ def _construction_params(
 
 
 def _gather_status_rows(
-    gc: gspread.Client,
+    doorway,
     lang_id: str,
     lang_data: Dict,
     row_skeletons: List[Dict],
@@ -210,12 +203,12 @@ def _gather_status_rows(
     """Fill in live status/link data for each row skeleton by reading the live Sheet.
 
     Opens each class spreadsheet once (constructions share one spreadsheet, keyed
-    by class_name in the manifest) and reads each construction's tab with gspread.
+    by class_name in the manifest) and reads each construction's tab.
     Returns row dicts with class_name, construction, is_pair, status_text, color, link.
     """
     lang_setup_dir = CODED_DATA / lang_id / "lang_setup"
     sheets = lang_data.get("sheets", {})
-    open_spreadsheets: Dict[str, Optional[gspread.Spreadsheet]] = {}
+    open_spreadsheets: Dict[str, Optional[object]] = {}
     rows: List[Dict] = []
 
     for skel in row_skeletons:
@@ -230,7 +223,7 @@ def _gather_status_rows(
 
         if class_name not in open_spreadsheets:
             try:
-                open_spreadsheets[class_name] = _open_spreadsheet(gc, sheet_info["spreadsheet_id"])
+                open_spreadsheets[class_name] = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
             except Exception as exc:
                 print(f"    WARNING: could not open {class_name} spreadsheet for {lang_id}: {exc}")
                 open_spreadsheets[class_name] = None
@@ -242,7 +235,7 @@ def _gather_status_rows(
 
         try:
             ws = _with_retry(lambda c=construction: ss.worksheet(c))
-        except gspread.WorksheetNotFound:
+        except WorksheetNotFound:
             text, color = _missing_sheet_status()
             rows.append({**skel, "status_text": text, "color": color, "link": None})
             continue
@@ -274,44 +267,50 @@ def _gather_status_rows(
 # ---------------------------------------------------------------------------
 
 def _get_or_create_status_spreadsheet(
-    gc: gspread.Client, drive, folder_id: str, name: str
-) -> Tuple[gspread.Spreadsheet, bool]:
+    doorway, folder_id: str, name: str
+) -> Tuple[object, bool]:
     """Find or create the status spreadsheet by name inside folder_id.
 
     Reused on re-runs so the URL stays stable across regenerations. Returns
     (spreadsheet, created).
     """
-    existing = drive.files().list(
+    existing = doorway.list_files(
         q=(
             f"name='{name}' and '{folder_id}' in parents"
             " and mimeType='application/vnd.google-apps.spreadsheet'"
             " and trashed=false"
         ),
         fields="files(id)",
-    ).execute().get("files", [])
+    )
     if existing:
-        return _open_spreadsheet(gc, existing[0]["id"]), False
-    ss = gc.create(name)
-    _move_to_folder(drive, ss.id, folder_id)
+        return doorway.open_spreadsheet(existing[0]["id"]), False
+    ss = doorway.create_spreadsheet(name)
+    doorway.move_file(ss.id, folder_id)
     return ss, True
 
 
-def _already_shared(drive, file_id: str, email: str) -> bool:
+def _already_shared(doorway, file_id: str, email: str) -> bool:
     """Return True if email already holds any permission on file_id.
 
     Avoids piling up duplicate permission entries on repeated --apply runs.
     """
-    perms = drive.permissions().list(
-        fileId=file_id, fields="permissions(emailAddress)"
-    ).execute().get("permissions", [])
+    perms = doorway.list_permissions(file_id, fields="permissions(emailAddress)")
     return any((p.get("emailAddress") or "").lower() == email.lower() for p in perms)
 
 
-def _lock_read_only(drive, file_id: str) -> None:
-    """Remove any 'anyone' permission and ensure Adam has read-only access."""
-    _remove_anyone_permission(drive, file_id)
-    if not _already_shared(drive, file_id, _ADAM_EMAIL):
-        _share_with_person(drive, file_id, _ADAM_EMAIL, role="reader")
+def _lock_read_only(doorway, file_id: str) -> None:
+    """Remove any 'anyone' permission and ensure Adam has read-only access.
+
+    No doorway-level convenience for removing the 'anyone' grant (unlike
+    `drive._remove_anyone_permission`, which every unmigrated caller still
+    uses) -- inlined here from the same two doorway primitives.
+    """
+    for p in doorway.list_permissions(file_id, fields="permissions(id,type)"):
+        if p.get("type") == "anyone":
+            doorway.delete_permission(file_id, p["id"])
+    if not _already_shared(doorway, file_id, _ADAM_EMAIL):
+        doorway.create_permission(file_id, type="user", role="reader",
+                                  email=_ADAM_EMAIL, notify=False)
 
 
 # ---------------------------------------------------------------------------
@@ -341,8 +340,8 @@ def _banner_rows(lang_id: str, folder_url: str) -> List[List[str]]:
 
 
 def _write_status_sheet(
-    ss: gspread.Spreadsheet, lang_id: str, folder_url: str, rows: List[Dict]
-) -> gspread.Worksheet:
+    ss, lang_id: str, folder_url: str, rows: List[Dict]
+):
     """Write banner + header + data rows to ss's single worksheet, with formatting."""
     ws = _with_retry(lambda: ss.sheet1)
     if ws.title != "Status":
@@ -447,8 +446,8 @@ def main() -> None:
         idx = sys.argv.index("--lang")
         lang_filter = sys.argv[idx + 1]
 
-    gc, drive = _get_clients()
-    manifest = _load_manifest_from_drive(drive)
+    doorway = get_doorway()
+    manifest = load_manifest(doorway)
     pair_row_constructions = _get_pair_row_constructions()
     manifest_dirty = False
 
@@ -460,9 +459,9 @@ def main() -> None:
 
     folder_id = None
     if apply:
-        folder_id = _get_or_create_folder(drive, _STATUS_FOLDER_NAME)
+        folder_id = doorway.get_or_create_folder(_STATUS_FOLDER_NAME)
         folder_url = f"https://drive.google.com/drive/folders/{folder_id}"
-        _lock_read_only(drive, folder_id)
+        _lock_read_only(doorway, folder_id)
         print(f"\nAnnotation Status folder: {folder_url}")
 
     for lang_id in lang_ids:
@@ -486,7 +485,7 @@ def main() -> None:
         n_classes = len({s["class_name"] for s in skeletons})
         print(f"\n[{lang_id}] {len(skeletons)} construction(s) across {n_classes} class(es)")
 
-        rows = _gather_status_rows(gc, lang_id, lang_data, skeletons)
+        rows = _gather_status_rows(doorway, lang_id, lang_data, skeletons)
         for r in rows:
             marker = " (pair-row tab)" if r["is_pair"] else ""
             print(f"    {r['class_name']}/{r['construction']}{marker}: {r['status_text']}")
@@ -496,9 +495,9 @@ def main() -> None:
 
         lang_folder_url = lang_data.get("folder_url", "")
         sheet_name = f"status_{lang_id}"
-        ss, created = _get_or_create_status_spreadsheet(gc, drive, folder_id, sheet_name)
+        ss, created = _get_or_create_status_spreadsheet(doorway, folder_id, sheet_name)
         _write_status_sheet(ss, lang_id, lang_folder_url, rows)
-        _lock_read_only(drive, ss.id)
+        _lock_read_only(doorway, ss.id)
         action = "Created" if created else "Updated"
         print(f"    {action}: {ss.url}")
 
@@ -517,7 +516,7 @@ def main() -> None:
             config = _load_drive_config()
             existing_file_id = config.get("_planars_config_file_id")
             root_folder_id = config.get("_root_folder_id")
-            file_id = _upload_planars_config(drive, manifest, root_folder_id, existing_file_id)
+            file_id = upload_manifest(doorway, manifest, root_folder_id, existing_file_id)
             config["_planars_config_file_id"] = file_id
             _save_drive_config(config)
             print("Manifest updated on Drive (status_sheet_url).")

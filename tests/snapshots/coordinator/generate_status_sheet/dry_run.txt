@@ -1,0 +1,26 @@
+DRY RUN — Generating Annotation Status sheet(s)
+(run with --apply to create/update sheets on Drive)
+
+[stan1293] 20 construction(s) across 10 class(es)
+    ciscategorial/general: 378/423 filled (89%)
+    subspanrepetition/andCoordination: 378/423 filled (89%)
+    subspanrepetition/control: 378/423 filled (89%)
+    subspanrepetition/thatCOMP: 378/423 filled (89%)
+    subspanrepetition/asyndeticPart: 378/423 filled (89%)
+    noninterruption/general: 252/282 filled (89%)
+    metrical/stress_domain: 634/709 filled (89%)
+    nonpermutability/element_prescreening: 127/142 filled (89%)
+    nonpermutability/general (pair-row tab): pair-row tab
+    segmental/aspiration_prominence: 127/142 filled (89%)
+    segmental/flapping: 384/426 filled (90%)
+    free_occurrence/general: 631/706 filled (89%)
+    coreference/prescreening: 126/141 filled (89%)
+    coreference/reflexivization (pair-row tab): pair-row tab
+    coreference/pronominalization (pair-row tab): pair-row tab
+    coreference/np_reference (pair-row tab): pair-row tab
+    proform/do_so_substitution: 126/141 filled (89%)
+    proform/vp_ellipsis: 5/141 filled (4%)
+    phrasal_accent/prescreening: 0/142 filled (0%)
+    phrasal_accent/general (pair-row tab): pair-row tab
+
+Run with --apply to create/update the sheet(s) on Drive.

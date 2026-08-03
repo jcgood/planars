@@ -30,7 +30,7 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 0b/1 — migrating callers, 11 of 18 done (started 2026-08-01)
+**Phase:** 0b/1 — migrating callers, 12 of 18 done (started 2026-08-01)
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
 **Last worked:** 2026-08-03
@@ -82,6 +82,7 @@ the same day — see the decisions log.
 | Phase 0b/1 — file 9: `import_planar.py` | **done** — snapshots captured, pre/post diff clean across 30 scenarios; first to read *and* write the planar sheet |
 | Phase 0b/1 — file 10: `generate_notebooks.py` | **done** — snapshots captured, pre/post diff clean across 7 scenarios |
 | Phase 0b/1 — file 11: `update_sheets.py` | **done** — snapshots captured, pre/post diff clean across 12 scenarios; first to append to the annotation tabs themselves |
+| Phase 0b/1 — file 12: `generate_status_sheet.py` | **done** — snapshots captured, pre/post diff clean across 8 scenarios; first to create a root-level folder (`parent_id=None`) and first to read *other* languages' already-existing annotation spreadsheets |
 | Phase 0b/1 — remaining files | not started — see § "Migration order" |
 | Phases 3–9 | not started |
 
@@ -98,10 +99,12 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
 1. **The remaining files**, one at a time, snapshots captured
    immediately after each. See § "Migration order" below.
-   Delegable to agents now that the pattern exists (the ten done are the
+   Delegable to agents now that the pattern exists (the twelve done are the
    worked examples: Sheets-heavy, Drive-files-only, folders-and-sharing,
    read-only, Docs, sheet creation, reference-sheet overwrite, a command
-   with two directions that must round-trip, and file uploads).
+   with two directions that must round-trip, file uploads, appending to
+   annotation tabs, and a root-level folder that reads other languages'
+   sheets).
 
    Watch for, in each: a `_save_drive_config` call (must be patched in tests —
    the real `drive_config.json` holds live IDs and a test that clobbers it
@@ -112,9 +115,11 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
    **If the file reads `construction_params` from the manifest, call
    `tests/mutation_checks.assert_no_criterion_writes_onto_trailing_columns` in
-   its snapshot test.** Six of the seven remaining files do: `sync_params`,
-   `generate_sheets`, `restructure_sheets`, `import_sheets`, `integrity_check`,
-   `generate_status_sheet`. Two commands have now written criterion-shaped
+   its snapshot test.** Five of the six remaining files do: `sync_params`,
+   `generate_sheets`, `restructure_sheets`, `import_sheets`, `integrity_check`.
+   (`generate_status_sheet` was checked against this same list before it was
+   migrated and turned out not to belong on it — see the 2026-08-03 decisions-log
+   entry.) Two commands have now written criterion-shaped
    things onto `Source`/`Comments` independently (#272 and Finding 10), both
    from trusting the manifest about a tab's columns, so treat it as the
    expected mistake rather than a surprise. `sync_params` is the one to watch:
@@ -161,7 +166,7 @@ current job and every one would otherwise be remembered by nobody.
 
 ### Migration order
 
-Seven files remain of eighteen that touch Drive. The plan's list of eleven
+Six files remain of eighteen that touch Drive. The plan's list of eleven
 was hand-written and never checked against the code; a scan on 2026-08-02
 replaced it with a derived one in `tests/test_doorway_coverage.py`.
 
@@ -176,12 +181,13 @@ total at all.
 Ordered by risk, lowest first, so that every shared helper and every part of
 the doorway has been exercised before the destructive commands are touched.
 
-**"11 of 18" flatters it, and planning should use the volume rather than the
-count.** Because the order is smallest-and-safest first, the eleven done are
-3,558 lines between them; the seven remaining are 8,231 lines and **48 direct
-Drive calls**. That is about a third of the phase by weight. Recompute rather
-than trusting these numbers — the command is in `tests/test_doorway_coverage.py`
-(`_DIRECT_ACCESS` over `coding/*.py`, minus `_EXEMPT`).
+**"12 of 18" flatters it, and planning should use the volume rather than the
+count.** Because the order is smallest-and-safest first, the twelve done are
+4,156 lines between them; the six remaining are 7,704 lines and **41 direct
+Drive calls**. That is a bit over a quarter of the phase by weight. Recompute
+rather than trusting these numbers — the command is in
+`tests/test_doorway_coverage.py` (`_DIRECT_ACCESS` over `coding/*.py`, minus
+`_EXEMPT`).
 
 | file | why here |
 |---|---|
@@ -194,7 +200,7 @@ than trusting these numbers — the command is in `tests/test_doorway_coverage.p
 | ~~`import_planar.py`~~ | done |
 | ~~`generate_notebooks.py`~~ | done |
 | ~~`update_sheets.py`~~ | done |
-| `generate_status_sheet.py` | Generated dashboard; no annotation at stake |
+| ~~`generate_status_sheet.py`~~ | done |
 | `validate_coding.py` | Writes highlighting across every sheet |
 | `integrity_check.py` | 945 lines but a small read-only Drive section |
 | `import_sheets.py` | Downloads everything; the daily refresh depends on it |
@@ -492,6 +498,36 @@ from the other direction.
 ---
 
 ## Decisions log
+
+**2026-08-03 — file 12 turned out not to need
+`assert_no_criterion_writes_onto_trailing_columns`, correcting a line written
+during file 11's migration.** The § "Next action" list said six of the seven
+remaining files read `construction_params` from the manifest, naming
+`generate_status_sheet` among them. Reading the file before migrating it
+showed that was never true: its `_construction_params` (singular, local) reads
+the diagnostics YAML and `_COREFERENCE_CONSTRUCTION_PARAMS`, never the
+manifest, and the command's only sheet writes are the three-column status
+table and its background-color formatting — no `setDataValidation`, no
+criterion note, nothing that could land on `Source`/`Comments`. So the
+assertion has nothing to check here; the file was miscounted, not exempted.
+Both `docs/data-layer-progress.md` and `coding/CLAUDE.md` said "six" (now
+"five" and "five", respectively) as part of this file's migration commit,
+per the rule that a stale statement gets fixed the moment it's noticed rather
+than deferred to an audit.
+
+**2026-08-03 — file 12 (`generate_status_sheet.py`) needed no doorway
+addition; the one gap was filled inline instead.** Every other primitive it
+uses already existed (`get_or_create_folder` with `parent_id=None`,
+`list_files`, `create_permission`, `list_permissions`, `delete_permission`,
+`move_file`, `create_spreadsheet`, `open_spreadsheet`). The one thing that
+had no doorway-level counterpart was `drive._remove_anyone_permission` — every
+still-unmigrated caller uses that helper directly, so it was left alone rather
+than added to the `DriveDoorway` protocol for a single caller; `_lock_read_only`
+inlines the same two-call sequence (`list_permissions` then
+`delete_permission` on any `type == "anyone"` entry) from primitives that
+already exist. Also worth naming: the command shares read-only (`role="reader"`)
+with Adam, unlike file 7's writer share — the two migrations use the same
+`create_permission` call with different arguments, not different mechanisms.
 
 **2026-08-02 — file 9 was checked by a round trip, not only by each direction
 on its own.** `import-planar` is the only migrated command with two directions
