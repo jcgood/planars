@@ -225,6 +225,7 @@ Keep the following files up to date as the project evolves. Check each one at th
 | `schemas/planar.yaml` | New standard element labels or structural column conventions |
 | `schemas/terms.yaml` | New analytical terms or chart label changes |
 | `README.md` | Changes to the annotated TOC (audience routing, guide descriptions) |
+| `NextPrompt.md` | The standing resumption prompt — open a fresh session and say "Read NextPrompt.md and carry on." Update the *Now* line when the current work changes; it holds no state, so nothing else should need editing |
 | `docs/*.md` | User-facing workflow changes, setup instructions, new dependencies, new commands |
 | `docs/tooling-design.md` | Coordinator UX checklist or design patterns change — this is the operational companion to the philosophy section above |
 | `docs/data-layer-design.md` | The data layer diagnosis, constraints, or design direction changes (issue #271). Rationale record — update when a decision is revised, not for routine work |

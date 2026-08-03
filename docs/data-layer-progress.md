@@ -33,7 +33,7 @@ of this state would be exactly the defect this project is trying to remove.
 **Phase:** 0b/1 — migrating callers, 9 of 18 done (started 2026-08-01)
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
-**Last worked:** 2026-08-02
+**Last worked:** 2026-08-03
 
 Bugs found and fixed while doing this work, all the same root cause — something
 inferred which column held a value from the wrong source: **#272** (dropdowns,
@@ -48,9 +48,12 @@ stale and `stan1293`'s `phrasal_accent/general` gets rebuilt with pair rows.
 Both its tabs are entirely unannotated, so nothing is at stake, and the rebuild
 waits on Adam annotating `phrasal_accent/prescreening` rather than on this work
 — `general`'s pair rows are derived from which elements he marks accented, so
-rebuilding it before then produces a correctly-shaped empty tab. **#276** —
-collapse the duplicated Drive helpers, blocked until every Drive-writing
-command has snapshots.
+rebuilding it before then produces a correctly-shaped empty tab. Daily
+validation refiles this as a `sheet-validation` issue until the rebuild happens
+(**#278** on 2026-08-03) — expected, and not a sign anything new is wrong; a
+*different* problem would supersede that issue rather than pile up under it.
+**#276** — collapse the duplicated Drive helpers, blocked until every
+Drive-writing command has snapshots.
 
 Also fixed, no issue filed: `apply-pending` gave one answer to four different
 questions when it could not check a Sheet. Found by file 4's snapshot, fixed
