@@ -22,13 +22,10 @@ column, a new construction, and a language with no local planar. Stdout, the
 mutation log, every tab of every spreadsheet, and the manifest all came back
 byte-identical afterwards.
 
-**Two snapshots record real bugs, deliberately.** See
-docs/data-layer-progress.md § Findings 9 and 10: appending a row rewrites the
-whole tab's dropdowns to `[y, n]`, discarding allowed values like `both` and
-`na`; and header notes are positioned from the manifest's criterion list rather
-than the tab's own header, so on `synth0001`/`coreference`/`prescreening` two of
-them land on `Source` and `Comments`. Do not quietly correct the snapshots —
-when the bugs are fixed, their diff is the evidence.
+These snapshots first recorded three bugs and then, in the next commit, their
+fixes — docs/data-layer-progress.md § Findings 9, 10 and 11. All three came of
+the same thing: the manifest was treated as the authority on which columns a tab
+has and how wide a new row should be, when the tab's own header is.
 
 `CODED_DATA` is redirected into a temp tree in every test, for both this module
 and `generate_sheets` (whose `_add_constructions_to_existing_sheet` reads the
@@ -241,6 +238,12 @@ def test_new_construction_transcript(env):
     check_snapshot("new_construction.txt", env.run(["update-sheets", "--apply"]))
 
 
+def test_new_construction_dry_run_transcript(env):
+    """The dry run names both consequences: a new tab, and a rewritten manifest."""
+    env.add_construction("arao1248", "ciscategorial", "second_frame")
+    check_snapshot("new_construction_dry_run.txt", env.run(["update-sheets"]))
+
+
 def test_a_language_with_no_local_planar_is_named_not_skipped_silently(env):
     shutil.rmtree(env.coded / "synth0001")
     out = env.run(["update-sheets"])
@@ -446,17 +449,15 @@ def test_the_dry_run_says_it_would_add_the_tab_without_adding_it(env):
     assert env.doorway.mutations == []
 
 
-def test_the_dry_run_does_not_say_the_manifest_would_change(env):
-    """Finding 11. Records current behaviour; the fix's diff is the evidence.
+def test_the_dry_run_says_the_manifest_would_change_too(env):
+    """Finding 11, fixed. Adding a tab rewrites the manifest; say so up front.
 
-    The line exists — "Would update manifest on Drive (new tabs detected)." —
-    but the flag that reaches it is only ever set inside the --apply branch, so
-    it can never print. The dry run does name the tab it would add, so nothing
-    is hidden; what is missing is that the manifest is written too.
+    The line was written but unreachable — the flag that guards it was only
+    ever set inside the --apply branch.
     """
     env.add_construction("arao1248", "ciscategorial", "second_frame")
     out = env.run(["update-sheets"])
-    assert "Would update manifest on Drive" not in out
+    assert "Would update manifest on Drive (new tabs detected)." in out
 
 
 def test_the_status_tab_stays_last(env):
@@ -489,15 +490,15 @@ def test_a_missing_trailing_column_is_added_back_without_disturbing_the_rest(env
 
 
 # ---------------------------------------------------------------------------
-# Findings 9 and 10 — recorded here, fixed next
+# Findings 9 and 10 — the manifest is not the authority on a tab's columns
 # ---------------------------------------------------------------------------
 
-def test_appending_a_row_narrows_the_whole_tabs_dropdowns_to_y_n(env):
-    """Finding 9. Records current behaviour; the fix's diff is the evidence.
+def test_appending_a_row_keeps_the_tabs_real_allowed_values(env):
+    """Finding 9, fixed. Adding one row used to narrow every dropdown to y/n.
 
-    segmental's criteria allow `both` and `na`. Appending one row re-applies
-    validation across every data row using a hardcoded [y, n], so the annotator
-    loses two of the four options on rows that were never touched.
+    segmental's criteria allow `both` and `na`. Validation is re-applied across
+    every data row after an append, so a hardcoded [y, n] took two of the four
+    options away on rows nobody had touched.
     """
     env.add_element("stan1293")
 
@@ -512,19 +513,32 @@ def test_appending_a_row_narrows_the_whole_tabs_dropdowns_to_y_n(env):
     for m in written:
         values = [v["userEnteredValue"]
                   for v in m["payload"]["rule"]["condition"]["values"]]
-        assert values == ["y", "n"]
-
-    recorded = (env.manifest()["stan1293"]["sheets"]["segmental"]
-                ["construction_params"]["flapping"]["param_values"])
-    assert recorded["flapping_left"] == ["y", "n", "both", "na"]
+        assert values == ["y", "n", "both", "na"]
 
 
-def test_header_notes_are_placed_from_the_manifest_not_the_header(env):
-    """Finding 10. Same shape as #272 bug 2, in a different command.
+def test_no_dropdown_is_ever_written_onto_source_or_comments(env):
+    """The columns an annotator writes prose in are never given a value list."""
+    env.add_element("stan1293")
+
+    env.run(["update-sheets", "--apply"])
+
+    for m in env.doorway.mutations:
+        if m["op"] != "batch_request" or m["request_type"] != "setDataValidation":
+            continue
+        rng = m["payload"]["range"]
+        ws = (env.doorway.spreadsheet(m["spreadsheet"])
+              ._worksheet_by_sheet_id(rng["sheetId"]))
+        header = ws.row_values(1)
+        for col in range(rng["startColumnIndex"], rng["endColumnIndex"]):
+            assert header[col] not in ("Source", "Comments")
+
+
+def test_header_notes_are_placed_from_the_header_not_the_manifest(env):
+    """Finding 10, fixed. Same shape as #272 bug 2, in a different command.
 
     synth0001's coreference prescreening tab has one criterion column,
-    `referential`; the manifest still lists the three pair criteria. The notes
-    are written at manifest positions, so two land on Source and Comments.
+    `referential`; the manifest still lists the three pair criteria. Written at
+    manifest positions, two of the notes landed on Source and Comments.
     """
     env.run(["update-sheets", "--apply"])
 
@@ -535,4 +549,24 @@ def test_header_notes_are_placed_from_the_manifest_not_the_header(env):
              and "note" in m["payload"].get("cell", {})]
     header = ws.row_values(1)
     columns = [header[m["payload"]["range"]["startColumnIndex"]] for m in noted]
-    assert columns == ["referential", "Source", "Comments"]
+    assert columns == ["referential"]
+
+
+def test_a_keystone_row_writes_na_only_into_criterion_columns(env):
+    """Part of finding 9's family: the row's width came from the manifest too.
+
+    Where the manifest listed more criteria than the tab has, a keystone row
+    carried NA past the last criterion and into Source and Comments.
+    """
+    def edit(df):
+        keystone = df.index[df["Position_Name"] == "v:verbstem"][0]
+        df.at[keystone, "Elements"] = df.at[keystone, "Elements"] + f", {NEW_ELEMENT}"
+    env.edit_planar("synth0001", edit)
+
+    env.run(["update-sheets", "--apply"])
+
+    ws = env.tab("synth0001", "coreference", "prescreening")
+    rows = ws.get_all_values()
+    added = [r for r in rows if r[0] == NEW_ELEMENT]
+    assert len(added) == 1
+    assert added[0] == [NEW_ELEMENT, "v:verbstem", "30", "NA", "", ""]

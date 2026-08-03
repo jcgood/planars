@@ -8,9 +8,15 @@ element was "missing" and needed adding back. There was no direct test
 coverage for this logic before now.
 
 Live-Sheet-touching orchestration in main() (opening spreadsheets, iterating
-the manifest) is not covered here — these tests operate on plain Python data
-structures and a minimal fake Worksheet, matching the existing pattern in
+the manifest) is covered by tests/test_update_sheets_snapshot.py, which runs
+the whole command against a stand-in Drive. These tests operate on plain Python
+data structures and a minimal fake Worksheet, matching the existing pattern in
 test_restructure.py for restructure_sheets.py's own helper functions.
+
+`_compute_missing_rows` takes the criterion block's start column and width
+because the tab's own header is what says where it is; the `3, 1` in these
+calls is "criteria begin at column 3, there is one of them", matching each
+fake header below.
 """
 from __future__ import annotations
 
@@ -197,7 +203,7 @@ class TestComputeMissingRows:
             ["he", "v:npsubj1", "5", "y", "", ""],
         ])
         element_index = {"he@5": (5, "v:npsubj1", "stan1293", "he")}
-        missing = _compute_missing_rows(ws, element_index, "stan1293", ["free"])
+        missing = _compute_missing_rows(ws, element_index, "stan1293", 3, 1)
         assert missing == []
 
     def test_adds_row_for_planar_element_absent_from_sheet(self):
@@ -205,7 +211,7 @@ class TestComputeMissingRows:
             ["Element", "Position_Name", "Position_Number", "free", "Source", "Comments"],
         ])
         element_index = {"he@5": (5, "v:npsubj1", "stan1293", "he")}
-        missing = _compute_missing_rows(ws, element_index, "stan1293", ["free"])
+        missing = _compute_missing_rows(ws, element_index, "stan1293", 3, 1)
         assert missing == [["he", "v:npsubj1", "5", "", "", ""]]
 
     def test_keystone_row_gets_na_param_values(self):
@@ -213,7 +219,7 @@ class TestComputeMissingRows:
             ["Element", "Position_Name", "Position_Number", "free", "Source", "Comments"],
         ])
         element_index = {"KEYSTONE@30": (30, "v:verbstem", "stan1293", "KEYSTONE")}
-        missing = _compute_missing_rows(ws, element_index, "stan1293", ["free"])
+        missing = _compute_missing_rows(ws, element_index, "stan1293", 3, 1)
         assert missing == [["KEYSTONE", "v:verbstem", "30", "NA", "", ""]]
 
     def test_hyphen_wrapped_elements_get_bracketed(self):
@@ -223,7 +229,7 @@ class TestComputeMissingRows:
             ["Element", "Position_Name", "Position_Number", "free", "Source", "Comments"],
         ])
         element_index = {"-s@13": (13, "v:perfectinflection", "stan1293", "-s")}
-        missing = _compute_missing_rows(ws, element_index, "stan1293", ["free"])
+        missing = _compute_missing_rows(ws, element_index, "stan1293", 3, 1)
         assert missing[0][0] == "[-s]"
 
     def test_ignores_elements_from_other_languages(self):
@@ -231,7 +237,7 @@ class TestComputeMissingRows:
             ["Element", "Position_Name", "Position_Number", "free", "Source", "Comments"],
         ])
         element_index = {"foo@3": (3, "v:foo", "arao1248", "foo")}
-        missing = _compute_missing_rows(ws, element_index, "stan1293", ["free"])
+        missing = _compute_missing_rows(ws, element_index, "stan1293", 3, 1)
         assert missing == []
 
     def test_this_is_the_exact_248_failure_shape(self):
@@ -251,7 +257,7 @@ class TestComputeMissingRows:
             "me@34": (34, "v:obj-part", "stan1293", "me"),
             "PRON{P,T}@34": (34, "v:obj-part", "stan1293", "PRON{P,T}"),  # retired, but present in the stale index
         }
-        missing = _compute_missing_rows(ws, stale_element_index, "stan1293", ["free"])
+        missing = _compute_missing_rows(ws, stale_element_index, "stan1293", 3, 1)
         assert missing == [["PRON{P,T}", "v:obj-part", "34", "", "", ""]]
 
 

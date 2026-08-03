@@ -36,6 +36,15 @@ from .drive import (
     upload_manifest,
 )
 from .drive_doorway import WorksheetHandle, WorksheetNotFound, get_doorway
+# Which columns of a tab hold criteria, and what each one allows, is a rule
+# refresh_dropdowns already owns — it was rewritten there for issue #272. Two
+# commands answering the same question separately is how they came to disagree
+# in the first place, so this imports the answer rather than restating it.
+from .refresh_dropdowns import (
+    _coreference_pair_criterion_map,
+    _fresh_param_values,
+    _resolve_criterion_columns,
+)
 from .generate_sheets import (
     _add_constructions_to_existing_sheet,
     _build_criterion_notes,
@@ -194,20 +203,27 @@ def _add_trailing_columns(
 # Header note helpers
 # ---------------------------------------------------------------------------
 
-def _write_header_notes(ws: WorksheetHandle, param_names: List[str]) -> bool:
+def _write_header_notes(ws: WorksheetHandle, col_start: int,
+                        criterion_names: List[str]) -> bool:
     """Write criterion description notes to header cells for element-row tabs.
 
     Looks up each criterion in diagnostic_criteria.yaml and writes the prose
     description as a hover note on the corresponding header cell.  Idempotent —
     safe to call on tabs that already have notes (overwrites with the same text).
 
+    ``criterion_names`` are the tab's *own* header columns, and ``col_start`` is
+    where they begin in that header. Both used to be taken from the manifest —
+    a fixed column 3 and the manifest's criterion list — so on a tab whose
+    manifest entry had gone stale the notes ran past the criteria and landed on
+    ``Source`` and ``Comments``, describing criteria the tab does not have. Same
+    mistake as issue #272 made with dropdowns.
+
     Returns True if any notes were written, False if the codebook had no
     descriptions for any of the criteria.
     """
-    notes = _build_criterion_notes(param_names)
+    notes = _build_criterion_notes(criterion_names)
     sheet_id = ws.id
     requests = []
-    col_start = 3  # Element, Position_Name, Position_Number, then params
     for col_offset, note in enumerate(notes):
         if note:
             col_idx = col_start + col_offset
@@ -238,17 +254,25 @@ def _compute_missing_rows(
     ws: WorksheetHandle,
     element_index,
     lang_id: str,
-    param_names: List[str],
+    col_start: int,
+    num_criteria: int,
 ) -> List[List[str]]:
-    """Compute rows present in the planar structure but missing from the sheet tab."""
+    """Compute rows present in the planar structure but missing from the sheet tab.
+
+    ``col_start`` and ``num_criteria`` describe the tab's own criterion block,
+    read from its header. They used to be a hardcoded 3 and the length of the
+    manifest's criterion list; where the manifest had gone stale that made the
+    new row the wrong width, and on a keystone row it wrote ``NA`` into
+    ``Source`` and ``Comments``.
+    """
     rows = _with_retry(ws.get_all_values)
     header = rows[0] if rows else []
 
     existing_keys = _sheet_element_keys(rows, header)
     planar_rows = _planar_rows_for_lang(element_index, lang_id)
 
-    # Count trailing columns (everything after param columns)
-    num_trailing = max(0, len(header) - 3 - len(param_names))
+    # Everything after the criterion block: Source, Comments, and any others.
+    num_trailing = max(0, len(header) - col_start - num_criteria)
 
     missing_rows = []
     for pos, element, pos_name in planar_rows:
@@ -258,7 +282,7 @@ def _compute_missing_rows(
         key = (element, str(pos))
         if key not in existing_keys:
             is_keystone = pos_name.strip().lower() == "v:verbstem"
-            param_vals = ["NA"] * len(param_names) if is_keystone else [""] * len(param_names)
+            param_vals = ["NA" if is_keystone else ""] * num_criteria
             row = [element, pos_name, str(pos)] + param_vals + [""] * num_trailing
             missing_rows.append(row)
 
@@ -269,29 +293,35 @@ def _apply_missing_rows(
     ws: WorksheetHandle,
     missing_rows: List[List[str]],
     num_data_rows_current: int,
-    param_names: List[str],
+    col_start: int,
+    per_column_values: List[List[str]],
 ) -> None:
-    """Append missing rows and re-apply dropdown validation to param columns.
+    """Append missing rows and re-apply dropdown validation to criterion columns.
 
     Validation is re-applied to all data rows (existing + new) so that the
     dropdown rules cover the full range after appending.
 
+    ``per_column_values`` is each criterion column's real allowed-value set,
+    resolved from the tab's header and the diagnostics YAML. It used to be
+    ``[["y", "n"]] * len(param_names)`` — a hardcoded pair — so adding a single
+    row narrowed the whole tab's dropdowns, dropping ``both`` and ``na`` from
+    segmental's criteria and ``<position_number>`` from free_occurrence's, on
+    rows nobody had touched.
+
     Args:
         ws: the worksheet to update.
         missing_rows: rows to append (already formatted with element, pos_name,
-            pos_number, param_values, trailing columns).
+            pos_number, criterion values, trailing columns).
         num_data_rows_current: count of existing data rows before appending.
-        param_names: ordered list of param column names (for validation).
+        col_start: 0-based column index where the criterion columns begin.
+        per_column_values: allowed values per criterion column, in header order.
     """
     ws.append_rows(missing_rows, value_input_option="RAW")
 
-    if param_names:
+    if per_column_values:
         from .generate_sheets import _format_and_validate
         total_rows = num_data_rows_current + len(missing_rows)
-        # Use default y/n validation for newly added rows; per-param custom
-        # values are not tracked in update_sheets (use sync_params for that).
-        per_col_values = [["y", "n"]] * len(param_names)
-        _format_and_validate(ws, total_rows, per_col_values)
+        _format_and_validate(ws, total_rows, per_column_values, col_start=col_start)
 
 
 # ---------------------------------------------------------------------------
@@ -319,6 +349,7 @@ def main() -> None:
 
     doorway = get_doorway()
     manifest = load_manifest(doorway)
+    coref_pair_map = _coreference_pair_criterion_map()
 
     # Build element index and planar position map for every language
     planar_files = sorted(CODED_DATA.glob("*/lang_setup/planar_*.tsv"))
@@ -345,6 +376,26 @@ def main() -> None:
             continue
         element_index, planar_pos_map, planar_path = lang_planar_data[manifest_lang]
 
+        # The diagnostics YAML says what values each criterion allows, and it
+        # says so per *construction*: several classes give their constructions
+        # different criteria (segmental's aspiration_prominence and flapping,
+        # phrasal_accent's prescreening and general), so a per-class reading
+        # would give all but the first the wrong values — that was issue #272.
+        lang_setup_dir = CODED_DATA / manifest_lang / "lang_setup"
+        try:
+            diag_rows = _read_diagnostics_for_language(manifest_lang, lang_setup_dir)
+        except Exception as exc:
+            print(f"\n  [{manifest_lang}] Could not read diagnostics: {exc}")
+            diag_rows = []
+        criteria_by_construction = {
+            (cls, con): values for cls, con, _names, values in diag_rows
+        }
+        # Only a fallback, for naming the values of a criterion column left on
+        # this tab that belongs to a sibling construction of the same class.
+        class_criteria_union: Dict[str, Dict[str, List[str]]] = {}
+        for cls, _con, _names, values in diag_rows:
+            class_criteria_union.setdefault(cls, {}).update(values)
+
         for class_name, sheet_info in lang_data["sheets"].items():
             print(f"\n  {class_name}")
             ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
@@ -359,7 +410,6 @@ def main() -> None:
                     print(f"    [{construction}] tab not found, skipping")
                     continue
 
-                param_names = construction_params.get(construction, {}).get("param_names", [])
                 rows = _with_retry(ws.get_all_values)
                 num_data_rows = max(0, len(rows) - 1)
 
@@ -386,8 +436,10 @@ def main() -> None:
                     print(f"    [{construction}] add trailing column(s): {missing_trailing}")
                     if apply:
                         _add_trailing_columns(ws, header, rows)
-                        # Re-fetch rows so _compute_missing_rows sees the updated header
+                        # Re-read so the header and row count below describe the
+                        # tab as it now is, not as it was before the insert.
                         rows = _with_retry(ws.get_all_values)
+                        header = rows[0] if rows else []
                         num_data_rows = max(0, len(rows) - 1)
 
                 if is_pair_row:
@@ -395,14 +447,33 @@ def main() -> None:
                         print(f"    [{construction}] up to date (pair-row tab — row updates skipped)")
                     continue
 
+                # Which columns hold criteria comes from the tab's own header;
+                # what each one allows comes from the diagnostics YAML. Neither
+                # answer is the manifest's to give — it is bookkeeping, and it
+                # goes stale. When the two cannot be reconciled, say so and
+                # leave the tab alone: an added row of the wrong width puts
+                # values under the wrong headings, which is worse than not
+                # adding it.
+                col_start, per_col, error = _resolve_criterion_columns(
+                    header,
+                    _fresh_param_values(
+                        class_name, construction,
+                        criteria_by_construction.get((class_name, construction), {}),
+                        coref_pair_map),
+                    class_criteria_union.get(class_name, {}))
+                if error:
+                    print(f"    [{construction}] SKIPPED — {error}")
+                    continue
+
                 # Write criterion notes to all element-row tabs on every apply
                 # (idempotent — safe to rewrite; skipped in dry-run to avoid
                 # an extra API call just to read existing note text for comparison).
                 if apply:
-                    _write_header_notes(ws, param_names)
+                    _write_header_notes(
+                        ws, col_start, header[col_start:col_start + len(per_col)])
 
                 missing_rows = _compute_missing_rows(
-                    ws, element_index, manifest_lang, param_names
+                    ws, element_index, manifest_lang, col_start, len(per_col)
                 )
 
                 if not missing_rows and not missing_trailing:
@@ -414,7 +485,8 @@ def main() -> None:
                     elements = [r[0] for r in missing_rows]
                     print(f"    [{construction}] add {len(missing_rows)} row(s): {elements}")
                     if apply:
-                        _apply_missing_rows(ws, missing_rows, num_data_rows, param_names)
+                        _apply_missing_rows(ws, missing_rows, num_data_rows,
+                                            col_start, per_col)
 
                 if apply and (missing_rows or missing_trailing):
                     print(f"    [{construction}] done")
@@ -422,16 +494,11 @@ def main() -> None:
             # Detect constructions in the diagnostics YAML that are not yet in the
             # manifest (i.e. added after the sheet was first generated).  Create a
             # tab for each and update the manifest entry in memory.
-            lang_setup_dir = CODED_DATA / manifest_lang / "lang_setup"
-            try:
-                yaml_constructions = {
-                    construction: (param_names, param_values)
-                    for cls, construction, param_names, param_values
-                    in _read_diagnostics_for_language(manifest_lang, lang_setup_dir)
-                    if cls == class_name
-                }
-            except Exception:
-                yaml_constructions = {}
+            yaml_constructions = {
+                construction: (names, values)
+                for cls, construction, names, values in diag_rows
+                if cls == class_name
+            }
 
             new_construction_names = sorted(set(yaml_constructions) - set(constructions))
             if new_construction_names:
@@ -443,6 +510,12 @@ def main() -> None:
                     action = "Adding" if apply else "Would add"
                     print(f"    [{c}] {action} new tab ({len(pn)} criterion/criteria)")
                     any_changes = True
+                # Set outside the apply branch: adding a tab rewrites the
+                # manifest too, and the dry run is what a coordinator reads to
+                # decide whether to run the apply. This used to be set only on
+                # apply, which made the "Would update manifest" line below
+                # unreachable.
+                manifest_modified = True
                 if apply:
                     new_params = _add_constructions_to_existing_sheet(
                         ss, class_name, new_for_class, manifest_lang,
@@ -450,7 +523,6 @@ def main() -> None:
                     )
                     sheet_info["constructions"].extend(new_construction_names)
                     sheet_info.setdefault("construction_params", {}).update(new_params)
-                    manifest_modified = True
 
             # Ensure Status tab exists and is last (reflects any new tabs added above)
             if apply:

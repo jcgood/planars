@@ -257,11 +257,10 @@ had hidden the second one entirely. Render before asking anyone to read.
 ## Findings
 
 Per the plan's Phase 0b/1 non-goals, a snapshot that reveals odd behaviour records
-it rather than fixing it *in the same change*. **Findings 1–8 have all been
-fixed; 9, 10 and 11 were found on 2026-08-03 and are due next** — the deferral
-only ever lasts until the migration each one is riding on has been committed and
-its before/after comparison taken, which for these three is the file 11 commit.
-The entries are kept after their fix because the sequence is the point.
+it rather than fixing it *in the same change*. **All eleven findings so far have
+since been fixed** — the deferral only ever lasts until the migration each one
+is riding on has been committed and its before/after comparison taken. Nothing
+here is outstanding; the entries are kept because the sequence is the point.
 
 **Do not delete this section when the migration ends without first checking that
 every finding has an issue number or a decisions-log entry.** Findings 4 and 5
@@ -420,7 +419,8 @@ arose. It is covered by a snapshot of its own
 path will report a fix like this as no change at all.
 
 **9. Adding one row to a tab narrows that whole tab's dropdowns to `y`/`n`**
-(found 2026-08-03, file 11). `update_sheets._apply_missing_rows` appends the
+(found 2026-08-03, file 11). **Fixed the same day**, with 10 and 11, in one
+commit after the migration. `update_sheets._apply_missing_rows` appends the
 row and then re-applies validation to *every* data row, existing ones included,
 using `per_col_values = [["y", "n"]] * len(param_names)` — a hardcoded pair,
 with a comment saying per-criterion values "are not tracked in update_sheets".
@@ -434,11 +434,25 @@ on four criteria. Nothing already annotated is erased — validation is non-stri
 — but the options offered are wrong on rows nobody touched.
 
 Same shape as findings 1 and 2 and as #272: **a value set was invented where one
-already existed.** Recorded in `tests/snapshots/coordinator/update_sheets/apply_digest.txt`
-and asserted directly in the snapshot test, so the fix has a visible diff.
+already existed.**
+
+A third symptom of the same cause turned up while fixing it, and is folded into
+the same change: the *width* of an added row was `len(manifest param_names)`
+too, so on a tab whose manifest entry had gone stale a keystone row carried `NA`
+past the last criterion into `Source` and `Comments`.
+
+The fix imports `refresh_dropdowns._resolve_criterion_columns` and
+`_fresh_param_values` rather than restating them. Those two were rewritten for
+#272 to answer exactly this question — the sheet's header says which columns
+hold criteria, the diagnostics YAML says what each one allows — and two commands
+answering it separately is how they came to disagree. Where the header cannot be
+reconciled with the YAML, the tab is now skipped with a reason rather than
+written to: a row of the wrong width puts values under the wrong headings, which
+is worse than not adding it.
 
 **10. Header notes are positioned from the manifest, so they can land on
-`Source` and `Comments`** (found 2026-08-03, file 11). `_write_header_notes`
+`Source` and `Comments`** (found 2026-08-03, file 11). **Fixed the same day.**
+`_write_header_notes`
 writes one hover note per criterion starting at a hardcoded column 3, and takes
 the criterion list from the manifest rather than from the tab's header. On
 `synth0001`/`coreference`/`prescreening` — one criterion column, `referential`,
@@ -448,13 +462,21 @@ have. Exactly #272's second bug, in a different command; that one wrote
 dropdowns, this one writes notes.
 
 **11. The dry run cannot say the manifest would change** (found 2026-08-03,
-file 11). The line is written — "Would update manifest on Drive (new tabs
-detected)." — but `manifest_modified` is only ever set inside the `if apply:`
-branch, so the `else` that prints it is unreachable. The dry run does name each
-tab it would add, so nothing is hidden; what is missing is that adding a tab
-also rewrites the manifest. Unlike 9 and 10 this only changes what the command
-says, so by the rule below it did not need deferring at all — it is grouped here
-because it was found in the same reading.
+file 11). **Fixed the same day.** The line is written — "Would update manifest
+on Drive (new tabs detected)." — but `manifest_modified` is only ever set inside
+the `if apply:` branch, so the `else` that prints it is unreachable. The dry run
+does name each tab it would add, so nothing is hidden; what is missing is that
+adding a tab also rewrites the manifest. Unlike 9 and 10 this only changes what
+the command says, so by the rule below it did not need deferring at all — it is
+grouped here because it was found in the same reading.
+
+Worth carrying forward, and the second time this has come up (see finding 8):
+**finding 9's fix has no diff in the ordinary snapshots at all.** The scenario
+those record edits `arao1248`, whose criteria are all `y`/`n` already, so the
+narrowed and the correct dropdown are the same three characters. What proves
+that fix is a property assertion on `stan1293`'s `segmental` tab, not snapshot
+text — which is the evidence order the migration settled on, arrived at again
+from the other direction.
 
 ---
 

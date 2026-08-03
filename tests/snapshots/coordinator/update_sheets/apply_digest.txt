@@ -1,7 +1,7 @@
 SUMMARY
      4  append_rows
-   107  batch_request
-    91    └─ repeatCell
+   105  batch_request
+    89    └─ repeatCell
     12    └─ setDataValidation
      4    └─ updateSheetProperties
 
@@ -180,8 +180,6 @@ SHEET OPERATIONS
 
   synth0001/class:coreference  tab=prescreening
     repeatCell: col 3 (referential) rows 0-1
-    repeatCell: col 4 (Source) rows 0-1
-    repeatCell: col 5 (Comments) rows 0-1
 
   synth0001/class:proform  tab=do_so_substitution
     repeatCell: col 3 (shareable_proform_replace) rows 0-1
