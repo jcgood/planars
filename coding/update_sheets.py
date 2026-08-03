@@ -23,8 +23,6 @@ from typing import Dict, List, Set, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 
-import gspread
-
 from .make_forms import (
     build_element_index,
     _infer_language_id_from_planar_filename,
@@ -32,13 +30,12 @@ from .make_forms import (
 )
 from .drive import (
     _check_coded_data_clean,
-    _get_clients,
     _load_drive_config,
-    _load_manifest_from_drive,
-    _open_spreadsheet,
-    _upload_planars_config,
     _with_retry,
+    load_manifest,
+    upload_manifest,
 )
+from .drive_doorway import WorksheetHandle, WorksheetNotFound, get_doorway
 from .generate_sheets import (
     _add_constructions_to_existing_sheet,
     _build_criterion_notes,
@@ -151,7 +148,7 @@ _TRAILING_ORDER = {col: i for i, col in enumerate(_TRAILING_COLS)}
 
 
 def _add_trailing_columns(
-    ws: gspread.Worksheet,
+    ws: WorksheetHandle,
     header: List[str],
     rows: List[List[str]],
 ) -> List[str]:
@@ -197,7 +194,7 @@ def _add_trailing_columns(
 # Header note helpers
 # ---------------------------------------------------------------------------
 
-def _write_header_notes(ws: gspread.Worksheet, param_names: List[str]) -> bool:
+def _write_header_notes(ws: WorksheetHandle, param_names: List[str]) -> bool:
     """Write criterion description notes to header cells for element-row tabs.
 
     Looks up each criterion in diagnostic_criteria.yaml and writes the prose
@@ -238,7 +235,7 @@ def _write_header_notes(ws: gspread.Worksheet, param_names: List[str]) -> bool:
 # ---------------------------------------------------------------------------
 
 def _compute_missing_rows(
-    ws: gspread.Worksheet,
+    ws: WorksheetHandle,
     element_index,
     lang_id: str,
     param_names: List[str],
@@ -269,7 +266,7 @@ def _compute_missing_rows(
 
 
 def _apply_missing_rows(
-    ws: gspread.Worksheet,
+    ws: WorksheetHandle,
     missing_rows: List[List[str]],
     num_data_rows_current: int,
     param_names: List[str],
@@ -280,7 +277,7 @@ def _apply_missing_rows(
     dropdown rules cover the full range after appending.
 
     Args:
-        ws: the gspread Worksheet to update.
+        ws: the worksheet to update.
         missing_rows: rows to append (already formatted with element, pos_name,
             pos_number, param_values, trailing columns).
         num_data_rows_current: count of existing data rows before appending.
@@ -320,8 +317,8 @@ def main() -> None:
         # planar file. Refuse to proceed rather than risk repeating that.
         _check_coded_data_clean(extensions=(".tsv",))
 
-    gc, drive = _get_clients()
-    manifest = _load_manifest_from_drive(drive)
+    doorway = get_doorway()
+    manifest = load_manifest(doorway)
 
     # Build element index and planar position map for every language
     planar_files = sorted(CODED_DATA.glob("*/lang_setup/planar_*.tsv"))
@@ -350,7 +347,7 @@ def main() -> None:
 
         for class_name, sheet_info in lang_data["sheets"].items():
             print(f"\n  {class_name}")
-            ss = _open_spreadsheet(gc, sheet_info["spreadsheet_id"])
+            ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
 
             construction_params = sheet_info.get("construction_params", {})
             constructions = sheet_info["constructions"]
@@ -358,7 +355,7 @@ def main() -> None:
             for construction in constructions:
                 try:
                     ws = _with_retry(lambda: ss.worksheet(construction))
-                except gspread.WorksheetNotFound:
+                except WorksheetNotFound:
                     print(f"    [{construction}] tab not found, skipping")
                     continue
 
@@ -448,8 +445,8 @@ def main() -> None:
                     any_changes = True
                 if apply:
                     new_params = _add_constructions_to_existing_sheet(
-                        gc, sheet_info["spreadsheet_id"], class_name,
-                        new_for_class, manifest_lang, element_index, planar_path,
+                        ss, class_name, new_for_class, manifest_lang,
+                        element_index, planar_path,
                     )
                     sheet_info["constructions"].extend(new_construction_names)
                     sheet_info.setdefault("construction_params", {}).update(new_params)
@@ -466,7 +463,7 @@ def main() -> None:
         root_folder_id = drive_config.get("_root_folder_id", "")
         existing_file_id = drive_config.get("_planars_config_file_id", "")
         if apply:
-            _upload_planars_config(drive, manifest, root_folder_id, existing_file_id)
+            upload_manifest(doorway, manifest, root_folder_id, existing_file_id)
             print("\nManifest updated on Drive.")
         else:
             print("\nWould update manifest on Drive (new tabs detected).")

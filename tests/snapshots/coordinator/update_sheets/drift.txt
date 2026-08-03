@@ -1,0 +1,105 @@
+DRY RUN — Languages: ['arao1248', 'stan1293', 'synth0001']
+(run with --apply to make changes)
+
+
+  ciscategorial
+    [general] WARNING: planar structure has changed:
+    'v:leftXP': sheet has pos 1, planar has pos 501
+    → Run python -m coding restructure-sheets --apply to rebuild this sheet.
+
+  noninterruption
+    [general] WARNING: planar structure has changed:
+    'v:leftXP': sheet has pos 1, planar has pos 501
+    → Run python -m coding restructure-sheets --apply to rebuild this sheet.
+
+  subspanrepetition
+    [auxiliary_construction] WARNING: planar structure has changed:
+    'v:leftXP': sheet has pos 1, planar has pos 501
+    → Run python -m coding restructure-sheets --apply to rebuild this sheet.
+    [tso_clause_linkage] WARNING: planar structure has changed:
+    'v:leftXP': sheet has pos 1, planar has pos 501
+    → Run python -m coding restructure-sheets --apply to rebuild this sheet.
+
+  ciscategorial
+    [general] up to date
+
+  subspanrepetition
+    [andCoordination] up to date
+    [control] up to date
+    [thatCOMP] up to date
+    [asyndeticPart] up to date
+
+  noninterruption
+    [general] up to date
+
+  segmental
+    [aspiration_prominence] up to date
+    [flapping] up to date
+
+  metrical
+    [stress_domain] up to date
+
+  free_occurrence
+    [general] up to date
+
+  nonpermutability
+    [element_prescreening] up to date
+    [general] up to date (pair-row tab — row updates skipped)
+
+  coreference
+    [prescreening] up to date
+    [reflexivization] up to date (pair-row tab — row updates skipped)
+    [pronominalization] up to date (pair-row tab — row updates skipped)
+    [np_reference] up to date (pair-row tab — row updates skipped)
+
+  proform
+    [do_so_substitution] up to date
+    [vp_ellipsis] up to date
+
+  phrasal_accent
+    [prescreening] up to date
+    [general] up to date
+
+  ciscategorial
+    [general] up to date
+
+  subspanrepetition
+    [andCoordination] up to date
+    [control] up to date
+    [thatCOMP] up to date
+    [asyndeticPart] up to date
+
+  noninterruption
+    [general] up to date
+
+  segmental
+    [aspiration_prominence] up to date
+    [flapping] up to date
+
+  metrical
+    [stress_domain] up to date
+
+  nonpermutability
+    [element_prescreening] up to date
+    [general] up to date (pair-row tab — row updates skipped)
+
+  free_occurrence
+    [general] up to date
+
+  coreference
+    [prescreening] up to date
+    [reflexivization] up to date (pair-row tab — row updates skipped)
+    [pronominalization] up to date (pair-row tab — row updates skipped)
+    [np_reference] up to date (pair-row tab — row updates skipped)
+
+  proform
+    [do_so_substitution] up to date
+    [vp_ellipsis] up to date
+
+  phrasal_accent
+    [prescreening] up to date
+    [general] up to date (pair-row tab — row updates skipped)
+
+Some sheets are out of sync with the planar structure.
+Run: python -m coding restructure-sheets --apply
+[SystemExit: 1]

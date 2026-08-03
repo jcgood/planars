@@ -1901,8 +1901,7 @@ def _regen_construction(
 
 
 def _add_constructions_to_existing_sheet(
-    gc: gspread.Client,
-    spreadsheet_id: str,
+    ss: gspread.Spreadsheet,
     class_name: str,
     new_constructions: List[Tuple[str, List[str], Dict[str, List[str]]]],
     lang_id: str,
@@ -1915,10 +1914,12 @@ def _add_constructions_to_existing_sheet(
     to the diagnostics YAML since the sheet was created. Applies the same
     class-specific overrides as _create_analysis_sheet.
 
+    Takes an already-open spreadsheet rather than a client and an ID: both
+    callers hold the spreadsheet open already, and `update_sheets.py` reaches
+    Drive through the doorway, where there is no client to hand over.
+
     Returns construction_params dict for the newly added tabs only.
     """
-    ss = _with_retry(lambda: gc.open_by_key(spreadsheet_id))
-
     # Apply class-specific overrides to new constructions.
     if class_name == "nonpermutability":
         new_constructions = [
@@ -2505,7 +2506,8 @@ def main() -> None:
                     ss_id = existing_cls_info["spreadsheet_id"]
                     _planar_path = planar_dir / f"planar_{lang_id}.tsv"
                     new_params = _add_constructions_to_existing_sheet(
-                        gc, ss_id, cls, new_cons, lang_id, element_index, _planar_path,
+                        _open_spreadsheet(gc, ss_id), cls, new_cons, lang_id,
+                        element_index, _planar_path,
                     )
                     existing_cls_info.setdefault("constructions", []).extend(
                         [c for c, _, _ in new_cons]

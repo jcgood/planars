@@ -30,7 +30,7 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 0b/1 — migrating callers, 10 of 18 done (started 2026-08-01)
+**Phase:** 0b/1 — migrating callers, 11 of 18 done (started 2026-08-01)
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
 **Last worked:** 2026-08-03
@@ -81,6 +81,7 @@ the same day — see the decisions log.
 | Phase 0b/1 — file 8: `sync_diagnostics_yaml.py` | **done** — snapshots captured, pre/post diff clean; first writer to a reference sheet |
 | Phase 0b/1 — file 9: `import_planar.py` | **done** — snapshots captured, pre/post diff clean across 30 scenarios; first to read *and* write the planar sheet |
 | Phase 0b/1 — file 10: `generate_notebooks.py` | **done** — snapshots captured, pre/post diff clean across 7 scenarios |
+| Phase 0b/1 — file 11: `update_sheets.py` | **done** — snapshots captured, pre/post diff clean across 12 scenarios; first to append to the annotation tabs themselves |
 | Phase 0b/1 — remaining files | not started — see § "Migration order" |
 | Phases 3–9 | not started |
 
@@ -149,7 +150,7 @@ current job and every one would otherwise be remembered by nobody.
 
 ### Migration order
 
-Eight files remain of eighteen that touch Drive. The plan's list of eleven
+Seven files remain of eighteen that touch Drive. The plan's list of eleven
 was hand-written and never checked against the code; a scan on 2026-08-02
 replaced it with a derived one in `tests/test_doorway_coverage.py`.
 
@@ -164,10 +165,10 @@ total at all.
 Ordered by risk, lowest first, so that every shared helper and every part of
 the doorway has been exercised before the destructive commands are touched.
 
-**"10 of 18" flatters it, and planning should use the volume rather than the
-count.** Because the order is smallest-and-safest first, the ten done are
-3,069 lines between them; the eight remaining are 8,717 lines and **52 direct
-Drive calls**. That is about a quarter of the phase by weight. Recompute rather
+**"11 of 18" flatters it, and planning should use the volume rather than the
+count.** Because the order is smallest-and-safest first, the eleven done are
+3,558 lines between them; the seven remaining are 8,231 lines and **48 direct
+Drive calls**. That is about a third of the phase by weight. Recompute rather
 than trusting these numbers — the command is in `tests/test_doorway_coverage.py`
 (`_DIRECT_ACCESS` over `coding/*.py`, minus `_EXEMPT`).
 
@@ -181,7 +182,7 @@ than trusting these numbers — the command is in `tests/test_doorway_coverage.p
 | ~~`sync_diagnostics_yaml.py`~~ | done |
 | ~~`import_planar.py`~~ | done |
 | ~~`generate_notebooks.py`~~ | done |
-| `update_sheets.py` | Appends to live annotation sheets. First real risk to Adam's data |
+| ~~`update_sheets.py`~~ | done |
 | `generate_status_sheet.py` | Generated dashboard; no annotation at stake |
 | `validate_coding.py` | Writes highlighting across every sheet |
 | `integrity_check.py` | 945 lines but a small read-only Drive section |
@@ -256,10 +257,11 @@ had hidden the second one entirely. Render before asking anyone to read.
 ## Findings
 
 Per the plan's Phase 0b/1 non-goals, a snapshot that reveals odd behaviour records
-it rather than fixing it *in the same change*. **All eight findings so far have
-since been fixed** — the deferral only ever lasts until the migration each one
-is riding on has been committed and its before/after comparison taken. Nothing
-here is outstanding; the entries are kept because the sequence is the point.
+it rather than fixing it *in the same change*. **Findings 1–8 have all been
+fixed; 9, 10 and 11 were found on 2026-08-03 and are due next** — the deferral
+only ever lasts until the migration each one is riding on has been committed and
+its before/after comparison taken, which for these three is the file 11 commit.
+The entries are kept after their fix because the sequence is the point.
 
 **Do not delete this section when the migration ends without first checking that
 every finding has an issue number or a decisions-log entry.** Findings 4 and 5
@@ -416,6 +418,43 @@ snapshots, because all three fixture languages have folders, so the case never
 arose. It is covered by a snapshot of its own
 (`dry_run_no_folder.txt`). A snapshot suite that can only exercise the happy
 path will report a fix like this as no change at all.
+
+**9. Adding one row to a tab narrows that whole tab's dropdowns to `y`/`n`**
+(found 2026-08-03, file 11). `update_sheets._apply_missing_rows` appends the
+row and then re-applies validation to *every* data row, existing ones included,
+using `per_col_values = [["y", "n"]] * len(param_names)` — a hardcoded pair,
+with a comment saying per-criterion values "are not tracked in update_sheets".
+They are: the manifest records them, `refresh-dropdowns` reads them, and the
+sheet's own header names the columns.
+
+What an annotator would lose on `stan1293`, from one appended row: `segmental`'s
+four criteria drop `both` and `na`; `metrical`'s `accented` drops `both` and
+`independence` drops `na`; `free_occurrence` loses `na` and `<position_number>`
+on four criteria. Nothing already annotated is erased — validation is non-strict
+— but the options offered are wrong on rows nobody touched.
+
+Same shape as findings 1 and 2 and as #272: **a value set was invented where one
+already existed.** Recorded in `tests/snapshots/coordinator/update_sheets/apply_digest.txt`
+and asserted directly in the snapshot test, so the fix has a visible diff.
+
+**10. Header notes are positioned from the manifest, so they can land on
+`Source` and `Comments`** (found 2026-08-03, file 11). `_write_header_notes`
+writes one hover note per criterion starting at a hardcoded column 3, and takes
+the criterion list from the manifest rather than from the tab's header. On
+`synth0001`/`coreference`/`prescreening` — one criterion column, `referential`,
+against a manifest still listing the three pair criteria — the second and third
+notes land on `Source` and `Comments`, describing criteria that tab does not
+have. Exactly #272's second bug, in a different command; that one wrote
+dropdowns, this one writes notes.
+
+**11. The dry run cannot say the manifest would change** (found 2026-08-03,
+file 11). The line is written — "Would update manifest on Drive (new tabs
+detected)." — but `manifest_modified` is only ever set inside the `if apply:`
+branch, so the `else` that prints it is unreachable. The dry run does name each
+tab it would add, so nothing is hidden; what is missing is that adding a tab
+also rewrites the manifest. Unlike 9 and 10 this only changes what the command
+says, so by the rule below it did not need deferring at all — it is grouped here
+because it was found in the same reading.
 
 ---
 

@@ -1,0 +1,193 @@
+SUMMARY
+     4  append_rows
+   107  batch_request
+    91    └─ repeatCell
+    12    └─ setDataValidation
+     4    └─ updateSheetProperties
+
+SHEET OPERATIONS
+
+  arao1248/class:ciscategorial  tab=general
+    repeatCell: col 3 (V-combines) rows 0-1
+    repeatCell: col 4 (N-combines) rows 0-1
+    repeatCell: col 5 (A-combines) rows 0-1
+    repeatCell: col 6 (PRED-combines) rows 0-1
+    append_rows: {"start_row": 75, "n_rows": 1, "value_input_option": "RAW", "exceeded_grid": false}
+      | ['zzz-new-element', 'v:leftXP', '1', '', '', '', '', '', '']
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (V-combines) rows 1-75 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (N-combines) rows 1-75 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (A-combines) rows 1-75 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 6 (PRED-combines) rows 1-75 -> ['y', 'n'] (strict=False)
+
+  arao1248/class:noninterruption  tab=general
+    repeatCell: col 3 (free) rows 0-1
+    repeatCell: col 4 (multiple) rows 0-1
+    append_rows: {"start_row": 75, "n_rows": 1, "value_input_option": "RAW", "exceeded_grid": false}
+      | ['zzz-new-element', 'v:leftXP', '1', '', '', '', '']
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (free) rows 1-75 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (multiple) rows 1-75 -> ['y', 'n'] (strict=False)
+
+  arao1248/class:subspanrepetition  tab=auxiliary_construction
+    repeatCell: col 3 (widescope_right) rows 0-1
+    repeatCell: col 4 (widescope_left) rows 0-1
+    repeatCell: col 5 (fillable_botheither_conjunct) rows 0-1
+    append_rows: {"start_row": 75, "n_rows": 1, "value_input_option": "RAW", "exceeded_grid": false}
+      | ['zzz-new-element', 'v:leftXP', '1', '', '', '', '', '']
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (widescope_right) rows 1-75 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (widescope_left) rows 1-75 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (fillable_botheither_conjunct) rows 1-75 -> ['y', 'n'] (strict=False)
+
+  arao1248/class:subspanrepetition  tab=tso_clause_linkage
+    repeatCell: col 3 (widescope_right) rows 0-1
+    repeatCell: col 4 (widescope_left) rows 0-1
+    repeatCell: col 5 (fillable_botheither_conjunct) rows 0-1
+    append_rows: {"start_row": 75, "n_rows": 1, "value_input_option": "RAW", "exceeded_grid": false}
+      | ['zzz-new-element', 'v:leftXP', '1', '', '', '', '', '']
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (widescope_right) rows 1-75 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (widescope_left) rows 1-75 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (fillable_botheither_conjunct) rows 1-75 -> ['y', 'n'] (strict=False)
+
+  stan1293/class:ciscategorial  tab=general
+    repeatCell: col 3 (V-combines) rows 0-1
+    repeatCell: col 4 (N-combines) rows 0-1
+    repeatCell: col 5 (A-combines) rows 0-1
+
+  stan1293/class:subspanrepetition  tab=andCoordination
+    repeatCell: col 3 (widescope_right) rows 0-1
+    repeatCell: col 4 (widescope_left) rows 0-1
+    repeatCell: col 5 (fillable_botheither_conjunct) rows 0-1
+
+  stan1293/class:subspanrepetition  tab=control
+    repeatCell: col 3 (widescope_right) rows 0-1
+    repeatCell: col 4 (widescope_left) rows 0-1
+    repeatCell: col 5 (fillable_botheither_conjunct) rows 0-1
+
+  stan1293/class:subspanrepetition  tab=thatCOMP
+    repeatCell: col 3 (widescope_right) rows 0-1
+    repeatCell: col 4 (widescope_left) rows 0-1
+    repeatCell: col 5 (fillable_botheither_conjunct) rows 0-1
+
+  stan1293/class:subspanrepetition  tab=asyndeticPart
+    repeatCell: col 3 (widescope_right) rows 0-1
+    repeatCell: col 4 (widescope_left) rows 0-1
+    repeatCell: col 5 (fillable_botheither_conjunct) rows 0-1
+
+  stan1293/class:noninterruption  tab=general
+    repeatCell: col 3 (free) rows 0-1
+    repeatCell: col 4 (multiple) rows 0-1
+
+  stan1293/class:segmental  tab=aspiration_prominence
+    repeatCell: col 3 (aspirated) rows 0-1
+
+  stan1293/class:segmental  tab=flapping
+    repeatCell: col 3 (flapping_left) rows 0-1
+    repeatCell: col 4 (flapping_internal) rows 0-1
+    repeatCell: col 5 (flapping_right) rows 0-1
+
+  stan1293/class:metrical  tab=stress_domain
+    repeatCell: col 3 (accented) rows 0-1
+    repeatCell: col 4 (obligatory) rows 0-1
+    repeatCell: col 5 (independence) rows 0-1
+    repeatCell: col 6 (left-interaction) rows 0-1
+    repeatCell: col 7 (right-interaction) rows 0-1
+
+  stan1293/class:free_occurrence  tab=general
+    repeatCell: col 3 (free) rows 0-1
+    repeatCell: col 4 (left-edge-of-free-form) rows 0-1
+    repeatCell: col 5 (right-edge-of-free-form) rows 0-1
+    repeatCell: col 6 (dependent-on-left) rows 0-1
+    repeatCell: col 7 (dependent-on-right) rows 0-1
+
+  stan1293/class:nonpermutability  tab=element_prescreening
+    repeatCell: col 3 (scopal) rows 0-1
+
+  stan1293/class:coreference  tab=prescreening
+    repeatCell: col 3 (referential) rows 0-1
+
+  stan1293/class:proform  tab=do_so_substitution
+    repeatCell: col 3 (shareable_proform_replace) rows 0-1
+
+  stan1293/class:proform  tab=vp_ellipsis
+    repeatCell: col 3 (shareable_proform_replace) rows 0-1
+
+  stan1293/class:phrasal_accent  tab=prescreening
+    repeatCell: col 3 (accented) rows 0-1
+
+  stan1293/class:phrasal_accent  tab=general
+    repeatCell: col 3 (joint_accent) rows 0-1
+
+  synth0001/class:ciscategorial  tab=general
+    repeatCell: col 3 (V-combines) rows 0-1
+    repeatCell: col 4 (N-combines) rows 0-1
+    repeatCell: col 5 (A-combines) rows 0-1
+
+  synth0001/class:subspanrepetition  tab=andCoordination
+    repeatCell: col 3 (widescope_right) rows 0-1
+    repeatCell: col 4 (widescope_left) rows 0-1
+    repeatCell: col 5 (fillable_botheither_conjunct) rows 0-1
+
+  synth0001/class:subspanrepetition  tab=control
+    repeatCell: col 3 (widescope_right) rows 0-1
+    repeatCell: col 4 (widescope_left) rows 0-1
+    repeatCell: col 5 (fillable_botheither_conjunct) rows 0-1
+
+  synth0001/class:subspanrepetition  tab=thatCOMP
+    repeatCell: col 3 (widescope_right) rows 0-1
+    repeatCell: col 4 (widescope_left) rows 0-1
+    repeatCell: col 5 (fillable_botheither_conjunct) rows 0-1
+
+  synth0001/class:subspanrepetition  tab=asyndeticPart
+    repeatCell: col 3 (widescope_right) rows 0-1
+    repeatCell: col 4 (widescope_left) rows 0-1
+    repeatCell: col 5 (fillable_botheither_conjunct) rows 0-1
+
+  synth0001/class:noninterruption  tab=general
+    repeatCell: col 3 (free) rows 0-1
+    repeatCell: col 4 (multiple) rows 0-1
+
+  synth0001/class:segmental  tab=aspiration_prominence
+    repeatCell: col 3 (aspirated) rows 0-1
+
+  synth0001/class:segmental  tab=flapping
+    repeatCell: col 3 (flapping_left) rows 0-1
+    repeatCell: col 4 (flapping_internal) rows 0-1
+    repeatCell: col 5 (flapping_right) rows 0-1
+
+  synth0001/class:metrical  tab=stress_domain
+    repeatCell: col 3 (accented) rows 0-1
+    repeatCell: col 4 (obligatory) rows 0-1
+    repeatCell: col 5 (independence) rows 0-1
+    repeatCell: col 6 (left-interaction) rows 0-1
+    repeatCell: col 7 (right-interaction) rows 0-1
+
+  synth0001/class:nonpermutability  tab=element_prescreening
+    repeatCell: col 3 (scopal) rows 0-1
+
+  synth0001/class:free_occurrence  tab=general
+    repeatCell: col 3 (free) rows 0-1
+    repeatCell: col 4 (left-edge-of-free-form) rows 0-1
+    repeatCell: col 5 (right-edge-of-free-form) rows 0-1
+    repeatCell: col 6 (dependent-on-left) rows 0-1
+    repeatCell: col 7 (dependent-on-right) rows 0-1
+
+  synth0001/class:coreference  tab=prescreening
+    repeatCell: col 3 (referential) rows 0-1
+    repeatCell: col 4 (Source) rows 0-1
+    repeatCell: col 5 (Comments) rows 0-1
+
+  synth0001/class:proform  tab=do_so_substitution
+    repeatCell: col 3 (shareable_proform_replace) rows 0-1
+
+  synth0001/class:proform  tab=vp_ellipsis
+    repeatCell: col 3 (shareable_proform_replace) rows 0-1
+
+  synth0001/class:phrasal_accent  tab=prescreening
+    repeatCell: col 3 (accented) rows 0-1

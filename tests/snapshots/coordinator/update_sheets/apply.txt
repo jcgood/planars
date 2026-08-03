@@ -1,0 +1,97 @@
+Languages: ['arao1248', 'stan1293', 'synth0001']
+
+  ciscategorial
+    [general] add 1 row(s): ['zzz-new-element']
+    [general] done
+
+  noninterruption
+    [general] add 1 row(s): ['zzz-new-element']
+    [general] done
+
+  subspanrepetition
+    [auxiliary_construction] add 1 row(s): ['zzz-new-element']
+    [auxiliary_construction] done
+    [tso_clause_linkage] add 1 row(s): ['zzz-new-element']
+    [tso_clause_linkage] done
+
+  ciscategorial
+    [general] up to date
+
+  subspanrepetition
+    [andCoordination] up to date
+    [control] up to date
+    [thatCOMP] up to date
+    [asyndeticPart] up to date
+
+  noninterruption
+    [general] up to date
+
+  segmental
+    [aspiration_prominence] up to date
+    [flapping] up to date
+
+  metrical
+    [stress_domain] up to date
+
+  free_occurrence
+    [general] up to date
+
+  nonpermutability
+    [element_prescreening] up to date
+    [general] up to date (pair-row tab — row updates skipped)
+
+  coreference
+    [prescreening] up to date
+    [reflexivization] up to date (pair-row tab — row updates skipped)
+    [pronominalization] up to date (pair-row tab — row updates skipped)
+    [np_reference] up to date (pair-row tab — row updates skipped)
+
+  proform
+    [do_so_substitution] up to date
+    [vp_ellipsis] up to date
+
+  phrasal_accent
+    [prescreening] up to date
+    [general] up to date
+
+  ciscategorial
+    [general] up to date
+
+  subspanrepetition
+    [andCoordination] up to date
+    [control] up to date
+    [thatCOMP] up to date
+    [asyndeticPart] up to date
+
+  noninterruption
+    [general] up to date
+
+  segmental
+    [aspiration_prominence] up to date
+    [flapping] up to date
+
+  metrical
+    [stress_domain] up to date
+
+  nonpermutability
+    [element_prescreening] up to date
+    [general] up to date (pair-row tab — row updates skipped)
+
+  free_occurrence
+    [general] up to date
+
+  coreference
+    [prescreening] up to date
+    [reflexivization] up to date (pair-row tab — row updates skipped)
+    [pronominalization] up to date (pair-row tab — row updates skipped)
+    [np_reference] up to date (pair-row tab — row updates skipped)
+
+  proform
+    [do_so_substitution] up to date
+    [vp_ellipsis] up to date
+
+  phrasal_accent
+    [prescreening] up to date
+    [general] up to date (pair-row tab — row updates skipped)
+
+Done.
