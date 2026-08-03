@@ -141,6 +141,13 @@ total at all.
 Ordered by risk, lowest first, so that every shared helper and every part of
 the doorway has been exercised before the destructive commands are touched.
 
+**"8 of 18" flatters it, and planning should use the volume rather than the
+count.** Because the order is smallest-and-safest first, the eight done are
+2,216 lines between them; the ten remaining are 9,508 lines and **65 direct
+Drive calls**. That is under a fifth of the phase by weight. Recompute rather
+than trusting these numbers — the command is in `tests/test_doorway_coverage.py`
+(`_DIRECT_ACCESS` over `coding/*.py`, minus `_EXEMPT`).
+
 | # | file | why here |
 |---|---|---|
 | ~~1~~ | ~~`setup_root_folder.py`~~ | done |
