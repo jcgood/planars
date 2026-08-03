@@ -45,6 +45,12 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
+# Where --apply leaves the structured diff for the data-refresh workflow, which
+# reads this exact path to build the planar-changed issue body. Named rather
+# than written inline so a test can point it somewhere harmless — a test suite
+# that clobbers the real file would hand the workflow a diff nobody made.
+PLANAR_CHANGES_PATH = Path("/tmp/planar_changes.json")
+
 
 # ---------------------------------------------------------------------------
 # Archive helper (same pattern as import_sheets._archive_tsv)
@@ -146,10 +152,10 @@ def import_planar(lang_ids: list[str] | None = None, apply: bool = False) -> lis
 
     Returns list of language IDs whose planars changed.
     """
-    from .drive import _get_clients, _load_drive_config, _open_spreadsheet, _with_retry
+    from .drive import _load_drive_config, _with_retry
+    from .drive_doorway import get_doorway
 
     cfg = _load_drive_config()
-    gc, _ = _get_clients()
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
 
     all_changes: dict[str, dict] = {}
@@ -173,7 +179,7 @@ def import_planar(lang_ids: list[str] | None = None, apply: bool = False) -> lis
         print(f"\n{lang_id}", flush=True)
 
         try:
-            ss = _open_spreadsheet(gc, sheet_id)
+            ss = get_doorway().open_spreadsheet(sheet_id)
             ws = _with_retry(lambda: ss.sheet1)
             old_df = pd.read_csv(tsv_path, sep="\t", dtype=str).fillna("")
             new_df = _read_sheet_df(ws, list(old_df.columns))
@@ -212,7 +218,7 @@ def import_planar(lang_ids: list[str] | None = None, apply: bool = False) -> lis
             written_files.extend([tsv_path, archived])
 
     if apply and all_changes:
-        Path("/tmp/planar_changes.json").write_text(json.dumps(all_changes, indent=2))
+        PLANAR_CHANGES_PATH.write_text(json.dumps(all_changes, indent=2))
         from .drive import _autocommit_data
         langs = ", ".join(sorted(all_changes.keys()))
         _autocommit_data(
@@ -229,14 +235,15 @@ def import_planar(lang_ids: list[str] | None = None, apply: bool = False) -> lis
 # TSV -> Sheet (push local planar changes up to Drive)
 # ---------------------------------------------------------------------------
 
-def push_planar_to_sheet(lang_id: str, gc, cfg: dict, apply: bool) -> bool:
+def push_planar_to_sheet(lang_id: str, cfg: dict, apply: bool) -> bool:
     """Push local planar_{lang_id}.tsv to the Drive planar spreadsheet.
 
     Mirror of the download direction in import_planar(): reads the local TSV,
     diffs it against the live Sheet, and on apply clears+rewrites the Sheet to
     match. Returns True if a change was made (or would be, in dry-run).
     """
-    from .drive import _open_spreadsheet, _with_retry
+    from .drive import _with_retry
+    from .drive_doorway import get_doorway
 
     lang_cfg = cfg.get(lang_id, {})
     sheet_id = lang_cfg.get("planar_spreadsheet_id")
@@ -252,7 +259,7 @@ def push_planar_to_sheet(lang_id: str, gc, cfg: dict, apply: bool) -> bool:
     local_df = pd.read_csv(tsv_path, sep="\t", dtype=str).fillna("")
 
     try:
-        ss = _open_spreadsheet(gc, sheet_id)
+        ss = get_doorway().open_spreadsheet(sheet_id)
         ws = _with_retry(lambda: ss.sheet1)
         sheet_df = _read_sheet_df(ws, list(local_df.columns))
     except Exception as exc:
@@ -289,10 +296,9 @@ def push_planars_to_sheets(lang_ids: list[str] | None = None, apply: bool = Fals
 
     Returns list of language IDs whose Sheet changed (or would change).
     """
-    from .drive import _get_clients, _load_drive_config
+    from .drive import _load_drive_config
 
     cfg = _load_drive_config()
-    gc, _ = _get_clients()
 
     changed = []
     for lang_id in cfg:
@@ -301,7 +307,7 @@ def push_planars_to_sheets(lang_ids: list[str] | None = None, apply: bool = Fals
         if lang_ids and lang_id not in lang_ids:
             continue
         print(f"\n{lang_id}", flush=True)
-        if push_planar_to_sheet(lang_id, gc, cfg, apply):
+        if push_planar_to_sheet(lang_id, cfg, apply):
             changed.append(lang_id)
 
     if not apply and changed:

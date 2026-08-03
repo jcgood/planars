@@ -1,0 +1,14 @@
+
+arao1248
+  + position 19 (x:newpos)
+  → python -m coding update-sheets --apply
+
+stan1293
+  - position 38 (v:rightedge)
+  → python -m coding restructure-sheets --lang stan1293 --apply
+
+synth0001
+  (content-only changes)
+  → (content-only changes — no sheet structural updates needed)
+
+Dry run — rerun with --apply to write changes.

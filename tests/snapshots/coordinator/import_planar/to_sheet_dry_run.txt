@@ -1,0 +1,12 @@
+
+arao1248
+  [arao1248] Sheet already up to date
+
+stan1293
+  [stan1293]   + position 39 (x:newpos)
+  [stan1293] Would update -> planar Sheet (use --apply to write)
+
+synth0001
+  [synth0001] Sheet already up to date
+
+Dry run — rerun with --apply to write changes.

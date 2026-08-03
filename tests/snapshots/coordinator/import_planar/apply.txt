@@ -1,0 +1,18 @@
+
+arao1248
+  + position 19 (x:newpos)
+  → python -m coding update-sheets --apply
+  archived → archive/lang_setup/planar_arao1248_20260802_112233.tsv
+  wrote planar_arao1248.tsv
+
+stan1293
+  - position 38 (v:rightedge)
+  → python -m coding restructure-sheets --lang stan1293 --apply
+  archived → archive/lang_setup/planar_stan1293_20260802_112233.tsv
+  wrote planar_stan1293.tsv
+
+synth0001
+  (content-only changes)
+  → (content-only changes — no sheet structural updates needed)
+  archived → archive/lang_setup/planar_synth0001_20260802_112233.tsv
+  wrote planar_synth0001.tsv

@@ -30,7 +30,7 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 0b/1 — migrating callers, 8 of 18 done (started 2026-08-01)
+**Phase:** 0b/1 — migrating callers, 9 of 18 done (started 2026-08-01)
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
 **Last worked:** 2026-08-02
@@ -76,6 +76,7 @@ the same day — see the decisions log.
 | Phase 0b/1 — file 6: `check_notes.py` | **done** — snapshots captured, pre/post diff clean; Docs part of the doorway now covered |
 | Phase 0b/1 — file 7: `generate_biuniqueness_allomorphy_sheet.py` | **done** — snapshots captured, pre/post diff clean; first to create a spreadsheet and share it with a named person |
 | Phase 0b/1 — file 8: `sync_diagnostics_yaml.py` | **done** — snapshots captured, pre/post diff clean; first writer to a reference sheet |
+| Phase 0b/1 — file 9: `import_planar.py` | **done** — snapshots captured, pre/post diff clean across 30 scenarios; first to read *and* write the planar sheet |
 | Phase 0b/1 — remaining files | not started — see § "Migration order" |
 | Phases 3–9 | not started |
 
@@ -92,9 +93,10 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
 1. **The remaining files**, one at a time, snapshots captured
    immediately after each. See § "Migration order" below.
-   Delegable to agents now that the pattern exists (the eight done are the
+   Delegable to agents now that the pattern exists (the nine done are the
    worked examples: Sheets-heavy, Drive-files-only, folders-and-sharing,
-   read-only, Docs, sheet creation, and reference-sheet overwrite).
+   read-only, Docs, sheet creation, reference-sheet overwrite, and a command
+   with two directions that must round-trip).
 
    Watch for, in each: a `_save_drive_config` call (must be patched in tests —
    the real `drive_config.json` holds live IDs and a test that clobbers it
@@ -126,7 +128,7 @@ current job and all three would otherwise be remembered by nobody.
 
 ### Migration order
 
-Ten files remain of eighteen that touch Drive. The plan's list of eleven
+Nine files remain of eighteen that touch Drive. The plan's list of eleven
 was hand-written and never checked against the code; a scan on 2026-08-02
 replaced it with a derived one in `tests/test_doorway_coverage.py`.
 
@@ -141,31 +143,31 @@ total at all.
 Ordered by risk, lowest first, so that every shared helper and every part of
 the doorway has been exercised before the destructive commands are touched.
 
-**"8 of 18" flatters it, and planning should use the volume rather than the
-count.** Because the order is smallest-and-safest first, the eight done are
-2,216 lines between them; the ten remaining are 9,508 lines and **65 direct
-Drive calls**. That is under a fifth of the phase by weight. Recompute rather
+**"9 of 18" flatters it, and planning should use the volume rather than the
+count.** Because the order is smallest-and-safest first, the nine done are
+2,557 lines between them; the nine remaining are 9,173 lines and **57 direct
+Drive calls**. That is under a quarter of the phase by weight. Recompute rather
 than trusting these numbers — the command is in `tests/test_doorway_coverage.py`
 (`_DIRECT_ACCESS` over `coding/*.py`, minus `_EXEMPT`).
 
-| # | file | why here |
-|---|---|---|
-| ~~1~~ | ~~`setup_root_folder.py`~~ | done |
-| ~~2~~ | ~~`apply_pending.py`~~ | done |
-| ~~3~~ | ~~`prune_manifest.py`~~ | done |
-| ~~4~~ | ~~`check_notes.py`~~ | done |
-| ~~5~~ | ~~`generate_biuniqueness_allomorphy_sheet.py`~~ | done |
-| ~~6~~ | ~~`sync_diagnostics_yaml.py`~~ | done |
-| 7 | `import_planar.py` | Reads *and* writes the planar sheet — the #248 command. Do it while the pattern is fresh, not last |
-| 8 | `generate_notebooks.py` | File uploads; closest sibling to `generate_reports`, already done |
-| 9 | `update_sheets.py` | Appends to live annotation sheets. First real risk to Adam's data |
-| 10 | `generate_status_sheet.py` | Generated dashboard; no annotation at stake |
-| 11 | `validate_coding.py` | Writes highlighting across every sheet |
-| 12 | `integrity_check.py` | 941 lines but a small read-only Drive section |
-| 13 | `import_sheets.py` | Downloads everything; the daily refresh depends on it |
-| 14 | `sync_params.py` | Column surgery — insert, rename, delete. Highest density of read-then-write on one handle |
-| 15 | `generate_sheets.py` | 2644 lines, creates everything, and owns helpers four other files call. Late, so those callers are already migrated and proven |
-| 16 | `restructure_sheets.py` | Archive-then-rebuild with no rollback. The #248 command. Last, deliberately |
+| file | why here |
+|---|---|
+| ~~`setup_root_folder.py`~~ | done |
+| ~~`apply_pending.py`~~ | done |
+| ~~`prune_manifest.py`~~ | done |
+| ~~`check_notes.py`~~ | done |
+| ~~`generate_biuniqueness_allomorphy_sheet.py`~~ | done |
+| ~~`sync_diagnostics_yaml.py`~~ | done |
+| ~~`import_planar.py`~~ | done |
+| `generate_notebooks.py` | File uploads; closest sibling to `generate_reports`, already done |
+| `update_sheets.py` | Appends to live annotation sheets. First real risk to Adam's data |
+| `generate_status_sheet.py` | Generated dashboard; no annotation at stake |
+| `validate_coding.py` | Writes highlighting across every sheet |
+| `integrity_check.py` | 945 lines but a small read-only Drive section |
+| `import_sheets.py` | Downloads everything; the daily refresh depends on it |
+| `sync_params.py` | Column surgery — insert, rename, delete. Highest density of read-then-write on one handle |
+| `generate_sheets.py` | 2,651 lines, creates everything, and owns helpers four other files call. Late, so those callers are already migrated and proven |
+| `restructure_sheets.py` | Archive-then-rebuild with no rollback. The #248 command. Last, deliberately |
 
 Two departures from "smallest first" worth keeping: `import_planar.py` moves
 up because it is the command whose silent revert caused #248 and it deserves
@@ -233,10 +235,11 @@ had hidden the second one entirely. Render before asking anyone to read.
 ## Findings
 
 Per the plan's Phase 0b/1 non-goals, a snapshot that reveals odd behaviour records
-it rather than fixing it *in the same change*. **All five findings so far have
-since been fixed** — the deferral only ever lasted until the migration each one
-was riding on had been committed and its before/after comparison taken. Nothing
-here is outstanding; the entries are kept because the sequence is the point.
+it rather than fixing it *in the same change*. **Findings 1–5 are fixed;
+findings 6 and 7 are open, both found on file 9** — the deferral only ever
+lasts until the migration each one is riding on has been committed and its
+before/after comparison taken, which for 6 and 7 is now. The entries are kept
+after their fix because the sequence is the point.
 
 **Do not delete this section when the migration ends without first checking that
 every finding has an issue number or a decisions-log entry.** Findings 4 and 5
@@ -333,9 +336,73 @@ Nothing was ever written wrongly: the whole-table comparison that decides
 YAML's content either way. What was lost was the one look at the change before
 approving it — which is the entire purpose of the dry run.
 
+**6. `import-planar` cannot see a column added to or removed from the planar
+Sheet** (found 2026-08-02, file 9). **Open.** The download direction reads the
+Sheet and then reshapes it to the columns the *local TSV* already has
+(`_read_sheet_df`'s `reindex`). Two consequences, checked rather than reasoned:
+
+- A column added in the Sheet is dropped on the way down. `import-planar` says
+  "up to date" and goes on saying it forever. This is how `Biuniqueness_Scope`
+  would arrive if anyone added it in the Sheet rather than locally.
+- A column removed from the Sheet is not reported as a structural change at
+  all. It comes back filled with blanks, so an `--apply` writes a TSV with
+  every value in that column erased, described only as "(content-only
+  changes)".
+
+The Sheet is the source of truth in this direction, so the local file's column
+list should not be deciding what the Sheet is allowed to say. Same shape as
+findings 1 and 2 and as #248 itself: **the copy is being trusted about the
+original.** Deferred out of this commit because the repair changes what the
+command writes, which is exactly what the before/after comparison holds still.
+
+**7. The download direction says nothing at all about a language whose planar
+sheet is not recorded** (found 2026-08-02, file 9). **Open.** `import_planar`
+`continue`s past a language with no `planar_spreadsheet_id` without printing
+its name, so it is indistinguishable from a language that was never configured.
+The push direction, in the same file, says "No planar_spreadsheet_id in
+drive_config.json — skipping". Visible in
+`tests/snapshots/coordinator/import_planar/skips.txt`, where three languages
+went in and only two are mentioned. This one only changes what the command
+says, so by the rule below it does not have to wait — it waits only for this
+migration's commit, because it moves a snapshot.
+
 ---
 
 ## Decisions log
+
+**2026-08-02 — file 9 was checked by a round trip, not only by each direction
+on its own.** `import-planar` is the only migrated command with two directions
+that write to different places, and #248 was neither direction being wrong: it
+was a local edit going up and not coming back down. So the snapshot tests
+assert the pair — push a planar up, import it back, and the file is unchanged;
+import down, push up, and the Sheet is unchanged. Each direction also carries
+the promise that it does not write to the other side at all, which is the
+narrower version of the same thing.
+
+Two other properties are worth naming because they are the ones that would have
+made #248 visible: an empty sheet never wipes the local planar (it is skipped),
+and a sheet that cannot be read leaves that language's TSV alone without
+stopping the other languages.
+
+**2026-08-02 — file 9 dropped a parameter, the same boundary as file 8.**
+`push_planar_to_sheet(lang_id, gc, cfg, apply)` took a `gc` client and passed
+it to one call. Through the doorway there is nothing to pass, so the parameter
+went. Its only caller is `push_planars_to_sheets`, in the same file; the two
+callers outside `coding/import_planar.py` (`restructure_sheets.py`,
+`tests/make_synthetic_lang.py`) both call `push_planars_to_sheets`, whose
+signature is unchanged.
+
+`/tmp/planar_changes.json` also became a named constant,
+`import_planar.PLANAR_CHANGES_PATH` — added *before* the pre-migration run, so
+both sides of the before/after comparison exercised the same code. The path is
+what the daily workflow reads to build the `planar-changed` issue, and a test
+suite writing to the real one would hand the workflow a diff nobody made.
+
+**2026-08-02 — the migration-order table no longer numbers its rows.** The
+numbers had drifted from the status table's "file N of 18" — one counted
+files done, the other files remaining — so two different numbers were both
+called the file's number. The order is the rows' order; that is all it ever
+meant.
 
 **2026-08-02 — finding 5 was fixed straight after being found, and the rule
 that decides which findings get that treatment is now stated once here.** Three
