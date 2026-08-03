@@ -30,6 +30,7 @@ from __future__ import annotations
 import io
 import json
 import os
+import re
 from contextlib import redirect_stdout
 from pathlib import Path
 
@@ -365,16 +366,48 @@ def test_regenerate_notebooks_always_applies(env, monkeypatch):
 # Missing configuration
 # ---------------------------------------------------------------------------
 
-def test_a_language_without_a_folder_id_is_skipped_not_fatal(env, monkeypatch):
+def test_a_language_without_a_folder_id_is_named_and_skipped_not_fatal(env, monkeypatch):
     doorway, config, saved = env
     partial = json.loads(json.dumps(config))
     partial["arao1248"] = {}
     use_config(monkeypatch, partial)
     out = run(["generate-notebooks", "--apply"], monkeypatch)
 
-    assert out.count("No folder_id in drive_config") == 3  # one per notebook kind
+    assert "No Drive folder recorded, so no notebooks: ['arao1248']" in out
+    assert "python -m coding generate-sheets --apply" in out
     assert not any("arao1248" in c["name"] for c in doorway.mutations_of("create_file"))
     assert any("stan1293" in c["name"] for c in doorway.mutations_of("create_file"))
+
+
+def test_dry_run_output_with_a_language_that_has_no_folder(env, monkeypatch):
+    """Committed because every fixture language has a folder, so the ordinary
+    dry-run snapshot cannot show what a skipped language looks like."""
+    _, config, _ = env
+    partial = json.loads(json.dumps(config))
+    partial["arao1248"] = {}
+    use_config(monkeypatch, partial)
+    check_snapshot("dry_run_no_folder.txt", run(["generate-notebooks"], monkeypatch))
+
+
+def test_the_dry_run_names_the_same_languages_the_apply_run_uploads_for(env, monkeypatch):
+    """The dry run used to promise notebooks it would then not deliver.
+
+    It listed three notebooks for every language, whether or not that language
+    had a Drive folder to put them in; the omission only appeared once --apply
+    had already run.
+    """
+    doorway, config, _ = env
+    partial = json.loads(json.dumps(config))
+    partial["arao1248"] = {}
+    use_config(monkeypatch, partial)
+
+    dry = run(["generate-notebooks"], monkeypatch)
+    assert "domains_arao1248.ipynb" not in dry
+    assert "domains_stan1293.ipynb" in dry
+
+    run(["generate-notebooks", "--apply"], monkeypatch)
+    assert set(re.findall(r"\w+\.ipynb", dry)) == {
+        c["name"] for c in doorway.mutations_of("create_file")}
 
 
 def test_no_manifest_file_id_recorded_stops_with_the_command_to_run(env, monkeypatch):

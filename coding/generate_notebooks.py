@@ -327,15 +327,28 @@ def _run_generation(apply: bool) -> None:
             "Run python -m coding generate-sheets --apply first."
         )
 
+    # A language with no Drive folder recorded gets no notebooks at all — they
+    # have nowhere to go. Said here, before the lists, so the dry run and the
+    # apply run name the same set of languages: the dry run used to promise
+    # three notebooks for every language and only mention the omission once
+    # --apply had already run.
+    uploadable = {lang_id: classes for lang_id, classes in lang_classes.items()
+                  if drive_config.get(lang_id, {}).get("folder_id")}
+    no_folder = [lang_id for lang_id in lang_classes if lang_id not in uploadable]
+    if no_folder:
+        print(f"\nNo Drive folder recorded, so no notebooks: {no_folder}")
+        print("  Run python -m coding generate-sheets --apply to create their "
+              "folders first.")
+
     if not apply:
         print("\nContributor notebooks (one per language, includes per-class report sections):")
-        for lang_id, classes in lang_classes.items():
+        for lang_id, classes in uploadable.items():
             print(f"  domains_{lang_id}.ipynb — {classes}")
         print("\nValidation notebooks (one per language):")
-        for lang_id in lang_classes:
+        for lang_id in uploadable:
             print(f"  validation_{lang_id}.ipynb")
         print("\nReport notebooks (one per language — generates shareable HTML for collaborators):")
-        for lang_id in lang_classes:
+        for lang_id in uploadable:
             print(f"  report_{lang_id}.ipynb")
         print(f"\nCoordinator notebook (all languages):")
         print(f"  all_languages.ipynb — {all_classes}")
@@ -347,11 +360,8 @@ def _run_generation(apply: bool) -> None:
 
     # Generate and upload contributor notebook for each language
     contributor_template = _load_template("domains_boilerplate.ipynb")
-    for lang_id, classes in lang_classes.items():
-        folder_id = drive_config.get(lang_id, {}).get("folder_id")
-        if not folder_id:
-            print(f"  [{lang_id}] No folder_id in drive_config — skipping")
-            continue
+    for lang_id, classes in uploadable.items():
+        folder_id = drive_config[lang_id]["folder_id"]
         nb = _substitute_tokens(contributor_template, {
             "LANG_ID": lang_id,
             "LANG_DISPLAY": _lang_display(lang_id),
@@ -370,11 +380,8 @@ def _run_generation(apply: bool) -> None:
 
     # Generate and upload validation notebook for each language
     validation_template = _load_template("validation_boilerplate.ipynb")
-    for lang_id in lang_classes:
-        folder_id = drive_config.get(lang_id, {}).get("folder_id")
-        if not folder_id:
-            print(f"  [{lang_id}] No folder_id in drive_config — skipping validation notebook")
-            continue
+    for lang_id in uploadable:
+        folder_id = drive_config[lang_id]["folder_id"]
         nb = _substitute_tokens(validation_template, {
             "LANG_ID": lang_id,
             "LANG_DISPLAY": _lang_display(lang_id),
@@ -392,11 +399,8 @@ def _run_generation(apply: bool) -> None:
 
     # Generate and upload report notebook for each language
     report_template = _load_template("report_boilerplate.ipynb")
-    for lang_id in lang_classes:
-        folder_id = drive_config.get(lang_id, {}).get("folder_id")
-        if not folder_id:
-            print(f"  [{lang_id}] No folder_id in drive_config — skipping report notebook")
-            continue
+    for lang_id in uploadable:
+        folder_id = drive_config[lang_id]["folder_id"]
         nb = _substitute_tokens(report_template, {
             "LANG_ID":        lang_id,
             "LANG_DISPLAY":   _lang_display(lang_id),

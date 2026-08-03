@@ -256,7 +256,7 @@ had hidden the second one entirely. Render before asking anyone to read.
 ## Findings
 
 Per the plan's Phase 0b/1 non-goals, a snapshot that reveals odd behaviour records
-it rather than fixing it *in the same change*. **All seven findings so far have
+it rather than fixing it *in the same change*. **All eight findings so far have
 since been fixed** — the deferral only ever lasts until the migration each one
 is riding on has been committed and its before/after comparison taken. Nothing
 here is outstanding; the entries are kept because the sequence is the point.
@@ -397,6 +397,25 @@ planar_spreadsheet_id in drive_config.json — skipping". It was visible in
 `tests/snapshots/coordinator/import_planar/skips.txt`, where three languages
 went in and only two were mentioned; the whole footprint of the fix is one
 added line in that snapshot.
+
+**8. `generate-notebooks`' dry run promised notebooks it would not deliver**
+(found 2026-08-03, file 10). **Fixed the same day.** A language gets no
+notebooks at all if `drive_config.json` has no Drive folder recorded for it —
+there is nowhere to put them. The dry run did not know that: it listed three
+notebooks for every language it found a planar for, and the omission first
+appeared as three separate skip lines part-way through an `--apply` run, once
+the coordinator had already been told what to expect.
+
+The two now name the same set of languages, up front and once per language
+rather than once per notebook kind, and say which command creates the missing
+folder (`python -m coding generate-sheets --apply`). Same shape as finding 7 —
+a command silently passing over something it had just been asked about.
+
+Worth noting for the files still to come: this fix has no diff in the ordinary
+snapshots, because all three fixture languages have folders, so the case never
+arose. It is covered by a snapshot of its own
+(`dry_run_no_folder.txt`). A snapshot suite that can only exercise the happy
+path will report a fix like this as no change at all.
 
 ---
 
