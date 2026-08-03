@@ -111,7 +111,7 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
 Live Drive writes are not permitted before then, so these are queued rather than
 forgotten. Each is small; the list exists because none of them is anybody's
-current job and all three would otherwise be remembered by nobody.
+current job and every one would otherwise be remembered by nobody.
 
 - **Bin `biuniqueness_stage1_synth0001`.** The 2026-08-02 rename means the next
   `generate-biuniqueness-allomorphy-sheet --apply` creates
@@ -122,6 +122,23 @@ current job and all three would otherwise be remembered by nobody.
   decided). Also waits on Adam annotating that class's `prescreening` tab —
   which is the binding constraint, not Phase 9, since the pair rows are derived
   from what he marks accented.
+- **Give `synth0001`'s three `coreference` pair tabs one criterion column
+  each.** `reflexivization`, `pronominalization` and `np_reference` each carry
+  all three of `reflexive_allowed`, `pronoun_allowed` and `np_allowed`, where
+  `diagnostic_classes.yaml` gives each construction a single `criterion:` and
+  `stan1293`'s equivalent tabs have exactly that one column. So the sheets are
+  stale against the schema, not disagreeing with it. Listed because it has
+  produced an advisory warning on every daily validation run with no issue of
+  its own, most recently #278.
+
+  Synthetic data, but **not empty**: each tab holds 67 machine-generated values
+  in its own criterion column, and the two surplus columns are blank. So decide
+  the mechanism at the time rather than reaching for
+  `generate-sheets --regen-construction coreference:reflexivization`, which
+  rebuilds the whole tab — `sync-params --apply --remove` drops surplus
+  criterion columns while leaving the rest of the tab alone, which is the
+  smaller change and the one that matches what is actually wrong. Note that
+  `--regen-construction` writes live regardless of `--apply`.
 - **Re-run `capture-drive-state`** if the live sheets have changed structurally
   since 2026-08-01. The fixtures are a recording with no staleness alarm; see
   `data_dependency_schema/facts.yaml` § `drive_state_test_fixtures`.
