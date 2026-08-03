@@ -17,7 +17,13 @@ Sheet -> TSV (default):
     planar_{lang_id}.tsv, and writes updated TSVs when content has changed.
     Archives the old file before overwriting.
 
-    When --apply is used and changes are found, writes /tmp/planar_changes.json
+    The Sheet is the source of truth here, so a column added in the Sheet is
+    carried down into the TSV. A column the Sheet no longer has is the one
+    exception: that language is skipped rather than imported, because writing
+    would erase every value in it, and an absent column is far more likely to
+    be a mistake in the Sheet than an instruction to delete data.
+
+    When --apply is used and changes are found, writes PLANAR_CHANGES_PATH
     with structured diff information used by the data-refresh workflow to build
     the planar-changed issue body.
 
@@ -68,7 +74,18 @@ def _archive_tsv(path: Path, timestamp: str) -> Path:
 # Sheet reading
 # ---------------------------------------------------------------------------
 
-def _read_sheet_df(ws, canonical_cols: list[str]) -> pd.DataFrame:
+def _read_sheet_df(ws) -> pd.DataFrame:
+    """The planar sheet as a frame, with the columns the Sheet itself has.
+
+    It used to be reshaped here to whatever columns the local TSV already had,
+    which meant a column added in the Sheet never arrived and a column removed
+    from the Sheet came back as a frame full of blanks. Deciding the Sheet's
+    columns from the local copy is the same mistake as #248. The callers
+    compare the two column lists themselves and say what differs.
+
+    A column with a blank header is dropped: the used range can run past the
+    last named column, and an unnamed column is not a column.
+    """
     from .drive import _with_retry
     rows = _with_retry(lambda: ws.get_all_values())
     if not rows:
@@ -76,8 +93,7 @@ def _read_sheet_df(ws, canonical_cols: list[str]) -> pd.DataFrame:
     headers = rows[0]
     data = [r for r in rows[1:] if any(c.strip() for c in r)]
     df = pd.DataFrame(data, columns=headers, dtype=str).fillna("")
-    # Keep only the canonical TSV columns; fill any missing with ""
-    return df.reindex(columns=canonical_cols, fill_value="")
+    return df[[c for c in df.columns if str(c).strip()]]
 
 
 def _normalize(df: pd.DataFrame) -> pd.DataFrame:
@@ -123,6 +139,7 @@ def _diff_positions(old_df: pd.DataFrame, new_df: pd.DataFrame) -> dict:
         "deleted": {str(k): v for k, v in deleted.items()},
         "renamed": {str(k): list(v) for k, v in renamed.items()},
         "remaps": [[o, n] for o, n in remaps],
+        "columns_added": [c for c in new_df.columns if c not in old_df.columns],
     }
 
 
@@ -139,6 +156,10 @@ def _recommend(diff: dict, lang_id: str) -> str:
         return cmd
     elif diff["added"]:
         return "python -m coding update-sheets --apply"
+    elif diff["columns_added"]:
+        # A planar column is not a criterion column: it feeds validation and
+        # the forms built from the planar, not the annotation tabs themselves.
+        return "(new planar column — no sheet structural updates needed)"
     else:
         return "(content-only changes — no sheet structural updates needed)"
 
@@ -169,6 +190,11 @@ def import_planar(lang_ids: list[str] | None = None, apply: bool = False) -> lis
 
         sheet_id = lang_cfg.get("planar_spreadsheet_id")
         if not sheet_id:
+            # Said out loud, not passed over in silence: a language that has
+            # dropped out of drive_config.json otherwise looks exactly like a
+            # language that was never in it.
+            print(f"\n{lang_id}: no planar_spreadsheet_id in drive_config.json"
+                  " — skipping")
             continue
 
         tsv_path = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
@@ -182,7 +208,7 @@ def import_planar(lang_ids: list[str] | None = None, apply: bool = False) -> lis
             ss = get_doorway().open_spreadsheet(sheet_id)
             ws = _with_retry(lambda: ss.sheet1)
             old_df = pd.read_csv(tsv_path, sep="\t", dtype=str).fillna("")
-            new_df = _read_sheet_df(ws, list(old_df.columns))
+            new_df = _read_sheet_df(ws)
         except Exception as exc:
             print(f"  ERROR reading planar sheet: {exc}")
             continue
@@ -190,6 +216,28 @@ def import_planar(lang_ids: list[str] | None = None, apply: bool = False) -> lis
         if new_df.empty:
             print("  planar sheet is empty — skipping")
             continue
+
+        # A column the Sheet no longer has is never taken as an instruction to
+        # erase it locally — same reasoning as the empty sheet just above. The
+        # coordinator is told which it is and given both ways out.
+        missing = [c for c in old_df.columns if c not in new_df.columns]
+        if missing:
+            many = len(missing) > 1
+            print(f"  the planar Sheet has no {', '.join(missing)} "
+                  f"column{'s' if many else ''}, but planar_{lang_id}.tsv "
+                  f"does — skipping, since importing would erase "
+                  f"{'them' if many else 'it'}")
+            print(f"  → restore {'them' if many else 'it'} in the Sheet, or "
+                  f"delete {'them' if many else 'it'} from "
+                  f"planar_{lang_id}.tsv and run: python -m coding "
+                  f"import-planar --to-sheet --lang {lang_id} --apply")
+            continue
+
+        # Local column order is kept and anything new goes on the end, so a
+        # column reordered in the Sheet is not a change to the file.
+        new_df = new_df.reindex(
+            columns=list(old_df.columns)
+            + [c for c in new_df.columns if c not in old_df.columns])
 
         if _normalize(old_df).equals(_normalize(new_df)):
             print("  up to date")
@@ -204,7 +252,10 @@ def import_planar(lang_ids: list[str] | None = None, apply: bool = False) -> lis
             print(f"  - position {n} ({name})")
         for n, (old_name, new_name) in diff["renamed"].items():
             print(f"  ~ position {n}: {old_name} → {new_name}")
-        if not any([diff["added"], diff["deleted"], diff["renamed"]]):
+        for col in diff["columns_added"]:
+            print(f"  + column {col}")
+        if not any([diff["added"], diff["deleted"], diff["renamed"],
+                    diff["columns_added"]]):
             print("  (content-only changes)")
         print(f"  → {rec}")
 
@@ -261,7 +312,7 @@ def push_planar_to_sheet(lang_id: str, cfg: dict, apply: bool) -> bool:
     try:
         ss = get_doorway().open_spreadsheet(sheet_id)
         ws = _with_retry(lambda: ss.sheet1)
-        sheet_df = _read_sheet_df(ws, list(local_df.columns))
+        sheet_df = _read_sheet_df(ws)
     except Exception as exc:
         print(f"  [{lang_id}] ERROR reading planar sheet: {exc}")
         return False
@@ -271,13 +322,21 @@ def push_planar_to_sheet(lang_id: str, cfg: dict, apply: bool) -> bool:
         return False
 
     diff = _diff_positions(sheet_df, local_df)
+    dropped_cols = [c for c in sheet_df.columns if c not in local_df.columns]
     for n, name in diff["added"].items():
         print(f"  [{lang_id}]   + position {n} ({name})")
     for n, name in diff["deleted"].items():
         print(f"  [{lang_id}]   - position {n} ({name})")
     for n, (old_name, new_name) in diff["renamed"].items():
         print(f"  [{lang_id}]   ~ position {n}: {old_name} -> {new_name}")
-    if not any([diff["added"], diff["deleted"], diff["renamed"]]):
+    for col in diff["columns_added"]:
+        print(f"  [{lang_id}]   + column {col}")
+    # This direction rewrites the Sheet from the TSV, so a column only the
+    # Sheet has goes. Named before it happens, not after.
+    for col in dropped_cols:
+        print(f"  [{lang_id}]   - column {col}")
+    if not any([diff["added"], diff["deleted"], diff["renamed"],
+                diff["columns_added"], dropped_cols]):
         print(f"  [{lang_id}]   (content-only changes)")
 
     if apply:

@@ -6,7 +6,9 @@
 # documented informally in CLAUDE.md.
 
 - id: planar_sheet_structure
-  description: a language's positional/element structure (Position_Name/Elements columns)
+  description: >-
+    a language's positional/element structure (Position_Name/Elements columns),
+    and the set of columns the planar itself has
   locations:
     - {entity: planar_sheet, detail: "the live planar spreadsheet for the language (planar_spreadsheet_id in drive_config.json)"}
     - {entity: planar_tsv, detail: "coded_data/{lang}/lang_setup/planar_{lang_id}.tsv"}
@@ -44,6 +46,17 @@
       planar_tsv directly needs this push, not just restructure-sheets --
       check for it by name in a new script rather than assuming the risk is
       already covered project-wide.
+
+      A second, column-level form of the same thing was found on 2026-08-02
+      while migrating import_planar.py to the Drive doorway (#271). The
+      download direction reshaped the Sheet's rows to whatever columns
+      planar_tsv already had, so planar_tsv -- the copy -- was deciding what
+      planar_sheet, the authoritative source, was allowed to say. A column
+      added in the Sheet never arrived and import-planar went on reporting
+      "up to date"; a column removed from the Sheet was written down as a
+      column full of blanks, described only as a content change. Fixed the
+      same day: a column added in the Sheet is carried down, and a column the
+      Sheet no longer has skips that language rather than erasing it.
     caught_by: >-
       nothing yet beyond the daily import-planar --apply step noticing a diff
       and filing a planar-changed issue -- which can't distinguish "the Sheet
@@ -51,7 +64,10 @@
       pushed," since both look identical from import-planar's side. This is
       still true even after the 2026-07-31 fix: it stops make_synthetic_lang.py
       from causing new drift, but doesn't add detection for a *future* script
-      that writes planar_tsv directly and forgets the same push.
+      that writes planar_tsv directly and forgets the same push. Column-level
+      drift is now caught in both directions by import-planar itself, which
+      names every column that differs before it writes anything
+      (tests/test_import_planar_snapshot.py).
 
 - id: diagnostics_scope
   description: which classes/constructions/criteria are in scope for a language's diagnostics

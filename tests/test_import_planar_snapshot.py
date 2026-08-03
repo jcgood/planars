@@ -203,6 +203,17 @@ def rename_position(rows: List[List[str]]) -> List[List[str]]:
     return rows
 
 
+def add_column(rows: List[List[str]]) -> List[List[str]]:
+    """A column the local TSV has never heard of."""
+    return [row + ["Biuniqueness_Scope" if i == 0 else "filled"]
+            for i, row in enumerate(rows)]
+
+
+def drop_notes_column(rows: List[List[str]]) -> List[List[str]]:
+    notes = rows[0].index("Notes")
+    return [row[:notes] + row[notes + 1:] for row in rows]
+
+
 def edit_a_note(rows: List[List[str]]) -> List[List[str]]:
     rows = [list(r) for r in rows]
     rows[1][8] = "a note that was not there before"
@@ -248,12 +259,19 @@ def test_to_sheet_apply_transcript(env):
 
 
 def test_skips_transcript(env):
-    """The three ways a language is passed over, in one run."""
+    """The three ways a language is passed over, in one run — each one named."""
     env.tsv("arao1248").unlink()
     env.config[LANG].pop("planar_spreadsheet_id")
     env.sheet("synth0001").clear()
     env.doorway.clear_mutations()
     check_snapshot("skips.txt", env.run(["import-planar", "--apply"]))
+
+
+def test_column_changes_transcript(env):
+    """One language gains a column in the Sheet, one loses one."""
+    env.write_sheet_rows(add_column(env.sheet_rows("arao1248")), "arao1248")
+    env.write_sheet_rows(drop_notes_column(env.sheet_rows(LANG)), LANG)
+    check_snapshot("columns.txt", env.run(["import-planar", "--apply"]))
 
 
 # ---------------------------------------------------------------------------
@@ -373,6 +391,70 @@ def test_one_language_at_a_time_leaves_the_others_untouched(env):
 
 
 # ---------------------------------------------------------------------------
+# Sheet → TSV: columns
+# ---------------------------------------------------------------------------
+
+def test_a_column_added_in_the_sheet_reaches_the_tsv(env):
+    """The Sheet is the source of truth here, columns included."""
+    env.write_sheet_rows(add_column(env.sheet_rows()))
+
+    out = env.run(["import-planar", "--lang", LANG, "--apply"])
+
+    assert "+ column Biuniqueness_Scope" in out
+    assert env.tsv_rows()[0][-1] == "Biuniqueness_Scope"
+    assert env.tsv_rows() == env.sheet_rows()
+    assert (json.loads(env.changes_path.read_text())[LANG]["diff"]
+            ["columns_added"] == ["Biuniqueness_Scope"])
+
+
+def test_a_column_missing_from_the_sheet_never_erases_it_locally(env):
+    """An absent column is a fault in the Sheet, not an instruction to delete."""
+    before = env.tsv_rows()
+    env.write_sheet_rows(drop_notes_column(env.sheet_rows()))
+
+    out = env.run(["import-planar", "--lang", LANG, "--apply"])
+
+    assert "the planar Sheet has no Notes column" in out
+    assert env.tsv_rows() == before
+    assert env.archives(LANG) == []
+    assert not env.changes_path.exists()
+
+
+def test_the_missing_column_message_names_both_ways_out(env):
+    env.write_sheet_rows(drop_notes_column(env.sheet_rows()))
+    out = env.run(["import-planar", "--lang", LANG])
+    assert "→ restore it in the Sheet, or delete it from" in out
+    assert (f"python -m coding import-planar --to-sheet --lang {LANG} --apply"
+            in out)
+
+
+def test_columns_reordered_in_the_sheet_are_not_a_change(env):
+    """Nothing was said or lost, so the file should not be rewritten."""
+    rows = env.sheet_rows()
+    order = [rows[0].index(c) for c in
+             [rows[0][0]] + list(reversed(rows[0][1:]))]
+    env.write_sheet_rows([[row[i] for i in order] for row in rows])
+    before = env.tsv_rows()
+
+    out = env.run(["import-planar", "--lang", LANG, "--apply"])
+
+    assert "up to date" in out
+    assert env.tsv_rows() == before
+
+
+def test_a_column_with_a_blank_header_is_not_a_column(env):
+    """The used range can run past the last named column."""
+    before = env.tsv_rows()
+    env.write_sheet_rows([row + ["" if i == 0 else "stray"]
+                          for i, row in enumerate(env.sheet_rows())])
+
+    out = env.run(["import-planar", "--lang", LANG, "--apply"])
+
+    assert "up to date" in out
+    assert env.tsv_rows() == before
+
+
+# ---------------------------------------------------------------------------
 # TSV → Sheet: never writes locally
 # ---------------------------------------------------------------------------
 
@@ -410,6 +492,19 @@ def test_to_sheet_apply_writes_nothing_locally(env):
     assert {lang: env.tsv_rows(lang) for lang in LANGS} == before
     assert env.archives(LANG) == []
     assert env.autocommits == []
+
+
+def test_to_sheet_names_the_columns_it_is_about_to_add_and_remove(env):
+    """The push rewrites the Sheet from the TSV, so its columns win."""
+    env.write_sheet_rows(add_column(env.sheet_rows()))
+    env.write_tsv_rows([row + ["Element_Types" if i == 0 else "formative"]
+                        for i, row in enumerate(env.tsv_rows())])
+
+    out = env.run(["import-planar", "--to-sheet", "--lang", LANG, "--apply"])
+
+    assert f"[{LANG}]   + column Element_Types" in out
+    assert f"[{LANG}]   - column Biuniqueness_Scope" in out
+    assert env.sheet_rows() == env.tsv_rows()
 
 
 def test_a_second_to_sheet_apply_is_a_no_op(env):

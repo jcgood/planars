@@ -235,11 +235,10 @@ had hidden the second one entirely. Render before asking anyone to read.
 ## Findings
 
 Per the plan's Phase 0b/1 non-goals, a snapshot that reveals odd behaviour records
-it rather than fixing it *in the same change*. **Findings 1–5 are fixed;
-findings 6 and 7 are open, both found on file 9** — the deferral only ever
-lasts until the migration each one is riding on has been committed and its
-before/after comparison taken, which for 6 and 7 is now. The entries are kept
-after their fix because the sequence is the point.
+it rather than fixing it *in the same change*. **All seven findings so far have
+since been fixed** — the deferral only ever lasts until the migration each one
+is riding on has been committed and its before/after comparison taken. Nothing
+here is outstanding; the entries are kept because the sequence is the point.
 
 **Do not delete this section when the migration ends without first checking that
 every finding has an issue number or a decisions-log entry.** Findings 4 and 5
@@ -336,35 +335,47 @@ Nothing was ever written wrongly: the whole-table comparison that decides
 YAML's content either way. What was lost was the one look at the change before
 approving it — which is the entire purpose of the dry run.
 
-**6. `import-planar` cannot see a column added to or removed from the planar
-Sheet** (found 2026-08-02, file 9). **Open.** The download direction reads the
-Sheet and then reshapes it to the columns the *local TSV* already has
-(`_read_sheet_df`'s `reindex`). Two consequences, checked rather than reasoned:
+**6. `import-planar` could not see a column added to or removed from the planar
+Sheet** (found 2026-08-02, file 9). **Fixed the same day**, in its own commit
+after the migration, with the snapshot diff as the evidence. The download
+direction read the Sheet and then reshaped it to the columns the *local TSV*
+already had (`_read_sheet_df`'s `reindex`). Two consequences, checked rather
+than reasoned:
 
-- A column added in the Sheet is dropped on the way down. `import-planar` says
-  "up to date" and goes on saying it forever. This is how `Biuniqueness_Scope`
-  would arrive if anyone added it in the Sheet rather than locally.
-- A column removed from the Sheet is not reported as a structural change at
-  all. It comes back filled with blanks, so an `--apply` writes a TSV with
-  every value in that column erased, described only as "(content-only
-  changes)".
+- A column added in the Sheet was dropped on the way down. `import-planar` said
+  "up to date" and would have gone on saying it forever. This is how
+  `Biuniqueness_Scope` would arrive if anyone added it in the Sheet rather than
+  locally, which is the ordinary way a planar gets edited.
+- A column removed from the Sheet was not reported as a structural change at
+  all. It came back filled with blanks, so an `--apply` wrote a TSV with every
+  value in that column erased, described only as "(content-only changes)".
 
 The Sheet is the source of truth in this direction, so the local file's column
-list should not be deciding what the Sheet is allowed to say. Same shape as
-findings 1 and 2 and as #248 itself: **the copy is being trusted about the
-original.** Deferred out of this commit because the repair changes what the
-command writes, which is exactly what the before/after comparison holds still.
+list should not have been deciding what the Sheet was allowed to say. Same
+shape as findings 1 and 2 and as #248 itself: **the copy was being trusted
+about the original.**
 
-**7. The download direction says nothing at all about a language whose planar
-sheet is not recorded** (found 2026-08-02, file 9). **Open.** `import_planar`
-`continue`s past a language with no `planar_spreadsheet_id` without printing
-its name, so it is indistinguishable from a language that was never configured.
-The push direction, in the same file, says "No planar_spreadsheet_id in
-drive_config.json — skipping". Visible in
+The two halves are fixed asymmetrically, and the asymmetry is the point. A
+column the Sheet has and the TSV lacks is carried down — growth is safe. A
+column the TSV has and the Sheet lacks skips that language entirely, with both
+ways out named, because **an absent column is far more likely to be a mistake
+in the Sheet than an instruction to erase data.** That is the same reasoning
+the empty-sheet skip already used, applied one level down. Refusing also avoids
+the question a "just apply it" fix would have raised — how to line up the
+values of a kept column against rows that may have been added, deleted or
+renumbered — where a wrong answer smears data onto the wrong positions
+silently. Registered in `data_dependency_schema/facts.yaml` under
+`planar_sheet_structure`, which already owned this fact at row level.
+
+**7. The download direction said nothing at all about a language whose planar
+sheet is not recorded** (found 2026-08-02, file 9). **Fixed the same day.**
+`import_planar` `continue`d past a language with no `planar_spreadsheet_id`
+without printing its name, so it was indistinguishable from a language that was
+never configured. The push direction, in the same file, already said "No
+planar_spreadsheet_id in drive_config.json — skipping". It was visible in
 `tests/snapshots/coordinator/import_planar/skips.txt`, where three languages
-went in and only two are mentioned. This one only changes what the command
-says, so by the rule below it does not have to wait — it waits only for this
-migration's commit, because it moves a snapshot.
+went in and only two were mentioned; the whole footprint of the fix is one
+added line in that snapshot.
 
 ---
 

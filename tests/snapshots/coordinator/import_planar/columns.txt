@@ -1,0 +1,13 @@
+
+arao1248
+  + column Biuniqueness_Scope
+  → (new planar column — no sheet structural updates needed)
+  archived → archive/lang_setup/planar_arao1248_20260802_112233.tsv
+  wrote planar_arao1248.tsv
+
+stan1293
+  the planar Sheet has no Notes column, but planar_stan1293.tsv does — skipping, since importing would erase it
+  → restore it in the Sheet, or delete it from planar_stan1293.tsv and run: python -m coding import-planar --to-sheet --lang stan1293 --apply
+
+synth0001
+  up to date

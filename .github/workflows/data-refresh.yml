@@ -141,7 +141,10 @@ jobs:
                   lines.append(f"- `-` position {n} (`{name}`) — removed\n")
               for n, pair in diff.get("renamed", {}).items():
                   lines.append(f"- `~` position {n}: `{pair[0]}` → `{pair[1]}`\n")
-              if not any([diff.get("added"), diff.get("deleted"), diff.get("renamed")]):
+              for col in diff.get("columns_added", []):
+                  lines.append(f"- `+` column `{col}` — added\n")
+              if not any([diff.get("added"), diff.get("deleted"),
+                          diff.get("renamed"), diff.get("columns_added")]):
                   lines.append("- (content-only changes — elements, examples, or notes)\n")
               lines.append(f"\n**Command to run:**\n```\n{info['recommendation']}\n```\n")
           lines.append(
