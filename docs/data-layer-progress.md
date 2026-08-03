@@ -110,6 +110,17 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
    should be stubbed so the snapshot locks the *Drive interaction*, which is what
    the migration touches, rather than output already covered elsewhere.
 
+   **If the file reads `construction_params` from the manifest, call
+   `tests/mutation_checks.assert_no_criterion_writes_onto_trailing_columns` in
+   its snapshot test.** Six of the seven remaining files do: `sync_params`,
+   `generate_sheets`, `restructure_sheets`, `import_sheets`, `integrity_check`,
+   `generate_status_sheet`. Two commands have now written criterion-shaped
+   things onto `Source`/`Comments` independently (#272 and Finding 10), both
+   from trusting the manifest about a tab's columns, so treat it as the
+   expected mistake rather than a surprise. `sync_params` is the one to watch:
+   it inserts and deletes criterion columns, which is the densest form of the
+   same question.
+
 2. Phases 3–9 per the plan.
 
 ### Held until Phase 9

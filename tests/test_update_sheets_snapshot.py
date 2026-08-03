@@ -53,6 +53,7 @@ from coding import drive_doorway
 from coding import generate_sheets as gs
 from coding import update_sheets as us
 from fake_drive import FakeDriveDoorway, MANIFEST_FILE_ID
+from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -516,21 +517,17 @@ def test_appending_a_row_keeps_the_tabs_real_allowed_values(env):
         assert values == ["y", "n", "both", "na"]
 
 
-def test_no_dropdown_is_ever_written_onto_source_or_comments(env):
-    """The columns an annotator writes prose in are never given a value list."""
+def test_nothing_criterion_shaped_is_written_onto_source_or_comments(env):
+    """Neither a dropdown nor a criterion note may land on the free-text columns.
+
+    Shared with refresh-dropdowns, which made the same mistake with dropdowns
+    while this command made it with notes — see tests/mutation_checks.py.
+    """
     env.add_element("stan1293")
 
     env.run(["update-sheets", "--apply"])
 
-    for m in env.doorway.mutations:
-        if m["op"] != "batch_request" or m["request_type"] != "setDataValidation":
-            continue
-        rng = m["payload"]["range"]
-        ws = (env.doorway.spreadsheet(m["spreadsheet"])
-              ._worksheet_by_sheet_id(rng["sheetId"]))
-        header = ws.row_values(1)
-        for col in range(rng["startColumnIndex"], rng["endColumnIndex"]):
-            assert header[col] not in ("Source", "Comments")
+    assert_no_criterion_writes_onto_trailing_columns(env.doorway)
 
 
 def test_header_notes_are_placed_from_the_header_not_the_manifest(env):

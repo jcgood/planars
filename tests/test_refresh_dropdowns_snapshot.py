@@ -40,6 +40,7 @@ import pytest
 
 from coding import drive, drive_doorway, refresh_dropdowns
 from fake_drive import FakeDriveDoorway, MANIFEST_FILE_ID
+from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -246,17 +247,12 @@ def test_dropdowns_are_never_written_onto_source_or_comments(fake, monkeypatch):
     The command used to take the *number* of dropdown columns from the manifest
     and their *start* from the header; when those disagreed it ran off the end
     of the criteria. Column identity now comes from the sheet's own header.
+
+    The check itself is shared with update-sheets, which made the same mistake
+    with criterion notes — see tests/mutation_checks.py.
     """
     run(["refresh-dropdowns", "--apply"], monkeypatch)
-    for m in fake.mutations:
-        if m["op"] != "batch_request" or m["request_type"] != "setDataValidation":
-            continue
-        rng = m["payload"]["range"]
-        ws = fake.spreadsheet(m["spreadsheet"])._worksheet_by_sheet_id(rng["sheetId"])
-        header = ws.row_values(1)
-        for col in range(rng["startColumnIndex"], rng["endColumnIndex"]):
-            assert header[col] not in ("Source", "Comments"), (
-                f"dropdown written onto {header[col]!r} of {ws.title}")
+    assert_no_criterion_writes_onto_trailing_columns(fake)
 
 
 def test_an_unrecognised_criterion_column_is_skipped_not_guessed(fake, monkeypatch):
