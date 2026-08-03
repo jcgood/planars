@@ -37,7 +37,6 @@ Authentication: same OAuth2 setup as generate_sheets.py.
 from __future__ import annotations
 
 import copy
-import io
 import json
 import sys
 from pathlib import Path
@@ -47,13 +46,12 @@ ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES_DIR = ROOT / "notebooks" / "templates"
 CODED_DATA = ROOT / "coded_data"
 
-from googleapiclient.http import MediaIoBaseUpload
-
 from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
 )
-from .drive import _get_clients, _load_drive_config, _save_drive_config
+from .drive import _load_drive_config, _save_drive_config
+from .drive_doorway import get_doorway
 
 # Human-readable display names for notebook section headers.
 # Covers all classes in diagnostic_classes.yaml; unknown classes fall back to
@@ -208,38 +206,37 @@ def _insert_class_cells(nb: dict, class_cells: List[dict]) -> dict:
 # ---------------------------------------------------------------------------
 
 def _upload_file(
-    drive,
+    doorway,
     content: bytes,
     filename: str,
     mimetype: str,
     folder_id: str,
     existing_file_id: Optional[str] = None,
 ) -> str:
-    """Upload (create or update) a file in Drive. Returns the file ID."""
-    media = MediaIoBaseUpload(io.BytesIO(content), mimetype=mimetype)
+    """Upload (create or update) a file in Drive. Returns the file ID.
+
+    The update path renames the file as well as replacing its content — one of
+    the four "create-or-update a Drive file" implementations this project
+    carries, and one of the two that rename. Preserved as-is; collapsing them
+    is issue #276.
+    """
     if existing_file_id:
-        drive.files().update(
-            fileId=existing_file_id,
-            body={"name": filename},
-            media_body=media,
-        ).execute()
+        doorway.update_file(existing_file_id, name=filename,
+                            content=content, mimetype=mimetype)
         return existing_file_id
-    else:
-        result = drive.files().create(
-            body={"name": filename, "parents": [folder_id]},
-            media_body=media,
-            fields="id",
-        ).execute()
-        return result["id"]
+    return doorway.create_file(filename, parents=[folder_id],
+                               content=content, mimetype=mimetype)
 
 
-def _set_viewer_permissions(drive, file_id: str) -> None:
-    """Share a file as view-only with anyone who has the link."""
-    drive.permissions().create(
-        fileId=file_id,
-        body={"type": "anyone", "role": "reader"},
-        fields="id",
-    ).execute()
+def _set_viewer_permissions(doorway, file_id: str) -> None:
+    """Share a file as view-only with anyone who has the link.
+
+    Called after *every* upload, create or update, so a notebook whose grant
+    was removed by hand is restored on the next run. `generate_reports.py`
+    grants only on create, so a report PDF is not — the asymmetry is real and
+    pre-existing (issue #276).
+    """
+    doorway.create_permission(file_id, type="anyone", role="reader")
 
 
 # ---------------------------------------------------------------------------
@@ -345,7 +342,7 @@ def _run_generation(apply: bool) -> None:
         print("\nRun with --apply to generate and upload.")
         return
 
-    _, drive = _get_clients()
+    doorway = get_doorway()
     print(f"\nUsing manifest.json (id: {config_file_id})")
 
     # Generate and upload contributor notebook for each language
@@ -364,10 +361,10 @@ def _run_generation(apply: bool) -> None:
         nb_bytes = json.dumps(nb, indent=1).encode()
         filename = f"domains_{lang_id}.ipynb"
         file_id = _upload_file(
-            drive, nb_bytes, filename, "application/json", folder_id,
+            doorway, nb_bytes, filename, "application/json", folder_id,
             drive_config.get(lang_id, {}).get("domains_notebook_file_id"),
         )
-        _set_viewer_permissions(drive, file_id)
+        _set_viewer_permissions(doorway, file_id)
         drive_config.setdefault(lang_id, {})["domains_notebook_file_id"] = file_id
         print(f"  [{lang_id}] Uploaded {filename} (viewer)")
 
@@ -386,10 +383,10 @@ def _run_generation(apply: bool) -> None:
         nb_bytes = json.dumps(nb, indent=1).encode()
         filename = f"validation_{lang_id}.ipynb"
         file_id = _upload_file(
-            drive, nb_bytes, filename, "application/json", folder_id,
+            doorway, nb_bytes, filename, "application/json", folder_id,
             drive_config.get(lang_id, {}).get("validation_notebook_file_id"),
         )
-        _set_viewer_permissions(drive, file_id)
+        _set_viewer_permissions(doorway, file_id)
         drive_config.setdefault(lang_id, {})["validation_notebook_file_id"] = file_id
         print(f"  [{lang_id}] Uploaded {filename} (viewer)")
 
@@ -409,10 +406,10 @@ def _run_generation(apply: bool) -> None:
         nb_bytes = json.dumps(nb, indent=1).encode()
         filename = f"report_{lang_id}.ipynb"
         file_id = _upload_file(
-            drive, nb_bytes, filename, "application/json", folder_id,
+            doorway, nb_bytes, filename, "application/json", folder_id,
             drive_config.get(lang_id, {}).get("report_notebook_file_id"),
         )
-        _set_viewer_permissions(drive, file_id)
+        _set_viewer_permissions(doorway, file_id)
         drive_config.setdefault(lang_id, {})["report_notebook_file_id"] = file_id
         print(f"  [{lang_id}] Uploaded {filename} (viewer)")
 
@@ -422,10 +419,10 @@ def _run_generation(apply: bool) -> None:
     nb = _insert_class_cells(nb, _generate_class_cells(all_classes))
     nb_bytes = json.dumps(nb, indent=1).encode()
     coord_file_id = _upload_file(
-        drive, nb_bytes, "all_languages.ipynb", "application/json", global_folder_id,
+        doorway, nb_bytes, "all_languages.ipynb", "application/json", global_folder_id,
         drive_config.get("_all_languages_notebook_file_id"),
     )
-    _set_viewer_permissions(drive, coord_file_id)
+    _set_viewer_permissions(doorway, coord_file_id)
     drive_config["_all_languages_notebook_file_id"] = coord_file_id
     print(f"\nUploaded all_languages.ipynb (viewer)")
 

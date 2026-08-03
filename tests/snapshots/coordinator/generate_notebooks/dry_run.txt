@@ -1,0 +1,23 @@
+DRY RUN — Notebook generation
+Languages:              ['arao1248', 'stan1293', 'synth0001']
+Classes (all langs):    ['ciscategorial', 'noninterruption', 'subspanrepetition', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent']
+
+Contributor notebooks (one per language, includes per-class report sections):
+  domains_arao1248.ipynb — ['ciscategorial', 'noninterruption', 'subspanrepetition']
+  domains_stan1293.ipynb — ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent']
+  domains_synth0001.ipynb — ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent']
+
+Validation notebooks (one per language):
+  validation_arao1248.ipynb
+  validation_stan1293.ipynb
+  validation_synth0001.ipynb
+
+Report notebooks (one per language — generates shareable HTML for collaborators):
+  report_arao1248.ipynb
+  report_stan1293.ipynb
+  report_synth0001.ipynb
+
+Coordinator notebook (all languages):
+  all_languages.ipynb — ['ciscategorial', 'noninterruption', 'subspanrepetition', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent']
+
+Run with --apply to generate and upload.

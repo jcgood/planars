@@ -30,7 +30,7 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 0b/1 — migrating callers, 9 of 18 done (started 2026-08-01)
+**Phase:** 0b/1 — migrating callers, 10 of 18 done (started 2026-08-01)
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
 **Last worked:** 2026-08-03
@@ -80,6 +80,7 @@ the same day — see the decisions log.
 | Phase 0b/1 — file 7: `generate_biuniqueness_allomorphy_sheet.py` | **done** — snapshots captured, pre/post diff clean; first to create a spreadsheet and share it with a named person |
 | Phase 0b/1 — file 8: `sync_diagnostics_yaml.py` | **done** — snapshots captured, pre/post diff clean; first writer to a reference sheet |
 | Phase 0b/1 — file 9: `import_planar.py` | **done** — snapshots captured, pre/post diff clean across 30 scenarios; first to read *and* write the planar sheet |
+| Phase 0b/1 — file 10: `generate_notebooks.py` | **done** — snapshots captured, pre/post diff clean across 7 scenarios |
 | Phase 0b/1 — remaining files | not started — see § "Migration order" |
 | Phases 3–9 | not started |
 
@@ -96,10 +97,10 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
 1. **The remaining files**, one at a time, snapshots captured
    immediately after each. See § "Migration order" below.
-   Delegable to agents now that the pattern exists (the nine done are the
+   Delegable to agents now that the pattern exists (the ten done are the
    worked examples: Sheets-heavy, Drive-files-only, folders-and-sharing,
-   read-only, Docs, sheet creation, reference-sheet overwrite, and a command
-   with two directions that must round-trip).
+   read-only, Docs, sheet creation, reference-sheet overwrite, a command
+   with two directions that must round-trip, and file uploads).
 
    Watch for, in each: a `_save_drive_config` call (must be patched in tests —
    the real `drive_config.json` holds live IDs and a test that clobbers it
@@ -148,7 +149,7 @@ current job and every one would otherwise be remembered by nobody.
 
 ### Migration order
 
-Nine files remain of eighteen that touch Drive. The plan's list of eleven
+Eight files remain of eighteen that touch Drive. The plan's list of eleven
 was hand-written and never checked against the code; a scan on 2026-08-02
 replaced it with a derived one in `tests/test_doorway_coverage.py`.
 
@@ -163,10 +164,10 @@ total at all.
 Ordered by risk, lowest first, so that every shared helper and every part of
 the doorway has been exercised before the destructive commands are touched.
 
-**"9 of 18" flatters it, and planning should use the volume rather than the
-count.** Because the order is smallest-and-safest first, the nine done are
-2,557 lines between them; the nine remaining are 9,173 lines and **57 direct
-Drive calls**. That is under a quarter of the phase by weight. Recompute rather
+**"10 of 18" flatters it, and planning should use the volume rather than the
+count.** Because the order is smallest-and-safest first, the ten done are
+3,069 lines between them; the eight remaining are 8,717 lines and **52 direct
+Drive calls**. That is about a quarter of the phase by weight. Recompute rather
 than trusting these numbers — the command is in `tests/test_doorway_coverage.py`
 (`_DIRECT_ACCESS` over `coding/*.py`, minus `_EXEMPT`).
 
@@ -179,7 +180,7 @@ than trusting these numbers — the command is in `tests/test_doorway_coverage.p
 | ~~`generate_biuniqueness_allomorphy_sheet.py`~~ | done |
 | ~~`sync_diagnostics_yaml.py`~~ | done |
 | ~~`import_planar.py`~~ | done |
-| `generate_notebooks.py` | File uploads; closest sibling to `generate_reports`, already done |
+| ~~`generate_notebooks.py`~~ | done |
 | `update_sheets.py` | Appends to live annotation sheets. First real risk to Adam's data |
 | `generate_status_sheet.py` | Generated dashboard; no annotation at stake |
 | `validate_coding.py` | Writes highlighting across every sheet |
@@ -199,7 +200,7 @@ already locked down when it changes.
 
 Step 1 of the plan's procedure ("run the dry-run against real Drive and save
 the output") is not permitted before Phase 9. The substitute, which worked
-better than expected and should be reused for files 2–11:
+better than expected and should be reused for every file after the first:
 
 - Drive the **unmigrated** code from a fake seeded by `from_fixtures()`, using
   thin shims for the `gc` and `drive` objects it expects (a `open_by_key` that
