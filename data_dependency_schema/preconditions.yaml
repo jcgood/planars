@@ -13,6 +13,7 @@
     - "update_sheets.py (update-sheets --apply)"
     - "sync_params.py (sync-params --apply)"
     - "generate_sheets.py (--regen-dependents)"
+    - "restructure_sheets.py (restructure-sheets --apply)"
   enforced_by: >-
     drive._check_coded_data_clean() -- called at the top of each apply path
     above; raises SystemExit(1) if coded_data/ has uncommitted changes

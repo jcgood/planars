@@ -86,7 +86,7 @@ class Env:
     def __init__(self, doorway: FakeDriveDoorway, coded: Path,
                  saved_configs: List[dict], autocommit_calls: List[tuple],
                  notebook_calls: List[bool], revalidate_calls: List[dict],
-                 push_planar_calls: List[dict],
+                 push_planar_calls: List[dict], clean_checks: List[dict],
                  run: Callable[[List[str]], str]) -> None:
         self.doorway = doorway
         self.coded = coded
@@ -95,6 +95,7 @@ class Env:
         self.notebook_calls = notebook_calls
         self.revalidate_calls = revalidate_calls
         self.push_planar_calls = push_planar_calls
+        self.clean_checks = clean_checks
         self.run = run
 
     # -- the manifest ---------------------------------------------------
@@ -201,6 +202,7 @@ def env(monkeypatch, tmp_path):
     notebook_calls: List[bool] = []
     revalidate_calls: List[dict] = []
     push_planar_calls: List[dict] = []
+    clean_checks: List[dict] = []
 
     monkeypatch.setattr(rs, "CODED_DATA", coded)
     monkeypatch.setattr(rs, "MANIFEST_PATH", tmp_path / "sheets_manifest.json")
@@ -208,6 +210,8 @@ def env(monkeypatch, tmp_path):
     monkeypatch.setattr(drive_module, "_load_drive_config",
                         FakeDriveDoorway.drive_config)
     monkeypatch.setattr(rs, "_save_drive_config", saved_configs.append)
+    monkeypatch.setattr(rs, "_check_coded_data_clean",
+                        lambda **kw: clean_checks.append(kw))
     monkeypatch.setattr(rs, "_autocommit_data",
                         lambda paths, message: autocommit_calls.append(
                             (sorted(str(p.relative_to(coded)) for p in paths), message)))
@@ -241,7 +245,8 @@ def env(monkeypatch, tmp_path):
 
     try:
         yield Env(doorway, coded, saved_configs, autocommit_calls,
-                  notebook_calls, revalidate_calls, push_planar_calls, run)
+                  notebook_calls, revalidate_calls, push_planar_calls,
+                  clean_checks, run)
     finally:
         drive_doorway.reset_doorway()
 
@@ -414,6 +419,29 @@ def test_rename_class_dry_run_does_not_write_even_after_preflight_passes(env):
     env.rename_class_in_diagnostics("stan1293", "proform", "proform_renamed")
     env.run(["--lang", "stan1293", "--rename-class", "proform:proform_renamed"])
     assert env.doorway.mutations == []
+
+
+# ---------------------------------------------------------------------------
+# Finding 17: --apply must refuse to run against a dirty coded_data/ tree,
+# same as import-sheets/update-sheets/sync-params/generate-sheets
+# --regen-dependents -- this file reads planar_{lang_id}.tsv and
+# diagnostics_{lang_id}.tsv from coded_data/ as its source of truth for the
+# new sheet structure just like those commands do, and is the single most
+# destructive command in the project (archive-then-recreate, no rollback).
+# ---------------------------------------------------------------------------
+
+def test_the_dry_run_does_not_ask_whether_coded_data_is_clean(env):
+    """The guard belongs to --apply. A dry run reads nothing it could corrupt."""
+    env.run([])
+    assert env.clean_checks == []
+
+
+def test_apply_asks_whether_coded_data_is_clean(env):
+    """Finding 17: this command used to never call the guard at all -- confirmed
+    absent by grep before the fix. It now calls it, with the same extensions
+    every sibling command (import-sheets, update-sheets, sync-params) uses."""
+    env.run(["--apply"])
+    assert env.clean_checks == [{"extensions": (".tsv",)}]
 
 
 # ---------------------------------------------------------------------------

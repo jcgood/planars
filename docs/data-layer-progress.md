@@ -88,7 +88,7 @@ the same day — see the decisions log.
 | Phase 0b/1 — file 15: `import_sheets.py` | **done** — pre/post diff clean across twenty-two scenarios; the command the daily `data-refresh` workflow depends on to pull annotator work down, and the largest file migrated so far (1,138 lines); found and later fixed Finding 13 (a dry run had no guard at all against a bad manifest spreadsheet ID — it crashed the whole run rather than reporting per class the way every other failure mode in this file does) |
 | Phase 0b/1 — file 16: `sync_params.py` | **done** — pre/post diff clean across fifteen scenarios; the file the migration order flagged to watch (column insert/delete is the densest form of the #272 question) and it passed clean — every column position already comes from the tab's own header; found and fixed Finding 14 (adding or removing a column re-stamped the manifest's `param_values` for the *whole* construction, masking a genuinely stale dropdown on an untouched sibling criterion) |
 | Phase 0b/1 — file 17: `generate_sheets.py` | **done** — pre/post diff clean across twelve scenarios; the largest file migrated so far (2,654 lines) and the first whose migration threaded `doorway` through this file's own call chain rather than substituting at a single entry point; passed `assert_no_criterion_writes_onto_trailing_columns` clean; found and later fixed Finding 15 (`--force` overwrote a language's planar/diagnostics reference sheets before the guard could abort on its existing annotation sheets) |
-| Phase 0b/1 — file 18: `restructure_sheets.py` | **done** — pre/post diff clean across thirteen scenarios; the last file, deliberately: the archive-then-rebuild command with no rollback behind #248's original incidents. `assert_no_criterion_writes_onto_trailing_columns` caught a real, pre-existing bug (Finding 16, fixed the same day); also surfaced a pre-existing gap, the missing `_check_coded_data_clean()` guard (Finding 17, still open) |
+| Phase 0b/1 — file 18: `restructure_sheets.py` | **done** — pre/post diff clean across thirteen scenarios; the last file, deliberately: the archive-then-rebuild command with no rollback behind #248's original incidents. `assert_no_criterion_writes_onto_trailing_columns` caught a real, pre-existing bug (Finding 16, fixed the same day); also surfaced a pre-existing gap, the missing `_check_coded_data_clean()` guard (Finding 17, fixed in a later follow-up commit) |
 | **Phase 0b/1 (the whole doorway migration)** | **done** — all eighteen files that reach Drive now go through it |
 | Phases 3–9 | not started |
 
@@ -119,18 +119,18 @@ used, gated behind the snapshot tests this effort built (every Phase 1
 snapshot must still pass byte-identical afterward, per the plan's own
 done-criteria for that phase).
 
-One small thing remains recorded rather than forgotten, from the last file's
-migration:
-
-- **Finding 17** — `restructure_sheets.py` never calls
-  `drive._check_coded_data_clean()` despite reading `coded_data/` as its
-  source of truth. Recorded, not fixed — adding the guard is a behaviour
-  change, not a call-site substitution, and belongs to whoever next revisits
-  this file's preconditions (see `data_dependency_schema/preconditions.yaml`).
-
-(Finding 16, the other thing this migration turned up — a real, pre-existing
-bug in `_copy_pair_tab_with_rename`'s hardcoded `col_start=4` — was fixed the
-same day, as its own commit; see its own entry below and the decisions log.)
+Nothing remains recorded-but-unfixed from the migration itself. Findings 13
+(`import-sheets` dry run crashing on a bad manifest spreadsheet ID), 15
+(`generate-sheets --force` overwriting reference sheets before refusing), and
+17 (`restructure_sheets.py` never calling `drive._check_coded_data_clean()`)
+were all deferred past their own migration commits per the deferral rule (each
+would have changed what its command writes or asks Drive for, not a call-site
+substitution), then fixed in their own follow-up commits once Jeff signed off
+on all three — see their own entries above for what changed and which test
+pins each. (Finding 16, the other thing the last file's migration turned up —
+a real, pre-existing bug in `_copy_pair_tab_with_rename`'s hardcoded
+`col_start=4` — was fixed the same day as its own commit, not deferred; see
+its own entry above and the decisions log.)
 
 Nothing else is blocked or waiting; the next step is Phase 3, and Phase 3
 needs Jeff's decision before it starts.
@@ -776,27 +776,38 @@ where it previously failed.
 
 **17. `restructure_sheets.py` never calls `drive._check_coded_data_clean()`**
 (found 2026-08-04, file 18, confirmed by grep — the string does not appear in
-the file at all). Every other command that reads `coded_data/` as its source
-of truth before writing live Sheets calls this guard first (`import_sheets.py`,
-`update_sheets.py`, `sync_params.py`, `generate_sheets.py --regen-dependents`
-— see `coding/CLAUDE.md`'s `drive.py` bullet) precisely because #248's
-stray-row incident was `update-sheets` acting on a `planar_{lang_id}.tsv`
-left stale by an earlier step's failed auto-commit, with nothing to catch it.
+the file at all). **Fixed 2026-08-04, per Jeff's sign-off.** Every other
+command that reads `coded_data/` as its source of truth before writing live
+Sheets calls this guard first (`import_sheets.py`, `update_sheets.py`,
+`sync_params.py`, `generate_sheets.py --regen-dependents` — see
+`coding/CLAUDE.md`'s `drive.py` bullet) precisely because #248's stray-row
+incident was `update-sheets` acting on a `planar_{lang_id}.tsv` left stale by
+an earlier step's failed auto-commit, with nothing to catch it.
 `restructure_sheets.py` reads exactly the same two files
 (`planar_{lang_id}.tsv`, `diagnostics_{lang_id}.tsv`) as its source of truth
 for what the *new* sheet structure should be, and is the single most
 destructive command in the project — archive-then-recreate, no rollback — so
-it is a plausible candidate for the same class of incident, not a peripheral
+it was a plausible candidate for the same class of incident, not a peripheral
 one.
 
-Not fixed here: adding the guard is a new abort path, which changes what the
-command does before any of its Drive calls, not a call-site substitution —
-squarely the kind of change this migration's non-goals rule out. Recorded
-here rather than in `data_dependency_schema/preconditions.yaml` directly,
-because adding the guard is the fix and the fact of the gap is what belongs
-in the tracking record until then; whoever adds the guard should also add the
-precondition record at that time, per this project's "write the record as
-part of the fix" rule for `data_dependency_schema/`.
+Not fixed in the migration itself: adding the guard is a new abort path,
+which changes what the command does before any of its Drive calls, not a
+call-site substitution — squarely the kind of change that migration's
+non-goals ruled out. Fixed in a follow-up commit by importing
+`_check_coded_data_clean` from `.drive` and calling
+`_check_coded_data_clean(extensions=(".tsv",))` right after CLI flags are
+parsed and before connecting to Drive — the same position and phrasing as
+`sync_params.py`'s precedent, gated `if apply:` like every sibling command.
+`tests/test_restructure_sheets_snapshot.py::test_apply_asks_whether_coded_data_is_clean`
+pins it (fails before the fix with an `AttributeError`, since the module had
+no such attribute to patch at all — direct confirmation of the grep finding —
+and passes after); `test_the_dry_run_does_not_ask_whether_coded_data_is_clean`
+confirms the guard stays off the dry-run path, matching every sibling
+command. The precondition record was added in the same commit as the fix,
+per this project's "write the record as part of the fix" rule for
+`data_dependency_schema/`: `restructure_sheets.py (restructure-sheets --apply)`
+is now listed in `data_dependency_schema/preconditions.yaml`'s
+`coded_data_clean_tree` entry's `required_by`.
 
 ---
 
