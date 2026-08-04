@@ -1,14 +1,6 @@
 Connecting to Google APIs...
 Manifest backed up to manifest_backup.json (3 language(s))
 
-Language:    arao1248
-Planar file: planar_arao1248.tsv
-Classes:     ['ciscategorial', 'noninterruption', 'subspanrepetition']
-Folder:      https://drive.google.com/drive/folders/1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU
-Notes doc:   (existing) https://docs.google.com/document/d/1vfSS_YoRHDgpSG-vi1nXWR5dNCR1SAKlyMVbqhkl8Qc
-  Updated planar sheet: https://docs.google.com/spreadsheets/d/1hM2L5bLbt8gsOdb4FgMc0uS2652Gia1W66FrpJuVuPI
-  Updated diagnostics sheet: https://docs.google.com/spreadsheets/d/1A0r232Wdi3bpBj7ZcIPVcrSi9uQ9z0mc-7TYQfluO-s
-
 ERROR: --force refused for arao1248.
   Existing annotation sheets: ['ciscategorial', 'noninterruption', 'subspanrepetition']
   Destroying annotation sheets is not allowed. Annotated data is

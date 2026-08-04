@@ -325,19 +325,74 @@ def test_regen_dependents_asks_whether_coded_data_is_clean(env):
 # ---------------------------------------------------------------------------
 
 def test_force_refuses_before_destroying_any_annotation_sheet(env):
-    """The three existing arao1248 annotation sheets themselves are never
-    touched (no clear/reset/update on those worksheets) -- only the
-    planar/diagnostics reference sheets are overwritten before the abort, a
-    pre-existing ordering quirk confirmed identical to the unmigrated code,
-    not something this migration changed.
+    """Finding 15, fixed: --force used to overwrite arao1248's
+    planar/diagnostics *reference* sheets before the guard could abort on
+    arao1248's existing *annotation* sheets -- a preflight pass now checks
+    --force against every language before any of them is touched, so nothing
+    is written at all, not even the reference sheets, when any language
+    already has annotation sheets. All three fixture languages already have
+    annotation sheets, so this fires on arao1248 (alphabetically first)
+    during the preflight pass, before the per-language loop -- and therefore
+    before the per-language loop -- ever starts.
     """
     ciscategorial_id = env.sheet_id("arao1248", "ciscategorial")
     before = env.tab("arao1248", "ciscategorial", "general").get_all_values()
+    planar_id = env.manifest()["arao1248"]["planar_spreadsheet_id"]
+    diagnostics_id = env.manifest()["arao1248"]["diagnostics_spreadsheet_id"]
+    before_planar = env.doorway.spreadsheet(planar_id).sheet1.get_all_values()
+    before_diagnostics = env.doorway.spreadsheet(diagnostics_id).sheet1.get_all_values()
 
-    env.run(["generate-sheets", "--apply", "--force"])
+    out = env.run(["generate-sheets", "--apply", "--force"])
 
+    assert "[SystemExit: 1]" in out
+    # Not one Drive mutation happened anywhere -- the guard fired before any
+    # language, including arao1248 itself, was touched.
+    assert env.doorway.mutations == []
     after_ss = env.doorway.spreadsheet(ciscategorial_id)
     assert after_ss.worksheet("general").get_all_values() == before
+    assert env.doorway.spreadsheet(planar_id).sheet1.get_all_values() == before_planar
+    assert env.doorway.spreadsheet(diagnostics_id).sheet1.get_all_values() == before_diagnostics
+
+
+def test_force_refuses_for_a_later_language_before_an_earlier_one_is_touched(env):
+    """Finding 15, fixed: the preflight pass checks *every* language before
+    any of them is touched, not just the language order the old, per-language
+    check happened to run in. arao1248 and stan1293 are made brand new (no
+    force conflict at all -- a real --force run against them would freely
+    create their sheets), while synth0001 -- last alphabetically, so last in
+    the old per-language loop -- keeps its real existing annotation sheets
+    and so fails the guard. The old code would have fully created arao1248's
+    and stan1293's sheets before ever reaching synth0001's abort; the fixed
+    code aborts during the preflight pass, before arao1248 or stan1293 is
+    touched at all.
+    """
+    env.remove_from_manifest("arao1248")
+    env.remove_from_manifest("stan1293")
+
+    out = env.run(["generate-sheets", "--apply", "--force"])
+
+    assert "[SystemExit: 1]" in out
+    assert "synth0001" in out
+    assert env.doorway.mutations == []
+
+
+def test_force_succeeds_as_before_when_no_language_fails_the_guard(env):
+    """No behaviour change on the passing path: with every language brand
+    new (no existing annotation sheets anywhere), --force --apply still
+    creates every language's sheets exactly as a plain --apply would.
+    """
+    for lang in LANGS:
+        env.remove_from_manifest(lang)
+
+    out = env.run(["generate-sheets", "--apply", "--force"])
+
+    assert "ERROR" not in out
+    assert "[SystemExit" not in out
+    for lang in LANGS:
+        assert lang in env.manifest()
+    create_titles = [m["title"] for m in env.doorway.mutations_of("create_spreadsheet")]
+    for lang in LANGS:
+        assert f"planar_{lang}" in create_titles
 
 
 # ---------------------------------------------------------------------------

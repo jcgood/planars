@@ -2289,6 +2289,29 @@ def main() -> None:
     else:
         merged_config = {}
 
+    # Preflight: resolve existing_lang_data for every language and check
+    # --force against it before any language's sheets are touched. Checking
+    # this one language at a time inside the main loop below meant an
+    # `--apply --force` run could overwrite the first language's
+    # planar/diagnostics reference sheets and only then abort on a later
+    # language's existing annotation sheets -- too late for the language
+    # already overwritten (Finding 15, docs/data-layer-progress.md). Every
+    # language must pass this guard before any of them are touched.
+    existing_lang_data_by_lang: Dict[str, Dict] = {}
+    for planar_file in planar_files:
+        lang_id = _infer_language_id_from_planar_filename(planar_file.name)
+        existing_lang_data: Dict = merged_config.get(lang_id, {})
+        if not existing_lang_data and lang_id in config:
+            # Migration: try old-format per-language manifest file
+            old_fid = config[lang_id].get("manifest_file_id")
+            if old_fid:
+                try:
+                    existing_lang_data = doorway.download_file_json(old_fid)
+                except Exception:
+                    pass
+        existing_lang_data_by_lang[lang_id] = existing_lang_data
+        _check_force_against_existing_sheets(lang_id, force, existing_lang_data)
+
     full_manifest: Dict = {}
 
     for planar_file in planar_files:
@@ -2327,18 +2350,12 @@ def main() -> None:
 
         print(f"Classes:     {list(all_classes.keys())}")
 
-        # Load existing data early (from the manifest already fetched above -- no
-        # live call yet) so we can plan what would be created/updated before
-        # touching Drive at all.
-        existing_lang_data: Dict = merged_config.get(lang_id, {})
-        if not existing_lang_data and lang_id in config:
-            # Migration: try old-format per-language manifest file
-            old_fid = config[lang_id].get("manifest_file_id")
-            if old_fid:
-                try:
-                    existing_lang_data = doorway.download_file_json(old_fid)
-                except Exception:
-                    pass
+        # existing_lang_data was already resolved for every language in the
+        # preflight pass above (which also ran the --force guard against it
+        # before any language's sheets were touched) -- reuse it rather than
+        # recomputing it here and re-issuing the old-format fallback's Drive
+        # read a second time.
+        existing_lang_data: Dict = existing_lang_data_by_lang[lang_id]
 
         # Dry-run gate: report what would happen using only manifest/local data,
         # with no Drive writes, unless --apply is given. See docs/tooling-design.md's
@@ -2533,8 +2550,9 @@ def main() -> None:
             print(f"Existing:    {list(existing_sheets.keys())}")
             print(f"New:         {new_class_names}")
 
-        _check_force_against_existing_sheets(lang_id, force, existing_lang_data)
-
+        # --force was already checked against existing_lang_data for every
+        # language in the preflight pass above, before any language's sheets
+        # were touched -- no need to check again here.
         classes_to_create = {
             k: v for k, v in all_classes.items()
             if k not in existing_lang_data.get("sheets", {})

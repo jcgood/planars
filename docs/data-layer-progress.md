@@ -87,7 +87,7 @@ the same day — see the decisions log.
 | Phase 0b/1 — file 14: `integrity_check.py` | **done** — pre/post diff clean across ten scenarios; two independent read-only entry points (`--sheets`, `--check-manifest`), no writes anywhere in the file; first migration to deliberately drop a retry wrapper (`_with_retry(lambda: gc.open_by_key(...))` → `doorway.open_spreadsheet(...)`, per the doorway's own named exception) |
 | Phase 0b/1 — file 15: `import_sheets.py` | **done** — pre/post diff clean across twenty-two scenarios; the command the daily `data-refresh` workflow depends on to pull annotator work down, and the largest file migrated so far (1,138 lines); found and later fixed Finding 13 (a dry run had no guard at all against a bad manifest spreadsheet ID — it crashed the whole run rather than reporting per class the way every other failure mode in this file does) |
 | Phase 0b/1 — file 16: `sync_params.py` | **done** — pre/post diff clean across fifteen scenarios; the file the migration order flagged to watch (column insert/delete is the densest form of the #272 question) and it passed clean — every column position already comes from the tab's own header; found and fixed Finding 14 (adding or removing a column re-stamped the manifest's `param_values` for the *whole* construction, masking a genuinely stale dropdown on an untouched sibling criterion) |
-| Phase 0b/1 — file 17: `generate_sheets.py` | **done** — pre/post diff clean across twelve scenarios; the largest file migrated so far (2,654 lines) and the first whose migration threaded `doorway` through this file's own call chain rather than substituting at a single entry point; passed `assert_no_criterion_writes_onto_trailing_columns` clean |
+| Phase 0b/1 — file 17: `generate_sheets.py` | **done** — pre/post diff clean across twelve scenarios; the largest file migrated so far (2,654 lines) and the first whose migration threaded `doorway` through this file's own call chain rather than substituting at a single entry point; passed `assert_no_criterion_writes_onto_trailing_columns` clean; found and later fixed Finding 15 (`--force` overwrote a language's planar/diagnostics reference sheets before the guard could abort on its existing annotation sheets) |
 | Phase 0b/1 — file 18: `restructure_sheets.py` | **done** — pre/post diff clean across thirteen scenarios; the last file, deliberately: the archive-then-rebuild command with no rollback behind #248's original incidents. `assert_no_criterion_writes_onto_trailing_columns` caught a real, pre-existing bug (Finding 16, fixed the same day); also surfaced a pre-existing gap, the missing `_check_coded_data_clean()` guard (Finding 17, still open) |
 | **Phase 0b/1 (the whole doorway migration)** | **done** — all eighteen files that reach Drive now go through it |
 | Phases 3–9 | not started |
@@ -681,34 +681,58 @@ the correct values — not merely that the manifest's text changed.
 **15. `--force` does not cleanly refuse before writing anything — it
 overwrites a language's planar/diagnostics reference sheets first, then
 aborts** (found 2026-08-04, file 17, while taking the pre-migration baseline).
-Not fixed here. `main()`'s per-language loop calls
+**Fixed 2026-08-04, per Jeff's sign-off.** `main()`'s per-language loop called
 `_upload_lang_setup_as_sheets(..., force=force)` — which overwrites the planar
 and diagnostics Sheets whenever `force=True`, regardless of whether that
 language has annotation sheets — *before* `_check_force_against_existing_sheets`
-runs and aborts the whole multi-language run with `SystemExit(1)`. The
+ran and aborted the whole multi-language run with `SystemExit(1)`. The
 module's own docstring line, `--apply --force  # blocked with a hard error if
 annotation sheets already exist`, reads as a clean refusal; what actually
-happens for a multi-language run is: the first language with existing
-annotation sheets gets its planar/diagnostics *reference* sheets (not its
+happened for a multi-language run was: the first language with existing
+annotation sheets got its planar/diagnostics *reference* sheets (not its
 annotation sheets, which the guard genuinely does protect) silently
-overwritten, then the whole run stops there — no later language in the same
-invocation is ever reached, `--force` or not.
+overwritten, then the whole run stopped there — no later language in the same
+invocation was ever reached, `--force` or not.
 
-Nothing analytically irreplaceable is at risk — the overwritten sheets are the
-structural planar/diagnostics tables, sourced from the local TSV, not
-annotation judgments — but it is still a live write the coordinator's own
-mental model of this flag says cannot happen. Confirmed identical between the
-unmigrated and migrated code as part of the pre/post comparison (both
-overwrite the same two sheets, then raise at the same point);
+Nothing analytically irreplaceable was at risk — the overwritten sheets are
+the structural planar/diagnostics tables, sourced from the local TSV, not
+annotation judgments — but it was still a live write the coordinator's own
+mental model of this flag says cannot happen. Same shape as #248 and Finding
+13: a guard that exists but does not cover the whole path leading up to it.
+
+Jeff's decision: move the guard so it runs for every language before any
+upload happens for any of them — a preflight pass, not just a reorder within
+one language's own iteration. Fixed by adding a preflight loop, right after
+`merged_config` is fetched and before the per-language loop starts, that
+resolves `existing_lang_data` for every language (the same manifest lookup
+plus old-format fallback the per-language loop used to do inline) into
+`existing_lang_data_by_lang`, and calls `_check_force_against_existing_sheets`
+on each one immediately. Any language failing the guard raises
+`SystemExit(1)` during this preflight pass, before the per-language loop —
+and therefore before any language's sheets — is ever reached. The
+per-language loop now looks `existing_lang_data` up from
+`existing_lang_data_by_lang` instead of recomputing it (avoiding a duplicate
+Drive read for the old-format fallback), and its own now-redundant call to
+`_check_force_against_existing_sheets` was removed.
 `tests/test_generate_sheets_snapshot.py::test_force_refuses_before_destroying_any_annotation_sheet`
-pins the one thing the guard does protect (the annotation sheet's own tab
-content, read back byte-identical) without papering over the ordering quirk.
-Same shape as #248 and Finding 13: a guard that exists but does not cover the
-whole path leading up to it. No issue filed — this needs a coordinator call on
-whether the upload should move after the guard, or whether `--force` is rare
-and deliberate enough (a hard error the module already treats as exceptional)
-that the current ordering is acceptable. Flagged for Jeff rather than decided
-here.
+was strengthened from pinning only the annotation sheet's tab content
+byte-identical to asserting `env.doorway.mutations == []` — no mutation
+happens anywhere, not even to the reference sheets. A new test,
+`test_force_refuses_for_a_later_language_before_an_earlier_one_is_touched`,
+makes the earlier-vs-later distinction explicit: with `arao1248` and
+`stan1293` made brand new (no force conflict) and only `synth0001` — last
+alphabetically — keeping its real existing annotation sheets, the run still
+aborts with zero mutations, proving the guard checks every language up front
+rather than happening to catch the first one in iteration order. A third
+test, `test_force_succeeds_as_before_when_no_language_fails_the_guard`,
+confirms the passing path is unchanged: with every language brand new,
+`--force --apply` still creates every language's sheets exactly as before.
+All three fail against the pre-fix code and pass against the fix.
+`tests/snapshots/coordinator/generate_sheets/force_refused.txt` was
+regenerated: the transcript no longer shows `Language: arao1248` or
+`Updated planar/diagnostics sheet` lines before the abort — the whole run now
+prints nothing but the connection line, the manifest backup line, and the
+error, confirming no per-language work happens before the preflight check.
 
 **16. `_copy_pair_tab_with_rename` wrote a pair tab's dropdown onto the wrong
 column for two of the project's three pair-row shapes** (found 2026-08-04,
