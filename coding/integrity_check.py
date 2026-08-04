@@ -303,14 +303,16 @@ def _stale_manifest_param_values(
         except Exception:
             continue
 
-        class_criteria_map: dict = {}
-        for cls, _con, _crit_names, crit_values in diag_rows:
-            if cls not in class_criteria_map:
-                class_criteria_map[cls] = crit_values
+        # Criteria are per (class, construction), not shared across a class --
+        # keying this by class alone and letting the first construction win
+        # was issue #272's Bug 1, independently reintroduced here. Mirrors
+        # refresh_dropdowns.py's criteria_by_construction exactly.
+        criteria_by_construction: dict = {}
+        for cls, con, _crit_names, crit_values in diag_rows:
+            criteria_by_construction[(cls, con)] = crit_values
 
         for class_name, sheet_info in sheets_info.items():
             cp_map = sheet_info.get("construction_params", {})
-            class_criteria = class_criteria_map.get(class_name, {})
 
             for construction in sheet_info.get("constructions", []):
                 if construction == "Status":
@@ -320,9 +322,13 @@ def _stale_manifest_param_values(
                 if not param_names:
                     continue
 
+                construction_criteria = criteria_by_construction.get(
+                    (class_name, construction), {})
+                if not construction_criteria:
+                    continue
+
                 fresh = _fresh_param_values(
-                    lang_id, class_name, construction,
-                    param_names, class_criteria, coref_pair_map,
+                    class_name, construction, construction_criteria, coref_pair_map,
                 )
                 stored = cp.get("param_values", {})
                 if fresh != stored:

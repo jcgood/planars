@@ -285,12 +285,10 @@ had hidden the second one entirely. Render before asking anyone to read.
 ## Findings
 
 Per the plan's Phase 0b/1 non-goals, a snapshot that reveals odd behaviour records
-it rather than fixing it *in the same change*. **All eleven of the first
-eleven findings have since been fixed** — the deferral only ever lasts until
-the migration each one is riding on has been committed and its before/after
-comparison taken. The entries are kept because the sequence is the point.
-Finding 12, found on file 14, is the one currently outstanding — see its own
-entry for whether it has been closed by the time this is read.
+it rather than fixing it *in the same change*. **All twelve findings so far have
+since been fixed** — the deferral only ever lasts until the migration each one
+is riding on has been committed and its before/after comparison taken. Nothing
+here is outstanding; the entries are kept because the sequence is the point.
 
 **Do not delete this section when the migration ends without first checking that
 every finding has an issue number or a decisions-log entry.** Findings 4 and 5
@@ -510,11 +508,18 @@ from the other direction.
 
 **12. `integrity-check --sheets` has been crashing before reaching any Drive
 call at all, for essentially every real run, since 2026-08-02** (found
-2026-08-03, file 14, while taking the pre-migration baseline — the
-unmigrated code raised the identical `TypeError` the first time it was driven
-against the fake, before any of the two Drive call sites this migration
-touches were even reached). `_stale_manifest_param_values`
-(`coding/integrity_check.py` ~line 274) calls
+2026-08-03, file 14, while taking the pre-migration baseline — the unmigrated
+code raised the identical `TypeError` the first time it was driven against
+the fake, before either of the two Drive call sites this migration touches
+was ever reached). **Fixed the same day**, as its own commit right after the
+migration landed. This one sits slightly outside the deferral rule below
+(fix now if it only changes what the command *says*; defer if it changes what
+it *writes* or asks Drive for) — the function touches no Drive call at all,
+so nothing it does falls on either side of that line — but it blocked the
+baseline outright, so a harness workaround was not enough to trust the
+migration on; it needed the real fix, and the fix could not itself move the
+Drive-touching diff since it never touches Drive.
+`_stale_manifest_param_values` (`coding/integrity_check.py` ~line 274) called
 `refresh_dropdowns._fresh_param_values` with six positional arguments:
 
 ```python
@@ -547,23 +552,32 @@ for cls, _con, _crit_names, crit_values in diag_rows:
         class_criteria_map[cls] = crit_values
 ```
 
-— which is exactly Bug 1 from #272, independently reintroduced here rather
-than shared from the fix. `refresh_dropdowns.py` now keys criteria by
-`(class, construction)` for precisely this reason; this function still keys
-by class alone, so even a corrected call would resolve every construction of
-a per-construction class (`segmental`, `phrasal_accent`) against the first
+— which was exactly Bug 1 from #272, independently reintroduced here rather
+than shared from the fix. `refresh_dropdowns.py` keys criteria by `(class,
+construction)` for precisely this reason; this function keyed by class alone,
+so even a corrected call would have resolved every construction of a
+per-construction class (`segmental`, `phrasal_accent`) against the first
 one's allowed values.
 
-Not fixed in the migration commit — this function touches no Drive call, so
-it is orthogonal to the doorway substitution, and the non-goal is no
-behaviour changes beyond it. Worked around in the test harness only (both
-pre- and post-migration drivers, and the new snapshot tests, patch
+Not fixed in the migration commit itself — the function touches no Drive
+call, so it was orthogonal to the doorway substitution, and the non-goal is
+no behaviour changes beyond it. Worked around in the test harness only while
+taking the pre/post baseline (both drivers patched
 `_stale_manifest_param_values` to a no-op so the Drive-touching lines under
 test could be reached and compared at all) — the source file itself was left
-exactly as broken as it already was. Whether this has been fixed as a
-follow-up commit by the time this is read is recorded here or superseded by
-its own decisions-log entry; check `git log --oneline --grep '#271'` if in
-doubt.
+exactly as broken as it already was for that comparison. Fixed properly in
+the very next commit: `criteria_by_construction` now keys by `(class,
+construction)`, mirroring `refresh_dropdowns.py`'s working pattern exactly
+rather than restating a second, independently-drifting copy of the same
+logic, and the call to `_fresh_param_values` now passes the four arguments it
+actually takes. Verified against the real fixture manifest before writing a
+regression test: the fixed function now reports four genuine, already-known
+mismatches on `synth0001`'s `coreference` pair tabs — the same drift named in
+`coding/CLAUDE.md`'s "Held until Phase 9" list (each manifest entry still
+lists all three pair criteria; the diagnostics YAML gives each construction
+just the one it uses) — rather than crashing or inventing a false one.
+`tests/test_integrity_check_snapshot.py::test_stale_param_values_reports_a_real_mismatch_without_crashing`
+pins it.
 
 ---
 
@@ -616,26 +630,32 @@ target here, confirmed by making the patch briefly absent and checking it
 raised before running any scenario.
 
 A pre-existing bug unrelated to the migration was found while taking the
-baseline and is recorded as Finding 12 rather than fixed here — see that
-entry for the full description. It blocked the baseline outright (the
-unmigrated code crashed on the very first scenario), so it was neutralized in
-the test harness only, identically on both sides of the comparison, rather
-than in `coding/integrity_check.py` itself.
+baseline — recorded as Finding 12, and fixed as its own commit right after
+this one landed rather than folded into it, since the fix touches no Drive
+call and so could not itself move the migration's before/after diff. It
+blocked the baseline outright (the unmigrated code crashed on the very first
+scenario), so it was neutralized in the test harness only, identically on
+both sides of the comparison, for the migration commit itself; see Finding 12
+for the fix.
 
-Twelve tests in a new `tests/test_integrity_check_snapshot.py`. They pin: a
-header mismatch names both the expected and actual column lists and points at
-`sync-params --apply`; a missing tab is an error that does not stop the rest
-of that language's run; a stale `_split_`/`_merged_` column gets its own
-remediation text instead of the header-mismatch message; an unreachable
-spreadsheet is reported per class, not fatal to the language; a plain run
-with no `--sheets` prints the section header and the skip line and touches no
-Drive calls at all; `--check-manifest` reports stale entries and exits 1, a
-clean manifest exits cleanly, and a failed connection warns and returns
-rather than crashing or filing a misleading issue; and every scenario that
-touches Drive leaves `doorway.mutations` empty, since this file never writes.
-`main()`'s header line stamps `date.today()` into the two full-transcript
-snapshots, so the fixture freezes it rather than letting the snapshots drift
-with the calendar.
+Thirteen tests in a new `tests/test_integrity_check_snapshot.py` (twelve from
+the migration commit, plus one more —
+`test_stale_param_values_reports_a_real_mismatch_without_crashing` — added
+with the Finding 12 follow-up). They pin: a header mismatch names both the
+expected and actual column lists and points at `sync-params --apply`; a
+missing tab is an error that does not stop the rest of that language's run; a
+stale `_split_`/`_merged_` column gets its own remediation text instead of
+the header-mismatch message; an unreachable spreadsheet is reported per
+class, not fatal to the language; a plain run with no `--sheets` prints the
+section header and the skip line and touches no Drive calls at all;
+`--check-manifest` reports stale entries and exits 1, a clean manifest exits
+cleanly, and a failed connection warns and returns rather than crashing or
+filing a misleading issue; a real, already-known `param_values` mismatch on
+`synth0001`'s `coreference` tabs is reported without crashing (Finding 12's
+regression test); and every scenario that touches Drive leaves
+`doorway.mutations` empty, since this file never writes. `main()`'s header
+line stamps `date.today()` into the two full-transcript snapshots, so the
+fixture freezes it rather than letting the snapshots drift with the calendar.
 
 `tests/test_doorway_coverage.py`'s `_REMAINING` drops `integrity_check.py`
 (four files now remain, all reading `construction_params` from the manifest

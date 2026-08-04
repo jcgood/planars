@@ -42,16 +42,19 @@ migrated `bad_spreadsheet_id` scenario report the identical "could not open
 spreadsheet" line. The shim script is a scratch throwaway per the plan's
 convention, not committed.
 
-A pre-existing bug unrelated to this migration was found and worked around
-(not fixed) while taking the baseline -- see docs/data-layer-progress.md's
-newest Finding: `_stale_manifest_param_values` (~line 274) calls
-`refresh_dropdowns._fresh_param_values` with 6 positional arguments; that
-function has taken 4 since `b399e32` (#272's fix, 2026-08-02). Every `--sheets`
-run with any construction carrying `param_names` -- effectively every real
-run -- has been raising `TypeError` before reaching any Drive call at all.
-Neither function touches Drive, so it is orthogonal to this migration and left
-alone here; `_neutralized_stale_param_values` below patches it out for testing
-purposes only, exactly as the pre/post harness did.
+A pre-existing bug unrelated to this migration was found while taking the
+baseline, worked around in the harness only (not fixed) to get the baseline
+at all, and then fixed as its own follow-up commit right after the migration
+landed -- see Finding 12 in docs/data-layer-progress.md. `_stale_manifest_param_values`
+(~line 274) called `refresh_dropdowns._fresh_param_values` with 6 positional
+arguments; that function has taken 4 since `b399e32` (#272's fix,
+2026-08-02). Every `--sheets` run with any construction carrying
+`param_names` -- effectively every real run -- had been raising `TypeError`
+before reaching any Drive call at all since that commit, uncaught because
+nothing exercised `_section_sheets` before now. Neither function touches
+Drive, so the fix is orthogonal to this migration and lives in its own
+commit; `test_stale_param_values_reports_a_real_mismatch_without_crashing`
+below pins the fixed behaviour.
 
 Regenerate: PLANARS_UPDATE_SNAPSHOTS=1 pytest tests/test_integrity_check_snapshot.py
 """
@@ -109,12 +112,6 @@ def env(monkeypatch):
     doorway = FakeDriveDoorway.from_fixtures()
     monkeypatch.setattr(ic, "date", _FrozenDate)
     monkeypatch.setattr(drive_module, "_load_drive_config", FakeDriveDoorway.drive_config)
-    # Pre-existing bug, unrelated to the Drive doorway migration -- see the
-    # module docstring and the newest Finding in docs/data-layer-progress.md.
-    # _stale_manifest_param_values crashes before any Drive call is made;
-    # neutralizing it here is what lets these tests reach the Drive-touching
-    # code below it at all.
-    monkeypatch.setattr(ic, "_stale_manifest_param_values", lambda manifest, lang_ids: [])
     drive_doorway.set_doorway(doorway)
 
     def run_main(argv: List[str]) -> Tuple[str, Optional[int]]:
@@ -257,6 +254,38 @@ def test_stale_merged_column_uses_the_merge_wording(env):
     out, _ = run_main(["integrity-check", "--sheets", "--lang", "arao1248"])
     assert "stale merge column '_merged_" in out
     assert doorway.mutations == []
+
+
+# ---------------------------------------------------------------------------
+# --sheets: stale param_values are reported without crashing (Finding 12's
+# regression test -- _stale_manifest_param_values used to raise TypeError
+# before any of the Drive-touching code below it ever ran)
+# ---------------------------------------------------------------------------
+
+def test_stale_param_values_reports_a_real_mismatch_without_crashing(env):
+    """synth0001's coreference pair tabs are a real, already-known instance
+    of stale param_values (see coding/CLAUDE.md's "Held until Phase 9" list,
+    and CLAUDE.md's matching note): each manifest entry still lists all three
+    pair criteria (reflexive_allowed, pronoun_allowed, np_allowed) while the
+    diagnostics YAML gives each construction just the one it actually uses.
+    No manifest mutation needed to exercise this -- the mismatch already
+    exists in the fixtures."""
+    _, run_main = env
+    out, _ = run_main(["integrity-check", "--sheets", "--lang", "synth0001"])
+    assert "param_values out of sync with YAML" in out
+    assert "coreference · prescreening" in out
+    assert "referential: stored=" in out
+    assert "→ run: python -m coding refresh-dropdowns --apply" in out
+    # Not asserting main()'s overall exit code here: synth0001's fixture data
+    # also carries real, already-known DEPENDENT CONSTRUCTION STALENESS errors
+    # (coreference/prescreening -> its three pair constructions -- see
+    # coding/CLAUDE.md's "Held until Phase 9" list) that force exit_code == 1
+    # regardless of this test's target. A param_values mismatch is a warning
+    # on its own within this section -- confirmed directly instead.
+    with redirect_stdout(io.StringIO()):
+        e, w = ic._section_sheets(["synth0001"])
+    assert e == 0
+    assert w >= 4  # the four param_values warnings above, at minimum
 
 
 # ---------------------------------------------------------------------------
