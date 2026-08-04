@@ -85,7 +85,7 @@ the same day — see the decisions log.
 | Phase 0b/1 — file 12: `generate_status_sheet.py` | **done** — snapshots captured, pre/post diff clean across 8 scenarios; first to create a root-level folder (`parent_id=None`) and first to read *other* languages' already-existing annotation spreadsheets |
 | Phase 0b/1 — file 13: `validate_coding.py` | **done** — pre/post diff clean across twelve scenarios; smallest Drive footprint of any file migrated so far (three call sites: `get_doorway()`, `load_manifest()`, `doorway.open_spreadsheet()`), no folder/sharing/manifest-upload logic at all |
 | Phase 0b/1 — file 14: `integrity_check.py` | **done** — pre/post diff clean across ten scenarios; two independent read-only entry points (`--sheets`, `--check-manifest`), no writes anywhere in the file; first migration to deliberately drop a retry wrapper (`_with_retry(lambda: gc.open_by_key(...))` → `doorway.open_spreadsheet(...)`, per the doorway's own named exception) |
-| Phase 0b/1 — file 15: `import_sheets.py` | **done** — pre/post diff clean across twenty-two scenarios; the command the daily `data-refresh` workflow depends on to pull annotator work down, and the largest file migrated so far (1,138 lines); found Finding 13 (a dry run has no guard at all against a bad manifest spreadsheet ID — it crashes the whole run rather than aborting cleanly the way `--apply` does) |
+| Phase 0b/1 — file 15: `import_sheets.py` | **done** — pre/post diff clean across twenty-two scenarios; the command the daily `data-refresh` workflow depends on to pull annotator work down, and the largest file migrated so far (1,138 lines); found and later fixed Finding 13 (a dry run had no guard at all against a bad manifest spreadsheet ID — it crashed the whole run rather than reporting per class the way every other failure mode in this file does) |
 | Phase 0b/1 — file 16: `sync_params.py` | **done** — pre/post diff clean across fifteen scenarios; the file the migration order flagged to watch (column insert/delete is the densest form of the #272 question) and it passed clean — every column position already comes from the tab's own header; found and fixed Finding 14 (adding or removing a column re-stamped the manifest's `param_values` for the *whole* construction, masking a genuinely stale dropdown on an untouched sibling criterion) |
 | Phase 0b/1 — file 17: `generate_sheets.py` | **done** — pre/post diff clean across twelve scenarios; the largest file migrated so far (2,654 lines) and the first whose migration threaded `doorway` through this file's own call chain rather than substituting at a single entry point; passed `assert_no_criterion_writes_onto_trailing_columns` clean |
 | Phase 0b/1 — file 18: `restructure_sheets.py` | **done** — pre/post diff clean across thirteen scenarios; the last file, deliberately: the archive-then-rebuild command with no rollback behind #248's original incidents. `assert_no_criterion_writes_onto_trailing_columns` caught a real, pre-existing bug (Finding 16, fixed the same day); also surfaced a pre-existing gap, the missing `_check_coded_data_clean()` guard (Finding 17, still open) |
@@ -584,28 +584,44 @@ pins it.
 
 **13. A dry run of `import-sheets` has no protection at all against a
 manifest entry pointing at an inaccessible spreadsheet** (found 2026-08-04,
-file 15). Not fixed here. `--apply` calls `_verify_manifest_sheet_ids` first
-and aborts cleanly — "ERROR: Manifest contains inaccessible spreadsheet
+file 15). **Fixed 2026-08-04.** `--apply` calls `_verify_manifest_sheet_ids`
+first and aborts cleanly — "ERROR: Manifest contains inaccessible spreadsheet
 IDs" — before downloading anything, but that call is gated `if apply:`. A
-dry run instead reaches `ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])`
+dry run instead reached `ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])`
 inside the per-class loop (`coding/import_sheets.py` ~line 879) with no
-`try`/`except` around it at all, so a bad ID raises an unhandled
+`try`/`except` around it at all, so a bad ID raised an unhandled
 `SpreadsheetNotFound` (or the live equivalent) straight out of `main()` —
 stopping the *entire* run, every language, not just the one naming the bad
 ID. Confirmed identical between the unmigrated and migrated code as part of
-the pre/post comparison (both raise the same exception at the same point);
-`tests/test_import_sheets_snapshot.py::test_a_bad_id_reached_on_a_dry_run_crashes_the_whole_run`
-pins the crash as current behaviour rather than papering over it.
+the pre/post comparison (both raised the same exception at the same point).
 
-Nothing is lost when it happens — a dry run performs no writes either way —
+Nothing was lost when it happened — a dry run performs no writes either way —
 and the daily `data-refresh` workflow itself runs `import-sheets --apply
---ignore-status` directly, so it always gets the clean abort. The risk is the
+--ignore-status` directly, so it always got the clean abort. The risk was the
 ordinary coordinator workflow this file's own module docstring recommends:
 `python -m coding import-sheets` (dry run) before `--apply`, to preview what
-would be written. A single stale manifest entry crashes that preview step
+would be written. A single stale manifest entry crashed that preview step
 outright, with a raw traceback, rather than reporting per-language the way
 every other failure mode in this file does. Same shape as #248 and findings 6
 and 7: a guard that exists on one path and not its twin.
+
+Fixed by wrapping the `open_spreadsheet` call in its own `try`/`except
+Exception` and reporting the failure per class — matching the reporting
+style already used a few lines later in the same loop for `WorksheetNotFound`
+(`WARNING: ...`, appended to `lang_warning_lines`, `total_warnings`
+incremented, `continue`) — rather than extending `_verify_manifest_sheet_ids`'s
+hard-abort to dry runs, which would still have crashed the whole run on the
+first bad ID instead of previewing everything else. The `continue` lands back
+in the per-class loop, so only the classes on the bad spreadsheet are skipped
+for that language — sibling classes on other spreadsheets, and every other
+language, are still previewed normally.
+`tests/test_import_sheets_snapshot.py::test_a_bad_id_reached_on_a_dry_run_warns_and_previews_every_other_language`
+replaces the test that pinned the crash as expected behaviour; it fails
+against the pre-fix code (confirmed) and passes now, asserting every language
+is still previewed and the bad class is reported as a warning rather than
+raised. `--apply`'s clean-abort behaviour via `_verify_manifest_sheet_ids` is
+unaffected — still gated `if apply:`, still runs before any language is
+touched.
 
 **14. Adding or removing a criterion column re-stamps the manifest's
 `param_values` for the whole construction, so a widened value on an untouched

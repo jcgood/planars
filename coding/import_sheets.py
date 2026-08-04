@@ -876,7 +876,14 @@ def main() -> None:
 
         for class_name, sheet_info in lang_data["sheets"].items():
             print(f"\n  {class_name}")
-            ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
+            try:
+                ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
+            except Exception as e:
+                msg = f"[{class_name}] could not open spreadsheet {sheet_info['spreadsheet_id']!r} for {lang_id}: {e}"
+                print(f"    WARNING: {msg}")
+                lang_warning_lines.append(f"WARNING: {msg}")
+                total_warnings += 1
+                continue
 
             status_map = _read_status_tab(ss)
             if not status_map and not ignore_status:

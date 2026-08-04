@@ -54,18 +54,23 @@ two real invocations a second apart otherwise disagreed on nothing but that).
 The shim script and its scenario driver are scratch throwaways per the plan's
 convention, not committed.
 
-**A genuine finding, not introduced by this migration:** a dry run has *no*
-protection at all against a manifest entry pointing at an inaccessible
-spreadsheet. `_verify_manifest_sheet_ids` -- the clean "ERROR: Manifest
-contains inaccessible spreadsheet IDs" abort -- only runs `if apply:`. A dry
-run instead reaches `ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])`
+**A genuine finding, not introduced by this migration, fixed separately:** a
+dry run had *no* protection at all against a manifest entry pointing at an
+inaccessible spreadsheet. `_verify_manifest_sheet_ids` -- the clean "ERROR:
+Manifest contains inaccessible spreadsheet IDs" abort -- only runs `if apply:`.
+A dry run instead reached `ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])`
 inside the per-class loop with no `try`/`except` around it at all, so a bad ID
-crashes the *entire* run -- every language, not just the one naming the bad
+crashed the *entire* run -- every language, not just the one naming the bad
 ID -- with an unhandled `SpreadsheetNotFound` traceback. Confirmed identical
-between the unmigrated and migrated code (both raise the same exception at the
-same point) and recorded as Finding 13 in docs/data-layer-progress.md rather
-than fixed here, per the migration's non-goal of no behaviour changes beyond
-the doorway swap.
+between the unmigrated and migrated code (both raised the same exception at
+the same point); recorded as Finding 13 in docs/data-layer-progress.md, and
+fixed in a follow-up commit rather than in the migration itself, per the
+migration's non-goal of no behaviour changes beyond the doorway swap. The
+`open_spreadsheet` call is now wrapped in its own `try`/`except Exception`,
+reported per class the same way a missing worksheet already is (`WARNING:
+... skipping`, appended to `lang_warning_lines`, `total_warnings` incremented),
+and the loop moves on to the next class rather than the next language --
+so a bad ID only ever costs the preview of the one class that names it.
 
 `_verify_manifest_sheet_ids`, `_read_sheet_as_df`, `_download_lang_setup_sheets`,
 and `_read_status_tab` all took a `gc`/`drive`/`ss` parameter typed against
@@ -573,15 +578,30 @@ def test_verify_is_skipped_on_a_dry_run_that_never_reaches_the_bad_id(env):
     assert "ERROR" not in out
 
 
-def test_a_bad_id_reached_on_a_dry_run_crashes_the_whole_run(env):
-    """Finding 13: unlike --apply, a dry run has no guard at all -- reaching
-    the bad ID crashes with an unhandled exception rather than a clean abort,
-    and stops every language, not just the one naming it."""
-    import gspread
+def test_a_bad_id_reached_on_a_dry_run_warns_and_previews_every_other_language(env):
+    """Finding 13, fixed: a dry run used to have no guard at all -- reaching a
+    bad manifest spreadsheet ID crashed the entire run with an unhandled
+    exception, stopping every language, not just the one naming it. Now the
+    bad ID is reported as a per-class warning and the run continues,
+    previewing every other class and every other language exactly as if the
+    bad ID were never there."""
     env.mutate_manifest(lambda m: m["stan1293"]["sheets"]["ciscategorial"]
                         .__setitem__("spreadsheet_id", "does_not_exist_xyz"))
-    with pytest.raises(gspread.exceptions.SpreadsheetNotFound):
-        env.run(["import-sheets"])
+    out, exit_code = env.run(["import-sheets"])
+
+    assert exit_code is None
+    assert "WARNING" in out
+    assert "ciscategorial" in out
+    assert "stan1293" in out
+    # Every language still gets previewed -- the run did not stop at stan1293.
+    assert "Language: arao1248" in out
+    assert "Language: stan1293" in out
+    assert "Language: synth0001" in out
+    # stan1293's other classes (not just ciscategorial) are still reached.
+    other_classes = [c for c in env.manifest()["stan1293"]["sheets"] if c != "ciscategorial"]
+    assert other_classes, "expected stan1293 to have more than one class in the manifest"
+    for cls in other_classes:
+        assert f"\n  {cls}" in out
 
 
 # ---------------------------------------------------------------------------
