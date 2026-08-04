@@ -30,7 +30,7 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 0b/1 — migrating callers, 17 of 18 done (started 2026-08-01)
+**Phase:** 0b/1 — done, 18 of 18 (started 2026-08-01, finished 2026-08-04)
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
 **Last worked:** 2026-08-04
@@ -88,7 +88,8 @@ the same day — see the decisions log.
 | Phase 0b/1 — file 15: `import_sheets.py` | **done** — pre/post diff clean across twenty-two scenarios; the command the daily `data-refresh` workflow depends on to pull annotator work down, and the largest file migrated so far (1,138 lines); found Finding 13 (a dry run has no guard at all against a bad manifest spreadsheet ID — it crashes the whole run rather than aborting cleanly the way `--apply` does) |
 | Phase 0b/1 — file 16: `sync_params.py` | **done** — pre/post diff clean across fifteen scenarios; the file the migration order flagged to watch (column insert/delete is the densest form of the #272 question) and it passed clean — every column position already comes from the tab's own header; found and fixed Finding 14 (adding or removing a column re-stamped the manifest's `param_values` for the *whole* construction, masking a genuinely stale dropdown on an untouched sibling criterion) |
 | Phase 0b/1 — file 17: `generate_sheets.py` | **done** — pre/post diff clean across twelve scenarios; the largest file migrated so far (2,654 lines) and the first whose migration threaded `doorway` through this file's own call chain rather than substituting at a single entry point; passed `assert_no_criterion_writes_onto_trailing_columns` clean |
-| Phase 0b/1 — remaining files | not started — see § "Migration order" |
+| Phase 0b/1 — file 18: `restructure_sheets.py` | **done** — pre/post diff clean across thirteen scenarios; the last file, deliberately: the archive-then-rebuild command with no rollback behind #248's original incidents. `assert_no_criterion_writes_onto_trailing_columns` caught a real, pre-existing bug (Finding 16); also surfaced a pre-existing gap, the missing `_check_coded_data_clean()` guard (Finding 17) |
+| **Phase 0b/1 (the whole doorway migration)** | **done** — all eighteen files that reach Drive now go through it |
 | Phases 3–9 | not started |
 
 ### In flight
@@ -100,62 +101,40 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
 ## Next action
 
-**Not blocked.**
+**Phase 0b/1 — the doorway migration itself — is complete.** All eighteen
+files in `coding/` that reach Google now go through `drive_doorway`; none
+reaches `gspread`/`googleapiclient` directly (`tests/test_doorway_coverage.py`
+verifies this, with an empty `_REMAINING`). No file remains to migrate — there
+is no next *file*.
 
-1. **The one remaining file**, `restructure_sheets.py` — the #248 command,
-   archive-then-rebuild with no rollback, deliberately last. See § "Migration
-   order" below.
-   Delegable to an agent now that the pattern exists (the sixteen done before
-   this one are the worked examples: Sheets-heavy, Drive-files-only,
-   folders-and-sharing, read-only, Docs, sheet creation, reference-sheet
-   overwrite, a command with two directions that must round-trip, file
-   uploads, appending to annotation tabs, a root-level folder that reads
-   other languages' sheets, a read-only structural comparison against a live
-   Sheet header with two independent entry points in one file, column
-   insert/rename/split/merge/delete, and — the seventeenth, `generate_sheets.py`
-   — the first migration where `gc`/`drive` were threaded as parameters through
-   this file's own call chain rather than substituted at a single entry point,
-   the largest file migrated so far by a wide margin).
+**Not blocked, but the next phase is gated on a decision from Jeff.**
+`docs/data-layer-implementation-plan.md`'s Phase 3 ("Schema reorganization")
+is next in the plan's sequencing, and the plan itself marks that phase
+**"(coordinator decides)"** — it is the highest-value and highest-risk phase,
+splitting `schemas/` into research-facing and administrative sections. This
+document does not attempt to describe what that split should look like or
+start planning it; that is Jeff's call to make, per the plan. Once made, an
+agent can pick up Phase 3 with the same per-unit discipline this migration
+used, gated behind the snapshot tests this effort built (every Phase 1
+snapshot must still pass byte-identical afterward, per the plan's own
+done-criteria for that phase).
 
-   Watch for: a `_save_drive_config` call (must be patched in tests — the real
-   `drive_config.json` holds live IDs and a test that clobbers it breaks the
-   coordinator's access to their own Drive) and any expensive or
-   non-deterministic pure-computation step that should be stubbed so the
-   snapshot locks the *Drive interaction*, which is what the migration
-   touches, rather than output already covered elsewhere.
+Two small things are recorded rather than forgotten, both from the last
+file's migration:
 
-   **`restructure_sheets.py` reads `construction_params` from the manifest, so
-   call `tests/mutation_checks.assert_no_criterion_writes_onto_trailing_columns`
-   in its snapshot test.**
-   (`generate_status_sheet` and `validate_coding` were each checked against
-   this same list before being migrated and turned out not to belong on it —
-   see the 2026-08-03 decisions-log entries. `validate_coding` writes only pink
-   highlighting, built from its own local param map, never a dropdown or a
-   criterion note. `integrity_check` and `import_sheets` both read
-   `construction_params` too, and genuinely stay on the "reads it" list —
-   `integrity_check`'s `_section_sheets` compares it against the live header,
-   `import_sheets` feeds it into `_validate_tab`/`_validate_pair_tab` as the
-   allowed-value set for each criterion — but neither needed the assertion,
-   for the same reason: neither ever writes a dropdown or a note back to
-   Drive. `import_sheets`'s only sheet write is `highlight_cells`, which
-   paints backgrounds, not `setDataValidation` or a note. A dropdown or note
-   landing on `Source`/`Comments` is a write-side mistake; these two files'
-   only way to get the same fact wrong would be to print an incorrect
-   warning, which is what `integrity_check`'s own newest Finding turned out
-   to be. `sync_params` and `generate_sheets` were the files this note most
-   expected to catch — between them they insert, delete, rename, split, and
-   merge criterion columns, and build `construction_params` from the
-   diagnostics YAML in three separate functions — and both passed clean:
-   every column position comes from the tab's own header or the row just
-   built, never a stored manifest offset. What the manifest *did* get wrong
-   in `sync_params` was different in shape — see Finding 14 — a `param_values`
-   bookkeeping error, not a wrong-column write.) Two commands have written
-   criterion-shaped things onto `Source`/`Comments` independently (#272 and
-   Finding 10), both from trusting the manifest about a tab's columns, so
-   treat it as the expected mistake rather than a surprise when checking the
-   last file.
+- **Finding 16** — a real, pre-existing bug in `_copy_pair_tab_with_rename`'s
+  hardcoded `col_start=4`, wrong for two of the project's pair-row shapes.
+  Not fixed as part of the migration (the deferral rule); worth fixing as its
+  own small change whenever someone next touches this file, with the
+  snapshot diff as evidence, the way Findings 12 and 14 were.
+- **Finding 17** — `restructure_sheets.py` never calls
+  `drive._check_coded_data_clean()` despite reading `coded_data/` as its
+  source of truth. Recorded, not fixed — adding the guard is a behaviour
+  change, not a call-site substitution, and belongs to whoever next revisits
+  this file's preconditions (see `data_dependency_schema/preconditions.yaml`).
 
-2. Phases 3–9 per the plan.
+Nothing else is blocked or waiting; the next step is Phase 3, and Phase 3
+needs Jeff's decision before it starts.
 
 ### Held until Phase 9
 
@@ -195,29 +174,29 @@ current job and every one would otherwise be remembered by nobody.
 
 ### Migration order
 
-One file remains of eighteen that touch Drive. The plan's list of eleven
-was hand-written and never checked against the code; a scan on 2026-08-02
-replaced it with a derived one in `tests/test_doorway_coverage.py`.
+All eighteen files that touch Drive are migrated; none remain. The plan's
+list of eleven was hand-written and never checked against the code; a scan on
+2026-08-02 replaced it with a derived one in `tests/test_doorway_coverage.py`,
+which now asserts `_REMAINING` is empty.
 
 That scan was reported as "seventeen", and this file repeated it for two days
 before the arithmetic gave it away: seven migrated plus eleven remaining is
 eighteen, not seventeen. A hand-copied count of a derived number, going stale
 exactly as the derived list would have — the same defect one level up. The
-counts above are now checked against the code by
-`test_stated_counts_match_the_code`, and the per-file rows no longer carry a
-total at all.
+counts above are checked against the code by `test_stated_counts_match_the_code`,
+and the per-file rows below no longer carry a total at all.
 
-Ordered by risk, lowest first, so that every shared helper and every part of
-the doorway has been exercised before the destructive commands are touched.
-
-**"17 of 18" still flatters it somewhat, and planning should use the volume
-rather than the count.** `generate_sheets.py` alone is 2,651 lines post-migration
-— larger than the combined remaining weight this doc quoted for any prior file
-— so the seventeen done are now 10,482 lines between them; the one file left
-is `restructure_sheets.py` alone: 1,425 lines and **10 direct Drive calls**.
-Recompute rather than trusting these numbers — the
-command is in `tests/test_doorway_coverage.py` (`_DIRECT_ACCESS` over
-`coding/*.py`, minus `_EXEMPT`).
+The files were migrated in order of risk, lowest first, so that every shared
+helper and every part of the doorway had been exercised before the destructive
+commands were touched. The last one, `restructure_sheets.py` (1,425 lines, 10
+direct Drive calls), was deliberately saved for last: the archive-then-rebuild
+command with no rollback, behind #248's original incidents. By the time it was
+migrated the eighteen files together totalled roughly 11,900 lines —
+`generate_sheets.py` alone was 2,651 post-migration, larger than the combined
+remaining weight this doc quoted for any prior file. Recompute rather than
+trusting these numbers if picking this back up later — the command is in
+`tests/test_doorway_coverage.py` (`_DIRECT_ACCESS` over `coding/*.py`, minus
+`_EXEMPT`).
 
 | file | why here |
 |---|---|
@@ -236,7 +215,7 @@ command is in `tests/test_doorway_coverage.py` (`_DIRECT_ACCESS` over
 | ~~`import_sheets.py`~~ | done |
 | ~~`sync_params.py`~~ | done |
 | ~~`generate_sheets.py`~~ | done |
-| `restructure_sheets.py` | Archive-then-rebuild with no rollback. The #248 command. Last, deliberately |
+| ~~`restructure_sheets.py`~~ | done |
 
 Two departures from "smallest first" worth keeping: `import_planar.py` moves
 up because it is the command whose silent revert caused #248 and it deserves
@@ -307,11 +286,13 @@ Per the plan's Phase 0b/1 non-goals, a snapshot that reveals odd behaviour recor
 it rather than fixing it *in the same change*. **Findings 1–12 and 14 have all
 since been fixed** — the deferral only ever lasts until the migration each one
 is riding on has been committed and its before/after comparison taken. Findings
-13 and 15 are the exceptions still outstanding: each is recorded as current
-behaviour, accepted rather than deferred-then-fixed, pending a coordinator
-decision named in its own entry on whether it warrants a fix at all. Nothing
-else here is outstanding; the entries are kept because the sequence is the
-point.
+13, 15, 16, and 17 are the exceptions still outstanding: each is recorded as
+current behaviour, accepted rather than deferred-then-fixed, pending either a
+coordinator decision (13, 15) or simply a future small fix by whoever next
+touches the file (16, 17 — both mechanical, neither needs Jeff's judgment, but
+neither was in scope for a call-site migration whose whole non-goal is "no
+behaviour changes"). Nothing else here is outstanding; the entries are kept
+because the sequence is the point.
 
 **Do not delete this section when the migration ends without first checking that
 every finding has an issue number or a decisions-log entry.** Findings 4 and 5
@@ -714,9 +695,185 @@ and deliberate enough (a hard error the module already treats as exceptional)
 that the current ordering is acceptable. Flagged for Jeff rather than decided
 here.
 
+**16. `_copy_pair_tab_with_rename` writes a pair tab's dropdown onto the wrong
+column for two of the project's three pair-row shapes** (found 2026-08-04,
+file 18, `restructure_sheets.py`, via `assert_no_criterion_writes_onto_trailing_columns`
+during the migration's own snapshot suite — not fixed here). The function
+calls `_format_and_validate(ws, ..., col_start=4)` unconditionally
+(`coding/restructure_sheets.py`, inside `_copy_pair_tab_with_rename`). `col_start=4`
+is correct for coreference's pair shape — `Element_A, Position_A, Position_B,
+Direction`, four structural columns before the one criterion — but
+`nonpermutability`'s and `phrasal_accent`'s `general` construction uses a
+different, two-column pair shape: `Element_A, Element_B`, with the criterion
+at column 2. Confirmed live against the real fixture data: a restructure of
+`stan1293`'s `nonpermutability` class writes a `y`/`n` dropdown onto
+`Comments` (header `[Element_A, Element_B, scopal, Source, Comments]`) and
+leaves `scopal` itself with no dropdown at all.
+
+Same shape as #272, Finding 10, and Finding 14: **a column position assumed
+rather than read from the header it is actually writing to.** The other three
+pair-row-writing functions in this file (`_write_tab_with_carryover`,
+`_cascade_rename_pair_tab`, and `_apply_split_to_pair_rows`) all locate their
+columns by `header.index(...)`, which is exactly why they passed the same
+check clean; this one function reverted to a hardcoded offset. Confirmed
+identical between the unmigrated and migrated code as part of this
+migration's own before/after comparison — both write the dropdown to the same
+wrong column — so it is pre-existing, not introduced by the doorway
+substitution. Not fixed here per the deferral rule (fixing would change what
+the command writes, which is exactly the diff this migration's comparison
+needed to hold still); worth fixing as its own small change whenever this
+file is next touched, deriving `col_start` from `header.index(criterion_col)`
+(the function already receives `criterion_col`) rather than a literal `4`,
+with the snapshot diff as evidence, the way Findings 12 and 14 were fixed.
+`tests/test_restructure_sheets_snapshot.py::test_finding_16_pair_tab_dropdown_lands_on_the_wrong_column_for_two_column_pair_shape`
+pins the current (wrong) placement rather than asserting cleanliness, so a
+future reader does not mistake that test's passing for "this was checked and
+is fine."
+
+**17. `restructure_sheets.py` never calls `drive._check_coded_data_clean()`**
+(found 2026-08-04, file 18, confirmed by grep — the string does not appear in
+the file at all). Every other command that reads `coded_data/` as its source
+of truth before writing live Sheets calls this guard first (`import_sheets.py`,
+`update_sheets.py`, `sync_params.py`, `generate_sheets.py --regen-dependents`
+— see `coding/CLAUDE.md`'s `drive.py` bullet) precisely because #248's
+stray-row incident was `update-sheets` acting on a `planar_{lang_id}.tsv`
+left stale by an earlier step's failed auto-commit, with nothing to catch it.
+`restructure_sheets.py` reads exactly the same two files
+(`planar_{lang_id}.tsv`, `diagnostics_{lang_id}.tsv`) as its source of truth
+for what the *new* sheet structure should be, and is the single most
+destructive command in the project — archive-then-recreate, no rollback — so
+it is a plausible candidate for the same class of incident, not a peripheral
+one.
+
+Not fixed here: adding the guard is a new abort path, which changes what the
+command does before any of its Drive calls, not a call-site substitution —
+squarely the kind of change this migration's non-goals rule out. Recorded
+here rather than in `data_dependency_schema/preconditions.yaml` directly,
+because adding the guard is the fix and the fact of the gap is what belongs
+in the tracking record until then; whoever adds the guard should also add the
+precondition record at that time, per this project's "write the record as
+part of the fix" rule for `data_dependency_schema/`.
+
 ---
 
 ## Decisions log
+
+**2026-08-04 — file 18 (`restructure_sheets.py`), the last file, completes
+Phase 0b/1.** Every primitive it needed already existed: `get_doorway()`,
+`load_manifest()`, `upload_manifest()`, `doorway.open_spreadsheet()`,
+`doorway.create_spreadsheet()`, `doorway.move_file()`,
+`doorway.update_file()`, `doorway.get_or_create_folder()`,
+`doorway.create_permission()`, `doorway.list_permissions()`,
+`doorway.delete_permission()`. The call-site mapping was a plain substitution
+throughout `_rename_class_for_language` and `main()`'s per-class loop, `gc,
+drive = _get_clients()` / `_load_manifest_from_drive(drive)` becoming
+`doorway = get_doorway()` / `load_manifest(doorway)`, `_open_spreadsheet(gc,
+id)` becoming `doorway.open_spreadsheet(id)`, and six occurrences of `except
+gspread.WorksheetNotFound` becoming `except WorksheetNotFound` (imported from
+`drive_doorway` instead).
+
+**`_get_or_create_subfolder` was consolidated into `doorway.get_or_create_folder`
+rather than migrated as its own function**, after checking the two really are
+equivalent rather than assuming it: both build the identical Drive query
+(name + parent + folder mimetype + not trashed) and the identical
+create-if-absent body; the only difference is the `fields` mask on the list
+call (`"files(id)"` vs. the doorway's `"files(id, name)"`), and every caller
+of either only ever reads `.id`, so the extra field is inert. This is the
+same substitution the brief for file 12 (`generate_status_sheet.py`) declined
+to make for `_remove_anyone_permission`, for the opposite reason: that helper
+had no doorway equivalent at all, so it was inlined from primitives instead
+(and `_lock_archived_sheet` here does exactly the same inlining, following
+that precedent, rather than restating a third copy of the same two-call
+sequence).
+
+**`import gspread` stays**, unlike most migrated files, for
+`gspread.utils.rowcol_to_a1` in `_cascade_rename_pair_tab` (~line 607) — pure
+coordinate arithmetic, not a client call, the identical reasoning
+`sync_params.py`'s migration (file 16) used to keep the same import. Grepping
+the whole file afterward for `gspread\.` turned up only that one call plus
+one docstring mention; every other prior use was a type hint
+(`gspread.Worksheet`/`gspread.Spreadsheet` → `WorksheetHandle`/
+`SpreadsheetHandle`) or an `except` clause, confirmed rather than assumed.
+
+Thirteen scenarios, run through both the unmigrated code (a throwaway copy
+placed temporarily inside `coding/` so its own relative imports resolved,
+never committed) and the migrated code against identically-seeded fakes,
+using thin `gc`/`drive` shims backed by the same `FakeDriveDoorway` instance
+and a socket-level guard raising on any connection not to localhost: a plain
+dry run and a true no-op `--apply` over the real fixture data (nothing in the
+repository today needs restructuring, confirmed rather than assumed — every
+class hit "no changes — skipping"); `--rename-map` carrying over a renamed
+position, dry run and apply, across every class of one language including its
+pair-row constructions; `--rename-element`; `--split-element` fanning one
+element into two and cascading into `nonpermutability/general` (the pair-row
+tab referencing it); the same split with a synthetic self-pair row injected
+directly into the fake beforehand (left untouched, flagged for manual
+review); `--rename-class`'s pre-flight abort (old class still active in
+diagnostics) and a real apply after the diagnostics files were updated first;
+a missing construction tab, hit on both the download step and
+`_copy_pair_tab_with_rename` in the same run (deleting a coreference pair tab
+from the fixture before a rename-map apply that restructures every class in
+that language); `--lang` restricting to one language while two others stay
+seeded; and a class absent from the manifest. `_autocommit_data`,
+`generate_notebooks.regenerate_notebooks`, `validate_coding.revalidate_sheets`,
+and `import_planar.push_planars_to_sheets` were stubbed identically on both
+sides rather than driven for real (file 15's precedent — the harness diffs
+this file's own Drive interaction, not theirs). stdout, the mutation log,
+`sheets_manifest.json`, and every `coded_data/` TSV written came back
+byte-identical across all thirteen.
+
+Two harness lessons, both already named in this log for earlier files and
+reconfirmed here: `load_manifest`/`upload_manifest` (`coding/drive.py`) call
+*that module's own* `_load_drive_config()` internally, so patching only the
+importing module's copy of the name reaches real `drive_config.json` and a
+real (unreachable, fake-seeded) file ID — caught immediately by an early
+`SystemExit`, not a silent pass, but worth restating since it is the same
+"patch where it's actually bound" lesson files 5 and 15 already recorded, one
+level further down the call chain than either of those. `_autocommit_data`
+similarly reads *that module's own* `CODED_DATA` constant rather than any
+path threaded through a caller, so both harness runs stub it rather than
+letting it shell out to `git` against a temp directory it doesn't know about.
+
+**`assert_no_criterion_writes_onto_trailing_columns` did not pass clean** —
+see Finding 16 above. This is the first file where that check caught a real,
+live bug rather than confirming cleanliness: `_copy_pair_tab_with_rename`'s
+hardcoded `col_start=4` is right for coreference's four-structural-column
+pair shape and wrong for `nonpermutability`'s/`phrasal_accent`'s two-column
+one. Pre-existing, confirmed identical on both sides of the before/after
+comparison, and not fixed in this commit per the deferral rule. The
+migration's own test suite reflects this honestly rather than papering over
+it: two of the "nothing criterion-shaped is written" checks were scoped to
+`arao1248` (which has no pair-row classes at all, so genuinely demonstrates
+clean behaviour for `_write_tab_with_carryover`), and a separate test
+explicitly pins the wrong placement on `nonpermutability/general` as known,
+current, deferred behaviour rather than folding it into a passing "clean"
+assertion.
+
+**The pre-existing, undocumented gap this file's brief asked to confirm —
+whether `_check_coded_data_clean()` is called anywhere in
+`restructure_sheets.py` — is confirmed real.** It is not, despite the file
+reading `planar_{lang_id}.tsv`/`diagnostics_{lang_id}.tsv` from `coded_data/`
+as its source of truth for the very structure it recreates sheets from, and
+despite being the most destructive command in the project. Recorded as
+Finding 17. Not fixed in this session, per the task's own explicit
+instruction — adding a new abort path is a behaviour change, not a call-site
+migration, and belongs to a deliberate change of its own.
+
+`tests/test_doorway_coverage.py`'s `_REMAINING` is now the empty set — the
+migration's main test flips, exactly as its own docstring said it would, from
+"the list is exactly this" to "the list is empty"; `test_stated_counts_match_the_code`'s
+regex was widened to recognise the finished phrasing ("done, N of N") as well
+as the in-progress one ("migrating callers, N of M done"), since the progress
+doc's own wording changed once there was no longer an "of M" to be behind.
+`coding/CLAUDE.md`'s migrated list gains `restructure_sheets.py` (now all
+eighteen), the "one other command still reaches Drive directly" sentence
+becomes "all commands that touch Drive now go through the doorway," and its
+own bullet plus the `drive_doorway.py` paragraph both name Finding 16.
+`docs/data-layer-progress.md` moves to "done, 18 of 18" and the migration
+order table's last row is struck through like the rest. This is the Phase
+0b/1 completion commit; `docs/data-layer-implementation-plan.md`'s Phase 3
+is next, gated on a decision from Jeff per the plan's own "(coordinator
+decides)" marking on that phase — see § "Next action" above.
 
 **2026-08-04 — file 17 (`generate_sheets.py`) needed no doorway addition, but
 was the first migration shaped differently from every one before it.** Every

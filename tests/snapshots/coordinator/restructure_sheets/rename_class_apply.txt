@@ -1,0 +1,105 @@
+
+Class renames:
+  'proform' -> 'proform_renamed'
+
+  stan1293: proform -> proform_renamed (v2):
+    [do_so_substitution] downloaded 142 rows
+    [vp_ellipsis] downloaded 142 rows
+    [do_so_substitution] carry over 142
+    [vp_ellipsis] carry over 142
+    no local TSVs for proform/
+    would archive: proform_stan1293 → _archived/proform_stan1293_v2
+    would create: proform_renamed_stan1293 (v3)
+    would update manifest: proform -> proform_renamed
+    Archived proform_stan1293 → _archived/proform_stan1293_v2
+    [do_so_substitution] wrote: carried 142, new blank 0, dropped 0
+    [vp_ellipsis] wrote: carried 142, new blank 0, dropped 0
+    Manifest: proform -> proform_renamed (v3): https://docs.google.com/spreadsheets/d/fake_ss_0003
+
+Language: stan1293
+
+  ciscategorial (current v2)
+    [general] downloaded 142 rows
+    [general] carry over 142; new blank 0
+    (no changes — skipping)
+
+  subspanrepetition (current v2)
+    [andCoordination] downloaded 142 rows
+    [control] downloaded 142 rows
+    [thatCOMP] downloaded 142 rows
+    [asyndeticPart] downloaded 142 rows
+    [andCoordination] carry over 142; new blank 0
+    [control] carry over 142; new blank 0
+    [thatCOMP] carry over 142; new blank 0
+    [asyndeticPart] carry over 142; new blank 0
+    (no changes — skipping)
+
+  noninterruption (current v2)
+    [general] downloaded 142 rows
+    [general] carry over 142; new blank 0
+    (no changes — skipping)
+
+  metrical (current v2)
+    [stress_domain] downloaded 142 rows
+    [stress_domain] carry over 142; new blank 0
+    (no changes — skipping)
+
+  nonpermutability (current v2)
+    [element_prescreening] downloaded 142 rows
+    [general] downloaded 0 rows
+    [element_prescreening] carry over 142; new blank 0
+    (no changes — skipping)
+
+  segmental (current v2)
+    [aspiration_prominence] downloaded 142 rows
+    [flapping] downloaded 142 rows
+    [aspiration_prominence] carry over 142; new blank 0
+    [flapping] carry over 142; new blank 0
+    (no changes — skipping)
+
+  free_occurrence (current v2)
+    [general] downloaded 142 rows
+    [general] carry over 142; new blank 0
+    (no changes — skipping)
+
+  coreference (current v4)
+    [prescreening] downloaded 142 rows
+    [reflexivization] downloaded 0 rows
+    [pronominalization] downloaded 0 rows
+    [np_reference] downloaded 0 rows
+    [prescreening] carry over 142; new blank 0
+    (no changes — skipping)
+
+  proform_renamed (current v3)
+    [do_so_substitution] downloaded 142 rows
+    [vp_ellipsis] downloaded 142 rows
+    [do_so_substitution] carry over 142; new blank 0
+    [vp_ellipsis] carry over 142; new blank 0
+    (no changes — skipping)
+
+  phrasal_accent (current v1)
+    [prescreening] downloaded 142 rows
+    [general] downloaded 142 rows
+    [prescreening] carry over 142; new blank 0
+    (no changes — skipping)
+
+Manifest updated on Drive.
+
+Done.
+
+--- Revalidating sheets ---
+
+--- Syncing planar Sheet ---
+
+--- Bookmark this instead ---
+  Every sheet below just got a NEW URL (restructure-sheets always creates a
+  fresh spreadsheet and archives the old one) — any previously bookmarked
+  sheet links are now stale. The Drive folder link does NOT change across
+  restructures, so it's the one worth bookmarking long-term:
+  [stan1293] https://drive.google.com/drive/folders/1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3
+
+--- Affected sheets (new URLs — old bookmarks to these classes are stale) ---
+  [stan1293] proform_renamed: https://docs.google.com/spreadsheets/d/fake_ss_0003
+
+--- Notifying language tracking issues ---
+  [stan1293] commented on issue #999

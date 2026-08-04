@@ -1,0 +1,66 @@
+
+DRY RUN — Language: stan1293
+  rename position: 'v' -> 'npsubj1:v:npsubj1new'
+(run with --apply to archive old sheets and regenerate)
+
+  ciscategorial (current v2)
+    [general] downloaded 142 rows
+    [general] carry over 134; new blank 8; drop 8 (he@v:npsubj1, I@v:npsubj1, it@v:npsubj1, NP{S,A}@v:npsubj1, she@v:npsubj1, they@v:npsubj1, we@v:npsubj1, you@v:npsubj1)
+
+  subspanrepetition (current v2)
+    [andCoordination] downloaded 142 rows
+    [control] downloaded 142 rows
+    [thatCOMP] downloaded 142 rows
+    [asyndeticPart] downloaded 142 rows
+    [andCoordination] carry over 134; new blank 8; drop 8 (he@v:npsubj1, I@v:npsubj1, it@v:npsubj1, NP{S,A}@v:npsubj1, she@v:npsubj1, they@v:npsubj1, we@v:npsubj1, you@v:npsubj1)
+    [control] carry over 134; new blank 8; drop 8 (he@v:npsubj1, I@v:npsubj1, it@v:npsubj1, NP{S,A}@v:npsubj1, she@v:npsubj1, they@v:npsubj1, we@v:npsubj1, you@v:npsubj1)
+    [thatCOMP] carry over 134; new blank 8; drop 8 (he@v:npsubj1, I@v:npsubj1, it@v:npsubj1, NP{S,A}@v:npsubj1, she@v:npsubj1, they@v:npsubj1, we@v:npsubj1, you@v:npsubj1)
+    [asyndeticPart] carry over 134; new blank 8; drop 8 (he@v:npsubj1, I@v:npsubj1, it@v:npsubj1, NP{S,A}@v:npsubj1, she@v:npsubj1, they@v:npsubj1, we@v:npsubj1, you@v:npsubj1)
+
+  noninterruption (current v2)
+    [general] downloaded 142 rows
+    [general] carry over 134; new blank 8; drop 8 (he@v:npsubj1, I@v:npsubj1, it@v:npsubj1, NP{S,A}@v:npsubj1, she@v:npsubj1, they@v:npsubj1, we@v:npsubj1, you@v:npsubj1)
+
+  metrical (current v2)
+    [stress_domain] downloaded 142 rows
+    [stress_domain] carry over 134; new blank 8; drop 8 (he@v:npsubj1, I@v:npsubj1, it@v:npsubj1, NP{S,A}@v:npsubj1, she@v:npsubj1, they@v:npsubj1, we@v:npsubj1, you@v:npsubj1)
+
+  nonpermutability (current v2)
+    [element_prescreening] downloaded 142 rows
+    [general] downloaded 0 rows
+    [element_prescreening] carry over 134; new blank 8; drop 8 (he@v:npsubj1, I@v:npsubj1, it@v:npsubj1, NP{S,A}@v:npsubj1, she@v:npsubj1, they@v:npsubj1, we@v:npsubj1, you@v:npsubj1)
+    [general] (pair tab) no position renames needed
+
+  segmental (current v2)
+    [aspiration_prominence] downloaded 142 rows
+    [flapping] downloaded 142 rows
+    [aspiration_prominence] carry over 134; new blank 8; drop 8 (he@v:npsubj1, I@v:npsubj1, it@v:npsubj1, NP{S,A}@v:npsubj1, she@v:npsubj1, they@v:npsubj1, we@v:npsubj1, you@v:npsubj1)
+    [flapping] carry over 134; new blank 8; drop 8 (he@v:npsubj1, I@v:npsubj1, it@v:npsubj1, NP{S,A}@v:npsubj1, she@v:npsubj1, they@v:npsubj1, we@v:npsubj1, you@v:npsubj1)
+
+  free_occurrence (current v2)
+    [general] downloaded 142 rows
+    [general] carry over 134; new blank 8; drop 8 (he@v:npsubj1, I@v:npsubj1, it@v:npsubj1, NP{S,A}@v:npsubj1, she@v:npsubj1, they@v:npsubj1, we@v:npsubj1, you@v:npsubj1)
+
+  coreference (current v4)
+    [prescreening] downloaded 142 rows
+    [reflexivization] downloaded 0 rows
+    [pronominalization] downloaded 0 rows
+    [np_reference] downloaded 0 rows
+    [prescreening] carry over 134; new blank 8; drop 8 (he@v:npsubj1, I@v:npsubj1, it@v:npsubj1, NP{S,A}@v:npsubj1, she@v:npsubj1, they@v:npsubj1, we@v:npsubj1, you@v:npsubj1)
+    [reflexivization] (pair tab) no position renames needed
+    [pronominalization] (pair tab) no position renames needed
+    [np_reference] (pair tab) no position renames needed
+
+  proform (current v2)
+    [do_so_substitution] downloaded 142 rows
+    [vp_ellipsis] downloaded 142 rows
+    [do_so_substitution] carry over 134; new blank 8; drop 8 (he@v:npsubj1, I@v:npsubj1, it@v:npsubj1, NP{S,A}@v:npsubj1, she@v:npsubj1, they@v:npsubj1, we@v:npsubj1, you@v:npsubj1)
+    [vp_ellipsis] carry over 134; new blank 8; drop 8 (he@v:npsubj1, I@v:npsubj1, it@v:npsubj1, NP{S,A}@v:npsubj1, she@v:npsubj1, they@v:npsubj1, we@v:npsubj1, you@v:npsubj1)
+
+  phrasal_accent (current v1)
+    [prescreening] downloaded 142 rows
+    [general] downloaded 142 rows
+    [prescreening] carry over 134; new blank 8; drop 8 (he@v:npsubj1, I@v:npsubj1, it@v:npsubj1, NP{S,A}@v:npsubj1, she@v:npsubj1, they@v:npsubj1, we@v:npsubj1, you@v:npsubj1)
+    [general] (pair tab) no position renames needed
+
+Run with --apply to make these changes.

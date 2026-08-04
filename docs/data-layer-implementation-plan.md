@@ -106,14 +106,20 @@ snapshots; and deliberately perturbing any generator makes a snapshot test fail.
 
 **Note on "eleven".** The count above was hand-written into this plan and then
 taken as given by the Phase 0a survey, rather than derived from the code. A
-scan on 2026-08-02 found **seventeen** files in `coding/` reaching Drive
-directly, not eleven — the seven missed are `setup_root_folder`,
+scan on 2026-08-02 first reported **seventeen** files in `coding/` reaching
+Drive directly, not eleven — the seven missed were `setup_root_folder`,
 `apply_pending`, `prune_manifest`, `check_notes`, `sync_diagnostics_yaml`,
-`import_planar`, and `integrity_check`. Two of those matter more than their
-size suggests: `import_planar` is the command at the centre of #248, and
-`check_notes` is the only user of Google Docs. `tests/test_doorway_coverage.py`
-now derives the list, so the remaining count is answered by running the tests
-rather than by reading this sentence.
+`import_planar`, and `integrity_check`. Two of those mattered more than their
+size suggested: `import_planar` is the command at the centre of #248, and
+`check_notes` is the only user of Google Docs. That "seventeen" was itself
+briefly wrong — the real total was **eighteen** (`restructure_sheets.py` was
+the eighteenth) — the same hand-copied-derived-number defect one level up,
+caught by simple arithmetic not adding up (see `docs/data-layer-progress.md`'s
+2026-08-02 decisions-log entry). `tests/test_doorway_coverage.py` derived the
+list from that point on, so this whole phase's file count stopped being
+something to read off a sentence and became something to run a test for.
+Phase 0b/1 finished 2026-08-04 with all eighteen migrated —
+`tests/test_doorway_coverage.py`'s `_REMAINING` is now empty.
 
 **Non-goals.** No behavior changes. No refactoring of command logic beyond the
 call-site substitution. Do not fix anything a snapshot reveals as odd — record

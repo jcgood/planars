@@ -90,11 +90,10 @@ from .make_forms import (
 )
 from .schemas import load_diagnostic_classes
 from .drive import (
-    _autocommit_data,
-    _get_clients, _move_to_folder, _share_with_person, _remove_anyone_permission, _open_spreadsheet,
-    _load_manifest_from_drive, _upload_planars_config, _load_drive_config, _save_drive_config,
-    _with_retry,
+    _autocommit_data, _load_drive_config, _save_drive_config, _with_retry,
+    load_manifest, upload_manifest,
 )
+from .drive_doorway import SpreadsheetHandle, WorksheetHandle, WorksheetNotFound, get_doorway
 from .generate_sheets import (
     _annotator_email,
     _build_criterion_notes,
@@ -122,7 +121,7 @@ _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
 # ---------------------------------------------------------------------------
 
 def _download_tab_annotations(
-    ws: gspread.Worksheet,
+    ws: WorksheetHandle,
 ) -> Dict[Tuple[str, str], Dict[str, str]]:
     """Download annotations from a tab, keyed by (element, pos_name).
 
@@ -196,42 +195,24 @@ def _folder_id_from_url(folder_url: str) -> str:
     return folder_url.rstrip("/").rsplit("/", 1)[-1]
 
 
-def _lock_archived_sheet(drive, file_id: str, lang_id: str) -> None:
+def _lock_archived_sheet(doorway, file_id: str, lang_id: str) -> None:
     """Remove any 'anyone' permission from a just-archived sheet and share it
     read-only with the language's annotator, if one is on file.
 
     Archived sheets carry real prior judgments (--split-element's breadcrumb
     notes point back to them) so the annotator still needs to be able to open
     and read them — just not edit them, since they're no longer the live copy.
+
+    No doorway-level convenience for removing the 'anyone' grant (unlike
+    `drive._remove_anyone_permission`) -- inlined here from the same two
+    doorway primitives, same precedent as `generate_status_sheet._lock_read_only`.
     """
-    _remove_anyone_permission(drive, file_id)
+    for p in doorway.list_permissions(file_id, fields="permissions(id,type)"):
+        if p.get("type") == "anyone":
+            doorway.delete_permission(file_id, p["id"])
     email = _annotator_email(lang_id)
     if email:
-        _share_with_person(drive, file_id, email, role="reader")
-
-
-def _get_or_create_subfolder(drive, parent_id: str, name: str) -> str:
-    """Get or create a named subfolder inside parent_id."""
-    results = drive.files().list(
-        q=(
-            f"name='{name}' and '{parent_id}' in parents"
-            " and mimeType='application/vnd.google-apps.folder'"
-            " and trashed=false"
-        ),
-        fields="files(id)",
-    ).execute()
-    files = results.get("files", [])
-    if files:
-        return files[0]["id"]
-    folder = drive.files().create(
-        body={
-            "name": name,
-            "mimeType": "application/vnd.google-apps.folder",
-            "parents": [parent_id],
-        },
-        fields="id",
-    ).execute()
-    return folder["id"]
+        doorway.create_permission(file_id, type="user", role="reader", email=email)
 
 
 # ---------------------------------------------------------------------------
@@ -255,7 +236,7 @@ def _old_key(
 
 
 def _write_tab_with_carryover(
-    spreadsheet: gspread.Spreadsheet,
+    spreadsheet: SpreadsheetHandle,
     tab_name: str,
     param_names: List[str],
     param_values: Dict[str, List[str]],
@@ -332,7 +313,7 @@ def _write_tab_with_carryover(
     try:
         ws = _with_retry(lambda: spreadsheet.worksheet(tab_name))
         ws.clear()
-    except gspread.WorksheetNotFound:
+    except WorksheetNotFound:
         ws = spreadsheet.add_worksheet(
             title=tab_name, rows=len(rows) + 2, cols=len(all_cols) + 3
         )
@@ -603,7 +584,7 @@ def _cascade_rename_pair_tsv(tsv_path: Path, rename_map: Dict[str, str]) -> int:
 
 
 def _cascade_rename_pair_tab(
-    ws: gspread.Worksheet, rename_map: Dict[str, str]
+    ws: WorksheetHandle, rename_map: Dict[str, str]
 ) -> int:
     """Update position name components in Position_A/Position_B cells of a Drive tab.
 
@@ -635,8 +616,8 @@ def _cascade_rename_pair_tab(
 
 
 def _copy_pair_tab_with_rename(
-    old_ss: gspread.Spreadsheet,
-    new_ss: gspread.Spreadsheet,
+    old_ss: SpreadsheetHandle,
+    new_ss: SpreadsheetHandle,
     tab_name: str,
     rename_map: Dict[str, str],
     param_names: List[str],
@@ -655,7 +636,7 @@ def _copy_pair_tab_with_rename(
     try:
         old_ws = _with_retry(lambda: old_ss.worksheet(tab_name))
         all_values = _with_retry(lambda: old_ws.get_all_values())
-    except gspread.WorksheetNotFound:
+    except WorksheetNotFound:
         all_values = []
 
     if not all_values:
@@ -683,7 +664,7 @@ def _copy_pair_tab_with_rename(
     try:
         ws = _with_retry(lambda: new_ss.worksheet(tab_name))
         ws.clear()
-    except gspread.WorksheetNotFound:
+    except WorksheetNotFound:
         ws = new_ss.add_worksheet(
             title=tab_name, rows=len(new_data) + 2, cols=len(header) + 2
         )
@@ -745,8 +726,7 @@ def _preflight_rename_class(
 
 
 def _rename_class_for_language(
-    gc,
-    drive,
+    doorway,
     manifest: dict,
     lang_id: str,
     old_class: str,
@@ -790,14 +770,14 @@ def _rename_class_for_language(
     print(f"\n  {lang_id}: {old_class} -> {new_class} (v{version}):")
 
     # Download annotations from old sheet
-    ss = _open_spreadsheet(gc, sheet_info["spreadsheet_id"])
+    ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
     all_annotations: Dict[str, Dict[Tuple[str, str], Dict[str, str]]] = {}
     for construction in constructions:
         try:
             ws = _with_retry(lambda: ss.worksheet(construction))
             all_annotations[construction] = _download_tab_annotations(ws)
             print(f"    [{construction}] downloaded {len(all_annotations[construction])} rows")
-        except gspread.WorksheetNotFound:
+        except WorksheetNotFound:
             all_annotations[construction] = {}
             print(f"    [{construction}] tab not found")
 
@@ -837,23 +817,20 @@ def _rename_class_for_language(
 
     # Archive old sheet
     if folder_id:
-        archive_id = _get_or_create_subfolder(drive, folder_id, "_archived")
-        drive.files().update(
-            fileId=ss.id,
-            body={"name": f"{old_class}_{lang_id}_v{version}"},
-        ).execute()
-        _move_to_folder(drive, ss.id, archive_id)
-        _lock_archived_sheet(drive, ss.id, lang_id)
+        archive_id = doorway.get_or_create_folder("_archived", parent_id=folder_id)
+        doorway.update_file(ss.id, name=f"{old_class}_{lang_id}_v{version}")
+        doorway.move_file(ss.id, archive_id)
+        _lock_archived_sheet(doorway, ss.id, lang_id)
         print(f"    Archived {old_class}_{lang_id} → _archived/{old_class}_{lang_id}_v{version}")
 
     # Create new sheet
     sheet_title = f"{new_class}_{lang_id}"
-    new_ss = gc.create(sheet_title)
+    new_ss = doorway.create_spreadsheet(sheet_title)
     if folder_id:
-        _move_to_folder(drive, new_ss.id, folder_id)
+        doorway.move_file(new_ss.id, folder_id)
         email = _annotator_email(lang_id)
         if email:
-            _share_with_person(drive, new_ss.id, email, role="writer")
+            doorway.create_permission(new_ss.id, type="user", role="writer", email=email)
 
     default_ws = _with_retry(lambda: new_ss.sheet1)
     tab_names = []
@@ -1025,8 +1002,8 @@ def main() -> None:
     lang_idx = sys.argv.index("--lang") if "--lang" in sys.argv else -1
     lang_filter = sys.argv[lang_idx + 1] if lang_idx >= 0 else None
 
-    gc, drive = _get_clients()
-    manifest = _load_manifest_from_drive(drive)
+    doorway = get_doorway()
+    manifest = load_manifest(doorway)
 
     planar_files = sorted(CODED_DATA.glob("*/lang_setup/planar_*.tsv"))
     if lang_filter:
@@ -1059,7 +1036,7 @@ def main() -> None:
             for old_class, new_class in rename_class_map.items():
                 planar_path = planar_file.parent / f"planar_{lang_id}.tsv"
                 changed = _rename_class_for_language(
-                    gc, drive, manifest, lang_id, old_class, new_class,
+                    doorway, manifest, lang_id, old_class, new_class,
                     element_index, specs, apply, folder_id, planar_path,
                     sheet_links=sheet_links,
                 )
@@ -1134,7 +1111,7 @@ def main() -> None:
             version = sheet_info.get("version", 1)
             print(f"\n  {class_name} (current v{version})")
 
-            ss = _open_spreadsheet(gc, sheet_info["spreadsheet_id"])
+            ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
 
             # Step 1: Download current annotations from all tabs
             all_annotations: Dict[str, Dict[Tuple[str, str], Dict[str, str]]] = {}
@@ -1143,7 +1120,7 @@ def main() -> None:
                     ws = _with_retry(lambda: ss.worksheet(construction))
                     all_annotations[construction] = _download_tab_annotations(ws)
                     print(f"    [{construction}] downloaded {len(all_annotations[construction])} rows")
-                except gspread.WorksheetNotFound:
+                except WorksheetNotFound:
                     all_annotations[construction] = {}
                     print(f"    [{construction}] tab not found")
 
@@ -1203,23 +1180,20 @@ def main() -> None:
             # Step 3: Archive existing sheet
             new_version = version + 1
             if folder_id:
-                archive_id = _get_or_create_subfolder(drive, folder_id, "_archived")
-                drive.files().update(
-                    fileId=ss.id,
-                    body={"name": f"{class_name}_{lang_id}_v{version}"},
-                ).execute()
-                _move_to_folder(drive, ss.id, archive_id)
-                _lock_archived_sheet(drive, ss.id, lang_id)
+                archive_id = doorway.get_or_create_folder("_archived", parent_id=folder_id)
+                doorway.update_file(ss.id, name=f"{class_name}_{lang_id}_v{version}")
+                doorway.move_file(ss.id, archive_id)
+                _lock_archived_sheet(doorway, ss.id, lang_id)
                 print(f"    Archived to _archived/{class_name}_{lang_id}_v{version}")
 
             # Step 4: Create new sheet and populate with carry-over
             sheet_title = f"{class_name}_{lang_id}"
-            new_ss = gc.create(sheet_title)
+            new_ss = doorway.create_spreadsheet(sheet_title)
             if folder_id:
-                _move_to_folder(drive, new_ss.id, folder_id)
+                doorway.move_file(new_ss.id, folder_id)
                 email = _annotator_email(lang_id)
                 if email:
-                    _share_with_person(drive, new_ss.id, email, role="writer")
+                    doorway.create_permission(new_ss.id, type="user", role="writer", email=email)
 
             default_ws = _with_retry(lambda: new_ss.sheet1)
             tab_names = []
@@ -1313,7 +1287,7 @@ def main() -> None:
                     if apply and (lang_id, class_name) not in restructured_classes:
                         if not sheet_info:
                             continue
-                        ss_pair = _open_spreadsheet(gc, sheet_info["spreadsheet_id"])
+                        ss_pair = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
                         try:
                             ws = _with_retry(lambda: ss_pair.worksheet(construction))
                             sheet_changed = _cascade_rename_pair_tab(ws, rename_map)
@@ -1322,7 +1296,7 @@ def main() -> None:
                                     f"  [{lang_id} {class_name}/{construction}]"
                                     f" Drive tab: updated {sheet_changed} position cell(s)"
                                 )
-                        except gspread.WorksheetNotFound:
+                        except WorksheetNotFound:
                             pass
 
     if apply:
@@ -1338,7 +1312,7 @@ def main() -> None:
             config[lid].pop("manifest_file_id", None)
         existing_file_id = config.get("_planars_config_file_id")
         root_folder_id = config.get("_root_folder_id")
-        file_id = _upload_planars_config(drive, manifest, root_folder_id, existing_file_id)
+        file_id = upload_manifest(doorway, manifest, root_folder_id, existing_file_id)
         config["_planars_config_file_id"] = file_id
         _save_drive_config(config)
         print("\nManifest updated on Drive.")
@@ -1410,12 +1384,12 @@ def main() -> None:
             if manifest_dirty:
                 # A new notification issue was created for at least one language --
                 # persist the updated manifest the same way the rest of this
-                # command already does (MANIFEST_PATH.write_text + _upload_planars_config).
+                # command already does (MANIFEST_PATH.write_text + upload_manifest).
                 MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
                 config = _load_drive_config()
                 existing_file_id = config.get("_planars_config_file_id")
                 root_folder_id = config.get("_root_folder_id")
-                file_id = _upload_planars_config(drive, manifest, root_folder_id, existing_file_id)
+                file_id = upload_manifest(doorway, manifest, root_folder_id, existing_file_id)
                 config["_planars_config_file_id"] = file_id
                 _save_drive_config(config)
                 print("  Manifest updated on Drive (new notification_issue number(s)).")

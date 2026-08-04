@@ -1,0 +1,10 @@
+
+Class renames:
+  'proform' -> 'proform_renamed'
+Pre-flight checks failed:
+
+  stan1293: 'proform' is still in diagnostics_stan1293.tsv.
+    Replace it with 'proform_renamed' before running --rename-class.
+  stan1293: 'proform_renamed' is not in diagnostics_stan1293.tsv.
+    Add it before running --rename-class.
+[SystemExit: 1]

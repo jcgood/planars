@@ -41,9 +41,9 @@ _EXEMPT = {
 
 # Files still to migrate, smallest first. Ordering rationale is in
 # docs/data-layer-progress.md § "Migration order".
-_REMAINING = {
-    "restructure_sheets.py",
-}
+#
+# Empty as of restructure_sheets.py (file 18 of 18) -- Phase 0b/1 is done.
+_REMAINING: Set[str] = set()
 
 
 def _reaches_google_directly() -> Set[str]:
@@ -107,9 +107,15 @@ def test_stated_counts_match_the_code():
     *count* was still hand-copied into docs/data-layer-progress.md — and it went
     stale within two days, reading "of 17" when the real total was 18. Same
     defect as the list it replaced, one level up.
+
+    The phrasing changed once Phase 0b/1 finished: "migrating callers, N of M
+    done" (an in-progress count) became "done, N of N" (a finished one, plus a
+    date). The regex below tracks whichever phrasing is currently true rather
+    than assuming the in-progress one forever.
     """
     doc = (ROOT / "docs" / "data-layer-progress.md").read_text(encoding="utf-8")
-    match = re.search(r"migrating callers, (\d+) of (\d+) done", doc)
+    match = re.search(r"migrating callers, (\d+) of (\d+) done", doc) or \
+        re.search(r"0b/1 — done, (\d+) of (\d+)", doc)
     assert match, "docs/data-layer-progress.md no longer states the migration count"
     said_done, said_total = int(match.group(1)), int(match.group(2))
 

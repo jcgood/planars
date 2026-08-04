@@ -1,0 +1,588 @@
+SUMMARY
+    32  add_worksheet
+   151  batch_request
+     1  create_file
+    20  create_permission
+    10  create_spreadsheet
+    10  del_worksheet
+    20  move_file
+    32  update
+    11  update_file
+    68    └─ repeatCell
+    51    └─ setDataValidation
+    32    └─ updateSheetProperties
+
+DRIVE OPERATIONS
+  create_file: file_id='fake_file_0001', name='_archived', parents=['1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'], mimetype='application/vnd.google-apps.folder'
+  update_file: file_id='1O3d4Bj4n28hkWWBQOl7RX95Bb4SkR27-RF6mSQ6-9rc', name='ciscategorial_stan1293_v2'
+  move_file: file_id='1O3d4Bj4n28hkWWBQOl7RX95Bb4SkR27-RF6mSQ6-9rc', from_parents=[], to_parent='fake_file_0001'
+  create_permission: file_id='1O3d4Bj4n28hkWWBQOl7RX95Bb4SkR27-RF6mSQ6-9rc', type='user', role='reader', email='adamjamesrosstallman@gmail.com', notify=False
+  move_file: file_id='fake_ss_0003', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
+  create_permission: file_id='fake_ss_0003', type='user', role='writer', email='adamjamesrosstallman@gmail.com', notify=False
+  update_file: file_id='1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4', name='subspanrepetition_stan1293_v2'
+  move_file: file_id='1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4', from_parents=[], to_parent='fake_file_0001'
+  create_permission: file_id='1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4', type='user', role='reader', email='adamjamesrosstallman@gmail.com', notify=False
+  move_file: file_id='fake_ss_0006', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
+  create_permission: file_id='fake_ss_0006', type='user', role='writer', email='adamjamesrosstallman@gmail.com', notify=False
+  update_file: file_id='1-rqDe52YRJsTrQjNe7HxPncDHky9FLm6CaJ9cBLZaX0', name='noninterruption_stan1293_v2'
+  move_file: file_id='1-rqDe52YRJsTrQjNe7HxPncDHky9FLm6CaJ9cBLZaX0', from_parents=[], to_parent='fake_file_0001'
+  create_permission: file_id='1-rqDe52YRJsTrQjNe7HxPncDHky9FLm6CaJ9cBLZaX0', type='user', role='reader', email='adamjamesrosstallman@gmail.com', notify=False
+  move_file: file_id='fake_ss_0009', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
+  create_permission: file_id='fake_ss_0009', type='user', role='writer', email='adamjamesrosstallman@gmail.com', notify=False
+  update_file: file_id='1yVggyBZ9whjWwihiQbc98aTMx9CRn9JQKfLEM8JZfTg', name='metrical_stan1293_v2'
+  move_file: file_id='1yVggyBZ9whjWwihiQbc98aTMx9CRn9JQKfLEM8JZfTg', from_parents=[], to_parent='fake_file_0001'
+  create_permission: file_id='1yVggyBZ9whjWwihiQbc98aTMx9CRn9JQKfLEM8JZfTg', type='user', role='reader', email='adamjamesrosstallman@gmail.com', notify=False
+  move_file: file_id='fake_ss_0012', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
+  create_permission: file_id='fake_ss_0012', type='user', role='writer', email='adamjamesrosstallman@gmail.com', notify=False
+  update_file: file_id='1sb0DJzFKY-j7sA1kjLqGUqtdsG2JJX0vW-rRALWV7Ic', name='nonpermutability_stan1293_v2'
+  move_file: file_id='1sb0DJzFKY-j7sA1kjLqGUqtdsG2JJX0vW-rRALWV7Ic', from_parents=[], to_parent='fake_file_0001'
+  create_permission: file_id='1sb0DJzFKY-j7sA1kjLqGUqtdsG2JJX0vW-rRALWV7Ic', type='user', role='reader', email='adamjamesrosstallman@gmail.com', notify=False
+  move_file: file_id='fake_ss_0015', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
+  create_permission: file_id='fake_ss_0015', type='user', role='writer', email='adamjamesrosstallman@gmail.com', notify=False
+  update_file: file_id='19uDRX9flfQFk-MSCsvFy_SG3zubz0Kxowo4y7pyJUOM', name='segmental_stan1293_v2'
+  move_file: file_id='19uDRX9flfQFk-MSCsvFy_SG3zubz0Kxowo4y7pyJUOM', from_parents=[], to_parent='fake_file_0001'
+  create_permission: file_id='19uDRX9flfQFk-MSCsvFy_SG3zubz0Kxowo4y7pyJUOM', type='user', role='reader', email='adamjamesrosstallman@gmail.com', notify=False
+  move_file: file_id='fake_ss_0018', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
+  create_permission: file_id='fake_ss_0018', type='user', role='writer', email='adamjamesrosstallman@gmail.com', notify=False
+  update_file: file_id='1L3kfV-g278NMxbdqfu2sN343nmKp1r-29jq60fr9YsQ', name='free_occurrence_stan1293_v2'
+  move_file: file_id='1L3kfV-g278NMxbdqfu2sN343nmKp1r-29jq60fr9YsQ', from_parents=[], to_parent='fake_file_0001'
+  create_permission: file_id='1L3kfV-g278NMxbdqfu2sN343nmKp1r-29jq60fr9YsQ', type='user', role='reader', email='adamjamesrosstallman@gmail.com', notify=False
+  move_file: file_id='fake_ss_0021', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
+  create_permission: file_id='fake_ss_0021', type='user', role='writer', email='adamjamesrosstallman@gmail.com', notify=False
+  update_file: file_id='131F4ZVngUR2Sgu3Zmtfb_1ff-JT4L8dT1mNOk12M0zA', name='coreference_stan1293_v4'
+  move_file: file_id='131F4ZVngUR2Sgu3Zmtfb_1ff-JT4L8dT1mNOk12M0zA', from_parents=[], to_parent='fake_file_0001'
+  create_permission: file_id='131F4ZVngUR2Sgu3Zmtfb_1ff-JT4L8dT1mNOk12M0zA', type='user', role='reader', email='adamjamesrosstallman@gmail.com', notify=False
+  move_file: file_id='fake_ss_0024', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
+  create_permission: file_id='fake_ss_0024', type='user', role='writer', email='adamjamesrosstallman@gmail.com', notify=False
+  update_file: file_id='1LJjSOkoblAre6v257wW1ENUMM7SDC_JbfhlN3HMwQJY', name='proform_stan1293_v2'
+  move_file: file_id='1LJjSOkoblAre6v257wW1ENUMM7SDC_JbfhlN3HMwQJY', from_parents=[], to_parent='fake_file_0001'
+  create_permission: file_id='1LJjSOkoblAre6v257wW1ENUMM7SDC_JbfhlN3HMwQJY', type='user', role='reader', email='adamjamesrosstallman@gmail.com', notify=False
+  move_file: file_id='fake_ss_0027', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
+  create_permission: file_id='fake_ss_0027', type='user', role='writer', email='adamjamesrosstallman@gmail.com', notify=False
+  update_file: file_id='12f_cgmKuKNEnHWUJGQX5QiaHeAVCIxMyYMS3mFe-mVs', name='phrasal_accent_stan1293_v1'
+  move_file: file_id='12f_cgmKuKNEnHWUJGQX5QiaHeAVCIxMyYMS3mFe-mVs', from_parents=[], to_parent='fake_file_0001'
+  create_permission: file_id='12f_cgmKuKNEnHWUJGQX5QiaHeAVCIxMyYMS3mFe-mVs', type='user', role='reader', email='adamjamesrosstallman@gmail.com', notify=False
+  move_file: file_id='fake_ss_0030', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
+  create_permission: file_id='fake_ss_0030', type='user', role='writer', email='adamjamesrosstallman@gmail.com', notify=False
+  update_file: file_id='fake_manifest_file', bytes=50697
+
+SHEET OPERATIONS
+
+  fake_ss_0003  tab=-
+    create_spreadsheet: title='ciscategorial_stan1293'
+
+  fake_ss_0003  tab=general
+    add_worksheet: rows=144, cols=8, index=None, sheet_id=1
+    update: anchor A1 raw=True 143x8
+      | ['Element', 'Position_Name', 'Position_Number', 'V-combines', 'N-combines', 'A-combines', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'y', 'n', 'n', '', '']
+      | ['and', 'v:leftedge', '1', 'y', 'y', 'y', '', '']
+      | ...
+
+  fake_ss_0003  tab=sheetId=1
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (BEYOND HEADER) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (BEYOND HEADER) rows 1-143 -> ['y', 'n'] (strict=False)
+    repeatCell: col 3 (BEYOND HEADER) rows 0-1
+    repeatCell: col 4 (BEYOND HEADER) rows 0-1
+    repeatCell: col 5 (BEYOND HEADER) rows 0-1
+
+  fake_ss_0003  tab=Sheet1
+    del_worksheet: 
+
+  fake_ss_0003  tab=Status
+    add_worksheet: rows=3, cols=2, index=None, sheet_id=2
+    update: anchor A1 raw=True 2x2
+      | ['Construction', 'Status']
+      | ['general', 'in-progress']
+
+  fake_ss_0003  tab=sheetId=2
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 1 (BEYOND HEADER) rows 1-2 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  fake_ss_0006  tab=-
+    create_spreadsheet: title='subspanrepetition_stan1293'
+
+  fake_ss_0006  tab=andCoordination
+    add_worksheet: rows=144, cols=8, index=None, sheet_id=1
+    update: anchor A1 raw=True 143x8
+      | ['Element', 'Position_Name', 'Position_Number', 'widescope_right', 'widescope_left', 'fillable_botheither_conjunct', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'n', 'n', 'y', '', '']
+      | ['and', 'v:leftedge', '1', '?', '?', '?', '', '']
+      | ...
+
+  fake_ss_0006  tab=sheetId=1
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (BEYOND HEADER) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (BEYOND HEADER) rows 1-143 -> ['y', 'n'] (strict=False)
+    repeatCell: col 3 (BEYOND HEADER) rows 0-1
+    repeatCell: col 4 (BEYOND HEADER) rows 0-1
+    repeatCell: col 5 (BEYOND HEADER) rows 0-1
+
+  fake_ss_0006  tab=control
+    add_worksheet: rows=144, cols=8, index=None, sheet_id=2
+    update: anchor A1 raw=True 143x8
+      | ['Element', 'Position_Name', 'Position_Number', 'widescope_right', 'widescope_left', 'fillable_botheither_conjunct', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'n', 'n', 'n', '', '*also martin also tried to unify the reform movement']
+      | ['and', 'v:leftedge', '1', 'n', 'n', 'n', '', '']
+      | ...
+
+  fake_ss_0006  tab=sheetId=2
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (BEYOND HEADER) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (BEYOND HEADER) rows 1-143 -> ['y', 'n'] (strict=False)
+    repeatCell: col 3 (BEYOND HEADER) rows 0-1
+    repeatCell: col 4 (BEYOND HEADER) rows 0-1
+    repeatCell: col 5 (BEYOND HEADER) rows 0-1
+
+  fake_ss_0006  tab=thatCOMP
+    add_worksheet: rows=144, cols=8, index=None, sheet_id=3
+    update: anchor A1 raw=True 143x8
+      | ['Element', 'Position_Name', 'Position_Number', 'widescope_right', 'widescope_left', 'fillable_botheither_conjunct', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'n', 'n', 'n', '', 'martin believed that then ...']
+      | ['and', 'v:leftedge', '1', 'n', 'n', 'n', '', '']
+      | ...
+
+  fake_ss_0006  tab=sheetId=3
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (BEYOND HEADER) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (BEYOND HEADER) rows 1-143 -> ['y', 'n'] (strict=False)
+    repeatCell: col 3 (BEYOND HEADER) rows 0-1
+    repeatCell: col 4 (BEYOND HEADER) rows 0-1
+    repeatCell: col 5 (BEYOND HEADER) rows 0-1
+
+  fake_ss_0006  tab=asyndeticPart
+    add_worksheet: rows=144, cols=8, index=None, sheet_id=4
+    update: anchor A1 raw=True 143x8
+      | ['Element', 'Position_Name', 'Position_Number', 'widescope_right', 'widescope_left', 'fillable_botheither_conjunct', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'y', 'n', 'n', '', '']
+      | ['and', 'v:leftedge', '1', 'y', 'n', 'n', '', '']
+      | ...
+
+  fake_ss_0006  tab=sheetId=4
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (BEYOND HEADER) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (BEYOND HEADER) rows 1-143 -> ['y', 'n'] (strict=False)
+    repeatCell: col 3 (BEYOND HEADER) rows 0-1
+    repeatCell: col 4 (BEYOND HEADER) rows 0-1
+    repeatCell: col 5 (BEYOND HEADER) rows 0-1
+
+  fake_ss_0006  tab=Sheet1
+    del_worksheet: 
+
+  fake_ss_0006  tab=Status
+    add_worksheet: rows=6, cols=2, index=None, sheet_id=5
+    update: anchor A1 raw=True 5x2
+      | ['Construction', 'Status']
+      | ['andCoordination', 'in-progress']
+      | ['control', 'in-progress']
+      | ...
+
+  fake_ss_0006  tab=sheetId=5
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 1 (BEYOND HEADER) rows 1-5 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  fake_ss_0009  tab=-
+    create_spreadsheet: title='noninterruption_stan1293'
+
+  fake_ss_0009  tab=general
+    add_worksheet: rows=144, cols=7, index=None, sheet_id=1
+    update: anchor A1 raw=True 143x7
+      | ['Element', 'Position_Name', 'Position_Number', 'free', 'multiple', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'y', 'n', '', '']
+      | ['and', 'v:leftedge', '1', 'y', 'n', '', '']
+      | ...
+
+  fake_ss_0009  tab=sheetId=1
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (BEYOND HEADER) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-143 -> ['y', 'n'] (strict=False)
+    repeatCell: col 3 (BEYOND HEADER) rows 0-1
+    repeatCell: col 4 (BEYOND HEADER) rows 0-1
+
+  fake_ss_0009  tab=Sheet1
+    del_worksheet: 
+
+  fake_ss_0009  tab=Status
+    add_worksheet: rows=3, cols=2, index=None, sheet_id=2
+    update: anchor A1 raw=True 2x2
+      | ['Construction', 'Status']
+      | ['general', 'in-progress']
+
+  fake_ss_0009  tab=sheetId=2
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 1 (BEYOND HEADER) rows 1-2 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  fake_ss_0012  tab=-
+    create_spreadsheet: title='metrical_stan1293'
+
+  fake_ss_0012  tab=stress_domain
+    add_worksheet: rows=144, cols=10, index=None, sheet_id=1
+    update: anchor A1 raw=True 143x10
+      | ['Element', 'Position_Name', 'Position_Number', 'accented', 'obligatory', 'independence', 'left-interaction', 'right-interaction', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'y', 'n', 'y', 'n', 'n', '', '']
+      | ['and', 'v:leftedge', '1', 'both', 'n', 'y', 'n', 'n', '', '']
+      | ...
+
+  fake_ss_0012  tab=sheetId=1
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (BEYOND HEADER) rows 1-143 -> ['y', 'n', 'both'] (strict=False)
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (BEYOND HEADER) rows 1-143 -> ['y', 'n', 'na'] (strict=False)
+    setDataValidation: col 6 (BEYOND HEADER) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 7 (BEYOND HEADER) rows 1-143 -> ['y', 'n'] (strict=False)
+    repeatCell: col 3 (BEYOND HEADER) rows 0-1
+    repeatCell: col 4 (BEYOND HEADER) rows 0-1
+    repeatCell: col 5 (BEYOND HEADER) rows 0-1
+    repeatCell: col 6 (BEYOND HEADER) rows 0-1
+    repeatCell: col 7 (BEYOND HEADER) rows 0-1
+
+  fake_ss_0012  tab=Sheet1
+    del_worksheet: 
+
+  fake_ss_0012  tab=Status
+    add_worksheet: rows=3, cols=2, index=None, sheet_id=2
+    update: anchor A1 raw=True 2x2
+      | ['Construction', 'Status']
+      | ['stress_domain', 'in-progress']
+
+  fake_ss_0012  tab=sheetId=2
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 1 (BEYOND HEADER) rows 1-2 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  fake_ss_0015  tab=-
+    create_spreadsheet: title='nonpermutability_stan1293'
+
+  fake_ss_0015  tab=element_prescreening
+    add_worksheet: rows=144, cols=6, index=None, sheet_id=1
+    update: anchor A1 raw=True 143x6
+      | ['Element', 'Position_Name', 'Position_Number', 'scopal', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'n', '', '']
+      | ['and', 'v:leftedge', '1', 'n', '', '']
+      | ...
+
+  fake_ss_0015  tab=sheetId=1
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (BEYOND HEADER) rows 1-143 -> ['y', 'n', 'both'] (strict=False)
+    repeatCell: col 3 (BEYOND HEADER) rows 0-1
+
+  fake_ss_0015  tab=general
+    add_worksheet: rows=138, cols=7, index=None, sheet_id=2
+    update: anchor A1 raw=True 136x5
+      | ['Element_A', 'Element_B', 'scopal', 'Source', 'Comments']
+      | ['AD-S', 'AD-VP', 'n', '', '']
+      | ['AD-S', 'KEYSTONE', 'n', '', '']
+      | ...
+
+  fake_ss_0015  tab=sheetId=2
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-136 -> ['y', 'n', 'both'] (strict=False)
+
+  fake_ss_0015  tab=Sheet1
+    del_worksheet: 
+
+  fake_ss_0015  tab=Planar Structure
+    add_worksheet: rows=41, cols=5, index=None, sheet_id=3
+    update: anchor A1 raw=True 39x4
+      | ['Position', 'Position_Name', 'Position_Type', 'Elements']
+      | ['1', 'v:leftedge', 'Zone', 'and, also, then, CONJUNCT']
+      | ['2', 'v:frontedXP', 'Slot', 'QWORDS, NP{S,A,P}']
+      | ...
+
+  fake_ss_0015  tab=sheetId=3
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+
+  fake_ss_0015  tab=Status
+    add_worksheet: rows=4, cols=2, index=None, sheet_id=4
+    update: anchor A1 raw=True 3x2
+      | ['Construction', 'Status']
+      | ['element_prescreening', 'in-progress']
+      | ['general', 'in-progress']
+
+  fake_ss_0015  tab=sheetId=4
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 1 (BEYOND HEADER) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  fake_ss_0018  tab=-
+    create_spreadsheet: title='segmental_stan1293'
+
+  fake_ss_0018  tab=aspiration_prominence
+    add_worksheet: rows=144, cols=6, index=None, sheet_id=1
+    update: anchor A1 raw=True 143x6
+      | ['Element', 'Position_Name', 'Position_Number', 'aspirated', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'n', '', '']
+      | ['and', 'v:leftedge', '1', 'n', '', '']
+      | ...
+
+  fake_ss_0018  tab=sheetId=1
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (BEYOND HEADER) rows 1-143 -> ['y', 'n', 'both', 'na'] (strict=False)
+    repeatCell: col 3 (BEYOND HEADER) rows 0-1
+
+  fake_ss_0018  tab=flapping
+    add_worksheet: rows=144, cols=8, index=None, sheet_id=2
+    update: anchor A1 raw=True 143x8
+      | ['Element', 'Position_Name', 'Position_Number', 'flapping_left', 'flapping_internal', 'flapping_right', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'na', 'na', 'na', '', '']
+      | ['and', 'v:leftedge', '1', 'na', 'na', 'na', '', '']
+      | ...
+
+  fake_ss_0018  tab=sheetId=2
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (BEYOND HEADER) rows 1-143 -> ['y', 'n', 'both', 'na'] (strict=False)
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-143 -> ['y', 'n', 'both', 'na'] (strict=False)
+    setDataValidation: col 5 (BEYOND HEADER) rows 1-143 -> ['y', 'n', 'both', 'na'] (strict=False)
+    repeatCell: col 3 (BEYOND HEADER) rows 0-1
+    repeatCell: col 4 (BEYOND HEADER) rows 0-1
+    repeatCell: col 5 (BEYOND HEADER) rows 0-1
+
+  fake_ss_0018  tab=Sheet1
+    del_worksheet: 
+
+  fake_ss_0018  tab=Status
+    add_worksheet: rows=4, cols=2, index=None, sheet_id=3
+    update: anchor A1 raw=True 3x2
+      | ['Construction', 'Status']
+      | ['aspiration_prominence', 'in-progress']
+      | ['flapping', 'in-progress']
+
+  fake_ss_0018  tab=sheetId=3
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 1 (BEYOND HEADER) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  fake_ss_0021  tab=-
+    create_spreadsheet: title='free_occurrence_stan1293'
+
+  fake_ss_0021  tab=general
+    add_worksheet: rows=144, cols=10, index=None, sheet_id=1
+    update: anchor A1 raw=True 143x10
+      | ['Element', 'Position_Name', 'Position_Number', 'free', 'left-edge-of-free-form', 'right-edge-of-free-form', 'dependent-on-left', 'dependent-on-right', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'y', 'na', 'na', 'na', 'na', '', '']
+      | ['and', 'v:leftedge', '1', 'y', 'na', 'na', 'na', 'na', '', '']
+      | ...
+
+  fake_ss_0021  tab=sheetId=1
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (BEYOND HEADER) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-143 -> ['y', 'n', 'na'] (strict=False)
+    setDataValidation: col 5 (BEYOND HEADER) rows 1-143 -> ['y', 'n', 'na'] (strict=False)
+    setDataValidation: col 6 (BEYOND HEADER) rows 1-143 -> ['na', '<position_number>'] (strict=False)
+    setDataValidation: col 7 (BEYOND HEADER) rows 1-143 -> ['na', '<position_number>'] (strict=False)
+    repeatCell: col 3 (BEYOND HEADER) rows 0-1
+    repeatCell: col 4 (BEYOND HEADER) rows 0-1
+    repeatCell: col 5 (BEYOND HEADER) rows 0-1
+    repeatCell: col 6 (BEYOND HEADER) rows 0-1
+    repeatCell: col 7 (BEYOND HEADER) rows 0-1
+
+  fake_ss_0021  tab=Sheet1
+    del_worksheet: 
+
+  fake_ss_0021  tab=Status
+    add_worksheet: rows=3, cols=2, index=None, sheet_id=2
+    update: anchor A1 raw=True 2x2
+      | ['Construction', 'Status']
+      | ['general', 'in-progress']
+
+  fake_ss_0021  tab=sheetId=2
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 1 (BEYOND HEADER) rows 1-2 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  fake_ss_0024  tab=-
+    create_spreadsheet: title='coreference_stan1293'
+
+  fake_ss_0024  tab=prescreening
+    add_worksheet: rows=144, cols=6, index=None, sheet_id=1
+    update: anchor A1 raw=True 143x6
+      | ['Element', 'Position_Name', 'Position_Number', 'referential', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'n', '', '']
+      | ['and', 'v:leftedge', '1', 'n', '', '']
+      | ...
+
+  fake_ss_0024  tab=sheetId=1
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (BEYOND HEADER) rows 1-143 -> ['y', 'n'] (strict=False)
+    repeatCell: col 3 (BEYOND HEADER) rows 0-1
+
+  fake_ss_0024  tab=reflexivization
+    add_worksheet: rows=166, cols=9, index=None, sheet_id=2
+    update: anchor A1 raw=True 164x7
+      | ['Element_A', 'Position_A', 'Position_B', 'Direction', 'reflexive_allowed', 'Source', 'Comments']
+      | ['NP{S,A,P}', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'n', '', '*then Sarah, John spoke to herself (otherwise not sure how to construct this sentence, but I perhaps needed to think harder about fronted NPs in this position)']
+      | ['QWORDS', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'y', '', 'Whom has spoken to himself.']
+      | ...
+
+  fake_ss_0024  tab=sheetId=2
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-164 -> ['y', 'n', 'untestable'] (strict=False)
+
+  fake_ss_0024  tab=pronominalization
+    add_worksheet: rows=166, cols=9, index=None, sheet_id=3
+    update: anchor A1 raw=True 164x7
+      | ['Element_A', 'Position_A', 'Position_B', 'Direction', 'pronoun_allowed', 'Source', 'Comments']
+      | ['NP{S,A,P}', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'n', '', 'I struggle with the test sentences here.']
+      | ['QWORDS', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'n', '', 'Who has John spoken to him']
+      | ...
+
+  fake_ss_0024  tab=sheetId=3
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-164 -> ['y', 'n', 'untestable'] (strict=False)
+
+  fake_ss_0024  tab=np_reference
+    add_worksheet: rows=166, cols=9, index=None, sheet_id=4
+    update: anchor A1 raw=True 164x7
+      | ['Element_A', 'Position_A', 'Position_B', 'Direction', 'np_allowed', 'Source', 'Comments']
+      | ['NP{S,A,P}', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'n', '', '']
+      | ['QWORDS', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'n', '', '']
+      | ...
+
+  fake_ss_0024  tab=sheetId=4
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-164 -> ['y', 'n', 'untestable'] (strict=False)
+
+  fake_ss_0024  tab=Sheet1
+    del_worksheet: 
+
+  fake_ss_0024  tab=Planar Structure
+    add_worksheet: rows=41, cols=5, index=None, sheet_id=5
+    update: anchor A1 raw=True 39x4
+      | ['Position', 'Position_Name', 'Position_Type', 'Elements']
+      | ['1', 'v:leftedge', 'Zone', 'and, also, then, CONJUNCT']
+      | ['2', 'v:frontedXP', 'Slot', 'QWORDS, NP{S,A,P}']
+      | ...
+
+  fake_ss_0024  tab=sheetId=5
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+
+  fake_ss_0024  tab=Status
+    add_worksheet: rows=6, cols=2, index=None, sheet_id=6
+    update: anchor A1 raw=True 5x2
+      | ['Construction', 'Status']
+      | ['prescreening', 'in-progress']
+      | ['reflexivization', 'in-progress']
+      | ...
+
+  fake_ss_0024  tab=sheetId=6
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 1 (BEYOND HEADER) rows 1-5 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  fake_ss_0027  tab=-
+    create_spreadsheet: title='proform_stan1293'
+
+  fake_ss_0027  tab=do_so_substitution
+    add_worksheet: rows=144, cols=6, index=None, sheet_id=1
+    update: anchor A1 raw=True 143x6
+      | ['Element', 'Position_Name', 'Position_Number', 'shareable_proform_replace', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'unclear', '', 'Also Martin ate sausage and Pope Leo did too']
+      | ['and', 'v:leftedge', '1', 'unclear', '', '']
+      | ...
+
+  fake_ss_0027  tab=sheetId=1
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (BEYOND HEADER) rows 1-143 -> ['y', 'n', 'both', 'unclear'] (strict=False)
+    repeatCell: col 3 (BEYOND HEADER) rows 0-1
+
+  fake_ss_0027  tab=vp_ellipsis
+    add_worksheet: rows=144, cols=6, index=None, sheet_id=2
+    update: anchor A1 raw=True 143x6
+      | ['Element', 'Position_Name', 'Position_Number', 'shareable_proform_replace', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'unclear', '', 'Also Martin drank beer and also John as well']
+      | ['and', 'v:leftedge', '1', 'unclear', '', '']
+      | ...
+
+  fake_ss_0027  tab=sheetId=2
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (BEYOND HEADER) rows 1-143 -> ['y', 'n', 'both', 'unclear'] (strict=False)
+    repeatCell: col 3 (BEYOND HEADER) rows 0-1
+
+  fake_ss_0027  tab=Sheet1
+    del_worksheet: 
+
+  fake_ss_0027  tab=Status
+    add_worksheet: rows=4, cols=2, index=None, sheet_id=3
+    update: anchor A1 raw=True 3x2
+      | ['Construction', 'Status']
+      | ['do_so_substitution', 'in-progress']
+      | ['vp_ellipsis', 'in-progress']
+
+  fake_ss_0027  tab=sheetId=3
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 1 (BEYOND HEADER) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  fake_ss_0030  tab=-
+    create_spreadsheet: title='phrasal_accent_stan1293'
+
+  fake_ss_0030  tab=prescreening
+    add_worksheet: rows=144, cols=6, index=None, sheet_id=1
+    update: anchor A1 raw=True 143x6
+      | ['Element', 'Position_Name', 'Position_Number', 'accented', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', '', '', '']
+      | ['and', 'v:leftedge', '1', '', '', '']
+      | ...
+
+  fake_ss_0030  tab=sheetId=1
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (BEYOND HEADER) rows 1-143 -> ['y', 'n', 'both'] (strict=False)
+    repeatCell: col 3 (BEYOND HEADER) rows 0-1
+
+  fake_ss_0030  tab=general
+    add_worksheet: rows=145, cols=8, index=None, sheet_id=2
+    update: anchor A1 raw=True 143x6
+      | ['Element', 'Position_Name', 'Position_Number', 'joint_accent', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', '', '', '']
+      | ['and', 'v:leftedge', '1', '', '', '']
+      | ...
+
+  fake_ss_0030  tab=sheetId=2
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-143 -> ['always', 'sometimes', 'never'] (strict=False)
+
+  fake_ss_0030  tab=Sheet1
+    del_worksheet: 
+
+  fake_ss_0030  tab=Status
+    add_worksheet: rows=4, cols=2, index=None, sheet_id=3
+    update: anchor A1 raw=True 3x2
+      | ['Construction', 'Status']
+      | ['prescreening', 'in-progress']
+      | ['general', 'in-progress']
+
+  fake_ss_0030  tab=sheetId=3
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 1 (BEYOND HEADER) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)

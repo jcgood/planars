@@ -15,10 +15,21 @@ this project is trying to remove.
 
 ## Now
 
-**Data layer migration (#271), Phase 0b/1 — continue at the next unmigrated
-file.** `docs/data-layer-progress.md` § "Migration order" says which one and
-why it is in that position. Do not take the file name from memory or from this
-file; the order has been revised twice.
+**Data layer migration (#271), Phase 0b/1 is complete** (finished 2026-08-04,
+`restructure_sheets.py` — file 18 of 18 — was last). Every command in
+`coding/` that reaches Google now goes through the doorway;
+`tests/test_doorway_coverage.py` confirms this with an empty `_REMAINING`.
+There is no next file to migrate.
+
+**Next up is Phase 3 of `docs/data-layer-implementation-plan.md`** ("Schema
+reorganization"), which the plan itself marks **"(coordinator decides)"** —
+it is the highest-value and highest-risk phase, and starting it requires a
+decision from Jeff first, not an agent's guess at what the split should look
+like. Read `docs/data-layer-progress.md` § "Next action" for the current
+state of that gate before doing anything else on this effort. Two small,
+non-blocking findings from the last migration (Findings 16 and 17, both
+mechanical, neither needing Jeff's judgment) are recorded in that file's
+Findings section for whoever next touches `restructure_sheets.py`.
 
 ---
 
@@ -55,6 +66,11 @@ progress doc points you there.
 
 ## How to work
 
+*(This section documents the per-file method Phase 0b/1 used, now finished.
+Kept as reference — the reasoning about evidence order and where bugs hide
+outlives that one phase — not as a live instruction with a next file to
+apply it to.)*
+
 - Use the per-file method written up in the progress doc: drive the unmigrated
   code from a stand-in Drive through shims, capture its output and its Drive
   changes, migrate, run the same thing again, and diff. Only then capture
@@ -79,10 +95,10 @@ progress doc points you there.
   read. Plain words; a new term only when the project has no word for the
   concept.
 
-## Scale, so the count does not mislead
+## Scale, so the count does not mislead (Phase 0b/1 reference — now finished at 18 of 18)
 
-The order is smallest-and-safest first, so "N of 18" flatters the progress.
-Plan by volume — lines and direct Drive calls — and recompute rather than
-trusting any written number: the command is in `tests/test_doorway_coverage.py`
-(`_DIRECT_ACCESS` over `coding/*.py`, minus `_EXEMPT`). The largest three files
-are deliberately last.
+The order was smallest-and-safest first, so "N of 18" flattered the progress
+for most of the effort. Recompute rather than trusting any written number if
+this is ever relevant again: the command is in `tests/test_doorway_coverage.py`
+(`_DIRECT_ACCESS` over `coding/*.py`, minus `_EXEMPT`) — it should now report
+zero remaining. The largest three files were deliberately last.
