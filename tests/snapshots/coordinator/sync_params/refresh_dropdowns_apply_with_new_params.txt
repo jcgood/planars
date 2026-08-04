@@ -34,6 +34,9 @@ Language: synth0001
 Mode:     apply
   [ciscategorial/general] New params: ['PLACE-combines']
     Added: ['PLACE-combines']
+  [ciscategorial/general] Would update dropdowns on existing columns:
+    V-combines: ['y', 'n'] → ['y', 'n', 'maybe']
+    Done.
   [subspanrepetition/andCoordination] OK — dropdowns up to date
   [subspanrepetition/control] OK — dropdowns up to date
   [subspanrepetition/thatCOMP] OK — dropdowns up to date

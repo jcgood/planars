@@ -86,7 +86,7 @@ the same day — see the decisions log.
 | Phase 0b/1 — file 13: `validate_coding.py` | **done** — pre/post diff clean across twelve scenarios; smallest Drive footprint of any file migrated so far (three call sites: `get_doorway()`, `load_manifest()`, `doorway.open_spreadsheet()`), no folder/sharing/manifest-upload logic at all |
 | Phase 0b/1 — file 14: `integrity_check.py` | **done** — pre/post diff clean across ten scenarios; two independent read-only entry points (`--sheets`, `--check-manifest`), no writes anywhere in the file; first migration to deliberately drop a retry wrapper (`_with_retry(lambda: gc.open_by_key(...))` → `doorway.open_spreadsheet(...)`, per the doorway's own named exception) |
 | Phase 0b/1 — file 15: `import_sheets.py` | **done** — pre/post diff clean across twenty-two scenarios; the command the daily `data-refresh` workflow depends on to pull annotator work down, and the largest file migrated so far (1,138 lines); found Finding 13 (a dry run has no guard at all against a bad manifest spreadsheet ID — it crashes the whole run rather than aborting cleanly the way `--apply` does) |
-| Phase 0b/1 — file 16: `sync_params.py` | **done** — pre/post diff clean across fifteen scenarios; the file the migration order flagged to watch (column insert/delete is the densest form of the #272 question) and it passed clean — every column position already comes from the tab's own header; found Finding 14, not fixed here (adding or removing a column re-stamps the manifest's `param_values` for the *whole* construction, masking a genuinely stale dropdown on an untouched sibling criterion) |
+| Phase 0b/1 — file 16: `sync_params.py` | **done** — pre/post diff clean across fifteen scenarios; the file the migration order flagged to watch (column insert/delete is the densest form of the #272 question) and it passed clean — every column position already comes from the tab's own header; found and fixed Finding 14 (adding or removing a column re-stamped the manifest's `param_values` for the *whole* construction, masking a genuinely stale dropdown on an untouched sibling criterion) |
 | Phase 0b/1 — remaining files | not started — see § "Migration order" |
 | Phases 3–9 | not started |
 
@@ -299,13 +299,12 @@ had hidden the second one entirely. Render before asking anyone to read.
 ## Findings
 
 Per the plan's Phase 0b/1 non-goals, a snapshot that reveals odd behaviour records
-it rather than fixing it *in the same change*. **Findings 1–12 have all
+it rather than fixing it *in the same change*. **Findings 1–12 and 14 have all
 since been fixed** — the deferral only ever lasts until the migration each one
 is riding on has been committed and its before/after comparison taken. Finding 13
-is different: it is recorded as current behaviour that the crash it
+is the one exception: it is recorded as current behaviour that the crash it
 describes is accepted rather than deferred-then-fixed, and its own entry says
-why. Finding 14 is a fresh deferral, riding on this same commit — its own
-entry says when it is expected to be fixed. The entries are kept because the
+why. Nothing else here is outstanding; the entries are kept because the
 sequence is the point.
 
 **Do not delete this section when the migration ends without first checking that
@@ -624,58 +623,58 @@ and 7: a guard that exists on one path and not its twin.
 
 **14. Adding or removing a criterion column re-stamps the manifest's
 `param_values` for the whole construction, so a widened value on an untouched
-sibling criterion can go stale forever without `--refresh-dropdowns` ever
+sibling criterion could go stale forever without `--refresh-dropdowns` ever
 reporting it** (found 2026-08-04, file 16, `sync_params.py`, while taking the
-pre-migration baseline).
+pre-migration baseline). **Fixed the same day**, as its own commit right after
+the migration landed, with the snapshot diff as the evidence — same pattern as
+Finding 12.
 
-`main()`'s `if new_params:` branch (`coding/sync_params.py` ~line 720) writes
-`cp[construction]["param_values"] = exp_values` unconditionally whenever a
-construction gains even one new column — not `{new column: its values}`, but
-the *entire* fresh diagnostics dict for every criterion of that construction,
-including ones whose dropdown `_insert_param_columns` never touched (it only
-builds `setDataValidation` requests for the columns it just inserted). The
-`if removed_params:` branch (~line 746) makes the identical mistake on
-delete. Both are reachable by real fixture data with no test scenario needed
-to invent them: `synth0001`'s three `coreference` pair tabs each still carry
-all three pair criteria while the diagnostics YAML narrows each construction
-to its own one (documented in `coding/CLAUDE.md`'s "Held until Phase 9"
-list), so `--apply --remove` against that real drift exercises the
-`removed_params` copy of the bug directly.
+`main()`'s `if new_params:` branch (`coding/sync_params.py` ~line 720, before
+the fix) wrote `cp[construction]["param_values"] = exp_values` unconditionally
+whenever a construction gained even one new column — not `{new column: its
+values}`, but the *entire* fresh diagnostics dict for every criterion of that
+construction, including ones whose dropdown `_insert_param_columns` never
+touched (it only builds `setDataValidation` requests for the columns it just
+inserted). The `if removed_params:` branch (~line 746) made the identical
+mistake on delete. Both were reachable by real fixture data with no test
+scenario needed to invent them: `synth0001`'s three `coreference` pair tabs
+each still carry all three pair criteria while the diagnostics YAML narrows
+each construction to its own one (documented in `coding/CLAUDE.md`'s "Held
+until Phase 9" list), so `--apply --remove` against that real drift exercised
+the `removed_params` copy of the bug directly.
 
 The second, later `if refresh_dropdowns:` block (~line 758) exists
 specifically to catch a criterion whose allowed values changed but whose
 column count didn't — it compares `exp_values` against
-`sheet_info["construction_params"][construction]["param_values"]`. Because
-the branches above have already overwritten that same dict with `exp_values`
-moments earlier in the same run, the comparison is always vacuous:
+`sheet_info["construction_params"][construction]["param_values"]`. Because the
+branches above had already overwritten that same dict with `exp_values`
+moments earlier in the same run, the comparison was always vacuous:
 `exp_values.get(p) != exp_values.get(p)` is never true. So any run that both
-adds or removes a column *and* separately widens a different, untouched
+added or removed a column *and* separately widened a different, untouched
 criterion in the same construction — a coordinator adding one criterion and
 correcting another's typo'd value list in the same YAML edit, the ordinary way
-`diagnostics_{lang_id}.yaml` gets edited — silently drops the second change.
-The sheet's dropdown stays exactly as stale as before, but the manifest now
-falsely records it as current, so every subsequent `--refresh-dropdowns` run,
-forever, reports "OK — dropdowns up to date" for a column that was never
-actually pushed. Same shape as #272 and Findings 9–10: **the manifest is made
+`diagnostics_{lang_id}.yaml` gets edited — silently dropped the second change.
+The sheet's dropdown stayed exactly as stale as before, but the manifest now
+falsely recorded it as current, so every subsequent `--refresh-dropdowns` run,
+forever, would report "OK — dropdowns up to date" for a column that was never
+actually pushed. Same shape as #272 and Findings 9–10: **the manifest was made
 to say something true of a column it never actually wrote to.**
 
 Confirmed live, not just reasoned about: reproduced by adding a new criterion
 to `synth0001`'s `ciscategorial` class alongside widening `V-combines`'
-allowed values in the same YAML edit — the code prints nothing about
-`V-combines` at all and pushes no `setDataValidation` for its column, while
+allowed values in the same YAML edit — the pre-fix code printed nothing about
+`V-combines` at all and pushed no `setDataValidation` for its column, while
 silently recording `V-combines: ["y", "n", "maybe"]` in the manifest as if it
-had.
-
-Not fixed in the migration commit — the fix changes what the command *writes*
-to the manifest, which is exactly what this migration's before/after
-comparison exists to hold still, so it waits for that comparison to be taken
-first, per the deferral rule below. Worked around nowhere in the test
-harness (nothing needed to route around it — the bug does not crash, it only
-misreports), so the pre/post diff and the initial `tests/test_sync_params_snapshot.py`
-snapshots pin the *current*, buggy behaviour as a faithful record of what the
-migrated code does today. Whether this has been fixed as a follow-up commit
-by the time this is read is recorded here or superseded by its own
-decisions-log entry; check `git log --oneline --grep '#271'` if in doubt.
+had. Fixed by snapshotting each construction's prior `param_values` once,
+before either branch runs, and having each branch update only the keys it
+actually touched (the newly inserted columns, or the surviving columns minus
+whatever was just deleted) rather than replacing the whole dict with
+`exp_values`. `tests/test_sync_params_snapshot.py`'s
+`test_a_new_column_does_not_mask_a_sibling_criterions_stale_dropdown` and
+`test_removing_a_column_does_not_mask_a_sibling_criterions_stale_dropdown`
+pin both branches: the widened criterion is now reported, and its
+`setDataValidation` request is confirmed landing on the correct column with
+the correct values — not merely that the manifest's text changed.
 
 ---
 
@@ -740,38 +739,44 @@ in the harness rather than assumed clean from the code reading alone.
 
 A pre-existing bug unrelated to the migration was found while taking the
 baseline, reproducible on both the unmigrated and migrated code identically —
-recorded as Finding 14 above, and left unfixed in this commit per the
-deferral rule (it changes what the command *writes* to the manifest, so the
-fix has to wait until this migration's own before/after comparison is
-already taken; expect a follow-up commit right after this one, mirroring how
-Finding 12 was handled). Thirty-eight tests in a new
-`tests/test_sync_params_snapshot.py`: the fifteen transcript/digest scenarios
-above, plus property assertions — a dry run performs no mutations and never
-touches `coded_data/`'s diagnostics files; `--remove` only ever deletes
-columns genuinely absent from the diagnostics YAML, never one still expected;
-`_split_`/`_merged_`-prefixed stale columns survive a later `--apply --remove`
-untouched; a second identical `--apply`, `--remove`, or `--refresh-dropdowns`
-run is confirmed a true no-op (verified empirically rather than assumed —
-`sync_params` has more moving parts than `update_sheets`, and all three held);
-and the manifest upload and `generate_notebooks.regenerate_notebooks()` both
-fire only when something genuinely changed, including the non-obvious case
-where a `--remove`-eligible warning alone (with no `--remove` passed) already
-counts as "something changed" because the coordinator needs to see the
-warning. The `refresh_dropdowns_apply_with_new_params.txt` snapshot pins
-Finding 14's buggy behaviour as it stands today — no dedicated regression
-test yet, since writing one against code known to fail it would just restate
-the bug as a xfail; those arrive with the fix.
+recorded as Finding 14 above. Not fixed in the migration commit itself, per
+the deferral rule (it changes what the command *writes* to the manifest, so
+it waited for this migration's own before/after comparison to be taken
+first, mirroring how Finding 12 was handled) — fixed properly in the very
+next commit, with the snapshot diff as the evidence: `main()` now
+snapshots each construction's prior `param_values` once, before either the
+`new_params` or `removed_params` branch runs, and each branch updates only
+the keys it actually touched rather than replacing the whole dict with
+`exp_values`. Forty tests in `tests/test_sync_params_snapshot.py`: the
+fifteen transcript/digest scenarios above, plus property assertions — a dry
+run performs no mutations and never touches `coded_data/`'s diagnostics
+files; `--remove` only ever deletes columns genuinely absent from the
+diagnostics YAML, never one still expected; `_split_`/`_merged_`-prefixed
+stale columns survive a later `--apply --remove` untouched; a second
+identical `--apply`, `--remove`, or `--refresh-dropdowns` run is confirmed a
+true no-op (verified empirically rather than assumed — `sync_params` has
+more moving parts than `update_sheets`, and all three held); the manifest
+upload and `generate_notebooks.regenerate_notebooks()` both fire only when
+something genuinely changed, including the non-obvious case where a
+`--remove`-eligible warning alone (with no `--remove` passed) already counts
+as "something changed" because the coordinator needs to see the warning; and
+the two Finding 14 regression tests
+(`test_a_new_column_does_not_mask_a_sibling_criterions_stale_dropdown`,
+`test_removing_a_column_does_not_mask_a_sibling_criterions_stale_dropdown`),
+which check the actual `setDataValidation` mutation and its values landed on
+the right column — not just that the manifest's text changed, which is
+exactly what the bug would have passed.
 
 `tests/test_doorway_coverage.py`'s `_REMAINING` drops `sync_params.py` (two
 files now remain, both still reading `construction_params` from the manifest
 — see the "Next action" update in the same commit); `coding/CLAUDE.md`'s
 migrated list gains it, its own `sync_params.py` bullet notes the migration
-and points at Finding 14 for the still-open bug, and the `drive_doorway.py`
-bullet's paragraph about the remaining files reading `construction_params` is
-rewritten to name `sync_params` as checked-and-clean on that specific
-question rather than still-to-check; `docs/data-layer-progress.md` moves to
-16 of 18 and recomputes the remaining-files weight (4,080 lines, 22 direct
-Drive calls across `generate_sheets` and `restructure_sheets`).
+and the Finding 14 fix, and the `drive_doorway.py` bullet's paragraph about
+the remaining files reading `construction_params` is rewritten to name
+`sync_params` as checked-and-clean rather than still-to-check;
+`docs/data-layer-progress.md` moves to 16 of 18 and recomputes the
+remaining-files weight (4,080 lines, 22 direct Drive calls across
+`generate_sheets` and `restructure_sheets`).
 
 **2026-08-04 — file 15 (`import_sheets.py`) needed no doorway addition.**
 Every primitive it uses already existed: `get_doorway()`, `load_manifest()`,

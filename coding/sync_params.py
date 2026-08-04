@@ -665,6 +665,15 @@ def main() -> None:
                     if p not in expected_set
                     and not any(p.startswith(pfx) for pfx in _STALE_PREFIXES)
                 ]
+                # Snapshot before either branch below overwrites it. Only the
+                # columns a branch actually inserts or deletes get their sheet
+                # dropdown touched, so the manifest's record for every other
+                # criterion of this construction must carry over unchanged —
+                # see the "manifest lied about param_values" fix below.
+                prior_values = dict(
+                    sheet_info.get("construction_params", {})
+                    .get(construction, {}).get("param_values", {})
+                )
 
                 if not new_params and not removed_params:
                     # Sheet columns match diagnostics. Sync param_names in manifest if needed,
@@ -714,10 +723,18 @@ def main() -> None:
                     print(f"  [{class_name}/{construction}] New params: {new_params}")
                     if apply:
                         _insert_param_columns(ws, new_params, exp_values, comments_col)
-                        # Update manifest construction_params so Colab reads the right params
+                        # Update manifest construction_params so Colab reads the right params.
+                        # Only the columns just inserted got a dropdown written — a
+                        # pre-existing criterion's values are untouched by this call,
+                        # so recording exp_values for it here would tell the next
+                        # --refresh-dropdowns run "up to date" for a column that was
+                        # never actually pushed. Carry the rest forward from prior_values.
                         cp = sheet_info.setdefault("construction_params", {})
                         cp.setdefault(construction, {})["param_names"] = exp_params
-                        cp[construction]["param_values"] = exp_values
+                        cp[construction]["param_values"] = {
+                            **prior_values,
+                            **{p: exp_values[p] for p in new_params if p in exp_values},
+                        }
                         manifest_changed = True
                         print(f"    Added: {new_params}")
 
@@ -740,10 +757,17 @@ def main() -> None:
                                 }
                             }]})
                             header.pop(col_idx)
-                        # Update manifest construction_params
+                        # Update manifest construction_params. Deleting a column says
+                        # nothing about whether a DIFFERENT column's dropdown is
+                        # current, so drop only the removed keys rather than
+                        # re-stamping every criterion with exp_values (same fix as
+                        # the new_params branch above, same reason).
                         cp = sheet_info.setdefault("construction_params", {})
                         cp.setdefault(construction, {})["param_names"] = exp_params
-                        cp[construction]["param_values"] = exp_values
+                        current_values = cp[construction].get("param_values", prior_values)
+                        cp[construction]["param_values"] = {
+                            p: v for p, v in current_values.items() if p not in removed_params
+                        }
                         manifest_changed = True
                         print(f"    Removed: {removed_params}")
                     else:

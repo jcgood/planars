@@ -296,6 +296,70 @@ def test_refresh_dropdowns_apply_with_new_params_transcript(env):
         env.run(["sync-params", "--apply", "--refresh-dropdowns"]))
 
 
+# ---------------------------------------------------------------------------
+# Bug found while taking this migration's pre/post baseline, fixed the same
+# day (docs/data-layer-progress.md's Findings section, 2026-08-04 entry):
+# adding a new column used to re-stamp the WHOLE construction's manifest
+# param_values with the fresh diagnostics values, including criteria whose
+# dropdown was never touched on the sheet. The next --refresh-dropdowns run
+# then compared the fresh YAML value against that same fresh value and always
+# reported "up to date" — a widened value could go stale on the sheet forever
+# without ever being reported, let alone pushed. Same shape as #272 and
+# Finding 9/10: the manifest was made to say something true of a column that
+# was never actually written.
+# ---------------------------------------------------------------------------
+
+def test_a_new_column_does_not_mask_a_sibling_criterions_stale_dropdown(env):
+    """Adding PLACE-combines must not hide that V-combines also widened."""
+    env.add_criterion("synth0001", "ciscategorial", "PLACE-combines")
+    env.edit_yaml("synth0001", lambda d: d["classes"]["ciscategorial"]["criteria"]
+                 .__setitem__("V-combines", ["y", "n", "maybe"]))
+
+    out = env.run(["sync-params", "--apply", "--refresh-dropdowns"])
+
+    assert "V-combines: ['y', 'n'] → ['y', 'n', 'maybe']" in out
+    ws = env.tab("synth0001", "ciscategorial", "general")
+    header = ws.row_values(1)
+    v_col = header.index("V-combines")
+    written = [
+        m for m in env.doorway.mutations
+        if m["op"] == "batch_request" and m["request_type"] == "setDataValidation"
+        and m["payload"]["range"]["sheetId"] == ws.id
+        and m["payload"]["range"]["startColumnIndex"] == v_col
+    ]
+    assert written, "V-combines' widened dropdown was never actually pushed to the sheet"
+    values = [v["userEnteredValue"]
+             for v in written[0]["payload"]["rule"]["condition"]["values"]]
+    assert values == ["y", "n", "maybe"]
+
+
+def test_removing_a_column_does_not_mask_a_sibling_criterions_stale_dropdown(env):
+    """Removing surplus columns must not hide that a kept one also widened."""
+    env.edit_yaml("synth0001", lambda d: d["classes"]["coreference"]["criteria"]
+                 .__setitem__("reflexive_allowed", ["y", "n", "untestable", "maybe"]))
+
+    out = env.run(["sync-params", "--apply", "--remove", "--refresh-dropdowns"])
+
+    assert ("reflexive_allowed: ['y', 'n', 'untestable'] → "
+            "['y', 'n', 'untestable', 'maybe']") in out
+    ws = env.tab("synth0001", "coreference", "reflexivization")
+    header = ws.row_values(1)
+    assert header == ["Element_A", "Position_A", "Position_B", "Direction",
+                      "reflexive_allowed", "Source", "Comments"], (
+        "the removed columns should be gone and reflexive_allowed still present")
+    r_col = header.index("reflexive_allowed")
+    written = [
+        m for m in env.doorway.mutations
+        if m["op"] == "batch_request" and m["request_type"] == "setDataValidation"
+        and m["payload"]["range"]["sheetId"] == ws.id
+        and m["payload"]["range"]["startColumnIndex"] == r_col
+    ]
+    assert written, "reflexive_allowed's widened dropdown was never actually pushed"
+    values = [v["userEnteredValue"]
+             for v in written[0]["payload"]["rule"]["condition"]["values"]]
+    assert values == ["y", "n", "untestable", "maybe"]
+
+
 def test_a_class_not_in_diagnostics_is_named(env):
     env.edit_yaml("stan1293", lambda d: d["classes"].pop("proform"))
     out = env.run(["sync-params"])
