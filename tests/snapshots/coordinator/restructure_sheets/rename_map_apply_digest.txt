@@ -294,7 +294,7 @@ SHEET OPERATIONS
   fake_ss_0015  tab=sheetId=2
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
-    setDataValidation: col 4 (BEYOND HEADER) rows 1-136 -> ['y', 'n', 'both'] (strict=False)
+    setDataValidation: col 2 (BEYOND HEADER) rows 1-136 -> ['y', 'n', 'both'] (strict=False)
 
   fake_ss_0015  tab=Sheet1
     del_worksheet: 
@@ -570,7 +570,7 @@ SHEET OPERATIONS
   fake_ss_0030  tab=sheetId=2
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
-    setDataValidation: col 4 (BEYOND HEADER) rows 1-143 -> ['always', 'sometimes', 'never'] (strict=False)
+    setDataValidation: col 3 (BEYOND HEADER) rows 1-143 -> ['always', 'sometimes', 'never'] (strict=False)
 
   fake_ss_0030  tab=Sheet1
     del_worksheet: 

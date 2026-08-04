@@ -88,7 +88,7 @@ the same day — see the decisions log.
 | Phase 0b/1 — file 15: `import_sheets.py` | **done** — pre/post diff clean across twenty-two scenarios; the command the daily `data-refresh` workflow depends on to pull annotator work down, and the largest file migrated so far (1,138 lines); found Finding 13 (a dry run has no guard at all against a bad manifest spreadsheet ID — it crashes the whole run rather than aborting cleanly the way `--apply` does) |
 | Phase 0b/1 — file 16: `sync_params.py` | **done** — pre/post diff clean across fifteen scenarios; the file the migration order flagged to watch (column insert/delete is the densest form of the #272 question) and it passed clean — every column position already comes from the tab's own header; found and fixed Finding 14 (adding or removing a column re-stamped the manifest's `param_values` for the *whole* construction, masking a genuinely stale dropdown on an untouched sibling criterion) |
 | Phase 0b/1 — file 17: `generate_sheets.py` | **done** — pre/post diff clean across twelve scenarios; the largest file migrated so far (2,654 lines) and the first whose migration threaded `doorway` through this file's own call chain rather than substituting at a single entry point; passed `assert_no_criterion_writes_onto_trailing_columns` clean |
-| Phase 0b/1 — file 18: `restructure_sheets.py` | **done** — pre/post diff clean across thirteen scenarios; the last file, deliberately: the archive-then-rebuild command with no rollback behind #248's original incidents. `assert_no_criterion_writes_onto_trailing_columns` caught a real, pre-existing bug (Finding 16); also surfaced a pre-existing gap, the missing `_check_coded_data_clean()` guard (Finding 17) |
+| Phase 0b/1 — file 18: `restructure_sheets.py` | **done** — pre/post diff clean across thirteen scenarios; the last file, deliberately: the archive-then-rebuild command with no rollback behind #248's original incidents. `assert_no_criterion_writes_onto_trailing_columns` caught a real, pre-existing bug (Finding 16, fixed the same day); also surfaced a pre-existing gap, the missing `_check_coded_data_clean()` guard (Finding 17, still open) |
 | **Phase 0b/1 (the whole doorway migration)** | **done** — all eighteen files that reach Drive now go through it |
 | Phases 3–9 | not started |
 
@@ -119,19 +119,18 @@ used, gated behind the snapshot tests this effort built (every Phase 1
 snapshot must still pass byte-identical afterward, per the plan's own
 done-criteria for that phase).
 
-Two small things are recorded rather than forgotten, both from the last
-file's migration:
+One small thing remains recorded rather than forgotten, from the last file's
+migration:
 
-- **Finding 16** — a real, pre-existing bug in `_copy_pair_tab_with_rename`'s
-  hardcoded `col_start=4`, wrong for two of the project's pair-row shapes.
-  Not fixed as part of the migration (the deferral rule); worth fixing as its
-  own small change whenever someone next touches this file, with the
-  snapshot diff as evidence, the way Findings 12 and 14 were.
 - **Finding 17** — `restructure_sheets.py` never calls
   `drive._check_coded_data_clean()` despite reading `coded_data/` as its
   source of truth. Recorded, not fixed — adding the guard is a behaviour
   change, not a call-site substitution, and belongs to whoever next revisits
   this file's preconditions (see `data_dependency_schema/preconditions.yaml`).
+
+(Finding 16, the other thing this migration turned up — a real, pre-existing
+bug in `_copy_pair_tab_with_rename`'s hardcoded `col_start=4` — was fixed the
+same day, as its own commit; see its own entry below and the decisions log.)
 
 Nothing else is blocked or waiting; the next step is Phase 3, and Phase 3
 needs Jeff's decision before it starts.
@@ -283,16 +282,16 @@ had hidden the second one entirely. Render before asking anyone to read.
 ## Findings
 
 Per the plan's Phase 0b/1 non-goals, a snapshot that reveals odd behaviour records
-it rather than fixing it *in the same change*. **Findings 1–12 and 14 have all
-since been fixed** — the deferral only ever lasts until the migration each one
-is riding on has been committed and its before/after comparison taken. Findings
-13, 15, 16, and 17 are the exceptions still outstanding: each is recorded as
-current behaviour, accepted rather than deferred-then-fixed, pending either a
-coordinator decision (13, 15) or simply a future small fix by whoever next
-touches the file (16, 17 — both mechanical, neither needs Jeff's judgment, but
-neither was in scope for a call-site migration whose whole non-goal is "no
-behaviour changes"). Nothing else here is outstanding; the entries are kept
-because the sequence is the point.
+it rather than fixing it *in the same change*. **Findings 1–12, 14, and 16 have
+all since been fixed** — the deferral only ever lasts until the migration each
+one is riding on has been committed and its before/after comparison taken.
+Findings 13, 15, and 17 are the exceptions still outstanding: each is recorded
+as current behaviour, accepted rather than deferred-then-fixed, pending a
+coordinator decision named in its own entry on whether it warrants a fix at
+all (17 is mechanical rather than a judgment call, but adding a new abort path
+is a behaviour change outside a call-site migration's scope, so it is left for
+a deliberate change of its own rather than folded into this one). Nothing else
+here is outstanding; the entries are kept because the sequence is the point.
 
 **Do not delete this section when the migration ends without first checking that
 every finding has an issue number or a decisions-log entry.** Findings 4 and 5
@@ -695,40 +694,45 @@ and deliberate enough (a hard error the module already treats as exceptional)
 that the current ordering is acceptable. Flagged for Jeff rather than decided
 here.
 
-**16. `_copy_pair_tab_with_rename` writes a pair tab's dropdown onto the wrong
+**16. `_copy_pair_tab_with_rename` wrote a pair tab's dropdown onto the wrong
 column for two of the project's three pair-row shapes** (found 2026-08-04,
 file 18, `restructure_sheets.py`, via `assert_no_criterion_writes_onto_trailing_columns`
-during the migration's own snapshot suite — not fixed here). The function
-calls `_format_and_validate(ws, ..., col_start=4)` unconditionally
-(`coding/restructure_sheets.py`, inside `_copy_pair_tab_with_rename`). `col_start=4`
-is correct for coreference's pair shape — `Element_A, Position_A, Position_B,
-Direction`, four structural columns before the one criterion — but
-`nonpermutability`'s and `phrasal_accent`'s `general` construction uses a
-different, two-column pair shape: `Element_A, Element_B`, with the criterion
-at column 2. Confirmed live against the real fixture data: a restructure of
-`stan1293`'s `nonpermutability` class writes a `y`/`n` dropdown onto
-`Comments` (header `[Element_A, Element_B, scopal, Source, Comments]`) and
-leaves `scopal` itself with no dropdown at all.
+during the migration's own snapshot suite). **Fixed the same day**, as its own
+commit right after the migration landed, with the snapshot diff as the
+evidence — the same pattern as Findings 12 and 14. The function called
+`_format_and_validate(ws, ..., col_start=4)` unconditionally
+(`coding/restructure_sheets.py`, inside `_copy_pair_tab_with_rename`).
+`col_start=4` is correct for coreference's pair shape — `Element_A,
+Position_A, Position_B, Direction`, four structural columns before the one
+criterion — but `nonpermutability`'s and `phrasal_accent`'s `general`
+construction uses a different, two-column pair shape: `Element_A, Element_B`,
+with the criterion at column 2. Confirmed live against the real fixture data:
+a restructure of `stan1293`'s `nonpermutability` class wrote a `y`/`n`/`both`
+dropdown onto `Comments` (header `[Element_A, Element_B, scopal, Source,
+Comments]`) and left `scopal` itself with no dropdown at all.
 
 Same shape as #272, Finding 10, and Finding 14: **a column position assumed
 rather than read from the header it is actually writing to.** The other three
 pair-row-writing functions in this file (`_write_tab_with_carryover`,
 `_cascade_rename_pair_tab`, and `_apply_split_to_pair_rows`) all locate their
 columns by `header.index(...)`, which is exactly why they passed the same
-check clean; this one function reverted to a hardcoded offset. Confirmed
+check clean; this one function had reverted to a hardcoded offset. Confirmed
 identical between the unmigrated and migrated code as part of this
-migration's own before/after comparison — both write the dropdown to the same
-wrong column — so it is pre-existing, not introduced by the doorway
-substitution. Not fixed here per the deferral rule (fixing would change what
-the command writes, which is exactly the diff this migration's comparison
-needed to hold still); worth fixing as its own small change whenever this
-file is next touched, deriving `col_start` from `header.index(criterion_col)`
-(the function already receives `criterion_col`) rather than a literal `4`,
-with the snapshot diff as evidence, the way Findings 12 and 14 were fixed.
-`tests/test_restructure_sheets_snapshot.py::test_finding_16_pair_tab_dropdown_lands_on_the_wrong_column_for_two_column_pair_shape`
-pins the current (wrong) placement rather than asserting cleanliness, so a
-future reader does not mistake that test's passing for "this was checked and
-is fine."
+migration's own before/after comparison — both wrote the dropdown to the same
+wrong column — so it was pre-existing, not introduced by the doorway
+substitution. Not fixed in the migration commit itself, per the deferral rule
+(fixing would have changed what the command writes, which is exactly the diff
+that migration's comparison needed to hold still). Fixed properly in the very
+next commit: `col_start` is now `header.index(criterion_col)` when
+`criterion_col` is present in the header (the function already receives
+`criterion_col`), falling back to `header.index(param_names[0])` and then to
+a derived (not guessed) position if neither is found. `tests/test_restructure_sheets_snapshot.py::test_finding_16_pair_tab_dropdown_lands_on_the_criterion_column_not_comments`
+pins the fix: the dropdown now lands on `scopal` with its real allowed values
+(`['y', 'n', 'both']`), not merely that some column changed. Verified
+independently of the pytest suite too, by re-running the exact scenario that
+first surfaced it against `stan1293`'s real `nonpermutability` fixture data
+and confirming `assert_no_criterion_writes_onto_trailing_columns` now passes
+where it previously failed.
 
 **17. `restructure_sheets.py` never calls `drive._check_coded_data_clean()`**
 (found 2026-08-04, file 18, confirmed by grep — the string does not appear in
@@ -834,20 +838,24 @@ similarly reads *that module's own* `CODED_DATA` constant rather than any
 path threaded through a caller, so both harness runs stub it rather than
 letting it shell out to `git` against a temp directory it doesn't know about.
 
-**`assert_no_criterion_writes_onto_trailing_columns` did not pass clean** —
-see Finding 16 above. This is the first file where that check caught a real,
-live bug rather than confirming cleanliness: `_copy_pair_tab_with_rename`'s
-hardcoded `col_start=4` is right for coreference's four-structural-column
-pair shape and wrong for `nonpermutability`'s/`phrasal_accent`'s two-column
-one. Pre-existing, confirmed identical on both sides of the before/after
-comparison, and not fixed in this commit per the deferral rule. The
-migration's own test suite reflects this honestly rather than papering over
-it: two of the "nothing criterion-shaped is written" checks were scoped to
-`arao1248` (which has no pair-row classes at all, so genuinely demonstrates
-clean behaviour for `_write_tab_with_carryover`), and a separate test
-explicitly pins the wrong placement on `nonpermutability/general` as known,
-current, deferred behaviour rather than folding it into a passing "clean"
-assertion.
+**`assert_no_criterion_writes_onto_trailing_columns` did not pass clean in the
+migration commit** — see Finding 16 above, fixed the same day in the very next
+commit. This is the first file where that check caught a real, live bug
+rather than confirming cleanliness: `_copy_pair_tab_with_rename`'s hardcoded
+`col_start=4` was right for coreference's four-structural-column pair shape
+and wrong for `nonpermutability`'s/`phrasal_accent`'s two-column one.
+Pre-existing, confirmed identical on both sides of the before/after
+comparison, and not fixed in the migration commit itself per the deferral
+rule — the migration's own test suite reflected this honestly rather than
+papering over it: two of the "nothing criterion-shaped is written" checks were
+scoped to `arao1248` (which has no pair-row classes at all, so genuinely
+demonstrates clean behaviour for `_write_tab_with_carryover`), and a separate
+test explicitly pinned the wrong placement on `nonpermutability/general` as
+known, current, deferred behaviour rather than folding it into a passing
+"clean" assertion. Once the migration's own before/after comparison was taken
+and committed, the deferral expired the same way it did for Findings 12 and
+14: `col_start` now derives from `header.index(criterion_col)`, and the
+pinning test was rewritten to assert the fixed placement instead of the bug.
 
 **The pre-existing, undocumented gap this file's brief asked to confirm —
 whether `_check_coded_data_clean()` is called anywhere in

@@ -671,7 +671,22 @@ def _copy_pair_tab_with_rename(
 
     ws.update(new_data, "A1")
     per_col = [param_values.get(p, ["y", "n"]) for p in param_names]
-    _format_and_validate(ws, len(new_data) - 1, per_col, col_start=4)
+    # Column position is derived from the tab's own header, never hardcoded --
+    # see docs/data-layer-progress.md's Finding 16. A literal col_start=4 used
+    # to sit here; it is right for coreference's four-structural-column pair
+    # shape (Element_A, Position_A, Position_B, Direction, THEN the criterion)
+    # but wrong for nonpermutability's/phrasal_accent's two-column "general"
+    # shape (Element_A, Element_B, THEN the criterion at column 2), where it
+    # landed the dropdown on Comments and left the criterion column with none.
+    if criterion_col and criterion_col in header:
+        col_start = header.index(criterion_col)
+    elif param_names and param_names[0] in header:
+        col_start = header.index(param_names[0])
+    else:
+        # Last-resort derived fallback (not a literal guess): the criterion
+        # columns are the ones immediately before the trailing columns.
+        col_start = len(header) - len(_TRAILING_COLS) - len(param_names)
+    _format_and_validate(ws, len(new_data) - 1, per_col, col_start=col_start)
     return len(new_data) - 1, renamed, split_fanned, split_manual
 
 

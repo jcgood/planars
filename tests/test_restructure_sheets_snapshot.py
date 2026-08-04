@@ -483,25 +483,21 @@ def test_nothing_criterion_shaped_is_written_onto_trailing_columns_on_rename_cla
 
 
 # ---------------------------------------------------------------------------
-# Finding 16 (docs/data-layer-progress.md): `_copy_pair_tab_with_rename`
-# hardcodes col_start=4 when re-populating a copied pair tab. That is correct
-# for coreference's four-structural-column shape (Element_A, Position_A,
-# Position_B, Direction, THEN the criterion) but wrong for nonpermutability's
-# and phrasal_accent's "general" construction, whose pair shape is only two
-# columns wide (Element_A, Element_B, THEN the criterion at column 2) -- so
-# the dropdown lands on Comments (column 4) instead of the criterion column,
-# and the criterion column itself gets no dropdown at all.
-#
-# Pre-existing: confirmed identical in the pre-migration code during this
-# migration's own before/after comparison (both write the dropdown to the
-# same wrong column). Not fixed here, per the deferral rule -- fixing would
-# change what the command writes, which is exactly the diff this migration's
-# comparison needs to hold still. Pinned as CURRENT (wrong) behaviour rather
-# than asserted clean, so nobody mistakes this test's silence for "checked
-# and passed" the way the two tests above genuinely are.
+# Finding 16 (docs/data-layer-progress.md), fixed in a follow-up commit right
+# after the migration landed, with this test's before/after as the evidence:
+# `_copy_pair_tab_with_rename` used to hardcode col_start=4 when re-populating
+# a copied pair tab. That was correct for coreference's four-structural-column
+# shape (Element_A, Position_A, Position_B, Direction, THEN the criterion) but
+# wrong for nonpermutability's and phrasal_accent's "general" construction,
+# whose pair shape is only two columns wide (Element_A, Element_B, THEN the
+# criterion at column 2) -- so the dropdown landed on Comments (column 4)
+# instead of the criterion column, and the criterion column itself got no
+# dropdown at all. Confirmed pre-existing (identical on both sides of this
+# migration's own before/after comparison) before being fixed, per the
+# deferral rule.
 # ---------------------------------------------------------------------------
 
-def test_finding_16_pair_tab_dropdown_lands_on_the_wrong_column_for_two_column_pair_shape(env):
+def test_finding_16_pair_tab_dropdown_lands_on_the_criterion_column_not_comments(env):
     env.split_element("stan1293", "her", ["HERACC", "HERDAT"])
     env.run(["--apply", "--lang", "stan1293", "--split-element", "her:HERACC,HERDAT"])
 
@@ -517,10 +513,12 @@ def test_finding_16_pair_tab_dropdown_lands_on_the_wrong_column_for_two_column_p
     ]
     assert writes, "expected a dropdown write on this tab"
     col = writes[0]["payload"]["range"]["startColumnIndex"]
-    assert header[col] == "Comments", (
-        "Finding 16 looks fixed -- col_start no longer lands on Comments. "
-        "Update this test (and mutation_checks' clean-check coverage) "
-        "alongside the fix, not just here.")
+    assert header[col] == "scopal", (
+        "the dropdown must land on the criterion column, not Comments "
+        "(Finding 16) -- got column {!r}".format(header[col]))
+    values = [v["userEnteredValue"]
+             for v in writes[0]["payload"]["rule"]["condition"]["values"]]
+    assert values == ["y", "n", "both"], "scopal's allowed values, not a guess"
 
 
 # ---------------------------------------------------------------------------
