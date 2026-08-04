@@ -30,7 +30,7 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 0b/1 — migrating callers, 12 of 18 done (started 2026-08-01)
+**Phase:** 0b/1 — migrating callers, 13 of 18 done (started 2026-08-01)
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
 **Last worked:** 2026-08-03
@@ -83,6 +83,7 @@ the same day — see the decisions log.
 | Phase 0b/1 — file 10: `generate_notebooks.py` | **done** — snapshots captured, pre/post diff clean across 7 scenarios |
 | Phase 0b/1 — file 11: `update_sheets.py` | **done** — snapshots captured, pre/post diff clean across 12 scenarios; first to append to the annotation tabs themselves |
 | Phase 0b/1 — file 12: `generate_status_sheet.py` | **done** — snapshots captured, pre/post diff clean across 8 scenarios; first to create a root-level folder (`parent_id=None`) and first to read *other* languages' already-existing annotation spreadsheets |
+| Phase 0b/1 — file 13: `validate_coding.py` | **done** — pre/post diff clean across twelve scenarios; smallest Drive footprint of any file migrated so far (three call sites: `get_doorway()`, `load_manifest()`, `doorway.open_spreadsheet()`), no folder/sharing/manifest-upload logic at all |
 | Phase 0b/1 — remaining files | not started — see § "Migration order" |
 | Phases 3–9 | not started |
 
@@ -115,11 +116,13 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
    **If the file reads `construction_params` from the manifest, call
    `tests/mutation_checks.assert_no_criterion_writes_onto_trailing_columns` in
-   its snapshot test.** Five of the six remaining files do: `sync_params`,
+   its snapshot test.** All five of the remaining files do: `sync_params`,
    `generate_sheets`, `restructure_sheets`, `import_sheets`, `integrity_check`.
-   (`generate_status_sheet` was checked against this same list before it was
-   migrated and turned out not to belong on it — see the 2026-08-03 decisions-log
-   entry.) Two commands have now written criterion-shaped
+   (`generate_status_sheet` and `validate_coding` were each checked against
+   this same list before being migrated and turned out not to belong on it —
+   see the 2026-08-03 decisions-log entries. `validate_coding` writes only pink
+   highlighting, built from its own local param map, never a dropdown or a
+   criterion note.) Two commands have now written criterion-shaped
    things onto `Source`/`Comments` independently (#272 and Finding 10), both
    from trusting the manifest about a tab's columns, so treat it as the
    expected mistake rather than a surprise. `sync_params` is the one to watch:
@@ -166,7 +169,7 @@ current job and every one would otherwise be remembered by nobody.
 
 ### Migration order
 
-Six files remain of eighteen that touch Drive. The plan's list of eleven
+Five files remain of eighteen that touch Drive. The plan's list of eleven
 was hand-written and never checked against the code; a scan on 2026-08-02
 replaced it with a derived one in `tests/test_doorway_coverage.py`.
 
@@ -181,11 +184,11 @@ total at all.
 Ordered by risk, lowest first, so that every shared helper and every part of
 the doorway has been exercised before the destructive commands are touched.
 
-**"12 of 18" flatters it, and planning should use the volume rather than the
-count.** Because the order is smallest-and-safest first, the twelve done are
-4,156 lines between them; the six remaining are 7,704 lines and **41 direct
-Drive calls**. That is a bit over a quarter of the phase by weight. Recompute
-rather than trusting these numbers — the command is in
+**"13 of 18" flatters it, and planning should use the volume rather than the
+count.** Because the order is smallest-and-safest first, the thirteen done are
+4,894 lines between them; the five remaining are 6,967 lines and **37 direct
+Drive calls**. That is still 59% of the phase by weight, even at 13 of 18 files
+by count. Recompute rather than trusting these numbers — the command is in
 `tests/test_doorway_coverage.py` (`_DIRECT_ACCESS` over `coding/*.py`, minus
 `_EXEMPT`).
 
@@ -201,7 +204,7 @@ rather than trusting these numbers — the command is in
 | ~~`generate_notebooks.py`~~ | done |
 | ~~`update_sheets.py`~~ | done |
 | ~~`generate_status_sheet.py`~~ | done |
-| `validate_coding.py` | Writes highlighting across every sheet |
+| ~~`validate_coding.py`~~ | done |
 | `integrity_check.py` | 945 lines but a small read-only Drive section |
 | `import_sheets.py` | Downloads everything; the daily refresh depends on it |
 | `sync_params.py` | Column surgery — insert, rename, delete. Highest density of read-then-write on one handle |
@@ -498,6 +501,39 @@ from the other direction.
 ---
 
 ## Decisions log
+
+**2026-08-03 — file 13 (`validate_coding.py`) needed no doorway addition and
+no `assert_no_criterion_writes_onto_trailing_columns`.** Every primitive it
+needs already existed (`load_manifest`, `get_doorway`,
+`doorway.open_spreadsheet`), and its only sheet writes are pink highlighting
+via `batch_update` — `highlight_cells`/`clear_highlights` call
+`ws.spreadsheet.batch_update(...)` directly, needing no edits at all, since
+handle methods mirror gspread by design. It never calls `setDataValidation`
+or writes a criterion hover note, so — like `generate_status_sheet` before it
+— it was checked against the "reads `construction_params` from the manifest"
+list and does not belong there either: its own `_load_param_map` and
+`_COREFERENCE_CONSTRUCTION_PARAMS` read the diagnostics YAML and schema
+files, never the manifest.
+
+Pre/post comparison across twelve scenarios — all languages, one `--lang`,
+`--verbose`, a `--lang` matching nothing in the manifest, a spreadsheet ID the
+fake has never seen (the `except Exception` around `open_spreadsheet`), an
+invalid local-TSV cell value (`highlight_cells` actually firing a
+`batch_update`), each fixture language alone, and `main()` across the
+equivalent argv combinations for exit-code behaviour — came back byte-identical
+between the unmigrated and migrated code.
+
+Thirteen tests. They pin: pink highlighting is written for an invalid cell and
+cleared once the value is fixed; `Status`/`Instructions`/`Planar Structure`
+tabs are skipped entirely (never reported, never looked up as a construction);
+a spreadsheet that cannot be opened is reported per-class and does not stop
+the rest of that language's run; `--lang` restricts output to one language;
+blank-cell issues never count toward the blocking total or `sys.exit(1)`, and
+are reported on a separate line from real issues; and a pair-row construction
+(`coreference/reflexivization`) is validated through `revalidate_pair_sheet`
+while a standard construction (`ciscategorial/general`) goes through
+`revalidate_sheet` — visibly different in the transcript, since only the pair
+path labels a row `Element_A → pos Position_B`.
 
 **2026-08-03 — file 12 turned out not to need
 `assert_no_criterion_writes_onto_trailing_columns`, correcting a line written

@@ -25,7 +25,8 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
-from .drive import _get_clients, _load_manifest_from_drive, _open_spreadsheet, _with_retry
+from .drive import _with_retry, load_manifest
+from .drive_doorway import get_doorway
 from .generate_sheets import _INSTRUCTIONS_TAB, _PLANAR_REF_TAB, _STATUS_TAB
 from .restructure_sheets import _get_pair_row_constructions
 from .make_forms import (
@@ -577,8 +578,8 @@ def revalidate_sheets(
     in Sheets as a side effect.  Called by restructure_sheets after --apply
     to refresh highlighting on newly created sheets.
     """
-    gc, drive = _get_clients()
-    manifest = _load_manifest_from_drive(drive)
+    doorway = get_doorway()
+    manifest = load_manifest(doorway)
     if not manifest:
         raise SystemExit("No manifest found. Run python -m coding generate-sheets --apply first.")
 
@@ -631,7 +632,7 @@ def revalidate_sheets(
             if not sid:
                 continue
             try:
-                ss = _open_spreadsheet(gc, sid)
+                ss = doorway.open_spreadsheet(sid)
             except Exception as e:
                 print(f"  [{class_name}] could not open spreadsheet: {e}")
                 continue

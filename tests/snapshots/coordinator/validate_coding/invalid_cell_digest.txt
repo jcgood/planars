@@ -1,0 +1,55 @@
+SUMMARY
+    47  batch_request
+     1    └─ repeatCell
+    46    └─ updateCells
+
+SHEET OPERATIONS
+
+  stan1293/class:ciscategorial  tab=general
+    repeatCell: col 0 (Element) rows 0-143
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 2, "endRowIndex": 3, "startColumnIndex": 3, "endColumnIndex": 4}, "rows": [{"values": [{"userEnteredFormat": {
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 23, "endRowIndex": 24, "startColumnIndex": 3, "endColumnIndex": 4}, "rows": [{"values": [{"userEnteredFormat":
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 23, "endRowIndex": 24, "startColumnIndex": 4, "endColumnIndex": 5}, "rows": [{"values": [{"userEnteredFormat":
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 23, "endRowIndex": 24, "startColumnIndex": 5, "endColumnIndex": 6}, "rows": [{"values": [{"userEnteredFormat":
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 24, "endRowIndex": 25, "startColumnIndex": 3, "endColumnIndex": 4}, "rows": [{"values": [{"userEnteredFormat":
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 24, "endRowIndex": 25, "startColumnIndex": 4, "endColumnIndex": 5}, "rows": [{"values": [{"userEnteredFormat":
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 24, "endRowIndex": 25, "startColumnIndex": 5, "endColumnIndex": 6}, "rows": [{"values": [{"userEnteredFormat":
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 25, "endRowIndex": 26, "startColumnIndex": 3, "endColumnIndex": 4}, "rows": [{"values": [{"userEnteredFormat":
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 25, "endRowIndex": 26, "startColumnIndex": 4, "endColumnIndex": 5}, "rows": [{"values": [{"userEnteredFormat":
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 25, "endRowIndex": 26, "startColumnIndex": 5, "endColumnIndex": 6}, "rows": [{"values": [{"userEnteredFormat":
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 27, "endRowIndex": 28, "startColumnIndex": 3, "endColumnIndex": 4}, "rows": [{"values": [{"userEnteredFormat":
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 27, "endRowIndex": 28, "startColumnIndex": 4, "endColumnIndex": 5}, "rows": [{"values": [{"userEnteredFormat":
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 27, "endRowIndex": 28, "startColumnIndex": 5, "endColumnIndex": 6}, "rows": [{"values": [{"userEnteredFormat":
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 28, "endRowIndex": 29, "startColumnIndex": 3, "endColumnIndex": 4}, "rows": [{"values": [{"userEnteredFormat":
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 28, "endRowIndex": 29, "startColumnIndex": 4, "endColumnIndex": 5}, "rows": [{"values": [{"userEnteredFormat":
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 28, "endRowIndex": 29, "startColumnIndex": 5, "endColumnIndex": 6}, "rows": [{"values": [{"userEnteredFormat":
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 29, "endRowIndex": 30, "startColumnIndex": 3, "endColumnIndex": 4}, "rows": [{"values": [{"userEnteredFormat":
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 29, "endRowIndex": 30, "startColumnIndex": 4, "endColumnIndex": 5}, "rows": [{"values": [{"userEnteredFormat":
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 29, "endRowIndex": 30, "startColumnIndex": 5, "endColumnIndex": 6}, "rows": [{"values": [{"userEnteredFormat":
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 30, "endRowIndex": 31, "startColumnIndex": 3, "endColumnIndex": 4}, "rows": [{"values": [{"userEnteredFormat":
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 30, "endRowIndex": 31, "startColumnIndex": 4, "endColumnIndex": 5}, "rows": [{"values": [{"userEnteredFormat":
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 30, "endRowIndex": 31, "startColumnIndex": 5, "endColumnIndex": 6}, "rows": [{"values": [{"userEnteredFormat":
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 129, "endRowIndex": 130, "startColumnIndex": 3, "endColumnIndex": 4}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 129, "endRowIndex": 130, "startColumnIndex": 4, "endColumnIndex": 5}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 129, "endRowIndex": 130, "startColumnIndex": 5, "endColumnIndex": 6}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 130, "endRowIndex": 131, "startColumnIndex": 3, "endColumnIndex": 4}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 130, "endRowIndex": 131, "startColumnIndex": 4, "endColumnIndex": 5}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 130, "endRowIndex": 131, "startColumnIndex": 5, "endColumnIndex": 6}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 131, "endRowIndex": 132, "startColumnIndex": 3, "endColumnIndex": 4}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 131, "endRowIndex": 132, "startColumnIndex": 4, "endColumnIndex": 5}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 131, "endRowIndex": 132, "startColumnIndex": 5, "endColumnIndex": 6}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 132, "endRowIndex": 133, "startColumnIndex": 3, "endColumnIndex": 4}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 132, "endRowIndex": 133, "startColumnIndex": 4, "endColumnIndex": 5}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 132, "endRowIndex": 133, "startColumnIndex": 5, "endColumnIndex": 6}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 133, "endRowIndex": 134, "startColumnIndex": 3, "endColumnIndex": 4}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 133, "endRowIndex": 134, "startColumnIndex": 4, "endColumnIndex": 5}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 133, "endRowIndex": 134, "startColumnIndex": 5, "endColumnIndex": 6}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 135, "endRowIndex": 136, "startColumnIndex": 3, "endColumnIndex": 4}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 135, "endRowIndex": 136, "startColumnIndex": 4, "endColumnIndex": 5}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 135, "endRowIndex": 136, "startColumnIndex": 5, "endColumnIndex": 6}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 136, "endRowIndex": 137, "startColumnIndex": 3, "endColumnIndex": 4}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 136, "endRowIndex": 137, "startColumnIndex": 4, "endColumnIndex": 5}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 136, "endRowIndex": 137, "startColumnIndex": 5, "endColumnIndex": 6}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 138, "endRowIndex": 139, "startColumnIndex": 3, "endColumnIndex": 4}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 138, "endRowIndex": 139, "startColumnIndex": 4, "endColumnIndex": 5}, "rows": [{"values": [{"userEnteredFormat
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 138, "endRowIndex": 139, "startColumnIndex": 5, "endColumnIndex": 6}, "rows": [{"values": [{"userEnteredFormat

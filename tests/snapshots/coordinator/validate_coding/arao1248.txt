@@ -1,0 +1,11 @@
+Connecting to Google APIs...
+
+arao1248
+  [ciscategorial/general] 288 blank cell(s) — annotation in progress
+  [noninterruption/general] 144 blank cell(s) — annotation in progress
+  [subspanrepetition/auxiliary_construction] no issues
+  [subspanrepetition/tso_clause_linkage] no issues
+
+──────────────────────────────────────────────────
+Validated 4 sheet(s).  Data coding issues: 0
+All data coding issues cleared. (Pink highlighting for blank cells preserved.)

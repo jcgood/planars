@@ -1,0 +1,33 @@
+Connecting to Google APIs...
+
+stan1293
+  Diagnostics validation (2 issue(s)):
+    [WARNING] row 12: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_exponence', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
+    [WARNING] row 13: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_exponence', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
+  [ciscategorial/general] 45 blank cell(s) — annotation in progress
+  [coreference/prescreening] 15 blank cell(s) — annotation in progress
+  [coreference/reflexivization] 54 blank cell(s) — annotation in progress
+  [coreference/pronominalization] 54 blank cell(s) — annotation in progress
+  [coreference/np_reference] 54 blank cell(s) — annotation in progress
+  [free_occurrence/general] 75 blank cell(s) — annotation in progress
+  [metrical/stress_domain] 75 blank cell(s) — annotation in progress
+  [noninterruption/general] 30 blank cell(s) — annotation in progress
+  [nonpermutability/element_prescreening] 15 blank cell(s) — annotation in progress
+  [nonpermutability/general] 112 blank cell(s) — annotation in progress
+  [phrasal_accent/prescreening] 142 blank cell(s) — annotation in progress
+  [phrasal_accent/general] 1 issue(s):
+    [ERROR] general: the sheet's rows are not the shape this construction is supposed to have. Expected pair rows (Element_A, Element_B); the sheet's columns are ['Element', 'Position_Name', 'Position_Number', 'joint_accent', 'Source', 'Comments']. Nothing else was checked, because every value would have been read from the wrong column.
+    → Either rebuild the sheet:  python -m coding generate-sheets --lang stan1293 --regen-construction phrasal_accent:general
+      or correct row_type for this construction in schemas/diagnostic_classes.yaml, if the sheet is the one that is right.
+  [proform/do_so_substitution] 15 blank cell(s) — annotation in progress
+  [proform/vp_ellipsis] 136 blank cell(s) — annotation in progress
+  [segmental/aspiration_prominence] 15 blank cell(s) — annotation in progress
+  [segmental/flapping] 42 blank cell(s) — annotation in progress
+  [subspanrepetition/andCoordination] 45 blank cell(s) — annotation in progress
+  [subspanrepetition/control] 45 blank cell(s) — annotation in progress
+  [subspanrepetition/thatCOMP] 45 blank cell(s) — annotation in progress
+  [subspanrepetition/asyndeticPart] 45 blank cell(s) — annotation in progress
+
+──────────────────────────────────────────────────
+Validated 20 sheet(s).  Data coding issues: 1
+Cell highlighting updated in Google Sheets.
