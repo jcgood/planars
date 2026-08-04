@@ -32,32 +32,21 @@ CODED_DATA = ROOT / "coded_data"
 
 from planars.reports import language_report_data
 from planars.html_report import render_language_report_pdf
-from .drive import _load_drive_config, _save_drive_config
+from .drive import _load_drive_config, _save_drive_config, create_or_update_shared_file
 from .drive_doorway import get_doorway
 
-
-def _upload_pdf(doorway, pdf_bytes: bytes, filename: str, folder_id: str, existing_file_id: str | None) -> str:
-    """Upload (create or update) a PDF file in Drive. Returns the file ID.
-
-    Two behaviours here differ from the project's three other "create-or-update
-    a Drive file" implementations, and both are preserved deliberately (see
-    docs/drive-protocol-surface.md § "Duplicate implementations to collapse"):
-    the update path renames the file, and the "anyone with the link, reader"
-    grant is set **only on create**. The latter means a report whose permission
-    is removed by hand is never restored — unlike a notebook, which
-    generate_notebooks.py reasserts on every run. Tracked in issue #276.
-
-    (The old code passed resumable=False to MediaIoBaseUpload; that is also the
-    library default, which the doorway uses, so the upload is unchanged.)
-    """
-    if existing_file_id:
-        doorway.update_file(existing_file_id, name=filename,
-                            content=pdf_bytes, mimetype="application/pdf")
-        return existing_file_id
-    file_id = doorway.create_file(filename, parents=[folder_id],
-                                  content=pdf_bytes, mimetype="application/pdf")
-    doorway.create_permission(file_id, type="anyone", role="reader")
-    return file_id
+# PDF upload (create-or-update, renamed on update, shared "anyone with the
+# link, reader" on every run) is drive.create_or_update_shared_file, shared
+# with generate_notebooks.py's notebook upload since the two collapsed under
+# issue #276. Before this, sharing was set only on create here, so a report
+# whose permission was removed by hand was never restored — unlike a
+# notebook, which generate_notebooks.py already reasserted every run. Both
+# now go through the same idempotent check (drive.ensure_anyone_permission),
+# so reports self-heal too, without piling up duplicate grants on a normal
+# repeat run.
+#
+# (The old code passed resumable=False to MediaIoBaseUpload; that is also the
+# library default, which the doorway uses, so the upload is unchanged.)
 
 
 def _run(apply: bool) -> None:
@@ -99,7 +88,8 @@ def _run(apply: bool) -> None:
         existing = lang_cfg.get("report_file_id") or lang_cfg.get("report_html_file_id")
 
         try:
-            file_id = _upload_pdf(doorway, pdf_bytes, filename, folder_id, existing)
+            file_id = create_or_update_shared_file(
+                doorway, pdf_bytes, filename, "application/pdf", folder_id, existing)
         except Exception as e:
             print(f"upload ERROR: {e}")
             continue

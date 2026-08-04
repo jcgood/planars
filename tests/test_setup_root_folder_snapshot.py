@@ -139,13 +139,15 @@ def test_first_run_records_the_root_folder_id(env):
 # Second run — the command claims to be safe to repeat
 # ---------------------------------------------------------------------------
 
-def test_second_run_changes_nothing_except_re_sharing(env, monkeypatch):
-    """Its docstring promises idempotence. It is, apart from the sharing call.
+def test_second_run_changes_nothing_at_all(env, monkeypatch):
+    """Its docstring promises idempotence, and now it actually is.
 
-    `_set_viewer_permissions` runs unconditionally, so every repeat adds
-    another "anyone with the link" grant instead of checking for one first.
-    Recorded rather than fixed — see that function's docstring. Everything else
-    correctly detects that the work is already done.
+    Before issue #276, the sharing call ran unconditionally, so every repeat
+    added another "anyone with the link" grant on the root folder instead of
+    checking for one first. `ensure_anyone_permission` (coding/drive.py) fixes
+    this: it lists existing permissions first and only creates one if no
+    "anyone" grant is already there, so a second run makes zero Drive calls of
+    any kind.
     """
     doorway, config, saved = env
     run()
@@ -154,13 +156,35 @@ def test_second_run_changes_nothing_except_re_sharing(env, monkeypatch):
     doorway.clear_mutations()
     out = run()
 
-    assert doorway.mutations_of("create_file") == []
-    assert doorway.mutations_of("move_file") == []
-    assert doorway.mutations_of("update_file") == []
-    assert len(doorway.mutations_of("create_permission")) == 1   # the known repeat
-    assert doorway.mutations_of("create_permission") == doorway.mutations
+    assert doorway.mutations == []
     assert "already inside root folder" in out
     assert "already has correct name" in out
+
+
+def test_a_manually_revoked_share_is_restored_on_the_next_run(env, monkeypatch):
+    """ensure_anyone_permission's other half: not just no duplicates, also self-heals.
+
+    Before issue #276, only generate_notebooks.py's grant repaired itself after
+    a manual revoke; setup_root_folder.py's did not because it never checked
+    at all (it just always fired, which is a different bug — see the test
+    above). The same shared helper now gives every sharing call site both
+    properties from one mechanism.
+    """
+    doorway, config, saved = env
+    run()
+    root_id = doorway.mutations_of("create_file")[0]["file_id"]
+    perm = next(p for p in doorway.list_permissions(root_id) if p["type"] == "anyone")
+    doorway.delete_permission(root_id, perm["id"])
+    assert not any(p["type"] == "anyone" for p in doorway.list_permissions(root_id))
+
+    monkeypatch.setattr(setup_root_folder, "_load_drive_config",
+                        lambda: json.loads(json.dumps({**config, **saved})))
+    doorway.clear_mutations()
+    run()
+
+    assert any(p["type"] == "anyone" and p["role"] == "reader"
+               for p in doorway.list_permissions(root_id))
+    assert len(doorway.mutations_of("create_permission")) == 1
 
 
 def test_second_run_output(env, monkeypatch):

@@ -53,6 +53,7 @@ MANIFEST_PATH = ROOT / "sheets_manifest.json"
 from .drive import (
     load_manifest,
     upload_manifest,
+    get_or_create_spreadsheet,
     _with_retry,
     _load_drive_config,
     _save_drive_config,
@@ -266,29 +267,6 @@ def _gather_status_rows(
 # Drive helpers
 # ---------------------------------------------------------------------------
 
-def _get_or_create_status_spreadsheet(
-    doorway, folder_id: str, name: str
-) -> Tuple[object, bool]:
-    """Find or create the status spreadsheet by name inside folder_id.
-
-    Reused on re-runs so the URL stays stable across regenerations. Returns
-    (spreadsheet, created).
-    """
-    existing = doorway.list_files(
-        q=(
-            f"name='{name}' and '{folder_id}' in parents"
-            " and mimeType='application/vnd.google-apps.spreadsheet'"
-            " and trashed=false"
-        ),
-        fields="files(id)",
-    )
-    if existing:
-        return doorway.open_spreadsheet(existing[0]["id"]), False
-    ss = doorway.create_spreadsheet(name)
-    doorway.move_file(ss.id, folder_id)
-    return ss, True
-
-
 def _already_shared(doorway, file_id: str, email: str) -> bool:
     """Return True if email already holds any permission on file_id.
 
@@ -301,9 +279,9 @@ def _already_shared(doorway, file_id: str, email: str) -> bool:
 def _lock_read_only(doorway, file_id: str) -> None:
     """Remove any 'anyone' permission and ensure Adam has read-only access.
 
-    No doorway-level convenience for removing the 'anyone' grant (unlike
-    `drive._remove_anyone_permission`, which every unmigrated caller still
-    uses) -- inlined here from the same two doorway primitives.
+    No doorway-level convenience for removing the 'anyone' grant -- inlined
+    here from the same two doorway primitives, same precedent as
+    `restructure_sheets._lock_archived_sheet`.
     """
     for p in doorway.list_permissions(file_id, fields="permissions(id,type)"):
         if p.get("type") == "anyone":
@@ -495,7 +473,7 @@ def main() -> None:
 
         lang_folder_url = lang_data.get("folder_url", "")
         sheet_name = f"status_{lang_id}"
-        ss, created = _get_or_create_status_spreadsheet(doorway, folder_id, sheet_name)
+        ss, created = get_or_create_spreadsheet(doorway, folder_id, sheet_name)
         _write_status_sheet(ss, lang_id, lang_folder_url, rows)
         _lock_read_only(doorway, ss.id)
         action = "Created" if created else "Updated"

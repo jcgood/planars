@@ -39,7 +39,7 @@ from pathlib import Path
 import pytest
 
 from coding import drive, drive_doorway, refresh_dropdowns
-from fake_drive import FakeDriveDoorway, MANIFEST_FILE_ID
+from fake_drive import FakeDriveDoorway, MANIFEST_FILE_ID, ROOT_FOLDER_ID
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
 
@@ -62,6 +62,9 @@ def fake(monkeypatch):
     monkeypatch.setattr(drive, "_load_drive_config", FakeDriveDoorway.drive_config)
     monkeypatch.setattr(refresh_dropdowns, "_load_drive_config",
                         FakeDriveDoorway.drive_config)
+    # drive_config.json is never written by these tests — the real one holds
+    # live Drive IDs. Individual tests may re-patch this to capture into a dict.
+    monkeypatch.setattr(refresh_dropdowns, "_save_drive_config", lambda config: None)
     drive_doorway.set_doorway(doorway)
     try:
         yield doorway
@@ -184,11 +187,11 @@ def test_apply_leaves_annotation_content_byte_identical(fake, monkeypatch):
 
 
 def test_apply_updates_the_manifest_in_place(fake, monkeypatch):
-    """Manifest write goes through the doorway but keeps this file's own semantics.
-
-    Notably: it updates in place with no create-if-missing fallback and no key
-    reordering, unlike drive._upload_planars_config. Preserved deliberately —
-    collapsing the four manifest writers is a later change.
+    """Manifest write now goes through drive.upload_manifest, the same shared
+    writer generate_sheets.py, sync_params.py, update_sheets.py,
+    import_sheets.py, and restructure_sheets.py already use (issue #276). When
+    the ID is known, the behaviour a caller sees is the same as before: update
+    in place, no new file.
     """
     run(["refresh-dropdowns", "--apply"], monkeypatch)
     updates = fake.mutations_of("update_file")
@@ -199,6 +202,49 @@ def test_apply_updates_the_manifest_in_place(fake, monkeypatch):
     stored = (manifest["synth0001"]["sheets"]["coreference"]
               ["construction_params"]["reflexivization"]["param_values"])
     assert stored == {"reflexive_allowed": ["y", "n", "untestable"]}
+
+
+def test_apply_writes_the_manifest_through_the_shared_upload_manifest_helper(fake, monkeypatch):
+    """Confirms the mechanism, not just the output it happens to produce here.
+
+    refresh-dropdowns now calls drive.upload_manifest — the same writer
+    generate_sheets.py, sync_params.py, update_sheets.py, import_sheets.py,
+    and restructure_sheets.py already use (issue #276) — instead of its own
+    inline doorway.update_file call with no key reordering and no
+    create-if-missing fallback. The fixture's manifest entries already sort in
+    upload_manifest's key order (they were themselves captured from a manifest
+    written by it), so asserting on output bytes here would pass either way;
+    asserting the call itself is what actually distinguishes old from new.
+    """
+    calls = []
+    real_upload_manifest = refresh_dropdowns.upload_manifest
+
+    def spy(doorway, manifest, root_folder_id, existing_file_id=None):
+        calls.append((root_folder_id, existing_file_id))
+        return real_upload_manifest(doorway, manifest, root_folder_id, existing_file_id)
+
+    monkeypatch.setattr(refresh_dropdowns, "upload_manifest", spy)
+    run(["refresh-dropdowns", "--apply"], monkeypatch)
+    assert calls == [(ROOT_FOLDER_ID, MANIFEST_FILE_ID)]
+
+
+def test_manifest_upload_falls_back_to_create_when_no_id_is_recorded(fake, monkeypatch):
+    """Before #276: a lost _planars_config_file_id meant this command gave up
+    with a [WARNING] instead of creating a fresh manifest.json, unlike every
+    other manifest writer. Now it falls back to create like the rest.
+    """
+    saved: dict = {}
+    monkeypatch.setattr(refresh_dropdowns, "_save_drive_config", saved.update)
+    without_id = {"_root_folder_id": ROOT_FOLDER_ID}
+    monkeypatch.setattr(refresh_dropdowns, "_load_drive_config", lambda: without_id)
+
+    out = run(["refresh-dropdowns", "--apply"], monkeypatch)
+
+    assert "[WARNING]" not in out
+    creates = fake.mutations_of("create_file")
+    assert [c["name"] for c in creates] == ["manifest.json"]
+    assert creates[0]["parents"] == [ROOT_FOLDER_ID]
+    assert saved.get("_planars_config_file_id") == creates[0]["file_id"]
 
 
 # ---------------------------------------------------------------------------

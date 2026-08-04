@@ -50,7 +50,7 @@ from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
 )
-from .drive import _load_drive_config, _save_drive_config
+from .drive import _load_drive_config, _save_drive_config, create_or_update_shared_file
 from .drive_doorway import get_doorway
 
 # Human-readable display names for notebook section headers.
@@ -204,40 +204,14 @@ def _insert_class_cells(nb: dict, class_cells: List[dict]) -> dict:
 # ---------------------------------------------------------------------------
 # Drive upload helpers
 # ---------------------------------------------------------------------------
-
-def _upload_file(
-    doorway,
-    content: bytes,
-    filename: str,
-    mimetype: str,
-    folder_id: str,
-    existing_file_id: Optional[str] = None,
-) -> str:
-    """Upload (create or update) a file in Drive. Returns the file ID.
-
-    The update path renames the file as well as replacing its content — one of
-    the four "create-or-update a Drive file" implementations this project
-    carries, and one of the two that rename. Preserved as-is; collapsing them
-    is issue #276.
-    """
-    if existing_file_id:
-        doorway.update_file(existing_file_id, name=filename,
-                            content=content, mimetype=mimetype)
-        return existing_file_id
-    return doorway.create_file(filename, parents=[folder_id],
-                               content=content, mimetype=mimetype)
-
-
-def _set_viewer_permissions(doorway, file_id: str) -> None:
-    """Share a file as view-only with anyone who has the link.
-
-    Called after *every* upload, create or update, so a notebook whose grant
-    was removed by hand is restored on the next run. `generate_reports.py`
-    grants only on create, so a report PDF is not — the asymmetry is real and
-    pre-existing (issue #276).
-    """
-    doorway.create_permission(file_id, type="anyone", role="reader")
-
+#
+# Notebook upload (create-or-update, renamed on update, shared "anyone with
+# the link, reader" on every run) is `drive.create_or_update_shared_file`,
+# shared with `generate_reports.py`'s PDF upload since the two collapsed
+# under issue #276. It calls `drive.ensure_anyone_permission` internally,
+# which is what makes "reshare on every run" safe: it skips creating a
+# second grant when one already exists, so a normal repeat run adds nothing
+# and only a manually-revoked share gets restored.
 
 # ---------------------------------------------------------------------------
 # Config helpers
@@ -370,11 +344,10 @@ def _run_generation(apply: bool) -> None:
         nb = _insert_class_cells(nb, _generate_class_cells(classes))
         nb_bytes = json.dumps(nb, indent=1).encode()
         filename = f"domains_{lang_id}.ipynb"
-        file_id = _upload_file(
+        file_id = create_or_update_shared_file(
             doorway, nb_bytes, filename, "application/json", folder_id,
             drive_config.get(lang_id, {}).get("domains_notebook_file_id"),
         )
-        _set_viewer_permissions(doorway, file_id)
         drive_config.setdefault(lang_id, {})["domains_notebook_file_id"] = file_id
         print(f"  [{lang_id}] Uploaded {filename} (viewer)")
 
@@ -389,11 +362,10 @@ def _run_generation(apply: bool) -> None:
         })
         nb_bytes = json.dumps(nb, indent=1).encode()
         filename = f"validation_{lang_id}.ipynb"
-        file_id = _upload_file(
+        file_id = create_or_update_shared_file(
             doorway, nb_bytes, filename, "application/json", folder_id,
             drive_config.get(lang_id, {}).get("validation_notebook_file_id"),
         )
-        _set_viewer_permissions(doorway, file_id)
         drive_config.setdefault(lang_id, {})["validation_notebook_file_id"] = file_id
         print(f"  [{lang_id}] Uploaded {filename} (viewer)")
 
@@ -409,11 +381,10 @@ def _run_generation(apply: bool) -> None:
         })
         nb_bytes = json.dumps(nb, indent=1).encode()
         filename = f"report_{lang_id}.ipynb"
-        file_id = _upload_file(
+        file_id = create_or_update_shared_file(
             doorway, nb_bytes, filename, "application/json", folder_id,
             drive_config.get(lang_id, {}).get("report_notebook_file_id"),
         )
-        _set_viewer_permissions(doorway, file_id)
         drive_config.setdefault(lang_id, {})["report_notebook_file_id"] = file_id
         print(f"  [{lang_id}] Uploaded {filename} (viewer)")
 
@@ -422,11 +393,10 @@ def _run_generation(apply: bool) -> None:
     nb = _substitute_tokens(coordinator_template, {"CONFIG_FILE_ID": config_file_id})
     nb = _insert_class_cells(nb, _generate_class_cells(all_classes))
     nb_bytes = json.dumps(nb, indent=1).encode()
-    coord_file_id = _upload_file(
+    coord_file_id = create_or_update_shared_file(
         doorway, nb_bytes, "all_languages.ipynb", "application/json", global_folder_id,
         drive_config.get("_all_languages_notebook_file_id"),
     )
-    _set_viewer_permissions(doorway, coord_file_id)
     drive_config["_all_languages_notebook_file_id"] = coord_file_id
     print(f"\nUploaded all_languages.ipynb (viewer)")
 

@@ -332,19 +332,47 @@ def test_a_second_run_updates_in_place_keeping_the_links_collaborators_hold(env,
     assert all(u["name"] for u in doorway.mutations_of("update_file"))
 
 
-def test_the_viewer_grant_is_reasserted_on_every_run(env, monkeypatch):
-    """Unlike a report PDF: a notebook whose sharing was removed self-heals.
+def test_a_second_run_does_not_duplicate_the_viewer_grant(env, monkeypatch):
+    """Bonus discovery from issue #276: this was a real, silent bug.
 
-    generate_reports.py grants only on create. The asymmetry is pre-existing
-    and recorded rather than endorsed — issue #276.
+    generate_notebooks.py reasserted its "anyone" grant on every run with no
+    existence check, exactly the shape of bug setup_root_folder.py had for its
+    root folder — just never named as a Finding because nothing had compared
+    the two. Since notebooks regenerate after nearly every --apply across
+    several commands, every one of those runs was quietly adding another
+    duplicate grant. `ensure_anyone_permission` (coding/drive.py) fixes both
+    files with the same check.
     """
     doorway, config, saved = env
     run(["generate-notebooks", "--apply"], monkeypatch)
     use_config(monkeypatch, json.loads(json.dumps(saved)))
     doorway.clear_mutations()
     run(["generate-notebooks", "--apply"], monkeypatch)
-    assert len(doorway.mutations_of("create_permission")) == len(
-        doorway.mutations_of("update_file"))
+    assert doorway.mutations_of("create_permission") == []
+
+
+def test_a_manually_revoked_viewer_grant_is_restored_on_the_next_run(env, monkeypatch):
+    """The property that must survive fixing the bug above: self-healing.
+
+    A notebook whose sharing was removed by hand still gets it back on the
+    next run — ensure_anyone_permission only skips the create when a grant
+    already exists, so a genuinely missing one is still created.
+    """
+    doorway, config, saved = env
+    run(["generate-notebooks", "--apply"], monkeypatch)
+    file_id = saved["_all_languages_notebook_file_id"]
+    perm = next(p for p in doorway.list_permissions(file_id) if p["type"] == "anyone")
+    doorway.delete_permission(file_id, perm["id"])
+    assert not any(p["type"] == "anyone" for p in doorway.list_permissions(file_id))
+
+    use_config(monkeypatch, json.loads(json.dumps(saved)))
+    doorway.clear_mutations()
+    run(["generate-notebooks", "--apply"], monkeypatch)
+
+    assert any(p["type"] == "anyone" and p["role"] == "reader"
+               for p in doorway.list_permissions(file_id))
+    created = [p for p in doorway.mutations_of("create_permission") if p["file_id"] == file_id]
+    assert len(created) == 1
 
 
 def test_regenerate_notebooks_always_applies(env, monkeypatch):

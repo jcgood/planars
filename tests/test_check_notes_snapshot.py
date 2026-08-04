@@ -253,7 +253,7 @@ def test_dry_run_only_says_it_would_create_the_doc(env):
 
 
 def test_apply_creates_the_doc_shared_with_anyone_holding_the_link(env):
-    """Deliberately the loosest sharing in the project — see _share_anyone_with_link.
+    """Deliberately the loosest sharing in the project — see drive.create_notes_doc.
 
     Everything else is shared with named people, because a link is not access
     control. The notes Doc is the exception: collaborators must be able to

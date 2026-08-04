@@ -52,8 +52,10 @@ rebuilding it before then produces a correctly-shaped empty tab. Daily
 validation refiles this as a `sheet-validation` issue until the rebuild happens
 (**#278** on 2026-08-03) — expected, and not a sign anything new is wrong; a
 *different* problem would supersede that issue rather than pile up under it.
-**#276** — collapse the duplicated Drive helpers, blocked until every
-Drive-writing command has snapshots.
+**#276** — closed 2026-08-04; the four duplicated Drive helper groups
+collapsed into three shared functions in `coding/drive.py`. See the decisions
+log for what changed and the bonus discovery (a real, silent duplicate-grant
+bug in `generate_notebooks.py`, not just `setup_root_folder.py`).
 
 Also fixed, no issue filed: `apply-pending` gave one answer to four different
 questions when it could not check a Sheet. Found by file 4's snapshot, fixed
@@ -1786,6 +1788,59 @@ working tree. It was resumed rather than relaunched (context intact, far
 cheaper) and instructed to commit per file. Telling an agent to "write
 incrementally" is not enough — unstaged work is not recoverable work. Folded
 into the plan's *Working with agents* section for all future briefs.
+
+**2026-08-04 — issue #276 resolved: the four duplicated Drive helper groups
+collapsed into three shared functions in `coding/drive.py`.** Jeff made the
+two behavioural calls the issue flagged as needing his judgment: reports now
+reassert their PDF's "anyone" share on every run instead of only on create
+(matching notebooks), and root-folder setup now checks before granting
+instead of re-granting unconditionally (matching `generate_status_sheet.py`'s
+existing `_already_shared` precedent). Rather than three separate patches,
+one mechanism does both: `ensure_anyone_permission(doorway, file_id,
+role="reader")` lists existing permissions first and only creates a grant
+if none of type `anyone` exists — self-healing after a manual revoke and
+duplicate-proof against a normal repeat run, from the same check. Building it
+as one function first, then wiring in all three call sites, avoided giving
+reports the exact bug root-folder setup was being fixed for: an unconditional
+reassert with no existence check is itself the bug, regardless of which file
+carries it.
+
+`create_or_update_shared_file` (create-or-update, rename-on-update, calling
+`ensure_anyone_permission` internally) replaces `generate_notebooks.py`'s
+`_upload_file`/`_set_viewer_permissions` and `generate_reports.py`'s
+`_upload_pdf` — confirmed identical once sharing timing was unified, per the
+issue's own suggestion. `get_or_create_spreadsheet` replaces
+`generate_status_sheet.py`'s `_get_or_create_status_spreadsheet` and
+`generate_biuniqueness_allomorphy_sheet.py`'s
+`_get_or_create_allomorphy_spreadsheet` — identical bodies, as catalogued.
+`refresh_dropdowns.py`'s inline manifest-write copy was replaced with a call
+to the already-shared `upload_manifest`, gaining key-reordering and a
+create-if-missing fallback it previously lacked. Folder find-or-create (the
+issue's item 3) needed no work — already consolidated into
+`doorway.get_or_create_folder` during `restructure_sheets.py`'s own #271
+migration (commit `6bc9abc`).
+
+**The suspicion that `generate_notebooks.py` already had the duplicate-grant
+bug, not just `setup_root_folder.py`, panned out.** Its `_set_viewer_permissions`
+was called unconditionally on every run with no existence check — the same
+shape of bug as `setup_root_folder.py`'s, just never named as a Finding
+because nothing had compared the two files side by side. Since notebooks
+regenerate after nearly every `--apply` across several commands
+(`generate_sheets`, `sync_params`, `restructure_sheets`), this had likely been
+silently piling up duplicate "anyone" grants on every language's notebooks in
+production. Fixed by the same `ensure_anyone_permission` check as everything
+else, not by a separate patch.
+
+**Dead code removed as part of the same change:** `drive.py`'s
+`_share_anyone_with_link`, `_share_with_person`, and `_remove_anyone_permission`
+had no remaining callers once the doorway migration finished — every caller
+that used to reach them directly had already moved to the doorway's
+`list_permissions`/`create_permission`/`delete_permission`. `_share_anyone_with_link`'s
+only caller was the raw (non-doorway) `_create_notes_doc`, itself dead —
+`create_notes_doc` (the doorway-based wrapper `generate_sheets.py` and
+`check_notes.py` actually call) has always been the live path. Deleted rather
+than left as unreferenced code, per this project's "delete unused code, don't
+deprecate it" convention.
 
 ---
 

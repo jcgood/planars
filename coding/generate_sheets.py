@@ -84,7 +84,10 @@ def _annotator_email(lang_id: str) -> Optional[str]:
     """Return the annotator's email for lang_id from languages.yaml, or None if unset.
 
     Used to share annotation sheets/folders with a named person instead of
-    "anyone with the link" — see _share_with_person's docstring for why.
+    "anyone with the link" — these carry unpublished research data, so access
+    is restricted to named individuals rather than a link (a link is not
+    access control: it can leak via a forwarded message, a public comment,
+    a screenshot).
     """
     entry = _get_language_entry(lang_id)
     if not entry:

@@ -203,9 +203,9 @@ def _lock_archived_sheet(doorway, file_id: str, lang_id: str) -> None:
     notes point back to them) so the annotator still needs to be able to open
     and read them — just not edit them, since they're no longer the live copy.
 
-    No doorway-level convenience for removing the 'anyone' grant (unlike
-    `drive._remove_anyone_permission`) -- inlined here from the same two
-    doorway primitives, same precedent as `generate_status_sheet._lock_read_only`.
+    No doorway-level convenience for removing the 'anyone' grant -- inlined
+    here from the same two doorway primitives, same precedent as
+    `generate_status_sheet._lock_read_only`.
     """
     for p in doorway.list_permissions(file_id, fields="permissions(id,type)"):
         if p.get("type") == "anyone":

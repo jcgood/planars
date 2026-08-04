@@ -846,47 +846,52 @@ Grouped by the object they operate on. **[R]**/**[W]** marks read/write;
   caller wants the composite behavior, so splitting would only add call sites
   without adding flexibility anyone uses today.
 
-### Duplicate implementations to collapse (candidates, not decisions)
+### Duplicate implementations collapsed (issue #276, resolved 2026-08-04)
 
-> **Now tracked as issue #276**, which owns this work and carries the
-> precondition (every Drive-writing command needs snapshots first). The
-> inventory below is the evidence; the issue is where the decision gets made.
+The four groups below were catalogued here as open candidates pointing at
+issue #276 for the decision. The decisions have since been made and
+implemented; this section now records what changed rather than what to do.
 
-The inventory found the same conceptual operation implemented independently
-multiple times. Collapsing these is exactly what `data-layer-design.md`
-argues for ("derive, don't duplicate" / "a fact recorded in more than one
-place, with no single owner"), but *which* behavior becomes canonical is a
-design decision, not something this enumeration should pre-decide:
-
-1. **"Create-or-update a Drive file with content"** — four independent
-   implementations: `drive.py`'s `_upload_planars_config` (reorders manifest
-   keys; update never renames; create sets no permission),
-   `refresh_dropdowns.py`'s inline duplicate (no key-reordering, no
-   create-fallback), `generate_notebooks.py`'s `_upload_file` +
-   `_set_viewer_permissions` (update renames; permission reasserted every
-   run), `generate_reports.py`'s `_upload_pdf` (update renames; permission
-   set only on create). A single `update_file`/`create_file` pair (proposed
-   above) needs explicit parameters for: rename-on-update (yes/no),
-   reassert-permission (always/create-only/never), and whether a
-   create-if-missing fallback exists when the "existing" ID doesn't resolve.
-2. **"Find-or-create a folder by name inside a parent"** — two
-   implementations: `drive.py`'s `_get_or_create_folder` (requests
-   `files(id, name)`) and `restructure_sheets.py`'s `_get_or_create_subfolder`
-   (requests `files(id)`, otherwise identical). Trivially collapsible.
-3. **"Find a spreadsheet by name inside a folder"** — a related but distinct
-   pattern (returns/creates a *spreadsheet*, not a folder) appearing
-   independently in `generate_status_sheet.py`'s
-   `_get_or_create_status_spreadsheet` and
-   `generate_biuniqueness_allomorphy_sheet.py`'s `_get_or_create_allomorphy_spreadsheet`
-   — identical bodies, different function names. Should become one method
-   parameterized by name/folder, built from `list_files` + `create_spreadsheet`
-   + `open_spreadsheet` primitives above.
-4. **"Grant `anyone`-with-link access"** — `drive.py`'s
-   `_share_anyone_with_link` (hardcoded `role="writer"`, used for the notes
-   doc) vs. `generate_notebooks.py`'s `_set_viewer_permissions` (hardcoded
-   `role="reader"`, used for notebooks/PDFs) — same call shape, should be one
-   `create_permission(..., type="anyone", role=...)` call with `role` exposed,
-   not two hardcoded wrappers.
+1. **"Create-or-update a Drive file with content"** — the four independent
+   implementations (`drive.py`'s `_upload_planars_config`,
+   `refresh_dropdowns.py`'s inline duplicate, `generate_notebooks.py`'s
+   `_upload_file` + `_set_viewer_permissions`, `generate_reports.py`'s
+   `_upload_pdf`) disagreed on rename-on-update, reassert-permission timing,
+   and create-if-missing fallback. Resolved: notebooks and reports (the two
+   whose bodies were identical once sharing timing is unified) now share
+   `drive.create_or_update_shared_file`, which reasserts an "anyone" share on
+   *every* run via `ensure_anyone_permission` below — reports previously
+   shared only on create, so a manually-revoked report share now self-heals
+   like a notebook's always did. `_upload_planars_config` stays separate: its
+   manifest-writing semantics (no renaming, no permission at all) are a
+   distinct job from sharing a notebook/PDF, not a fourth variant of the same
+   one.
+2. **"Find-or-create a folder by name inside a parent"** — already resolved
+   before this issue closed: `restructure_sheets.py`'s
+   `_get_or_create_subfolder` was consolidated into `doorway.get_or_create_folder`
+   during that file's own #271 migration (commit `6bc9abc`).
+3. **"Find a spreadsheet by name inside a folder"** — `generate_status_sheet.py`'s
+   and `generate_biuniqueness_allomorphy_sheet.py`'s identical bodies are now
+   one function, `drive.get_or_create_spreadsheet(doorway, folder_id, name)`,
+   built from the `list_files` + `create_spreadsheet` + `open_spreadsheet`
+   primitives above.
+4. **"Grant `anyone`-with-link access"** — now one function,
+   `drive.ensure_anyone_permission(doorway, file_id, role="reader")`, called
+   unconditionally on every run from all three sharing call sites
+   (`generate_notebooks.py`, `generate_reports.py`, `setup_root_folder.py`).
+   It lists existing permissions first and only creates a grant if none of
+   type `anyone` exists — the single check that satisfies both of Jeff's
+   decisions at once: a removed grant is restored (self-heals), and a normal
+   repeat run never piles up a duplicate. `setup_root_folder.py`'s
+   unconditional re-grant (the original motivating bug) and
+   `generate_notebooks.py`'s own unconditional reassertion (found to have the
+   identical bug once compared side by side — notebooks regenerate after
+   nearly every `--apply`, so this had been happening silently in production)
+   are both fixed by the same mechanism. `drive.py`'s old
+   `_share_anyone_with_link` (hardcoded `role="writer"`, used only by the
+   now-deleted raw `_create_notes_doc`) and `_share_with_person` (never
+   called) were dead code and removed rather than folded in — see
+   `docs/data-layer-progress.md`'s decisions log for the dead-code sweep.
 
 ### Subtleties most likely to be guessed wrong (per the plan's explicit callout)
 

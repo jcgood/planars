@@ -31,7 +31,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-from .drive import _load_drive_config, _save_drive_config
+from .drive import _load_drive_config, _save_drive_config, ensure_anyone_permission
 from .drive_doorway import get_doorway
 
 _ROOT_FOLDER_NAME = "ConstituencyTypology"
@@ -74,16 +74,6 @@ def _get_or_create_root_folder(doorway) -> str:
     return folder_id
 
 
-def _set_viewer_permissions(doorway, file_id: str) -> None:
-    """Share a file or folder as view-only with anyone who has the link.
-
-    Called unconditionally on every run, so a re-run adds another "anyone"
-    grant rather than checking for one first. Preserved as-is; tracked in
-    issue #276 with the other duplicated Drive helpers.
-    """
-    doorway.create_permission(file_id, type="anyone", role="reader")
-
-
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -109,8 +99,11 @@ def main() -> None:
     root_id = _get_or_create_root_folder(doorway)
     folder_url = f"https://drive.google.com/drive/folders/{root_id}"
 
-    # Step 2: Set Viewer permissions so coordinators can share the link
-    _set_viewer_permissions(doorway, root_id)
+    # Step 2: Set Viewer permissions so coordinators can share the link.
+    # ensure_anyone_permission checks first, so a re-run doesn't pile up a
+    # second "anyone" grant (issue #276) — the fix that motivated collapsing
+    # this project's sharing helpers into one shared, idempotent mechanism.
+    ensure_anyone_permission(doorway, root_id)
     print(f"Viewer permissions set on root folder.")
 
     # Step 3: Move any language folders not yet inside the root folder.

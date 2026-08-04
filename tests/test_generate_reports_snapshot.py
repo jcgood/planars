@@ -192,13 +192,8 @@ def test_apply_second_run_updates_in_place_keeping_the_url(env, monkeypatch):
     assert "created." not in out and "updated." in out
 
 
-def test_update_path_does_not_reassert_the_permission(env, monkeypatch):
-    """Recorded, not endorsed: a removed permission is never restored.
-
-    generate_notebooks.py reasserts its viewer grant on every run; this file
-    sets it only on create. The asymmetry is real and pre-existing — see
-    _upload_pdf's docstring and docs/drive-protocol-surface.md.
-    """
+def test_update_path_does_not_duplicate_the_permission(env, monkeypatch):
+    """A normal repeat run finds the grant already there and adds nothing."""
     doorway, config, saved = env
     run(["generate-reports", "--apply"], monkeypatch)
     monkeypatch.setattr(generate_reports, "_load_drive_config",
@@ -206,6 +201,34 @@ def test_update_path_does_not_reassert_the_permission(env, monkeypatch):
     doorway.clear_mutations()
     run(["generate-reports", "--apply"], monkeypatch)
     assert doorway.mutations_of("create_permission") == []
+
+
+def test_update_path_now_self_heals_after_a_manual_revoke(env, monkeypatch):
+    """The behavioural change issue #276 asked for: reports now self-heal too.
+
+    Before, this file granted the "anyone" share only on create — a report
+    whose permission was removed by hand was never restored, unlike a
+    notebook, which generate_notebooks.py already reasserted every run. Both
+    now go through the same shared, idempotent check
+    (drive.ensure_anyone_permission), so a manually-revoked report share comes
+    back on the next --apply.
+    """
+    doorway, config, saved = env
+    run(["generate-reports", "--apply"], monkeypatch)
+    file_id = saved["stan1293"]["report_file_id"]
+    perm = next(p for p in doorway.list_permissions(file_id) if p["type"] == "anyone")
+    doorway.delete_permission(file_id, perm["id"])
+    assert not any(p["type"] == "anyone" for p in doorway.list_permissions(file_id))
+
+    monkeypatch.setattr(generate_reports, "_load_drive_config",
+                        lambda: json.loads(json.dumps(saved)))
+    doorway.clear_mutations()
+    run(["generate-reports", "--apply"], monkeypatch)
+
+    assert any(p["type"] == "anyone" and p["role"] == "reader"
+               for p in doorway.list_permissions(file_id))
+    created = [p for p in doorway.mutations_of("create_permission") if p["file_id"] == file_id]
+    assert len(created) == 1
 
 
 def test_legacy_report_html_file_id_is_migrated_in_place(env, monkeypatch):

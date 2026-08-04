@@ -1,4 +1,4 @@
-"""Tests for coding/drive.py — the coded_data/ git-safety helpers.
+"""Tests for coding/drive.py.
 
 Covers:
   - _check_coded_data_clean: aborts when coded_data/ has uncommitted changes
@@ -7,6 +7,15 @@ Covers:
   - _autocommit_data: commits+pushes writes to coded_data/; raises on a
     failed add/commit rather than silently warning (see issue #248's
     stray-row incident, caused by exactly that silent-warning gap)
+  - ensure_anyone_permission / create_or_update_shared_file /
+    get_or_create_spreadsheet: the three shared Drive-sharing/creation
+    helpers issue #276 collapsed generate_notebooks.py's, generate_reports.py's,
+    setup_root_folder.py's, generate_status_sheet.py's, and
+    generate_biuniqueness_allomorphy_sheet.py's per-file duplicates into.
+    Exercised here directly, against a bare FakeDriveDoorway, since they are
+    pure Drive primitives with no per-language data dependency (unlike most
+    of this project's other Drive-facing tests, which are command-level
+    snapshot tests under a seeded fixture).
 """
 from __future__ import annotations
 
@@ -15,7 +24,14 @@ from pathlib import Path
 
 import pytest
 
-from coding.drive import _autocommit_data, _check_coded_data_clean
+from coding.drive import (
+    _autocommit_data,
+    _check_coded_data_clean,
+    create_or_update_shared_file,
+    ensure_anyone_permission,
+    get_or_create_spreadsheet,
+)
+from fake_drive import FakeDriveDoorway
 
 
 def _make_git_repo(path: Path) -> None:
@@ -140,3 +156,115 @@ class TestAutocommitData:
         new_file = tmp_path / "new_construction.tsv"
         new_file.write_text("x\n", encoding="utf-8")
         _autocommit_data([new_file], "add construction")  # no error despite no remote
+
+
+# ---------------------------------------------------------------------------
+# ensure_anyone_permission
+# ---------------------------------------------------------------------------
+
+class TestEnsureAnyonePermission:
+    def test_creates_a_grant_when_none_exists(self):
+        doorway = FakeDriveDoorway()
+        file_id = doorway.seed_file("f.txt", "text/plain")
+        ensure_anyone_permission(doorway, file_id)
+        perms = doorway.list_permissions(file_id)
+        assert [(p["type"], p["role"]) for p in perms] == [("anyone", "reader")]
+        assert len(doorway.mutations_of("create_permission")) == 1
+
+    def test_role_is_passed_through(self):
+        doorway = FakeDriveDoorway()
+        file_id = doorway.seed_file("f.txt", "text/plain")
+        ensure_anyone_permission(doorway, file_id, role="writer")
+        assert doorway.list_permissions(file_id)[0]["role"] == "writer"
+
+    def test_skips_creating_a_second_grant_when_one_already_exists(self):
+        """The property that makes it safe to call unconditionally every run:
+        a repeat call finds the existing grant and does nothing."""
+        doorway = FakeDriveDoorway()
+        file_id = doorway.seed_file("f.txt", "text/plain")
+        ensure_anyone_permission(doorway, file_id)
+        doorway.clear_mutations()
+        ensure_anyone_permission(doorway, file_id)
+        assert doorway.mutations_of("create_permission") == []
+        assert len(doorway.list_permissions(file_id)) == 1
+
+    def test_a_named_person_grant_does_not_count_as_anyone(self):
+        """Only an 'anyone' entry satisfies the check; a named share does not."""
+        doorway = FakeDriveDoorway()
+        file_id = doorway.seed_file("f.txt", "text/plain")
+        doorway.create_permission(file_id, type="user", role="reader",
+                                  email="adam@example.com")
+        ensure_anyone_permission(doorway, file_id)
+        types = {p["type"] for p in doorway.list_permissions(file_id)}
+        assert types == {"user", "anyone"}
+
+
+# ---------------------------------------------------------------------------
+# create_or_update_shared_file
+# ---------------------------------------------------------------------------
+
+class TestCreateOrUpdateSharedFile:
+    def test_creates_and_shares_when_no_existing_id(self):
+        doorway = FakeDriveDoorway()
+        folder_id = doorway.seed_folder("lang")
+        file_id = create_or_update_shared_file(
+            doorway, b"content", "notebook.ipynb", "application/json", folder_id)
+        creates = doorway.mutations_of("create_file")
+        assert [c["name"] for c in creates] == ["notebook.ipynb"]
+        assert creates[0]["parents"] == [folder_id]
+        assert doorway.mutations_of("update_file") == []
+        perms = doorway.list_permissions(file_id)
+        assert [(p["type"], p["role"]) for p in perms] == [("anyone", "reader")]
+
+    def test_updates_in_place_and_renames_when_existing_id_given(self):
+        doorway = FakeDriveDoorway()
+        folder_id = doorway.seed_folder("lang")
+        existing = doorway.seed_file("old_name.ipynb", "application/json", [folder_id])
+        file_id = create_or_update_shared_file(
+            doorway, b"new content", "new_name.ipynb", "application/json",
+            folder_id, existing_file_id=existing)
+        assert file_id == existing
+        assert doorway.mutations_of("create_file") == []
+        updates = doorway.mutations_of("update_file")
+        assert len(updates) == 1 and updates[0]["name"] == "new_name.ipynb"
+
+    def test_update_path_also_shares_reasserting_but_not_duplicating(self):
+        """The behavioural change issue #276 makes: update reshares every run,
+        but ensure_anyone_permission means a second run adds no duplicate."""
+        doorway = FakeDriveDoorway()
+        folder_id = doorway.seed_folder("lang")
+        file_id = create_or_update_shared_file(
+            doorway, b"v1", "report.pdf", "application/pdf", folder_id)
+        doorway.clear_mutations()
+        create_or_update_shared_file(
+            doorway, b"v2", "report.pdf", "application/pdf", folder_id,
+            existing_file_id=file_id)
+        assert doorway.mutations_of("update_file")
+        assert doorway.mutations_of("create_permission") == []  # already shared
+
+
+# ---------------------------------------------------------------------------
+# get_or_create_spreadsheet
+# ---------------------------------------------------------------------------
+
+class TestGetOrCreateSpreadsheet:
+    def test_creates_and_moves_when_none_exists(self):
+        doorway = FakeDriveDoorway()
+        folder_id = doorway.seed_folder("Annotation Status")
+        ss, created = get_or_create_spreadsheet(doorway, folder_id, "status_stan1293")
+        assert created is True
+        assert doorway.file(ss.id).name == "status_stan1293"
+        moves = doorway.mutations_of("move_file")
+        assert [(m["file_id"], m["to_parent"]) for m in moves] == [(ss.id, folder_id)]
+
+    def test_finds_the_existing_spreadsheet_by_name_instead_of_creating(self):
+        doorway = FakeDriveDoorway()
+        folder_id = doorway.seed_folder("Annotation Status")
+        first, created_first = get_or_create_spreadsheet(doorway, folder_id, "status_stan1293")
+        doorway.clear_mutations()
+        second, created_second = get_or_create_spreadsheet(doorway, folder_id, "status_stan1293")
+        assert created_first is True
+        assert created_second is False
+        assert second.id == first.id
+        assert doorway.mutations_of("create_file") == []
+        assert doorway.mutations_of("move_file") == []

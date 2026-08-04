@@ -18,7 +18,7 @@ import re
 import subprocess
 import time
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, TypeVar
+from typing import Callable, Dict, List, Optional, Tuple, TypeVar
 
 import gspread
 from googleapiclient.discovery import build as google_build
@@ -315,47 +315,74 @@ def _get_or_create_folder(drive, name: str, parent_id: str = None) -> str:
     return folder["id"]
 
 
-def _share_anyone_with_link(drive, file_id: str) -> None:
-    """Share a file or folder with anyone who has the link as editor.
+def ensure_anyone_permission(doorway, file_id: str, role: str = "reader") -> None:
+    """Grant 'anyone with the link' access to file_id, unless it already has one.
 
-    Used only for content meant to be open to any collaborator without an
-    invite (e.g. the freeform Notes doc). Annotation sheets and language
-    folders use _share_with_person instead — see that function's docstring.
+    The single mechanism behind both of issue #276's decisions: called
+    unconditionally on every run from all three sharing call sites
+    (generate_notebooks.py, generate_reports.py, setup_root_folder.py), it
+    both restores a manually-revoked share (a run always checks, so a missing
+    grant gets recreated) and never piles up duplicates (an existing grant is
+    left alone rather than re-created). Doing this unconditionally without the
+    existence check first is exactly the bug setup_root_folder.py had before
+    this fix, and generate_notebooks.py's repeat regeneration turned out to
+    have silently too (see that command's CLAUDE.md note).
     """
-    drive.permissions().create(
-        fileId=file_id,
-        body={"type": "anyone", "role": "writer"},
-        fields="id",
-    ).execute()
+    existing = doorway.list_permissions(file_id, fields="permissions(type)")
+    if any(p.get("type") == "anyone" for p in existing):
+        return
+    doorway.create_permission(file_id, type="anyone", role=role)
 
 
-def _share_with_person(drive, file_id: str, email: str, role: str = "writer") -> None:
-    """Share a file or folder with one specific person, no 'anyone' grant involved.
+def create_or_update_shared_file(
+    doorway,
+    content: bytes,
+    filename: str,
+    mimetype: str,
+    folder_id: str,
+    existing_file_id: Optional[str] = None,
+    role: str = "reader",
+) -> str:
+    """Create-or-update a Drive file, renaming on update, reasserting an
+    'anyone' share every run via ensure_anyone_permission. Returns the file ID.
 
-    Used for annotation sheets, planar/diagnostics reference sheets, and language
-    folders — these carry unpublished research data, so access is restricted to
-    named individuals rather than "anyone with the link" (a link is not access
-    control: it can leak via a forwarded message, a public comment, a screenshot).
-    role is "writer" for content someone needs to edit (live annotation sheets)
-    or "reader" for content they only need to view (archived sheets, folders).
+    Shared by generate_notebooks.py's notebook uploads and generate_reports.py's
+    PDF uploads — both are rename-on-update, create-if-missing, and (per issue
+    #276) reshare on every run, so their per-file duplicate implementations
+    collapse into this one function once the sharing timing is unified.
     """
-    drive.permissions().create(
-        fileId=file_id,
-        body={"type": "user", "role": role, "emailAddress": email},
-        fields="id",
-        sendNotificationEmail=False,
-    ).execute()
+    if existing_file_id:
+        doorway.update_file(existing_file_id, name=filename,
+                            content=content, mimetype=mimetype)
+        file_id = existing_file_id
+    else:
+        file_id = doorway.create_file(filename, parents=[folder_id],
+                                      content=content, mimetype=mimetype)
+    ensure_anyone_permission(doorway, file_id, role=role)
+    return file_id
 
 
-def _remove_anyone_permission(drive, file_id: str) -> None:
-    """Remove the 'anyone with the link' permission from a file or folder, if present.
+def get_or_create_spreadsheet(doorway, folder_id: str, name: str) -> Tuple[object, bool]:
+    """Find a spreadsheet by name inside folder_id, or create one there.
 
-    Safe to call on a file that never had one — silently does nothing.
+    Shared by generate_status_sheet.py and
+    generate_biuniqueness_allomorphy_sheet.py, whose per-file copies were
+    identical (issue #276). Returns (spreadsheet, created); reused on re-runs
+    so the URL stays stable across regenerations.
     """
-    perms = drive.permissions().list(fileId=file_id, fields="permissions(id,type)").execute()
-    for p in perms.get("permissions", []):
-        if p.get("type") == "anyone":
-            drive.permissions().delete(fileId=file_id, permissionId=p["id"]).execute()
+    existing = doorway.list_files(
+        q=(
+            f"name='{name}' and '{folder_id}' in parents"
+            " and mimeType='application/vnd.google-apps.spreadsheet'"
+            " and trashed=false"
+        ),
+        fields="files(id)",
+    )
+    if existing:
+        return doorway.open_spreadsheet(existing[0]["id"]), False
+    ss = doorway.create_spreadsheet(name)
+    doorway.move_file(ss.id, folder_id)
+    return ss, True
 
 
 def _move_to_folder(drive, file_id: str, folder_id: str) -> None:
@@ -377,28 +404,6 @@ def _move_to_folder(drive, file_id: str, folder_id: str) -> None:
 _ACK_PREFIX = "Notes transferred to coordinator"
 
 
-def _create_notes_doc(drive, lang_id: str, folder_id: str, display_name: str = "") -> str:
-    """Create a Google Doc for collaborator notes in the language folder.
-
-    The doc is named "{display_name} — Annotation Notes" (e.g. "Araona [arao1248]
-    — Annotation Notes"), falling back to "notes_{lang_id}" if display_name is
-    not provided.
-
-    Returns the new document's file ID.
-    """
-    result = drive.files().create(
-        body={
-            "name": _notes_doc_name(lang_id, display_name),
-            "mimeType": "application/vnd.google-apps.document",
-            "parents": [folder_id],
-        },
-        fields="id",
-    ).execute()
-    doc_id = result["id"]
-    _share_anyone_with_link(drive, doc_id)
-    return doc_id
-
-
 def _notes_doc_name(lang_id: str, display_name: str = "") -> str:
     """What a language's notes doc is called on Drive."""
     return f"{display_name} — Annotation Notes" if display_name else f"notes_{lang_id}"
@@ -406,11 +411,20 @@ def _notes_doc_name(lang_id: str, display_name: str = "") -> str:
 
 def create_notes_doc(doorway, lang_id: str, folder_id: str,
                      display_name: str = "") -> str:
-    """``_create_notes_doc`` through a ``drive_doorway.DriveDoorway``.
+    """Create a Google Doc for collaborator notes in the language folder.
 
-    Same name, same "anyone with the link can edit" grant. That grant is
-    deliberate and unusual — see ``_share_anyone_with_link`` — so it stays
-    beside the creation rather than being left to the caller to remember.
+    The doc is named "{display_name} — Annotation Notes" (e.g. "Araona
+    [arao1248] — Annotation Notes"), falling back to "notes_{lang_id}" if
+    display_name is not provided. Shared "anyone with the link" as **editor**
+    — deliberate and unusual: every other shared file in this project uses
+    either a named-person grant (see generate_sheets.py's `_annotator_email`)
+    or a reader-only "anyone" link (`ensure_anyone_permission`), but a
+    collaborator writing freeform notes may not have a Google account to be
+    named on, so this is the one place an anonymous *editor* grant is
+    intentional. That grant stays beside the creation call rather than being
+    left to the caller to remember.
+
+    Returns the new document's file ID.
     """
     doc_id = doorway.create_doc(_notes_doc_name(lang_id, display_name), folder_id)
     doorway.create_permission(doc_id, type="anyone", role="writer")

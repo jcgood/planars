@@ -18,7 +18,7 @@ from typing import Dict, List, Optional, Tuple
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
-from .drive import load_manifest, _load_drive_config
+from .drive import load_manifest, upload_manifest, _load_drive_config, _save_drive_config
 from .drive_doorway import get_doorway
 from .make_forms import _read_diagnostics_for_language
 from .schemas import load_diagnostic_classes
@@ -254,21 +254,18 @@ def main() -> None:
         return
 
     if any_changes:
-        # Upload updated manifest to Drive.
-        #
-        # This is the fourth independent "write manifest.json" implementation in
-        # the codebase (docs/drive-protocol-surface.md flags it). The migration
-        # routes its *transport* through the doorway but deliberately preserves its
-        # behaviour: no key reordering, and no create-if-missing fallback, unlike
-        # drive._upload_planars_config. Tracked in issue #276.
-        import json
-        manifest_file_id = drive_config.get("_planars_config_file_id")
-        if manifest_file_id:
-            content = json.dumps(manifest, indent=2).encode()
-            doorway.update_file(manifest_file_id, content=content,
-                                mimetype="application/json")
-            print("\nManifest updated on Drive.")
-        else:
-            print("\n[WARNING] _planars_config_file_id not set — manifest not uploaded.")
+        # Upload updated manifest to Drive through the same shared writer
+        # every other command uses (generate_sheets, sync_params,
+        # update_sheets, import_sheets, restructure_sheets). Before this, this
+        # file kept its own inline copy with no key reordering and no
+        # create-if-missing fallback — a lost _planars_config_file_id meant it
+        # gave up with a warning instead of creating a fresh manifest.json the
+        # way every other writer does. Collapsed under issue #276.
+        existing_file_id = drive_config.get("_planars_config_file_id")
+        root_folder_id = drive_config.get("_root_folder_id")
+        file_id = upload_manifest(doorway, manifest, root_folder_id, existing_file_id)
+        drive_config["_planars_config_file_id"] = file_id
+        _save_drive_config(drive_config)
+        print("\nManifest updated on Drive.")
 
     print("\nDone.")

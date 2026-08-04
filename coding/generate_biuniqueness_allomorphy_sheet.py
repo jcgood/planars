@@ -95,7 +95,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
@@ -106,6 +106,7 @@ import pandas as pd
 from .drive import (
     load_manifest,
     upload_manifest,
+    get_or_create_spreadsheet,
     _with_retry,
     _load_drive_config,
     _save_drive_config,
@@ -180,30 +181,6 @@ def _banner_rows() -> List[List[str]]:
 # ---------------------------------------------------------------------------
 # Drive helpers (API calls — not unit tested; see docs/tooling-design.md)
 # ---------------------------------------------------------------------------
-
-def _get_or_create_allomorphy_spreadsheet(
-    doorway, folder_id: str, name: str
-) -> Tuple[object, bool]:
-    """Find or create the allomorphy spreadsheet by name inside folder_id.
-
-    Reused on re-runs so the URL stays stable across regenerations, same
-    convention as generate_status_sheet.py's _get_or_create_status_spreadsheet.
-    Returns (spreadsheet, created).
-    """
-    existing = doorway.list_files(
-        q=(
-            f"name='{name}' and '{folder_id}' in parents"
-            " and mimeType='application/vnd.google-apps.spreadsheet'"
-            " and trashed=false"
-        ),
-        fields="files(id)",
-    )
-    if existing:
-        return doorway.open_spreadsheet(existing[0]["id"]), False
-    ss = doorway.create_spreadsheet(name)
-    doorway.move_file(ss.id, folder_id)
-    return ss, True
-
 
 def _write_prescreening_tab(ss, rows: List[Dict[str, str]]):
     """Write banner + header + data rows, freeze/bold the header, and add the
@@ -312,7 +289,7 @@ def main() -> None:
         raise SystemExit(f"No Drive folder found for {lang_id} in the manifest — run python -m coding generate-sheets --apply first.")
 
     sheet_name = f"biuniqueness_allomorphy_{lang_id}"
-    ss, created = _get_or_create_allomorphy_spreadsheet(
+    ss, created = get_or_create_spreadsheet(
         doorway, lang_data["folder_id"], sheet_name)
     _write_prescreening_tab(ss, rows)
     # Named person, not "anyone with the link" — see drive._share_with_person
