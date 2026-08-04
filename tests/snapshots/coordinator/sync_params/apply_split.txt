@@ -1,0 +1,85 @@
+Connecting to Google APIs...
+  [noninterruption] diagnostics Criteria: 'free, multiple' -> 'free_left, free_right, multiple'
+  [arao1248] YAML updated → diagnostics_arao1248.yaml
+
+Language: arao1248
+Mode:     apply
+Splits:   ['free:free_left:free_right']
+  [ciscategorial/general] Split: free not found — skipping
+  [noninterruption/general] Split: free -> free_left, free_right
+    Split applied.
+  [noninterruption/general] Manifest param_names updated
+  [subspanrepetition/auxiliary_construction] Split: free not found — skipping
+  [subspanrepetition/tso_clause_linkage] Split: free not found — skipping
+  [noninterruption] diagnostics Criteria: 'free, multiple' -> 'free_left, free_right, multiple'
+  [free_occurrence] diagnostics Criteria: 'free, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}' -> 'free_left, free_right, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}'
+  [stan1293] YAML updated → diagnostics_stan1293.yaml
+
+Language: stan1293
+Mode:     apply
+Splits:   ['free:free_left:free_right']
+  [ciscategorial/general] Split: free not found — skipping
+  [subspanrepetition/andCoordination] Split: free not found — skipping
+  [subspanrepetition/control] Split: free not found — skipping
+  [subspanrepetition/thatCOMP] Split: free not found — skipping
+  [subspanrepetition/asyndeticPart] Split: free not found — skipping
+  [noninterruption/general] Split: free -> free_left, free_right
+    Split applied.
+  [noninterruption/general] Manifest param_names updated
+  [segmental/aspiration_prominence] Split: free not found — skipping
+  [segmental/flapping] Split: free not found — skipping
+  [metrical/stress_domain] Split: free not found — skipping
+  [free_occurrence/general] Split: free -> free_left, free_right
+    Split applied.
+  [free_occurrence/general] Manifest param_names updated
+  [nonpermutability/element_prescreening] Split: free not found — skipping
+  [nonpermutability/general] Split: free not found — skipping
+  [coreference/prescreening] Split: free not found — skipping
+  [coreference/reflexivization] Split: free not found — skipping
+  [coreference/pronominalization] Split: free not found — skipping
+  [coreference/np_reference] Split: free not found — skipping
+  [proform/do_so_substitution] Split: free not found — skipping
+  [proform/vp_ellipsis] Split: free not found — skipping
+  [phrasal_accent/prescreening] Split: free not found — skipping
+  [phrasal_accent/general] Split: free not found — skipping
+  [noninterruption] diagnostics Criteria: 'free, multiple' -> 'free_left, free_right, multiple'
+  [free_occurrence] diagnostics Criteria: 'free, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}' -> 'free_left, free_right, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}'
+  [synth0001] YAML updated → diagnostics_synth0001.yaml
+
+Language: synth0001
+Mode:     apply
+Splits:   ['free:free_left:free_right']
+  [ciscategorial/general] Split: free not found — skipping
+  [subspanrepetition/andCoordination] Split: free not found — skipping
+  [subspanrepetition/control] Split: free not found — skipping
+  [subspanrepetition/thatCOMP] Split: free not found — skipping
+  [subspanrepetition/asyndeticPart] Split: free not found — skipping
+  [noninterruption/general] Split: free -> free_left, free_right
+    Split applied.
+  [noninterruption/general] Manifest param_names updated
+  [segmental/aspiration_prominence] Split: free not found — skipping
+  [segmental/flapping] Split: free not found — skipping
+  [metrical/stress_domain] Split: free not found — skipping
+  [nonpermutability/element_prescreening] Split: free not found — skipping
+  [nonpermutability/general] Split: free not found — skipping
+  [free_occurrence/general] Split: free -> free_left, free_right
+    Split applied.
+  [free_occurrence/general] Manifest param_names updated
+  [coreference/prescreening] Split: free not found — skipping
+  [coreference/prescreening] Manifest param_names updated
+  [coreference/reflexivization] Split: free not found — skipping
+  [coreference/reflexivization] WARNING: columns in sheet but not in diagnostics: ['pronoun_allowed', 'np_allowed']
+    (pass --apply --remove to delete)
+  [coreference/pronominalization] Split: free not found — skipping
+  [coreference/pronominalization] WARNING: columns in sheet but not in diagnostics: ['reflexive_allowed', 'np_allowed']
+    (pass --apply --remove to delete)
+  [coreference/np_reference] Split: free not found — skipping
+  [coreference/np_reference] WARNING: columns in sheet but not in diagnostics: ['reflexive_allowed', 'pronoun_allowed']
+    (pass --apply --remove to delete)
+  [proform/do_so_substitution] Split: free not found — skipping
+  [proform/vp_ellipsis] Split: free not found — skipping
+  [phrasal_accent/prescreening] Split: free not found — skipping
+  [phrasal_accent/general] Split: free not found — skipping
+
+Manifest updated on Drive.
+

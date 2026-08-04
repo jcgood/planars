@@ -1,0 +1,64 @@
+Connecting to Google APIs...
+
+Language: arao1248
+Mode:     apply
+  [ciscategorial/general] OK — dropdowns up to date
+  [noninterruption/general] OK — dropdowns up to date
+  [subspanrepetition/auxiliary_construction] OK — dropdowns up to date
+  [subspanrepetition/tso_clause_linkage] OK — dropdowns up to date
+
+Language: stan1293
+Mode:     apply
+  [ciscategorial/general] OK — dropdowns up to date
+  [subspanrepetition/andCoordination] OK — dropdowns up to date
+  [subspanrepetition/control] OK — dropdowns up to date
+  [subspanrepetition/thatCOMP] OK — dropdowns up to date
+  [subspanrepetition/asyndeticPart] OK — dropdowns up to date
+  [noninterruption/general] OK — dropdowns up to date
+  [segmental/aspiration_prominence] OK — dropdowns up to date
+  [segmental/flapping] OK — dropdowns up to date
+  [metrical/stress_domain] OK — dropdowns up to date
+  [free_occurrence/general] OK — dropdowns up to date
+  [nonpermutability/element_prescreening] OK — dropdowns up to date
+  [nonpermutability/general] OK — dropdowns up to date
+  [coreference/prescreening] OK — dropdowns up to date
+  [coreference/reflexivization] OK — dropdowns up to date
+  [coreference/pronominalization] OK — dropdowns up to date
+  [coreference/np_reference] OK — dropdowns up to date
+  [proform/do_so_substitution] OK — dropdowns up to date
+  [proform/vp_ellipsis] OK — dropdowns up to date
+  [phrasal_accent/prescreening] Would update dropdowns:
+    accented: ['y', 'n', 'both'] → ['y', 'n', 'both', 'maybe']
+    Done.
+  [phrasal_accent/general] OK — dropdowns up to date
+
+Language: synth0001
+Mode:     apply
+  [ciscategorial/general] OK — dropdowns up to date
+  [subspanrepetition/andCoordination] OK — dropdowns up to date
+  [subspanrepetition/control] OK — dropdowns up to date
+  [subspanrepetition/thatCOMP] OK — dropdowns up to date
+  [subspanrepetition/asyndeticPart] OK — dropdowns up to date
+  [noninterruption/general] OK — dropdowns up to date
+  [segmental/aspiration_prominence] OK — dropdowns up to date
+  [segmental/flapping] OK — dropdowns up to date
+  [metrical/stress_domain] OK — dropdowns up to date
+  [nonpermutability/element_prescreening] OK — dropdowns up to date
+  [nonpermutability/general] OK — dropdowns up to date
+  [free_occurrence/general] OK — dropdowns up to date
+  [coreference/prescreening] Would update dropdowns:
+    referential: ? → ['y', 'n']
+    Done.
+  [coreference/reflexivization] WARNING: columns in sheet but not in diagnostics: ['pronoun_allowed', 'np_allowed']
+    (pass --apply --remove to delete)
+  [coreference/pronominalization] WARNING: columns in sheet but not in diagnostics: ['reflexive_allowed', 'np_allowed']
+    (pass --apply --remove to delete)
+  [coreference/np_reference] WARNING: columns in sheet but not in diagnostics: ['reflexive_allowed', 'pronoun_allowed']
+    (pass --apply --remove to delete)
+  [proform/do_so_substitution] OK — dropdowns up to date
+  [proform/vp_ellipsis] OK — dropdowns up to date
+  [phrasal_accent/prescreening] OK — dropdowns up to date
+  [phrasal_accent/general] OK — dropdowns up to date
+
+Manifest updated on Drive.
+

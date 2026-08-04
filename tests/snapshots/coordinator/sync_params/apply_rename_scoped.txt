@@ -1,0 +1,35 @@
+Connecting to Google APIs...
+  [noninterruption] diagnostics Criteria: 'free, multiple' -> 'free_form, multiple'
+  [arao1248] YAML updated → diagnostics_arao1248.yaml
+
+Language: arao1248
+Mode:     apply
+Renames:  ['noninterruption:free:free_form']
+  [noninterruption/general] Rename: free → free_form
+    Renamed.
+  [noninterruption] diagnostics Criteria: 'free, multiple' -> 'free_form, multiple'
+  [stan1293] YAML updated → diagnostics_stan1293.yaml
+
+Language: stan1293
+Mode:     apply
+Renames:  ['noninterruption:free:free_form']
+  [noninterruption/general] Rename: free → free_form
+    Renamed.
+  [noninterruption] diagnostics Criteria: 'free, multiple' -> 'free_form, multiple'
+  [synth0001] YAML updated → diagnostics_synth0001.yaml
+
+Language: synth0001
+Mode:     apply
+Renames:  ['noninterruption:free:free_form']
+  [noninterruption/general] Rename: free → free_form
+    Renamed.
+  [coreference/prescreening] Manifest param_names updated
+  [coreference/reflexivization] WARNING: columns in sheet but not in diagnostics: ['pronoun_allowed', 'np_allowed']
+    (pass --apply --remove to delete)
+  [coreference/pronominalization] WARNING: columns in sheet but not in diagnostics: ['reflexive_allowed', 'np_allowed']
+    (pass --apply --remove to delete)
+  [coreference/np_reference] WARNING: columns in sheet but not in diagnostics: ['reflexive_allowed', 'pronoun_allowed']
+    (pass --apply --remove to delete)
+
+Manifest updated on Drive.
+

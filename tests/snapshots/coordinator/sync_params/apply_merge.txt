@@ -1,0 +1,93 @@
+Connecting to Google APIs...
+  [subspanrepetition] diagnostics Criteria: 'widescope_right, widescope_left, fillable_botheither_conjunct' -> 'widescope_either, fillable_botheither_conjunct'
+  [arao1248] YAML updated → diagnostics_arao1248.yaml
+
+Language: arao1248
+Mode:     apply
+Merges:   ['widescope_right:widescope_left:widescope_either']
+  [ciscategorial/general] Merge: neither widescope_right nor widescope_left found — skipping
+  [noninterruption/general] Merge: neither widescope_right nor widescope_left found — skipping
+  [subspanrepetition/auxiliary_construction] Merge: widescope_right, widescope_left -> widescope_either
+    Merge applied.
+  [subspanrepetition/auxiliary_construction] Manifest param_names updated
+  [subspanrepetition/tso_clause_linkage] Merge: widescope_right, widescope_left -> widescope_either
+    Merge applied.
+  [subspanrepetition/tso_clause_linkage] Manifest param_names updated
+  [subspanrepetition] diagnostics Criteria: 'widescope_right, widescope_left, fillable_botheither_conjunct' -> 'widescope_either, fillable_botheither_conjunct'
+  [stan1293] YAML updated → diagnostics_stan1293.yaml
+
+Language: stan1293
+Mode:     apply
+Merges:   ['widescope_right:widescope_left:widescope_either']
+  [ciscategorial/general] Merge: neither widescope_right nor widescope_left found — skipping
+  [subspanrepetition/andCoordination] Merge: widescope_right, widescope_left -> widescope_either
+    Merge applied.
+  [subspanrepetition/andCoordination] Manifest param_names updated
+  [subspanrepetition/control] Merge: widescope_right, widescope_left -> widescope_either
+    Merge applied.
+  [subspanrepetition/control] Manifest param_names updated
+  [subspanrepetition/thatCOMP] Merge: widescope_right, widescope_left -> widescope_either
+    Merge applied.
+  [subspanrepetition/thatCOMP] Manifest param_names updated
+  [subspanrepetition/asyndeticPart] Merge: widescope_right, widescope_left -> widescope_either
+    Merge applied.
+  [subspanrepetition/asyndeticPart] Manifest param_names updated
+  [noninterruption/general] Merge: neither widescope_right nor widescope_left found — skipping
+  [segmental/aspiration_prominence] Merge: neither widescope_right nor widescope_left found — skipping
+  [segmental/flapping] Merge: neither widescope_right nor widescope_left found — skipping
+  [metrical/stress_domain] Merge: neither widescope_right nor widescope_left found — skipping
+  [free_occurrence/general] Merge: neither widescope_right nor widescope_left found — skipping
+  [nonpermutability/element_prescreening] Merge: neither widescope_right nor widescope_left found — skipping
+  [nonpermutability/general] Merge: neither widescope_right nor widescope_left found — skipping
+  [coreference/prescreening] Merge: neither widescope_right nor widescope_left found — skipping
+  [coreference/reflexivization] Merge: neither widescope_right nor widescope_left found — skipping
+  [coreference/pronominalization] Merge: neither widescope_right nor widescope_left found — skipping
+  [coreference/np_reference] Merge: neither widescope_right nor widescope_left found — skipping
+  [proform/do_so_substitution] Merge: neither widescope_right nor widescope_left found — skipping
+  [proform/vp_ellipsis] Merge: neither widescope_right nor widescope_left found — skipping
+  [phrasal_accent/prescreening] Merge: neither widescope_right nor widescope_left found — skipping
+  [phrasal_accent/general] Merge: neither widescope_right nor widescope_left found — skipping
+  [subspanrepetition] diagnostics Criteria: 'widescope_right, widescope_left, fillable_botheither_conjunct' -> 'widescope_either, fillable_botheither_conjunct'
+  [synth0001] YAML updated → diagnostics_synth0001.yaml
+
+Language: synth0001
+Mode:     apply
+Merges:   ['widescope_right:widescope_left:widescope_either']
+  [ciscategorial/general] Merge: neither widescope_right nor widescope_left found — skipping
+  [subspanrepetition/andCoordination] Merge: widescope_right, widescope_left -> widescope_either
+    Merge applied.
+  [subspanrepetition/andCoordination] Manifest param_names updated
+  [subspanrepetition/control] Merge: widescope_right, widescope_left -> widescope_either
+    Merge applied.
+  [subspanrepetition/control] Manifest param_names updated
+  [subspanrepetition/thatCOMP] Merge: widescope_right, widescope_left -> widescope_either
+    Merge applied.
+  [subspanrepetition/thatCOMP] Manifest param_names updated
+  [subspanrepetition/asyndeticPart] Merge: widescope_right, widescope_left -> widescope_either
+    Merge applied.
+  [subspanrepetition/asyndeticPart] Manifest param_names updated
+  [noninterruption/general] Merge: neither widescope_right nor widescope_left found — skipping
+  [segmental/aspiration_prominence] Merge: neither widescope_right nor widescope_left found — skipping
+  [segmental/flapping] Merge: neither widescope_right nor widescope_left found — skipping
+  [metrical/stress_domain] Merge: neither widescope_right nor widescope_left found — skipping
+  [nonpermutability/element_prescreening] Merge: neither widescope_right nor widescope_left found — skipping
+  [nonpermutability/general] Merge: neither widescope_right nor widescope_left found — skipping
+  [free_occurrence/general] Merge: neither widescope_right nor widescope_left found — skipping
+  [coreference/prescreening] Merge: neither widescope_right nor widescope_left found — skipping
+  [coreference/prescreening] Manifest param_names updated
+  [coreference/reflexivization] Merge: neither widescope_right nor widescope_left found — skipping
+  [coreference/reflexivization] WARNING: columns in sheet but not in diagnostics: ['pronoun_allowed', 'np_allowed']
+    (pass --apply --remove to delete)
+  [coreference/pronominalization] Merge: neither widescope_right nor widescope_left found — skipping
+  [coreference/pronominalization] WARNING: columns in sheet but not in diagnostics: ['reflexive_allowed', 'np_allowed']
+    (pass --apply --remove to delete)
+  [coreference/np_reference] Merge: neither widescope_right nor widescope_left found — skipping
+  [coreference/np_reference] WARNING: columns in sheet but not in diagnostics: ['reflexive_allowed', 'pronoun_allowed']
+    (pass --apply --remove to delete)
+  [proform/do_so_substitution] Merge: neither widescope_right nor widescope_left found — skipping
+  [proform/vp_ellipsis] Merge: neither widescope_right nor widescope_left found — skipping
+  [phrasal_accent/prescreening] Merge: neither widescope_right nor widescope_left found — skipping
+  [phrasal_accent/general] Merge: neither widescope_right nor widescope_left found — skipping
+
+Manifest updated on Drive.
+

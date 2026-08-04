@@ -1,0 +1,62 @@
+Connecting to Google APIs...
+
+Language: arao1248
+Mode:     dry run
+  [ciscategorial/general] New params: ['PLACE-combines']
+  [noninterruption/general] OK — no changes
+  [subspanrepetition/auxiliary_construction] OK — no changes
+  [subspanrepetition/tso_clause_linkage] OK — no changes
+
+Language: stan1293
+Mode:     dry run
+  [ciscategorial/general] OK — no changes
+  [subspanrepetition/andCoordination] OK — no changes
+  [subspanrepetition/control] OK — no changes
+  [subspanrepetition/thatCOMP] OK — no changes
+  [subspanrepetition/asyndeticPart] OK — no changes
+  [noninterruption/general] OK — no changes
+  [segmental/aspiration_prominence] OK — no changes
+  [segmental/flapping] OK — no changes
+  [metrical/stress_domain] OK — no changes
+  [free_occurrence/general] OK — no changes
+  [nonpermutability/element_prescreening] OK — no changes
+  [nonpermutability/general] OK — no changes
+  [coreference/prescreening] OK — no changes
+  [coreference/reflexivization] OK — no changes
+  [coreference/pronominalization] OK — no changes
+  [coreference/np_reference] OK — no changes
+  [proform/do_so_substitution] OK — no changes
+  [proform/vp_ellipsis] OK — no changes
+  [phrasal_accent/prescreening] OK — no changes
+  [phrasal_accent/general] OK — no changes
+
+Language: synth0001
+Mode:     dry run
+  [ciscategorial/general] OK — no changes
+  [subspanrepetition/andCoordination] OK — no changes
+  [subspanrepetition/control] OK — no changes
+  [subspanrepetition/thatCOMP] OK — no changes
+  [subspanrepetition/asyndeticPart] OK — no changes
+  [noninterruption/general] OK — no changes
+  [segmental/aspiration_prominence] OK — no changes
+  [segmental/flapping] OK — no changes
+  [metrical/stress_domain] OK — no changes
+  [nonpermutability/element_prescreening] OK — no changes
+  [nonpermutability/general] OK — no changes
+  [free_occurrence/general] OK — no changes
+  [coreference/prescreening] OK — no changes
+  [coreference/reflexivization] WARNING: columns in sheet but not in diagnostics: ['pronoun_allowed', 'np_allowed']
+    (pass --remove with --apply)
+  [coreference/pronominalization] WARNING: columns in sheet but not in diagnostics: ['reflexive_allowed', 'np_allowed']
+    (pass --remove with --apply)
+  [coreference/np_reference] WARNING: columns in sheet but not in diagnostics: ['reflexive_allowed', 'pronoun_allowed']
+    (pass --remove with --apply)
+  [proform/do_so_substitution] OK — no changes
+  [proform/vp_ellipsis] OK — no changes
+  [phrasal_accent/prescreening] OK — no changes
+  [phrasal_accent/general] OK — no changes
+
+Dry run — changes detected. To apply:
+
+    python -m coding sync-params --apply
+

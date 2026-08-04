@@ -1,0 +1,20 @@
+SUMMARY
+     2  batch_request
+     1  update
+     1  update_file
+     1    └─ insertDimension
+     1    └─ setDataValidation
+
+DRIVE OPERATIONS
+  update_file: file_id='fake_manifest_file', bytes=51372
+
+SHEET OPERATIONS
+
+  arao1248/class:ciscategorial  tab=general
+    insertDimension: {"range": {"sheetId": 327005340, "dimension": "COLUMNS", "startIndex": 7, "endIndex": 8}, "inheritFromBefore": false}
+    update: anchor H1 raw=True 74x1
+      | ['PLACE-combines']
+      | ['']
+      | ['']
+      | ...
+    setDataValidation: col 7 (Source) rows 1-74 -> ['y', 'n'] (strict=False)

@@ -51,9 +51,10 @@ from .make_forms import (
 )
 from .schemas import load_diagnostic_classes as _load_dc
 from .drive import (
-    _check_coded_data_clean, _get_clients, _load_manifest_from_drive, _upload_planars_config,
-    _load_drive_config, _save_drive_config, _open_spreadsheet, _with_retry,
+    _check_coded_data_clean, _load_drive_config, _save_drive_config, _with_retry,
+    load_manifest, upload_manifest,
 )
+from .drive_doorway import WorksheetHandle, WorksheetNotFound, get_doorway
 from .generate_sheets import CODED_DATA, _TRAILING_COLS
 
 _TRAILING_SET = set(_TRAILING_COLS)
@@ -70,7 +71,7 @@ _STRUCTURAL_SET = {"Element", "Position_Name", "Position_Number",
 # Sheet introspection
 # ---------------------------------------------------------------------------
 
-def _get_current_params(ws: gspread.Worksheet) -> Tuple[List[str], int]:
+def _get_current_params(ws: WorksheetHandle) -> Tuple[List[str], int]:
     """Return (param_names, comments_col_0based) from the header row.
 
     Param columns are those that are neither structural nor trailing — identified
@@ -95,7 +96,7 @@ def _get_current_params(ws: gspread.Worksheet) -> Tuple[List[str], int]:
 # Column rename
 # ---------------------------------------------------------------------------
 
-def _rename_column(ws: gspread.Worksheet, old_name: str, new_name: str) -> bool:
+def _rename_column(ws: WorksheetHandle, old_name: str, new_name: str) -> bool:
     """Rename a column header in-place. Returns True if found and renamed."""
     header = _with_retry(lambda: ws.row_values(1))
     try:
@@ -208,7 +209,7 @@ def _update_diagnostics_tsv(
 # ---------------------------------------------------------------------------
 
 def _insert_param_columns(
-    ws: gspread.Worksheet,
+    ws: WorksheetHandle,
     new_params: List[str],
     param_values_map: Dict[str, List[str]],
     comments_col_0based: int,
@@ -294,7 +295,7 @@ _STALE_PREFIXES = ("_split_", "_merged_")
 
 
 def _apply_split_to_sheet(
-    ws: gspread.Worksheet,
+    ws: WorksheetHandle,
     old_name: str,
     new1: str,
     new2: str,
@@ -316,7 +317,7 @@ def _apply_split_to_sheet(
 
 
 def _apply_merge_to_sheet(
-    ws: gspread.Worksheet,
+    ws: WorksheetHandle,
     old1: str,
     old2: str,
     new: str,
@@ -347,7 +348,7 @@ def _apply_merge_to_sheet(
 # ---------------------------------------------------------------------------
 
 def _build_dropdown_refresh_requests(
-    ws: gspread.Worksheet,
+    ws: WorksheetHandle,
     stale_params: List[str],
     exp_values: Dict[str, List[str]],
 ) -> List[dict]:
@@ -490,8 +491,8 @@ def main() -> None:
         raise SystemExit("No planar_*.tsv found in coded_data/*/lang_setup/")
 
     print("Connecting to Google APIs...")
-    gc, drive = _get_clients()
-    manifest = _load_manifest_from_drive(drive)
+    doorway = get_doorway()
+    manifest = load_manifest(doorway)
 
     any_changes = False
     manifest_changed = False
@@ -576,12 +577,12 @@ def main() -> None:
                 print(f"[{class_name}] Not in diagnostics_{lang_id}.tsv — skipping")
                 continue
 
-            ss = _open_spreadsheet(gc, sheet_info["spreadsheet_id"])
+            ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
 
             for construction, (exp_params, exp_values) in expected[class_name].items():
                 try:
                     ws = _with_retry(lambda: ss.worksheet(construction))
-                except gspread.WorksheetNotFound:
+                except WorksheetNotFound:
                     print(f"  [{class_name}/{construction}] Tab not found — skipping")
                     continue
 
@@ -784,7 +785,7 @@ def main() -> None:
             manifest[lid].setdefault("folder_id", config.get(lid, {}).get("folder_id", ""))
         existing_file_id = config.get("_planars_config_file_id")
         root_folder_id = config.get("_root_folder_id")
-        file_id = _upload_planars_config(drive, manifest, root_folder_id, existing_file_id)
+        file_id = upload_manifest(doorway, manifest, root_folder_id, existing_file_id)
         config["_planars_config_file_id"] = file_id
         _save_drive_config(config)
         print("\nManifest updated on Drive.")

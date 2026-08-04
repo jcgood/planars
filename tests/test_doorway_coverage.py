@@ -42,7 +42,6 @@ _EXEMPT = {
 # Files still to migrate, smallest first. Ordering rationale is in
 # docs/data-layer-progress.md § "Migration order".
 _REMAINING = {
-    "sync_params.py",
     "restructure_sheets.py",
     "generate_sheets.py",
 }
