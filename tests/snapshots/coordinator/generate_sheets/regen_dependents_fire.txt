@@ -1,0 +1,23 @@
+Connecting to Google APIs...
+  [stan1293/nonpermutability/general] already exists — skipping auto-regeneration. Run:
+    python -m coding generate-sheets --lang stan1293 --regen-construction nonpermutability:general
+  [synth0001/nonpermutability/general] regenerating from element_prescreening…
+    [element_prescreening] 66 element(s) with scopal=n excluded
+    [element_prescreening] 838 → 231 pairs after filtering
+    general: 231 retained, 0 added, 0 removed
+  [stan1293/coreference/reflexivization] already exists — skipping auto-regeneration. Run:
+    python -m coding generate-sheets --lang stan1293 --regen-construction coreference:reflexivization
+  [stan1293/coreference/pronominalization] already exists — skipping auto-regeneration. Run:
+    python -m coding generate-sheets --lang stan1293 --regen-construction coreference:pronominalization
+  [stan1293/coreference/np_reference] already exists — skipping auto-regeneration. Run:
+    python -m coding generate-sheets --lang stan1293 --regen-construction coreference:np_reference
+  [synth0001/coreference/reflexivization] already exists — skipping auto-regeneration. Run:
+    python -m coding generate-sheets --lang synth0001 --regen-construction coreference:reflexivization
+  [synth0001/coreference/pronominalization] already exists — skipping auto-regeneration. Run:
+    python -m coding generate-sheets --lang synth0001 --regen-construction coreference:pronominalization
+  [synth0001/coreference/np_reference] already exists — skipping auto-regeneration. Run:
+    python -m coding generate-sheets --lang synth0001 --regen-construction coreference:np_reference
+  [stan1293/phrasal_accent/general] already exists — skipping auto-regeneration. Run:
+    python -m coding generate-sheets --lang stan1293 --regen-construction phrasal_accent:general
+  [synth0001/phrasal_accent/general] already exists — skipping auto-regeneration. Run:
+    python -m coding generate-sheets --lang synth0001 --regen-construction phrasal_accent:general

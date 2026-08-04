@@ -1,0 +1,51 @@
+Connecting to Google APIs...
+Manifest backed up to manifest_backup.json (2 language(s))
+
+Language:    arao1248
+Planar file: planar_arao1248.tsv
+Classes:     ['ciscategorial', 'noninterruption', 'subspanrepetition']
+Folder:      https://drive.google.com/drive/folders/1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU
+Notes doc:   https://docs.google.com/document/d/fake_file_0002
+  Created planar sheet: https://docs.google.com/spreadsheets/d/fake_ss_0004
+  Created diagnostics sheet: https://docs.google.com/spreadsheets/d/fake_ss_0006
+  Creating: ciscategorial_arao1248
+    Tab: general (73 rows, 4 params)
+    Status tab created (1 construction(s))
+    URL: https://docs.google.com/spreadsheets/d/fake_ss_0008
+
+  Creating: noninterruption_arao1248
+    Tab: general (73 rows, 2 params)
+    Status tab created (1 construction(s))
+    URL: https://docs.google.com/spreadsheets/d/fake_ss_0010
+
+  Creating: subspanrepetition_arao1248
+    Tab: auxiliary_construction (73 rows, 3 params)
+    Tab: tso_clause_linkage (73 rows, 3 params)
+    Status tab created (2 construction(s))
+    URL: https://docs.google.com/spreadsheets/d/fake_ss_0012
+
+manifest.json updated on Drive (id: fake_manifest_file)
+
+Language:    stan1293
+Planar file: planar_stan1293.tsv
+  Diagnostics validation (2 issue(s)):
+    [WARNING] row 12: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_exponence', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
+    [WARNING] row 13: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_exponence', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
+Classes:     ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent']
+  All classes already have sheets. Skipping stan1293.
+  (use --force to regenerate)
+
+Language:    synth0001
+Planar file: planar_synth0001.tsv
+  Diagnostics validation (2 issue(s)):
+    [WARNING] row 12: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_exponence', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
+    [WARNING] row 13: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_exponence', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
+Classes:     ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent']
+  All classes already have sheets. Skipping synth0001.
+  (use --force to regenerate)
+manifest.json uploaded (id: fake_manifest_file)
+
+Local manifest written to: sheets_manifest.json
+drive_config.json written.
+
+Share each language folder with your specialist (see folder URLs above).

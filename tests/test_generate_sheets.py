@@ -89,57 +89,72 @@ class TestCheckForceAgainstExistingSheets:
 # _create_analysis_sheet — Drive name guard
 # ---------------------------------------------------------------------------
 
+class _DoorwayStub:
+    """Minimal doorway-shaped stub: list_files(...) and create_spreadsheet(...).
+
+    _create_analysis_sheet takes a doorway rather than a raw gspread client
+    plus a Drive service (coding/drive_doorway.py's migration, #271 file 17),
+    so this replaces the old raw-drive-mock's
+    ``.files().list(...).execute().get("files", [])`` shape with the one
+    method the doorway actually exposes — ``list_files`` already returns the
+    files list directly, not a raw response to unwrap.
+    """
+
+    def __init__(self, existing_files=()):
+        self._existing_files = list(existing_files)
+        self.create_spreadsheet_calls = []
+
+    def list_files(self, q, fields="files(id, name)", page_size=None):
+        return self._existing_files
+
+    def create_spreadsheet(self, title):
+        self.create_spreadsheet_calls.append(title)
+        ss = MagicMock()
+        ss.sheet1 = MagicMock()
+        ss.worksheets.return_value = [ss.sheet1]
+        return ss
+
+    def move_file(self, file_id, new_parent_id):
+        pass
+
+    def create_permission(self, file_id, type, role, email=None, notify=False):
+        pass
+
+
 class TestCreateAnalysisSheetDriveNameGuard:
     """_create_analysis_sheet must abort when a same-named sheet already exists in Drive."""
 
-    def _make_drive(self, existing_files):
-        """Build a minimal Drive mock whose files().list().execute() returns existing_files."""
-        list_result = MagicMock()
-        list_result.execute.return_value = {"files": existing_files}
-        files_mock = MagicMock()
-        files_mock.list.return_value = list_result
-        drive = MagicMock()
-        drive.files.return_value = files_mock
-        return drive
-
     def test_aborts_when_same_named_sheet_exists(self, monkeypatch):
-        drive = self._make_drive([{"id": "orphan123", "name": "nonpermutability_stan1293"}])
-        gc = MagicMock()
+        doorway = _DoorwayStub([{"id": "orphan123", "name": "nonpermutability_stan1293"}])
         with pytest.raises(SystemExit) as exc_info:
             _gs._create_analysis_sheet(
-                gc, drive, "folder_abc", "stan1293", "nonpermutability", [], {}, Path("/fake")
+                doorway, "folder_abc", "stan1293", "nonpermutability", [], {}, Path("/fake")
             )
         msg = str(exc_info.value)
         assert "nonpermutability_stan1293" in msg
         assert "orphan123" in msg
-        gc.create.assert_not_called()
+        assert doorway.create_spreadsheet_calls == []
 
     def test_error_message_names_resolution_steps(self, monkeypatch):
-        drive = self._make_drive([{"id": "orphan123", "name": "nonpermutability_stan1293"}])
-        gc = MagicMock()
+        doorway = _DoorwayStub([{"id": "orphan123", "name": "nonpermutability_stan1293"}])
         with pytest.raises(SystemExit) as exc_info:
             _gs._create_analysis_sheet(
-                gc, drive, "folder_abc", "stan1293", "nonpermutability", [], {}, Path("/fake")
+                doorway, "folder_abc", "stan1293", "nonpermutability", [], {}, Path("/fake")
             )
         msg = str(exc_info.value)
         assert "_archived/" in msg
 
     def test_proceeds_when_folder_is_empty(self, monkeypatch, tmp_path):
-        drive = self._make_drive([])
-        ss = MagicMock()
-        ss.sheet1 = MagicMock()
-        ss.worksheets.return_value = [ss.sheet1]
-        gc = MagicMock()
-        gc.create.return_value = ss
-        # Pass empty constructions — we only care that gc.create is reached.
+        doorway = _DoorwayStub([])
+        # Pass empty constructions — we only care that create_spreadsheet is reached.
         monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
         try:
             _gs._create_analysis_sheet(
-                gc, drive, "folder_abc", "stan1293", "ciscategorial", [], {}, Path("/fake")
+                doorway, "folder_abc", "stan1293", "ciscategorial", [], {}, Path("/fake")
             )
         except Exception:
             pass  # downstream sheet-building may fail; we only care create was called
-        gc.create.assert_called_once()
+        assert doorway.create_spreadsheet_calls == ["ciscategorial_stan1293"]
 
 
 # ---------------------------------------------------------------------------

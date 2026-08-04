@@ -43,7 +43,6 @@ _EXEMPT = {
 # docs/data-layer-progress.md § "Migration order".
 _REMAINING = {
     "restructure_sheets.py",
-    "generate_sheets.py",
 }
 
 

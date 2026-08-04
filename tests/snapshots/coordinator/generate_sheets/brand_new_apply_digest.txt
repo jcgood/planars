@@ -1,0 +1,184 @@
+SUMMARY
+     7  add_worksheet
+    45  batch_request
+     1  create_file
+     7  create_permission
+     5  create_spreadsheet
+     3  del_worksheet
+     5  move_file
+     9  update
+     2  update_file
+    21    └─ repeatCell
+    15    └─ setDataValidation
+     9    └─ updateSheetProperties
+
+DRIVE OPERATIONS
+  create_permission: file_id='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU', type='user', role='reader', email='adamjamesrosstallman@gmail.com', notify=False
+  create_file: file_id='fake_file_0002', name='Araona [arao1248] — Annotation Notes', parents=['1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'], mimetype='application/vnd.google-apps.document'
+  create_permission: file_id='fake_file_0002', type='anyone', role='writer', notify=False
+  move_file: file_id='fake_ss_0004', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
+  create_permission: file_id='fake_ss_0004', type='user', role='writer', email='adamjamesrosstallman@gmail.com', notify=False
+  move_file: file_id='fake_ss_0006', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
+  create_permission: file_id='fake_ss_0006', type='user', role='writer', email='adamjamesrosstallman@gmail.com', notify=False
+  move_file: file_id='fake_ss_0008', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
+  create_permission: file_id='fake_ss_0008', type='user', role='writer', email='adamjamesrosstallman@gmail.com', notify=False
+  move_file: file_id='fake_ss_0010', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
+  create_permission: file_id='fake_ss_0010', type='user', role='writer', email='adamjamesrosstallman@gmail.com', notify=False
+  move_file: file_id='fake_ss_0012', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
+  create_permission: file_id='fake_ss_0012', type='user', role='writer', email='adamjamesrosstallman@gmail.com', notify=False
+  update_file: file_id='fake_manifest_file', bytes=50899
+  update_file: file_id='fake_manifest_file', bytes=50899
+
+SHEET OPERATIONS
+
+  fake_ss_0004  tab=-
+    create_spreadsheet: title='planar_arao1248'
+
+  fake_ss_0004  tab=Sheet1
+    update: anchor A1 raw=True 19x9
+      | ['Language_ID', 'Planar_Type', 'Position', 'Position_Type', 'Position_Name', 'Elements', 'Class_Type', 'Example', 'Notes']
+      | ['arao1248', 'verbal', '1', 'Zone', 'v:leftXP', 'NP{NP,PP,S}, ADVERBIALS, INTERROGATIVES', 'open', '[jico] tso pa neti bewewe', 'Constituent interrogatives, focused NPs, subordinated/coordinated clauses; motivates P2 zone (position 2) as elements after first XP']
+      | ['arao1248', 'verbal', '2', 'Zone', 'v:P2', 'po, pojo, tso, pa, tokwe, dipa, sha', 'list', 'pona tsidi-a [tokwe] [pa] wada todi-lipi laba ti -ta -iki', 'Wackernagel-like particles occurring after first XP; no fixed ordering among themselves; free forms']
+      | ...
+
+  fake_ss_0004  tab=sheetId=0
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+
+  fake_ss_0006  tab=-
+    create_spreadsheet: title='diagnostics_arao1248'
+
+  fake_ss_0006  tab=Sheet1
+    update: anchor A1 raw=True 4x4
+      | ['Class', 'Language', 'Constructions', 'Criteria']
+      | ['ciscategorial', 'arao1248', 'general', 'V-combines, N-combines, A-combines, PRED-combines']
+      | ['noninterruption', 'arao1248', 'general', 'free, multiple']
+      | ...
+
+  fake_ss_0006  tab=sheetId=0
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+
+  fake_ss_0008  tab=-
+    create_spreadsheet: title='ciscategorial_arao1248'
+
+  fake_ss_0008  tab=general
+    add_worksheet: rows=75, cols=9, index=None, sheet_id=1
+    update: anchor A1 raw=True 74x9
+      | ['Element', 'Position_Name', 'Position_Number', 'V-combines', 'N-combines', 'A-combines', 'PRED-combines', 'Source', 'Comments']
+      | ['ADVERBIALS', 'v:leftXP', '1', '', '', '', '', '', '']
+      | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '', '', '', '']
+      | ...
+
+  fake_ss_0008  tab=sheetId=1
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (BEYOND HEADER) rows 1-74 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-74 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (BEYOND HEADER) rows 1-74 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 6 (BEYOND HEADER) rows 1-74 -> ['y', 'n'] (strict=False)
+    repeatCell: col 3 (BEYOND HEADER) rows 0-1
+    repeatCell: col 4 (BEYOND HEADER) rows 0-1
+    repeatCell: col 5 (BEYOND HEADER) rows 0-1
+    repeatCell: col 6 (BEYOND HEADER) rows 0-1
+
+  fake_ss_0008  tab=Sheet1
+    del_worksheet: 
+
+  fake_ss_0008  tab=Status
+    add_worksheet: rows=3, cols=2, index=None, sheet_id=2
+    update: anchor A1 raw=True 2x2
+      | ['Construction', 'Status']
+      | ['general', 'in-progress']
+
+  fake_ss_0008  tab=sheetId=2
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 1 (BEYOND HEADER) rows 1-2 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  fake_ss_0010  tab=-
+    create_spreadsheet: title='noninterruption_arao1248'
+
+  fake_ss_0010  tab=general
+    add_worksheet: rows=75, cols=7, index=None, sheet_id=1
+    update: anchor A1 raw=True 74x7
+      | ['Element', 'Position_Name', 'Position_Number', 'free', 'multiple', 'Source', 'Comments']
+      | ['ADVERBIALS', 'v:leftXP', '1', '', '', '', '']
+      | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '', '']
+      | ...
+
+  fake_ss_0010  tab=sheetId=1
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (BEYOND HEADER) rows 1-74 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-74 -> ['y', 'n'] (strict=False)
+    repeatCell: col 3 (BEYOND HEADER) rows 0-1
+    repeatCell: col 4 (BEYOND HEADER) rows 0-1
+
+  fake_ss_0010  tab=Sheet1
+    del_worksheet: 
+
+  fake_ss_0010  tab=Status
+    add_worksheet: rows=3, cols=2, index=None, sheet_id=2
+    update: anchor A1 raw=True 2x2
+      | ['Construction', 'Status']
+      | ['general', 'in-progress']
+
+  fake_ss_0010  tab=sheetId=2
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 1 (BEYOND HEADER) rows 1-2 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  fake_ss_0012  tab=-
+    create_spreadsheet: title='subspanrepetition_arao1248'
+
+  fake_ss_0012  tab=auxiliary_construction
+    add_worksheet: rows=75, cols=8, index=None, sheet_id=1
+    update: anchor A1 raw=True 74x8
+      | ['Element', 'Position_Name', 'Position_Number', 'widescope_right', 'widescope_left', 'fillable_botheither_conjunct', 'Source', 'Comments']
+      | ['ADVERBIALS', 'v:leftXP', '1', '', '', '', '', '']
+      | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '', '', '']
+      | ...
+
+  fake_ss_0012  tab=sheetId=1
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (BEYOND HEADER) rows 1-74 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-74 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (BEYOND HEADER) rows 1-74 -> ['y', 'n'] (strict=False)
+    repeatCell: col 3 (BEYOND HEADER) rows 0-1
+    repeatCell: col 4 (BEYOND HEADER) rows 0-1
+    repeatCell: col 5 (BEYOND HEADER) rows 0-1
+
+  fake_ss_0012  tab=tso_clause_linkage
+    add_worksheet: rows=75, cols=8, index=None, sheet_id=2
+    update: anchor A1 raw=True 74x8
+      | ['Element', 'Position_Name', 'Position_Number', 'widescope_right', 'widescope_left', 'fillable_botheither_conjunct', 'Source', 'Comments']
+      | ['ADVERBIALS', 'v:leftXP', '1', '', '', '', '', '']
+      | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '', '', '']
+      | ...
+
+  fake_ss_0012  tab=sheetId=2
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (BEYOND HEADER) rows 1-74 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-74 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (BEYOND HEADER) rows 1-74 -> ['y', 'n'] (strict=False)
+    repeatCell: col 3 (BEYOND HEADER) rows 0-1
+    repeatCell: col 4 (BEYOND HEADER) rows 0-1
+    repeatCell: col 5 (BEYOND HEADER) rows 0-1
+
+  fake_ss_0012  tab=Sheet1
+    del_worksheet: 
+
+  fake_ss_0012  tab=Status
+    add_worksheet: rows=4, cols=2, index=None, sheet_id=3
+    update: anchor A1 raw=True 3x2
+      | ['Construction', 'Status']
+      | ['auxiliary_construction', 'in-progress']
+      | ['tso_clause_linkage', 'in-progress']
+
+  fake_ss_0012  tab=sheetId=3
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 1 (BEYOND HEADER) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)

@@ -1,0 +1,8 @@
+Position number remap: {5: 6}
+Connecting to Google APIs...
+
+synth0001/coreference/reflexivization
+    [prescreening] 63 element(s) excluded
+    [prescreening] 4055 → 607 pairs after filtering
+    reflexivization: 569 retained, 38 added, 38 removed
+    Removed pairs will surface via import-sheets --apply → apply-pending.

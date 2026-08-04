@@ -61,29 +61,20 @@ from typing import Dict, List, Optional, Set, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 
-import gspread
-
 import pandas as pd
 
 from . import validate_planar as _val_planar
 from . import validate_diagnostics as _val_diag
 from .drive import (
     _check_coded_data_clean,
-    _get_clients,
     _load_drive_config,
     _save_drive_config,
-    _open_spreadsheet,
-    _upload_planars_config,
-    _download_file_json,
-    _get_or_create_folder,
-    _share_anyone_with_link,
-    _share_with_person,
-    _move_to_folder,
     _with_retry,
-    _get_docs_client,
-    _create_notes_doc,
-    DRIVE_CONFIG_PATH,
+    load_manifest,
+    upload_manifest,
+    create_notes_doc,
 )
+from .drive_doorway import SpreadsheetHandle, WorksheetHandle, WorksheetNotFound, get_doorway
 from .glottolog import cached_entry as _cached_glottolog, get_metadata as _fetch_glottolog
 from planars.languages import get_display_name as _get_display_name, get_entry as _get_language_entry
 from planars.free_occurrence import _parse_pos_ref
@@ -123,8 +114,7 @@ _SYSTEM_TAB_ORDER = [_PLANAR_REF_TAB, _INSTRUCTIONS_TAB, _STATUS_TAB]
 
 
 def _create_or_update_tsv_sheet(
-    gc: gspread.Client,
-    drive,
+    doorway,
     folder_id: str,
     name: str,
     tsv_path: Path,
@@ -143,15 +133,15 @@ def _create_or_update_tsv_sheet(
     all_rows = [list(df.columns)] + [list(row) for _, row in df.iterrows()]
 
     if existing_id:
-        ss = _open_spreadsheet(gc, existing_id)
+        ss = doorway.open_spreadsheet(existing_id)
         ws = _with_retry(lambda: ss.sheet1)
         _with_retry(ws.clear)
     else:
-        ss = gc.create(name)
-        _move_to_folder(drive, ss.id, folder_id)
+        ss = doorway.create_spreadsheet(name)
+        doorway.move_file(ss.id, folder_id)
         email = _annotator_email(lang_id)
         if email:
-            _share_with_person(drive, ss.id, email, role="writer")
+            doorway.create_permission(ss.id, type="user", role="writer", email=email)
         ws = _with_retry(lambda: ss.sheet1)
 
     _with_retry(lambda: ws.update(all_rows, "A1"))
@@ -180,8 +170,7 @@ def _create_or_update_tsv_sheet(
 
 
 def _upload_lang_setup_as_sheets(
-    gc: gspread.Client,
-    drive,
+    doorway,
     planar_dir: Path,
     lang_id: str,
     folder_id: str,
@@ -211,7 +200,7 @@ def _upload_lang_setup_as_sheets(
             result["planar_spreadsheet_url"] = existing_lang_data.get("planar_spreadsheet_url", "")
         else:
             sheet_id, url = _create_or_update_tsv_sheet(
-                gc, drive, folder_id,
+                doorway, folder_id,
                 name=f"planar_{lang_id}",
                 tsv_path=planar_path,
                 lang_id=lang_id,
@@ -231,7 +220,7 @@ def _upload_lang_setup_as_sheets(
             result["diagnostics_spreadsheet_url"] = existing_lang_data.get("diagnostics_spreadsheet_url", "")
         else:
             sheet_id, url = _create_or_update_tsv_sheet(
-                gc, drive, folder_id,
+                doorway, folder_id,
                 name=f"diagnostics_{lang_id}",
                 tsv_path=diag_path,
                 lang_id=lang_id,
@@ -894,13 +883,13 @@ def _build_phrasal_accent_pairs(
 
 
 def _populate_tab_pairs(
-    spreadsheet: gspread.Spreadsheet,
+    spreadsheet: SpreadsheetHandle,
     tab_name: str,
     param_names: List[str],
     param_values: Dict[str, List[str]],
     pairs: List[List[str]],
     prefill: Optional[Dict[Tuple[str, str], Dict[str, str]]] = None,
-) -> gspread.Worksheet:
+) -> WorksheetHandle:
     """Create or clear a worksheet tab and populate it with pair rows.
 
     Like _populate_tab() but for the nonpermutability pair-row format:
@@ -908,7 +897,7 @@ def _populate_tab_pairs(
     columns. No Position_Name, Position_Number, or keystone row.
 
     Args:
-        spreadsheet:  the parent gspread Spreadsheet.
+        spreadsheet:  the parent spreadsheet handle.
         tab_name:     worksheet title to create or clear.
         param_names:  ordered list of criterion column names (e.g. ["scopal"]).
         param_values: dict mapping criterion name to list of allowed values.
@@ -917,13 +906,13 @@ def _populate_tab_pairs(
                       provided, retained pairs are pre-filled with existing values.
 
     Returns:
-        The populated gspread Worksheet.
+        The populated worksheet handle.
     """
     num_cols = 2 + len(param_names) + len(_TRAILING_COLS)  # Element_A, Element_B, params, trailing
     try:
         ws = _with_retry(lambda: spreadsheet.worksheet(tab_name))
         _reset_worksheet(ws, len(pairs), num_cols)
-    except gspread.WorksheetNotFound:
+    except WorksheetNotFound:
         ws = spreadsheet.add_worksheet(
             title=tab_name, rows=len(pairs) + 2, cols=num_cols
         )
@@ -943,13 +932,13 @@ def _populate_tab_pairs(
 
 
 def _populate_tab_reflex_pairs(
-    spreadsheet: gspread.Spreadsheet,
+    spreadsheet: SpreadsheetHandle,
     tab_name: str,
     param_names: List[str],
     param_values: Dict[str, List[str]],
     pairs: List[List[str]],
     prefill: Optional[Dict] = None,
-) -> gspread.Worksheet:
+) -> WorksheetHandle:
     """Create or clear a worksheet tab and populate it with coreference pair rows.
 
     Column format: Element_A, Position_A, Position_B, Direction,
@@ -966,7 +955,7 @@ def _populate_tab_reflex_pairs(
     try:
         ws = _with_retry(lambda: spreadsheet.worksheet(tab_name))
         _reset_worksheet(ws, len(pairs), num_cols)
-    except gspread.WorksheetNotFound:
+    except WorksheetNotFound:
         ws = spreadsheet.add_worksheet(
             title=tab_name, rows=len(pairs) + 2, cols=num_cols
         )
@@ -991,7 +980,7 @@ def _populate_tab_reflex_pairs(
 # ---------------------------------------------------------------------------
 
 def _maybe_create_instructions_tab(
-    spreadsheet: gspread.Spreadsheet,
+    spreadsheet: SpreadsheetHandle,
     class_name: str,
 ) -> None:
     """Add an Instructions tab if the class has any construction with depends_on."""
@@ -1004,7 +993,7 @@ def _maybe_create_instructions_tab(
 
 
 def _create_instructions_tab(
-    spreadsheet: gspread.Spreadsheet,
+    spreadsheet: SpreadsheetHandle,
     class_entry: dict,
     constructions_schema: list,
 ) -> None:
@@ -1085,7 +1074,7 @@ def _create_instructions_tab(
 # ---------------------------------------------------------------------------
 
 def _create_planar_reference_tab(
-    spreadsheet: gspread.Spreadsheet,
+    spreadsheet: SpreadsheetHandle,
     planar_path: Path,
     lang_id: str,
 ) -> None:
@@ -1111,7 +1100,7 @@ def _create_planar_reference_tab(
     try:
         ws = _with_retry(lambda: spreadsheet.worksheet(_PLANAR_REF_TAB))
         ws.clear()
-    except gspread.WorksheetNotFound:
+    except WorksheetNotFound:
         ws = spreadsheet.add_worksheet(
             title=_PLANAR_REF_TAB, rows=len(rows) + 2, cols=len(header) + 1
         )
@@ -1132,7 +1121,7 @@ def _create_planar_reference_tab(
 
 
 def _maybe_create_planar_reference_tab(
-    spreadsheet: gspread.Spreadsheet,
+    spreadsheet: SpreadsheetHandle,
     class_name: str,
     planar_path: Path,
     lang_id: str,
@@ -1148,7 +1137,7 @@ def _maybe_create_planar_reference_tab(
     return False
 
 
-def _reorder_system_tabs(spreadsheet: gspread.Spreadsheet) -> None:
+def _reorder_system_tabs(spreadsheet: SpreadsheetHandle) -> None:
     """Reorder tabs so system tabs appear last: Planar Structure → Instructions → Status."""
     all_ws = _with_retry(lambda: spreadsheet.worksheets())
     ws_by_title = {ws.title: ws for ws in all_ws}
@@ -1163,7 +1152,7 @@ def _reorder_system_tabs(spreadsheet: gspread.Spreadsheet) -> None:
 # Status tab
 # ---------------------------------------------------------------------------
 
-def _move_status_tab_to_end(spreadsheet: gspread.Spreadsheet) -> None:
+def _move_status_tab_to_end(spreadsheet: SpreadsheetHandle) -> None:
     """Ensure the Status tab is the last worksheet in the spreadsheet."""
     worksheets = _with_retry(spreadsheet.worksheets)
     if not worksheets or worksheets[-1].title == _STATUS_TAB:
@@ -1176,7 +1165,7 @@ def _move_status_tab_to_end(spreadsheet: gspread.Spreadsheet) -> None:
 
 
 def _create_status_tab(
-    spreadsheet: gspread.Spreadsheet,
+    spreadsheet: SpreadsheetHandle,
     construction_names: List[str],
 ) -> None:
     """Add a Status tab to a spreadsheet, or update an existing one.
@@ -1241,7 +1230,7 @@ def _create_status_tab(
 # Sheet formatting and validation
 # ---------------------------------------------------------------------------
 
-def _reset_worksheet(ws: gspread.Worksheet, num_data_rows: int, num_cols: int) -> None:
+def _reset_worksheet(ws: WorksheetHandle, num_data_rows: int, num_cols: int) -> None:
     """Clear values, reset all cell formatting, and resize to exact dimensions.
 
     ws.clear() alone only erases cell values — background colors (e.g. pink
@@ -1293,7 +1282,7 @@ def _build_criterion_notes(param_names: List[str]) -> List[Optional[str]]:
 
 
 def _format_and_validate(
-    worksheet: gspread.Worksheet,
+    worksheet: WorksheetHandle,
     num_data_rows: int,
     param_values: List[List[str]],
     col_start: int = 3,
@@ -1311,7 +1300,7 @@ def _format_and_validate(
     can also type 'NA' in keystone rows without triggering a validation error.
 
     Args:
-        worksheet: the gspread Worksheet to format.
+        worksheet: the worksheet handle to format.
         num_data_rows: number of data rows (excluding header) to validate.
         param_values: list of allowed-value lists, one entry per param column,
             in the same order as the columns.
@@ -1395,12 +1384,12 @@ def _format_and_validate(
 # ---------------------------------------------------------------------------
 
 def _populate_tab(
-    spreadsheet: gspread.Spreadsheet,
+    spreadsheet: SpreadsheetHandle,
     tab_name: str,
     param_names: List[str],
     param_values: Dict[str, List[str]],
     rows: List[List[object]],
-) -> gspread.Worksheet:
+) -> WorksheetHandle:
     """Create or clear a worksheet tab and populate it with data.
 
     If a tab named tab_name already exists it is cleared and rewritten;
@@ -1408,20 +1397,20 @@ def _populate_tab(
     are appended after the criterion columns with empty values.
 
     Args:
-        spreadsheet: the parent gspread Spreadsheet.
+        spreadsheet: the parent spreadsheet handle.
         tab_name: worksheet title to create or clear.
         param_names: ordered list of criterion column names.
         param_values: dict mapping criterion name to list of allowed values.
         rows: data rows from _build_rows (no header).
 
     Returns:
-        The populated gspread Worksheet.
+        The populated worksheet handle.
     """
     num_cols = 3 + len(param_names) + len(_TRAILING_COLS)  # Element, Position_Name, Position_Number, params, trailing
     try:
         ws = _with_retry(lambda: spreadsheet.worksheet(tab_name))
         _reset_worksheet(ws, len(rows), num_cols)
-    except gspread.WorksheetNotFound:
+    except WorksheetNotFound:
         ws = spreadsheet.add_worksheet(
             title=tab_name, rows=len(rows) + 2, cols=num_cols
         )
@@ -1442,8 +1431,7 @@ def _populate_tab(
 # ---------------------------------------------------------------------------
 
 def _create_analysis_sheet(
-    gc: gspread.Client,
-    drive,
+    doorway,
     folder_id: str,
     lang_id: str,
     class_name: str,
@@ -1459,7 +1447,7 @@ def _create_analysis_sheet(
     # registered in the manifest.  _check_force_against_existing_sheets only fires when the
     # manifest already has an entry for this class; this check covers the case where the
     # manifest entry is absent (e.g. after prune-manifest or during debugging iterations).
-    existing = drive.files().list(
+    existing = doorway.list_files(
         q=(
             f"'{folder_id}' in parents"
             f" and name='{sheet_title}'"
@@ -1467,8 +1455,8 @@ def _create_analysis_sheet(
             " and trashed=false"
         ),
         fields="files(id, name)",
-        pageSize=5,
-    ).execute().get("files", [])
+        page_size=5,
+    )
     if existing:
         ids = ", ".join(f["id"] for f in existing)
         raise SystemExit(
@@ -1481,11 +1469,11 @@ def _create_analysis_sheet(
             f"      python -m coding generate-sheets --apply\n"
         )
 
-    spreadsheet = gc.create(sheet_title)
-    _move_to_folder(drive, spreadsheet.id, folder_id)
+    spreadsheet = doorway.create_spreadsheet(sheet_title)
+    doorway.move_file(spreadsheet.id, folder_id)
     email = _annotator_email(lang_id)
     if email:
-        _share_with_person(drive, spreadsheet.id, email, role="writer")
+        doorway.create_permission(spreadsheet.id, type="user", role="writer", email=email)
 
     default_ws = spreadsheet.sheet1
     tab_names = []
@@ -1757,7 +1745,7 @@ def _format_annotated_drop(class_name: str, key: Tuple, crit_val: str, source: s
 
 
 def _regen_construction(
-    gc: gspread.Client,
+    doorway,
     lang_id: str,
     class_name: str,
     construction_name: str,
@@ -1785,7 +1773,7 @@ def _regen_construction(
     a legitimate scope change, not data loss.
 
     Args:
-        gc:                   authenticated gspread Client.
+        doorway:              the Drive doorway (coding.drive_doorway.DriveDoorway).
         lang_id:              language ID (e.g. 'stan1293').
         class_name:           analysis class (e.g. 'nonpermutability').
         construction_name:    dependent construction to regenerate (e.g. 'general').
@@ -1797,11 +1785,19 @@ def _regen_construction(
                               pair constructions; ignored for nonpermutability and
                               phrasal_accent.
         confirm_drop:         must be True to proceed if any dropped pair is annotated.
+
+    Note: before the #271 migration this opened the spreadsheet with no retry
+    at all, unlike every other spreadsheet open in this file. The doorway's
+    open call always retries (see its own module docstring), so this call site
+    now gets the same 429/500/503 backoff as the rest of the file -- see
+    docs/data-layer-progress.md's decisions log for the full rationale.
+    Opening is an idempotent read, so the added retry changes nothing about
+    what gets written.
     """
     spreadsheet_id = manifest_class_info.get("spreadsheet_id")
     if not spreadsheet_id:
         raise SystemExit(f"  No spreadsheet_id in manifest for {lang_id}/{class_name}")
-    spreadsheet = gc.open_by_key(spreadsheet_id)
+    spreadsheet = doorway.open_spreadsheet(spreadsheet_id)
 
     # Read existing tab annotations from the live Sheet.
     existing: Dict = {}
@@ -1819,7 +1815,7 @@ def _regen_construction(
                 else:
                     if len(row) >= 2 and row[0] and row[1]:
                         existing[(row[0], row[1])] = dict(zip(hdr[2:], row[2:]))
-    except gspread.WorksheetNotFound:
+    except WorksheetNotFound:
         pass
 
     # Get param_names and param_values from the manifest.
@@ -1901,7 +1897,7 @@ def _regen_construction(
 
 
 def _add_constructions_to_existing_sheet(
-    ss: gspread.Spreadsheet,
+    ss: SpreadsheetHandle,
     class_name: str,
     new_constructions: List[Tuple[str, List[str], Dict[str, List[str]]]],
     lang_id: str,
@@ -2024,7 +2020,7 @@ def _add_constructions_to_existing_sheet(
     return construction_params
 
 
-def _regen_dependents_simple(gc: gspread.Client, manifest: dict) -> None:
+def _regen_dependents_simple(doorway, manifest: dict) -> None:
     """Regenerate dependent constructions where the dependent TSV has no annotation data.
 
     Safe to automate: only fires when the dependent TSV does not exist or contains
@@ -2071,7 +2067,7 @@ def _regen_dependents_simple(gc: gspread.Client, manifest: dict) -> None:
 
                 print(f"  [{lang_id}/{cls_name}/{dep_name}] regenerating from {source_name}…")
                 try:
-                    _regen_construction(gc, lang_id, cls_name, dep_name, cls_info)
+                    _regen_construction(doorway, lang_id, cls_name, dep_name, cls_info)
                 except Exception as exc:
                     print(f"  ERROR: {exc}")
 
@@ -2223,10 +2219,10 @@ def main() -> None:
         confirm_drop = "--confirm-drop" in sys.argv
 
         print("Connecting to Google APIs...")
-        gc, drive = _get_clients()
+        doorway = get_doorway()
         config = _load_drive_config()
         file_id = config.get("_planars_config_file_id")
-        manifest = _download_file_json(drive, file_id) if file_id else {}
+        manifest = doorway.download_file_json(file_id) if file_id else {}
 
         langs = [lang_filter] if lang_filter else sorted(
             d.name for d in CODED_DATA.iterdir() if d.is_dir() and not d.name.startswith(".")
@@ -2237,7 +2233,7 @@ def main() -> None:
                 print(f"  {lang_id}/{class_name}: not in manifest — skipping")
                 continue
             print(f"\n{lang_id}/{class_name}/{construction_name}")
-            _regen_construction(gc, lang_id, class_name, construction_name, cls_info,
+            _regen_construction(doorway, lang_id, class_name, construction_name, cls_info,
                                 pos_num_remap=pos_num_remap or None, confirm_drop=confirm_drop)
         return
 
@@ -2251,11 +2247,11 @@ def main() -> None:
         # update-sheets.
         _check_coded_data_clean(extensions=(".tsv",))
         print("Connecting to Google APIs...")
-        gc, drive = _get_clients()
+        doorway = get_doorway()
         config = _load_drive_config()
         file_id = config.get("_planars_config_file_id")
-        manifest = _download_file_json(drive, file_id) if file_id else {}
-        _regen_dependents_simple(gc, manifest)
+        manifest = doorway.download_file_json(file_id) if file_id else {}
+        _regen_dependents_simple(doorway, manifest)
         return
 
     force = "--force" in sys.argv
@@ -2267,17 +2263,19 @@ def main() -> None:
 
     # Connect to Google once for all languages
     print("Connecting to Google APIs...")
-    gc, drive = _get_clients()
-    docs = _get_docs_client(gc)
+    doorway = get_doorway()
     config = _load_drive_config()
     root_folder_id = config.get("_root_folder_id")
 
     # Load the existing merged config from Drive (if present) so we can update
     # it incrementally as each language is processed, preserving other languages.
+    # Not routed through load_manifest(doorway): that helper has different
+    # fallback semantics for the pre-#30 per-language format and does not write
+    # the recovery backup below, both of which this call site needs.
     existing_config_file_id = config.get("_planars_config_file_id")
     if existing_config_file_id:
         try:
-            merged_config: Dict = _download_file_json(drive, existing_config_file_id)
+            merged_config: Dict = doorway.download_file_json(existing_config_file_id)
             # Back up the raw downloaded manifest before any mutations so it can
             # be used for recovery if something goes wrong during this run.
             _manifest_backup = ROOT / "manifest_backup.json"
@@ -2338,7 +2336,7 @@ def main() -> None:
             old_fid = config[lang_id].get("manifest_file_id")
             if old_fid:
                 try:
-                    existing_lang_data = _download_file_json(drive, old_fid)
+                    existing_lang_data = doorway.download_file_json(old_fid)
                 except Exception:
                     pass
 
@@ -2374,13 +2372,13 @@ def main() -> None:
             continue
 
         # Resolve/create Drive folder.
-        folder_id = existing_lang_data.get("folder_id") or _get_or_create_folder(
-            drive, lang_id, parent_id=root_folder_id
+        folder_id = existing_lang_data.get("folder_id") or doorway.get_or_create_folder(
+            lang_id, parent_id=root_folder_id
         )
         email = _annotator_email(lang_id)
         if email:
             try:
-                _share_with_person(drive, folder_id, email, role="reader")
+                doorway.create_permission(folder_id, type="user", role="reader", email=email)
             except Exception as _share_err:
                 print(f"  [WARNING] Could not share folder for {lang_id}: {_share_err}")
         folder_url = f"https://drive.google.com/drive/folders/{folder_id}"
@@ -2392,7 +2390,7 @@ def main() -> None:
         existing_notes_doc_id = existing_lang_data.get("notes_doc_id") or config.get(lang_id, {}).get("notes_doc_id")
         if not existing_notes_doc_id:
             try:
-                existing_notes_doc_id = _create_notes_doc(drive, lang_id, folder_id, _get_display_name(lang_id))
+                existing_notes_doc_id = create_notes_doc(doorway, lang_id, folder_id, _get_display_name(lang_id))
                 print(f"Notes doc:   https://docs.google.com/document/d/{existing_notes_doc_id}")
             except Exception as _notes_err:
                 print(f"  [WARNING] Could not create notes doc for {lang_id}: {_notes_err}")
@@ -2484,7 +2482,7 @@ def main() -> None:
         # Upload planar and diagnostics as editable Google Sheets (source of truth).
         # Skips files whose sheet IDs are already in the manifest unless --force.
         input_sheet_info = _upload_lang_setup_as_sheets(
-            gc, drive, planar_dir, lang_id, folder_id, existing_lang_data, force=force
+            doorway, planar_dir, lang_id, folder_id, existing_lang_data, force=force
         )
 
         if not force and existing_lang_data:
@@ -2506,7 +2504,7 @@ def main() -> None:
                     ss_id = existing_cls_info["spreadsheet_id"]
                     _planar_path = planar_dir / f"planar_{lang_id}.tsv"
                     new_params = _add_constructions_to_existing_sheet(
-                        _open_spreadsheet(gc, ss_id), cls, new_cons, lang_id,
+                        doorway.open_spreadsheet(ss_id), cls, new_cons, lang_id,
                         element_index, _planar_path,
                     )
                     existing_cls_info.setdefault("constructions", []).extend(
@@ -2555,7 +2553,7 @@ def main() -> None:
         # Create one sheet per new analysis class
         for class_name, constructions in classes_to_create.items():
             sheet_info = _create_analysis_sheet(
-                gc, drive, folder_id, lang_id, class_name, constructions, element_index,
+                doorway, folder_id, lang_id, class_name, constructions, element_index,
                 planar_path=planar_file,
             )
             lang_data["sheets"][class_name] = sheet_info
@@ -2566,8 +2564,8 @@ def main() -> None:
 
         # Upload the full merged config to Drive after each language so partial
         # progress is saved even if a later language fails.
-        existing_config_file_id = _upload_planars_config(
-            drive, merged_config, root_folder_id, existing_config_file_id
+        existing_config_file_id = upload_manifest(
+            doorway, merged_config, root_folder_id, existing_config_file_id
         )
         config["_planars_config_file_id"] = existing_config_file_id
         config.setdefault(lang_id, {})["folder_id"] = folder_id
@@ -2590,8 +2588,8 @@ def main() -> None:
 
     # Upload merged config once more after the loop to capture any skipped languages
     # that were added to merged_config but didn't trigger an in-loop upload.
-    final_file_id = _upload_planars_config(
-        drive, merged_config, root_folder_id, existing_config_file_id
+    final_file_id = upload_manifest(
+        doorway, merged_config, root_folder_id, existing_config_file_id
     )
     config["_planars_config_file_id"] = final_file_id
     _save_drive_config(config)
@@ -2621,7 +2619,7 @@ def push_manifest() -> None:
         )
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     print("Connecting to Google APIs...")
-    _, drive = _get_clients()
+    doorway = get_doorway()
     config = _load_drive_config()
 
     # Enrich manifest with folder_id from drive_config before uploading.
@@ -2639,7 +2637,7 @@ def push_manifest() -> None:
 
     root_folder_id = config.get("_root_folder_id")
     existing_file_id = config.get("_planars_config_file_id")
-    file_id = _upload_planars_config(drive, merged_config, root_folder_id, existing_file_id)
+    file_id = upload_manifest(doorway, merged_config, root_folder_id, existing_file_id)
     config["_planars_config_file_id"] = file_id
     _save_drive_config(config)
     print(f"manifest.json uploaded (id: {file_id})")

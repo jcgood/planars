@@ -1,0 +1,3 @@
+Connecting to Google APIs...
+manifest.json uploaded (id: fake_manifest_file)
+drive_config.json written.
