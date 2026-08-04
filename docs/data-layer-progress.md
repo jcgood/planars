@@ -30,10 +30,10 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 0b/1 — migrating callers, 14 of 18 done (started 2026-08-01)
+**Phase:** 0b/1 — migrating callers, 15 of 18 done (started 2026-08-01)
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
-**Last worked:** 2026-08-03
+**Last worked:** 2026-08-04
 
 Bugs found and fixed while doing this work, all the same root cause — something
 inferred which column held a value from the wrong source: **#272** (dropdowns,
@@ -85,6 +85,7 @@ the same day — see the decisions log.
 | Phase 0b/1 — file 12: `generate_status_sheet.py` | **done** — snapshots captured, pre/post diff clean across 8 scenarios; first to create a root-level folder (`parent_id=None`) and first to read *other* languages' already-existing annotation spreadsheets |
 | Phase 0b/1 — file 13: `validate_coding.py` | **done** — pre/post diff clean across twelve scenarios; smallest Drive footprint of any file migrated so far (three call sites: `get_doorway()`, `load_manifest()`, `doorway.open_spreadsheet()`), no folder/sharing/manifest-upload logic at all |
 | Phase 0b/1 — file 14: `integrity_check.py` | **done** — pre/post diff clean across ten scenarios; two independent read-only entry points (`--sheets`, `--check-manifest`), no writes anywhere in the file; first migration to deliberately drop a retry wrapper (`_with_retry(lambda: gc.open_by_key(...))` → `doorway.open_spreadsheet(...)`, per the doorway's own named exception) |
+| Phase 0b/1 — file 15: `import_sheets.py` | **done** — pre/post diff clean across twenty-two scenarios; the command the daily `data-refresh` workflow depends on to pull annotator work down, and the largest file migrated so far (1,138 lines); found Finding 13 (a dry run has no guard at all against a bad manifest spreadsheet ID — it crashes the whole run rather than aborting cleanly the way `--apply` does) |
 | Phase 0b/1 — remaining files | not started — see § "Migration order" |
 | Phases 3–9 | not started |
 
@@ -118,24 +119,29 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
    **If the file reads `construction_params` from the manifest, call
    `tests/mutation_checks.assert_no_criterion_writes_onto_trailing_columns` in
-   its snapshot test.** All four of the remaining files do: `sync_params`,
-   `generate_sheets`, `restructure_sheets`, `import_sheets`.
+   its snapshot test.** All three of the remaining files do: `sync_params`,
+   `generate_sheets`, `restructure_sheets`.
    (`generate_status_sheet` and `validate_coding` were each checked against
    this same list before being migrated and turned out not to belong on it —
    see the 2026-08-03 decisions-log entries. `validate_coding` writes only pink
    highlighting, built from its own local param map, never a dropdown or a
-   criterion note. `integrity_check` reads `construction_params` too, and
-   genuinely stays on the "reads it" list — `_section_sheets` compares it
-   against the live header — but needed no assertion either, for a different
-   reason from the other two: it never writes anything at all. A dropdown or
-   note landing on `Source`/`Comments` is a write-side mistake; this file's
-   only way to get the same fact wrong is to print an incorrect warning, which
-   is what its own newest Finding turned out to be.) Two commands have now
-   written criterion-shaped things onto `Source`/`Comments` independently
-   (#272 and Finding 10), both from trusting the manifest about a tab's
-   columns, so treat it as the expected mistake rather than a surprise.
-   `sync_params` is the one to watch: it inserts and deletes criterion
-   columns, which is the densest form of the same question.
+   criterion note. `integrity_check` and `import_sheets` both read
+   `construction_params` too, and genuinely stay on the "reads it" list —
+   `integrity_check`'s `_section_sheets` compares it against the live header,
+   `import_sheets` feeds it into `_validate_tab`/`_validate_pair_tab` as the
+   allowed-value set for each criterion — but neither needed the assertion,
+   for the same reason: neither ever writes a dropdown or a note back to
+   Drive. `import_sheets`'s only sheet write is `highlight_cells`, which
+   paints backgrounds, not `setDataValidation` or a note. A dropdown or note
+   landing on `Source`/`Comments` is a write-side mistake; these two files'
+   only way to get the same fact wrong would be to print an incorrect
+   warning, which is what `integrity_check`'s own newest Finding turned out
+   to be.) Two commands have now written criterion-shaped things onto
+   `Source`/`Comments` independently (#272 and Finding 10), both from
+   trusting the manifest about a tab's columns, so treat it as the expected
+   mistake rather than a surprise. `sync_params` is the one to watch: it
+   inserts and deletes criterion columns, which is the densest form of the
+   same question.
 
 2. Phases 3–9 per the plan.
 
@@ -177,7 +183,7 @@ current job and every one would otherwise be remembered by nobody.
 
 ### Migration order
 
-Four files remain of eighteen that touch Drive. The plan's list of eleven
+Three files remain of eighteen that touch Drive. The plan's list of eleven
 was hand-written and never checked against the code; a scan on 2026-08-02
 replaced it with a derived one in `tests/test_doorway_coverage.py`.
 
@@ -192,13 +198,13 @@ total at all.
 Ordered by risk, lowest first, so that every shared helper and every part of
 the doorway has been exercised before the destructive commands are touched.
 
-**"14 of 18" flatters it, and planning should use the volume rather than the
-count.** Because the order is smallest-and-safest first, the fourteen done are
-5,841 lines between them; the four remaining are 6,022 lines and **32 direct
-Drive calls**. That is still 51% of the phase by weight, even at 14 of 18 files
-by count. Recompute rather than trusting these numbers — the command is in
-`tests/test_doorway_coverage.py` (`_DIRECT_ACCESS` over `coding/*.py`, minus
-`_EXEMPT`).
+**"15 of 18" still flatters it, and planning should use the volume rather than
+the count.** Because the order is smallest-and-safest first, the fifteen done
+are 6,984 lines between them; the three remaining are 4,884 lines and **26
+direct Drive calls**. That is still 41% of the phase by weight, even at 15 of
+18 files by count. Recompute rather than trusting these numbers — the command
+is in `tests/test_doorway_coverage.py` (`_DIRECT_ACCESS` over `coding/*.py`,
+minus `_EXEMPT`).
 
 | file | why here |
 |---|---|
@@ -214,7 +220,7 @@ by count. Recompute rather than trusting these numbers — the command is in
 | ~~`generate_status_sheet.py`~~ | done |
 | ~~`validate_coding.py`~~ | done |
 | ~~`integrity_check.py`~~ | done |
-| `import_sheets.py` | Downloads everything; the daily refresh depends on it |
+| ~~`import_sheets.py`~~ | done |
 | `sync_params.py` | Column surgery — insert, rename, delete. Highest density of read-then-write on one handle |
 | `generate_sheets.py` | 2,651 lines, creates everything, and owns helpers four other files call. Late, so those callers are already migrated and proven |
 | `restructure_sheets.py` | Archive-then-rebuild with no rollback. The #248 command. Last, deliberately |
@@ -579,9 +585,151 @@ just the one it uses) — rather than crashing or inventing a false one.
 `tests/test_integrity_check_snapshot.py::test_stale_param_values_reports_a_real_mismatch_without_crashing`
 pins it.
 
+**13. A dry run of `import-sheets` has no protection at all against a
+manifest entry pointing at an inaccessible spreadsheet** (found 2026-08-04,
+file 15). Not fixed here. `--apply` calls `_verify_manifest_sheet_ids` first
+and aborts cleanly — "ERROR: Manifest contains inaccessible spreadsheet
+IDs" — before downloading anything, but that call is gated `if apply:`. A
+dry run instead reaches `ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])`
+inside the per-class loop (`coding/import_sheets.py` ~line 879) with no
+`try`/`except` around it at all, so a bad ID raises an unhandled
+`SpreadsheetNotFound` (or the live equivalent) straight out of `main()` —
+stopping the *entire* run, every language, not just the one naming the bad
+ID. Confirmed identical between the unmigrated and migrated code as part of
+the pre/post comparison (both raise the same exception at the same point);
+`tests/test_import_sheets_snapshot.py::test_a_bad_id_reached_on_a_dry_run_crashes_the_whole_run`
+pins the crash as current behaviour rather than papering over it.
+
+Nothing is lost when it happens — a dry run performs no writes either way —
+and the daily `data-refresh` workflow itself runs `import-sheets --apply
+--ignore-status` directly, so it always gets the clean abort. The risk is the
+ordinary coordinator workflow this file's own module docstring recommends:
+`python -m coding import-sheets` (dry run) before `--apply`, to preview what
+would be written. A single stale manifest entry crashes that preview step
+outright, with a raw traceback, rather than reporting per-language the way
+every other failure mode in this file does. Same shape as #248 and findings 6
+and 7: a guard that exists on one path and not its twin.
+
 ---
 
 ## Decisions log
+
+**2026-08-04 — file 15 (`import_sheets.py`) needed no doorway addition.**
+Every primitive it uses already existed: `get_doorway()`, `load_manifest()`,
+`upload_manifest()`, `doorway.open_spreadsheet()`, `doorway.get_file()`. Five
+functions touched Drive directly, each a plain call-site substitution —
+`_read_sheet_as_df(gc, ...)` → `_read_sheet_as_df(doorway, ...)`,
+`_read_status_tab` dropped its `gspread.Spreadsheet` type annotation and
+`except gspread.WorksheetNotFound` became `except WorksheetNotFound` (the
+identical class, imported from `drive_doorway` instead), `_download_lang_setup_sheets`
+renamed its `gc` parameter to `doorway` and threaded it into two
+`_read_sheet_as_df` calls, `_verify_manifest_sheet_ids` swapped
+`drive.files().get(fileId=..., fields=...).execute()` for
+`doorway.get_file(spreadsheet_id, fields="id,trashed")`, and `main()` replaced
+`gc, drive = _get_clients()` / `_load_manifest_from_drive(drive)` with
+`doorway = get_doorway()` / `load_manifest(doorway)`, threaded `doorway`
+everywhere `gc`/`drive` had been, and closed with
+`upload_manifest(doorway, manifest, root_id, file_id)` in place of
+`_upload_planars_config(drive, manifest, root_id, file_id)`. `gspread` is no
+longer imported at all — it was needed only for the two dropped type
+annotations and the one `except` clause.
+
+By far the largest and most consequential file migrated so far (1,137 lines
+post-migration; the daily `data-refresh` workflow's `import-sheets --apply
+--ignore-status` step is what pulls annotator work down from Sheets every
+day), so the scenario count follows suit: twenty-two, run through both the
+unmigrated and migrated code against identically seeded fakes — dry run over
+all languages and with `--lang`; `--apply` with no prior local TSVs
+(first-time download); an "already matches" baseline and a genuine content
+change on top of it; `--overwrite-existing`; a purely-additive in-order
+planar change (queues `update-sheets --apply`, confirmed via a stubbed
+`sys.modules["coding.update_sheets"]` recording rather than really running
+the auto-applied command) versus a deletion and a reorder (each its own
+pending entry); an unrecognised diagnostics criterion (ambiguous YAML drift);
+a missing construction tab (`WorksheetNotFound`, warn and continue); a class
+with no Status tab versus `--ignore-status` versus one construction flipped to
+`ready-for-review` alongside others left `in-progress`; an injected invalid
+cell (confirmed via a `updateCells` mutation at the exact row/column, not just
+by reading stdout — real fixture data already has blank cells pink-highlighted
+too, so the highlight *count* alone does not move when a blank becomes
+invalid); a missing local row on an in-progress tab (collaborator-check, not
+pending); a bad manifest spreadsheet ID reached under `--apply` (clean abort)
+versus the same ID excluded by `--lang` under a dry run (silently never
+reached) versus reached on a dry run over all languages (crashes — Finding
+13); the manifest metadata sync firing only when the computed planar
+structure actually differs from what the manifest already has; and `--lang`
+leaving other languages' local trees untouched. stdout, exit codes, the
+mutation logs, the local `coded_data/` tree contents, `pending_changes.json`,
+and `diagnostics_drift.json` all came back byte-identical once
+`datetime.now()` was frozen — the archive filename embeds a timestamp
+computed once at the top of `main()`, so two real invocations a second apart
+otherwise disagreed on nothing else.
+
+Two harness-only findings, neither about the migration itself, both worth
+naming for whoever migrates `sync_params.py`, `restructure_sheets.py`, or
+`generate_sheets.py` next: first, `load_manifest()`/`_load_manifest_from_drive()`
+are defined in `coding/drive.py` and call *that module's own* `_load_drive_config()`
+when falling back to the pre-#30 per-language manifest format — patching
+`import_sheets.py`'s imported copy of `_load_drive_config` is not enough, the
+same "patch where it's actually bound and looked up" lesson as file 5's
+finding, one level further down the call chain. Caught before it mattered:
+the very first harness run, with only the target module's copy patched,
+reached a *real* OAuth token refresh against `oauth2.googleapis.com` — three
+established HTTPS connections to Google IP ranges, found via `lsof` after the
+process sat idle past a two-minute timeout with zero CPU use. No data was
+read or written; `_get_clients` guards on `PLANARS_OAUTH_CREDENTIALS`, which
+happened to already be satisfied on the machine doing this migration, so the
+usual "no credentials file, raises immediately" guard did not fire. The
+harness now also wraps every scenario in a socket-level guard that raises
+immediately on any connection not to localhost, rather than trusting each
+shim to be complete. Second: `revalidate_sheets()` (called at the end of
+`main()` under `--apply`) reads local TSVs from `coding.validate_coding`'s
+own `CODED_DATA` constant, a different module-level path than this file's
+`ROOT` — both need redirecting into the test's private tree, or the
+revalidation pass silently reads the real repo's current annotation state
+instead of the scenario under test.
+
+`tests/test_import_sheets.py`'s `TestVerifyManifestSheetIds` mocked a raw
+`drive` object shaped like `.files().get(fileId=..., fields=...).execute()`;
+its six tests now pass a `_DoorwayStub` with a `get_file(self, file_id,
+fields=None)` method instead, keeping the same behaviour under test (which
+IDs abort, which don't) without depending on a shape `_verify_manifest_sheet_ids`
+no longer receives. The rest of that file is unchanged, per its own docstring
+being otherwise pure logic.
+
+Twenty-six tests in a new `tests/test_import_sheets_snapshot.py` (plus the six
+updated in `test_import_sheets.py`). They pin: a no-op apply writes no new
+TSVs or archives; `--overwrite-existing` forces a rewrite despite unchanged
+content; a content change archives the old file before overwriting; a
+purely-additive planar change auto-applies `update-sheets --apply` while a
+deletion or reorder writes a `pending_changes.json` entry instead; an
+unrecognised diagnostics criterion lands in `diagnostics_drift.json`, not a
+crash; a missing tab warns and leaves the rest of the language alone; the
+Status-tab-absent, `--ignore-status`, and mixed-status paths each produce the
+right ready-for-review/in-progress split; an invalid cell gets pink-highlighted
+at its exact cell address; a missing local row on an in-progress tab goes to
+`_notify_collaborator_check`, never `pending_changes.json`;
+`_verify_manifest_sheet_ids` aborts cleanly before any language is printed
+under `--apply`, is silently never called when `--lang` excludes the bad ID
+under a dry run, and crashes when a dry run does reach it (Finding 13,
+confirmed rather than avoided); the manifest metadata sync uploads only when
+the computed planar structure changed; `--lang` leaves other languages
+untouched; both a pair-row construction (`coreference/reflexivization`, whose
+output TSV keeps its `Element_A`/`Position_A`/`Position_B` columns) and a
+standard construction import cleanly in the same run; and a defensive call to
+`assert_no_criterion_writes_onto_trailing_columns`, expected to always pass
+here since this file's only sheet write is `highlight_cells` painting
+backgrounds, never a dropdown or a criterion note.
+
+`tests/test_doorway_coverage.py`'s `_REMAINING` drops `import_sheets.py`
+(three files now remain, all still reading `construction_params` from the
+manifest for different reasons — see the "Next action" update in the same
+commit); `coding/CLAUDE.md`'s migrated list gains it and its
+"`construction_params`" sentence is rewritten to name `import_sheets` and
+`integrity_check` together as readers that never write it back;
+`docs/data-layer-progress.md` moves to 15 of 18 and recomputes the
+remaining-files weight (4,884 lines, 26 direct Drive calls across
+`sync_params`, `restructure_sheets`, `generate_sheets`).
 
 **2026-08-03 — file 14 (`integrity_check.py`) needed no doorway addition.**
 Every primitive it uses already existed (`get_doorway`, `load_manifest`,

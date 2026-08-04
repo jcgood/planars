@@ -1,0 +1,6 @@
+Connecting to Google...
+ERROR: Manifest contains inaccessible spreadsheet IDs:
+  arao1248/ciscategorial: does_not_exist_xyz — APIError: [404]: File not found: does_not_exist_xyz.
+The manifest may be stale or point to deleted/moved sheets.
+→ Run: python -m coding integrity-check --sheets
+  This will list which spreadsheet IDs are unreachable and what to do next.

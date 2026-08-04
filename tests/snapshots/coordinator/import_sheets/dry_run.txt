@@ -1,0 +1,155 @@
+DRY RUN — pass --apply to write TSVs.
+
+Connecting to Google...
+
+Language: arao1248
+  [planar] No changes → planar_arao1248.tsv
+  [diagnostics] No changes → diagnostics_arao1248.tsv
+
+  ciscategorial
+    [general] status: 'in-progress' — importing for backup
+    [general] [backup] No changes → coded_data/arao1248/ciscategorial/general.tsv
+
+  noninterruption
+    [general] status: 'in-progress' — importing for backup
+    [general] [backup] No changes → coded_data/arao1248/noninterruption/general.tsv
+
+  subspanrepetition
+    [auxiliary_construction] status: 'in-progress' — importing for backup
+    [auxiliary_construction] [backup] No changes → coded_data/arao1248/subspanrepetition/auxiliary_construction.tsv
+    [tso_clause_linkage] status: 'in-progress' — importing for backup
+    [tso_clause_linkage] [backup] No changes → coded_data/arao1248/subspanrepetition/tso_clause_linkage.tsv
+
+Language: stan1293
+  [planar] No changes → planar_stan1293.tsv
+  [diagnostics] WARNING: [WARNING] row 12: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_exponence', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
+  [diagnostics] WARNING: [WARNING] row 13: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_exponence', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
+  [diagnostics] No changes → diagnostics_stan1293.tsv
+
+  ciscategorial
+    [general] status: 'in-progress' — importing for backup
+    [general] [backup] No changes → coded_data/stan1293/ciscategorial/general.tsv
+
+  subspanrepetition
+    [andCoordination] status: 'in-progress' — importing for backup
+    [andCoordination] [backup] No changes → coded_data/stan1293/subspanrepetition/andCoordination.tsv
+    [control] status: 'in-progress' — importing for backup
+    [control] [backup] No changes → coded_data/stan1293/subspanrepetition/control.tsv
+    [thatCOMP] status: 'in-progress' — importing for backup
+    [thatCOMP] [backup] No changes → coded_data/stan1293/subspanrepetition/thatCOMP.tsv
+    [asyndeticPart] status: 'in-progress' — importing for backup
+    [asyndeticPart] [backup] No changes → coded_data/stan1293/subspanrepetition/asyndeticPart.tsv
+
+  noninterruption
+    [general] status: 'in-progress' — importing for backup
+    [general] [backup] No changes → coded_data/stan1293/noninterruption/general.tsv
+
+  segmental
+    [aspiration_prominence] status: 'in-progress' — importing for backup
+    [aspiration_prominence] [backup] No changes → coded_data/stan1293/segmental/aspiration_prominence.tsv
+    [flapping] status: 'in-progress' — importing for backup
+    [flapping] [backup] No changes → coded_data/stan1293/segmental/flapping.tsv
+
+  metrical
+    [stress_domain] status: 'in-progress' — importing for backup
+    [stress_domain] [backup] No changes → coded_data/stan1293/metrical/stress_domain.tsv
+
+  free_occurrence
+    [general] status: 'in-progress' — importing for backup
+    [general] [backup] No changes → coded_data/stan1293/free_occurrence/general.tsv
+
+  nonpermutability
+    [element_prescreening] status: 'in-progress' — importing for backup
+    [element_prescreening] [backup] No changes → coded_data/stan1293/nonpermutability/element_prescreening.tsv
+    [general] status: 'in-progress' — importing for backup
+    [general] [backup] No changes → coded_data/stan1293/nonpermutability/general.tsv
+
+  coreference
+    [prescreening] status: 'in-progress' — importing for backup
+    [prescreening] [backup] No changes → coded_data/stan1293/coreference/prescreening.tsv
+    [reflexivization] status: 'in-progress' — importing for backup
+    [reflexivization] [backup] No changes → coded_data/stan1293/coreference/reflexivization.tsv
+    [pronominalization] status: 'in-progress' — importing for backup
+    [pronominalization] [backup] No changes → coded_data/stan1293/coreference/pronominalization.tsv
+    [np_reference] status: 'in-progress' — importing for backup
+    [np_reference] [backup] No changes → coded_data/stan1293/coreference/np_reference.tsv
+
+  proform
+    [do_so_substitution] status: 'in-progress' — importing for backup
+    [do_so_substitution] [backup] No changes → coded_data/stan1293/proform/do_so_substitution.tsv
+    [vp_ellipsis] status: 'in-progress' — importing for backup
+    [vp_ellipsis] [backup] No changes → coded_data/stan1293/proform/vp_ellipsis.tsv
+
+  phrasal_accent
+    [prescreening] status: 'in-progress' — importing for backup
+    [prescreening] [backup] No changes → coded_data/stan1293/phrasal_accent/prescreening.tsv
+    [general] status: 'in-progress' — importing for backup
+    [general] [backup] No changes → coded_data/stan1293/phrasal_accent/general.tsv
+
+Language: synth0001
+  [planar] No changes → planar_synth0001.tsv
+  [diagnostics] WARNING: [WARNING] row 12: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_exponence', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
+  [diagnostics] WARNING: [WARNING] row 13: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_exponence', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
+  [diagnostics] No changes → diagnostics_synth0001.tsv
+
+  ciscategorial
+    [general] status: 'in-progress' — importing for backup
+    [general] [backup] No changes → coded_data/synth0001/ciscategorial/general.tsv
+
+  subspanrepetition
+    [andCoordination] status: 'in-progress' — importing for backup
+    [andCoordination] [backup] No changes → coded_data/synth0001/subspanrepetition/andCoordination.tsv
+    [control] status: 'in-progress' — importing for backup
+    [control] [backup] No changes → coded_data/synth0001/subspanrepetition/control.tsv
+    [thatCOMP] status: 'in-progress' — importing for backup
+    [thatCOMP] [backup] No changes → coded_data/synth0001/subspanrepetition/thatCOMP.tsv
+    [asyndeticPart] status: 'in-progress' — importing for backup
+    [asyndeticPart] [backup] No changes → coded_data/synth0001/subspanrepetition/asyndeticPart.tsv
+
+  noninterruption
+    [general] status: 'in-progress' — importing for backup
+    [general] [backup] No changes → coded_data/synth0001/noninterruption/general.tsv
+
+  segmental
+    [aspiration_prominence] status: 'in-progress' — importing for backup
+    [aspiration_prominence] [backup] No changes → coded_data/synth0001/segmental/aspiration_prominence.tsv
+    [flapping] status: 'in-progress' — importing for backup
+    [flapping] [backup] No changes → coded_data/synth0001/segmental/flapping.tsv
+
+  metrical
+    [stress_domain] status: 'in-progress' — importing for backup
+    [stress_domain] [backup] No changes → coded_data/synth0001/metrical/stress_domain.tsv
+
+  nonpermutability
+    [element_prescreening] status: 'in-progress' — importing for backup
+    [element_prescreening] [backup] No changes → coded_data/synth0001/nonpermutability/element_prescreening.tsv
+    [general] status: 'in-progress' — importing for backup
+    [general] [backup] No changes → coded_data/synth0001/nonpermutability/general.tsv
+
+  free_occurrence
+    [general] status: 'in-progress' — importing for backup
+    [general] [backup] No changes → coded_data/synth0001/free_occurrence/general.tsv
+
+  coreference
+    [prescreening] status: 'in-progress' — importing for backup
+    [prescreening] [backup] No changes → coded_data/synth0001/coreference/prescreening.tsv
+    [reflexivization] status: 'in-progress' — importing for backup
+    [reflexivization] [backup] No changes → coded_data/synth0001/coreference/reflexivization.tsv
+    [pronominalization] status: 'in-progress' — importing for backup
+    [pronominalization] [backup] No changes → coded_data/synth0001/coreference/pronominalization.tsv
+    [np_reference] status: 'in-progress' — importing for backup
+    [np_reference] [backup] No changes → coded_data/synth0001/coreference/np_reference.tsv
+
+  proform
+    [do_so_substitution] status: 'in-progress' — importing for backup
+    [do_so_substitution] [backup] No changes → coded_data/synth0001/proform/do_so_substitution.tsv
+    [vp_ellipsis] status: 'in-progress' — importing for backup
+    [vp_ellipsis] [backup] No changes → coded_data/synth0001/proform/vp_ellipsis.tsv
+
+  phrasal_accent
+    [prescreening] status: 'in-progress' — importing for backup
+    [prescreening] [backup] No changes → coded_data/synth0001/phrasal_accent/prescreening.tsv
+    [general] status: 'in-progress' — importing for backup
+    [general] [backup] Would overwrite (changed) → coded_data/synth0001/phrasal_accent/general.tsv
+
+Done. 0 file(s) written, 0 warning(s).

@@ -29,13 +29,12 @@ from typing import Dict, List, Optional, Set, Tuple
 ROOT = Path(__file__).resolve().parent.parent
 
 import pandas as pd
-import gspread
 
 from .drive import (
-    _check_coded_data_clean, _get_clients, _load_manifest_from_drive, _open_spreadsheet,
-    _upload_planars_config, _load_drive_config, _save_drive_config,
-    _with_retry,
+    _check_coded_data_clean, load_manifest, upload_manifest,
+    _load_drive_config, _save_drive_config, _with_retry,
 )
+from .drive_doorway import get_doorway, WorksheetNotFound
 from .generate_sheets import _STATUS_TAB, _STATUS_VALUES
 from .restructure_sheets import _get_pair_row_constructions
 from . import validate_coding as _val
@@ -189,9 +188,9 @@ def _write_error_report(lang_id: str, lines: List[str], timestamp: str) -> Path:
 # Planar / diagnostics Sheet download and change detection
 # ---------------------------------------------------------------------------
 
-def _read_sheet_as_df(gc: gspread.Client, spreadsheet_id: str) -> Optional[pd.DataFrame]:
+def _read_sheet_as_df(doorway, spreadsheet_id: str) -> Optional[pd.DataFrame]:
     """Download sheet1 of a Google Sheet and return as a DataFrame, or None if empty."""
-    ss = _open_spreadsheet(gc, spreadsheet_id)
+    ss = doorway.open_spreadsheet(spreadsheet_id)
     rows = _with_retry(ss.sheet1.get_all_values)
     if not rows:
         return None
@@ -412,11 +411,11 @@ def _check_yaml_drift(lang_id: str, tsv_df: pd.DataFrame) -> List[Dict]:
     return ambiguous
 
 
-def _read_status_tab(ss: gspread.Spreadsheet) -> Dict[str, str]:
+def _read_status_tab(ss) -> Dict[str, str]:
     """Return {construction: status} from the Status tab, or {} if absent."""
     try:
         ws = _with_retry(lambda: ss.worksheet(_STATUS_TAB))
-    except gspread.WorksheetNotFound:
+    except WorksheetNotFound:
         return {}
     rows = _with_retry(ws.get_all_values)
     if len(rows) < 2:
@@ -663,7 +662,7 @@ def _notify_collaborator_check(entries: List[Dict]) -> None:
 
 
 def _download_lang_setup_sheets(
-    gc: gspread.Client,
+    doorway,
     lang_id: str,
     lang_data: Dict,
     timestamp: str = "",
@@ -686,7 +685,7 @@ def _download_lang_setup_sheets(
     # --- Planar sheet ---
     planar_id = lang_data.get("planar_spreadsheet_id")
     if planar_id:
-        new_df = _read_sheet_as_df(gc, planar_id)
+        new_df = _read_sheet_as_df(doorway, planar_id)
         if new_df is not None:
             issues = _validate_planar_df(new_df)
             errors = [i for i in issues if i.level == "error"]
@@ -739,7 +738,7 @@ def _download_lang_setup_sheets(
     # --- Diagnostics sheet ---
     diag_id = lang_data.get("diagnostics_spreadsheet_id")
     if diag_id:
-        new_df = _read_sheet_as_df(gc, diag_id)
+        new_df = _read_sheet_as_df(doorway, diag_id)
         if new_df is not None:
             issues = _validate_diagnostics_df(new_df, lang_id)
             errors = [i for i in issues if i.level == "error"]
@@ -792,7 +791,7 @@ def _download_lang_setup_sheets(
     return safe_cmds, pending, drift_entries
 
 
-def _verify_manifest_sheet_ids(drive, manifest: Dict) -> None:
+def _verify_manifest_sheet_ids(doorway, manifest: Dict) -> None:
     """Abort if any annotation spreadsheet ID in the manifest is inaccessible.
 
     Protects against writing TSVs from a stale or corrupted manifest that
@@ -811,7 +810,7 @@ def _verify_manifest_sheet_ids(drive, manifest: Dict) -> None:
             if not spreadsheet_id:
                 continue
             try:
-                drive.files().get(fileId=spreadsheet_id, fields="id,trashed").execute()
+                doorway.get_file(spreadsheet_id, fields="id,trashed")
             except Exception as e:
                 bad.append(f"  {lang_id}/{class_name}: {spreadsheet_id} — {e}")
     if bad:
@@ -848,11 +847,11 @@ def main() -> None:
         _check_coded_data_clean()
 
     print("Connecting to Google...")
-    gc, drive = _get_clients()
-    manifest = _load_manifest_from_drive(drive)
+    doorway = get_doorway()
+    manifest = load_manifest(doorway)
 
     if apply:
-        _verify_manifest_sheet_ids(drive, manifest)
+        _verify_manifest_sheet_ids(doorway, manifest)
 
     total_files = 0
     in_progress_files = 0
@@ -870,14 +869,14 @@ def main() -> None:
         lang_warning_lines: List[str] = []
 
         # Download planar and diagnostics Sheets to local TSVs; detect changes.
-        s, p, d = _download_lang_setup_sheets(gc, lang_id, lang_data, timestamp, apply)
+        s, p, d = _download_lang_setup_sheets(doorway, lang_id, lang_data, timestamp, apply)
         all_safe_cmds |= s
         all_pending   += p
         all_drift     += d
 
         for class_name, sheet_info in lang_data["sheets"].items():
             print(f"\n  {class_name}")
-            ss = _open_spreadsheet(gc, sheet_info["spreadsheet_id"])
+            ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
 
             status_map = _read_status_tab(ss)
             if not status_map and not ignore_status:
@@ -886,7 +885,7 @@ def main() -> None:
             for construction in sheet_info["constructions"]:
                 try:
                     ws = _with_retry(lambda: ss.worksheet(construction))
-                except gspread.WorksheetNotFound:
+                except WorksheetNotFound:
                     msg = f"[{class_name}/{construction}] tab not found in sheet, skipping"
                     print(f"    WARNING: {msg}")
                     lang_warning_lines.append(f"WARNING: {msg}")
@@ -1065,7 +1064,7 @@ def main() -> None:
         drive_cfg = _load_drive_config()
         file_id = drive_cfg.get("_planars_config_file_id")
         root_id = drive_cfg.get("_root_folder_id")
-        new_id = _upload_planars_config(drive, manifest, root_id, file_id)
+        new_id = upload_manifest(doorway, manifest, root_id, file_id)
         if new_id != file_id:
             drive_cfg["_planars_config_file_id"] = new_id
             _save_drive_config(drive_cfg)

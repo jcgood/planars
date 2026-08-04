@@ -107,20 +107,22 @@ class TestArchiveTsv:
 # _verify_manifest_sheet_ids
 # ---------------------------------------------------------------------------
 
-def _make_drive_mock(bad_ids: set = frozenset()):
-    """Return a minimal Drive mock where bad_ids raise on execute()."""
-    class _Files:
-        def get(self, fileId, fields=None):
-            class _Req:
-                def execute(self_inner):
-                    if fileId in bad_ids:
-                        raise Exception(f"404: File not found: {fileId}")
-                    return {"id": fileId}
-            return _Req()
-    class _Drive:
-        def files(self):
-            return _Files()
-    return _Drive()
+class _DoorwayStub:
+    """Minimal doorway-shaped stub: only get_file(file_id, fields=None).
+
+    _verify_manifest_sheet_ids now takes a doorway rather than a raw Drive
+    service (coding/drive_doorway.py's migration, #271 file 15), so this
+    replaces the old _make_drive_mock's .files().get(fileId=...).execute()
+    shape with the one method the doorway actually exposes.
+    """
+
+    def __init__(self, bad_ids: set = frozenset()):
+        self._bad_ids = bad_ids
+
+    def get_file(self, file_id, fields=None):
+        if file_id in self._bad_ids:
+            raise Exception(f"404: File not found: {file_id}")
+        return {"id": file_id}
 
 
 class TestVerifyManifestSheetIds:
@@ -137,23 +139,23 @@ class TestVerifyManifestSheetIds:
 
     def test_passes_with_all_accessible(self):
         manifest = self._manifest({"arao1248": "sheet_id_1", "stan1293": "sheet_id_2"})
-        drive = _make_drive_mock()
-        _verify_manifest_sheet_ids(drive, manifest)  # no error
+        doorway = _DoorwayStub()
+        _verify_manifest_sheet_ids(doorway, manifest)  # no error
 
     def test_aborts_when_sheet_inaccessible(self):
         manifest = self._manifest({"arao1248": "bad_id"})
-        drive = _make_drive_mock(bad_ids={"bad_id"})
+        doorway = _DoorwayStub(bad_ids={"bad_id"})
         with pytest.raises(SystemExit):
-            _verify_manifest_sheet_ids(drive, manifest)
+            _verify_manifest_sheet_ids(doorway, manifest)
 
     def test_aborts_on_any_bad_id_among_multiple(self):
         manifest = self._manifest({"arao1248": "good_id", "stan1293": "bad_id"})
-        drive = _make_drive_mock(bad_ids={"bad_id"})
+        doorway = _DoorwayStub(bad_ids={"bad_id"})
         with pytest.raises(SystemExit):
-            _verify_manifest_sheet_ids(drive, manifest)
+            _verify_manifest_sheet_ids(doorway, manifest)
 
     def test_passes_empty_manifest(self):
-        _verify_manifest_sheet_ids(_make_drive_mock(), {})  # no error
+        _verify_manifest_sheet_ids(_DoorwayStub(), {})  # no error
 
     def test_skips_entries_without_spreadsheet_id(self):
         manifest = {
@@ -161,11 +163,11 @@ class TestVerifyManifestSheetIds:
                 "sheets": {"ciscategorial": {"url": "https://example.com"}}
             }
         }
-        _verify_manifest_sheet_ids(_make_drive_mock(), manifest)  # no error
+        _verify_manifest_sheet_ids(_DoorwayStub(), manifest)  # no error
 
     def test_skips_non_dict_lang_data(self):
         manifest = {"_root_folder_id": "some_folder_id"}
-        _verify_manifest_sheet_ids(_make_drive_mock(), manifest)  # no error
+        _verify_manifest_sheet_ids(_DoorwayStub(), manifest)  # no error
 
 
 # ---------------------------------------------------------------------------
