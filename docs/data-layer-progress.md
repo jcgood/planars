@@ -30,7 +30,7 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 0b/1 — migrating callers, 13 of 18 done (started 2026-08-01)
+**Phase:** 0b/1 — migrating callers, 14 of 18 done (started 2026-08-01)
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
 **Last worked:** 2026-08-03
@@ -84,6 +84,7 @@ the same day — see the decisions log.
 | Phase 0b/1 — file 11: `update_sheets.py` | **done** — snapshots captured, pre/post diff clean across 12 scenarios; first to append to the annotation tabs themselves |
 | Phase 0b/1 — file 12: `generate_status_sheet.py` | **done** — snapshots captured, pre/post diff clean across 8 scenarios; first to create a root-level folder (`parent_id=None`) and first to read *other* languages' already-existing annotation spreadsheets |
 | Phase 0b/1 — file 13: `validate_coding.py` | **done** — pre/post diff clean across twelve scenarios; smallest Drive footprint of any file migrated so far (three call sites: `get_doorway()`, `load_manifest()`, `doorway.open_spreadsheet()`), no folder/sharing/manifest-upload logic at all |
+| Phase 0b/1 — file 14: `integrity_check.py` | **done** — pre/post diff clean across ten scenarios; two independent read-only entry points (`--sheets`, `--check-manifest`), no writes anywhere in the file; first migration to deliberately drop a retry wrapper (`_with_retry(lambda: gc.open_by_key(...))` → `doorway.open_spreadsheet(...)`, per the doorway's own named exception) |
 | Phase 0b/1 — remaining files | not started — see § "Migration order" |
 | Phases 3–9 | not started |
 
@@ -100,12 +101,13 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
 1. **The remaining files**, one at a time, snapshots captured
    immediately after each. See § "Migration order" below.
-   Delegable to agents now that the pattern exists (the twelve done are the
+   Delegable to agents now that the pattern exists (the fourteen done are the
    worked examples: Sheets-heavy, Drive-files-only, folders-and-sharing,
    read-only, Docs, sheet creation, reference-sheet overwrite, a command
    with two directions that must round-trip, file uploads, appending to
-   annotation tabs, and a root-level folder that reads other languages'
-   sheets).
+   annotation tabs, a root-level folder that reads other languages'
+   sheets, and a read-only structural comparison against a live Sheet header
+   with two independent entry points in one file).
 
    Watch for, in each: a `_save_drive_config` call (must be patched in tests —
    the real `drive_config.json` holds live IDs and a test that clobbers it
@@ -116,18 +118,24 @@ their own doc files touched, `coded_data/` untouched, tree clean)*
 
    **If the file reads `construction_params` from the manifest, call
    `tests/mutation_checks.assert_no_criterion_writes_onto_trailing_columns` in
-   its snapshot test.** All five of the remaining files do: `sync_params`,
-   `generate_sheets`, `restructure_sheets`, `import_sheets`, `integrity_check`.
+   its snapshot test.** All four of the remaining files do: `sync_params`,
+   `generate_sheets`, `restructure_sheets`, `import_sheets`.
    (`generate_status_sheet` and `validate_coding` were each checked against
    this same list before being migrated and turned out not to belong on it —
    see the 2026-08-03 decisions-log entries. `validate_coding` writes only pink
    highlighting, built from its own local param map, never a dropdown or a
-   criterion note.) Two commands have now written criterion-shaped
-   things onto `Source`/`Comments` independently (#272 and Finding 10), both
-   from trusting the manifest about a tab's columns, so treat it as the
-   expected mistake rather than a surprise. `sync_params` is the one to watch:
-   it inserts and deletes criterion columns, which is the densest form of the
-   same question.
+   criterion note. `integrity_check` reads `construction_params` too, and
+   genuinely stays on the "reads it" list — `_section_sheets` compares it
+   against the live header — but needed no assertion either, for a different
+   reason from the other two: it never writes anything at all. A dropdown or
+   note landing on `Source`/`Comments` is a write-side mistake; this file's
+   only way to get the same fact wrong is to print an incorrect warning, which
+   is what its own newest Finding turned out to be.) Two commands have now
+   written criterion-shaped things onto `Source`/`Comments` independently
+   (#272 and Finding 10), both from trusting the manifest about a tab's
+   columns, so treat it as the expected mistake rather than a surprise.
+   `sync_params` is the one to watch: it inserts and deletes criterion
+   columns, which is the densest form of the same question.
 
 2. Phases 3–9 per the plan.
 
@@ -169,7 +177,7 @@ current job and every one would otherwise be remembered by nobody.
 
 ### Migration order
 
-Five files remain of eighteen that touch Drive. The plan's list of eleven
+Four files remain of eighteen that touch Drive. The plan's list of eleven
 was hand-written and never checked against the code; a scan on 2026-08-02
 replaced it with a derived one in `tests/test_doorway_coverage.py`.
 
@@ -184,10 +192,10 @@ total at all.
 Ordered by risk, lowest first, so that every shared helper and every part of
 the doorway has been exercised before the destructive commands are touched.
 
-**"13 of 18" flatters it, and planning should use the volume rather than the
-count.** Because the order is smallest-and-safest first, the thirteen done are
-4,894 lines between them; the five remaining are 6,967 lines and **37 direct
-Drive calls**. That is still 59% of the phase by weight, even at 13 of 18 files
+**"14 of 18" flatters it, and planning should use the volume rather than the
+count.** Because the order is smallest-and-safest first, the fourteen done are
+5,841 lines between them; the four remaining are 6,022 lines and **32 direct
+Drive calls**. That is still 51% of the phase by weight, even at 14 of 18 files
 by count. Recompute rather than trusting these numbers — the command is in
 `tests/test_doorway_coverage.py` (`_DIRECT_ACCESS` over `coding/*.py`, minus
 `_EXEMPT`).
@@ -205,7 +213,7 @@ by count. Recompute rather than trusting these numbers — the command is in
 | ~~`update_sheets.py`~~ | done |
 | ~~`generate_status_sheet.py`~~ | done |
 | ~~`validate_coding.py`~~ | done |
-| `integrity_check.py` | 945 lines but a small read-only Drive section |
+| ~~`integrity_check.py`~~ | done |
 | `import_sheets.py` | Downloads everything; the daily refresh depends on it |
 | `sync_params.py` | Column surgery — insert, rename, delete. Highest density of read-then-write on one handle |
 | `generate_sheets.py` | 2,651 lines, creates everything, and owns helpers four other files call. Late, so those callers are already migrated and proven |
@@ -277,10 +285,12 @@ had hidden the second one entirely. Render before asking anyone to read.
 ## Findings
 
 Per the plan's Phase 0b/1 non-goals, a snapshot that reveals odd behaviour records
-it rather than fixing it *in the same change*. **All eleven findings so far have
-since been fixed** — the deferral only ever lasts until the migration each one
-is riding on has been committed and its before/after comparison taken. Nothing
-here is outstanding; the entries are kept because the sequence is the point.
+it rather than fixing it *in the same change*. **All eleven of the first
+eleven findings have since been fixed** — the deferral only ever lasts until
+the migration each one is riding on has been committed and its before/after
+comparison taken. The entries are kept because the sequence is the point.
+Finding 12, found on file 14, is the one currently outstanding — see its own
+entry for whether it has been closed by the time this is read.
 
 **Do not delete this section when the migration ends without first checking that
 every finding has an issue number or a decisions-log entry.** Findings 4 and 5
@@ -498,9 +508,143 @@ that fix is a property assertion on `stan1293`'s `segmental` tab, not snapshot
 text — which is the evidence order the migration settled on, arrived at again
 from the other direction.
 
+**12. `integrity-check --sheets` has been crashing before reaching any Drive
+call at all, for essentially every real run, since 2026-08-02** (found
+2026-08-03, file 14, while taking the pre-migration baseline — the
+unmigrated code raised the identical `TypeError` the first time it was driven
+against the fake, before any of the two Drive call sites this migration
+touches were even reached). `_stale_manifest_param_values`
+(`coding/integrity_check.py` ~line 274) calls
+`refresh_dropdowns._fresh_param_values` with six positional arguments:
+
+```python
+fresh = _fresh_param_values(
+    lang_id, class_name, construction,
+    param_names, class_criteria, coref_pair_map,
+)
+```
+
+`_fresh_param_values` has taken four positional arguments — `class_name,
+construction, construction_criteria, coref_pair_map` — since `b399e32`
+(2026-08-02, #272's fix), which dropped `lang_id` and `param_names` as part of
+moving the function to derive columns from the sheet header rather than the
+manifest. That commit updated every call site inside `refresh_dropdowns.py`
+itself but not this one in `integrity_check.py`, so the call has raised
+`TypeError: _fresh_param_values() takes 4 positional arguments but 6 were
+given` for any construction carrying `param_names` — which, on the real
+manifest, is effectively all of them — ever since. No test exercised
+`_section_sheets` before this migration (`--sheets` requires either live
+Drive or, as of now, the fake), so nothing caught it.
+
+There is a second defect riding along with the crash, not just the wrong call
+shape: `class_criteria_map` (built a few lines above the call) keeps only the
+**first** construction's criteria per class —
+
+```python
+class_criteria_map: dict = {}
+for cls, _con, _crit_names, crit_values in diag_rows:
+    if cls not in class_criteria_map:
+        class_criteria_map[cls] = crit_values
+```
+
+— which is exactly Bug 1 from #272, independently reintroduced here rather
+than shared from the fix. `refresh_dropdowns.py` now keys criteria by
+`(class, construction)` for precisely this reason; this function still keys
+by class alone, so even a corrected call would resolve every construction of
+a per-construction class (`segmental`, `phrasal_accent`) against the first
+one's allowed values.
+
+Not fixed in the migration commit — this function touches no Drive call, so
+it is orthogonal to the doorway substitution, and the non-goal is no
+behaviour changes beyond it. Worked around in the test harness only (both
+pre- and post-migration drivers, and the new snapshot tests, patch
+`_stale_manifest_param_values` to a no-op so the Drive-touching lines under
+test could be reached and compared at all) — the source file itself was left
+exactly as broken as it already was. Whether this has been fixed as a
+follow-up commit by the time this is read is recorded here or superseded by
+its own decisions-log entry; check `git log --oneline --grep '#271'` if in
+doubt.
+
 ---
 
 ## Decisions log
+
+**2026-08-03 — file 14 (`integrity_check.py`) needed no doorway addition.**
+Every primitive it uses already existed (`get_doorway`, `load_manifest`,
+`doorway.open_spreadsheet`); `_with_retry` stays imported and used for the
+three call sites that were never wrapped by `_open_spreadsheet`
+(`ss.worksheets()`, `ss.worksheet(construction)`, `ws.row_values(1)`), which
+keep exactly the retry behaviour they had before, per the migration's
+non-goal. Two independent entry points, both function-scoped imports rather
+than module-level: `_section_sheets` (the `--sheets` flag) and `main()`'s
+`--check-manifest` fast path, which makes no Sheet API calls at all and exists
+for the daily `data-refresh` workflow to check the manifest cheaply.
+
+One substitution departs from a plain call-site swap on purpose:
+`ss = _with_retry(lambda: gc.open_by_key(sheet_info["spreadsheet_id"]))`
+becomes `ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])` with the
+outer `_with_retry` **removed**, not preserved. `drive_doorway.py`'s own
+docstring names this exact idiom — bare `gc.open_by_key` wrapped by the
+caller — as one of three inconsistently-retried open idioms the doorway
+deliberately unifies onto `open_spreadsheet`'s always-retried path, safe
+because opening is an idempotent read. Confirmed equivalent, not just
+documented as such: `coding/drive.py`'s `_open_spreadsheet(gc, spreadsheet_id)`
+is itself `_with_retry(lambda: gc.open_by_key(spreadsheet_id))` with the same
+default `retries=5`, i.e. the identical wrapping this file was doing by hand —
+so the migration changes *which line* does the retrying, not the retry count
+or backoff. The three other `_with_retry` call sites in this file
+(`ss.worksheets()`, `ss.worksheet(...)`, `ws.row_values(1)`) are not
+`open_spreadsheet` and stay wrapped exactly as they were.
+
+Pre/post comparison across ten scenarios — `--sheets` over all languages, one
+`--lang`, a language whose manifest `spreadsheet_id` does not exist in the
+fake (the `except Exception` around opening), a class whose live tab is
+missing, a class whose live header has drifted from the manifest's
+`construction_params`, a stale `_split_` column, the plain run with no
+`--sheets` at all, and `--check-manifest` with a stale entry, with none, and
+with the connection itself failing — came back byte-identical between the
+unmigrated and migrated code: stdout, exit codes, and the (empty throughout)
+mutation logs. The pre-migration baseline needed the guard-intercepts-or-fails
+check run explicitly before trusting any scenario, per the established
+per-file procedure, and it passed on the first attempt this time — unlike file
+5, where the equivalent check was the thing that first surfaced that a
+module-level import needs a different patch target than a function-local one.
+This file's two entry points both do the `from .drive import ...` locally
+inside their own function bodies, so patching `coding.drive._get_clients`
+directly (rather than the importing module's own namespace) was the right
+target here, confirmed by making the patch briefly absent and checking it
+raised before running any scenario.
+
+A pre-existing bug unrelated to the migration was found while taking the
+baseline and is recorded as Finding 12 rather than fixed here — see that
+entry for the full description. It blocked the baseline outright (the
+unmigrated code crashed on the very first scenario), so it was neutralized in
+the test harness only, identically on both sides of the comparison, rather
+than in `coding/integrity_check.py` itself.
+
+Twelve tests in a new `tests/test_integrity_check_snapshot.py`. They pin: a
+header mismatch names both the expected and actual column lists and points at
+`sync-params --apply`; a missing tab is an error that does not stop the rest
+of that language's run; a stale `_split_`/`_merged_` column gets its own
+remediation text instead of the header-mismatch message; an unreachable
+spreadsheet is reported per class, not fatal to the language; a plain run
+with no `--sheets` prints the section header and the skip line and touches no
+Drive calls at all; `--check-manifest` reports stale entries and exits 1, a
+clean manifest exits cleanly, and a failed connection warns and returns
+rather than crashing or filing a misleading issue; and every scenario that
+touches Drive leaves `doorway.mutations` empty, since this file never writes.
+`main()`'s header line stamps `date.today()` into the two full-transcript
+snapshots, so the fixture freezes it rather than letting the snapshots drift
+with the calendar.
+
+`tests/test_doorway_coverage.py`'s `_REMAINING` drops `integrity_check.py`
+(four files now remain, all reading `construction_params` from the manifest
+except that this file reads it only to compare, never to write — see the
+"Next action" update in the same commit); `coding/CLAUDE.md`'s migrated list
+gains it and its "construction_params" sentence count drops from five to
+four; `docs/data-layer-progress.md` moves to 14 of 18 and recomputes the
+remaining-files weight (6,022 lines, 32 direct Drive calls across
+`sync_params`, `import_sheets`, `restructure_sheets`, `generate_sheets`).
 
 **2026-08-03 — file 13 (`validate_coding.py`) needed no doorway addition and
 no `assert_no_criterion_writes_onto_trailing_columns`.** Every primitive it

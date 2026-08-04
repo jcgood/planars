@@ -361,14 +361,15 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
     print(_section("ANNOTATION SHEETS"))
 
     try:
-        from .drive import _get_clients, _load_manifest_from_drive, _with_retry
+        from .drive import load_manifest, _with_retry
+        from .drive_doorway import get_doorway
     except ImportError as exc:
         print(_warn(f"Could not import sheet utilities: {exc}"))
         return 0, 1
 
     try:
-        gc, drive_svc = _get_clients()
-        manifest = _load_manifest_from_drive(drive_svc)
+        doorway = get_doorway()
+        manifest = load_manifest(doorway)
     except Exception as exc:
         print(_fail(f"Could not connect to Google Sheets: {exc}"))
         return 1, 0
@@ -436,7 +437,7 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
 
         for class_name, sheet_info in sorted(sheets_info.items()):
             try:
-                ss = _with_retry(lambda: gc.open_by_key(sheet_info["spreadsheet_id"]))
+                ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
             except Exception as exc:
                 print(_fail(f"{lang} · {class_name}  —  could not open spreadsheet: {exc}"))
                 total_e += 1
@@ -861,10 +862,11 @@ def main() -> None:
 
     # --check-manifest: lightweight standalone mode, no Sheet API calls.
     if args.check_manifest:
-        from .drive import _get_clients, _load_manifest_from_drive
+        from .drive import load_manifest
+        from .drive_doorway import get_doorway
         try:
-            _, drive_svc = _get_clients()
-            manifest = _load_manifest_from_drive(drive_svc)
+            doorway = get_doorway()
+            manifest = load_manifest(doorway)
         except Exception as exc:
             # Drive unavailable — skip silently rather than filing a misleading
             # stale-manifest issue. import-sheets will file an import-error issue

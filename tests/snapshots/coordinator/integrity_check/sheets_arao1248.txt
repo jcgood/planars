@@ -1,0 +1,49 @@
+════════════════════════════════════════════════════════════════════════
+  PLANARS INTEGRITY CHECK  —  2026-08-03
+════════════════════════════════════════════════════════════════════════
+
+── PLANAR STRUCTURE ────────────────────────────────────────────────────
+  ✓  Araona [arao1248]                   planar_arao1248.tsv
+
+── DIAGNOSTICS ─────────────────────────────────────────────────────────
+  ✓  Araona [arao1248]                   diagnostics_arao1248.tsv
+
+── CODEBOOK CONSISTENCY ────────────────────────────────────────────────
+  ✓  diagnostics TSVs match diagnostic_classes.yaml
+
+── ANALYSIS CONSISTENCY ────────────────────────────────────────────────
+  ✓  Module _REQUIRED_CRITERIA all defined in diagnostic_criteria.yaml
+  ✓  All chart span keys match derive function result dicts
+
+── CROSS-SHEET CONSISTENCY ─────────────────────────────────────────────
+  (no languages have both noninterruption and free_occurrence TSVs)
+
+── DEPENDENT CONSTRUCTION STALENESS ────────────────────────────────────
+  (no languages have dependent construction TSV pairs to check)
+
+── ANNOTATION SHEETS ───────────────────────────────────────────────────
+  ✓  Araona [arao1248] · ciscategorial · general
+  ✓  Araona [arao1248] · noninterruption · general
+  ✓  Araona [arao1248] · subspanrepetition · auxiliary_construction
+  ✓  Araona [arao1248] · subspanrepetition · tso_clause_linkage
+
+── NEEDS REVIEW / PLACEHOLDERS ─────────────────────────────────────────
+  ⚠  11 entry(ies) marked [NEEDS REVIEW] or [PLACEHOLDER]:
+       diagnostic_criteria.yaml [subspanrepetition/fillable_botheither_conjunct]: description
+       diagnostic_criteria.yaml [phrasal_accent]: description
+       diagnostic_criteria.yaml [phrasal_accent/joint_accent]: description
+       diagnostic_criteria.yaml [proform]: description
+       diagnostic_classes.yaml [proform]: status
+       diagnostic_classes.yaml [idiom]: status
+       diagnostic_classes.yaml [biuniqueness_exponence]: status
+       diagnostic_classes.yaml [repair]: status
+       diagnostic_classes.yaml [phrasal_accent]: status
+       diagnostic_classes.yaml [pausing]: status
+       diagnostic_classes.yaml [play_language]: status
+       → Edit the relevant schema file to resolve each entry.
+         Promoting a module status out of [AUTO-DERIVED] requires coordinator
+         sign-off. See docs/coordinator-guide.md § 'Updating a qualification rule'.
+
+════════════════════════════════════════════════════════════════════════
+  ✓  All checks passed  ·  0 warning(s)
+════════════════════════════════════════════════════════════════════════

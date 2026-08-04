@@ -43,7 +43,6 @@ _EXEMPT = {
 # docs/data-layer-progress.md § "Migration order".
 _REMAINING = {
     "sync_params.py",
-    "integrity_check.py",
     "import_sheets.py",
     "restructure_sheets.py",
     "generate_sheets.py",
