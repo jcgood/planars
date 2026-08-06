@@ -21,15 +21,18 @@ this project is trying to remove.
 `tests/test_doorway_coverage.py` confirms this with an empty `_REMAINING`.
 There is no next file to migrate.
 
+The migration also left three specific bugs behind (Findings 13, 15, 17) and
+one blocked cleanup issue (#276, collapsing the duplicated Drive helpers).
+All four are now fixed/closed too (2026-08-05) — see the decisions log and
+Findings section in `docs/data-layer-progress.md` for what changed. Nothing
+outstanding from Phase 0b/1 remains.
+
 **Next up is Phase 3 of `docs/data-layer-implementation-plan.md`** ("Schema
 reorganization"), which the plan itself marks **"(coordinator decides)"** —
 it is the highest-value and highest-risk phase, and starting it requires a
 decision from Jeff first, not an agent's guess at what the split should look
 like. Read `docs/data-layer-progress.md` § "Next action" for the current
-state of that gate before doing anything else on this effort. Two small,
-non-blocking findings from the last migration (Findings 16 and 17, both
-mechanical, neither needing Jeff's judgment) are recorded in that file's
-Findings section for whoever next touches `restructure_sheets.py`.
+state of that gate before doing anything else on this effort.
 
 ---
 
