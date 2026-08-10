@@ -1,0 +1,673 @@
+# planars' command operation registry -- Phase 4 of the data layer plan
+# (issue #271, "Topology declaration"). One record per entry in
+# coding/__main__.py's _COMMANDS table: side effects, idempotency,
+# preconditions, which facts.yaml facts the command touches and how, what it
+# triggers downstream, and required ordering relative to other commands. See
+# SCHEMA.md.
+#
+# DRAFT, not yet reviewed. The plan requires the coordinator to review two
+# things specifically before this phase is done: every authority assignment
+# (does facts_touched/preconditions actually match reality) and every
+# idempotency claim (a false "true" here is load-bearing -- Phases 7 and 8
+# build recovery logic on top of it). Until that review, treat this file as a
+# first pass, not ground truth. Drafted 2026-08-10, grounded in CLAUDE.md,
+# coding/CLAUDE.md, and facts.yaml/preconditions.yaml's own cascade/
+# drift_risk/required_by text rather than fresh guesses -- see each record's
+# ordering_constraints and facts_touched for what's already independently
+# documented elsewhere vs. new synthesis.
+
+- id: capture_drive_state
+  cli_command: capture-drive-state
+  description: >-
+    Records live Drive/Sheets state (every annotation spreadsheet plus the
+    manifest) to tests/fixtures/drive_state/, for the offline fake Drive
+    backend used by every other command's tests.
+  side_effects:
+    - "overwrites tests/fixtures/drive_state/{lang}/*.json and manifest.json"
+  idempotent: true
+  idempotency_note: >-
+    Always re-records current live state; running it twice with nothing
+    changed on Drive in between produces byte-identical fixture files.
+  apply_gate: "--apply"
+  preconditions: []
+  facts_touched:
+    - {fact: drive_state_test_fixtures, role: writes}
+  cascades_triggered: []
+  ordering_constraints:
+    - >-
+      Read-only against Drive -- the only live Drive call permitted before
+      Phase 9 of the data layer plan (issue #271). That constraint is scoped
+      to the migration's own throwaway test harness, not to normal
+      coordinator use of every other command.
+
+- id: generate_sheets
+  cli_command: generate-sheets
+  description: >-
+    Creates/updates Google Sheets annotation forms for every language's
+    diagnostics classes. The base command is dry-run by default;
+    --regen-construction and --regen-dependents are separate, always-live
+    code paths unaffected by --apply.
+  side_effects:
+    - >-
+      base --apply: creates/updates the language's Drive folder, notes doc,
+      planar/diagnostics reference sheets, one spreadsheet per class, Status
+      tabs; writes sheets_manifest.json and drive_config.json
+    - >-
+      --regen-construction CLASS:CONSTRUCTION: overwrites one construction's
+      live tab immediately, no --apply gate
+    - "--regen-dependents: regenerates a dependent pair-row tab only when it doesn't exist yet"
+    - >-
+      --force: overwrites planar/diagnostics reference sheets before
+      checking whether annotation sheets already exist (Finding 15 in
+      docs/data-layer-progress.md -- current behaviour, not yet fixed)
+  idempotent: false
+  idempotency_note: >-
+    A true no-op --apply still re-uploads the merged manifest once at the end
+    (documented test behaviour, not a bug), so a second run always produces
+    at least one write. --regen-construction overwrites the live tab every
+    time it runs, by design -- it is not safe to assume a second run is a
+    no-op if annotation happened in between; that case is guarded by the
+    annotated-drop check (issue #241), not by idempotency.
+  apply_gate: >-
+    --apply (base command only; --regen-construction and --regen-dependents
+    always act live, ungated by --apply)
+  preconditions: [coded_data_clean_tree]
+  facts_touched:
+    - {fact: planar_sheet_structure, role: reads}
+    - {fact: diagnostics_scope, role: reads}
+    - {fact: manifest_class_registration, role: writes}
+    - {fact: pair_row_construction_set, role: writes}
+    - {fact: dependent_construction_element_scope, role: writes}
+    - {fact: pair_row_position_numbers, role: writes}
+    - {fact: languages_metadata, role: writes}
+  cascades_triggered:
+    - "regenerate_notebooks() runs automatically after a successful base --apply"
+  ordering_constraints:
+    - >-
+      Run restructure-sheets --split-element or --rename-element before
+      --regen-construction if the element was renamed or split, so the old
+      annotated rows are already gone from the live sheet by the time
+      --regen-construction runs; otherwise pass --confirm-drop to proceed
+      anyway (issue #241).
+    - >-
+      For nonpermutability and coreference (two-stage pair constructions):
+      annotate element_prescreening / prescreening and mark it
+      ready-for-review before running --regen-construction CLASS:general (or
+      a pair construction) -- running it earlier produces an unfiltered pair
+      list.
+    - >-
+      Run lookup-lang before generate-sheets when onboarding a brand-new
+      language, so schemas/languages.yaml already has Glottolog metadata
+      cached.
+
+- id: generate_notebooks
+  cli_command: generate-notebooks
+  description: >-
+    Generates and uploads per-language contributor/validation/report
+    notebooks plus the coordinator notebook.
+  side_effects:
+    - >-
+      create-or-update uploads to Drive (renamed on update), shared "anyone
+      with the link, reader" on every run via drive.create_or_update_shared_file
+  idempotent: true
+  idempotency_note: >-
+    ensure_anyone_permission checks for an existing grant before creating one
+    (fixed issue #276 -- before that, every run silently added a duplicate
+    "anyone" permission). A repeat run with no content change re-uploads the
+    same content and re-asserts the same single grant.
+  apply_gate: "--apply"
+  preconditions: []
+  facts_touched: []
+  cascades_triggered: []
+  ordering_constraints:
+    - >-
+      Runs automatically after generate-sheets --apply, sync-params --apply,
+      and restructure-sheets --apply -- not normally invoked directly by a
+      coordinator.
+
+- id: generate_reports
+  cli_command: generate-reports
+  description: >-
+    Generates and uploads report_{lang_id}.pdf directly to Drive for every
+    language (no Colab; run nightly by GitHub Actions).
+  side_effects:
+    - >-
+      create-or-update uploads report_{lang_id}.pdf per language, shared
+      "anyone with the link, reader" on every run
+  idempotent: true
+  idempotency_note: >-
+    Same ensure_anyone_permission-based idempotency as generate-notebooks,
+    fixed under the same issue #276 -- before the fix, a manually-revoked
+    report share was never restored, since the grant was only asserted on
+    create, not on every run.
+  apply_gate: "--apply"
+  preconditions: []
+  facts_touched: []
+  cascades_triggered: []
+  ordering_constraints: []
+
+- id: sync_params
+  cli_command: sync-params
+  description: >-
+    Syncs a construction's criterion columns on its live sheet when
+    diagnostics_{lang_id}.yaml changes (rename, split, merge, remove);
+    regenerates the diagnostics YAML afterward.
+  side_effects:
+    - "inserts/deletes/renames criterion columns on live annotation tabs"
+    - "--refresh-dropdowns: pushes current YAML-derived allowed values to live dropdown validation"
+    - "updates sheets_manifest.json's per-construction param_values"
+  idempotent: false
+  idempotency_note: >-
+    Each run is driven by a real diff between the tab's own header and the
+    current diagnostics YAML (never the manifest), so a second run with
+    nothing changed makes no further sheet edits -- but param_values is only
+    ever updated for the criteria a given run actually touched (Finding 14's
+    fix), not blindly overwritten. Treat as idempotent for "nothing changed"
+    but not as safe against a concurrent edit to the same tab.
+  apply_gate: "--apply"
+  preconditions: [coded_data_clean_tree]
+  facts_touched:
+    - {fact: manifest_dropdown_values, role: writes}
+  cascades_triggered:
+    - "regenerate_notebooks() runs automatically after --apply"
+    - "regenerates diagnostics_{lang_id}.yaml to match the change"
+  ordering_constraints:
+    - >-
+      Run after editing diagnostics_{lang_id}.yaml's criteria for a class
+      whose sheets already exist -- this is the propagation step, not the
+      edit itself.
+
+- id: sync_diagnostics_yaml
+  cli_command: sync-diagnostics-yaml
+  description: >-
+    Syncs diagnostics_{lang_id}.yaml (source of truth) to the derived TSV
+    (default), to the live diagnostics Sheet (--to-sheet), or diffs the TSV
+    back to the YAML (--from-tsv).
+  side_effects:
+    - "default --apply: overwrites diagnostics_{lang_id}.tsv from the YAML"
+    - "--to-sheet --apply: overwrites the live diagnostics Sheet's content from the YAML"
+    - >-
+      --from-tsv --apply: writes deterministic TSV->YAML changes into the
+      YAML; ambiguous changes go to diagnostics_drift.json instead
+  idempotent: true
+  idempotency_note: >-
+    Each direction only writes when the derived content actually differs
+    from the current target ("TSV already up to date" / "Sheet already up to
+    date" short-circuits otherwise) -- a second run with nothing changed
+    performs no writes.
+  apply_gate: "--apply"
+  preconditions: []
+  facts_touched:
+    - {fact: diagnostics_scope, role: both}
+  cascades_triggered: []
+  ordering_constraints:
+    - >-
+      A required class (collection_required: "y" in
+      diagnostic_classes_status.yaml) missing from a language's YAML no
+      longer blocks the default direction from regenerating the TSV for the
+      classes that ARE present (Finding 20 in docs/data-layer-progress.md)
+      -- it still blocks --to-sheet, since pushing an incomplete language's
+      diagnostics to the live Sheet is a more consequential action than a
+      local file regeneration.
+    - >-
+      Run --to-sheet after renaming a class or criterion in the YAML, so the
+      Sheet stays in sync and import-sheets stops reporting false drift.
+
+- id: sync_qualification_hashes
+  cli_command: sync-qualification-hashes
+  description: >-
+    Stamps qualification_rule_hash in diagnostic_classes_status.yaml after a
+    module's qualification-rule prose has been reviewed and its
+    docstring/comments updated to match.
+  side_effects:
+    - "writes a fresh qualification_rule_hash for the class(es) being stamped"
+  idempotent: true
+  idempotency_note: "Re-running with nothing changed re-derives and writes the same hash value."
+  apply_gate: "--apply"
+  preconditions: []
+  facts_touched:
+    - {fact: qualification_rule_semantics, role: writes}
+  cascades_triggered: []
+  ordering_constraints:
+    - >-
+      The last step of the qualification-rule update workflow: edit
+      diagnostic_classes.yaml -> CI detects the hash mismatch ->
+      generate-rule-update-prompt produces a Claude prompt -> the module's
+      docstring/comments are updated and reviewed -> sync-qualification-hashes
+      --apply re-stamps the hash. Running this before the docstring update
+      makes check-codebook stop flagging a change that hasn't actually been
+      reviewed yet.
+
+- id: update_sheets
+  cli_command: update-sheets
+  description: >-
+    Adds missing rows/trailing columns to existing sheets and creates tabs
+    for constructions newly added to the diagnostics YAML; ensures the
+    Status tab exists and is last.
+  side_effects:
+    - "appends rows/columns to live annotation tabs"
+    - "creates new construction tabs for constructions not yet in the manifest"
+    - "updates sheets_manifest.json"
+  idempotent: true
+  idempotency_note: >-
+    Which columns/rows are missing is derived from the tab's own header plus
+    the current diagnostics YAML (never the manifest) every run -- a second
+    run with nothing changed adds nothing further. Before this design
+    (Findings 9-11 in docs/data-layer-progress.md), appending one row could
+    narrow a whole tab's dropdowns or write NA into Source/Comments; those
+    were bugs in what got written, not in whether re-running was safe.
+  apply_gate: "--apply"
+  preconditions: [coded_data_clean_tree]
+  facts_touched:
+    - {fact: manifest_class_registration, role: writes}
+    - {fact: pair_row_construction_set, role: reads}
+  cascades_triggered: []
+  ordering_constraints: []
+
+- id: import_sheets
+  cli_command: import-sheets
+  description: >-
+    Downloads filled annotation sheets to local TSVs; auto-applies safe
+    downstream commands; writes destructive changes to pending_changes.json
+    instead of applying them directly.
+  side_effects:
+    - "overwrites coded_data/{lang}/{class}/{construction}.tsv from the live sheet"
+    - "writes pending_changes.json for ready-for-review tabs' destructive changes"
+    - "paints pink highlighting on invalid cells (all tabs, any status)"
+    - "auto-commits coded_data/ changes"
+  idempotent: false
+  idempotency_note: >-
+    Re-running with nothing changed on the live sheets since the last run
+    produces no new TSV content and no new pending changes -- but it is not
+    idempotent across time in the ordinary sense, since its entire job is to
+    pull in whatever changed. --ignore-status changes what counts as
+    "ready-for-review" between runs, so the same live state can produce
+    different output depending on the flag.
+  apply_gate: "--apply"
+  preconditions: [coded_data_clean_tree]
+  facts_touched:
+    - {fact: pair_row_construction_set, role: reads}
+    - {fact: pair_row_position_numbers, role: reads}
+    - {fact: diagnostics_scope, role: reads}
+  cascades_triggered:
+    - "auto-applies safe downstream commands after a successful run"
+    - "revalidates sheets after auto-apply"
+  ordering_constraints:
+    - >-
+      A required class missing from a language's diagnostics YAML
+      (collection_required: "y") makes this command skip that language's
+      diagnostics validation entirely until resolved (Finding 19 in
+      docs/data-layer-progress.md).
+    - >-
+      apply-pending reviews what this command writes to pending_changes.json
+      -- run import-sheets before apply-pending has anything to review.
+
+- id: validate_coding
+  cli_command: validate-coding
+  description: >-
+    Re-validates annotation sheets against the diagnostics YAML's allowed
+    values and updates pink cell highlighting; exits non-zero on errors
+    (used by the sheet-validation workflow).
+  side_effects:
+    - "updates highlight_cells/clear_highlights on live tabs to reflect current validation state"
+  idempotent: true
+  idempotency_note: >-
+    Highlighting is recomputed from current sheet content and the current
+    diagnostics YAML every run, not accumulated -- a repeat run with nothing
+    changed re-paints the same cells the same colours.
+  apply_gate: null
+  preconditions: []
+  facts_touched:
+    - {fact: pair_row_construction_set, role: reads}
+    - {fact: diagnostics_scope, role: reads}
+  cascades_triggered: []
+  ordering_constraints:
+    - >-
+      If a tab's header doesn't match its construction's declared row_type,
+      this command checks nothing else in that tab and names both the
+      --regen-construction fix and the schema field to change instead -- see
+      pair_row_construction_set in facts.yaml.
+
+- id: validation_report
+  cli_command: validation-report
+  description: >-
+    Turns validate-coding's output into a GitHub issue body for the
+    sheet-validation workflow; pure formatting, no live Sheet/gh calls of
+    its own.
+  side_effects:
+    - "none directly (writes stdout only; the gh calls live in the calling workflow, not this command)"
+  idempotent: true
+  idempotency_note: "Pure function of validate-coding's log text -- same input always produces the same formatted output."
+  apply_gate: null
+  preconditions: []
+  facts_touched: []
+  cascades_triggered: []
+  ordering_constraints:
+    - "Run after validate-coding, on its output -- this command has no Drive access of its own."
+
+- id: restructure_sheets
+  cli_command: restructure-sheets
+  description: >-
+    Archives and regenerates sheets after structural changes to the planar
+    (--rename-map, --rename-element, --split-element, --rename-class).
+  side_effects:
+    - "archives the old sheet, creates/regenerates the new one, carries annotations over"
+    - >-
+      edits planar_{lang_id}.tsv directly for structural flags; pushes it
+      back to the live planar Sheet via import-planar --to-sheet
+    - "--rename-class: renames the local TSV directory in place, updates the manifest"
+    - "notifies the language's tracking issue via notify.py after sheets actually change"
+    - "auto-commits coded_data/ changes"
+  idempotent: false
+  idempotency_note: >-
+    Each run archives the current sheet and creates a new one -- running it
+    twice with the same flags archives twice, not a no-op. No rollback
+    exists if it fails partway through a multi-step change -- exactly the
+    gap Phase 7 of the data layer plan is meant to close (see #248).
+  apply_gate: "--apply"
+  preconditions: [coded_data_clean_tree, coded_data_git_identity_configured]
+  facts_touched:
+    - {fact: planar_sheet_structure, role: writes}
+    - {fact: sheet_change_notification_state, role: writes}
+    - {fact: pair_row_position_numbers, role: writes}
+  cascades_triggered:
+    - "regenerate_notebooks() runs automatically after --apply"
+    - >-
+      push_planars_to_sheets() (import-planar --to-sheet) runs automatically
+      after --apply so the master planar Sheet doesn't go stale
+    - "notify.py posts to (or creates) the language's 'Sheet updates -- {lang_id}' GitHub issue"
+  ordering_constraints:
+    - >-
+      --split-element cascades into every pair-row construction referencing
+      the retired element, fanning old pairs into blank new rows per
+      replacement -- but does NOT cascade a position NUMBER shift into
+      pair-row Position_A/Position_B cells from an insertion/deletion
+      elsewhere in the planar; that needs generate-sheets --regen-construction
+      --pos-remap by hand (issue #241).
+    - >-
+      Never use prune-manifest for a rename -- it archives and discards
+      rather than carrying annotations forward. Update
+      diagnostics_{lang_id}.tsv to the new name first, then run
+      restructure-sheets --rename-class OLD:NEW --apply.
+    - >-
+      This command never calls drive._check_coded_data_clean() despite
+      reading planar_{lang_id}.tsv/diagnostics_{lang_id}.tsv as its source of
+      truth -- a documented, still-open gap (Finding 17 in
+      docs/data-layer-progress.md).
+
+- id: check_codebook
+  cli_command: check-codebook
+  description: >-
+    Checks consistency between diagnostic_criteria.yaml,
+    diagnostic_classes.yaml/diagnostic_classes_status.yaml, analysis
+    modules, and every diagnostics_{lang_id}.tsv.
+  side_effects: ["none (read-only)"]
+  idempotent: true
+  idempotency_note: "Pure read-and-report; makes no writes of any kind."
+  apply_gate: null
+  preconditions: []
+  facts_touched:
+    - {fact: qualification_rule_semantics, role: reads}
+    - {fact: diagnostics_scope, role: reads}
+  cascades_triggered: []
+  ordering_constraints:
+    - >-
+      Runs in CI on every push and daily via data-refresh.yml; a
+      codebook-error issue is what tells a coordinator
+      generate-rule-update-prompt has something to say.
+
+- id: generate_rule_update_prompt
+  cli_command: generate-rule-update-prompt
+  description: >-
+    Generates a coordinator-facing Claude prompt for each class with a
+    missing or stale qualification_rule_hash; used to enrich the
+    codebook-error issue body.
+  side_effects: ["none directly (writes stdout / issue-body text only)"]
+  idempotent: true
+  idempotency_note: "Pure function of the current hash-mismatch state -- same input state produces the same prompt text."
+  apply_gate: null
+  preconditions: []
+  facts_touched:
+    - {fact: qualification_rule_semantics, role: reads}
+  cascades_triggered: []
+  ordering_constraints:
+    - >-
+      Sits between check-codebook detecting a stale hash and
+      sync-qualification-hashes re-stamping it -- see
+      sync_qualification_hashes' ordering_constraints for the full workflow.
+
+- id: integrity_check
+  cli_command: integrity-check
+  description: >-
+    Full project-wide health report across all languages and schemas;
+    --sheets adds live Sheet structural validation; --lang restricts to one
+    language.
+  side_effects: ["none (read-only; --sheets still only reads, never writes)"]
+  idempotent: true
+  idempotency_note: "Pure read-and-report across every section; no writes anywhere in the file."
+  apply_gate: null
+  preconditions: []
+  facts_touched:
+    - {fact: manifest_class_registration, role: reads}
+    - {fact: manifest_dropdown_values, role: reads}
+    - {fact: pair_row_position_numbers, role: reads}
+    - {fact: dependent_construction_element_scope, role: reads}
+    - {fact: diagnostics_scope, role: reads}
+  cascades_triggered: []
+  ordering_constraints:
+    - >-
+      Run daily via data-refresh.yml; a missing required class
+      (collection_required: "y") is reported here as an ERROR (Finding 19 in
+      docs/data-layer-progress.md) and folds into the standing
+      integrity-error issue rather than a dedicated label.
+
+- id: setup_root_folder
+  cli_command: setup-root-folder
+  description: "One-time creation of the ConstituencyTypology root Drive folder."
+  side_effects:
+    - "creates the root folder if it doesn't already exist; asserts the 'anyone with the link, reader' permission"
+  idempotent: true
+  idempotency_note: >-
+    ensure_anyone_permission-based, same mechanism as generate-notebooks/
+    generate-reports (issue #276) -- a second run with the folder already
+    present and shared makes zero Drive calls at all.
+  apply_gate: null
+  preconditions: []
+  facts_touched: []
+  cascades_triggered: []
+  ordering_constraints:
+    - >-
+      Run once, after the first generate-sheets --apply creates the first
+      language folder to nest under it.
+
+- id: lookup_lang
+  cli_command: lookup-lang
+  description: >-
+    Fetches and caches Glottolog metadata (name, ISO 639-3, family,
+    coordinates) for a Glottocode, writing it into glottolog_cache.json and
+    schemas/languages.yaml.
+  side_effects:
+    - "writes glottolog_cache.json and updates the language's entry in schemas/languages.yaml"
+  idempotent: true
+  idempotency_note: >-
+    Re-running for the same Glottocode re-fetches and overwrites with the
+    same (or newly current) upstream data; --refresh forces a re-fetch, the
+    default reads the cache when present.
+  apply_gate: null
+  preconditions: []
+  facts_touched:
+    - {fact: languages_metadata, role: writes}
+  cascades_triggered: []
+  ordering_constraints:
+    - >-
+      Run before generate-sheets when onboarding a new language, so
+      schemas/languages.yaml already has Glottolog metadata cached rather
+      than generate-sheets warning about it.
+
+- id: apply_pending
+  cli_command: apply-pending
+  description: >-
+    Interactive review and application of destructive changes recorded by
+    import-sheets in pending_changes.json; closes the pending-changes issue
+    when cleared.
+  side_effects:
+    - "applies coordinator-approved destructive changes to coded_data/ and/or the manifest; clears entries from pending_changes.json"
+  idempotent: false
+  idempotency_note: >-
+    Each run consumes and clears the entries it applies -- running it again
+    with nothing left in pending_changes.json is a no-op, but that's an
+    empty-input case, not idempotency in the sense of "safe to repeat the
+    same apply."
+  apply_gate: "interactive (per-entry approval, not a single --apply flag)"
+  preconditions: []
+  facts_touched: []
+  cascades_triggered: []
+  ordering_constraints:
+    - "Only has something to review after import-sheets --apply has written pending_changes.json."
+
+- id: prune_manifest
+  cli_command: prune-manifest
+  description: >-
+    Removes a retired class's entry from the Drive manifest, archives its
+    local TSVs, and moves its Drive spreadsheet to _archived/; warns if the
+    sheet was edited within 14 days.
+  side_effects:
+    - "moves coded_data/{lang}/{class}/ TSVs to coded_data/{lang}/archive/{class}/"
+    - "moves the class's Drive spreadsheet to the _archived/ subfolder"
+    - "removes the class's entry from sheets_manifest.json"
+  idempotent: false
+  idempotency_note: >-
+    Archives and removes on each run -- a class already pruned has no
+    manifest entry left, so a second run against the same class is a no-op
+    by absence of target, not by design idempotency.
+  apply_gate: "--apply"
+  preconditions: []
+  facts_touched:
+    - {fact: manifest_class_registration, role: writes}
+  cascades_triggered: []
+  ordering_constraints:
+    - "For retiring a class: remove it from diagnostics_{lang_id}.tsv first, then run prune-manifest --apply."
+    - >-
+      Never use for a rename -- it discards rather than carries annotations
+      forward. Use restructure-sheets --rename-class instead (see that
+      record's ordering_constraints).
+
+- id: check_notes
+  cli_command: check-notes
+  description: >-
+    Checks collaborator notes Google Docs for new content since the last
+    check and files/updates GitHub issues from it.
+  side_effects:
+    - "creates or comments on GitHub issues summarizing new notes content"
+    - "appends an acknowledgment to the collaborator's notes doc"
+    - "writes coded_data/notes_state.json (content-hash change-detection state)"
+  idempotent: true
+  idempotency_note: >-
+    Change detection is by content hash in notes_state.json -- a second run
+    with no new doc content since the last run finds nothing new and
+    writes/files nothing further.
+  apply_gate: "--apply"
+  preconditions: [check_notes_documents_scope_authorized]
+  facts_touched: []
+  cascades_triggered: []
+  ordering_constraints: []
+
+- id: refresh_dropdowns
+  cli_command: refresh-dropdowns
+  description: >-
+    Refreshes criterion dropdown validation on existing sheets from the
+    current diagnostics YAML, without touching annotation data.
+  side_effects:
+    - "updates dropdown validation rules on live tabs; updates sheets_manifest.json's param_values"
+  idempotent: true
+  idempotency_note: >-
+    Criterion columns and their values are read fresh from the tab's own
+    header and the diagnostics YAML every run (issue #272's fix), never from
+    the manifest -- a second run with nothing changed reasserts the same
+    dropdown rules.
+  apply_gate: "--apply"
+  preconditions: []
+  facts_touched:
+    - {fact: manifest_dropdown_values, role: writes}
+  cascades_triggered: []
+  ordering_constraints: []
+
+- id: import_planar
+  cli_command: import-planar
+  description: >-
+    Syncs planar_{lang_id}.tsv against the Drive planar spreadsheet; default
+    direction is Sheet -> TSV (download), --to-sheet reverses it.
+  side_effects:
+    - >-
+      default --apply: archives the old planar_{lang_id}.tsv, overwrites it
+      from the Sheet, writes PLANAR_CHANGES_PATH for the planar-changed
+      issue body
+    - "--to-sheet --apply: overwrites the live planar Sheet's content from the local TSV"
+    - "auto-commits coded_data/ changes (default direction)"
+  idempotent: true
+  idempotency_note: >-
+    Each direction only writes when the content genuinely differs ("up to
+    date" short-circuits otherwise) -- a second run with nothing changed on
+    either side performs no writes.
+  apply_gate: "--apply"
+  preconditions: [coded_data_git_identity_configured]
+  facts_touched:
+    - {fact: planar_sheet_structure, role: both}
+  cascades_triggered: []
+  ordering_constraints:
+    - >-
+      --to-sheet runs automatically at the end of restructure-sheets --apply
+      (via push_planars_to_sheets()) so a local structural edit never goes
+      un-pushed -- the fix for the 2026-07-29 incident (#244/#245/#248). Any
+      other script that edits planar_{lang_id}.tsv directly needs to call
+      the same push, or the next scheduled default-direction import-planar
+      --apply will silently revert it (see planar_sheet_structure's
+      drift_risk in facts.yaml).
+
+- id: generate_status_sheet
+  cli_command: generate-status-sheet
+  description: >-
+    Builds a locked, read-only status_{lang_id} spreadsheet per language
+    showing per-construction completeness, in a freestanding top-level
+    Annotation Status Drive folder.
+  side_effects:
+    - "creates or updates the status_{lang_id} spreadsheet; shares it read-only with the specialist"
+  idempotent: true
+  idempotency_note: >-
+    Recomputes every construction's completeness fresh from current
+    construction_tsv/annotation_sheet state on each run and overwrites the
+    sheet -- a second run with nothing changed produces the same content.
+  apply_gate: "--apply"
+  preconditions: []
+  facts_touched:
+    - {fact: status_sheet_completeness, role: writes}
+  cascades_triggered: []
+  ordering_constraints:
+    - >-
+      Not run automatically by any workflow -- coordinator-triggered only,
+      so the status sheet goes stale after annotation changes until someone
+      re-runs it by hand (status_sheet_completeness's drift_risk in
+      facts.yaml).
+
+- id: generate_biuniqueness_allomorphy_sheet
+  cli_command: generate-biuniqueness-allomorphy-sheet
+  description: >-
+    Builds the Stage 1 biuniqueness/allomorphy screening sheet (issue #254
+    Part 2c); synth0001-only for now.
+  side_effects:
+    - "creates or updates the biuniqueness_allomorphy_{lang_id} spreadsheet"
+  idempotent: true
+  idempotency_note: >-
+    Rows are derived fresh from planar_{lang_id}.tsv's Biuniqueness_Scope
+    column every run; a second run with nothing changed produces the same
+    content.
+  apply_gate: "--apply"
+  preconditions: []
+  facts_touched: []
+  cascades_triggered: []
+  ordering_constraints:
+    - >-
+      Depends on Biuniqueness_Scope already being filled in on
+      planar_{lang_id}.tsv (Part 2a/2b) -- runs outside the standard
+      diagnostics_{lang_id}.yaml/generate-sheets class/construction pipeline
+      entirely, so nothing else creates its input for it.

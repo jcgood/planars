@@ -19,10 +19,14 @@ was caught (#244, #245, #248). This schema exists to let that relationship be
 written down explicitly, once, so it can be checked by inspection — or
 validated automatically — instead of rediscovered by incident.
 
-## Two kinds of dependency, two schemas
+## Three kinds of dependency, three schemas
 
 Investigating that incident surfaced two genuinely different classes of
-dependency, and one schema doesn't fit both cleanly:
+dependency, and a third — command-level topology — was added later (Phase 4
+of the data layer plan, issue #271) once the first two made clear how much
+of `CLAUDE.md`'s narrative prose was really the same handful of relational
+facts, restated per-file rather than declared once. One schema doesn't fit
+all three cleanly:
 
 1. **The same fact, recorded in more than one place** (`fact_record.schema.json`
    / `facts.yaml`). This is the classic case: a planar structure exists as
@@ -41,10 +45,19 @@ dependency, and one schema doesn't fit both cleanly:
    to cascade to) and bury the actually useful information: which commands
    share the assumption, and what currently checks it.
 
-Both schemas are deliberately small, both are validated against real JSON
-Schema files, and both are populated with real, current planars facts and
-preconditions — not a smoke-test sample. `facts.yaml`/`preconditions.yaml`
-*are* the registry; keep them accurate as the project changes.
+3. **Per-command topology: what a command does, whether it's safe to repeat,
+   and what it depends on running before or after** (`operation_record.schema.json`
+   / `operations.yaml`). Neither of the first two shapes fits "run
+   `restructure-sheets --split-element` before `--regen-construction`" or "a
+   false idempotency claim here corrupts what Phase 7/8 build on top of it" —
+   this is about one *command*, not one fact or one shared invariant. See
+   "Operation record shape" below.
+
+All three schemas are deliberately small, all three are validated against
+real JSON Schema files, and all three are populated with real, current
+planars facts, preconditions, and commands — not a smoke-test sample.
+`facts.yaml`/`preconditions.yaml`/`operations.yaml` *are* the registry; keep
+them accurate as the project changes.
 
 ## Entity vocabulary (facts only — preconditions don't use one)
 
@@ -173,6 +186,67 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
   failure inside `drive._autocommit_data()` visible enough to fix
   immediately.
 
+## Operation record shape
+
+```yaml
+- id: restructure_sheets
+  cli_command: restructure-sheets
+  description: Archives and regenerates sheets after structural changes to the planar.
+  side_effects:
+    - "archives the old sheet, creates/regenerates the new one, carries annotations over"
+  idempotent: false
+  idempotency_note: >-
+    Each run archives the current sheet and creates a new one -- running it
+    twice with the same flags archives twice, not a no-op.
+  apply_gate: "--apply"
+  preconditions: [coded_data_clean_tree, coded_data_git_identity_configured]
+  facts_touched:
+    - {fact: planar_sheet_structure, role: writes}
+  cascades_triggered:
+    - "push_planars_to_sheets() (import-planar --to-sheet) runs automatically after --apply"
+  ordering_constraints:
+    - "Never use prune-manifest for a rename -- use restructure-sheets --rename-class instead."
+```
+
+- **`id`** — snake_case form of the CLI command name (`cli_command` with
+  hyphens turned to underscores). Chosen so it can be checked mechanically
+  against `coding/__main__.py`'s `_COMMANDS` table — see
+  `test_every_coding_command_has_an_operation_record` in
+  `tests/test_data_dependency_schema.py`, the "a new command cannot be added
+  without declaring itself" test the plan asks for.
+- **`side_effects`** — what the command creates, writes, or changes. A pure
+  reader still gets an entry: `"none (read-only)"` — an empty list would be
+  indistinguishable from "not yet documented."
+- **`idempotent`** / **`idempotency_note`** — the two fields the plan singles
+  out for coordinator review, not just the authority assignments below.
+  `idempotent` is a claim Phases 7 and 8 build recovery logic on top of; a
+  wrong `true` produces recovery that corrupts rather than repairs. The note
+  is required on every record, `true` or `false`, because an unreasoned
+  `true` is the more dangerous of the two to get wrong silently.
+- **`apply_gate`** — what actually gates a live write: a flag name, a fuller
+  description when different modes of the same command are gated
+  differently (`generate-sheets`' `--regen-construction` is never gated by
+  `--apply` at all), or `null` for a command with no live-write concept.
+- **`preconditions`** — ids from `preconditions.yaml` this command's apply
+  path assumes hold. Reuses the existing registry rather than restating
+  `enforced_by`/`failure_symptom` per command.
+- **`facts_touched`** — `{fact, role}` pairs, `fact` an id from `facts.yaml`
+  and `role` one of `reads`/`writes`/`both`. Reuses the existing registry the
+  same way `preconditions` does — a reader who wants to know "who's
+  authoritative for this fact" already has that answer in `facts.yaml`
+  itself; this field only needs to say which commands are in the picture at
+  all.
+- **`cascades_triggered`** — what this command's own run sets off
+  automatically as a side effect (another command's regeneration step, a
+  notification) — as opposed to `ordering_constraints`, which is about what
+  a *human* needs to do in what order.
+- **`ordering_constraints`** — plain-language "run X before/after Y, because
+  Z" statements naming other commands by `cli_command`. This is the field
+  that absorbs the sequencing knowledge that used to live only as scattered
+  prose in `CLAUDE.md`/`coding/CLAUDE.md` — `--regen-construction` bypassing
+  `--apply`, `--split-element` before `--regen-construction`,
+  `prune-manifest` for retirement but never rename.
+
 ## Known limitations
 
 - Neither JSON Schema can mechanically enforce that a fact record's
@@ -192,6 +266,16 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
   precondition is either currently enforced or it isn't; there's no "might
   or might not be violated in practice" middle ground the way two data
   copies might or might not actually drift.
+- Neither JSON Schema can mechanically cross-check an operation record's
+  `facts_touched[].fact` against `facts.yaml`'s real ids, or its
+  `preconditions[]` against `preconditions.yaml`'s — same class of
+  limitation as the `authoritative`-in-`locations` check above, and checked
+  the same way, by a belt-and-suspenders test.
+- `operations.yaml` was drafted 2026-08-10 as a first pass, not yet reviewed
+  against the two things the plan requires the coordinator to check
+  specifically: every authority assignment (`facts_touched`/`preconditions`)
+  and every `idempotent` claim. Until that review, treat it as a draft. See
+  the file's own header comment.
 
 ## How to use this for ongoing work
 
@@ -214,7 +298,14 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
    actual enforcement function (or admit `nothing yet`), and describe the
    concrete failure symptom so a future incident can be matched back to this
    record.
-5. **Validate** — `pytest tests/test_data_dependency_schema.py`, or directly
+5. **For a new command**: add an `operations.yaml` record in the same commit
+   that registers it in `coding/__main__.py`'s `_COMMANDS` —
+   `test_every_coding_command_has_an_operation_record` fails otherwise.
+   Reference existing `facts.yaml`/`preconditions.yaml` ids where the command
+   genuinely reads or writes a registered fact or assumes a registered
+   precondition, rather than restating their content; name every other
+   command this one has to run before or after, and why.
+6. **Validate** — `pytest tests/test_data_dependency_schema.py`, or directly
    against the JSON Schemas with any draft-2020-12-compatible validator
    (`jsonschema` in Python works directly against YAML loaded into Python
    objects).

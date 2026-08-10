@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/planars/data_dependency_schema/operation_record.schema.json",
+  "title": "planars command operation record list",
+  "description": "A list of operation records, one per python -m coding command, documenting the relational knowledge Phase 4 of the data layer plan (issue #271) absorbs out of CLAUDE.md's narrative prose: side effects, idempotency, preconditions, which data_dependency_schema facts a command touches and how, what it triggers downstream, and required ordering relative to other commands. Distinct from fact_record.schema.json (the same FACT recorded in multiple places) and precondition_record.schema.json (a shared invariant several commands assume) -- this is per-COMMAND metadata, one record per entry in coding/__main__.py's _COMMANDS table. See SCHEMA.md.",
+  "type": "array",
+  "items": { "$ref": "#/$defs/operationRecord" },
+  "$defs": {
+    "factTouched": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fact", "role"],
+      "properties": {
+        "fact": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "A fact id from facts.yaml. Not cross-validated by JSON Schema (drafts can't reference another file's dynamic enum) -- checked by a belt-and-suspenders test instead, same approach as fact_record's authoritative-in-locations check."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["reads", "writes", "both"],
+          "description": "Whether this command reads the fact's current value, writes (changes the authoritative copy or a derived one), or both."
+        }
+      }
+    },
+    "operationRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "cli_command",
+        "description",
+        "side_effects",
+        "idempotent",
+        "idempotency_note",
+        "apply_gate",
+        "preconditions",
+        "facts_touched",
+        "cascades_triggered",
+        "ordering_constraints"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Snake_case form of the CLI command name (hyphens -> underscores), e.g. 'generate_sheets' for 'generate-sheets'. Used to check every entry in coding/__main__.py's _COMMANDS table has a record."
+        },
+        "cli_command": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The exact hyphenated command as typed: 'python -m coding <cli_command>'."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A one-line, plain-language statement of what the command does."
+        },
+        "side_effects": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "description": "What the command creates, writes, or changes when run. A pure reader still gets an entry: 'none (read-only)'."
+        },
+        "idempotent": {
+          "type": "boolean",
+          "description": "Whether running this command twice in a row, with nothing else changing in between, produces the same end state as running it once. This is a load-bearing claim: Phases 7 and 8 build recovery logic on top of it, so a wrong 'true' produces recovery that corrupts rather than repairs. Reviewed explicitly, not inferred from the description."
+        },
+        "idempotency_note": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Why the idempotent value is true or false -- concrete enough that the claim can be checked, not just asserted. Required even when idempotent is true, since 'true' is the more dangerous claim to get wrong."
+        },
+        "apply_gate": {
+          "type": ["string", "null"],
+          "description": "What gates live writes: the flag name ('--apply'), a fuller description when different modes are gated differently, or null for a command with no live-write concept at all (pure read-only)."
+        },
+        "preconditions": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+          "description": "Precondition ids from preconditions.yaml that this command's apply path assumes hold. Empty array if none. Not cross-validated by JSON Schema; checked by a belt-and-suspenders test."
+        },
+        "facts_touched": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/factTouched" },
+          "description": "Which data_dependency_schema facts this command reads or writes. Empty array if none of the currently-registered facts apply -- not exhaustive by design (see SCHEMA.md's 'don't try to be exhaustive'); grounded in facts.yaml's own cascade/drift_risk text where possible rather than speculative."
+        },
+        "cascades_triggered": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "What this command's own run sets off downstream, automatically, as a side effect -- e.g. another command's regeneration step, a notification. Empty array if nothing is triggered."
+        },
+        "ordering_constraints": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Plain-language 'run X before/after Y, because Z' statements naming other commands by cli_command. This is the field that absorbs CLAUDE.md's scattered sequencing prose (--regen-construction bypassing --apply; --split-element before --regen-construction; prune-manifest for retirement but never rename). Empty array if this command has no ordering dependency on any other."
+        }
+      }
+    }
+  }
+}

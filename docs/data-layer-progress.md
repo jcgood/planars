@@ -30,7 +30,7 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 3 — done (started and finished 2026-08-10). 0b/1 — done, 18 of 18 (2026-08-01–2026-08-04).
+**Phase:** 4 — drafted, not yet reviewed (started 2026-08-10). 3 — done (started and finished 2026-08-10). 0b/1 — done, 18 of 18 (2026-08-01–2026-08-04).
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
 **Last worked:** 2026-08-10
@@ -112,7 +112,8 @@ the same day — see the decisions log.
 | Phase 0b/1 — file 18: `restructure_sheets.py` | **done** — pre/post diff clean across thirteen scenarios; the last file, deliberately: the archive-then-rebuild command with no rollback behind #248's original incidents. `assert_no_criterion_writes_onto_trailing_columns` caught a real, pre-existing bug (Finding 16, fixed the same day); also surfaced a pre-existing gap, the missing `_check_coded_data_clean()` guard (Finding 17, fixed in a later follow-up commit) |
 | **Phase 0b/1 (the whole doorway migration)** | **done** — all eighteen files that reach Drive now go through it |
 | Phase 3 — schema reorganization | **done** — `diagnostic_classes.yaml` split from `diagnostic_classes_status.yaml`; `Class_Type` catalogued as a resistant field on issue #271, not split (behaviour-neutral phase) |
-| Phases 4–9 | not started |
+| Phase 4 — topology declaration | **drafted, not reviewed** — `data_dependency_schema/operations.yaml` + `operation_record.schema.json`, one record per `coding/__main__.py` command; coverage test in place. Coordinator review of authority assignments and idempotency claims still needed (see "Next action"). |
+| Phases 5–9 | not started |
 
 ### In flight
 
@@ -141,12 +142,31 @@ baseline (the split touches no field any analysis module reads); the one
 snapshot that *did* change (`tests/snapshots/coordinator/integrity_check/sheets_arao1248.txt`)
 reflects an intentional file-name wording fix, not a behaviour change.
 
-**Not blocked, but the next phase is gated on a decision from Jeff.**
-`docs/data-layer-implementation-plan.md`'s Phase 4 ("Topology declaration")
-is next in the plan's sequencing, and the plan itself marks that phase
-**"(coordinator decides authority)"**. This document does not attempt to
-describe what that authority assignment should look like; that is Jeff's
-call to make, per the plan.
+**Phase 4 ("Topology declaration") is drafted, not yet reviewed.** Jeff's
+instruction was "I draft, you review" — Claude drafts, he checks the two
+things the plan calls out specifically. `data_dependency_schema/operations.yaml`
+(+ `operation_record.schema.json`) now has one record per
+`coding/__main__.py` command (24 total, mechanically checked against
+`_COMMANDS` by `test_every_coding_command_has_an_operation_record`), each
+covering side effects, an `idempotent` claim with a required
+`idempotency_note`, which `preconditions.yaml`/`facts.yaml` entries it
+touches and how, what it triggers downstream, and plain-language ordering
+constraints relative to other commands — the CLAUDE.md-narrative knowledge
+(`--regen-construction` bypassing `--apply`; `--split-element` before
+`--regen-construction`; `prune-manifest` for retirement but never rename) is
+now in `ordering_constraints` rather than only in prose. Grounded in
+`coding/CLAUDE.md` and in `facts.yaml`/`preconditions.yaml`'s own existing
+cascade/`drift_risk`/`required_by` text rather than fresh guesses, per
+`operations.yaml`'s own header note on what's synthesis vs. already
+independently documented.
+
+**Awaiting Jeff's review of two things before this phase is done**, per the
+plan's own emphasis: every `facts_touched`/`preconditions` authority
+assignment, and every `idempotent` claim (a false `true` is load-bearing —
+Phases 7 and 8 build recovery logic on top of it). `CLAUDE.md`'s narrative
+prose remains authoritative until that review; the plan's "done when" also
+calls for replacing that prose with a pointer to the generated registry, not
+attempted yet for the same reason. Not otherwise blocked.
 
 Nothing remains recorded-but-unfixed from the migration itself. Findings 13
 (`import-sheets` dry run crashing on a bad manifest spreadsheet ID), 15

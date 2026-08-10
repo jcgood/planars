@@ -58,12 +58,18 @@ without waiting on #279. See `docs/data-layer-progress.md`'s Finding 19
 entry for the full account, and its Findings 20/21 for the two bugs this
 onboarding pass found and fixed along the way.
 
-**Next up is Phase 4 of `docs/data-layer-implementation-plan.md`** ("Topology
-declaration"), which the plan marks **"(coordinator decides authority)"** —
-starting it requires a decision from Jeff first, not an agent's guess at
-what the authority assignments should look like. Read
-`docs/data-layer-progress.md` § "Next action" for the current state of that
-gate before doing anything else on this effort.
+**Phase 4 of `docs/data-layer-implementation-plan.md`** ("Topology
+declaration") **is drafted, not yet reviewed** (2026-08-10). Jeff said "I
+draft, you review" — `data_dependency_schema/operations.yaml` now has one
+record per `coding/__main__.py` command (side effects, an idempotency claim
++ reasoning, preconditions/facts touched, downstream triggers, ordering
+constraints), mechanically checked for coverage against every registered
+command. **Still needed before this phase counts as done:** Jeff's review of
+every authority assignment (`facts_touched`/`preconditions`) and every
+`idempotent` claim — the plan calls these out specifically, since Phases 7/8
+build recovery logic on top of the idempotency claims. Read
+`docs/data-layer-progress.md` § "Next action" for the current state before
+doing anything else on this effort.
 
 ---
 
