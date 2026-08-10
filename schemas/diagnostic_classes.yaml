@@ -268,7 +268,6 @@ classes:
         Computed by walking outward from keystone through all positions (including
         free-permutable), stopping only at structural gaps, and recording the outermost
         non-free-permutable position as the span edge.
-    keystone_active_default: true
 
   - name: coreference
     display_name: "Coreference"
