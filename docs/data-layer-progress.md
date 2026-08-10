@@ -30,10 +30,27 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 0b/1 — done, 18 of 18 (started 2026-08-01, finished 2026-08-04)
+**Phase:** 3 — done (started and finished 2026-08-10). 0b/1 done, 18 of 18 (2026-08-01–2026-08-04).
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
-**Last worked:** 2026-08-04
+**Last worked:** 2026-08-10
+
+Phase 3 split `schemas/diagnostic_classes.yaml` into that file (linguistic
+content only) and a new `schemas/diagnostic_classes_status.yaml` (process/
+tracking state: `status`, `criterion_set_status`, `collection_required`,
+`qualification_rule_hash`, `sheet_instructions`, `include_planar_reference_tab`),
+joined by class `name`. Scope turned out narrower than "split all of
+`schemas/`": `diagnostic_criteria.yaml`, `terms.yaml`, and `languages.yaml`
+were already single-purpose and needed no split; `planar.yaml`'s only
+conflated field, `Class_Type`, was catalogued rather than split (splitting
+its actual semantics would be a behaviour change, out of scope for this
+phase's own non-goals — see Findings 18/19 below and the decisions log).
+`coding/schemas.py`'s `load_diagnostic_classes()` merges both files by name
+at read time, so the ~30 existing callers across `coding/` and `planars/`
+needed no changes; `coding/sync_qualification_hashes.py` (the only writer of
+`qualification_rule_hash`) and `coding/generate_rule_update_prompt.py` (which
+read the old file directly, bypassing the merged loader, and would have
+silently treated every class as stale) were the two that did.
 
 Bugs found and fixed while doing this work, all the same root cause — something
 inferred which column held a value from the wrong source: **#272** (dropdowns,
@@ -92,7 +109,8 @@ the same day — see the decisions log.
 | Phase 0b/1 — file 17: `generate_sheets.py` | **done** — pre/post diff clean across twelve scenarios; the largest file migrated so far (2,654 lines) and the first whose migration threaded `doorway` through this file's own call chain rather than substituting at a single entry point; passed `assert_no_criterion_writes_onto_trailing_columns` clean; found and later fixed Finding 15 (`--force` overwrote a language's planar/diagnostics reference sheets before the guard could abort on its existing annotation sheets) |
 | Phase 0b/1 — file 18: `restructure_sheets.py` | **done** — pre/post diff clean across thirteen scenarios; the last file, deliberately: the archive-then-rebuild command with no rollback behind #248's original incidents. `assert_no_criterion_writes_onto_trailing_columns` caught a real, pre-existing bug (Finding 16, fixed the same day); also surfaced a pre-existing gap, the missing `_check_coded_data_clean()` guard (Finding 17, fixed in a later follow-up commit) |
 | **Phase 0b/1 (the whole doorway migration)** | **done** — all eighteen files that reach Drive now go through it |
-| Phases 3–9 | not started |
+| Phase 3 — schema reorganization | **done** — `diagnostic_classes.yaml` split from `diagnostic_classes_status.yaml`; `Class_Type` catalogued as a resistant field on issue #271, not split (behaviour-neutral phase) |
+| Phases 4–9 | not started |
 
 ### In flight
 
@@ -109,17 +127,24 @@ reaches `gspread`/`googleapiclient` directly (`tests/test_doorway_coverage.py`
 verifies this, with an empty `_REMAINING`). No file remains to migrate — there
 is no next *file*.
 
+**Phase 3 ("Schema reorganization") is done — see Current state above.**
+Jeff made the calls the plan marked "(coordinator decides)": the split
+mechanism (two parallel files, joined by class `name`, over the alternatives
+of one file with two top-level keys or a field-rate registry with no
+physical split) and the bucket for three borderline fields
+(`criterion_set_status`, `qualification_rule_hash`, `sheet_instructions` — all
+administrative). Every Phase 1 snapshot passed byte-identical, confirmed by
+`generate_snapshots.py` producing a zero-diff run against the pre-split
+baseline (the split touches no field any analysis module reads); the one
+snapshot that *did* change (`tests/snapshots/coordinator/integrity_check/sheets_arao1248.txt`)
+reflects an intentional file-name wording fix, not a behaviour change.
+
 **Not blocked, but the next phase is gated on a decision from Jeff.**
-`docs/data-layer-implementation-plan.md`'s Phase 3 ("Schema reorganization")
+`docs/data-layer-implementation-plan.md`'s Phase 4 ("Topology declaration")
 is next in the plan's sequencing, and the plan itself marks that phase
-**"(coordinator decides)"** — it is the highest-value and highest-risk phase,
-splitting `schemas/` into research-facing and administrative sections. This
-document does not attempt to describe what that split should look like or
-start planning it; that is Jeff's call to make, per the plan. Once made, an
-agent can pick up Phase 3 with the same per-unit discipline this migration
-used, gated behind the snapshot tests this effort built (every Phase 1
-snapshot must still pass byte-identical afterward, per the plan's own
-done-criteria for that phase).
+**"(coordinator decides authority)"**. This document does not attempt to
+describe what that authority assignment should look like; that is Jeff's
+call to make, per the plan.
 
 Nothing remains recorded-but-unfixed from the migration itself. Findings 13
 (`import-sheets` dry run crashing on a bad manifest spreadsheet ID), 15
@@ -298,6 +323,32 @@ here is outstanding; the entries are kept because the sequence is the point.
 **Do not delete this section when the migration ends without first checking that
 every finding has an issue number or a decisions-log entry.** Findings 4 and 5
 lived here alone for a day each, and a section that gets deleted is not tracking.
+
+**18 and 19 — found 2026-08-10 while splitting `diagnostic_classes.yaml` for
+Phase 3; both pre-existing, not introduced by the split, left unfixed per
+this phase's own non-goal of no behaviour changes.**
+
+**18. `nonpermutability` carries `keystone_active_default: true` twice** in
+`schemas/diagnostic_classes.yaml` (now in `diagnostic_classes_status.yaml`'s
+sibling record, but the duplicate itself predates the split). Both
+occurrences agree (`true`), so PyYAML's last-value-wins behaviour makes this
+harmless today, but a future edit to only one copy would silently do nothing.
+Caught by the split script's own field-inventory check (it counts occurrences
+per class), not by any existing test. One-line fix (delete the earlier
+occurrence) whenever convenient — not bundled into this phase's commit
+because it's a behaviour-neutral phase by design.
+
+**19. `validate_diagnostics.py`'s required-class check has never matched
+anything.** `_required_classes()` (`coding/validate_diagnostics.py:128`) reads
+`collection_required` and tests `is True` — a Python bool identity check —
+but the field's actual values are the strings `"y"`/`"n"`/`"[NEEDS COORDINATOR
+INPUT]"` throughout `diagnostic_classes_status.yaml`, never the YAML booleans
+`true`/`false`. `"y" is True` is always `False`, so this function has always
+returned an empty set and the required-class check it feeds has never flagged
+a missing required class. Found while confirming the split preserved
+`collection_required`'s value type; unrelated to the split itself and left
+for its own fix, since correcting it changes what `import-sheets`/`validate-coding`
+warn about — a real behaviour change.
 
 **1 and 2 — issue #272, fixed and closed 2026-08-02** (`b399e32`,
 "refresh-dropdowns: read the sheet, not the manifest, for criterion columns").
@@ -1844,7 +1895,52 @@ deprecate it" convention.
 
 ---
 
+**2026-08-10 — Phase 3 (schema reorganization) done.** Jeff decided the split
+mechanism (two parallel files, `diagnostic_classes.yaml` +
+`diagnostic_classes_status.yaml`, joined by class `name`) over a one-file/
+two-key-block alternative and a no-physical-split field-rate-registry
+alternative — the two-file option won on "clean ownership" (a person editing
+linguistic content never scrolls past process bookkeeping and vice versa),
+accepting that every reader needs a merge step. That step already existed as
+a single chokepoint (`coding/schemas.py`'s `load_diagnostic_classes()`), which
+is what made the two-file option's downside (every reader needs both files)
+cost nothing in practice — the ~30 existing callers across `coding/` and
+`planars/` needed no changes.
+
+Jeff also bucketed the three fields that don't obviously belong to either
+side by their own logic, not a rule stated in advance: `criterion_set_status`
+(a workflow/maturity flag like `status`, not a claim about the language),
+`qualification_rule_hash` (a derived integrity checksum, never hand-edited,
+belongs with other process fields even though it's meaningless without the
+rule it checks), and `sheet_instructions` (operational guidance for running
+annotation, not a claim about the language's grammar) — all landed
+administrative. One real coupling cost from that: a class's two-stage sheet
+workflow is now split across both files (`constructions` in the research
+file states the dependency structure; `sheet_instructions` in the status file
+says what to tell the annotator), so editing a multi-stage class like
+`nonpermutability`, `coreference`, or `phrasal_accent` means opening both.
+
+The text-level split (not a `yaml.dump` round-trip) was necessary to preserve
+every inline comment exactly — this file has 30+ rationale/issue-reference
+comments per class on average. The split script found and fixed its own bug
+mid-build: a first pass forward-attached every standalone same-indent comment
+to the field that followed it, which is right most of the time but wrong for
+seven comments that continue a field's own inline trailing comment wrapped at
+the wrong indent (e.g. `status`'s rationale, continued at indent 4 instead of
+the deeper indent used elsewhere) — misattributing those would have silently
+moved a class's review rationale into the wrong file. Each of the seven was
+resolved by reading it in context, not by a smarter general heuristic; a
+`yaml.safe_load` merge-back equality check against the original file (every
+class, every field) caught a real corruption from the first version of the
+bug (a comment fragment that leaked into a folded scalar's literal text) and
+would have caught the misattribution too had the manual read-through missed
+one. `Class_Type` (`schemas/planar.yaml`) — the field the plan named as the
+known example of a field that resists classification — was catalogued here
+and on issue #271, not resolved: splitting its ontological claim (open/closed
+word class) from its typographic-rule-selector job would be a behaviour
+change to the validator, out of scope for a phase whose own non-goal is "no
+intended behaviour changes whatsoever."
+
 ## Open questions for Jeff
 
-*(none currently — Phases 3 and 4 will raise the research/administrative
-classification and the authority assignments)*
+*(none currently — Phase 4 will raise the authority assignments)*

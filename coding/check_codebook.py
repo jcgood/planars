@@ -418,11 +418,11 @@ def _check_qualification_rule_drift(diag_classes: dict) -> List[str]:
         yaml_hash = cls.get("qualification_rule_hash")
         if yaml_hash is None:
             print(f"  \u26a0  [{name}] qualification_rule_hash not set in "
-                  f"diagnostic_classes.yaml (expected: {expected_hash!r}) — "
+                  f"diagnostic_classes_status.yaml (expected: {expected_hash!r}) — "
                   f"run: python -m coding sync-qualification-hashes --apply --class {name}")
         elif yaml_hash != expected_hash:
             errors.append(
-                f"[{name}] qualification_rule_hash mismatch: YAML has {yaml_hash!r} but "
+                f"[{name}] qualification_rule_hash mismatch: diagnostic_classes_status.yaml has {yaml_hash!r} but "
                 f"qualification_rule hashes to {expected_hash!r} — "
                 f"the rule was edited without a module review cycle; "
                 f"run: python -m coding generate-rule-update-prompt {name}"
@@ -590,11 +590,11 @@ def _report_needs_review(codebook: dict, diag_classes: dict) -> int:
     for cls in diag_classes.values():
         status = str(cls.get("status", ""))
         if "[NEEDS REVIEW]" in status or "[PLACEHOLDER]" in status:
-            flagged.append(f"diagnostic_classes.yaml [{cls['name']}]: status")
+            flagged.append(f"diagnostic_classes_status.yaml [{cls['name']}]: status")
         cr = str(cls.get("collection_required", ""))
         if "[NEEDS COORDINATOR INPUT]" in cr:
             flagged.append(
-                f"diagnostic_classes.yaml [{cls['name']}]: collection_required — "
+                f"diagnostic_classes_status.yaml [{cls['name']}]: collection_required — "
                 f"coordinator decision needed (set to 'y' or 'n')"
             )
     if flagged:

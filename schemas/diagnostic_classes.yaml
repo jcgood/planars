@@ -1,5 +1,16 @@
 # Diagnostic Classes
-# Normative schema for analysis classes used in diagnostics_{lang_id}.tsv.
+# Normative schema for the linguistic content of analysis classes used in
+# diagnostics_{lang_id}.tsv: what each class is, when it applies, and how it
+# derives spans. Process/tracking state for the same classes (review status,
+# whether collection is required, the sheet-facing instructions, the
+# qualification_rule integrity hash) lives in schemas/diagnostic_classes_status.yaml
+# instead — split out in Phase 3 of the data layer redesign (issue #271,
+# docs/data-layer-implementation-plan.md) because the two move at different
+# rates and a coordinator editing linguistic content had no way to touch it
+# without also seeing (and risking touching) workflow bookkeeping in the same
+# record. coding/schemas.py's load_diagnostic_classes() merges both files back
+# into one dict per class at read time, so every reader of the merged result
+# is unaffected by the split.
 #
 # THIS FILE IS THE SOURCE OF TRUTH FOR:
 #   - Which analysis classes exist and what they cover
@@ -18,14 +29,18 @@
 #     → see schemas/planar.yaml
 #   - Per-language instances of these classes
 #     → see coded_data/{lang_id}/lang_setup/diagnostics_{lang_id}.tsv
+#   - Review status, collection requirement, sheet instructions, or the
+#     qualification_rule_hash integrity check for these classes
+#     → see schemas/diagnostic_classes_status.yaml
 #
 # Relationship to other files:
-#   schemas/diagnostic_criteria.yaml — diagnostic criterion semantics and allowed values
-#   schemas/diagnostic_classes.yaml (this file) — class structure, applicability, qualification rules
-#   schemas/planar.yaml             — planar structure ontology (positions, elements, columns)
-#   schemas/terms.yaml              — analytical vocabulary (strict/loose span, partial/complete)
-#   diagnostics_{lang_id}.tsv       — per-language instance of these classes, validated against this file
-#   docs/analyses.md                — human reader's guide pointing to all schema files
+#   schemas/diagnostic_criteria.yaml       — diagnostic criterion semantics and allowed values
+#   schemas/diagnostic_classes.yaml (this) — class structure, applicability, qualification rules
+#   schemas/diagnostic_classes_status.yaml — process/tracking state for the same classes
+#   schemas/planar.yaml                    — planar structure ontology (positions, elements, columns)
+#   schemas/terms.yaml                     — analytical vocabulary (strict/loose span, partial/complete)
+#   diagnostics_{lang_id}.tsv              — per-language instance of these classes, validated against this file
+#   docs/analyses.md                       — human reader's guide pointing to all schema files
 #
 # check-codebook validates diagnostics_{lang_id}.tsv against this file:
 #   - required diagnostic criteria must be present as columns
@@ -36,7 +51,8 @@
 # to diagnostics_{lang_id}.tsv and scaffold any new analysis modules.
 #
 # Fields:
-#   name                     machine name (matches planars/ module and coded_data/ folder)
+#   name                     machine name (matches planars/ module and coded_data/ folder;
+#                            also the join key into diagnostic_classes_status.yaml)
 #   display_name             human-readable label for notebook section headers
 #   domain_type              morphosyntactic | phonological | indeterminate
 #   domain_subtype           segmental | prosodic  (optional; phonological classes only)
@@ -72,15 +88,16 @@
 #                            Only needed for general-specificity classes with multi-stage
 #                            workflows. construction_specific classes define constructions
 #                            per-language in diagnostics_{lang}.yaml.
-#   sheet_instructions       Optional free-text guidance for the Instructions tab generated
-#                            by generate-sheets. Written for annotators (John-level). If
-#                            absent, only generic dependency-order instructions are shown.
-#   status                   stable | "[NEEDS REVIEW]" | "[PLACEHOLDER]"
-#   criterion_set_status     stable | "[PROVISIONAL]" (expected to grow as more languages
-#                            are analyzed; note explains known gaps or open questions)
-#   collection_required      "[NEEDS COORDINATOR INPUT]" until coordinator decides;
-#                            true = must appear in diagnostics_{lang_id}.tsv for every language;
-#                            false = optional (conditional on language-specific phenomena)
+#
+# Process/tracking fields that used to live on these same records — status,
+# criterion_set_status, collection_required, qualification_rule_hash,
+# sheet_instructions, include_planar_reference_tab — moved to
+# schemas/diagnostic_classes_status.yaml; see that file's own header for field
+# docs. A class's two-stage sheet workflow is documented in two places as a
+# result: `constructions` here (the dependency structure) and
+# `sheet_instructions` there (what to tell the annotator) — expect to open
+# both files together when editing a multi-stage class like nonpermutability,
+# coreference, or phrasal_accent.
 
 classes:
 
@@ -110,12 +127,7 @@ classes:
       (and any further combine parameters are also n).
       A position is complete if ALL its elements are v-ciscategorial.
       A position is partial if AT LEAST ONE element is v-ciscategorial.
-    qualification_rule_hash: "eefbef19"
-    status: stable
     keystone_active_default: false
-    collection_required: "y"
-    criterion_set_status: "[PROVISIONAL]"  # Criterion set may grow further as more
-      # predicate-flexible languages are onboarded; other *-combines types not yet attested.
 
   - name: subspanrepetition
     display_name: "Subspan Repetition"
@@ -177,13 +189,7 @@ classes:
         maximum_narrowscope_right: widescope_right=n (element lacks wide scope right)
       Each category produces complete and partial position sets and four spans
       (strict/loose x complete/partial).
-    qualification_rule_hash: "82a6a7c2"
-    status: stable
     keystone_active_default: false
-    collection_required: "y"
-    criterion_set_status: "[PROVISIONAL]"  # Construction types are open-ended and expected
-      # to grow as more languages are added. Criterion names may also need refinement as
-      # additional construction types are attested.
 
   - name: noninterruption
     display_name: "Noninterruption"
@@ -201,11 +207,7 @@ classes:
         no-free domain:     element qualifies if free=n (bound).
         single-free domain: element qualifies if free=n OR (free=y AND multiple=n).
       Only strict spans are computed for non-interruption (no loose span).
-    qualification_rule_hash: "92149718"
-    status: stable
     keystone_active_default: false
-    collection_required: "y"
-    criterion_set_status: stable
 
   - name: nonpermutability
     display_name: "Nonpermutability"
@@ -232,21 +234,6 @@ classes:
         depends_on: element_prescreening
         staleness_check: element_set
         criterion: scopal
-    sheet_instructions: >
-      STEP 1 — element_prescreening: For each element, annotate scopal with one value:
-        y    = this element always participates in fixed-order (scopally meaningful) pairs
-        n    = this element has no meaningful variable ordering; it will be EXCLUDED from
-               the pair list in Step 2
-        both = this element has mixed behavior: some pairs are scopal, some are freely variable
-      When finished, mark element_prescreening as "ready-for-review" in the Status tab.
-      The coordinator will then regenerate the general tab with a filtered pair list.
-
-      STEP 2 — general: Do NOT annotate this tab until the coordinator confirms it has been
-      regenerated after Step 1 is complete. Once regenerated, annotate each pair:
-        scopal = y  means these two elements must appear in a fixed order (the order
-                    carries an obligatory scope difference)
-        scopal = n  means these two elements can appear in either order freely (no
-                    scope difference)
     keystone_active_default: true
     required_criteria: [scopal]
     optional_criteria: []
@@ -281,15 +268,7 @@ classes:
         Computed by walking outward from keystone through all positions (including
         free-permutable), stopping only at structural gaps, and recording the outermost
         non-free-permutable position as the span edge.
-    qualification_rule_hash: "6edfcae4"
-    criterion_set_status: stable
-    status: "[AUTO-DERIVED: NEEDS REVIEW — qualification rule redesigned Apr 2026 (issue
-      #116) to use pair-row annotation. Previous 4-span model (permutable/scopal per
-      element) replaced by 3-span model (scopal per pair; strict span now structurally
-      derived). Coordinator sign-off needed before promoting to stable.]"
     keystone_active_default: true
-    collection_required: "y"
-    include_planar_reference_tab: true
 
   - name: coreference
     display_name: "Coreference"
@@ -333,24 +312,6 @@ classes:
         depends_on: prescreening
         staleness_check: element_set
         criterion: np_allowed
-    sheet_instructions: >
-      STEP 1 — prescreening: For each element, annotate referential:
-        y = this element is a referential expression (NP, pronoun) that can enter coreference
-        n = this element cannot participate; it will be EXCLUDED from the pair list in Step 2
-      When finished, mark prescreening as "ready-for-review" in the Status tab.
-      The coordinator will then regenerate each pair construction tab from the prescreening results.
-
-      STEP 2 — (pair constructions): Do NOT annotate until the coordinator confirms regeneration.
-      The coordinator runs:
-        python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:CONSTRUCTION_NAME
-      Each row (Element_A, Position_A, Position_B, Direction) represents a potential
-      antecedent-anaphor pair. Position columns use "N (name)" format e.g. "5 (v:npsubj1)".
-      For reflexivization:   mark reflexive_allowed=y if a reflexive at Position_B can be
-                             bound by Element_A at Position_A; n if it cannot. (Principle A)
-      For pronominalization: mark pronoun_allowed=y if a pronoun at Position_B can be
-                             bound by Element_A at Position_A; n if it cannot. (Principle B)
-      For np_reference:      mark np_allowed=y if an NP at Position_B can corefer with
-                             Element_A at Position_A; n if it cannot. (Principle C)
     required_criteria: [reflexive_allowed]
     optional_criteria: [pronoun_allowed, np_allowed]
     qualification_rule: >
@@ -376,16 +337,8 @@ classes:
         Shared positions (either role):            appear in both sets.
       The asymmetry between binder-only and bindee-only positions approximates c-command
       without presupposing tree structure (see issue #163).
-    qualification_rule_hash: "96a13eba"
     keystone_active_default: true
     # Keystone (verb) is the natural bindee in morphological reflexive voice constructions.
-    status: "[AUTO-DERIVED: NEEDS REVIEW — proposed in issue #163 (Apr 2026). Pair-row
-      operationalization of binder/bindee domains with reflexive_allowed=y/n criterion and
-      upstream prescreening (referential=y/n) stage. Coordinator sign-off required before
-      promoting to stable.]"
-    criterion_set_status: "[NEEDS REVIEW]"
-    collection_required: "[NEEDS COORDINATOR INPUT]"
-    include_planar_reference_tab: true
 
   - name: free_occurrence
     display_name: "Free Occurrence"
@@ -425,12 +378,8 @@ classes:
       (left-edge-of-free-form, right-edge-of-free-form, dependent-on-left,
       dependent-on-right) apply only to bound elements (free=n); free elements (free=y)
       receive na in all annotation columns.
-    qualification_rule_hash: "c9a14b77"
-    status: "[AUTO-DERIVED]"
     keystone_active_default: true
     keystone_na_criteria: [left-edge-of-free-form, right-edge-of-free-form, dependent-on-left, dependent-on-right]
-    collection_required: "y"
-    criterion_set_status: stable
 
   - name: proform
     display_name: "Proform"
@@ -450,15 +399,7 @@ classes:
       least one element has shareable_proform_replace=y or shareable_proform_replace=both.
       Positions where all elements are n do not qualify. Strict span uses complete
       positions; loose span uses partial positions (which subsumes complete).
-    qualification_rule_hash: "4f6689ff"
-    criterion_set_status: "[NEEDS REVIEW]"  # Criterion design confirmed by Adam Tallman
-      # (May 2026); not yet validated against annotation data.
-    status: "[NEEDS REVIEW]"  # Ch. 17 line 543 explicitly states proform was NOT included in
-    # the published database: "There are other tests that have not yet been included in the
-    # database (e.g. proform replacement)." Criterion design confirmed; annotation for
-    # stan1293 do_so_substitution in progress.
     keystone_active_default: false
-    collection_required: "y"
 
   - name: idiom
     display_name: "Idiom"
@@ -479,14 +420,7 @@ classes:
       A position qualifies if it contains an element where idiomatic=y. Complete
       qualification: ALL elements have idiomatic=y. Partial qualification: at
       least one element has idiomatic=y.
-    qualification_rule_hash: "2794fd02"
-    criterion_set_status: stable  # Single binary criterion is appropriate; idiom identity
-      # is encoded in the construction name, not additional parameters.
-    status: "[NEEDS REVIEW]"  # Mebengokre (ch. 12) provides the clearest evidence: diagnostic
-    # [\ref{idioms}] documents 3 specific idioms with position spans (adjnc-ket). The class
-    # design is sound but needs annotation data.
     keystone_active_default: false
-    collection_required: "n"
 
   - name: biuniqueness_exponence
     display_name: "Biuniqueness — extended exponence"
@@ -528,17 +462,7 @@ classes:
       is the most semantically informative: it extends from the position of the
       prefixal piece to the position of the suffixal piece, directly identifying
       the extended exponent domain.
-    qualification_rule_hash: "bc5aee58"
-    criterion_set_status: stable  # Single binary criterion is appropriate for the
-      # circumfix/extended-exponent type. Non-automatic allomorphy (issue #58) is a
-      # distinct class, not an extension of this criterion set.
-    status: "[NEEDS REVIEW]"  # Formal abstract type in book's ch. 17 database schema.
-    # Ch. 17 line 554 explicitly acknowledges the class is "relatively superficially
-    # considered" and that "a great deal of complexity and variation is hidden behind such
-    # designations" — direct book-level support for issue #58 (non-automatic allomorphy
-    # as a distinct sub-type). Araona circumfix data is annotated; other types pending.
     keystone_active_default: false
-    collection_required: "[NEEDS COORDINATOR INPUT]"
 
   - name: repair
     display_name: "Repair"
@@ -556,19 +480,8 @@ classes:
       A position qualifies if it contains an element where restart=y. Complete
       qualification: ALL elements in the position have restart=y. Partial
       qualification: at least one element has restart=y.
-    qualification_rule_hash: "29dbc84b"
-    criterion_set_status: stable  # Single binary criterion is appropriate; restart
-      # behavior is categorical (yes/no per position).
-    status: "[NEEDS REVIEW]"  # Strongly confirmed by Cup'ik ch. 2 (4 naturalistic examples,
-    # restart domain = vbase–pn4); no evidence in 8 other reviewed chapters. Applicable
-    # only where elicitation can target production errors within the verbal complex.
     keystone_active_default: "[NEEDS REVIEW]"  # Unclear whether the verbstem participates
       # in repair/restart behavior. Treat as false until Adam resolves.
-    collection_required: "n"
-
-  # ---------------------------------------------------------------------------
-  # Phonological domain classes
-  # ---------------------------------------------------------------------------
 
   - name: metrical
     display_name: "Metrical"
@@ -600,12 +513,6 @@ classes:
         The keystone always remains part of the domain. Its criterion values
         participate in blocking checks but it is never excluded from the span.
         Returns minimal/maximal × partial/complete = 4 blocked spans.
-    qualification_rule_hash: "56e9aeb2"
-    criterion_set_status: "[PROVISIONAL]"  # left-interaction and right-interaction are
-      # [NEEDS REVIEW] — their role in the blocked-span qualification rule is unresolved
-      # (issue #17). May be removed, renamed, or replaced depending on resolution of
-      # meso/interaction domain design (issues #16, #17).
-    status: stable  # Note: left-interaction and right-interaction are [NEEDS REVIEW] (issue #17)
     keystone_active_default: true  # The verbstem has real stress/accent properties
       # (accented, obligatory, independence) that participate in the blocked-span
       # boundary computation. Keystone rows must be annotated with real values.
@@ -613,8 +520,6 @@ classes:
       # stress is independent *of* the keystone — a self-referential question for the
       # keystone itself. It is always 'na' on the keystone row even when
       # keystone_active is true.
-    collection_required: "n"
-
 
   - name: phrasal_accent
     display_name: "Phrasal (Pitch) Accent Grouping"
@@ -655,25 +560,6 @@ classes:
         depends_on: prescreening
         staleness_check: element_set
         criterion: joint_accent
-    sheet_instructions: >
-      STEP 1 — prescreening: For each element, annotate accented (same criterion
-      metrical uses):
-        y    = this element can always independently carry a phrasal pitch accent
-        n    = this element can never independently carry a phrasal pitch accent;
-               it will be EXCLUDED from the pair list in Step 2
-        both = variably accent-bearing depending on context
-      When finished, mark prescreening as "ready-for-review" in the Status tab.
-      The coordinator will then regenerate the general tab with a filtered pair list.
-
-      STEP 2 — general: Do NOT annotate this tab until the coordinator confirms it has
-      been regenerated after Step 1 is complete. Once regenerated, annotate each pair
-      of linearly adjacent accent-eligible elements:
-        joint_accent = always     one member obligatorily deaccents next to the other
-        joint_accent = never      both always retain independent accents when adjacent
-        joint_accent = sometimes  depends on focus/givenness/speech register
-      Corrective accent (e.g. "HE did it, not SHE") is out of scope — do not code
-      pairs elicited or observed under a correction context (see issue #237 for the
-      literature distinguishing corrective from contrastive/ordinary accent).
     required_criteria: []  # empty because criteria are construction-specific (mirrors
       # segmental's pattern): prescreening uses accented, general uses joint_accent --
       # neither is required on every row/construction of this class, so both go in
@@ -689,17 +575,9 @@ classes:
       method is chosen and this rule is filled in. No planars/phrasal_accent.py module
       exists yet for the same reason — writing derivation logic ahead of that decision
       would just be thrown away or risk becoming a silently-wrong default.
-    qualification_rule_hash: "79bb5fda"
-    criterion_set_status: "[NEEDS REVIEW]"  # accented is reused as-is from metrical
-      # (stable there); joint_accent is new and unvalidated against real data.
-    status: "[NEEDS REVIEW]"  # Derivation undecided; coding scheme itself pending real
-      # annotation. Requires Adam's sign-off per the module-review workflow before any
-      # promotion. See issue #237.
     keystone_active_default: true  # Mirrors metrical: the verbstem has real
       # accentuation properties that plausibly participate in phrasal grouping.
       # Tentative pending the deferred qualification rule.
-    collection_required: "n"
-
 
   - name: segmental
     display_name: "Segmental"
@@ -770,12 +648,7 @@ classes:
         Complete: ALL elements in the position qualify.
         Partial: at least one element qualifies.
         Returns four spans (strict/loose × complete/partial).
-    qualification_rule_hash: "b180dfa7"
-    # Formal abstract type in ch. 17 database schema.
-    status: "[AUTO-DERIVED: likely stable — confirmed across 10+ language chapters; formal
-      abstract type in ch. 17; coordinator sign-off needed to remove AUTO-DERIVED]"
     keystone_active_default: true
-    collection_required: "n"
 
   - name: tonal
     display_name: "Tonal"
@@ -802,11 +675,7 @@ classes:
       qualification: ALL elements in the position have applies=y. Partial
       qualification: at least one element has applies=y. Returns four spans
       (strict/loose × complete/partial).
-    qualification_rule_hash: "3dd8fb51"
-    criterion_set_status: "[AUTO-DERIVED]"
-    status: "[AUTO-DERIVED]"
     keystone_active_default: "[NEEDS REVIEW]"
-    collection_required: "n"
 
   - name: tonosegmental
     display_name: "Tonosegmental"
@@ -832,11 +701,7 @@ classes:
       qualification: ALL elements in the position have applies=y. Partial
       qualification: at least one element has applies=y. Returns four spans
       (strict/loose × complete/partial).
-    qualification_rule_hash: "3dd8fb51"
-    criterion_set_status: "[AUTO-DERIVED]"
-    status: "[AUTO-DERIVED]"
     keystone_active_default: "[NEEDS REVIEW]"
-    collection_required: "n"
 
   - name: intonational
     display_name: "Intonational"
@@ -858,18 +723,7 @@ classes:
       qualification: ALL elements in the position have applies=y. Partial
       qualification: at least one element has applies=y. Returns four spans
       (strict/loose × complete/partial).
-    qualification_rule_hash: "3dd8fb51"
-    criterion_set_status: "[AUTO-DERIVED]"
-    status: "[AUTO-DERIVED]"
     keystone_active_default: "[NEEDS REVIEW]"
-    collection_required: "n"
-
-  # suprasegmental is retired as of issue #100. Its constructions have been redistributed:
-  #   metrical:      pitch-accent domain, iambic foot domain, word-stress domain,
-  #                  right-edge stress domain, tone-stress locus domain,
-  #                  auxiliary construction domain
-  #   tonosegmental: tone melody domain, superhigh-assignment domain
-  #   tonal:         H1-spreading domain, H3-assignment domain
 
   - name: pausing
     display_name: "Pausing"
@@ -888,14 +742,7 @@ classes:
       A position qualifies if it contains an element where pause_domain=y.
       Complete qualification: ALL elements in the position have pause_domain=y.
       Partial qualification: at least one element has pause_domain=y.
-    qualification_rule_hash: "4fe4d821"
-    criterion_set_status: stable  # Single binary criterion is appropriate; pause
-      # behavior is categorical (yes/no per position).
-    status: "[NEEDS REVIEW]"  # Mebengokre (ch. 12) applies and validates: diagnostic [\ref{pause}]
-    # identifies span prevb-fin, converging with non-recursive interruption and stress domain.
-    # No evidence in 9 other reviewed chapters; elicitation access may be the limiting factor.
     keystone_active_default: "[NEEDS REVIEW]"
-    collection_required: "n"
 
   - name: play_language
     display_name: "Play Language"
@@ -921,10 +768,4 @@ classes:
       A position qualifies if it contains an element where applies=y. Complete
       qualification: ALL elements have applies=y. Partial qualification: at
       least one element has applies=y.
-    qualification_rule_hash: "fa856d1c"
-    criterion_set_status: stable  # Single binary criterion is appropriate; ludling
-      # operation identity is encoded in the construction name.
-    status: "[NEEDS REVIEW]"  # Chatino ch. 8 provides corpus-attested data (Campbell 2020);
-    # target domain = positions 10-13 (verbal core = tonal melody domain). Confirmed real.
     keystone_active_default: "[NEEDS REVIEW]"
-    collection_required: "n"

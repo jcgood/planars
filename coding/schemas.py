@@ -24,17 +24,36 @@ _planar_schema_cache: Dict | None = None
 
 
 def load_diagnostic_classes() -> Dict:
-    """Return the parsed diagnostic_classes.yaml dict (cached per process).
+    """Return diagnostic_classes.yaml merged with diagnostic_classes_status.yaml
+    (cached per process), keyed by class ``name``.
 
-    Returns the raw YAML structure: ``{"classes": [{name, ...}, ...]}``.
-    Returns an empty dict if the file is missing.
+    The two files split the linguistic content of an analysis class from its
+    process/tracking state (Phase 3, issue #271); every existing reader wants
+    both together, so this loader merges them transparently and returns the
+    same shape callers relied on before the split: ``{"classes": [{name, ...}, ...]}``.
+    Returns an empty dict if diagnostic_classes.yaml is missing.
     """
     global _diagnostic_classes_cache
     if _diagnostic_classes_cache is None:
         path = ROOT / "schemas" / "diagnostic_classes.yaml"
+        status_path = ROOT / "schemas" / "diagnostic_classes_status.yaml"
         if path.exists():
             with open(path, encoding="utf-8") as f:
-                _diagnostic_classes_cache = yaml.safe_load(f) or {}
+                data = yaml.safe_load(f) or {}
+            status_by_name: Dict[str, Dict] = {}
+            if status_path.exists():
+                with open(status_path, encoding="utf-8") as f:
+                    status_data = yaml.safe_load(f) or {}
+                for entry in status_data.get("classes", []) or []:
+                    if isinstance(entry, dict) and entry.get("name"):
+                        status_by_name[entry["name"]] = entry
+            merged_classes = []
+            for cls in data.get("classes", []) or []:
+                merged = dict(cls)
+                merged.update(status_by_name.get(cls.get("name"), {}))
+                merged_classes.append(merged)
+            data["classes"] = merged_classes
+            _diagnostic_classes_cache = data
         else:
             _diagnostic_classes_cache = {}
     return _diagnostic_classes_cache

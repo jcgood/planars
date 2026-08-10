@@ -1,8 +1,9 @@
 # Analyses
 
-This document describes the span types computed by planars, the available analysis modules, and their status. Four YAML files in `schemas/` govern the analysis framework:
+This document describes the span types computed by planars, the available analysis modules, and their status. Five YAML files in `schemas/` govern the analysis framework:
 
 - **`schemas/diagnostic_classes.yaml`** — the normative schema for analysis classes: which classes exist, when each applies (universal vs. conditional), construction-specific variants, required diagnostic criteria, qualification rules, and known construction types. See [The diagnostic classes schema](#the-diagnostic-classes-schema) below.
+- **`schemas/diagnostic_classes_status.yaml`** — process/tracking state for the same classes (review status, whether collection is required, sheet instructions, the qualification-rule integrity hash), split out from `diagnostic_classes.yaml` in Phase 3 of the data layer redesign (issue #271) because the two move at different rates. `coding/schemas.py`'s `load_diagnostic_classes()` merges the two back into one dict per class at read time.
 - **`schemas/diagnostic_criteria.yaml`** — the authoritative reference for diagnostic criterion semantics, allowed values, and linguistic definitions. See [The diagnostic criteria schema](#the-diagnostic-criteria-schema) below.
 - **`schemas/terms.yaml`** — definitions of analytical terms (strict/loose span, partial/complete position, keystone, etc.) and chart label glossary.
 - **`schemas/planar.yaml`** — planar structure ontology: structural columns, element conventions, and label standards.
@@ -11,13 +12,13 @@ This document describes the span types computed by planars, the available analys
 
 ## The diagnostic classes schema
 
-`schemas/diagnostic_classes.yaml` is the source of truth for the analysis class framework. It is separate from `schemas/diagnostic_criteria.yaml` (which owns criterion semantics) and serves as the normative reference for coordinators and contributors adding new languages or analyses.
+`schemas/diagnostic_classes.yaml` is the source of truth for the linguistic content of the analysis class framework. It is separate from `schemas/diagnostic_criteria.yaml` (which owns criterion semantics) and from `schemas/diagnostic_classes_status.yaml` (which owns process/tracking state for the same classes — see below), and serves as the normative reference for coordinators and contributors adding new languages or analyses.
 
 Each entry contains:
 
 | Field | Contents |
 |---|---|
-| `name` | Machine name — matches the `planars/` module and `coded_data/` subfolder |
+| `name` | Machine name — matches the `planars/` module and `coded_data/` subfolder; also the join key into `diagnostic_classes_status.yaml` |
 | `display_name` | Human-readable label used in notebook section headers |
 | `domain_type` | `morphosyntactic`, `phonological`, or `indeterminate` |
 | `applicability` | `universal` (applies to every language) or `conditional` (applies only when stated conditions hold) |
@@ -26,7 +27,8 @@ Each entry contains:
 | `known_constructions` | Non-exhaustive examples for construction-specific classes |
 | `required_criteria` | Diagnostic criterion columns that must appear in `diagnostics_{lang_id}.tsv` |
 | `qualification_rule` | How the code decides whether a position qualifies — complete vs. partial, blocking conditions, etc. |
-| `status` | `stable`, `[NEEDS REVIEW]`, or `[PLACEHOLDER]` |
+
+`schemas/diagnostic_classes_status.yaml` carries each class's `status` (`stable`, `[NEEDS REVIEW]`, `[PLACEHOLDER]`, or `[AUTO-DERIVED]`), `criterion_set_status`, `collection_required`, `qualification_rule_hash`, `sheet_instructions`, and `include_planar_reference_tab` — see that file's own header for field docs.
 
 ### Human-editable workflow
 
@@ -123,7 +125,7 @@ Some analyses (stress, aspiration) use a **blocked span** instead: expand from t
 
 † `left-interaction` and `right-interaction` criteria remain provisional — see issue #17.
 
-‡ Likely stable based on cross-language evidence (see `schemas/diagnostic_classes.yaml`), but coordinator sign-off still needed.
+‡ Likely stable based on cross-language evidence (see `schemas/diagnostic_classes_status.yaml`), but coordinator sign-off still needed.
 
 ¶ Not included in the langsci/291 published database (ch. 17, line 543). Prospective class.
 

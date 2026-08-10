@@ -9,7 +9,7 @@ Commands:
     generate-reports             Generate and upload PDF reports for all languages to Drive
     sync-params                  Sync diagnostic criterion columns when diagnostics_{lang_id}.yaml changes
     sync-diagnostics-yaml        Sync diagnostics YAML → TSV (YAML is source of truth)
-    sync-qualification-hashes    Stamp qualification_rule_hash in diagnostic_classes.yaml
+    sync-qualification-hashes    Stamp qualification_rule_hash in diagnostic_classes_status.yaml
     update-sheets                Add missing rows/columns to existing sheets
     import-sheets                Download filled sheets to TSVs
     validate-coding              Re-validate annotation sheets and update cell highlighting

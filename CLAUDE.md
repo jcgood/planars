@@ -181,17 +181,18 @@ Language IDs in this project are Glottocodes (e.g., `arao1248`, `stan1293`). Glo
 
 `schemas/planar.yaml` is the source of truth for structural column definitions and element conventions.
 
-`schemas/diagnostic_classes.yaml` is the normative schema for analysis classes — what they cover, when they apply, what diagnostic criteria they require, and how spans are computed (qualification_rule). It is separate from `schemas/diagnostic_criteria.yaml` (which owns criterion semantics) and serves as the source of truth for:
+`schemas/diagnostic_classes.yaml` is the normative schema for the linguistic content of analysis classes — what they cover, when they apply, what diagnostic criteria they require, and how spans are computed (qualification_rule). It is separate from `schemas/diagnostic_criteria.yaml` (which owns criterion semantics) and serves as the source of truth for:
 - Which classes exist and their domain types (morphosyntactic / phonological / indeterminate)
 - Whether a class is universal or conditional and when it applies
 - Whether a class uses a single general construction or is construction-specific
 - Which diagnostic criteria must appear in diagnostics_{lang_id}.tsv for each class
-- Whether a class is required for all languages (`collection_required: true/false`) — values are `[NEEDS COORDINATOR INPUT]` until Adam decides
 - Non-exhaustive examples of known construction types for variable classes
 
-`check-codebook` validates diagnostics_{lang_id}.tsv against both files. Human-editable workflow: edit `schemas/diagnostic_classes.yaml` to add or update a class, then ask Claude to propagate changes to diagnostics_{lang_id}.tsv and scaffold the module.
+`schemas/diagnostic_classes_status.yaml` holds process/tracking state for the same classes, keyed by class `name` — split out from `diagnostic_classes.yaml` in Phase 3 of the data layer redesign (issue #271) because linguistic content and workflow bookkeeping move at different rates and were previously welded into one record per class. Covers: review `status` (see § Analysis status convention below), `criterion_set_status`, whether a class is required for all languages (`collection_required: "y"`/`"n"`, values are `"[NEEDS COORDINATOR INPUT]"` until Adam decides), the `qualification_rule_hash` integrity check, `sheet_instructions`, and `include_planar_reference_tab`. `coding/schemas.py`'s `load_diagnostic_classes()` merges both files by `name` at read time, so every existing reader sees one combined dict per class exactly as before the split.
 
-`render_codebook.py` at the repo root renders the schemas as human-readable Markdown (reads from all four schema files): `python render_codebook.py` (stdout) or `python render_codebook.py codebook.md` (file).
+`check-codebook` validates diagnostics_{lang_id}.tsv against both files. Human-editable workflow: edit `schemas/diagnostic_classes.yaml` to add or update a class's linguistic content (or `schemas/diagnostic_classes_status.yaml` for its review/workflow state), then ask Claude to propagate changes to diagnostics_{lang_id}.tsv and scaffold the module.
+
+`render_codebook.py` at the repo root renders the schemas as human-readable Markdown (reads from all schema files): `python render_codebook.py` (stdout) or `python render_codebook.py codebook.md` (file).
 
 `generate_diagram.py` generates Graphviz diagrams: `taxonomy` (default, class taxonomy by domain type) or `schema-map` (YAML schema file relationships). Run: `python generate_diagram.py [--diagram schema-map] out.svg` (also `.pdf`, `.dot`, `.png`). Requires Graphviz.
 
@@ -222,6 +223,7 @@ Keep the following files up to date as the project evolves. Check each one at th
 | `coded_data/{lang_id}/lang_setup/diagnostics_{lang_id}.yaml` | Classes, constructions, criteria, or notes change for a language — then run `sync-diagnostics-yaml --apply` |
 | `schemas/diagnostic_criteria.yaml` | New diagnostic criteria, new analyses, `[PLACEHOLDER]` or `[NEEDS REVIEW]` entries resolved |
 | `schemas/diagnostic_classes.yaml` | New analysis classes added, applicability, required criteria, qualification rules, or known construction types change |
+| `schemas/diagnostic_classes_status.yaml` | A class's review status, collection requirement, or sheet instructions change |
 | `schemas/planar.yaml` | New standard element labels or structural column conventions |
 | `schemas/terms.yaml` | New analytical terms or chart label changes |
 | `README.md` | Changes to the annotated TOC (audience routing, guide descriptions) |
@@ -334,7 +336,7 @@ Drive/Sheets access is migrating behind a doorway (`coding/drive_doorway.py`, of
 
 ## Analysis status convention
 
-The `status` field in `diagnostic_classes.yaml` uses three values: `stable`, `[AUTO-DERIVED]`, and `[NEEDS REVIEW]`. **Only a coordinator (Adam Tallman or equivalent domain expert) may promote a module's status out of `[AUTO-DERIVED]`.** Claude should not change `[AUTO-DERIVED]` to `stable` or remove that designation, even when cross-language evidence is strong. Claude may:
+The `status` field in `diagnostic_classes_status.yaml` uses three values: `stable`, `[AUTO-DERIVED]`, and `[NEEDS REVIEW]`. **Only a coordinator (Adam Tallman or equivalent domain expert) may promote a module's status out of `[AUTO-DERIVED]`.** Claude should not change `[AUTO-DERIVED]` to `stable` or remove that designation, even when cross-language evidence is strong. Claude may:
 
 - Add "likely stable" notes or cross-language evidence summaries within the status comment
 - Change `[AUTO-DERIVED]` to `[NEEDS REVIEW]` if a specific known concern warrants it

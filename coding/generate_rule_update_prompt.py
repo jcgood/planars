@@ -19,10 +19,9 @@ import importlib.util
 import sys
 from pathlib import Path
 
-import yaml
+from coding.schemas import load_diagnostic_classes
 
 ROOT = Path(__file__).resolve().parent.parent
-CLASSES_YAML = ROOT / "schemas" / "diagnostic_classes.yaml"
 PLANARS_DIR = ROOT / "planars"
 
 
@@ -35,8 +34,11 @@ def _compute_hash(qualification_rule: str) -> str:
 
 
 def _load_classes() -> list[dict]:
-    data = yaml.safe_load(CLASSES_YAML.read_text(encoding="utf-8"))
-    return data.get("classes", [])
+    """Return classes merged from diagnostic_classes.yaml and
+    diagnostic_classes_status.yaml (via the shared cached loader), so
+    qualification_rule (research) and qualification_rule_hash (status) are
+    both present on each entry."""
+    return load_diagnostic_classes().get("classes", [])
 
 
 def _module_source(name: str) -> str | None:
@@ -118,7 +120,7 @@ def _generate_prompt(cls: dict) -> str:
         f"   ```bash\n"
         f"   {sync_cmd}\n"
         f"   ```\n"
-        f"   This stamps the new hash in `diagnostic_classes.yaml`, confirming the code "
+        f"   This stamps the new hash in `diagnostic_classes_status.yaml`, confirming the code "
         f"was verified against the current rule."
     )
 

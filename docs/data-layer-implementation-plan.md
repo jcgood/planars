@@ -156,7 +156,7 @@ derivable / must-declare classification.
 
 ---
 
-## Phase 3 — Schema reorganization *(coordinator decides)*
+## Phase 3 — Schema reorganization *(coordinator decides)* — done 2026-08-10
 
 **Goal.** Split `schemas/` into research-facing and administrative sections, and
 relocate inventoried facts into it.
@@ -180,6 +180,21 @@ split is applied, and resistant fields are catalogued in the tracking issue.
 **Non-goals.** No intended behavior changes whatsoever. If the split implies a
 desirable behavior change, that is a *separate, later, deliberate* step — not
 part of this phase.
+
+Done 2026-08-10: `diagnostic_classes.yaml` split into that file (linguistic
+content) and `diagnostic_classes_status.yaml` (process/tracking state),
+joined by class `name`; `coding/schemas.py`'s `load_diagnostic_classes()`
+merges both at read time so existing callers needed no changes. Scope turned
+out narrower than "all of `schemas/`" — only `diagnostic_classes.yaml` had
+fields moving at genuinely different rates within the same record;
+`diagnostic_criteria.yaml`, `terms.yaml`, and `languages.yaml` were already
+single-purpose. `Class_Type` (`schemas/planar.yaml`) — the resistant field
+named above — is catalogued on issue #271, not split: its two welded jobs
+(ontological open/closed-class claim vs. typographic-rule selector) can't be
+separated without changing validator behavior, which this phase's non-goal
+rules out. See `docs/data-layer-progress.md`'s 2026-08-10 decisions-log entry
+for the split-mechanism choice and Findings 18/19 for two pre-existing bugs
+found (and left unfixed, same reason) while verifying it.
 
 ---
 

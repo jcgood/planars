@@ -1,8 +1,12 @@
-"""Stamp qualification_rule_hash in diagnostic_classes.yaml.
+"""Stamp qualification_rule_hash in diagnostic_classes_status.yaml.
 
 The hash is SHA-256[:8] of the whitespace-normalised qualification_rule text.
 Running this after Claude has updated a module records that the code has been
-verified against the current rule text.
+verified against the current rule text. qualification_rule itself lives in
+diagnostic_classes.yaml (research); qualification_rule_hash lives in
+diagnostic_classes_status.yaml (process/tracking) — split in Phase 3 of the
+data layer redesign (issue #271). This script reads the rule from one file
+and stamps the hash into the other.
 
 Usage:
     python -m coding sync-qualification-hashes                       # dry run: show what would change
@@ -20,6 +24,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 CLASSES_YAML = ROOT / "schemas" / "diagnostic_classes.yaml"
+STATUS_YAML = ROOT / "schemas" / "diagnostic_classes_status.yaml"
 
 
 def _normalize(text: str) -> str:
@@ -44,118 +49,72 @@ def _collect_wanted(target_class: str | None) -> dict[str, str]:
     return wanted
 
 
-def _current_hashes(target_class: str | None) -> dict[str, str | None]:
-    """Return {class_name: current_hash_or_None} for all classes with a qualification_rule."""
-    data = yaml.safe_load(CLASSES_YAML.read_text(encoding="utf-8"))
+def _current_hashes(target_class: str | None, wanted: dict[str, str]) -> dict[str, str | None]:
+    """Return {class_name: current_hash_or_None} for classes in `wanted`."""
+    data = yaml.safe_load(STATUS_YAML.read_text(encoding="utf-8"))
+    by_name = {cls.get("name", ""): cls for cls in data.get("classes", [])}
     result: dict[str, str | None] = {}
-    for cls in data.get("classes", []):
-        name = cls.get("name", "")
-        if target_class and name != target_class:
-            continue
-        if cls.get("qualification_rule", ""):
-            result[name] = cls.get("qualification_rule_hash")
+    for name in wanted:
+        result[name] = by_name.get(name, {}).get("qualification_rule_hash")
     return result
 
 
-def _apply_hashes(wanted: dict[str, str], current: dict[str, str | None]) -> None:
-    """Write hash updates to CLASSES_YAML using text-level manipulation to preserve comments."""
-    lines = CLASSES_YAML.read_text(encoding="utf-8").splitlines(keepends=True)
+def _apply_hashes(wanted: dict[str, str]) -> None:
+    """Write hash updates to STATUS_YAML using text-level manipulation to preserve comments.
+
+    Unlike diagnostic_classes.yaml's old qualification_rule field,
+    qualification_rule_hash here is always a plain single-line scalar (never a
+    multi-line block). An existing `qualification_rule_hash:` line is updated
+    in place wherever it already sits in the class's field order; only a
+    class missing the field entirely gets a new line, appended at the end of
+    its block (just before the next class starts).
+    """
+    lines = STATUS_YAML.read_text(encoding="utf-8").splitlines(keepends=True)
     out: list[str] = []
 
     current_class: str | None = None
-    in_qr_block = False      # currently consuming qualification_rule scalar lines
-    qr_block_indent = 0      # indentation of qualification_rule: key
-    hash_inserted = False    # whether we already wrote hash for current_class
-    pending_insert: str | None = None   # hash line to insert at end of qr block
+    hash_written = False
+
+    def _flush_missing_hash():
+        if current_class in wanted and not hash_written:
+            out.append(f'    qualification_rule_hash: "{wanted[current_class]}"\n')
 
     i = 0
     while i < len(lines):
         line = lines[i]
         stripped = line.rstrip("\n")
-
-        # Detect class boundaries (lines like "  - name: classname", indent 2).
-        # Must NOT match nested "- name:" entries inside a class's own `constructions:`
-        # list (e.g. "      - name: prescreening" at indent 6) — those aren't new
-        # classes, and treating them as one silently drops current_class before the
-        # real qualification_rule field is ever reached, so no hash gets inserted.
         line_indent = len(stripped) - len(stripped.lstrip())
+
         if stripped.lstrip().startswith("- name:") and line_indent == 2:
-            # Flush any pending insert before moving to a new class
-            if pending_insert is not None:
-                out.append(pending_insert)
-                pending_insert = None
+            _flush_missing_hash()
             current_class = stripped.split("- name:", 1)[1].strip()
-            in_qr_block = False
-            hash_inserted = False
+            hash_written = False
             out.append(line)
             i += 1
             continue
 
         if current_class and current_class in wanted:
             key = stripped.lstrip()
-
-            # Detect start of qualification_rule block
-            if key.startswith("qualification_rule:") and not key.startswith("qualification_rule_hash:"):
-                qr_block_indent = len(stripped) - len(stripped.lstrip())
-                in_qr_block = True
-                out.append(line)
-                i += 1
-                continue
-
-            if in_qr_block:
-                # A line that is blank OR indented more than qr_block_indent is part of the block
-                stripped_content = stripped.lstrip()
-                line_indent = len(stripped) - len(stripped_content) if stripped_content else 999
-                if not stripped_content or line_indent > qr_block_indent:
-                    out.append(line)
-                    i += 1
-                    continue
-                else:
-                    # End of qr block: this line is the next field at same indent
-                    in_qr_block = False
-                    expected = wanted[current_class]
-
-                    if key.startswith("qualification_rule_hash:"):
-                        # Replace the existing hash value
-                        hash_inserted = True
-                        out.append(f"{' ' * qr_block_indent}qualification_rule_hash: \"{expected}\"\n")
-                        i += 1
-                        continue
-                    else:
-                        # No existing hash — insert before this line
-                        if not hash_inserted:
-                            out.append(f"{' ' * qr_block_indent}qualification_rule_hash: \"{expected}\"\n")
-                            hash_inserted = True
-                        out.append(line)
-                        i += 1
-                        continue
-
-            # Handle qualification_rule_hash that appears after the qr block
-            # (e.g. already exists; we may need to update it)
-            if key.startswith("qualification_rule_hash:"):
-                expected = wanted[current_class]
-                hash_inserted = True
-                out.append(f"{' ' * qr_block_indent}qualification_rule_hash: \"{expected}\"\n")
+            if key.startswith("qualification_rule_hash:") and line_indent == 4:
+                out.append(f'    qualification_rule_hash: "{wanted[current_class]}"\n')
+                hash_written = True
                 i += 1
                 continue
 
         out.append(line)
         i += 1
 
-    # Flush any trailing pending insert (shouldn't happen but be safe)
-    if pending_insert is not None:
-        out.append(pending_insert)
-
-    CLASSES_YAML.write_text("".join(out), encoding="utf-8")
+    _flush_missing_hash()
+    STATUS_YAML.write_text("".join(out), encoding="utf-8")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Stamp qualification_rule_hash in diagnostic_classes.yaml."
+        description="Stamp qualification_rule_hash in diagnostic_classes_status.yaml."
     )
     parser.add_argument(
         "--apply", action="store_true",
-        help="Write updated hashes to diagnostic_classes.yaml (dry run by default)."
+        help="Write updated hashes to diagnostic_classes_status.yaml (dry run by default)."
     )
     parser.add_argument(
         "--class", dest="target_class", metavar="CLASS",
@@ -164,7 +123,7 @@ def main() -> None:
     args = parser.parse_args()
 
     wanted = _collect_wanted(args.target_class)
-    current = _current_hashes(args.target_class)
+    current = _current_hashes(args.target_class, wanted)
 
     stale = [(name, wanted[name], current.get(name)) for name in wanted if current.get(name) != wanted[name]]
 
@@ -182,8 +141,8 @@ def main() -> None:
         print(f"\n{len(stale)} hash(es) need updating. Re-run with --apply to write.")
         sys.exit(1)
 
-    _apply_hashes(wanted, current)
-    print(f"\nStamped {len(stale)} hash(es) in {CLASSES_YAML.relative_to(ROOT)}")
+    _apply_hashes(wanted)
+    print(f"\nStamped {len(stale)} hash(es) in {STATUS_YAML.relative_to(ROOT)}")
     sys.exit(0)
 
 

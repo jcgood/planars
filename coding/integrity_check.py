@@ -811,7 +811,7 @@ def _section_needs_review(codebook: dict, diag_classes: dict) -> None:
     for cls in diag_classes.values():
         status = str(cls.get("status", ""))
         if "[NEEDS REVIEW]" in status or "[PLACEHOLDER]" in status:
-            flagged.append(f"diagnostic_classes.yaml [{cls['name']}]: status")
+            flagged.append(f"diagnostic_classes_status.yaml [{cls['name']}]: status")
 
     if flagged:
         print(_warn(f"{len(flagged)} entry(ies) marked [NEEDS REVIEW] or [PLACEHOLDER]:"))

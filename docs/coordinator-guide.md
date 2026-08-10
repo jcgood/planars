@@ -281,16 +281,16 @@ If noninterruption is updated after the free_occurrence sheet is generated, the 
 
 A **qualification rule** is the formal description of how span computations work for an analysis class — which criterion values cause a position to qualify, whether strict or loose spans are computed, and what blocking conditions apply. The rule text lives in `schemas/diagnostic_classes.yaml` under `qualification_rule:`, and the Python module in `planars/` must implement exactly that rule.
 
-To guard against the rule and code drifting apart, `diagnostic_classes.yaml` stores a `qualification_rule_hash` for each class — a short fingerprint of the rule text. `check-codebook` (and CI) verify that the hash matches the current rule. If you edit the rule text without updating the hash, CI files a `codebook-error` issue.
+To guard against the rule and code drifting apart, `schemas/diagnostic_classes_status.yaml` stores a `qualification_rule_hash` for each class — a short fingerprint of the rule text, kept in a separate file from the rule itself because it's process bookkeeping (when was this last reviewed), not a linguistic fact (see that file's own header for why). `check-codebook` (and CI) verify that the hash matches the current rule. If you edit the rule text without updating the hash, CI files a `codebook-error` issue.
 
 #### How to recognize the error
 
 The `codebook-error` GitHub issue body will contain a line like:
 
 ```
-✗ [metrical] qualification_rule_hash mismatch: YAML has "56e9aeb2" but qualification_rule
-  hashes to "a1b2c3d4" — the rule was edited without a module review cycle;
-  run: python -m coding generate-rule-update-prompt metrical
+✗ [metrical] qualification_rule_hash mismatch: diagnostic_classes_status.yaml has "56e9aeb2"
+  but qualification_rule hashes to "a1b2c3d4" — the rule was edited without a module review
+  cycle; run: python -m coding generate-rule-update-prompt metrical
 ```
 
 #### The 7-step workflow

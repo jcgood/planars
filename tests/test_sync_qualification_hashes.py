@@ -1,4 +1,10 @@
-"""Tests for coding/sync_qualification_hashes.py."""
+"""Tests for coding/sync_qualification_hashes.py.
+
+qualification_rule lives in diagnostic_classes.yaml (research content);
+qualification_rule_hash lives in diagnostic_classes_status.yaml (process
+tracking) — split in Phase 3 of the data layer redesign (issue #271). This
+script reads the rule from one file and stamps the hash into the other.
+"""
 from __future__ import annotations
 
 import hashlib
@@ -57,130 +63,123 @@ def test_collect_wanted_single_class():
 
 
 def test_current_hashes_all_stamped():
-    current = _current_hashes(None)
+    wanted = _collect_wanted(None)
+    current = _current_hashes(None, wanted)
     for name, h in current.items():
         assert h is not None, f"[{name}] hash is not stamped"
 
 
 def test_current_hashes_match_expected():
     wanted = _collect_wanted(None)
-    current = _current_hashes(None)
+    current = _current_hashes(None, wanted)
     stale = [(n, wanted[n], current.get(n)) for n in wanted if current.get(n) != wanted[n]]
     assert stale == [], f"Stale hashes after bootstrap: {stale}"
 
 
 # ---------------------------------------------------------------------------
-# _apply_hashes: update existing hash
+# _apply_hashes: update existing hash (writes only to STATUS_YAML)
 # ---------------------------------------------------------------------------
 
-_MINIMAL_YAML = """\
+_MINIMAL_STATUS_YAML = """\
 classes:
 
   - name: testclass
-    qualification_rule: >
-      A position qualifies if free=y.
     qualification_rule_hash: "oldvalue"
     status: stable
 """
 
-_MINIMAL_YAML_NO_HASH = """\
+_MINIMAL_STATUS_YAML_NO_HASH = """\
 classes:
 
   - name: testclass
-    qualification_rule: >
-      A position qualifies if free=y.
     status: stable
 """
 
-# Regression fixture for a real bug: a class with a two-stage `constructions:` list
-# (nested "- name: prescreening" / "- name: general" entries) whose qualification_rule
-# comes AFTER that list. The nested entries are indented like top-level class boundaries
-# ("- name: ...") and were being misdetected as one, silently resetting current_class
-# before the real qualification_rule field was ever reached — so no hash got inserted,
-# with no error raised. Any two-stage class (coreference, nonpermutability, and now
-# phrasal_accent) has this exact shape.
-_TWO_STAGE_YAML_NO_HASH = """\
+# Regression fixture: a two-stage class whose sheet_instructions (a multi-line
+# `>` block scalar) comes BEFORE qualification_rule_hash in the status file —
+# the shape nonpermutability, coreference, and phrasal_accent actually have.
+# The block-scalar continuation lines must not be mistaken for a new field or
+# a new class boundary.
+_TWO_STAGE_STATUS_YAML_NO_HASH = """\
 classes:
 
   - name: twostageclass
-    specificity: general
-    constructions:
-      - name: prescreening
-        row_type: element
-      - name: general
-        row_type: pair_rows
-        depends_on: prescreening
-        criterion: joint_accent
-    required_criteria: [joint_accent]
-    qualification_rule: >
-      [DEFERRED] Derivation not yet decided.
+    sheet_instructions: >
+      STEP 1 — prescreening: annotate accented.
+        y = eligible
+        n = excluded
+      STEP 2 — general: annotate joint_accent.
     status: "[NEEDS REVIEW]"
 """
 
 
 def test_apply_hashes_updates_existing(tmp_path, monkeypatch):
-    yaml_path = tmp_path / "diagnostic_classes.yaml"
-    yaml_path.write_text(_MINIMAL_YAML)
+    status_path = tmp_path / "diagnostic_classes_status.yaml"
+    status_path.write_text(_MINIMAL_STATUS_YAML)
 
     import coding.sync_qualification_hashes as sqh
-    monkeypatch.setattr(sqh, "CLASSES_YAML", yaml_path)
+    monkeypatch.setattr(sqh, "STATUS_YAML", status_path)
 
     rule = "A position qualifies if free=y."
     expected = _compute_hash(rule)
-    sqh._apply_hashes({"testclass": expected}, {"testclass": "oldvalue"})
+    sqh._apply_hashes({"testclass": expected})
 
-    updated = yaml_path.read_text()
+    updated = status_path.read_text()
     assert f'qualification_rule_hash: "{expected}"' in updated
     assert "oldvalue" not in updated
 
 
 def test_apply_hashes_inserts_missing(tmp_path, monkeypatch):
-    yaml_path = tmp_path / "diagnostic_classes.yaml"
-    yaml_path.write_text(_MINIMAL_YAML_NO_HASH)
+    status_path = tmp_path / "diagnostic_classes_status.yaml"
+    status_path.write_text(_MINIMAL_STATUS_YAML_NO_HASH)
 
     import coding.sync_qualification_hashes as sqh
-    monkeypatch.setattr(sqh, "CLASSES_YAML", yaml_path)
+    monkeypatch.setattr(sqh, "STATUS_YAML", status_path)
 
     rule = "A position qualifies if free=y."
     expected = _compute_hash(rule)
-    sqh._apply_hashes({"testclass": expected}, {"testclass": None})
+    sqh._apply_hashes({"testclass": expected})
 
-    updated = yaml_path.read_text()
+    updated = status_path.read_text()
     assert f'qualification_rule_hash: "{expected}"' in updated
+    assert yaml.safe_load(updated)["classes"][0]["status"] == "stable"
 
 
-def test_apply_hashes_two_stage_class_nested_names_not_mistaken_for_boundaries(tmp_path, monkeypatch):
-    """Regression test: nested `- name:` entries inside `constructions:` (indent 6)
-    must not be mistaken for top-level class boundaries (indent 2), or the real
-    qualification_rule field after them never gets its hash inserted."""
-    yaml_path = tmp_path / "diagnostic_classes.yaml"
-    yaml_path.write_text(_TWO_STAGE_YAML_NO_HASH)
+def test_apply_hashes_two_stage_class_sheet_instructions_block_not_mistaken_for_boundary(tmp_path, monkeypatch):
+    """Regression test: a multi-line sheet_instructions block (indent 6 content,
+    itself containing lines that look like 'y = ...'/'n = ...') must not be
+    mistaken for a new field or class boundary, or the hash never gets
+    inserted for a two-stage class."""
+    status_path = tmp_path / "diagnostic_classes_status.yaml"
+    status_path.write_text(_TWO_STAGE_STATUS_YAML_NO_HASH)
 
     import coding.sync_qualification_hashes as sqh
-    monkeypatch.setattr(sqh, "CLASSES_YAML", yaml_path)
+    monkeypatch.setattr(sqh, "STATUS_YAML", status_path)
 
     rule = "[DEFERRED] Derivation not yet decided."
     expected = _compute_hash(rule)
-    sqh._apply_hashes({"twostageclass": expected}, {"twostageclass": None})
+    sqh._apply_hashes({"twostageclass": expected})
 
-    updated = yaml_path.read_text()
+    updated = status_path.read_text()
     assert f'qualification_rule_hash: "{expected}"' in updated
-    # The nested construction names must survive untouched.
-    assert "- name: prescreening" in updated
-    assert "- name: general" in updated
+    parsed = yaml.safe_load(updated)["classes"][0]
+    # The sheet_instructions block must survive untouched.
+    assert "STEP 1" in parsed["sheet_instructions"]
+    assert "STEP 2" in parsed["sheet_instructions"]
+    assert parsed["status"] == "[NEEDS REVIEW]"
 
 
 def test_apply_hashes_preserves_surrounding_content(tmp_path, monkeypatch):
-    yaml_path = tmp_path / "diagnostic_classes.yaml"
-    yaml_path.write_text(_MINIMAL_YAML)
+    status_path = tmp_path / "diagnostic_classes_status.yaml"
+    status_path.write_text(_MINIMAL_STATUS_YAML)
 
     import coding.sync_qualification_hashes as sqh
-    monkeypatch.setattr(sqh, "CLASSES_YAML", yaml_path)
+    monkeypatch.setattr(sqh, "STATUS_YAML", status_path)
 
     rule = "A position qualifies if free=y."
     expected = _compute_hash(rule)
-    sqh._apply_hashes({"testclass": expected}, {"testclass": "oldvalue"})
+    sqh._apply_hashes({"testclass": expected})
 
-    updated = yaml_path.read_text()
+    updated = status_path.read_text()
     assert "status: stable" in updated
     assert "- name: testclass" in updated

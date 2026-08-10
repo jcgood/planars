@@ -33,13 +33,13 @@
        diagnostic_criteria.yaml [phrasal_accent]: description
        diagnostic_criteria.yaml [phrasal_accent/joint_accent]: description
        diagnostic_criteria.yaml [proform]: description
-       diagnostic_classes.yaml [proform]: status
-       diagnostic_classes.yaml [idiom]: status
-       diagnostic_classes.yaml [biuniqueness_exponence]: status
-       diagnostic_classes.yaml [repair]: status
-       diagnostic_classes.yaml [phrasal_accent]: status
-       diagnostic_classes.yaml [pausing]: status
-       diagnostic_classes.yaml [play_language]: status
+       diagnostic_classes_status.yaml [proform]: status
+       diagnostic_classes_status.yaml [idiom]: status
+       diagnostic_classes_status.yaml [biuniqueness_exponence]: status
+       diagnostic_classes_status.yaml [repair]: status
+       diagnostic_classes_status.yaml [phrasal_accent]: status
+       diagnostic_classes_status.yaml [pausing]: status
+       diagnostic_classes_status.yaml [play_language]: status
        → Edit the relevant schema file to resolve each entry.
          Promoting a module status out of [AUTO-DERIVED] requires coordinator
          sign-off. See docs/coordinator-guide.md § 'Updating a qualification rule'.

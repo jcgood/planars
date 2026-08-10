@@ -6,6 +6,11 @@
 #                                        names, allowed values, linguistic definitions
 #   schemas/diagnostic_classes.yaml   — analysis class definitions, applicability,
 #                                        required/optional criteria, qualification rules
+#   schemas/diagnostic_classes_status.yaml — process/tracking state for the same
+#                                        classes: review status, collection_required,
+#                                        sheet_instructions, qualification_rule_hash
+#                                        (split out from diagnostic_classes.yaml in
+#                                        Phase 3 of the data layer redesign, issue #271)
 #   schemas/planar.yaml               — planar structure ontology: structural columns,
 #                                        element conventions, label standards
 #   schemas/terms.yaml                — analytical vocabulary: strict/loose span,

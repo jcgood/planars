@@ -8,8 +8,16 @@ files accessible via ``importlib.resources``.
 Files
 -----
 diagnostic_classes.yaml
-    Normative schema for analysis classes: domain type, applicability,
-    required diagnostic criteria, qualification rules, and collection_required.
+    Normative schema for the linguistic content of analysis classes: domain
+    type, applicability, required diagnostic criteria, and qualification rules.
+
+diagnostic_classes_status.yaml
+    Process/tracking state for the same classes: status, criterion_set_status,
+    collection_required, qualification_rule_hash, sheet_instructions, and
+    include_planar_reference_tab. Split out from diagnostic_classes.yaml in
+    Phase 3 of the data layer redesign (issue #271) because the two move at
+    different rates. coding/schemas.py's load_diagnostic_classes() merges
+    both files by class name at read time.
 
 diagnostic_criteria.yaml
     Source of truth for diagnostic criterion definitions, valid values,
