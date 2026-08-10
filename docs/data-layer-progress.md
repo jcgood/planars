@@ -159,7 +159,7 @@ a real, pre-existing bug in `_copy_pair_tab_with_rename`'s hardcoded
 `col_start=4` — was fixed the same day as its own commit, not deferred; see
 its own entry above and the decisions log.)
 
-Nothing else is blocked or waiting; the next step is Phase 3, and Phase 3
+Nothing else is blocked or waiting; the next step is Phase 4, and Phase 4
 needs Jeff's decision before it starts.
 
 ### Held until Phase 9
