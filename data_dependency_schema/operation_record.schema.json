@@ -23,6 +23,45 @@
         }
       }
     },
+    "mode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "description",
+        "side_effects",
+        "idempotent",
+        "idempotency_note",
+        "apply_gate",
+        "preconditions",
+        "facts_touched"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The flag or sub-behavior distinguishing this mode from the command's default, e.g. '--regen-construction' or '--to-sheet'."
+        },
+        "description": { "type": "string", "minLength": 1 },
+        "side_effects": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "idempotent": { "type": "boolean" },
+        "idempotency_note": { "type": "string", "minLength": 1 },
+        "apply_gate": { "type": ["string", "null"] },
+        "preconditions": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" }
+        },
+        "facts_touched": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/factTouched" }
+        }
+      },
+      "description": "A full, self-contained override for one named mode of a command whose behavior genuinely diverges by flag -- NOT merged with the parent record's own top-level fields. The parent's top-level side_effects/idempotent/idempotency_note/apply_gate/preconditions/facts_touched describe the command's default invocation only; each mode restates its own values completely, even where they happen to match the default, so nothing has to be reconstructed by inheritance."
+    },
     "operationRecord": {
       "type": "object",
       "additionalProperties": false,
@@ -37,7 +76,8 @@
         "preconditions",
         "facts_touched",
         "cascades_triggered",
-        "ordering_constraints"
+        "ordering_constraints",
+        "modes"
       ],
       "properties": {
         "id": {
@@ -92,7 +132,12 @@
         "ordering_constraints": {
           "type": "array",
           "items": { "type": "string", "minLength": 1 },
-          "description": "Plain-language 'run X before/after Y, because Z' statements naming other commands by cli_command. This is the field that absorbs CLAUDE.md's scattered sequencing prose (--regen-construction bypassing --apply; --split-element before --regen-construction; prune-manifest for retirement but never rename). Empty array if this command has no ordering dependency on any other."
+          "description": "Plain-language 'run X before/after Y, because Z' statements naming other commands by cli_command. This is the field that absorbs CLAUDE.md's scattered sequencing prose (--regen-construction bypassing --apply; --split-element before --regen-construction; prune-manifest for retirement but never rename). Empty array if this command has no ordering dependency on any other. Modes are named inline here rather than getting their own ordering_constraints field -- ordering is about sequencing relative to other commands, which stays a whole-command concern even when the command itself has multiple modes."
+        },
+        "modes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/mode" },
+          "description": "Full overrides for named modes (flags) whose preconditions, facts touched, apply gate, or idempotency genuinely diverge from the command's default invocation, described by this record's own top-level fields. Empty array for a command with no such divergence -- most commands. See the 'mode' $def for what 'override, not merge' means."
         }
       }
     }

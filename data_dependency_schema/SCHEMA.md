@@ -246,6 +246,19 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
   prose in `CLAUDE.md`/`coding/CLAUDE.md` — `--regen-construction` bypassing
   `--apply`, `--split-element` before `--regen-construction`,
   `prune-manifest` for retirement but never rename.
+- **`modes`** — some commands genuinely behave differently by flag:
+  `generate-sheets`' `--regen-construction` has no `--apply` gate at all and
+  touches different facts than the base command; `sync-diagnostics-yaml`'s
+  `--to-sheet` and `--from-tsv` are different directions with different
+  preconditions. Flattening these onto one set of top-level fields would
+  either overstate what the base command does or understate what the mode
+  does. A `modes` entry is a **full, self-contained override** — it restates
+  its own `side_effects`/`idempotent`/`idempotency_note`/`apply_gate`/
+  `preconditions`/`facts_touched` completely rather than adding to or
+  inheriting from the parent record's top-level fields, even where a value
+  happens to match. Most commands have no divergent modes and get
+  `modes: []`; the parent's own top-level fields always describe the
+  command's default invocation, never a merge across modes.
 
 ## Known limitations
 
