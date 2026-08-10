@@ -30,7 +30,7 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 3 — done (started and finished 2026-08-10). 0b/1 done, 18 of 18 (2026-08-01–2026-08-04).
+**Phase:** 3 — done (started and finished 2026-08-10). 0b/1 — done, 18 of 18 (2026-08-01–2026-08-04).
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
 **Last worked:** 2026-08-10
