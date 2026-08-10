@@ -27,12 +27,22 @@ All four are now fixed/closed too (2026-08-05) — see the decisions log and
 Findings section in `docs/data-layer-progress.md` for what changed. Nothing
 outstanding from Phase 0b/1 remains.
 
-**Next up is Phase 3 of `docs/data-layer-implementation-plan.md`** ("Schema
-reorganization"), which the plan itself marks **"(coordinator decides)"** —
-it is the highest-value and highest-risk phase, and starting it requires a
-decision from Jeff first, not an agent's guess at what the split should look
-like. Read `docs/data-layer-progress.md` § "Next action" for the current
-state of that gate before doing anything else on this effort.
+**Phase 3 ("Schema reorganization") is also complete** (2026-08-10):
+`schemas/diagnostic_classes.yaml` now holds linguistic content only; a new
+`schemas/diagnostic_classes_status.yaml` holds process/tracking state,
+joined by class `name` and merged transparently by
+`coding/schemas.py`'s `load_diagnostic_classes()`. `Class_Type`
+(`schemas/planar.yaml`) is catalogued as the resistant field the plan
+anticipated, not split. See `docs/data-layer-progress.md`'s 2026-08-10
+entries (Current state, Findings 18/19, decisions log) for what changed,
+and issue #271's 2026-08-10 comment for the coordinator-facing summary.
+
+**Next up is Phase 4 of `docs/data-layer-implementation-plan.md`** ("Topology
+declaration"), which the plan marks **"(coordinator decides authority)"** —
+starting it requires a decision from Jeff first, not an agent's guess at
+what the authority assignments should look like. Read
+`docs/data-layer-progress.md` § "Next action" for the current state of that
+gate before doing anything else on this effort.
 
 ---
 
