@@ -175,9 +175,7 @@ Auto-applying 1 safe downstream command(s):
 --- Revalidating sheets ---
 
 arao1248
-  Diagnostics validation (3 issue(s)):
-    [ERROR] diagnostics_arao1248.tsv: Required class 'free_occurrence' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
-    [ERROR] diagnostics_arao1248.tsv: Required class 'nonpermutability' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
+  Diagnostics validation (1 issue(s)):
     [ERROR] diagnostics_arao1248.tsv: Required class 'proform' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
   [ciscategorial/general] 288 blank cell(s) — annotation in progress
   [noninterruption/general] 144 blank cell(s) — annotation in progress

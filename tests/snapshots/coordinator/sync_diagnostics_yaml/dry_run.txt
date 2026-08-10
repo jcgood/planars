@@ -1,8 +1,6 @@
 Dry run — nothing is written.
 
 Connecting to Google APIs...
-  [arao1248] ERROR diagnostics_arao1248.yaml: Required class 'free_occurrence' (collection_required: "y") is missing
-  [arao1248] ERROR diagnostics_arao1248.yaml: Required class 'nonpermutability' (collection_required: "y") is missing
   [arao1248] ERROR diagnostics_arao1248.yaml: Required class 'proform' (collection_required: "y") is missing
   [arao1248] Skipping — fix errors above before uploading.
   [stan1293] Sheet already up to date

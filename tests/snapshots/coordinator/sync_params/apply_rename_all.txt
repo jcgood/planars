@@ -1,5 +1,6 @@
 Connecting to Google APIs...
   [noninterruption] diagnostics Criteria: 'free, multiple' -> 'free_form, multiple'
+  [free_occurrence] diagnostics Criteria: 'free, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}' -> 'free_form, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}'
   [arao1248] YAML updated → diagnostics_arao1248.yaml
 
 Language: arao1248

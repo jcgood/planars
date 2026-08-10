@@ -11,6 +11,10 @@ Language: arao1248
     [general] carry over 73; new blank 0
     (no changes — skipping)
 
+  nonpermutability: not in manifest, skipping (run python -m coding generate-sheets --apply first)
+
+  free_occurrence: not in manifest, skipping (run python -m coding generate-sheets --apply first)
+
   subspanrepetition (current v2)
     [auxiliary_construction] downloaded 73 rows
     [tso_clause_linkage] downloaded 73 rows

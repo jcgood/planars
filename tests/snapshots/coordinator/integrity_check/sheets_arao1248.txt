@@ -7,8 +7,6 @@
 
 ── DIAGNOSTICS ─────────────────────────────────────────────────────────
   ✗  Araona [arao1248]                   diagnostics_arao1248.tsv
-       [ERROR] diagnostics_arao1248.tsv: Required class 'free_occurrence' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
-       [ERROR] diagnostics_arao1248.tsv: Required class 'nonpermutability' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
        [ERROR] diagnostics_arao1248.tsv: Required class 'proform' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
 
 ── CODEBOOK CONSISTENCY ────────────────────────────────────────────────
@@ -48,5 +46,5 @@
          sign-off. See docs/coordinator-guide.md § 'Updating a qualification rule'.
 
 ════════════════════════════════════════════════════════════════════════
-  ✗  3 error(s)  ·  0 warning(s)
+  ✗  1 error(s)  ·  0 warning(s)
 ════════════════════════════════════════════════════════════════════════

@@ -93,12 +93,13 @@ def _sync_to_tsv(lang_id: str, apply: bool) -> bool:
     issues = validate_diagnostics_yaml(yaml_data, lang_id)
     errors   = [i for i in issues if i.level == "error"]
     warnings = [i for i in issues if i.level == "warning"]
+    blocking_errors = [e for e in errors if e.blocking]
 
     for w in warnings:
         print(f"  [{lang_id}] WARNING {w.location}: {w.message}")
-    if errors:
-        for e in errors:
-            print(f"  [{lang_id}] ERROR {e.location}: {e.message}")
+    for e in errors:
+        print(f"  [{lang_id}] ERROR {e.location}: {e.message}")
+    if blocking_errors:
         print(f"  [{lang_id}] Skipping — fix errors above before applying.")
         return False
 

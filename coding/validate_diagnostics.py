@@ -365,7 +365,8 @@ def validate_diagnostics_yaml(data: dict, lang_id: str) -> List[ValidationIssue]
             if cls not in present:
                 issues.append(ValidationIssue(
                     "error", filename,
-                    f"Required class '{cls}' (collection_required: \"y\") is missing"
+                    f"Required class '{cls}' (collection_required: \"y\") is missing",
+                    blocking=False,
                 ))
 
     return issues

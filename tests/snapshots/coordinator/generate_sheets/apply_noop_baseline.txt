@@ -3,13 +3,35 @@ Manifest backed up to manifest_backup.json (3 language(s))
 
 Language:    arao1248
 Planar file: planar_arao1248.tsv
-  Diagnostics validation (3 issue(s)):
-    [ERROR] diagnostics_arao1248.tsv: Required class 'free_occurrence' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
-    [ERROR] diagnostics_arao1248.tsv: Required class 'nonpermutability' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
+  Diagnostics validation (1 issue(s)):
     [ERROR] diagnostics_arao1248.tsv: Required class 'proform' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
-Classes:     ['ciscategorial', 'noninterruption', 'subspanrepetition']
-  All classes already have sheets. Skipping arao1248.
-  (use --force to regenerate)
+Classes:     ['ciscategorial', 'noninterruption', 'nonpermutability', 'free_occurrence', 'subspanrepetition']
+Folder:      https://drive.google.com/drive/folders/1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU
+Notes doc:   (existing) https://docs.google.com/document/d/1vfSS_YoRHDgpSG-vi1nXWR5dNCR1SAKlyMVbqhkl8Qc
+  Planar sheet exists — skipping (use --force to overwrite)
+  Diagnostics sheet exists — skipping (use --force to overwrite)
+Existing:    ['ciscategorial', 'noninterruption', 'subspanrepetition']
+New:         ['nonpermutability', 'free_occurrence']
+  Creating: nonpermutability_arao1248
+    Tab: element_prescreening (73 rows, 1 params)
+    [NOTE] element_prescreening.tsv not found — generating unfiltered pair list.
+          Annotate element_prescreening first, then re-run
+          python -m coding generate-sheets --lang arao1248 --apply
+          to get a filtered pairs sheet.
+    Tab: general (253 candidate pairs)
+    Tab: Planar Structure (planar reference)
+    Instructions tab created
+    Status tab created (2 construction(s))
+    URL: https://docs.google.com/spreadsheets/d/fake_ss_0002
+
+  Creating: free_occurrence_arao1248
+    [WARNING] Elements not found in noninterruption TSV: ['ADVERBIALS', 'INTERROGATIVES', 'NP{NP,PP,S}', 'dipa', 'pa', 'po', 'pojo', 'sha', 'tokwe', 'tso', 'ADVERBIALS', 'NP{NP,PP,S}', '[e-]', '[ja-]', '[ke-]', '[noma-]', '[pa-]', '[pi-]', '[sho-]', '[shoma-]', '[tsi-]', 'haha', 'sha', 'shoa', 'watsi', '[-jaena]', '[-jajo]', '[-niapona]', '[-pasi]', '[-pe]', '[-sa]', '[-shana]', '[-shao]', '[-shawiya]', '[-sisa]', '[-titi]', '[-tseiye]', '[-wena]', '[-weya]', '[-wiki]', '[-yoa]', '[-limi]', '[-shodi]', '[-sawa]', '[-ti]', '[-eme]', '[-pe]', '[-me]', '[-ta]', '[-iba]', '[-ibo]', '[-ani]', '[-asha]', '[-bade]', '[-iki]', '[-isa]', '[-ja]', '[-ke]', '[-ma]', '[-neti]', '[-odi]', '[-tame]', '[-toa]', '[-tso]', '[-yoa]', '[-isha]', '[-we]', 'e-a', 'e-po', 'po', 'tsio', 'NP{NP,PP,Adv}']
+              free column left blank for those elements.
+    Tab: general (73 rows, 5 params)
+    Status tab created (1 construction(s))
+    URL: https://docs.google.com/spreadsheets/d/fake_ss_0004
+
+manifest.json updated on Drive (id: fake_manifest_file)
 
 Language:    stan1293
 Planar file: planar_stan1293.tsv

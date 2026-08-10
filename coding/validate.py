@@ -21,6 +21,12 @@ class ValidationIssue:
     location: str                        # human-readable location string
     message: str
     cell: Optional[Tuple[int, int]] = None  # (row_idx, col_idx) 0-based for Sheets
+    blocking: bool = True                # False: reported as an error, but callers
+                                          # that gate a write on "any error present"
+                                          # may still proceed (e.g. a required class
+                                          # that simply hasn't been drafted yet is not
+                                          # a reason to withhold syncing the classes
+                                          # that are already valid)
 
     def __str__(self) -> str:
         return f"[{self.level.upper()}] {self.location}: {self.message}"
