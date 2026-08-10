@@ -285,6 +285,47 @@
       surfaced as a generic integrity-error rather than a dedicated label
       the way stale-manifest is.
 
+- id: construction_criterion_columns
+  description: >-
+    which criterion columns a construction's live tab has, vs. what
+    diagnostics_{lang_id}.yaml declares for it -- column EXISTENCE, distinct
+    from manifest_dropdown_values (allowed VALUES per criterion, above)
+  locations:
+    - {entity: diagnostics_yaml, detail: "each construction's criteria/construction_criteria entries"}
+    - {entity: annotation_sheet, detail: "the tab's own header row -- one column per criterion, plus structural/trailing columns"}
+    - {entity: manifest, detail: "sheets_manifest.json's construction_params[construction].param_names -- a cached copy sync-params also updates, not a live read of the Sheet"}
+  authoritative: diagnostics_yaml
+  cascade:
+    direction: manual
+    mechanism: >-
+      sync-params --apply diffs the tab's own header against the current
+      diagnostics YAML and inserts/deletes/renames columns to match,
+      updating the manifest's param_names in the same run. Nothing runs this
+      automatically -- a criterion added, removed, or renamed in the YAML has
+      no effect on the live sheet or the manifest until a coordinator
+      notices and runs it.
+  drift_risk:
+    possible: true
+    note: >-
+      Found 2026-08-10 while reviewing sync-params for the Phase 4 (#271)
+      operation registry -- previously undocumented. A criterion column
+      change in diagnostics_yaml sits unpropagated indefinitely with nothing
+      prompting a run. Once sync-params does run for other reasons, it keeps
+      the sheet and manifest in lockstep; the two staying stale *together*
+      (sync-params never run at all since the YAML changed) is the case
+      nothing catches -- see caught_by.
+    caught_by: >-
+      integrity-check --sheets's per-construction header check
+      (_section_sheets in coding/integrity_check.py) compares the live tab's
+      actual header against the MANIFEST's param_names, not against the
+      diagnostics YAML directly -- so it catches a sheet/manifest
+      disagreement (a partial sync-params run, or a hand-edited manifest)
+      and names the fix (sync-params --apply). It does not catch the YAML
+      having moved while the sheet and manifest stayed stale together behind
+      it, since manifest and sheet still agree with each other in that case.
+      Nothing today compares the live sheet directly against the diagnostics
+      YAML.
+
 - id: pair_row_position_numbers
   description: the position NUMBER embedded in a pair-row construction's Position_A/Position_B cells (format "N (name)") must match the current planar structure's numbering for that position name
   locations:

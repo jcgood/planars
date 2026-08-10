@@ -186,7 +186,7 @@
     regenerates the diagnostics YAML afterward.
   side_effects:
     - "inserts/deletes/renames criterion columns on live annotation tabs"
-    - "updates sheets_manifest.json's per-construction param_values"
+    - "updates sheets_manifest.json's per-construction param_names and param_values"
   idempotent: false
   idempotency_note: >-
     Each run is driven by a real diff between the tab's own header and the
@@ -197,7 +197,8 @@
     but not as safe against a concurrent edit to the same tab.
   apply_gate: "--apply"
   preconditions: [coded_data_clean_tree]
-  facts_touched: []
+  facts_touched:
+    - {fact: construction_criterion_columns, role: writes}
   cascades_triggered:
     - "regenerate_notebooks() runs automatically after --apply"
     - "regenerates diagnostics_{lang_id}.yaml to match the change"
@@ -534,6 +535,7 @@
   facts_touched:
     - {fact: manifest_class_registration, role: reads}
     - {fact: manifest_dropdown_values, role: reads}
+    - {fact: construction_criterion_columns, role: reads}
     - {fact: pair_row_position_numbers, role: reads}
     - {fact: dependent_construction_element_scope, role: reads}
     - {fact: diagnostics_scope, role: reads}
@@ -544,6 +546,13 @@
       (collection_required: "y") is reported here as an ERROR (Finding 19 in
       docs/data-layer-progress.md) and folds into the standing
       integrity-error issue rather than a dedicated label.
+    - >-
+      The construction_criterion_columns check (--sheets only) compares the
+      live tab's header against the MANIFEST's cached param_names, not
+      against diagnostics_{lang_id}.yaml directly -- it cannot detect a
+      criterion column change in the YAML that sync-params was never run for
+      at all (see construction_criterion_columns's drift_risk in
+      facts.yaml).
   modes: []
 
 - id: setup_root_folder

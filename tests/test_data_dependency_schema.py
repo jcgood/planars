@@ -53,6 +53,7 @@ def test_facts_have_expected_ids():
         "status_sheet_completeness",
         "manifest_class_registration",
         "manifest_dropdown_values",
+        "construction_criterion_columns",
         "pair_row_position_numbers",
         "drive_state_test_fixtures",
         "pair_row_construction_set",
