@@ -10,6 +10,8 @@ Folder:      https://drive.google.com/drive/folders/1XHQvux5Bxtvo3LMEdKo_KKU_ZLi
 Notes doc:   (existing) https://docs.google.com/document/d/1vfSS_YoRHDgpSG-vi1nXWR5dNCR1SAKlyMVbqhkl8Qc
   Planar sheet exists — skipping (use --force to overwrite)
   Diagnostics sheet exists — skipping (use --force to overwrite)
+  [subspanrepetition] new construction(s): ['extra_construction_test']
+    Tab: extra_construction_test (73 rows, 3 params)
 Existing:    ['ciscategorial', 'noninterruption', 'subspanrepetition']
 New:         ['nonpermutability', 'free_occurrence']
   Creating: nonpermutability_arao1248

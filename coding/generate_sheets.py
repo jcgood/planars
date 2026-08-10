@@ -2508,31 +2508,37 @@ def main() -> None:
         if not force and existing_lang_data:
             existing_sheets = existing_lang_data.get("sheets", {})
             new_class_names = [c for c in all_classes if c not in existing_sheets]
-            if not new_class_names:
-                # Even when all classes exist, new constructions may have been added
-                # to an existing class's diagnostics YAML. Add their tabs now.
-                added_any = False
-                for cls, constructions_list in all_classes.items():
-                    existing_cls_info = existing_sheets.get(cls, {})
-                    existing_cons = set(existing_cls_info.get("constructions", []))
-                    new_cons = [(c, pn, pv) for c, pn, pv in constructions_list
-                                if c not in existing_cons]
-                    if not new_cons:
-                        continue
-                    added_any = True
-                    print(f"  [{cls}] new construction(s): {[c for c,_,_ in new_cons]}")
-                    ss_id = existing_cls_info["spreadsheet_id"]
-                    _planar_path = planar_dir / f"planar_{lang_id}.tsv"
-                    new_params = _add_constructions_to_existing_sheet(
-                        doorway.open_spreadsheet(ss_id), cls, new_cons, lang_id,
-                        element_index, _planar_path,
-                    )
-                    existing_cls_info.setdefault("constructions", []).extend(
-                        [c for c, _, _ in new_cons]
-                    )
-                    existing_cls_info.setdefault("construction_params", {}).update(new_params)
-                    existing_lang_data["sheets"][cls] = existing_cls_info
 
+            # A class that already has a sheet may still have gained a new
+            # construction in its diagnostics YAML entry -- check every
+            # existing class for that regardless of whether this language
+            # also picked up brand-new classes this run (brand-new classes
+            # are handled separately below via classes_to_create).
+            added_any = False
+            for cls, constructions_list in all_classes.items():
+                if cls not in existing_sheets:
+                    continue
+                existing_cls_info = existing_sheets.get(cls, {})
+                existing_cons = set(existing_cls_info.get("constructions", []))
+                new_cons = [(c, pn, pv) for c, pn, pv in constructions_list
+                            if c not in existing_cons]
+                if not new_cons:
+                    continue
+                added_any = True
+                print(f"  [{cls}] new construction(s): {[c for c,_,_ in new_cons]}")
+                ss_id = existing_cls_info["spreadsheet_id"]
+                _planar_path = planar_dir / f"planar_{lang_id}.tsv"
+                new_params = _add_constructions_to_existing_sheet(
+                    doorway.open_spreadsheet(ss_id), cls, new_cons, lang_id,
+                    element_index, _planar_path,
+                )
+                existing_cls_info.setdefault("constructions", []).extend(
+                    [c for c, _, _ in new_cons]
+                )
+                existing_cls_info.setdefault("construction_params", {}).update(new_params)
+                existing_lang_data["sheets"][cls] = existing_cls_info
+
+            if not new_class_names:
                 if not added_any:
                     print(
                         f"  All classes already have sheets. Skipping {lang_id}.\n"

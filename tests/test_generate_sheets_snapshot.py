@@ -196,20 +196,29 @@ def check_snapshot(name: str, actual: str) -> None:
 # ---------------------------------------------------------------------------
 
 def test_dry_run_baseline_transcript(env):
-    """Real fixture data as committed: all three languages already have every class."""
+    """Real fixture data as committed: stan1293 and synth0001 already have every
+    class; arao1248 is still missing sheets for two required classes it gained
+    after onboarding (nonpermutability, free_occurrence -- #271 Finding 19).
+    """
     check_snapshot("dry_run_baseline.txt", env.run(["generate-sheets"]))
 
 
 def test_apply_noop_baseline_transcript(env):
-    """A true no-op apply still re-uploads the merged manifest once at the end
+    """stan1293 and synth0001 are a true no-op; arao1248 creates sheets for its
+    two still-missing required classes (see test_dry_run_baseline_transcript).
+    The apply still re-uploads the merged manifest once at the end regardless
     (unlike sync-params, generate-sheets has no "anything changed" gate on that
     final upload) -- so one update_file mutation here is real, existing
-    behaviour, not a sign anything was actually recreated.
+    behaviour, not a sign anything else was recreated.
     """
     out = env.run(["generate-sheets", "--apply"])
     check_snapshot("apply_noop_baseline.txt", out)
-    assert env.doorway.mutations_of("create_spreadsheet") == []
-    assert env.doorway.mutations_of("move_file") == []
+    created = env.doorway.mutations_of("create_spreadsheet")
+    assert sorted(m["title"] for m in created) == [
+        "free_occurrence_arao1248", "nonpermutability_arao1248",
+    ]
+    moved = env.doorway.mutations_of("move_file")
+    assert {m["file_id"] for m in moved} == {m["spreadsheet"] for m in created}
 
 
 def test_brand_new_language_dry_run_transcript(env):
