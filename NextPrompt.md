@@ -34,8 +34,23 @@ joined by class `name` and merged transparently by
 `coding/schemas.py`'s `load_diagnostic_classes()`. `Class_Type`
 (`schemas/planar.yaml`) is catalogued as the resistant field the plan
 anticipated, not split. See `docs/data-layer-progress.md`'s 2026-08-10
-entries (Current state, Findings 18/19, decisions log) for what changed,
-and issue #271's 2026-08-10 comment for the coordinator-facing summary.
+Current state and decisions-log entries for what changed, and issue #271's
+2026-08-10 comment for the coordinator-facing summary.
+
+**Findings 18 and 19 (found while verifying the split) are also fixed**,
+same day, in their own commits after Phase 3's. 19 was the consequential
+one: a required-class check had never fired since it was written (compared
+`collection_required` against the Python bool `True`, but the field is
+always a string), and fixing it surfaced that **`arao1248` is genuinely
+missing three required classes** — `nonpermutability`, `free_occurrence`,
+`proform`. That's now live: `integrity-check` reports it, `import-sheets`
+and `sync-diagnostics-yaml --to-sheet` skip arao1248's diagnostics until
+it's resolved, and the next `data-refresh.yml` run will likely fold it into
+already-open issue #247. **This is real annotation/coordination work still
+outstanding** — arao1248 needs those three classes onboarded, or a decision
+that they don't apply (no per-language override for `collection_required`
+exists today). See `docs/data-layer-progress.md`'s Finding 19 entry for the
+full account.
 
 **Next up is Phase 4 of `docs/data-layer-implementation-plan.md`** ("Topology
 declaration"), which the plan marks **"(coordinator decides authority)"** —
