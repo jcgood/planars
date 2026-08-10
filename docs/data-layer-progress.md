@@ -73,6 +73,8 @@ validation refiles this as a `sheet-validation` issue until the rebuild happens
 collapsed into three shared functions in `coding/drive.py`. See the decisions
 log for what changed and the bonus discovery (a real, silent duplicate-grant
 bug in `generate_notebooks.py`, not just `setup_root_folder.py`).
+**#279** — filed 2026-08-10, open; asks Adam what construction (if any) fills
+`arao1248`'s still-missing `proform` class (Finding 19/20).
 
 Also fixed, no issue filed: `apply-pending` gave one answer to four different
 questions when it could not check a Sheet. Found by file 4's snapshot, fixed
@@ -324,9 +326,10 @@ here is outstanding; the entries are kept because the sequence is the point.
 every finding has an issue number or a decisions-log entry.** Findings 4 and 5
 lived here alone for a day each, and a section that gets deleted is not tracking.
 
-**18 and 19 — found 2026-08-10 while splitting `diagnostic_classes.yaml` for
-Phase 3; both pre-existing, not introduced by the split. Both fixed the same
-day, in their own commits after Phase 3's.**
+**18–21 — found 2026-08-10, 18 and 19 while splitting `diagnostic_classes.yaml`
+for Phase 3 and 20–21 while acting on what 19 surfaced; all pre-existing, not
+introduced by the split. All four fixed the same day, each in its own
+commit.**
 
 **18 — fixed, `40ba95a`.** `nonpermutability` carried `keystone_active_default:
 true` twice in `schemas/diagnostic_classes.yaml` (now
@@ -375,6 +378,51 @@ Nothing here required touching `tests/fixtures/drive_state/` — the arao1248
 diagnostics content driving these tests comes from the real, checked-out
 `coded_data/arao1248/lang_setup/diagnostics_arao1248.yaml`, not a recorded
 Drive fixture.
+
+**Follow-up, same day: two of arao1248's three missing classes are now
+onboarded** (`nonpermutability`, `free_occurrence` — both universal with
+fixed, language-independent criteria, so drafting their YAML entries needed
+no linguistic judgment call). `proform` is still open — it's
+construction-specific and nothing in the repo says what construction fills
+it for Araona — filed as issue #279, addressed to Adam. Doing this onboarding
+surfaced two more findings, 20 and 21 below.
+
+**20 — fixed.** Jeff wanted the two ready classes applied without waiting on
+`proform` (#279), with `proform`'s absence still surfacing on its own rather
+than being silently dropped. But `sync-diagnostics-yaml`'s required-class
+check (the one Finding 19 fixed) treated *any* validation error, including
+"required class missing," as fully blocking — `_sync_to_tsv` refused to
+regenerate `diagnostics_arao1248.tsv` at all while `proform` was absent, even
+though `nonpermutability` and `free_occurrence` were already valid. Fixed by
+adding a `blocking: bool = True` field to `ValidationIssue`
+(`coding/validate.py`) and setting it `False` on the required-class-missing
+issue in `validate_diagnostics_yaml` (`coding/validate_diagnostics.py`) —
+still printed as `[ERROR]`, still counted by `integrity-check` (unaffected;
+it calls the separate `validate_diagnostics_df` path, whose own required-class
+check was intentionally left fully blocking), still blocks
+`sync-diagnostics-yaml --to-sheet` and `import-sheets` (also untouched, since
+pushing a still-incomplete language to the live Sheet or importing over it is
+a different call than regenerating a local file) — only `_sync_to_tsv`'s gate
+changed. `integrity-check` continues to report `proform` missing and the
+daily `data-refresh.yml` run will fold it into the usual `integrity-error`
+issue, which is the "come up in the daily check" Jeff asked for; issue #279
+is the more specific, Adam-addressed version of the same fact.
+
+**21 — fixed.** Applying arao1248's two new classes exposed a real,
+pre-existing bug in `generate_sheets.py --apply`, unrelated to the required-
+class check: the scan for constructions added to an *already-existing*
+class's diagnostics YAML entry only ran inside the `if not new_class_names`
+branch — so on any run where the language also had a class with no sheet at
+all (exactly arao1248's situation once `nonpermutability`/`free_occurrence`
+needed creating), an unrelated new construction on an existing class
+(`subspanrepetition` gaining a construction, in the test that caught this)
+was silently skipped instead of getting its tab added. The dry-run path
+(`_plan_language_creation`) already computed `new_classes` and
+`new_constructions` independently and was never affected — only the `--apply`
+execution path shared the two under one conditional. Fixed by running the
+existing-class scan unconditionally over every already-existing class, before
+deciding whether there's also brand-new-class work to do. See
+`coding/CLAUDE.md`'s `generate_sheets.py` entry for the mechanics.
 
 **1 and 2 — issue #272, fixed and closed 2026-08-02** (`b399e32`,
 "refresh-dropdowns: read the sheet, not the manifest, for criterion columns").

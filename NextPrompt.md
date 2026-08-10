@@ -41,16 +41,22 @@ Current state and decisions-log entries for what changed, and issue #271's
 same day, in their own commits after Phase 3's. 19 was the consequential
 one: a required-class check had never fired since it was written (compared
 `collection_required` against the Python bool `True`, but the field is
-always a string), and fixing it surfaced that **`arao1248` is genuinely
+always a string), and fixing it surfaced that **`arao1248` was genuinely
 missing three required classes** — `nonpermutability`, `free_occurrence`,
-`proform`. That's now live: `integrity-check` reports it, `import-sheets`
-and `sync-diagnostics-yaml --to-sheet` skip arao1248's diagnostics until
-it's resolved, and the next `data-refresh.yml` run will likely fold it into
-already-open issue #247. **This is real annotation/coordination work still
-outstanding** — arao1248 needs those three classes onboarded, or a decision
-that they don't apply (no per-language override for `collection_required`
-exists today). See `docs/data-layer-progress.md`'s Finding 19 entry for the
-full account.
+`proform`. Two of those three are now onboarded (2026-08-10):
+`nonpermutability` and `free_occurrence` are both universal classes with
+fixed, language-independent criteria, so no linguistic judgment call was
+needed. **`proform` is still outstanding** — it's construction-specific,
+and nothing in the repo says what construction (if any) fills it for
+Araona; that's now issue #279, addressed to Adam. `integrity-check` keeps
+reporting `proform` missing until it's answered, and `import-sheets` /
+`sync-diagnostics-yaml --to-sheet` still skip arao1248's diagnostics until
+then — but a missing required class no longer blocks the local TSV
+(`sync-diagnostics-yaml --apply` with no `--to-sheet`) from picking up
+whichever classes *are* ready, which is what let the first two go in
+without waiting on #279. See `docs/data-layer-progress.md`'s Finding 19
+entry for the full account, and its Findings 20/21 for the two bugs this
+onboarding pass found and fixed along the way.
 
 **Next up is Phase 4 of `docs/data-layer-implementation-plan.md`** ("Topology
 declaration"), which the plan marks **"(coordinator decides authority)"** —
