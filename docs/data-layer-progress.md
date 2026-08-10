@@ -325,30 +325,56 @@ every finding has an issue number or a decisions-log entry.** Findings 4 and 5
 lived here alone for a day each, and a section that gets deleted is not tracking.
 
 **18 and 19 — found 2026-08-10 while splitting `diagnostic_classes.yaml` for
-Phase 3; both pre-existing, not introduced by the split, left unfixed per
-this phase's own non-goal of no behaviour changes.**
+Phase 3; both pre-existing, not introduced by the split. Both fixed the same
+day, in their own commits after Phase 3's.**
 
-**18. `nonpermutability` carries `keystone_active_default: true` twice** in
-`schemas/diagnostic_classes.yaml` (now in `diagnostic_classes_status.yaml`'s
-sibling record, but the duplicate itself predates the split). Both
-occurrences agree (`true`), so PyYAML's last-value-wins behaviour makes this
-harmless today, but a future edit to only one copy would silently do nothing.
-Caught by the split script's own field-inventory check (it counts occurrences
-per class), not by any existing test. One-line fix (delete the earlier
-occurrence) whenever convenient — not bundled into this phase's commit
-because it's a behaviour-neutral phase by design.
+**18 — fixed, `40ba95a`.** `nonpermutability` carried `keystone_active_default:
+true` twice in `schemas/diagnostic_classes.yaml` (now
+`diagnostic_classes_status.yaml`'s sibling record, but the duplicate itself
+predates the split). Both occurrences agreed (`true`), so PyYAML's
+last-value-wins behaviour made this harmless, but a future edit to only one
+copy would have silently done nothing. Caught by the split script's own
+field-inventory check (it counts occurrences per class), not by any existing
+test. Deleted the earlier occurrence.
 
-**19. `validate_diagnostics.py`'s required-class check has never matched
-anything.** `_required_classes()` (`coding/validate_diagnostics.py:128`) reads
-`collection_required` and tests `is True` — a Python bool identity check —
-but the field's actual values are the strings `"y"`/`"n"`/`"[NEEDS COORDINATOR
-INPUT]"` throughout `diagnostic_classes_status.yaml`, never the YAML booleans
-`true`/`false`. `"y" is True` is always `False`, so this function has always
-returned an empty set and the required-class check it feeds has never flagged
-a missing required class. Found while confirming the split preserved
-`collection_required`'s value type; unrelated to the split itself and left
-for its own fix, since correcting it changes what `import-sheets`/`validate-coding`
-warn about — a real behaviour change.
+**19 — fixed.** `validate_diagnostics.py`'s required-class check had never
+matched anything. `_required_classes()` (`coding/validate_diagnostics.py:128`)
+read `collection_required` and tested `is True` — a Python bool identity
+check — but the field's actual values are the strings
+`"y"`/`"n"`/`"[NEEDS COORDINATOR INPUT]"` throughout
+`diagnostic_classes_status.yaml`, never the YAML booleans `true`/`false`.
+`"y" is True` is always `False`, so this function had always returned an
+empty set and the required-class check it feeds had never flagged a missing
+required class. Fixed by comparing against `"y"` instead.
+
+Fixing it surfaced a real, previously-invisible gap: **`arao1248` is
+genuinely missing three `collection_required: "y"` classes** —
+`nonpermutability`, `free_occurrence`, `proform` — consistent with its
+in-progress onboarding status (only `ciscategorial`, `noninterruption`,
+`subspanrepetition` are annotated so far, per `CLAUDE.md`'s "In-progress
+annotation work"). This now shows up live: `integrity-check`'s error count
+went from 3 (pre-existing synth0001 coreference staleness) to 6;
+`import-sheets` and `sync-diagnostics-yaml --to-sheet` both skip processing
+arao1248's diagnostics entirely until it's resolved (their own validation
+gate, unrelated to this fix — they were always going to skip on any
+error, they just had nothing to skip on before); `generate-sheets` reports
+it but doesn't block sheet creation. The next `data-refresh.yml` run will
+likely fold this into already-open issue #247 (`integrity-error`) rather
+than file a new one.
+
+23 test fixtures needed updating to match: five broke because the shared
+`_valid_data()` helper in `tests/test_validate_diagnostics_yaml.py` declared
+only `ciscategorial` and needed all six required classes to stay genuinely
+valid; eleven coordinator-facing snapshots gained the arao1248 error lines
+for real (regenerated via `PLANARS_UPDATE_SNAPSHOTS=1`, each diff reviewed —
+see `git log --oneline --grep 'Finding 19'`); the rest were assertions like
+`"ERROR" not in out` written when the check was dormant, now updated to
+check for the *specific* error each test is about rather than the absence of
+any error at all (arao1248 always has one now, for an unrelated reason).
+Nothing here required touching `tests/fixtures/drive_state/` — the arao1248
+diagnostics content driving these tests comes from the real, checked-out
+`coded_data/arao1248/lang_setup/diagnostics_arao1248.yaml`, not a recorded
+Drive fixture.
 
 **1 and 2 — issue #272, fixed and closed 2026-08-02** (`b399e32`,
 "refresh-dropdowns: read the sheet, not the manifest, for criterion columns").

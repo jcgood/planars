@@ -11,6 +11,10 @@ from coding.validate_diagnostics import validate_diagnostics_yaml
 # ---------------------------------------------------------------------------
 
 def _valid_data(lang_id: str = "stan1293") -> dict:
+    """A minimal but genuinely valid diagnostics YAML — declares every
+    collection_required: "y" class (ciscategorial, subspanrepetition,
+    noninterruption, nonpermutability, free_occurrence, proform) so check 9
+    (required classes) passes, matching real diagnostics_stan1293.yaml shape."""
     return {
         "language": lang_id,
         "classes": {
@@ -21,7 +25,44 @@ def _valid_data(lang_id: str = "stan1293") -> dict:
                     "N-combines": ["y", "n"],
                     "A-combines": ["y", "n"],
                 },
-            }
+            },
+            "subspanrepetition": {
+                "constructions": ["andCoordination"],
+                "criteria": {
+                    "widescope_left": ["y", "n"],
+                    "widescope_right": ["y", "n"],
+                    "fillable_botheither_conjunct": ["y", "n"],
+                },
+            },
+            "noninterruption": {
+                "constructions": ["general"],
+                "criteria": {
+                    "free": ["y", "n"],
+                    "multiple": ["y", "n"],
+                },
+            },
+            "nonpermutability": {
+                "constructions": ["element_prescreening", "general"],
+                "criteria": {
+                    "scopal": ["y", "n", "both"],
+                },
+            },
+            "free_occurrence": {
+                "constructions": ["general"],
+                "criteria": {
+                    "free": ["y", "n"],
+                    "left-edge-of-free-form": ["y", "n", "na"],
+                    "right-edge-of-free-form": ["y", "n", "na"],
+                    "dependent-on-left": ["na", "<position_number>"],
+                    "dependent-on-right": ["na", "<position_number>"],
+                },
+            },
+            "proform": {
+                "constructions": ["do_so_substitution"],
+                "criteria": {
+                    "shareable_proform_replace": ["y", "n", "both"],
+                },
+            },
         },
     }
 

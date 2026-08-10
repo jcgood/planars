@@ -4,7 +4,10 @@ Connecting to Google...
 
 Language: arao1248
   [planar] No changes → planar_arao1248.tsv
-  [diagnostics] No changes → diagnostics_arao1248.tsv
+  [diagnostics] Validation errors — skipping download:
+    [ERROR] diagnostics_arao1248.tsv: Required class 'free_occurrence' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
+    [ERROR] diagnostics_arao1248.tsv: Required class 'nonpermutability' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
+    [ERROR] diagnostics_arao1248.tsv: Required class 'proform' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
 
   ciscategorial
     [general] status: 'in-progress' — importing for backup

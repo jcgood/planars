@@ -198,7 +198,11 @@ def test_mismatched_header_names_expected_and_actual(env):
     assert "actual criteria columns:" in out
     assert "renamed_criterion_col" in out
     assert "→ run: python -m coding sync-params --apply" in out
-    assert exit_code is None  # a header mismatch is a warning, not a blocking error
+    # A header mismatch is itself a warning, not a blocking error — but
+    # arao1248's diagnostics_arao1248.yaml is genuinely missing three
+    # collection_required: "y" classes (Finding 19), so any run for this
+    # language now exits nonzero regardless of this scenario's own severity.
+    assert exit_code == 1
     assert doorway.mutations == []
 
 
@@ -239,7 +243,11 @@ def test_stale_split_column_names_itself_and_the_remediation(env):
     assert "delete the stale" in out
     # This is a different remediation from the ordinary header-mismatch path.
     assert "→ run: python -m coding sync-params --apply" not in out
-    assert exit_code is None  # warning, not blocking
+    # This scenario is itself a warning, not blocking — but see the comment
+    # in test_mismatched_header_names_expected_and_actual above: arao1248's
+    # real diagnostics_arao1248.yaml has unrelated missing-required-class
+    # errors (Finding 19), so the overall run still exits nonzero.
+    assert exit_code == 1
     assert doorway.mutations == []
 
 

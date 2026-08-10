@@ -15,9 +15,8 @@ Checks:
   8. Schema conform — every criterion is in the allowed set for its class
                       (required_criteria ∪ optional_criteria in
                       diagnostic_classes.yaml)
-  9. Required classes — every class with collection_required: true in
-                      diagnostic_classes.yaml must be present (no-op while
-                      values are '[NEEDS COORDINATOR INPUT]')
+  9. Required classes — every class with collection_required: "y" in
+                      diagnostic_classes_status.yaml must be present
 """
 from __future__ import annotations
 
@@ -116,16 +115,16 @@ def _diagnostic_class_allowed_criteria() -> Dict[str, Set[str]]:
 
 
 def _required_collection_classes() -> Set[str]:
-    """Return class names where collection_required: true in diagnostic_classes.yaml.
+    """Return class names where collection_required: "y" in diagnostic_classes_status.yaml.
 
-    Classes with collection_required: false or '[NEEDS COORDINATOR INPUT]' are excluded.
-    Returns an empty set if the schema file is missing or no classes are marked true.
+    Classes with collection_required: "n" or "[NEEDS COORDINATOR INPUT]" are excluded.
+    Returns an empty set if the schema file is missing or no classes are marked "y".
     """
     data = load_diagnostic_classes()
     return {
         cls["name"]
         for cls in data.get("classes", [])
-        if cls.get("name") and cls.get("collection_required") is True
+        if cls.get("name") and cls.get("collection_required") == "y"
     }
 
 
@@ -366,7 +365,7 @@ def validate_diagnostics_yaml(data: dict, lang_id: str) -> List[ValidationIssue]
             if cls not in present:
                 issues.append(ValidationIssue(
                     "error", filename,
-                    f"Required class '{cls}' (collection_required: true) is missing"
+                    f"Required class '{cls}' (collection_required: \"y\") is missing"
                 ))
 
     return issues
@@ -545,8 +544,8 @@ def validate_diagnostics_df(df, lang_id: str) -> List[ValidationIssue]:
             if cls not in present_classes:
                 issues.append(ValidationIssue(
                     "error", f"diagnostics_{lang_id}.tsv",
-                    f"Required class '{cls}' (collection_required: true in "
-                    f"diagnostic_classes.yaml) is missing"
+                    f"Required class '{cls}' (collection_required: \"y\" in "
+                    f"diagnostic_classes_status.yaml) is missing"
                 ))
 
     return issues

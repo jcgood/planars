@@ -34,6 +34,49 @@ TSV_CONTENT = (
     "metrical\tlang0001\tstress_domain\taccented{y/n/both}, obligatory\n"
 )
 
+# _sync_to_tsv gates on validate_diagnostics_yaml's errors, including check 9
+# (every collection_required: "y" class must be present) — YAML_CONTENT above
+# deliberately omits those classes to stay minimal for _sync_from_tsv tests,
+# which don't call validate_diagnostics_yaml at all. _sync_to_tsv tests need a
+# genuinely valid YAML instead, so they exercise the create/update/no-change
+# logic rather than the required-classes gate.
+YAML_CONTENT_ALL_REQUIRED = textwrap.dedent("""\
+    language: lang0001
+    classes:
+      ciscategorial:
+        constructions: [general]
+        criteria:
+          V-combines: [y, n]
+          N-combines: [y, n]
+      subspanrepetition:
+        constructions: [andCoordination]
+        criteria:
+          widescope_left: [y, n]
+          widescope_right: [y, n]
+          fillable_botheither_conjunct: [y, n]
+      noninterruption:
+        constructions: [general]
+        criteria:
+          free: [y, n]
+          multiple: [y, n]
+      nonpermutability:
+        constructions: [element_prescreening, general]
+        criteria:
+          scopal: [y, n, both]
+      free_occurrence:
+        constructions: [general]
+        criteria:
+          free: [y, n]
+          left-edge-of-free-form: [y, n, na]
+          right-edge-of-free-form: [y, n, na]
+          dependent-on-left: [na, "<position_number>"]
+          dependent-on-right: [na, "<position_number>"]
+      proform:
+        constructions: [do_so_substitution]
+        criteria:
+          shareable_proform_replace: [y, n, both]
+""")
+
 
 @pytest.fixture()
 def lang_dir(tmp_path, monkeypatch):
@@ -50,7 +93,7 @@ def lang_dir(tmp_path, monkeypatch):
 
 def test_sync_to_tsv_creates_tsv(lang_dir):
     """Dry run with no existing TSV reports 'Would create' but does not write."""
-    (lang_dir / "diagnostics_lang0001.yaml").write_text(YAML_CONTENT)
+    (lang_dir / "diagnostics_lang0001.yaml").write_text(YAML_CONTENT_ALL_REQUIRED)
     changed = _sdy._sync_to_tsv("lang0001", apply=False)
     assert changed is True
     assert not (lang_dir / "diagnostics_lang0001.tsv").exists()
@@ -58,17 +101,20 @@ def test_sync_to_tsv_creates_tsv(lang_dir):
 
 def test_sync_to_tsv_writes_when_apply(lang_dir):
     """--apply writes the TSV."""
-    (lang_dir / "diagnostics_lang0001.yaml").write_text(YAML_CONTENT)
+    (lang_dir / "diagnostics_lang0001.yaml").write_text(YAML_CONTENT_ALL_REQUIRED)
     _sdy._sync_to_tsv("lang0001", apply=True)
     tsv_path = lang_dir / "diagnostics_lang0001.tsv"
     assert tsv_path.exists()
     df = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
-    assert set(df["Class"]) == {"ciscategorial", "metrical"}
+    assert set(df["Class"]) == {
+        "ciscategorial", "subspanrepetition", "noninterruption",
+        "nonpermutability", "free_occurrence", "proform",
+    }
 
 
 def test_sync_to_tsv_no_change_when_up_to_date(lang_dir):
     """Returns False when TSV already matches YAML content."""
-    (lang_dir / "diagnostics_lang0001.yaml").write_text(YAML_CONTENT)
+    (lang_dir / "diagnostics_lang0001.yaml").write_text(YAML_CONTENT_ALL_REQUIRED)
     _sdy._sync_to_tsv("lang0001", apply=True)
     changed = _sdy._sync_to_tsv("lang0001", apply=False)
     assert changed is False

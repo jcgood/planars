@@ -448,6 +448,11 @@ def test_planar_reorder_is_also_destructive(env):
 # ---------------------------------------------------------------------------
 
 def test_an_unrecognised_criterion_is_ambiguous_drift_not_a_crash(env):
+    # stan1293, not arao1248: arao1248's diagnostics_arao1248.yaml is missing
+    # three collection_required: "y" classes (Finding 19), which now blocks
+    # its diagnostics download entirely ("Validation errors — skipping
+    # download") before drift detection ever runs. stan1293 declares every
+    # required class, so this scenario actually reaches the drift path.
     def add_unknown(rows):
         header = rows[0]
         class_idx, crit_idx = header.index("Class"), header.index("Criteria")
@@ -457,14 +462,14 @@ def test_an_unrecognised_criterion_is_ambiguous_drift_not_a_crash(env):
                 r[crit_idx] += ", totally_made_up_zyx"
                 break
         return out
-    env.edit_sheet_rows(env.diagnostics_sheet("arao1248"), add_unknown)
+    env.edit_sheet_rows(env.diagnostics_sheet("stan1293"), add_unknown)
 
     out, _ = env.run(["import-sheets", "--apply"])
 
     assert "ambiguous YAML drift" in out
     assert is_.DRIFT_PATH.exists()
     drift = json.loads(is_.DRIFT_PATH.read_text())
-    entry = next(d for d in drift if d["lang_id"] == "arao1248")
+    entry = next(d for d in drift if d["lang_id"] == "stan1293")
     assert entry["ambiguous"][0]["criterion"] == "totally_made_up_zyx"
 
 
@@ -570,12 +575,17 @@ def test_verify_is_skipped_on_a_dry_run_that_never_reaches_the_bad_id(env):
     """A bad ID on a language the --lang filter excludes never gets checked at
     all on a dry run -- confirmed by the run completing normally rather than
     raising, since a reached bad ID has no guard on a dry run (see the module
-    docstring's Finding)."""
+    docstring's Finding). Not asserting "ERROR" not in out overall: arao1248's
+    diagnostics_arao1248.yaml is genuinely missing three collection_required:
+    "y" classes (Finding 19), which surfaces its own unrelated ERROR lines on
+    every run for this language -- the thing this test actually checks is
+    that stan1293's bad ID is never reached."""
     env.mutate_manifest(lambda m: m["stan1293"]["sheets"]["ciscategorial"]
                         .__setitem__("spreadsheet_id", "does_not_exist_xyz"))
     out, exit_code = env.run(["import-sheets", "--lang", "arao1248"])
     assert exit_code is None
-    assert "ERROR" not in out
+    assert "does_not_exist_xyz" not in out
+    assert "inaccessible spreadsheet" not in out
 
 
 def test_a_bad_id_reached_on_a_dry_run_warns_and_previews_every_other_language(env):

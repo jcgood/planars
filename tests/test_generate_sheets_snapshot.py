@@ -380,13 +380,21 @@ def test_force_succeeds_as_before_when_no_language_fails_the_guard(env):
     """No behaviour change on the passing path: with every language brand
     new (no existing annotation sheets anywhere), --force --apply still
     creates every language's sheets exactly as a plain --apply would.
+
+    Not asserting "ERROR" not in out overall: arao1248's
+    diagnostics_arao1248.yaml is genuinely missing three collection_required:
+    "y" classes (Finding 19), which surfaces as an informational validation
+    line on every generate-sheets run for this language without blocking
+    sheet creation (unlike import-sheets/sync-diagnostics-yaml, which skip
+    processing outright). The guard this test actually checks is the
+    --force-vs-existing-sheets one.
     """
     for lang in LANGS:
         env.remove_from_manifest(lang)
 
     out = env.run(["generate-sheets", "--apply", "--force"])
 
-    assert "ERROR" not in out
+    assert "ERROR: --force refused" not in out
     assert "[SystemExit" not in out
     for lang in LANGS:
         assert lang in env.manifest()

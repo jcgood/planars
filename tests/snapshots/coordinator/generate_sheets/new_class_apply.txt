@@ -3,6 +3,10 @@ Manifest backed up to manifest_backup.json (3 language(s))
 
 Language:    arao1248
 Planar file: planar_arao1248.tsv
+  Diagnostics validation (3 issue(s)):
+    [ERROR] diagnostics_arao1248.tsv: Required class 'free_occurrence' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
+    [ERROR] diagnostics_arao1248.tsv: Required class 'nonpermutability' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
+    [ERROR] diagnostics_arao1248.tsv: Required class 'proform' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
 Classes:     ['ciscategorial', 'noninterruption', 'subspanrepetition', 'metrical']
 Folder:      https://drive.google.com/drive/folders/1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU
 Notes doc:   (existing) https://docs.google.com/document/d/1vfSS_YoRHDgpSG-vi1nXWR5dNCR1SAKlyMVbqhkl8Qc

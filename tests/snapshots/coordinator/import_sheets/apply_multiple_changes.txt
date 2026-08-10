@@ -4,7 +4,10 @@ Language: arao1248
   [planar] New positions: ['x:newpos-test'] — queuing update-sheets
   [planar] Archived existing → archive/planar_arao1248_20260804_120000.tsv
   [planar] Downloaded → planar_arao1248.tsv
-  [diagnostics] No changes → diagnostics_arao1248.tsv
+  [diagnostics] Validation errors — skipping download:
+    [ERROR] diagnostics_arao1248.tsv: Required class 'free_occurrence' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
+    [ERROR] diagnostics_arao1248.tsv: Required class 'nonpermutability' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
+    [ERROR] diagnostics_arao1248.tsv: Required class 'proform' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
 
   ciscategorial
     [general] status: 'in-progress' — importing for backup
@@ -172,6 +175,10 @@ Auto-applying 1 safe downstream command(s):
 --- Revalidating sheets ---
 
 arao1248
+  Diagnostics validation (3 issue(s)):
+    [ERROR] diagnostics_arao1248.tsv: Required class 'free_occurrence' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
+    [ERROR] diagnostics_arao1248.tsv: Required class 'nonpermutability' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
+    [ERROR] diagnostics_arao1248.tsv: Required class 'proform' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
   [ciscategorial/general] 288 blank cell(s) — annotation in progress
   [noninterruption/general] 144 blank cell(s) — annotation in progress
   [subspanrepetition/auxiliary_construction] no issues
