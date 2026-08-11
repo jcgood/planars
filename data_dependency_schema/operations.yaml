@@ -705,16 +705,27 @@
     - "creates or comments on GitHub issues summarizing new notes content"
     - "appends an acknowledgment to the collaborator's notes doc"
     - "writes coded_data/notes_state.json (content-hash change-detection state)"
-  idempotent: true
+  idempotent: false
   idempotency_note: >-
-    Change detection is by content hash in notes_state.json -- a second run
-    with no new doc content since the last run finds nothing new and
-    writes/files nothing further.
+    A fourth instance of the #280 batched-write pattern, found in the same
+    review pass (2026-08-11): _save_notes_state(state) runs once, at the
+    very end of main(), after every language has been checked, every
+    annotator's GitHub issue has been filed/updated, and every
+    acknowledgment has already been appended to its notes doc. The hash
+    driving change detection is computed on the doc's content with
+    acknowledgment lines stripped out (_strip_acknowledgment_lines), so
+    appending the acknowledgment does not change it. If the process crashes
+    after an acknowledgment is appended but before the final
+    _save_notes_state call, notes_state.json still holds the OLD hash: a
+    retry re-reads the same underlying content, computes the same "new"
+    hash again, and re-files/comments on the issue and appends a second,
+    duplicate acknowledgment line to the doc.
   apply_gate: "--apply"
   preconditions: [check_notes_documents_scope_authorized]
   facts_touched: []
   cascades_triggered: []
-  ordering_constraints: []
+  ordering_constraints:
+    - "Same batched-write-at-end-of-loop shape as issue #280 (import-sheets, apply-pending, prune-manifest)."
   modes: []
 
 - id: refresh_dropdowns
