@@ -5,16 +5,19 @@
 # triggers downstream, and required ordering relative to other commands. See
 # SCHEMA.md.
 #
-# DRAFT, not yet reviewed. The plan requires the coordinator to review two
-# things specifically before this phase is done: every authority assignment
-# (does facts_touched/preconditions actually match reality) and every
-# idempotency claim (a false "true" here is load-bearing -- Phases 7 and 8
-# build recovery logic on top of it). Until that review, treat this file as a
-# first pass, not ground truth. Drafted 2026-08-10, grounded in CLAUDE.md,
-# coding/CLAUDE.md, and facts.yaml/preconditions.yaml's own cascade/
-# drift_risk/required_by text rather than fresh guesses -- see each record's
-# ordering_constraints and facts_touched for what's already independently
-# documented elsewhere vs. new synthesis.
+# Drafted 2026-08-10; every record traced against actual coding/*.py source
+# 2026-08-11 (facts_touched/preconditions authority assignments and every
+# idempotency claim), corrections applied on the spot -- see
+# docs/data-layer-progress.md's Findings 22/25/26 and "Next action" for what
+# was found and fixed. That trace was Claude verifying code, not the
+# coordinator's own sign-off the plan asks for (a false idempotent: true is
+# load-bearing -- Phases 7 and 8 build recovery logic on top of it); treat
+# the content as accurate but not yet coordinator-confirmed until that
+# read-through happens. Grounded in CLAUDE.md, coding/CLAUDE.md, and
+# facts.yaml/preconditions.yaml's own cascade/drift_risk/required_by text
+# rather than fresh guesses -- see each record's ordering_constraints and
+# facts_touched for what's already independently documented elsewhere vs.
+# new synthesis.
 
 - id: capture_drive_state
   cli_command: capture-drive-state
@@ -23,11 +26,16 @@
     manifest) to tests/fixtures/drive_state/, for the offline fake Drive
     backend used by every other command's tests.
   side_effects:
-    - "overwrites tests/fixtures/drive_state/{lang}/*.json and manifest.json"
+    - "overwrites tests/fixtures/drive_state/{lang}/*.json, manifest.json, and index.json"
   idempotent: true
   idempotency_note: >-
     Always re-records current live state; running it twice with nothing
-    changed on Drive in between produces byte-identical fixture files.
+    changed on Drive in between produces byte-identical per-spreadsheet
+    fixture files (not "byte-identical" for the whole output as originally
+    claimed here: index.json stamps a fresh "captured_at" timestamp every
+    run, coding/capture_drive_state.py:175-184 -- cosmetic, not a
+    retry-safety concern, since nothing reads that field to decide what to
+    do).
   apply_gate: "--apply"
   preconditions: []
   facts_touched:
@@ -144,11 +152,16 @@
     ensure_anyone_permission checks for an existing grant before creating one
     (fixed issue #276 -- before that, every run silently added a duplicate
     "anyone" permission). A repeat run with no content change re-uploads the
-    same content and re-asserts the same single grant.
+    same content and re-asserts the same single grant. drive_config.json is
+    now saved after every individual upload, not once after all four upload
+    loops (fixed 2026-08-11 as part of the #280 review) -- a crash partway
+    through no longer loses already-successful uploads' new file IDs, which
+    previously caused a retry to create duplicates rather than update.
   apply_gate: "--apply"
   preconditions: []
   facts_touched:
     - {fact: diagnostics_scope, role: reads}
+    - {fact: languages_metadata, role: reads}
   cascades_triggered: []
   ordering_constraints:
     - >-
@@ -171,11 +184,16 @@
     Same ensure_anyone_permission-based idempotency as generate-notebooks,
     fixed under the same issue #276 -- before the fix, a manually-revoked
     report share was never restored, since the grant was only asserted on
-    create, not on every run.
+    create, not on every run. drive_config.json is now saved after every
+    language, not once after the whole loop (fixed 2026-08-11 as part of the
+    #280 review), and a rendering failure on one language's report no longer
+    aborts the run for every language after it -- both were previously real
+    gaps, not disclosed here.
   apply_gate: "--apply"
   preconditions: []
   facts_touched:
     - {fact: diagnostics_scope, role: reads}
+    - {fact: languages_metadata, role: reads}
   cascades_triggered: []
   ordering_constraints: []
   modes: []
@@ -357,11 +375,23 @@
     were bugs in what got written, not in whether re-running was safe.
   apply_gate: "--apply"
   preconditions: [coded_data_clean_tree]
-  facts_touched:
-    - {fact: manifest_class_registration, role: writes}
-    - {fact: pair_row_construction_set, role: reads}
+  facts_touched: []
   cascades_triggered: []
-  ordering_constraints: []
+  ordering_constraints:
+    - >-
+      Does not read pair_row_construction_set (schema_yaml's row_type) the
+      way validate_coding.py/generate_status_sheet.py/import_sheets.py do --
+      it decides pair-row shape from the tab's own header ("Element_A" in
+      header, coding/update_sheets.py:431), a third, independent detection
+      strategy found while reviewing this record for operations.yaml
+      (2026-08-11). Not necessarily wrong (it responds to the sheet's actual
+      current shape rather than the schema's stated intention, which can
+      matter when the two have drifted, e.g. #275), but undocumented and
+      worth a coordinator look rather than a unilateral code change here.
+      Also does not write manifest_class_registration -- it only ever
+      extends an already-registered class's construction list, never adds a
+      new class to the manifest, which facts.yaml attributes exclusively to
+      generate-sheets.
   modes: []
 
 - id: import_sheets
@@ -380,22 +410,22 @@
       restructure_sheets.py call drive._autocommit_data(); import_sheets.py
       does not, corrected 2026-08-11 -- an earlier version of this record
       claimed otherwise)
-  idempotent: false
+  idempotent: true
   idempotency_note: >-
     Re-running with nothing changed on the live sheets since the last run
     produces no new TSV content and no new pending changes, which is safe.
-    But pending_changes.json is only written once
-    (_append_pending_changes(all_pending) at the end of main(), after every
-    tab has been processed), while each tab's TSV is written incrementally
-    as it's processed. If the run crashes after a tab's TSV write but before
-    that final write, that tab's destructive-change record is silently lost,
-    not just delayed: a retry re-downloads the same (now-unchanged) tab,
-    finds its local TSV already matches, and never re-detects the change
-    that would have gone to pending_changes.json. --ignore-status also
-    changes what counts as "ready-for-review" between runs, so the same live
-    state can produce different output depending on the flag. Filed as
-    issue #280 (batched-write-at-end-of-loop, same root cause shared with
-    prune-manifest and apply-pending).
+    Fixed 2026-08-11 (issue #280): pending_changes.json is now written per
+    language, immediately after that language's lang-setup pending entries
+    are computed, instead of once at the end of main() via a single
+    _append_pending_changes(all_pending) call. Previously, a crash after a
+    tab's TSV write but before that final write silently lost that
+    language's already-detected destructive-change record, since a retry
+    would find the (now-unchanged) tab already matching and never re-detect
+    the change. _append_pending_changes reads-then-appends, so calling it
+    once per language is equivalent in the no-failure case to the old single
+    call at the end. (--ignore-status changing what counts as
+    "ready-for-review" is a different-flags-different-output concern, not a
+    retry-safety one, and is unaffected by this fix.)
   apply_gate: "--apply"
   preconditions: [coded_data_clean_tree]
   facts_touched:
@@ -469,8 +499,17 @@
   side_effects:
     - "archives the old sheet, creates/regenerates the new one, carries annotations over"
     - >-
-      edits planar_{lang_id}.tsv directly for structural flags; pushes it
-      back to the live planar Sheet via import-planar --to-sheet
+      reads (never writes) planar_{lang_id}.tsv as the current structure to
+      regenerate sheets from -- the coordinator/Claude edits it directly
+      beforehand when a position/element is renamed or split, and this
+      command's --rename-map/--rename-element/--split-element flags only
+      supply the old->new mapping used to carry annotations forward under
+      the new names; it then pushes that (already-current) planar_tsv to the
+      live planar Sheet via import-planar --to-sheet, in case the local edit
+      was never pushed. Corrected 2026-08-11: no to_csv call in this file
+      targets a planar path (grepped and confirmed) -- the earlier claim
+      that this command edits planar_tsv directly was wrong, and the same
+      overstatement is also in facts.yaml's planar_sheet_structure record.
     - "--rename-class: renames the local TSV directory in place, updates the manifest"
     - "notifies the language's tracking issue via notify.py after sheets actually change"
     - "auto-commits coded_data/ changes"
@@ -492,6 +531,11 @@
       push_planars_to_sheets() (import-planar --to-sheet) runs automatically
       after --apply so the master planar Sheet doesn't go stale
     - "notify.py posts to (or creates) the language's 'Sheet updates -- {lang_id}' GitHub issue"
+    - >-
+      revalidate_sheets() (from validate_coding.py) runs automatically after
+      --apply for every processed language -- missing from this record until
+      2026-08-11's review; it repaints pink highlighting to match the
+      regenerated sheets, a real live Drive write alongside the three above.
   ordering_constraints:
     - >-
       --split-element cascades into every pair-row construction referencing
@@ -505,11 +549,6 @@
       rather than carrying annotations forward. Update
       diagnostics_{lang_id}.tsv to the new name first, then run
       restructure-sheets --rename-class OLD:NEW --apply.
-    - >-
-      This command never calls drive._check_coded_data_clean() despite
-      reading planar_{lang_id}.tsv/diagnostics_{lang_id}.tsv as its source of
-      truth -- a documented, still-open gap (Finding 17 in
-      docs/data-layer-progress.md).
   modes: []
 
 - id: check_codebook
@@ -576,6 +615,16 @@
   cascades_triggered: []
   ordering_constraints:
     - >-
+      _section_sheets computes pair-row constructions itself, iterating
+      diagnostic_classes.yaml's row_type directly (coding/integrity_check.py
+      lines 388-393), rather than calling
+      restructure_sheets._get_pair_row_constructions() the way
+      facts.yaml's pair_row_construction_set record names as the required
+      pattern for a reader deciding this. Currently correct (both derive the
+      same set), found while reviewing this record for operations.yaml
+      (2026-08-11) -- unprotected against the two derivations drifting apart
+      the way import_sheets.py's hardcoded version once did (#275).
+    - >-
       Run daily via data-refresh.yml; a missing required class
       (collection_required: "y") is reported here as an ERROR (Finding 19 in
       docs/data-layer-progress.md) and folds into the standing
@@ -598,7 +647,10 @@
   idempotency_note: >-
     ensure_anyone_permission-based, same mechanism as generate-notebooks/
     generate-reports (issue #276) -- a second run with the folder already
-    present and shared makes zero Drive calls at all.
+    present and shared makes zero Drive *write* calls (corrected 2026-08-11:
+    the read calls -- list_files, list_permissions, get_file -- still fire
+    unconditionally every run; only the create_permission/move_file/
+    update_file writes are skipped when state already matches).
   apply_gate: null
   preconditions: []
   facts_touched: []
@@ -619,9 +671,11 @@
     - "writes glottolog_cache.json and updates the language's entry in schemas/languages.yaml"
   idempotent: true
   idempotency_note: >-
-    Re-running for the same Glottocode re-fetches and overwrites with the
-    same (or newly current) upstream data; --refresh forces a re-fetch, the
-    default reads the cache when present.
+    --refresh forces a re-fetch and overwrite; the default reads the cache
+    when present, and coding/glottolog.py:140-142's early return for an
+    already-cached Glottocode makes zero writes at all (corrected 2026-08-11
+    -- the original wording overgeneralized this default-invocation case as
+    always re-fetching and overwriting).
   apply_gate: null
   preconditions: []
   facts_touched:
@@ -642,22 +696,21 @@
     when cleared.
   side_effects:
     - "applies coordinator-approved destructive changes to coded_data/ and/or the manifest; clears entries from pending_changes.json"
-  idempotent: false
+  idempotent: true
   idempotency_note: >-
-    _save_pending(remaining) is called exactly once, after the for loop over
-    every entry finishes -- not per entry. An entry is only dropped from
-    `remaining` (and so from the next _save_pending write) after its
-    underlying command has already run and returned rc == 0. If the process
-    crashes after entry 3 of 10 succeeds but before the loop finishes, entry
-    3's command already ran for real, but pending_changes.json still lists
-    it: a retry re-runs entry 3's command a second time. Whether that's safe
-    depends entirely on what the entry's command is (e.g. a
-    generate-sheets --regen-construction entry is itself close to retry-safe
-    per that record; other entry types were not individually checked here).
-    This is the clearest of the three batched-write findings from this
-    review pass (2026-08-11) -- the double-run risk is direct, not
-    conditional on Drive API behavior the way prune-manifest's is. Filed as
-    issue #280.
+    Fixed 2026-08-11 (issue #280): _save_pending(remaining + entries[i:]) is
+    now called after every entry's decision, not once after the whole loop.
+    Previously, an entry was only dropped from `remaining` after its
+    underlying command had already run and returned rc == 0, but the file
+    write reflecting that was deferred to the end -- a crash after entry 3
+    of 10 succeeded but before the loop finished left pending_changes.json
+    still listing entry 3, so a retry re-ran its command a second time. Now
+    the file is rewritten immediately after each entry is resolved, so a
+    crash at any point leaves the file accurately reflecting exactly what
+    has and hasn't run for real. (Whether re-running a *never-attempted*
+    entry's command is itself safe still depends on what that command is --
+    unrelated to this fix, which is about not re-attempting an
+    already-succeeded one.)
   apply_gate: "interactive (per-entry approval, not a single --apply flag)"
   preconditions: []
   facts_touched: []
@@ -676,28 +729,24 @@
     - "moves coded_data/{lang}/{class}/ TSVs to coded_data/{lang}/archive/{class}/"
     - "moves the class's Drive spreadsheet to the _archived/ subfolder"
     - "removes the class's entry from sheets_manifest.json"
-  idempotent: false
+  idempotent: true
   idempotency_note: >-
     Which classes are stale (_find_stale) is recomputed fresh from the
     current manifest at the start of every run, so a class already fully
-    pruned (manifest entry gone) correctly won't be reprocessed. But the
-    Drive manifest write (upload_manifest) happens once, after the entire
-    loop over every stale class finishes -- local TSVs are archived and the
-    Drive sheet is moved to _archived/ per-class inside that loop, all
-    before the manifest ever gets uploaded. A crash after class A's files
-    are archived and its sheet moved, but before the loop finishes, leaves
-    the Drive-side manifest still showing class A as present: a retry's
-    _find_stale sees A as stale again and reprocesses it -- _tsv_paths finds
-    nothing (already archived, handled gracefully) and _archive_drive_sheet
-    re-attempts moving a spreadsheet already in _archived/, which is likely
-    a harmless no-op at the Drive API level (re-parenting to an unchanged
-    folder) but was not verified against a real repeat call while writing
-    this record. Same batched-write-at-the-end shape as import-sheets'
-    pending_changes.json and apply-pending's pending file, found in the same
-    review pass (2026-08-11). Filed as issue #280. The coded_data_clean_tree
-    guard added the same day (below) is orthogonal -- it stops this command
-    from acting on an already-stale coded_data/ tree, it does not address
-    the mid-run-crash reprocessing risk above.
+    pruned (manifest entry gone) correctly won't be reprocessed. Fixed
+    2026-08-11 (issue #280): upload_manifest now runs immediately after each
+    class's local TSVs are archived and its Drive sheet is moved to
+    _archived/, not once after the whole loop over every stale class.
+    Previously, a crash after class A's files were archived and its sheet
+    moved, but before the loop finished, left the Drive-side manifest still
+    showing class A as present -- a retry's _find_stale would see A as stale
+    again and reprocess it (likely harmless per-call, since _tsv_paths finds
+    nothing and _archive_drive_sheet re-parenting an already-_archived/
+    sheet is probably a no-op, but never verified). Now the manifest is
+    correct after every class, so that reprocessing path is closed rather
+    than merely harmless. The coded_data_clean_tree guard (below) remains
+    orthogonal -- it stops this command from acting on an already-stale
+    coded_data/ tree, a different concern from mid-run-crash recovery.
   apply_gate: "--apply"
   preconditions: [coded_data_clean_tree]
   facts_touched:
@@ -720,21 +769,25 @@
     - "creates or comments on GitHub issues summarizing new notes content"
     - "appends an acknowledgment to the collaborator's notes doc"
     - "writes coded_data/notes_state.json (content-hash change-detection state)"
-  idempotent: false
+  idempotent: true
   idempotency_note: >-
-    A fourth instance of the #280 batched-write pattern, found in the same
-    review pass (2026-08-11): _save_notes_state(state) runs once, at the
-    very end of main(), after every language has been checked, every
-    annotator's GitHub issue has been filed/updated, and every
-    acknowledgment has already been appended to its notes doc. The hash
-    driving change detection is computed on the doc's content with
-    acknowledgment lines stripped out (_strip_acknowledgment_lines), so
-    appending the acknowledgment does not change it. If the process crashes
-    after an acknowledgment is appended but before the final
-    _save_notes_state call, notes_state.json still holds the OLD hash: a
-    retry re-reads the same underlying content, computes the same "new"
-    hash again, and re-files/comments on the issue and appends a second,
-    duplicate acknowledgment line to the doc.
+    Fixed 2026-08-11 (issue #280): _save_notes_state(state) now runs
+    immediately after each language's acknowledgment is appended to its
+    notes doc, not once at the very end of main() after every language has
+    been processed. The hash driving change detection is computed on the
+    doc's content with acknowledgment lines stripped out
+    (_strip_acknowledgment_lines), so appending the acknowledgment does not
+    itself change it -- previously, a crash after an acknowledgment was
+    appended but before the final _save_notes_state call left
+    notes_state.json holding the OLD hash, so a retry re-detected the same
+    content as new and re-filed/re-acknowledged it. Now each language's hash
+    is durable the moment its acknowledgment is written. A separate,
+    still-open risk is unaffected by this fix: _get_open_notes_issue matches
+    an existing issue by title substring, not a stored ID, so a
+    manually-renamed or -closed issue silently stops being found on ANY
+    run (not just after a crash) and the next run opens a new thread rather
+    than continuing the old one -- see
+    collaborator_notes_surfaced_state's drift_risk in facts.yaml.
   apply_gate: "--apply"
   preconditions: [check_notes_documents_scope_authorized]
   facts_touched:
@@ -845,12 +898,20 @@
     - "creates or updates the biuniqueness_allomorphy_{lang_id} spreadsheet"
   idempotent: true
   idempotency_note: >-
-    Rows are derived fresh from planar_{lang_id}.tsv's Biuniqueness_Scope
-    column every run; a second run with nothing changed produces the same
-    content.
+    Rows (Position_Name/Element/Biuniqueness_Scope) are derived fresh from
+    planar_{lang_id}.tsv every run; has_allomorphs/Members/Notes are carried
+    over by (Position_Name, Element) from whatever the tab already had
+    (fixed 2026-08-11, found reviewing this record for operations.yaml:
+    ws.clear() previously wiped those three columns unconditionally on every
+    --apply, misdescribed here as a benign "recomputes fresh, same content"
+    operation -- low-stakes today since this command is synth0001-only, but
+    the sheet is shared as *writer* with Adam and #254 plans to expand it
+    beyond synth0001). A second run with nothing changed now produces
+    genuinely the same content, including any annotation already entered.
   apply_gate: "--apply"
   preconditions: []
-  facts_touched: []
+  facts_touched:
+    - {fact: planar_sheet_structure, role: reads}
   cascades_triggered: []
   ordering_constraints:
     - >-

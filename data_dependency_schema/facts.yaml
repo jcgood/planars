@@ -18,10 +18,20 @@
     direction: bidirectional
     mechanism: >-
       import-planar --apply downloads planar_sheet -> planar_tsv (the normal
-      direction). restructure-sheets --split-element/--rename-map/--rename-class
-      --apply edits planar_tsv directly (the structural-change direction) and,
-      since #248, pushes that edit back to planar_sheet via
-      import-planar --to-sheet --apply in the same run.
+      direction). The structural-change direction is: a coordinator (with
+      Claude) edits planar_tsv directly first when a position/element is
+      renamed or split, then runs restructure-sheets
+      --split-element/--rename-map/--rename-class --apply, whose flags supply
+      the old->new mapping used to carry existing annotations forward under
+      the new names -- restructure_sheets.py itself only reads planar_tsv
+      (confirmed 2026-08-11: no to_csv call in that file targets a planar
+      path), it never edits it. Since #248, restructure-sheets --apply pushes
+      that already-current planar_tsv back to planar_sheet via
+      import-planar --to-sheet --apply in the same run, so a local edit that
+      preceded it doesn't go stale. (Corrected 2026-08-11, found reviewing
+      restructure_sheets' operations.yaml record: this mechanism previously
+      said restructure-sheets "edits planar_tsv directly," which overstated
+      what the command itself does.)
   drift_risk:
     possible: true
     note: >-

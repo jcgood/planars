@@ -31,30 +31,37 @@ missing required class no longer blocks `sync-diagnostics-yaml --apply`'s
 local-TSV direction from picking up whichever classes *are* ready (Finding
 20), just `--to-sheet`/`import-sheets` for the language as a whole.
 
-**Phase 4 ("Topology declaration") is drafted and has had a real,
-substantial interactive review pass with Jeff (2026-08-11) — not yet fully
-signed off.** `data_dependency_schema/operations.yaml` (+
-`operation_record.schema.json`) has one record per `coding/__main__.py`
-command, with a `modes` field for the 4 commands whose behavior genuinely
-diverges by flag. The review re-checked every flagged idempotency claim
-against actual code (4 corrected, one factual error fixed along the way),
-added 2 new facts to `facts.yaml`, and found + fixed 2 real
-`coded_data_clean_tree` guard gaps on the spot (`prune-manifest`,
-`sync-diagnostics-yaml` — Findings 23/24). It also found a cross-cutting
-reliability bug across 4 commands (Finding 22, filed as **issue #280**,
-documented but not yet fixed in code).
+**Phase 4 ("Topology declaration") is drafted, traced against code end to
+end, and all three of the plan's "done when" items are complete — the one
+thing left is Jeff's own final read-through, not more Claude work.**
+`data_dependency_schema/operations.yaml` (+ `operation_record.schema.json`)
+has one record per `coding/__main__.py` command (24, mechanically checked),
+with a `modes` field for the 4 commands whose behavior genuinely diverges by
+flag. The 2026-08-11 interactive session re-checked every flagged
+idempotency claim against actual code, added 2 new facts to `facts.yaml`,
+and found + fixed 2 real `coded_data_clean_tree` guard gaps on the spot
+(`prune-manifest`, `sync-diagnostics-yaml` — Findings 23/24); it also found a
+cross-cutting batched-write reliability bug across 4 commands (Finding 22,
+filed as **issue #280**). Later the same day, a full line-by-line pass
+(3 agents tracing every one of the 24 records against `coding/*.py`, not
+just the ones flagged) found and fixed several more stale claims (Finding
+25 — mostly `operations.yaml`/`facts.yaml` corrections, including a stale
+"still open" reference to a gap actually fixed a week earlier) and one more
+real bug: `generate_biuniqueness_allomorphy_sheet.py --apply` was silently
+wiping annotator-entered `has_allomorphs`/`Members`/`Notes` on every re-run
+(Finding 26, fixed — carries annotations over by (Position_Name, Element)
+now). Jeff decided to fix #280 immediately rather than defer it; the fix
+grew from the originally-filed 4 commands to 6 (`generate_notebooks.py`/
+`generate_reports.py` turned out to share the same shape). `CLAUDE.md`'s
+narrative topology prose (the "Retiring a class"/"Renaming a class"
+paragraphs) is now a pointer to `operations.yaml` instead of a restatement.
 
-**Three concrete things left before Phase 4 counts as done** — read
-`docs/data-layer-progress.md` § "Next action" for the full account before
-touching any of them:
-1. A final line-by-line pass confirming every one of the 24 records, not
-   just the ones Claude flagged as uncertain (which is where the review so
-   far concentrated).
-2. Replace `CLAUDE.md`'s narrative topology prose with a pointer to the
-   generated registry (the plan's own "done when" condition) — deliberately
-   not attempted before (1).
-3. A decision on when to fix issue #280 (real code work in 4 commands, not
-   itself part of Phase 4's documentation goal).
+**What's actually left: read `docs/data-layer-progress.md` § "Open questions
+for Jeff"** and look over the diff (`operations.yaml`, `facts.yaml`, the six
+`#280` fixes, `generate_biuniqueness_allomorphy_sheet.py`) — the plan is
+explicit that authority assignments and idempotency claims are the
+coordinator's call, and today's pass was Claude tracing code, not Jeff
+confirming it.
 
 ---
 
