@@ -381,7 +381,9 @@
     finds its local TSV already matches, and never re-detects the change
     that would have gone to pending_changes.json. --ignore-status also
     changes what counts as "ready-for-review" between runs, so the same live
-    state can produce different output depending on the flag.
+    state can produce different output depending on the flag. Filed as
+    issue #280 (batched-write-at-end-of-loop, same root cause shared with
+    prune-manifest and apply-pending).
   apply_gate: "--apply"
   preconditions: [coded_data_clean_tree]
   facts_touched:
@@ -642,7 +644,8 @@
     per that record; other entry types were not individually checked here).
     This is the clearest of the three batched-write findings from this
     review pass (2026-08-11) -- the double-run risk is direct, not
-    conditional on Drive API behavior the way prune-manifest's is.
+    conditional on Drive API behavior the way prune-manifest's is. Filed as
+    issue #280.
   apply_gate: "interactive (per-entry approval, not a single --apply flag)"
   preconditions: []
   facts_touched: []
@@ -679,7 +682,7 @@
     folder) but was not verified against a real repeat call while writing
     this record. Same batched-write-at-the-end shape as import-sheets'
     pending_changes.json and apply-pending's pending file, found in the same
-    review pass (2026-08-11).
+    review pass (2026-08-11). Filed as issue #280.
   apply_gate: "--apply"
   preconditions: []
   facts_touched:
