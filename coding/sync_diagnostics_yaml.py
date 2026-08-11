@@ -324,6 +324,16 @@ def main() -> None:
     to_sheet = "--to-sheet" in args
     lang_filter: Optional[str] = None
 
+    if apply:
+        # All three directions read coded_data/*.yaml as ground truth
+        # (--to-sheet pushes it live; --from-tsv also reads the TSV) and the
+        # default/--from-tsv directions write coded_data/ too -- same guard
+        # as sync_params.py/update_sheets.py/import_sheets.py/
+        # prune_manifest.py, against a prior step's failed auto-commit
+        # leaving a stale file on disk.
+        from .drive import _check_coded_data_clean
+        _check_coded_data_clean(extensions=(".yaml", ".tsv"))
+
     if "--lang" in args:
         idx = args.index("--lang")
         if idx + 1 >= len(args):

@@ -15,10 +15,12 @@
     - "generate_sheets.py (--regen-dependents)"
     - "restructure_sheets.py (restructure-sheets --apply)"
     - "prune_manifest.py (prune-manifest --apply)"
+    - "sync_diagnostics_yaml.py (sync-diagnostics-yaml --apply, all three directions)"
   enforced_by: >-
     drive._check_coded_data_clean() -- called at the top of each apply path
     above; raises SystemExit(1) if coded_data/ has uncommitted changes
-    matching the given extensions (default: .tsv).
+    matching the given extensions (default: .tsv; sync_diagnostics_yaml.py
+    passes (".yaml", ".tsv") since it reads/writes both).
   failure_symptom: >-
     a command reads a stale/reverted file as current and acts on it -- e.g.
     update-sheets wrote a blank retired-element row to 16 live sheets on
@@ -28,12 +30,14 @@
   established: >-
     2026-07-29, after the #248 stray-row incident. Previously only
     import_sheets.py had this guard; centralized into drive.py and wired
-    into the other three commands the same day. prune_manifest.py added
-    2026-08-11 -- found missing (it archives local TSVs out of coded_data/
-    without ever having checked this) while reviewing preconditions for the
-    Phase 4 (#271) operation registry; fixed the same day it was found,
-    same reasoning as every other small fix this project makes on sight
-    rather than deferring.
+    into the other three commands the same day. prune_manifest.py and
+    sync_diagnostics_yaml.py both added 2026-08-11 -- both found missing
+    (the former archives local TSVs out of coded_data/, the latter reads
+    the YAML as ground truth for all three of its directions and writes
+    the TSV/YAML for two of them) while reviewing preconditions for the
+    Phase 4 (#271) operation registry; fixed the same day found, same
+    reasoning as every other small fix this project makes on sight rather
+    than deferring.
 
 - id: coded_data_git_identity_configured
   description: >-

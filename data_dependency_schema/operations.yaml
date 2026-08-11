@@ -252,7 +252,7 @@
     disk ("TSV already up to date" short-circuits otherwise) -- a second run
     with nothing changed performs no write.
   apply_gate: "--apply"
-  preconditions: []
+  preconditions: [coded_data_clean_tree]
   facts_touched:
     - {fact: diagnostics_scope, role: both}
   cascades_triggered: []
@@ -268,6 +268,16 @@
     - >-
       Run --to-sheet after renaming a class or criterion in the YAML, so the
       Sheet stays in sync and import-sheets stops reporting false drift.
+    - >-
+      coded_data_clean_tree guard added 2026-08-11 to all three directions
+      (base, --to-sheet, --from-tsv) -- found missing while filling in
+      preconditions for this registry (issue #271 Phase 4). Unlike
+      prune-manifest's version of this gap, the risk here isn't reading a
+      stale target file, it's propagating a stale/reverted SOURCE (the
+      YAML) forward -- --to-sheet would push it live, the default direction
+      would regenerate the TSV from it. Passes extensions=(".yaml", ".tsv")
+      since this command reads/writes both, unlike every other guarded
+      command's TSV-only default.
   modes:
     - name: "--to-sheet"
       description: >-
@@ -280,7 +290,7 @@
         Only writes when content differs from the Sheet's current content
         ("Sheet already up to date" short-circuits otherwise).
       apply_gate: "--to-sheet --apply"
-      preconditions: []
+      preconditions: [coded_data_clean_tree]
       facts_touched:
         - {fact: diagnostics_scope, role: both}
     - name: "--from-tsv"
@@ -297,7 +307,7 @@
         changed on either side, produces no YAML changes and an empty drift
         file.
       apply_gate: "--from-tsv --apply"
-      preconditions: []
+      preconditions: [coded_data_clean_tree]
       facts_touched:
         - {fact: diagnostics_scope, role: both}
 
