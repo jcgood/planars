@@ -79,9 +79,11 @@ Run from the repo root:
     python -m coding generate-biuniqueness-allomorphy-sheet --lang synth0001            # dry run
     python -m coding generate-biuniqueness-allomorphy-sheet --lang synth0001 --apply
 
-Re-running with --apply overwrites the existing biuniqueness_allomorphy_{lang_id}
+Re-running with --apply regenerates the existing biuniqueness_allomorphy_{lang_id}
 spreadsheet in place (found by name within the language's Drive folder) rather than
-minting a new URL, same convention as generate_status_sheet.py.
+minting a new URL, same convention as generate_status_sheet.py. has_allomorphs/
+Members/Notes are carried over by (Position_Name, Element) rather than wiped —
+only elements no longer in scope lose their annotation.
 
 Sharing: shared as writer with Adam's email (adamjamesrosstallman@gmail.com) — issue
 #254 Part 2d/2j explicitly names Adam as exercising this flow. synth0001 has no
@@ -95,7 +97,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
@@ -154,12 +156,24 @@ def _build_prescreening_rows(planar_df: pd.DataFrame) -> List[Dict[str, str]]:
     return rows
 
 
-def _rows_to_sheet_values(rows: List[Dict[str, str]]) -> List[List[str]]:
-    """Header + data rows; has_allomorphs/Members/Notes start blank for annotation."""
-    return [_HEADER] + [
-        [r["position_name"], r["element"], r["scope"], "", "", ""]
-        for r in rows
-    ]
+def _rows_to_sheet_values(
+    rows: List[Dict[str, str]],
+    existing: Dict[Tuple[str, str], Dict[str, str]] = None,
+) -> List[List[str]]:
+    """Header + data rows. has_allomorphs/Members/Notes are carried over from
+    `existing` (keyed by (Position_Name, Element)) when a row's key is still
+    present; blank for rows with no prior annotation (new elements) or no
+    `existing` at all (first run).
+    """
+    existing = existing or {}
+    values = [_HEADER]
+    for r in rows:
+        prior = existing.get((r["position_name"], r["element"]), {})
+        values.append([
+            r["position_name"], r["element"], r["scope"],
+            prior.get("has_allomorphs", ""), prior.get("Members", ""), prior.get("Notes", ""),
+        ])
+    return values
 
 
 def _banner_rows() -> List[List[str]]:
@@ -182,21 +196,50 @@ def _banner_rows() -> List[List[str]]:
 # Drive helpers (API calls — not unit tested; see docs/tooling-design.md)
 # ---------------------------------------------------------------------------
 
+def _existing_annotations(ws) -> Dict[Tuple[str, str], Dict[str, str]]:
+    """Read the current tab's has_allomorphs/Members/Notes, keyed by
+    (Position_Name, Element). Returns {} for a brand-new/empty tab.
+
+    Locates the header row by content (matching _HEADER) rather than assuming
+    a fixed offset, so a banner-text change doesn't silently break carry-over.
+    """
+    values = _with_retry(ws.get_all_values)
+    try:
+        header_idx = values.index(_HEADER)
+    except ValueError:
+        return {}
+    annotations: Dict[Tuple[str, str], Dict[str, str]] = {}
+    for row in values[header_idx + 1:]:
+        if len(row) < 2 or not row[0]:
+            continue
+        annotations[(row[0], row[1])] = {
+            "has_allomorphs": row[3] if len(row) > 3 else "",
+            "Members": row[4] if len(row) > 4 else "",
+            "Notes": row[5] if len(row) > 5 else "",
+        }
+    return annotations
+
+
 def _write_prescreening_tab(ss, rows: List[Dict[str, str]]):
     """Write banner + header + data rows, freeze/bold the header, and add the
-    has_allomorphs y/n dropdown. Existing content is cleared first so re-running
-    reflects the current planar structure (matches _reset_worksheet's approach
-    in generate_sheets.py) — annotators re-annotate after a structural change,
-    same as every other sheet-generation path in this project.
+    has_allomorphs y/n dropdown. has_allomorphs/Members/Notes are carried over
+    from whatever the tab already had, keyed by (Position_Name, Element) — a
+    structural regeneration (planar changed) must not silently discard
+    annotation Adam already entered, the same principle every other
+    sheet-generation path in this project follows. Only rows for elements no
+    longer in scope lose their annotation, since there's no new row to carry
+    it to. Structural content (Position_Name/Element/Biuniqueness_Scope) is
+    always rebuilt fresh from the current planar, same as before.
     """
     ws = _with_retry(lambda: ss.sheet1)
     if ws.title != "prescreening":
         _with_retry(lambda: ws.update_title("prescreening"))
+    existing = _existing_annotations(ws)
     ws.clear()
 
     banner = _banner_rows()
     header_row_idx = len(banner)
-    values = banner + _rows_to_sheet_values(rows)
+    values = banner + _rows_to_sheet_values(rows, existing)
     n_cols = len(_HEADER)
     n_data_rows = len(rows)
 

@@ -255,6 +255,32 @@ def test_a_rerun_does_not_leave_rows_from_the_previous_structure_behind(env):
     assert not any("LEFTOVER" in row for row in ws.get_all_values())
 
 
+def test_a_rerun_preserves_existing_annotations(env):
+    """A structural regen must not silently wipe annotation Adam already
+    entered — the bug found reviewing this record for operations.yaml
+    (issue #280's review pass): ws.clear() used to wipe has_allomorphs/
+    Members/Notes unconditionally on every --apply.
+    """
+    doorway, run, _ = env
+    run(["gen", "--lang", LANG, "--apply"])
+    ws = the_sheet(doorway).worksheet("prescreening")
+    values = ws.get_all_values()
+    header_row = next(i for i, row in enumerate(values) if row[0] == "Position_Name")
+    data_row = header_row + 1  # 0-indexed into values; gspread rows are 1-indexed
+    pos_name, element = values[data_row][0], values[data_row][1]
+    col = gen._HEADER.index("has_allomorphs")
+    ws.update_cell(data_row + 1, col + 1, "y")
+    ws.update_cell(data_row + 1, gen._HEADER.index("Notes") + 1, "checked with Adam")
+
+    run(["gen", "--lang", LANG, "--apply"])
+    ws = the_sheet(doorway).worksheet("prescreening")
+    values = ws.get_all_values()
+    header_row = next(i for i, row in enumerate(values) if row[0] == "Position_Name")
+    row = next(r for r in values[header_row + 1:] if (r[0], r[1]) == (pos_name, element))
+    assert row[col] == "y"
+    assert row[gen._HEADER.index("Notes")] == "checked with Adam"
+
+
 # ---------------------------------------------------------------------------
 # Refusals
 # ---------------------------------------------------------------------------

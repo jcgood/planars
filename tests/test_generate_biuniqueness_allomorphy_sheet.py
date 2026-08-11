@@ -91,6 +91,20 @@ def test_rows_to_sheet_values_row_count_matches_input():
     assert len(values) == len(rows) + 1  # + header
 
 
+def test_rows_to_sheet_values_carries_over_existing_annotation_by_key():
+    rows = [
+        {"position_name": "v:leftedge", "element": "and", "scope": "filled"},
+        {"position_name": "v:leftedge", "element": "CONJUNCT", "scope": "open_category"},
+    ]
+    existing = {
+        ("v:leftedge", "and"): {"has_allomorphs": "y", "Members": "", "Notes": "checked"},
+    }
+    values = _rows_to_sheet_values(rows, existing)
+    assert values[1] == ["v:leftedge", "and", "filled", "y", "", "checked"]
+    # No prior entry for CONJUNCT -- still blank, not an error.
+    assert values[2] == ["v:leftedge", "CONJUNCT", "open_category", "", "", ""]
+
+
 # ---------------------------------------------------------------------------
 # _banner_rows
 # ---------------------------------------------------------------------------
