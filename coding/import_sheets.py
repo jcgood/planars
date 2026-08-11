@@ -873,6 +873,14 @@ def main() -> None:
         all_safe_cmds |= s
         all_pending   += p
         all_drift     += d
+        if apply and p:
+            # Write this language's destructive changes immediately rather than
+            # accumulating in all_pending for a single end-of-run write -- a
+            # crash while a later language is still being processed must not
+            # lose an earlier language's already-detected changes (issue #280).
+            # _append_pending_changes reads-then-writes, so calling it once per
+            # language is equivalent to one call at the end when nothing fails.
+            _append_pending_changes(p)
 
         for class_name, sheet_info in lang_data["sheets"].items():
             print(f"\n  {class_name}")
@@ -1079,10 +1087,11 @@ def main() -> None:
     elif manifest_changed:
         print("(manifest.json has pending metadata changes — re-run with --apply to write)")
 
-    # Write destructive changes to pending_changes.json for coordinator review.
+    # Destructive changes were already written to pending_changes.json
+    # incrementally, per language, above (issue #280) -- this is summary/
+    # notification only, not a write.
     if all_pending:
         if apply:
-            _append_pending_changes(all_pending)
             print(f"\n⚠  {len(all_pending)} destructive change(s) written to pending_changes.json")
             print("   Review and apply with: python -m coding apply-pending")
             _notify_pending_changes(all_pending)

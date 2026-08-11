@@ -260,6 +260,13 @@ def main() -> None:
                     print(f"[{lang_id}] Could not append acknowledgment: {e}")
             state.setdefault(lang_id, {})["notes_hash"] = new_hash
             state[lang_id]["last_changed"] = today
+            if apply:
+                # Persist immediately, not once at the end of main() -- a
+                # crash between appending this acknowledgment and the final
+                # save must not leave the old hash on disk, or a retry
+                # re-detects this doc's content as new and re-files/
+                # re-acknowledges it (issue #280).
+                _save_notes_state(state)
 
     # Persist state and manifest if changed.
     if apply:

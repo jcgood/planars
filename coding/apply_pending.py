@@ -282,6 +282,11 @@ def main() -> None:
                 remaining.append(updated)
             else:
                 print("  Resolved.")
+            # Persist after every entry, not once at the end of the loop -- a
+            # crash after this entry's command has already run for real must
+            # not leave pending_changes.json still listing it, or a retry
+            # re-runs it a second time (issue #280).
+            _save_pending(remaining + entries[i:])
             print()
             continue
 
@@ -306,9 +311,10 @@ def main() -> None:
         else:
             print("  Skipped.")
             remaining.append(entry)
+        # Same incremental-save reasoning as above.
+        _save_pending(remaining + entries[i:])
         print()
 
-    _save_pending(remaining)
     applied = len(entries) - len(remaining)
     print(f"Applied {applied} of {len(entries)} change(s). {len(remaining)} still pending.")
 

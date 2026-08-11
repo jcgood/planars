@@ -349,6 +349,11 @@ def _run_generation(apply: bool) -> None:
             drive_config.get(lang_id, {}).get("domains_notebook_file_id"),
         )
         drive_config.setdefault(lang_id, {})["domains_notebook_file_id"] = file_id
+        # Save after every upload, not once at the end -- a crash partway
+        # through the four loops below must not lose an already-successful
+        # upload's new file ID, or a retry creates a duplicate file instead
+        # of updating the existing one (issue #280).
+        _save_drive_config(drive_config)
         print(f"  [{lang_id}] Uploaded {filename} (viewer)")
 
     # Generate and upload validation notebook for each language
@@ -367,6 +372,7 @@ def _run_generation(apply: bool) -> None:
             drive_config.get(lang_id, {}).get("validation_notebook_file_id"),
         )
         drive_config.setdefault(lang_id, {})["validation_notebook_file_id"] = file_id
+        _save_drive_config(drive_config)
         print(f"  [{lang_id}] Uploaded {filename} (viewer)")
 
     # Generate and upload report notebook for each language
@@ -386,6 +392,7 @@ def _run_generation(apply: bool) -> None:
             drive_config.get(lang_id, {}).get("report_notebook_file_id"),
         )
         drive_config.setdefault(lang_id, {})["report_notebook_file_id"] = file_id
+        _save_drive_config(drive_config)
         print(f"  [{lang_id}] Uploaded {filename} (viewer)")
 
     # Generate and upload coordinator notebook

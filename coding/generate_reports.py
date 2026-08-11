@@ -81,7 +81,11 @@ def _run(apply: bool) -> None:
             print(f"ERROR: {e}")
             continue
 
-        pdf_bytes = render_language_report_pdf(data)
+        try:
+            pdf_bytes = render_language_report_pdf(data)
+        except Exception as e:
+            print(f"render ERROR: {e}")
+            continue
         filename = f"report_{lang_id}.pdf"
         # Migrate legacy key report_html_file_id → report_file_id if present
         lang_cfg = drive_config.get(lang_id, {})
@@ -96,10 +100,14 @@ def _run(apply: bool) -> None:
 
         drive_config.setdefault(lang_id, {})["report_file_id"] = file_id
         drive_config[lang_id].pop("report_html_file_id", None)
+        # Save after every language, not once at the end -- a crash on a
+        # later language must not lose an earlier language's already-
+        # successful upload's new file ID, or a retry creates a duplicate
+        # file instead of updating the existing one (issue #280).
+        _save_drive_config(drive_config)
         action = "updated" if existing else "created"
         print(f"{action}. https://drive.google.com/file/d/{file_id}/view")
 
-    _save_drive_config(drive_config)
     print("\nDone. drive_config.json updated.")
 
 

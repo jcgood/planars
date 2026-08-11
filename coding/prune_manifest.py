@@ -297,16 +297,22 @@ def main() -> None:
             print(f"    removed from manifest: {lang_id}/{class_name}")
             any_changes = True
 
+            # Upload the manifest right after this class's local/Drive
+            # archiving is done, not once after the whole loop -- a crash
+            # partway through must not leave Drive's manifest still showing
+            # an already-archived class as present, which would make a retry
+            # reprocess it (issue #280).
+            drive_cfg = _load_drive_config()
+            file_id = drive_cfg.get("_planars_config_file_id")
+            root_id = drive_cfg.get("_root_folder_id")
+            new_id = upload_manifest(doorway, manifest, root_id, file_id)
+            if new_id != file_id:
+                drive_cfg["_planars_config_file_id"] = new_id
+                _save_drive_config(drive_cfg)
+
         print()
 
     if any_changes:
-        drive_cfg = _load_drive_config()
-        file_id = drive_cfg.get("_planars_config_file_id")
-        root_id = drive_cfg.get("_root_folder_id")
-        new_id = upload_manifest(doorway, manifest, root_id, file_id)
-        if new_id != file_id:
-            drive_cfg["_planars_config_file_id"] = new_id
-            _save_drive_config(drive_cfg)
         print("Drive manifest updated.")
     else:
         print("No changes made (all classes skipped).")
