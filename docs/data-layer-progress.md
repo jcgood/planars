@@ -30,10 +30,10 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 4 — drafted, not yet reviewed (started 2026-08-10). 3 — done (started and finished 2026-08-10). 0b/1 — done, 18 of 18 (2026-08-01–2026-08-04).
+**Phase:** 4 — drafted and substantially reviewed interactively with Jeff (started 2026-08-10, review session 2026-08-11); not yet fully done — see "Next action". 3 — done (started and finished 2026-08-10). 0b/1 — done, 18 of 18 (2026-08-01–2026-08-04).
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
-**Last worked:** 2026-08-10
+**Last worked:** 2026-08-11
 
 Phase 3 split `schemas/diagnostic_classes.yaml` into that file (linguistic
 content only) and a new `schemas/diagnostic_classes_status.yaml` (process/
@@ -75,6 +75,9 @@ log for what changed and the bonus discovery (a real, silent duplicate-grant
 bug in `generate_notebooks.py`, not just `setup_root_folder.py`).
 **#279** — filed 2026-08-10, open; asks Adam what construction (if any) fills
 `arao1248`'s still-missing `proform` class (Finding 19/20).
+**#280** — filed 2026-08-11, open; the shared batched-write-at-end-of-loop
+pattern across four commands (Finding 22). Documented in `operations.yaml`;
+not yet fixed in code.
 
 Also fixed, no issue filed: `apply-pending` gave one answer to four different
 questions when it could not check a Sheet. Found by file 4's snapshot, fixed
@@ -112,7 +115,7 @@ the same day — see the decisions log.
 | Phase 0b/1 — file 18: `restructure_sheets.py` | **done** — pre/post diff clean across thirteen scenarios; the last file, deliberately: the archive-then-rebuild command with no rollback behind #248's original incidents. `assert_no_criterion_writes_onto_trailing_columns` caught a real, pre-existing bug (Finding 16, fixed the same day); also surfaced a pre-existing gap, the missing `_check_coded_data_clean()` guard (Finding 17, fixed in a later follow-up commit) |
 | **Phase 0b/1 (the whole doorway migration)** | **done** — all eighteen files that reach Drive now go through it |
 | Phase 3 — schema reorganization | **done** — `diagnostic_classes.yaml` split from `diagnostic_classes_status.yaml`; `Class_Type` catalogued as a resistant field on issue #271, not split (behaviour-neutral phase) |
-| Phase 4 — topology declaration | **drafted, not reviewed** — `data_dependency_schema/operations.yaml` + `operation_record.schema.json`, one record per `coding/__main__.py` command; coverage test in place. Coordinator review of authority assignments and idempotency claims still needed (see "Next action"). |
+| Phase 4 — topology declaration | **drafted and substantially reviewed** — `data_dependency_schema/operations.yaml` + `operation_record.schema.json`, one record per `coding/__main__.py` command, `modes` added for the 4 commands whose behavior genuinely diverges by flag; every `idempotent` claim re-checked against actual code, 4 corrected; 2 new facts added; 2 real code gaps found and fixed on the spot (Findings 23/24); 1 cross-cutting bug pattern found and filed (#280, Finding 22, not yet fixed in code). Still open: CLAUDE.md's narrative prose not yet replaced by a pointer to the registry (see "Next action"). |
 | Phases 5–9 | not started |
 
 ### In flight
@@ -142,10 +145,11 @@ baseline (the split touches no field any analysis module reads); the one
 snapshot that *did* change (`tests/snapshots/coordinator/integrity_check/sheets_arao1248.txt`)
 reflects an intentional file-name wording fix, not a behaviour change.
 
-**Phase 4 ("Topology declaration") is drafted, not yet reviewed.** Jeff's
-instruction was "I draft, you review" — Claude drafts, he checks the two
-things the plan calls out specifically. `data_dependency_schema/operations.yaml`
-(+ `operation_record.schema.json`) now has one record per
+**Phase 4 ("Topology declaration") is drafted and has had a real, substantial
+interactive review pass with Jeff — not yet the final sign-off the plan asks
+for.** Jeff's instruction was "I draft, you review": Claude drafts, he checks
+the two things the plan calls out specifically. `data_dependency_schema/
+operations.yaml` (+ `operation_record.schema.json`) has one record per
 `coding/__main__.py` command (24 total, mechanically checked against
 `_COMMANDS` by `test_every_coding_command_has_an_operation_record`), each
 covering side effects, an `idempotent` claim with a required
@@ -154,19 +158,56 @@ touches and how, what it triggers downstream, and plain-language ordering
 constraints relative to other commands — the CLAUDE.md-narrative knowledge
 (`--regen-construction` bypassing `--apply`; `--split-element` before
 `--regen-construction`; `prune-manifest` for retirement but never rename) is
-now in `ordering_constraints` rather than only in prose. Grounded in
-`coding/CLAUDE.md` and in `facts.yaml`/`preconditions.yaml`'s own existing
-cascade/`drift_risk`/`required_by` text rather than fresh guesses, per
-`operations.yaml`'s own header note on what's synthesis vs. already
-independently documented.
+now in `ordering_constraints` rather than only in prose.
 
-**Awaiting Jeff's review of two things before this phase is done**, per the
-plan's own emphasis: every `facts_touched`/`preconditions` authority
-assignment, and every `idempotent` claim (a false `true` is load-bearing —
-Phases 7 and 8 build recovery logic on top of it). `CLAUDE.md`'s narrative
-prose remains authoritative until that review; the plan's "done when" also
-calls for replacing that prose with a pointer to the generated registry, not
-attempted yet for the same reason. Not otherwise blocked.
+**What the 2026-08-11 review session actually did, working through it
+question by question rather than a single "approved" pass:**
+- **Mode scoping.** Jeff picked a `modes` field (self-contained overrides,
+  not merged with the parent record) over flattening or splitting into
+  separate records, after being talked out of Claude's first ("keep it
+  flat") recommendation — that recommendation would have made
+  `coded_data_clean_tree`-only-applies-to-`--regen-dependents` unenforceable
+  by Phase 5, since a caveat in prose isn't structured data. Applied to the
+  4 commands whose behavior genuinely diverges by flag: `generate-sheets`,
+  `import-planar`, `sync-diagnostics-yaml`, `sync-params`.
+- **Idempotency, redefined and re-checked.** Adopted retry-safety ("safe to
+  re-run after a failure, given nothing else changed") as the operational
+  definition, replacing an inconsistently-applied notion of pure output
+  determinism. Re-passed all four flagged records against actual code
+  (not just the descriptions): `sync-params` flipped `false` → `true`
+  (its Sheet edits are diff-driven from the tab's real header, so a retry
+  is safe); `import-sheets`/`prune-manifest`/`apply-pending` stayed `false`
+  but with concrete, code-traced mechanisms replacing the earlier hedged
+  notes. This tracing is what surfaced Findings 22–24 below.
+- **A factual correction.** `import_sheets.py` does **not** auto-commit
+  `coded_data/` — only `import_planar.py` and `restructure_sheets.py` call
+  `drive._autocommit_data()`. An earlier version of the `operations.yaml`
+  record claimed otherwise; corrected once traced.
+- **Two new facts added to `facts.yaml`**, both grounded in real evidence
+  (an existing Finding or an existing parallel fact), not speculative:
+  `construction_criterion_columns` (found reviewing `sync-params` — its base
+  behavior didn't match any registered fact, since `manifest_dropdown_values`
+  is about criterion *values* not column *existence*) and
+  `collaborator_notes_surfaced_state` (parallel in shape to the
+  already-registered `sheet_change_notification_state`).
+- **Findings 22–24** (batched-write pattern → #280, still open;
+  `prune-manifest` and `sync-diagnostics-yaml` both missing
+  `coded_data_clean_tree` — both fixed on the spot, see their own entries).
+
+**Still open before this phase is fully done:**
+1. **Not every one of the 24 records got an explicit line-by-line
+   confirmation from Jeff** — the review was targeted at what Claude flagged
+   as inconsistent, sparse, or uncertain, which is where the real problems
+   turned out to be, but it was not an exhaustive read-through of every
+   field on every record. Worth a final pass before treating the registry as
+   fully signed off.
+2. **`CLAUDE.md`'s narrative prose has not been replaced by a pointer** to
+   the generated registry — the plan's "done when" asks for this, and it
+   hasn't been attempted, on the reasoning that it shouldn't happen before
+   (1) above.
+3. **Issue #280 is documented, not fixed.** Fixing it (incremental writes in
+   4 commands instead of one batched write at the end of a loop) is real
+   code work, not itself part of Phase 4's documentation goal.
 
 Nothing remains recorded-but-unfixed from the migration itself. Findings 13
 (`import-sheets` dry run crashing on a bad manifest spreadsheet ID), 15
@@ -346,10 +387,12 @@ here is outstanding; the entries are kept because the sequence is the point.
 every finding has an issue number or a decisions-log entry.** Findings 4 and 5
 lived here alone for a day each, and a section that gets deleted is not tracking.
 
-**18–21 — found 2026-08-10, 18 and 19 while splitting `diagnostic_classes.yaml`
-for Phase 3 and 20–21 while acting on what 19 surfaced; all pre-existing, not
-introduced by the split. All four fixed the same day, each in its own
-commit.**
+**18–24 — found 2026-08-10/11. 18 and 19 while splitting
+`diagnostic_classes.yaml` for Phase 3; 20–21 while acting on what 19
+surfaced; 22–24 while drafting and interactively reviewing the Phase 4
+operation registry with Jeff (`data_dependency_schema/operations.yaml`). All
+pre-existing, not introduced by any of this work. 22 is still open (filed as
+#280); the rest were each fixed the same day, in their own commit.**
 
 **18 — fixed, `40ba95a`.** `nonpermutability` carried `keystone_active_default:
 true` twice in `schemas/diagnostic_classes.yaml` (now
@@ -443,6 +486,50 @@ execution path shared the two under one conditional. Fixed by running the
 existing-class scan unconditionally over every already-existing class, before
 deciding whether there's also brand-new-class work to do. See
 `coding/CLAUDE.md`'s `generate_sheets.py` entry for the mechanics.
+
+**22 — open, filed as #280.** Reviewing each command's `idempotent` claim for
+`operations.yaml` surfaced a shared bug pattern across four commands:
+`import_sheets.py`, `apply_pending.py`, `prune_manifest.py`, and
+`check_notes.py` each accumulate "what's been done" in memory across a loop
+over multiple items, then write the persistent record of it (respectively:
+`pending_changes.json`, `pending_changes.json` again, the Drive manifest,
+`notes_state.json`) exactly once, *after* the loop finishes — while the real,
+external side effects inside that loop (writing a TSV, running a pending
+entry's command, archiving a TSV and moving a Drive sheet, filing/commenting
+on a GitHub issue and appending a doc acknowledgment) happen incrementally,
+per item. A crash between "the real side effect already happened" and "the
+loop finishes and the record gets saved" means a retry either silently loses
+that item's record (`import-sheets`) or repeats the real side effect a
+second time (`apply-pending`'s command re-run; `prune-manifest`'s Drive-sheet
+re-move, probably harmless but unverified; `check-notes`' duplicate issue
+comment and doc acknowledgment). Each command's own `idempotency_note` in
+`operations.yaml` records the exact mechanism. Fix shape is the same for all
+four: persist the record incrementally, once per item, not once at the end.
+
+**23 — fixed.** `prune_manifest.py --apply` writes to `coded_data/` (archives
+local TSVs out of it) but never called `drive._check_coded_data_clean()`
+first — the same gap Finding 17 named for `restructure_sheets.py`, found the
+same way (filling in `operations.yaml`'s `preconditions` field) but *not*
+deferred the way Finding 17 was: that deferral was specific to the doorway
+migration's call-site-substitution-only commit discipline, which doesn't
+apply here, so this one was fixed on sight instead. Registered in
+`preconditions.yaml`'s `coded_data_clean_tree` `required_by`; two new tests
+(`test_apply_checks_coded_data_is_clean_before_archiving` and its dry-run
+counterpart) confirm the guard fires.
+
+**24 — fixed.** `sync_diagnostics_yaml.py --apply` reads
+`coded_data/*.yaml` as ground truth for all three of its directions (default,
+`--to-sheet`, `--from-tsv`) and writes `coded_data/` TSV/YAML for two of
+them, with the same gap as 23 — found the same day, immediately after. Risk
+shape differs from 23: this isn't about acting on a stale *target* file, it's
+about propagating a stale/reverted *source* (the YAML) forward — `--to-sheet`
+would push it live, the default direction would regenerate the TSV from it.
+Fixed the same way, `extensions=(".yaml", ".tsv")` since this command reads
+and writes both file types (every other guarded command is TSV-only).
+Registered in `preconditions.yaml` and all three of the command's
+`operations.yaml` records (base + two mode overrides); two new tests added,
+scoped to `--to-sheet` only since this test file's fixture reads the real
+`coded_data/` directly rather than a redirected copy.
 
 **1 and 2 — issue #272, fixed and closed 2026-08-02** (`b399e32`,
 "refresh-dropdowns: read the sheet, not the manifest, for criterion columns").

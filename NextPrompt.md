@@ -15,61 +15,46 @@ this project is trying to remove.
 
 ## Now
 
-**Data layer migration (#271), Phase 0b/1 is complete** (finished 2026-08-04,
-`restructure_sheets.py` — file 18 of 18 — was last). Every command in
-`coding/` that reaches Google now goes through the doorway;
-`tests/test_doorway_coverage.py` confirms this with an empty `_REMAINING`.
-There is no next file to migrate.
+**Phase 0b/1 (the doorway migration) and Phase 3 (schema reorganization) are
+both complete, nothing outstanding from either.** Phase 0b/1 finished
+2026-08-04 (18 of 18 files); Phase 3 finished 2026-08-10. Every bug either
+turned up (Findings 13, 15–19, 21) is fixed; #276 is closed. Full detail in
+`docs/data-layer-progress.md`'s Current state and Findings sections — no
+need to duplicate it here.
 
-The migration also left three specific bugs behind (Findings 13, 15, 17) and
-one blocked cleanup issue (#276, collapsing the duplicated Drive helpers).
-All four are now fixed/closed too (2026-08-05) — see the decisions log and
-Findings section in `docs/data-layer-progress.md` for what changed. Nothing
-outstanding from Phase 0b/1 remains.
+**arao1248's diagnostics gap (surfaced by Finding 19) is two-thirds closed.**
+`nonpermutability` and `free_occurrence` are onboarded (2026-08-10, no
+linguistic judgment needed — both universal with fixed criteria). `proform`
+is still open, waiting on Adam via issue #279 (construction-specific; nothing
+in the repo says what fills it for Araona). Not blocking anything else — a
+missing required class no longer blocks `sync-diagnostics-yaml --apply`'s
+local-TSV direction from picking up whichever classes *are* ready (Finding
+20), just `--to-sheet`/`import-sheets` for the language as a whole.
 
-**Phase 3 ("Schema reorganization") is also complete** (2026-08-10):
-`schemas/diagnostic_classes.yaml` now holds linguistic content only; a new
-`schemas/diagnostic_classes_status.yaml` holds process/tracking state,
-joined by class `name` and merged transparently by
-`coding/schemas.py`'s `load_diagnostic_classes()`. `Class_Type`
-(`schemas/planar.yaml`) is catalogued as the resistant field the plan
-anticipated, not split. See `docs/data-layer-progress.md`'s 2026-08-10
-Current state and decisions-log entries for what changed, and issue #271's
-2026-08-10 comment for the coordinator-facing summary.
+**Phase 4 ("Topology declaration") is drafted and has had a real,
+substantial interactive review pass with Jeff (2026-08-11) — not yet fully
+signed off.** `data_dependency_schema/operations.yaml` (+
+`operation_record.schema.json`) has one record per `coding/__main__.py`
+command, with a `modes` field for the 4 commands whose behavior genuinely
+diverges by flag. The review re-checked every flagged idempotency claim
+against actual code (4 corrected, one factual error fixed along the way),
+added 2 new facts to `facts.yaml`, and found + fixed 2 real
+`coded_data_clean_tree` guard gaps on the spot (`prune-manifest`,
+`sync-diagnostics-yaml` — Findings 23/24). It also found a cross-cutting
+reliability bug across 4 commands (Finding 22, filed as **issue #280**,
+documented but not yet fixed in code).
 
-**Findings 18 and 19 (found while verifying the split) are also fixed**,
-same day, in their own commits after Phase 3's. 19 was the consequential
-one: a required-class check had never fired since it was written (compared
-`collection_required` against the Python bool `True`, but the field is
-always a string), and fixing it surfaced that **`arao1248` was genuinely
-missing three required classes** — `nonpermutability`, `free_occurrence`,
-`proform`. Two of those three are now onboarded (2026-08-10):
-`nonpermutability` and `free_occurrence` are both universal classes with
-fixed, language-independent criteria, so no linguistic judgment call was
-needed. **`proform` is still outstanding** — it's construction-specific,
-and nothing in the repo says what construction (if any) fills it for
-Araona; that's now issue #279, addressed to Adam. `integrity-check` keeps
-reporting `proform` missing until it's answered, and `import-sheets` /
-`sync-diagnostics-yaml --to-sheet` still skip arao1248's diagnostics until
-then — but a missing required class no longer blocks the local TSV
-(`sync-diagnostics-yaml --apply` with no `--to-sheet`) from picking up
-whichever classes *are* ready, which is what let the first two go in
-without waiting on #279. See `docs/data-layer-progress.md`'s Finding 19
-entry for the full account, and its Findings 20/21 for the two bugs this
-onboarding pass found and fixed along the way.
-
-**Phase 4 of `docs/data-layer-implementation-plan.md`** ("Topology
-declaration") **is drafted, not yet reviewed** (2026-08-10). Jeff said "I
-draft, you review" — `data_dependency_schema/operations.yaml` now has one
-record per `coding/__main__.py` command (side effects, an idempotency claim
-+ reasoning, preconditions/facts touched, downstream triggers, ordering
-constraints), mechanically checked for coverage against every registered
-command. **Still needed before this phase counts as done:** Jeff's review of
-every authority assignment (`facts_touched`/`preconditions`) and every
-`idempotent` claim — the plan calls these out specifically, since Phases 7/8
-build recovery logic on top of the idempotency claims. Read
-`docs/data-layer-progress.md` § "Next action" for the current state before
-doing anything else on this effort.
+**Three concrete things left before Phase 4 counts as done** — read
+`docs/data-layer-progress.md` § "Next action" for the full account before
+touching any of them:
+1. A final line-by-line pass confirming every one of the 24 records, not
+   just the ones Claude flagged as uncertain (which is where the review so
+   far concentrated).
+2. Replace `CLAUDE.md`'s narrative topology prose with a pointer to the
+   generated registry (the plan's own "done when" condition) — deliberately
+   not attempted before (1).
+3. A decision on when to fix issue #280 (real code work in 4 commands, not
+   itself part of Phase 4's documentation goal).
 
 ---
 
