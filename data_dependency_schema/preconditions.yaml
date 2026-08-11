@@ -14,6 +14,7 @@
     - "sync_params.py (sync-params --apply)"
     - "generate_sheets.py (--regen-dependents)"
     - "restructure_sheets.py (restructure-sheets --apply)"
+    - "prune_manifest.py (prune-manifest --apply)"
   enforced_by: >-
     drive._check_coded_data_clean() -- called at the top of each apply path
     above; raises SystemExit(1) if coded_data/ has uncommitted changes
@@ -27,7 +28,12 @@
   established: >-
     2026-07-29, after the #248 stray-row incident. Previously only
     import_sheets.py had this guard; centralized into drive.py and wired
-    into the other three commands the same day.
+    into the other three commands the same day. prune_manifest.py added
+    2026-08-11 -- found missing (it archives local TSVs out of coded_data/
+    without ever having checked this) while reviewing preconditions for the
+    Phase 4 (#271) operation registry; fixed the same day it was found,
+    same reasoning as every other small fix this project makes on sight
+    rather than deferring.
 
 - id: coded_data_git_identity_configured
   description: >-

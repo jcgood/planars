@@ -43,6 +43,7 @@ MANIFEST_ARCHIVES = ROOT / "manifest_archives"
 from .drive import (
     load_manifest,
     upload_manifest,
+    _check_coded_data_clean,
     _load_drive_config,
     _save_drive_config,
     _with_retry,
@@ -212,6 +213,12 @@ def main() -> None:
     """Entry point for `python -m coding prune-manifest`."""
     apply = "--apply" in sys.argv
     skip_prompts = "--all" in sys.argv
+
+    if apply:
+        # coded_data/ (which this command archives TSVs out of) can be left
+        # stale/partially-reverted by a prior step's failed auto-commit --
+        # same guard as sync_params.py/update_sheets.py/import_sheets.py.
+        _check_coded_data_clean(extensions=(".tsv",))
 
     _SHEET_META.clear()
     doorway = get_doorway()
