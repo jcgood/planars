@@ -147,7 +147,8 @@
     same content and re-asserts the same single grant.
   apply_gate: "--apply"
   preconditions: []
-  facts_touched: []
+  facts_touched:
+    - {fact: diagnostics_scope, role: reads}
   cascades_triggered: []
   ordering_constraints:
     - >-
@@ -173,7 +174,8 @@
     create, not on every run.
   apply_gate: "--apply"
   preconditions: []
-  facts_touched: []
+  facts_touched:
+    - {fact: diagnostics_scope, role: reads}
   cascades_triggered: []
   ordering_constraints: []
   modes: []
