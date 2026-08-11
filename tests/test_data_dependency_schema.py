@@ -50,6 +50,7 @@ def test_facts_have_expected_ids():
         "qualification_rule_semantics",
         "dependent_construction_element_scope",
         "sheet_change_notification_state",
+        "collaborator_notes_surfaced_state",
         "status_sheet_completeness",
         "manifest_class_registration",
         "manifest_dropdown_values",

@@ -727,7 +727,8 @@
     duplicate acknowledgment line to the doc.
   apply_gate: "--apply"
   preconditions: [check_notes_documents_scope_authorized]
-  facts_touched: []
+  facts_touched:
+    - {fact: collaborator_notes_surfaced_state, role: writes}
   cascades_triggered: []
   ordering_constraints:
     - "Same batched-write-at-end-of-loop shape as issue #280 (import-sheets, apply-pending, prune-manifest)."

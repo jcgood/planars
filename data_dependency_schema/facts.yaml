@@ -206,6 +206,39 @@
       ensure_notification_issue could create a duplicate or post nowhere.
     caught_by: "nothing yet -- not checked by integrity-check today."
 
+- id: collaborator_notes_surfaced_state
+  description: >-
+    whether a language's collaborator notes doc content has already been
+    surfaced (filed or commented on an open GitHub issue) for its annotator
+  locations:
+    - {entity: filename_convention, detail: "coded_data/notes_state.json's per-language notes_hash/last_changed/last_checked fields -- tracks what content has already been seen, per language"}
+    - {entity: github_issue, detail: "the open 'Collaborator notes -- {annotator} ({date})' issue, labeled collaborator-notes -- looked up fresh each run by title substring match on the annotator's name (_get_open_notes_issue), not a stored ID"}
+  authoritative: github_issue
+  cascade:
+    direction: automatic
+    mechanism: >-
+      check-notes --apply hashes each language's notes doc content
+      (acknowledgment lines stripped) and compares against notes_state.json's
+      stored hash; on a change, it finds-or-creates an open collaborator-notes
+      issue for that language's annotator (by title search, not a stored ID)
+      and comments or creates accordingly, appends an acknowledgment to the
+      doc, then updates notes_state.json's hash for that language.
+  drift_risk:
+    possible: true
+    note: >-
+      Two independent risks, both found 2026-08-11 reviewing check-notes for
+      the Phase 4 (#271) operation registry. First, issue #280's shape:
+      notes_state.json is written once at the end of the whole run, not per
+      language, so a crash between filing/commenting on the issue and that
+      final write causes a retry to re-detect the same content as new and
+      re-comment/re-acknowledge. Second, independent of #280: the issue
+      lookup itself (_get_open_notes_issue) matches by substring on the
+      annotator's name in the issue title, not a stored ID -- a
+      manually-renamed or manually-closed issue silently stops being found,
+      and the next run files a new one rather than continuing the existing
+      thread, with no error or warning either way.
+    caught_by: "nothing yet -- not checked by integrity-check today."
+
 - id: status_sheet_completeness
   description: a language's per-construction annotation completeness percentage, as shown on its locked status spreadsheet
   locations:
