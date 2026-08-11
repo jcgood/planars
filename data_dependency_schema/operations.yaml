@@ -187,14 +187,23 @@
   side_effects:
     - "inserts/deletes/renames criterion columns on live annotation tabs"
     - "updates sheets_manifest.json's per-construction param_names and param_values"
-  idempotent: false
+  idempotent: true
   idempotency_note: >-
-    Each run is driven by a real diff between the tab's own header and the
-    current diagnostics YAML (never the manifest), so a second run with
-    nothing changed makes no further sheet edits -- but param_values is only
-    ever updated for the criteria a given run actually touched (Finding 14's
-    fix), not blindly overwritten. Treat as idempotent for "nothing changed"
-    but not as safe against a concurrent edit to the same tab.
+    Retry-safe: every sheet edit is driven by a real diff between the tab's
+    own actual header and the current diagnostics YAML (never the manifest),
+    so a crash mid-run leaves already-updated tabs correctly matching the
+    YAML, and a retry finds nothing left to do for them. The manifest
+    upload (upload_manifest) is deferred to the end of the whole run like
+    import-sheets' pending_changes.json and prune-manifest's manifest write,
+    but unlike those two this is not a data-loss or reprocessing risk: the
+    same code path that checks "does the sheet match the YAML" separately
+    checks "does the manifest's param_names match the YAML" (line ~679,
+    "Sync param_names in manifest if needed"), so the next successful run
+    catches the manifest up regardless of what a previous crash left
+    unfinished. param_values is only ever updated for the criteria a given
+    run actually touched (Finding 14's fix), not blindly overwritten. Not
+    safe against a concurrent edit to the same tab by another actor while
+    this command is running -- a different, non-retry hazard.
   apply_gate: "--apply"
   preconditions: [coded_data_clean_tree]
   facts_touched:
@@ -350,18 +359,29 @@
     downstream commands; writes destructive changes to pending_changes.json
     instead of applying them directly.
   side_effects:
-    - "overwrites coded_data/{lang}/{class}/{construction}.tsv from the live sheet"
+    - "overwrites coded_data/{lang}/{class}/{construction}.tsv from the live sheet, incrementally per tab"
     - "writes pending_changes.json for ready-for-review tabs' destructive changes"
     - "paints pink highlighting on invalid cells (all tabs, any status)"
-    - "auto-commits coded_data/ changes"
+    - >-
+      does NOT auto-commit coded_data/ -- prints the git add/commit/push
+      commands for the coordinator to run by hand (only import_planar.py and
+      restructure_sheets.py call drive._autocommit_data(); import_sheets.py
+      does not, corrected 2026-08-11 -- an earlier version of this record
+      claimed otherwise)
   idempotent: false
   idempotency_note: >-
     Re-running with nothing changed on the live sheets since the last run
-    produces no new TSV content and no new pending changes -- but it is not
-    idempotent across time in the ordinary sense, since its entire job is to
-    pull in whatever changed. --ignore-status changes what counts as
-    "ready-for-review" between runs, so the same live state can produce
-    different output depending on the flag.
+    produces no new TSV content and no new pending changes, which is safe.
+    But pending_changes.json is only written once
+    (_append_pending_changes(all_pending) at the end of main(), after every
+    tab has been processed), while each tab's TSV is written incrementally
+    as it's processed. If the run crashes after a tab's TSV write but before
+    that final write, that tab's destructive-change record is silently lost,
+    not just delayed: a retry re-downloads the same (now-unchanged) tab,
+    finds its local TSV already matches, and never re-detects the change
+    that would have gone to pending_changes.json. --ignore-status also
+    changes what counts as "ready-for-review" between runs, so the same live
+    state can produce different output depending on the flag.
   apply_gate: "--apply"
   preconditions: [coded_data_clean_tree]
   facts_touched:
@@ -610,10 +630,19 @@
     - "applies coordinator-approved destructive changes to coded_data/ and/or the manifest; clears entries from pending_changes.json"
   idempotent: false
   idempotency_note: >-
-    Each run consumes and clears the entries it applies -- running it again
-    with nothing left in pending_changes.json is a no-op, but that's an
-    empty-input case, not idempotency in the sense of "safe to repeat the
-    same apply."
+    _save_pending(remaining) is called exactly once, after the for loop over
+    every entry finishes -- not per entry. An entry is only dropped from
+    `remaining` (and so from the next _save_pending write) after its
+    underlying command has already run and returned rc == 0. If the process
+    crashes after entry 3 of 10 succeeds but before the loop finishes, entry
+    3's command already ran for real, but pending_changes.json still lists
+    it: a retry re-runs entry 3's command a second time. Whether that's safe
+    depends entirely on what the entry's command is (e.g. a
+    generate-sheets --regen-construction entry is itself close to retry-safe
+    per that record; other entry types were not individually checked here).
+    This is the clearest of the three batched-write findings from this
+    review pass (2026-08-11) -- the double-run risk is direct, not
+    conditional on Drive API behavior the way prune-manifest's is.
   apply_gate: "interactive (per-entry approval, not a single --apply flag)"
   preconditions: []
   facts_touched: []
@@ -634,9 +663,23 @@
     - "removes the class's entry from sheets_manifest.json"
   idempotent: false
   idempotency_note: >-
-    Archives and removes on each run -- a class already pruned has no
-    manifest entry left, so a second run against the same class is a no-op
-    by absence of target, not by design idempotency.
+    Which classes are stale (_find_stale) is recomputed fresh from the
+    current manifest at the start of every run, so a class already fully
+    pruned (manifest entry gone) correctly won't be reprocessed. But the
+    Drive manifest write (upload_manifest) happens once, after the entire
+    loop over every stale class finishes -- local TSVs are archived and the
+    Drive sheet is moved to _archived/ per-class inside that loop, all
+    before the manifest ever gets uploaded. A crash after class A's files
+    are archived and its sheet moved, but before the loop finishes, leaves
+    the Drive-side manifest still showing class A as present: a retry's
+    _find_stale sees A as stale again and reprocesses it -- _tsv_paths finds
+    nothing (already archived, handled gracefully) and _archive_drive_sheet
+    re-attempts moving a spreadsheet already in _archived/, which is likely
+    a harmless no-op at the Drive API level (re-parenting to an unchanged
+    folder) but was not verified against a real repeat call while writing
+    this record. Same batched-write-at-the-end shape as import-sheets'
+    pending_changes.json and apply-pending's pending file, found in the same
+    review pass (2026-08-11).
   apply_gate: "--apply"
   preconditions: []
   facts_touched:

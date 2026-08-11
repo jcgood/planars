@@ -48,7 +48,10 @@
           "minItems": 1,
           "items": { "type": "string", "minLength": 1 }
         },
-        "idempotent": { "type": "boolean" },
+        "idempotent": {
+          "type": "boolean",
+          "description": "Same retry-safety meaning as the parent record's idempotent field -- see that field's description."
+        },
         "idempotency_note": { "type": "string", "minLength": 1 },
         "apply_gate": { "type": ["string", "null"] },
         "preconditions": {
@@ -103,7 +106,7 @@
         },
         "idempotent": {
           "type": "boolean",
-          "description": "Whether running this command twice in a row, with nothing else changing in between, produces the same end state as running it once. This is a load-bearing claim: Phases 7 and 8 build recovery logic on top of it, so a wrong 'true' produces recovery that corrupts rather than repairs. Reviewed explicitly, not inferred from the description."
+          "description": "Retry-safety, not philosophical purity: given the same external state (nothing else changed since the last run), is running this command a second time equivalent to running it once -- in particular, is it safe to re-run after a failure or an uncertain-completion? Most planars commands can never be 'pure' idempotent in the sense of always producing the same output regardless of when they run, since their whole job is to reflect live Drive/Sheet state that changes constantly -- that is not what this field asks. This is a load-bearing claim: Phases 7 and 8 build recovery logic on top of it, so a wrong 'true' produces recovery that corrupts rather than repairs. Reviewed explicitly, not inferred from the description; where retry-safety genuinely depends on unverified downstream behavior (e.g. a third-party API's tolerance for a repeat call), say so in idempotency_note and default to false rather than assuming true."
         },
         "idempotency_note": {
           "type": "string",
