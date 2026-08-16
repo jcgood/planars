@@ -771,7 +771,7 @@
   side_effects:
     - "creates or comments on GitHub issues summarizing new notes content"
     - "appends an acknowledgment to the collaborator's notes doc"
-    - "writes coded_data/notes_state.json (content-hash change-detection state)"
+    - "writes coded_data/notes_state.json (content-hash change-detection state, and, since 2026-08-16, per-annotator issue-ID tracking)"
   idempotent: true
   idempotency_note: >-
     Fixed 2026-08-11 (issue #280): _save_notes_state(state) now runs
@@ -784,20 +784,31 @@
     appended but before the final _save_notes_state call left
     notes_state.json holding the OLD hash, so a retry re-detected the same
     content as new and re-filed/re-acknowledged it. Now each language's hash
-    is durable the moment its acknowledgment is written. A separate,
-    still-open risk is unaffected by this fix: _get_open_notes_issue matches
-    an existing issue by title substring, not a stored ID, so a
-    manually-renamed or -closed issue silently stops being found on ANY
-    run (not just after a crash) and the next run opens a new thread rather
-    than continuing the old one -- see
-    collaborator_notes_surfaced_state's drift_risk in facts.yaml.
+    is durable the moment its acknowledgment is written, and the same
+    incremental save covers the issue-ID write below.
+
+    A second, independent risk (unaffected by the #280 fix, since it wasn't
+    about crash timing) is now also fixed: _get_open_notes_issue used to
+    match an existing issue by title substring only, so a manually-renamed
+    issue silently stopped being found even while still open, and the next
+    run opened a duplicate thread. Fixed 2026-08-16: the issue's number is
+    now stored in notes_state.json's _annotator_issues[annotator] once
+    found or created, and preferred over the title search (which remains
+    only as a one-time fallback for an issue that predates this tracking,
+    backfilling the ID once found). A CLOSED issue is deliberately not
+    reused even when its ID is known -- closing is how a coordinator marks
+    a batch of notes triaged, so new content after that starts a fresh
+    issue on purpose, not a bug. See collaborator_notes_surfaced_state's
+    drift_risk in facts.yaml for the full account, and
+    tests/test_check_notes_snapshot.py's Finding-27-adjacent tests for the
+    behavior pinned.
   apply_gate: "--apply"
   preconditions: [check_notes_documents_scope_authorized]
   facts_touched:
     - {fact: collaborator_notes_surfaced_state, role: writes}
   cascades_triggered: []
   ordering_constraints:
-    - "Same batched-write-at-end-of-loop shape as issue #280 (import-sheets, apply-pending, prune-manifest)."
+    - "Same batched-write-at-end-of-loop shape as issue #280 (import-sheets, apply-pending, prune-manifest); fixed the same way."
   modes: []
 
 - id: refresh_dropdowns

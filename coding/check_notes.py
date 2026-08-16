@@ -43,8 +43,52 @@ def _hash_text(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()[:12]
 
 
-def _get_open_notes_issue(annotator: str) -> Optional[int]:
-    """Return the issue number of the first open collaborator-notes issue for this annotator."""
+def _issue_is_open(issue_number: int) -> bool:
+    """True only if the issue's state could be confirmed OPEN.
+
+    False covers both "confirmed closed" and "couldn't tell" (gh failure,
+    unparseable output, issue deleted) -- in every one of those cases the
+    caller should stop trusting the stored ID and fall back, not raise.
+    """
+    result = subprocess.run(
+        ["gh", "issue", "view", str(issue_number), "--json", "state"],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        return False
+    try:
+        return json.loads(result.stdout).get("state") == "OPEN"
+    except (json.JSONDecodeError, AttributeError):
+        return False
+
+
+def _get_open_notes_issue(annotator: str, state: Dict) -> Optional[int]:
+    """Return the open collaborator-notes issue number for this annotator, if any.
+
+    Prefers the ID stored in state["_annotator_issues"][annotator] (set once
+    an issue is found or created) over a fresh title-substring search -- a
+    stored ID survives the issue being renamed, which a substring match does
+    not (this was issue-lookup's half of collaborator_notes_surfaced_state's
+    drift_risk in facts.yaml: a manually-renamed issue silently stopped being
+    found, and the next run opened a new thread instead of continuing the
+    old one). Falls back to the substring search only when no ID is stored
+    yet -- covers an issue filed before this tracking existed, or state that
+    fell out of sync -- and backfills the ID once found, so the fallback is
+    only ever needed once per annotator.
+
+    A CLOSED issue is deliberately NOT reused: closing is how a coordinator
+    marks a batch of notes as triaged (see CLAUDE.md's collaborator-notes
+    label), so new content afterward should start a fresh issue, not reopen
+    an already-handled one. The stored ID is dropped in that case so the
+    caller creates a new issue and this function stores its ID instead.
+    """
+    annotator_issues = state.setdefault("_annotator_issues", {})
+    stored = annotator_issues.get(annotator)
+    if stored is not None:
+        if _issue_is_open(stored):
+            return stored
+        annotator_issues.pop(annotator, None)
+
     result = subprocess.run(
         ["gh", "issue", "list", "--label", "collaborator-notes",
          "--state", "open", "--json", "number,title"],
@@ -55,13 +99,14 @@ def _get_open_notes_issue(annotator: str) -> Optional[int]:
     issues = json.loads(result.stdout or "[]")
     for issue in issues:
         if annotator in issue.get("title", ""):
+            annotator_issues[annotator] = issue["number"]
             return issue["number"]
     return None
 
 
-def _file_or_update_issue(annotator: str, body_path: str) -> None:
+def _file_or_update_issue(annotator: str, body_path: str, state: Dict) -> None:
     today = date.today().isoformat()
-    open_issue = _get_open_notes_issue(annotator)
+    open_issue = _get_open_notes_issue(annotator, state)
     if open_issue:
         subprocess.run(
             ["gh", "issue", "comment", str(open_issue), "--body-file", body_path],
@@ -77,6 +122,8 @@ def _file_or_update_issue(annotator: str, body_path: str) -> None:
             capture_output=True, text=True, check=True,
         )
         url = result.stdout.strip()
+        issue_number = int(url.rstrip("/").rsplit("/", 1)[-1])
+        state.setdefault("_annotator_issues", {})[annotator] = issue_number
         print(f"  → Created issue: {url}")
 
 
@@ -241,9 +288,13 @@ def main() -> None:
                 f.write(body)
                 body_path = f.name
             try:
-                _file_or_update_issue(annotator, body_path)
+                _file_or_update_issue(annotator, body_path, state)
             finally:
                 Path(body_path).unlink(missing_ok=True)
+            # Persist the issue-ID tracking right away, same incremental-save
+            # reasoning as the #280 fix below -- don't lose a just-created
+            # issue's ID to a later crash in this loop or the next one.
+            _save_notes_state(state)
         else:
             print("  [dry run] Would file/update issue with body:")
             print("  " + "\n  ".join(body.splitlines()[:10]) + "\n  ...")

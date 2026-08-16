@@ -221,8 +221,8 @@
     whether a language's collaborator notes doc content has already been
     surfaced (filed or commented on an open GitHub issue) for its annotator
   locations:
-    - {entity: filename_convention, detail: "coded_data/notes_state.json's per-language notes_hash/last_changed/last_checked fields -- tracks what content has already been seen, per language"}
-    - {entity: github_issue, detail: "the open 'Collaborator notes -- {annotator} ({date})' issue, labeled collaborator-notes -- looked up fresh each run by title substring match on the annotator's name (_get_open_notes_issue), not a stored ID"}
+    - {entity: filename_convention, detail: "coded_data/notes_state.json's per-language notes_hash/last_changed/last_checked fields -- tracks what content has already been seen, per language; also a top-level _annotator_issues[annotator] -> issue_number map, added 2026-08-16"}
+    - {entity: github_issue, detail: "the open 'Collaborator notes -- {annotator} ({date})' issue, labeled collaborator-notes -- looked up by the stored _annotator_issues ID first (added 2026-08-16), falling back to a title substring match on the annotator's name (_get_open_notes_issue) only when no ID is stored yet"}
   authoritative: github_issue
   cascade:
     direction: automatic
@@ -230,24 +230,32 @@
       check-notes --apply hashes each language's notes doc content
       (acknowledgment lines stripped) and compares against notes_state.json's
       stored hash; on a change, it finds-or-creates an open collaborator-notes
-      issue for that language's annotator (by title search, not a stored ID)
-      and comments or creates accordingly, appends an acknowledgment to the
-      doc, then updates notes_state.json's hash for that language.
+      issue for that language's annotator -- preferring the stored
+      _annotator_issues ID, title search only as a one-time fallback that
+      backfills the ID -- and comments or creates accordingly, appends an
+      acknowledgment to the doc, then updates notes_state.json's hash for
+      that language.
   drift_risk:
     possible: true
     note: >-
       Two independent risks, both found 2026-08-11 reviewing check-notes for
-      the Phase 4 (#271) operation registry. First, issue #280's shape:
-      notes_state.json is written once at the end of the whole run, not per
-      language, so a crash between filing/commenting on the issue and that
-      final write causes a retry to re-detect the same content as new and
-      re-comment/re-acknowledge. Second, independent of #280: the issue
-      lookup itself (_get_open_notes_issue) matches by substring on the
-      annotator's name in the issue title, not a stored ID -- a
-      manually-renamed or manually-closed issue silently stops being found,
-      and the next run files a new one rather than continuing the existing
-      thread, with no error or warning either way.
-    caught_by: "nothing yet -- not checked by integrity-check today."
+      the Phase 4 (#271) operation registry, both fixed. First, issue #280's
+      shape: notes_state.json was written once at the end of the whole run,
+      not per language -- fixed 2026-08-11, now saved right after each
+      language's acknowledgment. Second, independent of #280: the issue
+      lookup used to match by substring on the annotator's name in the issue
+      title only, not a stored ID -- a manually-renamed issue silently
+      stopped being found even while still open, and the next run opened a
+      new thread instead of continuing the old one. Fixed 2026-08-16: the ID
+      is now stored in _annotator_issues and preferred over the title
+      search, which survives a rename. A CLOSED issue is deliberately not
+      reused even when its ID is stored -- closing is how a coordinator
+      marks a batch triaged, and the fix reads that as "start fresh," not as
+      a bug to work around.
+    caught_by: >-
+      tests/test_check_notes_snapshot.py covers both fixes directly:
+      test_a_renamed_but_still_open_issue_is_still_found and
+      test_a_closed_issue_is_not_reused.
 
 - id: status_sheet_completeness
   description: a language's per-construction annotation completeness percentage, as shown on its locked status spreadsheet

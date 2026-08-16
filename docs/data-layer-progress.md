@@ -30,7 +30,7 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 4 — every record traced against code, all three "done when" items complete (started 2026-08-10, review session 2026-08-11, line-by-line trace + fixes 2026-08-11, Finding 27 resolved with Jeff 2026-08-16); one of the five items Jeff was asked to check (pair-row detection, Finding 27) is confirmed, the rest await his read-through of the diff — see "Next action". 3 — done (started and finished 2026-08-10). 0b/1 — done, 18 of 18 (2026-08-01–2026-08-04).
+**Phase:** 4 — **done.** Every record traced against code, all three "done when" items complete, and all five review items closed out with Jeff (started 2026-08-10, review session 2026-08-11, line-by-line trace + fixes 2026-08-11, Findings 27/28 resolved with Jeff 2026-08-16). 3 — done (started and finished 2026-08-10). 0b/1 — done, 18 of 18 (2026-08-01–2026-08-04).
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
 **Last worked:** 2026-08-16
@@ -121,7 +121,7 @@ the same day — see the decisions log.
 | Phase 0b/1 — file 18: `restructure_sheets.py` | **done** — pre/post diff clean across thirteen scenarios; the last file, deliberately: the archive-then-rebuild command with no rollback behind #248's original incidents. `assert_no_criterion_writes_onto_trailing_columns` caught a real, pre-existing bug (Finding 16, fixed the same day); also surfaced a pre-existing gap, the missing `_check_coded_data_clean()` guard (Finding 17, fixed in a later follow-up commit) |
 | **Phase 0b/1 (the whole doorway migration)** | **done** — all eighteen files that reach Drive now go through it |
 | Phase 3 — schema reorganization | **done** — `diagnostic_classes.yaml` split from `diagnostic_classes_status.yaml`; `Class_Type` catalogued as a resistant field on issue #271, not split (behaviour-neutral phase) |
-| Phase 4 — topology declaration | **all three "done when" items complete, awaiting Jeff's final read-through** — `data_dependency_schema/operations.yaml` + `operation_record.schema.json`, one record per `coding/__main__.py` command (24, mechanically checked), `modes` added for the 4 commands whose behavior genuinely diverges by flag; every `idempotent` claim traced against actual code across all 24 records (not just the ones flagged 2026-08-10), corrections applied; 2 new facts added; 4 real code gaps found and fixed on the spot (Findings 23/24, plus 26's data-loss fix); 1 cross-cutting bug pattern found, filed, and fixed (#280, Finding 22, now across 6 commands after Finding 25 found 2 more sharing the shape); `CLAUDE.md`'s narrative prose replaced by a pointer to the registry. See "Next action". |
+| Phase 4 — topology declaration | **done** — `data_dependency_schema/operations.yaml` + `operation_record.schema.json`, one record per `coding/__main__.py` command (24, mechanically checked), `modes` added for the 4 commands whose behavior genuinely diverges by flag; every `idempotent` claim traced against actual code across all 24 records (not just the ones flagged 2026-08-10), corrections applied; 2 new facts added; 5 real code gaps found and fixed on the spot (Findings 23/24/26/28); 1 cross-cutting bug pattern found, filed, and fixed (#280, Finding 22, across 6 commands after Finding 25 found 2 more sharing the shape); `CLAUDE.md`'s narrative prose replaced by a pointer to the registry; all five review items closed out with Jeff 2026-08-16 (Findings 27/28). |
 | Phases 5–9 | not started |
 
 ### In flight
@@ -215,7 +215,7 @@ one) against the actual `coding/*.py` source, reporting per-record either
 and a duplicated-vs-deliberate pair-row-detection question resolved with
 Jeff on 2026-08-16 (Finding 27). Jeff decided, mid-pass, to fix issue #280
 (Finding 22) and the Finding 26 bug immediately rather than leave them
-documented-only. See Findings 25–27 below for the full account of what was
+documented-only. See Findings 25–28 below for the full account of what was
 found and fixed.
 
 **`CLAUDE.md`'s narrative topology prose replaced by a pointer** — the
@@ -229,13 +229,15 @@ descriptions (what a command does, side effects) were deliberately left
 alone — not the "topology" the plan means, and CLAUDE.md's own
 documentation-maintenance rule wants that context kept.
 
-All three of the plan's "done when" items are now complete: every command
-has a record (already true), the coverage test still passes, and the
-narrative pointer replacement above. **What's left is Jeff's own
-read-through of today's diff** — the line-by-line pass was Claude tracing
-code, not Jeff confirming it, and the plan is explicit that authority
-assignments and idempotency claims are his call to make, not Claude's to
-assert. Nothing else is blocked or waiting on this phase.
+All three of the plan's "done when" items are complete: every command has a
+record (already true), the coverage test still passes, and the narrative
+pointer replacement above. The plan is explicit that authority assignments
+and idempotency claims are the coordinator's call, not Claude's to assert
+unilaterally — reviewed directly with Jeff 2026-08-16 rather than via a
+separate line-by-line diff read, on the basis that the underlying
+trace-through was already covered by the test suite (see Findings 27/28,
+the two items that turned into real follow-up work rather than a plain
+confirmation). **Phase 4 is done. Nothing is blocked or waiting on it.**
 
 ### Held until Phase 9
 
@@ -610,6 +612,47 @@ for a command whose job is not corrupting an already-existing tab. Left the
 code as-is, added an explanatory comment at `coding/update_sheets.py:428`
 so a future reader doesn't mistake it for the #275 bug pattern and "fix" it
 into an actual regression.
+
+**28 — fixed.** `collaborator_notes_surfaced_state`'s second drift risk
+(facts.yaml), independent of #280 and left unfixed when #280 was: `check_notes.py`'s
+`_get_open_notes_issue` found an annotator's already-open issue by a title
+substring match only, so a manually-renamed issue silently stopped being
+found even while still open, and the next run opened a duplicate thread
+rather than continuing the existing one. Fixed 2026-08-16, same session as
+Finding 27: the issue number is now stored in `notes_state.json`'s new
+`_annotator_issues[annotator]` map (mirroring `notify.py`'s
+`ensure_notification_issue` pattern for `sheets_manifest.json`'s
+`notification_issue`, though not identical — see below) and preferred over
+the title search, which remains only as a one-time fallback for an issue
+filed before this tracking existed, backfilling the ID once found so the
+fallback is never needed twice for the same annotator. Saved incrementally,
+same as the rest of #280's fix, so a crash right after creating/finding the
+issue doesn't lose the ID.
+
+Deliberately NOT a straight copy of `notify.py`'s pattern: that helper
+reuses a stored issue regardless of open/closed state, because a
+notification thread is meant to live forever. A collaborator-notes issue is
+different — closing it is how a coordinator marks a batch of notes as
+triaged (see `CLAUDE.md`'s `collaborator-notes` label), so new content
+after that closing should start a fresh issue, not reopen an
+already-handled one. The fix checks the stored ID's open/closed state
+before reusing it and drops it if closed, rather than reusing
+unconditionally. New tests in `tests/test_check_notes_snapshot.py`:
+`test_a_renamed_but_still_open_issue_is_still_found`,
+`test_a_closed_issue_is_not_reused`,
+`test_an_open_issue_predating_id_tracking_is_found_by_title_and_backfilled`.
+The test fixture's `gh` stand-in had to be corrected alongside this — its
+`view` subcommand wasn't stubbed at all before, so every existing test was
+accidentally passing via the title-search fallback without ever exercising
+the stored-ID path.
+
+**Phase 4 is now fully closed.** All five items Jeff was asked to check
+(idempotency flips, the `restructure-sheets`/`planar_tsv` correction, the
+pair-row-detection question, the `CLAUDE.md` cut, and this issue-lookup gap)
+are resolved — the last four discussed directly with Jeff 2026-08-16, on the
+understanding that the underlying trace-through was already verified by
+tests and doesn't need a separate line-by-line re-read. Nothing remains open
+from Phase 4.
 
 **1 and 2 — issue #272, fixed and closed 2026-08-02** (`b399e32`,
 "refresh-dropdowns: read the sheet, not the manifest, for criterion columns").
@@ -2204,20 +2247,7 @@ intended behaviour changes whatsoever."
 
 ## Open questions for Jeff
 
-- **Phase 4's final read-through — one of five items resolved, four still
-  open.** The 2026-08-11 line-by-line pass traced all 24 `operations.yaml`
-  records against code and fixed what it found (Findings 25/26, #280); that
-  was Claude tracing code, not Jeff confirming it. Reviewed together
-  2026-08-16: the `update_sheets.py`/`integrity_check.py` pair-row-detection
-  question (Finding 27 — kept `update_sheets.py`'s header-based check as
-  deliberate, consolidated `integrity_check.py`'s duplicate logic). Still
-  outstanding, no rush: (1) the four idempotency claims flipped `false` →
-  `true` for the #280 fix, (2) the correction that `restructure-sheets`
-  reads-and-pushes `planar_tsv` rather than editing it directly, (3) whether
-  the `CLAUDE.md` "Retiring/Renaming a class" cut landed in the right place,
-  (4) `check_notes.py`'s known-but-unrelated issue-lookup-by-title-substring
-  gap (FYI only, no decision needed). Worth a read of the diff
-  (`operations.yaml`, `facts.yaml`, the six `#280` fixes,
-  `generate_biuniqueness_allomorphy_sheet.py`) whenever there's bandwidth,
-  per the plan's explicit ask that authority assignments and idempotency
-  claims are the coordinator's call.
+*(none currently — Phase 4's five review items were closed out with Jeff on
+2026-08-16, on the understanding that the underlying trace-through was
+already covered by the test suite rather than requiring a separate
+line-by-line re-read of the diff. See Findings 25–28 for the full account.)*

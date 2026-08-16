@@ -85,7 +85,9 @@ def env(monkeypatch, tmp_path):
 
     gh_calls: List[List[str]] = []
 
-    open_issues: List[Dict] = []
+    # All issues ever filed, open or closed -- numbers are never reused, the
+    # same as real GitHub. `list --state open` below filters to open ones.
+    all_issues: List[Dict] = []
 
     def fake_run(cmd, **kwargs):
         """Stand-in gh that remembers what it filed.
@@ -93,16 +95,35 @@ def env(monkeypatch, tmp_path):
         It has to: the command is supposed to comment on an annotator's open
         issue rather than file a second one, and a stub that always answers
         "no open issues" would let a regression to filing duplicates pass.
+        `view` reports OPEN/CLOSED from the same registry `list` and `create`
+        maintain, so the stored-ID path (_issue_is_open) is exercised for
+        real rather than always falling through to the title search.
         """
         gh_calls.append([str(p) for p in cmd])
         out = ""
         if "list" in cmd:
-            out = json.dumps(open_issues)
+            out = json.dumps([i for i in all_issues if i["state"] == "OPEN"])
+        elif "view" in cmd:
+            number = int(cmd[cmd.index("view") + 1])
+            issue = next((i for i in all_issues if i["number"] == number), None)
+            out = json.dumps({"state": issue["state"] if issue else "CLOSED"})
         elif "create" in cmd:
             title = cmd[cmd.index("--title") + 1]
-            open_issues.append({"number": 900 + len(open_issues), "title": title})
-            out = f"https://github.com/jcgood/planars/issues/{open_issues[-1]['number']}"
+            all_issues.append({"number": 900 + len(all_issues), "title": title, "state": "OPEN"})
+            out = f"https://github.com/jcgood/planars/issues/{all_issues[-1]['number']}"
         return subprocess.CompletedProcess(cmd, 0, stdout=out, stderr="")
+
+    def close_issue(number: int) -> None:
+        """Simulate the coordinator closing an issue after triage."""
+        for i in all_issues:
+            if i["number"] == number:
+                i["state"] = "CLOSED"
+
+    def rename_issue(number: int, new_title: str) -> None:
+        """Simulate a manual rename that would break a title-substring lookup."""
+        for i in all_issues:
+            if i["number"] == number:
+                i["title"] = new_title
 
     monkeypatch.setattr(check_notes.subprocess, "run", fake_run)
 
@@ -117,10 +138,15 @@ def env(monkeypatch, tmp_path):
     def state() -> Dict:
         return json.loads(state_path.read_text(encoding="utf-8"))
 
+    def set_state(new_state: Dict) -> None:
+        state_path.write_text(json.dumps(new_state), encoding="utf-8")
+
     yield type("Env", (), {
         "doorway": doorway, "run": staticmethod(run), "state": staticmethod(state),
+        "set_state": staticmethod(set_state),
         "seed_doc": staticmethod(seed_doc), "seed_no_doc": staticmethod(seed_no_doc),
         "gh_calls": gh_calls, "saved": saved,
+        "close_issue": staticmethod(close_issue), "rename_issue": staticmethod(rename_issue),
     })
     drive_doorway.reset_doorway()
 
@@ -291,6 +317,74 @@ def test_the_new_docs_id_is_written_back_to_the_manifest(env):
 # ---------------------------------------------------------------------------
 # When the Doc cannot be read
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Finding 27 / the second half of #280's review: issue lookup by stored ID,
+# not title-substring search, so a rename doesn't lose the thread and a
+# closed (triaged) issue doesn't get silently reused.
+# ---------------------------------------------------------------------------
+
+def test_the_issue_id_is_stored_after_filing(env):
+    """So later runs don't need the title search at all."""
+    env.seed_doc()
+    env.run(["check-notes", "--lang", LANG, "--apply"])
+    assert env.state()["_annotator_issues"]["Adam Tallman"] > 0
+
+
+def test_a_renamed_but_still_open_issue_is_still_found(env):
+    """A title-substring search would miss this; the stored ID does not."""
+    env.seed_doc()
+    env.run(["check-notes", "--lang", LANG, "--apply"])
+    issue_number = env.state()["_annotator_issues"]["Adam Tallman"]
+    env.rename_issue(issue_number, "Renamed by someone, no longer mentions the annotator")
+    env.gh_calls.clear()
+    env.doorway.append_doc_text(DOC_ID, "One more thing: v:obj-R feels doubtful.")
+
+    out = env.run(["check-notes", "--lang", LANG, "--apply"])
+    assert "New notes detected" in out
+    assert [c for c in env.gh_calls if "create" in c] == []
+    commented = [c for c in env.gh_calls if "comment" in c]
+    assert commented and str(issue_number) in commented[0]
+
+
+def test_a_closed_issue_is_not_reused(env):
+    """Closing is how the coordinator marks a batch triaged -- new content
+    after that starts a fresh issue rather than reopening an old one."""
+    env.seed_doc()
+    env.run(["check-notes", "--lang", LANG, "--apply"])
+    first_issue = env.state()["_annotator_issues"]["Adam Tallman"]
+    env.close_issue(first_issue)
+    env.gh_calls.clear()
+    env.doorway.append_doc_text(DOC_ID, "One more thing: v:obj-R feels doubtful.")
+
+    out = env.run(["check-notes", "--lang", LANG, "--apply"])
+    assert "New notes detected" in out
+    created = [c for c in env.gh_calls if "create" in c]
+    assert len(created) == 1
+    second_issue = env.state()["_annotator_issues"]["Adam Tallman"]
+    assert second_issue != first_issue
+
+
+def test_an_open_issue_predating_id_tracking_is_found_by_title_and_backfilled(env):
+    """Migration path: an issue that already existed before this fix has no
+    stored ID yet, so the title search is still needed once, and afterward
+    the ID takes over."""
+    env.seed_doc()
+    env.run(["check-notes", "--lang", LANG, "--apply"])
+    # Simulate pre-fix state: forget the ID this run just stored, as if it
+    # had been filed before _annotator_issues tracking existed.
+    state = env.state()
+    del state["_annotator_issues"]["Adam Tallman"]
+    env.set_state(state)
+
+    env.gh_calls.clear()
+    env.doorway.append_doc_text(DOC_ID, "One more thing: v:obj-R feels doubtful.")
+    env.run(["check-notes", "--lang", LANG, "--apply"])
+    assert [c for c in env.gh_calls if "create" in c] == []
+    assert [c for c in env.gh_calls if "comment" in c]
+    # Backfilled for next time.
+    assert env.state()["_annotator_issues"]["Adam Tallman"]
+
 
 def test_an_unreadable_doc_is_reported_and_the_language_is_skipped(env, monkeypatch):
     env.seed_doc()
