@@ -428,6 +428,18 @@ def main() -> None:
                 # Pair-row tabs (e.g. nonpermutability/general) use Element_A/Element_B
                 # instead of Element/Position_Name. Row structure is managed by
                 # --regen-construction, not update-sheets. Skip row updates entirely.
+                #
+                # Deliberately reads the tab's own live header rather than asking the
+                # schema (diagnostic_classes.yaml's row_type, via
+                # restructure_sheets._get_pair_row_constructions() -- the pattern
+                # validate_coding.py/import_sheets.py use). This command is about to
+                # WRITE to the tab, and the header is what's actually there right now;
+                # the schema is what a construction is eventually supposed to look
+                # like, and the two can disagree (stan1293's phrasal_accent/general is
+                # a live example -- row_type: pair_rows in the schema, still
+                # element-row-shaped on the live Sheet, per facts.yaml's
+                # pair_row_construction_set drift_risk). Trusting the header keeps
+                # this command from corrupting a tab that hasn't been rebuilt yet.
                 is_pair_row = "Element_A" in header or "Element_B" in header
 
                 missing_trailing = [col for col in _TRAILING_COLS if col not in header]

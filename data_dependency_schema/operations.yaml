@@ -384,14 +384,17 @@
       it decides pair-row shape from the tab's own header ("Element_A" in
       header, coding/update_sheets.py:431), a third, independent detection
       strategy found while reviewing this record for operations.yaml
-      (2026-08-11). Not necessarily wrong (it responds to the sheet's actual
-      current shape rather than the schema's stated intention, which can
-      matter when the two have drifted, e.g. #275), but undocumented and
-      worth a coordinator look rather than a unilateral code change here.
-      Also does not write manifest_class_registration -- it only ever
-      extends an already-registered class's construction list, never adds a
-      new class to the manifest, which facts.yaml attributes exclusively to
-      generate-sheets.
+      (2026-08-11), reviewed with Jeff and confirmed deliberate 2026-08-16:
+      this command is about to WRITE to the tab, and the header is what's
+      actually there right now, while the schema is what a construction is
+      eventually supposed to look like -- the two can disagree (#275's
+      phrasal_accent/general is a live example), and trusting the header is
+      the more conservative choice for a command whose job is not corrupting
+      an already-existing tab. Now documented in a code comment at the same
+      location. Also does not write manifest_class_registration -- it only
+      ever extends an already-registered class's construction list, never
+      adds a new class to the manifest, which facts.yaml attributes
+      exclusively to generate-sheets.
   modes: []
 
 - id: import_sheets
@@ -615,15 +618,15 @@
   cascades_triggered: []
   ordering_constraints:
     - >-
-      _section_sheets computes pair-row constructions itself, iterating
-      diagnostic_classes.yaml's row_type directly (coding/integrity_check.py
-      lines 388-393), rather than calling
-      restructure_sheets._get_pair_row_constructions() the way
-      facts.yaml's pair_row_construction_set record names as the required
-      pattern for a reader deciding this. Currently correct (both derive the
-      same set), found while reviewing this record for operations.yaml
-      (2026-08-11) -- unprotected against the two derivations drifting apart
-      the way import_sheets.py's hardcoded version once did (#275).
+      _section_sheets now calls restructure_sheets._get_pair_row_constructions()
+      directly, the same shared helper validate_coding.py/import_sheets.py/
+      generate_status_sheet.py use -- found duplicating that logic locally
+      while reviewing this record for operations.yaml (2026-08-11), fixed
+      2026-08-16. Unlike update_sheets.py's header-based check (see that
+      record), this was two code paths reading the same source
+      (diagnostic_classes.yaml's row_type) rather than two different
+      sources, so consolidating had no live-data risk to weigh -- it's a
+      read-only report either way.
     - >-
       Run daily via data-refresh.yml; a missing required class
       (collection_required: "y") is reported here as an ERROR (Finding 19 in

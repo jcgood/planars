@@ -30,10 +30,10 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 4 — every record traced against code, all three "done when" items complete (started 2026-08-10, review session 2026-08-11, line-by-line trace + fixes 2026-08-11); awaiting Jeff's final read-through of the diff, not yet signed off — see "Next action". 3 — done (started and finished 2026-08-10). 0b/1 — done, 18 of 18 (2026-08-01–2026-08-04).
+**Phase:** 4 — every record traced against code, all three "done when" items complete (started 2026-08-10, review session 2026-08-11, line-by-line trace + fixes 2026-08-11, Finding 27 resolved with Jeff 2026-08-16); one of the five items Jeff was asked to check (pair-row detection, Finding 27) is confirmed, the rest await his read-through of the diff — see "Next action". 3 — done (started and finished 2026-08-10). 0b/1 — done, 18 of 18 (2026-08-01–2026-08-04).
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
-**Last worked:** 2026-08-11
+**Last worked:** 2026-08-16
 
 Phase 3 split `schemas/diagnostic_classes.yaml` into that file (linguistic
 content only) and a new `schemas/diagnostic_classes_status.yaml` (process/
@@ -210,53 +210,13 @@ records not yet given a deep code-trace on 2026-08-11's interactive session
 `check_notes`, `sync_diagnostics_yaml`, and `generate_sheets` already had
 one) against the actual `coding/*.py` source, reporting per-record either
 "confirmed clean" or a specific field/claim mismatch with file:line evidence.
-11 of 17 came back clean; the rest are Finding 25. Jeff decided, mid-pass, to
-fix two of what the pass turned up as real code bugs rather than leave them
-documented-only: issue #280 itself (Finding 22, above), and the
-`generate_biuniqueness_allomorphy_sheet.py` data-loss bug the pass also found
-(Finding 26).
-
-**25 — fixed (documentation).** The line-by-line pass found several records
-whose claims no longer matched the code, none of them Findings in their own
-right (no live-data risk, just the registry describing something that wasn't
-true): `restructure_sheets`'s `ordering_constraints` still called the missing
-`coded_data_clean_tree` guard "still open" — Finding 17 was fixed 2026-08-04,
-six days before `operations.yaml` was drafted, and the record even
-contradicted its own `preconditions` field, which already listed
-`coded_data_clean_tree`; `facts.yaml`'s `planar_sheet_structure` cascade
-mechanism made the same overstatement, that `restructure-sheets` "edits
-`planar_tsv` directly" — grepped every `to_csv` call in the file, none
-targets a planar path, it only reads `planar_tsv` and pushes it, corrected in
-both places. Also fixed: `restructure_sheets`'s missing `revalidate_sheets()`
-cascade entry; `capture_drive_state`'s "byte-identical" claim (ignored
-`index.json`'s timestamp); `lookup_lang`'s idempotency note overstating what
-a cache hit does (zero writes, not a re-fetch); `setup_root_folder`'s "zero
-Drive calls" (should read "zero *write* calls" — reads still fire);
-`update_sheets`'s `facts_touched` claiming it reads `pair_row_construction_set`
-(it derives pair-row status from the tab's own header instead, a third,
-independent, currently-correct-but-undocumented detection strategy — noted,
-not changed, since it wasn't clearly wrong) and claiming it writes
-`manifest_class_registration` (it only ever extends an already-registered
-class, never registers a new one); `integrity_check` missing the same
-`pair_row_construction_set` note; `generate_notebooks`/`generate_reports`
-missing a `languages_metadata` fact-touch (both read `schemas/languages.yaml`
-for display names).
-
-**26 — fixed.** `generate_biuniqueness_allomorphy_sheet.py --apply` wiped
-`has_allomorphs`/`Members`/`Notes` unconditionally on every re-run
-(`ws.clear()` before rewrite, `coding/generate_biuniqueness_allomorphy_sheet.py`)
-while `operations.yaml` described this as a benign "recomputes fresh, same
-content" idempotent operation — found by the same line-by-line pass. Low
-current risk (`synth0001`-only per its own docstring), but the sheet is
-shared as *writer* with Adam and #254 plans to expand it beyond `synth0001`.
-Fixed by reading the tab's existing `has_allomorphs`/`Members`/`Notes` before
-clearing (`_existing_annotations()`) and carrying them back in by
-`(Position_Name, Element)` (`_rows_to_sheet_values()`'s new `existing`
-parameter) — only elements no longer in scope lose their annotation now, the
-same carry-over principle `restructure_sheets.py` already uses elsewhere.
-New regression test:
-`test_a_rerun_preserves_existing_annotations` in
-`tests/test_biuniqueness_allomorphy_snapshot.py`.
+11 of 17 came back clean; the rest are Finding 25 (below) — mostly stale
+`operations.yaml`/`facts.yaml` claims, plus a real data-loss bug (Finding 26)
+and a duplicated-vs-deliberate pair-row-detection question resolved with
+Jeff on 2026-08-16 (Finding 27). Jeff decided, mid-pass, to fix issue #280
+(Finding 22) and the Finding 26 bug immediately rather than leave them
+documented-only. See Findings 25–27 below for the full account of what was
+found and fixed.
 
 **`CLAUDE.md`'s narrative topology prose replaced by a pointer** — the
 plan's third "done when" item. The "Retiring a class"/"Renaming a class"
@@ -539,24 +499,29 @@ existing-class scan unconditionally over every already-existing class, before
 deciding whether there's also brand-new-class work to do. See
 `coding/CLAUDE.md`'s `generate_sheets.py` entry for the mechanics.
 
-**22 — open, filed as #280.** Reviewing each command's `idempotent` claim for
-`operations.yaml` surfaced a shared bug pattern across four commands:
-`import_sheets.py`, `apply_pending.py`, `prune_manifest.py`, and
-`check_notes.py` each accumulate "what's been done" in memory across a loop
-over multiple items, then write the persistent record of it (respectively:
-`pending_changes.json`, `pending_changes.json` again, the Drive manifest,
-`notes_state.json`) exactly once, *after* the loop finishes — while the real,
-external side effects inside that loop (writing a TSV, running a pending
-entry's command, archiving a TSV and moving a Drive sheet, filing/commenting
-on a GitHub issue and appending a doc acknowledgment) happen incrementally,
-per item. A crash between "the real side effect already happened" and "the
-loop finishes and the record gets saved" means a retry either silently loses
-that item's record (`import-sheets`) or repeats the real side effect a
-second time (`apply-pending`'s command re-run; `prune-manifest`'s Drive-sheet
-re-move, probably harmless but unverified; `check-notes`' duplicate issue
-comment and doc acknowledgment). Each command's own `idempotency_note` in
-`operations.yaml` records the exact mechanism. Fix shape is the same for all
-four: persist the record incrementally, once per item, not once at the end.
+**22 — fixed, filed and closed as #280.** Reviewing each command's
+`idempotent` claim for `operations.yaml` surfaced a shared bug pattern across
+four commands: `import_sheets.py`, `apply_pending.py`, `prune_manifest.py`,
+and `check_notes.py` each accumulate "what's been done" in memory across a
+loop over multiple items, then write the persistent record of it
+(respectively: `pending_changes.json`, `pending_changes.json` again, the
+Drive manifest, `notes_state.json`) exactly once, *after* the loop finishes —
+while the real, external side effects inside that loop (writing a TSV,
+running a pending entry's command, archiving a TSV and moving a Drive sheet,
+filing/commenting on a GitHub issue and appending a doc acknowledgment)
+happen incrementally, per item. A crash between "the real side effect
+already happened" and "the loop finishes and the record gets saved" meant a
+retry either silently lost that item's record (`import-sheets`) or repeated
+the real side effect a second time (`apply-pending`'s command re-run;
+`prune-manifest`'s Drive-sheet re-move, probably harmless but unverified;
+`check-notes`' duplicate issue comment and doc acknowledgment). Fixed
+2026-08-11, same day as filing: each command now persists its record right
+after each item instead of once at the end. `generate_notebooks.py`/
+`generate_reports.py` turned out to share the same shape against
+`drive_config.json` (found by Finding 25's line-by-line pass) and were fixed
+the same way, folded into this issue rather than filed separately. Each
+command's own `idempotency_note` in `operations.yaml` records the exact
+mechanism and now reads `idempotent: true`.
 
 **23 — fixed.** `prune_manifest.py --apply` writes to `coded_data/` (archives
 local TSVs out of it) but never called `drive._check_coded_data_clean()`
@@ -582,6 +547,69 @@ Registered in `preconditions.yaml` and all three of the command's
 `operations.yaml` records (base + two mode overrides); two new tests added,
 scoped to `--to-sheet` only since this test file's fixture reads the real
 `coded_data/` directly rather than a redirected copy.
+
+**25 — fixed (documentation).** A line-by-line pass over all 24
+`operations.yaml` records, 2026-08-11, same day as the interactive review
+session above: three agents each traced a batch of the records not yet
+given a deep code-trace, reporting per-record either "confirmed clean" or a
+specific field/claim mismatch with file:line evidence. 11 of 17 came back
+clean; the rest were stale claims, none a live-data risk on their own, all
+fixed the same day: `restructure_sheets`'s `ordering_constraints` still
+called the missing `coded_data_clean_tree` guard "still open" — Finding 17
+was fixed 2026-08-04, six days before `operations.yaml` was even drafted,
+and the record even contradicted its own `preconditions` field, which
+already listed `coded_data_clean_tree`; `facts.yaml`'s `planar_sheet_structure`
+cascade mechanism made the same overstatement, that `restructure-sheets`
+"edits `planar_tsv` directly" — grepped every `to_csv` call in the file,
+none targets a planar path, it only reads `planar_tsv` and pushes it,
+corrected in both places. Also fixed: `restructure_sheets`'s missing
+`revalidate_sheets()` cascade entry; `capture_drive_state`'s
+"byte-identical" claim (ignored `index.json`'s timestamp); `lookup_lang`'s
+idempotency note overstating what a cache hit does (zero writes, not a
+re-fetch); `setup_root_folder`'s "zero Drive calls" (should read "zero
+*write* calls" — reads still fire); `update_sheets`'s `facts_touched`
+claiming it reads `pair_row_construction_set` (it derives pair-row status
+from the tab's own header instead — see Finding 27) and claiming it writes
+`manifest_class_registration` (it only ever extends an already-registered
+class, never registers a new one); `integrity_check` missing a
+`pair_row_construction_set` note (see Finding 27); `generate_notebooks`/
+`generate_reports` missing a `languages_metadata` fact-touch (both read
+`schemas/languages.yaml` for display names).
+
+**26 — fixed.** `generate_biuniqueness_allomorphy_sheet.py --apply` wiped
+`has_allomorphs`/`Members`/`Notes` unconditionally on every re-run
+(`ws.clear()` before rewrite) while `operations.yaml` described this as a
+benign "recomputes fresh, same content" idempotent operation — found by
+Finding 25's pass. Low current risk (`synth0001`-only per its own
+docstring), but the sheet is shared as *writer* with Adam and issue #254
+plans to expand it beyond `synth0001`. Fixed by reading the tab's existing
+`has_allomorphs`/`Members`/`Notes` before clearing (`_existing_annotations()`)
+and carrying them back in by `(Position_Name, Element)`
+(`_rows_to_sheet_values()`'s new `existing` parameter) — only elements no
+longer in scope lose their annotation now, the same carry-over principle
+`restructure_sheets.py` already uses elsewhere. New regression test:
+`test_a_rerun_preserves_existing_annotations` in
+`tests/test_biuniqueness_allomorphy_snapshot.py`.
+
+**27 — resolved, one fixed one left as-is.** Finding 25 turned up two
+readers deriving pair-row status independently instead of calling the
+shared `restructure_sheets._get_pair_row_constructions()` helper. Reviewed
+with Jeff 2026-08-16, and the two turned out to be different in kind, not
+the same finding twice: `integrity_check.py`'s `_section_sheets` duplicated
+the *same* source (`diagnostic_classes.yaml`'s `row_type`) via its own local
+loop — pure DRY risk, no live-data stakes either way (read-only report), so
+it now calls the shared helper directly. `update_sheets.py` reads a
+*different* source on purpose: the tab's own live header
+(`"Element_A" in header`), not the schema. That's deliberate, not a bug —
+this command is about to WRITE to a tab, and the header says what's
+actually there right now, while the schema says what a construction is
+eventually supposed to look like; the two can disagree (`phrasal_accent`/
+`general` on `stan1293` is a live example, still element-row-shaped though
+its schema says `pair_rows`), and trusting the header is the safer choice
+for a command whose job is not corrupting an already-existing tab. Left the
+code as-is, added an explanatory comment at `coding/update_sheets.py:428`
+so a future reader doesn't mistake it for the #275 bug pattern and "fix" it
+into an actual regression.
 
 **1 and 2 — issue #272, fixed and closed 2026-08-02** (`b399e32`,
 "refresh-dropdowns: read the sheet, not the manifest, for criterion columns").
@@ -2176,11 +2204,20 @@ intended behaviour changes whatsoever."
 
 ## Open questions for Jeff
 
-- **Phase 4's final read-through.** The 2026-08-11 line-by-line pass traced
-  all 24 `operations.yaml` records against code and fixed what it found
-  (Findings 25/26, #280) — see "Next action" above. That was Claude tracing
-  code, not Jeff confirming it. Worth a read of the diff (`operations.yaml`,
-  `facts.yaml`, the six #280 fixes, `generate_biuniqueness_allomorphy_sheet.py`)
-  before treating Phase 4 as fully signed off, per the plan's explicit ask
-  that authority assignments and idempotency claims are the coordinator's
-  call.
+- **Phase 4's final read-through — one of five items resolved, four still
+  open.** The 2026-08-11 line-by-line pass traced all 24 `operations.yaml`
+  records against code and fixed what it found (Findings 25/26, #280); that
+  was Claude tracing code, not Jeff confirming it. Reviewed together
+  2026-08-16: the `update_sheets.py`/`integrity_check.py` pair-row-detection
+  question (Finding 27 — kept `update_sheets.py`'s header-based check as
+  deliberate, consolidated `integrity_check.py`'s duplicate logic). Still
+  outstanding, no rush: (1) the four idempotency claims flipped `false` →
+  `true` for the #280 fix, (2) the correction that `restructure-sheets`
+  reads-and-pushes `planar_tsv` rather than editing it directly, (3) whether
+  the `CLAUDE.md` "Retiring/Renaming a class" cut landed in the right place,
+  (4) `check_notes.py`'s known-but-unrelated issue-lookup-by-title-substring
+  gap (FYI only, no decision needed). Worth a read of the diff
+  (`operations.yaml`, `facts.yaml`, the six `#280` fixes,
+  `generate_biuniqueness_allomorphy_sheet.py`) whenever there's bandwidth,
+  per the plan's explicit ask that authority assignments and idempotency
+  claims are the coordinator's call.

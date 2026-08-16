@@ -55,6 +55,11 @@ grew from the originally-filed 4 commands to 6 (`generate_notebooks.py`/
 `generate_reports.py` turned out to share the same shape). `CLAUDE.md`'s
 narrative topology prose (the "Retiring a class"/"Renaming a class"
 paragraphs) is now a pointer to `operations.yaml` instead of a restatement.
+2026-08-16: one of the five things Jeff was asked to check is resolved
+(Finding 27 — `update_sheets.py`'s header-based pair-row detection is
+deliberate, now documented in a code comment; `integrity_check.py`'s
+duplicate copy of the same logic consolidated into the shared helper). Four
+remain open, no rush — see the list in "Open questions for Jeff" below.
 
 **What's actually left: read `docs/data-layer-progress.md` § "Open questions
 for Jeff"** and look over the diff (`operations.yaml`, `facts.yaml`, the six

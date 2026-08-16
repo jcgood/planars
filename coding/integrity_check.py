@@ -51,6 +51,7 @@ from .check_codebook import (
     _check_chart_keys,
 )
 from .schemas import load_planar_schema
+from .restructure_sheets import _get_pair_row_constructions
 import yaml as _yaml
 
 # ---------------------------------------------------------------------------
@@ -384,13 +385,14 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
     _PAIR_STRUCTURAL  = {"Element_A", "Element_B", "Position_A", "Position_B", "Direction"}
     _TRAILING         = set(load_planar_schema().get("trailing_columns", ["Source", "Comments"]))
 
-    # Build a set of (class_name, construction_name) pairs that use pair_rows layout.
-    _diag_classes = _load_diagnostic_classes()
-    _pair_constructions: set[tuple[str, str]] = set()
-    for cls_name, cls_data in _diag_classes.items():
-        for con in cls_data.get("constructions", []):
-            if isinstance(con, dict) and con.get("row_type") == "pair_rows":
-                _pair_constructions.add((cls_name, con["name"]))
+    # Which constructions use pair_rows layout -- read via the shared helper
+    # (same one validate_coding.py/import_sheets.py/generate_status_sheet.py
+    # use), not recomputed locally, so this can't silently drift from theirs
+    # the way import_sheets.py's hardcoded list once did (issue #275). Fixed
+    # 2026-08-16, found reviewing this section for
+    # data_dependency_schema/operations.yaml -- previously correct, but
+    # duplicated rather than shared.
+    _pair_row_constructions = _get_pair_row_constructions()
 
     total_e = total_w = 0
 
@@ -474,7 +476,8 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
                     continue
 
                 expected = construction_params.get(construction, {}).get("param_names", [])
-                _skip = (_STRUCTURAL | _PAIR_STRUCTURAL) if (class_name, construction) in _pair_constructions else _STRUCTURAL
+                is_pair_row = construction in _pair_row_constructions.get(class_name, set())
+                _skip = (_STRUCTURAL | _PAIR_STRUCTURAL) if is_pair_row else _STRUCTURAL
                 actual   = [c for c in header if c not in _skip and c not in _TRAILING]
 
                 # Warn on stale lifecycle columns left from --split or --merge operations.
