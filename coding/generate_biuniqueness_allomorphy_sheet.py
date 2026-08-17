@@ -94,8 +94,8 @@ Authentication: same OAuth2 setup as generate_sheets.py.
 """
 from __future__ import annotations
 
+import argparse
 import json
-import sys
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -298,10 +298,20 @@ def _write_prescreening_tab(ss, rows: List[Dict[str, str]]):
 
 def main() -> None:
     """Entry point for `python -m coding generate-biuniqueness-allomorphy-sheet`."""
-    apply = "--apply" in sys.argv
-    if "--lang" not in sys.argv:
-        raise SystemExit("Usage: generate-biuniqueness-allomorphy-sheet --lang LANG_ID [--apply]")
-    lang_id = sys.argv[sys.argv.index("--lang") + 1]
+    ap = argparse.ArgumentParser(
+        description="Generate the Stage 1 biuniqueness/allomorphy screening sheet."
+    )
+    ap.add_argument(
+        "--lang", metavar="LANG_ID", dest="lang", required=True,
+        help="language to generate the sheet for",
+    )
+    ap.add_argument(
+        "--apply", action="store_true",
+        help="write the sheet (default: dry run)",
+    )
+    args = ap.parse_args()
+    apply = args.apply
+    lang_id = args.lang
 
     lang_setup_dir = CODED_DATA / lang_id / "lang_setup"
     planar_path = lang_setup_dir / f"planar_{lang_id}.tsv"

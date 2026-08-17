@@ -322,4 +322,7 @@ def test_a_language_with_no_planar_stops_before_touching_drive(env):
 def test_no_lang_flag_is_refused(env):
     _, run, _ = env
     out = run(["gen", "--apply"])
-    assert "Usage:" in out
+    # argparse enforces --lang as required (exit code 2); its usage message
+    # goes to stderr, which this helper doesn't capture -- SystemExit is
+    # the observable part.
+    assert "[SystemExit: 2]" in out

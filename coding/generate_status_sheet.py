@@ -40,8 +40,8 @@ Authentication: same OAuth2 setup as generate_sheets.py.
 """
 from __future__ import annotations
 
+import argparse
 import json
-import sys
 from datetime import date
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
@@ -418,11 +418,20 @@ def _write_status_sheet(
 
 def main() -> None:
     """Entry point for `python -m coding generate-status-sheet`."""
-    apply = "--apply" in sys.argv
-    lang_filter = None
-    if "--lang" in sys.argv:
-        idx = sys.argv.index("--lang")
-        lang_filter = sys.argv[idx + 1]
+    ap = argparse.ArgumentParser(
+        description="Generate locked, read-only per-language Annotation Status sheets."
+    )
+    ap.add_argument(
+        "--lang", metavar="LANG_ID", dest="lang",
+        help="restrict to this language",
+    )
+    ap.add_argument(
+        "--apply", action="store_true",
+        help="create/update sheets on Drive (default: dry run)",
+    )
+    args = ap.parse_args()
+    apply = args.apply
+    lang_filter = args.lang
 
     doorway = get_doorway()
     manifest = load_manifest(doorway)
