@@ -37,8 +37,8 @@ wrongly-ordered fake is silent.
 """
 from __future__ import annotations
 
+import argparse
 import json
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List
@@ -114,9 +114,20 @@ def _plan(manifest: Dict, langs: List[str]) -> List[tuple]:
 
 
 def main() -> None:
-    args = sys.argv[1:]
-    apply = "--apply" in args
-    lang_filter = args[args.index("--lang") + 1] if "--lang" in args else None
+    ap = argparse.ArgumentParser(
+        description="Capture live Drive/Sheets state to local fixtures. READ-ONLY."
+    )
+    ap.add_argument(
+        "--apply", action="store_true",
+        help="write fixtures (default: dry run, reports what would be captured)",
+    )
+    ap.add_argument(
+        "--lang", metavar="LANG_ID", dest="lang",
+        help="restrict to this language",
+    )
+    args = ap.parse_args()
+    apply = args.apply
+    lang_filter = args.lang
 
     print("Connecting to Google APIs (read-only)...")
     gc, drive = _get_clients()

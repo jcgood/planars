@@ -24,7 +24,7 @@ Authentication: same OAuth2 setup as generate_sheets.py.
 """
 from __future__ import annotations
 
-import sys
+import argparse
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -113,7 +113,15 @@ def _run(apply: bool) -> None:
 
 def main() -> None:
     """Entry point for `python -m coding generate-reports`."""
-    _run(apply="--apply" in sys.argv)
+    ap = argparse.ArgumentParser(
+        description="Generate and upload PDF reports for all languages to Drive."
+    )
+    ap.add_argument(
+        "--apply", action="store_true",
+        help="generate and upload to Drive (default: dry run)",
+    )
+    args = ap.parse_args()
+    _run(apply=args.apply)
 
 
 if __name__ == "__main__":

@@ -24,6 +24,7 @@ Cached fields per Glottocode:
 """
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import sys
@@ -220,10 +221,25 @@ def _print_meta(meta: dict) -> None:
 
 def main() -> None:
     """Entry point for `python -m coding lookup-lang`."""
-    args = sys.argv[1:]
+    ap = argparse.ArgumentParser(
+        description="Fetch and cache Glottolog metadata for a language ID."
+    )
+    ap.add_argument(
+        "glottocode", nargs="?",
+        help="Glottocode to look up, e.g. arao1248",
+    )
+    ap.add_argument(
+        "--refresh", action="store_true",
+        help="force re-fetch from Glottolog instead of using the cache",
+    )
+    ap.add_argument(
+        "--all", action="store_true", dest="all_cached",
+        help="list every cached language",
+    )
+    args = ap.parse_args()
 
-    # --all: list every cached entry
-    if args == ["--all"] or args == []:
+    # --all (or no arguments at all): list every cached entry.
+    if args.all_cached or (not args.glottocode and not args.refresh):
         cache = _load_cache()
         if not cache:
             print("No languages cached yet. Run: python -m coding lookup-lang <glottocode>")
@@ -234,17 +250,13 @@ def main() -> None:
             print(f"  {code}  {meta['name']}  ({meta['level']}, {family})")
         return
 
-    refresh = False
-    if "--refresh" in args:
-        refresh = True
-        args = [a for a in args if a != "--refresh"]
-
-    if not args:
+    if not args.glottocode:
         print("Usage: python -m coding lookup-lang [--refresh] <glottocode>")
         print("       python -m coding lookup-lang --all")
         sys.exit(1)
 
-    glottocode = args[0]
+    glottocode = args.glottocode
+    refresh = args.refresh
 
     was_cached = not refresh and cached_entry(glottocode) is not None
     try:
