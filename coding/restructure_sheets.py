@@ -979,30 +979,14 @@ def _describe_split_impacts(
 
 
 
-def main() -> None:
-    """Entry point for `python -m coding restructure-sheets`.
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding restructure-sheets`.
 
-    For each class in the manifest, downloads current annotations, optionally
-    archives the existing spreadsheet to _archived/ in Drive (renamed to include _v{N}), creates a new
-    spreadsheet from the updated planar structure, and carries over matching
-    annotations by (Element, Position_Name). Unmatched rows are left blank for
-    re-annotation. Updates the manifest on Drive and locally.
-    In dry-run mode (no --apply) only prints what would change.
-
-    With --rename-class old:new, renames the class across all languages: archives
-    the old sheet, creates a new one under the new name with all annotations
-    carried over, renames coded_data/{lang}/{old}/ to coded_data/{lang}/{new}/,
-    and updates the manifest.  diagnostics_{lang_id}.tsv must be updated to use
-    the new name BEFORE running this command (enforced by pre-flight checks).
-
-    With --split-element old:new1,new2,..., retires one element in favor of several
-    finer-grained replacements within the same position. New rows are left blank
-    (no principled 1:1 value to carry over from a generic annotation), but each
-    gets a Comments breadcrumb pointing back to the archived sheet if the old
-    element had existing data, so re-annotators have a pointer to the prior
-    judgment instead of needing to remember or hunt for it. This also cascades
-    into every pair-row construction referencing the retired element (see
-    _apply_split_to_pair_rows) -- not just the "home" element-row construction.
+    Declares every flag so `--help` and unknown-flag detection work, but the
+    hand-rolled colon/comma helpers below (`_parse_flag_map`,
+    `_parse_split_flag_map`) still do the actual value extraction from
+    `sys.argv` — they have their own tested parsing and error messages
+    (`tests/test_restructure.py`), not reimplemented here.
     """
     ap = argparse.ArgumentParser(
         description="Archive and regenerate sheets after structural changes."
@@ -1032,11 +1016,42 @@ def main() -> None:
         help='retire one element into several, "old_element:new1,new2,..." '
              "(comma-separated, at least 2 targets)",
     )
-    # Parsed here for --help and to hard-error on unknown flags. The actual
-    # values are still pulled from sys.argv by the flag-map helpers below,
-    # which have their own tested colon/comma parsing and error messages
-    # (tests/test_restructure.py) -- not reimplemented here.
-    ap.parse_args()
+    return ap
+
+
+def main(args: argparse.Namespace | None = None) -> None:
+    """Entry point for `python -m coding restructure-sheets`.
+
+    For each class in the manifest, downloads current annotations, optionally
+    archives the existing spreadsheet to _archived/ in Drive (renamed to include _v{N}), creates a new
+    spreadsheet from the updated planar structure, and carries over matching
+    annotations by (Element, Position_Name). Unmatched rows are left blank for
+    re-annotation. Updates the manifest on Drive and locally.
+    In dry-run mode (no --apply) only prints what would change.
+
+    With --rename-class old:new, renames the class across all languages: archives
+    the old sheet, creates a new one under the new name with all annotations
+    carried over, renames coded_data/{lang}/{old}/ to coded_data/{lang}/{new}/,
+    and updates the manifest.  diagnostics_{lang_id}.tsv must be updated to use
+    the new name BEFORE running this command (enforced by pre-flight checks).
+
+    With --split-element old:new1,new2,..., retires one element in favor of several
+    finer-grained replacements within the same position. New rows are left blank
+    (no principled 1:1 value to carry over from a generic annotation), but each
+    gets a Comments breadcrumb pointing back to the archived sheet if the old
+    element had existing data, so re-annotators have a pointer to the prior
+    judgment instead of needing to remember or hunt for it. This also cascades
+    into every pair-row construction referencing the retired element (see
+    _apply_split_to_pair_rows) -- not just the "home" element-row construction.
+    """
+    # args itself is unused below -- build_parser().parse_args() (called here
+    # when this isn't invoked with an already-parsed args from __main__.py's
+    # dispatch) exists for --help and to hard-error on unknown flags. The
+    # actual values are still pulled from sys.argv by the flag-map helpers
+    # below, which have their own tested colon/comma parsing and error
+    # messages (tests/test_restructure.py) -- not reimplemented here.
+    if args is None:
+        args = build_parser().parse_args()
 
     apply = "--apply" in sys.argv
     rename_map         = _parse_flag_map(sys.argv[1:], "--rename-map")

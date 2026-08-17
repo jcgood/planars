@@ -466,13 +466,13 @@ def _parse_merges() -> List[Tuple[str, str, str]]:
     return result
 
 
-def main() -> None:
-    """Entry point for `python -m coding sync-params`.
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding sync-params`.
 
-    Compares expected param columns (from diagnostics_{lang_id}.tsv) against actual sheet
-    headers, inserts new columns before Comments, optionally removes stale columns,
-    applies dropdown validation, and updates the Drive manifest if anything changed.
-    In dry-run mode (no --apply) only prints what would change.
+    Declares every flag so `--help` and unknown-flag detection work, but the
+    actual values are still pulled from sys.argv by _parse_renames/
+    _parse_splits/_parse_merges below, which have their own tested parsing
+    and error messages (tests/test_sync_params.py) -- not reimplemented here.
     """
     ap = argparse.ArgumentParser(
         description="Sync diagnostic criterion columns when diagnostics_{lang_id}.yaml changes."
@@ -489,11 +489,20 @@ def main() -> None:
                      help="split one criterion into two (repeatable)")
     ap.add_argument("--merge", metavar="OLD1:OLD2:NEW", action="append",
                      help="merge two criteria into one (repeatable)")
-    # Parsed here for --help and to hard-error on unknown flags. The actual
-    # values are still pulled from sys.argv by _parse_renames/_parse_splits/
-    # _parse_merges below, which have their own tested parsing and error
-    # messages (tests/test_sync_params.py) -- not reimplemented here.
-    ap.parse_args()
+    return ap
+
+
+def main(args: argparse.Namespace | None = None) -> None:
+    """Entry point for `python -m coding sync-params`.
+
+    Compares expected param columns (from diagnostics_{lang_id}.tsv) against actual sheet
+    headers, inserts new columns before Comments, optionally removes stale columns,
+    applies dropdown validation, and updates the Drive manifest if anything changed.
+    In dry-run mode (no --apply) only prints what would change.
+    """
+    # args itself is unused below -- see build_parser()'s docstring.
+    if args is None:
+        args = build_parser().parse_args()
 
     apply = "--apply" in sys.argv
     remove = "--remove" in sys.argv

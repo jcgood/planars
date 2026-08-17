@@ -935,3 +935,25 @@
       entirely, so nothing else creates its input for it.
   modes: []
 
+- id: registry
+  cli_command: registry
+  description: >-
+    Shows the derived command inventory: every coding/__main__.py command's
+    live argparse flags joined with its operations.yaml record (Phase 5
+    unit C, issue #271). `--command CLI_COMMAND` shows one command's full
+    detail; with no flags, prints a one-line description of every command.
+  side_effects:
+    - "none (read-only)"
+  idempotent: true
+  idempotency_note: >-
+    Reads coding/__main__.py's _COMMANDS table, every command module's
+    build_parser(), and this file itself, fresh on every call -- never
+    caches or writes anything, so repeat runs with nothing changed produce
+    identical output by construction.
+  apply_gate: null
+  preconditions: []
+  facts_touched: []
+  cascades_triggered: []
+  ordering_constraints: []
+  modes: []
+

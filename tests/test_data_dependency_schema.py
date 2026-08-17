@@ -224,6 +224,7 @@ def test_operations_have_expected_ids():
         "import_planar",
         "generate_status_sheet",
         "generate_biuniqueness_allomorphy_sheet",
+        "registry",
     }
 
 

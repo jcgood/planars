@@ -72,6 +72,7 @@ python -m coding generate-notebooks       # regenerate and upload Colab notebook
 python -m coding generate-reports         # generate and upload PDF reports to Drive (--apply)
 
 # Other
+python -m coding registry                 # full command inventory, derived fresh (--command NAME for one command's detail)
 python -m coding lookup-lang arao1248     # fetch + cache Glottolog metadata (--refresh, --all)
 python -m coding setup-root-folder        # one-time Drive folder setup
 python -m coding generate-status-sheet    # locked read-only per-language status sheets (--apply, --lang)

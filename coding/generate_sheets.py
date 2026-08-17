@@ -2162,27 +2162,8 @@ def _check_force_against_existing_sheets(
 # Main
 # ---------------------------------------------------------------------------
 
-def main() -> None:
-    """Entry point for `python -m coding generate-sheets`.
-
-    Dry-run by default: without --apply, reports what would be created/updated per
-    language (_plan_language_creation, using only already-fetched manifest data —
-    no Drive writes) and moves on. This did not exist before -- generate-sheets was
-    the one mutating command in the project with no dry-run gate at all, unlike
-    restructure-sheets/sync-params/update-sheets/sync-diagnostics-yaml, in direct
-    tension with docs/tooling-design.md's "dry-run by default" principle. Fixed
-    after an accidental live creation during a session that assumed omitting
-    --apply was safe, by analogy with every other command.
-
-    With --apply, iterates over all planar_*.tsv files in coded_data/*/lang_setup/
-    and for each language:
-    - Creates planar_*.tsv and diagnostics_{lang_id}.tsv as editable Google Sheets (source of
-      truth). Skips files whose sheet IDs are already in the manifest unless --force.
-    - Creates one annotation Google Sheet per analysis class (skipping existing ones unless
-      --force). Each sheet has one tab per construction with dropdown validation.
-    - Uploads the merged manifest.json manifest to Drive after each language.
-    - Regenerates contributor notebooks at the end.
-    """
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding generate-sheets`."""
     ap = argparse.ArgumentParser(
         description="Create/update Google Sheets annotation forms."
     )
@@ -2221,7 +2202,32 @@ def main() -> None:
         help="upload the existing local sheets_manifest.json to Drive as manifest.json "
              "(one-time migration utility)",
     )
-    args = ap.parse_args()
+    return ap
+
+
+def main(args: argparse.Namespace | None = None) -> None:
+    """Entry point for `python -m coding generate-sheets`.
+
+    Dry-run by default: without --apply, reports what would be created/updated per
+    language (_plan_language_creation, using only already-fetched manifest data —
+    no Drive writes) and moves on. This did not exist before -- generate-sheets was
+    the one mutating command in the project with no dry-run gate at all, unlike
+    restructure-sheets/sync-params/update-sheets/sync-diagnostics-yaml, in direct
+    tension with docs/tooling-design.md's "dry-run by default" principle. Fixed
+    after an accidental live creation during a session that assumed omitting
+    --apply was safe, by analogy with every other command.
+
+    With --apply, iterates over all planar_*.tsv files in coded_data/*/lang_setup/
+    and for each language:
+    - Creates planar_*.tsv and diagnostics_{lang_id}.tsv as editable Google Sheets (source of
+      truth). Skips files whose sheet IDs are already in the manifest unless --force.
+    - Creates one annotation Google Sheet per analysis class (skipping existing ones unless
+      --force). Each sheet has one tab per construction with dropdown validation.
+    - Uploads the merged manifest.json manifest to Drive after each language.
+    - Regenerates contributor notebooks at the end.
+    """
+    if args is None:
+        args = build_parser().parse_args()
 
     if args.push_manifest:
         push_manifest()

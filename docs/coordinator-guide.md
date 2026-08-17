@@ -621,6 +621,16 @@ make snapshots
 
 For commands that accept extra flags not covered by the aliases (e.g. `--rename-map`, `--rename-element`, `--lang`), use the full `python -m coding ...` form directly. The venv must be activated before using `make` (see [Python environment](#python-environment) above).
 
+### Command inventory
+
+```bash
+python -m coding registry                          # one line per command
+python -m coding registry --command generate-sheets # full detail: flags, side effects,
+                                                     # idempotency, preconditions, ordering
+```
+
+Derived fresh on every call from `coding/__main__.py`'s command table, each command's own flags, and `data_dependency_schema/operations.yaml` — never hand-maintained, so it can't go stale the way a written-out command list would.
+
 ### Schema utilities
 
 Two standalone scripts in the repo root generate human-readable views of the schema files:

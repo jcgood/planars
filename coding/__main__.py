@@ -3,33 +3,14 @@
 Usage:
     python -m coding <command> [options]
 
-Commands:
-    generate-sheets              Create/update Google Sheets annotation forms
-    generate-notebooks           Generate and upload contributor + coordinator notebooks
-    generate-reports             Generate and upload PDF reports for all languages to Drive
-    sync-params                  Sync diagnostic criterion columns when diagnostics_{lang_id}.yaml changes
-    sync-diagnostics-yaml        Sync diagnostics YAML → TSV (YAML is source of truth)
-    sync-qualification-hashes    Stamp qualification_rule_hash in diagnostic_classes_status.yaml
-    update-sheets                Add missing rows/columns to existing sheets
-    import-sheets                Download filled sheets to TSVs
-    validate-coding              Re-validate annotation sheets and update cell highlighting
-    restructure-sheets           Archive and regenerate sheets after structural changes (--rename-class, --rename-map, --rename-element)
-    check-codebook               Check consistency between schema files and analysis modules
-    generate-rule-update-prompt  Generate coordinator-facing Claude prompt for stale qualification rules
-    integrity-check              Full project-wide integrity check (all languages, all schemas)
-    setup-root-folder            Create ConstituencyTypology root Drive folder (run once)
-    lookup-lang                  Fetch and cache Glottolog metadata for a language ID
-    apply-pending                Review and apply pending destructive changes
-    prune-manifest               Archive retired class TSVs and remove stale manifest entries
-    check-notes                  Check collaborator notes docs for new content and file issues
-    refresh-dropdowns            Refresh criterion dropdown validation on existing sheets
-    import-planar                Download planar spreadsheet from Drive and sync to local TSV
-    generate-status-sheet        Generate locked, read-only per-language Annotation Status sheets
-    generate-biuniqueness-allomorphy-sheet  Generate the Stage 1 biuniqueness/allomorphy screening sheet
-    capture-drive-state          Record live Drive/Sheets state to local test fixtures (READ-ONLY)
-
-Each command accepts the same flags as the original script. Use --help on any
-command for details, or see CLAUDE.md.
+Run `python -m coding registry` for the full, always-current list of
+commands with a one-line description of each -- derived fresh from this
+file's _COMMANDS table, every command's own argparse flags, and
+data_dependency_schema/operations.yaml, rather than restated here where it
+would inevitably drift (Phase 5 unit C, issue #271). Add `--command NAME`
+to that for one command's full detail: flags, side effects, idempotency,
+preconditions, and ordering relative to other commands. Use --help on any
+individual command for just its flags, or see CLAUDE.md.
 """
 import json
 import sys
@@ -62,6 +43,7 @@ _COMMANDS = {
     "import-planar":               "coding.import_planar",
     "generate-status-sheet":       "coding.generate_status_sheet",
     "generate-biuniqueness-allomorphy-sheet": "coding.generate_biuniqueness_allomorphy_sheet",
+    "registry":                    "coding.registry",
 }
 
 
@@ -86,12 +68,19 @@ def main() -> None:
         print(f"Available commands: {', '.join(sorted(_COMMANDS))}")
         sys.exit(1)
 
-    # Remove the subcommand so the module's main() sees only its own flags
+    # Remove the subcommand so the module's own parser -- and, for
+    # restructure_sheets.py/sync_params.py, their hand-rolled colon/comma
+    # helpers that read sys.argv directly -- see only its own flags.
     sys.argv = [sys.argv[0]] + sys.argv[2:]
 
     import importlib
     mod = importlib.import_module(_COMMANDS[cmd])
-    mod.main()
+    args = mod.build_parser().parse_args()
+    # Parsed once, here, rather than inside mod.main() -- this is the
+    # dispatch chokepoint Phase 5 units D (precondition enforcement) and E
+    # (provenance capture) hook into, keyed by `cmd` and `args`; neither is
+    # built yet (see docs/data-layer-progress.md's Open questions).
+    mod.main(args)
 
 
 if __name__ == "__main__":
