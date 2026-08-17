@@ -18,6 +18,12 @@ Runs eight sections of checks and prints a structured report:
                                     invisible to element-set comparison alone. When recoverable,
                                     prints ready-to-use --pos-remap flags.
   ANNOTATION SHEETS              — checks live sheet structure and dropdown drift (requires --sheets)
+  MANIFEST SHAPE                 — checks the live manifest against manifest_contract.py's
+                                    pydantic model (Phase 6 boundary 4, issue #271). The model is
+                                    deliberately permissive (see that module's docstring), so a
+                                    violation here means something structurally broken, not merely
+                                    an unrecognized field -- safe to let drive a real error, unlike
+                                    upload_manifest()'s own non-blocking version of the same check.
   NEEDS REVIEW                   — surfaces [NEEDS REVIEW] / [PLACEHOLDER] markers
 
 Exit code 0 if no errors; 1 if any errors (warnings do not fail).
@@ -793,6 +799,45 @@ def _section_dependent_construction_staleness(
     return total_e, 0
 
 
+def _section_manifest_shape() -> Tuple[int, int]:
+    """Check the live manifest against manifest_contract.py's pydantic model.
+
+    Unlike upload_manifest()'s version of this check (a local, non-blocking
+    warning), a violation here contributes to total_e and can drive the
+    integrity-error GitHub issue -- safe because the model is deliberately
+    permissive (see manifest_contract.py's module docstring): a violation
+    means the manifest isn't shaped like {lang_id: {...}} at all, not merely
+    that it carries a field this session hasn't seen before.
+    """
+    print(_section("MANIFEST SHAPE"))
+
+    from . import manifest_contract
+    from .drive import load_manifest
+    from .drive_doorway import get_doorway
+
+    try:
+        manifest = load_manifest(get_doorway())
+    except Exception as exc:
+        # Drive unavailable -- skip silently, same reasoning as
+        # --check-manifest above: import-sheets files an import-error issue
+        # if Drive is genuinely down, so this section doesn't need to also.
+        print(f"  (could not load manifest: {exc} — skipping)")
+        return 0, 0
+
+    problems = manifest_contract.check(manifest)
+    if not problems:
+        print(_ok("manifest matches the expected shape"))
+        return 0, 0
+
+    print(_fail(f"manifest does not match the expected shape ({len(problems)} issue(s))"))
+    for p in problems:
+        print(_sub(p))
+    print(_sub("→ See coding/manifest_contract.py for the contract, "
+               "and docs/data-layer-progress.md's 2026-08-17 decisions-log "
+               "entry for why this is checked here rather than blocking the write."))
+    return len(problems), 0
+
+
 def _section_needs_review(codebook: dict, diag_classes: dict) -> None:
     print(_section("NEEDS REVIEW / PLACEHOLDERS"))
 
@@ -934,6 +979,9 @@ def main(args: argparse.Namespace | None = None) -> None:
     total_e += e; total_w += w
 
     e, w = _section_dependent_construction_staleness(lang_ids, diag_classes)
+    total_e += e; total_w += w
+
+    e, w = _section_manifest_shape()
     total_e += e; total_w += w
 
     if args.sheets:

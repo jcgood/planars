@@ -185,7 +185,21 @@ def upload_manifest(doorway, full_config: Dict, root_folder_id: str,
     body, so the manifest-writing rules exist in exactly one place. (There are
     still three *other* independent manifest writers elsewhere in the codebase
     — that is issue #276, not this.)
+
+    Checks ``full_config`` against ``manifest_contract.check()`` first and
+    prints a warning if it finds anything — but writes regardless. Phase 6
+    boundary 4 (issue #271); see ``manifest_contract.py``'s module docstring
+    for why this is deliberately non-blocking. ``integrity-check`` runs the
+    same check against the currently-loaded manifest and *does* let it drive
+    a trackable issue — this local warning is only the in-the-moment signal.
     """
+    from . import manifest_contract
+    problems = manifest_contract.check(full_config)
+    if problems:
+        print(f"  WARNING: manifest being written doesn't match the expected shape ({len(problems)} issue(s)):")
+        for p in problems[:5]:
+            print(f"    {p}")
+
     content = _ordered_manifest_bytes(full_config)
     return _upload_manifest_with(
         lambda file_id: doorway.update_file(file_id, content=content,

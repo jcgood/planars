@@ -252,7 +252,7 @@ declared preconditions are checked before execution.
 
 ---
 
-## Phase 6 — Data contracts at boundaries
+## Phase 6 — Data contracts at boundaries — done 2026-08-17
 
 **Goal.** Declare expected input/output shapes on the highest-traffic functions.
 

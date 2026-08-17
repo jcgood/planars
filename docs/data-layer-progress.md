@@ -30,12 +30,19 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 6 — **started 2026-08-17, three of four boundaries done.** The
+**Phase:** 6 — **done, all four boundaries, as of 2026-08-17.** The
 filled-TSV/sheet loader (`planars/io.py`'s `_parse_filled_df`), the
 planar loader (`coding/make_forms.py`'s `build_element_index`), and the
-coreference pair-row loader (`planars/coreference.py`) now have pandera
-contracts (`planars/contracts.py`, `coding/contracts.py`); only manifest
-read/write is not started. See Next action below for the full
+coreference pair-row loader (`planars/coreference.py`) have pandera
+contracts (`planars/contracts.py`, `coding/contracts.py`); the Drive
+manifest has a pydantic contract (`coding/manifest_contract.py`),
+deliberately permissive and non-blocking on write, checked as a real,
+trackable error in `integrity-check`. Also produced, as a side effect of
+scoping boundary 4's risk: **issue #283**, a sweep finding four (later five)
+warning-shaped `print()` calls in automated commands that never reach a
+GitHub issue, and a new durable coverage test
+(`tests/test_unattended_warning_escalation.py`) that fails when a new one
+joins the pile unclassified. See Next action below for the full
 account. 5 — done, all five units. Unit A (argparse standardization, all 9 batches) done 2026-08-16. Units B (dispatch integration) and C (derived `registry` command) done the same day, right after A: every command module now exposes `build_parser()` separately from `main(args=None)`, `__main__.py` parses once and calls `mod.main(args)` directly (the chokepoint units D/E hook into), and `python -m coding registry` derives the full command inventory fresh from that plus `operations.yaml` on every call. Units D (precondition enforcement) and E (provenance capture) done 2026-08-17, both same day, after Jeff decided both units' open questions (see the Decisions log): D replaces the scattered manual `_check_coded_data_clean()` calls, file-by-file, with `coding/preconditions.py` driven by each command's `operations.yaml` record; E logs only Drive-writing invocations (not every command, and per actual invocation not per command) to `provenance_log.jsonl`, append-forever, via `coding/provenance.py`. 4 — done. Every record traced against code, all three "done when" items complete, and all five review items closed out with Jeff (started 2026-08-10, review session 2026-08-11, line-by-line trace + fixes 2026-08-11, Findings 27/28 resolved with Jeff 2026-08-16). 3 — done (started and finished 2026-08-10). 0b/1 — done, 18 of 18 (2026-08-01–2026-08-04).
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
@@ -137,7 +144,8 @@ the same day — see the decisions log.
 | Phase 6, boundary 1 — filled-TSV/sheet loader | **done** — `planars/contracts.py` (pandera), wired into `planars/io.py`'s `_parse_filled_df`; `tests/test_contracts.py` new, `tests/test_io.py`'s 14 error-path tests pass unchanged |
 | Phase 6, boundary 2 — planar load | **done** — `coding/contracts.py` (pandera), wired into `coding/make_forms.py`'s `build_element_index`; `tests/test_coding_contracts.py` new, `tests/test_make_forms.py`'s 3 pre-existing error-path tests pass unchanged plus 6 new ones closing a pre-existing test-coverage gap |
 | Phase 6, boundary 3 — pair-row load | **done** — `planars/contracts.py` section 2 (pandera), wired into `planars/coreference.py`'s `_load_planar_for_coreference`/`derive_coreference_domains`; `tests/test_coreference.py` new (no unit-test file existed for this module before), `tests/test_contracts.py` extended, all 6 pre-existing coreference snapshot tests pass unchanged |
-| Phase 6, boundary 4 — manifest read/write | not started |
+| Phase 6, boundary 4 — manifest read/write | **done** — `coding/manifest_contract.py` (pydantic, deliberately permissive, never raises); `drive.upload_manifest()` warns without blocking, `integrity_check.py`'s new `MANIFEST SHAPE` section lets a violation drive a real `integrity-error`; `tests/test_manifest_contract.py` new, `tests/test_drive.py`/`tests/test_integrity_check_snapshot.py` extended. Side effect: issue #283 (warning-escalation sweep) and `tests/test_unattended_warning_escalation.py` (durable coverage test) |
+| **Phase 6 (the whole unit)** | **done** — all four boundaries complete |
 | Phases 7–9 | not started |
 
 ### In flight
@@ -487,9 +495,82 @@ at all before today — `tests/test_coreference.py` (new) covers the error
 paths now added plus the pre-existing "no keystone" and "other-language
 rows ignored" behaviour, none of which had a test before.
 
-Boundary 4 (manifest read/write) is not started — the one boundary the
-plan assigns to pydantic rather than pandera (dict/JSON, not a DataFrame).
-No scoping question open there either, the plan already made that call.
+**Phase 6, boundary 4 ("manifest read/write") done, same session — the one
+boundary with a real scoping question, resolved through actual back-and-forth
+with Jeff rather than settled by the plan already.** `load_manifest()`
+(`coding/drive.py`) is the highest-blast-radius function in the project —
+called near the start of nearly every `coding/` command — so the question
+wasn't *which* boundary or *which* library (the plan already assigns
+pydantic to this one, dict/JSON not a DataFrame), it was how strict a
+contract can safely be here, given the model can only be checked against one
+static fixture (`tests/fixtures/drive_state/manifest.json`, three languages,
+2026-08-01) with no live Drive access permitted before Phase 9 to verify it
+against what the manifest actually looks like today.
+
+Three options were weighed explicitly: documentation-only (never blocks,
+never tracked); write-side validation with a hard block (real teeth, but
+risks an outage on real-but-unmodeled data); and the one Jeff picked —
+**write-side validation that warns but never blocks, plus the same check
+wired into `integrity-check` where a violation *does* drive a real,
+trackable `integrity-error` issue.** That combination only works because
+the model itself is deliberately far more permissive than boundaries 1–3's:
+every field `Optional`, `extra="allow"` at every level, `sheets`/`planar`
+left as untyped dicts rather than modeled (modeling them here would be a
+fourth place describing shape `docs/data-layer-design.md` already
+diagnoses as the recurring failure pattern). That permissiveness is what
+makes it safe to let `integrity-check`'s copy of the check raise a real
+error: a violation there means the manifest isn't shaped like
+`{lang_id: {...}}` at all, not merely that it carries a field this session
+hasn't seen.
+
+`coding/manifest_contract.py` (new): `check(full_config) -> List[str]`,
+never raises regardless of input shape. Two callers: `drive.upload_manifest()`
+prints a warning if `check()` finds anything but writes regardless (tests
+pin this: a malformed manifest still gets written);
+`integrity_check.py`'s new `MANIFEST SHAPE` section (part of the default
+report, not gated behind `--sheets`/`--check-manifest`) contributes to
+`total_e` on a violation. Validated clean against the real fixture; a
+malformed-manifest test confirms the `integrity-error`-driving exit-1 path.
+One pre-existing snapshot updated (`sheets_arao1248.txt`, the new section
+appearing in output — reviewed, expected).
+
+**A side effect of taking the "how strict" question seriously: it surfaced
+a broader, previously untracked problem, followed through as its own piece
+of work rather than left as a one-off worry.** Jeff asked how a warning
+that only prints would ever be tracked, which led to tracing
+`.github/workflows/data-refresh.yml`'s actual escalation mechanism: it
+keys off a command's **exit code** (and, for a few commands, specific line
+prefixes like `ERROR:`/`✗`), never off the literal word "WARNING". A sweep
+of all 25 warning-shaped `print()` calls across `coding/`, cross-referenced
+against what runs unattended, found four confirmed gaps (a fifth,
+`drive.py`'s own `load_manifest()` parse-failure warning, turned up
+afterward — see below) and three cases that turned out to be deliberate,
+documented decisions, not oversights (`update_sheets.py`'s structural-drift
+warning correctly escalates via exit 1; `integrity_check.py --check-manifest`'s
+Drive-unavailable skip and `drive._autocommit_data`'s git-push-failure
+warning are both intentionally silent, each with a code comment explaining
+why). Filed as **issue #283**, with recommended fixes for the four gaps —
+not applied, since they're changes to the workflow that's supposed to be
+the safety net for missed problems, and this session had no way to verify
+them against a live run before the next scheduled trigger. Building the
+durable coverage test below (before adding it to `_KNOWN_SITES`) found the
+fifth gap: its regex was more careful about case (`Warning:` vs `WARNING:`)
+than the manual sweep's, catching `drive.py:256` inside `_load_manifest_with`
+itself — added as a follow-up comment on #283 rather than a new issue.
+
+**The durable half of the answer to "how do I stop missing this":**
+`tests/test_unattended_warning_escalation.py` (new) derives the list of
+unattended commands straight from `.github/workflows/*.yml` (stripping
+Python heredoc blocks first, so a command name mentioned inside a
+generated issue-body string doesn't produce a false positive), scans those
+modules plus `drive.py`/`__main__.py` (common code every command passes
+through) for warning-shaped prints, and fails if one exists that isn't in
+a maintained `_KNOWN_SITES` allowlist with a one-line disposition. A
+second test catches the inverse — an allowlist entry whose line no longer
+matches anything, so the list can't quietly rot. This is the actual
+mechanism asked for: not a periodic manual sweep, but a test that won't
+let a new orphaned warning pass silently.
+
 Phases 7–9 remain entirely unscoped; see
 `docs/data-layer-implementation-plan.md`.
 
@@ -1470,6 +1551,33 @@ commit.
 ---
 
 ## Decisions log
+
+**2026-08-17 — Phase 6 boundary 4 (manifest contract): how strict, given
+`load_manifest()`'s blast radius.** Three options were on the table: (1)
+documentation-only, a permissive model that never blocks and never raises
+anywhere; (2) validate on write only (`upload_manifest`), never on read; (3)
+validate on both read and write, raising on mismatch — matching boundaries
+1–3's rigor exactly, but risking an outage on real data an incomplete
+fixture-derived model hadn't anticipated. Jeff's first question after
+hearing the reasoning for (1) was practical, not abstract: if a mismatch
+only prints, how does he ever find out it happened? That reframed the
+choice — "never blocks" and "never tracked" don't have to be the same
+decision. Landed on a fourth shape neither original option captured:
+write-side check that warns but never blocks (keeps the outage risk near
+zero), *plus* the same check wired into `integrity-check`, where a
+violation does drive a real, trackable `integrity-error` GitHub issue —
+made safe only by also deliberately loosening the model itself (every
+field `Optional`, `extra="allow"` everywhere, nested structures left
+untyped) so that a violation there means something structurally broken,
+not merely a field this session hadn't seen. Chasing that question further
+— "am I confident Jeff will agree, or asking reflexively" — led to
+noticing the session had been asking before every fork regardless of
+whether the fork carried real risk, which led to naming that pattern
+explicitly rather than continuing it by default. Also produced issue #283
+and its coverage test — see the Findings/Next-action entries for what that
+turned up. Full reasoning also lives in `coding/manifest_contract.py`'s
+module docstring, since that's where a future reader is more likely to
+look first.
 
 **2026-08-17 — Phase 5 units D and E, both decided in the same session
 after being blocked on Jeff's input since 2026-08-16.** D: replace the
@@ -2567,5 +2675,13 @@ intended behaviour changes whatsoever."
 None open right now. Phase 4's five review items were closed out with Jeff
 on 2026-08-16 (see Findings 25–28); Phase 5 units D and E's two open
 questions were decided 2026-08-17 (see the Decisions log) and both units are
-done. Phases 6–9 aren't scoped in enough detail yet to have surfaced their
-own questions.
+done; Phase 6 boundary 4's strictness question was decided the same day
+(see the Decisions log) and Phase 6 is now done in full. Phases 7–9 aren't
+scoped in enough detail yet to have surfaced their own questions.
+
+One item worth a look when convenient, not blocking anything: **issue #283**
+(warning-shaped `print()` calls in automated commands that never reach a
+GitHub issue) has recommended fixes for its four confirmed gaps, not yet
+applied — they're changes to `.github/workflows/data-refresh.yml` and a
+couple of `coding/*.py` files, better reviewed than shipped solo. See the
+issue for what's recommended.

@@ -8,6 +8,7 @@ google-api-python-client
 pandas
 pandera        # data contracts on DataFrame boundaries (Phase 6, issue #271)
 plotly
+pydantic       # data contracts on dict/JSON boundaries (Phase 6, issue #271) -- coordinator-only
 PyYAML
 weasyprint>=68.0
 

@@ -182,6 +182,30 @@ def test_check_manifest_clean_transcript(env):
 
 
 # ---------------------------------------------------------------------------
+# MANIFEST SHAPE section (Phase 6 boundary 4, issue #271)
+# ---------------------------------------------------------------------------
+
+def test_manifest_shape_clean_on_default_run(env):
+    # Not asserting exit_code here -- arao1248 has known, unrelated open
+    # issues elsewhere in the report (e.g. #279's proform gap) that can
+    # drive exit 1 on their own. This test is scoped to the MANIFEST SHAPE
+    # section only.
+    _, run_main = env
+    out, _ = run_main(["integrity-check", "--lang", "arao1248"])
+    assert "MANIFEST SHAPE" in out
+    assert "✓  manifest matches the expected shape" in out
+
+def test_manifest_shape_violation_drives_exit_1(env):
+    doorway, run_main = env
+    mutate_manifest(doorway, lambda m: m.__setitem__("arao1248", "not-a-dict-anymore"))
+
+    out, exit_code = run_main(["integrity-check", "--lang", "arao1248"])
+    assert "MANIFEST SHAPE" in out
+    assert "✗  manifest does not match the expected shape" in out
+    assert exit_code == 1
+
+
+# ---------------------------------------------------------------------------
 # --sheets: mismatched header -> sync-params warning naming both column lists
 # ---------------------------------------------------------------------------
 

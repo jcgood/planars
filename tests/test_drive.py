@@ -30,6 +30,7 @@ from coding.drive import (
     create_or_update_shared_file,
     ensure_anyone_permission,
     get_or_create_spreadsheet,
+    upload_manifest,
 )
 from fake_drive import FakeDriveDoorway
 
@@ -241,6 +242,30 @@ class TestCreateOrUpdateSharedFile:
             existing_file_id=file_id)
         assert doorway.mutations_of("update_file")
         assert doorway.mutations_of("create_permission") == []  # already shared
+
+
+# ---------------------------------------------------------------------------
+# upload_manifest -- manifest_contract check (Phase 6 boundary 4, issue #271)
+# ---------------------------------------------------------------------------
+
+class TestUploadManifestShapeCheck:
+    """The shape check is deliberately non-blocking -- see
+    manifest_contract.py's module docstring. These tests pin that promise:
+    a malformed manifest still gets written, just with a warning printed."""
+
+    def test_well_shaped_manifest_writes_with_no_warning(self, capsys):
+        doorway = FakeDriveDoorway()
+        folder_id = doorway.seed_folder("root")
+        upload_manifest(doorway, {"lang0001": {"folder_id": "abc"}}, folder_id)
+        assert doorway.mutations_of("create_file")
+        assert "WARNING" not in capsys.readouterr().out
+
+    def test_malformed_manifest_still_writes_but_warns(self, capsys):
+        doorway = FakeDriveDoorway()
+        folder_id = doorway.seed_folder("root")
+        upload_manifest(doorway, {"lang0001": "not-a-dict"}, folder_id)
+        assert doorway.mutations_of("create_file")  # write happened regardless
+        assert "WARNING" in capsys.readouterr().out
 
 
 # ---------------------------------------------------------------------------

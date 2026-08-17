@@ -22,6 +22,9 @@
 ── DEPENDENT CONSTRUCTION STALENESS ────────────────────────────────────
   (no languages have dependent construction TSV pairs to check)
 
+── MANIFEST SHAPE ──────────────────────────────────────────────────────
+  ✓  manifest matches the expected shape
+
 ── ANNOTATION SHEETS ───────────────────────────────────────────────────
   ✓  Araona [arao1248] · ciscategorial · general
   ✓  Araona [arao1248] · noninterruption · general

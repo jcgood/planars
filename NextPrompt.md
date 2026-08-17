@@ -19,8 +19,8 @@ this project is trying to remove.
 nothing blocked. Full detail in `docs/data-layer-progress.md`'s Current
 state / Next action / Decisions log / Findings sections.
 
-**Phase 6 ("data contracts at boundaries") started 2026-08-17, three of four
-boundaries done.** `planars/contracts.py` declares pandera schemas for two
+**Phase 6 ("data contracts at boundaries") is done, all four boundaries, as
+of 2026-08-17.** `planars/contracts.py` declares pandera schemas for two
 `planars/`-package DataFrame boundaries. Section 1: `planars/io.py`'s
 filled-TSV/sheet loader (`_parse_filled_df`, shared by
 `load_filled_tsv`/`load_filled_sheet` and all fifteen `planars/*.py` analysis
@@ -28,24 +28,38 @@ modules) — the boundary Jeff picked to start with, out of the plan's four
 candidates, for its reuse. `pandera` is now a runtime dependency of
 `planars/` (in `pyproject.toml`'s `dependencies`, since this loader is
 imported by Colab notebooks, not just `requirements.in`). Section 2:
-`planars/coreference.py`'s pair-row loader — a thinner fit than sections 1
+`planars/coreference.py`'s pair-row loader — a thinner fit than section 1
 and its coordinator-side sibling below (most bad *values* there are
 deliberate warnings, not failures), but real column-presence gaps
 (`row.get(col, "")`'s silent `""` fallback on a genuinely missing column)
 turned up anyway. `coding/contracts.py` declares one for
 `coding/make_forms.py`'s `build_element_index` (planar load) —
-coordinator-only, so no Colab dependency question there. Full account of
-all three, including a closure bug and a numpy-`int64` leak caught and
-fixed before commit (Finding 30) and pre-existing test-coverage gaps closed
-on boundaries 2 and 3 (the latter had no dedicated unit-test file at all
-before today), in `docs/data-layer-progress.md`'s Next action section.
+coordinator-only, so no Colab dependency question there. Boundary 4,
+`coding/manifest_contract.py` (pydantic, not pandera — dict/JSON), is the
+one that took real back-and-forth: `load_manifest()` is the
+highest-blast-radius function in the project, checkable only against one
+static fixture with no live Drive access before Phase 9, so the model is
+deliberately far more permissive than the other three and non-blocking on
+write — but *does* drive a real, trackable `integrity-error` GitHub issue
+via a new `integrity-check` section, resolving "how would I ever find out"
+without reintroducing the outage risk. See the 2026-08-17 decisions-log
+entry for the full path to that design.
 
-**Remaining Phase 6 boundary — manifest read/write — is not started.** The
-plan assigns it to pydantic rather than pandera (dict/JSON, not a
-DataFrame); no scoping question remains open the way "which boundary
-first" was for boundary 1. Phases 7–9 remain entirely unscoped in
-session-level detail — see `docs/data-layer-implementation-plan.md` for
-the phase spec.
+**A side effect of boundary 4's risk discussion: issue #283 and a new
+durable test.** Tracing "how would a warning ever get tracked" led to
+finding that `.github/workflows/*.yml` only escalates a problem to a
+GitHub issue via exit code (never the literal word "WARNING") — a sweep
+found five warning-shaped `print()` calls across `coding/` that are
+currently invisible in automation, filed as issue #283 with recommended
+fixes (not applied — those are workflow changes affecting the safety net
+itself, better reviewed than shipped solo). The durable half:
+`tests/test_unattended_warning_escalation.py` derives the unattended-command
+list straight from the workflow YAML and fails if a *new* orphaned warning
+joins the pile unclassified — the actual answer to "how do I stop missing
+this", not a periodic manual re-sweep.
+
+**Phases 7–9 remain entirely unscoped in session-level detail** — see
+`docs/data-layer-implementation-plan.md` for the phase spec.
 
 **Phase 0b/1 (the doorway migration), Phase 3 (schema reorganization), and
 Phase 4 (topology declaration) are all complete, nothing outstanding from
