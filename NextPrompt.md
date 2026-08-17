@@ -15,15 +15,18 @@ this project is trying to remove.
 
 ## Now
 
-**Phase 5 is in progress. Unit A (argparse standardization, all 17
-`coding/` commands, 9 batches) is done as of 2026-08-16 — every command now
-hard-errors on an unknown flag instead of silently ignoring it, and has real
-`--help`.** Units B (dispatch integration) and C (derived `registry`
-command) can start any time; unit D (precondition enforcement) and unit E
-(provenance capture) each have an open question for Jeff — see
-`docs/data-layer-progress.md`'s Open questions section. Full detail in that
-file's Current state, Next action, and Findings sections — no need to
-duplicate it here.
+**Phase 5 is in progress. Units A, B, and C are done, all as of 2026-08-16.**
+A: every command hard-errors on an unknown flag instead of silently ignoring
+it, and has real `--help`. B: every command module exposes `build_parser()`
+separately from `main(args=None)`, and `__main__.py`'s dispatch parses once
+and calls `mod.main(args)` directly — a real chokepoint, not just a parser
+in isolation. C: `python -m coding registry` derives the full command
+inventory fresh from that plus `operations.yaml` on every call; replaced
+`__main__.py`'s own hand-maintained command list. **Units D (precondition
+enforcement) and E (provenance capture) are next, and both are blocked on a
+decision from Jeff** — see `docs/data-layer-progress.md`'s Open questions
+section. Full detail in that file's Current state, Next action, and
+Findings sections — no need to duplicate it here.
 
 **Phase 0b/1 (the doorway migration), Phase 3 (schema reorganization), and
 Phase 4 (topology declaration) are all complete, nothing outstanding from
