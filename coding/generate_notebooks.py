@@ -36,9 +36,9 @@ Authentication: same OAuth2 setup as generate_sheets.py.
 """
 from __future__ import annotations
 
+import argparse
 import copy
 import json
-import sys
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -427,7 +427,15 @@ def regenerate_notebooks() -> None:
 
 def main() -> None:
     """Entry point for `python -m coding generate-notebooks`."""
-    _run_generation(apply="--apply" in sys.argv)
+    ap = argparse.ArgumentParser(
+        description="Generate and upload contributor + coordinator notebooks."
+    )
+    ap.add_argument(
+        "--apply", action="store_true",
+        help="generate and upload to Drive (default: dry run)",
+    )
+    args = ap.parse_args()
+    _run_generation(apply=args.apply)
 
 
 if __name__ == "__main__":

@@ -45,6 +45,7 @@ folder to participate. Languages without YAML are skipped.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -318,11 +319,30 @@ def _apply_command(from_tsv: bool, to_sheet: bool, lang_filter: Optional[str]) -
 
 
 def main() -> None:
-    args = sys.argv[1:]
-    apply = "--apply" in args
-    from_tsv = "--from-tsv" in args
-    to_sheet = "--to-sheet" in args
-    lang_filter: Optional[str] = None
+    ap = argparse.ArgumentParser(
+        description="Sync diagnostics YAML <-> TSV <-> Sheet."
+    )
+    ap.add_argument(
+        "--apply", action="store_true",
+        help="write changes (default: dry run)",
+    )
+    ap.add_argument(
+        "--from-tsv", action="store_true",
+        help="diff TSV against YAML instead of regenerating TSV from YAML",
+    )
+    ap.add_argument(
+        "--to-sheet", action="store_true",
+        help="push YAML to the live diagnostics Sheet instead of the local TSV",
+    )
+    ap.add_argument(
+        "--lang", metavar="LANG_ID", dest="lang",
+        help="restrict to this language",
+    )
+    args = ap.parse_args()
+    apply = args.apply
+    from_tsv = args.from_tsv
+    to_sheet = args.to_sheet
+    lang_filter: Optional[str] = args.lang
 
     if apply:
         # All three directions read coded_data/*.yaml as ground truth
@@ -333,13 +353,6 @@ def main() -> None:
         # leaving a stale file on disk.
         from .drive import _check_coded_data_clean
         _check_coded_data_clean(extensions=(".yaml", ".tsv"))
-
-    if "--lang" in args:
-        idx = args.index("--lang")
-        if idx + 1 >= len(args):
-            print("ERROR: --lang requires a language ID argument")
-            sys.exit(1)
-        lang_filter = args[idx + 1]
 
     run_line = _apply_command(from_tsv, to_sheet, lang_filter)
     if not apply:

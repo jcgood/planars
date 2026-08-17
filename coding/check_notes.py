@@ -15,10 +15,10 @@ Usage:
 """
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import subprocess
-import sys
 import tempfile
 from datetime import date
 from pathlib import Path
@@ -175,9 +175,20 @@ def _build_issue_body(
 
 
 def main() -> None:
-    args = sys.argv[1:]
-    apply = "--apply" in args
-    lang_filter = args[args.index("--lang") + 1] if "--lang" in args else None
+    ap = argparse.ArgumentParser(
+        description="Check collaborator notes docs for new content and file issues."
+    )
+    ap.add_argument(
+        "--apply", action="store_true",
+        help="file/update GitHub issues, acknowledge in doc, save state (default: dry run)",
+    )
+    ap.add_argument(
+        "--lang", metavar="LANG_ID", dest="lang",
+        help="restrict to this language",
+    )
+    args = ap.parse_args()
+    apply = args.apply
+    lang_filter = args.lang
 
     if not apply:
         print("DRY RUN — pass --apply to file issues, write back to docs, and save state.")
