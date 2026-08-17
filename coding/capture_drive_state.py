@@ -113,7 +113,8 @@ def _plan(manifest: Dict, langs: List[str]) -> List[tuple]:
     return targets
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding capture-drive-state`."""
     ap = argparse.ArgumentParser(
         description="Capture live Drive/Sheets state to local fixtures. READ-ONLY."
     )
@@ -125,7 +126,12 @@ def main() -> None:
         "--lang", metavar="LANG_ID", dest="lang",
         help="restrict to this language",
     )
-    args = ap.parse_args()
+    return ap
+
+
+def main(args: argparse.Namespace | None = None) -> None:
+    if args is None:
+        args = build_parser().parse_args()
     apply = args.apply
     lang_filter = args.lang
 

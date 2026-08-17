@@ -718,7 +718,8 @@ def revalidate_sheets(
     return total_blocking
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding validate-coding`."""
     ap = argparse.ArgumentParser(
         description="Re-validate annotation sheets and update cell highlighting."
     )
@@ -730,7 +731,12 @@ def main() -> None:
         "--verbose", action="store_true",
         help="print each blank-cell issue individually",
     )
-    args = ap.parse_args()
+    return ap
+
+
+def main(args: argparse.Namespace | None = None) -> None:
+    if args is None:
+        args = build_parser().parse_args()
     lang_filter = args.lang
     verbose = args.verbose
 

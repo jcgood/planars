@@ -131,7 +131,8 @@ def _resolve_criterion_columns(
     return col_start, per_col, None
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding refresh-dropdowns`."""
     ap = argparse.ArgumentParser(
         description="Refresh criterion dropdown validation on existing sheets."
     )
@@ -143,7 +144,12 @@ def main() -> None:
         "--lang", metavar="LANG_ID", dest="lang",
         help="restrict to this language",
     )
-    args = ap.parse_args()
+    return ap
+
+
+def main(args: argparse.Namespace | None = None) -> None:
+    if args is None:
+        args = build_parser().parse_args()
     apply = args.apply
     lang_filter = args.lang
 

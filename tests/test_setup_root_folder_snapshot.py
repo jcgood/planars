@@ -68,7 +68,8 @@ def env(monkeypatch):
         drive_doorway.reset_doorway()
 
 
-def run() -> str:
+def run(monkeypatch) -> str:
+    monkeypatch.setattr("sys.argv", ["setup-root-folder"])
     buf = io.StringIO()
     with redirect_stdout(buf):
         setup_root_folder.main()
@@ -94,12 +95,12 @@ def check_snapshot(name: str, actual: str) -> None:
 # ---------------------------------------------------------------------------
 
 def test_first_run_output(env, monkeypatch):
-    check_snapshot("first_run.txt", run())
+    check_snapshot("first_run.txt", run(monkeypatch))
 
 
-def test_first_run_creates_the_root_folder_and_shares_it(env):
+def test_first_run_creates_the_root_folder_and_shares_it(env, monkeypatch):
     doorway, _, _ = env
-    run()
+    run(monkeypatch)
     created = doorway.mutations_of("create_file")
     assert [c["name"] for c in created] == ["ConstituencyTypology"]
     assert created[0]["mimetype"] == FOLDER_MIME
@@ -108,9 +109,9 @@ def test_first_run_creates_the_root_folder_and_shares_it(env):
     assert [(p["type"], p["role"]) for p in perms] == [("anyone", "reader")]
 
 
-def test_first_run_moves_every_language_folder_into_the_root(env):
+def test_first_run_moves_every_language_folder_into_the_root(env, monkeypatch):
     doorway, config, _ = env
-    run()
+    run(monkeypatch)
     root_id = doorway.mutations_of("create_file")[0]["file_id"]
     langs = [k for k in config if not k.startswith("_")]
     moved = {m["file_id"]: m["to_parent"] for m in doorway.mutations_of("move_file")}
@@ -121,17 +122,17 @@ def test_first_run_moves_every_language_folder_into_the_root(env):
     assert moved[NOTEBOOK_ID] == root_id
 
 
-def test_first_run_renames_folders_to_the_bare_language_id(env):
+def test_first_run_renames_folders_to_the_bare_language_id(env, monkeypatch):
     doorway, config, _ = env
-    run()
+    run(monkeypatch)
     renamed = {m["file_id"]: m["name"] for m in doorway.mutations_of("update_file")}
     for lang in [k for k in config if not k.startswith("_")]:
         assert renamed[config[lang]["folder_id"]] == lang
 
 
-def test_first_run_records_the_root_folder_id(env):
+def test_first_run_records_the_root_folder_id(env, monkeypatch):
     doorway, _, saved = env
-    run()
+    run(monkeypatch)
     assert saved["_root_folder_id"] == doorway.mutations_of("create_file")[0]["file_id"]
 
 
@@ -150,11 +151,11 @@ def test_second_run_changes_nothing_at_all(env, monkeypatch):
     any kind.
     """
     doorway, config, saved = env
-    run()
+    run(monkeypatch)
     monkeypatch.setattr(setup_root_folder, "_load_drive_config",
                         lambda: json.loads(json.dumps({**config, **saved})))
     doorway.clear_mutations()
-    out = run()
+    out = run(monkeypatch)
 
     assert doorway.mutations == []
     assert "already inside root folder" in out
@@ -171,7 +172,7 @@ def test_a_manually_revoked_share_is_restored_on_the_next_run(env, monkeypatch):
     properties from one mechanism.
     """
     doorway, config, saved = env
-    run()
+    run(monkeypatch)
     root_id = doorway.mutations_of("create_file")[0]["file_id"]
     perm = next(p for p in doorway.list_permissions(root_id) if p["type"] == "anyone")
     doorway.delete_permission(root_id, perm["id"])
@@ -180,7 +181,7 @@ def test_a_manually_revoked_share_is_restored_on_the_next_run(env, monkeypatch):
     monkeypatch.setattr(setup_root_folder, "_load_drive_config",
                         lambda: json.loads(json.dumps({**config, **saved})))
     doorway.clear_mutations()
-    run()
+    run(monkeypatch)
 
     assert any(p["type"] == "anyone" and p["role"] == "reader"
                for p in doorway.list_permissions(root_id))
@@ -189,10 +190,10 @@ def test_a_manually_revoked_share_is_restored_on_the_next_run(env, monkeypatch):
 
 def test_second_run_output(env, monkeypatch):
     doorway, config, saved = env
-    run()
+    run(monkeypatch)
     monkeypatch.setattr(setup_root_folder, "_load_drive_config",
                         lambda: json.loads(json.dumps({**config, **saved})))
-    check_snapshot("second_run.txt", run())
+    check_snapshot("second_run.txt", run(monkeypatch))
 
 
 # ---------------------------------------------------------------------------
@@ -204,7 +205,7 @@ def test_a_language_without_a_folder_id_is_reported_and_skipped(env, monkeypatch
     partial = {**config, "arao1248": {}}
     monkeypatch.setattr(setup_root_folder, "_load_drive_config",
                         lambda: json.loads(json.dumps(partial)))
-    out = run()
+    out = run(monkeypatch)
     assert "No folder_id for 'arao1248'" in out
     assert config["arao1248"]["folder_id"] not in {
         m["file_id"] for m in doorway.mutations_of("move_file")}
@@ -216,7 +217,7 @@ def test_absent_manifest_and_notebook_are_reported_with_the_fix(env, monkeypatch
     bare = {k: v for k, v in config.items() if not k.startswith("_")}
     monkeypatch.setattr(setup_root_folder, "_load_drive_config",
                         lambda: json.loads(json.dumps(bare)))
-    out = run()
+    out = run(monkeypatch)
     assert "No manifest.json found" in out
     assert "No all_languages.ipynb found" in out
     # Twice for the two missing files, plus once in the closing next-steps list.

@@ -108,7 +108,8 @@ def _apply_hashes(wanted: dict[str, str]) -> None:
     STATUS_YAML.write_text("".join(out), encoding="utf-8")
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding sync-qualification-hashes`."""
     parser = argparse.ArgumentParser(
         description="Stamp qualification_rule_hash in diagnostic_classes_status.yaml."
     )
@@ -120,7 +121,12 @@ def main() -> None:
         "--class", dest="target_class", metavar="CLASS",
         help="Restrict to one analysis class (e.g. --class metrical)."
     )
-    args = parser.parse_args()
+    return parser
+
+
+def main(args: argparse.Namespace | None = None) -> None:
+    if args is None:
+        args = build_parser().parse_args()
 
     wanted = _collect_wanted(args.target_class)
     current = _current_hashes(args.target_class, wanted)

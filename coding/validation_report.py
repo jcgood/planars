@@ -277,7 +277,8 @@ def read_fingerprint(body: str) -> Optional[str]:
     return m.group(1) if m else None
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding validation-report`."""
     ap = argparse.ArgumentParser(
         description="Turn validate-coding output into a GitHub issue body."
     )
@@ -289,7 +290,12 @@ def main() -> None:
                      help="path to the previous issue body, to compare fingerprints")
     ap.add_argument("--date", default="",
                      help="date to stamp into the issue title/body (YYYY-MM-DD)")
-    args = ap.parse_args()
+    return ap
+
+
+def main(args: argparse.Namespace | None = None) -> None:
+    if args is None:
+        args = build_parser().parse_args()
 
     report_path = args.report
     out_path = args.out

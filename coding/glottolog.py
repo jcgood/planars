@@ -219,8 +219,8 @@ def _print_meta(meta: dict) -> None:
         print(f"  Class. path: {path}")
 
 
-def main() -> None:
-    """Entry point for `python -m coding lookup-lang`."""
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding lookup-lang`."""
     ap = argparse.ArgumentParser(
         description="Fetch and cache Glottolog metadata for a language ID."
     )
@@ -236,7 +236,13 @@ def main() -> None:
         "--all", action="store_true", dest="all_cached",
         help="list every cached language",
     )
-    args = ap.parse_args()
+    return ap
+
+
+def main(args: argparse.Namespace | None = None) -> None:
+    """Entry point for `python -m coding lookup-lang`."""
+    if args is None:
+        args = build_parser().parse_args()
 
     # --all (or no arguments at all): list every cached entry.
     if args.all_cached or (not args.glottocode and not args.refresh):

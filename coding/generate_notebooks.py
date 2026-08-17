@@ -425,8 +425,8 @@ def regenerate_notebooks() -> None:
 # CLI entry point
 # ---------------------------------------------------------------------------
 
-def main() -> None:
-    """Entry point for `python -m coding generate-notebooks`."""
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding generate-notebooks`."""
     ap = argparse.ArgumentParser(
         description="Generate and upload contributor + coordinator notebooks."
     )
@@ -434,7 +434,13 @@ def main() -> None:
         "--apply", action="store_true",
         help="generate and upload to Drive (default: dry run)",
     )
-    args = ap.parse_args()
+    return ap
+
+
+def main(args: argparse.Namespace | None = None) -> None:
+    """Entry point for `python -m coding generate-notebooks`."""
+    if args is None:
+        args = build_parser().parse_args()
     _run_generation(apply=args.apply)
 
 

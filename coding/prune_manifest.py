@@ -209,8 +209,8 @@ def _archive_manifest(manifest: dict, timestamp: str) -> Path:
 # Main
 # ---------------------------------------------------------------------------
 
-def main() -> None:
-    """Entry point for `python -m coding prune-manifest`."""
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding prune-manifest`."""
     ap = argparse.ArgumentParser(
         description="Archive retired class TSVs and remove stale manifest entries."
     )
@@ -222,7 +222,13 @@ def main() -> None:
         "--all", action="store_true", dest="skip_prompts",
         help="skip per-class confirmation prompts",
     )
-    args = ap.parse_args()
+    return ap
+
+
+def main(args: argparse.Namespace | None = None) -> None:
+    """Entry point for `python -m coding prune-manifest`."""
+    if args is None:
+        args = build_parser().parse_args()
     apply = args.apply
     skip_prompts = args.skip_prompts
 

@@ -174,7 +174,8 @@ def _build_issue_body(
     return "\n".join(lines)
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding check-notes`."""
     ap = argparse.ArgumentParser(
         description="Check collaborator notes docs for new content and file issues."
     )
@@ -186,7 +187,12 @@ def main() -> None:
         "--lang", metavar="LANG_ID", dest="lang",
         help="restrict to this language",
     )
-    args = ap.parse_args()
+    return ap
+
+
+def main(args: argparse.Namespace | None = None) -> None:
+    if args is None:
+        args = build_parser().parse_args()
     apply = args.apply
     lang_filter = args.lang
 

@@ -257,8 +257,8 @@ def _close_pending_issue() -> None:
         pass
 
 
-def main() -> None:
-    """Entry point for `python -m coding apply-pending`."""
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding apply-pending`."""
     ap = argparse.ArgumentParser(
         description="Review and apply pending destructive changes."
     )
@@ -266,7 +266,14 @@ def main() -> None:
         "--all", action="store_true", dest="all_flag",
         help="apply all pending changes without prompting",
     )
-    all_flag = ap.parse_args().all_flag
+    return ap
+
+
+def main(args: argparse.Namespace | None = None) -> None:
+    """Entry point for `python -m coding apply-pending`."""
+    if args is None:
+        args = build_parser().parse_args()
+    all_flag = args.all_flag
 
     entries = _load_pending()
     if not entries:

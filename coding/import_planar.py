@@ -375,7 +375,8 @@ def push_planars_to_sheets(lang_ids: list[str] | None = None, apply: bool = Fals
     return changed
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding import-planar`."""
     ap = argparse.ArgumentParser(
         description="Sync the planar spreadsheet between Drive and local TSV."
     )
@@ -392,7 +393,12 @@ def main() -> None:
         help="push local planar TSV changes up to the Drive spreadsheet "
              "(default direction is Sheet -> TSV)",
     )
-    args = ap.parse_args()
+    return ap
+
+
+def main(args: argparse.Namespace | None = None) -> None:
+    if args is None:
+        args = build_parser().parse_args()
     if args.to_sheet:
         push_planars_to_sheets(lang_ids=args.langs, apply=args.apply)
     else:

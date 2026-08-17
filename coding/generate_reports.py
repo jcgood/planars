@@ -111,8 +111,8 @@ def _run(apply: bool) -> None:
     print("\nDone. drive_config.json updated.")
 
 
-def main() -> None:
-    """Entry point for `python -m coding generate-reports`."""
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding generate-reports`."""
     ap = argparse.ArgumentParser(
         description="Generate and upload PDF reports for all languages to Drive."
     )
@@ -120,7 +120,13 @@ def main() -> None:
         "--apply", action="store_true",
         help="generate and upload to Drive (default: dry run)",
     )
-    args = ap.parse_args()
+    return ap
+
+
+def main(args: argparse.Namespace | None = None) -> None:
+    """Entry point for `python -m coding generate-reports`."""
+    if args is None:
+        args = build_parser().parse_args()
     _run(apply=args.apply)
 
 

@@ -831,7 +831,8 @@ def _section_needs_review(codebook: dict, diag_classes: dict) -> None:
 # Entry point
 # ---------------------------------------------------------------------------
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding integrity-check`."""
     parser = argparse.ArgumentParser(
         prog="python -m coding integrity-check",
         description="Run a full integrity check on the planars annotation pipeline.",
@@ -858,7 +859,12 @@ def main() -> None:
              "are out of sync with their source construction TSV. Used by data-refresh "
              "to file a dedicated dependent-stale issue.",
     )
-    args = parser.parse_args()
+    return parser
+
+
+def main(args: argparse.Namespace | None = None) -> None:
+    if args is None:
+        args = build_parser().parse_args()
 
     # Discover language IDs
     if args.lang:

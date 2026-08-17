@@ -296,8 +296,8 @@ def _write_prescreening_tab(ss, rows: List[Dict[str, str]]):
 # Main
 # ---------------------------------------------------------------------------
 
-def main() -> None:
-    """Entry point for `python -m coding generate-biuniqueness-allomorphy-sheet`."""
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding generate-biuniqueness-allomorphy-sheet`."""
     ap = argparse.ArgumentParser(
         description="Generate the Stage 1 biuniqueness/allomorphy screening sheet."
     )
@@ -309,7 +309,13 @@ def main() -> None:
         "--apply", action="store_true",
         help="write the sheet (default: dry run)",
     )
-    args = ap.parse_args()
+    return ap
+
+
+def main(args: argparse.Namespace | None = None) -> None:
+    """Entry point for `python -m coding generate-biuniqueness-allomorphy-sheet`."""
+    if args is None:
+        args = build_parser().parse_args()
     apply = args.apply
     lang_id = args.lang
 

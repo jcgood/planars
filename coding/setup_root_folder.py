@@ -27,6 +27,7 @@ Authentication: same OAuth2 setup as generate_sheets.py.
 """
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -78,7 +79,14 @@ def _get_or_create_root_folder(doorway) -> str:
 # Main
 # ---------------------------------------------------------------------------
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding setup-root-folder` (no flags)."""
+    return argparse.ArgumentParser(
+        description="Create ConstituencyTypology root Drive folder (run once)."
+    )
+
+
+def main(args: argparse.Namespace | None = None) -> None:
     """Entry point for `python -m coding setup-root-folder`.
 
     Fully idempotent: safe to re-run at any time. Each step checks the current
@@ -90,6 +98,8 @@ def main() -> None:
         convention and needs to be renamed.
       - You want to verify the Drive structure is correctly set up.
     """
+    if args is None:
+        args = build_parser().parse_args()
     config = _load_drive_config()
 
     print("Connecting to Google APIs...")

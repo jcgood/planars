@@ -824,17 +824,8 @@ def _verify_manifest_sheet_ids(doorway, manifest: Dict) -> None:
         raise SystemExit(1)
 
 
-def main() -> None:
-    """Entry point for `python -m coding import-sheets`.
-
-    Dry-run by default — pass --apply to write any TSVs. Loads the manifest
-    from Drive, downloads each construction tab, validates values, and writes
-    filled TSVs under coded_data/{lang_id}/{class_name}/. Compares downloaded
-    content to the existing file: if changed, archives the old file and writes
-    the new one; if unchanged, skips with "No changes". Pass --overwrite-existing
-    to force overwrite even when content is identical.
-    Writes an error report to import_errors/ if any warnings are generated.
-    """
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding import-sheets`."""
     ap = argparse.ArgumentParser(
         description="Download filled annotation sheets to TSVs."
     )
@@ -854,7 +845,22 @@ def main() -> None:
         "--lang", metavar="LANG_ID", dest="lang",
         help="restrict to this language",
     )
-    args = ap.parse_args()
+    return ap
+
+
+def main(args: argparse.Namespace | None = None) -> None:
+    """Entry point for `python -m coding import-sheets`.
+
+    Dry-run by default — pass --apply to write any TSVs. Loads the manifest
+    from Drive, downloads each construction tab, validates values, and writes
+    filled TSVs under coded_data/{lang_id}/{class_name}/. Compares downloaded
+    content to the existing file: if changed, archives the old file and writes
+    the new one; if unchanged, skips with "No changes". Pass --overwrite-existing
+    to force overwrite even when content is identical.
+    Writes an error report to import_errors/ if any warnings are generated.
+    """
+    if args is None:
+        args = build_parser().parse_args()
     apply = args.apply
     force = args.force
     ignore_status = args.ignore_status

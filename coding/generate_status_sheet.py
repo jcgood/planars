@@ -416,8 +416,8 @@ def _write_status_sheet(
 # Main
 # ---------------------------------------------------------------------------
 
-def main() -> None:
-    """Entry point for `python -m coding generate-status-sheet`."""
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding generate-status-sheet`."""
     ap = argparse.ArgumentParser(
         description="Generate locked, read-only per-language Annotation Status sheets."
     )
@@ -429,7 +429,13 @@ def main() -> None:
         "--apply", action="store_true",
         help="create/update sheets on Drive (default: dry run)",
     )
-    args = ap.parse_args()
+    return ap
+
+
+def main(args: argparse.Namespace | None = None) -> None:
+    """Entry point for `python -m coding generate-status-sheet`."""
+    if args is None:
+        args = build_parser().parse_args()
     apply = args.apply
     lang_filter = args.lang
 

@@ -329,7 +329,19 @@ def _apply_missing_rows(
 # Main
 # ---------------------------------------------------------------------------
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding update-sheets`."""
+    ap = argparse.ArgumentParser(
+        description="Add missing rows/columns to existing annotation sheets."
+    )
+    ap.add_argument(
+        "--apply", action="store_true",
+        help="write changes (default: dry run)",
+    )
+    return ap
+
+
+def main(args: argparse.Namespace | None = None) -> None:
     """Entry point for `python -m coding update-sheets`.
 
     Compares each sheet tab against the current planar structure and appends
@@ -338,14 +350,9 @@ def main() -> None:
     attempting to fix it — python -m coding restructure-sheets does that.
     In dry-run mode (no --apply) only prints what would change.
     """
-    ap = argparse.ArgumentParser(
-        description="Add missing rows/columns to existing annotation sheets."
-    )
-    ap.add_argument(
-        "--apply", action="store_true",
-        help="write changes (default: dry run)",
-    )
-    apply = ap.parse_args().apply
+    if args is None:
+        args = build_parser().parse_args()
+    apply = args.apply
 
     if apply:
         # planar_{lang_id}.tsv (read below) can be left in a reverted/stale

@@ -144,7 +144,8 @@ def _generate_prompt(cls: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding generate-rule-update-prompt`."""
     parser = argparse.ArgumentParser(
         description="Generate coordinator-facing Claude prompts for stale qualification rules."
     )
@@ -152,7 +153,12 @@ def main() -> None:
         "class_name", nargs="?", metavar="CLASS",
         help="Generate prompt for one class only (omit for all stale classes)."
     )
-    args = parser.parse_args()
+    return parser
+
+
+def main(args: argparse.Namespace | None = None) -> None:
+    if args is None:
+        args = build_parser().parse_args()
 
     stale = _stale_classes(args.class_name)
 

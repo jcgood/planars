@@ -318,7 +318,8 @@ def _apply_command(from_tsv: bool, to_sheet: bool, lang_filter: Optional[str]) -
     return " ".join(parts)
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding sync-diagnostics-yaml`."""
     ap = argparse.ArgumentParser(
         description="Sync diagnostics YAML <-> TSV <-> Sheet."
     )
@@ -338,7 +339,12 @@ def main() -> None:
         "--lang", metavar="LANG_ID", dest="lang",
         help="restrict to this language",
     )
-    args = ap.parse_args()
+    return ap
+
+
+def main(args: argparse.Namespace | None = None) -> None:
+    if args is None:
+        args = build_parser().parse_args()
     apply = args.apply
     from_tsv = args.from_tsv
     to_sheet = args.to_sheet

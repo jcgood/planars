@@ -20,6 +20,7 @@ Run:
 """
 from __future__ import annotations
 
+import argparse
 import hashlib
 import importlib
 import importlib.util
@@ -671,7 +672,14 @@ def _report_coverage_matrix(
         print(f"  {name.ljust(row_w)}  {cells}")
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for `python -m coding check-codebook` (no flags)."""
+    return argparse.ArgumentParser(
+        description="Check consistency between schema files and analysis modules."
+    )
+
+
+def main(args: argparse.Namespace | None = None) -> None:
     """Entry point for `python -m coding check-codebook`.
 
     Runs seven consistency checks (exit 1 if any fail) then three informational reports:
@@ -689,6 +697,8 @@ def main() -> None:
     9. Schema stubs: classes with no language coverage (ready-to-paste TSV rows).
     10. Coverage matrix: language × class grid.
     """
+    if args is None:
+        args = build_parser().parse_args()
     codebook = _load_codebook()
     diag_classes = _load_diagnostic_classes()
     all_errors: List[str] = []
