@@ -32,7 +32,7 @@ ROOT = Path(__file__).resolve().parent.parent
 import pandas as pd
 
 from .drive import (
-    _check_coded_data_clean, load_manifest, upload_manifest,
+    load_manifest, upload_manifest,
     _load_drive_config, _save_drive_config, _with_retry,
 )
 from .drive_doorway import get_doorway, WorksheetNotFound
@@ -870,9 +870,8 @@ def main(args: argparse.Namespace | None = None) -> None:
     if not apply:
         print("DRY RUN — pass --apply to write TSVs.\n")
 
-    if apply:
-        _check_coded_data_clean()
-
+    # coded_data_clean_tree is enforced centrally at the python -m coding
+    # dispatch chokepoint now -- see coding/preconditions.py -- not here.
     print("Connecting to Google...")
     doorway = get_doorway()
     manifest = load_manifest(doorway)

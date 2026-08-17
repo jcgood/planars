@@ -247,7 +247,6 @@ def env(monkeypatch, tmp_path):
     monkeypatch.setattr(is_, "PENDING_PATH", tmp_path / "pending_changes.json")
     monkeypatch.setattr(is_, "DRIFT_PATH", tmp_path / "diagnostics_drift.json")
     monkeypatch.setattr(is_, "datetime", _FrozenDatetime)
-    monkeypatch.setattr(is_, "_check_coded_data_clean", lambda *a, **kw: None)
     monkeypatch.setattr(is_, "_notify_pending_changes", notified_pending.append)
     monkeypatch.setattr(is_, "_notify_collaborator_check", notified_collaborator.append)
     monkeypatch.setattr(is_, "_load_drive_config", FakeDriveDoorway.drive_config)
