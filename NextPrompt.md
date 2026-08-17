@@ -15,12 +15,21 @@ this project is trying to remove.
 
 ## Now
 
-**Phase 0b/1 (the doorway migration) and Phase 3 (schema reorganization) are
-both complete, nothing outstanding from either.** Phase 0b/1 finished
-2026-08-04 (18 of 18 files); Phase 3 finished 2026-08-10. Every bug either
-turned up (Findings 13, 15–19, 21) is fixed; #276 is closed. Full detail in
-`docs/data-layer-progress.md`'s Current state and Findings sections — no
-need to duplicate it here.
+**Phase 5 is in progress. Unit A (argparse standardization, all 17
+`coding/` commands, 9 batches) is done as of 2026-08-16 — every command now
+hard-errors on an unknown flag instead of silently ignoring it, and has real
+`--help`.** Units B (dispatch integration) and C (derived `registry`
+command) can start any time; unit D (precondition enforcement) and unit E
+(provenance capture) each have an open question for Jeff — see
+`docs/data-layer-progress.md`'s Open questions section. Full detail in that
+file's Current state, Next action, and Findings sections — no need to
+duplicate it here.
+
+**Phase 0b/1 (the doorway migration), Phase 3 (schema reorganization), and
+Phase 4 (topology declaration) are all complete, nothing outstanding from
+any of them.** Phase 0b/1 finished 2026-08-04 (18 of 18 files); Phase 3
+finished 2026-08-10; Phase 4 finished 2026-08-16. Every bug either turned up
+is fixed; #276 and #280 are closed.
 
 **arao1248's diagnostics gap (surfaced by Finding 19) is two-thirds closed.**
 `nonpermutability` and `free_occurrence` are onboarded (2026-08-10, no
@@ -30,18 +39,6 @@ in the repo says what fills it for Araona). Not blocking anything else — a
 missing required class no longer blocks `sync-diagnostics-yaml --apply`'s
 local-TSV direction from picking up whichever classes *are* ready (Finding
 20), just `--to-sheet`/`import-sheets` for the language as a whole.
-
-**Phase 4 ("Topology declaration") is done, nothing outstanding.**
-`data_dependency_schema/operations.yaml` has one record per
-`coding/__main__.py` command, traced end to end against actual code (not
-just drafted). Along the way it found and fixed a cross-cutting reliability
-bug across 6 commands (issue #280), a data-loss bug in
-`generate_biuniqueness_allomorphy_sheet.py`, and a GitHub-issue-lookup
-fragility in `check_notes.py`; `CLAUDE.md`'s narrative topology prose is now
-a pointer to the registry. All five review items Jeff's own plan asks the
-coordinator to confirm were closed out with him directly on 2026-08-16.
-Full detail in `docs/data-layer-progress.md`'s Findings 22–28 — no need to
-duplicate it here.
 
 ---
 

@@ -30,7 +30,7 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 4 — **done.** Every record traced against code, all three "done when" items complete, and all five review items closed out with Jeff (started 2026-08-10, review session 2026-08-11, line-by-line trace + fixes 2026-08-11, Findings 27/28 resolved with Jeff 2026-08-16). 3 — done (started and finished 2026-08-10). 0b/1 — done, 18 of 18 (2026-08-01–2026-08-04).
+**Phase:** 5 — **in progress.** Unit A (argparse standardization, all 9 batches) done 2026-08-16; the derived registry, precondition enforcement, and provenance capture units are not started. 4 — done. Every record traced against code, all three "done when" items complete, and all five review items closed out with Jeff (started 2026-08-10, review session 2026-08-11, line-by-line trace + fixes 2026-08-11, Findings 27/28 resolved with Jeff 2026-08-16). 3 — done (started and finished 2026-08-10). 0b/1 — done, 18 of 18 (2026-08-01–2026-08-04).
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
 **Last worked:** 2026-08-16
@@ -122,7 +122,9 @@ the same day — see the decisions log.
 | **Phase 0b/1 (the whole doorway migration)** | **done** — all eighteen files that reach Drive now go through it |
 | Phase 3 — schema reorganization | **done** — `diagnostic_classes.yaml` split from `diagnostic_classes_status.yaml`; `Class_Type` catalogued as a resistant field on issue #271, not split (behaviour-neutral phase) |
 | Phase 4 — topology declaration | **done** — `data_dependency_schema/operations.yaml` + `operation_record.schema.json`, one record per `coding/__main__.py` command (24, mechanically checked), `modes` added for the 4 commands whose behavior genuinely diverges by flag; every `idempotent` claim traced against actual code across all 24 records (not just the ones flagged 2026-08-10), corrections applied; 2 new facts added; 5 real code gaps found and fixed on the spot (Findings 23/24/26/28); 1 cross-cutting bug pattern found, filed, and fixed (#280, Finding 22, across 6 commands after Finding 25 found 2 more sharing the shape); `CLAUDE.md`'s narrative prose replaced by a pointer to the registry; all five review items closed out with Jeff 2026-08-16 (Findings 27/28). |
-| Phases 5–9 | not started |
+| Phase 5, unit A — argparse standardization | **done** — all 17 `coding/` commands that hand-scanned `sys.argv` now use `argparse` (9 batches, smallest-and-safest first, `generate_sheets.py` deliberately last — same ordering logic as the Phase 0b/1 file migration). Documented flags unchanged; the actual difference is that an unknown flag now hard-errors (exit 2) instead of being silently ignored, the specific failure mode the plan calls out for `generate-sheets`. `restructure_sheets.py`/`sync_params.py` layer argparse in front of their existing hand-rolled colon/comma parsers (`_parse_flag_map`, `_parse_renames`, etc.) rather than replacing them, since those have their own passing unit tests. One real test update: `test_no_lang_flag_is_refused` (biuniqueness/allomorphy) now checks `SystemExit` code 2 instead of stdout text, since argparse's `required=True` error goes to stderr, which that test's capture helper doesn't see — same intent (refuse to run without `--lang`), exit code changes from 1 to 2. Full pytest suite (1281 tests) green after every one of the 9 batches. |
+| Phase 5, units B–E (dispatch integration, derived registry, precondition enforcement, provenance capture) | not started |
+| Phases 6–9 | not started |
 
 ### In flight
 
@@ -238,6 +240,51 @@ separate line-by-line diff read, on the basis that the underlying
 trace-through was already covered by the test suite (see Findings 27/28,
 the two items that turned into real follow-up work rather than a plain
 confirmation). **Phase 4 is done. Nothing is blocked or waiting on it.**
+
+**Phase 5, unit A ("Standardize on argparse everywhere") is done, all 17
+files.** Batches, in order: A1 `capture_drive_state.py`/`generate_reports.py`/
+`glottolog.py`; A2 `validation_report.py`/`update_sheets.py`/
+`validate_coding.py`; A3 `sync_diagnostics_yaml.py`/`generate_notebooks.py`/
+`check_notes.py`; A4 `apply_pending.py`/`prune_manifest.py`; A5
+`generate_biuniqueness_allomorphy_sheet.py`/`generate_status_sheet.py`; A6
+`refresh_dropdowns.py`/`import_sheets.py`; A7 `restructure_sheets.py`; A8
+`sync_params.py`; A9 `generate_sheets.py`. Each batch committed and pushed
+separately with the full pytest suite green; see `git log --oneline --grep
+'Phase 5 batch'` for the individual commits (this progress-doc update lands
+as its own commit after all nine, not one per batch — a deviation from the
+usual same-commit rule, noted here rather than silently).
+
+Two files kept their existing hand-rolled parsers underneath a thin argparse
+gate instead of a full rewrite: `restructure_sheets.py` (`_parse_flag_map`/
+`_parse_split_flag_map`, covering `--rename-map`/`--rename-element`/
+`--rename-class`/`--split-element`) and `sync_params.py` (`_parse_renames`/
+`_parse_splits`/`_parse_merges`, covering `--rename`/`--split`/`--merge`) —
+both have their own dedicated unit tests
+(`tests/test_restructure.py`/`tests/test_sync_params.py`) for colon/comma
+syntax and error messages that a reimplementation would have had to prove
+equivalent for no behavioral gain. argparse declares the same flags so
+`--help` and unknown-flag detection work; the proven parsers still do the
+real parsing from `sys.argv`.
+
+`generate_sheets.py`'s `--pos-remap old:new` integer-pair parsing (previously
+the one hand-rolled loop with no separate unit test) was converted directly
+to argparse's `action="append"`, verified against
+`test_regen_coreference_with_pos_remap_transcript`. Its bottom-of-file `if
+__name__ == "__main__":` guard (direct-script invocation, not the documented
+`python -m coding` path) was left untouched — it never reaches `main()`'s
+argparse instance, out of scope for this unit.
+
+**Next: Phase 5 units B–E.** B (`__main__.py` dispatch integration — mostly
+falls out of A, now that every command has a real parser) and C (the derived
+`python -m coding registry` command, joining each command's argparse spec to
+its `operations.yaml` record) can start any time. D (precondition enforcement
+at call time) needs a coordinator call first — replace the scattered manual
+`_check_coded_data_clean()`-style calls with dispatch-level enforcement
+driven by each command's declared `preconditions`, or add centralized
+enforcement as a second layer alongside the existing manual calls — and
+should come after C exists to cross-check the mapping. E (provenance
+capture) needs B's chokepoint and a decision on what's logged and retention.
+See the *Open questions for Jeff* section.
 
 ### Held until Phase 9
 
@@ -2247,7 +2294,22 @@ intended behaviour changes whatsoever."
 
 ## Open questions for Jeff
 
-*(none currently — Phase 4's five review items were closed out with Jeff on
-2026-08-16, on the understanding that the underlying trace-through was
-already covered by the test suite rather than requiring a separate
-line-by-line re-read of the diff. See Findings 25–28 for the full account.)*
+Phase 4's five review items were closed out with Jeff on 2026-08-16 (see
+Findings 25–28). Two new ones from scoping Phase 5, not blocking unit A/B/C:
+
+- **Unit D (precondition enforcement):** replace the scattered manual
+  `_check_coded_data_clean()`-style calls with dispatch-level enforcement
+  driven by each command's declared `preconditions` in `operations.yaml`, or
+  add the centralized check as a second layer alongside the existing manual
+  ones? Ground rule 4 ("derive, don't duplicate") points at replacing —
+  that's the only version that forecloses the class of bug Findings 23/24
+  already found twice (a precondition declared but the call missing) — but
+  replacing means a wrong mapping could silently drop a check that runs
+  unconditionally today, so whichever way this goes, it should be reviewed
+  file-by-file with the pre/post-diff discipline Phase 0b/1 used, not as one
+  sweep.
+- **Unit E (provenance capture):** what should be logged (every command, or
+  only ones with Drive side effects per `operations.yaml`) and what the
+  retention policy is (append-forever vs. rotated). The design doc's own
+  words: "no record of which tool run produced a given change... the natural
+  place to capture this nearly free," once unit B's chokepoint exists.
