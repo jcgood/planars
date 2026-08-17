@@ -78,8 +78,11 @@ def main() -> None:
     args = mod.build_parser().parse_args()
     # Parsed once, here, rather than inside mod.main() -- this is the
     # dispatch chokepoint Phase 5 units D (precondition enforcement) and E
-    # (provenance capture) hook into, keyed by `cmd` and `args`; neither is
-    # built yet (see docs/data-layer-progress.md's Open questions).
+    # (provenance capture) hook into, keyed by `cmd` and `args`. D is wired
+    # in below; E is not built yet (see docs/data-layer-progress.md's Open
+    # questions).
+    from . import preconditions
+    preconditions.enforce(cmd.replace("-", "_"), args)
     mod.main(args)
 
 
