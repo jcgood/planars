@@ -77,11 +77,10 @@ class Env:
     """One stand-in Drive, one private copy of the language setup files."""
 
     def __init__(self, doorway: FakeDriveDoorway, coded: Path,
-                 clean_checks: List[dict], saved_configs: List[dict],
+                 saved_configs: List[dict],
                  notebook_calls: List[bool], run: Callable[[List[str]], str]) -> None:
         self.doorway = doorway
         self.coded = coded
-        self.clean_checks = clean_checks
         self.saved_configs = saved_configs
         self.notebook_calls = notebook_calls
         self.run = run
@@ -142,14 +141,11 @@ def env(monkeypatch, tmp_path):
         shutil.copytree(ROOT / "coded_data" / lang / "lang_setup",
                         coded / lang / "lang_setup")
 
-    clean_checks: List[dict] = []
     saved_configs: List[dict] = []
     notebook_calls: List[bool] = []
 
     monkeypatch.setattr(sp, "CODED_DATA", coded)
     monkeypatch.setattr(gs, "CODED_DATA", coded)
-    monkeypatch.setattr(sp, "_check_coded_data_clean",
-                        lambda **kw: clean_checks.append(kw))
     monkeypatch.setattr(sp, "_load_drive_config", FakeDriveDoorway.drive_config)
     monkeypatch.setattr(drive_module, "_load_drive_config",
                         FakeDriveDoorway.drive_config)
@@ -171,7 +167,7 @@ def env(monkeypatch, tmp_path):
         return buf.getvalue()
 
     try:
-        yield Env(doorway, coded, clean_checks, saved_configs, notebook_calls, run)
+        yield Env(doorway, coded, saved_configs, notebook_calls, run)
     finally:
         drive_doorway.reset_doorway()
 
@@ -387,14 +383,11 @@ def test_the_dry_run_changes_nothing_anywhere(env):
     assert env.all_tab_values() == before
 
 
-def test_the_dry_run_does_not_ask_whether_coded_data_is_clean(env):
-    env.run(["sync-params"])
-    assert env.clean_checks == []
-
-
-def test_apply_refuses_to_read_a_half_written_diagnostics_tsv(env):
-    env.run(["sync-params", "--apply"])
-    assert env.clean_checks == [{"extensions": (".tsv",)}]
+# coded_data_clean_tree is enforced centrally at the python -m coding
+# dispatch chokepoint now, not inside sp.main() itself -- see
+# coding/preconditions.py and tests/test_preconditions.py, which cover this
+# command's gating (including the --refresh-dropdowns mode) directly
+# against the real operations.yaml record.
 
 
 def test_apply_with_a_real_change_saves_drive_config(env):

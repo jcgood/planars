@@ -52,7 +52,7 @@ from .make_forms import (
 )
 from .schemas import load_diagnostic_classes as _load_dc
 from .drive import (
-    _check_coded_data_clean, _load_drive_config, _save_drive_config, _with_retry,
+    _load_drive_config, _save_drive_config, _with_retry,
     load_manifest, upload_manifest,
 )
 from .drive_doorway import WorksheetHandle, WorksheetNotFound, get_doorway
@@ -511,12 +511,11 @@ def main(args: argparse.Namespace | None = None) -> None:
     splits  = _parse_splits()
     merges  = _parse_merges()
 
-    if apply:
-        # See update_sheets.py's guard for why: a prior step's failed
-        # auto-commit can leave coded_data/ (including the diagnostics/planar
-        # TSVs this command reads) in a stale, partially-reverted state.
-        _check_coded_data_clean(extensions=(".tsv",))
-
+    # coded_data_clean_tree is enforced centrally at the python -m coding
+    # dispatch chokepoint now -- see coding/preconditions.py -- not here.
+    # See update_sheets.py's guard comment for why: a prior step's failed
+    # auto-commit can leave coded_data/ (including the diagnostics/planar
+    # TSVs this command reads) in a stale, partially-reverted state.
     planar_files = sorted(CODED_DATA.glob("*/lang_setup/planar_*.tsv"))
     if not planar_files:
         raise SystemExit("No planar_*.tsv found in coded_data/*/lang_setup/")
