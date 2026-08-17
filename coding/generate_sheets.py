@@ -67,7 +67,6 @@ import pandas as pd
 from . import validate_planar as _val_planar
 from . import validate_diagnostics as _val_diag
 from .drive import (
-    _check_coded_data_clean,
     _load_drive_config,
     _save_drive_config,
     _with_retry,
@@ -2281,12 +2280,14 @@ def main(args: argparse.Namespace | None = None) -> None:
     # --regen-dependents
     # CI path: regenerate dependent constructions where no annotation data exists yet.
     if args.regen_dependents:
-        # _regen_dependents_simple reads coded_data/ (source construction TSVs
-        # and the planar) as ground truth for what to regenerate. Refuse if a
-        # prior step's failed auto-commit left it in a stale/reverted state —
+        # coded_data_clean_tree is enforced centrally at the python -m coding
+        # dispatch chokepoint now -- see coding/preconditions.py -- not here.
+        # It still guards against exactly what it always has:
+        # _regen_dependents_simple reads coded_data/ (source construction
+        # TSVs and the planar) as ground truth for what to regenerate, and a
+        # prior step's failed auto-commit can leave it stale/reverted --
         # see issue #248's stray-row incident, caused by exactly this gap in
         # update-sheets.
-        _check_coded_data_clean(extensions=(".tsv",))
         print("Connecting to Google APIs...")
         doorway = get_doorway()
         config = _load_drive_config()

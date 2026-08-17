@@ -85,12 +85,11 @@ class Env:
     """One stand-in Drive, one private copy of the language setup files."""
 
     def __init__(self, doorway: FakeDriveDoorway, coded: Path, tmp_root: Path,
-                 clean_checks: List[dict], saved_configs: List[dict],
+                 saved_configs: List[dict],
                  notebook_calls: List[bool], run: Callable[[List[str]], str]) -> None:
         self.doorway = doorway
         self.coded = coded
         self.tmp_root = tmp_root
-        self.clean_checks = clean_checks
         self.saved_configs = saved_configs
         self.notebook_calls = notebook_calls
         self.run = run
@@ -142,15 +141,12 @@ def env(monkeypatch, tmp_path):
     # that read still resolves the three real, already-onboarded languages.
     (tmp_path / "schemas").symlink_to(ROOT / "schemas")
 
-    clean_checks: List[dict] = []
     saved_configs: List[dict] = []
     notebook_calls: List[bool] = []
 
     monkeypatch.setattr(gs, "CODED_DATA", coded)
     monkeypatch.setattr(gs, "ROOT", tmp_path)
     monkeypatch.setattr(gs, "MANIFEST_PATH", tmp_path / "sheets_manifest.json")
-    monkeypatch.setattr(gs, "_check_coded_data_clean",
-                        lambda **kw: clean_checks.append(kw))
     monkeypatch.setattr(gs, "_load_drive_config", FakeDriveDoorway.drive_config)
     monkeypatch.setattr(drive_module, "_load_drive_config",
                         FakeDriveDoorway.drive_config)
@@ -172,7 +168,7 @@ def env(monkeypatch, tmp_path):
         return buf.getvalue()
 
     try:
-        yield Env(doorway, coded, tmp_path, clean_checks, saved_configs, notebook_calls, run)
+        yield Env(doorway, coded, tmp_path, saved_configs, notebook_calls, run)
     finally:
         drive_doorway.reset_doorway()
 
@@ -319,14 +315,12 @@ def test_the_dry_run_changes_nothing_anywhere(env):
     assert env.saved_configs == []
 
 
-def test_the_dry_run_does_not_ask_whether_coded_data_is_clean(env):
-    env.run(["generate-sheets"])
-    assert env.clean_checks == []
-
-
-def test_regen_dependents_asks_whether_coded_data_is_clean(env):
-    env.run(["generate-sheets", "--regen-dependents"])
-    assert env.clean_checks == [{"extensions": (".tsv",)}]
+# coded_data_clean_tree (--regen-dependents only, not the base command) is
+# enforced centrally at the python -m coding dispatch chokepoint now, not
+# inside gs.main() itself -- see coding/preconditions.py and
+# tests/test_preconditions.py, which cover this command's gating (including
+# --regen-construction, which needs no precondition) directly against the
+# real operations.yaml record.
 
 
 # ---------------------------------------------------------------------------
