@@ -6,6 +6,15 @@ from typing import Dict, List, Optional, Set, Tuple
 import yaml
 import pandas as pd
 from importlib.resources import files as _res_files
+from pandera.errors import SchemaError
+
+from planars.contracts import (
+    CHECK_NAME_TO_NUMBER,
+    CHECK_NUMBER_TO_NAME,
+    CHECK_ONE_KEYSTONE,
+    raw_shape_schema,
+    strict_criteria_schema,
+)
 
 def _load_planar_schema() -> dict:
     text = _res_files("schemas").joinpath("planar.yaml").read_text(encoding="utf-8")
@@ -56,41 +65,44 @@ def _parse_filled_df(
     for c in criterion_cols:
         df[c] = df[c].astype(str).str.strip().str.lower()
 
-    # Validate Position_Name ↔ Position_Number is a consistent 1-to-1 mapping.
-    # A mismatch means the sheet was generated from a different version of the
-    # planar structure (e.g. a position was inserted or renumbered).
-    name_to_num_count = df.groupby("Position_Name")["Position_Number"].nunique()
-    num_to_name_count = df.groupby("Position_Number")["Position_Name"].nunique()
-    bad_names = name_to_num_count[name_to_num_count > 1].index.tolist()
-    bad_nums  = num_to_name_count[num_to_name_count > 1].index.tolist()
-    if bad_names or bad_nums:
-        msgs = []
-        if bad_names:
-            msgs.append(f"Position_Name(s) with multiple Position_Numbers: {bad_names}")
-        if bad_nums:
-            msgs.append(f"Position_Number(s) with multiple Position_Names: {bad_nums}")
-        raise ValueError(
-            "Inconsistent Position_Name ↔ Position_Number mapping "
-            "(sheet may be out of sync with the planar structure — "
-            "run restructure_sheets.py):\n  " + "\n  ".join(msgs)
-        )
+    # Structural contract (Position_Name <-> Position_Number 1-to-1, exactly
+    # one keystone row) — see planars/contracts.py for the schema itself.
+    # A mismatch means the sheet was generated from a different version of
+    # the planar structure (e.g. a position was inserted or renumbered).
+    try:
+        raw_shape_schema(required_criteria).validate(df)
+    except SchemaError as e:
+        detail = ""
+        if e.check.name in (CHECK_NAME_TO_NUMBER, CHECK_NUMBER_TO_NAME):
+            name_to_num_count = df.groupby("Position_Name")["Position_Number"].nunique()
+            num_to_name_count = df.groupby("Position_Number")["Position_Name"].nunique()
+            bad_names = name_to_num_count[name_to_num_count > 1].index.tolist()
+            bad_nums  = num_to_name_count[num_to_name_count > 1].index.tolist()
+            msgs = []
+            if bad_names:
+                msgs.append(f"Position_Name(s) with multiple Position_Numbers: {bad_names}")
+            if bad_nums:
+                msgs.append(f"Position_Number(s) with multiple Position_Names: {bad_nums}")
+            detail = ":\n  " + "\n  ".join(msgs)
+        elif e.check.name == CHECK_ONE_KEYSTONE:
+            keystone_positions = sorted(
+                df.loc[df["Position_Name"].str.lower() == "v:verbstem", "Position_Number"]
+                  .unique().tolist()
+            )
+            detail = f" Found: {keystone_positions}"
+        raise ValueError(e.check.error + detail) from e
 
     keystone_mask = df["Position_Name"].str.lower() == "v:verbstem"
-    if not keystone_mask.any():
-        raise ValueError("No keystone row found (Position_Name == 'v:verbstem').")
-
-    keystone_positions = sorted(df.loc[keystone_mask, "Position_Number"].unique().tolist())
-    if len(keystone_positions) != 1:
-        raise ValueError(f"Expected exactly 1 keystone position, found: {keystone_positions}")
-    keystone_pos = keystone_positions[0]
-
+    keystone_pos = int(df.loc[keystone_mask, "Position_Number"].iloc[0])
     keystone_df = df.loc[keystone_mask].copy()
     data_df = df.loc[~keystone_mask].copy()
 
-    for c in required_criteria:
-        if strict and (data_df[c] == "").any():
-            bad = data_df.index[data_df[c] == ""].tolist()[:10]
-            raise ValueError(f"Blank value(s) in column '{c}' (example row indices: {bad}).")
+    if strict and required_criteria:
+        try:
+            strict_criteria_schema(required_criteria).validate(data_df)
+        except SchemaError as e:
+            bad = data_df.index[data_df[e.schema.name] == ""].tolist()[:10] if e.schema is not None else []
+            raise ValueError(f"{e.check.error} (example row indices: {bad}).") from e
 
     pos_to_name = (
         df.sort_values("Position_Number")

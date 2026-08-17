@@ -30,7 +30,11 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 5 — **done, all five units.** Unit A (argparse standardization, all 9 batches) done 2026-08-16. Units B (dispatch integration) and C (derived `registry` command) done the same day, right after A: every command module now exposes `build_parser()` separately from `main(args=None)`, `__main__.py` parses once and calls `mod.main(args)` directly (the chokepoint units D/E hook into), and `python -m coding registry` derives the full command inventory fresh from that plus `operations.yaml` on every call. Units D (precondition enforcement) and E (provenance capture) done 2026-08-17, both same day, after Jeff decided both units' open questions (see the Decisions log): D replaces the scattered manual `_check_coded_data_clean()` calls, file-by-file, with `coding/preconditions.py` driven by each command's `operations.yaml` record; E logs only Drive-writing invocations (not every command, and per actual invocation not per command) to `provenance_log.jsonl`, append-forever, via `coding/provenance.py`. 4 — done. Every record traced against code, all three "done when" items complete, and all five review items closed out with Jeff (started 2026-08-10, review session 2026-08-11, line-by-line trace + fixes 2026-08-11, Findings 27/28 resolved with Jeff 2026-08-16). 3 — done (started and finished 2026-08-10). 0b/1 — done, 18 of 18 (2026-08-01–2026-08-04).
+**Phase:** 6 — **started 2026-08-17, first of four boundaries done.** The
+filled-TSV/sheet loader (`planars/io.py`'s `_parse_filled_df`) now has a
+pandera contract (`planars/contracts.py`); planar load, pair-row load, and
+manifest read/write are not started. See Next action below for the full
+account. 5 — done, all five units. Unit A (argparse standardization, all 9 batches) done 2026-08-16. Units B (dispatch integration) and C (derived `registry` command) done the same day, right after A: every command module now exposes `build_parser()` separately from `main(args=None)`, `__main__.py` parses once and calls `mod.main(args)` directly (the chokepoint units D/E hook into), and `python -m coding registry` derives the full command inventory fresh from that plus `operations.yaml` on every call. Units D (precondition enforcement) and E (provenance capture) done 2026-08-17, both same day, after Jeff decided both units' open questions (see the Decisions log): D replaces the scattered manual `_check_coded_data_clean()` calls, file-by-file, with `coding/preconditions.py` driven by each command's `operations.yaml` record; E logs only Drive-writing invocations (not every command, and per actual invocation not per command) to `provenance_log.jsonl`, append-forever, via `coding/provenance.py`. 4 — done. Every record traced against code, all three "done when" items complete, and all five review items closed out with Jeff (started 2026-08-10, review session 2026-08-11, line-by-line trace + fixes 2026-08-11, Findings 27/28 resolved with Jeff 2026-08-16). 3 — done (started and finished 2026-08-10). 0b/1 — done, 18 of 18 (2026-08-01–2026-08-04).
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
 **Last worked:** 2026-08-17
@@ -128,7 +132,9 @@ the same day — see the decisions log.
 | Phase 5, unit D — precondition enforcement | **done** — `coding/preconditions.py`, wired into `__main__.py`'s dispatch; replaced the scattered manual `_check_coded_data_clean()` calls in all 7 files that had one, migrated one command at a time |
 | Phase 5, unit E — provenance capture | **done** — `coding/provenance.py`, wired into the same dispatch chokepoint; logs Drive-writing invocations only, per actual invocation, to `provenance_log.jsonl` (append-forever); new `operations.yaml` `writes_to_drive` field populated across all 25 records (Finding 29) |
 | **Phase 5 (the whole unit)** | **done** — units A/B/C/D/E all complete |
-| Phases 6–9 | not started |
+| Phase 6, boundary 1 — filled-TSV/sheet loader | **done** — `planars/contracts.py` (pandera), wired into `planars/io.py`'s `_parse_filled_df`; `tests/test_contracts.py` new, `tests/test_io.py`'s 14 error-path tests pass unchanged |
+| Phase 6, boundaries 2–4 — planar load, pair-row load, manifest read/write | not started |
+| Phases 7–9 | not started |
 
 ### In flight
 
@@ -364,7 +370,52 @@ below for what that tracing turned up. Full pytest suite green (1322 tests).
 
 **Both units needed a decision from Jeff before they could start; neither
 does anymore. Phase 5 is done in full** — units A/B/C/D/E all complete.
-Phases 6–9 are next, not yet scoped in detail here; see
+
+**Phase 6 ("Data contracts at boundaries") started 2026-08-17, first
+boundary done.** The plan names four candidate boundaries and already
+assigns tooling by data shape — pandera for the three DataFrame boundaries
+(planar load, filled-TSV/sheet load, pair-row load), pydantic for the one
+dict/JSON boundary (manifest read/write) — but says not to attempt full
+coverage in one pass, so which boundary to start with was an open scoping
+question. Jeff picked the filled-TSV/sheet loader
+(`planars/io.py`'s `_parse_filled_df`, shared by `load_filled_tsv` and
+`load_filled_sheet`): highest reuse (all fifteen `planars/*.py` analysis
+modules that read a filled sheet go through it), and it already did the
+checking by hand — a pandera schema formalizes what was there rather than
+adding new checking. Known and accepted going in: this loader is imported
+directly by Colab notebooks, so `pandera` becomes a Colab runtime
+dependency, not just a local one — added to `pyproject.toml`'s
+`dependencies` (governs the Colab install) as well as `requirements.in`.
+
+New `planars/contracts.py`: `raw_shape_schema(required_criteria)` (Position_Name
+<-> Position_Number 1-to-1, exactly one keystone row — applied post-
+normalization, pre-keystone-split) and `strict_criteria_schema(required_criteria)`
+(every required criterion non-blank in every non-keystone row — applied to
+`data_df` post-split, only when the caller asked for `strict=True`). Column
+*presence* and blank-`Position_Number` detection stayed as plain checks in
+`_parse_filled_df` itself, ahead of both schemas — the normalization step
+that produces the columns the schemas check has to run first, so validating
+presence via a schema built from columns that might not exist yet would be
+circular. Both schemas raise `pandera.errors.SchemaError`/`SchemaErrors`;
+`_parse_filled_df` catches that and re-raises `ValueError` with the same
+level of diagnostic detail the old hand-written messages had (which specific
+`Position_Name`s/`Position_Number`s collided, which row indices had a blank
+required criterion), so every one of the fifteen callers keeps seeing the
+exception type — and the same message content — it always has. All fourteen
+pre-existing `tests/test_io.py` error-path tests pass unchanged against the
+new implementation; `tests/test_contracts.py` (new) tests the two schemas
+directly, including a regression test for a late-binding closure bug caught
+before commit (a naive dict comprehension building one `Check` lambda per
+required criterion would have every lambda close over the same loop
+variable, so every column's blank-check would report the *last* criterion's
+name regardless of which one was actually blank — fixed with a factory
+function per column instead). Full pytest suite green (1322 tests) after a
+real bug this rewrite introduced and the same run caught: `keystone_pos`
+briefly leaked a numpy `int64` instead of a plain `int` (Finding 30) — fixed
+same session, before commit.
+
+Boundaries 2–4 (planar load, pair-row load, manifest read/write) are not
+started. Phases 7–9 remain entirely unscoped; see
 `docs/data-layer-implementation-plan.md`.
 
 ### Held until Phase 9
@@ -1326,6 +1377,20 @@ pairing has no way to express "this command has two side effects with two
 different gates" without a second field on the one record that needs it —
 judged not worth adding for a single case; flagged here rather than
 silently accepted.
+
+**30. `keystone_pos` briefly leaked a numpy `int64` instead of a plain `int`**
+(introduced and caught the same session, 2026-08-17, Phase 6 unit 1). While
+rewiring `_parse_filled_df` onto `raw_shape_schema`, `keystone_pos` was read
+straight off the DataFrame with `.iloc[0]`; the original code got a plain
+`int` for free because it passed through `.unique().tolist()` first, which
+converts numpy scalars to native Python ones. `tests/test_reports.py`'s
+`assert isinstance(entry["keystone_pos"], int)` and two snapshot tests
+(`stan1293_free_occurrence_general`, `synth0001_free_occurrence_general`,
+which format a position list into text) caught it immediately — the numpy
+repr (`np.int64(30)`) showed up inline in the rendered span text. Fixed by
+wrapping in `int(...)` at the same call site. No coordinator-facing output
+was ever produced with the bug in place; caught by the full suite before
+commit.
 
 ---
 

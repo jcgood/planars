@@ -4,9 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "planars"
-version = "0.1.0a27"
+version = "0.1.0a28"
 requires-python = ">=3.9"
-dependencies = ["pandas", "plotly", "pyyaml"]
+dependencies = ["pandas", "pandera", "plotly", "pyyaml"]
 description = "Toolkit for deriving morphosyntactic constituency spans from annotated planar structures"
 readme = "README.md"
 license = { text = "MIT" }

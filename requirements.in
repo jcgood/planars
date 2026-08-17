@@ -6,6 +6,7 @@
 gspread
 google-api-python-client
 pandas
+pandera        # data contracts on DataFrame boundaries (Phase 6, issue #271)
 plotly
 PyYAML
 weasyprint>=68.0

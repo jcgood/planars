@@ -15,27 +15,27 @@ this project is trying to remove.
 
 ## Now
 
-**Phase 5 is done, all five units, as of 2026-08-17.** A: every command
-hard-errors on an unknown flag instead of silently ignoring it, and has real
-`--help`. B: every command module exposes `build_parser()` separately from
-`main(args=None)`, and `__main__.py`'s dispatch parses once and calls
-`mod.main(args)` directly — a real chokepoint, not just a parser in
-isolation. C: `python -m coding registry` derives the full command inventory
-fresh from that plus `operations.yaml` on every call; replaced `__main__.py`'s
-own hand-maintained command list. D: `coding/preconditions.py` centralizes
-precondition enforcement at that same chokepoint, replacing the scattered
-manual `_check_coded_data_clean()` calls that used to live in seven separate
-command files. E: `coding/provenance.py`, wired into the same chokepoint,
-logs which run produced a Drive change to `provenance_log.jsonl`
-(gitignored, append-forever) — only for invocations that actually write to
-Drive, derived from a new `operations.yaml` field (`writes_to_drive`).
-**Phase 5 has no open questions left; nothing is blocked.** Full detail in
-`docs/data-layer-progress.md`'s Current state, Next action, Decisions log,
-and Findings (29) sections — no need to duplicate it here.
+**Phase 5 is done, all five units, as of 2026-08-17.** No open questions,
+nothing blocked. Full detail in `docs/data-layer-progress.md`'s Current
+state / Next action / Decisions log / Findings sections.
 
-**Phases 6–9 are next and not yet scoped in session-level detail** — see
-`docs/data-layer-implementation-plan.md` for the phase spec, and read
-`docs/data-layer-progress.md`'s Current state before starting.
+**Phase 6 ("data contracts at boundaries") started 2026-08-17, first of four
+boundaries done.** `planars/contracts.py` (new) declares a pandera schema for
+`planars/io.py`'s filled-TSV/sheet loader (`_parse_filled_df`, shared by
+`load_filled_tsv`/`load_filled_sheet` and all fifteen `planars/*.py` analysis
+modules) — the boundary Jeff picked to start with, out of the plan's four
+candidates, for its reuse. `pandera` is now a runtime dependency of
+`planars/` (in `pyproject.toml`'s `dependencies`, since this loader is
+imported by Colab notebooks, not just `requirements.in`). Full account,
+including a closure bug and a numpy-`int64` leak caught and fixed before
+commit (Finding 30), in `docs/data-layer-progress.md`'s Next action section.
+
+**Remaining Phase 6 boundaries — planar load, pair-row load, manifest
+read/write — are not started.** The plan already assigns manifest
+read/write to pydantic (dict/JSON) rather than pandera (DataFrame); no
+scoping question remains open for boundary 2 the way "which boundary first"
+was for boundary 1. Phases 7–9 remain entirely unscoped in session-level
+detail — see `docs/data-layer-implementation-plan.md` for the phase spec.
 
 **Phase 0b/1 (the doorway migration), Phase 3 (schema reorganization), and
 Phase 4 (topology declaration) are all complete, nothing outstanding from
