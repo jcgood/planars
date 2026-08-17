@@ -31,6 +31,7 @@ integrity-check --sheets warns on any _split_ or _merged_ prefixed column header
 """
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -473,6 +474,27 @@ def main() -> None:
     applies dropdown validation, and updates the Drive manifest if anything changed.
     In dry-run mode (no --apply) only prints what would change.
     """
+    ap = argparse.ArgumentParser(
+        description="Sync diagnostic criterion columns when diagnostics_{lang_id}.yaml changes."
+    )
+    ap.add_argument("--apply", action="store_true",
+                     help="apply changes to sheets (default: dry run)")
+    ap.add_argument("--remove", action="store_true",
+                     help="also remove stale columns")
+    ap.add_argument("--refresh-dropdowns", action="store_true",
+                     help="refresh allowed values on existing dropdowns instead of syncing columns")
+    ap.add_argument("--rename", metavar="[CLASS:]OLD:NEW", action="append",
+                     help="rename a criterion, in one class or all classes (repeatable)")
+    ap.add_argument("--split", metavar="OLD:NEW1:NEW2", action="append",
+                     help="split one criterion into two (repeatable)")
+    ap.add_argument("--merge", metavar="OLD1:OLD2:NEW", action="append",
+                     help="merge two criteria into one (repeatable)")
+    # Parsed here for --help and to hard-error on unknown flags. The actual
+    # values are still pulled from sys.argv by _parse_renames/_parse_splits/
+    # _parse_merges below, which have their own tested parsing and error
+    # messages (tests/test_sync_params.py) -- not reimplemented here.
+    ap.parse_args()
+
     apply = "--apply" in sys.argv
     remove = "--remove" in sys.argv
     refresh_dropdowns = "--refresh-dropdowns" in sys.argv
