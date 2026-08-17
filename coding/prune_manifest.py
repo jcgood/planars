@@ -26,10 +26,10 @@ Authentication: same OAuth2 setup as generate_sheets.py.
 """
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 import shutil
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -211,8 +211,20 @@ def _archive_manifest(manifest: dict, timestamp: str) -> Path:
 
 def main() -> None:
     """Entry point for `python -m coding prune-manifest`."""
-    apply = "--apply" in sys.argv
-    skip_prompts = "--all" in sys.argv
+    ap = argparse.ArgumentParser(
+        description="Archive retired class TSVs and remove stale manifest entries."
+    )
+    ap.add_argument(
+        "--apply", action="store_true",
+        help="archive TSVs, move Drive sheet, remove manifest entry (default: dry run)",
+    )
+    ap.add_argument(
+        "--all", action="store_true", dest="skip_prompts",
+        help="skip per-class confirmation prompts",
+    )
+    args = ap.parse_args()
+    apply = args.apply
+    skip_prompts = args.skip_prompts
 
     if apply:
         # coded_data/ (which this command archives TSVs out of) can be left

@@ -15,9 +15,9 @@ Skipped entries remain in the file for the next run.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import subprocess
-import sys
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -259,7 +259,14 @@ def _close_pending_issue() -> None:
 
 def main() -> None:
     """Entry point for `python -m coding apply-pending`."""
-    all_flag = "--all" in sys.argv
+    ap = argparse.ArgumentParser(
+        description="Review and apply pending destructive changes."
+    )
+    ap.add_argument(
+        "--all", action="store_true", dest="all_flag",
+        help="apply all pending changes without prompting",
+    )
+    all_flag = ap.parse_args().all_flag
 
     entries = _load_pending()
     if not entries:
