@@ -70,6 +70,7 @@ Authentication: same OAuth2 setup as generate_sheets.py.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import sys
@@ -1003,6 +1004,40 @@ def main() -> None:
     into every pair-row construction referencing the retired element (see
     _apply_split_to_pair_rows) -- not just the "home" element-row construction.
     """
+    ap = argparse.ArgumentParser(
+        description="Archive and regenerate sheets after structural changes."
+    )
+    ap.add_argument(
+        "--apply", action="store_true",
+        help="archive old sheets and regenerate (default: dry run)",
+    )
+    ap.add_argument(
+        "--lang", metavar="LANG_ID", dest="lang",
+        help="restrict to this language",
+    )
+    ap.add_argument(
+        "--rename-map", metavar="OLD:NEW", action="append",
+        help='rename a position, "old_pos_name:new_pos_name" (repeatable)',
+    )
+    ap.add_argument(
+        "--rename-element", metavar="OLD:NEW", action="append",
+        help='rename an element, "old_element:new_element" (repeatable)',
+    )
+    ap.add_argument(
+        "--rename-class", metavar="OLD:NEW", action="append",
+        help='rename a class, "old_class_name:new_class_name" (repeatable)',
+    )
+    ap.add_argument(
+        "--split-element", metavar="OLD:NEW1,NEW2,...", action="append",
+        help='retire one element into several, "old_element:new1,new2,..." '
+             "(comma-separated, at least 2 targets)",
+    )
+    # Parsed here for --help and to hard-error on unknown flags. The actual
+    # values are still pulled from sys.argv by the flag-map helpers below,
+    # which have their own tested colon/comma parsing and error messages
+    # (tests/test_restructure.py) -- not reimplemented here.
+    ap.parse_args()
+
     apply = "--apply" in sys.argv
     rename_map         = _parse_flag_map(sys.argv[1:], "--rename-map")
     element_rename_map = _parse_flag_map(sys.argv[1:], "--rename-element")
