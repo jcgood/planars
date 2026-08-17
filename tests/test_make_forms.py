@@ -438,3 +438,56 @@ def test_build_element_index_unknown_class_type_raises(tmp_path):
     data_dir = _write_planar(tmp_path, rows)
     with pytest.raises(ValueError, match="Unexpected Class_Type"):
         build_element_index("planar_lang0001.tsv", data_dir)
+
+
+def test_build_element_index_missing_required_column_raises(tmp_path):
+    d = tmp_path
+    path = d / "planar_lang0001.tsv"
+    # No Class_Type column.
+    path.write_text(
+        "Language_ID\tPlanar_Type\tPosition\tPosition_Type\tPosition_Name\tElements\n"
+        "lang0001\tverbal\t1\tSlot\tv:a\tFOO\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="Missing required column"):
+        build_element_index("planar_lang0001.tsv", d)
+
+
+def test_build_element_index_non_integer_position_raises(tmp_path):
+    rows = "lang0001\tverbal\tabc\tSlot\tv:a\tFOO\topen\n"
+    data_dir = _write_planar(tmp_path, rows)
+    with pytest.raises(ValueError, match="Non-integer Position"):
+        build_element_index("planar_lang0001.tsv", data_dir)
+
+
+def test_build_element_index_blank_position_row_is_skipped_not_raised(tmp_path):
+    # A row with no Position at all is a placeholder, not an error --
+    # matches the original loop's "if not pos_raw: continue".
+    rows = (
+        "lang0001\tverbal\t\tSlot\tv:a\tFOO\topen\n"
+        "lang0001\tverbal\t2\tSlot\tv:b\tbar\tlist\n"
+    )
+    data_dir = _write_planar(tmp_path, rows)
+    index = build_element_index("planar_lang0001.tsv", data_dir)
+    assert index == {"bar@2": (2, "v:b", "lang0001", "bar")}
+
+
+def test_build_element_index_duplicate_key_raises(tmp_path):
+    # Same element name repeated within one position's Elements cell.
+    rows = "lang0001\tverbal\t1\tSlot\tv:a\tFOO, FOO\topen\n"
+    data_dir = _write_planar(tmp_path, rows)
+    with pytest.raises(ValueError, match="Duplicate unique key"):
+        build_element_index("planar_lang0001.tsv", data_dir)
+
+
+def test_build_element_index_other_language_rows_ignored(tmp_path):
+    # A planar file can hold multiple languages' rows; only lang_id's own
+    # rows should ever reach the Position/Class_Type checks -- a garbage
+    # Class_Type on a different language's row must not raise.
+    rows = (
+        "otherlang\tverbal\t1\tSlot\tv:a\tBAD\tbogus\n"
+        "lang0001\tverbal\t2\tSlot\tv:b\tbar\tlist\n"
+    )
+    data_dir = _write_planar(tmp_path, rows)
+    index = build_element_index("planar_lang0001.tsv", data_dir)
+    assert index == {"bar@2": (2, "v:b", "lang0001", "bar")}

@@ -19,23 +19,27 @@ this project is trying to remove.
 nothing blocked. Full detail in `docs/data-layer-progress.md`'s Current
 state / Next action / Decisions log / Findings sections.
 
-**Phase 6 ("data contracts at boundaries") started 2026-08-17, first of four
-boundaries done.** `planars/contracts.py` (new) declares a pandera schema for
+**Phase 6 ("data contracts at boundaries") started 2026-08-17, two of four
+boundaries done.** `planars/contracts.py` declares a pandera schema for
 `planars/io.py`'s filled-TSV/sheet loader (`_parse_filled_df`, shared by
 `load_filled_tsv`/`load_filled_sheet` and all fifteen `planars/*.py` analysis
 modules) — the boundary Jeff picked to start with, out of the plan's four
 candidates, for its reuse. `pandera` is now a runtime dependency of
 `planars/` (in `pyproject.toml`'s `dependencies`, since this loader is
-imported by Colab notebooks, not just `requirements.in`). Full account,
-including a closure bug and a numpy-`int64` leak caught and fixed before
-commit (Finding 30), in `docs/data-layer-progress.md`'s Next action section.
+imported by Colab notebooks, not just `requirements.in`). `coding/contracts.py`
+declares one for `coding/make_forms.py`'s `build_element_index` (planar
+load) — coordinator-only, so no Colab dependency question there. Full
+account of both, including a closure bug and a numpy-`int64` leak caught
+and fixed before commit (Finding 30) and a pre-existing test-coverage gap
+closed on boundary 2, in `docs/data-layer-progress.md`'s Next action
+section.
 
-**Remaining Phase 6 boundaries — planar load, pair-row load, manifest
-read/write — are not started.** The plan already assigns manifest
-read/write to pydantic (dict/JSON) rather than pandera (DataFrame); no
-scoping question remains open for boundary 2 the way "which boundary first"
-was for boundary 1. Phases 7–9 remain entirely unscoped in session-level
-detail — see `docs/data-layer-implementation-plan.md` for the phase spec.
+**Remaining Phase 6 boundaries — pair-row load, manifest read/write — are
+not started.** The plan already assigns manifest read/write to pydantic
+(dict/JSON) rather than pandera (DataFrame); no scoping question remains
+open the way "which boundary first" was for boundary 1. Phases 7–9 remain
+entirely unscoped in session-level detail — see
+`docs/data-layer-implementation-plan.md` for the phase spec.
 
 **Phase 0b/1 (the doorway migration), Phase 3 (schema reorganization), and
 Phase 4 (topology declaration) are all complete, nothing outstanding from

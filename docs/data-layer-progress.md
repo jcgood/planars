@@ -30,10 +30,11 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 6 — **started 2026-08-17, first of four boundaries done.** The
-filled-TSV/sheet loader (`planars/io.py`'s `_parse_filled_df`) now has a
-pandera contract (`planars/contracts.py`); planar load, pair-row load, and
-manifest read/write are not started. See Next action below for the full
+**Phase:** 6 — **started 2026-08-17, two of four boundaries done.** The
+filled-TSV/sheet loader (`planars/io.py`'s `_parse_filled_df`) and the
+planar loader (`coding/make_forms.py`'s `build_element_index`) now have
+pandera contracts (`planars/contracts.py`, `coding/contracts.py`); pair-row
+load and manifest read/write are not started. See Next action below for the full
 account. 5 — done, all five units. Unit A (argparse standardization, all 9 batches) done 2026-08-16. Units B (dispatch integration) and C (derived `registry` command) done the same day, right after A: every command module now exposes `build_parser()` separately from `main(args=None)`, `__main__.py` parses once and calls `mod.main(args)` directly (the chokepoint units D/E hook into), and `python -m coding registry` derives the full command inventory fresh from that plus `operations.yaml` on every call. Units D (precondition enforcement) and E (provenance capture) done 2026-08-17, both same day, after Jeff decided both units' open questions (see the Decisions log): D replaces the scattered manual `_check_coded_data_clean()` calls, file-by-file, with `coding/preconditions.py` driven by each command's `operations.yaml` record; E logs only Drive-writing invocations (not every command, and per actual invocation not per command) to `provenance_log.jsonl`, append-forever, via `coding/provenance.py`. 4 — done. Every record traced against code, all three "done when" items complete, and all five review items closed out with Jeff (started 2026-08-10, review session 2026-08-11, line-by-line trace + fixes 2026-08-11, Findings 27/28 resolved with Jeff 2026-08-16). 3 — done (started and finished 2026-08-10). 0b/1 — done, 18 of 18 (2026-08-01–2026-08-04).
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
@@ -133,7 +134,8 @@ the same day — see the decisions log.
 | Phase 5, unit E — provenance capture | **done** — `coding/provenance.py`, wired into the same dispatch chokepoint; logs Drive-writing invocations only, per actual invocation, to `provenance_log.jsonl` (append-forever); new `operations.yaml` `writes_to_drive` field populated across all 25 records (Finding 29) |
 | **Phase 5 (the whole unit)** | **done** — units A/B/C/D/E all complete |
 | Phase 6, boundary 1 — filled-TSV/sheet loader | **done** — `planars/contracts.py` (pandera), wired into `planars/io.py`'s `_parse_filled_df`; `tests/test_contracts.py` new, `tests/test_io.py`'s 14 error-path tests pass unchanged |
-| Phase 6, boundaries 2–4 — planar load, pair-row load, manifest read/write | not started |
+| Phase 6, boundary 2 — planar load | **done** — `coding/contracts.py` (pandera), wired into `coding/make_forms.py`'s `build_element_index`; `tests/test_coding_contracts.py` new, `tests/test_make_forms.py`'s 3 pre-existing error-path tests pass unchanged plus 6 new ones closing a pre-existing test-coverage gap |
+| Phase 6, boundaries 3–4 — pair-row load, manifest read/write | not started |
 | Phases 7–9 | not started |
 
 ### In flight
@@ -414,9 +416,49 @@ real bug this rewrite introduced and the same run caught: `keystone_pos`
 briefly leaked a numpy `int64` instead of a plain `int` (Finding 30) — fixed
 same session, before commit.
 
-Boundaries 2–4 (planar load, pair-row load, manifest read/write) are not
-started. Phases 7–9 remain entirely unscoped; see
-`docs/data-layer-implementation-plan.md`.
+**Phase 6, boundary 2 ("planar load") done, same session.**
+`coding/make_forms.py`'s `build_element_index` — the function every sheet-
+generation and structural-maintenance command (`generate_sheets.py`,
+`update_sheets.py`, `restructure_sheets.py`) depends on to know what
+elements exist at what positions — gets its own `coding/contracts.py`
+(deliberately not `planars/contracts.py`: `build_element_index` is
+coordinator tooling only, nothing the Colab-installed `planars` package
+imports, so this boundary doesn't add a Colab runtime dependency the way
+boundary 1 did). No open scoping question here — the plan already named
+this the second candidate boundary and pandera as the right tool for a
+DataFrame boundary, so this one proceeded straight to implementation.
+
+`position_integer_schema()` and `class_type_schema()` cover the same two
+checks the original hand-written loop raised on (`Position` castable to
+`int`; `Class_Type` one of `open`/`list`/`mixed`), applied to the same
+two narrowed row subsets the original loop's `continue` statements
+produced (matching-language + non-blank-`Position` for the first check,
+further narrowed to non-blank-`Elements` for the second) — refactored so
+both the schema check and the indexing loop that follows read off one
+shared, normalized DataFrame instead of each re-deriving the same
+strip/lower logic separately and risking drift between them. The
+duplicate-`element@position`-key check stays procedural in
+`make_forms.py`, not moved into the schema, since it depends on per-row
+multi-element splitting (`_split_elements`) that doesn't fit a per-column
+check. Same wrapping pattern as boundary 1: `SchemaError` caught, `ValueError`
+re-raised with the original message wording, so all three callers see the
+exception type and message shape they always have.
+
+Found while adding tests, not a code bug: `build_element_index` had exactly
+three tests before this (the `open`/`list`/`mixed` indexing parity check,
+a single-item list check, and the unexpected-`Class_Type` error path) —
+missing-column, non-integer-`Position`, and duplicate-key were all
+real, working `ValueError` paths with no test ever exercising them. Six
+new tests close that gap (including one confirming a different-language
+row's garbage `Class_Type` is correctly ignored, not raised on). All
+pre-existing `tests/test_make_forms.py` tests pass unchanged;
+`tests/test_coding_contracts.py` (new) tests the two schemas directly.
+
+Boundaries 3–4 (pair-row load, manifest read/write) are not started. Manifest
+read/write is the one boundary the plan assigns to pydantic rather than
+pandera (dict/JSON, not a DataFrame) — no scoping question open there
+either, the plan already made that call. Phases 7–9 remain entirely
+unscoped; see `docs/data-layer-implementation-plan.md`.
 
 ### Held until Phase 9
 

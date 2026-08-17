@@ -8,7 +8,9 @@ from typing import Any, Dict, List, Tuple
 
 import pandas as pd
 import yaml
+from pandera.errors import SchemaError
 
+from .contracts import VALID_CLASS_TYPES, class_type_schema, position_integer_schema, position_is_integer
 from .schemas import load_planar_schema
 
 _BRACE_SUFFIX_RE = re.compile(r'\{[^}]*\}$')
@@ -209,6 +211,36 @@ def build_element_index(planar_filename: str, data_dir: Path | str) -> ElementIn
     if missing:
         raise ValueError(f"Missing required column(s): {sorted(missing)}")
 
+    # Normalize once (strip everything, lowercase Class_Type) and filter to
+    # this language's rows, so the pandera checks below and the row-by-row
+    # indexing loop that follows both work off the same values instead of
+    # each re-deriving them and risking drift. A row with blank Position or
+    # blank Elements is a placeholder, not a contract violation, so it's
+    # filtered out here rather than checked — mirrors the original
+    # hand-written loop's own skip order (see contracts.py's module
+    # docstring for the two-stage narrowing this reproduces).
+    work = df.copy()
+    for col in ("Language_ID", "Class_Type", "Elements", "Position_Name", "Position"):
+        work[col] = work[col].astype(str).str.strip() if col in work.columns else ""
+    work["Class_Type"] = work["Class_Type"].str.lower()
+    work = work[work["Language_ID"] == lang_id]
+
+    has_position = work[work["Position"] != ""]
+    try:
+        position_integer_schema().validate(has_position)
+    except SchemaError as e:
+        bad = has_position.loc[~position_is_integer(has_position["Position"]), "Position"].iloc[0]
+        raise ValueError(f"{e.check.error} Found: '{bad}'.") from e
+
+    has_elements = has_position[has_position["Elements"] != ""]
+    try:
+        class_type_schema().validate(has_elements)
+    except SchemaError as e:
+        bad_row = has_elements.loc[~has_elements["Class_Type"].isin(VALID_CLASS_TYPES)].iloc[0]
+        raise ValueError(
+            f"Unexpected Class_Type '{bad_row['Class_Type']}' at position {bad_row['Position']}."
+        ) from e
+
     element_to_info: ElementIndex = {}
 
     def add_element(element_plain: str, pos: int, position_name: str) -> None:
@@ -225,37 +257,13 @@ def build_element_index(planar_filename: str, data_dir: Path | str) -> ElementIn
 
         element_to_info[key] = (pos, position_name, lang_id, element_plain)
 
-    for _, row in df.iterrows():
-        row_lang = (row.get("Language_ID", "") or "").strip()
-        # Skip rows that belong to a different language (multi-language planar files).
-        if row_lang != lang_id:
-            continue
-
-        class_type = (row.get("Class_Type", "") or "").strip().lower()
-        elements_raw = (row.get("Elements", "") or "").strip()
-        position_name = (row.get("Position_Name", "") or "").strip()
-        pos_raw = (row.get("Position", "") or "").strip()
-
-        if not pos_raw:
-            continue
-        try:
-            pos = int(pos_raw)
-        except ValueError as e:
-            raise ValueError(f"Non-integer Position value '{pos_raw}'") from e
-
-        if not elements_raw:
-            continue
-
-        # "open", "list", and "mixed" class types all enumerate individual
-        # elements the same way for indexing purposes -- the distinction
-        # between them matters for form generation and ALL-CAPS convention
-        # checking (validate_planar.py), not here.
-        if class_type in ("open", "list", "mixed"):
-            for element_plain in _split_elements(elements_raw):
-                add_element(element_plain, pos, position_name)
-
-        else:
-            raise ValueError(f"Unexpected Class_Type '{class_type}' at position {pos}")
+    # "open", "list", and "mixed" class types all enumerate individual
+    # elements the same way for indexing purposes -- the distinction between
+    # them matters for form generation and ALL-CAPS convention checking
+    # (validate_planar.py), not here.
+    for _, row in has_elements.iterrows():
+        for element_plain in _split_elements(row["Elements"]):
+            add_element(element_plain, int(row["Position"]), row["Position_Name"])
 
     return element_to_info
 
