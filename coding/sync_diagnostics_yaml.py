@@ -350,16 +350,13 @@ def main(args: argparse.Namespace | None = None) -> None:
     to_sheet = args.to_sheet
     lang_filter: Optional[str] = args.lang
 
-    if apply:
-        # All three directions read coded_data/*.yaml as ground truth
-        # (--to-sheet pushes it live; --from-tsv also reads the TSV) and the
-        # default/--from-tsv directions write coded_data/ too -- same guard
-        # as sync_params.py/update_sheets.py/import_sheets.py/
-        # prune_manifest.py, against a prior step's failed auto-commit
-        # leaving a stale file on disk.
-        from .drive import _check_coded_data_clean
-        _check_coded_data_clean(extensions=(".yaml", ".tsv"))
-
+    # coded_data_clean_tree (all three directions) is enforced centrally at
+    # the python -m coding dispatch chokepoint now -- see
+    # coding/preconditions.py -- not here. It still guards against exactly
+    # what it always has: a prior step's failed auto-commit leaving a
+    # stale/reverted YAML or TSV on disk for this command to read as ground
+    # truth (--to-sheet would then push it live; the default/--from-tsv
+    # directions would regenerate from it).
     run_line = _apply_command(from_tsv, to_sheet, lang_filter)
     if not apply:
         print("Dry run — nothing is written.\n")

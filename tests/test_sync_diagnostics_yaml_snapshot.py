@@ -67,14 +67,6 @@ def env(monkeypatch):
                         lambda: json.loads(json.dumps(config)))
     drive_doorway.set_doorway(doorway)
 
-    # main()'s guard does `from .drive import _check_coded_data_clean` at
-    # call time (matching this file's own existing inline `from .drive
-    # import load_manifest` under --to-sheet), so patching the attribute on
-    # drive_module here -- before main() runs -- is picked up correctly.
-    clean_checks: List[dict] = []
-    monkeypatch.setattr(drive_module, "_check_coded_data_clean",
-                        lambda **kw: clean_checks.append(kw))
-
     def run(argv: List[str]) -> str:
         monkeypatch.setattr(sys, "argv", argv)
         buf = io.StringIO()
@@ -84,8 +76,6 @@ def env(monkeypatch):
         except SystemExit as exc:
             buf.write(f"[SystemExit: {exc.code}]\n")
         return buf.getvalue()
-
-    run.clean_checks = clean_checks
 
     try:
         yield doorway, run
@@ -153,25 +143,11 @@ def test_apply_transcript(env):
                    run(["sdy", "--to-sheet", "--lang", LANG, "--apply"]))
 
 
-# ---------------------------------------------------------------------------
-# coded_data/ must be clean before an apply reads/writes it as ground truth
-# (only exercised via --to-sheet here: the default/--from-tsv directions
-# would write the real coded_data/*/lang_setup/diagnostics_*.tsv files, since
-# this fixture reads the real coded_data/ rather than a redirected copy)
-# ---------------------------------------------------------------------------
-
-def test_dry_run_does_not_check_whether_coded_data_is_clean(env):
-    _, run = env
-    run(["sdy", "--to-sheet"])
-    assert run.clean_checks == []
-
-
-def test_apply_checks_coded_data_is_clean_before_pushing_to_the_sheet(env):
-    doorway, run = env
-    make_stale(doorway)
-    run(["sdy", "--to-sheet", "--lang", LANG, "--apply"])
-    assert run.clean_checks == [{"extensions": (".yaml", ".tsv")}]
-
+# coded_data_clean_tree (all three directions) is enforced centrally at the
+# python -m coding dispatch chokepoint now, not inside sdy.main() itself --
+# see coding/preconditions.py and tests/test_preconditions.py, which cover
+# this command's precise gating (including its (".yaml", ".tsv") extensions
+# exception) directly against the real operations.yaml record.
 
 # ---------------------------------------------------------------------------
 # The dry run is a dry run
