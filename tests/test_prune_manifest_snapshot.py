@@ -105,10 +105,6 @@ def env(monkeypatch, tmp_path):
     monkeypatch.setattr(drive_module, "_load_drive_config", lambda: dict(config))
     drive_doorway.set_doorway(doorway)
 
-    clean_checks: List[dict] = []
-    monkeypatch.setattr(prune_manifest, "_check_coded_data_clean",
-                        lambda **kw: clean_checks.append(kw))
-
     def run(argv: List[str], answers: List[str] = ()) -> str:
         replies = iter(answers)
 
@@ -127,8 +123,6 @@ def env(monkeypatch, tmp_path):
             prune_manifest.main()
         # Archive filenames carry a wall-clock stamp.
         return re.sub(r"\d{8}_\d{6}", "TIMESTAMP", buf.getvalue())
-
-    run.clean_checks = clean_checks
 
     try:
         yield doorway, run, coded, saved
@@ -178,20 +172,11 @@ def test_apply_transcript(env):
     check_snapshot("apply.txt", run(["prune-manifest", "--apply"], ["y"]))
 
 
-# ---------------------------------------------------------------------------
-# coded_data/ must be clean before --apply archives anything out of it
-# ---------------------------------------------------------------------------
-
-def test_dry_run_does_not_check_whether_coded_data_is_clean(env):
-    _, run, _, _ = env
-    run(["prune-manifest"])
-    assert run.clean_checks == []
-
-
-def test_apply_checks_coded_data_is_clean_before_archiving(env):
-    _, run, _, _ = env
-    run(["prune-manifest", "--apply"], ["y"])
-    assert run.clean_checks == [{"extensions": (".tsv",)}]
+# coded_data_clean_tree (coded_data/ must be clean before --apply archives
+# anything out of it) is enforced centrally at the python -m coding
+# dispatch chokepoint now, not inside prune_manifest.main() itself -- see
+# coding/preconditions.py and tests/test_preconditions.py, which cover this
+# command's gating directly against the real operations.yaml record.
 
 
 # ---------------------------------------------------------------------------

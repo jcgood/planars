@@ -43,7 +43,6 @@ MANIFEST_ARCHIVES = ROOT / "manifest_archives"
 from .drive import (
     load_manifest,
     upload_manifest,
-    _check_coded_data_clean,
     _load_drive_config,
     _save_drive_config,
     _with_retry,
@@ -232,12 +231,11 @@ def main(args: argparse.Namespace | None = None) -> None:
     apply = args.apply
     skip_prompts = args.skip_prompts
 
-    if apply:
-        # coded_data/ (which this command archives TSVs out of) can be left
-        # stale/partially-reverted by a prior step's failed auto-commit --
-        # same guard as sync_params.py/update_sheets.py/import_sheets.py.
-        _check_coded_data_clean(extensions=(".tsv",))
-
+    # coded_data_clean_tree is enforced centrally at the python -m coding
+    # dispatch chokepoint now -- see coding/preconditions.py -- not here. It
+    # still guards against exactly what it always has: coded_data/ (which
+    # this command archives TSVs out of) left stale/partially-reverted by a
+    # prior step's failed auto-commit.
     _SHEET_META.clear()
     doorway = get_doorway()
     manifest = load_manifest(doorway)
