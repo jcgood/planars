@@ -15,18 +15,27 @@ this project is trying to remove.
 
 ## Now
 
-**Phase 5 is in progress. Units A, B, and C are done, all as of 2026-08-16.**
-A: every command hard-errors on an unknown flag instead of silently ignoring
-it, and has real `--help`. B: every command module exposes `build_parser()`
-separately from `main(args=None)`, and `__main__.py`'s dispatch parses once
-and calls `mod.main(args)` directly — a real chokepoint, not just a parser
-in isolation. C: `python -m coding registry` derives the full command
-inventory fresh from that plus `operations.yaml` on every call; replaced
-`__main__.py`'s own hand-maintained command list. **Units D (precondition
-enforcement) and E (provenance capture) are next, and both are blocked on a
-decision from Jeff** — see `docs/data-layer-progress.md`'s Open questions
-section. Full detail in that file's Current state, Next action, and
-Findings sections — no need to duplicate it here.
+**Phase 5 is done, all five units, as of 2026-08-17.** A: every command
+hard-errors on an unknown flag instead of silently ignoring it, and has real
+`--help`. B: every command module exposes `build_parser()` separately from
+`main(args=None)`, and `__main__.py`'s dispatch parses once and calls
+`mod.main(args)` directly — a real chokepoint, not just a parser in
+isolation. C: `python -m coding registry` derives the full command inventory
+fresh from that plus `operations.yaml` on every call; replaced `__main__.py`'s
+own hand-maintained command list. D: `coding/preconditions.py` centralizes
+precondition enforcement at that same chokepoint, replacing the scattered
+manual `_check_coded_data_clean()` calls that used to live in seven separate
+command files. E: `coding/provenance.py`, wired into the same chokepoint,
+logs which run produced a Drive change to `provenance_log.jsonl`
+(gitignored, append-forever) — only for invocations that actually write to
+Drive, derived from a new `operations.yaml` field (`writes_to_drive`).
+**Phase 5 has no open questions left; nothing is blocked.** Full detail in
+`docs/data-layer-progress.md`'s Current state, Next action, Decisions log,
+and Findings (29) sections — no need to duplicate it here.
+
+**Phases 6–9 are next and not yet scoped in session-level detail** — see
+`docs/data-layer-implementation-plan.md` for the phase spec, and read
+`docs/data-layer-progress.md`'s Current state before starting.
 
 **Phase 0b/1 (the doorway migration), Phase 3 (schema reorganization), and
 Phase 4 (topology declaration) are all complete, nothing outstanding from

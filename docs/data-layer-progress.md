@@ -30,10 +30,10 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 5 — **in progress.** Unit A (argparse standardization, all 9 batches) done 2026-08-16. Units B (dispatch integration) and C (derived `registry` command) done the same day, right after A: every command module now exposes `build_parser()` separately from `main(args=None)`, `__main__.py` parses once and calls `mod.main(args)` directly (the chokepoint units D/E will hook into), and `python -m coding registry` derives the full command inventory fresh from that plus `operations.yaml` on every call. Units D (precondition enforcement) and E (provenance capture) are not started — both still need a decision from Jeff, see Open questions. 4 — done. Every record traced against code, all three "done when" items complete, and all five review items closed out with Jeff (started 2026-08-10, review session 2026-08-11, line-by-line trace + fixes 2026-08-11, Findings 27/28 resolved with Jeff 2026-08-16). 3 — done (started and finished 2026-08-10). 0b/1 — done, 18 of 18 (2026-08-01–2026-08-04).
+**Phase:** 5 — **done, all five units.** Unit A (argparse standardization, all 9 batches) done 2026-08-16. Units B (dispatch integration) and C (derived `registry` command) done the same day, right after A: every command module now exposes `build_parser()` separately from `main(args=None)`, `__main__.py` parses once and calls `mod.main(args)` directly (the chokepoint units D/E hook into), and `python -m coding registry` derives the full command inventory fresh from that plus `operations.yaml` on every call. Units D (precondition enforcement) and E (provenance capture) done 2026-08-17, both same day, after Jeff decided both units' open questions (see the Decisions log): D replaces the scattered manual `_check_coded_data_clean()` calls, file-by-file, with `coding/preconditions.py` driven by each command's `operations.yaml` record; E logs only Drive-writing invocations (not every command, and per actual invocation not per command) to `provenance_log.jsonl`, append-forever, via `coding/provenance.py`. 4 — done. Every record traced against code, all three "done when" items complete, and all five review items closed out with Jeff (started 2026-08-10, review session 2026-08-11, line-by-line trace + fixes 2026-08-11, Findings 27/28 resolved with Jeff 2026-08-16). 3 — done (started and finished 2026-08-10). 0b/1 — done, 18 of 18 (2026-08-01–2026-08-04).
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
-**Last worked:** 2026-08-16
+**Last worked:** 2026-08-17
 
 Phase 3 split `schemas/diagnostic_classes.yaml` into that file (linguistic
 content only) and a new `schemas/diagnostic_classes_status.yaml` (process/
@@ -125,7 +125,9 @@ the same day — see the decisions log.
 | Phase 5, unit A — argparse standardization | **done** — all 17 `coding/` commands that hand-scanned `sys.argv` now use `argparse` (9 batches, smallest-and-safest first, `generate_sheets.py` deliberately last — same ordering logic as the Phase 0b/1 file migration). Documented flags unchanged; the actual difference is that an unknown flag now hard-errors (exit 2) instead of being silently ignored, the specific failure mode the plan calls out for `generate-sheets`. `restructure_sheets.py`/`sync_params.py` layer argparse in front of their existing hand-rolled colon/comma parsers (`_parse_flag_map`, `_parse_renames`, etc.) rather than replacing them, since those have their own passing unit tests. One real test update: `test_no_lang_flag_is_refused` (biuniqueness/allomorphy) now checks `SystemExit` code 2 instead of stdout text, since argparse's `required=True` error goes to stderr, which that test's capture helper doesn't see — same intent (refuse to run without `--lang`), exit code changes from 1 to 2. Full pytest suite (1281 tests) green after every one of the 9 batches. |
 | Phase 5, unit B — dispatch integration | **done** — every command module (all 24, including the 2 with no flags at all and the 2 with hand-rolled colon/comma parsers underneath argparse) exposes `build_parser()` separately from `main(args: argparse.Namespace \| None = None)`; `main()` parses `sys.argv` itself only when called with no `args`, so all 18 existing snapshot tests that monkeypatch `sys.argv` and call `mod.main()` kept working unchanged (one exception: `setup_root_folder`'s test never controlled `sys.argv` at all, safe before only because `main()` never parsed it — fixed to monkeypatch like every other test). `__main__.py`'s dispatch now parses once and calls `mod.main(args)` directly instead of letting each command re-parse internally — the chokepoint units D and E will hook into, keyed by command name and already-parsed `args`. |
 | Phase 5, unit C — derived `registry` command | **done** — `python -m coding registry` joins `__main__.py`'s `_COMMANDS` table + every command's `build_parser()` (unit A/B) with `operations.yaml` (Phase 4), recomputed fresh on every call, nothing cached. Plain listing by default; `--command CLI_COMMAND` for one command's full detail. Replaced `__main__.py`'s own hand-maintained "Commands:" docstring table — exactly the kind of duplicated inventory this command exists to remove (ground rule 4). `operations.yaml` gained a record for `registry` itself; `tests/test_registry.py` checks flag lists against a *fresh* call to each module's own `build_parser()`, not a copy pinned in the test, so a hand-copied list couldn't pass silently. |
-| Phase 5, units D–E (precondition enforcement, provenance capture) | not started — both need a decision from Jeff first, see Open questions |
+| Phase 5, unit D — precondition enforcement | **done** — `coding/preconditions.py`, wired into `__main__.py`'s dispatch; replaced the scattered manual `_check_coded_data_clean()` calls in all 7 files that had one, migrated one command at a time |
+| Phase 5, unit E — provenance capture | **done** — `coding/provenance.py`, wired into the same dispatch chokepoint; logs Drive-writing invocations only, per actual invocation, to `provenance_log.jsonl` (append-forever); new `operations.yaml` `writes_to_drive` field populated across all 25 records (Finding 29) |
+| **Phase 5 (the whole unit)** | **done** — units A/B/C/D/E all complete |
 | Phases 6–9 | not started |
 
 ### In flight
@@ -309,18 +311,61 @@ against a *fresh, independent* call to that module's own `build_parser()`
 (not a copy pinned in the test), so a hand-copied flag list couldn't pass
 silently. Full pytest suite (1291 tests, +10 new) green.
 
-**Next: Phase 5 units D and E, both blocked on a decision from Jeff.** D
-(precondition enforcement at call time) — replace the scattered manual
-`_check_coded_data_clean()`-style calls with dispatch-level enforcement
-driven by each command's declared `preconditions`, or add centralized
-enforcement as a second layer alongside the existing manual calls? Ground
-rule 4 points at replacing, but replacing risks a wrong mapping silently
-dropping a check that runs unconditionally today — should be reviewed
-file-by-file with the pre/post-diff discipline Phase 0b/1 used, not as one
-sweep, whichever way this goes. E (provenance capture) needs a decision on
-what's logged (every command, or only ones with Drive side effects per
-`operations.yaml`) and the retention policy (append-forever vs. rotated); B's
-chokepoint it needs now exists. See the *Open questions for Jeff* section.
+**Phase 5, unit D ("Precondition enforcement") is done, 2026-08-17.** Jeff's
+decision on the unit D open question: replace, file-by-file, with the same
+pre/post-diff discipline Phase 0b/1 used — not add a second layer, and not
+one sweep. `coding/preconditions.py` (`active_preconditions(op_id, args)`/
+`enforce(op_id, args)`) derives which preconditions apply to a real
+invocation straight from that command's `operations.yaml` record (base
+`apply_gate` plus any active `modes`), so a declared-but-unchecked
+precondition — the exact shape Findings 23/24 already found twice — is no
+longer possible; the declaration IS what runs. Wired into `__main__.py`'s
+dispatch right after parsing, before `mod.main(args)`. Only
+`coded_data_clean_tree` is centrally enforced (the one precondition that was
+actually a scattered manual `_check_coded_data_clean()` call per file);
+`coded_data_git_identity_configured` and `check_notes_documents_scope_authorized`
+stay enforced where they already were — neither was that shape, so
+centralizing them would be a different, un-scoped change (see
+`preconditions.py`'s module docstring). Migrated one command at a time —
+`sync_diagnostics_yaml.py` first (the one extensions exception, a good early
+check), then `update_sheets.py`, `prune_manifest.py`, `sync_params.py`,
+`import_sheets.py`, `generate_sheets.py`, `restructure_sheets.py` last
+(deliberately — the archive-then-rebuild command with no rollback, same
+ordering logic Phase 0b/1 used) — each its own commit, full pytest suite run
+after every one. Each command's own snapshot tests lost the guard-specific
+assertions they used to carry (a monkeypatched `_check_coded_data_clean` and
+one or two dry-run-vs-apply tests per file) since the guard no longer lives
+in that file at all; that coverage now lives once, in
+`tests/test_preconditions.py`, checked against the real, live
+`operations.yaml` rather than duplicated per command. `coding/gating.py`
+factors the `apply_gate`-matching logic out for reuse by unit E. Full pytest
+suite green after every commit (1306 by the end of unit D).
+
+**Phase 5, unit E ("Provenance capture") is done, 2026-08-17, same day as
+unit D.** Jeff's decisions on the unit E open questions: log only commands
+with real Drive side effects (not every command), and log per actual
+invocation rather than per command — scoping unit E turned up that
+Drive-write status genuinely diverges by mode for `sync-diagnostics-yaml`
+and `import-planar` (their default directions touch only the local
+YAML/TSV; only `--to-sheet` reaches the live Sheet), so "does *this* run's
+flags actually hit Drive" is the only version that doesn't either under- or
+over-log those two. Retention: append-forever. `coding/provenance.py`
+(`writes_to_drive(op_id, args)`/`record(cli_command, op_id, args)`) is wired
+into `__main__.py`'s dispatch right before `mod.main(args)` runs (not after
+— a run that fails partway through can still have written something), and
+appends one JSON line (`{timestamp, command, args}`) to
+`provenance_log.jsonl` at the repo root (gitignored) whenever the actual
+invocation reaches a Drive/Sheets/Docs write. Required a new
+`operations.yaml` field, `writes_to_drive` (base + per-mode, schema change
+in `operation_record.schema.json`, documented in `SCHEMA.md`), populated
+across all 25 records by tracing each command's real Drive footprint rather
+than assuming `apply_gate` always means "writes to Drive" — see Finding 29
+below for what that tracing turned up. Full pytest suite green (1322 tests).
+
+**Both units needed a decision from Jeff before they could start; neither
+does anymore. Phase 5 is done in full** — units A/B/C/D/E all complete.
+Phases 6–9 are next, not yet scoped in detail here; see
+`docs/data-layer-implementation-plan.md`.
 
 ### Held until Phase 9
 
@@ -1249,9 +1294,58 @@ per this project's "write the record as part of the fix" rule for
 is now listed in `data_dependency_schema/preconditions.yaml`'s
 `coded_data_clean_tree` entry's `required_by`.
 
+**29. Populating `operations.yaml`'s new `writes_to_drive` field (unit E)
+found `apply_pending`'s own direct Drive footprint is read-only** (found
+2026-08-17, scoping unit E's provenance logging). Its side effect text says
+it "applies coordinator-approved destructive changes to coded_data/ and/or
+the manifest", which reads as a Drive write — but tracing `apply_pending.py`
+directly shows its only Drive call is `doorway.open_spreadsheet()` inside
+`_check_construction_tab_exists`, a read used to verify a new-construction
+entry before offering to apply it. The actual destructive action runs via
+`_run_command`, a `subprocess.run` shelling out to another
+`python -m coding <cmd> --apply` — which, invoked that way, goes through the
+dispatch chokepoint itself and logs its own provenance entry independently.
+Setting `apply_pending`'s `writes_to_drive: true` would have double-logged
+every entry it applies: once (correctly) from the delegated command's own
+run, and once (redundantly) from `apply_pending` itself, for a write it
+never actually performed. Set to `false` instead — not a code fix, since
+nothing was wrong before this field existed; recorded here because it's the
+same kind of "declared claim doesn't match what the code does" gap
+Findings 22–28 exist to catch, just caught before anything was ever wired to
+the wrong value rather than after.
+
+Also found, not fixed (deliberately, see `coding/provenance.py`'s module
+docstring and its "Known gap" note): `import-sheets` paints pink highlighting
+on invalid cells (a real Sheet write) on *every* run, including a dry run —
+that write is not gated by `--apply` at all, only its other side effects
+(the local TSV write, `pending_changes.json`) are. Its `operations.yaml`
+`apply_gate` ("--apply") correctly describes those other effects, so gating
+provenance logging on that same field means a dry run of `import-sheets`
+that paints cells goes unlogged. The schema's `writes_to_drive`/`apply_gate`
+pairing has no way to express "this command has two side effects with two
+different gates" without a second field on the one record that needs it —
+judged not worth adding for a single case; flagged here rather than
+silently accepted.
+
 ---
 
 ## Decisions log
+
+**2026-08-17 — Phase 5 units D and E, both decided in the same session
+after being blocked on Jeff's input since 2026-08-16.** D: replace the
+scattered manual `_check_coded_data_clean()` calls with dispatch-level
+enforcement, file-by-file with the Phase 0b/1 pre/post-diff discipline —
+not add a second layer, and not one sweep. E, two decisions: log only
+commands with real Drive side effects (not every command), and — a
+refinement surfaced only once implementation started, since
+`sync-diagnostics-yaml`'s and `import-planar`'s Drive-write status turned
+out to genuinely diverge by mode (their default directions touch only the
+local YAML/TSV) — log per actual invocation, not per command, so a run
+whose real flags never reach Drive is never logged even when the command
+*can* write to Drive under a different flag. Retention: append-forever.
+Both units done the same day; see the *Next action* section above for what
+each actually built, and Finding 29 above for what populating the new
+`writes_to_drive` field turned up.
 
 **2026-08-04 — file 18 (`restructure_sheets.py`), the last file, completes
 Phase 0b/1.** Every primitive it needed already existed: `get_doorway()`,
@@ -2330,23 +2424,8 @@ intended behaviour changes whatsoever."
 
 ## Open questions for Jeff
 
-Phase 4's five review items were closed out with Jeff on 2026-08-16 (see
-Findings 25–28). Two new ones from scoping Phase 5, both about units D and
-E — units A/B/C needed no coordinator call and are done:
-
-- **Unit D (precondition enforcement):** replace the scattered manual
-  `_check_coded_data_clean()`-style calls with dispatch-level enforcement
-  driven by each command's declared `preconditions` in `operations.yaml`, or
-  add the centralized check as a second layer alongside the existing manual
-  ones? Ground rule 4 ("derive, don't duplicate") points at replacing —
-  that's the only version that forecloses the class of bug Findings 23/24
-  already found twice (a precondition declared but the call missing) — but
-  replacing means a wrong mapping could silently drop a check that runs
-  unconditionally today, so whichever way this goes, it should be reviewed
-  file-by-file with the pre/post-diff discipline Phase 0b/1 used, not as one
-  sweep.
-- **Unit E (provenance capture):** what should be logged (every command, or
-  only ones with Drive side effects per `operations.yaml`) and what the
-  retention policy is (append-forever vs. rotated). The design doc's own
-  words: "no record of which tool run produced a given change... the natural
-  place to capture this nearly free," once unit B's chokepoint exists.
+None open right now. Phase 4's five review items were closed out with Jeff
+on 2026-08-16 (see Findings 25–28); Phase 5 units D and E's two open
+questions were decided 2026-08-17 (see the Decisions log) and both units are
+done. Phases 6–9 aren't scoped in enough detail yet to have surfaced their
+own questions.
