@@ -11,7 +11,7 @@ Run from the repo root:
 """
 from __future__ import annotations
 
-import sys
+import argparse
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -132,11 +132,20 @@ def _resolve_criterion_columns(
 
 
 def main() -> None:
-    apply = "--apply" in sys.argv
-    lang_filter = None
-    if "--lang" in sys.argv:
-        idx = sys.argv.index("--lang")
-        lang_filter = sys.argv[idx + 1]
+    ap = argparse.ArgumentParser(
+        description="Refresh criterion dropdown validation on existing sheets."
+    )
+    ap.add_argument(
+        "--apply", action="store_true",
+        help="push updated dropdowns (default: dry run)",
+    )
+    ap.add_argument(
+        "--lang", metavar="LANG_ID", dest="lang",
+        help="restrict to this language",
+    )
+    args = ap.parse_args()
+    apply = args.apply
+    lang_filter = args.lang
 
     doorway = get_doorway()
     manifest = load_manifest(doorway)

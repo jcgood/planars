@@ -18,6 +18,7 @@ Authentication: same OAuth2 setup as generate_sheets.py.
 """
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 import shutil
@@ -834,10 +835,30 @@ def main() -> None:
     to force overwrite even when content is identical.
     Writes an error report to import_errors/ if any warnings are generated.
     """
-    apply = "--apply" in sys.argv
-    force = "--overwrite-existing" in sys.argv
-    ignore_status = "--ignore-status" in sys.argv
-    lang_filter = sys.argv[sys.argv.index("--lang") + 1] if "--lang" in sys.argv else None
+    ap = argparse.ArgumentParser(
+        description="Download filled annotation sheets to TSVs."
+    )
+    ap.add_argument(
+        "--apply", action="store_true",
+        help="write TSVs (default: dry run)",
+    )
+    ap.add_argument(
+        "--overwrite-existing", action="store_true", dest="force",
+        help="force overwrite even when downloaded content is unchanged",
+    )
+    ap.add_argument(
+        "--ignore-status", action="store_true",
+        help="treat all tabs as ready-for-review, regardless of their Status tab",
+    )
+    ap.add_argument(
+        "--lang", metavar="LANG_ID", dest="lang",
+        help="restrict to this language",
+    )
+    args = ap.parse_args()
+    apply = args.apply
+    force = args.force
+    ignore_status = args.ignore_status
+    lang_filter = args.lang
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     if not apply:
