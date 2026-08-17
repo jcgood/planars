@@ -53,6 +53,7 @@ Authentication (OAuth2 — recommended for personal Google accounts):
 """
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import sys
@@ -2182,44 +2183,75 @@ def main() -> None:
     - Uploads the merged manifest.json manifest to Drive after each language.
     - Regenerates contributor notebooks at the end.
     """
-    if "--push-manifest" in sys.argv:
+    ap = argparse.ArgumentParser(
+        description="Create/update Google Sheets annotation forms."
+    )
+    ap.add_argument(
+        "--apply", action="store_true",
+        help="create sheets for new classes (default: dry run)",
+    )
+    ap.add_argument(
+        "--force", action="store_true",
+        help="hard error if annotation sheets already exist, instead of skipping them",
+    )
+    ap.add_argument(
+        "--regen-construction", metavar="CLASS:CONSTRUCTION",
+        help="regenerate one dependent construction tab in an existing sheet "
+             "(bypasses --force protection; no new sheet is created)",
+    )
+    ap.add_argument(
+        "--lang", metavar="LANG_ID", dest="lang",
+        help="restrict --regen-construction to this language",
+    )
+    ap.add_argument(
+        "--pos-remap", metavar="OLD_NUM:NEW_NUM", action="append",
+        help="carry over annotations to a renumbered position for "
+             "--regen-construction (repeatable)",
+    )
+    ap.add_argument(
+        "--confirm-drop", action="store_true",
+        help="confirm an intentional annotated pair-row drop for --regen-construction",
+    )
+    ap.add_argument(
+        "--regen-dependents", action="store_true",
+        help="regenerate dependent constructions with no annotation data yet (CI path)",
+    )
+    ap.add_argument(
+        "--push-manifest", action="store_true",
+        help="upload the existing local sheets_manifest.json to Drive as manifest.json "
+             "(one-time migration utility)",
+    )
+    args = ap.parse_args()
+
+    if args.push_manifest:
         push_manifest()
         return
 
     # --regen-construction CLASS:CONSTRUCTION [--lang LANG_ID]
     # Regenerate a specific dependent construction tab in an existing sheet.
     # Bypasses --force protection (no new sheet is created).
-    if "--regen-construction" in sys.argv:
-        idx = sys.argv.index("--regen-construction")
-        spec = sys.argv[idx + 1] if idx + 1 < len(sys.argv) else ""
+    if args.regen_construction:
+        spec = args.regen_construction
         if ":" not in spec:
             raise SystemExit("Usage: --regen-construction CLASS_NAME:CONSTRUCTION_NAME")
         class_name, construction_name = spec.split(":", 1)
-        lang_idx = sys.argv.index("--lang") if "--lang" in sys.argv else -1
-        lang_filter = sys.argv[lang_idx + 1] if lang_idx >= 0 else None
+        lang_filter = args.lang
 
         # --pos-remap OLD_NUM:NEW_NUM (repeatable) — for renumbered positions.
         pos_num_remap: Dict[int, int] = {}
-        argv = sys.argv[:]
-        i = 0
-        while i < len(argv):
-            if argv[i] == "--pos-remap" and i + 1 < len(argv):
-                pair = argv[i + 1]
-                if ":" not in pair:
-                    raise SystemExit("--pos-remap requires 'old_num:new_num' format")
-                old_s, new_s = pair.split(":", 1)
-                try:
-                    pos_num_remap[int(old_s.strip())] = int(new_s.strip())
-                except ValueError:
-                    raise SystemExit(f"--pos-remap values must be integers, got: {pair!r}")
-                i += 2
-            else:
-                i += 1
+        for pair in (args.pos_remap or []):
+            if ":" not in pair:
+                raise SystemExit("--pos-remap requires 'old_num:new_num' format")
+            old_s, new_s = pair.split(":", 1)
+            try:
+                pos_num_remap[int(old_s.strip())] = int(new_s.strip())
+            except ValueError:
+                raise SystemExit(f"--pos-remap values must be integers, got: {pair!r}")
 
         if pos_num_remap:
             print(f"Position number remap: {pos_num_remap}")
 
-        confirm_drop = "--confirm-drop" in sys.argv
+        confirm_drop = args.confirm_drop
 
         print("Connecting to Google APIs...")
         doorway = get_doorway()
@@ -2242,7 +2274,7 @@ def main() -> None:
 
     # --regen-dependents
     # CI path: regenerate dependent constructions where no annotation data exists yet.
-    if "--regen-dependents" in sys.argv:
+    if args.regen_dependents:
         # _regen_dependents_simple reads coded_data/ (source construction TSVs
         # and the planar) as ground truth for what to regenerate. Refuse if a
         # prior step's failed auto-commit left it in a stale/reverted state —
@@ -2257,8 +2289,8 @@ def main() -> None:
         _regen_dependents_simple(doorway, manifest)
         return
 
-    force = "--force" in sys.argv
-    apply = "--apply" in sys.argv
+    force = args.force
+    apply = args.apply
 
     planar_files = sorted(CODED_DATA.glob("*/lang_setup/planar_*.tsv"))
     if not planar_files:
