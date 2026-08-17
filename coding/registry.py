@@ -112,6 +112,7 @@ def _format_detail(entry: Dict) -> str:
 
     lines.append(f"Description: {record['description']}")
     lines.append(f"Apply gate: {record['apply_gate']}")
+    lines.append(f"Writes to Drive: {record['writes_to_drive']}")
     lines.append(f"Idempotent: {record['idempotent']}")
     lines.append(f"  {record['idempotency_note']}")
     lines.append("Side effects:")

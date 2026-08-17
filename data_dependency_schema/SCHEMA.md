@@ -200,6 +200,7 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
     twice with the same flags archives twice, not a no-op.
   apply_gate: "--apply"
   preconditions: [coded_data_clean_tree, coded_data_git_identity_configured]
+  writes_to_drive: true
   facts_touched:
     - {fact: planar_sheet_structure, role: writes}
   cascades_triggered:
@@ -230,6 +231,20 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
 - **`preconditions`** — ids from `preconditions.yaml` this command's apply
   path assumes hold. Reuses the existing registry rather than restating
   `enforced_by`/`failure_symptom` per command.
+- **`writes_to_drive`** — whether this command's default invocation, when its
+  `apply_gate` is satisfied, actually writes to Drive/Sheets/Docs (create,
+  update, share, delete — not merely read). Added for Phase 5 unit E (issue
+  #271): `coding/provenance.py` logs a run only when this is `true` for the
+  gate that was actually satisfied, so the provenance log records "which run
+  produced this Drive change" precisely instead of every `--apply` run
+  regardless of what it touched. Several commands' Drive-write status
+  genuinely diverges by mode the same way `apply_gate`/`preconditions` can —
+  `sync-diagnostics-yaml`'s default/`--from-tsv` directions touch only the
+  local YAML/TSV, `import-planar`'s default direction only the local TSV;
+  only `--to-sheet` reaches the live Sheet in both — so a mode restates it
+  per the same "full override" rule as every other mode field. `false` for a
+  command with no live-write concept at all (pure read-only) and for one
+  whose writes are entirely local, never Drive itself.
 - **`facts_touched`** — `{fact, role}` pairs, `fact` an id from `facts.yaml`
   and `role` one of `reads`/`writes`/`both`. Reuses the existing registry the
   same way `preconditions` does — a reader who wants to know "who's

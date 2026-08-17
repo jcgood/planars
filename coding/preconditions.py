@@ -34,9 +34,10 @@ un-scoped change, not this one.
 from __future__ import annotations
 
 import argparse
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from .drive import _check_coded_data_clean
+from .gating import gate_satisfied
 from .registry import _load_operations
 
 # coded_data_clean_tree defaults to checking only *.tsv (preconditions.yaml's
@@ -59,30 +60,6 @@ _ENFORCERS = {
 }
 
 
-def _flag_dest(flag: str) -> str:
-    """argparse's own long-option-to-dest rule: '--regen-dependents' -> 'regen_dependents'."""
-    return flag.lstrip("-").replace("-", "_")
-
-
-def _gate_satisfied(apply_gate: Optional[str], mode_name: Optional[str],
-                     args: argparse.Namespace) -> bool:
-    """True if this record/mode's gate is satisfied by the actual invocation.
-
-    apply_gate is a space-separated list of long flags that must ALL be set
-    (e.g. "--apply", "--to-sheet --apply") — active whenever the coordinator
-    passed every one of them. A null apply_gate means no --apply concept:
-    for the base record that means "always active"; for a mode (which
-    always corresponds to its own named flag, e.g. generate-sheets'
-    --regen-dependents) it means "active whenever that flag itself is set",
-    since that mode's code path runs independent of --apply entirely.
-    """
-    if apply_gate is None:
-        if mode_name is None:
-            return True
-        return bool(getattr(args, _flag_dest(mode_name), False))
-    return all(getattr(args, _flag_dest(flag), False) for flag in apply_gate.split())
-
-
 def active_preconditions(op_id: str, args: argparse.Namespace) -> List[str]:
     """Which precondition ids apply to this actual invocation of op_id.
 
@@ -99,10 +76,10 @@ def active_preconditions(op_id: str, args: argparse.Namespace) -> List[str]:
     if record is None:
         return []
     active: List[str] = []
-    if _gate_satisfied(record["apply_gate"], None, args):
+    if gate_satisfied(record["apply_gate"], None, args):
         active.extend(record["preconditions"])
     for mode in record.get("modes", []):
-        if _gate_satisfied(mode["apply_gate"], mode["name"], args):
+        if gate_satisfied(mode["apply_gate"], mode["name"], args):
             active.extend(mode["preconditions"])
     seen = set()
     return [p for p in active if not (p in seen or seen.add(p))]

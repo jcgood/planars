@@ -78,11 +78,14 @@ def main() -> None:
     args = mod.build_parser().parse_args()
     # Parsed once, here, rather than inside mod.main() -- this is the
     # dispatch chokepoint Phase 5 units D (precondition enforcement) and E
-    # (provenance capture) hook into, keyed by `cmd` and `args`. D is wired
-    # in below; E is not built yet (see docs/data-layer-progress.md's Open
-    # questions).
-    from . import preconditions
-    preconditions.enforce(cmd.replace("-", "_"), args)
+    # (provenance capture) hook into, keyed by `cmd` and `args`.
+    op_id = cmd.replace("-", "_")
+    from . import preconditions, provenance
+    preconditions.enforce(op_id, args)
+    # Logged before the command runs, not after -- a run that fails partway
+    # through can still have written something to Drive, and "this run may
+    # have changed something" is the signal provenance.py exists to capture.
+    provenance.record(cmd, op_id, args)
     mod.main(args)
 
 

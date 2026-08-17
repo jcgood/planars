@@ -17,5 +17,6 @@ dist/
 glottolog_cache.json
 pending_changes.json
 diagnostics_drift.json
+provenance_log.jsonl
 manifest_archives/
 book_proposal/
