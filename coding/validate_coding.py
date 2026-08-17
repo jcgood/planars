@@ -16,6 +16,7 @@ are missing, run `python -m coding import-sheets` first.
 """
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -718,9 +719,20 @@ def revalidate_sheets(
 
 
 def main() -> None:
-    args = sys.argv[1:]
-    lang_filter = args[args.index("--lang") + 1] if "--lang" in args else None
-    verbose = "--verbose" in args
+    ap = argparse.ArgumentParser(
+        description="Re-validate annotation sheets and update cell highlighting."
+    )
+    ap.add_argument(
+        "--lang", metavar="LANG_ID", dest="lang",
+        help="restrict to this language",
+    )
+    ap.add_argument(
+        "--verbose", action="store_true",
+        help="print each blank-cell issue individually",
+    )
+    args = ap.parse_args()
+    lang_filter = args.lang
+    verbose = args.verbose
 
     pending = ROOT / "pending_changes.json"
     if pending.exists() and pending.stat().st_size > 2:

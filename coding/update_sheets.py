@@ -17,6 +17,7 @@ Authentication: same OAuth2 setup as generate_sheets.py.
 """
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
@@ -337,7 +338,14 @@ def main() -> None:
     attempting to fix it — python -m coding restructure-sheets does that.
     In dry-run mode (no --apply) only prints what would change.
     """
-    apply = "--apply" in sys.argv
+    ap = argparse.ArgumentParser(
+        description="Add missing rows/columns to existing annotation sheets."
+    )
+    ap.add_argument(
+        "--apply", action="store_true",
+        help="write changes (default: dry run)",
+    )
+    apply = ap.parse_args().apply
 
     if apply:
         # planar_{lang_id}.tsv (read below) can be left in a reverted/stale

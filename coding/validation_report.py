@@ -45,9 +45,9 @@ report anyone reads. Repeated messages are collapsed with a count.
 """
 from __future__ import annotations
 
+import argparse
 import hashlib
 import re
-import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -278,17 +278,23 @@ def read_fingerprint(body: str) -> Optional[str]:
 
 
 def main() -> None:
-    args = sys.argv[1:]
-    if not args:
-        raise SystemExit(
-            "usage: python -m coding validation-report REPORT.txt "
-            "[--out BODY.md] [--previous-body PREV.md] [--date YYYY-MM-DD]")
+    ap = argparse.ArgumentParser(
+        description="Turn validate-coding output into a GitHub issue body."
+    )
+    ap.add_argument("report", metavar="REPORT.txt", type=Path,
+                     help="path to the raw validate-coding output")
+    ap.add_argument("--out", metavar="BODY.md", type=Path,
+                     help="write the generated issue body here")
+    ap.add_argument("--previous-body", metavar="PREV.md", type=Path,
+                     help="path to the previous issue body, to compare fingerprints")
+    ap.add_argument("--date", default="",
+                     help="date to stamp into the issue title/body (YYYY-MM-DD)")
+    args = ap.parse_args()
 
-    report_path = Path(args[0])
-    out_path = Path(args[args.index("--out") + 1]) if "--out" in args else None
-    prev_path = (Path(args[args.index("--previous-body") + 1])
-                 if "--previous-body" in args else None)
-    date = args[args.index("--date") + 1] if "--date" in args else ""
+    report_path = args.report
+    out_path = args.out
+    prev_path = args.previous_body
+    date = args.date
 
     report = parse_report(report_path.read_text(encoding="utf-8"))
     body = build_issue_body(report, date)
