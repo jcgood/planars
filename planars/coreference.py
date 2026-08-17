@@ -6,7 +6,13 @@ from typing import Dict, List, Optional, Set
 import pandas as pd
 import yaml
 from importlib.resources import files as _res_files
+from pandera.errors import SchemaError
 
+from planars.contracts import (
+    CHECK_COREFERENCE_POSITION_INTEGER,
+    coreference_planar_rows_schema,
+    coreference_position_is_integer,
+)
 from planars.spans import fmt_span, loose_span, strict_span
 
 _KEYSTONE_NAME = "v:verbstem"
@@ -105,27 +111,45 @@ def _load_planar_for_coreference(
     The planar TSV has one row per position with a comma-separated Elements column.
     """
     df = pd.read_csv(planar_path, sep="\t", dtype=str, keep_default_na=False)
-    df = df[df["Language_ID"] == lang_id]
-    keystone_pos: Optional[int] = None
+
+    # Column presence stays a plain check, ahead of everything else that
+    # assumes these columns exist -- without it, a missing column (e.g. a
+    # typo'd header) doesn't crash here, it silently makes every row look
+    # like it belongs to no language via row.get()'s "" fallback. See
+    # contracts.py's module docstring, section 2.
+    required_cols = {"Language_ID", "Position", "Position_Name", "Elements"}
+    missing = required_cols - set(df.columns)
+    if missing:
+        raise ValueError(f"Missing required column(s): {sorted(missing)}")
+
+    df = df[df["Language_ID"] == lang_id].copy()
+    for col in ("Position", "Position_Name", "Elements"):
+        df[col] = df[col].astype(str).str.strip()
+
+    try:
+        coreference_planar_rows_schema().validate(df)
+    except SchemaError as e:
+        if e.check.name == CHECK_COREFERENCE_POSITION_INTEGER:
+            bad = df.loc[~coreference_position_is_integer(df["Position"]), "Position"].iloc[0]
+            raise ValueError(f"{e.check.error} Found: '{bad}'.") from e
+        raise ValueError(e.check.error) from e
+
     pos_to_name: Dict[int, str] = {}
     elem_to_positions: Dict[str, Set[int]] = {}
+    keystone_pos: Optional[int] = None
 
     def _wrap(e: str) -> str:
         return f"[{e}]" if (e.startswith("-") or e.endswith("-")) else e
 
     for _, row in df.iterrows():
         pos = int(row["Position"])
-        pname = row["Position_Name"].strip()
+        pname = row["Position_Name"]
         pos_to_name[pos] = pname
         if pname.lower() == _KEYSTONE_NAME:
             keystone_pos = pos
-        for elem_plain in _split_elements((row.get("Elements", "") or "").strip()):
+        for elem_plain in _split_elements(row["Elements"]):
             elem_to_positions.setdefault(_wrap(elem_plain), set()).add(pos)
 
-    if keystone_pos is None:
-        raise ValueError(
-            f"No keystone row (Position_Name == '{_KEYSTONE_NAME}') in planar."
-        )
     return keystone_pos, pos_to_name, elem_to_positions
 
 
@@ -203,6 +227,16 @@ def derive_coreference_domains(
 
     pair_cols = set(pair_df.columns) if hasattr(pair_df, "columns") else set()
     criterion_col = _criterion_column(tsv_path, pair_cols)
+
+    # Column presence stays a plain check, ahead of the loop below -- without
+    # it, a missing column doesn't crash, it silently makes every row look
+    # unknown via row.get()'s "" fallback, producing a wrong-but-plausible
+    # empty result instead of an error. See contracts.py's module docstring,
+    # section 2.
+    required_pair_cols = {"Element_A", "Position_B", criterion_col}
+    missing_pair_cols = required_pair_cols - pair_cols
+    if missing_pair_cols:
+        raise ValueError(f"Missing required column(s): {sorted(missing_pair_cols)}")
 
     for _, row in pair_df.iterrows():
         ea      = row.get("Element_A", "").strip()

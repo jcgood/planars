@@ -30,11 +30,12 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 6 — **started 2026-08-17, two of four boundaries done.** The
-filled-TSV/sheet loader (`planars/io.py`'s `_parse_filled_df`) and the
-planar loader (`coding/make_forms.py`'s `build_element_index`) now have
-pandera contracts (`planars/contracts.py`, `coding/contracts.py`); pair-row
-load and manifest read/write are not started. See Next action below for the full
+**Phase:** 6 — **started 2026-08-17, three of four boundaries done.** The
+filled-TSV/sheet loader (`planars/io.py`'s `_parse_filled_df`), the
+planar loader (`coding/make_forms.py`'s `build_element_index`), and the
+coreference pair-row loader (`planars/coreference.py`) now have pandera
+contracts (`planars/contracts.py`, `coding/contracts.py`); only manifest
+read/write is not started. See Next action below for the full
 account. 5 — done, all five units. Unit A (argparse standardization, all 9 batches) done 2026-08-16. Units B (dispatch integration) and C (derived `registry` command) done the same day, right after A: every command module now exposes `build_parser()` separately from `main(args=None)`, `__main__.py` parses once and calls `mod.main(args)` directly (the chokepoint units D/E hook into), and `python -m coding registry` derives the full command inventory fresh from that plus `operations.yaml` on every call. Units D (precondition enforcement) and E (provenance capture) done 2026-08-17, both same day, after Jeff decided both units' open questions (see the Decisions log): D replaces the scattered manual `_check_coded_data_clean()` calls, file-by-file, with `coding/preconditions.py` driven by each command's `operations.yaml` record; E logs only Drive-writing invocations (not every command, and per actual invocation not per command) to `provenance_log.jsonl`, append-forever, via `coding/provenance.py`. 4 — done. Every record traced against code, all three "done when" items complete, and all five review items closed out with Jeff (started 2026-08-10, review session 2026-08-11, line-by-line trace + fixes 2026-08-11, Findings 27/28 resolved with Jeff 2026-08-16). 3 — done (started and finished 2026-08-10). 0b/1 — done, 18 of 18 (2026-08-01–2026-08-04).
 **Live Drive writes performed:** none. Permitted from Phase 9 only.
 **Adam's annotation data touched:** none.
@@ -135,7 +136,8 @@ the same day — see the decisions log.
 | **Phase 5 (the whole unit)** | **done** — units A/B/C/D/E all complete |
 | Phase 6, boundary 1 — filled-TSV/sheet loader | **done** — `planars/contracts.py` (pandera), wired into `planars/io.py`'s `_parse_filled_df`; `tests/test_contracts.py` new, `tests/test_io.py`'s 14 error-path tests pass unchanged |
 | Phase 6, boundary 2 — planar load | **done** — `coding/contracts.py` (pandera), wired into `coding/make_forms.py`'s `build_element_index`; `tests/test_coding_contracts.py` new, `tests/test_make_forms.py`'s 3 pre-existing error-path tests pass unchanged plus 6 new ones closing a pre-existing test-coverage gap |
-| Phase 6, boundaries 3–4 — pair-row load, manifest read/write | not started |
+| Phase 6, boundary 3 — pair-row load | **done** — `planars/contracts.py` section 2 (pandera), wired into `planars/coreference.py`'s `_load_planar_for_coreference`/`derive_coreference_domains`; `tests/test_coreference.py` new (no unit-test file existed for this module before), `tests/test_contracts.py` extended, all 6 pre-existing coreference snapshot tests pass unchanged |
+| Phase 6, boundary 4 — manifest read/write | not started |
 | Phases 7–9 | not started |
 
 ### In flight
@@ -454,11 +456,42 @@ row's garbage `Class_Type` is correctly ignored, not raised on). All
 pre-existing `tests/test_make_forms.py` tests pass unchanged;
 `tests/test_coding_contracts.py` (new) tests the two schemas directly.
 
-Boundaries 3–4 (pair-row load, manifest read/write) are not started. Manifest
-read/write is the one boundary the plan assigns to pydantic rather than
-pandera (dict/JSON, not a DataFrame) — no scoping question open there
-either, the plan already made that call. Phases 7–9 remain entirely
-unscoped; see `docs/data-layer-implementation-plan.md`.
+**Phase 6, boundary 3 ("pair-row load") done, same session — Jeff's call to
+do it despite a flagged thin payoff.** `planars/coreference.py`'s pair-row
+loader is a genuinely weaker fit than boundaries 1–2: the module
+deliberately treats most bad *values* (an unrecognized element, an
+unparseable `Position_B`) as warnings collected into `missing_data`, only
+raised at all when the caller passes `strict=True` — so there wasn't much
+existing hand-written validation to formalize the way boundaries 1–2 had.
+Real value turned out to be different in kind, not absent: both
+`_load_planar_for_coreference` and `derive_coreference_domains` read
+required columns via `row.get(col, "")` with a silent `""` fallback, so a
+genuinely missing column doesn't crash — it quietly makes every row look
+"unknown" and, unless `strict=True`, produces a wrong-but-plausible-looking
+*empty* result instead of an error. Exactly the class of failure Phase 6's
+own "done when" language calls out ("would have turned the phrasal_accent
+failure into a clear error"), just found on a smaller boundary than
+expected.
+
+Column presence for both the planar TSV and the pair TSV is now checked
+explicitly (plain checks, not pandera — same reasoning as boundaries 1–2:
+the checks that follow need the columns to exist first). One real pandera
+schema added, `coreference_planar_rows_schema()` in `planars/contracts.py`
+(section 2, appended to the same file as boundary 1's section 1 rather
+than a new file, since both are `planars/`-package DataFrame boundaries):
+`Position` castable to `int` (previously an unguarded `int(...)` call
+raising a raw, unclear `ValueError`) and a keystone row exists (already had
+a clear message; now schema-backed). All 6 existing coreference snapshot
+tests pass unchanged. No dedicated unit-test file existed for this module
+at all before today — `tests/test_coreference.py` (new) covers the error
+paths now added plus the pre-existing "no keystone" and "other-language
+rows ignored" behaviour, none of which had a test before.
+
+Boundary 4 (manifest read/write) is not started — the one boundary the
+plan assigns to pydantic rather than pandera (dict/JSON, not a DataFrame).
+No scoping question open there either, the plan already made that call.
+Phases 7–9 remain entirely unscoped; see
+`docs/data-layer-implementation-plan.md`.
 
 ### Held until Phase 9
 

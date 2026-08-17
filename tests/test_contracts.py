@@ -1,6 +1,7 @@
-"""Tests for planars/contracts.py's pandera schemas, in isolation from
-planars/io.py's wrapping (see tests/test_io.py for the wrapped
-ValueError-raising behaviour exercised through load_filled_tsv).
+"""Tests for planars/contracts.py's pandera schemas, in isolation from their
+wrapping (see tests/test_io.py for section 1's wrapped ValueError-raising
+behaviour through load_filled_tsv, and tests/test_coreference.py for
+section 2's through _load_planar_for_coreference/derive_coreference_domains).
 """
 from __future__ import annotations
 
@@ -9,10 +10,14 @@ import pytest
 from pandera.errors import SchemaError
 
 from planars.contracts import (
+    CHECK_COREFERENCE_HAS_KEYSTONE,
+    CHECK_COREFERENCE_POSITION_INTEGER,
     CHECK_HAS_KEYSTONE,
     CHECK_NAME_TO_NUMBER,
     CHECK_NUMBER_TO_NAME,
     CHECK_ONE_KEYSTONE,
+    coreference_planar_rows_schema,
+    coreference_position_is_integer,
     raw_shape_schema,
     strict_criteria_schema,
 )
@@ -100,3 +105,39 @@ class TestStrictCriteriaSchema:
         df = pd.DataFrame({"a": ["y", "y"], "b": ["y", ""]})
         with pytest.raises(SchemaError, match="'b'"):
             strict_criteria_schema({"a", "b"}).validate(df)
+
+
+class TestCoreferencePlanarRowsSchema:
+    def _valid_df(self):
+        return pd.DataFrame({
+            "Position": ["1", "5", "9"],
+            "Position_Name": ["v:left", "v:verbstem", "v:right"],
+        })
+
+    def test_valid_df_passes(self):
+        coreference_planar_rows_schema().validate(self._valid_df())  # no raise
+
+    def test_non_integer_position_raises_with_named_check(self):
+        df = self._valid_df()
+        df.loc[0, "Position"] = "abc"
+        with pytest.raises(SchemaError) as exc_info:
+            coreference_planar_rows_schema().validate(df)
+        assert exc_info.value.check.name == CHECK_COREFERENCE_POSITION_INTEGER
+
+    def test_no_keystone_raises_with_named_check(self):
+        df = self._valid_df()
+        df["Position_Name"] = df["Position_Name"].replace("v:verbstem", "v:notakey")
+        with pytest.raises(SchemaError) as exc_info:
+            coreference_planar_rows_schema().validate(df)
+        assert exc_info.value.check.name == CHECK_COREFERENCE_HAS_KEYSTONE
+
+    def test_case_insensitive_keystone_match(self):
+        df = self._valid_df()
+        df["Position_Name"] = df["Position_Name"].replace("v:verbstem", "V:VERBSTEM")
+        coreference_planar_rows_schema().validate(df)  # no raise
+
+
+class TestCoreferencePositionIsInteger:
+    def test_matches_python_int_semantics(self):
+        s = pd.Series(["1", "-2", "+3", "4.0", "", "abc"])
+        assert coreference_position_is_integer(s).tolist() == [True, True, True, False, False, False]
