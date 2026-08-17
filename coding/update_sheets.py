@@ -30,7 +30,6 @@ from .make_forms import (
     _read_diagnostics_for_language,
 )
 from .drive import (
-    _check_coded_data_clean,
     _load_drive_config,
     _with_retry,
     load_manifest,
@@ -354,14 +353,13 @@ def main(args: argparse.Namespace | None = None) -> None:
         args = build_parser().parse_args()
     apply = args.apply
 
-    if apply:
-        # planar_{lang_id}.tsv (read below) can be left in a reverted/stale
-        # state mid-run if an earlier step's auto-commit failed silently —
-        # see issue #248's stray-row incident, where this exact gap let
-        # update-sheets write bogus rows to 16 live sheets from a stale
-        # planar file. Refuse to proceed rather than risk repeating that.
-        _check_coded_data_clean(extensions=(".tsv",))
-
+    # coded_data_clean_tree is enforced centrally at the python -m coding
+    # dispatch chokepoint now -- see coding/preconditions.py -- not here. It
+    # still guards against exactly what it always has: planar_{lang_id}.tsv
+    # (read below) left in a reverted/stale state mid-run if an earlier
+    # step's auto-commit failed silently (issue #248's stray-row incident,
+    # where this exact gap let update-sheets write bogus rows to 16 live
+    # sheets from a stale planar file).
     doorway = get_doorway()
     manifest = load_manifest(doorway)
     coref_pair_map = _coreference_pair_criterion_map()

@@ -75,10 +75,9 @@ class Env:
     """One stand-in Drive, one private copy of the language setup files."""
 
     def __init__(self, doorway: FakeDriveDoorway, coded: Path,
-                 clean_checks: List[dict], run: Callable[[List[str]], str]) -> None:
+                 run: Callable[[List[str]], str]) -> None:
         self.doorway = doorway
         self.coded = coded
-        self.clean_checks = clean_checks
         self.run = run
 
     # -- the manifest -------------------------------------------------------
@@ -140,12 +139,8 @@ def env(monkeypatch, tmp_path):
         shutil.copytree(ROOT / "coded_data" / lang / "lang_setup",
                         coded / lang / "lang_setup")
 
-    clean_checks: List[dict] = []
-
     monkeypatch.setattr(us, "CODED_DATA", coded)
     monkeypatch.setattr(gs, "CODED_DATA", coded)
-    monkeypatch.setattr(us, "_check_coded_data_clean",
-                        lambda **kw: clean_checks.append(kw))
     monkeypatch.setattr(us, "_load_drive_config", FakeDriveDoorway.drive_config)
     monkeypatch.setattr(drive_module, "_load_drive_config",
                         FakeDriveDoorway.drive_config)
@@ -163,7 +158,7 @@ def env(monkeypatch, tmp_path):
         return buf.getvalue()
 
     try:
-        yield Env(doorway, coded, clean_checks, run)
+        yield Env(doorway, coded, run)
     finally:
         drive_doorway.reset_doorway()
 
@@ -272,16 +267,11 @@ def test_the_dry_run_changes_nothing_anywhere(env):
     assert env.all_tab_values() == before
 
 
-def test_the_dry_run_does_not_ask_whether_coded_data_is_clean(env):
-    """The guard belongs to --apply. A dry run reads nothing it could corrupt."""
-    env.run(["update-sheets"])
-    assert env.clean_checks == []
-
-
-def test_apply_refuses_to_read_a_half_written_planar(env):
-    """The #248 guard: a stale planar is what wrote bogus rows to 16 live sheets."""
-    env.run(["update-sheets", "--apply"])
-    assert env.clean_checks == [{"extensions": (".tsv",)}]
+# coded_data_clean_tree (the #248 guard: a stale planar is what wrote bogus
+# rows to 16 live sheets) is enforced centrally at the python -m coding
+# dispatch chokepoint now, not inside us.main() itself -- see
+# coding/preconditions.py and tests/test_preconditions.py, which cover this
+# command's gating directly against the real operations.yaml record.
 
 
 # ---------------------------------------------------------------------------
