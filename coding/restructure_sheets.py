@@ -91,7 +91,7 @@ from .make_forms import (
 )
 from .schemas import load_diagnostic_classes
 from .drive import (
-    _autocommit_data, _check_coded_data_clean, _load_drive_config, _save_drive_config, _with_retry,
+    _autocommit_data, _load_drive_config, _save_drive_config, _with_retry,
     load_manifest, upload_manifest,
 )
 from .drive_doorway import SpreadsheetHandle, WorksheetHandle, WorksheetNotFound, get_doorway
@@ -1067,15 +1067,16 @@ def main(args: argparse.Namespace | None = None) -> None:
     lang_idx = sys.argv.index("--lang") if "--lang" in sys.argv else -1
     lang_filter = sys.argv[lang_idx + 1] if lang_idx >= 0 else None
 
-    if apply:
-        # This command reads planar_{lang_id}.tsv/diagnostics_{lang_id}.tsv from
-        # coded_data/ as its source of truth for the new sheet structure, and is
-        # the single most destructive command in the project (archive-then-
-        # recreate, no rollback) -- refuse if a prior step's failed auto-commit
-        # left coded_data/ in a stale/reverted state. See update_sheets.py's
-        # guard for why (issue #248's stray-row incident).
-        _check_coded_data_clean(extensions=(".tsv",))
-
+    # coded_data_clean_tree is enforced centrally at the python -m coding
+    # dispatch chokepoint now -- see coding/preconditions.py -- not here. It
+    # still guards against exactly what it always has: this command reads
+    # planar_{lang_id}.tsv/diagnostics_{lang_id}.tsv from coded_data/ as its
+    # source of truth for the new sheet structure, and is the single most
+    # destructive command in the project (archive-then-recreate, no
+    # rollback) -- a prior step's failed auto-commit leaving coded_data/
+    # stale/reverted is exactly what it must not act on. See
+    # update_sheets.py's guard comment for why (issue #248's stray-row
+    # incident).
     doorway = get_doorway()
     manifest = load_manifest(doorway)
 
