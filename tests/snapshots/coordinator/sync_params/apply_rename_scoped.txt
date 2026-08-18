@@ -23,7 +23,6 @@ Mode:     apply
 Renames:  ['noninterruption:free:free_form']
   [noninterruption/general] Rename: free → free_form
     Renamed.
-  [coreference/prescreening] Manifest param_names updated
   [coreference/reflexivization] WARNING: columns in sheet but not in diagnostics: ['pronoun_allowed', 'np_allowed']
     (pass --apply --remove to delete)
   [coreference/pronominalization] WARNING: columns in sheet but not in diagnostics: ['reflexive_allowed', 'np_allowed']

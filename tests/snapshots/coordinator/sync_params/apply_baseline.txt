@@ -44,7 +44,7 @@ Mode:     apply
   [nonpermutability/element_prescreening] OK — no changes
   [nonpermutability/general] OK — no changes
   [free_occurrence/general] OK — no changes
-  [coreference/prescreening] Manifest param_names updated
+  [coreference/prescreening] OK — no changes
   [coreference/reflexivization] WARNING: columns in sheet but not in diagnostics: ['pronoun_allowed', 'np_allowed']
     (pass --apply --remove to delete)
   [coreference/pronominalization] WARNING: columns in sheet but not in diagnostics: ['reflexive_allowed', 'np_allowed']
@@ -55,6 +55,4 @@ Mode:     apply
   [proform/vp_ellipsis] OK — no changes
   [phrasal_accent/prescreening] OK — no changes
   [phrasal_accent/general] OK — no changes
-
-Manifest updated on Drive.
 

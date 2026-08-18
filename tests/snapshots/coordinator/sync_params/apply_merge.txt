@@ -74,7 +74,6 @@ Merges:   ['widescope_right:widescope_left:widescope_either']
   [nonpermutability/general] Merge: neither widescope_right nor widescope_left found — skipping
   [free_occurrence/general] Merge: neither widescope_right nor widescope_left found — skipping
   [coreference/prescreening] Merge: neither widescope_right nor widescope_left found — skipping
-  [coreference/prescreening] Manifest param_names updated
   [coreference/reflexivization] Merge: neither widescope_right nor widescope_left found — skipping
   [coreference/reflexivization] WARNING: columns in sheet but not in diagnostics: ['pronoun_allowed', 'np_allowed']
     (pass --apply --remove to delete)

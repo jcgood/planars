@@ -1,6 +1,7 @@
 {
-  "captured_at": "2026-08-01T23:39:09.819806+00:00",
+  "captured_at": "2026-08-18T22:57:56.433648+00:00",
   "note": "Raw recorded API responses. Do not normalise, pad, or tidy — see coding/capture_drive_state.py for why raggedness is load-bearing.",
+  "manifest": "tests/fixtures/drive_state/manifest.json",
   "spreadsheets": [
     {
       "lang_id": "arao1248",

@@ -44,7 +44,7 @@ Mode:     apply
   [nonpermutability/element_prescreening] OK — no changes
   [nonpermutability/general] OK — no changes
   [free_occurrence/general] OK — no changes
-  [coreference/prescreening] Manifest param_names updated
+  [coreference/prescreening] OK — no changes
   [coreference/reflexivization] Removing params: ['pronoun_allowed', 'np_allowed']
     Removed: ['pronoun_allowed', 'np_allowed']
   [coreference/pronominalization] Removing params: ['reflexive_allowed', 'np_allowed']

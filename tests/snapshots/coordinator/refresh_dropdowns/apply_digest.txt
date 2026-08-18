@@ -6,7 +6,7 @@ SUMMARY
      4    └─ updateSheetProperties
 
 DRIVE OPERATIONS
-  update_file: file_id='fake_manifest_file', bytes=50306
+  update_file: file_id='fake_manifest_file', bytes=50239
 
 SHEET OPERATIONS
 

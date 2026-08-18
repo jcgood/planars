@@ -1575,9 +1575,7 @@
         "construction_params": {
           "prescreening": {
             "param_names": [
-              "reflexive_allowed",
-              "pronoun_allowed",
-              "np_allowed"
+              "referential"
             ],
             "param_values": {
               "reflexive_allowed": [

@@ -456,6 +456,6 @@
     "op": "update_file",
     "file_id": "fake_manifest_file",
     "name": null,
-    "bytes": 50306
+    "bytes": 50239
   }
 ]

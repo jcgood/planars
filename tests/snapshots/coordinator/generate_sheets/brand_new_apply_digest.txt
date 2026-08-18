@@ -31,8 +31,8 @@ DRIVE OPERATIONS
   create_permission: file_id='fake_ss_0014', type='user', role='writer', email='adamjamesrosstallman@gmail.com', notify=False
   move_file: file_id='fake_ss_0016', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
   create_permission: file_id='fake_ss_0016', type='user', role='writer', email='adamjamesrosstallman@gmail.com', notify=False
-  update_file: file_id='fake_manifest_file', bytes=52799
-  update_file: file_id='fake_manifest_file', bytes=52799
+  update_file: file_id='fake_manifest_file', bytes=52732
+  update_file: file_id='fake_manifest_file', bytes=52732
 
 SHEET OPERATIONS
 

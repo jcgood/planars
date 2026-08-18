@@ -67,7 +67,6 @@ Splits:   ['free:free_left:free_right']
     Split applied.
   [free_occurrence/general] Manifest param_names updated
   [coreference/prescreening] Split: free not found — skipping
-  [coreference/prescreening] Manifest param_names updated
   [coreference/reflexivization] Split: free not found — skipping
   [coreference/reflexivization] WARNING: columns in sheet but not in diagnostics: ['pronoun_allowed', 'np_allowed']
     (pass --apply --remove to delete)

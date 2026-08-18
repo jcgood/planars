@@ -62,7 +62,6 @@ Renames:  ['free:free_form']
   [free_occurrence/general] Rename: free → free_form
     Renamed.
   [coreference/prescreening] Rename: free not found — skipping
-  [coreference/prescreening] Manifest param_names updated
   [coreference/reflexivization] Rename: free not found — skipping
   [coreference/reflexivization] WARNING: columns in sheet but not in diagnostics: ['pronoun_allowed', 'np_allowed']
     (pass --apply --remove to delete)
