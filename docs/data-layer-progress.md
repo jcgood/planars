@@ -30,8 +30,18 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 7 — **in progress, both restructure-sheets units done, as of
-2026-08-17.** `restructure-sheets --apply`'s main per-class loop (unit 1)
+**Phase:** 8 — **first pass done, as of 2026-08-17 (same session as
+Phase 7).** Built real fault injection for the fake doorway
+(`tests/fake_drive.py`'s `fail_after`) and used it to crash
+`restructure-sheets` mid-sequence at both of Phase 7's checkpoints, proving
+`--resume` genuinely recovers rather than trusting a hand-set journal entry
+the way Phase 7's own tests did. Found and fixed a real bug this way:
+rollback used to silently drop a co-annotator's pre-existing sheet access.
+Confirmed both new tests actually catch a broken recovery (deliberately
+broke it, watched them fail, reverted). This is a first pass, not the
+phase's full scope — see Next action. 7 — **done, both restructure-sheets
+units plus the import-sheets/generate-sheets check, as of 2026-08-17.**
+`restructure-sheets --apply`'s main per-class loop (unit 1)
 and its separate `--rename-class` archive sequence (unit 2, same day) both
 now journal their progress to `restructure_journal.json`
 (`coding/restructure_journal.py`) before each Drive-mutating step, sharing
@@ -185,8 +195,9 @@ the same day — see the decisions log.
 | Phase 7, unit 1 — restructure-sheets main loop recovery | **done** — `coding/restructure_journal.py`, journals each class's archive/create/manifest-sync progress; `restructure-sheets` refuses new work while a class is left mid-flight; `--resume`/`--rollback` added. Rollback offered only pre-recreate (decided with Jeff — see decisions log); resume-forward only past that point |
 | Phase 7, unit 2 — `--rename-class` archive-sequence recovery | **done**, same day — `_rename_class_for_language` journals through the same two checkpoints and shares unit 1's journal (a plain run or `--rename-class` each refuse to start while either kind of unit is stuck). Unit key is the OLD class name, `new_class_name` carried in the checkpoint detail for reporting/resume; the rename's own extra steps (local TSV directory rename, manifest key swap) are folded into finishing `NEW_SHEET_CREATED` rather than given their own checkpoint |
 | Phase 7 — `import-sheets`/`generate-sheets` checked | **done** — neither has restructure-sheets' danger shape (destroy-before-replace). `import-sheets` needs nothing (local-only archiving, non-destructive Sheet write). `generate-sheets`'s new-sheet path needs nothing (nothing to lose). `--regen-construction`'s existing-tab clear+rewrite got a smaller, different fix: a pre-write local snapshot (`_snapshot_before_regen`), not a journal — see decisions log |
-| Phase 7 (the whole unit) | in progress — `restructure-sheets` (both units) and the `import-sheets`/`generate-sheets` check are done; no further Phase 7 candidate identified |
-| Phase 8 | not started |
+| Phase 7 (the whole unit) | **done** — `restructure-sheets` (both units) and the `import-sheets`/`generate-sheets` check are complete; no further Phase 7 candidate identified |
+| Phase 8, first pass — fault injection on `restructure-sheets`' recovery | **done** — `tests/fake_drive.py`'s `fail_after(op, count)` makes a real doorway call raise after its in-memory effect lands, simulating a crash mid-sequence rather than a hand-set journal entry. Two tests prove both checkpoints' recovery survives a real crash and confirmed to have teeth (deliberately broke the recovery, watched both fail, reverted). Found and fixed a real bug this way: `_rollback_unit` used to delete every `'user'`-type permission on rollback, silently dropping a co-annotator's pre-existing access if the sheet had one before archiving even started — exactly the assumption Phase 7's own docstring had flagged as unverified. Not yet covered: `--rename-class`'s sequence under real fault injection (same mechanism, not yet exercised), 429/500/timeout-shaped API failures (only "succeeded then crashed" simulated so far), concurrent human edits, and every other command's idempotency claims |
+| Phase 8 (the whole unit) | in progress — first pass done; plan's full scope ("every multi-step operation", "every idempotency claim in Phase 4") is much broader |
 | Phase 9 | not started |
 
 ### In flight
@@ -803,16 +814,76 @@ than accumulated. All 127 pre-existing tests across
 unchanged. `data_dependency_schema/operations.yaml`'s `--regen-construction`
 mode and `coding/CLAUDE.md`'s `generate_sheets.py` entry updated to match.
 
-**Next action:** no further Phase 7 candidate identified — both commands
-the plan named as remaining have now been checked, and neither needed the
-full journal treatment. Whether Phase 7 is considered complete as scoped,
-or Jeff wants a broader sweep for the destroy-before-replace shape across
-`coding/` before calling it done, is open. Otherwise Phase 8
-(fault-injection stress testing, the plan's next phase) is the next
-phase-level piece of work, and would also be the place to hard-check
-`restructure-sheets`' own unit 1/2 assumptions (`_rollback_unit`'s "exactly
-one 'user'-type permission" note, in particular) against real
-kill-mid-call fault injection rather than hand-driven states.
+**Phase 7 is done as scoped** — both commands the plan named as remaining
+(`import-sheets`, `generate-sheets`) were checked and neither needed the
+full journal treatment. Proceeded straight to Phase 8 the same session,
+per the plan's own sequencing ("Phase 9 must not begin until 8 is
+complete") and Jeff's instruction to decide this class of question from
+the project's stated goals rather than ask first.
+
+**Phase 8, first pass ("fault injection on restructure-sheets' recovery")
+done, 2026-08-17, same session.** The plan's Phase 8 scope is broad —
+"inject failure at every step of every multi-step operation," "every
+idempotency claim in Phase 4 has a test proving it" (25 records) — too
+large to do in one pass, so this first pass targeted the operation with
+the clearest, most recently-built recovery to check: `restructure-sheets`'
+own two units. Every one of Phase 7's own recovery tests set its starting
+state up by hand (`rj.record_checkpoint(...)` called directly, or the
+archive step replicated by hand outside `main()`) — real evidence the
+*logic* is right, but not evidence the system survives an actual crash
+mid-call the way #248 did.
+
+`tests/fake_drive.py`'s `FakeDriveDoorway.fail_after(op, count)` (new):
+arms a fault so the `count`-th call to a named doorway method raises
+after its in-memory effect has already landed — mirroring a Drive write
+that succeeded server-side right before the process making the call died,
+not a write that never happened. One hook point works for every doorway
+method because they all already funnel through the class's own `_record`.
+Two tests in `tests/test_restructure_sheets_snapshot.py` use it against a
+real `--apply` run (not a hand-seeded one): a crash between archiving and
+creating the replacement (the actual #248 shape), and a crash after the
+replacement is fully built but before the closing Drive manifest upload
+(injected by making `upload_manifest` itself raise once, since
+`_upload_manifest_with`'s own except-and-fall-back-to-create swallows a
+plain doorway-level failure at that point rather than letting it
+propagate as a real crash). Both confirmed to have teeth before being
+trusted: deliberately broke the journal-clearing loop, watched both tests
+fail with a clear diff, reverted, watched them pass again.
+
+**Found and fixed a real bug this way — the exact class of assumption
+`_rollback_unit`'s own Phase 7 docstring had flagged as unverified.**
+`_rollback_unit` deleted every `'user'`-type permission on the archived
+sheet before re-adding one for the primary annotator — correct when
+locking added the only such permission, but a sheet that already had a
+second person's grant (a co-annotator) before archiving even started lost
+it silently on rollback. Confirmed with a dedicated test (add a second
+permission, archive, roll back, check it survived — failed before the
+fix, passes after). Fixed by matching the permission to delete by the
+annotator's own email instead of sweeping every `'user'`-type grant, which
+also needed requesting `emailAddress` in the `fields` mask -- the real
+Drive API honors that field mask and omits the address otherwise, unlike
+the fake, which returns every field regardless of what's asked (a gap
+this fix would not have caught against the fake alone if the field mask
+itself had stayed wrong -- worth remembering next time a "matches the
+fake" result is read as "matches Drive").
+
+Full suite green throughout (1395 tests, +3 new: the two crash tests plus
+the co-annotator regression test).
+
+**Next action:** this is a first pass, not Phase 8's full scope. Not yet
+covered: `--rename-class`'s own archive sequence under real fault
+injection (same `fail_after` mechanism, just not yet pointed at it); API
+failures shaped like 429/500/timeout rather than "succeeded then crashed"
+(`_with_retry`'s own retry behavior is untested against a fake that
+actually fails a few times before succeeding); concurrent human edits
+during a programmatic operation (Adam editing a sheet mid-`restructure` is
+a named scenario in the plan, not exercised); and every other command's
+`idempotent` claim in `operations.yaml` (25 records, most never
+fault-injection-tested at all). Whether to continue widening Phase 8's
+coverage, or consider this first pass sufficient signal and move toward
+Phase 9's staged cutover, is open — but per the same instruction as above,
+the default without further word is to keep going on Phase 8's remaining
+scope, not to stop and ask.
 
 ### Held until Phase 9
 
@@ -1791,6 +1862,23 @@ commit.
 ---
 
 ## Decisions log
+
+**2026-08-17 — decided without a check-in: proceed straight from Phase 7
+to a first pass of Phase 8, and pick `restructure-sheets`' own recovery as
+what to fault-inject first.** Once Phase 7 closed, the plan's own
+sequencing note ("Phase 9 must not begin until 8 is complete") already
+says what phase comes next — no real choice to make there. What Phase 8
+should cover *first*, given its stated scope is much broader than one
+pass can cover, still needed a call: picked `restructure-sheets` because
+Phase 7 had just built its recovery and every one of Phase 7's own tests
+proved the *logic* right by hand-setting the journal, not by surviving an
+actual crash — the highest-value, most immediately checkable gap on hand,
+not a scan across all 25 `operations.yaml` records for the "best" one.
+That check paid off immediately: fault injection found a real bug
+(`_rollback_unit` dropping a co-annotator's permission) that every
+hand-seeded test had been structurally unable to surface, since hand-
+seeding only ever set up the states the tests already expected. See the
+Current-state entry above for the full account.
 
 **2026-08-17 — decided without a check-in, per Jeff's own instruction:
 `import-sheets`/`generate-sheets` don't get restructure-sheets' journal, and
@@ -2973,15 +3061,16 @@ unit 1's. Neither command needed restructure-sheets' journal;
 `--regen-construction` got a smaller, differently-shaped fix instead (a
 pre-write snapshot).
 
-**Nothing open right now.** Phase 7 as scoped (restructure-sheets, plus
-checking the plan's other two named candidates) is done. Whether Jeff
-wants Phase 7 to widen into a broader sweep for the same danger shape
-elsewhere in `coding/`, or considers it complete and wants to move to
-Phase 8, is a real next call — but not raised as a blocking question here,
-per the same instruction: the next session should read Next action's entry
-just above "Held until Phase 9" and proceed on Phase 8 by default unless
-told otherwise, since that's what the plan's own sequencing already says
-comes next.
+**Nothing open right now.** Phase 7 is done as scoped. Phase 8 has a first
+pass done the same day (fault injection proved `restructure-sheets`'
+recovery survives a real crash, not just a hand-set journal entry, and
+found a real permission-loss bug in the process — see the decisions log
+and the Current-state entry above). Whether to keep widening Phase 8's
+coverage (its own full scope is much broader — see Next action, just above
+"Held until Phase 9") or move toward Phase 9 is a real next call, but not
+raised as a blocking question here, per the same instruction: the next
+session should read Next action and keep going on Phase 8's remaining
+scope by default unless told otherwise.
 
 One item worth a look when convenient, not blocking anything: **issue #283**
 (warning-shaped `print()` calls in automated commands that never reach a

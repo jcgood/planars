@@ -48,6 +48,23 @@ Every write appends a JSON-serialisable record to ``doorway.mutations``. That
 log is what the plan's per-file procedure has a human review before it becomes
 a snapshot — write paths have no pre-migration baseline to diff against, so the
 review is the only barrier between a migration bug and its enshrinement.
+
+Fault injection (Phase 8, issue #271)
+--------------------------------------
+``fail_after(op, count)`` arms a real crash: the ``count``-th call to a named
+doorway method raises *after* that call's in-memory state change has already
+landed — every method mutates its own state before calling ``self._record``,
+which is where the check lives, so this mirrors a Drive write that succeeded
+server-side right before the process making the call died, not a write that
+never happened. One hook covers every doorway method for free, since they all
+already funnel through ``_record``. Used to crash ``restructure-sheets`` mid-
+sequence for real (`tests/test_restructure_sheets_snapshot.py`) rather than
+trusting a hand-set journal entry, and found a real bug that hand-seeded
+states had not (`_rollback_unit` dropping a co-annotator's permission — see
+``docs/data-layer-progress.md``'s Phase 8 entry). Only simulates "the call
+succeeded but the caller never got to use it" — 429/500/timeout-shaped
+failures (the call itself failing) are a different fault mode, not yet wired
+in here.
 """
 from __future__ import annotations
 
@@ -651,6 +668,8 @@ class FakeDriveDoorway:
         self._permissions: Dict[str, List[Dict[str, Any]]] = {}
         self._docs: Dict[str, str] = {}
         self._counter = 0
+        self._fail_after: Dict[str, int] = {}
+        self._fail_exc: Dict[str, Exception] = {}
 
     # -- construction -------------------------------------------------------
     @classmethod
@@ -746,6 +765,27 @@ class FakeDriveDoorway:
     def clear_mutations(self) -> None:
         self.mutations.clear()
 
+    # -- fault injection (Phase 8 of the data layer redesign, issue #271) --
+    # Every doorway-level mutation already funnels through `_record` below,
+    # so arming a fault here is the one hook that covers all of them: no
+    # per-method wiring needed. `fail_after(op, count)` raises on the
+    # `count`-th call to `op` from the moment it's armed -- *after* this
+    # method's in-memory state change has already happened (every caller
+    # mutates `self._spreadsheets`/`self._files`/etc. before calling
+    # `_record`), mirroring a real Drive write that succeeded server-side
+    # right before the process making the call died -- not a write that
+    # never happened. This is what makes it a faithful crash simulation
+    # rather than a "the API call itself failed" simulation (that's a
+    # different, also real fault mode -- 429/500/timeout -- not yet wired
+    # in here).
+    def fail_after(self, op: str, count: int, exc: Optional[Exception] = None) -> None:
+        self._fail_after[op] = count
+        self._fail_exc[op] = exc or RuntimeError(f"simulated crash during {op}")
+
+    def clear_faults(self) -> None:
+        self._fail_after.clear()
+        self._fail_exc.clear()
+
     # -- internals ----------------------------------------------------------
     def _new_id(self, prefix: str) -> str:
         self._counter += 1
@@ -753,6 +793,12 @@ class FakeDriveDoorway:
 
     def _record(self, op: str, **kw) -> None:
         self.mutations.append({"op": op, **kw})
+        if op in self._fail_after:
+            self._fail_after[op] -= 1
+            if self._fail_after[op] <= 0:
+                exc = self._fail_exc.pop(op)
+                del self._fail_after[op]
+                raise exc
 
     def _require_file(self, file_id: str) -> _DriveFile:
         try:

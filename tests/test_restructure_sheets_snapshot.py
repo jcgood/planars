@@ -700,6 +700,29 @@ def test_rollback_restores_the_archived_sheet_and_stops(env):
     assert "DRY RUN" not in out and "Manifest updated on Drive" not in out
 
 
+def test_rollback_preserves_a_pre_existing_co_annotator_permission(env):
+    """_rollback_unit's docstring flagged this as an unverified assumption
+    (Phase 7): locking a sheet only ever adds ONE 'user'-type permission
+    (the primary annotator's), so rollback deletes every 'user'-type grant
+    and re-adds just that one. If the sheet already carried a second
+    person's grant before archiving even started (a co-annotator, say),
+    rollback must not silently drop it -- Phase 8's job is to check this
+    for real rather than leave it as a documented risk.
+    """
+    lang_id, class_name = "stan1293", "ciscategorial"
+    ss_id = env.manifest()[lang_id]["sheets"][class_name]["spreadsheet_id"]
+    env.doorway.create_permission(
+        ss_id, type="user", role="writer", email="co-annotator@example.test")
+
+    _archive_ciscategorial(env)
+    rj.record_checkpoint(lang_id, class_name, rj.OLD_SHEET_ARCHIVED,
+                          archived_spreadsheet_id=ss_id, folder_id=None)
+    env.run(["--rollback", "--apply"])
+
+    emails = {p.get("emailAddress") for p in env.doorway.list_permissions(ss_id)}
+    assert "co-annotator@example.test" in emails
+
+
 def test_rollback_refuses_when_any_unit_is_past_recreate(env):
     ss_id, folder_id = _archive_ciscategorial(env)
     rj.record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED,
@@ -849,3 +872,94 @@ def test_rename_class_rollback_refuses_when_past_recreate(env):
     assert "ciscategorial -> ciscategorial_renamed" in out
     assert "--resume instead" in out
     assert len(rj.load_journal()) == 1
+
+
+# ---------------------------------------------------------------------------
+# Fault injection (Phase 8 of the data layer redesign, issue #271) — proving
+# the recovery above survives an actual crash mid-sequence, not just a
+# hand-set journal entry the way every test above sets its scenario up.
+# `env.doorway.fail_after(op, count)` raises on the Nth call to a doorway
+# method, after that call's in-memory effect already landed (mirroring a
+# Drive write that succeeded server-side right before the process died) --
+# see fake_drive.py's own docstring on the hook for the full reasoning.
+# ---------------------------------------------------------------------------
+
+def test_real_crash_between_archive_and_create_then_resume_recovers(env):
+    """A network failure right after archiving succeeds, before the
+    replacement sheet is created -- the actual #248 shape, injected for
+    real via the fake doorway rather than hand-seeded the way every test
+    above this one sets its starting state up.
+    """
+    env.rename_position("stan1293", "v:npsubj1", "v:npsubj1new")
+    env.doorway.fail_after("create_spreadsheet", 1)
+    with pytest.raises(RuntimeError, match="simulated crash"):
+        env.run(["--apply", "--lang", "stan1293",
+                 "--rename-map", "v:npsubj1:v:npsubj1new"])
+
+    journal = rj.load_journal()
+    assert len(journal) == 1
+    entry = next(iter(journal.values()))
+    assert entry["checkpoint"] == rj.OLD_SHEET_ARCHIVED
+    stuck_lang, stuck_class = entry["lang_id"], entry["class_name"]
+
+    # A plain re-run refuses to touch anything else while it's stuck.
+    env.doorway.clear_faults()
+    out = env.run(["--apply", "--lang", "stan1293",
+                   "--rename-map", "v:npsubj1:v:npsubj1new"])
+    assert "[SystemExit:" in out
+    assert stuck_class in out
+
+    # --resume rolls the interrupted class back (nothing of value existed
+    # past the archive) and the SAME run redoes it for real -- not a
+    # hand-driven finish, the ordinary per-class loop running to completion.
+    out = env.run(["--resume", "--apply", "--lang", "stan1293",
+                   "--rename-map", "v:npsubj1:v:npsubj1new"])
+    assert rj.load_journal() == {}
+    assert f"Archived to _archived/{stuck_class}_{stuck_lang}" in out
+    assert "New sheet (v" in out
+    live_id = env.manifest()[stuck_lang]["sheets"][stuck_class]["spreadsheet_id"]
+    assert env.doorway.spreadsheet(live_id).title == f"{stuck_class}_{stuck_lang}"
+
+
+def test_real_crash_before_final_manifest_upload_then_resume_recovers(env, monkeypatch):
+    """A network failure after the replacement sheet is fully created and
+    populated, but before the run's closing Drive manifest upload -- the
+    class exists live but is invisible to every other command until that
+    upload lands.
+
+    Injected by making the real upload_manifest call raise once, not via
+    fail_after on a doorway op: _upload_manifest_with (coding/drive.py)
+    catches a failed doorway.update_file itself and falls back to creating
+    a fresh manifest file, so a doorway-level fault here self-heals inside
+    upload_manifest rather than propagating as a crash. A genuine "the
+    whole run dies here" failure needs to be simulated one level up, at the
+    call restructure_sheets.py itself makes.
+    """
+    env.rename_position("stan1293", "v:npsubj1", "v:npsubj1new")
+
+    real_upload_manifest = rs.upload_manifest
+    calls = {"n": 0}
+
+    def _flaky_upload_manifest(*a, **kw):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError("simulated crash during manifest upload")
+        return real_upload_manifest(*a, **kw)
+
+    monkeypatch.setattr(rs, "upload_manifest", _flaky_upload_manifest)
+    with pytest.raises(RuntimeError, match="simulated crash"):
+        env.run(["--apply", "--lang", "stan1293",
+                 "--rename-map", "v:npsubj1:v:npsubj1new"])
+
+    journal = rj.load_journal()
+    assert journal  # at least one class reached NEW_SHEET_CREATED before the crash
+    assert all(e["checkpoint"] == rj.NEW_SHEET_CREATED for e in journal.values())
+    stuck = [(e["lang_id"], e["class_name"]) for e in journal.values()]
+
+    monkeypatch.setattr(rs, "upload_manifest", real_upload_manifest)
+    out = env.run(["--resume", "--apply", "--lang", "stan1293",
+                   "--rename-map", "v:npsubj1:v:npsubj1new"])
+    assert rj.load_journal() == {}
+    assert "Manifest updated on Drive." in out
+    for lang_id, class_name in stuck:
+        assert class_name in env.manifest()[lang_id]["sheets"]

@@ -247,13 +247,20 @@ def _rollback_unit(doorway, manifest, entry: dict) -> None:
 
     Only called for entries `restructure_journal.is_rollback_safe()` confirms
     are still pre-recreate (see that module's docstring for why nothing later
-    is undone this way). Assumes locking added exactly one 'user'-type
-    permission (the annotator's reader grant) -- true for every sheet this
-    command creates, since `_lock_archived_sheet` is the only place that adds
-    one; Phase 8's fault-injection tests are the place to harden this further
-    if that assumption ever turns out wrong for a case captured only live.
-    Does not touch the manifest -- it was never updated for this unit, so it
-    already still points at the sheet being restored here.
+    is undone this way). Does not touch the manifest -- it was never updated
+    for this unit, so it already still points at the sheet being restored
+    here.
+
+    Removes only the ONE permission `_lock_archived_sheet` itself would have
+    added (the annotator's reader grant, matched by email) rather than every
+    'user'-type permission on the sheet. An earlier version swept all
+    'user'-type grants, which silently dropped a co-annotator's pre-existing
+    access if the sheet had one before archiving even started -- found by
+    Phase 8's fault-injection tests (issue #271), which is exactly the class
+    of assumption this module's docstring had flagged as unverified. Needs
+    `emailAddress` in the requested fields to match by email at all -- the
+    real Drive API honors that field mask and omits the address otherwise,
+    unlike the fake, which returns every field regardless of what's asked.
     """
     lang_id = entry["lang_id"]
     class_name = entry["class_name"]
@@ -263,11 +270,13 @@ def _rollback_unit(doorway, manifest, entry: dict) -> None:
     if folder_id:
         doorway.move_file(archived_id, folder_id)
     doorway.update_file(archived_id, name=f"{class_name}_{lang_id}")
-    for p in doorway.list_permissions(archived_id, fields="permissions(id,type,role)"):
-        if p.get("type") == "user":
-            doorway.delete_permission(archived_id, p["id"])
     email = _annotator_email(lang_id)
     if email:
+        for p in doorway.list_permissions(
+            archived_id, fields="permissions(id,type,emailAddress)"
+        ):
+            if p.get("type") == "user" and p.get("emailAddress") == email:
+                doorway.delete_permission(archived_id, p["id"])
         doorway.create_permission(archived_id, type="user", role="writer", email=email)
     print(f"    [{lang_id}] {class_name}: rolled back — sheet restored, un-archived.")
 

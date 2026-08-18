@@ -29,9 +29,20 @@ two named candidates — were checked the same day and neither needed the
 same treatment: no destroy-before-replace step in their normal paths.
 `generate-sheets`'s `--regen-construction` got a smaller, differently-shaped
 fix (a pre-write local snapshot, not a resume system — see
-`docs/data-layer-progress.md`'s decisions log). Nothing open; nothing
-blocked. Next, per the plan's own sequencing, is Phase 8 (fault-injection
-stress testing) unless the next session decides otherwise.
+`docs/data-layer-progress.md`'s decisions log).
+
+**Phase 8 ("fault-injection stress testing") has a first pass done, same
+session.** `tests/fake_drive.py`'s new `fail_after(op, count)` makes a real
+Drive call raise mid-operation instead of hand-setting a journal entry;
+used to crash `restructure-sheets` for real at both of Phase 7's
+checkpoints and confirm `--resume` actually recovers. Found and fixed a
+real bug this way: rollback used to silently drop a co-annotator's
+pre-existing sheet permission. Not the phase's full scope — `--rename-class`
+under fault injection, 429/500/timeout-shaped failures, concurrent edits,
+and every other command's idempotency claims are all still uncovered. See
+`docs/data-layer-progress.md`'s Next action for the full list. Nothing
+blocked; the default is to keep widening Phase 8's coverage rather than
+stop and ask.
 
 **Phase 5 is done, all five units, as of 2026-08-17.** No open questions,
 nothing blocked. Full detail in `docs/data-layer-progress.md`'s Current
@@ -76,7 +87,8 @@ list straight from the workflow YAML and fails if a *new* orphaned warning
 joins the pile unclassified — the actual answer to "how do I stop missing
 this", not a periodic manual re-sweep.
 
-**Phase 7 is done as scoped (see above). Phases 8–9 remain unscoped in
+**Phase 7 is done as scoped (see above). Phase 8 has a first pass done
+(see above); its remaining scope and Phase 9 remain unscoped in
 session-level detail** — see `docs/data-layer-implementation-plan.md` for
 the phase spec.
 
