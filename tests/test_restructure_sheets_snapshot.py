@@ -1069,3 +1069,65 @@ def test_a_transient_429_during_archiving_is_retried_not_a_crash(env, monkeypatc
     assert "[SystemExit:" not in out
     assert rj.load_journal() == {}
     assert "Archived to _archived/" in out
+
+
+# ---------------------------------------------------------------------------
+# Concurrent human edits (Phase 8, issue #271) -- the plan's third named
+# fault shape, and a different kind of test than everything above: not
+# "does recovery work after a crash," but "what happens to an edit Adam
+# makes on the live sheet in the narrow window between this command
+# reading it and archiving it." Unlike a crash, this isn't something a
+# journal can protect against -- the read already happened; there's
+# nothing to detect or resume. What matters is whether the edit is ever
+# silently destroyed, or just not carried forward while still recoverable.
+# ---------------------------------------------------------------------------
+
+def test_an_edit_made_during_the_read_archive_window_is_not_carried_but_is_not_destroyed(env, monkeypatch):
+    """Step 1 (_download_tab_annotations) reads the tab's content once, up
+    front; everything after that -- archiving, creating the replacement,
+    carrying values over -- works from that snapshot, not a fresh read.
+    If Adam edits a cell after the snapshot but before archiving, his edit
+    is real and on the live sheet at that moment, but this command has no
+    way to know it happened: there is no lock, no version check, and no
+    second read. This is a structural property of a script working against
+    a live, human-editable document, not a bug fixable by retrying or
+    resuming -- the two things every test above this one proves. What can
+    be checked, and matters more: the edit is not *destroyed*, because
+    archiving preserves the whole tab exactly as it was -- it just isn't
+    where a re-annotator would look for it afterward without knowing to
+    check the archive.
+    """
+    ws = env.tab("stan1293", "ciscategorial", "general")
+    header = ws.get_all_values()[0]
+    comments_col = header.index("Comments") + 1  # update_cell is 1-indexed
+
+    real_download = rs._download_tab_annotations
+    calls = {"n": 0}
+
+    def _download_then_concurrent_edit(worksheet):
+        result = real_download(worksheet)
+        calls["n"] += 1
+        if calls["n"] == 1:
+            # Adam, editing live, right after the coordinator's script took
+            # its snapshot but before anything else happens to this tab.
+            worksheet.update_cell(2, comments_col, "ADAM'S CONCURRENT EDIT")
+        return result
+
+    monkeypatch.setattr(rs, "_download_tab_annotations", _download_then_concurrent_edit)
+    env.rename_position("stan1293", "v:npsubj1", "v:npsubj1new")
+    env.run(["--apply", "--lang", "stan1293",
+             "--rename-map", "v:npsubj1:v:npsubj1new"])
+
+    # Not carried forward onto the new live tab -- the snapshot taken
+    # before the edit landed is what populated it.
+    new_values = env.tab("stan1293", "ciscategorial", "general").get_all_values()
+    assert not any("ADAM'S CONCURRENT EDIT" in row for row in new_values)
+
+    # Not destroyed either -- still readable on the archived copy, which
+    # is where a coordinator checking "did I lose anything?" would look.
+    # The first move_file call of the run is the archive-move (the old
+    # sheet into _archived/); a later one moves the new sheet into the
+    # language folder instead.
+    archived_id = env.doorway.mutations_of("move_file")[0]["file_id"]
+    archived_values = env.doorway.spreadsheet(archived_id).worksheet("general").get_all_values()
+    assert any("ADAM'S CONCURRENT EDIT" in row for row in archived_values)

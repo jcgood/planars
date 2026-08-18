@@ -44,11 +44,20 @@ steps' structural Drive calls retried on a transient 429/500/503 the way
 every worksheet-content read already did, so a single rate-limit blip
 crashed the whole run — now wrapped in `_with_retry`. The same gap in 5
 other files (18 call sites) is issue #284, filed rather than fixed here.
-Not the phase's full scope — concurrent edits and every other command's
-idempotency claims are still uncovered. See
-`docs/data-layer-progress.md`'s Next action for the full list. Nothing
-blocked; the default is to keep widening Phase 8's coverage rather than
-stop and ask.
+Also checked concurrent human edits (the plan's third named fault shape):
+an edit landing between this command reading a tab and archiving it isn't
+carried onto the new sheet, but isn't destroyed either — still recoverable
+from the archived copy. Not a bug fixable without changing the command's
+actual read/write ordering, so documented by a test rather than "fixed."
+
+**One real open item, not defaulted into:** the last piece of Phase 8's
+own named scope is auditing every other command's `idempotent` claim in
+`operations.yaml` (25 records) — a project-wide sweep, different in scale
+from hardening `restructure-sheets` specifically. Every smaller call this
+session made on its own using the project's stated goals; this one is
+sized like Phase 4's own review and is named explicitly rather than
+started unscoped. See `docs/data-layer-progress.md`'s Open questions
+section.
 
 **Phase 5 is done, all five units, as of 2026-08-17.** No open questions,
 nothing blocked. Full detail in `docs/data-layer-progress.md`'s Current
