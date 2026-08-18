@@ -227,13 +227,21 @@ def _lock_archived_sheet(doorway, file_id: str, lang_id: str) -> None:
     No doorway-level convenience for removing the 'anyone' grant -- inlined
     here from the same two doorway primitives, same precedent as
     `generate_status_sheet._lock_read_only`.
+
+    Wrapped in `_with_retry` throughout (Phase 8, issue #271, found by fault
+    injection) -- unlike every worksheet-content read in this file, none of
+    the doorway's own structural calls (this function's included) retried on
+    a transient 429/500/503 before this fix, so a single rate-limit blip
+    during archiving used to crash the whole run and manufacture a false
+    interrupted-run recovery event out of something that should have been
+    transparent.
     """
-    for p in doorway.list_permissions(file_id, fields="permissions(id,type)"):
+    for p in _with_retry(lambda: doorway.list_permissions(file_id, fields="permissions(id,type)")):
         if p.get("type") == "anyone":
-            doorway.delete_permission(file_id, p["id"])
+            _with_retry(lambda: doorway.delete_permission(file_id, p["id"]))
     email = _annotator_email(lang_id)
     if email:
-        doorway.create_permission(file_id, type="user", role="reader", email=email)
+        _with_retry(lambda: doorway.create_permission(file_id, type="user", role="reader", email=email))
 
 
 # ---------------------------------------------------------------------------
@@ -261,6 +269,9 @@ def _rollback_unit(doorway, manifest, entry: dict) -> None:
     `emailAddress` in the requested fields to match by email at all -- the
     real Drive API honors that field mask and omits the address otherwise,
     unlike the fake, which returns every field regardless of what's asked.
+
+    Wrapped in `_with_retry` throughout, same reasoning and same fault-
+    injection pass as `_lock_archived_sheet` above.
     """
     lang_id = entry["lang_id"]
     class_name = entry["class_name"]
@@ -268,16 +279,16 @@ def _rollback_unit(doorway, manifest, entry: dict) -> None:
     archived_id = detail["archived_spreadsheet_id"]
     folder_id = detail.get("folder_id")
     if folder_id:
-        doorway.move_file(archived_id, folder_id)
-    doorway.update_file(archived_id, name=f"{class_name}_{lang_id}")
+        _with_retry(lambda: doorway.move_file(archived_id, folder_id))
+    _with_retry(lambda: doorway.update_file(archived_id, name=f"{class_name}_{lang_id}"))
     email = _annotator_email(lang_id)
     if email:
-        for p in doorway.list_permissions(
+        for p in _with_retry(lambda: doorway.list_permissions(
             archived_id, fields="permissions(id,type,emailAddress)"
-        ):
+        )):
             if p.get("type") == "user" and p.get("emailAddress") == email:
-                doorway.delete_permission(archived_id, p["id"])
-        doorway.create_permission(archived_id, type="user", role="writer", email=email)
+                _with_retry(lambda: doorway.delete_permission(archived_id, p["id"]))
+        _with_retry(lambda: doorway.create_permission(archived_id, type="user", role="writer", email=email))
     print(f"    [{lang_id}] {class_name}: rolled back — sheet restored, un-archived.")
 
 
@@ -958,11 +969,15 @@ def _rename_class_for_language(
 
     # --- apply ---
 
-    # Archive old sheet
+    # Archive old sheet. Structural doorway calls wrapped in _with_retry
+    # throughout this block and the create block below (Phase 8, issue #271,
+    # found by fault injection) -- previously unretried, unlike every
+    # worksheet-content read in this file, so a single transient 429/500/503
+    # here used to crash the whole run instead of retrying transparently.
     if folder_id:
-        archive_id = doorway.get_or_create_folder("_archived", parent_id=folder_id)
-        doorway.update_file(ss.id, name=f"{old_class}_{lang_id}_v{version}")
-        doorway.move_file(ss.id, archive_id)
+        archive_id = _with_retry(lambda: doorway.get_or_create_folder("_archived", parent_id=folder_id))
+        _with_retry(lambda: doorway.update_file(ss.id, name=f"{old_class}_{lang_id}_v{version}"))
+        _with_retry(lambda: doorway.move_file(ss.id, archive_id))
         _lock_archived_sheet(doorway, ss.id, lang_id)
         restructure_journal.record_checkpoint(
             lang_id, old_class, restructure_journal.OLD_SHEET_ARCHIVED,
@@ -972,12 +987,12 @@ def _rename_class_for_language(
 
     # Create new sheet
     sheet_title = f"{new_class}_{lang_id}"
-    new_ss = doorway.create_spreadsheet(sheet_title)
+    new_ss = _with_retry(lambda: doorway.create_spreadsheet(sheet_title))
     if folder_id:
-        doorway.move_file(new_ss.id, folder_id)
+        _with_retry(lambda: doorway.move_file(new_ss.id, folder_id))
         email = _annotator_email(lang_id)
         if email:
-            doorway.create_permission(new_ss.id, type="user", role="writer", email=email)
+            _with_retry(lambda: doorway.create_permission(new_ss.id, type="user", role="writer", email=email))
 
     default_ws = _with_retry(lambda: new_ss.sheet1)
     tab_names = []
@@ -1469,12 +1484,17 @@ def main(args: argparse.Namespace | None = None) -> None:
             if not apply:
                 continue
 
-            # Step 3: Archive existing sheet
+            # Step 3: Archive existing sheet. Structural doorway calls
+            # wrapped in _with_retry throughout this step and Step 4 below
+            # (Phase 8, issue #271, found by fault injection) -- previously
+            # unretried, unlike every worksheet-content read in this file,
+            # so a single transient 429/500/503 here used to crash the
+            # whole run instead of retrying transparently.
             new_version = version + 1
             if folder_id:
-                archive_id = doorway.get_or_create_folder("_archived", parent_id=folder_id)
-                doorway.update_file(ss.id, name=f"{class_name}_{lang_id}_v{version}")
-                doorway.move_file(ss.id, archive_id)
+                archive_id = _with_retry(lambda: doorway.get_or_create_folder("_archived", parent_id=folder_id))
+                _with_retry(lambda: doorway.update_file(ss.id, name=f"{class_name}_{lang_id}_v{version}"))
+                _with_retry(lambda: doorway.move_file(ss.id, archive_id))
                 _lock_archived_sheet(doorway, ss.id, lang_id)
                 restructure_journal.record_checkpoint(
                     lang_id, class_name, restructure_journal.OLD_SHEET_ARCHIVED,
@@ -1484,12 +1504,12 @@ def main(args: argparse.Namespace | None = None) -> None:
 
             # Step 4: Create new sheet and populate with carry-over
             sheet_title = f"{class_name}_{lang_id}"
-            new_ss = doorway.create_spreadsheet(sheet_title)
+            new_ss = _with_retry(lambda: doorway.create_spreadsheet(sheet_title))
             if folder_id:
-                doorway.move_file(new_ss.id, folder_id)
+                _with_retry(lambda: doorway.move_file(new_ss.id, folder_id))
                 email = _annotator_email(lang_id)
                 if email:
-                    doorway.create_permission(new_ss.id, type="user", role="writer", email=email)
+                    _with_retry(lambda: doorway.create_permission(new_ss.id, type="user", role="writer", email=email))
 
             default_ws = _with_retry(lambda: new_ss.sheet1)
             tab_names = []

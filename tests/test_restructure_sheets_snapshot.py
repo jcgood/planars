@@ -63,7 +63,7 @@ from coding import import_planar as ip
 from coding import restructure_journal as rj
 from coding import restructure_sheets as rs
 from coding import validate_coding as vc
-from fake_drive import FakeDriveDoorway, MANIFEST_FILE_ID
+from fake_drive import FakeDriveDoorway, MANIFEST_FILE_ID, api_error
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
 
@@ -1040,3 +1040,32 @@ def test_rename_class_real_crash_before_final_manifest_upload_then_resume_recove
     manifest = env.manifest()["stan1293"]["sheets"]
     assert "proform" not in manifest
     assert "proform_renamed" in manifest
+
+
+def test_a_transient_429_during_archiving_is_retried_not_a_crash(env, monkeypatch):
+    """The plan's Phase 8 scope also names 429/500/timeout, a different
+    fault shape than the "succeeded then the process died" one every test
+    above this one injects: here the API call itself fails, transiently.
+    Every worksheet-content read in this file already retries through
+    _with_retry, but the archive/create steps' own structural calls --
+    get_or_create_folder, update_file, move_file, create_spreadsheet,
+    create_permission, delete_permission -- did not, until this fault
+    injection found the gap and they were wrapped too (same commit): a
+    single rate-limit blip during archiving used to crash the whole run
+    instead of retrying, manufacturing a false interrupted-run recovery
+    event out of something that should have been transparent.
+    `fail_after` fires exactly once by design (see fake_drive.py), so this
+    is a real "one 429, then the retry succeeds" case, not a permanent
+    failure -- time.sleep is mocked so the real ~15s backoff wait doesn't
+    slow the suite down (same convention as test_apply_pending_snapshot.py).
+    """
+    import coding.drive as drive_module
+    monkeypatch.setattr(drive_module.time, "sleep", lambda *a, **kw: None)
+
+    env.rename_position("stan1293", "v:npsubj1", "v:npsubj1new")
+    env.doorway.fail_after("update_file", 1, exc=api_error(429, "rate limited"))
+    out = env.run(["--apply", "--lang", "stan1293",
+                   "--rename-map", "v:npsubj1:v:npsubj1new"])
+    assert "[SystemExit:" not in out
+    assert rj.load_journal() == {}
+    assert "Archived to _archived/" in out

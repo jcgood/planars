@@ -40,10 +40,14 @@ the way Phase 7's own tests did. Found and fixed a real bug this way:
 rollback used to silently drop a co-annotator's pre-existing sheet access
 — caught once, but shared by both units since they share the same
 rollback code, so extending coverage to the second unit was confirmation,
-not a second discovery. Confirmed all four new tests actually catch a
-broken recovery (deliberately broke it, watched them fail, reverted).
-This is a first pass, not the phase's full scope — see Next action. 7 —
-**done, both restructure-sheets
+not a second discovery. A second real bug found the same way: none of the
+archive/create steps' structural Drive calls retried on a transient
+429/500/503, unlike every worksheet-content read in the file — fixed by
+wrapping them in `_with_retry`; the same gap in 5 other files is issue
+#284, not fixed here. Confirmed all five new tests actually catch a
+broken recovery (deliberately broke each one's target, watched it fail,
+reverted). This is a first pass, not the phase's full scope — see Next
+action. 7 — **done, both restructure-sheets
 units plus the import-sheets/generate-sheets check, as of 2026-08-17.**
 `restructure-sheets --apply`'s main per-class loop (unit 1)
 and its separate `--rename-class` archive sequence (unit 2, same day) both
@@ -200,7 +204,7 @@ the same day — see the decisions log.
 | Phase 7, unit 2 — `--rename-class` archive-sequence recovery | **done**, same day — `_rename_class_for_language` journals through the same two checkpoints and shares unit 1's journal (a plain run or `--rename-class` each refuse to start while either kind of unit is stuck). Unit key is the OLD class name, `new_class_name` carried in the checkpoint detail for reporting/resume; the rename's own extra steps (local TSV directory rename, manifest key swap) are folded into finishing `NEW_SHEET_CREATED` rather than given their own checkpoint |
 | Phase 7 — `import-sheets`/`generate-sheets` checked | **done** — neither has restructure-sheets' danger shape (destroy-before-replace). `import-sheets` needs nothing (local-only archiving, non-destructive Sheet write). `generate-sheets`'s new-sheet path needs nothing (nothing to lose). `--regen-construction`'s existing-tab clear+rewrite got a smaller, different fix: a pre-write local snapshot (`_snapshot_before_regen`), not a journal — see decisions log |
 | Phase 7 (the whole unit) | **done** — `restructure-sheets` (both units) and the `import-sheets`/`generate-sheets` check are complete; no further Phase 7 candidate identified |
-| Phase 8, first pass — fault injection on `restructure-sheets`' recovery | **done**, both units — `tests/fake_drive.py`'s `fail_after(op, count)` makes a real doorway call raise after its in-memory effect lands, simulating a crash mid-sequence rather than a hand-set journal entry. Four tests (two per unit) prove both checkpoints' recovery survives a real crash for the main per-class loop *and* `--rename-class`'s separate sequence, all confirmed to have teeth (deliberately broke the recovery, watched all four fail, reverted). Found and fixed a real bug this way: `_rollback_unit` used to delete every `'user'`-type permission on rollback, silently dropping a co-annotator's pre-existing access if the sheet had one before archiving even started — exactly the assumption Phase 7's own docstring had flagged as unverified, and shared by both units since they share the same rollback code. Not yet covered: 429/500/timeout-shaped API failures (only "succeeded then crashed" simulated so far), concurrent human edits, and every other command's idempotency claims |
+| Phase 8, first pass — fault injection on `restructure-sheets`' recovery | **done**, both units — `tests/fake_drive.py`'s `fail_after(op, count)` makes a real doorway call raise after its in-memory effect lands, simulating a crash mid-sequence rather than a hand-set journal entry. Five tests prove recovery survives a real crash: both checkpoints for the main per-class loop and for `--rename-class`'s separate sequence (four), plus a transient 429 during archiving (one, a different fault shape — the call itself fails, not "succeeded then the process died"). All confirmed to have teeth (deliberately broke the code each targets, watched every one fail, reverted). Two real bugs found and fixed this way: `_rollback_unit` used to delete every `'user'`-type permission on rollback, silently dropping a co-annotator's pre-existing access (shared by both units); and none of the archive/create steps' structural Drive calls retried on 429/500/503 the way every worksheet-content read already did, so a single rate-limit blip crashed the whole run instead of retrying transparently — now wrapped in `_with_retry` throughout. The same retry gap exists in 5 other doorway-migrated files (18 call sites), filed as issue #284 rather than fixed here (separate, mechanical sweep). Not yet covered: concurrent human edits, and every other command's idempotency claims |
 | Phase 8 (the whole unit) | in progress — first pass done; plan's full scope ("every multi-step operation", "every idempotency claim in Phase 4") is much broader |
 | Phase 9 | not started |
 
@@ -894,18 +898,52 @@ code entirely, so the co-annotator-permission fix already covered it; this
 pass is evidence that sharing holds under a real crash, not just in the
 hand-driven tests. Full suite green (1397 tests, +2 new).
 
-**Next action:** still not Phase 8's full scope. Not yet covered: API
-failures shaped like 429/500/timeout rather than "succeeded then crashed"
-(`_with_retry`'s own retry behavior is untested against a fake that
-actually fails a few times before succeeding); concurrent human edits
-during a programmatic operation (Adam editing a sheet mid-`restructure` is
-a named scenario in the plan, not exercised); and every other command's
-`idempotent` claim in `operations.yaml` (25 records, most never
-fault-injection-tested at all). Whether to continue widening Phase 8's
-coverage, or consider this first pass sufficient signal and move toward
-Phase 9's staged cutover, is open — but per the same instruction as above,
-the default without further word is to keep going on Phase 8's remaining
-scope, not to stop and ask.
+**A transient-429 test, same session, continued unprompted after Jeff
+confirmed "keep going" meant exactly that.** Checked the API-failures-shaped
+half of Phase 8's scope (429/500/timeout, distinct from "succeeded then
+the process died") against the archive step specifically, since that's the
+step every test so far had been hardening. Wrote a test expecting the
+existing retry protection every worksheet-content read in this file
+already has (`_with_retry`) — and it failed for a real reason: grepped and
+confirmed `get_or_create_folder`/`update_file`/`move_file`/
+`create_spreadsheet`/`create_permission`/`delete_permission` were never
+wrapped in `_with_retry` anywhere in this file, so a single 429 during
+archiving crashed the whole run uncaught. (First attempt at the test used
+`get_or_create_folder` and passed for the wrong reason — the fake's
+`get_or_create_folder` doesn't call `_record` at all when the folder
+already exists, so the injected fault silently never fired; switched to
+`update_file`, which always fires, and the gap showed up immediately.)
+
+Fixed by wrapping every structural call in the archive/create steps in
+`_with_retry` — both units, plus `_lock_archived_sheet` and `_rollback_unit`
+themselves, since both are shared by unit 1 and unit 2. Confirmed with
+`time.sleep` mocked (same convention as `test_apply_pending_snapshot.py`)
+so the real ~15s backoff doesn't slow the suite, and confirmed to have
+teeth the same way as every fault-injection test above (broke one wrapped
+call, watched the test fail, reverted).
+
+**Grepped the same pattern across every other doorway-migrated file rather
+than assuming this was restructure-sheets-specific**, since the gap
+("structural Drive calls never retried, unlike content reads") is a shape,
+not a one-off — found 18 more unretried call sites across 5 files
+(`generate_sheets.py`: 8, `setup_root_folder.py`: 4, `generate_status_sheet.py`:
+3, `prune_manifest.py`: 2, `generate_biuniqueness_allomorphy_sheet.py`: 1).
+Filed as **issue #284** rather than fixed here — a separate, mechanical
+sweep across files this session wasn't otherwise touching, better tracked
+than silently expanded into.
+
+Full suite green (1398 tests, +1 new since the last entry).
+
+**Next action:** still not Phase 8's full scope. Not yet covered:
+concurrent human edits during a programmatic operation (Adam editing a
+sheet mid-`restructure` is a named scenario in the plan, not exercised);
+and every other command's `idempotent` claim in `operations.yaml` (25
+records, most never fault-injection-tested at all) — including the 5
+files issue #284 names, once that's fixed. Whether to continue widening
+Phase 8's coverage, or consider this first pass sufficient signal and move
+toward Phase 9's staged cutover, is open — but per the same instruction as
+above, the default without further word is to keep going on Phase 8's
+remaining scope, not to stop and ask.
 
 ### Held until Phase 9
 
