@@ -54,6 +54,12 @@ Run from the repo root:
     The pre-flight check will abort if the old name is still present in any language's
     diagnostics file, or if the new name is absent.
 
+    # If a previous --apply run was interrupted mid-class (crash, network failure),
+    # the next run of any kind refuses to start new work and reports which class(es)
+    # are stuck and how, until one of these resolves them:
+    python -m coding restructure-sheets --resume --apply    # finish or safely undo, then continue
+    python -m coding restructure-sheets --rollback --apply  # undo what's safely undoable, then stop
+
 What this does per spreadsheet:
   1. Downloads current annotations from each tab
   2. [--apply] Moves the spreadsheet to _archived/ in Drive (renamed to include _v{N})
@@ -61,6 +67,17 @@ What this does per spreadsheet:
   4. Carries over annotations matched by (Element, Position_Name)
   5. Leaves unmatched rows blank for re-annotation
   6. Updates sheets_manifest.json to point to the new spreadsheets
+
+Recoverability (Phase 7 of the data layer redesign, issue #271): each class's
+progress through steps 2-6 is journaled to restructure_journal.json before
+each Drive-mutating step, so a crash partway through is detected by the next
+run rather than silently re-attempted or left unexplained. Undoing is only
+offered where it's actually safe -- step 2 alone, before step 3 has created
+anything -- since a step-3 replacement sheet already holds real carried-over
+annotation data that undoing would destroy; past that point recovery always
+finishes forward (--resume), never deletes. See restructure_journal.py's
+module docstring for the full reasoning and #248 for the incident this
+closes.
 
 For --rename-class, step 3 creates a spreadsheet under the new class name, and
 local TSV directories are renamed in-place (coded_data/{lang}/{old}/ ->
@@ -111,6 +128,7 @@ from .notify import (
     ensure_notification_issue,
     post_notification_comment,
 )
+from . import restructure_journal
 
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
 CODED_DATA = ROOT / "coded_data"
@@ -214,6 +232,69 @@ def _lock_archived_sheet(doorway, file_id: str, lang_id: str) -> None:
     email = _annotator_email(lang_id)
     if email:
         doorway.create_permission(file_id, type="user", role="reader", email=email)
+
+
+# ---------------------------------------------------------------------------
+# Interrupted-run recovery (Phase 7 of the data layer redesign, issue #271)
+# ---------------------------------------------------------------------------
+
+def _rollback_unit(doorway, manifest, entry: dict) -> None:
+    """Undo an OLD_SHEET_ARCHIVED-only unit: move the archived sheet back to
+    its language folder, rename it back to its live title, and restore the
+    annotator's write access -- the exact inverse of `_lock_archived_sheet`.
+
+    Only called for entries `restructure_journal.is_rollback_safe()` confirms
+    are still pre-recreate (see that module's docstring for why nothing later
+    is undone this way). Assumes locking added exactly one 'user'-type
+    permission (the annotator's reader grant) -- true for every sheet this
+    command creates, since `_lock_archived_sheet` is the only place that adds
+    one; Phase 8's fault-injection tests are the place to harden this further
+    if that assumption ever turns out wrong for a case captured only live.
+    Does not touch the manifest -- it was never updated for this unit, so it
+    already still points at the sheet being restored here.
+    """
+    lang_id = entry["lang_id"]
+    class_name = entry["class_name"]
+    detail = entry["detail"]
+    archived_id = detail["archived_spreadsheet_id"]
+    folder_id = detail.get("folder_id")
+    if folder_id:
+        doorway.move_file(archived_id, folder_id)
+    doorway.update_file(archived_id, name=f"{class_name}_{lang_id}")
+    for p in doorway.list_permissions(archived_id, fields="permissions(id,type,role)"):
+        if p.get("type") == "user":
+            doorway.delete_permission(archived_id, p["id"])
+    email = _annotator_email(lang_id)
+    if email:
+        doorway.create_permission(archived_id, type="user", role="writer", email=email)
+    print(f"    [{lang_id}] {class_name}: rolled back — sheet restored, un-archived.")
+
+
+def _finish_new_sheet_created_unit(manifest, entry: dict) -> Tuple[str, str, str]:
+    """Finish a NEW_SHEET_CREATED unit: the replacement sheet itself is
+    already done, only the manifest bookkeeping (pointing at it) never
+    happened. Pure local bookkeeping, no Drive-sheet mutation -- always safe
+    to finish forward. The actual Drive upload of this manifest change, and
+    clearing the unit from the journal, happen where they already do for a
+    normal run's classes -- once, in the end-of-run upload block -- so a
+    crash between this write and that upload leaves the journal entry in
+    place and correctly re-detected, rather than marked done early.
+
+    Returns (lang_id, class_name, url) for the caller's sheet_links/notify list.
+    """
+    lang_id = entry["lang_id"]
+    class_name = entry["class_name"]
+    detail = entry["detail"]
+    manifest.setdefault(lang_id, {}).setdefault("sheets", {})[class_name] = {
+        "spreadsheet_id": detail["spreadsheet_id"],
+        "url": detail["url"],
+        "constructions": detail["constructions"],
+        "construction_params": detail["construction_params"],
+        "version": detail["version"],
+    }
+    print(f"    [{lang_id}] {class_name}: resumed — manifest now points at the "
+          f"already-created sheet ({detail['url']}).")
+    return lang_id, class_name, detail["url"]
 
 
 # ---------------------------------------------------------------------------
@@ -1016,6 +1097,17 @@ def build_parser() -> argparse.ArgumentParser:
         help='retire one element into several, "old_element:new1,new2,..." '
              "(comma-separated, at least 2 targets)",
     )
+    ap.add_argument(
+        "--resume", action="store_true",
+        help="finish or safely undo classes an interrupted run left mid-flight, "
+             "then continue (requires --apply)",
+    )
+    ap.add_argument(
+        "--rollback", action="store_true",
+        help="undo classes an interrupted run left mid-flight (only where an old "
+             "sheet was archived but no replacement was created yet), then stop "
+             "(requires --apply)",
+    )
     return ap
 
 
@@ -1054,6 +1146,8 @@ def main(args: argparse.Namespace | None = None) -> None:
         args = build_parser().parse_args()
 
     apply = "--apply" in sys.argv
+    resume = "--resume" in sys.argv
+    rollback = "--rollback" in sys.argv
     rename_map         = _parse_flag_map(sys.argv[1:], "--rename-map")
     element_rename_map = _parse_flag_map(sys.argv[1:], "--rename-element")
     rename_class_map   = _parse_flag_map(sys.argv[1:], "--rename-class")
@@ -1064,6 +1158,11 @@ def main(args: argparse.Namespace | None = None) -> None:
             f"Element(s) {sorted(conflict)} appear in both --rename-element and "
             f"--split-element — pick one treatment per element."
         )
+    if (resume or rollback) and not apply:
+        raise SystemExit(
+            "--resume/--rollback recover live Drive state left mid-flight by an "
+            "interrupted run and require --apply."
+        )
     lang_idx = sys.argv.index("--lang") if "--lang" in sys.argv else -1
     lang_filter = sys.argv[lang_idx + 1] if lang_idx >= 0 else None
 
@@ -1072,13 +1171,60 @@ def main(args: argparse.Namespace | None = None) -> None:
     # still guards against exactly what it always has: this command reads
     # planar_{lang_id}.tsv/diagnostics_{lang_id}.tsv from coded_data/ as its
     # source of truth for the new sheet structure, and is the single most
-    # destructive command in the project (archive-then-recreate, no
-    # rollback) -- a prior step's failed auto-commit leaving coded_data/
-    # stale/reverted is exactly what it must not act on. See
-    # update_sheets.py's guard comment for why (issue #248's stray-row
-    # incident).
+    # destructive command in the project (archive-then-recreate). Phase 7 of
+    # the data layer redesign (issue #271) closed the "no rollback" half of
+    # that risk -- see restructure_journal.py's module docstring and the
+    # journal-recovery block just below -- but a prior step's failed
+    # auto-commit leaving coded_data/ stale/reverted is a different risk this
+    # precondition still guards against. See update_sheets.py's guard comment
+    # for why (issue #248's stray-row incident).
     doorway = get_doorway()
     manifest = load_manifest(doorway)
+
+    # Interrupted-run recovery (Phase 7, issue #271). Anything still in the
+    # journal is evidence a previous --apply run died mid-class; refuse to
+    # start any new work -- including --rename-class below -- until it's
+    # resolved, so a second run never has to guess which of two interrupted
+    # sequences it's looking at.
+    journal = restructure_journal.load_journal()
+    if journal and not (resume or rollback):
+        raise SystemExit(restructure_journal.format_incomplete_report(journal))
+
+    resumed_units: Set[Tuple[str, str]] = set()
+    sheet_links: List[Tuple[str, str, str]] = []  # (lang_id, class_name, url), for the summary
+    lang_folder_urls: Dict[str, str] = {}  # lang_id -> Drive folder url (stable across restructures)
+
+    if journal and rollback:
+        stuck = {k: e for k, e in journal.items() if not restructure_journal.is_rollback_safe(e)}
+        if stuck:
+            raise SystemExit(
+                "--rollback can't undo every interrupted class — some already have "
+                "a real replacement sheet with carried-over annotation data, which "
+                "rollback will not delete. Use --resume instead to finish those "
+                "(rollback still isn't offered for them).\n\n"
+                + restructure_journal.format_incomplete_report(stuck)
+            )
+        print("\nRolling back interrupted classes (old sheet restored, nothing else touched):")
+        for entry in journal.values():
+            _rollback_unit(doorway, manifest, entry)
+            restructure_journal.clear_unit(entry["lang_id"], entry["class_name"])
+        print("\nDone. Re-run without --rollback to continue restructuring normally.")
+        return
+
+    if journal and resume:
+        print("\nResuming interrupted classes:")
+        for entry in list(journal.values()):
+            if restructure_journal.is_rollback_safe(entry):
+                # Nothing of value existed past the archive yet, so "resume"
+                # and "roll back, then let the loop below redo it cleanly"
+                # are the same operation here -- reuse the safe primitive
+                # rather than a second way to reach the same state.
+                _rollback_unit(doorway, manifest, entry)
+                restructure_journal.clear_unit(entry["lang_id"], entry["class_name"])
+            else:
+                lang_id, class_name, url = _finish_new_sheet_created_unit(manifest, entry)
+                resumed_units.add((lang_id, class_name))
+                sheet_links.append((lang_id, class_name, url))
 
     planar_files = sorted(CODED_DATA.glob("*/lang_setup/planar_*.tsv"))
     if lang_filter:
@@ -1091,8 +1237,9 @@ def main(args: argparse.Namespace | None = None) -> None:
     written_tsvs: List[Path] = []
     pair_row_constructions = _get_pair_row_constructions()
     restructured_classes: Set[Tuple[str, str]] = set()
-    sheet_links: List[Tuple[str, str, str]] = []  # (lang_id, class_name, url), for the summary
-    lang_folder_urls: Dict[str, str] = {}  # lang_id -> Drive folder url (stable across restructures)
+    # sheet_links/lang_folder_urls were initialized above, before the journal-
+    # recovery block, so a resumed class's entry lands in the same summary/
+    # notify list as one this run restructured fresh.
 
     # --rename-class pass: runs before the main restructure loop so the manifest
     # reflects the new class names when the main loop processes each language.
@@ -1259,6 +1406,10 @@ def main(args: argparse.Namespace | None = None) -> None:
                 doorway.update_file(ss.id, name=f"{class_name}_{lang_id}_v{version}")
                 doorway.move_file(ss.id, archive_id)
                 _lock_archived_sheet(doorway, ss.id, lang_id)
+                restructure_journal.record_checkpoint(
+                    lang_id, class_name, restructure_journal.OLD_SHEET_ARCHIVED,
+                    archived_spreadsheet_id=ss.id, folder_id=folder_id,
+                )
                 print(f"    Archived to _archived/{class_name}_{lang_id}_v{version}")
 
             # Step 4: Create new sheet and populate with carry-over
@@ -1324,6 +1475,11 @@ def main(args: argparse.Namespace | None = None) -> None:
             _reorder_system_tabs(new_ss)
 
             restructured_classes.add((lang_id, class_name))
+            restructure_journal.record_checkpoint(
+                lang_id, class_name, restructure_journal.NEW_SHEET_CREATED,
+                spreadsheet_id=new_ss.id, url=new_ss.url, constructions=tab_names,
+                construction_params=new_construction_params, version=new_version,
+            )
 
             # Step 5: Update manifest
             manifest[lang_id]["sheets"][class_name] = {
@@ -1391,6 +1547,13 @@ def main(args: argparse.Namespace | None = None) -> None:
         config["_planars_config_file_id"] = file_id
         _save_drive_config(config)
         print("\nManifest updated on Drive.")
+        # Only now -- after the Drive upload actually succeeded -- clear these
+        # units from the journal. A crash between the write above and here
+        # leaves them recorded as NEW_SHEET_CREATED, correctly re-detected as
+        # still not synced to Drive rather than marked done early (Phase 7,
+        # issue #271; see restructure_journal.py's module docstring).
+        for lang_id, class_name in restructured_classes | resumed_units:
+            restructure_journal.clear_unit(lang_id, class_name)
 
     if not apply:
         print("\nRun with --apply to make these changes.")

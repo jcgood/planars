@@ -18,5 +18,6 @@ glottolog_cache.json
 pending_changes.json
 diagnostics_drift.json
 provenance_log.jsonl
+restructure_journal.json
 manifest_archives/
 book_proposal/

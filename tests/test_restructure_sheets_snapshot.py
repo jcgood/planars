@@ -60,6 +60,7 @@ from coding import drive as drive_module
 from coding import drive_doorway
 from coding import generate_notebooks as gn
 from coding import import_planar as ip
+from coding import restructure_journal as rj
 from coding import restructure_sheets as rs
 from coding import validate_coding as vc
 from fake_drive import FakeDriveDoorway, MANIFEST_FILE_ID
@@ -204,6 +205,11 @@ def env(monkeypatch, tmp_path):
 
     monkeypatch.setattr(rs, "CODED_DATA", coded)
     monkeypatch.setattr(rs, "MANIFEST_PATH", tmp_path / "sheets_manifest.json")
+    # restructure_journal's JOURNAL_PATH default is resolved fresh per call
+    # (never bound into a default parameter -- see that module's docstring),
+    # so patching the module attribute here reaches every call
+    # restructure_sheets.py makes without needing rs's own copy patched too.
+    monkeypatch.setattr(rj, "JOURNAL_PATH", tmp_path / "restructure_journal.json")
     monkeypatch.setattr(rs, "_load_drive_config", FakeDriveDoorway.drive_config)
     monkeypatch.setattr(drive_module, "_load_drive_config",
                         FakeDriveDoorway.drive_config)
@@ -622,4 +628,127 @@ def test_downstream_commands_fire_after_a_real_apply(env):
     assert env.notebook_calls == [True]
     assert env.revalidate_calls == [{"lang_ids": ["stan1293"]}]
     assert env.push_planar_calls == [{"lang_ids": ["stan1293"], "apply": True}]
+
+
+# ---------------------------------------------------------------------------
+# Interrupted-run recovery (Phase 7 of the data layer redesign, issue #271)
+#
+# Rather than actually killing the process mid-run (Phase 8's job, with real
+# fault injection), these drive the fake doorway directly to the exact Drive
+# state an interrupted run would leave, write the matching journal entry by
+# hand, and confirm --resume/--rollback/a plain run each do what
+# restructure_journal.py's module docstring promises.
+# ---------------------------------------------------------------------------
+
+def _archive_ciscategorial(env) -> tuple:
+    """Replicate restructure_sheets.py's own archive step (Step 3) by hand,
+    for stan1293/ciscategorial, and return (spreadsheet_id, folder_id) --
+    the exact detail OLD_SHEET_ARCHIVED's checkpoint stores.
+    """
+    lang_id, class_name = "stan1293", "ciscategorial"
+    manifest = env.manifest()
+    sheet_info = manifest[lang_id]["sheets"][class_name]
+    folder_id = manifest[lang_id]["folder_url"].rstrip("/").rsplit("/", 1)[-1]
+    ss_id = sheet_info["spreadsheet_id"]
+    archive_id = env.doorway.get_or_create_folder("_archived", parent_id=folder_id)
+    env.doorway.update_file(ss_id, name=f"{class_name}_{lang_id}_v{sheet_info['version']}")
+    env.doorway.move_file(ss_id, archive_id)
+    rs._lock_archived_sheet(env.doorway, ss_id, lang_id)
+    return ss_id, folder_id
+
+
+def test_plain_run_refuses_to_start_while_a_unit_is_mid_flight(env):
+    ss_id, folder_id = _archive_ciscategorial(env)
+    rj.record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED,
+                          archived_spreadsheet_id=ss_id, folder_id=folder_id)
+    out = env.run(["--apply"])
+    assert "[SystemExit:" in out
+    assert "stan1293" in out and "ciscategorial" in out
+    assert "--resume" in out and "--rollback" in out
+    # Nothing else ran -- no other class got touched while this one is stuck.
+    assert env.doorway.mutations_of("create_spreadsheet") == []
+
+
+def test_resume_or_rollback_require_apply(env):
+    out = env.run(["--resume"])
+    assert "[SystemExit:" in out
+    assert "--apply" in out
+    out = env.run(["--rollback"])
+    assert "[SystemExit:" in out
+    assert "--apply" in out
+
+
+def test_rollback_restores_the_archived_sheet_and_stops(env):
+    ss_id, folder_id = _archive_ciscategorial(env)
+    rj.record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED,
+                          archived_spreadsheet_id=ss_id, folder_id=folder_id)
+    before_manifest = env.manifest()
+    out = env.run(["--rollback", "--apply"])
+
+    assert "rolled back" in out
+    assert rj.load_journal() == {}
+    # Sheet moved back out of _archived/ and renamed back.
+    ss = env.doorway.spreadsheet(ss_id)
+    assert ss.title == "ciscategorial_stan1293"
+    move_calls = [m for m in env.doorway.mutations_of("move_file") if m["file_id"] == ss_id]
+    assert move_calls[-1]["to_parent"] == folder_id
+    # Nothing else happened: no replacement created, manifest untouched,
+    # none of the end-of-run cascade fired.
+    assert env.doorway.mutations_of("create_spreadsheet") == []
+    assert env.manifest() == before_manifest
+    assert env.notebook_calls == []
+    assert "DRY RUN" not in out and "Manifest updated on Drive" not in out
+
+
+def test_rollback_refuses_when_any_unit_is_past_recreate(env):
+    ss_id, folder_id = _archive_ciscategorial(env)
+    rj.record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED,
+                          archived_spreadsheet_id=ss_id, folder_id=folder_id)
+    rj.record_checkpoint("stan1293", "noninterruption", rj.NEW_SHEET_CREATED,
+                          spreadsheet_id="fake_new_id", url="https://example.test/fake",
+                          constructions=["general"], construction_params={}, version=3)
+    out = env.run(["--rollback", "--apply"])
+    assert "[SystemExit:" in out
+    assert "--resume instead" in out
+    # Refuses outright -- neither unit touched, not even the safe one.
+    assert len(rj.load_journal()) == 2
+    ss = env.doorway.spreadsheet(ss_id)
+    assert ss.title != "ciscategorial_stan1293"  # still archived
+
+
+def test_resume_finishes_a_new_sheet_created_unit_then_continues(env):
+    """--lang restricts the main loop to a different language (arao1248) so
+    stan1293/ciscategorial's own resumed pointer is the only thing that can
+    change it -- isolating "did resume's bookkeeping stick" from "did the
+    main loop separately decide this class needs restructuring anyway",
+    which is a real but different question a synthetic, not-fully-populated
+    stand-in new sheet would otherwise confound.
+    """
+    lang_id, class_name = "stan1293", "ciscategorial"
+    manifest = env.manifest()
+    folder_id = manifest[lang_id]["folder_url"].rstrip("/").rsplit("/", 1)[-1]
+    new_ss = env.doorway.create_spreadsheet(f"{class_name}_{lang_id}")
+    env.doorway.move_file(new_ss.id, folder_id)
+    rj.record_checkpoint(
+        lang_id, class_name, rj.NEW_SHEET_CREATED,
+        spreadsheet_id=new_ss.id, url=new_ss.url,
+        constructions=["general"],
+        construction_params=manifest[lang_id]["sheets"][class_name]["construction_params"],
+        version=99,
+    )
+    out = env.run(["--resume", "--apply", "--lang", "arao1248"])
+
+    assert "resumed" in out
+    assert rj.load_journal() == {}
+    updated = env.manifest()[lang_id]["sheets"][class_name]
+    assert updated["spreadsheet_id"] == new_ss.id
+    assert updated["version"] == 99
+    # Exactly the one spreadsheet this test created itself -- the resume
+    # pass didn't also recreate it, and the --lang-filtered main loop never
+    # touched stan1293 at all.
+    assert len(env.doorway.mutations_of("create_spreadsheet")) == 1
+    # The resumed class's manifest fix rides the same end-of-run Drive
+    # upload every normal run already does -- confirm it actually fired.
+    assert env.saved_configs
+    assert "Manifest updated on Drive." in out
     assert env.autocommit_calls, "written TSVs must be committed to coded_data/"

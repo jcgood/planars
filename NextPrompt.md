@@ -15,6 +15,17 @@ this project is trying to remove.
 
 ## Now
 
+**Phase 7 ("recoverability for multi-step operations") is in progress —
+unit 1 done, as of 2026-08-17.** `restructure-sheets --apply`'s main
+per-class loop now journals its archive/create/manifest-sync progress
+(`coding/restructure_journal.py`) and refuses to start new work while a
+class is left mid-flight from an interrupted run; `--resume`/`--rollback`
+recover it, with rollback offered only where it's actually safe (a class
+archived but not yet replaced — past that point recovery is resume-forward
+only, never delete). One open question for Jeff: which command Phase 7's
+second unit should cover — see `docs/data-layer-progress.md`'s Open
+questions section. Nothing else blocked.
+
 **Phase 5 is done, all five units, as of 2026-08-17.** No open questions,
 nothing blocked. Full detail in `docs/data-layer-progress.md`'s Current
 state / Next action / Decisions log / Findings sections.
@@ -58,7 +69,8 @@ list straight from the workflow YAML and fails if a *new* orphaned warning
 joins the pile unclassified — the actual answer to "how do I stop missing
 this", not a periodic manual re-sweep.
 
-**Phases 7–9 remain entirely unscoped in session-level detail** — see
+**Phase 7 has its first unit scoped and done (see above); its second unit
+and Phases 8–9 remain unscoped in session-level detail** — see
 `docs/data-layer-implementation-plan.md` for the phase spec.
 
 **Phase 0b/1 (the doorway migration), Phase 3 (schema reorganization), and

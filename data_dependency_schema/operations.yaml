@@ -533,12 +533,31 @@
     - "--rename-class: renames the local TSV directory in place, updates the manifest"
     - "notifies the language's tracking issue via notify.py after sheets actually change"
     - "auto-commits coded_data/ changes"
+    - >-
+      Phase 7, issue #271 (2026-08-17): journals each class's progress
+      through archive/create/manifest-sync to restructure_journal.json
+      (coding/restructure_journal.py) before each Drive-mutating step. Any
+      run -- with or without --resume/--rollback -- refuses to start new
+      work while the journal is non-empty. --resume finishes or safely
+      undoes whatever an interrupted run left mid-flight, then continues
+      restructuring normally; --rollback undoes only what's safe to undo
+      (a class archived but not yet replaced) and stops rather than
+      continuing. Neither flag exists for --rename-class's separate archive
+      sequence (_rename_class_for_language) -- out of scope for this first
+      unit, a candidate second one.
   idempotent: false
   idempotency_note: >-
     Each run archives the current sheet and creates a new one -- running it
-    twice with the same flags archives twice, not a no-op. No rollback
-    exists if it fails partway through a multi-step change -- exactly the
-    gap Phase 7 of the data layer plan is meant to close (see #248).
+    twice with the same flags archives twice, not a no-op. Phase 7 (#271,
+    2026-08-17) closed the "no rollback on partial failure" half of this for
+    the main per-class loop: an interrupted run is detected and must be
+    resolved with --resume or --rollback before any further work proceeds,
+    rather than silently re-attempted. Still not idempotent in the pure
+    re-run sense -- a *clean*, completed run followed by an identical second
+    run still archives-and-recreates again, since nothing here treats "sheet
+    already matches the target structure" as a no-op the way sync-params
+    does. The --rename-class archive sequence is not yet covered by the
+    journal (see the side_effects entry above).
   apply_gate: "--apply"
   preconditions: [coded_data_clean_tree, coded_data_git_identity_configured]
   facts_touched:
