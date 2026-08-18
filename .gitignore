@@ -19,5 +19,6 @@ pending_changes.json
 diagnostics_drift.json
 provenance_log.jsonl
 restructure_journal.json
+regen_snapshots/
 manifest_archives/
 book_proposal/

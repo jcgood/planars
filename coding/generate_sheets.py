@@ -37,6 +37,11 @@ intentional (e.g. a prescreening scope change, not a rename/split), add --confir
     python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:reflexivization \
         --confirm-drop
 
+--regen-construction also saves the tab's current content to regen_snapshots/ (gitignored)
+immediately before overwriting it -- a safety net in case anything not yet downloaded via
+import-sheets was lost to an interrupted run (issue #271); not something you need to act on
+unless a run is actually interrupted.
+
 Requires:
     pip install gspread google-auth google-api-python-client
 
@@ -57,10 +62,12 @@ import argparse
 import json
 import re
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
+REGEN_SNAPSHOT_DIR = ROOT / "regen_snapshots"
 
 import pandas as pd
 
@@ -1747,6 +1754,49 @@ def _format_annotated_drop(class_name: str, key: Tuple, crit_val: str, source: s
     return line
 
 
+def _snapshot_before_regen(
+    lang_id: str, class_name: str, construction_name: str, rows: List[List[str]],
+) -> None:
+    """Save the live tab's current raw values to a local file, immediately
+    before --regen-construction clears and rewrites it (issue #271, the
+    Phase 7 investigation that also produced restructure_journal.py).
+
+    _regen_construction reads existing annotations from the live Sheet
+    specifically because they may include real edits an annotator made that
+    have not been downloaded via import-sheets yet (see this function's own
+    caller docstring). What follows this call -- clear the tab, then
+    rewrite it -- is two separate Drive API calls, not one atomic write (the
+    Sheets API has no transactional way to resize/reformat and populate a
+    tab in a single call), so a crash between them would otherwise destroy
+    those not-yet-imported values with nothing left to recover them from.
+
+    This is a pure safety net, not a resume mechanism, and deliberately
+    smaller than restructure_journal.py's: re-running --regen-construction
+    after any kind of interruption already recovers cleanly on its own,
+    since it recomputes the pair list fresh from source data (the planar,
+    diagnostics YAML, and prescreening tab) every time rather than trusting
+    the tab's own prior content -- there is no multi-step Drive sequence to
+    resume or roll back the way restructure-sheets' archive-then-recreate
+    has. The only thing that can go wrong here is losing values that were
+    never anywhere but the live Sheet at the moment of a crash; this file is
+    what a coordinator (or Claude) checks by hand in that case.
+
+    Overwritten on every run for the same (lang_id, class_name,
+    construction_name) -- only the most recent pre-write state is ever
+    useful, since a successful run makes the live Sheet's new content the
+    thing worth having, not this snapshot.
+    """
+    REGEN_SNAPSHOT_DIR.mkdir(exist_ok=True)
+    path = REGEN_SNAPSHOT_DIR / f"{lang_id}_{class_name}_{construction_name}.json"
+    path.write_text(json.dumps({
+        "lang_id": lang_id,
+        "class_name": class_name,
+        "construction_name": construction_name,
+        "saved_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "rows": rows,
+    }, indent=2), encoding="utf-8")
+
+
 def _regen_construction(
     doorway,
     lang_id: str,
@@ -1807,6 +1857,7 @@ def _regen_construction(
     try:
         ws = _with_retry(lambda: spreadsheet.worksheet(construction_name))
         rows = _with_retry(ws.get_all_values)
+        _snapshot_before_regen(lang_id, class_name, construction_name, rows)
         if rows and len(rows) > 1:
             hdr = rows[0]
             is_reflex_fmt = class_name == "coreference" and "Position_A" in hdr and "Element_B" not in hdr

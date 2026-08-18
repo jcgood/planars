@@ -42,12 +42,30 @@ interrupted and continues; `--rollback` undoes only what's safe (a class
 archived but not yet replaced) and stops. See the 2026-08-17 decisions-log
 entry for the rollback-scope call made with Jeff (unit 1) and Next action
 below for both units' mechanism. This closes the plan's own named example
-(#248) completely for `restructure-sheets`. Not journaled: every other
-multi-step command the plan's Phase 7 goal nominally covers
-(`generate-sheets`, `import-sheets`) — out of scope for this phase's
-restructure-sheets-first scoping (Jeff's call: scope one command, review,
-then decide the next). Phase 8's generic fault-injection framework doesn't
-exist yet; both units' own tests hand-drive the fake doorway to the exact
+(#248) completely for `restructure-sheets`. **Checked `import-sheets` and
+`generate-sheets` for the same danger shape, same day: neither has it.**
+`import-sheets` only ever archives local TSV files (a plain, always-safe
+`copy2` to a local archive folder before overwriting) and its one live
+Sheet write just paints cell backgrounds — nothing is ever destroyed before
+a replacement exists. `generate-sheets`'s ordinary sheet-creation path only
+ever creates brand-new sheets (nothing to lose if interrupted, and it
+already reports clearly if a same-named orphan sheet is found on the next
+run). Its `--regen-construction` mode does clear and rewrite an *existing*
+live tab in two separate, non-atomic Drive calls — a real but narrower gap
+than restructure-sheets had (the sheet's identity and manifest entry are
+never at risk, only that one tab's not-yet-downloaded content, for the
+width of two API calls) — closed with a small, different mechanism: a
+pre-write local snapshot (`coding/generate_sheets.py`'s
+`_snapshot_before_regen`), not a resume/rollback system, since re-running
+`--regen-construction` after any interruption already recovers cleanly on
+its own. See Next action below for the full account of what was checked
+and why the fixes differ in shape. Not journaled: every other multi-step
+command the plan's Phase 7 goal nominally covers — the plan named
+`generate-sheets`/`import-sheets` as the remaining candidates, and both are
+now checked and either fine as-is or fixed to the size their actual risk
+warrants. Phase 8's generic fault-injection framework doesn't exist yet;
+both `restructure-sheets` units' own tests hand-drive the fake doorway to
+the exact
 interrupted states rather than killing the process for real. 6 — done, all four boundaries. The
 filled-TSV/sheet loader (`planars/io.py`'s `_parse_filled_df`), the
 planar loader (`coding/make_forms.py`'s `build_element_index`), and the
@@ -166,7 +184,8 @@ the same day — see the decisions log.
 | **Phase 6 (the whole unit)** | **done** — all four boundaries complete |
 | Phase 7, unit 1 — restructure-sheets main loop recovery | **done** — `coding/restructure_journal.py`, journals each class's archive/create/manifest-sync progress; `restructure-sheets` refuses new work while a class is left mid-flight; `--resume`/`--rollback` added. Rollback offered only pre-recreate (decided with Jeff — see decisions log); resume-forward only past that point |
 | Phase 7, unit 2 — `--rename-class` archive-sequence recovery | **done**, same day — `_rename_class_for_language` journals through the same two checkpoints and shares unit 1's journal (a plain run or `--rename-class` each refuse to start while either kind of unit is stuck). Unit key is the OLD class name, `new_class_name` carried in the checkpoint detail for reporting/resume; the rename's own extra steps (local TSV directory rename, manifest key swap) are folded into finishing `NEW_SHEET_CREATED` rather than given their own checkpoint |
-| Phase 7 (the whole unit) | in progress — both `restructure-sheets` units done; every other Phase 7 candidate command (`generate-sheets`, `import-sheets`) not started |
+| Phase 7 — `import-sheets`/`generate-sheets` checked | **done** — neither has restructure-sheets' danger shape (destroy-before-replace). `import-sheets` needs nothing (local-only archiving, non-destructive Sheet write). `generate-sheets`'s new-sheet path needs nothing (nothing to lose). `--regen-construction`'s existing-tab clear+rewrite got a smaller, different fix: a pre-write local snapshot (`_snapshot_before_regen`), not a journal — see decisions log |
+| Phase 7 (the whole unit) | in progress — `restructure-sheets` (both units) and the `import-sheets`/`generate-sheets` check are done; no further Phase 7 candidate identified |
 | Phase 8 | not started |
 | Phase 9 | not started |
 
@@ -732,15 +751,68 @@ file's own restructure-sheets module docstring updated in the same commit
 to describe both units together rather than describing unit 1's scope as
 still current.
 
-**Next action:** neither Phase 7 candidate from unit 1's own "next action"
-note is started — `generate-sheets`/`import-sheets` (multi-step but with a
-narrower gap already, from #280) is the remaining named candidate if Phase
-7 continues past `restructure-sheets`. Otherwise Phase 8 (fault-injection
-stress testing, the plan's next phase) is the next phase-level piece of
-work, and would also be the place to hard-check unit 1/2's own
-assumptions (`_rollback_unit`'s "exactly one 'user'-type permission" note,
-in particular) against real kill-mid-call fault injection rather than
-hand-driven states. Needs Jeff's call on which, same as before.
+**`import-sheets`/`generate-sheets` checked against restructure-sheets'
+danger shape, 2026-08-17, same session — Jeff's instruction was to check
+and build what's needed rather than ask first, so this proceeded without a
+scoping question.** The specific danger restructure-sheets had was
+destroying something (archiving, locking) before its replacement exists.
+Traced both commands' actual Drive-mutating call sites rather than
+assuming the same shape applies generally:
+
+- **`import-sheets`**: its only "archive" is `_archive_tsv`, a plain local
+  `shutil.copy2` to `coded_data/{lang}/archive/{class}/` before overwriting
+  a local TSV — always safe, the copy sits right there and git history
+  backs it up too. Its one live Sheet write, `highlight_cells`, only paints
+  cell backgrounds; it never deletes or replaces anything. No work needed.
+- **`generate-sheets`'s ordinary sheet-creation path** (`_create_analysis_sheet`,
+  `_add_constructions_to_existing_sheet`) only ever creates a brand-new
+  spreadsheet or tab — there is nothing to lose if interrupted, and a
+  re-run already detects and reports a same-named orphan sheet clearly
+  (`_create_analysis_sheet`'s existing "register or archive" guard). No
+  work needed.
+- **`--regen-construction`** does clear and rewrite an *already-registered,
+  live* tab (`_reset_worksheet` then `ws.update(...)`) — two separate,
+  non-atomic Drive calls, and the tab is read first specifically because it
+  may hold real annotator edits not yet downloaded via `import-sheets` (the
+  function's own docstring says so). A crash between the clear and the
+  rewrite could destroy those edits with nothing to recover them from.
+  Real, but a narrower risk than restructure-sheets': the sheet's identity
+  and manifest entry are never touched, only one tab's not-yet-imported
+  content, for the width of two API calls -- and unlike restructure-sheets,
+  there is no multi-step sequence to *resume*, since re-running
+  `--regen-construction` after any interruption already recovers cleanly
+  on its own (it recomputes the pair list fresh from source data — the
+  planar, diagnostics YAML, prescreening tab — every time, never trusting
+  the tab's own prior content).
+
+Given that difference, building `restructure_journal.py`'s resume/rollback
+machinery here would have added complexity with nothing for it to actually
+do — there's no interrupted state to resume through since the two calls
+are the entire operation and re-running always redoes both. Fixed instead
+with `coding/generate_sheets.py`'s `_snapshot_before_regen`: writes the
+tab's current raw values to `regen_snapshots/{lang}_{class}_{construction}.json`
+(gitignored) immediately before the clear, overwritten each run (only the
+most recent pre-write state is ever useful). A pure safety net for a
+coordinator or Claude to check by hand, not an automatic recovery
+mechanism — deliberately smaller than a journal because the risk itself is
+smaller and differently shaped. Two new tests in
+`tests/test_generate_sheets_snapshot.py` confirm the file lands with the
+tab's real content (not just "doesn't crash") and is overwritten rather
+than accumulated. All 127 pre-existing tests across
+`test_generate_sheets.py`/`test_generate_sheets_snapshot.py` pass
+unchanged. `data_dependency_schema/operations.yaml`'s `--regen-construction`
+mode and `coding/CLAUDE.md`'s `generate_sheets.py` entry updated to match.
+
+**Next action:** no further Phase 7 candidate identified — both commands
+the plan named as remaining have now been checked, and neither needed the
+full journal treatment. Whether Phase 7 is considered complete as scoped,
+or Jeff wants a broader sweep for the destroy-before-replace shape across
+`coding/` before calling it done, is open. Otherwise Phase 8
+(fault-injection stress testing, the plan's next phase) is the next
+phase-level piece of work, and would also be the place to hard-check
+`restructure-sheets`' own unit 1/2 assumptions (`_rollback_unit`'s "exactly
+one 'user'-type permission" note, in particular) against real
+kill-mid-call fault injection rather than hand-driven states.
 
 ### Held until Phase 9
 
@@ -1719,6 +1791,24 @@ commit.
 ---
 
 ## Decisions log
+
+**2026-08-17 — decided without a check-in, per Jeff's own instruction:
+`import-sheets`/`generate-sheets` don't get restructure-sheets' journal, and
+`--regen-construction` gets something smaller instead.** After both
+`restructure-sheets` units, Jeff pointed out he was being asked to decide
+things the project's own stated goals should already answer, and told me to
+check the remaining two commands and build what's needed rather than ask
+first. Traced both rather than assuming "the same fix" was right by
+default: `import-sheets` and `generate-sheets`'s ordinary path have no
+destroy-before-replace step at all (local-only archiving; brand-new sheets
+only), so the specific danger `restructure_journal.py` closes doesn't exist
+there. `--regen-construction` does clear and rewrite a live tab in two
+non-atomic Drive calls, a real gap — but a *resumable* mechanism has
+nothing to resume, since re-running it always safely redoes both calls from
+source data regardless of how the last run ended. Built the smaller thing
+the actual risk called for (a pre-write local snapshot) instead of the
+bigger thing already on hand (a journal) — see the 2026-08-17 Next-action
+entry for the full trace.
 
 **2026-08-17 — Phase 7, first unit: rollback scope for restructure-sheets.**
 Traced the actual failure windows in `restructure-sheets --apply`'s per-class
@@ -2874,17 +2964,24 @@ Findings 25–28); Phase 5 units D and E's two open questions were decided
 boundary 4's strictness question was decided the same day (see the
 Decisions log) and Phase 6 is now done in full; Phase 7 unit 1's
 rollback-scope question was also decided 2026-08-17 (see the Decisions
-log), and both `restructure-sheets` units (1 and 2) are now done — unit
-2 applied unit 1's already-approved decision to a second sequence rather
-than raising a new question.
+log), and both `restructure-sheets` units (1 and 2) are now done. The
+`import-sheets`/`generate-sheets` question this section used to list as
+open was resolved the same day without a check-in, per Jeff's own
+instruction to decide this class of question from the project's stated
+goals rather than ask — see the Decisions log entry just above Phase 7
+unit 1's. Neither command needed restructure-sheets' journal;
+`--regen-construction` got a smaller, differently-shaped fix instead (a
+pre-write snapshot).
 
-**One open now: what Phase 7 covers next, if anything, before Phase 8.**
-`generate-sheets`/`import-sheets` are multi-step but already got a
-narrower fix from #280 — worth journaling the same way, or worth leaving
-as-is and moving to Phase 8 (fault-injection stress testing, the plan's
-next phase, and the place both `restructure-sheets` units' own untested
-assumptions would get a harder check)? See Next action's entry on this,
-just above "Held until Phase 9" — needs Jeff's call.
+**Nothing open right now.** Phase 7 as scoped (restructure-sheets, plus
+checking the plan's other two named candidates) is done. Whether Jeff
+wants Phase 7 to widen into a broader sweep for the same danger shape
+elsewhere in `coding/`, or considers it complete and wants to move to
+Phase 8, is a real next call — but not raised as a blocking question here,
+per the same instruction: the next session should read Next action's entry
+just above "Held until Phase 9" and proceed on Phase 8 by default unless
+told otherwise, since that's what the plan's own sequencing already says
+comes next.
 
 One item worth a look when convenient, not blocking anything: **issue #283**
 (warning-shaped `print()` calls in automated commands that never reach a

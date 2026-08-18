@@ -110,6 +110,18 @@
         - >-
           aborts instead of writing if it would silently drop an annotated
           pair-row (issue #241), unless --confirm-drop is passed
+        - >-
+          issue #271 (Phase 7 follow-up, 2026-08-17): snapshots the tab's
+          current live content to regen_snapshots/{lang}_{class}_
+          {construction}.json (coding/generate_sheets.py's
+          _snapshot_before_regen) immediately before clearing and rewriting
+          it -- the clear-then-rewrite is two separate Drive calls, not
+          atomic, and this tab read exists specifically because it may hold
+          live annotator edits not yet pulled down via import-sheets. A
+          plain safety-net file, not a resume mechanism -- re-running
+          --regen-construction after any interruption already recovers on
+          its own, since it recomputes the pair list fresh from source data
+          every time.
       idempotent: false
       idempotency_note: >-
         Overwrites the live tab every time it runs, by design -- not safe to

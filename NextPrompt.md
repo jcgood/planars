@@ -15,20 +15,23 @@ this project is trying to remove.
 
 ## Now
 
-**Phase 7 ("recoverability for multi-step operations") is in progress —
-both `restructure-sheets` units done, as of 2026-08-17.** `restructure-sheets
---apply`'s main per-class loop (unit 1) and its separate `--rename-class`
-archive sequence (unit 2, same day) both journal their progress
-(`coding/restructure_journal.py`) and refuse to start new work while a
-class is left mid-flight from an interrupted run, from either sequence;
-`--resume`/`--rollback` recover it, with rollback offered only where it's
-actually safe (a class archived but not yet replaced — past that point
-recovery is resume-forward only, never delete). This closes the plan's own
-named #248 example completely for `restructure-sheets`. One open question
-for Jeff: whether Phase 7 continues to `generate-sheets`/`import-sheets`
-next or moves to Phase 8 (fault-injection stress testing) — see
-`docs/data-layer-progress.md`'s Open questions section. Nothing else
-blocked.
+**Phase 7 ("recoverability for multi-step operations") is done as scoped,
+as of 2026-08-17.** `restructure-sheets --apply`'s main per-class loop
+(unit 1) and its separate `--rename-class` archive sequence (unit 2, same
+day) both journal their progress (`coding/restructure_journal.py`) and
+refuse to start new work while a class is left mid-flight from an
+interrupted run, from either sequence; `--resume`/`--rollback` recover it,
+with rollback offered only where it's actually safe (a class archived but
+not yet replaced — past that point recovery is resume-forward only, never
+delete). This closes the plan's own named #248 example completely for
+`restructure-sheets`. `import-sheets`/`generate-sheets` — the plan's other
+two named candidates — were checked the same day and neither needed the
+same treatment: no destroy-before-replace step in their normal paths.
+`generate-sheets`'s `--regen-construction` got a smaller, differently-shaped
+fix (a pre-write local snapshot, not a resume system — see
+`docs/data-layer-progress.md`'s decisions log). Nothing open; nothing
+blocked. Next, per the plan's own sequencing, is Phase 8 (fault-injection
+stress testing) unless the next session decides otherwise.
 
 **Phase 5 is done, all five units, as of 2026-08-17.** No open questions,
 nothing blocked. Full detail in `docs/data-layer-progress.md`'s Current
@@ -73,8 +76,7 @@ list straight from the workflow YAML and fails if a *new* orphaned warning
 joins the pile unclassified — the actual answer to "how do I stop missing
 this", not a periodic manual re-sweep.
 
-**Phase 7 has both `restructure-sheets` units scoped and done (see above);
-whether it continues to another command and Phases 8–9 remain unscoped in
+**Phase 7 is done as scoped (see above). Phases 8–9 remain unscoped in
 session-level detail** — see `docs/data-layer-implementation-plan.md` for
 the phase spec.
 

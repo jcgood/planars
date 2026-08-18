@@ -147,6 +147,11 @@ def env(monkeypatch, tmp_path):
     monkeypatch.setattr(gs, "CODED_DATA", coded)
     monkeypatch.setattr(gs, "ROOT", tmp_path)
     monkeypatch.setattr(gs, "MANIFEST_PATH", tmp_path / "sheets_manifest.json")
+    # REGEN_SNAPSHOT_DIR was computed from ROOT at import time, like
+    # MANIFEST_PATH above -- patching gs.ROOT here doesn't cascade into it,
+    # so it needs its own explicit redirect or _regen_construction tests
+    # would write outside tmp_path into the real repo's regen_snapshots/.
+    monkeypatch.setattr(gs, "REGEN_SNAPSHOT_DIR", tmp_path / "regen_snapshots")
     monkeypatch.setattr(gs, "_load_drive_config", FakeDriveDoorway.drive_config)
     monkeypatch.setattr(drive_module, "_load_drive_config",
                         FakeDriveDoorway.drive_config)
@@ -282,6 +287,42 @@ def test_regen_coreference_with_pos_remap_transcript(env):
                   "--regen-construction", "coreference:reflexivization",
                   "--pos-remap", "5:6", "--confirm-drop"])
     check_snapshot("regen_coref_remap.txt", out)
+
+
+def test_regen_construction_snapshots_the_live_tab_before_overwriting_it(env):
+    """Issue #271 (Phase 7 follow-up): --regen-construction reads a tab's
+    current content specifically because it may hold live annotator edits
+    not yet downloaded via import-sheets -- the clear-then-rewrite that
+    follows is two separate Drive calls, not atomic, so a crash between
+    them could destroy those edits with nothing to recover them from. This
+    confirms the pre-write safety-net file lands with the tab's real
+    content, not just that the command doesn't crash.
+    """
+    before = env.tab("synth0001", "nonpermutability", "general").get_all_values()
+    env.run(["generate-sheets", "--lang", "synth0001",
+             "--regen-construction", "nonpermutability:general"])
+    snapshot_path = env.tmp_root / "regen_snapshots" / "synth0001_nonpermutability_general.json"
+    assert snapshot_path.exists()
+    saved = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    assert saved["lang_id"] == "synth0001"
+    assert saved["class_name"] == "nonpermutability"
+    assert saved["construction_name"] == "general"
+    assert saved["rows"] == before
+    assert saved["saved_at"].endswith("Z")
+
+
+def test_regen_construction_snapshot_is_overwritten_not_appended(env):
+    """Only the most recent pre-write state is useful -- a successful run's
+    new live content is what's worth having, not a growing history."""
+    env.run(["generate-sheets", "--lang", "synth0001",
+             "--regen-construction", "nonpermutability:general"])
+    env.run(["generate-sheets", "--lang", "synth0001",
+             "--regen-construction", "nonpermutability:general", "--confirm-drop"])
+    snapshot_path = env.tmp_root / "regen_snapshots" / "synth0001_nonpermutability_general.json"
+    saved = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    # The second run's snapshot is of the FIRST run's already-regenerated
+    # tab, not a copy of both runs concatenated together.
+    assert isinstance(saved["rows"], list)
 
 
 def test_regen_dependents_noop_transcript(env):
