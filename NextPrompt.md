@@ -16,15 +16,19 @@ this project is trying to remove.
 ## Now
 
 **Phase 7 ("recoverability for multi-step operations") is in progress —
-unit 1 done, as of 2026-08-17.** `restructure-sheets --apply`'s main
-per-class loop now journals its archive/create/manifest-sync progress
-(`coding/restructure_journal.py`) and refuses to start new work while a
-class is left mid-flight from an interrupted run; `--resume`/`--rollback`
-recover it, with rollback offered only where it's actually safe (a class
-archived but not yet replaced — past that point recovery is resume-forward
-only, never delete). One open question for Jeff: which command Phase 7's
-second unit should cover — see `docs/data-layer-progress.md`'s Open
-questions section. Nothing else blocked.
+both `restructure-sheets` units done, as of 2026-08-17.** `restructure-sheets
+--apply`'s main per-class loop (unit 1) and its separate `--rename-class`
+archive sequence (unit 2, same day) both journal their progress
+(`coding/restructure_journal.py`) and refuse to start new work while a
+class is left mid-flight from an interrupted run, from either sequence;
+`--resume`/`--rollback` recover it, with rollback offered only where it's
+actually safe (a class archived but not yet replaced — past that point
+recovery is resume-forward only, never delete). This closes the plan's own
+named #248 example completely for `restructure-sheets`. One open question
+for Jeff: whether Phase 7 continues to `generate-sheets`/`import-sheets`
+next or moves to Phase 8 (fault-injection stress testing) — see
+`docs/data-layer-progress.md`'s Open questions section. Nothing else
+blocked.
 
 **Phase 5 is done, all five units, as of 2026-08-17.** No open questions,
 nothing blocked. Full detail in `docs/data-layer-progress.md`'s Current
@@ -69,9 +73,10 @@ list straight from the workflow YAML and fails if a *new* orphaned warning
 joins the pile unclassified — the actual answer to "how do I stop missing
 this", not a periodic manual re-sweep.
 
-**Phase 7 has its first unit scoped and done (see above); its second unit
-and Phases 8–9 remain unscoped in session-level detail** — see
-`docs/data-layer-implementation-plan.md` for the phase spec.
+**Phase 7 has both `restructure-sheets` units scoped and done (see above);
+whether it continues to another command and Phases 8–9 remain unscoped in
+session-level detail** — see `docs/data-layer-implementation-plan.md` for
+the phase spec.
 
 **Phase 0b/1 (the doorway migration), Phase 3 (schema reorganization), and
 Phase 4 (topology declaration) are all complete, nothing outstanding from

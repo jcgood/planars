@@ -30,23 +30,25 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 7 — **in progress, first unit done, as of 2026-08-17.**
-`restructure-sheets --apply`'s main per-class loop (archive old sheet →
-create replacement → sync manifest) now journals its progress to
-`restructure_journal.json` (`coding/restructure_journal.py`) before each
-Drive-mutating step, and refuses to start any new work — including
-`--rename-class` — while a previous run's journal shows a class left
-mid-flight. `--resume` finishes or safely undoes whatever was interrupted
-and continues; `--rollback` undoes only what's safe (a class archived but
-not yet replaced) and stops. See the 2026-08-17 decisions-log entry for the
-rollback-scope call made with Jeff and Next action below for the full
-mechanism. Not journaled yet: the separate `--rename-class` archive
-sequence, and every other multi-step command the plan's Phase 7 goal
-nominally covers (`generate-sheets`, `import-sheets`) — this unit was
-scoped to the plan's own named example (#248) only. Phase 8's generic
-fault-injection framework doesn't exist yet; this unit's own tests
-hand-drive the fake doorway to the exact interrupted states rather than
-killing the process for real. 6 — done, all four boundaries. The
+**Phase:** 7 — **in progress, both restructure-sheets units done, as of
+2026-08-17.** `restructure-sheets --apply`'s main per-class loop (unit 1)
+and its separate `--rename-class` archive sequence (unit 2, same day) both
+now journal their progress to `restructure_journal.json`
+(`coding/restructure_journal.py`) before each Drive-mutating step, sharing
+one journal — any run, including `--rename-class` itself, refuses to start
+new work while a previous run's journal shows a class left mid-flight from
+*either* sequence. `--resume` finishes or safely undoes whatever was
+interrupted and continues; `--rollback` undoes only what's safe (a class
+archived but not yet replaced) and stops. See the 2026-08-17 decisions-log
+entry for the rollback-scope call made with Jeff (unit 1) and Next action
+below for both units' mechanism. This closes the plan's own named example
+(#248) completely for `restructure-sheets`. Not journaled: every other
+multi-step command the plan's Phase 7 goal nominally covers
+(`generate-sheets`, `import-sheets`) — out of scope for this phase's
+restructure-sheets-first scoping (Jeff's call: scope one command, review,
+then decide the next). Phase 8's generic fault-injection framework doesn't
+exist yet; both units' own tests hand-drive the fake doorway to the exact
+interrupted states rather than killing the process for real. 6 — done, all four boundaries. The
 filled-TSV/sheet loader (`planars/io.py`'s `_parse_filled_df`), the
 planar loader (`coding/make_forms.py`'s `build_element_index`), and the
 coreference pair-row loader (`planars/coreference.py`) have pandera
@@ -162,8 +164,9 @@ the same day — see the decisions log.
 | Phase 6, boundary 3 — pair-row load | **done** — `planars/contracts.py` section 2 (pandera), wired into `planars/coreference.py`'s `_load_planar_for_coreference`/`derive_coreference_domains`; `tests/test_coreference.py` new (no unit-test file existed for this module before), `tests/test_contracts.py` extended, all 6 pre-existing coreference snapshot tests pass unchanged |
 | Phase 6, boundary 4 — manifest read/write | **done** — `coding/manifest_contract.py` (pydantic, deliberately permissive, never raises); `drive.upload_manifest()` warns without blocking, `integrity_check.py`'s new `MANIFEST SHAPE` section lets a violation drive a real `integrity-error`; `tests/test_manifest_contract.py` new, `tests/test_drive.py`/`tests/test_integrity_check_snapshot.py` extended. Side effect: issue #283 (warning-escalation sweep) and `tests/test_unattended_warning_escalation.py` (durable coverage test) |
 | **Phase 6 (the whole unit)** | **done** — all four boundaries complete |
-| Phase 7, unit 1 — restructure-sheets main loop recovery | **done** — `coding/restructure_journal.py`, journals each class's archive/create/manifest-sync progress; `restructure-sheets` refuses new work while a class is left mid-flight; `--resume`/`--rollback` added. Rollback offered only pre-recreate (decided with Jeff — see decisions log); resume-forward only past that point. `--rename-class`'s separate archive sequence not yet covered — candidate unit 2 |
-| Phase 7 (the whole unit) | in progress — unit 1 of at least 2 candidate units done |
+| Phase 7, unit 1 — restructure-sheets main loop recovery | **done** — `coding/restructure_journal.py`, journals each class's archive/create/manifest-sync progress; `restructure-sheets` refuses new work while a class is left mid-flight; `--resume`/`--rollback` added. Rollback offered only pre-recreate (decided with Jeff — see decisions log); resume-forward only past that point |
+| Phase 7, unit 2 — `--rename-class` archive-sequence recovery | **done**, same day — `_rename_class_for_language` journals through the same two checkpoints and shares unit 1's journal (a plain run or `--rename-class` each refuse to start while either kind of unit is stuck). Unit key is the OLD class name, `new_class_name` carried in the checkpoint detail for reporting/resume; the rename's own extra steps (local TSV directory rename, manifest key swap) are folded into finishing `NEW_SHEET_CREATED` rather than given their own checkpoint |
+| Phase 7 (the whole unit) | in progress — both `restructure-sheets` units done; every other Phase 7 candidate command (`generate-sheets`, `import-sheets`) not started |
 | Phase 8 | not started |
 | Phase 9 | not started |
 
@@ -664,14 +667,80 @@ doesn't go stale the way the pre-Phase-7 version's "no rollback" language
 now would have. `coding/CLAUDE.md`'s `restructure_sheets.py` entry updated
 to match, plus a new entry for `restructure_journal.py`.
 
-**Next action:** decide Phase 7's second unit. Two candidates surfaced
-while scoping unit 1, neither started: journaling `--rename-class`'s
-separate archive sequence (`_rename_class_for_language` — same shape as
-unit 1, a second, independent multi-step sequence in the same file), or
-moving to a different command entirely (`generate-sheets`/`import-sheets`
-are multi-step but already got incremental per-item persistence from #280,
-a narrower gap than `restructure-sheets` had). Needs Jeff's call the same
-way unit 1's scope did, not assumed.
+**Phase 7, unit 2 ("`--rename-class` archive-sequence recovery") done,
+2026-08-17, same session as unit 1 — chosen as the natural continuation
+rather than re-asked as a fresh scoping question.** Of the two candidates
+unit 1 left open (journal `--rename-class` next, in the same file and same
+shape; or move to a different command whose gap is already narrower from
+#280), Jeff's "let's keep going" after reviewing unit 1 was read as
+endorsing momentum on the queued item, not as reopening the choice — this
+unit applies the *same*, already-approved rollback-scope decision to a
+second sequence, not a new tradeoff needing its own sign-off, so it
+proceeded without a second `AskUserQuestion`. Finishing it also closes the
+plan's own named `restructure-sheets`/#248 example completely, rather than
+leaving one of its two archive sequences covered and the other not.
+
+`_rename_class_for_language` (the function `--rename-class` calls once per
+language per rename pair) is structurally identical to unit 1's per-class
+loop at the Drive level — same `_lock_archived_sheet`/`create_spreadsheet`
+calls — so it reuses the *same two checkpoints* rather than inventing a
+third kind. The one real design wrinkle: a rename's unit key can't simply
+be "the class", because the class's identity itself changes. Resolved by
+keying on the OLD class name (the sheet actually being archived is real and
+unambiguous) and carrying `new_class_name` in the checkpoint detail, so
+recovery code and `format_incomplete_report()` can name both sides
+(`old -> new`) without a schema change to the journal entry shape. The
+rename's two extra steps beyond unit 1's shape — renaming the local
+`coded_data/{lang}/{old}/` TSV directory, and swapping the manifest's key
+(delete old, add new) rather than updating one value in place — are
+deliberately *not* their own checkpoints: recorded the `NEW_SHEET_CREATED`
+checkpoint *before* either happens (so `is_rollback_safe()` stays correct —
+a real replacement sheet with real data exists by that point, so rollback
+must already be refused), then folded both into
+`_finish_new_sheet_created_unit` finishing that checkpoint, since neither
+is unsafe to redo or skip if a crash lands between them, unlike archiving
+or creating a sheet.
+
+One real bug caught before committing, by reasoning through the resume
+path rather than by a failing test: `_finish_new_sheet_created_unit`
+returns the *display* class name (the new one, for a rename) for the
+caller's summary/notify list, but the caller was also using that same
+returned value to decide which journal entry to clear — clearing by the
+new name would silently no-op against a journal keyed by the old name,
+leaving the unit permanently stuck-looking even though it had actually
+finished. Fixed by having the `--resume` loop in `main()` clear by
+`entry["lang_id"]`/`entry["class_name"]` (the journal key) directly,
+independent of whatever the finish function returns for display.
+
+Four integration tests added to `tests/test_restructure_sheets_snapshot.py`
+(reusing the same `env` fixture and hand-driven-interrupted-state approach
+as unit 1's five), covering: a stuck rename unit blocks a plain run and
+names both sides of the rename in the report; `--rollback` restores the
+archived sheet under its *old* name and touches nothing else; `--resume`
+finishes a rename's `NEW_SHEET_CREATED` unit — manifest key swap (old
+entry gone, new entry present with the right spreadsheet ID) and local TSV
+directory rename both verified directly, not just asserted as "no crash";
+`--rollback` refuses outright when the stuck rename unit is already past
+recreate, same as unit 1's equivalent case. All pre-existing tests in that
+file (unit 1's five plus every original rename-class snapshot/transcript
+test) pass unchanged — confirming the new checkpoint calls add no stdout
+and no behavior change to the normal, non-interrupted path. Full suite
+green.
+
+`data_dependency_schema/operations.yaml`, `coding/CLAUDE.md`, and this
+file's own restructure-sheets module docstring updated in the same commit
+to describe both units together rather than describing unit 1's scope as
+still current.
+
+**Next action:** neither Phase 7 candidate from unit 1's own "next action"
+note is started — `generate-sheets`/`import-sheets` (multi-step but with a
+narrower gap already, from #280) is the remaining named candidate if Phase
+7 continues past `restructure-sheets`. Otherwise Phase 8 (fault-injection
+stress testing, the plan's next phase) is the next phase-level piece of
+work, and would also be the place to hard-check unit 1/2's own
+assumptions (`_rollback_unit`'s "exactly one 'user'-type permission" note,
+in particular) against real kill-mid-call fault injection rather than
+hand-driven states. Needs Jeff's call on which, same as before.
 
 ### Held until Phase 9
 
@@ -2805,14 +2874,17 @@ Findings 25–28); Phase 5 units D and E's two open questions were decided
 boundary 4's strictness question was decided the same day (see the
 Decisions log) and Phase 6 is now done in full; Phase 7 unit 1's
 rollback-scope question was also decided 2026-08-17 (see the Decisions
-log) and unit 1 is done.
+log), and both `restructure-sheets` units (1 and 2) are now done — unit
+2 applied unit 1's already-approved decision to a second sequence rather
+than raising a new question.
 
-**One open now: Phase 7's second unit.** Two candidates, neither started —
-journal `--rename-class`'s separate archive sequence next (same shape as
-unit 1, in the same file), or move to a different multi-step command
-(`generate-sheets`/`import-sheets`, though both already got a narrower fix
-from #280). See Next action's entry on this, just above "Held until Phase
-9" — needs Jeff's call the same way unit 1's scope did.
+**One open now: what Phase 7 covers next, if anything, before Phase 8.**
+`generate-sheets`/`import-sheets` are multi-step but already got a
+narrower fix from #280 — worth journaling the same way, or worth leaving
+as-is and moving to Phase 8 (fault-injection stress testing, the plan's
+next phase, and the place both `restructure-sheets` units' own untested
+assumptions would get a harder check)? See Next action's entry on this,
+just above "Held until Phase 9" — needs Jeff's call.
 
 One item worth a look when convenient, not blocking anything: **issue #283**
 (warning-shaped `print()` calls in automated commands that never reach a

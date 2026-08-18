@@ -75,9 +75,11 @@ run rather than silently re-attempted or left unexplained. Undoing is only
 offered where it's actually safe -- step 2 alone, before step 3 has created
 anything -- since a step-3 replacement sheet already holds real carried-over
 annotation data that undoing would destroy; past that point recovery always
-finishes forward (--resume), never deletes. See restructure_journal.py's
-module docstring for the full reasoning and #248 for the incident this
-closes.
+finishes forward (--resume), never deletes. This covers --rename-class's own
+archive/create sequence too (unit 2, same day as the main loop's unit 1) --
+both refuse to start new work while the other's interrupted class is still
+stuck, since they share one journal. See restructure_journal.py's module
+docstring for the full reasoning and #248 for the incident this closes.
 
 For --rename-class, step 3 creates a spreadsheet under the new class name, and
 local TSV directories are renamed in-place (coded_data/{lang}/{old}/ ->
@@ -273,28 +275,53 @@ def _rollback_unit(doorway, manifest, entry: dict) -> None:
 def _finish_new_sheet_created_unit(manifest, entry: dict) -> Tuple[str, str, str]:
     """Finish a NEW_SHEET_CREATED unit: the replacement sheet itself is
     already done, only the manifest bookkeeping (pointing at it) never
-    happened. Pure local bookkeeping, no Drive-sheet mutation -- always safe
-    to finish forward. The actual Drive upload of this manifest change, and
-    clearing the unit from the journal, happen where they already do for a
-    normal run's classes -- once, in the end-of-run upload block -- so a
-    crash between this write and that upload leaves the journal entry in
-    place and correctly re-detected, rather than marked done early.
+    happened. Pure local bookkeeping, no further Drive-sheet mutation --
+    always safe to finish forward. The actual Drive upload of this manifest
+    change, and clearing the unit from the journal, happen where they
+    already do for a normal run's classes -- once, in the end-of-run upload
+    block -- so a crash between this write and that upload leaves the
+    journal entry in place and correctly re-detected, rather than marked
+    done early.
 
-    Returns (lang_id, class_name, url) for the caller's sheet_links/notify list.
+    Handles both shapes this checkpoint can mean: an ordinary restructure
+    (`class_name` unchanged) and a `--rename-class` unit (`detail`'s
+    `new_class_name` differs from the journal key `class_name`, which is
+    the OLD class name -- see `_rename_class_for_language`). For a rename,
+    also finishes the local TSV directory rename if it didn't already
+    happen (deliberately deferred here rather than done before this
+    checkpoint, same reasoning as the manifest write: neither is unsafe to
+    redo/skip if already done, unlike archiving or creating a sheet) and
+    drops the old class's now-stale manifest entry.
+
+    Returns (lang_id, DISPLAY class name, url) for the caller's
+    sheet_links/notify list -- the new name for a rename, same as the
+    journal key otherwise. Callers that need to clear this unit from the
+    journal must use `entry["lang_id"]`/`entry["class_name"]` (the journal
+    key) instead, not this return value -- clearing by the display name
+    would silently no-op for a renamed unit and leave it stuck forever.
     """
     lang_id = entry["lang_id"]
-    class_name = entry["class_name"]
+    class_name = entry["class_name"]  # journal key; OLD class name for a rename
     detail = entry["detail"]
-    manifest.setdefault(lang_id, {}).setdefault("sheets", {})[class_name] = {
+    new_class_name = detail.get("new_class_name") or class_name
+    if new_class_name != class_name:
+        old_dir = CODED_DATA / lang_id / class_name
+        new_dir = CODED_DATA / lang_id / new_class_name
+        if old_dir.exists() and not new_dir.exists():
+            old_dir.rename(new_dir)
+            print(f"    [{lang_id}] {class_name} -> {new_class_name}: "
+                  f"renamed local TSV directory.")
+        manifest.get(lang_id, {}).get("sheets", {}).pop(class_name, None)
+    manifest.setdefault(lang_id, {}).setdefault("sheets", {})[new_class_name] = {
         "spreadsheet_id": detail["spreadsheet_id"],
         "url": detail["url"],
         "constructions": detail["constructions"],
         "construction_params": detail["construction_params"],
         "version": detail["version"],
     }
-    print(f"    [{lang_id}] {class_name}: resumed — manifest now points at the "
+    print(f"    [{lang_id}] {new_class_name}: resumed — manifest now points at the "
           f"already-created sheet ({detail['url']}).")
-    return lang_id, class_name, detail["url"]
+    return lang_id, new_class_name, detail["url"]
 
 
 # ---------------------------------------------------------------------------
@@ -834,12 +861,22 @@ def _rename_class_for_language(
     folder_id: Optional[str],
     planar_path: Optional[Path] = None,
     sheet_links: Optional[List[Tuple[str, str, str]]] = None,
+    journal_units: Optional[Set[Tuple[str, str]]] = None,
 ) -> bool:
     """Rename one analysis class for one language.
 
     Downloads annotations from the old class sheet, archives it, creates a new
     sheet under new_class with all annotations carried over, renames the local
     TSV directory, and updates the manifest in-place.
+
+    Journals its archive/create progress the same way the main per-class
+    loop does (Phase 7 unit 2, issue #271) -- one entry keyed by
+    (lang_id, old_class), with `new_class_name` in its detail so recovery
+    code can tell a rename apart from an ordinary restructure. On a real
+    apply, `journal_units` collects (lang_id, old_class) so the caller can
+    clear it from the journal once the end-of-run Drive upload actually
+    succeeds -- same "only clear after the real upload lands" discipline as
+    `restructured_classes`, not right after this function's own local write.
 
     Returns True if changes were made (or would be made in dry-run).
     """
@@ -918,6 +955,10 @@ def _rename_class_for_language(
         doorway.update_file(ss.id, name=f"{old_class}_{lang_id}_v{version}")
         doorway.move_file(ss.id, archive_id)
         _lock_archived_sheet(doorway, ss.id, lang_id)
+        restructure_journal.record_checkpoint(
+            lang_id, old_class, restructure_journal.OLD_SHEET_ARCHIVED,
+            archived_spreadsheet_id=ss.id, folder_id=folder_id, new_class_name=new_class,
+        )
         print(f"    Archived {old_class}_{lang_id} → _archived/{old_class}_{lang_id}_v{version}")
 
     # Create new sheet
@@ -958,6 +999,22 @@ def _rename_class_for_language(
         if created_ref:
             print(f"    Tab: Planar Structure (planar reference)")
         _reorder_system_tabs(new_ss)
+
+    # Checkpoint here, before the local dir rename / manifest update below --
+    # a real replacement sheet with real carried-over data exists as of this
+    # point, so recovery must never delete it (restructure_journal.py's
+    # is_rollback_safe() keys off exactly this checkpoint). The dir rename
+    # and manifest write that follow are pure bookkeeping, safe to redo or
+    # skip if a crash lands between them and are handled uniformly for both
+    # a fresh run and --resume by _finish_new_sheet_created_unit.
+    restructure_journal.record_checkpoint(
+        lang_id, old_class, restructure_journal.NEW_SHEET_CREATED,
+        spreadsheet_id=new_ss.id, url=new_ss.url, constructions=tab_names,
+        construction_params=new_construction_params, version=new_version,
+        new_class_name=new_class,
+    )
+    if journal_units is not None:
+        journal_units.add((lang_id, old_class))
 
     # Rename local TSV directory in-place (preserves git history)
     if old_dir.exists():
@@ -1222,9 +1279,12 @@ def main(args: argparse.Namespace | None = None) -> None:
                 _rollback_unit(doorway, manifest, entry)
                 restructure_journal.clear_unit(entry["lang_id"], entry["class_name"])
             else:
-                lang_id, class_name, url = _finish_new_sheet_created_unit(manifest, entry)
-                resumed_units.add((lang_id, class_name))
-                sheet_links.append((lang_id, class_name, url))
+                _, display_class_name, url = _finish_new_sheet_created_unit(manifest, entry)
+                # Clear by the journal KEY (old class name for a rename), not
+                # the display name the function returns -- clearing by the
+                # new name would silently no-op and leave this unit stuck.
+                resumed_units.add((entry["lang_id"], entry["class_name"]))
+                sheet_links.append((entry["lang_id"], display_class_name, url))
 
     planar_files = sorted(CODED_DATA.glob("*/lang_setup/planar_*.tsv"))
     if lang_filter:
@@ -1237,6 +1297,7 @@ def main(args: argparse.Namespace | None = None) -> None:
     written_tsvs: List[Path] = []
     pair_row_constructions = _get_pair_row_constructions()
     restructured_classes: Set[Tuple[str, str]] = set()
+    renamed_classes: Set[Tuple[str, str]] = set()  # (lang_id, old_class) journal keys
     # sheet_links/lang_folder_urls were initialized above, before the journal-
     # recovery block, so a resumed class's entry lands in the same summary/
     # notify list as one this run restructured fresh.
@@ -1260,7 +1321,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                 changed = _rename_class_for_language(
                     doorway, manifest, lang_id, old_class, new_class,
                     element_index, specs, apply, folder_id, planar_path,
-                    sheet_links=sheet_links,
+                    sheet_links=sheet_links, journal_units=renamed_classes,
                 )
                 if changed:
                     any_changes = True
@@ -1552,7 +1613,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         # leaves them recorded as NEW_SHEET_CREATED, correctly re-detected as
         # still not synced to Drive rather than marked done early (Phase 7,
         # issue #271; see restructure_journal.py's module docstring).
-        for lang_id, class_name in restructured_classes | resumed_units:
+        for lang_id, class_name in restructured_classes | resumed_units | renamed_classes:
             restructure_journal.clear_unit(lang_id, class_name)
 
     if not apply:

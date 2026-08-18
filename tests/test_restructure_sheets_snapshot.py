@@ -752,3 +752,100 @@ def test_resume_finishes_a_new_sheet_created_unit_then_continues(env):
     assert env.saved_configs
     assert "Manifest updated on Drive." in out
     assert env.autocommit_calls, "written TSVs must be committed to coded_data/"
+
+
+# ---------------------------------------------------------------------------
+# Interrupted-run recovery for --rename-class (Phase 7 unit 2, issue #271)
+#
+# --rename-class's own archive sequence (_rename_class_for_language) shares
+# the same two checkpoints and the same journal as the main loop above, keyed
+# by the OLD class name with new_class_name carried in the detail. These
+# mirror the main-loop recovery tests, checking the rename-specific parts:
+# both names appear in reports, an archived-only unit restores under its OLD
+# name, and a resumed replacement's manifest key swap (old removed, new
+# added) and local TSV directory rename both land.
+# ---------------------------------------------------------------------------
+
+def _archive_for_rename(env, lang_id="stan1293", old_class="ciscategorial") -> tuple:
+    """Replicate _rename_class_for_language's own archive step by hand."""
+    manifest = env.manifest()
+    sheet_info = manifest[lang_id]["sheets"][old_class]
+    folder_id = manifest[lang_id]["folder_url"].rstrip("/").rsplit("/", 1)[-1]
+    ss_id = sheet_info["spreadsheet_id"]
+    archive_id = env.doorway.get_or_create_folder("_archived", parent_id=folder_id)
+    env.doorway.update_file(ss_id, name=f"{old_class}_{lang_id}_v{sheet_info['version']}")
+    env.doorway.move_file(ss_id, archive_id)
+    rs._lock_archived_sheet(env.doorway, ss_id, lang_id)
+    return ss_id, folder_id
+
+
+def test_rename_class_stuck_unit_also_blocks_a_plain_run(env):
+    ss_id, folder_id = _archive_for_rename(env)
+    rj.record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED,
+                          archived_spreadsheet_id=ss_id, folder_id=folder_id,
+                          new_class_name="ciscategorial_renamed")
+    out = env.run(["--apply"])
+    assert "[SystemExit:" in out
+    # Both sides of the rename are named, not just the (old) journal key.
+    assert "ciscategorial -> ciscategorial_renamed" in out
+    assert env.doorway.mutations_of("create_spreadsheet") == []
+
+
+def test_rename_class_rollback_restores_the_old_name_and_stops(env):
+    ss_id, folder_id = _archive_for_rename(env)
+    rj.record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED,
+                          archived_spreadsheet_id=ss_id, folder_id=folder_id,
+                          new_class_name="ciscategorial_renamed")
+    before_manifest = env.manifest()
+    out = env.run(["--rollback", "--apply"])
+
+    assert "rolled back" in out
+    assert rj.load_journal() == {}
+    ss = env.doorway.spreadsheet(ss_id)
+    assert ss.title == "ciscategorial_stan1293"  # back under the OLD name
+    assert env.doorway.mutations_of("create_spreadsheet") == []
+    assert env.manifest() == before_manifest  # never touched -- rename never wrote it
+
+
+def test_rename_class_resume_finishes_manifest_swap_and_local_dir_rename(env):
+    lang_id, old_class, new_class = "stan1293", "ciscategorial", "ciscategorial_renamed"
+    manifest = env.manifest()
+    folder_id = manifest[lang_id]["folder_url"].rstrip("/").rsplit("/", 1)[-1]
+
+    old_dir = env.coded / lang_id / old_class
+    old_dir.mkdir(parents=True)
+    (old_dir / "general.tsv").write_text("Element\tPosition_Name\n", encoding="utf-8")
+
+    new_ss = env.doorway.create_spreadsheet(f"{new_class}_{lang_id}")
+    env.doorway.move_file(new_ss.id, folder_id)
+    rj.record_checkpoint(
+        lang_id, old_class, rj.NEW_SHEET_CREATED,
+        spreadsheet_id=new_ss.id, url=new_ss.url,
+        constructions=["general"],
+        construction_params=manifest[lang_id]["sheets"][old_class]["construction_params"],
+        version=99, new_class_name=new_class,
+    )
+    out = env.run(["--resume", "--apply", "--lang", "arao1248"])
+
+    assert "resumed" in out
+    assert rj.load_journal() == {}
+    updated_manifest = env.manifest()
+    assert old_class not in updated_manifest[lang_id]["sheets"]
+    new_entry = updated_manifest[lang_id]["sheets"][new_class]
+    assert new_entry["spreadsheet_id"] == new_ss.id
+    assert new_entry["version"] == 99
+    assert not old_dir.exists()
+    assert (env.coded / lang_id / new_class / "general.tsv").exists()
+
+
+def test_rename_class_rollback_refuses_when_past_recreate(env):
+    ss_id, folder_id = _archive_for_rename(env)
+    rj.record_checkpoint("stan1293", "ciscategorial", rj.NEW_SHEET_CREATED,
+                          spreadsheet_id="fake_new_id", url="https://example.test/fake",
+                          constructions=["general"], construction_params={}, version=3,
+                          new_class_name="ciscategorial_renamed")
+    out = env.run(["--rollback", "--apply"])
+    assert "[SystemExit:" in out
+    assert "ciscategorial -> ciscategorial_renamed" in out
+    assert "--resume instead" in out
+    assert len(rj.load_journal()) == 1

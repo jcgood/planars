@@ -1,4 +1,6 @@
-"""Crash-recovery journal for restructure_sheets.py's per-class restructure loop.
+"""Crash-recovery journal for restructure_sheets.py's multi-step Drive
+sequences: the main per-class restructure loop (unit 1, 2026-08-17) and
+`--rename-class`'s separate archive sequence (unit 2, same day).
 
 Phase 7 of the data layer redesign (issue #271) — "close the transaction gap."
 `restructure-sheets --apply` archives a class's old sheet, creates and populates
@@ -24,6 +26,20 @@ and anything present in it at the start of a run is evidence of an
 interrupted previous run** -- not something the coordinator has to
 reconstruct by reading Drive by hand.
 
+**`--rename-class` reuses the same two checkpoints, not a third kind** — a
+rename's archive/create steps are physically identical to the main loop's
+(same `_lock_archived_sheet`/`create_spreadsheet` calls), so the unit key
+stays `(lang_id, class_name)` where `class_name` is the OLD class name (the
+one whose live sheet is actually being archived), and `detail` carries an
+extra `new_class_name` so recovery code and coordinator-facing reports can
+tell a rename apart and name both sides. The rename's own extra steps (local
+TSV directory rename, manifest key swap old->new instead of a value update)
+are deliberately treated as part of *finishing* NEW_SHEET_CREATED, not
+their own checkpoint -- neither is unsafe to redo or skip if a crash lands
+between them, unlike archiving or creating a sheet, so giving them a
+checkpoint each would add bookkeeping without closing any real risk window.
+See `_finish_new_sheet_created_unit` in restructure_sheets.py.
+
 **Rollback scope, decided with Jeff 2026-08-17: only safe pre-recreate.**
 `OLD_SHEET_ARCHIVED` with no `NEW_SHEET_CREATED` yet can be undone cleanly --
 nothing but the old sheet was touched, so moving it back, renaming it back,
@@ -33,7 +49,10 @@ carried-over annotation data already exists; "rolling back" would mean
 deleting it, which destroys work rather than protecting it. So rollback is
 offered only in the first window -- everything past it is resume-forward
 only, `--resume` picking up from the next unfinished checkpoint rather than
-blindly restarting the whole class.
+blindly restarting the whole class. This reasoning is identical for a
+rename unit: `_rollback_unit` restores the archived sheet to its OLD name
+and folder regardless, since nothing named `new_class` has been created yet
+at that checkpoint.
 """
 from __future__ import annotations
 
@@ -143,23 +162,28 @@ def format_incomplete_report(journal: Dict[str, dict]) -> str:
         lang_id = entry["lang_id"]
         class_name = entry["class_name"]
         checkpoint = entry["checkpoint"]
+        new_class_name = entry.get("detail", {}).get("new_class_name")
+        # For a --rename-class unit, class_name (the journal key) is the OLD
+        # name -- name both so the report reads the way the command itself
+        # does, not as if the old class still exists under its old name.
+        label = f"{class_name} -> {new_class_name}" if new_class_name else class_name
         if checkpoint == OLD_SHEET_ARCHIVED:
             lines.append(
-                f"  [{lang_id}] {class_name}: old sheet archived, new sheet never "
+                f"  [{lang_id}] {label}: old sheet archived, new sheet never "
                 f"created. The old sheet is locked and annotators can't write to "
                 f"it. Run with --rollback to restore it, or --resume to finish "
                 f"creating the replacement."
             )
         elif checkpoint == NEW_SHEET_CREATED:
             lines.append(
-                f"  [{lang_id}] {class_name}: new sheet created and populated, "
+                f"  [{lang_id}] {label}: new sheet created and populated, "
                 f"but the manifest was never updated to point at it -- it's "
                 f"currently invisible to every other command. Run with --resume "
                 f"to finish (rollback isn't offered here -- the new sheet holds "
                 f"real carried-over data)."
             )
         else:
-            lines.append(f"  [{lang_id}] {class_name}: at checkpoint {checkpoint!r}.")
+            lines.append(f"  [{lang_id}] {label}: at checkpoint {checkpoint!r}.")
     lines.append(
         "\nNo other class will be processed until every mid-flight class above "
         "is resolved with --resume or (where offered) --rollback."
