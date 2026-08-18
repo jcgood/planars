@@ -15,59 +15,38 @@ this project is trying to remove.
 
 ## Now
 
-**Phase 7 ("recoverability for multi-step operations") is done as scoped,
-as of 2026-08-17.** `restructure-sheets --apply`'s main per-class loop
-(unit 1) and its separate `--rename-class` archive sequence (unit 2, same
-day) both journal their progress (`coding/restructure_journal.py`) and
-refuse to start new work while a class is left mid-flight from an
-interrupted run, from either sequence; `--resume`/`--rollback` recover it,
-with rollback offered only where it's actually safe (a class archived but
-not yet replaced — past that point recovery is resume-forward only, never
-delete). This closes the plan's own named #248 example completely for
-`restructure-sheets`. `import-sheets`/`generate-sheets` — the plan's other
-two named candidates — were checked the same day and neither needed the
-same treatment: no destroy-before-replace step in their normal paths.
-`generate-sheets`'s `--regen-construction` got a smaller, differently-shaped
-fix (a pre-write local snapshot, not a resume system — see
-`docs/data-layer-progress.md`'s decisions log).
+**Phase 9 ("staged cutover") started 2026-08-18 and is in progress — the
+first phase permitted to write to live Drive, after every prior phase
+built and tested against a fake.** Step 1 (shadow reads) is done: every
+coordinator-only command was run live, read-only, and reviewed — clean
+throughout, including two real 429s that recovered on their own (Phase
+8's retry fix, confirmed working outside the test suite). That review
+surfaced something worth knowing before resuming this: most of the
+project already runs live continuously via `data-refresh.yml`/
+`sheet-validation.yml`'s daily automation, which has been exercising every
+phase of this whole redesign against real Drive the moment each merged —
+there was never a separate "old path" to shadow against the way the plan's
+generic wording assumes. Step 2 (write cutover) has begun: two real
+writes done, both named to Jeff and approved individually first
+(`synth0001`'s stale coreference columns removed; `arao1248`'s two
+still-missing class sheets created). `restructure-sheets`/`prune-manifest`
+reported nothing to do, so haven't been cut over to a real write yet —
+that happens whenever real project work next calls for either. Full
+account, including why the daily-automation finding reframes what "shadow
+reads" means for this project specifically: `docs/data-layer-progress.md`'s
+Phase 9 entries (Current state, Next action, Decisions log).
 
-**Phase 8 ("fault-injection stress testing") has a first pass done, same
-session.** `tests/fake_drive.py`'s new `fail_after(op, count)` makes a real
-Drive call raise mid-operation instead of hand-setting a journal entry;
-used to crash `restructure-sheets` for real at both checkpoints, for both
-the main per-class loop and `--rename-class`'s own sequence, and confirm
-`--resume` actually recovers each time. Two real bugs found and fixed this
-way: rollback used to silently drop a co-annotator's pre-existing sheet
-permission (shared by both units, so extending to the second was
-confirmation, not a second discovery); and none of the archive/create
-steps' structural Drive calls retried on a transient 429/500/503 the way
-every worksheet-content read already did, so a single rate-limit blip
-crashed the whole run — now wrapped in `_with_retry`. The same gap in 5
-other files (18 call sites) is issue #284, filed rather than fixed here.
-Also checked concurrent human edits (the plan's third named fault shape):
-an edit landing between this command reading a tab and archiving it isn't
-carried onto the new sheet, but isn't destroyed either — still recoverable
-from the archived copy. Not a bug fixable without changing the command's
-actual read/write ordering, so documented by a test rather than "fixed."
-
-**Phase 8's remaining named item — the idempotency audit across all 25
-`operations.yaml` records (29 claims counting modes) — is done, 2026-08-18,
-on Jeff's explicit "do the full thing."** 19 claims already had a real
-test proving them (found by reading each command's test file, not
-grepping for phrasing — a keyword search initially mis-flagged
-`validate_coding` as a gap, corrected by reading it directly); 10 got a
-new one, including two commands (`lookup-lang`, `capture-drive-state`)
-that had no test file at all before this. One real bug found and fixed:
-`registry.py` cached `operations.yaml`'s parsed content in a module-level
-global, directly contradicting its own repeated "never cached" claim —
-invisible to the ordinary CLI (a fresh process every call) but a real gap
-for anything calling it twice in one process, which the test suite does
-constantly. **Phase 8 is done in full.** See
-`docs/data-layer-progress.md`'s Current state / Next action / Decisions
-log for the full per-command account. Next, per the plan's own
-sequencing, is Phase 9 (staged cutover, the only phase touching live
-Drive, and the one the plan itself marks "coordinator decides" throughout)
-unless something else takes priority.
+**Phases 7 and 8 are both done in full** (2026-08-17–18, same session run
+that led into Phase 9). Phase 7: `restructure-sheets` gained real
+crash-recovery (`coding/restructure_journal.py`, `--resume`/`--rollback`)
+for both its main loop and `--rename-class`'s sequence. Phase 8: real
+fault injection proved that recovery survives an actual crash (not just a
+hand-set state) and found two real bugs in the process (a permission-loss
+bug on rollback, missing retry protection on 429/500/503); a full audit of
+every command's idempotency claim in `operations.yaml` found and fixed one
+more (`registry.py` caching what it claims is never cached). See
+`docs/data-layer-progress.md` for the complete account — not repeated here
+per this file's own rule against duplicating status.
 
 **Phase 5 is done, all five units, as of 2026-08-17.** No open questions,
 nothing blocked. Full detail in `docs/data-layer-progress.md`'s Current
@@ -112,9 +91,10 @@ list straight from the workflow YAML and fails if a *new* orphaned warning
 joins the pile unclassified — the actual answer to "how do I stop missing
 this", not a periodic manual re-sweep.
 
-**Phases 7 and 8 are both done in full (see above). Phase 9 remains
-unscoped in session-level detail** — see
-`docs/data-layer-implementation-plan.md` for the phase spec.
+**Phases 7 and 8 are both done in full (see above). Phase 9 is in progress
+(see above) — step 1 done, step 2 ongoing opportunistically, not on a
+fixed schedule** — see `docs/data-layer-implementation-plan.md` for the
+phase spec.
 
 **Phase 0b/1 (the doorway migration), Phase 3 (schema reorganization), and
 Phase 4 (topology declaration) are all complete, nothing outstanding from
@@ -124,7 +104,9 @@ is fixed; #276 and #280 are closed.
 
 **arao1248's diagnostics gap (surfaced by Finding 19) is two-thirds closed.**
 `nonpermutability` and `free_occurrence` are onboarded (2026-08-10, no
-linguistic judgment needed — both universal with fixed criteria). `proform`
+linguistic judgment needed — both universal with fixed criteria) and their
+Drive sheets went live 2026-08-18 as part of Phase 9's write cutover
+(`generate-sheets --lang arao1248 --apply`). `proform`
 is still open, waiting on Adam via issue #279 (construction-specific; nothing
 in the repo says what fills it for Araona). Not blocking anything else — a
 missing required class no longer blocks `sync-diagnostics-yaml --apply`'s
@@ -148,8 +130,14 @@ progress doc points you there.
 
 ## Constraints that matter most
 
-- **No live Drive writes.** `capture-drive-state` (read-only) is the only
-  permitted live call before Phase 9.
+- **Live Drive writes are permitted now (Phase 9, started 2026-08-18), but
+  not casually.** Every prior phase's "no live writes, `capture-drive-state`
+  is the only permitted call" rule is lifted — but the plan's own Phase 9
+  discipline replaces it, not a blank check: read-only checks (dry runs,
+  `capture-drive-state`) need no sign-off, same as always; an actual write
+  gets named to Jeff individually — which command, which target, why it's
+  low-risk — before running, the same way the first two real writes were
+  handled. Never batch multiple real writes under one approval.
 - **Adam is annotating.** His data must not change. `coded_data/` must be clean
   before you start and clean when you stop.
 - **In the throwaway harness, make every unshimmed route to Google raise.**

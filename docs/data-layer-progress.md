@@ -30,6 +30,19 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
+**Phase:** 9 — **in progress, started 2026-08-18, same session as Phase
+8's completion.** The constraint every phase before this one operated
+under — no live Drive writes — is lifted from here on; this is the first
+phase permitted to touch it. Step 1 (shadow reads) is done: every
+coordinator-only command was run live, read-only, and reviewed — see the
+Current-state paragraph below for what that turned up and why it reframed
+what "shadow reads" needed to mean for this project specifically. Step 2
+(write cutover) has begun: two real writes performed, both named to Jeff
+first and both at the lowest-risk end of what the plan's own ordering
+calls for — a stale-column cleanup on synthetic test data, and creating
+two brand-new sheets for a language that had nothing there to lose. See
+Next action for the full account and what's still ahead.
+
 **Phase:** 8 — **done in full, as of 2026-08-18 (Jeff's call: "do the full
 thing" after the first pass's report).** The remaining named item, auditing
 every command's `idempotent` claim in `operations.yaml` (25 records, 4 with
@@ -111,9 +124,16 @@ GitHub issue, and a new durable coverage test
 (`tests/test_unattended_warning_escalation.py`) that fails when a new one
 joins the pile unclassified. See Next action below for the full
 account. 5 — done, all five units. Unit A (argparse standardization, all 9 batches) done 2026-08-16. Units B (dispatch integration) and C (derived `registry` command) done the same day, right after A: every command module now exposes `build_parser()` separately from `main(args=None)`, `__main__.py` parses once and calls `mod.main(args)` directly (the chokepoint units D/E hook into), and `python -m coding registry` derives the full command inventory fresh from that plus `operations.yaml` on every call. Units D (precondition enforcement) and E (provenance capture) done 2026-08-17, both same day, after Jeff decided both units' open questions (see the Decisions log): D replaces the scattered manual `_check_coded_data_clean()` calls, file-by-file, with `coding/preconditions.py` driven by each command's `operations.yaml` record; E logs only Drive-writing invocations (not every command, and per actual invocation not per command) to `provenance_log.jsonl`, append-forever, via `coding/provenance.py`. 4 — done. Every record traced against code, all three "done when" items complete, and all five review items closed out with Jeff (started 2026-08-10, review session 2026-08-11, line-by-line trace + fixes 2026-08-11, Findings 27/28 resolved with Jeff 2026-08-16). 3 — done (started and finished 2026-08-10). 0b/1 — done, 18 of 18 (2026-08-01–2026-08-04).
-**Live Drive writes performed:** none. Permitted from Phase 9 only.
-**Adam's annotation data touched:** none.
-**Last worked:** 2026-08-17
+**Live Drive writes performed:** two, 2026-08-18, both named and approved
+individually before running — `synth0001`'s coreference column cleanup
+(synthetic test data) and `arao1248`'s two new class sheets (pure
+creation). The blanket "none, permitted from Phase 9 only" applied through
+Phase 8; Phase 9 lifts it deliberately, one approved write at a time — see
+the Current-state Phase 9 entry and the 2026-08-18 decisions-log entry.
+**Adam's annotation data touched:** none directly by this project's own
+actions — both real writes above were to synthetic data or newly-created
+sheets with nothing pre-existing to lose.
+**Last worked:** 2026-08-18
 
 Phase 3 split `schemas/diagnostic_classes.yaml` into that file (linguistic
 content only) and a new `schemas/diagnostic_classes_status.yaml` (process/
@@ -219,7 +239,9 @@ the same day — see the decisions log.
 | Phase 7 (the whole unit) | **done** — `restructure-sheets` (both units) and the `import-sheets`/`generate-sheets` check are complete; no further Phase 7 candidate identified |
 | Phase 8, first pass — fault injection on `restructure-sheets`' recovery | **done**, both units — `tests/fake_drive.py`'s `fail_after(op, count)` makes a real doorway call raise after its in-memory effect lands, simulating a crash mid-sequence rather than a hand-set journal entry. Five tests prove recovery survives a real crash: both checkpoints for the main per-class loop and for `--rename-class`'s separate sequence (four), plus a transient 429 during archiving (one, a different fault shape — the call itself fails, not "succeeded then the process died"). All confirmed to have teeth (deliberately broke the code each targets, watched every one fail, reverted). Two real bugs found and fixed this way: `_rollback_unit` used to delete every `'user'`-type permission on rollback, silently dropping a co-annotator's pre-existing access (shared by both units); and none of the archive/create steps' structural Drive calls retried on 429/500/503 the way every worksheet-content read already did, so a single rate-limit blip crashed the whole run instead of retrying transparently — now wrapped in `_with_retry` throughout. The same retry gap exists in 5 other doorway-migrated files (18 call sites), filed as issue #284 rather than fixed here (separate, mechanical sweep). A sixth test checks the plan's third named fault shape, concurrent human edits: an edit landing in the window between this command reading a tab and archiving it is not carried onto the new sheet (expected — no lock, no second read) but is never destroyed either, still readable on the archived copy. Not a bug fixable by retry/resume, so documented as a structural property rather than "fixed". | Phase 8, idempotency audit — every `operations.yaml` claim | **done**, 2026-08-18 — all 29 claims (25 records + 4 modes) checked; 19 already had a real test proving them, 10 got a new one (`prune-manifest`, `apply-pending`, `sync-qualification-hashes`, `generate-rule-update-prompt`, `validation-report`, `registry`, `check-codebook`, `lookup-lang`, `capture-drive-state` — the last two had no test file at all before this). Found and fixed one real bug: `registry.py` cached `operations.yaml`'s parsed content in a module-level global, directly contradicting its own "never cached" claim, stated three times in the file — harmless for the ordinary CLI (a fresh process every call) but a real gap for anything calling it twice in one process, which the test suite itself does. See Next action for the full per-command account |
 | Phase 8 (the whole unit) | **done** — both named items (fault injection on `restructure-sheets`, the idempotency audit) complete |
-| Phase 9 | not started |
+| Phase 9, step 1 — shadow reads | **done**, 2026-08-18 — every coordinator-only command run live, read-only, against real Drive and reviewed; nothing unexpected anywhere (see Current state below for the reframing this step turned up and Next action for the per-command account) |
+| Phase 9, step 2 — write cutover | **in progress**, 2026-08-18 — two real writes done (`synth0001` coreference column cleanup, `arao1248`'s two new class sheets), both lowest-risk; `restructure-sheets`/`prune-manifest` (the plan's own "last" tier) reported nothing to do so there was nothing to cut over yet |
+| Phase 9 (the whole unit) | in progress |
 
 ### In flight
 
@@ -1095,45 +1117,131 @@ except `lookup-lang`'s four and `capture-drive-state`'s two).
 
 **Phase 8 is done in full.** Both of the plan's named items —
 fault-injection coverage of `restructure-sheets`' recovery, and proof for
-every command's idempotency claim — are complete. Next, per the plan's own
-sequencing, is Phase 9 (staged cutover, the only phase touching live
-Drive) unless something else takes priority first.
+every command's idempotency claim — are complete.
 
-### Held until Phase 9
+**Phase 9 started 2026-08-18, same session — Jeff asked what it was before
+deciding anything, then explicitly held off starting the actual cutover
+while approving a harmless, always-permitted refresh in the same breath**
+(`capture-drive-state --apply` — read-only, allowed the whole way through,
+not gated by Phase 9 at all). That refresh turned up one real thing: the
+live manifest's `coreference/prescreening` entry had already been
+corrected (`param_names: [referential]`, not the stale three-criterion
+list) — almost certainly by the daily automation's own real `sync-params
+--apply` run, evidence in itself that the new code has been live longer
+than "Phase 9" as a ceremony. Eight snapshot files whose pinned transcripts
+assumed the old, stale value were regenerated after reviewing each diff;
+all explained by this one change.
 
-Live Drive writes are not permitted before then, so these are queued rather than
-forgotten. Each is small; the list exists because none of them is anybody's
-current job and every one would otherwise be remembered by nobody.
+**The scoping conversation for step 1 (shadow reads) surfaced something
+that changes what the plan's own wording means for this project
+specifically.** The plan's language ("new path reads real Drive, compares
+against the old path's results") assumes two parallel implementations
+coexisting. They don't: the doorway migration (Phase 0b/1) replaced the
+old direct-`gspread` code in place, file by file, months ago — there is no
+separate "old path" left anywhere to compare against. More consequentially:
+`.github/workflows/data-refresh.yml` and `sheet-validation.yml` run 13 of
+the ~24 commands live, automatically, every single day, on whatever code
+is on `main` — meaning every phase of this whole redesign (Phase 3's
+schema split, Phase 5's preconditions/provenance, Phase 6's contracts, and
+now Phase 7/8's journal and fault-injection fixes) was already exercised
+against live Drive the moment it merged, not held back for a deliberate
+cutover. Checked this rather than assumed it: `gh run list` showed 10+
+consecutive successful daily runs including that same morning, and no
+open `import-error`/`integrity-error`/`codebook-error`/`sheet-drift`/
+`stale-manifest`/`planar-changed`/`data-overwrite` issues. So "shadow
+reads" for this project doesn't mean running two systems in parallel for
+several days — most of that already happened continuously, unglamorously,
+as a side effect of normal git+cron operation. What's genuinely unwatched
+is the smaller set of commands nobody runs automatically — coordinator-
+triggered only, and in `restructure-sheets`' case, never once run live
+with the journal/`--resume`/`--rollback`/retry-wrapping code this session
+just built.
+
+**Step 1, concretely: every coordinator-only command run live, read-only,
+one at a time, output reviewed before moving to the next.**
+`restructure-sheets` (highest priority — the whole reason this phase
+needed care), `prune-manifest`, `generate-sheets`, `generate-status-sheet`,
+`refresh-dropdowns`, `generate-notebooks`, `generate-biuniqueness-
+allomorphy-sheet`, `apply-pending`, and `lookup-lang`. All clean: no
+crashes, nothing unexpected. Two real 429s hit mid-run and recovered on
+their own — an unplanned live confirmation that today's retry fix (Phase
+8) works outside the test suite, not just inside it. Nothing that came
+back was a new problem: `restructure-sheets` reported every class across
+all three languages already correctly built; `arao1248`'s missing `proform`
+(#279) and `synth0001`'s stale coreference columns (already on the queued
+list) both showed up exactly as already known, not as surprises.
+`setup-root-folder` was the one exception — held out and named separately
+rather than run in the same sweep, since it's the only command with no
+observe-only mode at all (no `--apply` flag; it always acts, though
+idempotently by design). Run afterward on its own explicit go-ahead: every
+step reported "already ... skipping," zero real Drive writes, confirming
+its own idempotency claim (Phase 8's audit had already tested this
+offline; this was the first live confirmation).
+
+**Step 2, begun: two real writes, both named explicitly and approved
+before running, both at the lowest-risk end of the plan's own ordering.**
+`sync-params --remove --apply` on `synth0001`'s three `coreference` pair
+tabs (`reflexivization`/`pronominalization`/`np_reference`) — removed the
+two surplus criterion columns each had been carrying since #278, the item
+already sitting on the queued list with the mechanism already decided.
+Dry-run first, confirmed it touched only those three tabs and nothing
+else, then applied; `generate-notebooks` cascaded automatically afterward.
+`generate-sheets --lang arao1248 --apply` — created the two still-missing
+required class sheets (`nonpermutability`, `free_occurrence`) found by
+Finding 19/20 back in Phase 4, onboarded in the local YAML on 2026-08-10
+but never pushed live until now. Pure creation, nothing existing to lose;
+two informational warnings printed during creation (unfiltered pair list
+until `element_prescreening` is annotated; some `free_occurrence` elements
+not yet found in `noninterruption`'s TSV) are both known, deliberate,
+already-classified warning shapes (`tests/test_unattended_warning_
+escalation.py`'s `_KNOWN_SITES`), not new problems. Both writes verified
+clean afterward (`git status` showed nothing to commit — everything
+touched was either on Drive or in already-gitignored local config).
+
+`restructure-sheets`/`prune-manifest` — the plan's own "destructive, last"
+tier — reported nothing to do during step 1's dry run, so there was
+nothing to cut over to yet; the first time either writes live will be
+whenever real project work next calls for it.
+
+**Next action:** step 2 continues opportunistically rather than by a fixed
+schedule — there's no more "safest tier" left to deliberately cut over
+(the daily-automated commands already have been, continuously; the two
+lowest-risk manual writes are done), so what's next is whatever real
+project work comes up next that needs `generate-sheets`, `update-sheets`,
+`restructure-sheets`, or `prune-manifest` to write for real. Per the
+plan's own rule, still true and unchanged: confirm with Jeff before any
+step that could touch a sheet Adam is actively annotating, and prefer a
+window when he isn't mid-pass. Phase 9 is "done" per the plan's own
+done-when line once every command has run live at least once through the
+new path and a full daily cycle completes clean — daily cycles already
+have been clean throughout; what's left is the smaller set of manual
+commands getting their first live run each, as real work calls for them.
+
+### Small queued items
+
+Was "Held until Phase 9" — Phase 9 started 2026-08-18 (see the Current-state
+entry below), so the two items below are the only ones still genuinely
+blocked; the other two this list used to carry are done.
 
 - **Bin `biuniqueness_stage1_synth0001`.** The 2026-08-02 rename means the next
   `generate-biuniqueness-allomorphy-sheet --apply` creates
   `biuniqueness_allomorphy_synth0001` and leaves the old sheet orphaned in the
   `synth0001` Drive folder. Synthetic test data, nothing to preserve. Coordinator
-  decision, 2026-08-02: delete it once the new one exists.
+  decision, 2026-08-02: delete it once the new one exists. Still pending — a
+  live dry run confirmed 2026-08-18 it would still create the new sheet, but
+  `--apply` for this command hasn't been run.
 - **Rebuild `stan1293`'s `phrasal_accent/general` with pair rows** (#275,
-  decided). Also waits on Adam annotating that class's `prescreening` tab —
-  which is the binding constraint, not Phase 9, since the pair rows are derived
-  from what he marks accented.
-- **Give `synth0001`'s three `coreference` pair tabs one criterion column
-  each.** `reflexivization`, `pronominalization` and `np_reference` each carry
-  all three of `reflexive_allowed`, `pronoun_allowed` and `np_allowed`, where
-  `diagnostic_classes.yaml` gives each construction a single `criterion:` and
-  `stan1293`'s equivalent tabs have exactly that one column. So the sheets are
-  stale against the schema, not disagreeing with it. Listed because it has
-  produced an advisory warning on every daily validation run with no issue of
-  its own, most recently #278.
+  decided). Waits on Adam annotating that class's `prescreening` tab, not on
+  anything in this project's own tooling — the pair rows are derived from
+  what he marks accented.
 
-  Synthetic data, but **not empty**: each tab holds 67 machine-generated values
-  in its own criterion column, and the two surplus columns are blank. So decide
-  the mechanism at the time rather than reaching for
-  `generate-sheets --regen-construction coreference:reflexivization`, which
-  rebuilds the whole tab — `sync-params --apply --remove` drops surplus
-  criterion columns while leaving the rest of the tab alone, which is the
-  smaller change and the one that matches what is actually wrong. Note that
-  `--regen-construction` writes live regardless of `--apply`.
-- **Re-run `capture-drive-state`** if the live sheets have changed structurally
-  since 2026-08-01. The fixtures are a recording with no staleness alarm; see
-  `data_dependency_schema/facts.yaml` § `drive_state_test_fixtures`.
+**Done, 2026-08-18 (Phase 9's first real writes):** `synth0001`'s three
+`coreference` pair tabs (`reflexivization`/`pronominalization`/`np_reference`)
+had their surplus criterion columns removed (`sync-params --apply --remove`)
+— the advisory warning behind #278 should stop recurring. `capture-drive-state`
+was re-run against live Drive; 29 spreadsheets, 80 tabs, same counts as
+2026-08-01, no structural drift (one real manifest content fix picked up —
+see the Phase 9 entry below).
 
 ### Migration order
 
@@ -1792,10 +1900,11 @@ rather than restating a second, independently-drifting copy of the same
 logic, and the call to `_fresh_param_values` now passes the four arguments it
 actually takes. Verified against the real fixture manifest before writing a
 regression test: the fixed function now reports four genuine, already-known
-mismatches on `synth0001`'s `coreference` pair tabs — the same drift named in
-`coding/CLAUDE.md`'s "Held until Phase 9" list (each manifest entry still
+mismatches on `synth0001`'s `coreference` pair tabs — the same drift this
+file's own queued-items list named (each manifest entry still
 lists all three pair criteria; the diagnostics YAML gives each construction
-just the one it uses) — rather than crashing or inventing a false one.
+just the one it uses; fixed live 2026-08-18, see the Phase 9 entry in
+Current state) — rather than crashing or inventing a false one.
 `tests/test_integrity_check_snapshot.py::test_stale_param_values_reports_a_real_mismatch_without_crashing`
 pins it.
 
@@ -2076,6 +2185,25 @@ commit.
 ---
 
 ## Decisions log
+
+**2026-08-18 — Jeff started Phase 9 in three explicit steps rather than
+one blanket go-ahead: asked what the phase was, approved the read-only
+refresh, then separately scoped and approved the read-only sweep, then
+separately approved two specific real writes by name.** Consistent with
+every prior phase-level decision this session: the read-only steps (a
+refresh already permitted the whole time; a dry-run sweep that writes
+nothing) needed only a plain explanation to greenlight, since nothing
+about them is hard to reverse. The two real writes were named individually
+— which command, which target, why it's low-risk — rather than approved
+as a category, matching the plan's own framing of this phase as the one
+place a wrong call has a cost this project can't just redo. Jeff also
+independently pushed to widen the read-only sweep from "the one command
+that matters most" (`restructure-sheets`, my own first suggestion) to
+every coordinator-only command, worried a command left for "whenever it's
+next needed" would just never get checked — right, and worth the small
+extra time to do the same day rather than let it become exactly the kind
+of forgotten-because-nobody's-job gap this project's own tooling
+philosophy names as the thing to design against.
 
 **2026-08-18 — Jeff: "go ahead and do the full thing" — the idempotency
 audit, run to completion rather than scoped down or sampled.** The one
@@ -3294,21 +3422,18 @@ unit 1's. Neither command needed restructure-sheets' journal;
 `--regen-construction` got a smaller, differently-shaped fix instead (a
 pre-write snapshot).
 
-**Nothing open right now — Phase 8 is done in full.** Jeff answered the
-one real open item ("do the full thing") 2026-08-18: the idempotency audit
-across all 25 `operations.yaml` records (29 claims counting modes) is
-complete, 19 already covered by a real test and 10 given a new one, one
-real bug found and fixed (`registry.py` cached what it claims is never
-cached — see the Decisions log and Current-state paragraph above). Phase 7
-is done as scoped; Phase 8's first pass (fault injection on
-`restructure-sheets`, same session as Phase 7) found and fixed two more
-real bugs (permission loss on rollback, missing retry protection) and
-filed a third as issue #284 rather than fixing it inline. Next, per the
-plan's own sequencing, is Phase 9 — the only phase touching live Drive,
-and the one the plan itself marks "(coordinator decides)" throughout, so
-that phase's own scoping questions are real ones to bring to Jeff when it
-starts, not something to default into the way this session handled
-Phase 7/8's internal sequencing calls.
+**Nothing open right now — Phase 8 is done in full and Phase 9 is
+underway with Jeff's direct involvement at every real-write decision.**
+Phase 8's idempotency audit (25 `operations.yaml` records, 29 claims
+counting modes) is complete — see the Decisions log. Phase 9 started
+2026-08-18: Jeff asked what the phase was before deciding anything, then
+approved the read-only sweep (widening it from one command to every
+coordinator-only one, on his own instinct that anything left for "whenever
+it's next needed" tends to just never get checked), then separately named
+and approved two specific real writes. Step 2 (write cutover) continues
+opportunistically now — see Next action, just above "Small queued items"
+— with the plan's own rule still binding: confirm with Jeff before
+anything that could touch a sheet Adam is actively annotating.
 
 One item worth a look when convenient, not blocking anything: **issue #283**
 (warning-shaped `print()` calls in automated commands that never reach a
