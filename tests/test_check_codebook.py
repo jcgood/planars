@@ -2,9 +2,13 @@
 from __future__ import annotations
 
 import hashlib
+import io
+from contextlib import redirect_stdout
+from pathlib import Path
 
 import pytest
 
+from coding import check_codebook
 from coding.check_codebook import (
     _collect_coverage,
     _report_schema_stubs,
@@ -13,6 +17,8 @@ from coding.check_codebook import (
     _report_keystone_active_unresolved,
     _check_diagnostics_yaml_exists,
 )
+
+ROOT = Path(__file__).resolve().parent.parent
 
 
 # ---------------------------------------------------------------------------
@@ -339,3 +345,43 @@ def test_keystone_active_multiple_langs_partial(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "lang0002/pausing" in out
     assert "lang0001" not in out
+
+
+# ---------------------------------------------------------------------------
+# Idempotency (Phase 8 of the data layer redesign, issue #271) --
+# operations.yaml's own claim: "pure read-and-report; makes no writes of any
+# kind." Every test above this one calls one helper function directly with a
+# tmp_path fixture; none calls the real CLI entry point against the actual
+# repo state and checks for stability -- this does, against real
+# schemas/coded_data, matching how the command actually runs (main() takes
+# no flags, always reads project files directly, no root= override).
+# ---------------------------------------------------------------------------
+
+def _run_main() -> tuple[str, int]:
+    buf = io.StringIO()
+    code = 0
+    try:
+        with redirect_stdout(buf):
+            check_codebook.main(check_codebook.build_parser().parse_args([]))
+    except SystemExit as exc:
+        code = exc.code or 0
+    return buf.getvalue(), code
+
+
+@pytest.mark.skipif(
+    not (ROOT / "coded_data").exists(),
+    reason="coded_data/ (planars-data) is not checked out",
+)
+def test_a_second_run_produces_byte_identical_output_and_no_writes():
+    before = {
+        p: p.stat().st_mtime_ns
+        for p in (ROOT / "schemas").rglob("*.yaml")
+    }
+
+    first_out, first_code = _run_main()
+    second_out, second_code = _run_main()
+
+    assert second_out == first_out
+    assert second_code == first_code
+    after = {p: p.stat().st_mtime_ns for p in (ROOT / "schemas").rglob("*.yaml")}
+    assert after == before

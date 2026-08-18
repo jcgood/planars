@@ -28,17 +28,24 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 OPERATIONS_PATH = ROOT / "data_dependency_schema" / "operations.yaml"
 
-_operations_cache: Dict[str, Dict] | None = None
-
 
 def _load_operations() -> Dict[str, Dict]:
-    """Return operations.yaml records keyed by id (cached per process)."""
-    global _operations_cache
-    if _operations_cache is None:
-        with open(OPERATIONS_PATH, encoding="utf-8") as f:
-            records = yaml.safe_load(f) or []
-        _operations_cache = {r["id"]: r for r in records}
-    return _operations_cache
+    """Return operations.yaml records keyed by id, read fresh every call.
+
+    Deliberately uncached (Phase 8, issue #271, found by the idempotency
+    audit) -- an earlier version cached the parsed file in a module-level
+    global after its first read, which directly contradicted this file's
+    own repeated claim that nothing here can go stale within a process.
+    Harmless for the ordinary `python -m coding registry` invocation (a
+    fresh process every time, so the cache started empty regardless), but a
+    real gap for anything importing this module and calling
+    `build_registry()` more than once in the same process -- exactly the
+    shape a test suite has. The file is small; re-reading it every call
+    costs nothing worth trading freshness for.
+    """
+    with open(OPERATIONS_PATH, encoding="utf-8") as f:
+        records = yaml.safe_load(f) or []
+    return {r["id"]: r for r in records}
 
 
 def _flags_from_parser(parser: argparse.ArgumentParser) -> List[Dict]:
@@ -60,8 +67,7 @@ def _flags_from_parser(parser: argparse.ArgumentParser) -> List[Dict]:
 def build_registry() -> List[Dict]:
     """One entry per `coding/__main__.py` command, joining its live argparse
     spec with its operations.yaml record. Recomputed fresh every call --
-    nothing here is cached across process runs, so it cannot drift from
-    either source.
+    nothing here is cached, so it cannot drift from either source.
     """
     from coding.__main__ import _COMMANDS
 

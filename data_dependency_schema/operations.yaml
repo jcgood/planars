@@ -1011,7 +1011,14 @@
     Reads coding/__main__.py's _COMMANDS table, every command module's
     build_parser(), and this file itself, fresh on every call -- never
     caches or writes anything, so repeat runs with nothing changed produce
-    identical output by construction.
+    identical output by construction. This claim was false until 2026-08-18
+    (Phase 8, issue #271's idempotency audit): _load_operations() cached
+    the parsed file in a module-level global after its first read, so a
+    second build_registry() call in the same process (never an issue for
+    the ordinary CLI invocation, a fresh process every time, but a real gap
+    for anything importing this module more than once -- a test suite,
+    say) silently returned stale data. Fixed by removing the cache; see
+    coding/registry.py's own docstring for the full account.
   apply_gate: null
   preconditions: []
   facts_touched: []

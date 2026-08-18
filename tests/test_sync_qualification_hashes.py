@@ -183,3 +183,27 @@ def test_apply_hashes_preserves_surrounding_content(tmp_path, monkeypatch):
     updated = status_path.read_text()
     assert "status: stable" in updated
     assert "- name: testclass" in updated
+
+
+def test_a_second_apply_with_nothing_changed_writes_the_same_file(tmp_path, monkeypatch):
+    """Idempotency (Phase 8 of the data layer redesign, issue #271) --
+    operations.yaml's own claim: "re-running with nothing changed re-derives
+    and writes the same hash value." No existing test called _apply_hashes
+    twice; this proves it directly rather than trusting the claim's own
+    determinism tests (test_compute_hash_deterministic) to stand in for it.
+    """
+    status_path = tmp_path / "diagnostic_classes_status.yaml"
+    status_path.write_text(_MINIMAL_STATUS_YAML)
+
+    import coding.sync_qualification_hashes as sqh
+    monkeypatch.setattr(sqh, "STATUS_YAML", status_path)
+
+    rule = "A position qualifies if free=y."
+    expected = _compute_hash(rule)
+    sqh._apply_hashes({"testclass": expected})
+    first_write = status_path.read_text()
+
+    sqh._apply_hashes({"testclass": expected})
+    second_write = status_path.read_text()
+
+    assert second_write == first_write

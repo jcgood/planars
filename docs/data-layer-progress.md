@@ -30,8 +30,15 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 8 — **first pass done, both restructure-sheets units, as of
-2026-08-17 (same session as Phase 7).** Built real fault injection for the
+**Phase:** 8 — **done in full, as of 2026-08-18 (Jeff's call: "do the full
+thing" after the first pass's report).** The remaining named item, auditing
+every command's `idempotent` claim in `operations.yaml` (25 records, 4 with
+their own mode-level claim — 29 total), is complete: each was either
+verified against a real existing test or given a new one, and one real bug
+turned up (`registry.py` cached what it claims is never cached). See the
+Current-state paragraph below this one and Next action for the full
+account. First pass (2026-08-17, same session as Phase 7): built real
+fault injection for the
 fake doorway (`tests/fake_drive.py`'s `fail_after`) and used it to crash
 `restructure-sheets` mid-sequence at both checkpoints, for both the main
 per-class loop and the separate `--rename-class` sequence, proving
@@ -210,8 +217,8 @@ the same day — see the decisions log.
 | Phase 7, unit 2 — `--rename-class` archive-sequence recovery | **done**, same day — `_rename_class_for_language` journals through the same two checkpoints and shares unit 1's journal (a plain run or `--rename-class` each refuse to start while either kind of unit is stuck). Unit key is the OLD class name, `new_class_name` carried in the checkpoint detail for reporting/resume; the rename's own extra steps (local TSV directory rename, manifest key swap) are folded into finishing `NEW_SHEET_CREATED` rather than given their own checkpoint |
 | Phase 7 — `import-sheets`/`generate-sheets` checked | **done** — neither has restructure-sheets' danger shape (destroy-before-replace). `import-sheets` needs nothing (local-only archiving, non-destructive Sheet write). `generate-sheets`'s new-sheet path needs nothing (nothing to lose). `--regen-construction`'s existing-tab clear+rewrite got a smaller, different fix: a pre-write local snapshot (`_snapshot_before_regen`), not a journal — see decisions log |
 | Phase 7 (the whole unit) | **done** — `restructure-sheets` (both units) and the `import-sheets`/`generate-sheets` check are complete; no further Phase 7 candidate identified |
-| Phase 8, first pass — fault injection on `restructure-sheets`' recovery | **done**, both units — `tests/fake_drive.py`'s `fail_after(op, count)` makes a real doorway call raise after its in-memory effect lands, simulating a crash mid-sequence rather than a hand-set journal entry. Five tests prove recovery survives a real crash: both checkpoints for the main per-class loop and for `--rename-class`'s separate sequence (four), plus a transient 429 during archiving (one, a different fault shape — the call itself fails, not "succeeded then the process died"). All confirmed to have teeth (deliberately broke the code each targets, watched every one fail, reverted). Two real bugs found and fixed this way: `_rollback_unit` used to delete every `'user'`-type permission on rollback, silently dropping a co-annotator's pre-existing access (shared by both units); and none of the archive/create steps' structural Drive calls retried on 429/500/503 the way every worksheet-content read already did, so a single rate-limit blip crashed the whole run instead of retrying transparently — now wrapped in `_with_retry` throughout. The same retry gap exists in 5 other doorway-migrated files (18 call sites), filed as issue #284 rather than fixed here (separate, mechanical sweep). A sixth test checks the plan's third named fault shape, concurrent human edits: an edit landing in the window between this command reading a tab and archiving it is not carried onto the new sheet (expected — no lock, no second read) but is never destroyed either, still readable on the archived copy. Not a bug fixable by retry/resume, so documented as a structural property rather than "fixed". Not yet covered: every other command's idempotency claims (25 records, a project-wide sweep — see Next action) |
-| Phase 8 (the whole unit) | in progress — first pass done; plan's full scope ("every multi-step operation", "every idempotency claim in Phase 4") is much broader |
+| Phase 8, first pass — fault injection on `restructure-sheets`' recovery | **done**, both units — `tests/fake_drive.py`'s `fail_after(op, count)` makes a real doorway call raise after its in-memory effect lands, simulating a crash mid-sequence rather than a hand-set journal entry. Five tests prove recovery survives a real crash: both checkpoints for the main per-class loop and for `--rename-class`'s separate sequence (four), plus a transient 429 during archiving (one, a different fault shape — the call itself fails, not "succeeded then the process died"). All confirmed to have teeth (deliberately broke the code each targets, watched every one fail, reverted). Two real bugs found and fixed this way: `_rollback_unit` used to delete every `'user'`-type permission on rollback, silently dropping a co-annotator's pre-existing access (shared by both units); and none of the archive/create steps' structural Drive calls retried on 429/500/503 the way every worksheet-content read already did, so a single rate-limit blip crashed the whole run instead of retrying transparently — now wrapped in `_with_retry` throughout. The same retry gap exists in 5 other doorway-migrated files (18 call sites), filed as issue #284 rather than fixed here (separate, mechanical sweep). A sixth test checks the plan's third named fault shape, concurrent human edits: an edit landing in the window between this command reading a tab and archiving it is not carried onto the new sheet (expected — no lock, no second read) but is never destroyed either, still readable on the archived copy. Not a bug fixable by retry/resume, so documented as a structural property rather than "fixed". | Phase 8, idempotency audit — every `operations.yaml` claim | **done**, 2026-08-18 — all 29 claims (25 records + 4 modes) checked; 19 already had a real test proving them, 10 got a new one (`prune-manifest`, `apply-pending`, `sync-qualification-hashes`, `generate-rule-update-prompt`, `validation-report`, `registry`, `check-codebook`, `lookup-lang`, `capture-drive-state` — the last two had no test file at all before this). Found and fixed one real bug: `registry.py` cached `operations.yaml`'s parsed content in a module-level global, directly contradicting its own "never cached" claim, stated three times in the file — harmless for the ordinary CLI (a fresh process every call) but a real gap for anything calling it twice in one process, which the test suite itself does. See Next action for the full per-command account |
+| Phase 8 (the whole unit) | **done** — both named items (fault injection on `restructure-sheets`, the idempotency audit) complete |
 | Phase 9 | not started |
 
 ### In flight
@@ -965,18 +972,132 @@ now documented by a test instead of left unverified.
 
 Full suite green (1399 tests, +1 new).
 
-**Next action:** the one item left from Phase 8's own stated scope is
-every other command's `idempotent` claim in `operations.yaml` — 25
-records, most never fault-injection-tested at all (including the 5 files
-issue #284 names, once that's fixed). This is a project-wide sweep, not a
-continuation of hardening `restructure-sheets` specifically — a different
-scale and shape of work than everything in this phase so far, which is
-why this pass stops here rather than starting it unscoped. Whether to
-scope and run that sweep next, consider this first pass sufficient signal
-and move toward Phase 9's staged cutover, or something else, is a real
-call — flagged here rather than defaulted into, unlike the smaller
-in-scope decisions this session made on its own (see the decisions log
-entries above for the distinction being drawn).
+**The idempotency audit, 2026-08-18, on Jeff's explicit instruction ("go
+ahead and do the full thing") after the first pass's report named it as a
+real open item rather than defaulting into it.** All 25 `operations.yaml`
+records plus their 4 mode-level sub-claims (`sync-params
+--refresh-dropdowns`, `sync-diagnostics-yaml --to-sheet`/`--from-tsv`,
+`import-planar --to-sheet`) — 29 claims total.
+
+**Method:** for each claim, check whether an existing test actually
+invokes the real behavior twice (or the equivalent — a genuine "given
+this state, does re-running produce no further change" check) rather than
+only testing a single run against an already-clean starting fixture,
+which proves a *related* but weaker thing. Where a real test already
+existed, verified it and moved on without touching it. Where it didn't,
+added one — sized to the claim's actual risk, not a fixed template: a
+Drive-mutating command's claim got a test through the real command with
+the fake doorway; a pure local-state function's claim got a direct
+two-calls-same-input check.
+
+**19 of 29 claims already had a real test proving them** — found by
+reading each command's test file rather than assumed: `generate-notebooks`
+(3 dedicated second-run tests), `generate-reports`, `sync-params` (base +
+`--refresh-dropdowns`), `sync-diagnostics-yaml` (base + both modes),
+`update-sheets`, `import-sheets`, `validate-coding` (a real corrupt-fix-
+reverify-clears cycle, not just a same-input check), `setup-root-folder`,
+`import-planar` (both directions), `generate-status-sheet`,
+`generate-biuniqueness-allomorphy-sheet`, `integrity-check` (a real
+`doorway.mutations == []` assertion after a full `--sheets` run), and
+`generate-sheets`'s base `idempotent: false` claim (a snapshot-backed test
+whose own docstring states the manifest-always-reuploads reasoning
+directly). `restructure-sheets`' both `idempotent: false` claims are what
+the rest of this phase already hardened. One near-miss corrected before
+counting it as covered: `validate_coding` was initially flagged as a gap
+by a keyword search for "second run"/"idempotent"-shaped test names, then
+found to be genuinely covered once read directly
+(`test_fixing_the_value_clears_its_highlight` runs the real command twice)
+— a reminder that a grep for phrasing is a starting point, not a
+substitute for reading the test.
+
+**10 claims got a new test** (`tests/test_prune_manifest_snapshot.py`,
+`tests/test_apply_pending_snapshot.py`, `tests/test_sync_qualification_hashes.py`,
+`tests/test_generate_rule_update_prompt.py`, `tests/test_validation_report.py`,
+`tests/test_registry.py`, `tests/test_check_codebook.py`, and two brand-new
+files, `tests/test_glottolog.py` and `tests/test_capture_drive_state.py`,
+for the two commands that had no test file of any kind before this):
+
+- **`prune-manifest`** — existing coverage tested "nothing was ever stale"
+  (a hand-set post-state), not "prune something for real, then run again
+  and confirm the now-gone class isn't reprocessed" — the exact mechanism
+  `_find_stale`'s own idempotency_note claims. New test runs a real prune,
+  then a real second apply, and checks the doorway sees zero further
+  mutations.
+- **`apply-pending`** — the #280 fix's specific claim (a crash right after
+  one entry's command succeeds must not leave that entry still listed, or
+  a retry re-runs it) had no test proving it, only tests for the
+  *different* already-covered case of an entry whose command fails
+  cleanly. New test makes `_run_command` succeed once then raise, and
+  checks the on-disk `pending_changes.json` after the crash: the
+  succeeded entry is gone, the not-yet-attempted one is still there.
+- **`sync-qualification-hashes`**, **`generate-rule-update-prompt`**,
+  **`validation-report`** — each had a claim shaped "same input always
+  produces the same output" with a determinism test for the underlying
+  hash/text function, but nothing calling the actual write/build entry
+  point (`_apply_hashes`, `_generate_prompt`, `build_issue_body`) twice.
+  New tests do exactly that.
+- **`check-codebook`** — every existing test calls one internal helper
+  function against a `tmp_path` fixture; nothing runs the real CLI entry
+  point (`main()`, no flags, always reads the actual repo) against real
+  `schemas/`/`coded_data/` and checks for output stability and zero
+  writes. New test does, comparing two real runs' stdout/exit code and
+  confirming no `schemas/*.yaml` file's mtime changed.
+- **`registry`** — see the bug below; the new test is what found it.
+- **`lookup-lang`** (`tests/test_glottolog.py`, new file) — no test
+  existed at all. The claim ("cache hit makes zero writes") is directly
+  testable offline by mocking the one thing that can't run offline
+  (`urllib.request.urlopen`): four tests confirm a second call for an
+  already-cached Glottocode makes no second fetch and writes neither
+  `glottolog_cache.json` nor `languages.yaml`, `--refresh` does force a
+  second fetch, and two different Glottocodes each get their own fetch
+  (caching is per-code, not global). Confirmed to have teeth: temporarily
+  disabled the cache-hit check, watched both write-side tests fail,
+  reverted.
+- **`capture-drive-state`** (`tests/test_capture_drive_state.py`, new
+  file) — no test existed at all, and it's the one command exempt from
+  the Drive doorway (its whole job is recording raw API responses) and
+  the one live-Drive-permitted command, so it can't be driven through
+  `main()` offline. What's testable without live Drive is its pure
+  capture logic (`_capture_worksheet`/`_capture_spreadsheet`): given a
+  `FakeWorksheet`/`FakeSpreadsheet` (same interface real gspread handles
+  present, same stand-in every other command's tests already use), two
+  captures of the same content are byte-identical. A third test's premise
+  (feed it a ragged tab, confirm it's recorded ragged not padded) turned
+  out to be wrong and was dropped rather than forced to pass: the fake
+  deliberately never returns ragged rows at all (`get_all_values()` is
+  documented to reproduce the real API's rectangular-only behavior), so
+  there was nothing to observe — not a bug, a test built on a false
+  premise, caught before it could sit in the suite asserting something
+  that was never really being exercised.
+
+**The one real bug: `registry.py` cached what it explicitly, repeatedly
+claims is never cached.** `_load_operations()` stored `operations.yaml`'s
+parsed content in a module-level global after its first read within a
+process. The ordinary CLI invocation never notices — `python -m coding
+registry` is a fresh process every time, so the cache starts empty
+regardless — but anything importing `coding.registry` and calling
+`build_registry()` more than once in the same process (a test suite,
+inescapably) would silently see stale data after the file changed. Found
+by writing the straightforward version of the idempotency test (call
+`build_registry()`, change the file, call it again, expect the change to
+show) and watching it fail for a real reason rather than a test bug.
+Fixed by deleting the cache entirely — the file is small enough that
+re-reading it every call costs nothing worth trading freshness for, which
+is also just this command's entire reason to exist. Confirmed the fix
+both ways: the new test fails against the reintroduced cache and passes
+against the fix. `data_dependency_schema/operations.yaml`'s own `registry`
+record and `coding/CLAUDE.md`'s `registry.py` entry updated to record the
+finding rather than continue repeating the now-corrected claim as if nothing
+had ever been wrong with it.
+
+Full suite green throughout (1412 tests, +13 new: one per new test above,
+except `lookup-lang`'s four and `capture-drive-state`'s two).
+
+**Phase 8 is done in full.** Both of the plan's named items —
+fault-injection coverage of `restructure-sheets`' recovery, and proof for
+every command's idempotency claim — are complete. Next, per the plan's own
+sequencing, is Phase 9 (staged cutover, the only phase touching live
+Drive) unless something else takes priority first.
 
 ### Held until Phase 9
 
@@ -1955,6 +2076,25 @@ commit.
 ---
 
 ## Decisions log
+
+**2026-08-18 — Jeff: "go ahead and do the full thing" — the idempotency
+audit, run to completion rather than scoped down or sampled.** The one
+item this session had explicitly named as too large to default into
+(auditing all 25 `operations.yaml` idempotency claims, flagged rather than
+started unscoped) was given a direct go-ahead. Run as a real audit, not a
+token pass: every claim checked against its actual test coverage by
+reading the test file, not by grepping for phrasing (a keyword search
+initially mis-flagged `validate_coding` as a gap; reading the file directly
+showed it was already covered) — 19 of 29 claims already had a real test,
+10 got a new one sized to the claim's actual mechanism rather than a fixed
+template. This is also where the audit paid for itself: `registry.py`'s
+module-level cache, contradicting its own repeated "never cached" claim,
+was found by the most literal possible test of the claim (write a file,
+call the function, change the file, call again, check the change shows) —
+exactly the kind of thing a full pass finds and a scoped-down sample could
+easily have missed, since the bug is invisible to the ordinary CLI
+invocation and only shows up when the same process calls the function
+twice.
 
 **2026-08-17 — decided without a check-in: proceed straight from Phase 7
 to a first pass of Phase 8, and pick `restructure-sheets`' own recovery as
@@ -3154,22 +3294,21 @@ unit 1's. Neither command needed restructure-sheets' journal;
 `--regen-construction` got a smaller, differently-shaped fix instead (a
 pre-write snapshot).
 
-**One real open item: whether to run the full 25-command idempotency
-sweep Phase 8's own scope still names, or stop here.** Phase 7 is done as
-scoped. Phase 8's first pass (same day) covered `restructure-sheets`
-thoroughly — both units' recovery under a real crash, a transient 429
-during archiving, and concurrent human edits — found and fixed two real
-bugs (permission loss on rollback, missing retry protection) and filed
-one more as issue #284 rather than fixing it inline. What's left is
-different in kind, not a small continuation: auditing every other
-command's `idempotent` claim in `operations.yaml` (25 records) is a
-project-wide sweep on the scale of Phase 4's own review, not a few more
-tests on code already being hardened. Flagged here rather than defaulted
-into — every smaller call this session made on its own (which command to
-harden first, whether import-sheets/generate-sheets needed the same
-treatment, whether to fix issue #284 inline or file it) used the project's
-stated goals to decide without asking; this one is sized differently
-enough to name explicitly instead.
+**Nothing open right now — Phase 8 is done in full.** Jeff answered the
+one real open item ("do the full thing") 2026-08-18: the idempotency audit
+across all 25 `operations.yaml` records (29 claims counting modes) is
+complete, 19 already covered by a real test and 10 given a new one, one
+real bug found and fixed (`registry.py` cached what it claims is never
+cached — see the Decisions log and Current-state paragraph above). Phase 7
+is done as scoped; Phase 8's first pass (fault injection on
+`restructure-sheets`, same session as Phase 7) found and fixed two more
+real bugs (permission loss on rollback, missing retry protection) and
+filed a third as issue #284 rather than fixing it inline. Next, per the
+plan's own sequencing, is Phase 9 — the only phase touching live Drive,
+and the one the plan itself marks "(coordinator decides)" throughout, so
+that phase's own scoping questions are real ones to bring to Jeff when it
+starts, not something to default into the way this session handled
+Phase 7/8's internal sequencing calls.
 
 One item worth a look when convenient, not blocking anything: **issue #283**
 (warning-shaped `print()` calls in automated commands that never reach a

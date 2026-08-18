@@ -78,3 +78,40 @@ def test_unknown_command_is_a_clear_error():
 def test_unknown_flag_hard_errors():
     with pytest.raises(SystemExit):
         registry.build_parser().parse_args(["--bogus-flag"])
+
+
+def test_a_second_call_in_the_same_process_reflects_a_changed_operations_yaml(tmp_path):
+    """Idempotency (Phase 8 of the data layer redesign, issue #271) --
+    every claim in this module and its own docstrings is "recomputed fresh
+    every call, nothing cached." Found a real violation this way:
+    `_load_operations()` cached the parsed file in a module-level global
+    after its first read, so a second `build_registry()` call in the same
+    process silently returned stale data -- harmless for the ordinary CLI
+    invocation (a fresh process every time), but a real gap for anything
+    importing this module and calling it more than once, which a test
+    suite does constantly. Fixed by removing the cache; this test proves
+    the fix by writing a real operations.yaml, calling build_registry()
+    twice, changing the file in between, and confirming the second call
+    picks up the change.
+    """
+    ops_path = tmp_path / "operations.yaml"
+    ops_path.write_text(
+        "- id: check_codebook\n  description: original description\n",
+        encoding="utf-8",
+    )
+    original = registry.OPERATIONS_PATH
+    registry.OPERATIONS_PATH = ops_path
+    try:
+        first = registry.build_registry()
+        check_codebook = next(e for e in first if e["cli_command"] == "check-codebook")
+        assert check_codebook["operation"]["description"] == "original description"
+
+        ops_path.write_text(
+            "- id: check_codebook\n  description: changed description\n",
+            encoding="utf-8",
+        )
+        second = registry.build_registry()
+        check_codebook = next(e for e in second if e["cli_command"] == "check-codebook")
+        assert check_codebook["operation"]["description"] == "changed description"
+    finally:
+        registry.OPERATIONS_PATH = original

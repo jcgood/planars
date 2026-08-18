@@ -339,3 +339,30 @@ def test_nothing_stale_does_nothing(env, monkeypatch):
     out = run(["prune-manifest", "--apply", "--all"])
     assert "nothing to prune" in out
     assert doorway.mutations == []
+
+
+# ---------------------------------------------------------------------------
+# Idempotency (Phase 8 of the data layer redesign, issue #271) -- proving
+# operations.yaml's own claim ("_find_stale is recomputed fresh from the
+# current manifest at the start of every run, so a class already fully
+# pruned won't be reprocessed") against a real prune, not the case above's
+# manually-simulated post-state. #280's fix (upload_manifest running right
+# after each class, not once at the end of the whole loop) is what makes
+# this true for a run interrupted mid-loop; this test is the plain
+# uninterrupted case, which the fix needed to keep true too.
+# ---------------------------------------------------------------------------
+
+def test_a_second_apply_after_a_real_prune_reprocesses_nothing(env):
+    doorway, run, coded, _ = env
+    run(["prune-manifest", "--apply"], ["y"])  # the real prune
+
+    doorway.clear_mutations()
+    out = run(["prune-manifest", "--apply", "--all"])
+
+    assert "nothing to prune" in out
+    assert doorway.mutations == []
+    # Still archived from the first run, not re-touched by the second --
+    # archived filenames carry a wall-clock stamp, so compare stems only.
+    assert active_tsvs(coded) == []
+    assert sorted(name.split("_2")[0] for name in archived_tsvs(coded)) == [
+        "general", "stress_domain"]

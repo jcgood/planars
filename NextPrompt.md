@@ -50,14 +50,24 @@ carried onto the new sheet, but isn't destroyed either — still recoverable
 from the archived copy. Not a bug fixable without changing the command's
 actual read/write ordering, so documented by a test rather than "fixed."
 
-**One real open item, not defaulted into:** the last piece of Phase 8's
-own named scope is auditing every other command's `idempotent` claim in
-`operations.yaml` (25 records) — a project-wide sweep, different in scale
-from hardening `restructure-sheets` specifically. Every smaller call this
-session made on its own using the project's stated goals; this one is
-sized like Phase 4's own review and is named explicitly rather than
-started unscoped. See `docs/data-layer-progress.md`'s Open questions
-section.
+**Phase 8's remaining named item — the idempotency audit across all 25
+`operations.yaml` records (29 claims counting modes) — is done, 2026-08-18,
+on Jeff's explicit "do the full thing."** 19 claims already had a real
+test proving them (found by reading each command's test file, not
+grepping for phrasing — a keyword search initially mis-flagged
+`validate_coding` as a gap, corrected by reading it directly); 10 got a
+new one, including two commands (`lookup-lang`, `capture-drive-state`)
+that had no test file at all before this. One real bug found and fixed:
+`registry.py` cached `operations.yaml`'s parsed content in a module-level
+global, directly contradicting its own repeated "never cached" claim —
+invisible to the ordinary CLI (a fresh process every call) but a real gap
+for anything calling it twice in one process, which the test suite does
+constantly. **Phase 8 is done in full.** See
+`docs/data-layer-progress.md`'s Current state / Next action / Decisions
+log for the full per-command account. Next, per the plan's own
+sequencing, is Phase 9 (staged cutover, the only phase touching live
+Drive, and the one the plan itself marks "coordinator decides" throughout)
+unless something else takes priority.
 
 **Phase 5 is done, all five units, as of 2026-08-17.** No open questions,
 nothing blocked. Full detail in `docs/data-layer-progress.md`'s Current
@@ -102,10 +112,9 @@ list straight from the workflow YAML and fails if a *new* orphaned warning
 joins the pile unclassified — the actual answer to "how do I stop missing
 this", not a periodic manual re-sweep.
 
-**Phase 7 is done as scoped (see above). Phase 8 has a first pass done
-(see above); its remaining scope and Phase 9 remain unscoped in
-session-level detail** — see `docs/data-layer-implementation-plan.md` for
-the phase spec.
+**Phases 7 and 8 are both done in full (see above). Phase 9 remains
+unscoped in session-level detail** — see
+`docs/data-layer-implementation-plan.md` for the phase spec.
 
 **Phase 0b/1 (the doorway migration), Phase 3 (schema reorganization), and
 Phase 4 (topology declaration) are all complete, nothing outstanding from

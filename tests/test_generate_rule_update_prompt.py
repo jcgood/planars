@@ -82,3 +82,19 @@ def test_generate_prompt_new_module_no_source(tmp_path, monkeypatch):
     prompt = grp._generate_prompt(cls)
     assert "from scratch" in prompt
     assert "planars/brand_new_class.py" in prompt
+
+
+def test_generate_prompt_is_a_pure_function_of_its_input(tmp_path, monkeypatch):
+    """Idempotency (Phase 8 of the data layer redesign, issue #271) --
+    operations.yaml's own claim: "pure function of the current hash-mismatch
+    state -- same input state produces the same prompt text." No existing
+    test called _generate_prompt twice with the same class dict; this proves
+    it directly, including against the module-source-reading branch
+    (test_generate_prompt_update_existing_module's path), not just the
+    no-source branch already exercised above.
+    """
+    import coding.generate_rule_update_prompt as grp
+    cls = _fake_cls("metrical", "A position qualifies if free=y.", hash_val="deadbeef")
+    first = grp._generate_prompt(cls)
+    second = grp._generate_prompt(cls)
+    assert second == first

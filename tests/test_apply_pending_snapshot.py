@@ -436,3 +436,47 @@ def test_all_refuses_new_construction_entries(env):
     session = run([entry], answers=[], all_flag=True)
     assert session.remaining == [entry]
     assert "cannot be applied automatically" in session.output
+
+
+# ---------------------------------------------------------------------------
+# Idempotency (Phase 8 of the data layer redesign, issue #271) -- proving
+# the #280 fix's own claim for real: pending_changes.json is rewritten after
+# every entry's decision, not once at the end of the loop, so a crash right
+# after one entry's command has already run for real doesn't leave that
+# entry still listed (which would make a retry run it a second time). The
+# fixture's own `run()` stubs _run_command to always succeed, so this test
+# builds its own scripted version that succeeds once, then raises -- a real
+# crash mid-loop, not a hand-set file.
+# ---------------------------------------------------------------------------
+
+def test_a_crash_after_one_entry_succeeds_does_not_leave_it_listed(monkeypatch, tmp_path):
+    pending_path = tmp_path / "pending_changes.json"
+    entry_a = dict(planar_entry(), description="first change")
+    entry_b = dict(planar_entry(), description="second change")
+    pending_path.write_text(json.dumps([entry_a, entry_b], indent=2), encoding="utf-8")
+    monkeypatch.setattr(apply_pending, "PENDING_PATH", pending_path)
+
+    calls = {"n": 0}
+
+    def flaky_run_command(cmd):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return 0  # entry_a's command genuinely succeeds
+        raise RuntimeError("simulated crash while running entry_b's command")
+
+    monkeypatch.setattr(apply_pending, "_run_command", flaky_run_command)
+    monkeypatch.setattr(apply_pending, "_close_pending_issue", lambda: None)
+    replies = iter(["y", "y"])
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(replies))
+    monkeypatch.setattr(sys, "argv", ["apply-pending"])
+
+    with pytest.raises(RuntimeError, match="simulated crash"):
+        apply_pending.main()
+
+    left = json.loads(pending_path.read_text(encoding="utf-8"))
+    # entry_a's success was saved immediately -- not still listed, so a
+    # retry won't run its command a second time. entry_b never got a save
+    # for its own decision (the crash landed before that line), so it's
+    # still exactly where it was -- correctly re-attempted next time, since
+    # its command never actually completed.
+    assert left == [entry_b]

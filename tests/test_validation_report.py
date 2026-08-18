@@ -193,3 +193,19 @@ def test_section_prefix_is_not_repeated_in_the_message():
     body = build_issue_body(parse_report(ERROR_LOG), "2026-08-02")
     assert "`phrasal_accent/general`: missing structural column" in body
     assert "general: general:" not in body
+
+
+def test_build_issue_body_is_a_pure_function_of_its_input():
+    """Idempotency (Phase 8 of the data layer redesign, issue #271) --
+    operations.yaml's own claim: "pure function of validate-coding's log
+    text -- same input always produces the same formatted output." Every
+    existing test above builds one body and checks its content; none calls
+    build_issue_body twice with the same input and compares -- this proves
+    the claim directly, across all three log shapes (crash, errors,
+    warnings-only) rather than just one.
+    """
+    for log in (CRASH_LOG, ERROR_LOG, WARNINGS_ONLY_LOG):
+        report = parse_report(log)
+        first = build_issue_body(report, "2026-08-02")
+        second = build_issue_body(parse_report(log), "2026-08-02")
+        assert second == first
