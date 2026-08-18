@@ -30,16 +30,20 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 8 — **first pass done, as of 2026-08-17 (same session as
-Phase 7).** Built real fault injection for the fake doorway
-(`tests/fake_drive.py`'s `fail_after`) and used it to crash
-`restructure-sheets` mid-sequence at both of Phase 7's checkpoints, proving
+**Phase:** 8 — **first pass done, both restructure-sheets units, as of
+2026-08-17 (same session as Phase 7).** Built real fault injection for the
+fake doorway (`tests/fake_drive.py`'s `fail_after`) and used it to crash
+`restructure-sheets` mid-sequence at both checkpoints, for both the main
+per-class loop and the separate `--rename-class` sequence, proving
 `--resume` genuinely recovers rather than trusting a hand-set journal entry
 the way Phase 7's own tests did. Found and fixed a real bug this way:
-rollback used to silently drop a co-annotator's pre-existing sheet access.
-Confirmed both new tests actually catch a broken recovery (deliberately
-broke it, watched them fail, reverted). This is a first pass, not the
-phase's full scope — see Next action. 7 — **done, both restructure-sheets
+rollback used to silently drop a co-annotator's pre-existing sheet access
+— caught once, but shared by both units since they share the same
+rollback code, so extending coverage to the second unit was confirmation,
+not a second discovery. Confirmed all four new tests actually catch a
+broken recovery (deliberately broke it, watched them fail, reverted).
+This is a first pass, not the phase's full scope — see Next action. 7 —
+**done, both restructure-sheets
 units plus the import-sheets/generate-sheets check, as of 2026-08-17.**
 `restructure-sheets --apply`'s main per-class loop (unit 1)
 and its separate `--rename-class` archive sequence (unit 2, same day) both
@@ -196,7 +200,7 @@ the same day — see the decisions log.
 | Phase 7, unit 2 — `--rename-class` archive-sequence recovery | **done**, same day — `_rename_class_for_language` journals through the same two checkpoints and shares unit 1's journal (a plain run or `--rename-class` each refuse to start while either kind of unit is stuck). Unit key is the OLD class name, `new_class_name` carried in the checkpoint detail for reporting/resume; the rename's own extra steps (local TSV directory rename, manifest key swap) are folded into finishing `NEW_SHEET_CREATED` rather than given their own checkpoint |
 | Phase 7 — `import-sheets`/`generate-sheets` checked | **done** — neither has restructure-sheets' danger shape (destroy-before-replace). `import-sheets` needs nothing (local-only archiving, non-destructive Sheet write). `generate-sheets`'s new-sheet path needs nothing (nothing to lose). `--regen-construction`'s existing-tab clear+rewrite got a smaller, different fix: a pre-write local snapshot (`_snapshot_before_regen`), not a journal — see decisions log |
 | Phase 7 (the whole unit) | **done** — `restructure-sheets` (both units) and the `import-sheets`/`generate-sheets` check are complete; no further Phase 7 candidate identified |
-| Phase 8, first pass — fault injection on `restructure-sheets`' recovery | **done** — `tests/fake_drive.py`'s `fail_after(op, count)` makes a real doorway call raise after its in-memory effect lands, simulating a crash mid-sequence rather than a hand-set journal entry. Two tests prove both checkpoints' recovery survives a real crash and confirmed to have teeth (deliberately broke the recovery, watched both fail, reverted). Found and fixed a real bug this way: `_rollback_unit` used to delete every `'user'`-type permission on rollback, silently dropping a co-annotator's pre-existing access if the sheet had one before archiving even started — exactly the assumption Phase 7's own docstring had flagged as unverified. Not yet covered: `--rename-class`'s sequence under real fault injection (same mechanism, not yet exercised), 429/500/timeout-shaped API failures (only "succeeded then crashed" simulated so far), concurrent human edits, and every other command's idempotency claims |
+| Phase 8, first pass — fault injection on `restructure-sheets`' recovery | **done**, both units — `tests/fake_drive.py`'s `fail_after(op, count)` makes a real doorway call raise after its in-memory effect lands, simulating a crash mid-sequence rather than a hand-set journal entry. Four tests (two per unit) prove both checkpoints' recovery survives a real crash for the main per-class loop *and* `--rename-class`'s separate sequence, all confirmed to have teeth (deliberately broke the recovery, watched all four fail, reverted). Found and fixed a real bug this way: `_rollback_unit` used to delete every `'user'`-type permission on rollback, silently dropping a co-annotator's pre-existing access if the sheet had one before archiving even started — exactly the assumption Phase 7's own docstring had flagged as unverified, and shared by both units since they share the same rollback code. Not yet covered: 429/500/timeout-shaped API failures (only "succeeded then crashed" simulated so far), concurrent human edits, and every other command's idempotency claims |
 | Phase 8 (the whole unit) | in progress — first pass done; plan's full scope ("every multi-step operation", "every idempotency claim in Phase 4") is much broader |
 | Phase 9 | not started |
 
@@ -870,9 +874,27 @@ fake" result is read as "matches Drive").
 Full suite green throughout (1395 tests, +3 new: the two crash tests plus
 the co-annotator regression test).
 
-**Next action:** this is a first pass, not Phase 8's full scope. Not yet
-covered: `--rename-class`'s own archive sequence under real fault
-injection (same `fail_after` mechanism, just not yet pointed at it); API
+**Extended to unit 2 (`--rename-class`) the same session, unprompted —
+Jeff asked "why did you stop, do you need my input?" after the report
+above, which was answered directly (no, that was a natural stopping point,
+not a block) and taken as confirmation to keep going on the already-stated
+plan rather than a new instruction to interpret.** Two more tests, same
+`fail_after` mechanism, same two checkpoints, now driving
+`_rename_class_for_language`'s own archive sequence through a real crash
+(`env.rename_class_in_diagnostics` + `--rename-class proform:proform_renamed`,
+reusing the existing real-rename fixture setup rather than a synthetic
+one): a crash between archiving and creating the replacement, and a crash
+after the replacement exists but before the closing manifest upload
+(reusing the same `upload_manifest`-raises-once technique, since the
+`update_file`-level fallback swallows a doorway-level fault here too).
+Both confirmed to have teeth the same way (broke the recovery, watched
+both new tests fail, reverted). No second bug turned up — expected, since
+unit 2 shares unit 1's `_rollback_unit`/`_finish_new_sheet_created_unit`
+code entirely, so the co-annotator-permission fix already covered it; this
+pass is evidence that sharing holds under a real crash, not just in the
+hand-driven tests. Full suite green (1397 tests, +2 new).
+
+**Next action:** still not Phase 8's full scope. Not yet covered: API
 failures shaped like 429/500/timeout rather than "succeeded then crashed"
 (`_with_retry`'s own retry behavior is untested against a fake that
 actually fails a few times before succeeding); concurrent human edits

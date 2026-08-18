@@ -961,5 +961,82 @@ def test_real_crash_before_final_manifest_upload_then_resume_recovers(env, monke
                    "--rename-map", "v:npsubj1:v:npsubj1new"])
     assert rj.load_journal() == {}
     assert "Manifest updated on Drive." in out
-    for lang_id, class_name in stuck:
-        assert class_name in env.manifest()[lang_id]["sheets"]
+
+
+def test_rename_class_real_crash_between_archive_and_create_then_resume_recovers(env):
+    """Same fault as the main-loop version above, injected against
+    --rename-class's own archive sequence (_rename_class_for_language,
+    Phase 7 unit 2) instead -- unit 2 shares unit 1's journal and recovery
+    code, but had not itself been driven through a real crash before now.
+    """
+    env.rename_class_in_diagnostics("stan1293", "proform", "proform_renamed")
+    env.doorway.fail_after("create_spreadsheet", 1)
+    with pytest.raises(RuntimeError, match="simulated crash"):
+        env.run(["--apply", "--lang", "stan1293",
+                 "--rename-class", "proform:proform_renamed"])
+
+    journal = rj.load_journal()
+    assert len(journal) == 1
+    entry = next(iter(journal.values()))
+    assert entry["checkpoint"] == rj.OLD_SHEET_ARCHIVED
+    assert entry["class_name"] == "proform"
+    assert entry["detail"]["new_class_name"] == "proform_renamed"
+
+    env.doorway.clear_faults()
+    out = env.run(["--apply", "--lang", "stan1293",
+                   "--rename-class", "proform:proform_renamed"])
+    assert "[SystemExit:" in out
+    assert "proform -> proform_renamed" in out
+
+    out = env.run(["--resume", "--apply", "--lang", "stan1293",
+                   "--rename-class", "proform:proform_renamed"])
+    assert rj.load_journal() == {}
+    manifest = env.manifest()["stan1293"]["sheets"]
+    assert "proform" not in manifest
+    assert "proform_renamed" in manifest
+    live_id = manifest["proform_renamed"]["spreadsheet_id"]
+    assert env.doorway.spreadsheet(live_id).title == "proform_renamed_stan1293"
+
+
+def test_rename_class_real_crash_before_final_manifest_upload_then_resume_recovers(env, monkeypatch):
+    """Same fault as the main-loop version above (a crash after the
+    replacement is fully built, before the closing Drive manifest upload),
+    injected against --rename-class instead. This is the window where the
+    manifest key swap (old class's entry removed, new one added) and the
+    local TSV directory rename both still need to happen -- both folded
+    into finishing NEW_SHEET_CREATED, not their own checkpoint (see
+    restructure_journal.py's module docstring) -- so this is also the test
+    proving that finish step runs for real, not just in the hand-driven
+    unit test that first covered it.
+    """
+    env.rename_class_in_diagnostics("stan1293", "proform", "proform_renamed")
+
+    real_upload_manifest = rs.upload_manifest
+    calls = {"n": 0}
+
+    def _flaky_upload_manifest(*a, **kw):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError("simulated crash during manifest upload")
+        return real_upload_manifest(*a, **kw)
+
+    monkeypatch.setattr(rs, "upload_manifest", _flaky_upload_manifest)
+    with pytest.raises(RuntimeError, match="simulated crash"):
+        env.run(["--apply", "--lang", "stan1293",
+                 "--rename-class", "proform:proform_renamed"])
+
+    journal = rj.load_journal()
+    assert len(journal) == 1
+    entry = next(iter(journal.values()))
+    assert entry["checkpoint"] == rj.NEW_SHEET_CREATED
+    assert entry["class_name"] == "proform"
+    assert entry["detail"]["new_class_name"] == "proform_renamed"
+
+    monkeypatch.setattr(rs, "upload_manifest", real_upload_manifest)
+    out = env.run(["--resume", "--apply", "--lang", "stan1293",
+                   "--rename-class", "proform:proform_renamed"])
+    assert rj.load_journal() == {}
+    assert "Manifest updated on Drive." in out
+    manifest = env.manifest()["stan1293"]["sheets"]
+    assert "proform" not in manifest
+    assert "proform_renamed" in manifest

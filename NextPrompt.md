@@ -34,12 +34,14 @@ fix (a pre-write local snapshot, not a resume system — see
 **Phase 8 ("fault-injection stress testing") has a first pass done, same
 session.** `tests/fake_drive.py`'s new `fail_after(op, count)` makes a real
 Drive call raise mid-operation instead of hand-setting a journal entry;
-used to crash `restructure-sheets` for real at both of Phase 7's
-checkpoints and confirm `--resume` actually recovers. Found and fixed a
-real bug this way: rollback used to silently drop a co-annotator's
-pre-existing sheet permission. Not the phase's full scope — `--rename-class`
-under fault injection, 429/500/timeout-shaped failures, concurrent edits,
-and every other command's idempotency claims are all still uncovered. See
+used to crash `restructure-sheets` for real at both checkpoints, for both
+the main per-class loop and `--rename-class`'s own sequence, and confirm
+`--resume` actually recovers each time. Found and fixed a real bug this
+way: rollback used to silently drop a co-annotator's pre-existing sheet
+permission (shared by both units, so extending to the second was
+confirmation, not a second discovery). Not the phase's full scope —
+429/500/timeout-shaped failures, concurrent edits, and every other
+command's idempotency claims are all still uncovered. See
 `docs/data-layer-progress.md`'s Next action for the full list. Nothing
 blocked; the default is to keep widening Phase 8's coverage rather than
 stop and ask.
