@@ -15,6 +15,47 @@ this project is trying to remove.
 
 ## Now
 
+**Loose ends flagged for the next session (Jeff asked these be tracked explicitly
+before clearing, 2026-08-19), none blocking anything else — good candidates for
+a session with no specific task in mind:**
+- **#284** — retry-wrapping gap. Phase 8's fault injection gave
+  `restructure_sheets.py`'s structural Drive calls `_with_retry` (a 429/500/503
+  no longer crashes the run); the same gap exists at 18 call sites across
+  `generate_sheets.py`, `generate_status_sheet.py`,
+  `generate_biuniqueness_allomorphy_sheet.py`, `setup_root_folder.py`, and
+  `prune_manifest.py`, found the same day but deliberately left as its own
+  mechanical sweep rather than folded in. Same fix shape throughout, low risk,
+  no coordinator judgment needed — a clean next task.
+- **#283** — five warning-shaped `print()` calls in commands the daily
+  automation runs unattended never reach a GitHub issue (found by the same
+  sweep). `tests/test_unattended_warning_escalation.py` now stops a *sixth*
+  from joining unnoticed, but doesn't fix the five already there. Recommended
+  fixes are in the issue body; deliberately not applied solo since they touch
+  the automation safety net itself (`.github/workflows/*.yml`) — read the
+  issue and decide per site rather than batch-apply.
+- Worth a quick `gh issue list --label bug --label infrastructure` sweep
+  before the next real Drive write generally — Phase 9's step 2 (live writes,
+  below) is exactly the point where a gap like these two would first bite for
+  real, so closing them down is good sequencing, not just tidiness.
+
+**A tangent this session (2026-08-18/19) worth knowing about even though it's
+unrelated to #271: issue #285, found, fixed, and closed.** Investigating what
+looked like leftover #241 fallout on `synth0001` turned up a real, separate
+bug: `coreference`'s `referential` filter had the same element-vs-position
+exclusion shape issue #228 found for `nonpermutability` back in May — #228's
+own closing text had incorrectly claimed coreference was unaffected. Fixed:
+coreference's filter now shares #228's divergence guard (abort and file a
+`diagnostics` issue instead of silently resolving the ambiguity), and
+`integrity-check`'s own coreference staleness check — which had an
+independently-wrong approximation, the thing that actually surfaced this —
+now matches the real filter instead of a separately-invented one.
+`stan1293` has zero divergent elements right now, so no real annotation was
+affected; this was only visible in `synth0001`'s synthetic data. Also closed
+while cleaning up: **#241** (the original split-cascade problem — done since
+2026-08-01, just never closed after the final confirming comment) and two
+accidental duplicate issues (**#286**/**#287**) a test run filed against the
+real repo before a fixture-neutralization fix landed later the same session.
+
 **Phase 9 ("staged cutover") started 2026-08-18 and is in progress — the
 first phase permitted to write to live Drive, after every prior phase
 built and tested against a fake.** Step 1 (shadow reads) is done: every
@@ -26,15 +67,17 @@ project already runs live continuously via `data-refresh.yml`/
 `sheet-validation.yml`'s daily automation, which has been exercising every
 phase of this whole redesign against real Drive the moment each merged —
 there was never a separate "old path" to shadow against the way the plan's
-generic wording assumes. Step 2 (write cutover) has begun: two real
-writes done, both named to Jeff and approved individually first
+generic wording assumes. Step 2 (write cutover) has begun: four real
+writes done, each named to Jeff and approved individually first
 (`synth0001`'s stale coreference columns removed; `arao1248`'s two
-still-missing class sheets created). `restructure-sheets`/`prune-manifest`
-reported nothing to do, so haven't been cut over to a real write yet —
-that happens whenever real project work next calls for either. Full
-account, including why the daily-automation finding reframes what "shadow
-reads" means for this project specifically: `docs/data-layer-progress.md`'s
-Phase 9 entries (Current state, Next action, Decisions log).
+still-missing class sheets created; the orphaned `biuniqueness_stage1_
+synth0001` sheet trashed and its replacement `biuniqueness_allomorphy_
+synth0001` created). `restructure-sheets`/`prune-manifest` reported nothing
+to do, so haven't been cut over to a real write yet — that happens whenever
+real project work next calls for either. Full account, including why the
+daily-automation finding reframes what "shadow reads" means for this
+project specifically: `docs/data-layer-progress.md`'s Phase 9 entries
+(Current state, Next action, Decisions log).
 
 **Phases 7 and 8 are both done in full** (2026-08-17–18, same session run
 that led into Phase 9). Phase 7: `restructure-sheets` gained real
