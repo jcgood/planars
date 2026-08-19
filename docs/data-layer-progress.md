@@ -124,15 +124,20 @@ GitHub issue, and a new durable coverage test
 (`tests/test_unattended_warning_escalation.py`) that fails when a new one
 joins the pile unclassified. See Next action below for the full
 account. 5 — done, all five units. Unit A (argparse standardization, all 9 batches) done 2026-08-16. Units B (dispatch integration) and C (derived `registry` command) done the same day, right after A: every command module now exposes `build_parser()` separately from `main(args=None)`, `__main__.py` parses once and calls `mod.main(args)` directly (the chokepoint units D/E hook into), and `python -m coding registry` derives the full command inventory fresh from that plus `operations.yaml` on every call. Units D (precondition enforcement) and E (provenance capture) done 2026-08-17, both same day, after Jeff decided both units' open questions (see the Decisions log): D replaces the scattered manual `_check_coded_data_clean()` calls, file-by-file, with `coding/preconditions.py` driven by each command's `operations.yaml` record; E logs only Drive-writing invocations (not every command, and per actual invocation not per command) to `provenance_log.jsonl`, append-forever, via `coding/provenance.py`. 4 — done. Every record traced against code, all three "done when" items complete, and all five review items closed out with Jeff (started 2026-08-10, review session 2026-08-11, line-by-line trace + fixes 2026-08-11, Findings 27/28 resolved with Jeff 2026-08-16). 3 — done (started and finished 2026-08-10). 0b/1 — done, 18 of 18 (2026-08-01–2026-08-04).
-**Live Drive writes performed:** two, 2026-08-18, both named and approved
+**Live Drive writes performed:** four, all 2026-08-18 (two same-session,
+two a fresh session later the same day), each named and approved
 individually before running — `synth0001`'s coreference column cleanup
-(synthetic test data) and `arao1248`'s two new class sheets (pure
-creation). The blanket "none, permitted from Phase 9 only" applied through
-Phase 8; Phase 9 lifts it deliberately, one approved write at a time — see
-the Current-state Phase 9 entry and the 2026-08-18 decisions-log entry.
+(synthetic test data), `arao1248`'s two new class sheets (pure creation),
+trashing the orphaned `biuniqueness_stage1_synth0001` sheet (synthetic test
+data, superseded 2026-08-02), and creating its replacement
+`biuniqueness_allomorphy_synth0001` (pure creation). The blanket "none,
+permitted from Phase 9 only" applied through Phase 8; Phase 9 lifts it
+deliberately, one approved write at a time — see the Current-state Phase 9
+entry, the Small queued items section, and the 2026-08-18 decisions-log
+entry.
 **Adam's annotation data touched:** none directly by this project's own
-actions — both real writes above were to synthetic data or newly-created
-sheets with nothing pre-existing to lose.
+actions — all four real writes above were to synthetic data or
+newly-created sheets with nothing pre-existing to lose.
 **Last worked:** 2026-08-18
 
 Phase 3 split `schemas/diagnostic_classes.yaml` into that file (linguistic
@@ -1220,16 +1225,9 @@ commands getting their first live run each, as real work calls for them.
 ### Small queued items
 
 Was "Held until Phase 9" — Phase 9 started 2026-08-18 (see the Current-state
-entry below), so the two items below are the only ones still genuinely
-blocked; the other two this list used to carry are done.
+entry below). One item remains genuinely blocked; the `biuniqueness_stage1_
+synth0001` item is now done (see below).
 
-- **Bin `biuniqueness_stage1_synth0001`.** The 2026-08-02 rename means the next
-  `generate-biuniqueness-allomorphy-sheet --apply` creates
-  `biuniqueness_allomorphy_synth0001` and leaves the old sheet orphaned in the
-  `synth0001` Drive folder. Synthetic test data, nothing to preserve. Coordinator
-  decision, 2026-08-02: delete it once the new one exists. Still pending — a
-  live dry run confirmed 2026-08-18 it would still create the new sheet, but
-  `--apply` for this command hasn't been run.
 - **Rebuild `stan1293`'s `phrasal_accent/general` with pair rows** (#275,
   decided). Waits on Adam annotating that class's `prescreening` tab, not on
   anything in this project's own tooling — the pair rows are derived from
@@ -1241,7 +1239,33 @@ had their surplus criterion columns removed (`sync-params --apply --remove`)
 — the advisory warning behind #278 should stop recurring. `capture-drive-state`
 was re-run against live Drive; 29 spreadsheets, 80 tabs, same counts as
 2026-08-01, no structural drift (one real manifest content fix picked up —
-see the Phase 9 entry below).
+see the Phase 9 entry above in Current state).
+
+**Done, 2026-08-18 (a fresh session, same phase): the `biuniqueness_stage1_
+synth0001` cleanup, both halves, each named to Jeff and approved
+separately.** The queued item as written was actually two steps folded into
+one bullet — delete the orphan, and create its replacement — and the first
+attempt did only the delete: `biuniqueness_stage1_synth0001`
+(`1rQ8KWqOPNN-Pt7uXDN_Afx81Tuj8XNHB2E3IoZaY7NI`, confirmed by file metadata
+against the manifest fixture's `folder_id` for `synth0001` before trashing)
+was moved to trash via the connected Google Drive account (same owner,
+`jcgood@gmail.com`, as the project's own OAuth credentials — checked, not
+assumed). Checking the manifest fixture right after showed
+`biuniqueness_allomorphy_synth0001` — the replacement the 2026-08-02 rename
+was waiting on — had never actually been created either, so the task wasn't
+finished by the deletion alone. No harm from the order: nothing about
+creating the new sheet depends on the old one still existing. Named
+separately and approved, `generate-biuniqueness-allomorphy-sheet --lang
+synth0001 --apply` then created it (135 rows, pure creation, nothing
+existing to lose) and updated the manifest's
+`biuniqueness_allomorphy_spreadsheet_id`/`_url` for `synth0001`. Both trees
+clean before and after both writes. The manifest's now-dead
+`biuniqueness_stage1_spreadsheet_id`/`_url` fields for `synth0001` (still
+present as of the 2026-08-18 fixture capture, no code reads them) were left
+as-is — a separate, even smaller write, not named or approved this session;
+harmless dead data pointing at a file that no longer exists, worth a line
+here so it doesn't get mistaken for something missed rather than something
+deliberately deferred.
 
 ### Migration order
 
