@@ -1,0 +1,14 @@
+Arao1248 Nonpermutability General
+=================================
+
+NOTE: Some pairs have unannotated scopal values.
+  scopal: ['ADVERBIALS × INTERROGATIVES', 'ADVERBIALS × NP{NP,PP,S}', 'ADVERBIALS × dipa', 'ADVERBIALS × pa', 'ADVERBIALS × po'] … (253 total)
+
+Keystone position: 6 (v:verbstem)
+
+Strictly non-permutable positions (structural): [4, 8, 9, 10, 12, 13, 15, 16]
+Free-permutable positions (scopal=n pairs):     []
+
+Strict non-permutable span:           positions 6–6  (v:verbstem → v:verbstem)
+Minimal flexible non-permutable span: positions 1–18  (v:leftXP → v:rightXP)
+Maximal flexible non-permutable span: positions 1–18  (v:leftXP → v:rightXP)
