@@ -57,6 +57,7 @@ from contextlib import redirect_stdout
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
+import pandas as pd
 import pytest
 
 from coding import drive as drive_module
@@ -192,6 +193,35 @@ def check_snapshot(name: str, actual: str) -> None:
         f"PLANARS_UPDATE_SNAPSHOTS=1 and review the diff.")
 
 
+def resolve_referential_divergence_for_test(env: Env, lang: str) -> None:
+    """Neutralize a real, currently-existing data quirk in this fixture
+    language's coreference/prescreening.tsv, for tests that aren't about it.
+
+    Several `synth0001` elements are genuinely marked referential=y at one
+    structural position and referential=n at another (issue #285). Since
+    #285's fix, generating/regenerating a coreference pair tab now correctly
+    aborts with a SystemExit when that happens, rather than silently
+    resolving it -- which would swallow whatever an unrelated test actually
+    wants to exercise (pos-remap cascading, a clean --force --apply run,
+    etc). Resolves the ambiguity in this test's own private fixture copy
+    only (never the real committed data) by letting 'y' win -- an arbitrary
+    choice for test purposes, not a stance on the real linguistics question
+    #285 leaves open for Adam.
+    """
+    path = env.coded / lang / "coreference" / "prescreening.tsv"
+    if not path.exists():
+        return
+    df = pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False)
+    divergent = {
+        elem for elem, group in df.groupby("Element")
+        if "n" in set(group["referential"].str.strip())
+        and set(group["referential"].str.strip()) & {"y", "both"}
+    }
+    is_divergent_n = df["Element"].isin(divergent) & (df["referential"].str.strip() == "n")
+    df.loc[is_divergent_n, "referential"] = "y"
+    df.to_csv(path, sep="\t", index=False)
+
+
 # ---------------------------------------------------------------------------
 # What the coordinator sees
 # ---------------------------------------------------------------------------
@@ -283,6 +313,9 @@ def test_regen_nonpermutability_transcript(env):
 
 
 def test_regen_coreference_with_pos_remap_transcript(env):
+    """About --pos-remap's cascade, not #285's referential-divergence guard --
+    see resolve_referential_divergence_for_test's docstring."""
+    resolve_referential_divergence_for_test(env, "synth0001")
     out = env.run(["generate-sheets", "--lang", "synth0001",
                   "--regen-construction", "coreference:reflexivization",
                   "--pos-remap", "5:6", "--confirm-drop"])
@@ -435,6 +468,9 @@ def test_force_succeeds_as_before_when_no_language_fails_the_guard(env):
     """
     for lang in LANGS:
         env.remove_from_manifest(lang)
+    # Not about #285's referential-divergence guard -- see
+    # resolve_referential_divergence_for_test's docstring.
+    resolve_referential_divergence_for_test(env, "synth0001")
 
     out = env.run(["generate-sheets", "--apply", "--force"])
 

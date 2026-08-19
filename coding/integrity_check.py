@@ -696,14 +696,25 @@ def _section_dependent_construction_staleness(
                     total_e += 1
                     continue
 
-                # Source set: elements where the filter criterion ≠ 'n'/'na'.
-                # For nonpermutability, use element-level aggregation (consistent
-                # with _filter_nonperm_pairs_by_prescreening): exclude an element
-                # if ANY of its rows has scopal=n, matching the filter's behaviour.
-                # For coreference, use position-level (each row is independent).
+                # Source set: elements where the filter criterion is not excluded.
+                # nonpermutability and coreference both use element-level
+                # aggregation, matching _filter_nonperm_pairs_by_prescreening's
+                # `excluded`/_filter_reflex_pairs_by_prescreening's
+                # `excluded_elements` respectively: an element is excluded from
+                # the whole set (not just the one position) if ANY of its
+                # occurrences was marked 'n', even when another occurrence was
+                # marked 'y'. This file used to approximate coreference
+                # differently -- any single non-'n'/'na' row was enough to
+                # count an element as in-scope, a union rather than the real
+                # filter's exclusion -- which produced a false "stale" report
+                # for synth0001, whose synthetic data has several elements
+                # marked both referential=y and referential=n at different
+                # positions. See issue #285, which also adds the real filter a
+                # divergence guard instead of resolving that ambiguity
+                # silently either way.
                 # Also filter nonpermutability to structurally reachable elements.
                 if _eff_filter and _eff_filter in src_df.columns and "Element" in src_df.columns:
-                    if cls_name == "nonpermutability":
+                    if cls_name in ("nonpermutability", "coreference"):
                         from collections import defaultdict as _dd
                         _elem_vals: dict = _dd(set)
                         for _, _r in src_df.iterrows():

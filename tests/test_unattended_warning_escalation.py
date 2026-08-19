@@ -118,17 +118,17 @@ _KNOWN_SITES: Dict[Tuple[str, int], str] = {
     ("generate_sheets.py", 335): "same function/reasoning as 326",
     ("generate_sheets.py", 389): "same reasoning as 326 (Elements not found check, "
         "same sheet-creation path)",
-    ("generate_sheets.py", 869): "inside _build_phrasal_accent_pairs, called by "
+    ("generate_sheets.py", 921): "inside _build_phrasal_accent_pairs, called by "
         "_regen_construction -- possibly reachable via --regen-dependents if a "
         "phrasal_accent construction is ever a depends_on target; not fully traced, "
         "treat conservatively rather than assumed safe",
-    ("generate_sheets.py", 2493): "inside the interactive language-onboarding path "
+    ("generate_sheets.py", 2545): "inside the interactive language-onboarding path "
         "(folder sharing) -- not --regen-dependents",
-    ("generate_sheets.py", 2506): "inside the interactive language-onboarding path "
+    ("generate_sheets.py", 2558): "inside the interactive language-onboarding path "
         "(notes doc creation) -- not --regen-dependents",
-    ("generate_sheets.py", 2582): "inside the interactive language-onboarding path "
+    ("generate_sheets.py", 2634): "inside the interactive language-onboarding path "
         "(Glottolog fetch) -- not --regen-dependents",
-    ("integrity_check.py", 934): "deliberately silent by design -- see the code "
+    ("integrity_check.py", 945): "deliberately silent by design -- see the code "
         "comment: defers to import-sheets' own import-error issue if Drive is "
         "genuinely down",
     ("validate_coding.py", 664): "advisory warning under sheet-validation.yml, "
@@ -165,10 +165,10 @@ _KNOWN_SITES: Dict[Tuple[str, int], str] = {
         "remote lags until a manual `git push` retry",
     ("import_sheets.py", 1069): "summary count ('N warning(s)'), not an "
         "independent site -- reflects warnings already tracked at 917/931/989/997",
-    ("integrity_check.py", 1000): "footer summary line; its leading ✗ is exactly "
+    ("integrity_check.py", 1011): "footer summary line; its leading ✗ is exactly "
         "what the integrity-error issue-filing step scans for -- part of the "
         "escalation mechanism, not a gap",
-    ("integrity_check.py", 1002): "footer summary line, the all-clear case (total_e "
+    ("integrity_check.py", 1013): "footer summary line, the all-clear case (total_e "
         "== 0) -- not a gap",
     ("validation_report.py", 319): "diagnostic key=value dump (this file's own "
         "--debug-style output), not a runtime warning alert -- 'warnings' here is "

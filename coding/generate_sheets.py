@@ -474,6 +474,106 @@ def _build_nonperm_pairs(  # noqa: too-many-branches
     return pairs
 
 
+def _abort_if_criterion_diverges_by_position(
+    df: "pd.DataFrame",
+    criterion: str,
+    lang_id: str,
+    source_label: str,
+    title_label: str,
+    regen_command: str,
+    context_note: str,
+    body_stub: str,
+) -> None:
+    """Abort and file/update a `diagnostics` GitHub issue if any element has
+    divergent `criterion` values across positions in `df` — e.g. `n` at one
+    structural position, `y` or `both` at another. Returns normally (no-op)
+    if nothing diverges.
+
+    This is an unresolved linguistics question the code shouldn't guess at:
+    is `criterion` a property of an element globally, or of an element at a
+    specific position? First found for nonpermutability's `scopal` (issue
+    #228); the identical shape recurred, unguarded, in coreference's
+    `referential` (issue #285) — #228 had assumed coreference was unaffected,
+    which turned out to be wrong. Shared here, used by both filters below, so
+    the two can't independently drift the way #285 found they already had.
+    """
+    divergent = []
+    for elem, group in df.groupby("Element"):
+        vals = {v.strip() for v in group[criterion]}
+        if "n" in vals and vals & {"y", "both"}:
+            rows = [
+                f"  {row.get('Position_Name', '?')} (pos {row.get('Position_Number', '?')}): "
+                f"{criterion}={row[criterion].strip() or '(blank)'}"
+                for _, row in group.iterrows()
+            ]
+            divergent.append((elem, rows))
+
+    if not divergent:
+        return
+
+    import subprocess as _sp
+    lines = [
+        f"[{lang_id}] `{source_label}` has element(s) with divergent `{criterion}` values "
+        f"across positions (e.g. `{criterion}=n` at one position, `{criterion}=y` or `both` at "
+        f"another). Pair generation cannot proceed until this is resolved. {context_note}\n",
+        "**Affected elements:**",
+    ]
+    for elem, rows in divergent:
+        lines.append(f"\n**{elem}**")
+        lines.extend(rows)
+    lines += [
+        "",
+        f"**Action required:** Decide whether `{criterion}` is a property of an element globally "
+        f"or per position, update `{source_label}` accordingly, then re-run:",
+        f"`{regen_command}`",
+    ]
+    body = "\n".join(lines)
+    title = f"[{lang_id}] {title_label}: element has divergent {criterion} values by position"
+    body_file = ROOT / f"{body_stub}.tmp"
+    body_file.write_text(body, encoding="utf-8")
+    try:
+        _sp.run(["gh", "auth", "status"], capture_output=True, check=True)
+        # This guard can fire from more than one call site for the same
+        # language before the underlying data is fixed. Find-or-edit by
+        # exact title (not just the "diagnostics" label, which is shared with
+        # unrelated issues) so repeated trips update one issue in place instead
+        # of piling up duplicates -- see issue #269, filed after #266/#267 were
+        # both created for the same synth0001 divergence three minutes apart.
+        existing = _sp.run(
+            ["gh", "issue", "list", "--label", "diagnostics", "--state", "open",
+             "--json", "number,title"],
+            capture_output=True, text=True, check=True,
+        )
+        import json as _json
+        match = next(
+            (i["number"] for i in _json.loads(existing.stdout) if i["title"] == title),
+            None,
+        )
+        if match is not None:
+            _sp.run(
+                ["gh", "issue", "edit", str(match), "--body-file", str(body_file)],
+                capture_output=True, text=True, check=True,
+            )
+            print(f"   GitHub issue #{match} updated (already open for this language)")
+        else:
+            r = _sp.run(
+                ["gh", "issue", "create",
+                 "--title", title,
+                 "--label", "diagnostics",
+                 "--body-file", str(body_file)],
+                capture_output=True, text=True, check=True,
+            )
+            print(f"   GitHub issue created: {r.stdout.strip()}")
+    except Exception as exc:
+        print(f"   (Could not create/update GitHub issue: {exc})")
+    finally:
+        body_file.unlink(missing_ok=True)
+    raise SystemExit(
+        f"  Aborting: {source_label} for {lang_id} has elements with divergent {criterion}\n"
+        f"  values across positions. See the GitHub issue above. {context_note}"
+    )
+
+
 def _filter_nonperm_pairs_by_prescreening(
     pairs: List[List[str]], lang_id: str
 ) -> List[List[str]]:
@@ -496,82 +596,15 @@ def _filter_nonperm_pairs_by_prescreening(
 
     df = pd.read_csv(prescreening_path, sep="\t", dtype=str, keep_default_na=False)
 
-    # Guard: detect elements whose scopal values diverge across positions.
-    divergent = []
-    for elem, group in df.groupby("Element"):
-        vals = {v.strip() for v in group["scopal"]}
-        if "n" in vals and vals & {"y", "both"}:
-            rows = [
-                f"  {row.get('Position_Name', '?')} (pos {row.get('Position_Number', '?')}): "
-                f"scopal={row['scopal'].strip() or '(blank)'}"
-                for _, row in group.iterrows()
-            ]
-            divergent.append((elem, rows))
-
-    if divergent:
-        import subprocess as _sp
-        lines = [
-            f"[{lang_id}] `element_prescreening` has element(s) with divergent `scopal` values "
-            f"across positions (e.g. `scopal=n` at one position, `scopal=y` or `both` at another). "
-            f"Pair generation cannot proceed until this is resolved. See issue #228 for context.\n",
-            "**Affected elements:**",
-        ]
-        for elem, rows in divergent:
-            lines.append(f"\n**{elem}**")
-            lines.extend(rows)
-        lines += [
-            "",
-            "**Action required:** Decide whether `scopal` is a property of an element globally "
-            "or per position, update `element_prescreening` accordingly, then re-run:",
-            f"`python -m coding generate-sheets --lang {lang_id} --regen-construction nonpermutability:general`",
-        ]
-        body = "\n".join(lines)
-        title = f"[{lang_id}] nonpermutability: element has divergent scopal values by position"
-        body_file = ROOT / "nonperm_scopal_conflict.tmp"
-        body_file.write_text(body, encoding="utf-8")
-        try:
-            _sp.run(["gh", "auth", "status"], capture_output=True, check=True)
-            # This guard fires from three independent call sites (initial sheet
-            # creation, --regen-construction, --add-constructions-to-existing-sheet),
-            # so a single work session can easily trip it more than once for the
-            # same language before the underlying data is fixed. Find-or-edit by
-            # exact title (not just the "diagnostics" label, which is shared with
-            # unrelated issues) so repeated trips update one issue in place instead
-            # of piling up duplicates -- see issue #269, filed after #266/#267 were
-            # both created for the same synth0001 divergence three minutes apart.
-            existing = _sp.run(
-                ["gh", "issue", "list", "--label", "diagnostics", "--state", "open",
-                 "--json", "number,title"],
-                capture_output=True, text=True, check=True,
-            )
-            import json as _json
-            match = next(
-                (i["number"] for i in _json.loads(existing.stdout) if i["title"] == title),
-                None,
-            )
-            if match is not None:
-                _sp.run(
-                    ["gh", "issue", "edit", str(match), "--body-file", str(body_file)],
-                    capture_output=True, text=True, check=True,
-                )
-                print(f"   GitHub issue #{match} updated (already open for this language)")
-            else:
-                r = _sp.run(
-                    ["gh", "issue", "create",
-                     "--title", title,
-                     "--label", "diagnostics",
-                     "--body-file", str(body_file)],
-                    capture_output=True, text=True, check=True,
-                )
-                print(f"   GitHub issue created: {r.stdout.strip()}")
-        except Exception as exc:
-            print(f"   (Could not create/update GitHub issue: {exc})")
-        finally:
-            body_file.unlink(missing_ok=True)
-        raise SystemExit(
-            f"  Aborting: element_prescreening for {lang_id} has elements with divergent scopal\n"
-            f"  values across positions. See the GitHub issue above and issue #228 for context."
-        )
+    _abort_if_criterion_diverges_by_position(
+        df, "scopal", lang_id,
+        source_label="element_prescreening",
+        title_label="nonpermutability",
+        regen_command=f"python -m coding generate-sheets --lang {lang_id} "
+                       "--regen-construction nonpermutability:general",
+        context_note="See issue #228 for context.",
+        body_stub="nonperm_scopal_conflict",
+    )
 
     excluded = {
         row["Element"]
@@ -646,7 +679,7 @@ def _build_reflex_pairs(
 
 
 def _filter_reflex_pairs_by_prescreening(
-    pairs: List[List[str]], lang_id: str
+    pairs: List[List[str]], lang_id: str, construction_name: str = "<construction>"
 ) -> List[List[str]]:
     """Filter candidate pairs using prescreening annotations.
 
@@ -657,6 +690,14 @@ def _filter_reflex_pairs_by_prescreening(
     Removes rows where:
       - Element_A has referential=n (cannot serve as binder), or
       - Position_B has no referential=y elements (no potential anaphor at that position).
+
+    Aborts (and files a GitHub issue) if any element has divergent referential values
+    across positions — e.g. referential=n at one position and referential=y at another.
+    This is the same unresolved-linguistics-question shape as issue #228 (there for
+    nonpermutability's `scopal`); #228 assumed coreference didn't have it, which issue
+    #285 found was wrong. `construction_name` is only used to name the right
+    `--regen-construction` target in that issue's body, defaulting to a placeholder for
+    any caller that doesn't have it handy.
     """
     prescreening_path = CODED_DATA / lang_id / "coreference" / "prescreening.tsv"
     if not prescreening_path.exists():
@@ -667,6 +708,17 @@ def _filter_reflex_pairs_by_prescreening(
         return []
 
     df = pd.read_csv(prescreening_path, sep="\t", dtype=str, keep_default_na=False)
+
+    _abort_if_criterion_diverges_by_position(
+        df, "referential", lang_id,
+        source_label="prescreening",
+        title_label="coreference",
+        regen_command=f"python -m coding generate-sheets --lang {lang_id} "
+                       f"--regen-construction coreference:{construction_name}",
+        context_note="See issue #228 (the original nonpermutability case) and issue "
+                      "#285 for context.",
+        body_stub="coref_referential_conflict",
+    )
 
     excluded_elements: set = {
         row["Element"]
@@ -1583,7 +1635,7 @@ def _create_analysis_sheet(
                                          data_dir=planar_path.parent) or False
             pos_type = _read_position_types(planar_path, lang_id)
             pairs = _build_reflex_pairs(element_index, lang_id, pos_type, keystone_active=ka)
-            pairs = _filter_reflex_pairs_by_prescreening(pairs, lang_id)
+            pairs = _filter_reflex_pairs_by_prescreening(pairs, lang_id, construction)
             _populate_tab_reflex_pairs(spreadsheet, construction, param_names, param_values, pairs)
             tab_names.append(construction)
             print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
@@ -1899,7 +1951,7 @@ def _regen_construction(
     pos_type = _read_position_types(planar_path, lang_id)
     if class_name == "coreference":
         pairs = _build_reflex_pairs(element_index, lang_id, pos_type, keystone_active=ka)
-        pairs = _filter_reflex_pairs_by_prescreening(pairs, lang_id)
+        pairs = _filter_reflex_pairs_by_prescreening(pairs, lang_id, construction_name)
     elif class_name == "phrasal_accent":
         pairs = _build_phrasal_accent_pairs(element_index, lang_id, pos_type, keystone_active=ka)
     else:
@@ -2036,7 +2088,7 @@ def _add_constructions_to_existing_sheet(
             print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
         elif class_name == "coreference":
             pairs = _build_reflex_pairs(element_index, lang_id, pos_type, keystone_active=ka)
-            pairs = _filter_reflex_pairs_by_prescreening(pairs, lang_id)
+            pairs = _filter_reflex_pairs_by_prescreening(pairs, lang_id, construction)
             _populate_tab_reflex_pairs(ss, construction, param_names, param_values, pairs)
             print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
         elif class_name == "phrasal_accent" and construction == "prescreening":

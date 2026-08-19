@@ -30,6 +30,7 @@ from coding.generate_sheets import (
     _build_phrasal_accent_pairs,
     _check_force_against_existing_sheets,
     _filter_nonperm_pairs_by_prescreening,
+    _filter_reflex_pairs_by_prescreening,
     _find_annotated_drops,
     _format_annotated_drop,
     _maybe_create_planar_reference_tab,
@@ -331,6 +332,105 @@ class TestFilterNonpermPairsByPrescreening:
         with patch("subprocess.run", side_effect=fake_run):
             with pytest.raises(SystemExit):
                 _filter_nonperm_pairs_by_prescreening([["a", "b"]], "lang0001")
+
+        create_calls = [c for c in calls if c[:3] == ["gh", "issue", "create"]]
+        edit_calls = [c for c in calls if c[:3] == ["gh", "issue", "edit"]]
+        assert len(create_calls) == 0
+        assert len(edit_calls) == 1
+        assert edit_calls[0][:4] == ["gh", "issue", "edit", "42"]
+
+
+# ---------------------------------------------------------------------------
+# _filter_reflex_pairs_by_prescreening
+# ---------------------------------------------------------------------------
+
+class TestFilterReflexPairsByPrescreening:
+    """Issue #285: coreference's Element_A exclusion has the same element-vs-
+    position shape #228 found (and #228's own text incorrectly assumed
+    coreference didn't have)."""
+
+    def _write_prescreening(self, tmp_path: Path, lang_id: str, rows: list[dict]) -> None:
+        d = tmp_path / lang_id / "coreference"
+        d.mkdir(parents=True)
+        path = d / "prescreening.tsv"
+        header = "\t".join(rows[0].keys())
+        lines = [header] + ["\t".join(r.values()) for r in rows]
+        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    def _completed(self, stdout: str = "") -> MagicMock:
+        proc = MagicMock()
+        proc.stdout = stdout
+        return proc
+
+    def test_referential_n_excludes_as_binder(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        self._write_prescreening(tmp_path, "lang0001", [
+            {"Element": "a", "Position_Name": "p1", "Position_Number": "1", "referential": "n"},
+            {"Element": "b", "Position_Name": "p2", "Position_Number": "2", "referential": "y"},
+        ])
+        pairs = [["a", "1 (p1)", "2 (p2)", "forward"], ["b", "2 (p2)", "2 (p2)", "same"]]
+        result = _filter_reflex_pairs_by_prescreening(pairs, "lang0001")
+        assert result == [["b", "2 (p2)", "2 (p2)", "same"]]
+
+    def test_position_b_without_referential_y_excluded(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        self._write_prescreening(tmp_path, "lang0001", [
+            {"Element": "a", "Position_Name": "p1", "Position_Number": "1", "referential": "y"},
+            {"Element": "b", "Position_Name": "p2", "Position_Number": "2", "referential": "n"},
+        ])
+        pairs = [["a", "1 (p1)", "2 (p2)", "forward"]]
+        result = _filter_reflex_pairs_by_prescreening(pairs, "lang0001")
+        assert result == []
+
+    def test_missing_prescreening_file_returns_empty(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        result = _filter_reflex_pairs_by_prescreening([["a", "1 (p1)", "2 (p2)", "forward"]], "lang0001")
+        assert result == []
+
+    def test_divergent_referential_creates_issue_when_none_open(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        self._write_prescreening(tmp_path, "lang0001", [
+            {"Element": "a", "Position_Name": "p1", "Position_Number": "1", "referential": "n"},
+            {"Element": "a", "Position_Name": "p2", "Position_Number": "2", "referential": "y"},
+        ])
+        calls = []
+
+        def fake_run(args, **kwargs):
+            calls.append(args)
+            if args[:3] == ["gh", "issue", "list"]:
+                return self._completed("[]")
+            return self._completed("https://github.com/x/y/issues/1")
+
+        with patch("subprocess.run", side_effect=fake_run):
+            with pytest.raises(SystemExit):
+                _filter_reflex_pairs_by_prescreening(
+                    [["a", "1 (p1)", "2 (p2)", "forward"]], "lang0001", "reflexivization")
+
+        create_calls = [c for c in calls if c[:3] == ["gh", "issue", "create"]]
+        edit_calls = [c for c in calls if c[:3] == ["gh", "issue", "edit"]]
+        assert len(create_calls) == 1
+        assert len(edit_calls) == 0
+
+    def test_divergent_referential_edits_existing_issue_instead_of_duplicating(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        self._write_prescreening(tmp_path, "lang0001", [
+            {"Element": "a", "Position_Name": "p1", "Position_Number": "1", "referential": "n"},
+            {"Element": "a", "Position_Name": "p2", "Position_Number": "2", "referential": "y"},
+        ])
+        import json
+        title = "[lang0001] coreference: element has divergent referential values by position"
+        calls = []
+
+        def fake_run(args, **kwargs):
+            calls.append(args)
+            if args[:3] == ["gh", "issue", "list"]:
+                return self._completed(json.dumps([{"number": 42, "title": title}]))
+            return self._completed("")
+
+        with patch("subprocess.run", side_effect=fake_run):
+            with pytest.raises(SystemExit):
+                _filter_reflex_pairs_by_prescreening(
+                    [["a", "1 (p1)", "2 (p2)", "forward"]], "lang0001", "reflexivization")
 
         create_calls = [c for c in calls if c[:3] == ["gh", "issue", "create"]]
         edit_calls = [c for c in calls if c[:3] == ["gh", "issue", "edit"]]
