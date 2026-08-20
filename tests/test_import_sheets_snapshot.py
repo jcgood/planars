@@ -399,8 +399,16 @@ def test_content_change_archives_before_overwriting(env):
 # ---------------------------------------------------------------------------
 
 def test_planar_pure_addition_queues_update_sheets_and_auto_applies_it(env):
-    env.edit_sheet_rows(env.planar_sheet("arao1248"), add_planar_position)
-    out, _ = env.run(["import-sheets", "--apply"])
+    # synth0001, not arao1248: since issue #283's fix, arao1248's diagnostics
+    # Sheet (genuinely stale in this fixture -- missing free_occurrence/
+    # nonpermutability, issue #279's already-tracked gap) now downloads
+    # instead of being silently skipped, and correctly produces its own,
+    # unrelated diagnostics_class_removed pending entry. That's real,
+    # intentional behavior (see test_an_unrecognised_criterion_is_ambiguous_
+    # drift_not_a_crash's comment for the same reasoning) -- just not what
+    # this test is about, so it uses a language without that quirk.
+    env.edit_sheet_rows(env.planar_sheet("synth0001"), add_planar_position)
+    out, _ = env.run(["import-sheets", "--lang", "synth0001", "--apply"])
     assert "queuing update-sheets" in out
     assert ("coding.update_sheets", ["update-sheets", "--apply"]) in env.auto_apply_calls
     assert not is_.PENDING_PATH.exists()
@@ -439,7 +447,14 @@ def test_planar_reorder_is_also_destructive(env):
     entries = json.loads(is_.PENDING_PATH.read_text())
     assert any(e["change_type"] == "planar_deletion_or_reorder"
               and e["lang_id"] == "synth0001" for e in entries)
-    assert "Position order changed" in entries[0]["diff_summary"]
+    # entries[0] isn't necessarily this test's entry -- since issue #283's
+    # fix, arao1248 also contributes its own, unrelated diagnostics_class_
+    # removed entry in every full run (see test_planar_pure_addition_...'s
+    # comment above), so pick the one this test actually cares about.
+    synth_entry = next(e for e in entries
+                       if e["change_type"] == "planar_deletion_or_reorder"
+                       and e["lang_id"] == "synth0001")
+    assert "Position order changed" in synth_entry["diff_summary"]
 
 
 # ---------------------------------------------------------------------------
@@ -448,10 +463,13 @@ def test_planar_reorder_is_also_destructive(env):
 
 def test_an_unrecognised_criterion_is_ambiguous_drift_not_a_crash(env):
     # stan1293, not arao1248: arao1248's diagnostics_arao1248.yaml is missing
-    # three collection_required: "y" classes (Finding 19), which now blocks
-    # its diagnostics download entirely ("Validation errors — skipping
-    # download") before drift detection ever runs. stan1293 declares every
-    # required class, so this scenario actually reaches the drift path.
+    # some collection_required: "y" classes (Finding 19, issue #279's
+    # already-tracked missing proform class). That's a non-blocking gap
+    # (issue #283 fixed this download from being silently skipped over it
+    # entirely), but it still produces its own unrelated
+    # diagnostics_class_removed pending entry every run in this fixture --
+    # stan1293 declares every required class and has no such quirk, so it
+    # keeps this test's assertions focused on the drift scenario alone.
     def add_unknown(rows):
         header = rows[0]
         class_idx, crit_idx = header.index("Class"), header.index("Criteria")
@@ -560,7 +578,16 @@ def test_a_missing_row_on_an_in_progress_tab_is_a_collaborator_check_not_pending
     out, _ = env.run(["import-sheets", "--lang", "arao1248", "--apply"])
 
     assert "ANOMALY: Missing rows" in out
-    assert not is_.PENDING_PATH.exists()
+    # Not "not PENDING_PATH.exists()": since issue #283's fix, arao1248's
+    # diagnostics Sheet (genuinely stale in this fixture -- issue #279's
+    # already-tracked missing proform class) now downloads instead of being
+    # silently skipped, and correctly produces its own, unrelated
+    # diagnostics_class_removed pending entry every run. What this test
+    # actually checks is that the missing-row anomaly itself never becomes
+    # a pending entry -- it's a collaborator-check instead.
+    if is_.PENDING_PATH.exists():
+        entries = json.loads(is_.PENDING_PATH.read_text())
+        assert all(e["change_type"].startswith("diagnostics_") for e in entries)
     assert env.notified_collaborator
     assert env.notified_collaborator[0][0]["class_name"] == "ciscategorial"
 

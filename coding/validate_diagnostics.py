@@ -546,7 +546,18 @@ def validate_diagnostics_df(df, lang_id: str) -> List[ValidationIssue]:
                 issues.append(ValidationIssue(
                     "error", f"diagnostics_{lang_id}.tsv",
                     f"Required class '{cls}' (collection_required: \"y\" in "
-                    f"diagnostic_classes_status.yaml) is missing"
+                    f"diagnostic_classes_status.yaml) is missing",
+                    # Matches validate_diagnostics_yaml's identical check
+                    # above -- a required class simply not drafted yet is
+                    # not a reason to withhold syncing the classes that are
+                    # already valid. Missing here until issue #283 found the
+                    # gap: import_sheets.py's _download_lang_setup_sheets
+                    # gates purely on level == "error", so this used to
+                    # silently skip the whole diagnostics Sheet download
+                    # for any language with a genuinely non-blocking gap
+                    # like this one (confirmed happening to arao1248 daily,
+                    # via issue #279's already-tracked missing proform class).
+                    blocking=False,
                 ))
 
     return issues

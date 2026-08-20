@@ -743,13 +743,25 @@ def _download_lang_setup_sheets(
         if new_df is not None:
             issues = _validate_diagnostics_df(new_df, lang_id)
             errors = [i for i in issues if i.level == "error"]
-            if errors:
+            # Gate on blocking errors only (issue #283) -- this used to gate
+            # on every level=="error" issue regardless of .blocking, which
+            # meant a non-blocking one (a required class not yet drafted,
+            # blocking=False by design -- see ValidationIssue's docstring)
+            # silently skipped the whole diagnostics Sheet download, every
+            # run, for as long as the gap stayed open. Confirmed actually
+            # happening to arao1248 (issue #279's already-tracked missing
+            # proform class) before this fix.
+            blocking_errors = [e for e in errors if e.blocking]
+            if blocking_errors:
                 print(f"  [diagnostics] Validation errors — skipping download:")
-                for i in errors:
+                for i in blocking_errors:
                     print(f"    {i}")
             else:
                 for i in issues:
-                    print(f"  [diagnostics] WARNING: {i}")
+                    if i.level == "error":
+                        print(f"  [diagnostics] ERROR (non-blocking): {i}")
+                    else:
+                        print(f"  [diagnostics] WARNING: {i}")
 
                 diag_path = planar_dir / f"diagnostics_{lang_id}.tsv"
                 if diag_path.exists():

@@ -4,10 +4,12 @@ Language: arao1248
   [planar] New positions: ['x:newpos-test'] — queuing update-sheets
   [planar] Archived existing → archive/planar_arao1248_20260804_120000.tsv
   [planar] Downloaded → planar_arao1248.tsv
-  [diagnostics] Validation errors — skipping download:
-    [ERROR] diagnostics_arao1248.tsv: Required class 'free_occurrence' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
-    [ERROR] diagnostics_arao1248.tsv: Required class 'nonpermutability' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
-    [ERROR] diagnostics_arao1248.tsv: Required class 'proform' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
+  [diagnostics] ERROR (non-blocking): [ERROR] diagnostics_arao1248.tsv: Required class 'free_occurrence' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
+  [diagnostics] ERROR (non-blocking): [ERROR] diagnostics_arao1248.tsv: Required class 'nonpermutability' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
+  [diagnostics] ERROR (non-blocking): [ERROR] diagnostics_arao1248.tsv: Required class 'proform' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
+  [diagnostics] Archived existing → archive/diagnostics_arao1248_20260804_120000.tsv
+  [diagnostics] Downloaded → diagnostics_arao1248.tsv
+  [diagnostics] 2 ambiguous YAML drift item(s) — see diagnostics_drift.json
 
   ciscategorial
     [general] status: 'in-progress' — importing for backup
@@ -166,8 +168,11 @@ Next: commit and push coded_data/ before pushing planars:
   git -C coded_data push
 manifest.json updated on Drive with languages.yaml metadata.
 
-⚠  1 destructive change(s) written to pending_changes.json
+⚠  3 destructive change(s) written to pending_changes.json
    Review and apply with: python -m coding apply-pending
+
+⚠  1 language(s) have ambiguous YAML drift — see diagnostics_drift.json
+   Resolve with: python -m coding sync-diagnostics-yaml --from-tsv --apply
 
 Auto-applying 1 safe downstream command(s):
   python -m coding update-sheets --apply
@@ -175,7 +180,9 @@ Auto-applying 1 safe downstream command(s):
 --- Revalidating sheets ---
 
 arao1248
-  Diagnostics validation (1 issue(s)):
+  Diagnostics validation (3 issue(s)):
+    [ERROR] diagnostics_arao1248.tsv: Required class 'free_occurrence' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
+    [ERROR] diagnostics_arao1248.tsv: Required class 'nonpermutability' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
     [ERROR] diagnostics_arao1248.tsv: Required class 'proform' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
   [ciscategorial/general] 288 blank cell(s) — annotation in progress
   [noninterruption/general] 144 blank cell(s) — annotation in progress
