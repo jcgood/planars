@@ -573,12 +573,13 @@ class TestRegenDependentsSimple:
         source.write_text("Element\tscopal\na\ty\n", encoding="utf-8")
 
         with patch.object(_gs, "_regen_construction") as mock_regen:
-            _regen_dependents_simple(MagicMock(), self._manifest("lang0001"))
+            failures = _regen_dependents_simple(MagicMock(), self._manifest("lang0001"))
         mock_regen.assert_called_once()
         _, call_args, _ = mock_regen.mock_calls[0]
         assert call_args[1] == "lang0001"
         assert call_args[2] == "nonpermutability"
         assert call_args[3] == "general"
+        assert failures == []
 
     def test_skips_lang_not_in_manifest(self, tmp_path, monkeypatch):
         monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
@@ -589,6 +590,23 @@ class TestRegenDependentsSimple:
         with patch.object(_gs, "_regen_construction") as mock_regen:
             _regen_dependents_simple(MagicMock(), {})  # empty manifest
         mock_regen.assert_not_called()
+
+    def test_a_regen_failure_is_returned_not_only_printed(self, tmp_path, monkeypatch, capsys):
+        """Issue #283: a per-language exception was caught and printed but
+        otherwise vanished -- the caller (and, downstream, the daily
+        automation) had no way to know anything had gone wrong. One failure
+        also must not stop the loop from trying to regenerate the rest.
+        """
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        monkeypatch.setattr(_gs, "load_diagnostic_classes", lambda: _NONPERM_SCHEMA)
+        source, _ = self._setup_lang(tmp_path, "lang0001")
+        source.write_text("Element\tscopal\na\ty\n", encoding="utf-8")
+
+        with patch.object(_gs, "_regen_construction", side_effect=RuntimeError("boom")) as mock_regen:
+            failures = _regen_dependents_simple(MagicMock(), self._manifest("lang0001"))
+        mock_regen.assert_called_once()
+        assert failures == ["lang0001/nonpermutability/general: boom"]
+        assert "ERROR: boom" in capsys.readouterr().out
 
 
 # ---------------------------------------------------------------------------

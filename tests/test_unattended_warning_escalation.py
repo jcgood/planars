@@ -127,11 +127,11 @@ _KNOWN_SITES: Dict[Tuple[str, int], str] = {
         "_regen_construction -- possibly reachable via --regen-dependents if a "
         "phrasal_accent construction is ever a depends_on target; not fully traced, "
         "treat conservatively rather than assumed safe",
-    ("generate_sheets.py", 2545): "inside the interactive language-onboarding path "
+    ("generate_sheets.py", 2568): "inside the interactive language-onboarding path "
         "(folder sharing) -- not --regen-dependents",
-    ("generate_sheets.py", 2558): "inside the interactive language-onboarding path "
+    ("generate_sheets.py", 2581): "inside the interactive language-onboarding path "
         "(notes doc creation) -- not --regen-dependents",
-    ("generate_sheets.py", 2634): "inside the interactive language-onboarding path "
+    ("generate_sheets.py", 2657): "inside the interactive language-onboarding path "
         "(Glottolog fetch) -- not --regen-dependents",
     ("integrity_check.py", 945): "deliberately silent by design -- see the code "
         "comment: defers to import-sheets' own import-error issue if Drive is "

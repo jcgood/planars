@@ -400,6 +400,22 @@ def test_regen_dependents_fires_when_dependent_tsv_absent(env):
     check_snapshot("regen_dependents_fire.txt", out)
 
 
+def test_regen_dependents_exits_non_zero_on_a_real_failure(env, monkeypatch):
+    """Issue #283: --regen-dependents used to always exit 0, even when a
+    per-language regeneration raised -- the exception was caught, printed,
+    and otherwise vanished, invisible to the workflow step that runs this
+    unattended. Now the step outcome reflects a real failure.
+    """
+    dep_path = env.coded / "synth0001" / "nonpermutability" / "general.tsv"
+    dep_path.unlink()
+    monkeypatch.setattr(gs, "_regen_construction",
+                        lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("boom")))
+    out = env.run(["generate-sheets", "--regen-dependents"])
+    assert "ERROR: boom" in out
+    assert "1 dependent construction(s) failed to regenerate" in out
+    assert "[SystemExit: 1]" in out
+
+
 def test_push_manifest_transcript(env):
     manifest = env.manifest()
     gs.MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")

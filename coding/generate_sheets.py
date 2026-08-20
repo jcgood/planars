@@ -2126,14 +2126,23 @@ def _add_constructions_to_existing_sheet(
     return construction_params
 
 
-def _regen_dependents_simple(doorway, manifest: dict) -> None:
+def _regen_dependents_simple(doorway, manifest: dict) -> List[str]:
     """Regenerate dependent constructions where the dependent TSV has no annotation data.
 
     Safe to automate: only fires when the dependent TSV does not exist or contains
     no annotated values. If the dependent TSV has data, skips and lets
     integrity-check flag it for manual coordinator action.
+
+    Returns a list of "{lang_id}/{cls_name}/{dep_name}: {error}" strings, one
+    per (language, dependent construction) that failed to regenerate --
+    empty if all attempted regenerations succeeded. One failure deliberately
+    doesn't stop the loop from trying the rest (this function's whole
+    contract is per-item resilience), but until issue #283 a failure was
+    only ever printed and otherwise vanished -- the caller had no way to
+    know anything had gone wrong, and neither did the daily automation.
     """
     dc_classes = {c["name"]: c for c in load_diagnostic_classes().get("classes", [])}
+    failures: List[str] = []
 
     for cls_name, cls_entry in dc_classes.items():
         constructions_schema = cls_entry.get("constructions", [])
@@ -2176,6 +2185,9 @@ def _regen_dependents_simple(doorway, manifest: dict) -> None:
                     _regen_construction(doorway, lang_id, cls_name, dep_name, cls_info)
                 except Exception as exc:
                     print(f"  ERROR: {exc}")
+                    failures.append(f"{lang_id}/{cls_name}/{dep_name}: {exc}")
+
+    return failures
 
 
 # ---------------------------------------------------------------------------
@@ -2396,7 +2408,18 @@ def main(args: argparse.Namespace | None = None) -> None:
         config = _load_drive_config()
         file_id = config.get("_planars_config_file_id")
         manifest = doorway.download_file_json(file_id) if file_id else {}
-        _regen_dependents_simple(doorway, manifest)
+        failures = _regen_dependents_simple(doorway, manifest)
+        if failures:
+            # Issue #283: this used to return None regardless of whether any
+            # regeneration failed -- the workflow step had no way to notice,
+            # since a per-language exception was already caught and printed
+            # inside _regen_dependents_simple. Exiting non-zero here is what
+            # lets a workflow step's outcome (and, downstream, a filed
+            # regen-dependents-error issue) reflect a real failure.
+            print(f"\n{len(failures)} dependent construction(s) failed to regenerate:")
+            for f in failures:
+                print(f"  {f}")
+            sys.exit(1)
         return
 
     force = args.force

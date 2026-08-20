@@ -360,8 +360,57 @@ jobs:
         # TSV has no annotation data yet — safe to automate with no data loss.
         # If the dependent TSV already has annotations, skips and lets the
         # dependent-stale check below file an issue for coordinator action.
-        run: python -m coding generate-sheets --regen-dependents
+        id: regen_dependents
+        run: python -m coding generate-sheets --regen-dependents > /tmp/regen_dependents_report.txt 2>&1
         continue-on-error: true
+
+      - name: File or update GitHub issue if a dependent construction failed to regenerate
+        # Issue #283: a per-language regeneration failure was caught and
+        # printed inside _regen_dependents_simple but otherwise vanished --
+        # this step had zero output capture and zero follow-up of any kind,
+        # so a real failure here was invisible to everything downstream.
+        # generate-sheets now exits non-zero when any regeneration failed,
+        # so the step outcome is enough to file/close an issue directly.
+        if: steps.regen_dependents.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BODY_FILE=$(mktemp)
+          echo "## Dependent construction regeneration failed — $(date -u +%Y-%m-%d)" >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo "\`generate-sheets --regen-dependents\` failed to regenerate one or more" >> "$BODY_FILE"
+          echo "dependent (pair-row) tabs during the daily data refresh — see the failure" >> "$BODY_FILE"
+          echo "lines in the full log below." >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo "## What to do" >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo "Investigate the error below, then re-run for the affected language:" >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo '```bash' >> "$BODY_FILE"
+          echo "python -m coding generate-sheets --lang LANG_ID --regen-construction CLASS:CONSTRUCTION" >> "$BODY_FILE"
+          echo '```' >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo "The issue closes automatically once a run regenerates everything cleanly." >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo "## Full log" >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo '<details><summary>Show full output</summary>' >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo '```' >> "$BODY_FILE"
+          if [ -f /tmp/regen_dependents_report.txt ]; then
+            cat /tmp/regen_dependents_report.txt >> "$BODY_FILE"
+          fi
+          echo '```' >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo '</details>' >> "$BODY_FILE"
+          bash .github/scripts/manage_issue.sh file regen-dependents-error "Dependent construction regeneration failed ($(date -u +%Y-%m-%d))" "$BODY_FILE"
+          rm -f "$BODY_FILE"
+
+      - name: Close open regen-dependents-error issue if all clear
+        if: steps.regen_dependents.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash .github/scripts/manage_issue.sh close regen-dependents-error "Dependent construction regeneration succeeded on $(date -u +%Y-%m-%d) — closing."
 
       - name: Check for stale dependent constructions
         id: check_dependents
