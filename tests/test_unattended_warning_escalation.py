@@ -104,9 +104,14 @@ _KNOWN_SITES: Dict[Tuple[str, int], str] = {
     ("import_sheets.py", 989): "same mechanism as 917 -- gap in issue #283",
     ("import_sheets.py", 997): "same mechanism as 917 (this one IS a blocking "
         "warning on a ready-for-review tab) -- gap in issue #283",
-    ("sync_diagnostics_yaml.py", 100): "never affects exit code, and the workflow "
-        "step doesn't capture this command's output at all -- worst gap in issue "
-        "#283 (the ERROR case on the next line is equally invisible)",
+    ("sync_diagnostics_yaml.py", 106): "advisory-only (non-blocking WARNING-level "
+        "validate_diagnostics_yaml issue); fixed 2026-08-19 alongside issue #283's "
+        "worse ERROR-level gap on the next line -- the workflow step now captures "
+        "this command's output to $GITHUB_STEP_SUMMARY unconditionally (same "
+        "'Write ... summary' pattern as import_sheets.py's advisory warnings "
+        "above), and a blocking error two lines down now makes the command exit "
+        "non-zero, which files a diagnostics-yaml-error issue with the same "
+        "captured output attached",
     ("sync_params.py", 440): "only reachable via --split, never passed by the "
         "automated workflow invocation (plain `sync-params --apply`)",
     ("sync_params.py", 461): "only reachable via --merge, same reasoning as 440",

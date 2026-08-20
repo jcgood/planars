@@ -254,15 +254,97 @@ jobs:
         # Keeps diagnostics_{lang_id}.tsv in sync with the YAML source of truth.
         # Catches cases where a coordinator edited the YAML locally but forgot to
         # run sync-diagnostics-yaml --apply before committing.
-        run: python -m coding sync-diagnostics-yaml --apply
+        id: sync_diag_tsv
+        run: python -m coding sync-diagnostics-yaml --apply > /tmp/sync_diag_tsv_report.txt 2>&1
         continue-on-error: true
 
       - name: Push diagnostics YAML changes back to Google Sheets
         # Keeps the diagnostics Google Sheet in sync with the YAML source of truth.
         # Prevents false-alarm diagnostics-drift issues caused by stale Sheet content
         # (e.g. old class names after a rename). See issue #125.
-        run: python -m coding sync-diagnostics-yaml --to-sheet --apply
+        id: sync_diag_sheet
+        run: python -m coding sync-diagnostics-yaml --to-sheet --apply > /tmp/sync_diag_sheet_report.txt 2>&1
         continue-on-error: true
+
+      - name: Write diagnostics YAML sync summary
+        # Advisory (non-blocking) WARNING lines from either direction don't
+        # fail the step above, so they'd otherwise never appear anywhere --
+        # same reasoning as the "Write import summary" step above, and the
+        # same gap issue #283's sweep found here for the blocking-error case.
+        if: always()
+        run: |
+          echo "## Diagnostics YAML sync — $(date -u +%Y-%m-%d)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          if [ -f /tmp/sync_diag_tsv_report.txt ]; then
+            cat /tmp/sync_diag_tsv_report.txt >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f /tmp/sync_diag_sheet_report.txt ]; then
+            cat /tmp/sync_diag_sheet_report.txt >> $GITHUB_STEP_SUMMARY
+          fi
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: File or update GitHub issue if diagnostics YAML has blocking errors
+        # Issue #283: both steps above used to always exit 0, even when a
+        # language's diagnostics_{lang_id}.yaml had a blocking validation
+        # error (e.g. a mismatched `language:` field) -- the error only ever
+        # reached this step's own log, which CI discards. Both commands now
+        # exit non-zero on a blocking error (a non-blocking one, like a
+        # required class not yet drafted, correctly does not -- see
+        # ValidationIssue.blocking's docstring), so the step outcome alone is
+        # enough to file/close an issue, no stdout marker parsing needed
+        # (unlike diagnostics-drift/dependent-stale below, which predate this
+        # exit-code signal).
+        if: steps.sync_diag_tsv.outcome == 'failure' || steps.sync_diag_sheet.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BODY_FILE=$(mktemp)
+          echo "## Diagnostics YAML validation errors — $(date -u +%Y-%m-%d)" >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo "One or more languages' \`diagnostics_{lang_id}.yaml\` failed validation" >> "$BODY_FILE"
+          echo "during the daily data refresh, so their TSV and/or diagnostics Google Sheet" >> "$BODY_FILE"
+          echo "were not updated." >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo "## What to do" >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo "Fix the errors named below in the language's \`diagnostics_{lang_id}.yaml\`," >> "$BODY_FILE"
+          echo "then run \`python -m coding sync-diagnostics-yaml --apply\` (and" >> "$BODY_FILE"
+          echo "\`--to-sheet --apply\` if the Sheet also needs updating)." >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo "The issue closes automatically once both directions run clean." >> "$BODY_FILE"
+          if [ -f /tmp/sync_diag_tsv_report.txt ]; then
+            echo "" >> "$BODY_FILE"
+            echo "## YAML → TSV direction" >> "$BODY_FILE"
+            echo "" >> "$BODY_FILE"
+            echo '<details><summary>Show full output</summary>' >> "$BODY_FILE"
+            echo "" >> "$BODY_FILE"
+            echo '```' >> "$BODY_FILE"
+            cat /tmp/sync_diag_tsv_report.txt >> "$BODY_FILE"
+            echo '```' >> "$BODY_FILE"
+            echo "" >> "$BODY_FILE"
+            echo '</details>' >> "$BODY_FILE"
+          fi
+          if [ -f /tmp/sync_diag_sheet_report.txt ]; then
+            echo "" >> "$BODY_FILE"
+            echo "## YAML → Sheet direction" >> "$BODY_FILE"
+            echo "" >> "$BODY_FILE"
+            echo '<details><summary>Show full output</summary>' >> "$BODY_FILE"
+            echo "" >> "$BODY_FILE"
+            echo '```' >> "$BODY_FILE"
+            cat /tmp/sync_diag_sheet_report.txt >> "$BODY_FILE"
+            echo '```' >> "$BODY_FILE"
+            echo "" >> "$BODY_FILE"
+            echo '</details>' >> "$BODY_FILE"
+          fi
+          bash .github/scripts/manage_issue.sh file diagnostics-yaml-error "Diagnostics YAML validation errors ($(date -u +%Y-%m-%d))" "$BODY_FILE"
+          rm -f "$BODY_FILE"
+
+      - name: Close open diagnostics-yaml-error issue if all clear
+        if: steps.sync_diag_tsv.outcome == 'success' && steps.sync_diag_sheet.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash .github/scripts/manage_issue.sh close diagnostics-yaml-error "Diagnostics YAML validation passed on $(date -u +%Y-%m-%d) — closing."
 
       - name: Sync criterion columns to annotation sheets
         # Issue #120: adds missing criterion columns and updates dropdown validation

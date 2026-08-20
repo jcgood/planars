@@ -78,8 +78,14 @@ def _discover_languages() -> List[str]:
     return langs
 
 
-def _sync_to_tsv(lang_id: str, apply: bool) -> bool:
-    """Sync YAML → TSV for one language. Returns True if changes were made (or would be)."""
+def _sync_to_tsv(lang_id: str, apply: bool, error_langs: List[str]) -> bool:
+    """Sync YAML → TSV for one language. Returns True if changes were made (or would be).
+
+    A language whose YAML fails validation is appended to error_langs rather
+    than only being skipped locally — main() exits non-zero if it's
+    non-empty, so a blocking error here reaches the daily automation's exit
+    code instead of only ever appearing in a log nobody reads (issue #283).
+    """
     planar_dir = CODED_DATA / lang_id / "lang_setup"
     yaml_path  = planar_dir / f"diagnostics_{lang_id}.yaml"
     tsv_path   = planar_dir / f"diagnostics_{lang_id}.tsv"
@@ -102,6 +108,7 @@ def _sync_to_tsv(lang_id: str, apply: bool) -> bool:
         print(f"  [{lang_id}] ERROR {e.location}: {e.message}")
     if blocking_errors:
         print(f"  [{lang_id}] Skipping — fix errors above before applying.")
+        error_langs.append(lang_id)
         return False
 
     new_df = _yaml_to_tsv_df(yaml_data, lang_id)
@@ -228,7 +235,7 @@ def _describe_changes(current_df: pd.DataFrame, new_df: pd.DataFrame) -> List[st
     return lines
 
 
-def _sync_to_sheet(lang_id: str, manifest: dict, apply: bool) -> bool:
+def _sync_to_sheet(lang_id: str, manifest: dict, apply: bool, error_langs: List[str]) -> bool:
     """Sync YAML → Google Sheet for one language.
 
     Reads the YAML, generates the TSV representation, compares it against the
@@ -239,7 +246,10 @@ def _sync_to_sheet(lang_id: str, manifest: dict, apply: bool) -> bool:
     Google Sheet is stale. Running this in data-refresh after sync-diagnostics-yaml
     --apply keeps the Sheet in continuous sync with the YAML.
 
-    Returns True if changes were made (or would be).
+    Returns True if changes were made (or would be). A language whose YAML
+    fails validation is appended to error_langs — same reasoning as
+    _sync_to_tsv above (issue #283): this direction had the identical gap,
+    found and fixed alongside it rather than left for a second pass.
     """
     from .drive import _with_retry
     from .drive_doorway import get_doorway
@@ -262,10 +272,21 @@ def _sync_to_sheet(lang_id: str, manifest: dict, apply: bool) -> bool:
 
     issues = validate_diagnostics_yaml(yaml_data, lang_id)
     errors = [i for i in issues if i.level == "error"]
-    if errors:
-        for e in errors:
-            print(f"  [{lang_id}] ERROR {e.location}: {e.message}")
+    # Gate on blocking errors only, matching _sync_to_tsv above -- this used
+    # to gate on every error regardless of .blocking, which meant a
+    # non-blocking one (e.g. "required class not yet drafted", blocking=False
+    # by design -- see ValidationIssue's docstring) silently withheld the
+    # Sheet push it was explicitly designed not to withhold. Harmless while
+    # errors were invisible either way; found fixing issue #283, since wiring
+    # up an exit code on top of the old logic would have turned a known,
+    # already-tracked gap (arao1248's proform class, issue #279) into a false
+    # alarm on every daily run.
+    blocking_errors = [e for e in errors if e.blocking]
+    for e in errors:
+        print(f"  [{lang_id}] ERROR {e.location}: {e.message}")
+    if blocking_errors:
         print(f"  [{lang_id}] Skipping — fix errors above before uploading.")
+        error_langs.append(lang_id)
         return False
 
     new_df = _yaml_to_tsv_df(yaml_data, lang_id)
@@ -371,8 +392,9 @@ def main(args: argparse.Namespace | None = None) -> None:
             raise SystemExit("No manifest found. Run python -m coding generate-sheets --apply first.")
         languages = [lang_filter] if lang_filter else list(manifest.keys())
         changed = 0
+        error_langs: List[str] = []
         for lang_id in sorted(languages):
-            changed += _sync_to_sheet(lang_id, manifest, apply)
+            changed += _sync_to_sheet(lang_id, manifest, apply, error_langs)
         print()
         if apply:
             print(f"Done: {changed} Sheet(s) updated.")
@@ -380,6 +402,10 @@ def main(args: argparse.Namespace | None = None) -> None:
             print(f"Dry run complete: {changed} Sheet(s) would be updated.")
             if changed:
                 print(f"  → run: {run_line}")
+        if error_langs:
+            print(f"\n{len(error_langs)} language(s) had blocking validation errors: "
+                  f"{', '.join(sorted(error_langs))}")
+            sys.exit(1)
         return
 
     languages = [lang_filter] if lang_filter else _discover_languages()
@@ -389,6 +415,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         sys.exit(0)
 
     changed = 0
+    error_langs: List[str] = []
     if from_tsv:
         drift_entries: List[Dict] = []
         for lang_id in languages:
@@ -403,7 +430,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                 )
     else:
         for lang_id in languages:
-            changed += _sync_to_tsv(lang_id, apply)
+            changed += _sync_to_tsv(lang_id, apply, error_langs)
 
     print()
     direction = "YAML" if from_tsv else "TSV"
@@ -413,3 +440,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         print(f"Dry run complete: {changed} {direction} file(s) would be updated.")
         if changed:
             print(f"  → run: {run_line}")
+    if error_langs:
+        print(f"\n{len(error_langs)} language(s) had blocking validation errors: "
+              f"{', '.join(sorted(error_langs))}")
+        sys.exit(1)

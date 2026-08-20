@@ -94,7 +94,7 @@ def lang_dir(tmp_path, monkeypatch):
 def test_sync_to_tsv_creates_tsv(lang_dir):
     """Dry run with no existing TSV reports 'Would create' but does not write."""
     (lang_dir / "diagnostics_lang0001.yaml").write_text(YAML_CONTENT_ALL_REQUIRED)
-    changed = _sdy._sync_to_tsv("lang0001", apply=False)
+    changed = _sdy._sync_to_tsv("lang0001", apply=False, error_langs=[])
     assert changed is True
     assert not (lang_dir / "diagnostics_lang0001.tsv").exists()
 
@@ -102,7 +102,7 @@ def test_sync_to_tsv_creates_tsv(lang_dir):
 def test_sync_to_tsv_writes_when_apply(lang_dir):
     """--apply writes the TSV."""
     (lang_dir / "diagnostics_lang0001.yaml").write_text(YAML_CONTENT_ALL_REQUIRED)
-    _sdy._sync_to_tsv("lang0001", apply=True)
+    _sdy._sync_to_tsv("lang0001", apply=True, error_langs=[])
     tsv_path = lang_dir / "diagnostics_lang0001.tsv"
     assert tsv_path.exists()
     df = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
@@ -115,24 +115,31 @@ def test_sync_to_tsv_writes_when_apply(lang_dir):
 def test_sync_to_tsv_no_change_when_up_to_date(lang_dir):
     """Returns False when TSV already matches YAML content."""
     (lang_dir / "diagnostics_lang0001.yaml").write_text(YAML_CONTENT_ALL_REQUIRED)
-    _sdy._sync_to_tsv("lang0001", apply=True)
-    changed = _sdy._sync_to_tsv("lang0001", apply=False)
+    _sdy._sync_to_tsv("lang0001", apply=True, error_langs=[])
+    changed = _sdy._sync_to_tsv("lang0001", apply=False, error_langs=[])
     assert changed is False
 
 
 def test_sync_to_tsv_skips_missing_yaml(lang_dir):
     """Returns False and prints a skip message when no YAML exists."""
-    changed = _sdy._sync_to_tsv("lang0001", apply=True)
+    error_langs: list = []
+    changed = _sdy._sync_to_tsv("lang0001", apply=True, error_langs=error_langs)
     assert changed is False
+    assert error_langs == []          # a missing YAML isn't a validation error
 
 
 def test_sync_to_tsv_skips_on_validation_error(lang_dir):
     """Returns False when YAML has validation errors (mismatched language field)."""
     bad_yaml = YAML_CONTENT.replace("language: lang0001", "language: other_lang")
     (lang_dir / "diagnostics_lang0001.yaml").write_text(bad_yaml)
-    changed = _sdy._sync_to_tsv("lang0001", apply=True)
+    error_langs: list = []
+    changed = _sdy._sync_to_tsv("lang0001", apply=True, error_langs=error_langs)
     assert changed is False
     assert not (lang_dir / "diagnostics_lang0001.tsv").exists()
+    # issue #283: a blocking validation error used to be visible only in the
+    # printed log -- error_langs is what lets main() turn it into a non-zero
+    # exit code so the daily automation actually notices.
+    assert error_langs == ["lang0001"]
 
 
 # ---------------------------------------------------------------------------

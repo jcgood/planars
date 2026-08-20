@@ -312,6 +312,36 @@ def test_a_yaml_with_errors_never_reaches_the_sheet(env, monkeypatch, tmp_path):
     assert "fix errors above before uploading" in out
     assert doorway.mutations == []
     assert sheet(doorway).get_all_values() == before
+    # issue #283: a blocking validation error used to leave the command
+    # exiting 0 -- silent in the daily automation. Now it exits non-zero so
+    # a workflow step can turn it into a diagnostics-yaml-error issue.
+    assert "[SystemExit: 1]" in out
+
+
+def test_the_default_direction_also_exits_non_zero_on_a_blocking_error(env, monkeypatch, tmp_path):
+    """Same issue #283 fix, the other direction: --to-sheet isn't the only
+    place this command silently swallowed a blocking validation error --
+    the default YAML-to-TSV direction had the identical gap, in the sibling
+    function one screen down in the same file.
+    """
+    _, run = env
+    lang_setup = tmp_path / LANG / "lang_setup"
+    lang_setup.mkdir(parents=True)
+    (lang_setup / f"diagnostics_{LANG}.yaml").write_text(textwrap.dedent("""\
+        language: some_other_language
+        classes:
+          ciscategorial:
+            constructions: [general]
+            criteria:
+              V-combines: [y, n]
+        """), encoding="utf-8")
+    monkeypatch.setattr(sdy, "CODED_DATA", tmp_path)
+
+    out = run(["sdy", "--lang", LANG, "--apply"])
+    assert "ERROR" in out
+    assert "fix errors above before applying" in out
+    assert not (lang_setup / f"diagnostics_{LANG}.tsv").exists()
+    assert "[SystemExit: 1]" in out
 
 
 def test_a_language_with_no_yaml_is_skipped(env, monkeypatch, tmp_path):
@@ -338,7 +368,12 @@ def test_one_unreachable_sheet_does_not_stop_the_others(env):
     out = run(["sdy", "--to-sheet", "--apply"])
     assert f"[{LANG}] Could not read Sheet" in out
     assert sheet(doorway, "synth0001").get_all_values() == yaml_rows("synth0001")
-    assert "Done: 1 Sheet(s) updated." in out
+    # arao1248 also updates here (its Sheet is genuinely stale in the fixture
+    # data — see the _sync_to_sheet blocking-filter fix, issue #283): before
+    # that fix its own unrelated non-blocking error (missing proform class,
+    # issue #279) silently withheld this update too, on top of the intended
+    # skip for LANG's unreachable sheet.
+    assert "Done: 2 Sheet(s) updated." in out
 
 
 # ---------------------------------------------------------------------------

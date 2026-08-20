@@ -2,8 +2,11 @@ Dry run — nothing is written.
 
 Connecting to Google APIs...
   [arao1248] ERROR diagnostics_arao1248.yaml: Required class 'proform' (collection_required: "y") is missing
-  [arao1248] Skipping — fix errors above before uploading.
+  [arao1248]   + added:   free_occurrence
+  [arao1248]   + added:   nonpermutability
+  [arao1248] Would update → diagnostics Sheet
   [stan1293] Sheet already up to date
   [synth0001] Sheet already up to date
 
-Dry run complete: 0 Sheet(s) would be updated.
+Dry run complete: 1 Sheet(s) would be updated.
+  → run: python -m coding sync-diagnostics-yaml --to-sheet --apply
