@@ -15,28 +15,49 @@ this project is trying to remove.
 
 ## Now
 
-**Loose ends flagged for the next session (Jeff asked these be tracked explicitly
-before clearing, 2026-08-19), none blocking anything else — good candidates for
-a session with no specific task in mind:**
-- **#284** — retry-wrapping gap. Phase 8's fault injection gave
-  `restructure_sheets.py`'s structural Drive calls `_with_retry` (a 429/500/503
-  no longer crashes the run); the same gap exists at 18 call sites across
+**#284 and #283, both flagged 2026-08-19 as loose ends, are now closed
+(2026-08-19/20, same session that flagged them).**
+
+- **#284** — all 19 unretried structural Drive calls (the issue's own
+  grep-based count of 18 undercounted `setup_root_folder.py` by one) across
   `generate_sheets.py`, `generate_status_sheet.py`,
   `generate_biuniqueness_allomorphy_sheet.py`, `setup_root_folder.py`, and
-  `prune_manifest.py`, found the same day but deliberately left as its own
-  mechanical sweep rather than folded in. Same fix shape throughout, low risk,
-  no coordinator judgment needed — a clean next task.
-- **#283** — five warning-shaped `print()` calls in commands the daily
-  automation runs unattended never reach a GitHub issue (found by the same
-  sweep). `tests/test_unattended_warning_escalation.py` now stops a *sixth*
-  from joining unnoticed, but doesn't fix the five already there. Recommended
-  fixes are in the issue body; deliberately not applied solo since they touch
-  the automation safety net itself (`.github/workflows/*.yml`) — read the
-  issue and decide per site rather than batch-apply.
-- Worth a quick `gh issue list --label bug --label infrastructure` sweep
-  before the next real Drive write generally — Phase 9's step 2 (live writes,
-  below) is exactly the point where a gap like these two would first bite for
-  real, so closing them down is good sequencing, not just tidiness.
+  `prune_manifest.py` are now wrapped in `_with_retry`, each with a
+  fault-injection test proving the retry recovers — matching
+  `restructure_sheets.py`'s existing Phase 8 treatment.
+- **#283** — all four gaps closed, one at a time with Jeff's sign-off on
+  each: `sync-diagnostics-yaml`, `generate-sheets --regen-dependents`, and
+  `import-sheets` all now exit non-zero on a real (blocking) problem and
+  reach a GitHub issue — two via a new `diagnostics-yaml-error`/
+  `regen-dependents-error` label, one by reusing the existing `import-error`
+  mechanism once its trigger condition was fixed. The two genuinely-cosmetic
+  warnings (gap 4) were deliberately left quiet after reading their actual
+  content — filing an issue for a style nudge risks the exact warning-fatigue
+  failure #260 already taught this project to avoid.
+- **Three real, previously-unknown bugs came out of implementing this, all
+  fixed in the same passes**: (1) `sync_diagnostics_yaml.py`'s `--to-sheet`
+  direction ignored `ValidationIssue.blocking` entirely, so a non-blocking
+  gap (a required class not yet drafted) was silently withholding pushes
+  that should have gone through — confirmed live: arao1248's diagnostics
+  Sheet has been stale (missing `free_occurrence`/`nonpermutability`) this
+  whole time as a result. **The next `data-refresh.yml` run will push a real
+  change to arao1248's live diagnostics Sheet** to fix this — a live-Drive
+  consequence worth watching for, not something run manually this session.
+  (2) `validate_diagnostics_df` (the TSV-form validator `import-sheets`
+  uses) had the identical `.blocking` gap on its own copy of the same
+  required-class check — arao1248's diagnostics Sheet *download* was being
+  silently skipped in full every run because of it, confirmed live before
+  fixing. Fixed to match. (3) Neither was one of #283's four originally-named
+  gaps — both found by tracing the actual code while answering "why," not by
+  the original sweep.
+- **Still open, not touched this session:** GitHub's Dependabot flagged 1
+  moderate vulnerability (WeasyPrint CSS injection,
+  [GHSA-jhhc-3hcp-qhm5](https://github.com/jcgood/planars/security/dependabot/13)) —
+  already mitigated in code (`planars/html_report.py` pins
+  `presentational_hints=False`, the setting the advisory's injection path
+  requires), Dependabot just can't see that. Jeff was offered a dismiss with
+  reason "tolerable risk"; no answer yet — ask again or just do it next
+  session if it's still sitting open.
 
 **A tangent this session (2026-08-18/19) worth knowing about even though it's
 unrelated to #271: issue #285, found, fixed, and closed.** Investigating what
