@@ -17,10 +17,10 @@
   ✓  All chart span keys match derive function result dicts
 
 ── CROSS-SHEET CONSISTENCY ─────────────────────────────────────────────
-  (no languages have both noninterruption and free_occurrence TSVs)
+  ✓  arao1248: noninterruption vs free_occurrence (free column)
 
 ── DEPENDENT CONSTRUCTION STALENESS ────────────────────────────────────
-  (no languages have dependent construction TSV pairs to check)
+  ✓  Araona [arao1248]: nonpermutability/element_prescreening → general
 
 ── MANIFEST SHAPE ──────────────────────────────────────────────────────
   ✓  manifest matches the expected shape

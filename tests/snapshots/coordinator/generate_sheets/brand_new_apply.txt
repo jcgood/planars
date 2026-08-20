@@ -22,10 +22,8 @@ Notes doc:   https://docs.google.com/document/d/fake_file_0002
 
   Creating: nonpermutability_arao1248
     Tab: element_prescreening (73 rows, 1 params)
-    [NOTE] element_prescreening.tsv not found — generating unfiltered pair list.
-          Annotate element_prescreening first, then re-run
-          python -m coding generate-sheets --lang arao1248 --apply
-          to get a filtered pairs sheet.
+    [element_prescreening] 0 element(s) with scopal=n excluded
+    [element_prescreening] 253 → 253 pairs after filtering
     Tab: general (253 candidate pairs)
     Tab: Planar Structure (planar reference)
     Instructions tab created
