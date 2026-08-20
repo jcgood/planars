@@ -98,12 +98,23 @@ _KNOWN_SITES: Dict[Tuple[str, int], str] = {
         "$GITHUB_STEP_SUMMARY only, never affects exit code -- gap in issue #283",
     ("import_sheets.py", 752): "advisory-only ([diagnostics] validation issue); "
         "same as above -- gap in issue #283",
-    ("import_sheets.py", 917): "accumulated into lang_warning_lines, written to "
-        "import_errors/*.txt -- gitignored, never read in CI -- gap in issue #283",
-    ("import_sheets.py", 931): "same mechanism as 917 -- gap in issue #283",
-    ("import_sheets.py", 989): "same mechanism as 917 -- gap in issue #283",
-    ("import_sheets.py", 997): "same mechanism as 917 (this one IS a blocking "
-        "warning on a ready-for-review tab) -- gap in issue #283",
+    ("import_sheets.py", 925): "fixed 2026-08-19 (issue #283): a spreadsheet that "
+        "can't be opened at all now counts toward total_blocking_warnings, making "
+        "the command exit non-zero and reach the existing import-error issue -- "
+        "previously accumulated into lang_warning_lines/import_errors/*.txt (a "
+        "gitignored file, never read in CI) with no effect on exit code",
+    ("import_sheets.py", 940): "fixed 2026-08-19 (issue #283), same mechanism as "
+        "925: a missing tab now counts toward total_blocking_warnings too",
+    ("import_sheets.py", 999): "the one warning in this group NOT accumulated "
+        "into lang_warning_lines/total_warnings at all (a failed pink-highlight "
+        "attempt after the underlying data write already succeeded) -- stays "
+        "advisory-only and out of scope for issue #283's exit-code fix: purely "
+        "cosmetic, no data loss if missed. (Corrected 2026-08-19: this entry "
+        "previously and inaccurately claimed the same mechanism as 925 above.)",
+    ("import_sheets.py", 1007): "fixed 2026-08-19 (issue #283): this is "
+        "blocking_warnings, an invalid-value/structural problem on a "
+        "ready-for-review tab -- already named 'blocking' in the code, now "
+        "actually gates the exit code and reaches the existing import-error issue",
     ("sync_diagnostics_yaml.py", 106): "advisory-only (non-blocking WARNING-level "
         "validate_diagnostics_yaml issue); fixed 2026-08-19 alongside issue #283's "
         "worse ERROR-level gap on the next line -- the workflow step now captures "
@@ -168,8 +179,14 @@ _KNOWN_SITES: Dict[Tuple[str, int], str] = {
     ("drive.py", 595): "deliberately non-raising by design -- see the code comment "
         "on _autocommit_data: the commit already succeeded locally, only the "
         "remote lags until a manual `git push` retry",
-    ("import_sheets.py", 1069): "summary count ('N warning(s)'), not an "
-        "independent site -- reflects warnings already tracked at 917/931/989/997",
+    ("import_sheets.py", 1080): "summary count ('N warning(s)'), not an "
+        "independent site -- reflects warnings already tracked at 925/940/999/1007",
+    ("import_sheets.py", 1195): "the exit-non-zero summary line added by issue "
+        "#283's own fix (2026-08-19) -- reflects total_blocking_warnings, itself "
+        "reflecting warnings already tracked at 925/940/1007. Printed right "
+        "before sys.exit(1), so unlike 1080 above it's the thing that actually "
+        "makes this run's outcome reach the import-error issue, not just a "
+        "count for a human reading the log.",
     ("integrity_check.py", 1011): "footer summary line; its leading ✗ is exactly "
         "what the integrity-error issue-filing step scans for -- part of the "
         "escalation mechanism, not a gap",

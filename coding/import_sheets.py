@@ -882,6 +882,14 @@ def main(args: argparse.Namespace | None = None) -> None:
     total_files = 0
     in_progress_files = 0
     total_warnings = 0
+    # Subset of total_warnings serious enough to make this command exit
+    # non-zero (issue #283): a class's spreadsheet couldn't be opened at
+    # all, a tab is missing from a sheet, or a ready-for-review tab has an
+    # invalid-value/structural problem (blocking_warnings below -- already
+    # named that in the code, just never actually gated anything before
+    # this fix). Routine "blank value" warnings and the highlight-cell
+    # best-effort failure stay advisory-only and don't count here.
+    total_blocking_warnings = 0
     all_safe_cmds: Set[str] = set()
     all_pending: List[Dict] = []
     all_drift: List[Dict] = []
@@ -917,6 +925,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                 print(f"    WARNING: {msg}")
                 lang_warning_lines.append(f"WARNING: {msg}")
                 total_warnings += 1
+                total_blocking_warnings += 1
                 continue
 
             status_map = _read_status_tab(ss)
@@ -931,6 +940,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                     print(f"    WARNING: {msg}")
                     lang_warning_lines.append(f"WARNING: {msg}")
                     total_warnings += 1
+                    total_blocking_warnings += 1
                     continue
 
                 # Determine tab status. In-progress sheets are imported for backup
@@ -997,6 +1007,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                         print(f"    WARNING: {w}")
                         lang_warning_lines.append(f"[{class_name}/{construction}] {w}")
                     total_warnings += len(blocking_warnings)
+                    total_blocking_warnings += len(blocking_warnings)
                 else:
                     print(f"    [{construction}] status: {tab_status!r} — importing for backup")
 
@@ -1173,6 +1184,16 @@ def main(args: argparse.Namespace | None = None) -> None:
         from .validate_coding import revalidate_sheets
         lang_ids = [lang_filter] if lang_filter else None
         revalidate_sheets(lang_ids=lang_ids)
+
+    if total_blocking_warnings:
+        # Issue #283: these warnings used to never affect the exit code, so
+        # the daily automation's existing import-error issue (already wired
+        # up, already attaches the full log) never fired for them -- only a
+        # hard crash did. Checked last, after every other step above, so a
+        # blocking warning doesn't cut short pending-changes/notification/
+        # revalidation work this run should still do regardless.
+        print(f"\n{total_blocking_warnings} blocking warning(s) found — see WARNING lines above.")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

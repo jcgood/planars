@@ -479,13 +479,17 @@ def test_an_unrecognised_criterion_is_ambiguous_drift_not_a_crash(env):
 def test_a_missing_tab_warns_and_does_not_stop_the_rest_of_the_language(env):
     before = env.output_tsv("arao1248", "subspanrepetition", "tso_clause_linkage").read_text()
     env.delete_tab("arao1248", "subspanrepetition", "tso_clause_linkage")
-    out, _ = env.run(["import-sheets", "--apply"])
+    out, exit_code = env.run(["import-sheets", "--apply"])
     assert "[subspanrepetition/tso_clause_linkage] tab not found in sheet, skipping" in out
     # The sibling construction on the same spreadsheet is still imported.
     assert env.output_tsv("arao1248", "subspanrepetition", "auxiliary_construction").exists()
     # The missing tab's local TSV (pre-existing from real history) is left
     # alone entirely -- the run never reaches the point of writing it.
     assert env.output_tsv("arao1248", "subspanrepetition", "tso_clause_linkage").read_text() == before
+    # Issue #283: a missing tab is one of the warnings serious enough to
+    # make the command exit non-zero, even though (as above) it doesn't
+    # stop the rest of the run from completing.
+    assert exit_code == 1
 
 
 # ---------------------------------------------------------------------------
@@ -523,7 +527,7 @@ def test_an_invalid_cell_is_pink_highlighted(env):
     sid = env.sheet_id("arao1248", "ciscategorial")
     env.tab("arao1248", "ciscategorial", "general")._cell(1, 3).value = "maybe123"
 
-    env.run(["import-sheets", "--lang", "arao1248", "--apply"])
+    out, exit_code = env.run(["import-sheets", "--lang", "arao1248", "--apply", "--ignore-status"])
 
     hits = [
         m for m in env.doorway.mutations
@@ -535,6 +539,11 @@ def test_an_invalid_cell_is_pink_highlighted(env):
     assert hits, "expected a pink-highlight write for the invalid cell"
     assert hits[0]["payload"]["rows"][0]["values"][0]["userEnteredFormat"]["backgroundColor"] \
         == {"red": 1.0, "green": 0.8, "blue": 0.8}
+    # Issue #283: an invalid (non-blank) value on a ready-for-review tab is
+    # one of blocking_warnings -- serious enough to make the command exit
+    # non-zero, so it reaches the daily automation's existing import-error
+    # issue instead of only ever appearing in a log nobody reads.
+    assert exit_code == 1
 
 
 # ---------------------------------------------------------------------------
@@ -593,12 +602,18 @@ def test_a_bad_id_reached_on_a_dry_run_warns_and_previews_every_other_language(e
     exception, stopping every language, not just the one naming it. Now the
     bad ID is reported as a per-class warning and the run continues,
     previewing every other class and every other language exactly as if the
-    bad ID were never there."""
+    bad ID were never there. Since issue #283, a spreadsheet-open failure is
+    also one of the warnings serious enough to make the command exit
+    non-zero (dry run or not -- it's the same real problem either way, and
+    the daily automation always runs --apply, never a dry run, so this
+    matters operationally for the --apply case; asserted here on the dry
+    run because that's what this test already exercises for the
+    no-crash/keeps-previewing behavior above)."""
     env.mutate_manifest(lambda m: m["stan1293"]["sheets"]["ciscategorial"]
                         .__setitem__("spreadsheet_id", "does_not_exist_xyz"))
     out, exit_code = env.run(["import-sheets"])
 
-    assert exit_code is None
+    assert exit_code == 1
     assert "WARNING" in out
     assert "ciscategorial" in out
     assert "stan1293" in out

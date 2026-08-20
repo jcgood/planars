@@ -191,13 +191,22 @@ jobs:
           text = open('/tmp/import_report.txt').read() if os.path.exists('/tmp/import_report.txt') else ""
           lines = text.splitlines()
           errors = [l.strip() for l in lines if l.startswith('ERROR:')]
+          # Issue #283: import-sheets now also exits non-zero on a blocking
+          # WARNING (a class's spreadsheet couldn't be opened, a tab is
+          # missing, or a ready-for-review tab has an invalid-value/
+          # structural problem) -- those never have an ERROR: line, so
+          # without this the summary below would fall through to an
+          # arbitrary 25-line tail that may not even contain the warning.
+          warnings = [l.strip() for l in lines if 'WARNING:' in l]
           with open('/tmp/import_error_body.md', 'w') as f:
               f.write("## What's wrong\n\n")
               if errors:
                   f.write('\n'.join(f"- {e}" for e in errors) + '\n')
+              elif warnings:
+                  f.write('\n'.join(f"- {w}" for w in warnings) + '\n')
               else:
-                  # No ERROR: lines — likely an API exception or traceback.
-                  # Show the last 25 lines so the actual error is visible.
+                  # No ERROR: or WARNING: lines — likely an API exception or
+                  # traceback. Show the last 25 lines so the actual error is visible.
                   tail = lines[-25:] if len(lines) > 25 else lines
                   f.write("_(No `ERROR:` lines found — showing end of output where the failure likely appears.)_\n\n")
                   f.write("```\n")
