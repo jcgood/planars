@@ -138,8 +138,8 @@ def _archive_drive_sheet(
     _warn_if_recently_edited(meta, spreadsheet_id)
 
     try:
-        archived_folder_id = doorway.get_or_create_folder("_archived", folder_id)
-        doorway.move_file(spreadsheet_id, archived_folder_id)
+        archived_folder_id = _with_retry(lambda: doorway.get_or_create_folder("_archived", folder_id))
+        _with_retry(lambda: doorway.move_file(spreadsheet_id, archived_folder_id))
         print(f"    archived Drive sheet: '{sheet_name}' → _archived/")
         return True
     except Exception as exc:

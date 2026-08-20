@@ -147,11 +147,11 @@ def _create_or_update_tsv_sheet(
         ws = _with_retry(lambda: ss.sheet1)
         _with_retry(ws.clear)
     else:
-        ss = doorway.create_spreadsheet(name)
-        doorway.move_file(ss.id, folder_id)
+        ss = _with_retry(lambda: doorway.create_spreadsheet(name))
+        _with_retry(lambda: doorway.move_file(ss.id, folder_id))
         email = _annotator_email(lang_id)
         if email:
-            doorway.create_permission(ss.id, type="user", role="writer", email=email)
+            _with_retry(lambda: doorway.create_permission(ss.id, type="user", role="writer", email=email))
         ws = _with_retry(lambda: ss.sheet1)
 
     _with_retry(lambda: ws.update(all_rows, "A1"))
@@ -1531,11 +1531,11 @@ def _create_analysis_sheet(
             f"      python -m coding generate-sheets --apply\n"
         )
 
-    spreadsheet = doorway.create_spreadsheet(sheet_title)
-    doorway.move_file(spreadsheet.id, folder_id)
+    spreadsheet = _with_retry(lambda: doorway.create_spreadsheet(sheet_title))
+    _with_retry(lambda: doorway.move_file(spreadsheet.id, folder_id))
     email = _annotator_email(lang_id)
     if email:
-        doorway.create_permission(spreadsheet.id, type="user", role="writer", email=email)
+        _with_retry(lambda: doorway.create_permission(spreadsheet.id, type="user", role="writer", email=email))
 
     default_ws = spreadsheet.sheet1
     tab_names = []
@@ -2534,13 +2534,13 @@ def main(args: argparse.Namespace | None = None) -> None:
             continue
 
         # Resolve/create Drive folder.
-        folder_id = existing_lang_data.get("folder_id") or doorway.get_or_create_folder(
-            lang_id, parent_id=root_folder_id
+        folder_id = existing_lang_data.get("folder_id") or _with_retry(
+            lambda: doorway.get_or_create_folder(lang_id, parent_id=root_folder_id)
         )
         email = _annotator_email(lang_id)
         if email:
             try:
-                doorway.create_permission(folder_id, type="user", role="reader", email=email)
+                _with_retry(lambda: doorway.create_permission(folder_id, type="user", role="reader", email=email))
             except Exception as _share_err:
                 print(f"  [WARNING] Could not share folder for {lang_id}: {_share_err}")
         folder_url = f"https://drive.google.com/drive/folders/{folder_id}"

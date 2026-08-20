@@ -37,7 +37,7 @@ import pytest
 
 from coding import drive as drive_module
 from coding import drive_doorway, prune_manifest
-from fake_drive import MANIFEST_FILE_ID, ROOT_FOLDER_ID, FakeDriveDoorway
+from fake_drive import MANIFEST_FILE_ID, ROOT_FOLDER_ID, FakeDriveDoorway, api_error
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "prune_manifest"
@@ -351,6 +351,28 @@ def test_nothing_stale_does_nothing(env, monkeypatch):
 # this true for a run interrupted mid-loop; this test is the plain
 # uninterrupted case, which the fix needed to keep true too.
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Retry on a transient rate limit (issue #284) -- the structural calls this
+# file makes while archiving a retired sheet (get_or_create_folder, move_file)
+# were not wrapped in _with_retry until this fix, unlike restructure_sheets.py
+# which got the same treatment during Phase 8 fault injection (issue #271).
+# A single 429 here used to crash the whole prune run instead of retrying.
+# ---------------------------------------------------------------------------
+
+def test_a_transient_429_during_archiving_is_retried_not_a_crash(env, monkeypatch):
+    """`fail_after` fires exactly once by design (see fake_drive.py), so this
+    is a real "one 429, then the retry succeeds" case. time.sleep is mocked
+    so the real ~15s backoff wait doesn't slow the suite down.
+    """
+    doorway, run, coded, _ = env
+    monkeypatch.setattr(drive_module.time, "sleep", lambda *a, **kw: None)
+    doorway.fail_after("move_file", 1, exc=api_error(429, "rate limited"))
+    out = run(["prune-manifest", "--apply"], ["y"])
+    assert "[SystemExit:" not in out
+    assert "archived Drive sheet" in out
+    assert RETIRED not in manifest_of(doorway)[LANG]["sheets"]
+
 
 def test_a_second_apply_after_a_real_prune_reprocesses_nothing(env):
     doorway, run, coded, _ = env

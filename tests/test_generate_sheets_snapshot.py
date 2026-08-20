@@ -64,7 +64,7 @@ from coding import drive as drive_module
 from coding import drive_doorway
 from coding import generate_notebooks as gn
 from coding import generate_sheets as gs
-from fake_drive import FakeDriveDoorway, MANIFEST_FILE_ID, ROOT_FOLDER_ID
+from fake_drive import FakeDriveDoorway, MANIFEST_FILE_ID, ROOT_FOLDER_ID, api_error
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
 
@@ -272,6 +272,34 @@ def test_brand_new_language_apply_digest(env):
     env.remove_from_manifest("arao1248")
     env.run(["generate-sheets", "--apply"])
     check_snapshot("brand_new_apply_digest.txt", render(env.doorway.mutations))
+
+
+# ---------------------------------------------------------------------------
+# Retry on a transient rate limit (issue #284) -- this file's structural
+# doorway calls (create_spreadsheet, move_file, create_permission,
+# get_or_create_folder) were not wrapped in _with_retry until this fix,
+# unlike restructure_sheets.py which got the same treatment during Phase 8
+# fault injection (issue #271). A single 429 during a brand-new-language
+# apply -- the highest-stakes write path this file has -- used to crash the
+# whole run instead of retrying.
+# ---------------------------------------------------------------------------
+
+def test_a_transient_429_moving_a_new_sheet_is_retried_not_a_crash(env, monkeypatch):
+    """`fail_after` fires exactly once by design (see fake_drive.py), so this
+    is a real "one 429, then the retry succeeds" case. time.sleep is mocked
+    so the real ~15s backoff wait doesn't slow the suite down. move_file is
+    idempotent on retry (setting the same parent twice converges), unlike
+    create_spreadsheet/create_permission -- see
+    test_biuniqueness_allomorphy_snapshot.py's version of this test for that
+    distinction.
+    """
+    env.remove_from_manifest("arao1248")
+    monkeypatch.setattr(drive_module.time, "sleep", lambda *a, **kw: None)
+    env.doorway.fail_after("move_file", 1, exc=api_error(429, "rate limited"))
+    out = env.run(["generate-sheets", "--apply"])
+    assert "[SystemExit:" not in out
+    assert "arao1248" in env.manifest()
+    assert env.doorway.mutations_of("move_file")
 
 
 def test_new_class_on_existing_language_transcript(env):

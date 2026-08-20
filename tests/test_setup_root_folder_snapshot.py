@@ -25,8 +25,9 @@ from pathlib import Path
 
 import pytest
 
+from coding import drive as drive_module
 from coding import drive_doorway, setup_root_folder
-from fake_drive import MANIFEST_FILE_ID, FakeDriveDoorway
+from fake_drive import MANIFEST_FILE_ID, FakeDriveDoorway, api_error
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "setup_root_folder"
@@ -194,6 +195,31 @@ def test_second_run_output(env, monkeypatch):
     monkeypatch.setattr(setup_root_folder, "_load_drive_config",
                         lambda: json.loads(json.dumps({**config, **saved})))
     check_snapshot("second_run.txt", run(monkeypatch))
+
+
+# ---------------------------------------------------------------------------
+# Retry on a transient rate limit (issue #284) -- this file's structural
+# doorway calls (create_file, move_file, update_file) were not wrapped in
+# _with_retry until this fix, unlike restructure_sheets.py which got the
+# same treatment during Phase 8 fault injection (issue #271). A single 429
+# during the move step used to crash the whole run instead of retrying.
+# ---------------------------------------------------------------------------
+
+def test_a_transient_429_during_the_move_step_is_retried_not_a_crash(env, monkeypatch):
+    """`fail_after` fires exactly once by design (see fake_drive.py), so this
+    is a real "one 429, then the retry succeeds" case. time.sleep is mocked
+    so the real ~15s backoff wait doesn't slow the suite down.
+    """
+    doorway, config, _ = env
+    monkeypatch.setattr(drive_module.time, "sleep", lambda *a, **kw: None)
+    doorway.fail_after("move_file", 1, exc=api_error(429, "rate limited"))
+    out = run(monkeypatch)
+    assert "[SystemExit:" not in out
+    assert "Moved language folder" in out
+    root_id = doorway.mutations_of("create_file")[0]["file_id"]
+    langs = [k for k in config if not k.startswith("_")]
+    for lang in langs:
+        assert doorway.file(config[lang]["folder_id"]).parents == [root_id]
 
 
 # ---------------------------------------------------------------------------

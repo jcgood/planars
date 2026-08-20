@@ -285,10 +285,10 @@ def _lock_read_only(doorway, file_id: str) -> None:
     """
     for p in doorway.list_permissions(file_id, fields="permissions(id,type)"):
         if p.get("type") == "anyone":
-            doorway.delete_permission(file_id, p["id"])
+            _with_retry(lambda pid=p["id"]: doorway.delete_permission(file_id, pid))
     if not _already_shared(doorway, file_id, _ADAM_EMAIL):
-        doorway.create_permission(file_id, type="user", role="reader",
-                                  email=_ADAM_EMAIL, notify=False)
+        _with_retry(lambda: doorway.create_permission(file_id, type="user", role="reader",
+                                  email=_ADAM_EMAIL, notify=False))
 
 
 # ---------------------------------------------------------------------------
@@ -452,7 +452,7 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     folder_id = None
     if apply:
-        folder_id = doorway.get_or_create_folder(_STATUS_FOLDER_NAME)
+        folder_id = _with_retry(lambda: doorway.get_or_create_folder(_STATUS_FOLDER_NAME))
         folder_url = f"https://drive.google.com/drive/folders/{folder_id}"
         _lock_read_only(doorway, folder_id)
         print(f"\nAnnotation Status folder: {folder_url}")

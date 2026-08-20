@@ -33,7 +33,7 @@ import pytest
 from coding import drive as drive_module
 from coding import drive_doorway
 from coding import generate_biuniqueness_allomorphy_sheet as gen
-from fake_drive import MANIFEST_FILE_ID, ROOT_FOLDER_ID, FakeDriveDoorway
+from fake_drive import MANIFEST_FILE_ID, ROOT_FOLDER_ID, FakeDriveDoorway, api_error
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "biuniqueness_allomorphy"
@@ -317,6 +317,38 @@ def test_a_language_with_no_planar_stops_before_touching_drive(env):
     out = run(["gen", "--lang", "nyan1308", "--apply"])
     assert "No planar_nyan1308.tsv found" in out
     assert doorway.mutations == []
+
+
+# ---------------------------------------------------------------------------
+# Retry on a transient rate limit (issue #284) -- this file's one structural
+# doorway call (create_permission, sharing the sheet with Adam) was not
+# wrapped in _with_retry until this fix, unlike restructure_sheets.py which
+# got the same treatment during Phase 8 fault injection (issue #271).
+# ---------------------------------------------------------------------------
+
+def test_a_transient_429_sharing_the_sheet_is_retried_not_a_crash(env, monkeypatch):
+    """`fail_after` fires exactly once by design (see fake_drive.py), so this
+    is a real "one 429, then the retry succeeds" case. time.sleep is mocked
+    so the real ~15s backoff wait doesn't slow the suite down.
+
+    Not asserted here: exactly one create_permission call. `fail_after`
+    simulates the request having already succeeded server-side right before
+    the response was lost -- for a bare `create_permission` (no existence
+    check inside the retried call, unlike `get_or_create_folder`), a retry
+    after that exact fault shape genuinely grants a second permission entry
+    for the same person. `restructure_sheets.py`'s own `_with_retry`-wrapped
+    `create_permission` calls (Phase 8, issue #271) carry the same property
+    and were accepted as-is, so this file matches existing project practice
+    rather than inventing a stricter guarantee only here.
+    """
+    doorway, run, _ = env
+    monkeypatch.setattr(drive_module.time, "sleep", lambda *a, **kw: None)
+    doorway.fail_after("create_permission", 1, exc=api_error(429, "rate limited"))
+    out = run(["gen", "--lang", LANG, "--apply"])
+    assert "[SystemExit:" not in out
+    ss = the_sheet(doorway)
+    perms = doorway.mutations_of("create_permission")
+    assert any(p["email"] == ADAM and p["role"] == "writer" for p in perms)
 
 
 def test_no_lang_flag_is_refused(env):

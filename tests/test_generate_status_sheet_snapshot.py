@@ -36,7 +36,7 @@ import pytest
 from coding import drive as drive_module
 from coding import drive_doorway
 from coding import generate_status_sheet as gen
-from fake_drive import MANIFEST_FILE_ID, ROOT_FOLDER_ID, FakeDriveDoorway
+from fake_drive import MANIFEST_FILE_ID, ROOT_FOLDER_ID, FakeDriveDoorway, api_error
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "generate_status_sheet"
@@ -403,3 +403,27 @@ def test_no_lang_flag_runs_every_manifest_language(env):
     out = run(["gen"])
     for lang_id in ("arao1248", "stan1293", "synth0001"):
         assert f"[{lang_id}]" in out
+
+
+# ---------------------------------------------------------------------------
+# Retry on a transient rate limit (issue #284) -- this file's structural
+# doorway calls (get_or_create_folder, delete_permission, create_permission)
+# were not wrapped in _with_retry until this fix, unlike restructure_sheets.py
+# which got the same treatment during Phase 8 fault injection (issue #271).
+# A single 429 while creating the status folder used to crash the whole run.
+# ---------------------------------------------------------------------------
+
+def test_a_transient_429_creating_the_status_folder_is_retried_not_a_crash(env, monkeypatch):
+    """`fail_after` fires exactly once by design (see fake_drive.py), so this
+    is a real "one 429, then the retry succeeds" case. time.sleep is mocked
+    so the real ~15s backoff wait doesn't slow the suite down.
+    """
+    doorway, run, _ = env
+    monkeypatch.setattr(drive_module.time, "sleep", lambda *a, **kw: None)
+    doorway.fail_after("create_file", 1, exc=api_error(429, "rate limited"))
+    out = run(["gen", "--lang", "arao1248", "--apply"])
+    assert "[SystemExit:" not in out
+    folder = the_folder(doorway)
+    assert folder.parents == []
+    folder_creates = [m for m in doorway.mutations_of("create_file") if m["name"] == FOLDER_NAME]
+    assert len(folder_creates) == 1

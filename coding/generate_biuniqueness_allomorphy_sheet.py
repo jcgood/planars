@@ -353,8 +353,8 @@ def main(args: argparse.Namespace | None = None) -> None:
     _write_prescreening_tab(ss, rows)
     # Named person, not "anyone with the link" — see drive._share_with_person
     # for why unpublished research data is shared this way.
-    doorway.create_permission(ss.id, type="user", role="writer",
-                              email=_ADAM_EMAIL, notify=False)
+    _with_retry(lambda: doorway.create_permission(ss.id, type="user", role="writer",
+                              email=_ADAM_EMAIL, notify=False))
     action = "Created" if created else "Updated"
     print(f"\n{action}: {ss.url}")
 
