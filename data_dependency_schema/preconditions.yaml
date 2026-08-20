@@ -59,6 +59,24 @@
     of leaving same-run intermediate state looking dirty to a precondition
     meant to catch a genuinely stale prior run.
 
+    2026-08-20, same day, found live: a second instance of the identical
+    pattern, this time self-inflicted between sync-diagnostics-yaml's own
+    two directions rather than between two different commands.
+    sync-diagnostics-yaml --apply (YAML -> TSV) can now genuinely write
+    diagnostics_{lang}.tsv (gap 1's own fix un-blocked arao1248's write,
+    previously silently skipped over its non-blocking proform gap) --
+    but nothing committed that write before --to-sheet --apply, this
+    command's own next direction, ran moments later in the same job and
+    aborted on its sibling's uncommitted output. Caught by manually
+    triggering the workflow the same day the ordering fix above shipped,
+    specifically to confirm it -- #289 and #290 both cited the same file
+    (arao1248/lang_setup/diagnostics_arao1248.tsv). Fixed the same way:
+    a third commit-and-push step, between sync-diagnostics-yaml's two
+    directions. sync_params.py (next in the job) was checked and confirmed
+    not to write to coded_data/ on its automated bare --apply invocation
+    (no --rename/--split/--merge), so it was not given the same treatment
+    -- but is worth re-checking if this pattern surfaces a third time.
+
 - id: coded_data_git_identity_configured
   description: >-
     coded_data/'s git user.name/user.email are set before any code path

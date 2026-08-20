@@ -298,6 +298,33 @@ jobs:
         run: python -m coding sync-diagnostics-yaml --apply > /tmp/sync_diag_tsv_report.txt 2>&1
         continue-on-error: true
 
+      - name: Commit and push planars-data changes from diagnostics sync
+        # Second instance of the same class of gap the step above this
+        # block exists for (issue #283, 2026-08-20) -- found live, the same
+        # day, by triggering this workflow manually to confirm the first
+        # fix: gap 1's own change (making sync-diagnostics-yaml able to
+        # actually write diagnostics_{lang}.tsv instead of silently
+        # skipping arao1248 over its non-blocking proform gap) means this
+        # step can now genuinely dirty coded_data/ -- and nothing committed
+        # that write before the very next coded_data_clean_tree-gated step
+        # (--to-sheet, right below) ran, so it aborted on its own sibling's
+        # uncommitted output (#289, #290 both cited the same file:
+        # arao1248/lang_setup/diagnostics_arao1248.tsv). sync-params, later
+        # in this job, was checked and confirmed not to write to coded_data/
+        # on its automated bare --apply invocation (no --rename/--split/
+        # --merge), so it does not need the same treatment.
+        working-directory: coded_data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No annotation data changes from diagnostics sync."
+          else
+            git commit -m "data: daily diagnostics sync refresh $(date -u +%Y-%m-%d)"
+            git push
+          fi
+
       - name: Push diagnostics YAML changes back to Google Sheets
         # Keeps the diagnostics Google Sheet in sync with the YAML source of truth.
         # Prevents false-alarm diagnostics-drift issues caused by stale Sheet content
