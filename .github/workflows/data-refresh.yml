@@ -259,6 +259,37 @@ jobs:
         run: python -m coding check-notes --apply
         continue-on-error: true
 
+      - name: Commit and push planars-data changes from import
+        # Everything above this point (import-planar, import-sheets,
+        # check-notes) writes to coded_data/ but does not commit -- unlike
+        # restructure-sheets/import-planar's own inline _autocommit_data()
+        # calls, import-sheets relies entirely on a workflow-level commit.
+        # Before this step existed, that commit only happened once, near the
+        # end of the job (see "Commit and push planars-data changes"
+        # below) -- so every coded_data_clean_tree-gated command between
+        # here and there (sync-diagnostics-yaml, sync-params,
+        # generate-sheets --regen-dependents) ran against an
+        # already-dirtied tree and silently aborted on its own
+        # uncommitted-changes guard, every time import-sheets or
+        # check-notes actually changed a file. Invisible until issue #283
+        # added real issue-filing to two of those steps, which is what
+        # surfaced it (#289, #290) rather than introduced it -- this was
+        # already happening, just never visible. Same fix shape as #245's
+        # "Configure git identity for coded_data" step above: commit
+        # promptly rather than let same-run intermediate state look dirty
+        # to a precondition meant to catch a genuinely stale prior run.
+        working-directory: coded_data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No annotation data changes from import."
+          else
+            git commit -m "data: daily import refresh $(date -u +%Y-%m-%d)"
+            git push
+          fi
+
       - name: Regenerate diagnostics TSVs from YAML
         # Keeps diagnostics_{lang_id}.tsv in sync with the YAML source of truth.
         # Catches cases where a coordinator edited the YAML locally but forgot to

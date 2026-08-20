@@ -39,6 +39,26 @@
     reasoning as every other small fix this project makes on sight rather
     than deferring.
 
+    2026-08-20: found that .github/workflows/data-refresh.yml itself
+    violated this precondition's own assumption -- the same shape as
+    coded_data_git_identity_configured's #245 precedent below, just on the
+    workflow-ordering side instead of the git-identity side.
+    import-sheets writes to coded_data/ (new TSVs, archived-on-change
+    files) but does not self-commit via _autocommit_data() the way
+    import_planar.py/restructure_sheets.py do; the workflow's only commit
+    step ran once, near the very end of the job. Every coded_data_clean_tree
+    -gated command between "Import annotation data" and that final commit
+    (sync-diagnostics-yaml, sync-params, generate-sheets --regen-dependents)
+    was therefore running against an already-dirtied tree and silently
+    aborting on this very guard whenever import-sheets or check-notes
+    actually changed a file -- invisible until issue #283 added real
+    issue-filing to two of those three commands, which is what surfaced it
+    (issues #289, #290) rather than introduced it. Fixed by adding a second,
+    earlier commit-and-push step right after check-notes, before any
+    coded_data_clean_tree-gated command runs -- committing promptly instead
+    of leaving same-run intermediate state looking dirty to a precondition
+    meant to catch a genuinely stale prior run.
+
 - id: coded_data_git_identity_configured
   description: >-
     coded_data/'s git user.name/user.email are set before any code path
