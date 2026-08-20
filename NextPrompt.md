@@ -15,6 +15,30 @@ this project is trying to remove.
 
 ## Now
 
+**A CI/workflow-ordering bug traced and fixed 2026-08-20, same session as
+#283/#284 below — worth reading before trusting a green local test run
+again.** Local `coded_data/` had gone unpulled for 10 days mid-session;
+CI always checks out fresh, so it caught real annotation progress
+(arao1248's `free_occurrence`/`nonpermutability` data landing for real)
+that local runs didn't see, producing 5 CI-only test failures. Pulled,
+regenerated those 5 snapshots (all genuine, reviewed, not bugs). Separately,
+diagnosing that also traced #289/#290 (both auto-filed by #283's own new
+issue-filing, ironically) to a real, pre-existing `data-refresh.yml`
+ordering gap — the same shape as #245's already-documented
+`coded_data_git_identity_configured` precedent, just on commit-timing
+instead of git-identity: `import-sheets` writes to `coded_data/` but
+doesn't self-commit, and the workflow's only commit step ran once, near
+the very end of the job — so every `coded_data_clean_tree`-gated command in
+between (`sync-diagnostics-yaml`, `sync-params`, `generate-sheets
+--regen-dependents`) was silently aborting whenever import actually
+changed a file, invisible until #283 gave two of those three real
+issue-filing. Fixed with a second, earlier commit step right after
+`check-notes`; recorded in `data_dependency_schema/preconditions.yaml`.
+**Lesson for next time: pull `coded_data/` at the start of a session, not
+just when a command complains about it being dirty** — a stale local
+checkout won't show as an error, it'll just quietly diverge from what CI
+sees.
+
 **#284 and #283, both flagged 2026-08-19 as loose ends, are now closed
 (2026-08-19/20, same session that flagged them).**
 
