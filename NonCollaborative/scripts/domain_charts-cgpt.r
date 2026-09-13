@@ -6,7 +6,7 @@ pacman::p_load(ggsci, here, tidyverse)
 # ---- data in ----
 # metadata <- read_tsv("metadata.tsv") # to be added later
 # Prefer project-relative path:
-domains <- read_tsv("/Users/jcgood/gitrepos/planars/domains/domains_nyan1308.tsv")
+domains <- read_tsv("/Users/jcgood/gitrepos/planars/NonCollaborative/domains/domains_nyan1308.tsv")
 
 # ---- helpers ----
 
@@ -65,10 +65,36 @@ group.colors <- c(
   intonational    = "#7876B1"
 )
 
+# Shared finishing touches for both plot functions below. When the data covers only one
+# Domain_Type (the per-class charts), a 5-item color legend is both misleading (it lists
+# types that aren't in the chart) and a waste of vertical space on already-short charts —
+# so swap it for a plain title instead. Multi-domain charts (the pooled ones) keep the legend.
+finish.constituency.plot <- function(p, c){
+  domain_types <- unique(na.omit(as.character(c$Domain_Type)))
+
+  if (length(domain_types) == 1) {
+    p +
+      ggtitle(paste0(str_to_title(domain_types), " domains")) +
+      # plot.title.position = "panel" (the theme_bw() default) already aligns the title to
+      # the data panel rather than the full plot width, so hjust = 0.5 centers it over the
+      # panel itself, not over the (variable-width) row-label column to its left.
+      theme(legend.position = "none", plot.title = element_text(hjust = 0.5))
+  } else {
+    p +
+      theme(
+        legend.direction = "horizontal",
+        legend.position = "top",
+        legend.justification = c(1.25, 0)
+      )
+  }
+}
+
 constituency.plot <- function(c, b, o){
-  ggplot(c, aes(
+  p <- ggplot(c, aes(
     x = Edge,
-    y = reorder(Test_Labels, desc(Size*100 + as.numeric(Layer))),
+    # Largest domain on top: ascending Size puts the highest value (largest
+    # domain) at the last factor level, which ggplot draws at the top.
+    y = reorder(Test_Labels, Size*100 + as.numeric(Layer)),
     label = Reverse_Layer
   )) +
     geom_vline(xintercept = o, linetype = "dotted") +
@@ -81,8 +107,8 @@ constituency.plot <- function(c, b, o){
     ) +
     xlab("Positions on the verbal planar structure") +
     scale_x_continuous(breaks = seq(1, b, 1), limits = c(1, b)) +
-    
-    # Custom legend order
+
+    # Custom legend order (only shown for multi-domain charts; see finish.constituency.plot())
     scale_color_manual(
       values = group.colors,
       breaks = c(
@@ -97,17 +123,16 @@ constituency.plot <- function(c, b, o){
     theme_bw() +
     theme(
       axis.title.y = element_blank(),
-      legend.direction = "horizontal",
-      legend.position = "top",
-      legend.justification = c(1.25, 0),
       text = element_text(size = 15),
       panel.grid.minor = element_blank()
     )
+
+  finish.constituency.plot(p, c)
 }
 
 
 constituency.domain.plot <- function(c, b, o){
-  ggplot(c, aes(
+  p <- ggplot(c, aes(
     x = Edge,
     y = reorder(Test_Labels, Layer),
     label = Reverse_Domain_Layer
@@ -122,8 +147,8 @@ constituency.domain.plot <- function(c, b, o){
     ) +
     xlab("Positions on the verbal planar structure") +
     scale_x_continuous(breaks = seq(1, b, 1), limits = c(1, b)) +
-    
-    # Custom legend order
+
+    # Custom legend order (only shown for multi-domain charts; see finish.constituency.plot())
     scale_color_manual(
       values = group.colors,
       breaks = c(
@@ -138,12 +163,11 @@ constituency.domain.plot <- function(c, b, o){
     theme_bw() +
     theme(
       axis.title.y = element_blank(),
-      legend.direction = "horizontal",
-      legend.position = "top",
-      legend.justification = c(1.25, 0),
       text = element_text(size = 15),
       panel.grid.minor = element_blank()
     )
+
+  finish.constituency.plot(p, c)
 }
 
 # ---- prepare data ----
@@ -156,15 +180,25 @@ tests_plot        <- df.plot(tests)
 tests_domainsplot <- df.domain.plot(tests)
 
 # Per-domain subsets (each inherits Reverse_Layer from df.plot())
-tests_plot_length          <- df.plot(filter(domains, Domain_Type == "length"))
-tests_plot_morphosyntactic <- df.plot(filter(domains, Domain_Type == "morphosyntactic"))
-tests_plot_phonological    <- df.plot(filter(domains, Domain_Type == "phonological"))
-tests_plot_tonosegmental   <- df.plot(filter(domains, Domain_Type == "tonosegmental"))
-tests_plot_intonational    <- df.plot(filter(domains, Domain_Type == "intonational"))
+# Filtered from `tests`, not `domains`, so commented-out rows (e.g. "#DummyRoot",
+# a placeholder that spans the full structure) stay excluded here too.
+tests_plot_length          <- df.plot(filter(tests, Domain_Type == "length"))
+tests_plot_morphosyntactic <- df.plot(filter(tests, Domain_Type == "morphosyntactic"))
+tests_plot_phonological    <- df.plot(filter(tests, Domain_Type == "phonological"))
+tests_plot_tonosegmental   <- df.plot(filter(tests, Domain_Type == "tonosegmental"))
+tests_plot_intonational    <- df.plot(filter(tests, Domain_Type == "intonational"))
 
 # ---- params ----
 o <- 10 # position of root
 b <- 22 # number of positions
+
+# Standard output location for generated charts (see NonCollaborative/results/visualizations.md).
+# Absolute path so it lands here regardless of where Rscript is invoked from.
+output_dir <- "/Users/jcgood/gitrepos/planars/NonCollaborative/results"
+
+# Chart height scales with how many tests it contains, with a floor so small
+# classes (e.g. length, n=7 tests) don't render unreadably short.
+plot_height <- function(d) max(7, n_distinct(d$Test_Labels) * 0.7)
 
 # ---- plots ----
 pooled_plot        <- constituency.plot(tests_plot, b, o)
@@ -176,8 +210,54 @@ pooled_plot_phonological    <- constituency.plot(tests_plot_phonological, b, o)
 pooled_plot_tonosegmental   <- constituency.plot(tests_plot_tonosegmental, b, o)
 pooled_plot_intonational    <- constituency.plot(tests_plot_intonational, b, o)
 
-ggsave("/Users/jcgood/Library/CloudStorage/Box-Box/PresentationsAndAbstracts/Constituency/ChichewaPaper/chichewa_pooled_plot.pdf", pooled_plot, device = "pdf", width = 26, height = nrow(tests_plot)/5, units = "cm")
+# ---- save ----
+ggsave(file.path(output_dir, "nyan1308_pooled_plot.pdf"), pooled_plot,
+       device = "pdf", width = 26, height = plot_height(tests_plot), units = "cm")
+ggsave(file.path(output_dir, "nyan1308_pooled_domainplot.pdf"), pooled_domainplot,
+       device = "pdf", width = 26, height = plot_height(tests_domainsplot), units = "cm")
 
+ggsave(file.path(output_dir, "nyan1308_pooled_plot_length.pdf"), pooled_plot_length,
+       device = "pdf", width = 25, height = plot_height(tests_plot_length), units = "cm")
+ggsave(file.path(output_dir, "nyan1308_pooled_plot_morphosyntactic.pdf"), pooled_plot_morphosyntactic,
+       device = "pdf", width = 25, height = plot_height(tests_plot_morphosyntactic), units = "cm")
+ggsave(file.path(output_dir, "nyan1308_pooled_plot_phonological.pdf"), pooled_plot_phonological,
+       device = "pdf", width = 25, height = plot_height(tests_plot_phonological), units = "cm")
+ggsave(file.path(output_dir, "nyan1308_pooled_plot_tonosegmental.pdf"), pooled_plot_tonosegmental,
+       device = "pdf", width = 25, height = plot_height(tests_plot_tonosegmental), units = "cm")
+ggsave(file.path(output_dir, "nyan1308_pooled_plot_intonational.pdf"), pooled_plot_intonational,
+       device = "pdf", width = 25, height = plot_height(tests_plot_intonational), units = "cm")
+
+# ---- per-domain-type variant with pooled-plot-consistent layer numbers ----
+# The per-domain-type charts above each call df.plot() on their own filtered subset, so
+# their Layer/Reverse_Layer numbering is computed fresh from just that subset -- e.g.
+# "layer 3" in the tonosegmental chart is unrelated to "layer 3" in the phonological
+# chart or in the pooled plot; each chart renumbers its own domains from 1. This variant
+# instead filters the *already-numbered* pooled tests_plot down to one Domain_Type, so
+# every chart shares one numbering: whatever a domain is labeled in nyan1308_pooled_plot.pdf
+# is the same number it carries here, letting you cross-reference a span between the
+# overview and a single-type breakdown directly.
+tests_plot_length_global          <- filter(tests_plot, Domain_Type == "length")
+tests_plot_morphosyntactic_global <- filter(tests_plot, Domain_Type == "morphosyntactic")
+tests_plot_phonological_global    <- filter(tests_plot, Domain_Type == "phonological")
+tests_plot_tonosegmental_global   <- filter(tests_plot, Domain_Type == "tonosegmental")
+tests_plot_intonational_global    <- filter(tests_plot, Domain_Type == "intonational")
+
+pooled_plot_length_global          <- constituency.plot(tests_plot_length_global, b, o)
+pooled_plot_morphosyntactic_global <- constituency.plot(tests_plot_morphosyntactic_global, b, o)
+pooled_plot_phonological_global    <- constituency.plot(tests_plot_phonological_global, b, o)
+pooled_plot_tonosegmental_global   <- constituency.plot(tests_plot_tonosegmental_global, b, o)
+pooled_plot_intonational_global    <- constituency.plot(tests_plot_intonational_global, b, o)
+
+ggsave(file.path(output_dir, "nyan1308_pooled_plot_length_global_layers.pdf"), pooled_plot_length_global,
+       device = "pdf", width = 25, height = plot_height(tests_plot_length_global), units = "cm")
+ggsave(file.path(output_dir, "nyan1308_pooled_plot_morphosyntactic_global_layers.pdf"), pooled_plot_morphosyntactic_global,
+       device = "pdf", width = 25, height = plot_height(tests_plot_morphosyntactic_global), units = "cm")
+ggsave(file.path(output_dir, "nyan1308_pooled_plot_phonological_global_layers.pdf"), pooled_plot_phonological_global,
+       device = "pdf", width = 25, height = plot_height(tests_plot_phonological_global), units = "cm")
+ggsave(file.path(output_dir, "nyan1308_pooled_plot_tonosegmental_global_layers.pdf"), pooled_plot_tonosegmental_global,
+       device = "pdf", width = 25, height = plot_height(tests_plot_tonosegmental_global), units = "cm")
+ggsave(file.path(output_dir, "nyan1308_pooled_plot_intonational_global_layers.pdf"), pooled_plot_intonational_global,
+       device = "pdf", width = 25, height = plot_height(tests_plot_intonational_global), units = "cm")
 
 # ---- counts ----
 domain_summary <- tests %>%
@@ -185,7 +265,3 @@ domain_summary <- tests %>%
   count(Domain, Left_Edge, Right_Edge, name = "Count") %>%
   arrange(desc(Count))
 print(domain_summary)
-
-# Example saves (relative paths)
-# ggsave(here::here("figs", "chichewa_pooled_plot.pdf"), pooled_plot,
-#        width = 26, height = nrow(tests_plot)/5, units = "cm")
