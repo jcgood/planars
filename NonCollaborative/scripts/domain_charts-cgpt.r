@@ -5,8 +5,9 @@ pacman::p_load(ggsci, here, tidyverse)
 
 # ---- data in ----
 # metadata <- read_tsv("metadata.tsv") # to be added later
-# Prefer project-relative path:
-domains <- read_tsv("/Users/jcgood/gitrepos/planars/NonCollaborative/domains/domains_nyan1308.tsv")
+# here() resolves from the planars repo root, so this works regardless of
+# which machine/user or working directory the script is run from.
+domains <- read_tsv(here("NonCollaborative", "domains", "domains_nyan1308.tsv"))
 
 # ---- helpers ----
 
@@ -193,8 +194,8 @@ o <- 10 # position of root
 b <- 22 # number of positions
 
 # Standard output location for generated charts (see NonCollaborative/results/visualizations.md).
-# Absolute path so it lands here regardless of where Rscript is invoked from.
-output_dir <- "/Users/jcgood/gitrepos/planars/NonCollaborative/results"
+# here() lands here regardless of where Rscript is invoked from, or by whom.
+output_dir <- here("NonCollaborative", "results")
 
 # Chart height scales with how many tests it contains, with a floor so small
 # classes (e.g. length, n=7 tests) don't render unreadably short.

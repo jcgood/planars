@@ -2,7 +2,7 @@
 
 Personal R/Python working area for the planars project — scripts, prototypes, domain data, and older files. **Not part of the main analysis pipeline.** Nothing here is imported by `planars/` or `coding/`.
 
-This folder contains the precursor work that evolved into the main pipeline, plus ongoing exploratory analysis and visualization code.
+This folder contains the precursor work that evolved into the main pipeline, plus ongoing exploratory analysis and visualization code, most of it now built around the Chichewa (nyan1308) laminar-family analysis described in `docs/VERIFICATION.md`.
 
 ## Relationship to the main pipeline
 
@@ -24,6 +24,7 @@ TSV files containing constituency test results from the Constituency and Converg
 
 - `domains.tsv` — Master dataset (all languages, ~464 rows)
 - `domains_nyan1308.tsv` — Nyangatom (Nilotic)
+- `domains_nyan1293_test.tsv` — Test fixture (not a real language dataset)
 - `domains_chac.tsv` — Chácobo (Pano)
 - `domains_yupik.tsv` — Yupik (Eskimo-Aleut)
 - `domains_mart.tsv` — Martuthunira (Pama-Nyungan)
@@ -38,29 +39,20 @@ TSV files containing constituency test results from the Constituency and Converg
 Planar structure files (slot/position templates for each language's morphosyntactic template).
 
 - `planar_stan1293.tsv` — Canonical planar structure for Standard English (19 positions)
+- `planar_nyan1308.tsv` — Planar structure for Nyangatom
 
 Older timestamped CSV snapshots are archived in `OlderFiles/planar_tables/`.
 
 ### `scripts/`
 
-R and Python scripts for analysis and visualization. These are run interactively, not from the pipeline.
+R and Python scripts for analysis and visualization. These are run interactively, not from the pipeline. As of the current laminar-family work, `scripts/` is organized into subfolders rather than kept flat:
 
-**R scripts (ggplot2/ggtree-based visualization)**:
-- `domain_charts.r` — Reads `domains/domains.tsv`; plots constituency spans across the planar structure, colored by domain type. Core visualization script.
-- `domain_charts-cgpt.r` — ChatGPT-assisted variant of `domain_charts.r`.
-- `constituencyforest-all.r` — Phylogenetic-style tree plots showing domain nesting relationships; line thickness encodes domain strength.
-- `morsynconstituencyforest-all.r` — Morphosyntactic-specific forest plot.
-- `phonconstituencyforest-all.r` — Phonological-specific forest plot.
-- `tonosegconstituencyforest-all.r` — Tonosegmental-specific forest plot.
-- `allsubtypes-forest-byhand.r` — Hand-crafted forest plot with specific orderings.
-- `ColorTree-Example.r` — Reference code for tree coloring techniques.
-- `domainSignificance.r` — Statistical significance testing for domain patterns.
-- `make_file.R` — Builds an element index from planar structure files; maps elements to position numbers. Reads TSVs with columns: Class_Type, Elements, Position_Name.
+- **`scripts/analysis/`** — the active Chichewa/nyan1308 pipeline: `laminar_analysis.py` (core laminar-family enumeration engine), `laminar_tree_counts.py` (family-count bar charts), `random_tree_overlay.py` (ghost-overlay of sampled trees). See `scripts/README_laminar_analysis.md` for the full walkthrough and `scripts/INDEX.md` for a per-script index.
+- **`scripts/verification/`** — `verify_barthelmemy_correspondence.py` and `verify_chichewa.py` cross-check the laminar-family algorithm against independent methods (exhaustive search, alternate graph formulations). See `docs/VERIFICATION.md`.
+- **`scripts/exploratory/`** — earlier prototypes kept for reference, not for new work: `treeTraversal.py` (superseded by `laminar_analysis.py`), `catalan.py`/`catalan_old.py` (Catalan-number tree enumeration), `generate_supercatalan_rows.py` + `render_supercatalan_rows.r` (super-Catalan tree-shape figures).
+- **Top-level `scripts/*.r` and `scripts/*.py`** — older, largely hand-written R visualization scripts predating the laminar-family pipeline (`constituencyforest-all.r`, `morsynconstituencyforest-all.r`, `phonconstituencyforest-all.r`, `tonosegconstituencyforest-all.r`, `allsubtypes-forest-byhand.r`, `ColorTree-Example.r`, `domainSignificance.r`, `domain_charts-older.r` — an earlier variant, since superseded by `domain_charts-cgpt.r` — and `nyan_boundary_skyline.r`), plus a few standalone utilities: `make_file.R` (builds an element index from planar structure files), `makeLaTeXDomains.py` (domains TSV → LaTeX table), `highlight_planar_example.py` and `make_planar_latex.py` (generate the highlighted planar-table/example-card PDFs under `results/`).
 
-**Python scripts**:
-- `treeTraversal.py` — Analyzes constituency domains; builds and reduces tree structures; tracks domain strength (convergence counts); outputs tree statistics and visualization.
-- `catalan.py` — Enumerates all possible binary tree structures for a given number of items (Catalan number generator). Used to explore the space of possible constituency structures.
-- `makeLaTeXDomains.py` — Converts a domains TSV to a LaTeX tabular table for publication output.
+`scripts/INDEX.md` and `scripts/README_laminar_analysis.md` are the authoritative, actively-maintained guides to the `analysis/`/`verification/`/`exploratory/` scripts — read those for algorithm details and usage rather than this file.
 
 ### `domainGenerationTests/`
 
@@ -73,6 +65,26 @@ Early prototypes for domain derivation from linguistic parameter files. Represen
 - `ciscategorial_stan1293_blank.tsv` — Blank template version of the above.
 - `planar_stan1293.tsv` — Reference planar structure used by these scripts.
 - `early/` — Earlier iterations: `makeDomains.py` (construction-based domain generation), `planar_stan1293.tsv`, `construction_domains.txt`.
+
+### `docs/`
+
+- `VERIFICATION.md` — methodology, theoretical framework, and verified results for the laminar-family analysis (the two independent algorithms that both confirm 69 maximal families for nyan1308).
+
+### `examples/`
+
+Glossed Chichewa examples (`nyan1308_*.yaml`) transcribed for use with `scripts/highlight_planar_example.py`, which renders each into a highlighted planar-table PDF and matching example card under `results/`.
+
+### `readings/`
+
+Reference PDFs cited in `REFERENCES.md` (currently: Barthélemy 1989, on the copair-hypergraph algorithm used as a cross-check in `scripts/verification/`).
+
+### `results/`
+
+Generated output — PDFs, `.tex` sources, `.tsv` data, and the `.r` scripts that produced them. `results/visualizations.md` documents every chart and table here: what it shows, which script generates it, and how to regenerate it. Keep that file in sync whenever a script here starts writing a new `results/` artifact.
+
+### `tests/`
+
+A real `pytest` suite, run with `pytest NonCollaborative/tests/` from the repo root (or `pytest tests/` from inside `NonCollaborative/`). `test_tree_traversal.py` runs `scripts/exploratory/treeTraversal.py` against each `domains/*.tsv` file and compares its output to the checked-in snapshots in `tests/snapshots/`; known-hanging inputs are marked `xfail` rather than fixed. Run `pytest --update-snapshots` to regenerate snapshots after a deliberate output change.
 
 ### `OlderFiles/`
 
@@ -88,10 +100,12 @@ The `domains/` TSV files are drawn from the **Constituency and Convergence Datab
 
 License: CC BY-SA 4.0.
 
+See also `REFERENCES.md` for the mathematical/linguistic literature behind the laminar-family analysis, and `readings/` for the PDFs it cites.
+
 ## Running scripts
 
-R scripts require `ggplot2`, `ape`, `ggtree`. No package management file — install manually.
+R scripts require `ggplot2`, `ape`, `ggtree`, `patchwork`. No package management file — install manually.
 
-Python scripts have no external dependencies beyond the standard library.
+Python scripts mostly use the standard library, but some depend on third-party packages already in the main project's `.venv` (`requirements.txt`): `pandas`, `networkx`, `matplotlib`, `pyyaml`. `tests/` additionally needs `pytest`.
 
-Scripts read data files using relative paths from their own location (or a configured `DATA_DIR`). Run from the script's directory or adjust paths as needed.
+Scripts read data files using relative paths from their own location (or a configured `DATA_DIR`). Run from the script's directory (e.g. `cd scripts/analysis`) or adjust paths as needed.

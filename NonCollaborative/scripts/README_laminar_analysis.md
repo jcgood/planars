@@ -67,8 +67,8 @@ Each row = one span from one test. The script will:
 ### Running
 
 ```bash
-cd scripts
-python laminar_analysis.py ../domains/domains_{lang_id}.tsv
+cd scripts/analysis
+python laminar_analysis.py ../../domains/domains_{lang_id}.tsv
 ```
 
 Outputs:
@@ -114,13 +114,14 @@ Check `laminar_analysis.py --help` for command-line flags (if implemented).
 # (domains_nyan1308.tsv already exists)
 
 # 2. Run analysis
-python laminar_analysis.py ../domains/domains_nyan1308.tsv
+cd scripts/analysis
+python laminar_analysis.py ../../domains/domains_nyan1308.tsv
 
 # 3. Inspect results
-cat ../results/nyan1308_laminar_analysis.md
+cat ../../results/nyan1308_laminar_analysis.md
 
 # 4. Render visualizations in R
-cd ../results
+cd ../../results
 Rscript nyan1308_laminar_forest.r  # produces nyan1308_laminar_forest.pdf
 Rscript nyan1308_laminar_conflict_groups.r  # produces nyan1308_conflict_groups.pdf
 ```
@@ -153,7 +154,7 @@ Rscript nyan1308_laminar_conflict_groups.r  # produces nyan1308_conflict_groups.
 
 ## See Also
 
-- `treeTraversal.py` — earlier exploratory version (less efficient, different output format)
-- `../results/nyan1308_laminar_analysis.md` — example output summary
-- `../results/laminar_*.r` — generated visualization scripts
+- `../exploratory/treeTraversal.py` — earlier exploratory version (less efficient, different output format)
+- `../../results/nyan1308_laminar_analysis.md` — example output summary
+- `../../results/laminar_*.r` — generated visualization scripts
 - Good (draft) — "Domains of linearization, constituency, and wordhood in Chichewa"

@@ -9,7 +9,7 @@ p_load(ggsci,
 # read in output files and metadata
 
 #metadata <- read_tsv("metadata.tsv") # to be added later
-domains <- read_tsv("/Users/jcgood/gitrepos/planars/domains/domains_nyan1308.tsv")
+domains <- read_tsv("../domains/domains_nyan1308.tsv")
 
 
 # this code groups tests by domain types

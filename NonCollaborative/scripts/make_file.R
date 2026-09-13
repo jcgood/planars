@@ -1,13 +1,13 @@
 # --- CONFIG ----------------------------------------------------------
 
-# Set this to your folder; or leave "" to use the script's folder (see note below)
-DATA_DIR <- "D:/planars/01_planar_input"
+# Set this to your folder; or leave "" to use the current working directory
+# (see resolve_path() below — run from this script's own folder in that case).
+DATA_DIR <- ""
 
 # --- HELPERS ---------------------------------------------------------
 
 resolve_path <- function(filename) {
-  # If DATA_DIR is set, use it; otherwise use the directory of this script
-  # In RStudio, this_script_dir() isn't always trivial; easiest is to set DATA_DIR.
+  # If DATA_DIR is set, use it; otherwise fall back to the working directory.
   if (nzchar(DATA_DIR)) {
     file.path(DATA_DIR, filename)
   } else {

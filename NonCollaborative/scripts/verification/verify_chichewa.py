@@ -11,7 +11,8 @@ Two independent algorithms for finding maximal laminar families:
    - Tests each subset for laminarity (no conflicts between any pair)
    - Identifies which subsets are maximal (cannot be extended)
    - Provably correct but slow: O(2^n × n²)
-   - For 26 spans: ~67 million subsets, ~60-90 seconds
+   - For 26 spans: ~67 million subsets; potentially multi-minute runtime
+     on current hardware
 
 2. NETWORKX BRON-KERBOSCH (via complement graph)
    - Key insight: maximal independent sets of conflict graph
@@ -46,15 +47,18 @@ RESULTS FOR CHICHEWA [nyan1308]:
 
 Data: 26 unique observed spans, 65 conflict pairs, positions 1-22
 
-Expected: Both algorithms should find the same number of maximal families
-(strong independent verification).
+Expected: Both algorithms should find the same number of maximal families.
 
-Actual: Both algorithms find exactly 69 maximal families ✓
+Recorded result: Both algorithms find exactly 69 maximal families. The
+optimized laminar implementation and the NetworkX complement-graph check
+reproduce this result quickly; the exhaustive implementation is retained as
+a direct reference check but is substantially slower on current hardware.
 
 See ../docs/VERIFICATION.md for detailed results and theoretical background.
 """
 
 import csv
+import os
 from itertools import combinations
 import networkx as nx
 
@@ -123,7 +127,8 @@ def find_maximal_independent_sets_exhaustive(observed_spans):
     - Collect and return all maximal families
 
     COMPLEXITY: O(2^n × n²)
-    - For n=26 spans: ~67 million subsets, ~60-90 seconds
+    - For n=26 spans: ~67 million subsets; potentially multi-minute runtime
+      on current hardware
 
     CORRECTNESS: Provably correct (checks all possibilities)
 
@@ -210,7 +215,9 @@ def main():
     print("=" * 80)
 
     # Load data
-    filepath = '/Users/jcgood/gitrepos/planars/NonCollaborative/domains/domains_nyan1308.tsv'
+    filepath = os.path.join(
+        os.path.dirname(__file__), "..", "..", "domains", "domains_nyan1308.tsv"
+    )
     spans = load_chichewa_spans(filepath)
     spans_sorted = sorted(spans)
 

@@ -7,8 +7,11 @@
 library(ggplot2)
 library(patchwork)
 
-input_file <- "/Users/jcgood/gitrepos/planars/NonCollaborative/domains/domains_nyan1308.tsv"
-output_dir <- "/Users/jcgood/gitrepos/planars/NonCollaborative/results"
+# Paths are relative to this script's own location (scripts/), per the
+# convention documented in NonCollaborative/CLAUDE.md: run from the script's
+# directory, or adjust as needed.
+input_file <- "../domains/domains_nyan1308.tsv"
+output_dir <- "../results"
 
 position_labels <- c(
   "QM", "PreSbj", "Sbj", "PostSbj", "Neg1", "SM", "Neg2", "TAM",

@@ -19,7 +19,7 @@ import pytest
 from contextlib import redirect_stdout
 from pathlib import Path
 
-SCRIPTS_DIR = Path(__file__).parent.parent / "scripts"
+SCRIPTS_DIR = Path(__file__).parent.parent / "scripts" / "exploratory"
 SNAPSHOTS_DIR = Path(__file__).parent / "snapshots"
 DOMAINS_DIR = Path(__file__).parent.parent / "domains"
 
