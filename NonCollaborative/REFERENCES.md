@@ -67,7 +67,7 @@ https://dl.acm.org/doi/10.1016/j.ejc.2017.01.002
 ## Counting Constituency Trees: Catalan and Schröder Numbers
 
 **Schröder, E. (1870).** Vier combinatorische Probleme. *Zeitschrift für Mathematik und Physik*, 15, 361–376.  
-> The original source for what are now called the little Schröder numbers (OEIS A001003: 1, 1, 3, 11, 45, 197, ...). Schröder posed four combinatorial problems; the relevant one asks how many ways a product of n+1 symbols can be parenthesized, grouping ≥2 factors at a time. This is equivalent to counting rooted ordered (plane) trees with n+1 leaves in which every internal node has ≥2 children — the correct theoretical maximum for laminar families over n positions with arbitrary n-ary branching.
+> The original source for what are now called the little Schröder numbers (OEIS A001003: 1, 1, 3, 11, 45, 197, ...). Schröder posed four combinatorial problems; the relevant one asks how many ways a product of n+1 symbols can be parenthesized, grouping ≥2 factors at a time. This is equivalent to counting rooted ordered (plane) trees with n+1 leaves in which every internal node has ≥2 children. Thus, for n ordered positions/leaves, the corresponding count is the little Schröder number A001003(n−1).
 
 **Stanley, R. P. (1999).** *Enumerative Combinatorics*, Vol. 2. Cambridge University Press.  
 > The standard modern reference. The little Schröder numbers appear in Chapter 6 (exercise 6.19 and surrounding discussion) with multiple equivalent interpretations: polygon dissections, parenthesizations, plane tree enumeration. Reliable citation for the tree-counting interpretation.
@@ -94,7 +94,7 @@ For linguistics: unary nodes appear in X-bar theory (intermediate projections XP
 
 ### Relationship to the laminar family problem
 
-The Catalan numbers (OEIS A000108: 1, 1, 2, 5, 14, 42, ...) count binary-branching ordered trees and are the implicit background assumption in most generative syntax. The little Schröder numbers are the n-ary generalization: A001003(n) counts the number of distinct constituency trees for n ordered positions if every possible contiguous span is observed with no conflicts. For Chichewa (nyan1308, 22 positions), the 69 maximal laminar families found by Bron-Kerbosch are a small fraction of A001003(22). The Schröder/n-ary tree connection does not appear to have been explicitly discussed in the linguistics literature; most work assumes binary branching and cites Catalan numbers implicitly.
+The Catalan numbers (OEIS A000108: 1, 1, 2, 5, 14, 42, ...) count binary-branching ordered trees and are the implicit background assumption in most generative syntax. The little Schröder numbers are the n-ary generalization: A001003(n−1) counts the number of distinct constituency trees for n ordered positions if every possible contiguous span is observed with no conflicts. For Chichewa (nyan1308, 22 positions), the 69 maximal laminar families found by Bron-Kerbosch are a small fraction of A001003(21). The Schröder/n-ary tree connection does not appear to have been explicitly discussed in the linguistics literature; most work assumes binary branching and cites Catalan numbers implicitly.
 
 Note: OEIS A007052 ("order-consecutive partitions of n") is a related but distinct sequence (1, 3, 10, 34, 116, ...) that counts only trees where every internal node has at least one direct leaf child. See `scripts/catalan.py` for the distinction and the generating function analysis.
 
@@ -128,12 +128,12 @@ Loose spans decompose naturally into two analytical layers:
 
 Ordering spans by containment gives a Hasse diagram (partial order). Its properties:
 - **Height** = maximum nesting depth of the span system
-- **Maximum antichain size** = maximum number of mutually conflicting spans (those with no containment relation)
+- **Maximum antichain size** = maximum number of pairwise incomparable spans. This may include disjoint spans as well as crossing/conflicting spans, so it is not the same as a maximum clique in the conflict graph.
 - **Dilworth's theorem** connects these: the minimum number of chains (linearly ordered subsets) needed to cover the poset equals the maximum antichain size. This gives a principled measure of how far a language's span structure is from a tree, with a clean algorithmic interpretation.
 
 ### VC dimension as a laminarity index
 
-A perfectly laminar family (a tree) has VC dimension 1: no pair of sets can be shattered, since every pair is nested or disjoint. An interval system on a linearly ordered set has VC dimension 2. VC dimension could serve as a scalar summary of deviation from the Tree hypothesis across languages — more grounded than a raw conflict count.
+A perfectly laminar family (a tree) has VC dimension at most 1: no pair of points can be shattered, since every pair of sets is nested or disjoint. The full family of intervals on a linearly ordered set has VC dimension 2, while a particular interval subfamily may have a smaller dimension. VC dimension could serve as a scalar summary of deviation from the Tree hypothesis across languages — more grounded than a raw conflict count.
 
 **Caveat:** the precise VC dimension of laminar families vs. interval systems is stated here as a plausible conjecture based on the definitions; verify against a primary source before asserting it in writing.
 
@@ -199,7 +199,7 @@ The user's intuition is correct: coloring and treeness are directly connected vi
 
 ### The conflict graph is a circle graph
 
-Represent each span [a, b] as a chord connecting point a to point b on a circle (positions on the circle correspond to positions in the planar template, read in order). Two chords cross inside the circle iff their corresponding intervals partially overlap — exactly the conflict condition. So the conflict graph for strict spans (or for loose spans analyzed at the extent level) is a *circle graph*: the intersection graph of a set of chords of a circle.
+Represent each span [a, b] as a chord connecting its two ordered endpoints on a circle, using distinct, consistently perturbed endpoint copies when spans share a position. With that endpoint convention, two chords cross inside the circle iff their corresponding intervals partially overlap — exactly the conflict condition. So the conflict graph for strict spans (or for loose spans analyzed at the extent level) can be represented as a *circle graph*: the intersection graph of a set of chords of a circle. The endpoint convention matters here because the data treats spans sharing a boundary position, such as [5–6] and [6–8], as conflicting.
 
 Circle graphs are a well-studied class with polynomial-time algorithms for maximum clique and maximum independent set (Gavril 1973). They are *not* in general perfect: a 5-cycle (C₅) is a circle graph with χ = 3 but ω = 2, so χ > ω is possible. This means the minimum number of trees needed (χ) can exceed the size of the largest mutually-conflicting set of spans (ω); the two quantities are related but not equal.
 

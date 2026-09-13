@@ -17,7 +17,7 @@ morsyntreeplot1 <- ggtree(morsyntree1grouped,
   alpha=alphaval, color="#BC3C29") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +
+    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -33,7 +33,7 @@ morsyntreeplot2 <- ggtree(morsyntree2grouped,
   alpha=alphaval, color="#BC3C29") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +
+    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -49,7 +49,7 @@ morsyntreeplot3 <- ggtree(morsyntree3grouped,
   alpha=alphaval, color="#BC3C29") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +
+    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -66,7 +66,7 @@ tonotreeplot1 <- ggtree(tonotree1grouped,
   alpha=alphaval, color="#0072B5") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +
+    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -82,7 +82,7 @@ tonotreeplot2 <- ggtree(tonotree2grouped,
   alpha=alphaval, color="#0072B5") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +
+    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -98,7 +98,7 @@ tonotreeplot3 <- ggtree(tonotree3grouped,
   alpha=alphaval, color="#0072B5") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +
+    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -114,7 +114,7 @@ tonotreeplot4 <- ggtree(tonotree4grouped,
   alpha=alphaval, color="#0072B5") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +
+    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -130,7 +130,7 @@ tonotreeplot5 <- ggtree(tonotree5grouped,
   alpha=alphaval, color="#0072B5") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +
+    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -146,7 +146,7 @@ tonotreeplot6 <- ggtree(tonotree6grouped,
   alpha=alphaval, color="#0072B5") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +
+    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -162,7 +162,7 @@ tonotreeplot7 <- ggtree(tonotree7grouped,
   alpha=alphaval, color="#0072B5") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +
+    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -178,7 +178,7 @@ tonotreeplot8 <- ggtree(tonotree8grouped,
   alpha=alphaval, color="#0072B5") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +
+    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -194,7 +194,7 @@ tonotreeplot9 <- ggtree(tonotree9grouped,
   alpha=alphaval, color="#0072B5") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +
+    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -211,7 +211,7 @@ lengthtreeplot1 <- ggtree(lengthtree1grouped,
   alpha=alphaval, color="#E18727") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +
+    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -227,7 +227,7 @@ lengthtreeplot2 <- ggtree(lengthtree2grouped,
   alpha=alphaval, color="#E18727") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +
+    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -243,7 +243,7 @@ lengthtreeplot3 <- ggtree(lengthtree3grouped,
   alpha=alphaval, color="#E18727") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +
+    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -260,7 +260,7 @@ phontreeplot1 <- ggtree(phontree1grouped,
   alpha=alphaval, color="#20845E") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +
+    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -276,7 +276,7 @@ phontreeplot2 <- ggtree(phontree2grouped,
   alpha=alphaval, color="#20845E") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +
+    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -292,7 +292,7 @@ phontreeplot3 <- ggtree(phontree3grouped,
   alpha=alphaval, color="#20845E") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +
+    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -308,7 +308,7 @@ phontreeplot4 <- ggtree(phontree4grouped,
   alpha=alphaval, color="#20845E") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +
+    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -324,7 +324,7 @@ phontreeplot5 <- ggtree(phontree5grouped,
   alpha=alphaval, color="#20845E") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +
+    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -340,7 +340,7 @@ phontreeplot6 <- ggtree(phontree6grouped,
   alpha=alphaval, color="#20845E") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +
+    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -357,7 +357,7 @@ intontreeplot1 <- ggtree(intontree1grouped,
   alpha=alphaval, color="#7876B1") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +
+    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",

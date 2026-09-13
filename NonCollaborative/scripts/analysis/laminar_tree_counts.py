@@ -1,0 +1,216 @@
+"""Plot counts of maximal laminar families for nyan1308.
+
+The project calls a maximal laminar family a tree: it is a maximal set of
+observed spans that are mutually nested or disjoint.  Counts here therefore
+refer to maximal laminar families, not to the number of raw diagnostic rows.
+
+The existing laminar_analysis.load_spans() function deduplicates diagnostics
+with the same positional span and excludes size-1 spans.  This script uses
+that same convention.  "Adjacent" means a span of size 2, i.e. [i, i+1].
+
+Outputs (under results/ by default):
+  nyan1308_tree_count_all.pdf
+  nyan1308_tree_count_by_class.pdf
+  nyan1308_tree_count_without_adjacent.pdf
+  nyan1308_tree_counts.tsv
+
+Usage:
+  python scripts/analysis/laminar_tree_counts.py
+  python scripts/analysis/laminar_tree_counts.py --domain-file domains_other.tsv
+"""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import sys
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_DIR = SCRIPT_DIR.parents[1]
+sys.path.insert(0, str(SCRIPT_DIR))
+
+from laminar_analysis import (  # noqa: E402
+    find_conflicts,
+    enumerate_maximal_laminar_families,
+    load_spans,
+)
+
+
+CLASS_ORDER = [
+    "morphosyntactic",
+    "phonological",
+    "tonosegmental",
+    "intonational",
+    "length",
+]
+
+# Exact pooled-plot colors.
+CLASS_COLORS = {
+    "morphosyntactic": "#BC3C29",
+    "tonosegmental": "#0072B5",
+    "length": "#E18727",
+    "phonological": "#20845E",
+    "intonational": "#7876B1",
+}
+
+
+def count_families(spans, n_positions: int) -> tuple[int, int]:
+    """Return (number of maximal families, number of compatible spans)."""
+    families, truncated = enumerate_maximal_laminar_families(
+        spans, find_conflicts(spans), n_positions
+    )
+    if truncated:
+        raise RuntimeError(
+            "Family enumeration reached MAX_FAMILIES; count is incomplete."
+        )
+    return len(families), len(spans)
+
+
+def collect_counts(domain_file: str, domains_dir: Path) -> list[dict]:
+    all_spans, n_positions = load_spans(domain_file, str(domains_dir))
+    rows: list[dict] = []
+
+    all_count, all_n_spans = count_families(all_spans, n_positions)
+    rows.append({
+        "condition": "all_tests",
+        "class": "all",
+        "n_unique_spans": all_n_spans,
+        "n_maximal_laminar_families": all_count,
+    })
+
+    without_adjacent = [span for span in all_spans if span.size != 2]
+    no_adj_count, no_adj_n_spans = count_families(without_adjacent, n_positions)
+    rows.append({
+        "condition": "without_adjacent_spans",
+        "class": "all",
+        "n_unique_spans": no_adj_n_spans,
+        "n_maximal_laminar_families": no_adj_count,
+    })
+
+    for domain_class in CLASS_ORDER:
+        class_spans, _ = load_spans(
+            domain_file, str(domains_dir), subset=[domain_class]
+        )
+        class_count, class_n_spans = count_families(class_spans, n_positions)
+        rows.append({
+            "condition": "all_tests",
+            "class": domain_class,
+            "n_unique_spans": class_n_spans,
+            "n_maximal_laminar_families": class_count,
+        })
+
+        class_without_adjacent = [span for span in class_spans if span.size != 2]
+        no_adj_class_count, no_adj_class_n_spans = count_families(
+            class_without_adjacent, n_positions
+        )
+        rows.append({
+            "condition": "without_adjacent_spans",
+            "class": domain_class,
+            "n_unique_spans": no_adj_class_n_spans,
+            "n_maximal_laminar_families": no_adj_class_count,
+        })
+
+    return rows
+
+
+def add_value_labels(ax, bars):
+    for bar in bars:
+        height = bar.get_height()
+        ax.annotate(
+            str(int(height)),
+            xy=(bar.get_x() + bar.get_width() / 2, height),
+            xytext=(0, 5),
+            textcoords="offset points",
+            ha="center",
+            va="bottom",
+            fontsize=12,
+        )
+
+
+def save_all_figure(rows: list[dict], output_dir: Path):
+    row = next(r for r in rows if r["condition"] == "all_tests" and r["class"] == "all")
+    fig, ax = plt.subplots(figsize=(7, 5))
+    bars = ax.bar(["All tests"], [row["n_maximal_laminar_families"]], color="#444444", width=0.55)
+    add_value_labels(ax, bars)
+    ax.set_ylabel("Number of maximal laminar families")
+    ax.set_title("Nyangatom (nyan1308): all tests")
+    ax.set_ylim(0, row["n_maximal_laminar_families"] * 1.18)
+    fig.tight_layout()
+    fig.savefig(output_dir / "nyan1308_tree_count_all.pdf")
+    plt.close(fig)
+
+
+def save_class_figure(rows: list[dict], output_dir: Path):
+    values = [
+        next(r for r in rows if r["condition"] == "all_tests" and r["class"] == c)[
+            "n_maximal_laminar_families"
+        ]
+        for c in CLASS_ORDER
+    ]
+    labels = [c.title() for c in CLASS_ORDER]
+    fig, ax = plt.subplots(figsize=(10, 5.5))
+    bars = ax.bar(labels, values, color=[CLASS_COLORS[c] for c in CLASS_ORDER], width=0.7)
+    add_value_labels(ax, bars)
+    ax.set_ylabel("Number of maximal laminar families")
+    ax.set_title("Nyangatom (nyan1308): trees by domain class")
+    ax.set_ylim(0, max(values) * 1.25)
+    ax.tick_params(axis="x", rotation=20)
+    fig.tight_layout()
+    fig.savefig(output_dir / "nyan1308_tree_count_by_class.pdf")
+    plt.close(fig)
+
+
+def save_without_adjacent_figure(rows: list[dict], output_dir: Path):
+    conditions = [("all_tests", "All tests"), ("without_adjacent_spans", "Without size-2 spans")]
+    values = [
+        next(r for r in rows if r["condition"] == condition and r["class"] == "all")[
+            "n_maximal_laminar_families"
+        ]
+        for condition, _ in conditions
+    ]
+    fig, ax = plt.subplots(figsize=(8, 5))
+    bars = ax.bar([label for _, label in conditions], values, color=["#777777", "#222222"], width=0.6)
+    add_value_labels(ax, bars)
+    ax.set_ylabel("Number of maximal laminar families")
+    ax.set_title("Nyangatom (nyan1308): effect of removing adjacent spans")
+    ax.set_ylim(0, max(values) * 1.25)
+    fig.tight_layout()
+    fig.savefig(output_dir / "nyan1308_tree_count_without_adjacent.pdf")
+    plt.close(fig)
+
+
+def write_tsv(rows: list[dict], output_dir: Path):
+    path = output_dir / "nyan1308_tree_counts.tsv"
+    with path.open("w", newline="") as stream:
+        writer = csv.DictWriter(stream, fieldnames=list(rows[0]), delimiter="\t")
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--domain-file", default="domains_nyan1308.tsv")
+    parser.add_argument("--domains-dir", type=Path, default=REPO_DIR / "domains")
+    parser.add_argument("--output-dir", type=Path, default=REPO_DIR / "results")
+    args = parser.parse_args()
+
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    rows = collect_counts(args.domain_file, args.domains_dir)
+    write_tsv(rows, args.output_dir)
+    save_all_figure(rows, args.output_dir)
+    save_class_figure(rows, args.output_dir)
+    save_without_adjacent_figure(rows, args.output_dir)
+
+    for row in rows:
+        print(
+            f"{row['condition']:24} {row['class']:18} "
+            f"spans={row['n_unique_spans']:2} "
+            f"families={row['n_maximal_laminar_families']:2}"
+        )
+
+
+if __name__ == "__main__":
+    main()

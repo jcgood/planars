@@ -58,7 +58,8 @@ This transformation is critical. Without it, naive application of Bron-Kerbosch 
 **Properties**:
 - Provably correct (checks all possibilities)
 - Slow: O(2^n × n²) per subset check
-- For 26 spans: ~67 million subsets, ~60-90 seconds
+- For 26 spans: ~67 million subsets; potentially multi-minute runtime on
+  current hardware
 
 **Status**: ✓ Mathematically correct, verified on toy and real data
 
@@ -128,12 +129,14 @@ This is a conceptual shift, not a modification to Bron-Kerbosch itself. The algo
 **Results**:
 | Algorithm | Count | Time | Match |
 |-----------|-------|------|-------|
-| Exhaustive search | 69 | ~60-90s | ✓ |
+| Exhaustive search | 69 (recorded result) | potentially multi-minute | reference implementation |
 | NetworkX Bron-Kerbosch | 69 | ~5s | ✓ |
 
-**Conclusion**: ✓ Both algorithms find exactly **69 maximal laminar families**
-
-This is **strong independent verification**. Two fundamentally different approaches (exhaustive enumeration vs. complement graph cliques) agree on the same answer.
+**Conclusion**: The optimized implementation and the independent NetworkX
+complement-graph enumeration agree on exactly **69 maximal laminar families**.
+The exhaustive implementation provides a direct reference algorithm, but its
+2^26-subset search is substantially slower and is not the routine verification
+path.
 
 ## Linguistic Interpretation
 

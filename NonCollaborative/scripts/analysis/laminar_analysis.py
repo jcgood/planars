@@ -7,9 +7,9 @@ Background
 
 A laminar family is a collection of sets where every two members are either
 nested (one contains the other) or disjoint (they share no elements). No
-partial overlaps are allowed. A laminar family IS a rooted tree: the
-containment relationships define a unique valid hierarchy, with each set's
-parent being the smallest set that properly contains it.
+partial overlaps are allowed. A laminar family induces a rooted containment
+tree once a root is supplied (and uncovered ground-set positions are treated
+as leaves): each set's parent is the smallest set that properly contains it.
 
 This makes laminar families the right mathematical object for testing the
 three hypotheses developed in Good, "Domains of linearization, constituency,
@@ -896,9 +896,26 @@ def generate_r_overlay_script(
                 # geom_tiplab comment for the full verification writeup. The
                 # widened bottom plot.margin keeps vjust's extra downward
                 # shift from being clipped at the panel edge.
+                #
+                # colour=NA, fill=NA is what actually makes this invisible --
+                # verified directly with an isolated single-tree test. Two
+                # other params that look like they should do it don't:
+                # alpha=0 is silently ignored by geom_tiplab(geom="label", ...)
+                # in this ggtree version (the label rendered at FULL opacity
+                # regardless), and label.size=0 is dropped outright (ggplot2
+                # warns "Ignoring unknown parameters: label.size" every run --
+                # that warning, seen throughout this project's R output and
+                # long assumed harmless noise, was actually reporting this).
+                # The visible symptom: every one of the ~69 "invisible"
+                # placeholders was rendering in full, at the same reserved
+                # position on every tree, so they stacked into what looked
+                # like one small extra box (its own bare tip number, no name)
+                # peeking out from behind the one real, larger, two-line
+                # visible label added afterward -- not fully invisible, just
+                # fully covered except at the edges.
                 geom_tip = (
                     '  geom_tiplab(geom="label", size=5, angle=0,\n'
-                    '    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +'
+                    '    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +'
                 )
 
                 print(
@@ -952,29 +969,93 @@ def generate_r_overlay_script(
             f'ggsave("{pdf_path}", forest & {bg_theme}, width=20, height=14)',
             file=rout,
         )
+        # The domain-type color legend only means something when more than one
+        # colored group actually contributed trees -- a single-group (e.g. one
+        # black "all families" overlay) has no color variation for a legend to
+        # explain, and showing all 5 domain-type colors regardless would be
+        # actively misleading (implying colors that don't appear anywhere).
+        # For that single-group case, a darkness/thickness legend is the
+        # meaningful one instead: both encode the same quantity (how many of
+        # the n_total families share a span), so one legend explains both.
+        used_groups = sum(1 for fams, _, _, _ in subsets if fams)
         legend_pdf_path = pdf_path[:-4] + "_legend.pdf" if pdf_path.endswith(".pdf") else pdf_path + "_legend.pdf"
-        print("", file=rout)
-        print("legend_data <- data.frame(", file=rout)
-        print('  Domain_Type = factor(c("morphosyntactic", "tonosegmental", "length", "phonological", "intonational"),', file=rout)
-        print('    levels=c("morphosyntactic", "tonosegmental", "length", "phonological", "intonational")),', file=rout)
-        print("  x=1, y=1", file=rout)
-        print(")", file=rout)
-        print("legend_plot <- ggplot(legend_data, aes(x=x, y=y, color=Domain_Type)) +", file=rout)
-        print("  geom_point(size=3, alpha=0) +", file=rout)
-        print('  scale_color_manual(values=c(morphosyntactic="#BC3C29", tonosegmental="#0072B5", length="#E18727", phonological="#20845E", intonational="#7876B1"),', file=rout)
-        print('    name="Domain type") +', file=rout)
-        print('  guides(color=guide_legend(override.aes=list(alpha=1))) +', file=rout)
-        print("  theme_void() + theme(legend.position=\"inside\", legend.position.inside=c(0.02, 0.98), legend.justification=c(\"left\", \"top\"), legend.direction=\"vertical\",", file=rout)
-        print("    legend.background=element_rect(fill=\"white\", color=\"black\", linewidth=0.5),", file=rout)
-        print("    legend.text=element_text(size=26), legend.title=element_text(size=28, face=\"bold\"),", file=rout)
-        print("    legend.key.height=unit(2.2, \"lines\"), legend.key.width=unit(1.2, \"lines\"),", file=rout)
-        print("    legend.spacing.y=unit(0.45, \"in\"), legend.margin=margin(18, 20, 18, 20),", file=rout)
-        print("    plot.margin=margin(8, 8, 8, 8))", file=rout)
-        print("legend_version <- forest + inset_element(legend_plot, left=0.002, bottom=0.55, right=0.40, top=0.97, align_to=\"panel\", on_top=TRUE)", file=rout)
-        print(
-            f'ggsave("{legend_pdf_path}", legend_version, width=20, height=14)',
-            file=rout,
-        )
+        if used_groups > 1:
+            print("", file=rout)
+            print("legend_data <- data.frame(", file=rout)
+            print('  Domain_Type = factor(c("morphosyntactic", "tonosegmental", "length", "phonological", "intonational"),', file=rout)
+            print('    levels=c("morphosyntactic", "tonosegmental", "length", "phonological", "intonational")),', file=rout)
+            print("  x=1, y=1", file=rout)
+            print(")", file=rout)
+            print("legend_plot <- ggplot(legend_data, aes(x=x, y=y, color=Domain_Type)) +", file=rout)
+            print("  geom_point(size=3, alpha=0) +", file=rout)
+            print('  scale_color_manual(values=c(morphosyntactic="#BC3C29", tonosegmental="#0072B5", length="#E18727", phonological="#20845E", intonational="#7876B1"),', file=rout)
+            print('    name="Domain type") +', file=rout)
+            print('  guides(color=guide_legend(override.aes=list(alpha=1))) +', file=rout)
+            print("  theme_void() + theme(legend.position=\"inside\", legend.position.inside=c(0.02, 0.98), legend.justification=c(\"left\", \"top\"), legend.direction=\"vertical\",", file=rout)
+            print("    legend.background=element_rect(fill=\"white\", color=\"black\", linewidth=0.5),", file=rout)
+            print("    legend.text=element_text(size=26), legend.title=element_text(size=28, face=\"bold\"),", file=rout)
+            print("    legend.key.height=unit(2.2, \"lines\"), legend.key.width=unit(1.2, \"lines\"),", file=rout)
+            print("    legend.spacing.y=unit(0.45, \"in\"), legend.margin=margin(18, 20, 18, 20),", file=rout)
+            print("    plot.margin=margin(8, 8, 8, 8))", file=rout)
+            print("legend_version <- forest + inset_element(legend_plot, left=0.002, bottom=0.55, right=0.40, top=0.97, align_to=\"panel\", on_top=TRUE)", file=rout)
+            print(
+                f'ggsave("{legend_pdf_path}", legend_version, width=20, height=14)',
+                file=rout,
+            )
+        elif used_groups == 1:
+            # Representative family counts spanning the full range (all the
+            # way down to a single contingent span), as fractions of n_total
+            # rather than hardcoded numbers so this works for any subset size.
+            levels = sorted({n_total, max(1, round(n_total * 0.5)),
+                             max(1, round(n_total * 0.15)), 1}, reverse=True)
+            # Each swatch is rendered as ONE segment at the alpha a stack of
+            # n identical alphaval layers would composite to
+            # (1 - (1-alphaval)**n) -- mathematically identical to actually
+            # stacking n layers of the same color, so the legend swatch
+            # matches the real chart's accumulated opacity exactly rather
+            # than approximating it.
+            rows = []
+            for i, n in enumerate(levels):
+                composite_alpha = round(1 - (1 - alphaval) ** n, 6)
+                lw = round(n ** 0.5, 4)
+                suffix = " (always present)" if n == n_total else (
+                    " (contingent)" if n == 1 else "")
+                label = f"{n}/{n_total} families{suffix}"
+                rows.append((len(levels) - i, composite_alpha, lw, label))
+
+            print("", file=rout)
+            print("darkness_legend_data <- data.frame(", file=rout)
+            print(f"  y = c({', '.join(str(r[0]) for r in rows)}),", file=rout)
+            print(f"  alpha_val = c({', '.join(str(r[1]) for r in rows)}),", file=rout)
+            print(f"  lw = c({', '.join(str(r[2]) for r in rows)}),", file=rout)
+            labels_r = ", ".join(f'"{r[3]}"' for r in rows)
+            print(f"  label = c({labels_r})", file=rout)
+            print(")", file=rout)
+            print(
+                "darkness_legend_plot <- ggplot(darkness_legend_data) +\n"
+                "  geom_segment(aes(x=0, xend=1, y=y, yend=y, linewidth=lw, alpha=alpha_val),\n"
+                '    color="black", lineend="round") +\n'
+                "  geom_text(aes(x=1.15, y=y, label=label), hjust=0, size=7) +\n"
+                "  scale_linewidth_identity() +\n"
+                "  scale_alpha_identity() +\n"
+                f"  xlim(0, 4) + ylim(0.3, {len(rows) + 0.7}) +\n"
+                '  labs(title="Darkness & thickness =\\nhow many of the '
+                f'{n_total} families\\nshare the span") +\n'
+                "  theme_void() +\n"
+                "  theme(plot.title=element_text(size=20, face=\"bold\", margin=margin(b=10)),\n"
+                "    plot.margin=margin(10, 10, 10, 10),\n"
+                '    plot.background=element_rect(fill="white", color="black", linewidth=0.5))',
+                file=rout,
+            )
+            print(
+                "legend_version <- forest + inset_element(darkness_legend_plot,\n"
+                '  left=0.002, bottom=0.72, right=0.42, top=0.97, align_to="panel", on_top=TRUE)',
+                file=rout,
+            )
+            print(
+                f'ggsave("{legend_pdf_path}", legend_version, width=20, height=14)',
+                file=rout,
+            )
 
     print(f"\nR overlay script written to: {rout_path}")
 
