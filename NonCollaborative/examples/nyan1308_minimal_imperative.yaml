@@ -1,0 +1,25 @@
+# One glossed Chichewa example, transcribed for use with
+# NonCollaborative/scripts/highlight_planar_example.py. See
+# nyan1308_not_just_chairs.yaml for the `lines`/`chunks`/`morphemes` format.
+#
+# Source: ChichewaWordhood.tex, \label{ChichImp2} -- "the minimal possible verb
+# form, with morphemes only in Position V and Position FV" (the manuscript's own
+# description, \sref{ChichewaPlanar}). Pasted directly from the manuscript's own
+# \gll source, using its \su{\V}/\su{\FV} macros, so the positions below (10, 17)
+# are already ChichPlan numbers, not a source needing remapping.
+
+language_id: nyan1308
+name: minimal_imperative
+
+lines:
+  - chunks:
+      - morphemes:
+          - text: "lum"
+            positions: [10]
+            gloss: "bite"
+          - text: "a"
+            positions: [17]
+            gloss: "FV"
+
+translation: "bite!"
+citation: "Mchombo 2004:33"

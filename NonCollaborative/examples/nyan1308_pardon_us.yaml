@@ -1,0 +1,47 @@
+# One glossed Chichewa example, transcribed for use with
+# NonCollaborative/scripts/highlight_planar_example.py. See
+# nyan1308_not_just_chairs.yaml for the `lines`/`chunks`/`morphemes` format.
+#
+# Source: ChichewaWordhood.tex, \label{PardonUs} (Downing & Mtenje 2017:180) --
+# the manuscript's example of the largest domain of free occurrence (Position V
+# through Position FV, "the elements found in intermediate positions... cannot be
+# elided"). Pasted directly from the manuscript's own \gll source, using its
+# \su{\Neg}/\su{\SM}/\su{\TM}/\su{\OM}/\su{\V}/\su{\Ap}/\su{\FV} macros, so the
+# positions below are already ChichPlan numbers, not a source needing remapping.
+#
+# Gloss casing preserves the manuscript's own mix of plain and \gc{}/{\sc}-wrapped
+# text within a single gloss token (e.g. "2pl.\gc{s}" -> "2pl.S", "1p.{\sc o}" ->
+# "1p.O") -- format_gloss() only transforms a gloss that's *entirely* uppercase,
+# so a mixed-case token like these is passed through unchanged, same as the
+# associative-marker case in nyan1308_mad_baboons.yaml.
+
+language_id: nyan1308
+name: pardon_us
+
+lines:
+  - chunks:
+      - morphemes:
+          - text: "sí"
+            positions: [5]
+            gloss: "NEG"
+          - text: "mú"
+            positions: [6]
+            gloss: "2pl.S"
+          - text: "ku"
+            positions: [8]
+            gloss: "PRS"
+          - text: "tí"
+            positions: [9]
+            gloss: "1p.O"
+          - text: "khúluluk"
+            positions: [10]
+            gloss: "pardon"
+          - text: "íil"
+            positions: [14]
+            gloss: "APPL"
+          - text: "a"
+            positions: [17]
+            gloss: "FV"
+
+translation: "you didn't use to pardon us"
+citation: "Downing & Mtenje 2017:180"

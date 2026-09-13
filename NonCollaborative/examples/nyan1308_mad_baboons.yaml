@@ -1,0 +1,62 @@
+# One glossed Chichewa example, transcribed for use with
+# NonCollaborative/scripts/highlight_planar_example.py. See
+# nyan1308_not_just_chairs.yaml for the `lines`/`chunks`/`morphemes` format.
+#
+# This example needs two chunks on each line (a question particle sitting
+# beside a subject NP; a hyphen-chained verb sitting beside a separate
+# object NP) rather than one chunk chained across the whole line -- the
+# reason this format supports more than one chunk per line at all.
+#
+# Gloss casing was normalized to match nyan1308_not_just_chairs.yaml's
+# convention (grammatical glosses in caps: 2SM, PRES, FV; lexical glosses in
+# lowercase: smash, what) -- the pasted source had "2sm"/"pres"/"fv" in
+# lowercase, inconsistent with its own "Q" and with the first example.
+#
+# The subject's gloss is one multi-word string for one morpheme ("2.baboon 2.ASS
+# 4.madness" for "anyaní á mísala") mixing a grammatical gloss (ASS, the
+# associative marker) with two lexical ones (baboon, madness) -- caps only on
+# ASS, matching the same convention at word granularity. format_gloss() only
+# transforms a gloss that's *entirely* uppercase; a mixed-case string like this
+# one is passed through unchanged, so the casing has to be written correctly
+# here rather than relying on the function to fix it up.
+#
+# Position numbers checked against ChichPlan (planar_nyan1308.tsv): Kodí=1 (QM),
+# subject=3 (Su), 2sm=6 (SM), pres=8 (TM), smash=10 (V), fv=17 (FV). `what` is
+# ambiguous between Ob=20 and OT=21 (no object marker on the verb to disambiguate
+# which object slot it fills) -- see https://github.com/jcgood/planars/issues/293.
+
+language_id: nyan1308
+name: mad_baboons
+
+lines:
+  - chunks:
+      - morphemes:
+          - text: "Kodí"
+            positions: [1]
+            gloss: "Q"
+      - morphemes:
+          - text: "anyaní á mísala"
+            positions: [3]
+            gloss: "2.baboon 2.ASS 4.madness"
+  - chunks:
+      - morphemes:
+          - text: "a"
+            positions: [6]
+            gloss: "2SM"
+          - text: "ku"
+            positions: [8]
+            gloss: "PRES"
+          - text: "phwány"
+            positions: [10]
+            gloss: "smash"
+          - text: "á"
+            positions: [17]
+            gloss: "FV"
+      - morphemes:
+          - text: "chiyáni"
+            positions: [20, 21]
+            gloss: "what"
+    trailing_punct: "?"
+
+translation: "What are the mad baboons smashing?"
+citation: "Mchombo 2005:69"

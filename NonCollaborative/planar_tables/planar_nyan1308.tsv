@@ -1,0 +1,23 @@
+Language_ID	Planar_Type	Position	Position_Label	Position_Type	Elements	Description	Class_Size	Notes
+nyan1308	verbal	1	QM	Slot	q	Question Marker
+nyan1308	verbal	2	PrS	Zone	presubj	presubject zone
+nyan1308	verbal	3	Su	Slot	subj	subject
+nyan1308	verbal	4	PoS	Zone	postsubj	postsubject zone
+nyan1308	verbal	5	Neg	Slot	neg	negative marker
+nyan1308	verbal	6	SM	Slot	sm	Subject Marker
+nyan1308	verbal	7	NegT	Slot	neg	negative marker
+nyan1308	verbal	8	TM	Zone	tamp	tense, aspect, mood, and polarity markers
+nyan1308	verbal	9	OM	Slot	om	Object Marker
+nyan1308	verbal	10	V	Slot	root	verb root
+nyan1308	verbal	11	Un	Slot	unprod ext	unproductive verbal extensions
+nyan1308	verbal	12	St	Slot	stat	Stative Extension
+nyan1308	verbal	13	Ca	Slot	caus	Causative Extension
+nyan1308	verbal	14	Ap	Slot	appl	Applicative Extension
+nyan1308	verbal	15	Rc	Slot	recp	Reciprocal Extension
+nyan1308	verbal	16	Pa	Slot	pass	Passive Extension
+nyan1308	verbal	17	FV	Slot	fv	inflectional Final Vowel
+nyan1308	verbal	18	2P	Slot	postfinal2p	second person plural enclitic
+nyan1308	verbal	19	En	Zone	postfinalenc	postverbal enclitic
+nyan1308	verbal	20	Ob	Slot	obj1	first object
+nyan1308	verbal	21	OT	Slot	obj2	second object
+nyan1308	verbal	22	PoO	Zone	postobj	postobject elements

@@ -1,0 +1,59 @@
+# One glossed Chichewa example, transcribed for use with
+# NonCollaborative/scripts/highlight_planar_example.py.
+#
+# `positions` on each morpheme refers to Position numbers in
+# planar_tables/planar_nyan1308.tsv (the manuscript's ChichPlan numbering,
+# not Mchombo 2004's own numbering in the cited source). A morpheme with more
+# than one position (like the object below) is genuinely ambiguous between
+# them -- see https://github.com/jcgood/planars/issues/293.
+#
+# `lines` is a sequence of bracket-notation/gloss row pairs. Each line has
+# `chunks` (independent words, rendered space-separated); each chunk has
+# `morphemes` (bound forms of one word, rendered hyphen-chained). This
+# example is the simple case: one line with a single chunk holding the whole
+# hyphen-chained verb, and one line per "standalone" item (here, the object
+# NP, which sits outside the verb word so it's its own chunk on its own
+# line). See nyan1308_mad_baboons.yaml for an example that actually needs
+# more than one chunk per line.
+
+language_id: nyan1308
+name: not_just_chairs
+
+lines:
+  - chunks:
+      - morphemes:
+          - text: "Sí"
+            positions: [5]
+            gloss: "NEG"
+          - text: "ú"
+            positions: [6]
+            gloss: "3SM"
+          - text: "kú-ká-ngo"
+            positions: [8]
+            gloss: "PRS-GO-JUST"
+          - text: "zí"
+            positions: [9]
+            gloss: "10OM"
+          - text: "thyól"
+            positions: [10]
+            gloss: "break"
+          - text: "ets"
+            positions: [13]
+            gloss: "CAUS"
+          - text: "el"
+            positions: [14]
+            gloss: "APPL"
+          - text: "á"
+            positions: [17]
+            gloss: "FV"
+          - text: "nso"
+            positions: [19]
+            gloss: "too"
+  - chunks:
+      - morphemes:
+          - text: "mipando"
+            positions: [20, 21]
+            gloss: "4.chair"
+
+translation: "It is not just going to have the chairs broken for them as well (too)."
+citation: "Mchombo 2004:69"
