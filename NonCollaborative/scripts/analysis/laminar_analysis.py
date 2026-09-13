@@ -199,7 +199,7 @@ def load_spans(domain_file: str, domains_dir: str | None = None,
 
     Args:
         domain_file: TSV filename.
-        domains_dir: Directory containing the file. Defaults to ../domains/
+        domains_dir: Directory containing the file. Defaults to ../../domains/
                      relative to this script's location.
         subset: If given, only include rows whose Domain_Type is in this list.
         skip_prefix: Rows whose Test_Labels starts with this character are
@@ -211,7 +211,7 @@ def load_spans(domain_file: str, domains_dir: str | None = None,
         n_positions is the maximum Right_Edge observed (= total positions).
     """
     if domains_dir is None:
-        domains_dir = os.path.join(os.path.dirname(__file__), "..", "domains")
+        domains_dir = os.path.join(os.path.dirname(__file__), "..", "..", "domains")
 
     df = pd.read_csv(os.path.join(domains_dir, domain_file), sep="\t")
 
@@ -764,12 +764,13 @@ def generate_r_script(families: list[frozenset[Span]],
 # Overlay: multi-domain-type forest visualization
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Standard colors matching the spanchart convention
+# Standard colors matching the pooled-plot convention
 OVERLAY_GROUPS: list[tuple[list[str], str, str]] = [
-    (["morphosyntactic"], "#EE6677", "morsyn"),
-    (["tonosegmental"],   "#228833",  "tono"),
-    (["phonological"],    "#4477AA",  "phon"),
-    (["intonational"],    "#CCBB44",  "inton"),
+    (["morphosyntactic"], "#BC3C29", "morsyn"),
+    (["tonosegmental"],   "#0072B5", "tono"),
+    (["length"],          "#E18727", "length"),
+    (["phonological"],    "#20845E", "phon"),
+    (["intonational"],    "#7876B1", "inton"),
 ]
 
 _NYAN1308_POS_LABELS: dict[int, str] = {
@@ -787,6 +788,7 @@ def generate_r_overlay_script(
         output_dir: str,
         output_name: str = "laminar_overlay.r",
         pos_labels: dict[int, str] | None = None,
+        alpha_divisor: float = 2.0,
 ) -> None:
     """Write a ggtree R script that overlays trees from multiple domain-type groups.
 
@@ -804,18 +806,25 @@ def generate_r_overlay_script(
         output_name: R script filename.
         pos_labels: Position number → label. If given, the first tree shows
                     tip labels as 'N\\nName'; all other trees suppress them.
+        alpha_divisor: Divides the opacity-matched alpha formula before use.
+                       Default 2.0 matches this function's original tuning
+                       for the ~20-tree colored multi-group overlay
+                       (nyan1308_laminar_overlay.r). Pass 1.0 for a single
+                       black all-families overlay to match the density of
+                       laminar_conflict_groups.r's Panel ALL (its 69-family
+                       alpha of 0.064563 is what (1 - 0.01**(1/69)) / 1
+                       gives, not /2).
     """
     n_total = sum(len(fams) for fams, _, _, _ in subsets if fams)
     if n_total == 0:
         return
 
     # Alpha: chosen so all trees together approach opacity
-    alphaval = round((1 - 0.01 ** (1 / n_total)) / 2, 6)
+    alphaval = round((1 - 0.01 ** (1 / n_total)) / alpha_divisor, 6)
 
     rout_path = os.path.join(output_dir, output_name)
     pdf_path = rout_path[:-2] + ".pdf" if rout_path.endswith(".r") else rout_path + ".pdf"
     all_plot_names: list[str] = []
-    first_written = False
 
     with open(rout_path, "w") as rout:
         print("library(ape)", file=rout)
@@ -871,24 +880,26 @@ def generate_r_overlay_script(
                 )
                 print(f"{strength_var} <- c(0.5, {strength_vals})", file=rout)
 
-                # Tip labels on first tree only
-                if not first_written and pos_labels:
-                    geom_tip = (
-                        '  geom_tiplab(geom="label", size=3.5, angle=0,\n'
-                        '    offset=-1, hjust=0.5, alpha=1, label.size=0,\n'
-                        '    lineheight=0.9,\n'
-                        '    aes(label=paste(label, posLabel[label], sep="\\n"))) +'
-                    )
-                elif not first_written:
-                    geom_tip = (
-                        '  geom_tiplab(geom="label", size=5, angle=0,\n'
-                        '    offset=-1, hjust=0.5, alpha=1) +'
-                    )
-                else:
-                    geom_tip = (
-                        '  geom_tiplab(geom="label", size=5, angle=0,\n'
-                        '    offset=-1, hjust=0.5, alpha=0) +'
-                    )
+                # Suppress tip labels on every tree, but still reserve the same
+                # panel space every visible label will need (offset + vjust),
+                # so all trees share identical panel bounds when stacked. They
+                # are added once below, to the topmost tree, after all edge
+                # plots have been assembled.
+                #
+                # offset=-1 alone (the previous convention here) was verified
+                # too small a gap between vertex and box at this box size —
+                # measured directly at 39px on a 16x10in/200dpi render, which
+                # still reads as touching/overlapping at normal viewing scale.
+                # vjust=1.25 on top of the same offset roughly triples that to
+                # 111px, confirmed against a true tip marker
+                # (geom_tippoint()), not by eye. See random_tree_overlay.py's
+                # geom_tiplab comment for the full verification writeup. The
+                # widened bottom plot.margin keeps vjust's extra downward
+                # shift from being clipped at the panel edge.
+                geom_tip = (
+                    '  geom_tiplab(geom="label", size=5, angle=0,\n'
+                    '    offset=-1, hjust=0.5, vjust=1.25, alpha=0) +'
+                )
 
                 print(
                     f'{plot_var} <- ggtree({grouped_var},\n'
@@ -899,16 +910,31 @@ def generate_r_overlay_script(
                     f'{geom_tip}\n'
                     f'  theme(panel.background=element_blank(),\n'
                     f'    plot.background=element_blank(),\n'
-                    f'    legend.position="none") +\n'
+                    f'    legend.position="none",\n'
+                    f'    plot.margin=margin(t=5, r=5, b=25, l=5, unit="pt")) +\n'
                     f'  scale_size_identity()',
                     file=rout,
                 )
                 print("", file=rout)
 
                 all_plot_names.append(plot_var)
-                first_written = True
 
         n_plots = len(all_plot_names)
+        last_plot = all_plot_names[-1]
+        if pos_labels:
+                print(
+                    f'{last_plot} <- {last_plot} + geom_tiplab(geom="label", size=6, angle=0,\n'
+                '  offset=-1, hjust=0.5, vjust=1.25, alpha=1, label.size=0,\n'
+                '  aes(label=paste(label, posLabel[label], sep="\\n")), lineheight=1)',
+                file=rout,
+            )
+        else:
+                print(
+                    f'{last_plot} <- {last_plot} + geom_tiplab(geom="label", size=6, angle=0,\n'
+                '  offset=-1, hjust=0.5, vjust=1.25, alpha=1, label.size=0, lineheight=1)',
+                file=rout,
+            )
+        print("", file=rout)
         print("treelayout <- c(", file=rout)
         for _ in range(n_plots - 1):
             print("  area(t=1, l=1, b=5, r=1),", file=rout)
@@ -920,10 +946,33 @@ def generate_r_overlay_script(
             f"forest <- (\n  {joined} +\n  plot_layout(design=treelayout))",
             file=rout,
         )
-        bg_theme = "theme(plot.background=element_rect(fill='grey95'))"
+        bg_theme = "theme(plot.background=element_rect(fill='white', color=NA))"
         print(f"print(forest & {bg_theme})", file=rout)
         print(
             f'ggsave("{pdf_path}", forest & {bg_theme}, width=20, height=14)',
+            file=rout,
+        )
+        legend_pdf_path = pdf_path[:-4] + "_legend.pdf" if pdf_path.endswith(".pdf") else pdf_path + "_legend.pdf"
+        print("", file=rout)
+        print("legend_data <- data.frame(", file=rout)
+        print('  Domain_Type = factor(c("morphosyntactic", "tonosegmental", "length", "phonological", "intonational"),', file=rout)
+        print('    levels=c("morphosyntactic", "tonosegmental", "length", "phonological", "intonational")),', file=rout)
+        print("  x=1, y=1", file=rout)
+        print(")", file=rout)
+        print("legend_plot <- ggplot(legend_data, aes(x=x, y=y, color=Domain_Type)) +", file=rout)
+        print("  geom_point(size=3, alpha=0) +", file=rout)
+        print('  scale_color_manual(values=c(morphosyntactic="#BC3C29", tonosegmental="#0072B5", length="#E18727", phonological="#20845E", intonational="#7876B1"),', file=rout)
+        print('    name="Domain type") +', file=rout)
+        print('  guides(color=guide_legend(override.aes=list(alpha=1))) +', file=rout)
+        print("  theme_void() + theme(legend.position=\"inside\", legend.position.inside=c(0.02, 0.98), legend.justification=c(\"left\", \"top\"), legend.direction=\"vertical\",", file=rout)
+        print("    legend.background=element_rect(fill=\"white\", color=\"black\", linewidth=0.5),", file=rout)
+        print("    legend.text=element_text(size=26), legend.title=element_text(size=28, face=\"bold\"),", file=rout)
+        print("    legend.key.height=unit(2.2, \"lines\"), legend.key.width=unit(1.2, \"lines\"),", file=rout)
+        print("    legend.spacing.y=unit(0.45, \"in\"), legend.margin=margin(18, 20, 18, 20),", file=rout)
+        print("    plot.margin=margin(8, 8, 8, 8))", file=rout)
+        print("legend_version <- forest + inset_element(legend_plot, left=0.002, bottom=0.55, right=0.40, top=0.97, align_to=\"panel\", on_top=TRUE)", file=rout)
+        print(
+            f'ggsave("{legend_pdf_path}", legend_version, width=20, height=14)',
             file=rout,
         )
 
@@ -937,6 +986,7 @@ def run_domain_overlay(
         overlay_groups: list | None = None,
         pos_labels: dict[int, str] | None = None,
         output_name: str | None = None,
+        alpha_divisor: float = 2.0,
 ) -> None:
     """Run laminar analysis per domain type and write a combined colored overlay.
 
@@ -947,11 +997,17 @@ def run_domain_overlay(
     n_positions is derived from the full unfiltered dataset so subset analyses
     always produce trees spanning the complete planar structure — even when a
     subset's spans don't reach the last position (e.g. tonosegmental stops at 17).
+
+    Pass overlay_groups=[(None, "black", tpfx)] for a single unfiltered
+    all-families overlay instead of one colored group per domain type (e.g.
+    nyan1308_all_families_labeled.r, the labeled equivalent of
+    laminar_conflict_groups.r's Panel ALL) — with alpha_divisor=1.0 to match
+    that panel's density; see generate_r_overlay_script()'s alpha_divisor doc.
     """
     if domains_dir is None:
-        domains_dir = os.path.join(os.path.dirname(__file__), "..", "domains")
+        domains_dir = os.path.join(os.path.dirname(__file__), "..", "..", "domains")
     if output_dir is None:
-        output_dir = os.path.join(os.path.dirname(__file__), "..", "results")
+        output_dir = os.path.join(os.path.dirname(__file__), "..", "..", "results")
     if overlay_groups is None:
         overlay_groups = OVERLAY_GROUPS
     if pos_labels is None and "nyan1308" in domain_file:
@@ -986,7 +1042,7 @@ def run_domain_overlay(
                 span_family_count[s] += 1
         subsets.append((families, dict(span_family_count), color, tpfx))
 
-    generate_r_overlay_script(subsets, output_dir, output_name, pos_labels)
+    generate_r_overlay_script(subsets, output_dir, output_name, pos_labels, alpha_divisor)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1005,7 +1061,7 @@ def main(domain_file: str = "domains_nyan1308.tsv",
 
     Args:
         domain_file: TSV filename inside domains_dir.
-        domains_dir: Path to the domains/ folder. Defaults to ../domains/
+        domains_dir: Path to the domains/ folder. Defaults to ../../domains/
                      relative to this script's location.
         output_dir:  Where to write the R script. Defaults to CWD.
         subset:      List of Domain_Type strings to include (e.g.
@@ -1084,3 +1140,15 @@ if __name__ == "__main__":
     #   main(subset=["intonational"], color="#228833", tpfx="inton")
     main()
     run_domain_overlay()
+
+    # All-conflict-groups-stacked overlay: every maximal family in one panel
+    # (the labeled equivalent of laminar_conflict_groups.r's Panel ALL), with
+    # nyan1308_laminar_overlay.r's boxed position-labeled tips. One unfiltered
+    # group (type_filter=None) instead of one color per domain type;
+    # alpha_divisor=1.0 matches Panel ALL's density (its 69-family alpha of
+    # 0.064563), not the colored overlay's /2 tuning.
+    run_domain_overlay(
+        overlay_groups=[(None, "black", "all")],
+        output_name="nyan1308_all_families_labeled.r",
+        alpha_divisor=1.0,
+    )
