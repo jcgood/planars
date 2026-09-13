@@ -35,9 +35,10 @@ def _ordered_forests(n):
 def all_trees_new(n):
     """Count rooted ordered trees with n ordered leaves (each internal node has >=2 children).
 
-    Matches OEIS A007052. See catalan_old.py::all_trees() for the buggy predecessor,
-    which gave 10 for n=4 (correct: 11) because it used bare (i+1) where it needed
-    all_trees_new(i+1), and because its range excluded splits where one side is a single leaf.
+    Matches OEIS A001003 (little Schröder numbers). See catalan_old.py::all_trees() for
+    the buggy predecessor, which gave 10 for n=4 (correct: 11) because it used bare
+    (i+1) where it needed all_trees_new(i+1), and because its range excluded splits
+    where one side is a single leaf.
     """
     if n == 1:
         return 1
@@ -303,13 +304,13 @@ def OCPSplus(n):
 
 if __name__ == "__main__":
     # Count comparison table
-    a007052 = [1, 1, 3, 11, 45, 197, 903, 4279, 20793, 103049]
-    print("n   all_trees_new   all_trees_old   A007052   correct?")
+    a001003 = [1, 1, 3, 11, 45, 197, 903, 4279, 20793, 103049]
+    print("n   all_trees_new   all_trees_old   A001003   correct?")
     print("-" * 54)
     for n in range(1, 11):
         new = all_trees_new(n)
         old = all_trees_old(n)
-        ref = a007052[n - 1]
+        ref = a001003[n - 1]
         ok  = "✓" if new == ref else "✗"
         print(f"{n:2d}  {new:13d}   {old:13d}   {ref:7d}   {ok}")
 

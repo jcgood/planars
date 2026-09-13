@@ -1,0 +1,34 @@
+\parbox{15.6cm}{
+\renewcommand{\arraystretch}{1.9}
+\begin{tabular}{@{}l l l@{}}
+\hline
+ & \textbf{Catalan numbers} & \textbf{Little Schr\"oder numbers} \\
+ & (binary branching) & (super-Catalan; OEIS A001003) \\
+\hline
+Counts &
+  \parbox[t]{5.6cm}{\raggedright rooted ordered trees with $k{+}1$ leaves, every internal node exactly 2 children} &
+  \parbox[t]{6.6cm}{\raggedright rooted ordered trees with $n$ leaves, every internal node $\geq 2$ children} \\[0.6em]
+Values ($k,n{=}0,1,2,\dots$) &
+  $1, 1, 2, 5, 14, 42, 132, \dots$ &
+  $1, 1, 3, 11, 45, 197, 903, \dots$ \\[0.6em]
+Closed form &
+  $\displaystyle C_k = \frac{1}{k+1}\binom{2k}{k}$ &
+  \parbox[t]{6.6cm}{\raggedright (no comparably simple closed form)} \\[1em]
+Recurrence &
+  \parbox[t]{5.6cm}{$\displaystyle C_0 = 1,\quad C_{k+1} = \sum_{i=0}^{k} C_i\, C_{k-i}$} &
+  \parbox[t]{6.6cm}{$s_1 = s_2 = 1,$\\[0.3em] $\displaystyle (n{+}1)\,s_{n+1} = 3(2n{-}1)\,s_n - (n{-}2)\,s_{n-1}$ \\[0.2em] \footnotesize for $n \geq 2$} \\[1.4em]
+Generating function &
+  \parbox[t]{5.6cm}{$\displaystyle \sum_{k\geq 0} C_k x^k = \frac{1-\sqrt{1-4x}}{2x}$} &
+  \parbox[t]{6.6cm}{$\displaystyle \sum_{n\geq 1} s_n x^n = \frac{1+x-\sqrt{1-6x+x^2}}{4}$} \\[1em]
+\hline
+\end{tabular}
+
+\vspace{0.8em}
+
+{\footnotesize\raggedright
+Same indexing convention as \texttt{catalan.py}: the right-hand column's $n$ counts leaves
+directly ($s_n$ = \texttt{all\_trees\_new(n)}); the left-hand column's $k$ is the standard
+Catalan index (trees with $k{+}1$ leaves), since that is how Catalan numbers are conventionally
+stated. Both recurrences and generating functions verified numerically against the known
+sequences before typesetting.\par}
+}
