@@ -18,6 +18,23 @@ This directory contains Python and R scripts for laminar family analysis and ver
   - Console output with statistics
 - **Dependencies**: Standard library only
 
+## Data export
+
+**`analysis/export_planarsviz_data.py`**
+- **Purpose**: Export validated Python analysis results for the `planarsviz` R package
+- **Output**: `results/planarsviz/<dataset>/data/` TSV/JSON bundle
+- **Source of truth**: Reuses `laminar_analysis.py`; does not re-enumerate families
+- **Example**: `python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_nyan1308.tsv`
+
+**`render_planarsviz.R`**
+- **Purpose**: Render package-backed plots from a validated planarsviz bundle
+- **Output**: Organized `plots/` files plus a reproducibility `manifest.json`
+- **Plots**: `span_frequency`, `boundary_skyline`, `frequency_tree`,
+  `family_tree`, `family_forest`, `four_trees`, `conflict_groups`,
+  `domain_overlay`, `all_family_overlay`, `pooled_domains`,
+  `all_family_tree_overlay`, `laminar_subset_overlay`, `exemplary_trees`
+- **Example**: `Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308 --output results/planarsviz/nyan1308`
+
 ## Verification (New)
 
 **`verification/verify_barthelmemy_correspondence.py`**
@@ -39,9 +56,13 @@ This directory contains Python and R scripts for laminar family analysis and ver
   1. Exhaustive search — checks all 2^26 ≈ 67 million subsets
   2. NetworkX Bron-Kerbosch — finds maximal cliques of complement graph
 - **Expected result**: Both should find 69 maximal families (verified ✓)
-- **Runtime**: Exhaustive search ~60-90 seconds; Bron-Kerbosch ~seconds
+- **Runtime**: NetworkX Bron--Kerbosch is the practical verification path;
+  exhaustive enumeration over 26 spans checks roughly 67 million subsets and
+  may take several minutes or be impractical on some machines.
 - **Dependencies**: `networkx`
-- **Status**: Verification complete — both algorithms agree
+- **Status**: The optimized algorithms agree on 69 families. The exhaustive
+  implementation remains a reference check and should not be treated as a
+  routine CI step.
 
 ## Exploratory / Archive
 

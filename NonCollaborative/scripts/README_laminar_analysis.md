@@ -6,13 +6,25 @@ This directory contains Python scripts for analyzing constituency domains via **
 
 **Key script**: `laminar_analysis.py` — does all the heavy lifting.
 
+The R visualization package consumes an explicit export bundle rather than
+reconstructing analytical results. Generate one with:
+
+```bash
+python scripts/analysis/export_planarsviz_data.py \
+  --domain-file domains/domains_nyan1308.tsv
+```
+
+The bundle contract is documented in `r/planarsviz/inst/data-contract.md`.
+
 ## What is a Laminar Family?
 
 A laminar family is a collection of spans where every pair is either:
 - **Nested** (one contains the other), or
 - **Disjoint** (they share no positions)
 
-No partial overlaps are allowed. Crucially, a laminar family IS a rooted tree — containment relationships define a unique valid hierarchy.
+No partial overlaps are allowed. A laminar family induces a rooted
+containment tree once a root span is supplied; without a root, it may be a
+forest.
 
 Laminar families are the right mathematical object for testing three hypotheses from Good's draft on Chichewa:
 
@@ -110,7 +122,7 @@ Check `laminar_analysis.py --help` for command-line flags (if implemented).
 ## Example Workflow
 
 ```bash
-# 1. Prepare domain TSV for Nyangatom
+# 1. Prepare domain TSV for Chichewa
 # (domains_nyan1308.tsv already exists)
 
 # 2. Run analysis
@@ -128,13 +140,19 @@ Rscript nyan1308_laminar_conflict_groups.r  # produces nyan1308_conflict_groups.
 
 ## Key Functions in `laminar_analysis.py`
 
-- `load_spans()` — read domain TSV, extract unique (start, end, type) tuples
-- `pairwise_relationships()` — classify all span pairs as nested/disjoint/conflict
-- `bron_kerbosch()` — enumerate all maximal independent sets
-- `build_parent_map()` — assign parents (tree construction)
+- `load_spans()` — read domain TSV, deduplicate tests into unique spans (size-1 spans excluded)
+- `classify_pair()` / `find_conflicts()` — classify span pairs as nested/disjoint/conflict; build the conflict graph
+- `enumerate_maximal_laminar_families()` — all maximal laminar families, via `_bron_kerbosch()` (maximal independent sets of the conflict graph)
+- `build_parent_map()` / `get_children()` — tree construction
 - `span_to_newick()` — recursive Newick encoder (proper branching trees)
-- `write_ggtree_forest()` — generate `laminar_forest.r` visualization code
-- `write_ggtree_overlay()` — generate overlay visualization code
+- `generate_r_script()` — write a stacked-tree forest R script (`{prefix}laminar_forest.r`)
+- `generate_r_overlay_script()` / `run_domain_overlay()` — write overlay R scripts (`nyan1308_laminar_overlay.r`, `nyan1308_all_families_labeled.r`)
+- `select_representative_families()` / `generate_exemplary_trees()` — exemplary-tree R scripts
+
+`laminar_conflict_groups.r`, `laminar_four_trees.r`, `laminar_freqtree.r` and
+`laminar_spanchart.r` in `results/` have no generator in this file (it was never
+committed); their family-selection rules were recovered from the scripts
+themselves — see `docs/PLAN_planarsviz_library.md` §4.1.
 
 ## Troubleshooting
 
