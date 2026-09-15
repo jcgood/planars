@@ -1,11 +1,12 @@
 """Check the exporter's selections against the trees drawn by the scripts
 whose generator was never committed.
 
-For charts 12-14 (docs/PLAN_planarsviz_library.md section 4.1):
-results/laminar_freqtree.r, results/laminar_four_trees.r and
-results/laminar_conflict_groups.r each paste in the Newick string of every
-tree they draw. This checks that the bundle's families.tsv newick for the
-families named in selections.tsv (consensus_all, consensus_<group>) and in
+For charts 10 and 12-14 (docs/PLAN_planarsviz_library.md section 4.1):
+results/nyan1308_exemplary_trees.r, results/laminar_freqtree.r,
+results/laminar_four_trees.r and results/laminar_conflict_groups.r each
+paste in the Newick string of every tree they draw. This checks that the
+bundle's families.tsv newick for the families named in selections.tsv
+(exemplary ranks, consensus_all, consensus_<group>) and in
 conflict_groups.tsv (all families, then each group's drawn members in
 draw_rank order) reproduces those strings in drawing order.
 
@@ -36,7 +37,12 @@ def check(label, drawn, expected):
 
 
 newick = {row["family_id"]: row["newick"] for row in read("families.tsv")}
-selection = {row["selection"]: row["family_id"] for row in read("selections.tsv")}
+selection_rows = read("selections.tsv")
+selection = {row["selection"]: row["family_id"] for row in selection_rows if row["rank"] == "1"}
+
+exemplary = sorted((r for r in selection_rows if r["selection"] == "exemplary"), key=lambda r: int(r["rank"]))
+trees = re.findall(r'ex_tree\d+ <- read\.tree\(text="([^"]+)"\)', (RESULTS / "nyan1308_exemplary_trees.r").read_text())
+check("exemplary trees", trees, [newick[r["family_id"]] for r in exemplary])
 groups = read("conflict_groups.tsv")
 group_ids = list(dict.fromkeys(row["group_id"] for row in groups))
 

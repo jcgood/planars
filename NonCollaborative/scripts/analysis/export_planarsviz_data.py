@@ -34,6 +34,7 @@ from laminar_analysis import (  # noqa: E402
     find_conflicts,
     get_children,
     load_spans,
+    select_representative_families,
     span_to_newick,
 )
 from planars_groupings import BUNDLES  # noqa: E402
@@ -259,18 +260,24 @@ def capped_draw_order(members: list[int], families, cap: int) -> list[int]:
 
 
 def export_selections(dataset: str, families, data_dir: Path,
-                      conflict_groups_file: Path | None, cap: int) -> dict:
+                      conflict_groups_file: Path | None, cap: int,
+                      exemplary_k: int = 6, include_sparsest: bool = True) -> dict:
     """Write conflict_groups.tsv and selections.tsv; return metadata fields.
 
     conflict_groups.tsv: every family's group (group_id, defining_span_id,
     family_id) and draw_rank (empty = not drawn under the cap). A family
     containing more than one defining span goes to the first group listed.
 
-    selections.tsv (selection, rank, family_id): consensus_all and
-    consensus_<group_id> -- the family with the highest consensus score, the
-    sum over its spans of each span's family count across ALL families.
-    Recovered from laminar_four_trees.r and laminar_freqtree.r (section 4.1;
-    unique for nyan1308). Ties, never seen, go to the lower family number.
+    selections.tsv (selection, rank, family_id):
+    - consensus_all and consensus_<group_id>: the family with the highest
+      consensus score, the sum over its spans of each span's family count
+      across ALL families. Recovered from laminar_four_trees.r and
+      laminar_freqtree.r (section 4.1; unique for nyan1308). Ties, never
+      seen, go to the lower family number.
+    - exemplary, ranks 1..: what laminar_analysis.generate_exemplary_trees()
+      picks -- select_representative_families(k=exemplary_k), called
+      directly, then (include_sparsest) the family drawing on the fewest
+      tests, ties by fewest domain types, if not already picked.
     """
     family_ids = [f"family_{number:03d}" for number in range(1, len(families) + 1)]
     count: dict = {}
@@ -311,10 +318,24 @@ def export_selections(dataset: str, families, data_dir: Path,
         if members:
             selection_rows.append({"selection": f"consensus_{group_id}", "rank": 1,
                                    "family_id": family_ids[consensus(members)]})
+    selected = select_representative_families(families, count, k=exemplary_k)
+    if include_sparsest:
+        def sparsity(family):
+            return (len({label for s in family for label in s.labels}),
+                    len({t for s in family for t in s.domain_types}))
+        sparsest = min(families, key=sparsity)
+        if sparsest not in selected:
+            selected = selected + [sparsest]
+    for rank, family in enumerate(selected, start=1):
+        selection_rows.append({"selection": "exemplary", "rank": rank,
+                               "family_id": family_ids[families.index(family)]})
+
     write_tsv(data_dir / "conflict_groups.tsv",
               ["group_id", "defining_span_id", "family_id", "draw_rank"], group_rows)
     write_tsv(data_dir / "selections.tsv", ["selection", "rank", "family_id"], selection_rows)
     return {
+        "exemplary_k": exemplary_k,
+        "exemplary_include_sparsest": include_sparsest,
         "conflict_group_cap": cap,
         "source_conflict_groups_file": (
             str(source.relative_to(REPO_DIR)) if source and source.is_relative_to(REPO_DIR)
@@ -473,6 +494,8 @@ def export_bundle(
     highlights_file: Path | None = None,
     conflict_groups_file: Path | None = None,
     conflict_group_cap: int = 12,
+    exemplary_k: int = 6,
+    exemplary_include_sparsest: bool = True,
 ) -> Path:
     """Export one validated domain dataset and return its bundle directory.
 
@@ -589,7 +612,8 @@ def export_bundle(
     span_family_count, conflict_rows = write_analysis_tables(data_dir, table_spans, families, adjacency, tests)
     synthetic_id = f"1-{n_positions}" if synthetic_root else None
     selection_metadata = export_selections(dataset, families, data_dir,
-                                           conflict_groups_file, conflict_group_cap)
+                                           conflict_groups_file, conflict_group_cap,
+                                           exemplary_k, exemplary_include_sparsest)
 
     if planar_file is None:
         candidate = REPO_DIR / "planar_tables" / f"planar_{dataset}.tsv"
@@ -749,12 +773,21 @@ def main() -> None:
         "--conflict-group-cap", type=int, default=12,
         help="Most trees the conflict-groups chart draws per group (default: 12)",
     )
+    parser.add_argument(
+        "--exemplary-k", type=int, default=6,
+        help="Representative families the exemplary-trees charts pick by coverage (default: 6)",
+    )
+    parser.add_argument(
+        "--no-exemplary-sparsest", action="store_true",
+        help="Don't add the family with the least evidence to the exemplary selection",
+    )
     args = parser.parse_args()
 
     bundle_dir = export_bundle(args.domain_file, args.output_dir, args.planar_file,
                                args.labels_file, args.root_element, args.language_name,
                                args.highlights_file, args.conflict_groups_file,
-                               args.conflict_group_cap)
+                               args.conflict_group_cap, args.exemplary_k,
+                               not args.no_exemplary_sparsest)
     print(f"Exported planarsviz bundle: {bundle_dir}")
 
 

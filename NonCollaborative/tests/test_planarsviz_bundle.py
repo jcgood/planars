@@ -52,9 +52,15 @@ def test_recovered_selections():
     # there; family_NNN ids here are 1-based).
     def fid(number):
         return f"family_{number + 1:03d}"
-    selections = {row["selection"]: row["family_id"] for row in read_tsv("selections.tsv")}
+    rows = read_tsv("selections.tsv")
+    selections = {row["selection"]: row["family_id"] for row in rows if row["selection"] != "exemplary"}
     assert selections == {"consensus_all": fid(15), "consensus_A": fid(46),
                           "consensus_B": fid(15), "consensus_C": fid(6)}
+    # generate_exemplary_trees(include_sparsest=True): six by coverage, then
+    # the sparsest family (67).
+    exemplary = [row["family_id"] for row in sorted(
+        (row for row in rows if row["selection"] == "exemplary"), key=lambda row: int(row["rank"]))]
+    assert exemplary == [fid(i) for i in [15, 0, 37, 53, 46, 6, 67]]
     groups = read_tsv("conflict_groups.tsv")
     assert [sum(r["group_id"] == g for r in groups) for g in "ABC"] == [10, 23, 36]
     assert sorted(r["family_id"] for r in groups) == [fid(i) for i in range(69)]

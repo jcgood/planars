@@ -4,6 +4,8 @@
   "contract_version": "0.2.0",
   "dataset": "shifted_nyan",
   "enumeration_truncated": false,
+  "exemplary_include_sparsest": true,
+  "exemplary_k": 6,
   "language_name": "Shifted test data",
   "n_active_tests": 95,
   "n_conflict_pairs": 65,

@@ -70,7 +70,10 @@ empty.
 
 `selections.tsv` (`selection`, `rank`, `family_id`): `consensus_all` and
 `consensus_<group_id>`, the family with the highest sum of its spans' family
-counts across all families.
+counts across all families; `exemplary`, ranks 1.., the representative
+families chosen by greedy coverage (`metadata.exemplary_k` of them) plus,
+when `metadata.exemplary_include_sparsest`, the family drawing on the
+fewest tests.
 
 `forests.json` / `forests/<id>.tsv`: the trees of each per-class forest
 (Newick, span order, thickness), computed with the class's own position

@@ -188,17 +188,13 @@ plot_pooled <- function(bundle, domain_types = NULL, layers = c("global", "local
     stop("`group_by_domain` is only available for all tests.", call. = FALSE)
   }
 
-  style <- planarsviz_domain_types(bundle)
-  type_levels <- style$domain_type[order(style$sort_order)]
-  group.colors <- stats::setNames(style$colour, style$domain_type)
-  legend_breaks <- style$domain_type[order(style$legend_order)]
-  b <- as.integer(bundle$metadata$n_positions)
-  o <- bundle$metadata$root_position
-  if (!is.null(o)) o <- as.integer(o)
-
-  tests <- bundle$tests
-  tests$Test_Labels <- trimws(tests$Test_Labels)
-  tests$Domain_Type <- trimws(tests$Domain_Type)
+  setup <- planarsviz_pooled_setup(bundle)
+  type_levels <- setup$type_levels
+  group.colors <- setup$group.colors
+  legend_breaks <- setup$legend_breaks
+  b <- setup$b
+  o <- setup$o
+  tests <- setup$tests
 
   if (isTRUE(group_by_domain)) {
     d <- df.domain.plot(tests, type_levels)
@@ -223,6 +219,27 @@ plot_pooled <- function(bundle, domain_types = NULL, layers = c("global", "local
   }
   attr(p, "planarsviz_size") <- c(width = width, height = pooled_plot_height(d))
   p
+}
+
+# What every pooled-style chart reads from the bundle: domain-type levels,
+# colours and legend order, position count (b), root position (o), and the
+# tests with trimmed labels. Shared by plot_pooled() and the exemplary
+# evidence panels so they can't drift apart.
+planarsviz_pooled_setup <- function(bundle) {
+  style <- planarsviz_domain_types(bundle)
+  o <- bundle$metadata$root_position
+  if (!is.null(o)) o <- as.integer(o)
+  tests <- bundle$tests
+  tests$Test_Labels <- trimws(tests$Test_Labels)
+  tests$Domain_Type <- trimws(tests$Domain_Type)
+  list(
+    type_levels = style$domain_type[order(style$sort_order)],
+    group.colors = stats::setNames(style$colour, style$domain_type),
+    legend_breaks = style$domain_type[order(style$legend_order)],
+    b = as.integer(bundle$metadata$n_positions),
+    o = o,
+    tests = tests
+  )
 }
 
 #' Domain-type style table from a bundle
