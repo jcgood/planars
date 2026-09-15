@@ -51,6 +51,20 @@ Honesty rule: nothing below says "matches" without naming the comparison file.
    the reader can't tell which small panel is which group. Reproduced
    faithfully (the library builds the same titles, equally invisible). Fix
    by drawing the titles another way?
+10. **scipy is not installed.** The boundary-strength distributions chart
+    (chart 17) uses scipy's weighted smoothing, but scipy isn't in the
+    project's environment or declared in `requirements.in`, so that
+    committed PDF can't be regenerated on this machine. The exporter rebuilds
+    the calculation in numpy; it matches the scipy-drawn chart by eye and at
+    its peaks, but equality to the last decimal can't be checked without
+    scipy. Add scipy (a `requirements.in` change) so it can be confirmed, or
+    accept the numpy version?
+11. **Undocumented boundary-strength files.** `results/visualizations.md`
+    has no entries for the boundary-strength charts, and no script writes
+    the `_no_tono` file names (`boundary_strength.py --subset` would name
+    them after the four kept types; they were presumably renamed by hand —
+    the numbers do match that four-type analysis exactly). Not fixed here
+    because that doc lives on `main`.
 
 ---
 
@@ -491,4 +505,48 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
 - R6 search: comments only.
 - Looked at by Claude: yes (all four comparisons twice, the shifted type and
   bundles charts). Seen by Jeff: no.
+- Status: done pending Jeff's review.
+
+## Chart 17: boundary-strength charts (3 files) — cross-language port (§4.3)
+- Step 1, calculation: the exporter calls `boundary_strength.py`'s
+  `compute_boundary_strength()` unchanged for the full data and every subset
+  analysis, writing `boundary_strength.tsv`. `verify_boundary_strength_export.py`:
+  the full table and `subsets/no_tono/` equal the committed
+  `nyan1308_boundary_strength.tsv` and `_no_tono.tsv`, 22 rows each. That
+  also settles what the unnamed `_no_tono` table was: exactly the four
+  non-tonosegmental types (question 11).
+- Density: the distributions chart's curves are scipy's weighted
+  `gaussian_kde`, and scipy is missing (question 10). The exporter rebuilds
+  it in numpy (`weighted_gaussian_kde()`, scipy's documented rule for a
+  numeric bandwidth) into `boundary_strength_density.tsv`: area 1, left
+  peak 0.2332 at 5.07, right peak 0.1519 at 21.5 — the reference's peaks;
+  the comparison image shows the curves on top of scipy's.
+- Step 2, visual settings: listed with source lines in the header of
+  `R/boundary_strength.R` (bars lines 126–156, distributions 159–200),
+  including the matplotlib margin and tick rules reused from chart 16.
+- Step 3: `plot_boundary_strength(bundle, subset = NULL)` (bars; the
+  no-tonosegmental file is `subset = "no_tono"`) and
+  `plot_boundary_strength_distributions(bundle, subset = NULL)`.
+- Deliberate difference: the legend reads "capped (reference only, max N)"
+  with the analysis's own family count. The script typed in 69, so the
+  committed no-tonosegmental chart says "max 69" while its dotted line sits
+  at 24; the port says 24. Full chart unchanged (69).
+- Step 4, comparison (`check_boundary_strength.R`,
+  `comparisons/nyan1308_boundary_strength{,_no_tono,_distributions}.png`):
+  5.7%, 5.1%, 10.3% differing pixels. By eye: bar heights, capped marks,
+  dotted line, ticks, curves and dot rows match; differences are fonts,
+  line weights and legend key shapes. One fix found by looking: zero-strength
+  positions drew tiny specks in the dot rows (matplotlib draws nothing
+  there); now left out.
+- White background (not a transparent chart), so no alpha check needed.
+- Shifted-dataset check (`comparisons/shifted/shifted_nyan_boundary_strength*.png`;
+  new test `test_boundary_strength_shifted`): same strengths two positions
+  later. One expected difference, predicted by the test before rendering:
+  position 1 has a capped mark at 69, because every shifted family contains
+  the added full root `[1-24]` (nothing is summed there). `no_tono`
+  skipped (no tonosegmental in that data).
+- Plotting functions in `boundary_strength.py` not deleted (§4.3).
+- R6 search: comments and doc references only.
+- Looked at by Claude: yes (all three comparisons, twice for the
+  distributions; shifted bars). Seen by Jeff: no.
 - Status: done pending Jeff's review.
