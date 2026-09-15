@@ -550,3 +550,44 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
 - Looked at by Claude: yes (all three comparisons, twice for the
   distributions; shifted bars). Seen by Jeff: no.
 - Status: done pending Jeff's review.
+
+## Chart 18: boundary-strength overlay (2 files)
+- Source copied: `scripts/analysis/boundary_strength_plot.r:1-157` →
+  `R/boundary_strength_overlay.R`, commit `0426f73` (line-for-line check).
+- One function (`0902d5b`):
+  `plot_boundary_strength_overlay(bundle, subset = NULL, colours, highlight
+  = "orthographic_word")`. The script's two calls become options: the
+  no-tonosegmental chart is `subset = "no_tono", colours = c(Left =
+  "#009E73", Right = "#CC79A7")`. The function body is otherwise the
+  script's, including its own weighted `density()` in R (no scipy involved).
+- Literals replaced: the TSV path → the bundle's `boundary_strength.tsv`
+  (chart 17's exporter addition, full or subset); position labels →
+  `position_labels.tsv`; label text colours (black, red 5–19, `#0072B5` at
+  17) → the `orthographic_word` highlight in `highlights.tsv`, the same data
+  chart 9 uses. No new exporter fields.
+- Numbers comparison (`check_boundary_strength_overlay.R`, which runs the
+  script's function with `ggsave` replaced by one that keeps the plot): both
+  variants' plot data and y breaks identical. Pixel comparison:
+  `comparisons/nyan1308_boundary_strength_overlay{,_no_tono}.png`, both
+  0.0000%.
+- Shifted-dataset check
+  (`comparisons/shifted/shifted_nyan_boundary_strength_overlay.png`): 24
+  boxed labels with renamed positions, red on 7–21 and blue on 19 — the
+  highlight moved with the data; bars and density curves two positions
+  later. `no_tono` skipped. No leaks.
+- Faithful behaviour worth knowing: y-axis ticks are every 50 by the
+  script's own rule, so the no-tonosegmental chart (maximum 88) shows only 0
+  and 50. Could become an option if wanted.
+- Deviation from plan §6 (items 11–12), decided here: the plan said to fold
+  charts 5, 17 and 18 into one boundary function with options. They stay
+  three functions (`plot_boundary_skyline()`, `plot_boundary_strength()`,
+  `plot_boundary_strength_overlay()`) because they are different charts, not
+  variants of one: test counts faceted by domain type; matplotlib-style
+  stacked panels with capped marks; dodged bars over density curves. One
+  function would be a switch between three unrelated bodies, which removes
+  no copy (the §1 "options, not copies" aim) and makes each harder to read.
+  What they do share is already shared data: the bundle's
+  `boundary_strength.tsv`, subsets and highlights.
+- R6 search: comments and doc references only.
+- Looked at by Claude: yes (shifted side by side). Seen by Jeff: no.
+- Status: done pending Jeff's review.
