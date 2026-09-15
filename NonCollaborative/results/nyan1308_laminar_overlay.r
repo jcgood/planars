@@ -10,14 +10,14 @@ alphaval <- 0.094435
 # ── morsyn: 3 families ──
 morsyntree1 <- read.tree(text="(1,2,3,4,(((5,6,7,8,(9,((10,11,12,(13,14,15)13-15,16,17)10-17,18)10-18)9-18)5-18,19)5-19,20,21)5-21,22)1-22;")
 morsyntree1grouped <- groupOTU(morsyntree1, list(a = c(1, 22), b = c(5, 21), c = c(5, 19), d = c(5, 18), e = c(9, 18), f = c(10, 18), g = c(10, 17), h = c(13, 15)))
-morsynsmap1 <- c(0.5, 1.7321, 1.7321, 1.7321, 1.7321, 1.0, 1.0, 1.4142, 1.4142)
+morsynsmap1 <- c(0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.4142, 1.0)
 morsyntreeplot1 <- ggtree(morsyntree1grouped,
   aes(size=(morsynsmap1[group])),
   layout="slanted", ladderize=FALSE,
   alpha=alphaval, color="#BC3C29") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -26,14 +26,14 @@ morsyntreeplot1 <- ggtree(morsyntree1grouped,
 
 morsyntree2 <- read.tree(text="(1,2,3,4,((((5,6,7,8,9,(10,11,12,(13,14,15)13-15,16,17)10-17)5-17,18)5-18,19)5-19,20,21)5-21,22)1-22;")
 morsyntree2grouped <- groupOTU(morsyntree2, list(a = c(1, 22), b = c(5, 21), c = c(5, 19), d = c(5, 18), e = c(5, 17), f = c(10, 17), g = c(13, 15)))
-morsynsmap2 <- c(0.5, 1.7321, 1.7321, 1.7321, 1.7321, 1.4142, 1.4142, 1.4142)
+morsynsmap2 <- c(0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.4142, 1.0)
 morsyntreeplot2 <- ggtree(morsyntree2grouped,
   aes(size=(morsynsmap2[group])),
   layout="slanted", ladderize=FALSE,
   alpha=alphaval, color="#BC3C29") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -42,14 +42,14 @@ morsyntreeplot2 <- ggtree(morsyntree2grouped,
 
 morsyntree3 <- read.tree(text="(1,2,3,4,(((((5,6,7,8,9,10,11,12,13)5-13,14,15,16,17)5-17,18)5-18,19)5-19,20,21)5-21,22)1-22;")
 morsyntree3grouped <- groupOTU(morsyntree3, list(a = c(1, 22), b = c(5, 21), c = c(5, 19), d = c(5, 18), e = c(5, 17), f = c(5, 13)))
-morsynsmap3 <- c(0.5, 1.7321, 1.7321, 1.7321, 1.7321, 1.4142, 1.0)
+morsynsmap3 <- c(0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
 morsyntreeplot3 <- ggtree(morsyntree3grouped,
   aes(size=(morsynsmap3[group])),
   layout="slanted", ladderize=FALSE,
   alpha=alphaval, color="#BC3C29") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -59,14 +59,14 @@ morsyntreeplot3 <- ggtree(morsyntree3grouped,
 # ── tono: 9 families ──
 tonotree1 <- read.tree(text="(1,2,3,4,(5,((((6,7,8)6-8,(9,10)9-10)6-10,11,12,13,14,15,16)6-16,17)6-17)5-17,18,19,20,21,22)1-22;")
 tonotree1grouped <- groupOTU(tonotree1, list(a = c(1, 22), b = c(5, 17), c = c(6, 17), d = c(6, 16), e = c(6, 10), f = c(6, 8), g = c(9, 10)))
-tonosmap1 <- c(0.5, 3.0, 3.0, 3.0, 2.2361, 1.4142, 1.7321, 3.0)
+tonosmap1 <- c(0.5, 1.0, 2.6458, 3.4641, 2.6458, 1.0, 1.0, 1.0)
 tonotreeplot1 <- ggtree(tonotree1grouped,
   aes(size=(tonosmap1[group])),
   layout="slanted", ladderize=FALSE,
   alpha=alphaval, color="#0072B5") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -75,14 +75,14 @@ tonotreeplot1 <- ggtree(tonotree1grouped,
 
 tonotree2 <- read.tree(text="(1,2,3,4,(5,(((6,7,8)6-8,((9,10)9-10,11,12,13,14,15,16)9-16)6-16,17)6-17)5-17,18,19,20,21,22)1-22;")
 tonotree2grouped <- groupOTU(tonotree2, list(a = c(1, 22), b = c(5, 17), c = c(6, 17), d = c(6, 16), e = c(6, 8), f = c(9, 16), g = c(9, 10)))
-tonosmap2 <- c(0.5, 3.0, 3.0, 3.0, 2.2361, 1.7321, 2.2361, 3.0)
+tonosmap2 <- c(0.5, 1.0, 2.6458, 3.4641, 2.6458, 1.0, 1.0, 1.0)
 tonotreeplot2 <- ggtree(tonotree2grouped,
   aes(size=(tonosmap2[group])),
   layout="slanted", ladderize=FALSE,
   alpha=alphaval, color="#0072B5") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -91,14 +91,14 @@ tonotreeplot2 <- ggtree(tonotree2grouped,
 
 tonotree3 <- read.tree(text="(1,2,3,4,(5,((6,7,8)6-8,(((9,10)9-10,11,12,13,14,15,16)9-16,17)9-17)6-17)5-17,18,19,20,21,22)1-22;")
 tonotree3grouped <- groupOTU(tonotree3, list(a = c(1, 22), b = c(5, 17), c = c(6, 17), d = c(6, 8), e = c(9, 17), f = c(9, 16), g = c(9, 10)))
-tonosmap3 <- c(0.5, 3.0, 3.0, 3.0, 1.7321, 1.4142, 2.2361, 3.0)
+tonosmap3 <- c(0.5, 1.0, 2.6458, 3.4641, 1.0, 1.7321, 1.0, 1.0)
 tonotreeplot3 <- ggtree(tonotree3grouped,
   aes(size=(tonosmap3[group])),
   layout="slanted", ladderize=FALSE,
   alpha=alphaval, color="#0072B5") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -107,14 +107,14 @@ tonotreeplot3 <- ggtree(tonotree3grouped,
 
 tonotree4 <- read.tree(text="(1,2,3,4,(5,(((6,7,(8,(9,10)9-10)8-10)6-10,11,12,13,14,15,16)6-16,17)6-17)5-17,18,19,20,21,22)1-22;")
 tonotree4grouped <- groupOTU(tonotree4, list(a = c(1, 22), b = c(5, 17), c = c(6, 17), d = c(6, 16), e = c(6, 10), f = c(8, 10), g = c(9, 10)))
-tonosmap4 <- c(0.5, 3.0, 3.0, 3.0, 2.2361, 1.4142, 1.7321, 3.0)
+tonosmap4 <- c(0.5, 1.0, 2.6458, 3.4641, 2.6458, 1.0, 1.0, 1.0)
 tonotreeplot4 <- ggtree(tonotree4grouped,
   aes(size=(tonosmap4[group])),
   layout="slanted", ladderize=FALSE,
   alpha=alphaval, color="#0072B5") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -123,14 +123,14 @@ tonotreeplot4 <- ggtree(tonotree4grouped,
 
 tonotree5 <- read.tree(text="(1,2,3,4,(5,((6,7,((8,(9,10)9-10)8-10,11,12,13,14,15,16)8-16)6-16,17)6-17)5-17,18,19,20,21,22)1-22;")
 tonotree5grouped <- groupOTU(tonotree5, list(a = c(1, 22), b = c(5, 17), c = c(6, 17), d = c(6, 16), e = c(8, 16), f = c(8, 10), g = c(9, 10)))
-tonosmap5 <- c(0.5, 3.0, 3.0, 3.0, 2.2361, 2.0, 1.7321, 3.0)
+tonosmap5 <- c(0.5, 1.0, 2.6458, 3.4641, 2.6458, 1.4142, 1.0, 1.0)
 tonotreeplot5 <- ggtree(tonotree5grouped,
   aes(size=(tonosmap5[group])),
   layout="slanted", ladderize=FALSE,
   alpha=alphaval, color="#0072B5") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -139,14 +139,14 @@ tonotreeplot5 <- ggtree(tonotree5grouped,
 
 tonotree6 <- read.tree(text="(1,2,3,4,(5,((6,7,(8,((9,10)9-10,11,12,13,14,15,16)9-16)8-16)6-16,17)6-17)5-17,18,19,20,21,22)1-22;")
 tonotree6grouped <- groupOTU(tonotree6, list(a = c(1, 22), b = c(5, 17), c = c(6, 17), d = c(6, 16), e = c(8, 16), f = c(9, 16), g = c(9, 10)))
-tonosmap6 <- c(0.5, 3.0, 3.0, 3.0, 2.2361, 2.0, 2.2361, 3.0)
+tonosmap6 <- c(0.5, 1.0, 2.6458, 3.4641, 2.6458, 1.4142, 1.0, 1.0)
 tonotreeplot6 <- ggtree(tonotree6grouped,
   aes(size=(tonosmap6[group])),
   layout="slanted", ladderize=FALSE,
   alpha=alphaval, color="#0072B5") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -155,14 +155,14 @@ tonotreeplot6 <- ggtree(tonotree6grouped,
 
 tonotree7 <- read.tree(text="(1,2,3,4,(5,(6,7,(((8,(9,10)9-10)8-10,11,12,13,14,15,16)8-16,17)8-17)6-17)5-17,18,19,20,21,22)1-22;")
 tonotree7grouped <- groupOTU(tonotree7, list(a = c(1, 22), b = c(5, 17), c = c(6, 17), d = c(8, 17), e = c(8, 16), f = c(8, 10), g = c(9, 10)))
-tonosmap7 <- c(0.5, 3.0, 3.0, 3.0, 1.7321, 2.0, 1.7321, 3.0)
+tonosmap7 <- c(0.5, 1.0, 2.6458, 3.4641, 2.8284, 1.4142, 1.0, 1.0)
 tonotreeplot7 <- ggtree(tonotree7grouped,
   aes(size=(tonosmap7[group])),
   layout="slanted", ladderize=FALSE,
   alpha=alphaval, color="#0072B5") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -171,14 +171,14 @@ tonotreeplot7 <- ggtree(tonotree7grouped,
 
 tonotree8 <- read.tree(text="(1,2,3,4,(5,(6,7,((8,((9,10)9-10,11,12,13,14,15,16)9-16)8-16,17)8-17)6-17)5-17,18,19,20,21,22)1-22;")
 tonotree8grouped <- groupOTU(tonotree8, list(a = c(1, 22), b = c(5, 17), c = c(6, 17), d = c(8, 17), e = c(8, 16), f = c(9, 16), g = c(9, 10)))
-tonosmap8 <- c(0.5, 3.0, 3.0, 3.0, 1.7321, 2.0, 2.2361, 3.0)
+tonosmap8 <- c(0.5, 1.0, 2.6458, 3.4641, 2.8284, 1.4142, 1.0, 1.0)
 tonotreeplot8 <- ggtree(tonotree8grouped,
   aes(size=(tonosmap8[group])),
   layout="slanted", ladderize=FALSE,
   alpha=alphaval, color="#0072B5") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -187,14 +187,14 @@ tonotreeplot8 <- ggtree(tonotree8grouped,
 
 tonotree9 <- read.tree(text="(1,2,3,4,(5,(6,7,(8,(((9,10)9-10,11,12,13,14,15,16)9-16,17)9-17)8-17)6-17)5-17,18,19,20,21,22)1-22;")
 tonotree9grouped <- groupOTU(tonotree9, list(a = c(1, 22), b = c(5, 17), c = c(6, 17), d = c(8, 17), e = c(9, 17), f = c(9, 16), g = c(9, 10)))
-tonosmap9 <- c(0.5, 3.0, 3.0, 3.0, 1.7321, 1.4142, 2.2361, 3.0)
+tonosmap9 <- c(0.5, 1.0, 2.6458, 3.4641, 2.8284, 1.7321, 1.0, 1.0)
 tonotreeplot9 <- ggtree(tonotree9grouped,
   aes(size=(tonosmap9[group])),
   layout="slanted", ladderize=FALSE,
   alpha=alphaval, color="#0072B5") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -204,14 +204,14 @@ tonotreeplot9 <- ggtree(tonotree9grouped,
 # ── length: 3 families ──
 lengthtree1 <- read.tree(text="(1,2,3,4,((5,6,7,8,(9,(10,11,12,13,14,15,16,17)10-17)9-17)5-17,18)5-18,19,20,21,22)1-22;")
 lengthtree1grouped <- groupOTU(lengthtree1, list(a = c(1, 22), b = c(5, 18), c = c(5, 17), d = c(9, 17), e = c(10, 17)))
-lengthsmap1 <- c(0.5, 1.7321, 1.7321, 1.0, 1.4142, 1.7321)
+lengthsmap1 <- c(0.5, 1.0, 1.0, 1.4142, 1.0, 1.0)
 lengthtreeplot1 <- ggtree(lengthtree1grouped,
   aes(size=(lengthsmap1[group])),
   layout="slanted", ladderize=FALSE,
   alpha=alphaval, color="#E18727") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -220,14 +220,14 @@ lengthtreeplot1 <- ggtree(lengthtree1grouped,
 
 lengthtree2 <- read.tree(text="(1,2,3,4,(5,6,7,8,((9,(10,11,12,13,14,15,16,17)10-17)9-17,18)9-18)5-18,19,20,21,22)1-22;")
 lengthtree2grouped <- groupOTU(lengthtree2, list(a = c(1, 22), b = c(5, 18), c = c(9, 18), d = c(9, 17), e = c(10, 17)))
-lengthsmap2 <- c(0.5, 1.7321, 1.7321, 1.4142, 1.4142, 1.7321)
+lengthsmap2 <- c(0.5, 1.0, 1.0, 1.0, 1.0, 1.0)
 lengthtreeplot2 <- ggtree(lengthtree2grouped,
   aes(size=(lengthsmap2[group])),
   layout="slanted", ladderize=FALSE,
   alpha=alphaval, color="#E18727") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -236,14 +236,14 @@ lengthtreeplot2 <- ggtree(lengthtree2grouped,
 
 lengthtree3 <- read.tree(text="(1,2,3,4,(5,6,7,8,(9,((10,11,12,13,14,15,16,17)10-17,18)10-18)9-18)5-18,19,20,21,22)1-22;")
 lengthtree3grouped <- groupOTU(lengthtree3, list(a = c(1, 22), b = c(5, 18), c = c(9, 18), d = c(10, 18), e = c(10, 17)))
-lengthsmap3 <- c(0.5, 1.7321, 1.7321, 1.4142, 1.0, 1.7321)
+lengthsmap3 <- c(0.5, 1.0, 1.0, 1.0, 1.0, 1.0)
 lengthtreeplot3 <- ggtree(lengthtree3grouped,
   aes(size=(lengthsmap3[group])),
   layout="slanted", ladderize=FALSE,
   alpha=alphaval, color="#E18727") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -253,14 +253,14 @@ lengthtreeplot3 <- ggtree(lengthtree3grouped,
 # ── phon: 6 families ──
 phontree1 <- read.tree(text="(1,2,(3,4,(5,((6,7,8)6-8,(9,(((10,11,12,13)10-13,14,15,16)10-16,17)10-17)9-17)6-17,18,19,20,21)5-21)3-21,22)1-22;")
 phontree1grouped <- groupOTU(phontree1, list(a = c(1, 22), b = c(3, 21), c = c(5, 21), d = c(6, 17), e = c(6, 8), f = c(9, 17), g = c(10, 17), h = c(10, 16), i = c(10, 13)))
-phonsmap1 <- c(0.5, 2.4495, 2.4495, 2.4495, 1.4142, 2.0, 1.4142, 1.4142, 2.0, 2.0)
+phonsmap1 <- c(0.5, 1.0, 2.0, 2.0, 1.0, 1.4142, 1.0, 1.7321, 1.0, 1.0)
 phontreeplot1 <- ggtree(phontree1grouped,
   aes(size=(phonsmap1[group])),
   layout="slanted", ladderize=FALSE,
   alpha=alphaval, color="#20845E") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -269,14 +269,14 @@ phontreeplot1 <- ggtree(phontree1grouped,
 
 phontree2 <- read.tree(text="(1,2,(3,4,((5,6)5-6,7,8,(9,(((10,11,12,13)10-13,14,15,16)10-16,17)10-17)9-17,18,19,20,21)5-21)3-21,22)1-22;")
 phontree2grouped <- groupOTU(phontree2, list(a = c(1, 22), b = c(3, 21), c = c(5, 21), d = c(5, 6), e = c(9, 17), f = c(10, 17), g = c(10, 16), h = c(10, 13)))
-phonsmap2 <- c(0.5, 2.4495, 2.4495, 2.4495, 1.4142, 1.4142, 1.4142, 2.0, 2.0)
+phonsmap2 <- c(0.5, 1.0, 2.0, 2.0, 1.0, 1.0, 1.7321, 1.0, 1.0)
 phontreeplot2 <- ggtree(phontree2grouped,
   aes(size=(phonsmap2[group])),
   layout="slanted", ladderize=FALSE,
   alpha=alphaval, color="#20845E") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -285,14 +285,14 @@ phontreeplot2 <- ggtree(phontree2grouped,
 
 phontree3 <- read.tree(text="(1,2,(3,4,((5,6)5-6,7,8,9,((10,11,12,13)10-13,14,15,16)10-16,(17,18,19)17-19,20,21)5-21)3-21,22)1-22;")
 phontree3grouped <- groupOTU(phontree3, list(a = c(1, 22), b = c(3, 21), c = c(5, 21), d = c(5, 6), e = c(10, 16), f = c(10, 13), g = c(17, 19)))
-phonsmap3 <- c(0.5, 2.4495, 2.4495, 2.4495, 1.4142, 2.0, 2.0, 1.7321)
+phonsmap3 <- c(0.5, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0)
 phontreeplot3 <- ggtree(phontree3grouped,
   aes(size=(phonsmap3[group])),
   layout="slanted", ladderize=FALSE,
   alpha=alphaval, color="#20845E") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -301,14 +301,14 @@ phontreeplot3 <- ggtree(phontree3grouped,
 
 phontree4 <- read.tree(text="(1,2,(3,4,(5,(6,7,8)6-8,9,((10,11,12,13)10-13,14,15,16)10-16,(17,18,19)17-19,20,21)5-21)3-21,22)1-22;")
 phontree4grouped <- groupOTU(phontree4, list(a = c(1, 22), b = c(3, 21), c = c(5, 21), d = c(6, 8), e = c(10, 16), f = c(10, 13), g = c(17, 19)))
-phonsmap4 <- c(0.5, 2.4495, 2.4495, 2.4495, 2.0, 2.0, 2.0, 1.7321)
+phonsmap4 <- c(0.5, 1.0, 2.0, 2.0, 1.4142, 1.0, 1.0, 1.0)
 phontreeplot4 <- ggtree(phontree4grouped,
   aes(size=(phonsmap4[group])),
   layout="slanted", ladderize=FALSE,
   alpha=alphaval, color="#20845E") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -317,14 +317,14 @@ phontreeplot4 <- ggtree(phontree4grouped,
 
 phontree5 <- read.tree(text="(1,2,(3,4,(5,(((6,7,8)6-8,9,10)6-10,11,12,13,14,15,16,17)6-17,18,19,20,21)5-21)3-21,22)1-22;")
 phontree5grouped <- groupOTU(phontree5, list(a = c(1, 22), b = c(3, 21), c = c(5, 21), d = c(6, 17), e = c(6, 10), f = c(6, 8)))
-phonsmap5 <- c(0.5, 2.4495, 2.4495, 2.4495, 1.4142, 1.4142, 2.0)
+phonsmap5 <- c(0.5, 1.0, 2.0, 2.0, 1.0, 1.4142, 1.4142)
 phontreeplot5 <- ggtree(phontree5grouped,
   aes(size=(phonsmap5[group])),
   layout="slanted", ladderize=FALSE,
   alpha=alphaval, color="#20845E") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -333,14 +333,14 @@ phontreeplot5 <- ggtree(phontree5grouped,
 
 phontree6 <- read.tree(text="(1,2,(3,4,(5,((6,7,8)6-8,9,10)6-10,11,12,13,14,15,16,(17,18,19)17-19,20,21)5-21)3-21,22)1-22;")
 phontree6grouped <- groupOTU(phontree6, list(a = c(1, 22), b = c(3, 21), c = c(5, 21), d = c(6, 10), e = c(6, 8), f = c(17, 19)))
-phonsmap6 <- c(0.5, 2.4495, 2.4495, 2.4495, 1.4142, 2.0, 1.7321)
+phonsmap6 <- c(0.5, 1.0, 2.0, 2.0, 1.4142, 1.4142, 1.0)
 phontreeplot6 <- ggtree(phontree6grouped,
   aes(size=(phonsmap6[group])),
   layout="slanted", ladderize=FALSE,
   alpha=alphaval, color="#20845E") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -350,14 +350,14 @@ phontreeplot6 <- ggtree(phontree6grouped,
 # ── inton: 1 families ──
 intontree1 <- read.tree(text="(1,(2,3,4,5,(6,7,8,9,10,11,12,13,14,15,16,17)6-17,18,19,20,21,22)2-22)1-22;")
 intontree1grouped <- groupOTU(intontree1, list(a = c(1, 22), b = c(2, 22), c = c(6, 17)))
-intonsmap1 <- c(0.5, 1.0, 1.0, 1.0)
+intonsmap1 <- c(0.5, 2.0, 1.4142, 2.4495)
 intontreeplot1 <- ggtree(intontree1grouped,
   aes(size=(intonsmap1[group])),
   layout="slanted", ladderize=FALSE,
   alpha=alphaval, color="#7876B1") +
   layout_dendrogram() +
   geom_tiplab(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +
   theme(panel.background=element_blank(),
     plot.background=element_blank(),
     legend.position="none",
@@ -365,7 +365,7 @@ intontreeplot1 <- ggtree(intontree1grouped,
   scale_size_identity()
 
 intontreeplot1 <- intontreeplot1 + geom_tiplab(geom="label", size=6, angle=0,
-  offset=-1, hjust=0.5, vjust=1.25, alpha=1, label.size=0,
+  offset=-1, hjust=0.5, vjust=0.35, alpha=1, label.size=0,
   aes(label=paste(label, posLabel[label], sep="\n")), lineheight=1)
 
 treelayout <- c(
@@ -416,7 +416,6 @@ forest <- (
   phontreeplot6 +
   intontreeplot1 +
   plot_layout(design=treelayout))
-print(forest & theme(plot.background=element_rect(fill='white', color=NA)))
 ggsave("/Users/jcgood/gitrepos/planars/NonCollaborative/scripts/analysis/../../results/nyan1308_laminar_overlay.pdf", forest & theme(plot.background=element_rect(fill='white', color=NA)), width=20, height=14)
 
 legend_data <- data.frame(

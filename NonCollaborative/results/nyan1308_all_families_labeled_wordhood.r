@@ -5,6 +5,17 @@ library(patchwork)
 
 posLabel <- list("1" = "QM", "2" = "PreSbj", "3" = "Sbj", "4" = "PostSbj", "5" = "Neg1", "6" = "SM", "7" = "Neg2", "8" = "TAM", "9" = "OM", "10" = "Root", "11" = "Ext", "12" = "STAT", "13" = "CAUS", "14" = "APPL", "15" = "REC", "16" = "PASS", "17" = "FV", "18" = "2P", "19" = "Enc", "20" = "Obj1", "21" = "Obj2", "22" = "PostObj")
 
+# Orthographic-word highlighting: positions 5-19 (Neg1..Enc) in red, position
+# 17 (FV, the final vowel) called out separately in blue -- not green, since
+# red/green is exactly the pair a red-green colorblind reader can't tell
+# apart. This blue (#0072B5) is the same one already used for "tonosegmental"
+# in this project's pooled-plot palette (laminar_tree_counts.py's
+# CLASS_COLORS), reused here rather than picking a new arbitrary color.
+# Everything outside 5-19 keeps the default label color (black).
+wordColor <- setNames(rep("black", 22), as.character(1:22))
+wordColor[as.character(5:19)] <- "red"
+wordColor["17"] <- "#0072B5"
+
 alphaval <- 0.064563
 
 # ── all: 69 families ──
@@ -1114,7 +1125,9 @@ alltreeplot69 <- ggtree(alltree69grouped,
 
 alltreeplot69 <- alltreeplot69 + geom_tiplab(geom="label", size=6, angle=0,
   offset=-1, hjust=0.5, vjust=0.35, alpha=1, label.size=0,
-  aes(label=paste(label, posLabel[label], sep="\n")), lineheight=1)
+  aes(label=paste(label, posLabel[label], sep="\n"), colour=wordColor[label]),
+  lineheight=1) +
+  scale_colour_identity()
 
 treelayout <- c(
   area(t=1, l=1, b=5, r=1),
@@ -1258,7 +1271,7 @@ forest <- (
   alltreeplot68 +
   alltreeplot69 +
   plot_layout(design=treelayout))
-ggsave("/Users/jcgood/gitrepos/planars/NonCollaborative/scripts/analysis/../../results/nyan1308_all_families_labeled.pdf", forest & theme(plot.background=element_rect(fill='white', color=NA)), width=20, height=14)
+ggsave("/Users/jcgood/gitrepos/planars/NonCollaborative/scripts/analysis/../../results/nyan1308_all_families_labeled_wordhood.pdf", forest & theme(plot.background=element_rect(fill='white', color=NA)), width=20, height=14)
 
 legend_header_data <- data.frame(
   y = c(7, 3.65),
@@ -1287,4 +1300,4 @@ legend_plot <- ggplot() +
 legend_version <- (forest & theme(plot.background=element_rect(fill='white', color=NA))) + inset_element(legend_plot,
   left=0.01, bottom=0.67, right=0.27, top=0.97,
   align_to="panel", on_top=TRUE)
-ggsave("/Users/jcgood/gitrepos/planars/NonCollaborative/scripts/analysis/../../results/nyan1308_all_families_labeled_legend.pdf", legend_version, width=20, height=14)
+ggsave("/Users/jcgood/gitrepos/planars/NonCollaborative/scripts/analysis/../../results/nyan1308_all_families_labeled_wordhood_legend.pdf", legend_version, width=20, height=14)

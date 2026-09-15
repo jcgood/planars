@@ -669,7 +669,8 @@ def generate_r_script(families: list[frozenset[Span]],
                       span_family_count: dict[Span, int],
                       output_dir: str,
                       tpfx: str = "",
-                      color: str = "black") -> None:
+                      color: str = "black",
+                      pos_labels: dict[int, str] | None = None) -> None:
     """Write a ggtree R script for visualising the maximal laminar families.
 
     Each family produces one proper branching tree (via a correct recursive
@@ -677,6 +678,14 @@ def generate_r_script(families: list[frozenset[Span]],
     'tree' and overlaid them. Branch thickness is scaled by how many families
     a span appears in (sqrt-scaled to compress the range): spans present in
     all trees appear with the heaviest lines.
+
+    pos_labels: Position number -> label (e.g. _NYAN1308_POS_LABELS). If
+    given, tips show as boxed "N\\nName" labels, matching
+    generate_r_overlay_script()'s convention -- only the last tree's copy is
+    made visible (colour=NA, fill=NA on every other copy; alpha=0 alone does
+    NOT hide a geom="label" tip in this ggtree version, and neither does
+    label.size=0 -- see that function's docstring for the verified writeup).
+    If omitted, tips fall back to bare position numbers.
     """
     n_families = len(families)
     if n_families == 0:
@@ -686,12 +695,19 @@ def generate_r_script(families: list[frozenset[Span]],
     alphaval = round(1 - 0.01 ** (1 / n_families), 6)
 
     rout_path = os.path.join(output_dir, tpfx + "laminar_forest.r")
+    pdf_path = rout_path[:-2] + ".pdf" if rout_path.endswith(".r") else rout_path + ".pdf"
     with open(rout_path, "w") as rout:
         print("library(ape)", file=rout)
         print("library(ggplot2)", file=rout)
         print("library(ggtree)", file=rout)
         print("library(patchwork)", file=rout)
         print("", file=rout)
+        if pos_labels:
+            pairs = ", ".join(
+                f'"{k}" = "{v}"' for k, v in sorted(pos_labels.items())
+            )
+            print(f"posLabel <- list({pairs})", file=rout)
+            print("", file=rout)
         print(f"alphaval <- {alphaval} / 2", file=rout)
         print("", file=rout)
 
@@ -729,7 +745,14 @@ def generate_r_script(families: list[frozenset[Span]],
 
             plot_var = f"{tpfx}treeplot{idx + 1}"
             plot_names.append(plot_var)
-            tip_alpha = 1 if idx == 0 else 0
+            # Every tree's own tip labels are fully invisible placeholders
+            # that just reserve panel space -- the one real, visible label is
+            # added once, to the last tree, after the loop (see below).
+            # colour=NA, fill=NA is what actually hides a geom="label" tip;
+            # alpha=0 alone is silently ignored, and label.size=0 is dropped
+            # outright by this ggtree version -- see
+            # generate_r_overlay_script()'s docstring for the verified
+            # writeup of that bug.
             print(
                 f'{plot_var} <- ggtree({grouped_var},\n'
                 f'  aes(size=({strength_var}[group])),\n'
@@ -737,15 +760,32 @@ def generate_r_script(families: list[frozenset[Span]],
                 f'  alpha=alphaval, color="{color}") +\n'
                 f'  layout_dendrogram() +\n'
                 f'  geom_tiplab(geom="label", size=5, angle=0,\n'
-                f'    offset=-1, hjust=0.5, alpha={tip_alpha},\n'
+                f'    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA,\n'
                 f'    lineheight=1) +\n'
                 f'  theme(panel.background=element_blank(),\n'
                 f'    plot.background=element_blank(),\n'
-                f'    legend.position="none") +\n'
+                f'    legend.position="none",\n'
+                f'    plot.margin=margin(t=5, r=5, b=25, l=5, unit="pt")) +\n'
                 f'  scale_size_identity()',
                 file=rout,
             )
             print("", file=rout)
+
+        last_plot = plot_names[-1]
+        if pos_labels:
+            print(
+                f'{last_plot} <- {last_plot} + geom_tiplab(geom="label", size=6, angle=0,\n'
+                '  offset=-1, hjust=0.5, vjust=0.35, alpha=1, label.size=0,\n'
+                '  aes(label=paste(label, posLabel[label], sep="\\n")), lineheight=1)',
+                file=rout,
+            )
+        else:
+            print(
+                f'{last_plot} <- {last_plot} + geom_tiplab(geom="label", size=6, angle=0,\n'
+                '  offset=-1, hjust=0.5, vjust=0.35, alpha=1, label.size=0, lineheight=1)',
+                file=rout,
+            )
+        print("", file=rout)
 
         # Patchwork layout
         print("treelayout <- c(", file=rout)
@@ -755,7 +795,11 @@ def generate_r_script(families: list[frozenset[Span]],
         print("", file=rout)
         joined = " +\n  ".join(plot_names)
         print(f"forest <- (\n  {joined} +\n  plot_layout(design=treelayout))", file=rout)
-        print("print(forest)", file=rout)
+        print(
+            f'ggsave("{pdf_path}", forest & theme(plot.background=element_rect(fill=\'white\', color=NA)), '
+            f'width=20, height=14)',
+            file=rout,
+        )
 
     print(f"\nR script written to: {rout_path}")
 
@@ -789,6 +833,7 @@ def generate_r_overlay_script(
         output_name: str = "laminar_overlay.r",
         pos_labels: dict[int, str] | None = None,
         alpha_divisor: float = 2.0,
+        thickness_exponent: float = 0.5,
 ) -> None:
     """Write a ggtree R script that overlays trees from multiple domain-type groups.
 
@@ -798,7 +843,9 @@ def generate_r_overlay_script(
 
     Alpha is computed from the total tree count so the combined overlay
     approaches opacity. Branch thickness encodes within-group frequency
-    (sqrt-scaled).
+    (convergence, i.e. how many independent tests produced that span —
+    deliberately not family count; see the thickness_exponent docs below
+    for why the two are kept separate).
 
     Args:
         subsets: List of (families, span_family_count, color, tpfx) tuples.
@@ -814,6 +861,23 @@ def generate_r_overlay_script(
                        laminar_conflict_groups.r's Panel ALL (its 69-family
                        alpha of 0.064563 is what (1 - 0.01**(1/69)) / 1
                        gives, not /2).
+        thickness_exponent: Power applied to convergence for branch
+                       thickness (thickness = max(convergence, 1) **
+                       thickness_exponent). 0.5 (sqrt, the default) keeps
+                       every span within a ~4x width range for nyan1308
+                       (convergence runs 1..19) — deliberately gentle so
+                       rare spans stay visible, but it also means a highly
+                       convergent span (e.g. [5-17], 10 tests) isn't much
+                       thicker than a barely-attested one. Raising this
+                       towards 1.0 (linear) spreads the high end out more
+                       — 0.75 roughly doubles the width ratio (~8x) without
+                       the extremes linear scaling produces (~19x, which
+                       reads as "crazy thick" against the sqrt-scaled
+                       darkness accumulation). Tune per chart; this does
+                       not affect darkness, which is family-count-driven
+                       and independent of this parameter (see the
+                       convergence-vs-family-count note where strength_vals
+                       is computed below).
     """
     n_total = sum(len(fams) for fams, _, _, _ in subsets if fams)
     if n_total == 0:
@@ -874,8 +938,26 @@ def generate_r_overlay_script(
                     file=rout,
                 )
 
+                # Thickness = convergence (how many independent diagnostic
+                # tests produced this span), NOT family count. Darkness comes
+                # from the ghost-overlay mechanism itself -- how many of the
+                # n_total stacked semi-transparent layers happen to draw a
+                # matching segment at that position, which is unavoidably
+                # family count (there's no way to vary that per-edge without
+                # also disturbing the alpha-accumulation the overlay depends
+                # on). Convergence and family count are genuinely different
+                # measures of the same span (evidential support vs.
+                # structural robustness -- see the Word hypothesis discussion
+                # in this module's docstring): [5-17] (Neg1-FV) has the
+                # highest convergence of any non-backbone span (n=10 tests)
+                # but sits in only 37/69 families, while e.g. [2-22] has
+                # convergence n=2 but is in all 69 -- strong on one axis,
+                # weak on the other. Using the same family-count-derived
+                # value for both thickness and darkness (the previous
+                # convention here) collapsed that distinction into one
+                # signal shown twice.
                 strength_vals = ", ".join(
-                    str(round(span_family_count.get(s, 1) ** 0.5, 4))
+                    str(round(max(s.convergence, 1) ** thickness_exponent, 4))
                     for s in sorted_spans
                 )
                 print(f"{strength_var} <- c(0.5, {strength_vals})", file=rout)
@@ -890,12 +972,17 @@ def generate_r_overlay_script(
                 # too small a gap between vertex and box at this box size —
                 # measured directly at 39px on a 16x10in/200dpi render, which
                 # still reads as touching/overlapping at normal viewing scale.
-                # vjust=1.25 on top of the same offset roughly triples that to
-                # 111px, confirmed against a true tip marker
-                # (geom_tippoint()), not by eye. See random_tree_overlay.py's
-                # geom_tiplab comment for the full verification writeup. The
-                # widened bottom plot.margin keeps vjust's extra downward
-                # shift from being clipped at the panel edge.
+                # vjust on top of the same offset controls how much further:
+                # measured directly on THIS 20x14in canvas (not assumed from
+                # the 16x10in random_tree_overlay.py numbers, which don't
+                # transfer 1:1 across canvas sizes) at vjust=1.25 (145px),
+                # 0.6 (75px), 0.35 (45px) via a true tip marker
+                # (geom_tippoint()), giving a close-to-linear ~108px/unit
+                # relationship on this canvas. vjust=0.35 was chosen as
+                # closer to the vertex than the first (145px) pass while
+                # keeping a clearly visible, unambiguous gap. The widened
+                # bottom plot.margin keeps vjust's extra downward shift from
+                # being clipped at the panel edge.
                 #
                 # colour=NA, fill=NA is what actually makes this invisible --
                 # verified directly with an isolated single-tree test. Two
@@ -915,7 +1002,7 @@ def generate_r_overlay_script(
                 # fully covered except at the edges.
                 geom_tip = (
                     '  geom_tiplab(geom="label", size=5, angle=0,\n'
-                    '    offset=-1, hjust=0.5, vjust=1.25, alpha=0, colour=NA, fill=NA) +'
+                    '    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA) +'
                 )
 
                 print(
@@ -941,14 +1028,14 @@ def generate_r_overlay_script(
         if pos_labels:
                 print(
                     f'{last_plot} <- {last_plot} + geom_tiplab(geom="label", size=6, angle=0,\n'
-                '  offset=-1, hjust=0.5, vjust=1.25, alpha=1, label.size=0,\n'
+                '  offset=-1, hjust=0.5, vjust=0.35, alpha=1, label.size=0,\n'
                 '  aes(label=paste(label, posLabel[label], sep="\\n")), lineheight=1)',
                 file=rout,
             )
         else:
                 print(
                     f'{last_plot} <- {last_plot} + geom_tiplab(geom="label", size=6, angle=0,\n'
-                '  offset=-1, hjust=0.5, vjust=1.25, alpha=1, label.size=0, lineheight=1)',
+                '  offset=-1, hjust=0.5, vjust=0.35, alpha=1, label.size=0, lineheight=1)',
                 file=rout,
             )
         print("", file=rout)
@@ -964,7 +1051,6 @@ def generate_r_overlay_script(
             file=rout,
         )
         bg_theme = "theme(plot.background=element_rect(fill='white', color=NA))"
-        print(f"print(forest & {bg_theme})", file=rout)
         print(
             f'ggsave("{pdf_path}", forest & {bg_theme}, width=20, height=14)',
             file=rout,
@@ -1003,53 +1089,85 @@ def generate_r_overlay_script(
                 file=rout,
             )
         elif used_groups == 1:
-            # Representative family counts spanning the full range (all the
-            # way down to a single contingent span), as fractions of n_total
-            # rather than hardcoded numbers so this works for any subset size.
-            levels = sorted({n_total, max(1, round(n_total * 0.5)),
-                             max(1, round(n_total * 0.15)), 1}, reverse=True)
-            # Each swatch is rendered as ONE segment at the alpha a stack of
-            # n identical alphaval layers would composite to
-            # (1 - (1-alphaval)**n) -- mathematically identical to actually
-            # stacking n layers of the same color, so the legend swatch
-            # matches the real chart's accumulated opacity exactly rather
-            # than approximating it.
-            rows = []
-            for i, n in enumerate(levels):
-                composite_alpha = round(1 - (1 - alphaval) ** n, 6)
-                lw = round(n ** 0.5, 4)
-                suffix = " (always present)" if n == n_total else (
-                    " (contingent)" if n == 1 else "")
-                label = f"{n}/{n_total} families{suffix}"
-                rows.append((len(levels) - i, composite_alpha, lw, label))
+            # One compact, bordered legend box, inset in the top-left corner
+            # -- not a side panel. A side panel (the previous version here)
+            # guarantees no overlap but permanently costs canvas width and
+            # only suits this one script; a boxed corner inset is the more
+            # ordinary convention (matches the domain-type legend above) and
+            # generalizes better across languages/canvas sizes, provided its
+            # bounds are chosen conservatively. The very first inset attempt
+            # overlapped real tree content because its bounds (up to 42% of
+            # panel width) crossed where the outer envelope's diagonal
+            # actually sits; this one stays narrow (27% width) with a bottom
+            # bound well clear of that diagonal at that width, checked
+            # directly against a render before shipping, not just estimated.
+            #
+            # Two sections (darkness, thickness), no numbers in the text at
+            # all -- no family/test counts, no n_total -- so the same legend
+            # reads correctly for any language's tree set without
+            # regeneration-specific wording. "Trees," not "families," in the
+            # visible text -- a maximal laminar family IS a tree (see this
+            # module's own docstring), and "trees" is the term a linguist
+            # reading this chart will expect. Each swatch pair still renders
+            # at the real formula (composited alpha for darkness, sqrt for
+            # thickness) using this run's own actual data range; only the
+            # *labels* are generic ("More"/"Fewer"). Header size=7, no bold
+            # (bold at a small size read as heavier than intended once the
+            # font itself got bigger), tightened margins, and a heavier
+            # border (linewidth=1.2, was 0.6) per direct feedback on the
+            # first version's styling.
+            all_spans_seen: set = set()
+            for fams, _, _, _ in subsets:
+                for fam in fams:
+                    all_spans_seen.update(fam)
+            max_conv = max((s.convergence for s in all_spans_seen), default=1)
+
+            dark_hi = round(1 - (1 - alphaval) ** n_total, 6)
+            # dark_lo is deliberately NOT the real single-layer alphaval
+            # (e.g. ~0.065 for n_total=69) -- at that opacity the "Fewer"
+            # swatch was reported as nearly invisible. This legend is already
+            # schematic (a qualitative More/Fewer key, not a precise n/n_total
+            # readout, per earlier feedback), so the swatch doesn't need to
+            # match one specific layer's real opacity -- it needs to read
+            # clearly as "the lighter end of the gradient" without vanishing.
+            # A fixed, visibly-legible-but-still-clearly-lighter value serves
+            # that better than the true formula would here.
+            dark_lo = 0.4
+            thick_hi = round(max_conv ** 0.5, 4)
+            thick_lo = round(1 ** 0.5, 4)
 
             print("", file=rout)
-            print("darkness_legend_data <- data.frame(", file=rout)
-            print(f"  y = c({', '.join(str(r[0]) for r in rows)}),", file=rout)
-            print(f"  alpha_val = c({', '.join(str(r[1]) for r in rows)}),", file=rout)
-            print(f"  lw = c({', '.join(str(r[2]) for r in rows)}),", file=rout)
-            labels_r = ", ".join(f'"{r[3]}"' for r in rows)
-            print(f"  label = c({labels_r})", file=rout)
+            print("legend_header_data <- data.frame(", file=rout)
+            print("  y = c(7, 3.65),", file=rout)
+            print('  label = c("Darkness: Trees sharing span",', file=rout)
+            print('    "Thickness: Tests supporting span")', file=rout)
+            print(")", file=rout)
+            print("legend_swatch_data <- data.frame(", file=rout)
+            print("  y = c(6.0, 5.15, 2.65, 1.8),", file=rout)
+            print(f"  alpha_val = c({dark_hi}, {dark_lo}, 1, 1),", file=rout)
+            print(f"  lw = c(3, 3, {thick_hi}, {thick_lo}),", file=rout)
+            print('  label = c("More", "Fewer", "More", "Fewer")', file=rout)
             print(")", file=rout)
             print(
-                "darkness_legend_plot <- ggplot(darkness_legend_data) +\n"
-                "  geom_segment(aes(x=0, xend=1, y=y, yend=y, linewidth=lw, alpha=alpha_val),\n"
+                "legend_plot <- ggplot() +\n"
+                "  geom_text(data=legend_header_data, aes(x=0, y=y, label=label),\n"
+                '    hjust=0, size=7) +\n'
+                "  geom_segment(data=legend_swatch_data,\n"
+                "    aes(x=0, xend=0.9, y=y, yend=y, alpha=alpha_val, linewidth=lw),\n"
                 '    color="black", lineend="round") +\n'
-                "  geom_text(aes(x=1.15, y=y, label=label), hjust=0, size=7) +\n"
-                "  scale_linewidth_identity() +\n"
-                "  scale_alpha_identity() +\n"
-                f"  xlim(0, 4) + ylim(0.3, {len(rows) + 0.7}) +\n"
-                '  labs(title="Darkness & thickness =\\nhow many of the '
-                f'{n_total} families\\nshare the span") +\n'
+                "  geom_text(data=legend_swatch_data, aes(x=1.05, y=y, label=label),\n"
+                "    hjust=0, size=5.8) +\n"
+                "  scale_alpha_identity() + scale_linewidth_identity() +\n"
+                "  xlim(0, 4.9) + ylim(1.3, 7.5) +\n"
                 "  theme_void() +\n"
-                "  theme(plot.title=element_text(size=20, face=\"bold\", margin=margin(b=10)),\n"
-                "    plot.margin=margin(10, 10, 10, 10),\n"
-                '    plot.background=element_rect(fill="white", color="black", linewidth=0.5))',
+                '  theme(plot.background=element_rect(fill="white", color="black", linewidth=1.2),\n'
+                "    plot.margin=margin(6, 8, 6, 6))",
                 file=rout,
             )
             print(
-                "legend_version <- forest + inset_element(darkness_legend_plot,\n"
-                '  left=0.002, bottom=0.72, right=0.42, top=0.97, align_to="panel", on_top=TRUE)',
+                f'legend_version <- (forest & {bg_theme}) + inset_element(legend_plot,\n'
+                '  left=0.01, bottom=0.67, right=0.27, top=0.97,\n'
+                '  align_to="panel", on_top=TRUE)',
                 file=rout,
             )
             print(
@@ -1068,6 +1186,7 @@ def run_domain_overlay(
         pos_labels: dict[int, str] | None = None,
         output_name: str | None = None,
         alpha_divisor: float = 2.0,
+        thickness_exponent: float = 0.5,
 ) -> None:
     """Run laminar analysis per domain type and write a combined colored overlay.
 
@@ -1084,6 +1203,12 @@ def run_domain_overlay(
     nyan1308_all_families_labeled.r, the labeled equivalent of
     laminar_conflict_groups.r's Panel ALL) — with alpha_divisor=1.0 to match
     that panel's density; see generate_r_overlay_script()'s alpha_divisor doc.
+
+    thickness_exponent: passed straight through to generate_r_overlay_script()
+    — see its docstring. Left at 0.5 (sqrt) by default for the colored
+    multi-domain-type overlay; nyan1308_all_families_labeled.r is generated
+    with 0.75 to make high-convergence spans more visually distinct without
+    the extremes linear scaling would produce (see that call site).
     """
     if domains_dir is None:
         domains_dir = os.path.join(os.path.dirname(__file__), "..", "..", "domains")
@@ -1123,7 +1248,381 @@ def run_domain_overlay(
                 span_family_count[s] += 1
         subsets.append((families, dict(span_family_count), color, tpfx))
 
-    generate_r_overlay_script(subsets, output_dir, output_name, pos_labels, alpha_divisor)
+    generate_r_overlay_script(
+        subsets, output_dir, output_name, pos_labels, alpha_divisor, thickness_exponent)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Exemplary trees: a handful of representative families, each paired with the
+# pooled plot of just the tests that produced it
+# ══════════════════════════════════════════════════════════════════════════════
+
+def select_representative_families(
+        families: list[frozenset[Span]],
+        span_family_count: dict[Span, int],
+        k: int = 6,
+) -> list[frozenset[Span]]:
+    """Greedy-coverage selection of k structurally diverse, consensus-leaning families.
+
+    Neither of the two selection ideas already named elsewhere in this project
+    exists as code: "structurally diverse representatives... by greedy
+    coverage" (laminar_conflict_groups.r's Panels B/C) and "most consensus-like
+    family" (laminar_four_trees.r) are both described in visualizations.md and
+    visible in those scripts' output, but the functions that produced them
+    aren't in this file or anywhere else in scripts/ -- checked directly, not
+    assumed. This combines both ideas into one function instead of leaving the
+    gap twice: repeatedly pick the family that adds the most spans not yet
+    shown by an already-selected family (diversity), breaking ties by highest
+    total span_family_count among the tied candidates (consensus). Once every
+    span is already covered by some selected family (there are only 26 unique
+    spans in nyan1308's data but 69 families, so this happens well before
+    k trees are picked), every remaining candidate ties at zero new coverage
+    and the tiebreak alone decides the rest -- which degrades gracefully into
+    pure "most consensus-like" selection, not an error case.
+    """
+    remaining = list(families)
+    covered: set[Span] = set()
+    selected: list[frozenset[Span]] = []
+    for _ in range(min(k, len(remaining))):
+        def _new_coverage(fam: frozenset[Span]) -> int:
+            return len(fam - covered)
+
+        def _consensus_score(fam: frozenset[Span]) -> int:
+            return sum(span_family_count.get(s, 0) for s in fam)
+
+        best = max(remaining, key=lambda fam: (_new_coverage(fam), _consensus_score(fam)))
+        selected.append(best)
+        covered |= best
+        remaining.remove(best)
+    return selected
+
+
+def generate_r_exemplary_trees_script(
+        selected: list[frozenset[Span]],
+        n_total: int,
+        output_dir: str,
+        output_name: str = "nyan1308_exemplary_trees.r",
+        pos_labels: dict[int, str] | None = None,
+) -> None:
+    """Write an R script producing, per selected family: a print file (clean
+    tree next to the pooled plot of just the tests that produced it) and a
+    pair of 16:9 slide files (tree alone, evidence alone -- see below for
+    why they're not combined).
+
+    Reuses df.plot()/constituency.plot() from domain_charts-cgpt.r via
+    source() rather than reimplementing the pooled-plot logic in
+    Python-generated R -- that function is the single source of truth for
+    what a pooled plot looks like (colors, layer numbering, legend behavior),
+    and it's hand-maintained directly in scripts/ (see that file's own
+    docstring), not something this generator should fork a second copy of.
+    One side effect worth knowing: source()-ing that file re-runs it end to
+    end, which re-saves all the standard pooled-plot PDFs it already
+    produces (nyan1308_pooled_plot.pdf and friends) as a side effect of
+    generating this one. Harmless (same data in, same data out -- it's
+    idempotent) but worth knowing about if this script's run time or file
+    timestamps look surprising.
+
+    One file per exemplar, NOT one combined page -- a first version tried
+    to fit all 6 trees and pooled plots into one shared page with shrunk
+    rows, and the result was illegible in both directions at once:
+    overlapping tree label boxes, and 40-plus test-label rows stacked into a
+    few cm of vertical space. Confirmed directly by rendering it, not
+    assumed. Each exemplar gets its own full-size page instead.
+
+    Tree and pooled plot are placed side by side (`|`), not stacked -- each
+    keeps the dimension it actually needs: the tree keeps the same
+    ~20in-equivalent width (51cm) proven elsewhere in this module for 22
+    boxed labels, and the pooled plot keeps domain_charts-cgpt.r's own
+    untouched per-test height (plot_height()'s max(7, n*0.7) cm). Side by
+    side, patchwork gives both panels the pooled plot's height, which can
+    make a low-test-count tree panel taller than it needs -- but that just
+    adds blank space around a normally-proportioned tree, unlike the earlier
+    shared-row version where BOTH panels were squeezed below what either
+    needed.
+    """
+    k = len(selected)
+    if k == 0:
+        return
+
+    if pos_labels is None:
+        pos_labels = _NYAN1308_POS_LABELS
+    named = bool(pos_labels)
+
+    rout_path = os.path.join(output_dir, output_name)
+    base_pdf_path = rout_path[:-2] if rout_path.endswith(".r") else rout_path
+
+    with open(rout_path, "w") as rout:
+        print("library(ape)", file=rout)
+        print("library(ggtree)", file=rout)
+        print("library(patchwork)", file=rout)
+        print("", file=rout)
+        # df.plot(), constituency.plot(), group.colors, `tests`, `b`, `o` all
+        # come from here -- see this function's docstring for why source()
+        # rather than a reimplementation. Requires being run with the
+        # planars/ repo root as the working directory, same as
+        # domain_charts-cgpt.r's own documented usage -- here::here()
+        # resolves relative to cwd, not this script's file location, and
+        # resolves to the wrong place (a doubled NonCollaborative/NonCollaborative
+        # path) if run from inside scripts/ or scripts/analysis/.
+        print('source(here::here("NonCollaborative", "scripts", "domain_charts-cgpt.r"))', file=rout)
+        print("", file=rout)
+
+        if named:
+            pos_label_entries = ", ".join(
+                f'"{i}" = "{label}"' for i, label in enumerate(
+                    [pos_labels[i] for i in sorted(pos_labels)], 1)
+            )
+            print(f"posLabel <- list({pos_label_entries})", file=rout)
+            print("", file=rout)
+
+        for idx, family_set in enumerate(selected, 1):
+            family_list = sorted(family_set, key=lambda s: s.size, reverse=True)
+            parent_map = build_parent_map(family_list)
+            children_map = get_children(parent_map)
+            root = max(family_list, key=lambda s: s.size)
+            newick = span_to_newick(root, children_map) + ";"
+
+            tree_var = f"ex_tree{idx}"
+            tp_var = f"ex_tp{idx}"
+            print(f'{tree_var} <- read.tree(text="{newick}")', file=rout)
+            if named:
+                print(
+                    f'{tp_var} <- ggtree({tree_var}, layout="slanted", ladderize=FALSE) +\n'
+                    "  layout_dendrogram() +\n"
+                    '  geom_tiplab(geom="label", size=5, angle=0,\n'
+                    "    offset=-1, hjust=0.5, vjust=0.35, alpha=1, label.size=0,\n"
+                    '    aes(label=paste(label, posLabel[label], sep="\\n")), lineheight=1) +\n'
+                    "  theme(panel.background=element_blank(),\n"
+                    '    plot.background=element_blank(), legend.position="none",\n'
+                    '    plot.margin=margin(t=10, r=10, b=25, l=10, unit="pt"))',
+                    file=rout,
+                )
+            else:
+                print(
+                    f'{tp_var} <- ggtree({tree_var}, layout="slanted", ladderize=FALSE) +\n'
+                    "  layout_dendrogram() +\n"
+                    '  geom_tiplab(size=5, angle=0, offset=-1, hjust=0.5, vjust=0.35) +\n'
+                    "  theme(panel.background=element_blank(),\n"
+                    '    plot.background=element_blank(), legend.position="none",\n'
+                    '    plot.margin=margin(t=10, r=10, b=25, l=10, unit="pt"))',
+                    file=rout,
+                )
+
+            # The exact test rows that produced this family's spans -- Span's
+            # own .labels field (set in load_spans()) carries the original
+            # Test_Labels, so this is a direct filter, not a re-derivation.
+            #
+            # Filtered from the already-numbered `tests_plot` (global layer
+            # numbers, matching nyan1308_pooled_plot.pdf), NOT re-run through
+            # df.plot() on a fresh subset -- the latter renumbers layers
+            # locally from 1 for whatever's in the subset, same issue the
+            # "_global_layers" pooled-chart variants were already built to
+            # avoid (see domain_charts-cgpt.r's own
+            # tests_plot_<type>_global pattern, which this mirrors exactly).
+            # Local numbering would make "layer 3" here mean something
+            # different than "layer 3" in the main pooled plot or in a
+            # different exemplar's panel; global numbering keeps one
+            # consistent numbering everywhere.
+            test_labels = sorted({label for s in family_list for label in s.labels})
+            labels_r = ", ".join(f'"{lbl}"' for lbl in test_labels)
+            plot_var = f"ex_plot{idx}"
+            print(f'{plot_var}_data <- filter(tests_plot, Test_Labels %in% c({labels_r}))', file=rout)
+            print(f"{plot_var} <- constituency.plot({plot_var}_data, b, o)", file=rout)
+            print("", file=rout)
+
+            page_var = f"ex_page{idx}"
+            # Side by side (tree | pooled plot), not stacked. Tree keeps the
+            # same ~20in-equivalent width (51cm) it needed when it had the
+            # full page to itself, so its 22 boxed labels stay legible; the
+            # pooled panel keeps domain_charts-cgpt.r's own per-test height
+            # (max(7, n_tests*0.7) cm) since that's what keeps ITS labels
+            # legible, and shares that height with the tree column
+            # (patchwork gives side-by-side panels equal row height) even
+            # though the tree itself doesn't need that much vertical room --
+            # unlike a shared shrunk row, neither panel loses legibility here,
+            # since the constraint each panel actually needs (tree: width,
+            # pooled plot: height) is still what it gets.
+            tree_width_cm = 51.0
+            pooled_width_cm = 25.0
+            pooled_height_cm = max(7.0, len(test_labels) * 0.7)
+            print(
+                f"{page_var} <- ({tp_var} | {plot_var}) +\n"
+                f"  plot_layout(widths=c({tree_width_cm}, {pooled_width_cm}))",
+                file=rout,
+            )
+            total_width = round(tree_width_cm + pooled_width_cm, 1)
+            pdf_path = f"{base_pdf_path}_{idx}.pdf"
+            print(
+                f'ggsave("{pdf_path}", {page_var}, device="pdf",\n'
+                f"  width={total_width}, height={round(pooled_height_cm, 2)}, "
+                'units="cm", limitsize=FALSE)',
+                file=rout,
+            )
+            print("", file=rout)
+
+            # --- Slide variant: tree at a fixed 13.333x7.5in (1920x1080
+            # @144dpi, the standard PowerPoint 16:9 size); evidence reuses
+            # the SAME per-test, global-layer-numbered plot_var built above
+            # for the combined print file -- not a separate aggregated
+            # summary. An earlier version here built a one-row-per-span
+            # summary (a test count per span instead of every test) to fit a
+            # fixed slide height, since the busiest family runs to 59 test
+            # rows. That was the wrong call: per explicit correction, "all
+            # tests" is the wanted content, and showing a count instead of
+            # the actual tests reads as data going missing, not as a
+            # deliberate simplification -- especially once its per-span
+            # numbering (test counts) sat next to the print file's per-test
+            # global layer numbers and looked like a second, inconsistent
+            # numbering scheme, not two views of the same thing. Reusing
+            # plot_var directly keeps this slide file automatically
+            # consistent with the print file (same object, same numbers,
+            # same tests) with no second implementation to drift out of
+            # sync -- at the cost of the evidence slide's height varying by
+            # family (matching plot_var's own proven cm sizing) rather than
+            # staying fixed at 7.5in like the tree slide.
+            # size=4.6 + a smaller label.padding than the ggplot2 default
+            # (0.25 lines) -- the print tree's own 5/default-padding boxes
+            # never overlap (checked directly: it has ~20in for these same
+            # 22 labels), but at the slide tree's narrower 13.333in, the
+            # last two boxes (21 Obj2, 22 PostObj) butted borders/slightly
+            # crossed at every size tried down to 5 with default padding.
+            # Diagnosed by inspecting the actual panel coordinate ranges
+            # (ggplot_build()) before guessing further: confirmed the panel
+            # expansion itself was NOT asymmetric in a way that explains it
+            # (scale_y_continuous(expand=...) made left/right expansion
+            # symmetric but the 21/22 pair still touched), so the fix is
+            # shrinking the boxes themselves (font + padding together),
+            # verified by rendering the full 22-label row at this exact
+            # combination and finding a clean gap everywhere, not just at
+            # the one pair that prompted the check.
+            slide_tp_var = f"ex_slide_tp{idx}"
+            if named:
+                print(
+                    f'{slide_tp_var} <- ggtree({tree_var}, layout="slanted", ladderize=FALSE) +\n'
+                    "  layout_dendrogram() +\n"
+                    '  geom_tiplab(geom="label", size=4.6, angle=0,\n'
+                    "    offset=-1, hjust=0.5, vjust=0.35, alpha=1, label.size=0,\n"
+                    '    label.padding=unit(0.12, "lines"),\n'
+                    '    aes(label=paste(label, posLabel[label], sep="\\n")), lineheight=1) +\n'
+                    "  theme(panel.background=element_blank(),\n"
+                    '    plot.background=element_blank(), legend.position="none",\n'
+                    '    plot.margin=margin(t=10, r=10, b=25, l=10, unit="pt"))',
+                    file=rout,
+                )
+            else:
+                print(
+                    f'{slide_tp_var} <- ggtree({tree_var}, layout="slanted", ladderize=FALSE) +\n'
+                    "  layout_dendrogram() +\n"
+                    '  geom_tiplab(size=4.6, angle=0, offset=-1, hjust=0.5, vjust=0.35) +\n'
+                    "  theme(panel.background=element_blank(),\n"
+                    '    plot.background=element_blank(), legend.position="none",\n'
+                    '    plot.margin=margin(t=10, r=10, b=25, l=10, unit="pt"))',
+                    file=rout,
+                )
+
+            # Two slides, not one combined frame -- tested putting both
+            # panels on one 13.333x7.5in slide at several width splits
+            # (roughly even, then 9.7/3.6) and neither panel was legible at
+            # either split. Tested the tree alone at the full 13.333in width
+            # and it fit cleanly (confirmed by rendering, not assumed) --
+            # there just isn't room left for a second panel beside it once
+            # the tree has the width its 22 boxed labels actually need. Two
+            # full-frame slides (tree, then its evidence) also matches how a
+            # talk would actually present this -- show the tree, then show
+            # what supports it -- rather than compressing both into one busy
+            # slide.
+            slide_tree_pdf_path = f"{base_pdf_path}_slide_{idx}_tree.pdf"
+            print(
+                f'ggsave("{slide_tree_pdf_path}", {slide_tp_var}, device="pdf",\n'
+                '  width=13.333, height=7.5, units="in", limitsize=FALSE)',
+                file=rout,
+            )
+            # Same object, same sizing as the print file's pooled panel
+            # (plot_var / pooled_width_cm / pooled_height_cm, built above) --
+            # not resized to 13.333x7.5in like the tree slide. Forcing it
+            # into a fixed 7.5in height is exactly what motivated the
+            # (rejected) aggregated-summary version; keeping its own proven
+            # per-test cm sizing is what keeps every test legible here.
+            slide_evidence_pdf_path = f"{base_pdf_path}_slide_{idx}_evidence.pdf"
+            print(
+                f'ggsave("{slide_evidence_pdf_path}", {plot_var}, device="pdf",\n'
+                f'  width={pooled_width_cm}, height={round(pooled_height_cm, 2)}, '
+                'units="cm", limitsize=FALSE)',
+                file=rout,
+            )
+            print("", file=rout)
+
+    print(f"\nR script written to: {rout_path}")
+    print(f"Produces {k} print files: {base_pdf_path}_1.pdf .. {base_pdf_path}_{k}.pdf")
+    print(f"Produces {k} slide pairs: {base_pdf_path}_slide_1_tree.pdf / _evidence.pdf .. "
+          f"{base_pdf_path}_slide_{k}_tree.pdf / _evidence.pdf")
+
+
+def generate_exemplary_trees(
+        domain_file: str = "domains_nyan1308.tsv",
+        domains_dir: str | None = None,
+        output_dir: str | None = None,
+        pos_labels: dict[int, str] | None = None,
+        k: int = 6,
+        output_name: str = "nyan1308_exemplary_trees.r",
+        include_sparsest: bool = False,
+) -> None:
+    """Select k representative families and write their tree+pooled-plot R script.
+
+    The one call that ties select_representative_families() and
+    generate_r_exemplary_trees_script() together -- load the full unfiltered
+    span set (not per-domain-type; this picks across all 69 families), find
+    conflicts, enumerate, select, generate.
+
+    include_sparsest: append one more family beyond the k selected by
+    coverage/consensus -- specifically the family drawing on the fewest
+    individual tests (ties broken by fewest distinct domain types, though
+    for nyan1308 the two criteria agree exactly: family 67 in enumeration
+    order is the unique minimum on both at once, 21 tests / 3 domain types,
+    not just the smaller of two different answers). The greedy-coverage
+    selection has no reason to pick the sparsest family on its own --
+    coverage/consensus favor families that explain a lot, and a sparse
+    family by definition doesn't -- so this is a deliberate second axis
+    (least evidence) alongside the first (most representative), not
+    something k=7 on the main selection would surface.
+    """
+    if domains_dir is None:
+        domains_dir = os.path.join(os.path.dirname(__file__), "..", "..", "domains")
+    if output_dir is None:
+        output_dir = os.path.join(os.path.dirname(__file__), "..", "..", "results")
+    if pos_labels is None and "nyan1308" in domain_file:
+        pos_labels = _NYAN1308_POS_LABELS
+
+    spans, n_positions = load_spans(domain_file, domains_dir)
+    adjacency = find_conflicts(spans)
+    families, truncated = enumerate_maximal_laminar_families(spans, adjacency, n_positions)
+    print(f"\n═══ Exemplary trees: {domain_file} ({len(families)} families) ═══")
+
+    span_family_count: dict[Span, int] = defaultdict(int)
+    for fam in families:
+        for s in fam:
+            span_family_count[s] += 1
+
+    selected = select_representative_families(families, dict(span_family_count), k=k)
+    print(f"   Selected {len(selected)} representative families")
+
+    if include_sparsest:
+        def _sparsity_key(fam: frozenset[Span]) -> tuple[int, int]:
+            n_tests = len({label for s in fam for label in s.labels})
+            n_domains = len({dt for s in fam for dt in s.domain_types})
+            return (n_tests, n_domains)
+
+        sparsest = min(families, key=_sparsity_key)
+        if sparsest not in selected:
+            selected = selected + [sparsest]
+            n_tests, n_domains = _sparsity_key(sparsest)
+            print(f"   Added sparsest family: {len(sparsest)} spans, "
+                  f"{n_tests} tests, {n_domains} domain types")
+        else:
+            print("   Sparsest family already among the selected representatives")
+
+    generate_r_exemplary_trees_script(
+        selected, len(families), output_dir, output_name, pos_labels)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1137,7 +1636,8 @@ def main(domain_file: str = "domains_nyan1308.tsv",
          color: str = "black",
          tpfx: str = "",
          show_trees: bool = True,
-         max_trees_to_show: int = 20) -> dict:
+         max_trees_to_show: int = 20,
+         pos_labels: dict[int, str] | None = None) -> dict:
     """Run the full laminar family analysis for one domain file.
 
     Args:
@@ -1152,6 +1652,10 @@ def main(domain_file: str = "domains_nyan1308.tsv",
         show_trees:  If True, print indented tree structure in Phase 3.
                      Automatically suppressed when n > max_trees_to_show.
         max_trees_to_show: Threshold above which tree bodies are suppressed.
+        pos_labels:  Position number -> label, passed straight through to
+                     generate_r_script() for boxed "N\\nName" tip labels.
+                     Defaults to _NYAN1308_POS_LABELS when domain_file
+                     mentions nyan1308, matching run_domain_overlay().
 
     Returns:
         Dict with keys: spans, adjacency, families, span_family_count,
@@ -1159,6 +1663,8 @@ def main(domain_file: str = "domains_nyan1308.tsv",
     """
     if output_dir is None:
         output_dir = os.getcwd()
+    if pos_labels is None and "nyan1308" in domain_file:
+        pos_labels = _NYAN1308_POS_LABELS
 
     print(f"═══ Laminar family analysis: {domain_file} ═══")
     if subset:
@@ -1199,7 +1705,7 @@ def main(domain_file: str = "domains_nyan1308.tsv",
 
     # ── R output ─────────────────────────────────────────────────────────────
     generate_r_script(families, n_positions, span_family_count,
-                      output_dir, tpfx, color)
+                      output_dir, tpfx, color, pos_labels)
 
     return {
         "spans": spans,
@@ -1214,13 +1720,44 @@ def main(domain_file: str = "domains_nyan1308.tsv",
 if __name__ == "__main__":
     # Default: run on nyan1308 (the language most carefully checked against
     # the earlier treeTraversal.py algorithm).
-    #
-    # To run on a subset by domain type:
-    #   main(subset=["morphosyntactic"], color="#EE6677", tpfx="morsyn")
-    #   main(subset=["phonological", "tonosegmental"], color="#4477AA", tpfx="phon")
-    #   main(subset=["intonational"], color="#228833", tpfx="inton")
     main()
     run_domain_overlay()
+
+    # One single-domain-type forest per class -- each domain type analyzed
+    # entirely on its own (not overlaid with the others), same colors as
+    # OVERLAY_GROUPS above. Writes {tpfx}laminar_forest.r per class into
+    # results/, not CWD (main()'s own default) -- kept explicit here so these
+    # land next to every other nyan1308_* output.
+    _results_dir = os.path.join(os.path.dirname(__file__), "..", "..", "results")
+    for subset_types, color, short_tpfx in OVERLAY_GROUPS:
+        main(subset=subset_types, color=color,
+             tpfx=f"nyan1308_{short_tpfx}_", output_dir=_results_dir)
+
+    # Two-bundle approximation of a morphosyntax/phonology split -- crude on
+    # purpose (this project's own diagnostic classes don't map cleanly onto
+    # that binary; see the "Morphosyntax/phonology divide hypothesis" in this
+    # module's own docstring), grouping phonological+intonational into one
+    # pooled analysis and morphosyntactic+tonosegmental+length into the other.
+    main(
+        subset=["phonological", "intonational"],
+        color="#0072B5",
+        tpfx="nyan1308_phonologylike_",
+        output_dir=_results_dir,
+    )
+    main(
+        subset=["morphosyntactic", "tonosegmental", "length"],
+        color="#BC3C29",
+        tpfx="nyan1308_syntaxlike_",
+        output_dir=_results_dir,
+    )
+    # Same syntax-like bundle with tonosegmental dropped, to see how much of
+    # its structure that domain type alone was contributing.
+    main(
+        subset=["morphosyntactic", "length"],
+        color="#E18727",
+        tpfx="nyan1308_syntaxlike_notono_",
+        output_dir=_results_dir,
+    )
 
     # All-conflict-groups-stacked overlay: every maximal family in one panel
     # (the labeled equivalent of laminar_conflict_groups.r's Panel ALL), with
@@ -1232,4 +1769,10 @@ if __name__ == "__main__":
         overlay_groups=[(None, "black", "all")],
         output_name="nyan1308_all_families_labeled.r",
         alpha_divisor=1.0,
+        thickness_exponent=0.75,
     )
+
+    # Six exemplary trees (greedy coverage, tied broken by consensus), plus
+    # a 7th: the sparsest family (fewest tests/domain types) in the forest --
+    # each paired with the pooled plot of just the tests that produced it.
+    generate_exemplary_trees(include_sparsest=True)

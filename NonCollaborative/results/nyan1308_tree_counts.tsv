@@ -11,3 +11,6 @@ all_tests	intonational	3	1
 without_adjacent_spans	intonational	3	1
 all_tests	length	6	3
 without_adjacent_spans	length	6	3
+all_tests	phonologylike	13	6
+all_tests	syntaxlike	20	16
+all_tests	syntaxlike_notono	11	4
