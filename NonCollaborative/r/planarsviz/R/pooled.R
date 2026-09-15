@@ -218,6 +218,7 @@ plot_pooled <- function(bundle, domain_types = NULL, layers = c("global", "local
     width <- 25
   }
   attr(p, "planarsviz_size") <- c(width = width, height = pooled_plot_height(d))
+  attr(p, "planarsviz_units") <- "cm"
   p
 }
 

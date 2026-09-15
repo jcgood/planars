@@ -1,0 +1,59 @@
+"""Compare every PNG the renderer wrote with the frozen reference images.
+
+For docs/PLAN_planarsviz_library.md section 8.3: after
+    Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308 --output DIR --formats pdf,png
+run
+    python scripts/planarsviz_checks/check_renderer.py DIR
+Reads DIR/manifest.tsv, pairs each nyan1308_<chart>.png with
+results/planarsviz/reference/nyan1308_<chart>.png, and prints the
+differing-pixel share per chart (side-by-side images go to DIR/compare/).
+Charts copied from working R code must show 0.0000%; the two matplotlib
+ports (tree_count_*, boundary_strength, _no_tono, _distributions) differ by
+fonts, as recorded in the progress file. It also lists references with no
+render and renders with no reference.
+
+The only name mapping: the renderer names highlight variants after the
+highlight id (all_families_labeled_orthographic_word), where the old file
+was all_families_labeled_wordhood.
+"""
+
+import csv
+import subprocess
+import sys
+from pathlib import Path
+
+NC = Path(__file__).resolve().parents[2]
+REFERENCE = NC / "results" / "planarsviz" / "reference"
+RENAMED = {"all_families_labeled_orthographic_word": "all_families_labeled_wordhood",
+           "all_families_labeled_orthographic_word_legend": "all_families_labeled_wordhood_legend"}
+PORTS = ("tree_count_", "boundary_strength", "boundary_strength_no_tono", "boundary_strength_distributions")
+
+out_dir = Path(sys.argv[1])
+compare_dir = out_dir / "compare"
+compare_dir.mkdir(exist_ok=True)
+with (out_dir / "manifest.tsv").open(newline="") as handle:
+    rows = [r for r in csv.DictReader(handle, delimiter="\t") if r["file"].endswith(".png")]
+
+seen = set()
+problems = 0
+for row in rows:
+    chart = row["chart"]
+    ref_name = f"nyan1308_{RENAMED.get(chart, chart)}.png"
+    seen.add(ref_name)
+    ref = REFERENCE / ref_name
+    if not ref.exists():
+        print(f"{chart:48} no reference")
+        continue
+    result = subprocess.run(
+        [sys.executable, str(NC / "scripts" / "planarsviz_compare.py"), str(ref),
+         str(out_dir / row["file"]), str(compare_dir / row["file"])],
+        capture_output=True, text=True).stdout.strip()
+    is_port = chart.startswith(PORTS[0]) or chart in PORTS[1:] and "overlay" not in chart
+    exact = "differing_pixels=0.0000%" in result and "size_match=True" in result
+    flag = "" if exact or is_port else "   <-- NOT EXACT"
+    problems += bool(flag)
+    print(f"{chart:48} {result}{flag}")
+
+missing = sorted(p.name for p in REFERENCE.glob("nyan1308_*.png") if p.name not in seen)
+print(f"\n{len(rows)} renders compared; references with no render: {missing or 'none'}")
+print("RENDERER CHECK PASSED" if not problems else f"RENDERER CHECK: {problems} copied chart(s) not exact")
