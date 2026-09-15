@@ -1,0 +1,31 @@
+Package: planarsviz
+Title: Visualizations for Planar Constituency Analyses
+Version: 0.3.0.9000
+Authors@R:
+    person("Jeff", "Good", role = c("aut", "cre"),
+           email = "jcgood@buffalo.edu")
+Author: Jeff Good [aut, cre]
+Maintainer: Jeff Good <jcgood@buffalo.edu>
+Description:
+    Reusable, data-driven visualizations for planar constituency and
+    laminar-family analyses. Analytical family enumeration remains outside
+    this package; the package reads a data bundle exported by
+    scripts/analysis/export_planarsviz_data.py and returns plot objects.
+    Being rebuilt chart by chart; see docs/PLAN_planarsviz_library.md.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends:
+    R (>= 4.2.0)
+Imports:
+    dplyr,
+    ggplot2,
+    grid,
+    jsonlite,
+    magrittr,
+    stats,
+    stringr,
+    tidyr
+Suggests:
+    ape,
+    ggtree,
+    patchwork

@@ -1,0 +1,17 @@
+# Hand-written: roxygen2 is not installed on this machine (see
+# docs/PLANARSVIZ_LIBRARY_PROGRESS.md). Every public function name starts
+# with one of the exported prefixes below.
+exportPattern("^plot_")
+exportPattern("^read_planars_")
+exportPattern("^validate_planars_")
+exportPattern("^planarsviz_")
+
+# Imports let chart code copied from the working scripts run unchanged
+# (unqualified dplyr/tidyr/ggplot2 calls and %>%).
+import(ggplot2)
+importFrom(dplyr, arrange, cur_group_id, desc, filter, group_by, mutate, n_distinct, ungroup)
+importFrom(grid, unit)
+importFrom(magrittr, "%>%")
+importFrom(stats, na.omit, reorder)
+importFrom(stringr, str_to_title)
+importFrom(tidyr, pivot_longer)
