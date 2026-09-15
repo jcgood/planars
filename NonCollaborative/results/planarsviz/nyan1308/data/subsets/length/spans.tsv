@@ -1,8 +1,8 @@
-span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic
-1-22	1	22	22	0	3	(root)	(synthetic)	True
-5-17	5	17	13	2	1	FreeOccurrence-Maximal/elsewhere|Length-DisyllabicMinimality	length	False
-5-18	5	18	14	1	3	FreeOccurrence-Maximal-AFF/2pOBJ	length	False
-9-17	9	17	9	1	2	FreeOccurrence-Maximal-AFF/IMP2s	length	False
-9-18	9	18	10	1	2	FreeOccurrence-Maximal-AFF/IMP2p	length	False
-10-17	10	17	8	1	3	FreeOccurrence-Minimal-AFF/IMP2s	length	False
-10-18	10	18	9	1	1	FreeOccurrence-Minimal-AFF/IMP2p	length	False
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank
+1-22	1	22	22	0	3	(root)	(synthetic)	True	
+5-17	5	17	13	2	1	FreeOccurrence-Maximal/elsewhere|Length-DisyllabicMinimality	length	False	1
+5-18	5	18	14	1	3	FreeOccurrence-Maximal-AFF/2pOBJ	length	False	6
+9-17	9	17	9	1	2	FreeOccurrence-Maximal-AFF/IMP2s	length	False	3
+9-18	9	18	10	1	2	FreeOccurrence-Maximal-AFF/IMP2p	length	False	4
+10-17	10	17	8	1	3	FreeOccurrence-Minimal-AFF/IMP2s	length	False	5
+10-18	10	18	9	1	1	FreeOccurrence-Minimal-AFF/IMP2p	length	False	2

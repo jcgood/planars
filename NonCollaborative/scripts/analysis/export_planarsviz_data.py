@@ -41,12 +41,26 @@ from laminar_analysis import (  # noqa: E402
 # (group.colors, df.plot() levels, constituency.plot() breaks). This is the
 # one place R gets them from. A domain type observed in the data but not listed
 # here gets FALLBACK_COLOUR and sorts after the known types, alphabetically.
+#
+# alt_colour / colour_priority: the second palette used by the span-frequency
+# chart (results/laminar_spanchart.r, Paul Tol's "bright" colours). A span
+# with several domain types takes the alt_colour of its type with the lowest
+# colour_priority. Recovered from that script's data: morphosyntactic,
+# phonological, tonosegmental and intonational colours and the priority
+# order are exactly reproduced; length never decides a colour there (every
+# length span also has a higher-priority type), so its #AA3377 (Tol purple,
+# matching visualizations.md's "length = purple") is inferred, not observed.
 DOMAIN_TYPE_STYLE: list[dict] = [
-    {"domain_type": "morphosyntactic", "colour": "#BC3C29", "sort_order": 1, "legend_order": 1, "facet_order": 1},
-    {"domain_type": "tonosegmental", "colour": "#0072B5", "sort_order": 2, "legend_order": 5, "facet_order": 3},
-    {"domain_type": "length", "colour": "#E18727", "sort_order": 3, "legend_order": 3, "facet_order": 5},
-    {"domain_type": "phonological", "colour": "#20845E", "sort_order": 4, "legend_order": 2, "facet_order": 2},
-    {"domain_type": "intonational", "colour": "#7876B1", "sort_order": 5, "legend_order": 4, "facet_order": 4},
+    {"domain_type": "morphosyntactic", "colour": "#BC3C29", "sort_order": 1, "legend_order": 1, "facet_order": 1,
+     "alt_colour": "#EE6677", "colour_priority": 1},
+    {"domain_type": "tonosegmental", "colour": "#0072B5", "sort_order": 2, "legend_order": 5, "facet_order": 3,
+     "alt_colour": "#228833", "colour_priority": 3},
+    {"domain_type": "length", "colour": "#E18727", "sort_order": 3, "legend_order": 3, "facet_order": 5,
+     "alt_colour": "#AA3377", "colour_priority": 5},
+    {"domain_type": "phonological", "colour": "#20845E", "sort_order": 4, "legend_order": 2, "facet_order": 2,
+     "alt_colour": "#4477AA", "colour_priority": 2},
+    {"domain_type": "intonational", "colour": "#7876B1", "sort_order": 5, "legend_order": 4, "facet_order": 4,
+     "alt_colour": "#CCBB44", "colour_priority": 4},
 ]
 FALLBACK_COLOUR = "#7F7F7F"
 
@@ -63,6 +77,8 @@ def domain_type_rows(observed: list[str]) -> list[dict]:
             "sort_order": len(DOMAIN_TYPE_STYLE) + i,
             "legend_order": len(DOMAIN_TYPE_STYLE) + i,
             "facet_order": len(DOMAIN_TYPE_STYLE) + i,
+            "alt_colour": FALLBACK_COLOUR,
+            "colour_priority": len(DOMAIN_TYPE_STYLE) + i,
             "known": False,
         })
     return rows
@@ -206,6 +222,25 @@ def export_bundle(
             key: sum(span in family for family in families)
             for key, span in span_lookup.items()
         }
+        # Row order of the span-frequency chart (laminar_spanchart.r, whose
+        # generator was never committed; recovered 2026-09-15 by matching its
+        # rows): every span except the full root, sorted by family count
+        # ascending; ties keep the order in which the spans are first met
+        # when iterating the families in order and each family's frozenset in
+        # Python's iteration order -- how laminar_analysis.report_families()
+        # builds its count dict. That tie order is deterministic but
+        # arbitrary; it is kept only so the chart reproduces exactly.
+        first_counted: dict[str, int] = {}
+        for family in families:
+            for span in family:
+                first_counted.setdefault(span_id(span), len(first_counted))
+        charted = [
+            key for key, span in span_lookup.items()
+            if not (span.left == 1 and span.right == n_positions)
+        ]
+        charted.sort(key=lambda key: first_counted.get(key, len(first_counted)))
+        charted.sort(key=lambda key: span_family_count[key])
+        span_chart_rank = {key: rank for rank, key in enumerate(charted, start=1)}
         span_rows = []
         for key in sorted(span_lookup, key=lambda value: tuple(map(int, value.split("-")))):
             span = span_lookup[key]
@@ -219,10 +254,12 @@ def export_bundle(
                 "labels": "|".join(span.labels),
                 "domain_types": "|".join(sorted(span.domain_types)),
                 "synthetic": span.domain_types == frozenset(["(synthetic)"]),
+                "span_chart_rank": span_chart_rank.get(key, ""),
             })
         write_tsv(target_dir / "spans.tsv", [
             "span_id", "left", "right", "size", "convergence",
-            "family_frequency", "labels", "domain_types", "synthetic"
+            "family_frequency", "labels", "domain_types", "synthetic",
+            "span_chart_rank"
         ], span_rows)
 
         family_rows = []
@@ -273,7 +310,8 @@ def export_bundle(
     root_position = load_root_position(planar_file, root_element)
     observed_types = sorted(t.strip() for t in tests["Domain_Type"].dropna().unique())
     write_tsv(data_dir / "domain_types.tsv",
-              ["domain_type", "colour", "sort_order", "legend_order", "facet_order", "known"],
+              ["domain_type", "colour", "sort_order", "legend_order", "facet_order",
+               "alt_colour", "colour_priority", "known"],
               domain_type_rows(observed_types))
 
     metadata = {

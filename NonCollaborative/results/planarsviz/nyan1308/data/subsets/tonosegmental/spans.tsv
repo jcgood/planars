@@ -1,13 +1,13 @@
-span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic
-1-22	1	22	22	0	9	(root)	(synthetic)	True
-5-17	5	17	13	7	9	NegTonePattern2-Neg1-NoOM-MonoSyll|NegTonePattern2-Neg1-Other|NegTonePattern3-PERM-NoOM-MonoSyll|NegTonePattern3-PERM-NoOM-DiSyll|NegTonePattern3-PERM-NoOM-Other|NegTonePattern3-PERM-OM-MonoSyll|NegTonePattern3-PERM-OM-Other	tonosegmental	False
-6-8	6	8	3	1	3	TonePattern7-noOM	tonosegmental	False
-6-10	6	10	5	1	2	TonePattern7-OM-Other	tonosegmental	False
-6-16	6	16	11	7	5	TonePattern6-RP-noOM-Other|TonePattern6-RP-OM|TonePattern6-HAB-noOM-Other|TonePattern6-HAB-OM|TonePattern8-noOM-JST-Other|TonePattern8-OM-JST-Other|NegTonePattern2-Neg2-IMP-Other	tonosegmental	False
-6-17	6	17	12	12	9	TonePattern6-RP-noOM-MonoSyll|TonePattern6-HAB-noOM-MonoSyll|TonePattern7-OM-MonoSyll|TonePattern8-noOM-JST-MonoSyll|TonePattern8-noOM-JST-DiSyll|TonePattern8-OM-JST-MonoSyll|TonePattern8-OM-JST-DiTriSyll|NegTonePattern2-Neg2-IMP-NoOM-MonoSyll|NegTonePattern2-Neg2-SeqPFV-NoOM-MonoSyll|NegTonePattern2-Neg2-SeqPFV-Other|NegTonePattern3-PfvSimPST-NoOM-MonoSyll|NegTonePattern3-PfvSimPST-Other	tonosegmental	False
-8-10	8	10	3	1	3	TonePattern4-noOM-Other	tonosegmental	False
-8-16	8	16	9	2	4	TonePattern5-noOM-Other|TonePattern5-OM	tonosegmental	False
-8-17	8	17	10	8	3	TonePattern4-noOM-MonoSyll|TonePattern4-noOM-DiSyll|TonePattern4-OM-MonoSyll|TonePattern4-OM-DiTriSyll|TonePattern4-OM-Other|TonePattern5-noOM-MonoDiSyll|NegTonePattern4-noOM|NegTonePattern4-OM	tonosegmental	False
-9-10	9	10	2	1	9	TonePattern2-OM-Other	tonosegmental	False
-9-16	9	16	8	1	5	TonePattern3-OM-Other	tonosegmental	False
-9-17	9	17	9	3	2	TonePattern2-OM-MonoSyll|TonePattern2-OM-DiSyll|TonePattern3-OM-MonoSyll	tonosegmental	False
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank
+1-22	1	22	22	0	9	(root)	(synthetic)	True	
+5-17	5	17	13	7	9	NegTonePattern2-Neg1-NoOM-MonoSyll|NegTonePattern2-Neg1-Other|NegTonePattern3-PERM-NoOM-MonoSyll|NegTonePattern3-PERM-NoOM-DiSyll|NegTonePattern3-PERM-NoOM-Other|NegTonePattern3-PERM-OM-MonoSyll|NegTonePattern3-PERM-OM-Other	tonosegmental	False	11
+6-8	6	8	3	1	3	TonePattern7-noOM	tonosegmental	False	3
+6-10	6	10	5	1	2	TonePattern7-OM-Other	tonosegmental	False	1
+6-16	6	16	11	7	5	TonePattern6-RP-noOM-Other|TonePattern6-RP-OM|TonePattern6-HAB-noOM-Other|TonePattern6-HAB-OM|TonePattern8-noOM-JST-Other|TonePattern8-OM-JST-Other|NegTonePattern2-Neg2-IMP-Other	tonosegmental	False	7
+6-17	6	17	12	12	9	TonePattern6-RP-noOM-MonoSyll|TonePattern6-HAB-noOM-MonoSyll|TonePattern7-OM-MonoSyll|TonePattern8-noOM-JST-MonoSyll|TonePattern8-noOM-JST-DiSyll|TonePattern8-OM-JST-MonoSyll|TonePattern8-OM-JST-DiTriSyll|NegTonePattern2-Neg2-IMP-NoOM-MonoSyll|NegTonePattern2-Neg2-SeqPFV-NoOM-MonoSyll|NegTonePattern2-Neg2-SeqPFV-Other|NegTonePattern3-PfvSimPST-NoOM-MonoSyll|NegTonePattern3-PfvSimPST-Other	tonosegmental	False	10
+8-10	8	10	3	1	3	TonePattern4-noOM-Other	tonosegmental	False	4
+8-16	8	16	9	2	4	TonePattern5-noOM-Other|TonePattern5-OM	tonosegmental	False	6
+8-17	8	17	10	8	3	TonePattern4-noOM-MonoSyll|TonePattern4-noOM-DiSyll|TonePattern4-OM-MonoSyll|TonePattern4-OM-DiTriSyll|TonePattern4-OM-Other|TonePattern5-noOM-MonoDiSyll|NegTonePattern4-noOM|NegTonePattern4-OM	tonosegmental	False	5
+9-10	9	10	2	1	9	TonePattern2-OM-Other	tonosegmental	False	9
+9-16	9	16	8	1	5	TonePattern3-OM-Other	tonosegmental	False	8
+9-17	9	17	9	3	2	TonePattern2-OM-MonoSyll|TonePattern2-OM-DiSyll|TonePattern3-OM-MonoSyll	tonosegmental	False	2
