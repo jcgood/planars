@@ -294,3 +294,43 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
 - Looked at by Claude: yes (nyan legend comparison; shifted wordhood label
   row). Seen by Jeff: no.
 - Status: done pending Jeff's review.
+
+## Charts 14 and 13: frequency tree and four trees
+- Source copied: `results/laminar_freqtree.r:1-31` and
+  `results/laminar_four_trees.r:1-104` → `R/summary_trees.R`, commit `9125812`
+  (checked line-for-line identical before committing).
+- Recovered rules re-run in the worktree (§4.1): consensus picks families
+  15 / 46 / 15 / 6 (0-based) for All / A / B / C; conflict groups 10 / 23 / 36;
+  B drawn as 9, 25, 16, 18, 10–15, 17, 19 and C as 0, 40, 53, 37, 1–8 — all
+  equal to the plan's lists.
+- Exporter additions: `families.tsv` `newick`; `conflict_groups.tsv`
+  (group, defining span, family, draw rank under the cap);
+  `selections.tsv` (`consensus_all`, `consensus_<group>`); metadata
+  `conflict_group_cap`, `source_conflict_groups_file`. The defining spans are
+  data — `planar_tables/conflict_groups_nyan1308.tsv` (A 5-13, B 6-17, C =
+  the rest), `--conflict-groups-file`; the cap is `--conflict-group-cap`
+  (default 12). A group no larger than the cap is drawn whole in family order
+  (A); larger groups use the greedy-coverage seed then family order. Ties in
+  consensus (never seen) go to the lower family number — a choice, not
+  recovered. `verify_selection_export.py`: the freqtree, four-trees and all
+  four conflict-group panels' Newick strings reproduce in drawing order.
+- R (`03405d7`): `plot_frequency_tree(bundle, selection)`,
+  `plot_four_trees(bundle, other_label = "neither")`, shared
+  `planarsviz_summary_tree()`; frequencies counted from
+  `family_membership.tsv` (rounding 6 places, thickness 4 × share). Group
+  titles are built from the defining span; "neither" is an option. Layout:
+  the script's 2×2 for three groups, two panels per row otherwise.
+- Numbers comparison (`check_summary_trees.R`): every panel's plot data,
+  title and opacity-scale name identical. Pixel comparison:
+  `comparisons/nyan1308_freqtree.png`, `comparisons/nyan1308_four_trees.png`,
+  both 0.0000%.
+- Shifted-dataset check (`comparisons/shifted/shifted_nyan_{freqtree,four_trees}.png`):
+  same trees with New1/New2 as extra top-level tips, renamed labels, titles
+  `[7-15]` / `[8-19]`; same families selected (bundle test). Labels crowd in
+  the four-tree panels with 24 tips (same canvas). No leaks.
+- Also fixed: `inst/data-contract.md` was out of date (listed none of the
+  files added since the salvage, and said `n_unique_spans` counts every span
+  row); rewritten to match the exporter.
+- R6 search: clean.
+- Looked at by Claude: yes (both shifted side-by-sides). Seen by Jeff: no.
+- Status: done pending Jeff's review.
