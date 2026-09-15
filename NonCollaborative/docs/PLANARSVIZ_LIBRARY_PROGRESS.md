@@ -365,3 +365,40 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
 - R6 search: clean.
 - Looked at by Claude: yes. Seen by Jeff: no.
 - Status: done pending Jeff's review.
+
+## Chart 10: exemplary trees and slides (21 files)
+- Source copied: `results/nyan1308_exemplary_trees.r:1-225` (written by
+  `generate_r_exemplary_trees_script()`) → `R/exemplary.R`, commit `9b4ed22`
+  (line-for-line check).
+- Selection re-run in the worktree: `select_representative_families(k=6)`
+  + sparsest = families 15, 0, 37, 53, 46, 6, 67 (0-based); every drawn
+  tree, test list and page height matches.
+- Exporter: `selections.tsv` `exemplary` ranks 1–7, calling
+  `select_representative_families()` directly (this rule was never lost);
+  `--exemplary-k` (6), `--no-exemplary-sparsest`; metadata `exemplary_k`,
+  `exemplary_include_sparsest`. `verify_selection_export.py` now also checks
+  the seven exemplary trees.
+- R: `plot_exemplary_tree(bundle, rank, view = "page" | "slide_tree" |
+  "slide_evidence")`, from `planarsviz_exemplary_tree()` and
+  `planarsviz_family_evidence()`. The test list is the member spans'
+  `labels` (synthetic root excluded). The evidence panel no longer
+  `source()`s `domain_charts-cgpt.r` (which re-saved every pooled PDF as a
+  side effect). New shared `planarsviz_pooled_setup()` used by
+  `plot_pooled()` too — charts 1–4 re-checked: all 12 still identical.
+- §5 fixes checked: evidence filters the already-numbered data (global
+  layers); slide tree size 4.6 with `label.padding = 0.12 lines`.
+- Numbers comparison (`check_exemplary.R`, evaluates the script with
+  `ggsave` disabled so nothing committed is rewritten): all 7 print trees,
+  evidence panels and slide trees identical. Pixel comparison: all 21 files
+  0.0000% at the script's sizes (`comparisons/nyan1308_exemplary_trees_*.png`).
+- Shifted-dataset check (`comparisons/shifted/shifted_nyan_exemplary_trees_*.png`):
+  21 rendered, same canvas sizes (same test counts per family); same
+  families selected (bundle test). Exemplar 7 looked at: same 21 tests and
+  layer numbers, axis to 24, root line at 12. No leaks.
+- Housekeeping: the rendered PDFs and comparison images for charts 12–14
+  were missing from their commits; added with this one. Pooled PDFs that
+  the charts 1–4 re-check rewrote (pixel-identical, file metadata only)
+  were restored rather than committed.
+- R6 search: clean.
+- Looked at by Claude: yes. Seen by Jeff: no.
+- Status: done pending Jeff's review.
