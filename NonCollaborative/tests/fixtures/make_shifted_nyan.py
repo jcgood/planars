@@ -10,8 +10,9 @@ unchanged; only facts a chart might have typed in are changed:
 - every display label is renamed (breaks hard-coded position names);
 - tonosegmental is renamed tonal (breaks hard-coded domain-type names and
   colours; tonal gets the exporter's fallback colour);
-- the position highlights move with the positions (breaks hard-coded
-  highlight ranges such as the orthographic word at 5-19).
+- the position highlights and the conflict groups' defining spans move with
+  the positions (breaks hard-coded ranges such as the orthographic word at
+  5-19 or the [5-13]/[6-17] conflict).
 
 Not to be confused with domains/domains_nyan1293_test.tsv, an older,
 unrelated test file.
@@ -20,13 +21,14 @@ Usage (from NonCollaborative/):
     python tests/fixtures/make_shifted_nyan.py
 
 Writes tests/fixtures/domains_shifted_nyan.tsv, planar_shifted_nyan.tsv,
-display_labels_shifted_nyan.tsv and highlights_shifted_nyan.tsv. Export its
-bundle with:
+display_labels_shifted_nyan.tsv, highlights_shifted_nyan.tsv and
+conflict_groups_shifted_nyan.tsv. Export its bundle with:
     python scripts/analysis/export_planarsviz_data.py \\
         --domain-file tests/fixtures/domains_shifted_nyan.tsv \\
         --planar-file tests/fixtures/planar_shifted_nyan.tsv \\
         --labels-file tests/fixtures/display_labels_shifted_nyan.tsv \\
         --highlights-file tests/fixtures/highlights_shifted_nyan.tsv \\
+        --conflict-groups-file tests/fixtures/conflict_groups_shifted_nyan.tsv \\
         --language-name "Shifted test data" \\
         --output-dir results/planarsviz
 """
@@ -95,6 +97,17 @@ def main():
         writer.writeheader()
         writer.writerows(dict(row, left=str(int(row["left"]) + SHIFT), right=str(int(row["right"]) + SHIFT))
                          for row in highlights)
+    with (NC / "planar_tables" / "conflict_groups_nyan1308.tsv").open(encoding="utf-8", newline="") as handle:
+        groups = list(csv.DictReader(handle, delimiter="\t"))
+    with (FIXTURES / "conflict_groups_shifted_nyan.tsv").open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["group_id", "defining_span_id"], delimiter="\t", lineterminator="\n")
+        writer.writeheader()
+        for row in groups:
+            span = (row["defining_span_id"] or "").strip()
+            if span:
+                left, right = map(int, span.split("-"))
+                span = f"{left + SHIFT}-{right + SHIFT}"
+            writer.writerow({"group_id": row["group_id"], "defining_span_id": span})
     print("wrote", ", ".join(p.name for p in sorted(FIXTURES.glob("*shifted_nyan.tsv"))))
 
 

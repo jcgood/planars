@@ -47,6 +47,26 @@ def test_bundle_records_current_source_hash_and_domain_subsets():
         assert len(list(csv.DictReader((subset_dir / "families.tsv").open(), delimiter="\t"))) == row["n_maximal_families"]
 
 
+def test_recovered_selections():
+    # docs/PLAN_planarsviz_library.md section 4.1 (0-based family numbers
+    # there; family_NNN ids here are 1-based).
+    def fid(number):
+        return f"family_{number + 1:03d}"
+    selections = {row["selection"]: row["family_id"] for row in read_tsv("selections.tsv")}
+    assert selections == {"consensus_all": fid(15), "consensus_A": fid(46),
+                          "consensus_B": fid(15), "consensus_C": fid(6)}
+    groups = read_tsv("conflict_groups.tsv")
+    assert [sum(r["group_id"] == g for r in groups) for g in "ABC"] == [10, 23, 36]
+    assert sorted(r["family_id"] for r in groups) == [fid(i) for i in range(69)]
+
+    def drawn(group):
+        ranked = [r for r in groups if r["group_id"] == group and r["draw_rank"]]
+        return [r["family_id"] for r in sorted(ranked, key=lambda r: int(r["draw_rank"]))]
+    assert drawn("B") == [fid(i) for i in [9, 25, 16, 18, 10, 11, 12, 13, 14, 15, 17, 19]]
+    assert drawn("C") == [fid(i) for i in [0, 40, 53, 37, 1, 2, 3, 4, 5, 6, 7, 8]]
+    assert len(drawn("A")) == 10
+
+
 def test_conflict_pairs_are_symmetric_as_an_undirected_relation():
     pairs = read_tsv("conflict_pairs.tsv")
     normalized = {(row["span_id_a"], row["span_id_b"]) for row in pairs}

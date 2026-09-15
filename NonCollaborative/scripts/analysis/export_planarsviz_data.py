@@ -201,6 +201,127 @@ def export_highlights(dataset: str, data_dir: Path, highlights_file: Path | None
             rows = list(csv.DictReader(handle, delimiter="\t"))
     write_tsv(data_dir / "highlights.tsv", fields, rows)
 
+
+def family_newick(family) -> str:
+    """Newick string for one family, built the way every tree chart builds it:
+    spans by size (largest first) for the parent map, the largest as root."""
+    family_list = sorted(family, key=lambda s: s.size, reverse=True)
+    root = max(family_list, key=lambda s: s.size)
+    return span_to_newick(root, get_children(build_parent_map(family_list))) + ";"
+
+
+def load_conflict_group_config(dataset: str, conflict_groups_file: Path | None):
+    """(group_id, defining_span_id) pairs, and the file they came from.
+
+    Which spans split the families into groups is a fact about the language
+    (nyan1308's central conflict is [5-13] vs [6-17]), so it is data:
+    planar_tables/conflict_groups_<dataset>.tsv, columns group_id and
+    defining_span_id. One row may leave defining_span_id empty: that group
+    gets every family not in another group. Absent file = no groups.
+    """
+    if conflict_groups_file is None:
+        candidate = REPO_DIR / "planar_tables" / f"conflict_groups_{dataset}.tsv"
+        conflict_groups_file = candidate if candidate.exists() else None
+    if conflict_groups_file is None:
+        return [], None
+    with conflict_groups_file.open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle, delimiter="\t"))
+    config = [(row["group_id"].strip(), (row.get("defining_span_id") or "").strip()) for row in rows]
+    if sum(not span for _, span in config) > 1:
+        raise ValueError(f"Only one group may have an empty defining_span_id: {conflict_groups_file}")
+    return config, conflict_groups_file
+
+
+def capped_draw_order(members: list[int], families, cap: int) -> list[int]:
+    """Which members of a group the conflict-groups chart draws, in order.
+
+    Recovered 2026-09-14 from results/laminar_conflict_groups.r (its generator
+    was never committed; docs/PLAN_planarsviz_library.md section 4.1). A group
+    no larger than the cap is drawn whole, in family order. A larger group is
+    seeded by greedy coverage -- repeatedly the member adding the most spans
+    not yet shown, ties to the lower family number, until every span in the
+    group is shown -- then filled up to the cap in family order.
+    """
+    if cap < 1:
+        raise ValueError("The conflict-group cap must be at least 1.")
+    if len(members) <= cap:
+        return list(members)
+    in_group = set().union(*(families[i] for i in members))
+    covered: set = set()
+    chosen: list[int] = []
+    while covered != in_group and len(chosen) < cap:
+        best = max((i for i in members if i not in chosen),
+                   key=lambda i: (len(families[i] - covered), -i))
+        chosen.append(best)
+        covered |= families[best]
+    chosen += [i for i in members if i not in chosen][: cap - len(chosen)]
+    return chosen
+
+
+def export_selections(dataset: str, families, data_dir: Path,
+                      conflict_groups_file: Path | None, cap: int) -> dict:
+    """Write conflict_groups.tsv and selections.tsv; return metadata fields.
+
+    conflict_groups.tsv: every family's group (group_id, defining_span_id,
+    family_id) and draw_rank (empty = not drawn under the cap). A family
+    containing more than one defining span goes to the first group listed.
+
+    selections.tsv (selection, rank, family_id): consensus_all and
+    consensus_<group_id> -- the family with the highest consensus score, the
+    sum over its spans of each span's family count across ALL families.
+    Recovered from laminar_four_trees.r and laminar_freqtree.r (section 4.1;
+    unique for nyan1308). Ties, never seen, go to the lower family number.
+    """
+    family_ids = [f"family_{number:03d}" for number in range(1, len(families) + 1)]
+    count: dict = {}
+    for family in families:
+        for span in family:
+            count[span] = count.get(span, 0) + 1
+    score = [sum(count[span] for span in family) for family in families]
+
+    def consensus(members):
+        return max(members, key=lambda i: (score[i], -i))
+
+    config, source = load_conflict_group_config(dataset, conflict_groups_file)
+    known = {span_id(span) for family in families for span in family}
+    groups: dict[str, tuple[str, list[int]]] = {}
+    assigned: set[int] = set()
+    for group_id, defining in config:
+        if not defining:
+            continue
+        if defining not in known:
+            raise ValueError(f"Conflict group {group_id!r}: span {defining} is not in the data.")
+        members = [i for i, family in enumerate(families)
+                   if i not in assigned and any(span_id(s) == defining for s in family)]
+        assigned.update(members)
+        groups[group_id] = (defining, members)
+    for group_id, defining in config:
+        if not defining:
+            groups[group_id] = ("", [i for i in range(len(families)) if i not in assigned])
+
+    group_rows = []
+    selection_rows = [{"selection": "consensus_all", "rank": 1,
+                       "family_id": family_ids[consensus(range(len(families)))]}]
+    for group_id, _ in config:
+        defining, members = groups[group_id]
+        draw_rank = {i: rank for rank, i in enumerate(capped_draw_order(members, families, cap), start=1)}
+        for i in members:
+            group_rows.append({"group_id": group_id, "defining_span_id": defining,
+                               "family_id": family_ids[i], "draw_rank": draw_rank.get(i, "")})
+        if members:
+            selection_rows.append({"selection": f"consensus_{group_id}", "rank": 1,
+                                   "family_id": family_ids[consensus(members)]})
+    write_tsv(data_dir / "conflict_groups.tsv",
+              ["group_id", "defining_span_id", "family_id", "draw_rank"], group_rows)
+    write_tsv(data_dir / "selections.tsv", ["selection", "rank", "family_id"], selection_rows)
+    return {
+        "conflict_group_cap": cap,
+        "source_conflict_groups_file": (
+            str(source.relative_to(REPO_DIR)) if source and source.is_relative_to(REPO_DIR)
+            else str(source) if source else None
+        ),
+    }
+
 # Domain-type display style: colour, the order types are sorted in within a
 # layer (df.plot()'s factor levels), the order they appear in a legend, and the
 # order of per-type panels (facet_order, from nyan_boundary_skyline.r's facet
@@ -350,6 +471,8 @@ def export_bundle(
     root_element: str = "root",
     language_name: str | None = None,
     highlights_file: Path | None = None,
+    conflict_groups_file: Path | None = None,
+    conflict_group_cap: int = 12,
 ) -> Path:
     """Export one validated domain dataset and return its bundle directory.
 
@@ -439,10 +562,11 @@ def export_bundle(
                 "family_id": family_id,
                 "family_number": family_number,
                 "n_spans": len(family),
+                "newick": family_newick(family),
             })
             for span in sorted(family, key=lambda item: (item.left, item.right)):
                 membership_rows.append({"family_id": family_id, "span_id": span_id(span)})
-        write_tsv(target_dir / "families.tsv", ["family_id", "family_number", "n_spans"], family_rows)
+        write_tsv(target_dir / "families.tsv", ["family_id", "family_number", "n_spans", "newick"], family_rows)
         write_tsv(target_dir / "family_membership.tsv", ["family_id", "span_id"], membership_rows)
 
         conflict_rows = []
@@ -464,6 +588,8 @@ def export_bundle(
     table_spans, synthetic_root = with_synthetic_root(spans, n_positions)
     span_family_count, conflict_rows = write_analysis_tables(data_dir, table_spans, families, adjacency, tests)
     synthetic_id = f"1-{n_positions}" if synthetic_root else None
+    selection_metadata = export_selections(dataset, families, data_dir,
+                                           conflict_groups_file, conflict_group_cap)
 
     if planar_file is None:
         candidate = REPO_DIR / "planar_tables" / f"planar_{dataset}.tsv"
@@ -513,6 +639,7 @@ def export_bundle(
             for key, frequency in span_family_count.items() if key != synthetic_id
         ),
         "enumeration_truncated": truncated,
+        **selection_metadata,
         "producer": "scripts/analysis/export_planarsviz_data.py",
         "analysis_source": "scripts/analysis/laminar_analysis.py",
     }
@@ -614,11 +741,20 @@ def main() -> None:
         "--highlights-file", type=Path, default=None,
         help="TSV of named position highlights; default planar_tables/highlights_<dataset>.tsv if present",
     )
+    parser.add_argument(
+        "--conflict-groups-file", type=Path, default=None,
+        help="TSV of group_id, defining_span_id; default planar_tables/conflict_groups_<dataset>.tsv if present",
+    )
+    parser.add_argument(
+        "--conflict-group-cap", type=int, default=12,
+        help="Most trees the conflict-groups chart draws per group (default: 12)",
+    )
     args = parser.parse_args()
 
     bundle_dir = export_bundle(args.domain_file, args.output_dir, args.planar_file,
                                args.labels_file, args.root_element, args.language_name,
-                               args.highlights_file)
+                               args.highlights_file, args.conflict_groups_file,
+                               args.conflict_group_cap)
     print(f"Exported planarsviz bundle: {bundle_dir}")
 
 

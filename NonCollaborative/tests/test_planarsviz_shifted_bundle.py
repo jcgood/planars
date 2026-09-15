@@ -6,6 +6,9 @@ docs/PLAN_planarsviz_library.md section 10.2. Build and export it first:
         --domain-file tests/fixtures/domains_shifted_nyan.tsv \
         --planar-file tests/fixtures/planar_shifted_nyan.tsv \
         --labels-file tests/fixtures/display_labels_shifted_nyan.tsv \
+        --highlights-file tests/fixtures/highlights_shifted_nyan.tsv \
+        --conflict-groups-file tests/fixtures/conflict_groups_shifted_nyan.tsv \
+        --language-name "Shifted test data" \
         --output-dir results/planarsviz
 """
 
@@ -91,6 +94,17 @@ def test_families_identical_in_same_order():
                 out.setdefault(r["family_id"], set()).add(span)
         return out
     assert by_family(NYAN, True) == by_family(SHIFTED, False)
+
+
+def test_selections_pick_the_same_families():
+    # Section 10.2: the recovered selection rules pick the same family numbers.
+    assert rows(NYAN, "selections.tsv") == rows(SHIFTED, "selections.tsv")
+    a = rows(NYAN, "conflict_groups.tsv")
+    b = rows(SHIFTED, "conflict_groups.tsv")
+    for row in a:
+        if row["defining_span_id"]:
+            row["defining_span_id"] = shift_id(row["defining_span_id"])
+    assert a == b
 
 
 def test_conflicts_are_nyan_conflicts_shifted():

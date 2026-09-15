@@ -1,150 +1,176 @@
 # Single summary trees: the frequency tree and the four trees (charts 14 and
 # 13 in docs/PLAN_planarsviz_library.md).
 #
-# STEP 1 COPY: everything below the header is copied verbatim from
-# results/laminar_freqtree.r, lines 1-31, and results/laminar_four_trees.r,
-# lines 1-104, at commit 43a308f (generated scripts whose generator was never
-# committed), each wrapped in an uncalled function so loading the package
-# doesn't run it. No other edits. Literals are replaced with bundle data in
-# the next commit.
+# Copied, at commit 43a308f, from results/laminar_freqtree.r and
+# results/laminar_four_trees.r (generated scripts whose generator was never
+# committed; see the previous commit for the unchanged copies). The per-tree
+# block both scripts repeat became planarsviz_summary_tree(). Changes since
+# the copy:
+#   - literals replaced with bundle data: the Newick string (families.tsv
+#     `newick`), which family each tree shows (selections.tsv, rule recovered
+#     in section 4.1), the groups and their defining spans
+#     (conflict_groups.tsv), position labels, and the family counts in the
+#     titles and legend names;
+#   - the node table (freq, freq_scaled, edge_size) is counted from
+#     family_membership.tsv over the tree's comparison set -- all families, or
+#     the group's families -- with the scripts' rounding (6 places) and
+#     edge_size = 4 x share, instead of being pasted in;
+#   - library() and ggsave() removed; unused `n_families` dropped.
 
-freqtree_step1_copy <- function() {
-library(ape)
-library(ggplot2)
-library(ggtree)
-
-posLabel <- list("1" = "QM", "2" = "PreSbj", "3" = "Sbj", "4" = "PostSbj", "5" = "Neg1", "6" = "SM", "7" = "Neg2", "8" = "TAM", "9" = "OM", "10" = "Root", "11" = "Ext", "12" = "STAT", "13" = "CAUS", "14" = "APPL", "15" = "REC", "16" = "PASS", "17" = "FV", "18" = "2P", "19" = "Enc", "20" = "Obj1", "21" = "Obj2", "22" = "PostObj")
-
-n_families <- 69
-freq_tree <- read.tree(text="(1,(2,(3,4,((((5,((6,7,8)6-8,((9,(10,11,12,(13,14,15)13-15,16)10-16)9-16,17)9-17)6-17)5-17,18)5-18,19)5-19,20,21)5-21)3-21,22)2-22)1-22;")
-
-node_freq <- data.frame(
-  label      = c("1-22", "2-22", "3-21", "5-21", "5-19", "5-18", "5-17", "6-17", "9-17", "9-16", "10-16", "6-8", "13-15", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"),
-  freq       = c(69, 69, 69, 69, 69, 51, 37, 23, 25, 36, 38, 24, 40, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69),
-  freq_scaled= c(1.0, 1.0, 1.0, 1.0, 1.0, 0.73913, 0.536232, 0.333333, 0.362319, 0.521739, 0.550725, 0.347826, 0.57971, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
-  edge_size  = c(4.0, 4.0, 4.0, 4.0, 4.0, 2.956522, 2.144928, 1.333333, 1.449275, 2.086957, 2.202899, 1.391304, 2.318841, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0)
-)
-
-p_freqtree <- ggtree(freq_tree, layout='slanted', ladderize=FALSE) %<+%
-  node_freq +
-  layout_dendrogram() +
-  aes(alpha=freq_scaled, size=edge_size) +
-  scale_size_identity() +
-  scale_alpha_continuous(range=c(0.05, 1.0),
-    name=paste0('Proportion of 69 families')) +
-  geom_tiplab(geom='label', size=5, angle=0,
-    offset=-1, hjust=0.5, alpha=1, label.size=0,
-    aes(label=paste(label, posLabel[label], sep="\n")), lineheight=1) +
-  theme(panel.background=element_blank(),
-    plot.background=element_blank()) +
-  ggtitle('69 maximal families — edge weight = family count')
-
-ggsave('/Users/jcgood/gitrepos/planars/NonCollaborative/scripts/../results/nyan1308_freqtree.pdf', p_freqtree, width=16, height=10)
+#' Read representative-family selections from a bundle
+#'
+#' @param bundle A bundle from [read_planars_bundle()].
+#' @return A data frame with `selection`, `rank`, `family_id`.
+#' @export
+read_planars_selections <- function(bundle) {
+  path <- file.path(bundle$bundle_dir, "data", "selections.tsv")
+  if (!file.exists(path)) stop("Bundle has no selections.tsv; re-export it.", call. = FALSE)
+  out <- utils::read.delim(path, stringsAsFactors = FALSE, colClasses = "character")
+  out$rank <- as.integer(out$rank)
+  out
 }
 
-four_trees_step1_copy <- function() {
-library(ape)
-library(ggplot2)
-library(ggtree)
-library(patchwork)
+#' Read conflict groups from a bundle
+#'
+#' @param bundle A bundle from [read_planars_bundle()].
+#' @return A data frame with `group_id`, `defining_span_id` (empty for the
+#'   group of all remaining families), `family_id`, `draw_rank` (`NA` = not
+#'   drawn under the exporter's cap). Rows keep the exporter's group order.
+#' @export
+read_planars_conflict_groups <- function(bundle) {
+  path <- file.path(bundle$bundle_dir, "data", "conflict_groups.tsv")
+  if (!file.exists(path)) stop("Bundle has no conflict_groups.tsv; re-export it.", call. = FALSE)
+  out <- utils::read.delim(path, stringsAsFactors = FALSE, colClasses = "character")
+  if (!nrow(out)) stop("This bundle defines no conflict groups.", call. = FALSE)
+  out$draw_rank <- suppressWarnings(as.integer(out$draw_rank))
+  out
+}
 
-posLabel <- list("1" = "QM", "2" = "PreSbj", "3" = "Sbj", "4" = "PostSbj", "5" = "Neg1", "6" = "SM", "7" = "Neg2", "8" = "TAM", "9" = "OM", "10" = "Root", "11" = "Ext", "12" = "STAT", "13" = "CAUS", "14" = "APPL", "15" = "REC", "16" = "PASS", "17" = "FV", "18" = "2P", "19" = "Enc", "20" = "Obj1", "21" = "Obj2", "22" = "PostObj")
+planarsviz_selected_family <- function(bundle, selection) {
+  selections <- read_planars_selections(bundle)
+  hit <- selections$family_id[selections$selection == selection & selections$rank == 1L]
+  if (!length(hit)) {
+    stop("No selection `", selection, "` in this bundle. Available: ",
+         paste(unique(selections$selection), collapse = ", "), call. = FALSE)
+  }
+  hit[[1]]
+}
 
-# ── All 69 families (representative) ──
-p_all_tree <- read.tree(text="(1,(2,(3,4,((((5,((6,7,8)6-8,((9,(10,11,12,(13,14,15)13-15,16)10-16)9-16,17)9-17)6-17)5-17,18)5-18,19)5-19,20,21)5-21)3-21,22)2-22)1-22;")
-p_all_nf <- data.frame(
-  label      = c("1-22", "2-22", "3-21", "5-21", "5-19", "5-18", "5-17", "6-17", "9-17", "9-16", "10-16", "6-8", "13-15", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"),
-  freq       = c(69, 69, 69, 69, 69, 51, 37, 23, 25, 36, 38, 24, 40, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69),
-  freq_scaled= c(1.0, 1.0, 1.0, 1.0, 1.0, 0.73913, 0.536232, 0.333333, 0.362319, 0.521739, 0.550725, 0.347826, 0.57971, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
-  edge_size  = c(4.0, 4.0, 4.0, 4.0, 4.0, 2.956522, 2.144928, 1.333333, 1.449275, 2.086957, 2.202899, 1.391304, 2.318841, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0)
-)
-p_all <- ggtree(p_all_tree, layout='slanted', ladderize=FALSE) %<+%
-  p_all_nf +
-  layout_dendrogram() +
-  aes(alpha=freq_scaled, size=edge_size) +
-  scale_size_identity() +
-  scale_alpha_continuous(range=c(0.05, 1.0),
-    name=paste0('Prop. of 69 families')) +
-  geom_tiplab(geom='label', size=5, angle=0,
-    offset=-1, hjust=0.5, alpha=1, label.size=0,
-    aes(label=paste(label, posLabel[label], sep="\n")), lineheight=1) +
-  theme(panel.background=element_blank(),
-    plot.background=element_blank(),
-    legend.position='none') +
-  ggtitle('All 69 families (representative)')
+#' One summary tree weighted by family frequency
+#'
+#' Draws one family's tree; each branch's opacity and thickness show the
+#' share of the comparison families that contain that span.
+#'
+#' @param bundle A bundle from [read_planars_bundle()].
+#' @param family_id The family to draw.
+#' @param member_ids Family ids the frequencies are counted over.
+#' @param title Plot title.
+#' @param alpha_name Name of the opacity scale.
+#' @param legend Keep the opacity legend (`FALSE` hides it).
+#' @return A ggtree plot.
+#' @export
+planarsviz_summary_tree <- function(bundle, family_id, member_ids, title, alpha_name,
+                                    legend = TRUE) {
+  planarsviz_require_trees()
+  `%<+%` <- ggtree::`%<+%`
+  posLabel <- as.list(planarsviz_position_labels(bundle$position_labels))
+  newick <- bundle$families$newick[bundle$families$family_id == family_id]
+  if (length(newick) != 1L) stop("No family `", family_id, "` with a Newick string in this bundle.", call. = FALSE)
+  n_members <- length(member_ids)
+  membership <- bundle$family_membership
+  counts <- table(membership$span_id[membership$family_id %in% member_ids])
+  family_spans <- membership$span_id[membership$family_id == family_id]
+  tips <- as.character(seq_len(as.integer(bundle$metadata$n_positions)))
+  freq <- c(as.numeric(counts[family_spans]), rep(n_members, length(tips)))
 
-# ── Group A: [5-13] (10 families) ──
-p_A_tree <- read.tree(text="(1,(2,(3,4,((((((5,6)5-6,7,(8,(9,10)9-10)8-10,11,12,13)5-13,14,15,16,17)5-17,18)5-18,19)5-19,20,21)5-21)3-21,22)2-22)1-22;")
-p_A_nf <- data.frame(
-  label      = c("1-22", "2-22", "3-21", "5-21", "5-19", "5-18", "5-17", "5-13", "8-10", "9-10", "5-6", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"),
-  freq       = c(10, 10, 10, 10, 10, 5, 5, 10, 4, 6, 4, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10),
-  freq_scaled= c(1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 0.5, 1.0, 0.4, 0.6, 0.4, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
-  edge_size  = c(4.0, 4.0, 4.0, 4.0, 4.0, 2.0, 2.0, 4.0, 1.6, 2.4, 1.6, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0)
-)
-p_A <- ggtree(p_A_tree, layout='slanted', ladderize=FALSE) %<+%
-  p_A_nf +
-  layout_dendrogram() +
-  aes(alpha=freq_scaled, size=edge_size) +
-  scale_size_identity() +
-  scale_alpha_continuous(range=c(0.05, 1.0),
-    name=paste0('Prop. of 10 families')) +
-  geom_tiplab(geom='label', size=5, angle=0,
-    offset=-1, hjust=0.5, alpha=1, label.size=0,
-    aes(label=paste(label, posLabel[label], sep="\n")), lineheight=1) +
-  theme(panel.background=element_blank(),
-    plot.background=element_blank(),
-    legend.position='none') +
-  ggtitle('Group A: [5-13] (10 families)')
+  freq_tree <- ape::read.tree(text = newick)
 
-# ── Group B: [6-17] (23 families) ──
-p_B_tree <- read.tree(text="(1,(2,(3,4,((((5,((6,7,8)6-8,((9,(10,11,12,(13,14,15)13-15,16)10-16)9-16,17)9-17)6-17)5-17,18)5-18,19)5-19,20,21)5-21)3-21,22)2-22)1-22;")
-p_B_nf <- data.frame(
-  label      = c("1-22", "2-22", "3-21", "5-21", "5-19", "5-18", "5-17", "6-17", "9-17", "9-16", "10-16", "6-8", "13-15", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"),
-  freq       = c(23, 23, 23, 23, 23, 23, 23, 23, 10, 15, 14, 9, 16, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23),
-  freq_scaled= c(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.434783, 0.652174, 0.608696, 0.391304, 0.695652, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
-  edge_size  = c(4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 1.73913, 2.608696, 2.434783, 1.565217, 2.782609, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0)
-)
-p_B <- ggtree(p_B_tree, layout='slanted', ladderize=FALSE) %<+%
-  p_B_nf +
-  layout_dendrogram() +
-  aes(alpha=freq_scaled, size=edge_size) +
-  scale_size_identity() +
-  scale_alpha_continuous(range=c(0.05, 1.0),
-    name=paste0('Prop. of 23 families')) +
-  geom_tiplab(geom='label', size=5, angle=0,
-    offset=-1, hjust=0.5, alpha=1, label.size=0,
-    aes(label=paste(label, posLabel[label], sep="\n")), lineheight=1) +
-  theme(panel.background=element_blank(),
-    plot.background=element_blank(),
-    legend.position='none') +
-  ggtitle('Group B: [6-17] (23 families)')
+  node_freq <- data.frame(
+    label      = c(family_spans, tips),
+    freq       = freq,
+    freq_scaled= round(freq / n_members, 6),
+    edge_size  = round(4 * freq / n_members, 6)
+  )
 
-# ── Group C: neither (36 families) ──
-p_C_tree <- read.tree(text="(1,(2,(3,4,(((((5,6)5-6,7,(8,((9,(10,11,12,(13,14,15)13-15,16)10-16)9-16,17)9-17)8-17)5-17,18)5-18,19)5-19,20,21)5-21)3-21,22)2-22)1-22;")
-p_C_nf <- data.frame(
-  label      = c("1-22", "2-22", "3-21", "5-21", "5-19", "5-18", "5-17", "8-17", "9-17", "9-16", "10-16", "13-15", "5-6", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"),
-  freq       = c(36, 36, 36, 36, 36, 23, 9, 9, 15, 21, 24, 24, 20, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36),
-  freq_scaled= c(1.0, 1.0, 1.0, 1.0, 1.0, 0.638889, 0.25, 0.25, 0.416667, 0.583333, 0.666667, 0.666667, 0.555556, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
-  edge_size  = c(4.0, 4.0, 4.0, 4.0, 4.0, 2.555556, 1.0, 1.0, 1.666667, 2.333333, 2.666667, 2.666667, 2.222222, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0)
-)
-p_C <- ggtree(p_C_tree, layout='slanted', ladderize=FALSE) %<+%
-  p_C_nf +
-  layout_dendrogram() +
-  aes(alpha=freq_scaled, size=edge_size) +
-  scale_size_identity() +
-  scale_alpha_continuous(range=c(0.05, 1.0),
-    name=paste0('Prop. of 36 families')) +
-  geom_tiplab(geom='label', size=5, angle=0,
-    offset=-1, hjust=0.5, alpha=1, label.size=0,
-    aes(label=paste(label, posLabel[label], sep="\n")), lineheight=1) +
-  theme(panel.background=element_blank(),
-    plot.background=element_blank(),
-    legend.position='none') +
-  ggtitle('Group C: neither (36 families)')
+  p <- ggtree::ggtree(freq_tree, layout='slanted', ladderize=FALSE) %<+%
+    node_freq +
+    ggtree::layout_dendrogram() +
+    aes(alpha=freq_scaled, size=edge_size) +
+    scale_size_identity() +
+    scale_alpha_continuous(range=c(0.05, 1.0),
+      name=alpha_name) +
+    ggtree::geom_tiplab(geom='label', size=5, angle=0,
+      offset=-1, hjust=0.5, alpha=1, label.size=0,
+      aes(label=paste(label, posLabel[label], sep="\n")), lineheight=1) +
+    theme(panel.background=element_blank(),
+      plot.background=element_blank()) +
+    ggtitle(title)
+  if (!isTRUE(legend)) p <- p + theme(legend.position='none')
+  p
+}
 
-# ── 2x2 layout ──
-forest <- (p_all | p_A) / (p_B | p_C) +
-  plot_layout(guides='collect')
+#' Frequency tree
+#'
+#' The most consensus-like family (by default), with each branch weighted by
+#' the share of all maximal families containing it. Reproduces
+#' `nyan1308_freqtree.pdf`.
+#'
+#' @param bundle A bundle from [read_planars_bundle()].
+#' @param selection A selection from `selections.tsv`.
+#' @return A ggtree plot with attributes `planarsviz_size` and `planarsviz_units`.
+#' @export
+plot_frequency_tree <- function(bundle, selection = "consensus_all") {
+  validate_planars_bundle(bundle)
+  n <- nrow(bundle$families)
+  p <- planarsviz_summary_tree(
+    bundle, planarsviz_selected_family(bundle, selection), bundle$families$family_id,
+    title = paste0(n, ' maximal families — edge weight = family count'),
+    alpha_name = paste0('Proportion of ', n, ' families'))
+  attr(p, "planarsviz_size") <- c(width = 16, height = 10)
+  attr(p, "planarsviz_units") <- "in"
+  p
+}
 
-ggsave('/Users/jcgood/gitrepos/planars/NonCollaborative/scripts/../results/nyan1308_four_trees.pdf', forest, width=24, height=16)
+#' Four trees: the most consensus-like family overall and per conflict group
+#'
+#' One panel for all families and one per conflict group, each showing the
+#' group's most consensus-like family weighted by frequency within the group.
+#' Reproduces `nyan1308_four_trees.pdf` (for three groups).
+#'
+#' @param bundle A bundle from [read_planars_bundle()].
+#' @param other_label Title text for the group with no defining span.
+#' @return A patchwork plot with attributes `planarsviz_size`,
+#'   `planarsviz_units` and `planarsviz_parts` (the panels, all-families first).
+#' @export
+plot_four_trees <- function(bundle, other_label = "neither") {
+  validate_planars_bundle(bundle)
+  groups <- read_planars_conflict_groups(bundle)
+  n <- nrow(bundle$families)
+  p_all <- planarsviz_summary_tree(
+    bundle, planarsviz_selected_family(bundle, "consensus_all"), bundle$families$family_id,
+    title = paste0('All ', n, ' families (representative)'),
+    alpha_name = paste0('Prop. of ', n, ' families'), legend = FALSE)
+  panels <- lapply(unique(groups$group_id), function(g) {
+    rows <- groups[groups$group_id == g, , drop = FALSE]
+    defining <- rows$defining_span_id[[1]]
+    what <- if (is.na(defining) || defining == "") other_label else paste0('[', defining, ']')
+    planarsviz_summary_tree(
+      bundle, planarsviz_selected_family(bundle, paste0("consensus_", g)), rows$family_id,
+      title = paste0('Group ', g, ': ', what, ' (', nrow(rows), ' families)'),
+      alpha_name = paste0('Prop. of ', nrow(rows), ' families'), legend = FALSE)
+  })
+  parts <- c(list(p_all), panels)
+
+  # The source script's 2x2 layout, kept exactly for three groups; any other
+  # number of groups is laid out two panels per row.
+  forest <- if (length(panels) == 3L) {
+    (parts[[1]] | parts[[2]]) / (parts[[3]] | parts[[4]]) +
+      plot_layout(guides='collect')
+  } else {
+    patchwork::wrap_plots(parts, ncol = 2) + plot_layout(guides='collect')
+  }
+  attr(forest, "planarsviz_size") <- c(width = 24, height = 16)
+  attr(forest, "planarsviz_units") <- "in"
+  attr(forest, "planarsviz_parts") <- parts
+  forest
 }
