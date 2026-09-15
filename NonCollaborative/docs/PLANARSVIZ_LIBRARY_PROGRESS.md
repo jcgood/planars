@@ -44,6 +44,13 @@ Honesty rule: nothing below says "matches" without naming the comparison file.
    so every `planarsviz-library` commit exists only on this machine (worktree
    `/Users/jcgood/gitrepos/planars-planarsviz`). Push it yourself after the
    usual `coded_data` pull, or tell me to.
+9. **Conflict-groups chart has no panel titles.** The script sets titles
+   ("All 69 families", "Group A: [5–13] (10 families)"…) with
+   `plot_annotation()` on each panel, but patchwork ignores annotations on a
+   panel nested inside a larger layout, so the committed PDF shows none —
+   the reader can't tell which small panel is which group. Reproduced
+   faithfully (the library builds the same titles, equally invisible). Fix
+   by drawing the titles another way?
 
 ---
 
@@ -333,4 +340,28 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
   row); rewritten to match the exporter.
 - R6 search: clean.
 - Looked at by Claude: yes (both shifted side-by-sides). Seen by Jeff: no.
+- Status: done pending Jeff's review.
+
+## Chart 12: conflict groups
+- Source copied: `results/laminar_conflict_groups.r:1-1684` →
+  `R/conflict_groups.R`, commit `3cab0a8` (written by a small script and
+  checked line-for-line identical, since 1684 lines are too many to retype).
+- Replaced (`2af1e7d`) by `planarsviz_conflict_tree()` and
+  `plot_conflict_groups(bundle, other_label = "neither")`. Uses the
+  exporter files added for charts 13–14 (`families.tsv` newick,
+  `conflict_groups.tsv` draw ranks); no new exporter fields.
+- Rules the pasted numbers follow, now computed in R: per-panel opacity
+  `1 − 0.01^(1/trees drawn)` (69 → 0.064563, 10 → 0.369043, 12 → 0.318708);
+  thickness `sqrt(span family count over ALL families)`, not within the
+  group; groupOTU order by left edge, larger first. No tip labels. Opacity
+  and colour are set on the built layer (`aes_params`), as the script does.
+- Numbers comparison (`check_conflict_groups.R`): all 103 trees' plot data
+  identical. Pixel comparison: `comparisons/nyan1308_conflict_groups.png`,
+  0.0000%.
+- Shifted-dataset check (`comparisons/shifted/shifted_nyan_conflict_groups.png`):
+  same shapes plus the two new leading tips; group membership and draw order
+  identical (bundle test). No leaks.
+- Question 9 above: panel titles are invisible in the original too.
+- R6 search: clean.
+- Looked at by Claude: yes. Seen by Jeff: no.
 - Status: done pending Jeff's review.
