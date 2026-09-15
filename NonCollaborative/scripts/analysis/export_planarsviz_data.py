@@ -116,6 +116,91 @@ def export_forests(domain_file: Path, domains_dir: Path, data_dir: Path) -> None
         json.dumps(index, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
 
+
+def tree_rows(families) -> list[dict]:
+    """Per-family Newick, groupOTU span order, and each span's convergence.
+
+    Same construction as generate_r_overlay_script(): spans sorted by size
+    (descending) to build the tree, then by left edge for groupOTU. Thickness
+    isn't stored -- the overlay charts raise convergence to a drawing-choice
+    exponent, so R does that.
+    """
+    rows = []
+    for tree_number, family_set in enumerate(families, start=1):
+        family_list = sorted(family_set, key=lambda s: s.size, reverse=True)
+        children = get_children(build_parent_map(family_list))
+        root = max(family_list, key=lambda s: s.size)
+        ordered = sorted(family_list, key=lambda s: s.left)
+        rows.append({
+            "tree_number": tree_number,
+            "newick": span_to_newick(root, children) + ";",
+            "group_spans": ";".join(f"{s.left}-{s.right}" for s in ordered),
+            "group_convergence": ";".join(str(s.convergence) for s in ordered),
+        })
+    return rows
+
+
+def export_overlay_groups(domain_file: Path, domains_dir: Path, data_dir: Path) -> None:
+    """Write the trees of every group the overlay charts can stack.
+
+    Replays run_domain_overlay(): one group per laminar_analysis.OVERLAY_GROUPS
+    entry (the subset's families, but using the FULL dataset's position count,
+    unlike the per-class forests), plus group "all" (every family of the full
+    dataset, drawn in black by nyan1308_all_families_labeled.r). Groups whose
+    domain types don't occur in the data are skipped.
+    """
+    group_dir = data_dir / "overlay_groups"
+    group_dir.mkdir(parents=True, exist_ok=True)
+    observed = set(
+        pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")["Domain_Type"].dropna().str.strip()
+    )
+    _, n_positions = load_spans(domain_file.name, str(domains_dir))
+    groups = [(short, list(types), colour) for types, colour, short in OVERLAY_GROUPS]
+    groups.append(("all", None, "black"))
+    index = []
+    for group_id, types, colour in groups:
+        if types is not None and not set(types) & observed:
+            continue
+        spans, _ = load_spans(domain_file.name, str(domains_dir), subset=types)
+        if not spans:
+            continue
+        families, truncated = enumerate_maximal_laminar_families(
+            spans, find_conflicts(spans), n_positions
+        )
+        if truncated:
+            raise RuntimeError(f"Family enumeration was truncated for overlay group {group_id!r}.")
+        write_tsv(group_dir / f"{group_id}.tsv",
+                  ["tree_number", "newick", "group_spans", "group_convergence"], tree_rows(families))
+        index.append({
+            "group_id": group_id,
+            "domain_types": types,
+            "colour": colour,
+            "n_trees": len(families),
+        })
+    (data_dir / "overlay_groups.json").write_text(
+        json.dumps(index, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+
+def export_highlights(dataset: str, data_dir: Path, highlights_file: Path | None) -> None:
+    """Copy a dataset's named position highlights into the bundle.
+
+    Highlights (e.g. nyan1308's orthographic word, positions 5-19, with the
+    final vowel at 17 called out) are facts about the language, so they are
+    data: planar_tables/highlights_<dataset>.tsv, columns highlight_id, name,
+    left, right, colour (a default the chart may override), layer (later
+    layers win where ranges overlap). Absent file = no highlights.
+    """
+    if highlights_file is None:
+        candidate = REPO_DIR / "planar_tables" / f"highlights_{dataset}.tsv"
+        highlights_file = candidate if candidate.exists() else None
+    fields = ["highlight_id", "name", "left", "right", "colour", "layer"]
+    rows = []
+    if highlights_file is not None:
+        with highlights_file.open(encoding="utf-8", newline="") as handle:
+            rows = list(csv.DictReader(handle, delimiter="\t"))
+    write_tsv(data_dir / "highlights.tsv", fields, rows)
+
 # Domain-type display style: colour, the order types are sorted in within a
 # layer (df.plot()'s factor levels), the order they appear in a legend, and the
 # order of per-type panels (facet_order, from nyan_boundary_skyline.r's facet
@@ -264,6 +349,7 @@ def export_bundle(
     labels_file: Path | None = None,
     root_element: str = "root",
     language_name: str | None = None,
+    highlights_file: Path | None = None,
 ) -> Path:
     """Export one validated domain dataset and return its bundle directory.
 
@@ -500,6 +586,8 @@ def export_bundle(
         json.dumps(subset_index, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     export_forests(domain_file, domains_dir, data_dir)
+    export_overlay_groups(domain_file, domains_dir, data_dir)
+    export_highlights(dataset, data_dir, highlights_file)
     return bundle_dir
 
 
@@ -522,10 +610,15 @@ def main() -> None:
         "--language-name", default=None,
         help="Human-readable language name for chart titles, e.g. Chichewa (titles fall back to the dataset id)",
     )
+    parser.add_argument(
+        "--highlights-file", type=Path, default=None,
+        help="TSV of named position highlights; default planar_tables/highlights_<dataset>.tsv if present",
+    )
     args = parser.parse_args()
 
     bundle_dir = export_bundle(args.domain_file, args.output_dir, args.planar_file,
-                               args.labels_file, args.root_element, args.language_name)
+                               args.labels_file, args.root_element, args.language_name,
+                               args.highlights_file)
     print(f"Exported planarsviz bundle: {bundle_dir}")
 
 

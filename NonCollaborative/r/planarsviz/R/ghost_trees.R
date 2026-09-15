@@ -33,23 +33,28 @@ planarsviz_require_trees <- function() {
 #' @param strengths Numeric thickness for each span, same order.
 #' @param alphaval Opacity of this tree.
 #' @param colour Line colour.
+#' @param spacer_lineheight `lineheight` of the invisible tip-label spacer, or
+#'   `NULL` to leave it unset. The forest generator (generate_r_script) sets
+#'   1; the overlay generator (generate_r_overlay_script) leaves it unset.
 #' @return A ggtree plot with an invisible tip-label spacer.
 #' @export
-planarsviz_ghost_tree <- function(newick, group_spans, strengths, alphaval, colour) {
+planarsviz_ghost_tree <- function(newick, group_spans, strengths, alphaval, colour,
+                                  spacer_lineheight = 1) {
   planarsviz_require_trees()
   tree1 <- ape::read.tree(text = newick)
   spans <- lapply(strsplit(group_spans, "-", fixed = TRUE), as.numeric)
   names(spans) <- letters[seq_along(spans)]
   tree1grouped <- ggtree::groupOTU(tree1, spans)
   strengthMap1 <- c(0.5, strengths)
+  spacer_args <- list(geom="label", size=5, angle=0,
+    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA)
+  if (!is.null(spacer_lineheight)) spacer_args$lineheight <- spacer_lineheight
   treeplot1 <- ggtree::ggtree(tree1grouped,
     aes(size=(strengthMap1[group])),
     layout="slanted", ladderize=FALSE,
     alpha=alphaval, color=colour) +
     ggtree::layout_dendrogram() +
-    ggtree::geom_tiplab(geom="label", size=5, angle=0,
-      offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA,
-      lineheight=1) +
+    do.call(ggtree::geom_tiplab, spacer_args) +
     theme(panel.background=element_blank(),
       plot.background=element_blank(),
       legend.position="none",

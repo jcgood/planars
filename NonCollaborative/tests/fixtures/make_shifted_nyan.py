@@ -81,6 +81,15 @@ def main():
         writer = csv.DictWriter(handle, fieldnames=["position", "label"], delimiter="\t", lineterminator="\n")
         writer.writeheader()
         writer.writerows(display)
+    with (NC / "planar_tables" / "highlights_nyan1308.tsv").open(encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle, delimiter="\t")
+        hl_fields = reader.fieldnames
+        highlights = list(reader)
+    with (FIXTURES / "highlights_shifted_nyan.tsv").open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=hl_fields, delimiter="\t", lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(dict(row, left=str(int(row["left"]) + SHIFT), right=str(int(row["right"]) + SHIFT))
+                         for row in highlights)
     print("wrote", ", ".join(p.name for p in sorted(FIXTURES.glob("*shifted_nyan.tsv"))))
 
 
