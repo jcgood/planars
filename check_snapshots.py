@@ -8,6 +8,7 @@ Exits with code 0 if all snapshots match, 1 if any differ.
 """
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
@@ -80,13 +81,22 @@ def main() -> None:
     # remote, CI will see different data and the snapshot check will fail.
     coded_data = ROOT / "coded_data"
     if (coded_data / ".git").exists():
+        # Git runs hooks with GIT_DIR (and, in a linked worktree, related
+        # variables) set to *this* repository. Passed on unchanged, they make
+        # `git -C coded_data` inspect planars instead of planars-data -- from a
+        # second worktree that reports every planars file as an "uncommitted
+        # change" and blocks a legitimate push. Drop them so git finds
+        # planars-data's own repository.
+        repo_location_vars = {"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR",
+                              "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_PREFIX"}
+        env = {k: v for k, v in os.environ.items() if k not in repo_location_vars}
         dirty = subprocess.run(
             ["git", "-C", str(coded_data), "status", "--porcelain"],
-            capture_output=True, text=True,
+            capture_output=True, text=True, env=env,
         ).stdout.strip()
         ahead = subprocess.run(
             ["git", "-C", str(coded_data), "log", "@{u}..", "--oneline"],
-            capture_output=True, text=True,
+            capture_output=True, text=True, env=env,
         ).stdout.strip()
         if dirty or ahead:
             print("\ncoded_data/ is out of sync with remote planars-data:")
