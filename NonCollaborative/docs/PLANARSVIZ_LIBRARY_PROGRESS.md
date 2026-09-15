@@ -443,3 +443,52 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
 - R6 search: comments and a point-shape number only.
 - Looked at by Claude: yes (shifted side by side). Seen by Jeff: no.
 - Status: done pending Jeff's review.
+
+## Chart 16: tree-count bar charts (4 files) — cross-language port (§4.3)
+- Step 1, calculation: the exporter calls `laminar_tree_counts.py`'s
+  `collect_counts()` and `collect_bundle_counts()` and writes
+  `tree_counts.tsv` (the script's four columns, plus `kind`, `label`,
+  `colour`). Both functions gained an optional list of types/bundles,
+  because with a fixed list of five types the shifted data (no
+  tonosegmental) crashed `load_spans()`. Defaults unchanged: re-running the
+  script gives a `nyan1308_tree_counts.tsv` identical to the committed one,
+  and `verify_tree_counts_export.py` finds the exported numbers identical,
+  15 rows.
+- Step 2, visual settings (all listed with source lines in the header of
+  `R/tree_counts.R`):
+  - house style, lines 169–213: 8 × 3.8 in; ascending, ties in input order;
+    bar height 0.45; value labels 6 pt right, 15 pt; x label 14 pt; x to
+    1.2 × max; tick labels 14/13 pt; no spines; tick length 0; transparent;
+    no title;
+  - vertical, lines 142–166 and 242–258: 7 × 5 / 8 × 5 in; colours `#444444`
+    / `#777777`, `#222222`; widths 0.55 / 0.6; value labels 5 pt above,
+    12 pt; y to 1.18 / 1.25 × max; default 10 pt ticks and y label, 12 pt
+    title; box; white background.
+  - Two unstated matplotlib defaults the charts depend on, found by
+    comparing: bars fill their axis up to a 5% margin (a single bar fills
+    most of the panel), and ticks step by 1/2/2.5/5/10 with at most 9
+    intervals (the bundles chart counts by 2.5). Both reproduced.
+- Step 3: `plot_tree_counts(bundle, chart = "by_class" | "bundles" | "all" |
+  "without_adjacent")`. Title stem from the bundle (`Chichewa (nyan1308)`),
+  not typed in.
+- Step 4, comparison (`check_tree_counts.R`,
+  `comparisons/nyan1308_tree_count_*.png`): 8.1%, 6.8%, 7.2%, 7.1%
+  differing pixels. By eye: bar lengths, order, colours, ticks, value labels
+  and margins match. Remaining differences are fonts (R's sans is narrower
+  than DejaVu Sans) and hyphens in labels drawing long like minus signs (a
+  WinAnsi PDF encoding was tried and changed nothing). Horizontal renders are
+  1 px shorter than the references (380 vs 381).
+- Transparency (`pdftocairo -png -transp`, `check_transparency.py`): both
+  house-style charts' backgrounds fully transparent, corner alpha 0, 85%/84%
+  of pixels transparent vs 86%/85% for the references.
+- Shifted-dataset check (`comparisons/shifted/shifted_nyan_tree_count_*.png`;
+  new test `test_tree_counts_unchanged`): same counts; `Tonal` bar in grey;
+  the syntax-like bundle drops to 4 trees (defined by type names, as in
+  chart 6), which reorders the bundles chart and changes its ticks to steps
+  of 1. No leaks.
+- The matplotlib plotting functions are not deleted (§4.3: only after Jeff
+  approves cutover).
+- R6 search: comments only.
+- Looked at by Claude: yes (all four comparisons twice, the shifted type and
+  bundles charts). Seen by Jeff: no.
+- Status: done pending Jeff's review.
