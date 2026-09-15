@@ -169,3 +169,73 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
   (rendering choices).
 - Looked at by Claude: yes. Seen by Jeff: no.
 - Status: done pending Jeff's review.
+
+## Chart 15: span-frequency chart
+- Source copied: `results/laminar_spanchart.r:1-35` → `R/spanchart.R`, commit `7c064b9`.
+  The script is generated and its generator was never committed; its data
+  frame was pasted in, so the rules behind it were recovered by matching its
+  values (`891575f`), all exact for nyan1308:
+  - rows: every span except the full root, ordered by family count
+    ascending; ties in the order `report_families()` first counts spans
+    (iterating families in order, each family's frozenset in Python's
+    iteration order) — deterministic but arbitrary. Exporter writes
+    `spans.tsv` `span_chart_rank`. (Simpler guesses — first appearance in the
+    domain file, `report_convergence()` order — were tested and did not match.)
+  - width `0.5 + 5 × share`, share `round(count/69, 6)`;
+  - colour: a second palette (Paul Tol "bright"), taking the colour of the
+    span's highest-priority domain type (morphosyntactic > phonological >
+    tonosegmental > intonational > length). Exporter writes `alt_colour`,
+    `colour_priority`.
+- Numbers comparison (`check_spanchart.R`): plot data, title, x labels, legend
+  name identical. Pixel comparison: `comparisons/nyan1308_spanchart.png`, 0.0000%.
+- Shifted-dataset check (`comparisons/shifted/shifted_nyan_spanchart.png`):
+  expected differences only — `[3-24]` appears as a row (it is not the full
+  `[1-24]` root), tie order among equal counts differs (the recovered tie rule
+  depends on Python set iteration, which changes with coordinates), `tonal`
+  spans in fallback grey, renamed labels. No leaks.
+- **Question 5 for Jeff:** the working chart's x-axis drops tick labels left of
+  the leftmost charted span (nyan1308's axis starts at PreSbj, not QM, because
+  the root `[1-22]` is excluded and nothing else starts at 1). Reproduced
+  faithfully; say if it should show every position instead.
+- **Question 6 for Jeff:** the span chart's colour for `length` (`#AA3377`,
+  Tol purple) is inferred, not observed — in nyan1308 every length span also
+  has a higher-priority type, so length never decides a colour. Matches
+  `visualizations.md` ("length = purple").
+- Looked at by Claude: yes. Seen by Jeff: no.
+- Status: done pending Jeff's review.
+
+## Chart 6: per-class laminar forests (8 files)
+- Source copied: `results/nyan1308_inton_laminar_forest.r:1-37` (what
+  `generate_r_script()` writes, one tree's worth) → `R/ghost_trees.R`,
+  commit `34c8738`. Shared building block `planarsviz_ghost_tree()` + chart
+  function `plot_laminar_forest(bundle, forest_id)` (`c4ed37f`).
+- Exporter additions: `data/forests.json` + `data/forests/<id>.tsv` (per tree:
+  Newick, groupOTU span order, thickness), computed with the same
+  `build_parent_map`/`get_children`/`span_to_newick` the generator uses and
+  the **subset's own position count** (length 18, tono 17, phon 21) — the
+  analysis subsets in `data/subsets/` use the full 22 and would draw
+  different trees. `verify_forest_export.py`: all 8 exported forests
+  reproduce their generated scripts tree by tree (Newick, groups, thickness,
+  alpha, colour, count).
+- Bundles moved to `scripts/analysis/planars_groupings.py`, read by
+  `laminar_analysis.py` `__main__`, `laminar_tree_counts.py`, and the
+  exporter. Verified unchanged: bundle tree counts equal
+  `nyan1308_tree_counts.tsv`; `laminar_analysis.main()` regenerates the three
+  bundle forest scripts byte-identically apart from the `ggsave` path line.
+- Numbers comparison (`check_forests.R`): every tree's ggplot_build data
+  identical for all 8 forests. Pixel comparison: all 8 at 0.0000%
+  (`comparisons/nyan1308_*_laminar_forest.png`).
+- Shifted-dataset check: another exporter leak found and fixed — a forest
+  whose domain types don't occur in the data (tono, since tonosegmental is
+  renamed) crashed `load_spans()`; now skipped. 7 shifted forests rendered
+  (`comparisons/shifted/`): shapes unchanged, positions +2, renamed labels,
+  per-class position counts +2. Expected consequence of the rename, not a
+  leak: the syntax-like bundle is defined by type *names*, so without
+  `tonosegmental` it has 4 trees instead of 16. Label boxes crowd slightly on
+  forests with 23–24 tips (same 20-inch canvas).
+- §5 fixes checked: invisible spacer `colour = NA, fill = NA`; `vjust = 0.35`
+  on the original 20×14 in canvas; alpha formula `(1 − 0.01^(1/n))/2`; white
+  page background.
+- R6 search: clean (rendering constants only).
+- Looked at by Claude: yes (tono and shifted phon side by side). Seen by Jeff: no.
+- Status: done pending Jeff's review.
