@@ -402,3 +402,44 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
 - R6 search: clean.
 - Looked at by Claude: yes. Seen by Jeff: no.
 - Status: done pending Jeff's review.
+
+## Chart 11: ForestSpans plot (2 files)
+- Source copied: `results/nyan1308_forestspans_plot.r:1-140` (written by
+  `make_forestspans_table.py` `make_r_plot_script()`) → `R/forestspans.R`,
+  commit `e0a7791` (line-for-line check). The no-tono script is the same
+  code with other data rows (checked by diff), so it was not copied.
+- One function (decision on options, §4.2): `plot_forestspans(bundle,
+  subset = NULL)`; `subset = "no_tono"` gives the no-tonosegmental chart.
+- Exporter additions:
+  - `spans.tsv` `blend_colour` — `mix_hex_colors()` copied into the
+    exporter (Python rounding kept). One deliberate change: an unknown
+    domain type contributes the fallback grey instead of being skipped.
+  - `planars_groupings.FILTERS` (`no_tono` leaves out tonosegmental), the
+    one place a filter is defined. Exported as a fresh analysis in
+    `subsets/no_tono/` (`kind: filter`, only when the data has a type to
+    leave out); `subsets.json` and subset metadata gain `kind` and
+    `domain_types`. This is the §4.2 "domain-type filter = fresh analysis".
+  - `verify_forestspans_export.py`: both pasted tables (26 and 20 rows:
+    layer, edges, count, colour, row order) and tree counts (69, 24)
+    rebuilt exactly from the bundle.
+- Computed in R: layer = size rank inverted, rows by count then layer,
+  synthetic root dropped; tree count, root and position count from the
+  bundle; legend colours and order from `domain_types.tsv`.
+- §5 fixes checked: `show.legend = FALSE` on the `I(Color)` layers; margins
+  by `expansion(add = 1)`, no hard limits.
+- Numbers comparison (`check_forestspans.R`): plot data, row order and
+  legend title identical for both. Pixel comparison:
+  `comparisons/nyan1308_forestspans_plot{,_no_tono}.png`, both 0.0000%.
+  Forest, overlay and selection export checks re-run after the exporter
+  change: still identical.
+- Shifted-dataset check (`comparisons/shifted/shifted_nyan_forestspans_plot.png`):
+  same counts and layer numbers; positions +2, root line at 12; `tonal`
+  spans grey or grey-blended. `no_tono` skipped (the shifted data has no
+  tonosegmental to leave out). Two faithful behaviours, not leaks:
+  - the x-axis starts at 2, because its range comes from the data and the
+    shifted spans start at 3 — the same kind of behaviour as question 5;
+  - the legend lists every known domain type (including tonosegmental,
+    absent here) plus `tonal`, as the original always listed its five.
+- R6 search: comments and a point-shape number only.
+- Looked at by Claude: yes (shifted side by side). Seen by Jeff: no.
+- Status: done pending Jeff's review.
