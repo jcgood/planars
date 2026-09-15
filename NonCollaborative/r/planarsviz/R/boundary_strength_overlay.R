@@ -1,28 +1,23 @@
 # Boundary-strength overlay (chart 18 in docs/PLAN_planarsviz_library.md).
 #
-# STEP 1 COPY: everything below the header is copied verbatim from
-# scripts/analysis/boundary_strength_plot.r, lines 1-157, at commit 43a308f,
-# wrapped in an uncalled function so loading the package doesn't run it.
-# No other edits. Literals are replaced with bundle data in the next commit.
-
-boundary_strength_overlay_step1_copy <- function() {
-# Combined left/right boundary-strength overlay(s) for Chichewa (nyan1308),
-# read from nyan1308_boundary_strength*.tsv (written by boundary_strength.py,
-# including its --subset variants). Same dodged-bar convention as
-# nyan_boundary_skyline.r's p_all panel, but for boundary strength (summed --
-# weighted by how many of the source dataset's maximal laminar families each
-# contributing span appears in), not raw test counts. The capped/ceilinged
-# reference values in that TSV are deliberately not used here -- summed is
-# the analytical object, see boundary_strength.py's own docstring.
+# Copied, at commit 43a308f, from scripts/analysis/boundary_strength_plot.r
+# (see the previous commit for the unchanged copy); its function body is kept
+# as it was. Changes since the copy:
+#   - literals replaced with bundle data: the strength table
+#     (boundary_strength.tsv of the full analysis or a subsets.json analysis,
+#     instead of a TSV path), position labels (position_labels.tsv), and the
+#     label text colours -- black, red for positions 5-19, #0072B5 for 17,
+#     typed in there -- from a named highlight in highlights.tsv
+#     (`highlight`, default "orthographic_word", which holds exactly those
+#     ranges and colours for nyan1308);
+#   - the two calls at the end of the script (all types: #0072B2/#E69F00;
+#     without tonosegmental: #009E73/#CC79A7 from the no_tono TSV) become
+#     `subset` and `colours` arguments; the defaults reproduce the first;
+#   - library() and ggsave() removed; the script's canvas (13 x 7 in) is
+#     returned as an attribute.
+# The notes below are the script's own, unchanged.
 #
-# Refactored into one function + one call per variant (currently: all domain
-# types pooled, and the same thing with tonosegmental excluded) so a future
-# domain-type breakdown is a new call with a new TSV/color pair, not a
-# rewrite -- matching boundary_strength.py's own --subset design.
-#
-# Notes on the non-obvious choices, all still apply to every variant below:
-#  - Colors: each variant gets its own colorblind-safe pair (see call sites),
-#    deliberately ordinary choices rather than anything unusual.
+# Notes on the non-obvious choices, all still apply to every variant:
 #  - No title/subtitle on the chart itself -- kept out entirely rather than
 #    risk a stale or wrong description drifting from the code again.
 #  - Boxed "N\nName" tick labels, matching the tip-label convention used
@@ -42,34 +37,40 @@ boundary_strength_overlay_step1_copy <- function() {
 #    listed explicitly, none below 0), so it just reads as blank space
 #    reserved for the labels. Label fill stays white to keep the boxes
 #    readable against the density colors above them; the label TEXT color
-#    follows the same orthographic-word convention as
-#    nyan1308_all_families_labeled_wordhood.r: black by default, red for
-#    positions 5-19 (the orthographic word), blue (#0072B5, not green --
-#    stays distinguishable from red under red-green colorblindness) for
-#    position 17 specifically (FV, the final vowel). This label-text blue is
-#    independent of whatever the bar/density colors happen to be for a given
-#    variant -- one marks a specific position, the other marks "Left edge";
-#    kept distinct on purpose.
+#    follows the highlight (see above). This label-text blue is independent
+#    of whatever the bar/density colors happen to be for a given variant --
+#    one marks a specific position, the other marks "Left edge"; kept
+#    distinct on purpose.
 #  - A semi-transparent weighted density curve underlaid behind the bars for
-#    each side, via base R's density(x, weights=) -- no need for
-#    Python/scipy here, R's own density() takes weights natively. Each
-#    side's curve is rescaled so its own peak matches that side's own
-#    tallest bar, purely so the shape reads at a comparable height to the
-#    bars on the same panel -- not a second, separately-labeled axis.
+#    each side, via base R's density(x, weights=) -- R's own density() takes
+#    weights natively. Each side's curve is rescaled so its own peak matches
+#    that side's own tallest bar, purely so the shape reads at a comparable
+#    height to the bars on the same panel -- not a second, separately-labeled
+#    axis.
 
-library(ggplot2)
-
-output_dir <- "../../results"
-
-position_labels <- c(
-  "QM", "PreSbj", "Sbj", "PostSbj", "Neg1", "SM", "Neg2", "TAM",
-  "OM", "Root", "Ext", "STAT", "CAUS", "APPL", "REC", "PASS",
-  "FV", "2P", "Enc", "Obj1", "Obj2", "PostObj"
-)
-
-plot_boundary_strength <- function(input_file, output_name, boundary_colors) {
-  strength <- read.delim(input_file, stringsAsFactors = FALSE, check.names = FALSE)
+#' Boundary-strength overlay
+#'
+#' Left- and right-edge boundary strength per position as dodged bars over
+#' rescaled weighted density curves, with boxed position labels coloured by
+#' a position highlight. Reproduces `nyan1308_boundary_strength_overlay.pdf`;
+#' with `subset = "no_tono", colours = c(Left = "#009E73", Right = "#CC79A7")`,
+#' `nyan1308_boundary_strength_overlay_no_tono.pdf`.
+#'
+#' @param bundle A bundle from [read_planars_bundle()].
+#' @param subset `NULL` for the full analysis, or a `subset_id` from `subsets.json`.
+#' @param colours Named fill colours for `Left` and `Right`.
+#' @param highlight A `highlight_id` from `highlights.tsv` for the label text
+#'   colours, or `NULL` for all black.
+#' @return A ggplot object with attributes `planarsviz_size` and `planarsviz_units` (`"in"`).
+#' @export
+plot_boundary_strength_overlay <- function(bundle, subset = NULL,
+                                           colours = c(Left = "#0072B2", Right = "#E69F00"),
+                                           highlight = "orthographic_word") {
+  validate_planars_bundle(bundle)
+  strength <- read_planars_boundary_strength(bundle, subset)$strength
+  boundary_colors <- colours
   n_positions <- nrow(strength)
+  position_labels <- unname(planarsviz_position_labels(bundle$position_labels)[as.character(seq_len(n_positions))])
 
   # ---- bars ----
   long <- rbind(
@@ -84,7 +85,7 @@ plot_boundary_strength <- function(input_file, output_name, boundary_colors) {
   # weight (shouldn't happen here, but guarded) would break that, so this
   # assumes at least one non-zero weight per side, matching the real data.
   weighted_density <- function(x, w, side_label, peak_target) {
-    d <- density(x, weights = w / sum(w), bw = 1, from = 0.5, to = n_positions + 0.5, n = 512)
+    d <- stats::density(x, weights = w / sum(w), bw = 1, from = 0.5, to = n_positions + 0.5, n = 512)
     scale_factor <- peak_target / max(d$y)
     data.frame(Position = d$x, Density = d$y * scale_factor, Boundary = side_label)
   }
@@ -99,9 +100,11 @@ plot_boundary_strength <- function(input_file, output_name, boundary_colors) {
   label_y <- -0.09 * max_strength
   y_lower <- label_y - 0.05 * max_strength  # extra buffer below the label row itself
 
-  label_colors <- setNames(rep("black", n_positions), as.character(seq_len(n_positions)))
-  label_colors[as.character(5:19)] <- "red"
-  label_colors["17"] <- "#0072B5"
+  label_colors <- if (is.null(highlight)) {
+    stats::setNames(rep("black", n_positions), as.character(seq_len(n_positions)))
+  } else {
+    planarsviz_highlight_colours(bundle, highlight)
+  }
   label_df <- data.frame(
     Position = seq_len(n_positions),
     Label = paste(seq_len(n_positions), position_labels[seq_len(n_positions)], sep = "\n"),
@@ -144,23 +147,7 @@ plot_boundary_strength <- function(input_file, output_name, boundary_colors) {
       legend.position = "top"
     )
 
-  ggsave(file.path(output_dir, output_name), p, device = "pdf", width = 13, height = 7, units = "in")
-}
-
-# All domain types pooled: blue (#0072B2) / orange (#E69F00), Okabe-Ito.
-plot_boundary_strength(
-  "../../results/nyan1308_boundary_strength.tsv",
-  "nyan1308_boundary_strength_overlay.pdf",
-  c(Left = "#0072B2", Right = "#E69F00")
-)
-
-# Tonosegmental excluded: bluish green (#009E73) / reddish purple (#CC79A7),
-# the other standard Okabe-Ito pair -- visually distinct from the pooled
-# chart's blue/orange so the two are never mistaken for each other, while
-# staying equally colorblind-safe.
-plot_boundary_strength(
-  "../../results/nyan1308_boundary_strength_no_tono.tsv",
-  "nyan1308_boundary_strength_overlay_no_tono.pdf",
-  c(Left = "#009E73", Right = "#CC79A7")
-)
+  attr(p, "planarsviz_size") <- c(width = 13, height = 7)
+  attr(p, "planarsviz_units") <- "in"
+  p
 }
