@@ -31,13 +31,27 @@ Honesty rule: nothing below says "matches" without naming the comparison file.
    `Position_Name` column; its root row has `Elements == "root"`. The
    exporter uses `--root-element root` (default) and records
    `root_position` in `metadata.json`. Confirm this is the right marker.
+5. Span chart x-axis drops labels left of the first charted span — see the
+   chart 15 entry.
+6. Span chart colour for `length` is inferred — see the chart 15 entry.
+7. **Overlay legend's "More" thickness swatch.** The generator draws the
+   swatch at `sqrt(highest convergence)` even when the lines are drawn with
+   exponent 0.75 (the all-families chart), so in chart 8/9's legend the
+   swatch is thinner than the thickest line. Reproduced faithfully; say if
+   the swatch should follow the chart's exponent.
+8. **The branch is not pushed.** The repo's push hook requires syncing
+   `planars-data` first, and syncing that repo was off-limits for this work,
+   so every `planarsviz-library` commit exists only on this machine (worktree
+   `/Users/jcgood/gitrepos/planars-planarsviz`). Push it yourself after the
+   usual `coded_data` pull, or tell me to.
 
 ---
 
 ## Setup (§3)
 
 - `main` commits: `e362364`, `0cd41a8`, `d240737`, `43a308f`; pushed.
-  Worktree created from `43a308f`.
+  Worktree created from `43a308f`. The branch itself is not pushed
+  (question 8).
 - Salvaged into the worktree: `scripts/analysis/export_planarsviz_data.py`,
   `tests/test_planarsviz_bundle.py` (file-counting manifest test deleted),
   `r/planarsviz/{DESCRIPTION,LICENSE,inst/data-contract.md}`,
@@ -238,4 +252,45 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
   page background.
 - R6 search: clean (rendering constants only).
 - Looked at by Claude: yes (tono and shifted phon side by side). Seen by Jeff: no.
+- Status: done pending Jeff's review.
+
+## Charts 7–9: stacked overlays (6 files)
+- Source copied: `results/nyan1308_laminar_overlay.r`,
+  `results/nyan1308_all_families_labeled.r` (both written by
+  `generate_r_overlay_script()`) and `results/nyan1308_all_families_labeled_wordhood.r`
+  (a hand edit of the second — it has no generator) → `R/overlays.R`, commit `2f6cb1a`.
+- One function replaces the three scripts (`21b6111`):
+  `plot_laminar_overlay(bundle, groups, alpha_divisor, thickness_exponent, legend, highlight)`.
+  Chart 7 = defaults; chart 8 = `groups = "all", alpha_divisor = 1,
+  thickness_exponent = 0.75`; chart 9 = chart 8 + `highlight = "orthographic_word"`
+  (decision 4: wordhood is an option). `legend = TRUE` gives the `_legend` versions.
+- Exporter additions: `data/overlay_groups.json` + `data/overlay_groups/<id>.tsv`
+  (per tree: Newick, groupOTU span order, convergence), replaying
+  `run_domain_overlay()` — subset families with the **full** dataset's
+  position count, unlike chart 6. `data/highlights.tsv` from the new
+  `planar_tables/highlights_nyan1308.tsv` (orthographic word 5–19 red, final
+  vowel 17 `#0072B5`), `--highlights-file`. `verify_overlay_export.py`: every
+  tree's Newick, groups, thickness, colour and the alpha formula reproduce
+  both generated scripts.
+- Computed in R rather than pasted: alpha `(1 − 0.01^(1/total trees)) / divisor`,
+  thickness `max(convergence, 1)^exponent`, the darkness/thickness legend's
+  swatch values. `planarsviz_ghost_tree()` gained `spacer_lineheight` (this
+  generator leaves it unset; chart 6's sets 1) — chart 6 re-checked afterwards,
+  still identical.
+- Behaviour note: the colour legend lists the domain types of the groups
+  actually drawn; the generator always listed its fixed five (the same five
+  for nyan1308).
+- Numbers comparison (`check_overlays.R`): every tree's ggplot_build data and
+  the legend plot's data identical, all three charts.
+- Pixel comparison: `comparisons/nyan1308_{laminar_overlay,all_families_labeled,all_families_labeled_wordhood}{,_legend}.png`,
+  all six 0.0000%.
+- Shifted-dataset check (`comparisons/shifted/`): all six rendered, same
+  canvas. Expected differences only: positions +2, renamed labels, no
+  tonosegmental group (renamed, so not one of the overlay groups), legend
+  without it. Wordhood labels: red on 7–21, blue on 19 — the highlight moved
+  with the data. No leaks.
+- Question 7 above (legend thickness swatch).
+- R6 search: font sizes and legend-panel coordinates only.
+- Looked at by Claude: yes (nyan legend comparison; shifted wordhood label
+  row). Seen by Jeff: no.
 - Status: done pending Jeff's review.

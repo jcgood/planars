@@ -9,7 +9,9 @@ unchanged; only facts a chart might have typed in are changed:
   (breaks "root at 10");
 - every display label is renamed (breaks hard-coded position names);
 - tonosegmental is renamed tonal (breaks hard-coded domain-type names and
-  colours; tonal gets the exporter's fallback colour).
+  colours; tonal gets the exporter's fallback colour);
+- the position highlights move with the positions (breaks hard-coded
+  highlight ranges such as the orthographic word at 5-19).
 
 Not to be confused with domains/domains_nyan1293_test.tsv, an older,
 unrelated test file.
@@ -17,12 +19,15 @@ unrelated test file.
 Usage (from NonCollaborative/):
     python tests/fixtures/make_shifted_nyan.py
 
-Writes tests/fixtures/domains_shifted_nyan.tsv, planar_shifted_nyan.tsv and
-display_labels_shifted_nyan.tsv. Export its bundle with:
+Writes tests/fixtures/domains_shifted_nyan.tsv, planar_shifted_nyan.tsv,
+display_labels_shifted_nyan.tsv and highlights_shifted_nyan.tsv. Export its
+bundle with:
     python scripts/analysis/export_planarsviz_data.py \\
         --domain-file tests/fixtures/domains_shifted_nyan.tsv \\
         --planar-file tests/fixtures/planar_shifted_nyan.tsv \\
         --labels-file tests/fixtures/display_labels_shifted_nyan.tsv \\
+        --highlights-file tests/fixtures/highlights_shifted_nyan.tsv \\
+        --language-name "Shifted test data" \\
         --output-dir results/planarsviz
 """
 
