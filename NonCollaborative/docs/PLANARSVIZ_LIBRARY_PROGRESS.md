@@ -6,6 +6,25 @@ Claude (Opus) with Jeff's authorization to proceed without waiting.
 
 Honesty rule: nothing below says "matches" without naming the comparison file.
 
+## Where things stand (2026-09-15)
+
+- **All 18 charts are ported** (63 files). Every chart copied from working R
+  reproduces its reference exactly: identical plot data and 0.0000%
+  differing pixels. The two matplotlib charts (16, 17) are ported to R with
+  every visual setting mapped; they differ only in fonts.
+- **Renderer done** (`scripts/render_planarsviz.R`): draws every chart a
+  bundle supports; its nyan1308 output passes `check_renderer.py`.
+- **Generalization pass done**: every chart also renders from the shifted
+  test data with only the expected differences, and the shifted bundle is
+  in the Python tests (13 pass).
+- **Not done, by plan**: tooling (R9: roxygen/testthat) and the cutover
+  (replacing the old scripts and `results/` files) — both wait for you.
+  Nothing on `main` was changed by this work; the old scripts still work.
+- **Seen by Jeff: none yet.** Comparison images are under
+  `results/planarsviz/comparisons/` (reference | new | difference).
+- **Needs you:** questions 1–11 below; the most consequential are 8 (branch
+  not pushed), 10 (scipy), 9 (invisible panel titles) and 7 (legend swatch).
+
 ---
 
 ## Open questions for Jeff
@@ -588,6 +607,38 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
   no copy (the §1 "options, not copies" aim) and makes each harder to read.
   What they do share is already shared data: the bundle's
   `boundary_strength.tsv`, subsets and highlights.
+
+## Renderer (§8.3) and final generalization pass (§10.3)
+- `scripts/render_planarsviz.R --bundle DIR [--output DIR] [--plots
+  all|names] [--formats pdf,png] [--list]`. The chart list is built from the
+  bundle, not typed in: a pooled pair per observed domain type, a forest per
+  `forests.json` entry, highlight and filter variants from `highlights.tsv`
+  and `subsets.json`, exemplary charts per selected family, conflict-group
+  charts only when groups are defined. Canvas sizes come from the chart
+  functions (each carries its source script's `ggsave()` size), so there is
+  no second size table as §8.3 suggested — one place instead of two.
+  Refuses truncated bundles; reports and exits non-zero on any failed chart;
+  writes `manifest.tsv` (bookkeeping only).
+- Rendering choice kept in the renderer: filtered boundary-strength
+  overlays use the script's second colour pair (`#009E73`/`#CC79A7`).
+- File naming change for cutover: highlight variants are
+  `all_families_labeled_<highlight_id>` (`_orthographic_word`), not
+  `_wordhood`, because the name must come from the data.
+- Small fix: `plot_pooled()` now sets `planarsviz_units` ("cm") like every
+  other chart function; the renderer needs it.
+- Check (`scripts/planarsviz_checks/check_renderer.py` on a render of the
+  nyan1308 bundle): 63 of 63 charts; all 57 charts copied from R 0.0000%
+  differing pixels; the 6 matplotlib-port files show their recorded font
+  differences (5.1–10.3%); no reference without a render.
+- Final pass on the shifted bundle through the renderer: 59 of 59 charts
+  rendered. Charts only in nyan1308: `tono_laminar_forest` and the
+  `pooled_plot_tonosegmental` pair (type renamed), and the three `no_tono`
+  variants (no tonosegmental to leave out). Only in shifted:
+  `pooled_plot_tonal` pair. Exactly the expected set. Every chart's
+  nyan1308-vs-shifted side by side was already looked at chart by chart
+  (entries above); §10.3 step 5 (shifted bundle in the Python tests) is
+  `tests/test_planarsviz_shifted_bundle.py`.
+- Remaining by plan (§6 item 7): tooling (R9) and the cutover conversation.
 - R6 search: comments and doc references only.
 - Looked at by Claude: yes (shifted side by side). Seen by Jeff: no.
 - Status: done pending Jeff's review.
