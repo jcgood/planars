@@ -1,0 +1,76 @@
+[
+  {
+    "alpha": 0.784557,
+    "colour": "#BC3C29",
+    "domain_types": [
+      "morphosyntactic"
+    ],
+    "forest_id": "morsyn",
+    "n_positions": 24,
+    "n_trees": 3
+  },
+  {
+    "alpha": 0.784557,
+    "colour": "#E18727",
+    "domain_types": [
+      "length"
+    ],
+    "forest_id": "length",
+    "n_positions": 20,
+    "n_trees": 3
+  },
+  {
+    "alpha": 0.535841,
+    "colour": "#20845E",
+    "domain_types": [
+      "phonological"
+    ],
+    "forest_id": "phon",
+    "n_positions": 23,
+    "n_trees": 6
+  },
+  {
+    "alpha": 0.99,
+    "colour": "#7876B1",
+    "domain_types": [
+      "intonational"
+    ],
+    "forest_id": "inton",
+    "n_positions": 24,
+    "n_trees": 1
+  },
+  {
+    "alpha": 0.535841,
+    "colour": "#0072B5",
+    "domain_types": [
+      "phonological",
+      "intonational"
+    ],
+    "forest_id": "phonologylike",
+    "n_positions": 24,
+    "n_trees": 6
+  },
+  {
+    "alpha": 0.683772,
+    "colour": "#BC3C29",
+    "domain_types": [
+      "morphosyntactic",
+      "tonosegmental",
+      "length"
+    ],
+    "forest_id": "syntaxlike",
+    "n_positions": 24,
+    "n_trees": 4
+  },
+  {
+    "alpha": 0.683772,
+    "colour": "#E18727",
+    "domain_types": [
+      "morphosyntactic",
+      "length"
+    ],
+    "forest_id": "syntaxlike_notono",
+    "n_positions": 24,
+    "n_trees": 4
+  }
+]

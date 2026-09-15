@@ -27,11 +27,94 @@ REPO_DIR = SCRIPT_DIR.parents[1]
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from laminar_analysis import (  # noqa: E402
+    OVERLAY_GROUPS,
     Span,
+    build_parent_map,
     enumerate_maximal_laminar_families,
     find_conflicts,
+    get_children,
     load_spans,
+    span_to_newick,
 )
+from planars_groupings import BUNDLES  # noqa: E402
+
+
+def forest_variants() -> list[tuple[str, list[str], str]]:
+    """(forest id, domain types, colour) for every per-class forest chart.
+
+    The per-domain-type groups come from laminar_analysis.OVERLAY_GROUPS and
+    the bundles from planars_groupings.BUNDLES -- the same lists
+    laminar_analysis.py's __main__ block uses to write
+    nyan1308_{id}_laminar_forest.r -- so ids and colours match those charts.
+    """
+    variants = [(short, list(types), colour) for types, colour, short in OVERLAY_GROUPS]
+    variants += [(name, list(types), colour) for name, types, colour, _ in BUNDLES]
+    return variants
+
+
+def export_forests(domain_file: Path, domains_dir: Path, data_dir: Path) -> None:
+    """Write the trees of every per-class forest chart, exactly as drawn.
+
+    For each variant, replays what laminar_analysis.main(subset=...) passes to
+    generate_r_script(): the subset's own spans and position count (the
+    largest right edge *within the subset* -- e.g. [1-18] for length, not the
+    dataset's 22; the analysis subsets in data/subsets/ use the full count
+    instead, which would draw different trees), its maximal families, and for
+    each family the Newick string, the spans in groupOTU order (by left edge,
+    larger first on ties), and each span's thickness sqrt(family count)
+    rounded to 4 places. R then draws these without building any topology.
+    """
+    forest_dir = data_dir / "forests"
+    forest_dir.mkdir(parents=True, exist_ok=True)
+    observed = set(
+        pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")["Domain_Type"].dropna().str.strip()
+    )
+    index = []
+    for forest_id, types, colour in forest_variants():
+        # Skip a forest none of whose domain types occur in this dataset:
+        # load_spans() fails on an empty subset rather than returning nothing.
+        # Found by the shifted test dataset, where tonosegmental is renamed.
+        if not set(types) & observed:
+            continue
+        spans, n_positions = load_spans(domain_file.name, str(domains_dir), subset=types)
+        if not spans:
+            continue
+        families, truncated = enumerate_maximal_laminar_families(
+            spans, find_conflicts(spans), n_positions
+        )
+        if truncated:
+            raise RuntimeError(f"Family enumeration was truncated for forest {forest_id!r}.")
+        span_family_count: dict[Span, int] = {}
+        for family in families:
+            for span in family:
+                span_family_count[span] = span_family_count.get(span, 0) + 1
+        rows = []
+        for tree_number, family_set in enumerate(families, start=1):
+            family_list = sorted(family_set, key=lambda s: s.size, reverse=True)
+            children = get_children(build_parent_map(family_list))
+            root = max(family_list, key=lambda s: s.size)
+            ordered = sorted(family_list, key=lambda s: s.left)
+            rows.append({
+                "tree_number": tree_number,
+                "newick": span_to_newick(root, children) + ";",
+                "group_spans": ";".join(f"{s.left}-{s.right}" for s in ordered),
+                "strengths": ";".join(
+                    str(round(span_family_count.get(s, 1) ** 0.5, 4)) for s in ordered
+                ),
+            })
+        write_tsv(forest_dir / f"{forest_id}.tsv",
+                  ["tree_number", "newick", "group_spans", "strengths"], rows)
+        index.append({
+            "forest_id": forest_id,
+            "domain_types": types,
+            "colour": colour,
+            "n_positions": n_positions,
+            "n_trees": len(families),
+            "alpha": round(1 - 0.01 ** (1 / len(families)), 6),
+        })
+    (data_dir / "forests.json").write_text(
+        json.dumps(index, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
 
 # Domain-type display style: colour, the order types are sorted in within a
 # layer (df.plot()'s factor levels), the order they appear in a legend, and the
@@ -416,6 +499,7 @@ def export_bundle(
     (data_dir / "subsets.json").write_text(
         json.dumps(subset_index, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
+    export_forests(domain_file, domains_dir, data_dir)
     return bundle_dir
 
 

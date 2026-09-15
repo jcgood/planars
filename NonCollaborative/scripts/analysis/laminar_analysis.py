@@ -1737,27 +1737,19 @@ if __name__ == "__main__":
     # purpose (this project's own diagnostic classes don't map cleanly onto
     # that binary; see the "Morphosyntax/phonology divide hypothesis" in this
     # module's own docstring), grouping phonological+intonational into one
-    # pooled analysis and morphosyntactic+tonosegmental+length into the other.
-    main(
-        subset=["phonological", "intonational"],
-        color="#0072B5",
-        tpfx="nyan1308_phonologylike_",
-        output_dir=_results_dir,
-    )
-    main(
-        subset=["morphosyntactic", "tonosegmental", "length"],
-        color="#BC3C29",
-        tpfx="nyan1308_syntaxlike_",
-        output_dir=_results_dir,
-    )
-    # Same syntax-like bundle with tonosegmental dropped, to see how much of
-    # its structure that domain type alone was contributing.
-    main(
-        subset=["morphosyntactic", "length"],
-        color="#E18727",
-        tpfx="nyan1308_syntaxlike_notono_",
-        output_dir=_results_dir,
-    )
+    # pooled analysis and morphosyntactic+tonosegmental+length into the other,
+    # plus the syntax-like bundle with tonosegmental dropped, to see how much
+    # of its structure that domain type alone was contributing. Defined once
+    # in planars_groupings.py (also read by laminar_tree_counts.py and the
+    # planarsviz exporter).
+    from planars_groupings import BUNDLES
+    for _name, _subset, _color, _display in BUNDLES:
+        main(
+            subset=_subset,
+            color=_color,
+            tpfx=f"nyan1308_{_name}_",
+            output_dir=_results_dir,
+        )
 
     # All-conflict-groups-stacked overlay: every maximal family in one panel
     # (the labeled equivalent of laminar_conflict_groups.r's Panel ALL), with
