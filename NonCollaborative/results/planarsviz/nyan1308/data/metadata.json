@@ -1,0 +1,20 @@
+{
+  "analysis_source": "scripts/analysis/laminar_analysis.py",
+  "contract_version": "0.2.0",
+  "dataset": "nyan1308",
+  "enumeration_truncated": false,
+  "n_active_tests": 95,
+  "n_conflict_pairs": 65,
+  "n_maximal_families": 69,
+  "n_positions": 22,
+  "n_unique_spans": 26,
+  "n_universal_spans": 5,
+  "producer": "scripts/analysis/export_planarsviz_data.py",
+  "root_element": "root",
+  "root_position": 10,
+  "source_domain_file": "domains/domains_nyan1308.tsv",
+  "source_domain_sha256": "ce2fdcb1dbdc0aad77c4546059f6246ec0218bd2ea56fb21deb1d82bd748c8bf",
+  "source_labels_file": "planar_tables/display_labels_nyan1308.tsv",
+  "source_planar_file": "planar_tables/planar_nyan1308.tsv",
+  "source_planar_sha256": "c039201b38fbbb4aca1a322791114ed2a69fc7d3a3e0992ad8cd64a16d789e17"
+}

@@ -1,0 +1,8 @@
+source_row	Test_Labels	Domain_Type	Left_Edge	Right_Edge	Size	Notes
+2	FreeOccurrence-Minimal-AFF/IMP2s	length	10	17	8	
+3	FreeOccurrence-Maximal-AFF/IMP2s	length	9	17	9	
+4	FreeOccurrence-Minimal-AFF/IMP2p	length	10	18	9	
+5	FreeOccurrence-Maximal-AFF/IMP2p	length	9	18	10	
+6	FreeOccurrence-Maximal-AFF/2pOBJ	length	5	18	14	
+7	FreeOccurrence-Maximal/elsewhere	length	5	17	13	
+26	Length-DisyllabicMinimality	length	5	17	13	

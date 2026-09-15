@@ -1,0 +1,11 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types
+1-22	1	22	22	1	3	SubspanRepetition-Coordination-Maximal	morphosyntactic
+5-13	5	13	9	1	1	NonPermutability-Strict	morphosyntactic
+5-17	5	17	13	1	2	BiuniquenessDeviation-TAMP	morphosyntactic
+5-18	5	18	14	1	3	Ciscategorial-Maximal	morphosyntactic
+5-19	5	19	15	1	3	NonInterruptibility	morphosyntactic
+5-21	5	21	17	1	3	NonPermutability-Scopal	morphosyntactic
+9-18	9	18	10	1	1	BiuniquenessDeviation-2pl	morphosyntactic
+10-17	10	17	8	2	2	SubspanRepetition-Coordination-Minimal|SubspanRepetition-Reduplication	morphosyntactic
+10-18	10	18	9	1	1	Ciscategorial-Minimal	morphosyntactic
+13-15	13	15	3	1	2	BiuniquenessDeviation-Valency	morphosyntactic

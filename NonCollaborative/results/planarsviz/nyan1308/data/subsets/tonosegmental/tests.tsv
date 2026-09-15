@@ -1,0 +1,45 @@
+source_row	Test_Labels	Domain_Type	Left_Edge	Right_Edge	Size	Notes
+41	TonePattern2-OM-MonoSyll	tonosegmental	9	17	9	
+42	TonePattern2-OM-DiSyll	tonosegmental	9	17	9	
+43	TonePattern2-OM-Other	tonosegmental	9	10	2	
+44	TonePattern3-OM-MonoSyll	tonosegmental	9	17	9	
+45	TonePattern3-OM-Other	tonosegmental	9	16	8	
+46	TonePattern4-noOM-MonoSyll	tonosegmental	8	17	10	
+47	TonePattern4-noOM-DiSyll	tonosegmental	8	17	10	
+48	TonePattern4-noOM-Other	tonosegmental	8	10	3	
+49	TonePattern4-OM-MonoSyll	tonosegmental	8	17	10	
+50	TonePattern4-OM-DiTriSyll	tonosegmental	8	17	10	
+51	TonePattern4-OM-Other	tonosegmental	8	17	10	
+52	TonePattern5-noOM-MonoDiSyll	tonosegmental	8	17	10	
+53	TonePattern5-noOM-Other	tonosegmental	8	16	9	
+54	TonePattern5-OM	tonosegmental	8	16	9	
+55	TonePattern6-RP-noOM-MonoSyll	tonosegmental	6	17	12	
+56	TonePattern6-RP-noOM-Other	tonosegmental	6	16	11	
+57	TonePattern6-RP-OM	tonosegmental	6	16	11	
+58	TonePattern6-HAB-noOM-MonoSyll	tonosegmental	6	17	12	
+59	TonePattern6-HAB-noOM-Other	tonosegmental	6	16	11	
+60	TonePattern6-HAB-OM	tonosegmental	6	16	11	
+61	TonePattern7-noOM	tonosegmental	6	8	3	
+62	TonePattern7-OM-MonoSyll	tonosegmental	6	17	12	
+63	TonePattern7-OM-Other	tonosegmental	6	10	5	
+67	TonePattern8-noOM-JST-MonoSyll	tonosegmental	6	17	12	
+68	TonePattern8-noOM-JST-DiSyll	tonosegmental	6	17	12	
+69	TonePattern8-noOM-JST-Other	tonosegmental	6	16	11	
+73	TonePattern8-OM-JST-MonoSyll	tonosegmental	6	17	12	
+74	TonePattern8-OM-JST-DiTriSyll	tonosegmental	6	17	12	
+75	TonePattern8-OM-JST-Other	tonosegmental	6	16	11	
+76	NegTonePattern2-Neg2-IMP-NoOM-MonoSyll	tonosegmental	6	17	12	Treating ó as underlyingly high
+77	NegTonePattern2-Neg2-IMP-Other	tonosegmental	6	16	11	
+78	NegTonePattern2-Neg2-SeqPFV-NoOM-MonoSyll	tonosegmental	6	17	12	Negative sequential appears to have main clause usage; assigns high tone to SM
+79	NegTonePattern2-Neg2-SeqPFV-Other	tonosegmental	6	17	12	
+80	NegTonePattern2-Neg1-NoOM-MonoSyll	tonosegmental	5	17	13	include Neg1 since low tone, unlike NegTP 1
+81	NegTonePattern2-Neg1-Other	tonosegmental	5	17	13	To FV because of neutralization of high-toned roots
+82	NegTonePattern3-PfvSimPST-NoOM-MonoSyll	tonosegmental	6	17	12	
+83	NegTonePattern3-PfvSimPST-Other	tonosegmental	6	17	12	
+84	NegTonePattern3-PERM-NoOM-MonoSyll	tonosegmental	5	17	13	
+85	NegTonePattern3-PERM-NoOM-DiSyll	tonosegmental	5	17	13	
+86	NegTonePattern3-PERM-NoOM-Other	tonosegmental	5	17	13	
+87	NegTonePattern3-PERM-OM-MonoSyll	tonosegmental	5	17	13	
+88	NegTonePattern3-PERM-OM-Other	tonosegmental	5	17	13	
+89	NegTonePattern4-noOM	tonosegmental	8	17	10	
+90	NegTonePattern4-OM	tonosegmental	8	17	10	
