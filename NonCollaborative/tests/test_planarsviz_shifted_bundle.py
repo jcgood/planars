@@ -107,6 +107,17 @@ def test_selections_pick_the_same_families():
     assert a == b
 
 
+def test_tree_counts_unchanged():
+    # Per-type and all-tests counts are nyan1308's, with tonosegmental named
+    # tonal. Bundle rows are left out: bundles are defined by type names, so
+    # the rename changes them (see the chart 6 progress entry).
+    def counts(data_dir, rename):
+        return {(r["condition"], rename.get(r["class"], r["class"])):
+                (r["n_unique_spans"], r["n_maximal_laminar_families"])
+                for r in rows(data_dir, "tree_counts.tsv") if r["kind"] != "bundle"}
+    assert counts(NYAN, {"tonosegmental": "tonal"}) == counts(SHIFTED, {})
+
+
 def test_conflicts_are_nyan_conflicts_shifted():
     a = {frozenset((shift_id(r["span_id_a"]), shift_id(r["span_id_b"]))) for r in rows(NYAN, "conflict_pairs.tsv")}
     b = {frozenset((r["span_id_a"], r["span_id_b"])) for r in rows(SHIFTED, "conflict_pairs.tsv")}

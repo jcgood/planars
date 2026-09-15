@@ -84,6 +84,13 @@ families chosen by greedy coverage (`metadata.exemplary_k` of them) plus,
 when `metadata.exemplary_include_sparsest`, the family drawing on the
 fewest tests.
 
+`tree_counts.tsv`: the numbers behind the tree-count bar charts, from
+`laminar_tree_counts.py`'s `collect_counts()` and `collect_bundle_counts()`
+(`condition` all_tests / without_adjacent_spans, `class`, `n_unique_spans`,
+`n_maximal_laminar_families`), plus `kind` (all / class / bundle), `label`
+and `colour` for the bars. Types and bundles with no tests in the data are
+left out.
+
 `forests.json` / `forests/<id>.tsv`: the trees of each per-class forest
 (Newick, span order, thickness), computed with the class's own position
 count. `overlay_groups.json` / `overlay_groups/<id>.tsv`: the trees of each

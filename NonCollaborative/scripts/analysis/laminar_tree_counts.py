@@ -77,7 +77,16 @@ def count_families(spans, n_positions: int) -> tuple[int, int]:
     return len(families), len(spans)
 
 
-def collect_counts(domain_file: str, domains_dir: Path) -> list[dict]:
+def collect_counts(domain_file: str, domains_dir: Path,
+                   classes: list[str] | None = None) -> list[dict]:
+    """Family counts for all tests and per domain type, with and without
+    size-2 spans.
+
+    classes: the domain types to count, in order (default CLASS_ORDER). A
+    type with no tests in the data can't be counted -- load_spans() fails on
+    an empty subset -- so a caller handling other datasets passes only the
+    types that occur (export_planarsviz_data.py does).
+    """
     all_spans, n_positions = load_spans(domain_file, str(domains_dir))
     rows: list[dict] = []
 
@@ -98,7 +107,7 @@ def collect_counts(domain_file: str, domains_dir: Path) -> list[dict]:
         "n_maximal_laminar_families": no_adj_count,
     })
 
-    for domain_class in CLASS_ORDER:
+    for domain_class in (CLASS_ORDER if classes is None else classes):
         class_spans, _ = load_spans(
             domain_file, str(domains_dir), subset=[domain_class]
         )
@@ -124,10 +133,13 @@ def collect_counts(domain_file: str, domains_dir: Path) -> list[dict]:
     return rows
 
 
-def collect_bundle_counts(domain_file: str, domains_dir: Path) -> list[dict]:
-    """Same schema as collect_counts()'s rows, one per entry in BUNDLES."""
+def collect_bundle_counts(domain_file: str, domains_dir: Path,
+                          bundles: list | None = None) -> list[dict]:
+    """Same schema as collect_counts()'s rows, one per entry in BUNDLES (or
+    in `bundles`, same shape; pass only bundles with a type that occurs, for
+    the reason given in collect_counts())."""
     rows: list[dict] = []
-    for name, subset, _color, _display in BUNDLES:
+    for name, subset, _color, _display in (BUNDLES if bundles is None else bundles):
         bundle_spans, n_positions = load_spans(domain_file, str(domains_dir), subset=subset)
         count, n_spans = count_families(bundle_spans, n_positions)
         rows.append({

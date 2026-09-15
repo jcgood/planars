@@ -38,6 +38,7 @@ from laminar_analysis import (  # noqa: E402
     span_to_newick,
 )
 from planars_groupings import BUNDLES, FILTERS  # noqa: E402
+from laminar_tree_counts import CLASS_ORDER, collect_bundle_counts, collect_counts  # noqa: E402
 
 
 def forest_variants() -> list[tuple[str, list[str], str]]:
@@ -201,6 +202,42 @@ def export_highlights(dataset: str, data_dir: Path, highlights_file: Path | None
         with highlights_file.open(encoding="utf-8", newline="") as handle:
             rows = list(csv.DictReader(handle, delimiter="\t"))
     write_tsv(data_dir / "highlights.tsv", fields, rows)
+
+
+def export_tree_counts(domain_file: Path, domains_dir: Path, data_dir: Path) -> None:
+    """Write tree_counts.tsv: the numbers behind the tree-count bar charts.
+
+    Calls laminar_tree_counts.collect_counts() and collect_bundle_counts()
+    unchanged (docs/PLAN_planarsviz_library.md section 4.3), so the four
+    count columns equal that script's nyan1308_tree_counts.tsv. Types are
+    counted in its CLASS_ORDER, then any other observed type alphabetically;
+    types and bundles with no tests in this dataset are left out. Added
+    columns: kind (all / class / bundle), label (the bar label: the type
+    title-cased as that script does, or the bundle's display name) and colour
+    (the type's colour from DOMAIN_TYPE_STYLE or the fallback grey, or the
+    bundle's colour); empty for the all-tests rows, whose bar colours are a
+    chart choice.
+    """
+    observed = set(
+        pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")["Domain_Type"].dropna().str.strip()
+    )
+    classes = [c for c in CLASS_ORDER if c in observed] + sorted(observed - set(CLASS_ORDER))
+    bundles = [b for b in BUNDLES if set(b[1]) & observed]
+    palette = {row["domain_type"]: row["colour"] for row in DOMAIN_TYPE_STYLE}
+    bundle_style = {name: (display, colour) for name, _types, colour, display in bundles}
+
+    rows = []
+    for row in collect_counts(domain_file.name, domains_dir, classes):
+        kind = "all" if row["class"] == "all" else "class"
+        rows.append(dict(row, kind=kind,
+                         label="" if kind == "all" else row["class"].title(),
+                         colour="" if kind == "all" else palette.get(row["class"], FALLBACK_COLOUR)))
+    for row in collect_bundle_counts(domain_file.name, domains_dir, bundles):
+        display, colour = bundle_style[row["class"]]
+        rows.append(dict(row, kind="bundle", label=display, colour=colour))
+    write_tsv(data_dir / "tree_counts.tsv",
+              ["condition", "class", "n_unique_spans", "n_maximal_laminar_families",
+               "kind", "label", "colour"], rows)
 
 
 def family_newick(family) -> str:
@@ -774,6 +811,7 @@ def export_bundle(
     export_forests(domain_file, domains_dir, data_dir)
     export_overlay_groups(domain_file, domains_dir, data_dir)
     export_highlights(dataset, data_dir, highlights_file)
+    export_tree_counts(domain_file, domains_dir, data_dir)
     return bundle_dir
 
 
