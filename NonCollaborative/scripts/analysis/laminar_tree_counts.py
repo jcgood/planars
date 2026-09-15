@@ -165,7 +165,7 @@ def save_all_figure(rows: list[dict], output_dir: Path):
     bars = ax.bar(["All tests"], [row["n_maximal_laminar_families"]], color="#444444", width=0.55)
     add_value_labels(ax, bars)
     ax.set_ylabel("Number of maximal laminar families")
-    ax.set_title("Nyangatom (nyan1308): all tests")
+    ax.set_title("Chichewa (nyan1308): all tests")
     ax.set_ylim(0, row["n_maximal_laminar_families"] * 1.18)
     fig.tight_layout()
     fig.savefig(output_dir / "nyan1308_tree_count_all.pdf")
@@ -179,9 +179,12 @@ def save_horizontal_bar_chart(
         figsize: tuple[float, float] = (8, 3.8),
 ) -> None:
     """Shared "house style" horizontal bar chart: least-to-most (bottom to
-    top), no title, no bounding box, narrow bars, black background with
-    white text, value labels to the right of each bar. `items` is a list of
-    (label, value, color); sorted here, callers don't need to pre-sort.
+    top), no title, no bounding box, narrow bars, transparent background with
+    black text (reads correctly on a white/light background, which is the
+    common case; will be invisible on a dark slide -- flip to white if that's
+    ever the target instead), value labels to the right of each bar. `items`
+    is a list of (label, value, color); sorted here, callers don't need to
+    pre-sort.
     """
     items = sorted(items, key=lambda item: item[1])
     labels = [label for label, _, _ in items]
@@ -189,8 +192,8 @@ def save_horizontal_bar_chart(
     colors = [color for _, _, color in items]
 
     fig, ax = plt.subplots(figsize=figsize)
-    fig.patch.set_facecolor("black")
-    ax.set_facecolor("black")
+    fig.patch.set_facecolor("none")
+    ax.set_facecolor("none")
     bars = ax.barh(labels, values, color=colors, height=0.45)
     for bar in bars:
         width = bar.get_width()
@@ -202,17 +205,17 @@ def save_horizontal_bar_chart(
             ha="left",
             va="center",
             fontsize=15,
-            color="white",
+            color="black",
         )
-    ax.set_xlabel(xlabel, fontsize=14, color="white")
+    ax.set_xlabel(xlabel, fontsize=14, color="black")
     ax.set_xlim(0, max(values) * 1.2)
-    ax.tick_params(axis="y", labelsize=14, colors="white")
-    ax.tick_params(axis="x", labelsize=13, colors="white")
+    ax.tick_params(axis="y", labelsize=14, colors="black")
+    ax.tick_params(axis="x", labelsize=13, colors="black")
     for spine in ax.spines.values():
         spine.set_visible(False)
     ax.tick_params(axis="both", length=0)
     fig.tight_layout()
-    fig.savefig(output_path, facecolor=fig.get_facecolor())
+    fig.savefig(output_path, transparent=True)
     plt.close(fig)
 
 
@@ -254,7 +257,7 @@ def save_without_adjacent_figure(rows: list[dict], output_dir: Path):
     bars = ax.bar([label for _, label in conditions], values, color=["#777777", "#222222"], width=0.6)
     add_value_labels(ax, bars)
     ax.set_ylabel("Number of maximal laminar families")
-    ax.set_title("Nyangatom (nyan1308): effect of removing adjacent spans")
+    ax.set_title("Chichewa (nyan1308): effect of removing adjacent spans")
     ax.set_ylim(0, max(values) * 1.25)
     fig.tight_layout()
     fig.savefig(output_dir / "nyan1308_tree_count_without_adjacent.pdf")
