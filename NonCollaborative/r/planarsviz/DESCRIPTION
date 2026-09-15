@@ -7,11 +7,13 @@ Authors@R:
 Author: Jeff Good [aut, cre]
 Maintainer: Jeff Good <jcgood@buffalo.edu>
 Description:
-    Reusable, data-driven visualizations for planar constituency and
-    laminar-family analyses. Analytical family enumeration remains outside
-    this package; the package reads a data bundle exported by
-    scripts/analysis/export_planarsviz_data.py and returns plot objects.
-    Being rebuilt chart by chart; see docs/PLAN_planarsviz_library.md.
+    Data-driven charts for planar constituency and laminar-family analyses:
+    pooled test plots, boundary frequencies, laminar forests and overlays,
+    representative trees, conflict groups, tree counts and boundary
+    strength. Analysis stays in Python; the package reads a data bundle
+    exported by scripts/analysis/export_planarsviz_data.py and returns plot
+    objects. See README.md, docs/planarsviz_guide.md and
+    docs/planarsviz_charts.md.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends:
