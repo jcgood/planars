@@ -10,9 +10,10 @@
   "n_conflict_pairs": 3,
   "n_maximal_families": 3,
   "n_positions": 22,
-  "n_unique_spans": 7,
-  "n_universal_spans": 3,
+  "n_unique_spans": 6,
+  "n_universal_spans": 2,
   "source_domain_file": "domains/domains_nyan1308.tsv",
   "source_domain_sha256": "ce2fdcb1dbdc0aad77c4546059f6246ec0218bd2ea56fb21deb1d82bd748c8bf",
-  "subset_id": "length"
+  "subset_id": "length",
+  "synthetic_root": true
 }

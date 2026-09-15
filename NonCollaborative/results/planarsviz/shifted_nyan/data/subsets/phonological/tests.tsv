@@ -1,0 +1,22 @@
+source_row	Test_Labels	Domain_Type	Left_Edge	Right_Edge	Size	Notes
+19	Segmental-VowelHarmony	phonological	12	18	7	
+20	Segmental-muContraction	phonological	8	19	12	
+21	Segmental-HiatusResolution-Glide	phonological	8	10	3	
+22	Segmental-HiatusResolution-Deletion	phonological	8	10	3	
+23	Segmental-GlideInsertion	phonological	8	12	5	
+24	Segmental-Assimilation	phonological	8	12	5	
+25	Segmental-Assimilation-Neg	phonological	7	8	2	
+27	Accent-PenultimateLengthening-Minimal	phonological	12	19	8	
+28	Accent-PenultimateLengthening-Maximal-NoSubj	phonological	7	23	17	
+29	Accent-PenultimateLengthening-Maximal-Subj	phonological	5	23	19	
+30	Tonal-ToneDoubling-Minimal	phonological	11	19	9	
+31	Tonal-ToneDoubling-Maximal-NoSubj	phonological	7	23	17	
+32	Tonal-ToneDoubling-Maximal-Subj	phonological	5	23	19	
+33	Tonal-FinalRetraction-Minimal	phonological	12	19	8	
+34	Tonal-FinalRetraction-Maximal-NoSubj	phonological	7	23	17	
+35	Tonal-FinalRetraction-Maximal-Subj	phonological	5	23	19	
+36	Tonal-Plateauing-Minimal	phonological	12	19	8	
+37	Tonal-Plateauing-Maximal-NoSubj	phonological	7	23	17	
+38	Tonal-Plateauing-Maximal-Subj	phonological	5	23	19	
+39	Tonal-EncliticToneShift	phonological	19	21	3	
+40	Tonal-RootExtensionHighTone	phonological	12	15	4	

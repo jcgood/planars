@@ -65,6 +65,23 @@ def domain_type_rows(observed: list[str]) -> list[dict]:
     return rows
 
 
+def with_synthetic_root(spans: list[Span], n_positions: int) -> tuple[list[Span], bool]:
+    """Add the synthetic full root [1..n_positions] when no observed span covers it.
+
+    enumerate_maximal_laminar_families() puts that synthetic root into every
+    family, so the span table must list it too or memberships would name a
+    span the table doesn't have. It is flagged `synthetic` in spans.tsv and
+    excluded from observed-span counts. Found by the shifted test dataset,
+    whose data starts at position 3: nyan1308 never needed it because its
+    [1-22] span is observed.
+    """
+    if any(span.left == 1 and span.right == n_positions for span in spans):
+        return spans, False
+    root = Span(1, n_positions, labels=("(root)",),
+                domain_types=frozenset(["(synthetic)"]), convergence=0)
+    return spans + [root], True
+
+
 def load_root_position(planar_file: Path | None, root_element: str) -> int | None:
     """Position whose planar-table Elements value is `root_element`, if any."""
     if planar_file is None or not planar_file.exists():
@@ -197,10 +214,11 @@ def export_bundle(
                 "family_frequency": span_family_count[key],
                 "labels": "|".join(span.labels),
                 "domain_types": "|".join(sorted(span.domain_types)),
+                "synthetic": span.domain_types == frozenset(["(synthetic)"]),
             })
         write_tsv(target_dir / "spans.tsv", [
             "span_id", "left", "right", "size", "convergence",
-            "family_frequency", "labels", "domain_types"
+            "family_frequency", "labels", "domain_types", "synthetic"
         ], span_rows)
 
         family_rows = []
@@ -233,7 +251,9 @@ def export_bundle(
     families, truncated = enumerate_maximal_laminar_families(spans, adjacency, n_positions)
     if truncated:
         raise RuntimeError("Family enumeration was truncated; refusing to export incomplete data.")
-    span_family_count, conflict_rows = write_analysis_tables(data_dir, spans, families, adjacency, tests)
+    table_spans, synthetic_root = with_synthetic_root(spans, n_positions)
+    span_family_count, conflict_rows = write_analysis_tables(data_dir, table_spans, families, adjacency, tests)
+    synthetic_id = f"1-{n_positions}" if synthetic_root else None
 
     if planar_file is None:
         candidate = REPO_DIR / "planar_tables" / f"planar_{dataset}.tsv"
@@ -273,10 +293,12 @@ def export_bundle(
         "n_positions": n_positions,
         "n_active_tests": len(tests),
         "n_unique_spans": len(spans),
+        "synthetic_root": synthetic_root,
         "n_conflict_pairs": len(conflict_rows),
         "n_maximal_families": len(families),
         "n_universal_spans": sum(
-            frequency == len(families) for frequency in span_family_count.values()
+            frequency == len(families)
+            for key, frequency in span_family_count.items() if key != synthetic_id
         ),
         "enumeration_truncated": truncated,
         "producer": "scripts/analysis/export_planarsviz_data.py",
@@ -309,11 +331,9 @@ def export_bundle(
         # subset has no observed full-span root, the analysis adds a synthetic
         # root to every family; export it as a span too so memberships remain
         # self-contained and directly readable by R.
-        if not any(span.left == 1 and span.right == n_positions for span in subset_spans):
-            subset_spans = subset_spans + [
-                Span(1, n_positions, labels=("(root)",),
-                     domain_types=frozenset(["(synthetic)"]), convergence=0)
-            ]
+        n_observed_subset_spans = len(subset_spans)
+        subset_spans, subset_synthetic = with_synthetic_root(subset_spans, n_positions)
+        subset_synthetic_id = f"1-{n_positions}" if subset_synthetic else None
         subset_dir = data_dir / "subsets" / subset_slug
         subset_frequency, subset_conflicts = write_analysis_tables(
             subset_dir, subset_spans, subset_families, subset_adjacency, subset_tests
@@ -327,12 +347,13 @@ def export_bundle(
             "source_domain_sha256": sha256_file(domain_file),
             "n_positions": n_positions,
             "n_active_tests": len(subset_tests),
-            "n_unique_spans": len(subset_spans),
+            "n_unique_spans": n_observed_subset_spans,
+            "synthetic_root": subset_synthetic,
             "n_conflict_pairs": len(subset_conflicts),
             "n_maximal_families": len(subset_families),
             "n_universal_spans": sum(
                 frequency == len(subset_families)
-                for frequency in subset_frequency.values()
+                for key, frequency in subset_frequency.items() if key != subset_synthetic_id
             ),
             "enumeration_truncated": subset_truncated,
             "domain_types": [domain_type],
@@ -346,7 +367,7 @@ def export_bundle(
             "domain_type": domain_type,
             "path": f"subsets/{subset_slug}",
             "n_active_tests": len(subset_tests),
-            "n_unique_spans": len(subset_spans),
+            "n_unique_spans": n_observed_subset_spans,
             "n_maximal_families": len(subset_families),
         })
     (data_dir / "subsets.json").write_text(

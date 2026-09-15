@@ -10,9 +10,10 @@
   "n_conflict_pairs": 10,
   "n_maximal_families": 6,
   "n_positions": 22,
-  "n_unique_spans": 12,
-  "n_universal_spans": 3,
+  "n_unique_spans": 11,
+  "n_universal_spans": 2,
   "source_domain_file": "domains/domains_nyan1308.tsv",
   "source_domain_sha256": "ce2fdcb1dbdc0aad77c4546059f6246ec0218bd2ea56fb21deb1d82bd748c8bf",
-  "subset_id": "phonological"
+  "subset_id": "phonological",
+  "synthetic_root": true
 }

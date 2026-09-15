@@ -1,27 +1,27 @@
-span_id	left	right	size	convergence	family_frequency	labels	domain_types
-1-22	1	22	22	5	69	SubspanRepetition-Coordination-Maximal|PitchRange-Question-Maximal|Downdrift-DeclarativeContentQ-Maximal|Downdrift-YesNoQ-Maximal|FinalPitch-YesNoQ-Maximal	intonational|morphosyntactic
-2-22	2	22	21	2	69	PitchRange-Declarative-Maximal|FinalPitch-Declarative-Maximal	intonational
-3-21	3	21	19	4	69	Accent-PenultimateLengthening-Maximal-Subj|Tonal-ToneDoubling-Maximal-Subj|Tonal-FinalRetraction-Maximal-Subj|Tonal-Plateauing-Maximal-Subj	phonological
-5-6	5	6	2	1	24	Segmental-Assimilation-Neg	phonological
-5-13	5	13	9	1	10	NonPermutability-Strict	morphosyntactic
-5-17	5	17	13	10	37	FreeOccurrence-Maximal/elsewhere|BiuniquenessDeviation-TAMP|Length-DisyllabicMinimality|NegTonePattern2-Neg1-NoOM-MonoSyll|NegTonePattern2-Neg1-Other|NegTonePattern3-PERM-NoOM-MonoSyll|NegTonePattern3-PERM-NoOM-DiSyll|NegTonePattern3-PERM-NoOM-Other|NegTonePattern3-PERM-OM-MonoSyll|NegTonePattern3-PERM-OM-Other	length|morphosyntactic|tonosegmental
-5-18	5	18	14	2	51	FreeOccurrence-Maximal-AFF/2pOBJ|Ciscategorial-Maximal	length|morphosyntactic
-5-19	5	19	15	1	69	NonInterruptibility	morphosyntactic
-5-21	5	21	17	5	69	NonPermutability-Scopal|Accent-PenultimateLengthening-Maximal-NoSubj|Tonal-ToneDoubling-Maximal-NoSubj|Tonal-FinalRetraction-Maximal-NoSubj|Tonal-Plateauing-Maximal-NoSubj	morphosyntactic|phonological
-6-8	6	8	3	3	24	Segmental-HiatusResolution-Glide|Segmental-HiatusResolution-Deletion|TonePattern7-noOM	phonological|tonosegmental
-6-10	6	10	5	3	8	Segmental-GlideInsertion|Segmental-Assimilation|TonePattern7-OM-Other	phonological|tonosegmental
-6-16	6	16	11	7	18	TonePattern6-RP-noOM-Other|TonePattern6-RP-OM|TonePattern6-HAB-noOM-Other|TonePattern6-HAB-OM|TonePattern8-noOM-JST-Other|TonePattern8-OM-JST-Other|NegTonePattern2-Neg2-IMP-Other	tonosegmental
-6-17	6	17	12	19	23	Segmental-muContraction|TonePattern6-RP-noOM-MonoSyll|TonePattern6-HAB-noOM-MonoSyll|TonePattern7-OM-MonoSyll|TonePattern8-noOM-JST-MonoSyll|TonePattern8-noOM-JST-DiSyll|TonePattern8-OM-JST-MonoSyll|TonePattern8-OM-JST-DiTriSyll|NegTonePattern2-Neg2-IMP-NoOM-MonoSyll|NegTonePattern2-Neg2-SeqPFV-NoOM-MonoSyll|NegTonePattern2-Neg2-SeqPFV-Other|NegTonePattern3-PfvSimPST-NoOM-MonoSyll|NegTonePattern3-PfvSimPST-Other|PitchRange-Declarative-Minimal|PitchRange-Question-Minimal|Downdrift-DeclarativeContentQ-Minimal|Downdrift-YesNoQ-Minimal|FinalPitch-Declarative-Minimal|FinalPitch-YesNoQ-Minimal	intonational|phonological|tonosegmental
-8-10	8	10	3	1	11	TonePattern4-noOM-Other	tonosegmental
-8-16	8	16	9	2	20	TonePattern5-noOM-Other|TonePattern5-OM	tonosegmental
-8-17	8	17	10	8	18	TonePattern4-noOM-MonoSyll|TonePattern4-noOM-DiSyll|TonePattern4-OM-MonoSyll|TonePattern4-OM-DiTriSyll|TonePattern4-OM-Other|TonePattern5-noOM-MonoDiSyll|NegTonePattern4-noOM|NegTonePattern4-OM	tonosegmental
-9-10	9	10	2	1	27	TonePattern2-OM-Other	tonosegmental
-9-16	9	16	8	1	36	TonePattern3-OM-Other	tonosegmental
-9-17	9	17	9	5	25	FreeOccurrence-Maximal-AFF/IMP2s|Tonal-ToneDoubling-Minimal|TonePattern2-OM-MonoSyll|TonePattern2-OM-DiSyll|TonePattern3-OM-MonoSyll	length|phonological|tonosegmental
-9-18	9	18	10	2	14	FreeOccurrence-Maximal-AFF/IMP2p|BiuniquenessDeviation-2pl	length|morphosyntactic
-10-13	10	13	4	1	23	Tonal-RootExtensionHighTone	phonological
-10-16	10	16	7	1	38	Segmental-VowelHarmony	phonological
-10-17	10	17	8	6	14	FreeOccurrence-Minimal-AFF/IMP2s|SubspanRepetition-Coordination-Minimal|SubspanRepetition-Reduplication|Accent-PenultimateLengthening-Minimal|Tonal-FinalRetraction-Minimal|Tonal-Plateauing-Minimal	length|morphosyntactic|phonological
-10-18	10	18	9	2	4	FreeOccurrence-Minimal-AFF/IMP2p|Ciscategorial-Minimal	length|morphosyntactic
-13-15	13	15	3	1	40	BiuniquenessDeviation-Valency	morphosyntactic
-17-19	17	19	3	1	18	Tonal-EncliticToneShift	phonological
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic
+1-22	1	22	22	5	69	SubspanRepetition-Coordination-Maximal|PitchRange-Question-Maximal|Downdrift-DeclarativeContentQ-Maximal|Downdrift-YesNoQ-Maximal|FinalPitch-YesNoQ-Maximal	intonational|morphosyntactic	False
+2-22	2	22	21	2	69	PitchRange-Declarative-Maximal|FinalPitch-Declarative-Maximal	intonational	False
+3-21	3	21	19	4	69	Accent-PenultimateLengthening-Maximal-Subj|Tonal-ToneDoubling-Maximal-Subj|Tonal-FinalRetraction-Maximal-Subj|Tonal-Plateauing-Maximal-Subj	phonological	False
+5-6	5	6	2	1	24	Segmental-Assimilation-Neg	phonological	False
+5-13	5	13	9	1	10	NonPermutability-Strict	morphosyntactic	False
+5-17	5	17	13	10	37	FreeOccurrence-Maximal/elsewhere|BiuniquenessDeviation-TAMP|Length-DisyllabicMinimality|NegTonePattern2-Neg1-NoOM-MonoSyll|NegTonePattern2-Neg1-Other|NegTonePattern3-PERM-NoOM-MonoSyll|NegTonePattern3-PERM-NoOM-DiSyll|NegTonePattern3-PERM-NoOM-Other|NegTonePattern3-PERM-OM-MonoSyll|NegTonePattern3-PERM-OM-Other	length|morphosyntactic|tonosegmental	False
+5-18	5	18	14	2	51	FreeOccurrence-Maximal-AFF/2pOBJ|Ciscategorial-Maximal	length|morphosyntactic	False
+5-19	5	19	15	1	69	NonInterruptibility	morphosyntactic	False
+5-21	5	21	17	5	69	NonPermutability-Scopal|Accent-PenultimateLengthening-Maximal-NoSubj|Tonal-ToneDoubling-Maximal-NoSubj|Tonal-FinalRetraction-Maximal-NoSubj|Tonal-Plateauing-Maximal-NoSubj	morphosyntactic|phonological	False
+6-8	6	8	3	3	24	Segmental-HiatusResolution-Glide|Segmental-HiatusResolution-Deletion|TonePattern7-noOM	phonological|tonosegmental	False
+6-10	6	10	5	3	8	Segmental-GlideInsertion|Segmental-Assimilation|TonePattern7-OM-Other	phonological|tonosegmental	False
+6-16	6	16	11	7	18	TonePattern6-RP-noOM-Other|TonePattern6-RP-OM|TonePattern6-HAB-noOM-Other|TonePattern6-HAB-OM|TonePattern8-noOM-JST-Other|TonePattern8-OM-JST-Other|NegTonePattern2-Neg2-IMP-Other	tonosegmental	False
+6-17	6	17	12	19	23	Segmental-muContraction|TonePattern6-RP-noOM-MonoSyll|TonePattern6-HAB-noOM-MonoSyll|TonePattern7-OM-MonoSyll|TonePattern8-noOM-JST-MonoSyll|TonePattern8-noOM-JST-DiSyll|TonePattern8-OM-JST-MonoSyll|TonePattern8-OM-JST-DiTriSyll|NegTonePattern2-Neg2-IMP-NoOM-MonoSyll|NegTonePattern2-Neg2-SeqPFV-NoOM-MonoSyll|NegTonePattern2-Neg2-SeqPFV-Other|NegTonePattern3-PfvSimPST-NoOM-MonoSyll|NegTonePattern3-PfvSimPST-Other|PitchRange-Declarative-Minimal|PitchRange-Question-Minimal|Downdrift-DeclarativeContentQ-Minimal|Downdrift-YesNoQ-Minimal|FinalPitch-Declarative-Minimal|FinalPitch-YesNoQ-Minimal	intonational|phonological|tonosegmental	False
+8-10	8	10	3	1	11	TonePattern4-noOM-Other	tonosegmental	False
+8-16	8	16	9	2	20	TonePattern5-noOM-Other|TonePattern5-OM	tonosegmental	False
+8-17	8	17	10	8	18	TonePattern4-noOM-MonoSyll|TonePattern4-noOM-DiSyll|TonePattern4-OM-MonoSyll|TonePattern4-OM-DiTriSyll|TonePattern4-OM-Other|TonePattern5-noOM-MonoDiSyll|NegTonePattern4-noOM|NegTonePattern4-OM	tonosegmental	False
+9-10	9	10	2	1	27	TonePattern2-OM-Other	tonosegmental	False
+9-16	9	16	8	1	36	TonePattern3-OM-Other	tonosegmental	False
+9-17	9	17	9	5	25	FreeOccurrence-Maximal-AFF/IMP2s|Tonal-ToneDoubling-Minimal|TonePattern2-OM-MonoSyll|TonePattern2-OM-DiSyll|TonePattern3-OM-MonoSyll	length|phonological|tonosegmental	False
+9-18	9	18	10	2	14	FreeOccurrence-Maximal-AFF/IMP2p|BiuniquenessDeviation-2pl	length|morphosyntactic	False
+10-13	10	13	4	1	23	Tonal-RootExtensionHighTone	phonological	False
+10-16	10	16	7	1	38	Segmental-VowelHarmony	phonological	False
+10-17	10	17	8	6	14	FreeOccurrence-Minimal-AFF/IMP2s|SubspanRepetition-Coordination-Minimal|SubspanRepetition-Reduplication|Accent-PenultimateLengthening-Minimal|Tonal-FinalRetraction-Minimal|Tonal-Plateauing-Minimal	length|morphosyntactic|phonological	False
+10-18	10	18	9	2	4	FreeOccurrence-Minimal-AFF/IMP2p|Ciscategorial-Minimal	length|morphosyntactic	False
+13-15	13	15	3	1	40	BiuniquenessDeviation-Valency	morphosyntactic	False
+17-19	17	19	3	1	18	Tonal-EncliticToneShift	phonological	False

@@ -1,0 +1,13 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic
+1-24	1	24	24	0	6	(root)	(synthetic)	True
+5-23	5	23	19	4	6	Accent-PenultimateLengthening-Maximal-Subj|Tonal-ToneDoubling-Maximal-Subj|Tonal-FinalRetraction-Maximal-Subj|Tonal-Plateauing-Maximal-Subj	phonological	False
+7-8	7	8	2	1	2	Segmental-Assimilation-Neg	phonological	False
+7-23	7	23	17	4	6	Accent-PenultimateLengthening-Maximal-NoSubj|Tonal-ToneDoubling-Maximal-NoSubj|Tonal-FinalRetraction-Maximal-NoSubj|Tonal-Plateauing-Maximal-NoSubj	phonological	False
+8-10	8	10	3	2	4	Segmental-HiatusResolution-Glide|Segmental-HiatusResolution-Deletion	phonological	False
+8-12	8	12	5	2	2	Segmental-GlideInsertion|Segmental-Assimilation	phonological	False
+8-19	8	19	12	1	2	Segmental-muContraction	phonological	False
+11-19	11	19	9	1	2	Tonal-ToneDoubling-Minimal	phonological	False
+12-15	12	15	4	1	4	Tonal-RootExtensionHighTone	phonological	False
+12-18	12	18	7	1	4	Segmental-VowelHarmony	phonological	False
+12-19	12	19	8	3	2	Accent-PenultimateLengthening-Minimal|Tonal-FinalRetraction-Minimal|Tonal-Plateauing-Minimal	phonological	False
+19-21	19	21	3	1	3	Tonal-EncliticToneShift	phonological	False

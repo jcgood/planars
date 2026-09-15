@@ -1,13 +1,13 @@
-span_id	left	right	size	convergence	family_frequency	labels	domain_types
-1-22	1	22	22	0	6	(root)	(synthetic)
-3-21	3	21	19	4	6	Accent-PenultimateLengthening-Maximal-Subj|Tonal-ToneDoubling-Maximal-Subj|Tonal-FinalRetraction-Maximal-Subj|Tonal-Plateauing-Maximal-Subj	phonological
-5-6	5	6	2	1	2	Segmental-Assimilation-Neg	phonological
-5-21	5	21	17	4	6	Accent-PenultimateLengthening-Maximal-NoSubj|Tonal-ToneDoubling-Maximal-NoSubj|Tonal-FinalRetraction-Maximal-NoSubj|Tonal-Plateauing-Maximal-NoSubj	phonological
-6-8	6	8	3	2	4	Segmental-HiatusResolution-Glide|Segmental-HiatusResolution-Deletion	phonological
-6-10	6	10	5	2	2	Segmental-GlideInsertion|Segmental-Assimilation	phonological
-6-17	6	17	12	1	2	Segmental-muContraction	phonological
-9-17	9	17	9	1	2	Tonal-ToneDoubling-Minimal	phonological
-10-13	10	13	4	1	4	Tonal-RootExtensionHighTone	phonological
-10-16	10	16	7	1	4	Segmental-VowelHarmony	phonological
-10-17	10	17	8	3	2	Accent-PenultimateLengthening-Minimal|Tonal-FinalRetraction-Minimal|Tonal-Plateauing-Minimal	phonological
-17-19	17	19	3	1	3	Tonal-EncliticToneShift	phonological
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic
+1-22	1	22	22	0	6	(root)	(synthetic)	True
+3-21	3	21	19	4	6	Accent-PenultimateLengthening-Maximal-Subj|Tonal-ToneDoubling-Maximal-Subj|Tonal-FinalRetraction-Maximal-Subj|Tonal-Plateauing-Maximal-Subj	phonological	False
+5-6	5	6	2	1	2	Segmental-Assimilation-Neg	phonological	False
+5-21	5	21	17	4	6	Accent-PenultimateLengthening-Maximal-NoSubj|Tonal-ToneDoubling-Maximal-NoSubj|Tonal-FinalRetraction-Maximal-NoSubj|Tonal-Plateauing-Maximal-NoSubj	phonological	False
+6-8	6	8	3	2	4	Segmental-HiatusResolution-Glide|Segmental-HiatusResolution-Deletion	phonological	False
+6-10	6	10	5	2	2	Segmental-GlideInsertion|Segmental-Assimilation	phonological	False
+6-17	6	17	12	1	2	Segmental-muContraction	phonological	False
+9-17	9	17	9	1	2	Tonal-ToneDoubling-Minimal	phonological	False
+10-13	10	13	4	1	4	Tonal-RootExtensionHighTone	phonological	False
+10-16	10	16	7	1	4	Segmental-VowelHarmony	phonological	False
+10-17	10	17	8	3	2	Accent-PenultimateLengthening-Minimal|Tonal-FinalRetraction-Minimal|Tonal-Plateauing-Minimal	phonological	False
+17-19	17	19	3	1	3	Tonal-EncliticToneShift	phonological	False

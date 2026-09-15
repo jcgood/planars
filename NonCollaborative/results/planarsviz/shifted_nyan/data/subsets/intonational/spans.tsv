@@ -1,0 +1,5 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic
+1-24	1	24	24	0	1	(root)	(synthetic)	True
+3-24	3	24	22	4	1	PitchRange-Question-Maximal|Downdrift-DeclarativeContentQ-Maximal|Downdrift-YesNoQ-Maximal|FinalPitch-YesNoQ-Maximal	intonational	False
+4-24	4	24	21	2	1	PitchRange-Declarative-Maximal|FinalPitch-Declarative-Maximal	intonational	False
+8-19	8	19	12	6	1	PitchRange-Declarative-Minimal|PitchRange-Question-Minimal|Downdrift-DeclarativeContentQ-Minimal|Downdrift-YesNoQ-Minimal|FinalPitch-Declarative-Minimal|FinalPitch-YesNoQ-Minimal	intonational	False

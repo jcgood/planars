@@ -11,7 +11,7 @@
     "domain_type": "length",
     "n_active_tests": 7,
     "n_maximal_families": 3,
-    "n_unique_spans": 7,
+    "n_unique_spans": 6,
     "path": "subsets/length",
     "subset_id": "length"
   },
@@ -27,7 +27,7 @@
     "domain_type": "phonological",
     "n_active_tests": 21,
     "n_maximal_families": 6,
-    "n_unique_spans": 12,
+    "n_unique_spans": 11,
     "path": "subsets/phonological",
     "subset_id": "phonological"
   },
@@ -35,7 +35,7 @@
     "domain_type": "tonosegmental",
     "n_active_tests": 44,
     "n_maximal_families": 9,
-    "n_unique_spans": 12,
+    "n_unique_spans": 11,
     "path": "subsets/tonosegmental",
     "subset_id": "tonosegmental"
   }

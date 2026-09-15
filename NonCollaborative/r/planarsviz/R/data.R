@@ -120,7 +120,14 @@ validate_planars_bundle <- function(bundle) {
   if (any(as.integer(spans$size) != as.integer(spans$right) - as.integer(spans$left) + 1L)) {
     stop("Span sizes do not match left/right coordinates.", call. = FALSE)
   }
-  if (nrow(spans) != as.integer(metadata$n_unique_spans) ||
+  # A synthetic full root (spans.tsv `synthetic` = TRUE) is listed so family
+  # memberships can name it, but it is not an observed span.
+  n_observed_spans <- if ("synthetic" %in% names(spans)) {
+    sum(!as.logical(spans$synthetic))
+  } else {
+    nrow(spans)
+  }
+  if (n_observed_spans != as.integer(metadata$n_unique_spans) ||
       nrow(bundle$families) != as.integer(metadata$n_maximal_families) ||
       nrow(bundle$conflict_pairs) != as.integer(metadata$n_conflict_pairs) ||
       nrow(bundle$tests) != as.integer(metadata$n_active_tests) ||

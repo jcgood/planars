@@ -16,5 +16,6 @@
   "source_domain_sha256": "ce2fdcb1dbdc0aad77c4546059f6246ec0218bd2ea56fb21deb1d82bd748c8bf",
   "source_labels_file": "planar_tables/display_labels_nyan1308.tsv",
   "source_planar_file": "planar_tables/planar_nyan1308.tsv",
-  "source_planar_sha256": "c039201b38fbbb4aca1a322791114ed2a69fc7d3a3e0992ad8cd64a16d789e17"
+  "source_planar_sha256": "c039201b38fbbb4aca1a322791114ed2a69fc7d3a3e0992ad8cd64a16d789e17",
+  "synthetic_root": false
 }
