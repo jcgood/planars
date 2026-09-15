@@ -53,7 +53,13 @@ Honesty rule: nothing below says "matches" without naming the comparison file.
 5. Span chart x-axis drops labels left of the first charted span — see the
    chart 15 entry.
 6. Span chart colour for `length` is inferred — see the chart 15 entry.
-7. **Overlay legend's "More" thickness swatch.** The generator draws the
+7. **Settled 2026-09-15: fixed.** The swatch now follows the lines'
+   exponent (`legend_thickness_exponent`, default `thickness_exponent`;
+   `0.5` reproduces the old legend exactly), and a swatch too thick for the
+   legend box is pulled in so its rounded ends stay inside. All-families and
+   wordhood legends: 0.05% differing pixels from the old files (the swatch
+   only). Original question:
+   **Overlay legend's "More" thickness swatch.** The generator draws the
    swatch at `sqrt(highest convergence)` even when the lines are drawn with
    exponent 0.75 (the all-families chart), so in chart 8/9's legend the
    swatch is thinner than the thickest line. Reproduced faithfully; say if
@@ -63,14 +69,25 @@ Honesty rule: nothing below says "matches" without naming the comparison file.
    so every `planarsviz-library` commit exists only on this machine (worktree
    `/Users/jcgood/gitrepos/planars-planarsviz`). Push it yourself after the
    usual `coded_data` pull, or tell me to.
-9. **Conflict-groups chart has no panel titles.** The script sets titles
+9. **Settled 2026-09-15: fixed.** Titles show by default, at 24 pt
+   (`panel_titles`, `title_size`); `panel_titles = FALSE` reproduces the old
+   chart exactly. With titles: 8.7% differing pixels from the old file
+   (titles plus a small shift of each panel). Original question:
+   **Conflict-groups chart has no panel titles.** The script sets titles
    ("All 69 families", "Group A: [5–13] (10 families)"…) with
    `plot_annotation()` on each panel, but patchwork ignores annotations on a
    panel nested inside a larger layout, so the committed PDF shows none —
    the reader can't tell which small panel is which group. Reproduced
    faithfully (the library builds the same titles, equally invisible). Fix
    by drawing the titles another way?
-10. **scipy is not installed.** The boundary-strength distributions chart
+10. **Settled 2026-09-15: scipy added** to `requirements.in` (1.18.1 pinned
+    in `requirements.txt`) and installed. `verify_boundary_density.py`: the
+    exporter's numpy curves equal scipy's `gaussian_kde` for the full
+    analysis and all six subsets (largest difference 1.3e-14, rounding
+    only), so the numpy version stays and the exporter needs no scipy.
+    `boundary_strength.py` now runs here and reproduces its committed table.
+    Original question:
+    **scipy is not installed.** The boundary-strength distributions chart
     (chart 17) uses scipy's weighted smoothing, but scipy isn't in the
     project's environment or declared in `requirements.in`, so that
     committed PDF can't be regenerated on this machine. The exporter rebuilds

@@ -17,6 +17,11 @@
 #   - the final layout stacks the all-families panel over the group panels
 #     side by side for any number of groups (the script's three-group
 #     expression is the same thing);
+#   - fixed 2026-09-15 at Jeff's request: panel titles are visible. The
+#     script set them with plot_annotation(), which patchwork ignores on a
+#     panel nested in a larger layout, so they never appeared; each panel is
+#     now wrapped as one element carrying a title. panel_titles = FALSE
+#     reproduces the old chart;
 #   - library() and ggsave() removed.
 
 #' One conflict-groups tree
@@ -57,11 +62,16 @@ planarsviz_conflict_tree <- function(newick, group_spans, strengths, alphaval, c
 #'
 #' @param bundle A bundle from [read_planars_bundle()].
 #' @param other_label Title text for the group with no defining span.
+#' @param panel_titles Show each panel's title ("All 69 families", "Group A:
+#'   [5–13] (10 families)", ...). `FALSE` reproduces the old chart, whose
+#'   titles never appeared.
+#' @param title_size Panel title size in points (the canvas is 24 x 20 in).
 #' @return A patchwork plot with attributes `planarsviz_size`,
 #'   `planarsviz_units` and `planarsviz_parts` (one list of trees per panel,
 #'   all-families first).
 #' @export
-plot_conflict_groups <- function(bundle, other_label = "neither") {
+plot_conflict_groups <- function(bundle, other_label = "neither", panel_titles = TRUE,
+                                 title_size = 24) {
   validate_planars_bundle(bundle)
   planarsviz_require_trees()
   groups <- read_planars_conflict_groups(bundle)
@@ -84,7 +94,12 @@ plot_conflict_groups <- function(bundle, other_label = "neither") {
     panel_design <- do.call(c, rep(list(patchwork::area(t=1, l=1, b=5, r=1)), length(trees)))
     panel <- Reduce(`+`, trees) +
       plot_layout(design=panel_design)
-    panel <- panel + plot_annotation(title=title)
+    panel <- if (isTRUE(panel_titles)) {
+      patchwork::wrap_elements(full = panel) + ggtitle(title) +
+        theme(plot.title = element_text(size = title_size))
+    } else {
+      panel + plot_annotation(title=title)
+    }
     list(panel = panel, trees = trees)
   }
 

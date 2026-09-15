@@ -7,6 +7,10 @@
 # plot_conflict_groups(), compares every tree's ggplot_build() data panel by
 # panel (all_tp*, ga_tp*, gb_tp*, gc_tp* against the library's parts in
 # order), renders at 24x20 in and pixel-compares with the frozen reference.
+# Panel titles were fixed on 2026-09-15 (the old chart's never showed). The
+# exact pixel comparison uses panel_titles = FALSE, which reproduces the old
+# chart; plots/ and comparisons/ get the library's default (titled) chart,
+# and the report gives both pixel figures.
 # library-only (shifted test data): render only, beside the nyan1308 render.
 #
 # Run from NonCollaborative/:
@@ -54,18 +58,22 @@ same_data <- function(po, pl, what) {
 compare <- function(ref, new_png, out_png) {
   system2(python, c("scripts/planarsviz_compare.py", shQuote(ref), shQuote(new_png), shQuote(out_png)), stdout = TRUE)
 }
+# Saves the PDF at pdf_path (at the chart's own canvas) and returns a 100 dpi PNG made in tempdir().
+render <- function(p, pdf_path) {
+  size <- attr(p, "planarsviz_size")
+  dir.create(dirname(pdf_path), recursive = TRUE, showWarnings = FALSE)
+  suppressMessages(suppressWarnings(ggplot2::ggsave(pdf_path, p, width = size[["width"]], height = size[["height"]], units = "in")))
+  stem <- file.path(tempdir(), paste0(basename(dirname(pdf_path)), "_", sub("\\.pdf$", "", basename(pdf_path))))
+  system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(pdf_path), shQuote(stem)))
+  paste0(stem, ".png")
+}
 cmp_dir <- file.path(dirname(bundle_dir), "comparisons", if (library_only) "shifted" else "")
 dir.create(cmp_dir, recursive = TRUE, showWarnings = FALSE)
 
+base <- paste0(prefix, "_conflict_groups")
 pl <- suppressMessages(suppressWarnings(plot_conflict_groups(bundle)))
 size <- attr(pl, "planarsviz_size")
-base <- paste0(prefix, "_conflict_groups")
-pdf_path <- file.path(bundle_dir, "plots", paste0(base, ".pdf"))
-dir.create(dirname(pdf_path), recursive = TRUE, showWarnings = FALSE)
-suppressMessages(suppressWarnings(ggplot2::ggsave(pdf_path, pl, width = size[["width"]], height = size[["height"]], units = "in")))
-stem <- file.path(tempdir(), base)
-system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(pdf_path), shQuote(stem)))
-new_png <- paste0(stem, ".png")
+new_png <- render(pl, file.path(bundle_dir, "plots", paste0(base, ".pdf")))
 
 if (library_only) {
   nyan_pdf <- file.path(dirname(bundle_dir), "nyan1308", "plots", "nyan1308_conflict_groups.pdf")
@@ -74,11 +82,14 @@ if (library_only) {
   cat(base, ": rendered; side by side with nyan1308: ",
       compare(paste0(nyan_stem, ".png"), new_png, file.path(cmp_dir, paste0(base, ".png"))), "\n", sep = "")
 } else {
+  pl_old <- suppressMessages(suppressWarnings(plot_conflict_groups(bundle, panel_titles = FALSE)))
+  old_png <- render(pl_old, file.path(tempdir(), "as_generated", paste0(base, ".pdf")))
+
   src <- readLines(file.path("results", "laminar_conflict_groups.r"))
   src <- src[!startsWith(src, "ggsave(")]
   orig <- new.env()
   suppressMessages(suppressWarnings(eval(parse(text = src), envir = orig)))
-  parts <- attr(pl, "planarsviz_parts")
+  parts <- attr(pl_old, "planarsviz_parts")
   prefixes <- c("all_tp", "ga_tp", "gb_tp", "gc_tp")
   problems <- character()
   if (length(parts) != length(prefixes)) problems <- sprintf("panel count %d vs %d", length(parts), length(prefixes))
@@ -91,9 +102,12 @@ if (library_only) {
     }
     for (i in seq_along(names_j)) problems <- c(problems, same_data(get(names_j[[i]], envir = orig), parts[[j]][[i]], names_j[[i]]))
   }
-  pix <- compare(file.path(dirname(bundle_dir), "reference", paste0(base, ".png")), new_png,
-                 file.path(cmp_dir, paste0(base, ".png")))
+  ref <- file.path(dirname(bundle_dir), "reference", paste0(base, ".png"))
+  pix_old <- compare(ref, old_png, file.path(tempdir(), paste0(base, "_as_generated_cmp.png")))
+  pix <- compare(ref, new_png, file.path(cmp_dir, paste0(base, ".png")))
   cat(base, ": ", if (length(problems)) paste("NUMBERS DIFFER:", paste(head(problems, 5), collapse = " | ")) else "numbers identical",
-      "; canvas ", size[["width"]], "x", size[["height"]], " in; pixels: ", pix, "\n", sep = "")
+      "; canvas ", size[["width"]], "x", size[["height"]], " in",
+      "\n  as generated (panel_titles = FALSE): ", pix_old,
+      "\n  library default (titles shown): ", pix, "\n", sep = "")
   cat(if (length(problems)) "SOME NUMBER CHECKS FAILED\n" else "ALL NUMBER CHECKS PASSED\n")
 }

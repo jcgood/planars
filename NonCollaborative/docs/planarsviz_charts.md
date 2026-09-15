@@ -150,6 +150,7 @@ plot_laminar_overlay(bundle, groups = "all", alpha_divisor = 1,
 | `thickness_exponent` | Line thickness is convergence to this power. |
 | `legend` | Add an inset legend: a colour key for several groups, a darkness/thickness key for one. |
 | `highlight` | A highlight id from `highlights.tsv` to colour position labels by. |
+| `legend_thickness_exponent` | Exponent for the legend's "More" thickness swatch; defaults to `thickness_exponent`, so the swatch matches the thickest lines. The old legends always used 0.5, which was too thin for the all-families charts; `0.5` reproduces them. |
 
 Canvas 20 × 14 in.
 
@@ -217,10 +218,14 @@ cover every span in the group.
 plot_conflict_groups(bundle)
 ```
 
-Option `other_label` as for four trees. Canvas 24 × 20 in. Renderer name
-`conflict_groups`; old file `nyan1308_conflict_groups.pdf`. The panel
-titles don't show, in the old chart or this one (open question 9 in the
-progress file).
+| Option | Meaning |
+|---|---|
+| `other_label` | As for four trees. |
+| `panel_titles` | Show each panel's title (default `TRUE`). The old chart's titles never appeared; `FALSE` reproduces it. |
+| `title_size` | Title size in points (default 24). |
+
+Canvas 24 × 20 in. Renderer name `conflict_groups`; old file
+`nyan1308_conflict_groups.pdf` (which has no visible titles).
 
 ---
 

@@ -23,6 +23,11 @@
 #   - the colour legend lists the domain types of the groups actually drawn
 #     (the generator always listed its fixed five, which for nyan1308 are the
 #     same five);
+#   - fixed 2026-09-15 at Jeff's request: the darkness/thickness legend's
+#     "More" thickness swatch follows the lines' exponent (the generator
+#     always used a square root, so with exponent 0.75 the swatch was
+#     thinner than the thickest line); legend_thickness_exponent = 0.5
+#     reproduces the generator's legend;
 #   - library() and ggsave() removed. Without `legend`, the white page
 #     background the generator applied inside ggsave() is applied to the
 #     returned plot; with `legend`, the plot is built exactly as the
@@ -62,13 +67,17 @@ read_planars_overlay_groups <- function(bundle) {
 #'   one group is drawn, otherwise a darkness/thickness key.
 #' @param highlight A `highlight_id` from `highlights.tsv` to colour position
 #'   labels by (e.g. `"orthographic_word"`), or `NULL`.
+#' @param legend_thickness_exponent Exponent for the darkness/thickness
+#'   legend's "More" thickness swatch; defaults to `thickness_exponent` so the
+#'   swatch matches the lines. `0.5` reproduces the old generated legend.
 #' @return A patchwork plot with attributes `planarsviz_size`,
 #'   `planarsviz_units` (`"in"`), `planarsviz_parts` (tree plots in stacking
 #'   order) and, with `legend = TRUE`, `planarsviz_legend_plot`.
 #' @export
 plot_laminar_overlay <- function(bundle, groups = NULL, alpha_divisor = 2,
                                  thickness_exponent = 0.5, legend = FALSE,
-                                 highlight = NULL) {
+                                 highlight = NULL,
+                                 legend_thickness_exponent = thickness_exponent) {
   validate_planars_bundle(bundle)
   planarsviz_require_trees()
   all_groups <- read_planars_overlay_groups(bundle)
@@ -145,16 +154,15 @@ plot_laminar_overlay <- function(bundle, groups = NULL, alpha_divisor = 2,
         plot.margin=margin(8, 8, 8, 8))
     result <- forest + patchwork::inset_element(legend_plot, left=0.002, bottom=0.55, right=0.40, top=0.97, align_to="panel", on_top=TRUE)
   } else {
-    # Swatch values as the generator computes them. Note (question for Jeff,
-    # docs/PLANARSVIZ_LIBRARY_PROGRESS.md): the "More" thickness swatch uses
-    # a square root regardless of thickness_exponent, so it doesn't match
-    # lines drawn with 0.75. Reproduced, not fixed.
+    # Swatch values with the generator's formulas, except that the thickness
+    # swatches use legend_thickness_exponent (default: the lines' own
+    # exponent; the generator always used 0.5).
     max_conv <- max(1L, unlist(lapply(chosen, function(g)
       as.integer(unlist(strsplit(g$trees$group_convergence, ";", fixed = TRUE))))))
     dark_hi <- round(1 - (1 - alphaval) ^ n_total, 6)
     dark_lo <- 0.4
-    thick_hi <- round(max_conv ^ 0.5, 4)
-    thick_lo <- round(1 ^ 0.5, 4)
+    thick_hi <- round(max_conv ^ legend_thickness_exponent, 4)
+    thick_lo <- round(1 ^ legend_thickness_exponent, 4)
     legend_header_data <- data.frame(
       y = c(7, 3.65),
       label = c("Darkness: Trees sharing span",
@@ -166,11 +174,21 @@ plot_laminar_overlay <- function(bundle, groups = NULL, alpha_divisor = 2,
       lw = c(3, 3, thick_hi, thick_lo),
       label = c("More", "Fewer", "More", "Fewer")
     )
+    # A swatch's rounded ends stick out by half its line width. Up to the
+    # legend's 6 pt left margin that is harmless (every swatch the generator
+    # drew fits, so those keep their exact position); a thicker swatch --
+    # e.g. the thickness swatch at exponent 0.75 -- is pulled in by the
+    # excess so it stays inside the box and clear of its label. The legend
+    # panel is about 0.26 x 19.8 in wide for x from 0 to 4.9.
+    pt_per_unit <- 0.26 * 19.8 * 72 / 4.9
+    inset <- pmax(0, legend_swatch_data$lw * .pt * 0.75 / 2 - 6) / pt_per_unit
+    legend_swatch_data$x0 <- inset
+    legend_swatch_data$x1 <- 0.9 - inset
     legend_plot <- ggplot() +
       geom_text(data=legend_header_data, aes(x=0, y=y, label=label),
         hjust=0, size=7) +
       geom_segment(data=legend_swatch_data,
-        aes(x=0, xend=0.9, y=y, yend=y, alpha=alpha_val, linewidth=lw),
+        aes(x=x0, xend=x1, y=y, yend=y, alpha=alpha_val, linewidth=lw),
         color="black", lineend="round") +
       geom_text(data=legend_swatch_data, aes(x=1.05, y=y, label=label),
         hjust=0, size=5.8) +

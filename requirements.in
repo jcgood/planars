@@ -12,6 +12,9 @@ pydantic       # data contracts on dict/JSON boundaries (Phase 6, issue #271) --
 PyYAML
 weasyprint>=68.0
 
+# NonCollaborative/ analysis scripts
+scipy            # weighted density in scripts/analysis/boundary_strength.py (distributions chart)
+
 # Needed at runtime but not directly imported
 kaleido          # plotly image/PDF export backend
 

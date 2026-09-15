@@ -273,15 +273,16 @@ def export_boundary_strength(domain_file: Path, domains_dir: Path, target_dir: P
 
 def weighted_gaussian_kde(points, weights, grid, factor):
     """scipy.stats.gaussian_kde(points, weights=weights, bw_method=factor)(grid),
-    rebuilt in numpy because scipy is not installed in this project's
-    environment (checked 2026-09-15; boundary_strength.py imports it only
-    inside save_distribution_figure()). scipy's rule for a numeric
+    rebuilt in numpy. It was written when scipy was missing from the
+    project's environment; scipy is now a declared dependency, and
+    scripts/planarsviz_checks/verify_boundary_density.py confirms this equals
+    scipy's result (largest difference 1.3e-14), so the exporter keeps the
+    numpy version and doesn't need scipy. scipy's rule for a numeric
     bw_method: normalise the weights to sum to 1; kernel variance = the
     weighted variance of the points (numpy.cov with aweights, bias=False)
     times factor squared; density = sum of weight x normal density centred on
-    each point. Checked against the committed scipy-drawn chart: area 1, left
-    peak 0.2332 at x = 5.07, right peak 0.1519 at x = 21.5. Returns a list of
-    None where scipy would refuse (no weight, or all weight on one point).
+    each point. Returns a list of None where scipy would refuse (no weight,
+    or all weight on one point).
     """
     w = np.asarray(weights, dtype=float)
     if w.sum() <= 0 or np.count_nonzero(w) < 2:
