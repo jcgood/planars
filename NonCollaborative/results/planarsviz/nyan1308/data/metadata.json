@@ -3,6 +3,7 @@
   "contract_version": "0.2.0",
   "dataset": "nyan1308",
   "enumeration_truncated": false,
+  "language_name": "Chichewa",
   "n_active_tests": 95,
   "n_conflict_pairs": 65,
   "n_maximal_families": 69,

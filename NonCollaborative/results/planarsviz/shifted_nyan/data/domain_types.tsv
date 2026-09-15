@@ -1,7 +1,7 @@
-domain_type	colour	sort_order	legend_order	known
-morphosyntactic	#BC3C29	1	1	True
-tonosegmental	#0072B5	2	5	True
-length	#E18727	3	3	True
-phonological	#20845E	4	2	True
-intonational	#7876B1	5	4	True
-tonal	#7F7F7F	6	6	False
+domain_type	colour	sort_order	legend_order	facet_order	known
+morphosyntactic	#BC3C29	1	1	1	True
+tonosegmental	#0072B5	2	5	3	True
+length	#E18727	3	3	5	True
+phonological	#20845E	4	2	2	True
+intonational	#7876B1	5	4	4	True
+tonal	#7F7F7F	6	6	6	False

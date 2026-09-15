@@ -34,17 +34,19 @@ from laminar_analysis import (  # noqa: E402
 )
 
 # Domain-type display style: colour, the order types are sorted in within a
-# layer (df.plot()'s factor levels), and the order they appear in a legend.
-# Values copied from scripts/domain_charts-cgpt.r (group.colors, df.plot()
-# levels, constituency.plot() breaks). This is the one place R gets them from.
-# A domain type observed in the data but not listed here gets FALLBACK_COLOUR
-# and sorts/legends after the known types, alphabetically.
+# layer (df.plot()'s factor levels), the order they appear in a legend, and the
+# order of per-type panels (facet_order, from nyan_boundary_skyline.r's facet
+# levels -- a third, different order, kept as-is so that chart doesn't change).
+# Colours and the first two orders are copied from scripts/domain_charts-cgpt.r
+# (group.colors, df.plot() levels, constituency.plot() breaks). This is the
+# one place R gets them from. A domain type observed in the data but not listed
+# here gets FALLBACK_COLOUR and sorts after the known types, alphabetically.
 DOMAIN_TYPE_STYLE: list[dict] = [
-    {"domain_type": "morphosyntactic", "colour": "#BC3C29", "sort_order": 1, "legend_order": 1},
-    {"domain_type": "tonosegmental", "colour": "#0072B5", "sort_order": 2, "legend_order": 5},
-    {"domain_type": "length", "colour": "#E18727", "sort_order": 3, "legend_order": 3},
-    {"domain_type": "phonological", "colour": "#20845E", "sort_order": 4, "legend_order": 2},
-    {"domain_type": "intonational", "colour": "#7876B1", "sort_order": 5, "legend_order": 4},
+    {"domain_type": "morphosyntactic", "colour": "#BC3C29", "sort_order": 1, "legend_order": 1, "facet_order": 1},
+    {"domain_type": "tonosegmental", "colour": "#0072B5", "sort_order": 2, "legend_order": 5, "facet_order": 3},
+    {"domain_type": "length", "colour": "#E18727", "sort_order": 3, "legend_order": 3, "facet_order": 5},
+    {"domain_type": "phonological", "colour": "#20845E", "sort_order": 4, "legend_order": 2, "facet_order": 2},
+    {"domain_type": "intonational", "colour": "#7876B1", "sort_order": 5, "legend_order": 4, "facet_order": 4},
 ]
 FALLBACK_COLOUR = "#7F7F7F"
 
@@ -60,6 +62,7 @@ def domain_type_rows(observed: list[str]) -> list[dict]:
             "colour": FALLBACK_COLOUR,
             "sort_order": len(DOMAIN_TYPE_STYLE) + i,
             "legend_order": len(DOMAIN_TYPE_STYLE) + i,
+            "facet_order": len(DOMAIN_TYPE_STYLE) + i,
             "known": False,
         })
     return rows
@@ -161,6 +164,7 @@ def export_bundle(
     planar_file: Path | None = None,
     labels_file: Path | None = None,
     root_element: str = "root",
+    language_name: str | None = None,
 ) -> Path:
     """Export one validated domain dataset and return its bundle directory.
 
@@ -269,12 +273,13 @@ def export_bundle(
     root_position = load_root_position(planar_file, root_element)
     observed_types = sorted(t.strip() for t in tests["Domain_Type"].dropna().unique())
     write_tsv(data_dir / "domain_types.tsv",
-              ["domain_type", "colour", "sort_order", "legend_order", "known"],
+              ["domain_type", "colour", "sort_order", "legend_order", "facet_order", "known"],
               domain_type_rows(observed_types))
 
     metadata = {
         "contract_version": "0.2.0",
         "dataset": dataset,
+        "language_name": language_name,
         "source_domain_file": str(domain_file),
         "source_domain_sha256": sha256_file(domain_file),
         "source_planar_file": (
@@ -391,10 +396,14 @@ def main() -> None:
         "--root-element", default="root",
         help="Elements value marking the root position in the planar table (default: root)",
     )
+    parser.add_argument(
+        "--language-name", default=None,
+        help="Human-readable language name for chart titles, e.g. Chichewa (titles fall back to the dataset id)",
+    )
     args = parser.parse_args()
 
     bundle_dir = export_bundle(args.domain_file, args.output_dir, args.planar_file,
-                               args.labels_file, args.root_element)
+                               args.labels_file, args.root_element, args.language_name)
     print(f"Exported planarsviz bundle: {bundle_dir}")
 
 

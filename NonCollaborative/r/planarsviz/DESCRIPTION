@@ -22,10 +22,12 @@ Imports:
     grid,
     jsonlite,
     magrittr,
+    patchwork,
+    scales,
     stats,
     stringr,
-    tidyr
+    tidyr,
+    utils
 Suggests:
     ape,
-    ggtree,
-    patchwork
+    ggtree
