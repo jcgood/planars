@@ -91,6 +91,17 @@ fewest tests.
 and `colour` for the bars. Types and bundles with no tests in the data are
 left out.
 
+`boundary_strength.tsv` (in `data/` and in every `subsets/<id>/`): per
+position, how strongly it is a left or right constituent edge across the
+analysis's maximal families, from `boundary_strength.py`'s
+`compute_boundary_strength()`: `left_summed`/`right_summed` (sum over spans
+starting/ending there of each span's family count) and
+`left_capped`/`right_capped` (families with at least one such span).
+Beside it, `boundary_strength_density.tsv` (`x`, `left`, `right`): the
+weighted density curves of the summed strengths drawn by the distributions
+chart, on 400 points from the first position − 1 to the last + 1; a side
+is empty when it has fewer than two positions with any strength.
+
 `forests.json` / `forests/<id>.tsv`: the trees of each per-class forest
 (Newick, span order, thickness), computed with the class's own position
 count. `overlay_groups.json` / `overlay_groups/<id>.tsv`: the trees of each

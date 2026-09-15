@@ -40,13 +40,13 @@
 # renders long, like a minus sign (a PDF encoding of WinAnsi.enc did not
 # change it).
 
-# matplotlib's AutoLocator ticks for an axis from 0 to `limit`.
-planarsviz_mpl_breaks <- function(limit, nbins = 9) {
-  raw <- limit / nbins
+# matplotlib's AutoLocator ticks for an axis from `lower` to `limit`.
+planarsviz_mpl_breaks <- function(limit, nbins = 9, lower = 0) {
+  raw <- (limit - lower) / nbins
   scale <- 10 ^ floor(log10(raw))
   steps <- c(1, 2, 2.5, 5, 10) * scale
   step <- steps[steps >= raw - 1e-9][1]
-  seq(0, floor(limit / step + 1e-9) * step, by = step)
+  seq(ceiling(lower / step - 1e-9) * step, floor(limit / step + 1e-9) * step, by = step)
 }
 
 # matplotlib's padding around n categorical bars of the given width, as a

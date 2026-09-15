@@ -20,6 +20,7 @@ import json
 import sys
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -39,6 +40,7 @@ from laminar_analysis import (  # noqa: E402
 )
 from planars_groupings import BUNDLES, FILTERS  # noqa: E402
 from laminar_tree_counts import CLASS_ORDER, collect_bundle_counts, collect_counts  # noqa: E402
+from boundary_strength import compute_boundary_strength  # noqa: E402
 
 
 def forest_variants() -> list[tuple[str, list[str], str]]:
@@ -238,6 +240,58 @@ def export_tree_counts(domain_file: Path, domains_dir: Path, data_dir: Path) -> 
     write_tsv(data_dir / "tree_counts.tsv",
               ["condition", "class", "n_unique_spans", "n_maximal_laminar_families",
                "kind", "label", "colour"], rows)
+
+
+def export_boundary_strength(domain_file: Path, domains_dir: Path, target_dir: Path,
+                             subset: list[str] | None = None) -> None:
+    """Write boundary_strength.tsv for the full data or one subset analysis.
+
+    Calls boundary_strength.compute_boundary_strength() unchanged
+    (docs/PLAN_planarsviz_library.md section 4.3), so the columns and values
+    equal that script's nyan1308_boundary_strength.tsv -- and, for
+    subsets/no_tono, the committed nyan1308_boundary_strength_no_tono.tsv,
+    which is the same four domain types (checked 2026-09-15). One row per
+    position up to the analysis's largest right edge.
+    """
+    rows, _n_families = compute_boundary_strength(domain_file.name, domains_dir, subset=subset)
+    write_tsv(target_dir / "boundary_strength.tsv",
+              ["position", "left_summed", "left_capped", "right_summed", "right_capped"], rows)
+
+    # The distributions chart's curves: save_distribution_figure()'s
+    # gaussian_kde(positions, weights=summed, bw_method=0.15) on its grid of
+    # 400 points from the first position - 1 to the last + 1.
+    positions = np.array([row["position"] for row in rows], dtype=float)
+    grid = np.linspace(positions.min() - 1, positions.max() + 1, 400)
+    density_rows = [{"x": repr(float(x))} for x in grid]
+    for side in ("left", "right"):
+        weights = np.array([row[f"{side}_summed"] for row in rows], dtype=float)
+        values = weighted_gaussian_kde(positions, weights, grid, 0.15)
+        for density_row, value in zip(density_rows, values):
+            density_row[side] = "" if value is None else repr(float(value))
+    write_tsv(target_dir / "boundary_strength_density.tsv", ["x", "left", "right"], density_rows)
+
+
+def weighted_gaussian_kde(points, weights, grid, factor):
+    """scipy.stats.gaussian_kde(points, weights=weights, bw_method=factor)(grid),
+    rebuilt in numpy because scipy is not installed in this project's
+    environment (checked 2026-09-15; boundary_strength.py imports it only
+    inside save_distribution_figure()). scipy's rule for a numeric
+    bw_method: normalise the weights to sum to 1; kernel variance = the
+    weighted variance of the points (numpy.cov with aweights, bias=False)
+    times factor squared; density = sum of weight x normal density centred on
+    each point. Checked against the committed scipy-drawn chart: area 1, left
+    peak 0.2332 at x = 5.07, right peak 0.1519 at x = 21.5. Returns a list of
+    None where scipy would refuse (no weight, or all weight on one point).
+    """
+    w = np.asarray(weights, dtype=float)
+    if w.sum() <= 0 or np.count_nonzero(w) < 2:
+        return [None] * len(grid)
+    points = np.asarray(points, dtype=float)
+    w = w / w.sum()
+    variance = float(np.cov(points, aweights=w, bias=False)) * factor ** 2
+    diff = grid[:, None] - points[None, :]
+    kernel = np.exp(-diff ** 2 / (2 * variance)) / np.sqrt(2 * np.pi * variance)
+    return list(kernel @ w)
 
 
 def family_newick(family) -> str:
@@ -795,6 +849,7 @@ def export_bundle(
             json.dumps(subset_metadata, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
         )
+        export_boundary_strength(domain_file, domains_dir, subset_dir, subset_types)
         subset_index.append({
             "subset_id": subset_slug,
             "kind": subset_kind,
@@ -812,6 +867,7 @@ def export_bundle(
     export_overlay_groups(domain_file, domains_dir, data_dir)
     export_highlights(dataset, data_dir, highlights_file)
     export_tree_counts(domain_file, domains_dir, data_dir)
+    export_boundary_strength(domain_file, domains_dir, data_dir)
     return bundle_dir
 
 

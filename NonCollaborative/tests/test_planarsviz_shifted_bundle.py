@@ -118,6 +118,24 @@ def test_tree_counts_unchanged():
     assert counts(NYAN, {"tonosegmental": "tonal"}) == counts(SHIFTED, {})
 
 
+def test_boundary_strength_shifted():
+    # Same strengths two positions later. The one expected exception: the
+    # shifted families all contain the added full root [1-24], so position 1
+    # is a left edge in every family (left_capped = number of families);
+    # nothing is summed there because the root isn't an observed span.
+    a = rows(NYAN, "boundary_strength.tsv")
+    b = rows(SHIFTED, "boundary_strength.tsv")
+    assert len(b) == len(a) + SHIFT
+    n_families = str(meta(SHIFTED)["n_maximal_families"])
+    for row in b[:SHIFT]:
+        expected_capped = n_families if row["position"] == "1" else "0"
+        assert (row["left_summed"], row["left_capped"], row["right_summed"], row["right_capped"]) == \
+               ("0", expected_capped, "0", "0")
+    for ra, rb in zip(a, b[SHIFT:]):
+        assert int(rb["position"]) == int(ra["position"]) + SHIFT
+        assert {k: v for k, v in ra.items() if k != "position"} == {k: v for k, v in rb.items() if k != "position"}
+
+
 def test_conflicts_are_nyan_conflicts_shifted():
     a = {frozenset((shift_id(r["span_id_a"]), shift_id(r["span_id_b"]))) for r in rows(NYAN, "conflict_pairs.tsv")}
     b = {frozenset((r["span_id_a"], r["span_id_b"])) for r in rows(SHIFTED, "conflict_pairs.tsv")}
