@@ -23,7 +23,7 @@ The versions here are historical prototypes. For the canonical implementation, u
 TSV files containing constituency test results from the Constituency and Convergence Database (CCDB). Each row is one test result for one language; columns include span edges, domain type, fracture types, convergence metrics, and test labels.
 
 - `domains.tsv` — Master dataset (all languages, ~464 rows)
-- `domains_nyan1308.tsv` — Nyangatom (Nilotic)
+- `domains_nyan1308.tsv` — Chichewa (Bantu)
 - `domains_nyan1293_test.tsv` — Test fixture (not a real language dataset)
 - `domains_chac.tsv` — Chácobo (Pano)
 - `domains_yupik.tsv` — Yupik (Eskimo-Aleut)
@@ -39,7 +39,7 @@ TSV files containing constituency test results from the Constituency and Converg
 Planar structure files (slot/position templates for each language's morphosyntactic template).
 
 - `planar_stan1293.tsv` — Canonical planar structure for Standard English (19 positions)
-- `planar_nyan1308.tsv` — Planar structure for Nyangatom
+- `planar_nyan1308.tsv` — Planar structure for Chichewa
 
 Older timestamped CSV snapshots are archived in `OlderFiles/planar_tables/`.
 

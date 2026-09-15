@@ -1,4 +1,4 @@
-# Laminar Family Analysis: Nyangatom (nyan1308)
+# Laminar Family Analysis: Chichewa (nyan1308)
 
 *Generated 2026-04-18 from `domains_nyan1308.tsv` using `laminar_analysis.py`.*  
 *Position labels from `constituencyforest-all.r` (treeTraversal.py output).*

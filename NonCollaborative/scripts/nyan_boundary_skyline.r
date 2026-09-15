@@ -116,7 +116,7 @@ p_by_type <- ggplot(counts, aes(x = Position, y = Count, fill = Boundary)) +
 p <- p_all / p_by_type +
   plot_layout(heights = c(1, 1.7)) +
   plot_annotation(
-    title = "Nyangatom (nyan1308): distribution of span boundaries",
+    title = "Chichewa (nyan1308): distribution of span boundaries",
     subtitle = paste0(
       nrow(domains), " active tests; each test contributes one start and one end boundary. ",
       "Bars show counts at each planar position."
