@@ -96,10 +96,76 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
 
 ---
 
-## Chart 1: pooled plot (`nyan1308_pooled_plot.pdf`)
+## Shifted test dataset (§10.1–10.2)
+
+- `tests/fixtures/make_shifted_nyan.py` → `domains_shifted_nyan.tsv`,
+  `planar_shifted_nyan.tsv`, `display_labels_shifted_nyan.tsv`; exported as
+  `results/planarsviz/shifted_nyan/` with `--language-name "Shifted test data"`.
+- **Leak found and fixed on first export (exporter, not R):** the shifted
+  data doesn't cover position 1, so the family enumeration adds a synthetic
+  root `[1-24]` to every family, but the main span table didn't list it —
+  memberships named an unknown span and the R validator refused the bundle.
+  nyan1308 never hit this (its `[1-22]` is observed). Now spans.tsv lists the
+  synthetic root flagged `synthetic=True`, excluded from observed counts
+  (main and subset metadata); R validator counts observed spans.
+  Side effect on nyan1308's bundle: subset `n_unique_spans` /
+  `n_universal_spans` no longer count their synthetic roots (they did before).
+- `tests/test_planarsviz_shifted_bundle.py`: same counts, spans shifted by 2,
+  conflicts shifted, same families in the same `family_NNN` order (ignoring
+  the synthetic root), root 12, 24 positions, renamed labels, `tonal` in
+  fallback grey. 9 bundle tests pass (nyan1308 + shifted).
+
+---
+
+## Charts 1–4: pooled plots (12 files)
 - Reference current? Re-rendered `domain_charts-cgpt.r` into a scratch dir
-  (output path swapped in memory, script file untouched) and compared all 12
-  pooled PDFs (charts 1–4) to the frozen references: 0.0000% differing pixels
-  for every one (`results/planarsviz/comparisons/refcheck/`).
-- Source copied: `scripts/domain_charts-cgpt.r:14-202` → `R/pooled.R`
-- Status: in progress
+  (output path swapped in memory, script file untouched): all 12 PDFs 0.0000%
+  differing pixels vs frozen references (`comparisons/refcheck/`).
+- Source copied: `scripts/domain_charts-cgpt.r:14-202` → `R/pooled.R`, commit `9b4e37d`.
+- Literals replaced (`180ffcf`): domain-type factor levels, colours, legend
+  order (→ `domain_types.tsv`), root position (→ `metadata.root_position`),
+  position count (→ `metadata.n_positions`). Exporter fields added:
+  `domain_types.tsv`, `root_position`. Public function: `plot_pooled()`
+  (`group_by_domain`, `domain_types`, `layers = "global"|"local"`).
+- Numbers comparison (`scripts/planarsviz_checks/check_pooled.R`): for all 12,
+  every ggplot_build layer data frame, y-axis labels, title and canvas size
+  identical to the working script.
+- Pixel comparison: `results/planarsviz/comparisons/nyan1308_pooled_*.png`,
+  0.0000% differing pixels, all 12.
+- Shifted-dataset check: `comparisons/shifted/shifted_nyan_pooled_*.png`.
+  Only expected differences: positions +2 with empty 1–2, axis to 24, root
+  line at 12, renamed labels, `tonal` in grey in the legend. Also, as a direct
+  consequence of the fallback sort order for an unknown type, `tonal` rows
+  sort after the known types within a layer and its group moves last in the
+  grouped-by-domain chart — expected, not a leak. No leaks found.
+- §5 fixes: global layer numbers (chart 4) — checked, filtered view of the
+  already-numbered data.
+- R6 search: hits only in doc-comment examples and the 26/25 cm canvas widths
+  (rendering choices).
+- Looked at by Claude: yes (full images and zoomed legend/axis/row crops).
+  Seen by Jeff: no.
+- Status: done pending Jeff's review.
+
+## Chart 5: boundary skyline
+- Reference current? Yes by transitivity: the library's plot data equals the
+  working script's (below) and its render has 0.0000% differing pixels
+  against the reference.
+- Source copied: `scripts/nyan_boundary_skyline.r:1-129` → `R/boundary.R`, commit `a0401a8`.
+- Literals replaced (`22e13bc`): position labels and 1..22 range, panel
+  order (→ new `facet_order` column), language name in the title (→ new
+  `metadata.language_name`, `--language-name`). Count table returned as an
+  attribute instead of written. Unused `type_colors` dropped. Public
+  function: `plot_boundary_skyline()`; helper `planarsviz_dataset_title()`.
+- Behaviour note: in the working script an unknown domain type would become
+  NA and silently disappear from the lower panel; the library gives it a
+  panel. Invisible for nyan1308 (all five types known).
+- Numbers comparison (`check_skyline.R`): both panels' plot data, facet
+  panels, x labels, title, subtitle, and the boundary-count table identical.
+- Pixel comparison: `comparisons/nyan1308_boundary_skyline.png`, 0.0000%.
+- Shifted-dataset check: `comparisons/shifted/shifted_nyan_boundary_skyline.png`
+  — title "Shifted test data (shifted_nyan)", empty New1/New2, renamed labels,
+  `tonal` panel last; bar heights unchanged. No leaks found.
+- R6 search: clean apart from the Start/End colours and 16×11 in canvas
+  (rendering choices).
+- Looked at by Claude: yes. Seen by Jeff: no.
+- Status: done pending Jeff's review.
