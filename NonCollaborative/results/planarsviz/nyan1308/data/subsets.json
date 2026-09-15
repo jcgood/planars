@@ -1,6 +1,10 @@
 [
   {
     "domain_type": "intonational",
+    "domain_types": [
+      "intonational"
+    ],
+    "kind": "domain_type",
     "n_active_tests": 12,
     "n_maximal_families": 1,
     "n_unique_spans": 3,
@@ -9,6 +13,10 @@
   },
   {
     "domain_type": "length",
+    "domain_types": [
+      "length"
+    ],
+    "kind": "domain_type",
     "n_active_tests": 7,
     "n_maximal_families": 3,
     "n_unique_spans": 6,
@@ -17,6 +25,10 @@
   },
   {
     "domain_type": "morphosyntactic",
+    "domain_types": [
+      "morphosyntactic"
+    ],
+    "kind": "domain_type",
     "n_active_tests": 11,
     "n_maximal_families": 3,
     "n_unique_spans": 10,
@@ -25,6 +37,10 @@
   },
   {
     "domain_type": "phonological",
+    "domain_types": [
+      "phonological"
+    ],
+    "kind": "domain_type",
     "n_active_tests": 21,
     "n_maximal_families": 6,
     "n_unique_spans": 11,
@@ -33,10 +49,29 @@
   },
   {
     "domain_type": "tonosegmental",
+    "domain_types": [
+      "tonosegmental"
+    ],
+    "kind": "domain_type",
     "n_active_tests": 44,
     "n_maximal_families": 9,
     "n_unique_spans": 11,
     "path": "subsets/tonosegmental",
     "subset_id": "tonosegmental"
+  },
+  {
+    "domain_type": null,
+    "domain_types": [
+      "intonational",
+      "length",
+      "morphosyntactic",
+      "phonological"
+    ],
+    "kind": "filter",
+    "n_active_tests": 51,
+    "n_maximal_families": 24,
+    "n_unique_spans": 20,
+    "path": "subsets/no_tono",
+    "subset_id": "no_tono"
   }
 ]

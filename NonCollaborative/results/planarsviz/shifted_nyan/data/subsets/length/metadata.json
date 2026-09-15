@@ -6,6 +6,7 @@
     "length"
   ],
   "enumeration_truncated": false,
+  "kind": "domain_type",
   "n_active_tests": 7,
   "n_conflict_pairs": 3,
   "n_maximal_families": 3,

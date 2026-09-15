@@ -1,0 +1,21 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-22	1	22	22	5	24	SubspanRepetition-Coordination-Maximal|PitchRange-Question-Maximal|Downdrift-DeclarativeContentQ-Maximal|Downdrift-YesNoQ-Maximal|FinalPitch-YesNoQ-Maximal	intonational|morphosyntactic	False		#9A596D
+2-22	2	22	21	2	24	PitchRange-Declarative-Maximal|FinalPitch-Declarative-Maximal	intonational	False	17	#7876B1
+3-21	3	21	19	4	24	Accent-PenultimateLengthening-Maximal-Subj|Tonal-ToneDoubling-Maximal-Subj|Tonal-FinalRetraction-Maximal-Subj|Tonal-Plateauing-Maximal-Subj	phonological	False	19	#20845E
+5-6	5	6	2	1	10	Segmental-Assimilation-Neg	phonological	False	10	#20845E
+5-13	5	13	9	1	6	NonPermutability-Strict	morphosyntactic	False	4	#BC3C29
+5-17	5	17	13	3	8	FreeOccurrence-Maximal/elsewhere|BiuniquenessDeviation-TAMP|Length-DisyllabicMinimality	length|morphosyntactic	False	5	#CE6228
+5-18	5	18	14	2	16	FreeOccurrence-Maximal-AFF/2pOBJ|Ciscategorial-Maximal	length|morphosyntactic	False	15	#CE6228
+5-19	5	19	15	1	24	NonInterruptibility	morphosyntactic	False	18	#BC3C29
+5-21	5	21	17	5	24	NonPermutability-Scopal|Accent-PenultimateLengthening-Maximal-NoSubj|Tonal-ToneDoubling-Maximal-NoSubj|Tonal-FinalRetraction-Maximal-NoSubj|Tonal-Plateauing-Maximal-NoSubj	morphosyntactic|phonological	False	16	#6E6044
+6-8	6	8	3	2	14	Segmental-HiatusResolution-Glide|Segmental-HiatusResolution-Deletion	phonological	False	13	#20845E
+6-10	6	10	5	2	4	Segmental-GlideInsertion|Segmental-Assimilation	phonological	False	3	#20845E
+6-17	6	17	12	7	3	Segmental-muContraction|PitchRange-Declarative-Minimal|PitchRange-Question-Minimal|Downdrift-DeclarativeContentQ-Minimal|Downdrift-YesNoQ-Minimal|FinalPitch-Declarative-Minimal|FinalPitch-YesNoQ-Minimal	intonational|phonological	False	1	#4C7D88
+9-17	9	17	9	2	8	FreeOccurrence-Maximal-AFF/IMP2s|Tonal-ToneDoubling-Minimal	length|phonological	False	6	#808642
+9-18	9	18	10	2	8	FreeOccurrence-Maximal-AFF/IMP2p|BiuniquenessDeviation-2pl	length|morphosyntactic	False	7	#CE6228
+10-13	10	13	4	1	12	Tonal-RootExtensionHighTone	phonological	False	12	#20845E
+10-16	10	16	7	1	16	Segmental-VowelHarmony	phonological	False	14	#20845E
+10-17	10	17	8	6	12	FreeOccurrence-Minimal-AFF/IMP2s|SubspanRepetition-Coordination-Minimal|SubspanRepetition-Reduplication|Accent-PenultimateLengthening-Minimal|Tonal-FinalRetraction-Minimal|Tonal-Plateauing-Minimal	length|morphosyntactic|phonological	False	11	#946D3A
+10-18	10	18	9	2	4	FreeOccurrence-Minimal-AFF/IMP2p|Ciscategorial-Minimal	length|morphosyntactic	False	2	#CE6228
+13-15	13	15	3	1	10	BiuniquenessDeviation-Valency	morphosyntactic	False	9	#BC3C29
+17-19	17	19	3	1	8	Tonal-EncliticToneShift	phonological	False	8	#20845E

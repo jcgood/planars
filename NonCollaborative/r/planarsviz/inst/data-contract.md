@@ -41,7 +41,16 @@ maximal families containing the span; `convergence` counts source tests that
 produced the span. `synthetic` is `True` only for a full root
 `[1-n_positions]` that no test produced but the family enumeration adds to
 every family; it is not counted as an observed span. `span_chart_rank` is the
-span-frequency chart's row order (empty for the full root).
+span-frequency chart's row order (empty for the full root). `blend_colour` is
+the per-channel average of the span's domain-type colours (black for the
+synthetic root), used by the ForestSpans chart.
+
+`subsets.json` lists fresh analyses of part of the data, each in
+`subsets/<subset_id>/` with the same tables as `data/`: `kind` `domain_type`
+(one per observed type) or `filter` (every observed type except those a
+filter in `scripts/analysis/planars_groupings.py` leaves out, e.g. `no_tono`;
+exported only when the data has a type to leave out). Their spans, families
+and counts are recomputed, not filtered from the full analysis.
 
 `families.tsv` has one row per maximal family: `family_id`, `family_number`,
 `n_spans`, and `newick` (the family's tree; tips are position numbers,

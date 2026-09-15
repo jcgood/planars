@@ -6,6 +6,7 @@
     "tonal"
   ],
   "enumeration_truncated": false,
+  "kind": "domain_type",
   "n_active_tests": 44,
   "n_conflict_pairs": 12,
   "n_maximal_families": 9,

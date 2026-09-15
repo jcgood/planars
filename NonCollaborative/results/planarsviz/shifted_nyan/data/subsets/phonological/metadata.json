@@ -6,6 +6,7 @@
     "phonological"
   ],
   "enumeration_truncated": false,
+  "kind": "domain_type",
   "n_active_tests": 21,
   "n_conflict_pairs": 10,
   "n_maximal_families": 6,

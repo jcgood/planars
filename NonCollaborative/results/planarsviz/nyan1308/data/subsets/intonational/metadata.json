@@ -6,6 +6,7 @@
     "intonational"
   ],
   "enumeration_truncated": false,
+  "kind": "domain_type",
   "n_active_tests": 12,
   "n_conflict_pairs": 0,
   "n_maximal_families": 1,

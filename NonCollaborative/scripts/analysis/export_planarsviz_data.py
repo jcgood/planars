@@ -37,7 +37,7 @@ from laminar_analysis import (  # noqa: E402
     select_representative_families,
     span_to_newick,
 )
-from planars_groupings import BUNDLES  # noqa: E402
+from planars_groupings import BUNDLES, FILTERS  # noqa: E402
 
 
 def forest_variants() -> list[tuple[str, list[str], str]]:
@@ -394,6 +394,28 @@ def domain_type_rows(observed: list[str]) -> list[dict]:
     return rows
 
 
+def blend_colour(domain_types) -> str:
+    """One colour for a span with one or more domain types.
+
+    Copied from scripts/make_forestspans_table.py mix_hex_colors() (the
+    ForestSpans chart's colours): a plain per-channel average of the pure
+    domain-type colours, rounded with Python's round(). A single type gives
+    its own colour exactly. One change: that function skipped types missing
+    from its palette; here an unknown observed type contributes the fallback
+    grey, as it does in every other chart. The synthetic root has no type and
+    gets black, as an empty list did there.
+    """
+    palette = {row["domain_type"]: row["colour"] for row in DOMAIN_TYPE_STYLE}
+    cols = [palette.get(t, FALLBACK_COLOUR) for t in sorted(domain_types) if t != "(synthetic)"]
+    if not cols:
+        return "#000000"
+    rs = [int(c[1:3], 16) for c in cols]
+    gs = [int(c[3:5], 16) for c in cols]
+    bs = [int(c[5:7], 16) for c in cols]
+    r, g, b = (round(sum(vals) / len(vals)) for vals in (rs, gs, bs))
+    return "#%02X%02X%02X" % (r, g, b)
+
+
 def with_synthetic_root(spans: list[Span], n_positions: int) -> tuple[list[Span], bool]:
     """Add the synthetic full root [1..n_positions] when no observed span covers it.
 
@@ -570,11 +592,12 @@ def export_bundle(
                 "domain_types": "|".join(sorted(span.domain_types)),
                 "synthetic": span.domain_types == frozenset(["(synthetic)"]),
                 "span_chart_rank": span_chart_rank.get(key, ""),
+                "blend_colour": blend_colour(span.domain_types),
             })
         write_tsv(target_dir / "spans.tsv", [
             "span_id", "left", "right", "size", "convergence",
             "family_frequency", "labels", "domain_types", "synthetic",
-            "span_chart_rank"
+            "span_chart_rank", "blend_colour"
         ], span_rows)
 
         family_rows = []
@@ -671,14 +694,23 @@ def export_bundle(
         json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
 
-    # Domain-type-specific family analyses for exact laminar overlays.
+    # Fresh analyses of part of the data: one per observed domain type
+    # (kind "domain_type"), and one per planars_groupings.FILTERS entry that
+    # leaves out a type this dataset actually has (kind "filter"; e.g.
+    # no_tono, the ForestSpans no-tonosegmental chart).
     domain_types = sorted(t.strip() for t in tests["Domain_Type"].dropna().unique())
+    subset_specs = [
+        (domain_type.lower().replace(" ", "_").replace("-", "_"), "domain_type", [domain_type])
+        for domain_type in domain_types
+    ]
+    for filter_id, excluded in FILTERS:
+        if set(excluded) & set(domain_types):
+            subset_specs.append((filter_id, "filter", [t for t in domain_types if t not in excluded]))
     subset_index = []
-    for domain_type in domain_types:
-        subset_slug = domain_type.lower().replace(" ", "_").replace("-", "_")
-        subset_tests = tests[tests["Domain_Type"].str.strip() == domain_type].copy()
+    for subset_slug, subset_kind, subset_types in subset_specs:
+        subset_tests = tests[tests["Domain_Type"].str.strip().isin(subset_types)].copy()
         subset_spans, _ = load_spans(
-            domain_file.name, str(domains_dir), subset=[domain_type]
+            domain_file.name, str(domains_dir), subset=subset_types
         )
         if not subset_spans:
             continue
@@ -688,7 +720,7 @@ def export_bundle(
         )
         if subset_truncated:
             raise RuntimeError(
-                f"Family enumeration was truncated for domain subset {domain_type!r}."
+                f"Family enumeration was truncated for subset {subset_slug!r}."
             )
         # Subset analyses use the full dataset's coordinate system.  When a
         # subset has no observed full-span root, the analysis adds a synthetic
@@ -705,7 +737,8 @@ def export_bundle(
             "contract_version": "0.2.0",
             "dataset": dataset,
             "subset_id": subset_slug,
-            "domain_type": domain_type,
+            "kind": subset_kind,
+            "domain_type": subset_types[0] if subset_kind == "domain_type" else None,
             "source_domain_file": str(domain_file),
             "source_domain_sha256": sha256_file(domain_file),
             "n_positions": n_positions,
@@ -719,7 +752,7 @@ def export_bundle(
                 for key, frequency in subset_frequency.items() if key != subset_synthetic_id
             ),
             "enumeration_truncated": subset_truncated,
-            "domain_types": [domain_type],
+            "domain_types": subset_types,
         }
         (subset_dir / "metadata.json").write_text(
             json.dumps(subset_metadata, indent=2, sort_keys=True) + "\n",
@@ -727,7 +760,9 @@ def export_bundle(
         )
         subset_index.append({
             "subset_id": subset_slug,
-            "domain_type": domain_type,
+            "kind": subset_kind,
+            "domain_type": subset_types[0] if subset_kind == "domain_type" else None,
+            "domain_types": subset_types,
             "path": f"subsets/{subset_slug}",
             "n_active_tests": len(subset_tests),
             "n_unique_spans": n_observed_subset_spans,

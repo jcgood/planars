@@ -35,9 +35,11 @@ def test_bundle_records_current_source_hash_and_domain_subsets():
     digest = hashlib.sha256(SOURCE.read_bytes()).hexdigest()
     assert metadata["source_domain_sha256"] == digest
     subsets = json.loads((BUNDLE / "subsets.json").read_text())
-    assert {row["domain_type"] for row in subsets} == {
+    assert {row["domain_type"] for row in subsets if row["kind"] == "domain_type"} == {
         "intonational", "length", "morphosyntactic", "phonological", "tonosegmental"
     }
+    filters = {row["subset_id"]: row["domain_types"] for row in subsets if row["kind"] == "filter"}
+    assert filters == {"no_tono": ["intonational", "length", "morphosyntactic", "phonological"]}
     for row in subsets:
         subset_dir = BUNDLE / row["path"]
         subset_metadata = json.loads((subset_dir / "metadata.json").read_text())

@@ -6,6 +6,7 @@
     "morphosyntactic"
   ],
   "enumeration_truncated": false,
+  "kind": "domain_type",
   "n_active_tests": 11,
   "n_conflict_pairs": 6,
   "n_maximal_families": 3,
