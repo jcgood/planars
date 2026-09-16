@@ -59,9 +59,9 @@ same_data <- function(po, pl, what) {
 compare <- function(ref, new_png, out_png) {
   system2(python, c("scripts/planarsviz_compare.py", shQuote(ref), shQuote(new_png), shQuote(out_png)), stdout = TRUE)
 }
-render <- function(p, base) {
+render <- function(p, base, dir = file.path(bundle_dir, "plots")) {
   size <- attr(p, "planarsviz_size")
-  pdf_path <- file.path(bundle_dir, "plots", paste0(base, ".pdf"))
+  pdf_path <- file.path(dir, paste0(base, ".pdf"))
   dir.create(dirname(pdf_path), recursive = TRUE, showWarnings = FALSE)
   suppressMessages(suppressWarnings(ggplot2::ggsave(pdf_path, p, width = size[["width"]], height = size[["height"]],
                                                     units = attr(p, "planarsviz_units"))))
@@ -88,6 +88,11 @@ for (case in cases) {
   }
   pl <- suppressMessages(suppressWarnings(plot_forestspans(bundle, subset = case$subset)))
   new_png <- render(pl, base)
+  # The legend moved into the panel's lower-left corner on 2026-09-16; the
+  # exact comparison with the old script uses the original right-hand legend.
+  pl_old <- suppressMessages(suppressWarnings(
+    plot_forestspans(bundle, subset = case$subset, legend_position = "right")))
+  old_png <- render(pl_old, paste0(base, "_legend_right"), file.path(tempdir(), "as_generated"))
 
   if (library_only) {
     nyan_pdf <- file.path(dirname(bundle_dir), "nyan1308", "plots", paste0("nyan1308_", case$name, ".pdf"))
@@ -105,9 +110,12 @@ for (case in cases) {
   problems <- same_data(get("p", envir = orig), pl, case$name)
   if (length(problems)) all_ok <- FALSE
   size <- attr(pl, "planarsviz_size")
-  pix <- compare(file.path(dirname(bundle_dir), "reference", paste0(base, ".png")), new_png,
-                 file.path(cmp_dir, paste0(base, ".png")))
+  ref <- file.path(dirname(bundle_dir), "reference", paste0(base, ".png"))
+  pix_old <- compare(ref, old_png, file.path(tempdir(), paste0(base, "_as_generated_cmp.png")))
+  pix <- compare(ref, new_png, file.path(cmp_dir, paste0(base, ".png")))
   cat(base, ": ", if (length(problems)) paste("NUMBERS DIFFER:", paste(head(problems, 5), collapse = " | ")) else "numbers identical",
-      "; canvas ", size[["width"]], "x", size[["height"]], " ", attr(pl, "planarsviz_units"), "; pixels: ", pix, "\n", sep = "")
+      "; canvas ", size[["width"]], "x", size[["height"]], " ", attr(pl, "planarsviz_units"),
+      "\n  as generated (legend right): ", pix_old,
+      "\n  library default (inset legend): ", pix, "\n", sep = "")
 }
 if (!library_only) cat(if (all_ok) "ALL NUMBER CHECKS PASSED\n" else "SOME NUMBER CHECKS FAILED\n")

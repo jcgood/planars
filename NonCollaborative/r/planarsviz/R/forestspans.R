@@ -28,10 +28,18 @@
 #' @param subset `NULL` for the full analysis, or a `subset_id` from
 #'   `subsets.json` (a fresh analysis of part of the data, e.g. `"no_tono"`);
 #'   its layer numbers and counts are its own, not the full chart's.
+#' @param legend_position `"inside"` (default) puts the colour key in the
+#'   empty lower-left corner of the panel, in a bordered white box;
+#'   `"right"` puts it beside the panel, as the original script did.
+#' @param legend_inside Position of the inset legend's lower-left corner, as
+#'   a share of the panel.
 #' @return A ggplot object with attributes `planarsviz_size` and
 #'   `planarsviz_units` (`"cm"`).
 #' @export
-plot_forestspans <- function(bundle, subset = NULL) {
+plot_forestspans <- function(bundle, subset = NULL,
+                             legend_position = c("inside", "right"),
+                             legend_inside = c(0.012, 0.02)) {
+  legend_position <- match.arg(legend_position)
   validate_planars_bundle(bundle)
   analysis <- if (is.null(subset)) bundle else read_planars_subset(bundle, subset)
   spans <- analysis$spans
@@ -145,6 +153,19 @@ plot_forestspans <- function(bundle, subset = NULL) {
       legend.title = element_text(size = 10),
       legend.text = element_text(size = 10)
     )
+
+  if (legend_position == "inside") {
+    # The lower-left of the panel is empty: the rows there are the spans with
+    # the fewest families, which all start well right of position 1.
+    p <- p + theme(
+      legend.position = "inside",
+      legend.position.inside = legend_inside,
+      legend.justification = c(0, 0),
+      legend.background = element_rect(fill = "white", colour = "black", linewidth = 0.3),
+      legend.margin = margin(6, 8, 6, 8),
+      legend.key.height = unit(1.1, "lines")
+    )
+  }
 
   attr(p, "planarsviz_size") <- c(width = 34, height = 24)
   attr(p, "planarsviz_units") <- "cm"

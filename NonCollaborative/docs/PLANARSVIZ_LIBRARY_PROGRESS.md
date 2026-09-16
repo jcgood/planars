@@ -493,6 +493,14 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
 - R6 search: comments and a point-shape number only.
 - Looked at by Claude: yes (shifted side by side). Seen by Jeff: no.
 - Status: done pending Jeff's review.
+- **Changed 2026-09-16 at Jeff's request:** the colour key moved from beside
+  the panel into the panel's empty lower-left corner, in a white box with a
+  border (`legend_position`, default `"inside"`; `"right"` reproduces the old
+  chart exactly, checked; `legend_inside` moves the box). Nothing is
+  covered: every span in that corner starts at position 5 or later and the
+  box ends before position 4, on both the full and the no-tonosegmental
+  chart. Pixel difference from the old files: 5.2% and 4.2%, all of it the
+  legend moving.
 
 ## Chart 16: tree-count bar charts (4 files) — cross-language port (§4.3)
 - Step 1, calculation: the exporter calls `laminar_tree_counts.py`'s

@@ -31,7 +31,10 @@ PORTS = ("tree_count_", "boundary_strength", "boundary_strength_no_tono", "bound
 # match the old files: conflict-group panel titles now show; the overlay
 # legend's thickness swatch follows the lines' exponent (0.75 here).
 CHANGED = {"conflict_groups", "all_families_labeled_legend",
-           "all_families_labeled_orthographic_word_legend"}
+           "all_families_labeled_orthographic_word_legend",
+           # 2026-09-16: the ForestSpans legend moved into the panel's empty
+           # lower-left corner, in a bordered box.
+           "forestspans_plot", "forestspans_plot_no_tono"}
 
 out_dir = Path(sys.argv[1])
 compare_dir = out_dir / "compare"
