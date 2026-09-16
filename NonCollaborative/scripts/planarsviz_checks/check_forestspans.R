@@ -90,8 +90,10 @@ for (case in cases) {
   new_png <- render(pl, base)
   # The legend moved into the panel's lower-left corner on 2026-09-16; the
   # exact comparison with the old script uses the original right-hand legend.
+  # 2026-09-16 also: "Trees" set larger than "(n = N)" in the count header;
+  # count_header_size = NULL restores the original label.
   pl_old <- suppressMessages(suppressWarnings(
-    plot_forestspans(bundle, subset = case$subset, legend_position = "right")))
+    plot_forestspans(bundle, subset = case$subset, legend_position = "right", count_header_size = NULL)))
   old_png <- render(pl_old, paste0(base, "_legend_right"), file.path(tempdir(), "as_generated"))
 
   if (library_only) {
@@ -107,7 +109,7 @@ for (case in cases) {
   src <- src[!startsWith(src, "ggsave(")]
   orig <- new.env()
   suppressMessages(suppressWarnings(eval(parse(text = src), envir = orig)))
-  problems <- same_data(get("p", envir = orig), pl, case$name)
+  problems <- same_data(get("p", envir = orig), pl_old, case$name)
   if (length(problems)) all_ok <- FALSE
   size <- attr(pl, "planarsviz_size")
   ref <- file.path(dirname(bundle_dir), "reference", paste0(base, ".png"))
@@ -115,7 +117,7 @@ for (case in cases) {
   pix <- compare(ref, new_png, file.path(cmp_dir, paste0(base, ".png")))
   cat(base, ": ", if (length(problems)) paste("NUMBERS DIFFER:", paste(head(problems, 5), collapse = " | ")) else "numbers identical",
       "; canvas ", size[["width"]], "x", size[["height"]], " ", attr(pl, "planarsviz_units"),
-      "\n  as generated (legend right): ", pix_old,
-      "\n  library default (inset legend): ", pix, "\n", sep = "")
+      "\n  as generated (legend right, original header): ", pix_old,
+      "\n  library default (inset legend, larger header): ", pix, "\n", sep = "")
 }
 if (!library_only) cat(if (all_ok) "ALL NUMBER CHECKS PASSED\n" else "SOME NUMBER CHECKS FAILED\n")

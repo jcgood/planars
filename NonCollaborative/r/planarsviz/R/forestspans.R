@@ -33,12 +33,17 @@
 #'   `"right"` puts it beside the panel, as the original script did.
 #' @param legend_inside Position of the inset legend's lower-left corner, as
 #'   a share of the panel.
+#' @param count_header_size Text sizes (ggplot size units) of the count
+#'   column's header: `c(trees, n)` for the "Trees" line and the "(n = N)"
+#'   line beneath it. `NULL` draws the original single label (both lines at
+#'   size 4).
 #' @return A ggplot object with attributes `planarsviz_size` and
 #'   `planarsviz_units` (`"cm"`).
 #' @export
 plot_forestspans <- function(bundle, subset = NULL,
                              legend_position = c("inside", "right"),
-                             legend_inside = c(0.012, 0.02)) {
+                             legend_inside = c(0.012, 0.02),
+                             count_header_size = c(6, 4.5)) {
   legend_position <- match.arg(legend_position)
   validate_planars_bundle(bundle)
   analysis <- if (is.null(subset)) bundle else read_planars_subset(bundle, subset)
@@ -109,11 +114,32 @@ plot_forestspans <- function(bundle, subset = NULL,
       hjust = 1, size = 6, color = "black", inherit.aes = TRUE
     ) +
     # Column header for the count, right-justified to sit above the column the
-    # same way the numbers do.
-    annotate(
-      "text", x = count_x, y = Inf, vjust = -0.3, hjust = 1,
-      label = paste0("Trees\n(n = ", n_families, ")"), fontface = "bold", size = 4
-    ) +
+    # same way the numbers do. By default "Trees" is set larger than the
+    # "(n = N)" line beneath it; count_header_size = NULL draws the original
+    # single two-line label.
+    {
+      if (is.null(count_header_size)) {
+        annotate(
+          "text", x = count_x, y = Inf, vjust = -0.3, hjust = 1,
+          label = paste0("Trees\n(n = ", n_families, ")"), fontface = "bold", size = 4
+        )
+      } else {
+        trees_size <- count_header_size[[1]]
+        n_size <- count_header_size[[2]]
+        list(
+          annotate(
+            "text", x = count_x, y = Inf, vjust = -0.3, hjust = 1,
+            label = paste0("(n = ", n_families, ")"), fontface = "bold", size = n_size
+          ),
+          # vjust is measured in this label's own height, so lift "Trees" by
+          # the "(n = N)" line's height expressed in "Trees" heights.
+          annotate(
+            "text", x = count_x, y = Inf, vjust = -0.3 - 1.25 * n_size / trees_size, hjust = 1,
+            label = "Trees", fontface = "bold", size = trees_size
+          )
+        )
+      }
+    } +
     # Invisible reference layer: exists only to put a real, correctly-labeled
     # legend on the plot for the pure domain-type colors (see docstring).
     # fill (not color) mapped, so the legend key renders as a solid filled

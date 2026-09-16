@@ -501,6 +501,15 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
   box ends before position 4, on both the full and the no-tonosegmental
   chart. Pixel difference from the old files: 5.2% and 4.2%, all of it the
   legend moving.
+- **Changed 2026-09-16 at Jeff's request:** the count column's header is
+  now two sizes, "Trees" (size 6, matching the counts) above a smaller
+  "(n = N)" (size 4.5); it was one label at size 4 (`count_header_size`,
+  `NULL` for the old label). Checked in close-up: no overlap, nothing cut
+  off. With both changes switched off (`legend_position = "right"`,
+  `count_header_size = NULL`) the charts are still identical to the old
+  files; the check now compares the old script's plot data against that
+  version. Both charts copied over `results/nyan1308_forestspans_plot*.pdf`
+  for use before cutover.
 
 ## Chart 16: tree-count bar charts (4 files) — cross-language port (§4.3)
 - Step 1, calculation: the exporter calls `laminar_tree_counts.py`'s

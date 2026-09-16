@@ -284,6 +284,7 @@ plot_forestspans(bundle, subset = "no_tono")    # fresh analysis without tonoseg
 | `subset` | `NULL`, or a subset id from `subsets.json`; its layers and counts are its own. |
 | `legend_position` | `"inside"` (default) puts the colour key in the panel's empty lower-left corner, in a bordered white box; `"right"` puts it beside the panel, as the old file has it. |
 | `legend_inside` | Where the inset legend's lower-left corner sits, as a share of the panel. |
+| `count_header_size` | Sizes of the count column's header, `c(trees, n)`: "Trees" (default 6) above a smaller "(n = N)" (default 4.5). `NULL` gives the old single label, both lines at size 4. |
 
 Canvas 34 × 24 cm. Renderer names `forestspans_plot`,
 `forestspans_plot_<subset>`; old files `nyan1308_forestspans_plot.pdf`,
