@@ -642,6 +642,41 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
   What they do share is already shared data: the bundle's
   `boundary_strength.tsv`, subsets and highlights.
 
+## New chart, 2026-09-19: maximal binary branching (illustration)
+- Asked for by Jeff: one tree showing as much binary branching as the
+  evidence allows, for illustration rather than analysis.
+- Any consistent tree is a subset of one of the 69 families, so this is a
+  choice among them, not a new structure. Every observed span has at least
+  one test behind it, so "supported" rules nothing out; branching is
+  maximised by packing in the most compatible spans. The ceiling is 13
+  spans, reached by 32 of the 69.
+- Rule (exporter, `most_binary_order()`): most strictly binary nodes, then
+  most tests supporting the tree, then the narrowest widest node, then
+  family order. A node's children count its child spans plus the positions
+  it covers directly — what the drawn tree shows. nyan1308 picks
+  family_031: 7 binary nodes, nothing wider than 4 children, 69 tests, the
+  highest of any family. The shifted test data picks the same family number.
+- Notable: family_031 is also what greedy selection by test support gives
+  (see the consensus note below), so the most branching tree is also the
+  best-attested one — they agree here, which is worth saying in a caption.
+- R: `plot_frequency_tree()` gained `title` and `weight` (`"families"`
+  default, `"tests"`, `"none"`). Drawn with `weight = "none"`: frequency
+  shading made the deep binary spine — the very structure being
+  illustrated — nearly invisible, and test weighting faded the outer
+  backbone instead, which rests on few tests.
+- Checks: frequency tree and four trees re-checked after the `weight`
+  change, both still identical (0.0000%); 14 bundle tests pass, including a
+  new one pinning that `most_binary` names a maximally resolved family.
+- Renderer name `most_binary_tree`; copied to
+  `results/nyan1308_most_binary_tree.pdf` for use before cutover. No old
+  file — this chart did not exist before.
+- Consensus note (for the record): strict consensus over the 69 keeps 5
+  spans, majority rule 10 (guaranteed a tree), greedy by family count 13
+  (= family_016, the existing frequency tree), greedy by test support 13
+  (= family_031). Family count largely measures how uncontested a span is,
+  not how well attested: [5–19] is in all 69 families on 1 test, while
+  [6–17] has 19 tests but sits in 23 families.
+
 ## Renderer (§8.3) and final generalization pass (§10.3)
 - `scripts/render_planarsviz.R --bundle DIR [--output DIR] [--plots
   all|names] [--formats pdf,png] [--list]`. The chart list is built from the

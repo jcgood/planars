@@ -67,11 +67,16 @@ planarsviz_selected_family <- function(bundle, selection) {
 #' @param title Plot title.
 #' @param alpha_name Name of the opacity scale.
 #' @param legend Keep the opacity legend (`FALSE` hides it).
+#' @param weight What a branch's opacity and thickness show: `"families"` (the
+#'   share of `member_ids` containing the span), `"tests"` (the span's
+#'   convergence as a share of the drawn tree's best-tested span), or
+#'   `"none"` (every branch drawn solid — for illustrating shape alone).
 #' @return A ggtree plot.
 #' @export
 planarsviz_summary_tree <- function(bundle, family_id, member_ids, title, alpha_name,
-                                    legend = TRUE) {
+                                    legend = TRUE, weight = c("families", "tests", "none")) {
   planarsviz_require_trees()
+  weight <- match.arg(weight)
   `%<+%` <- ggtree::`%<+%`
   posLabel <- as.list(planarsviz_position_labels(bundle$position_labels))
   newick <- bundle$families$newick[bundle$families$family_id == family_id]
@@ -81,7 +86,17 @@ planarsviz_summary_tree <- function(bundle, family_id, member_ids, title, alpha_
   counts <- table(membership$span_id[membership$family_id %in% member_ids])
   family_spans <- membership$span_id[membership$family_id == family_id]
   tips <- as.character(seq_len(as.integer(bundle$metadata$n_positions)))
-  freq <- c(as.numeric(counts[family_spans]), rep(n_members, length(tips)))
+  if (weight == "families") {
+    span_value <- as.numeric(counts[family_spans])
+    n_members <- n_members
+  } else if (weight == "tests") {
+    span_value <- as.numeric(bundle$spans$convergence[match(family_spans, bundle$spans$span_id)])
+    n_members <- max(span_value)
+  } else {
+    span_value <- rep(1, length(family_spans))
+    n_members <- 1
+  }
+  freq <- c(span_value, rep(n_members, length(tips)))
 
   freq_tree <- ape::read.tree(text = newick)
 
@@ -97,8 +112,10 @@ planarsviz_summary_tree <- function(bundle, family_id, member_ids, title, alpha_
     ggtree::layout_dendrogram() +
     aes(alpha=freq_scaled, size=edge_size) +
     scale_size_identity() +
-    scale_alpha_continuous(range=c(0.05, 1.0),
-      name=alpha_name) +
+    # With one weight for every branch the scale would otherwise map them all
+    # to the middle of its range, drawing a solid tree in grey.
+    scale_alpha_continuous(range=c(0.05, 1.0), name=alpha_name,
+      limits=if (weight == "none") c(0, 1) else NULL) +
     ggtree::geom_tiplab(geom='label', size=5, angle=0,
       offset=-1, hjust=0.5, alpha=1, label.size=0,
       aes(label=paste(label, posLabel[label], sep="\n")), lineheight=1) +
@@ -117,15 +134,24 @@ planarsviz_summary_tree <- function(bundle, family_id, member_ids, title, alpha_
 #'
 #' @param bundle A bundle from [read_planars_bundle()].
 #' @param selection A selection from `selections.tsv`.
+#' @param title Plot title; the default names the number of families.
+#' @param weight What branch opacity and thickness show: `"families"`
+#'   (default), `"tests"`, or `"none"`. See [planarsviz_summary_tree()].
 #' @return A ggtree plot with attributes `planarsviz_size` and `planarsviz_units`.
 #' @export
-plot_frequency_tree <- function(bundle, selection = "consensus_all") {
+plot_frequency_tree <- function(bundle, selection = "consensus_all", title = NULL,
+                                weight = c("families", "tests", "none")) {
   validate_planars_bundle(bundle)
+  weight <- match.arg(weight)
   n <- nrow(bundle$families)
+  if (is.null(title)) title <- paste0(n, ' maximal families — edge weight = family count')
+  alpha_name <- switch(weight,
+    families = paste0('Proportion of ', n, ' families'),
+    tests = 'Share of the best-tested span',
+    none = NULL)
   p <- planarsviz_summary_tree(
     bundle, planarsviz_selected_family(bundle, selection), bundle$families$family_id,
-    title = paste0(n, ' maximal families — edge weight = family count'),
-    alpha_name = paste0('Proportion of ', n, ' families'))
+    title = title, alpha_name = alpha_name, legend = weight != "none", weight = weight)
   attr(p, "planarsviz_size") <- c(width = 16, height = 10)
   attr(p, "planarsviz_units") <- "in"
   p

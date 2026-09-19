@@ -181,8 +181,29 @@ plot_frequency_tree(bundle)
 | Option | Meaning |
 |---|---|
 | `selection` | Which selection in `selections.tsv` to draw (default `"consensus_all"`). |
+| `title` | Plot title; the default names the number of families. |
+| `weight` | What branch opacity and thickness show: `"families"` (default, the share of families containing the span), `"tests"` (support relative to the best-tested span), or `"none"` (solid — shape alone). |
 
 Canvas 16 × 10 in. Renderer name `freqtree`; old file `nyan1308_freqtree.pdf`.
+
+### 6a. Maximal binary branching
+
+The same drawing used for an illustration: the family that branches most
+binarily, drawn solid. Every span rests on at least one test, so this is the
+most branching structure the data supports — for nyan1308, 13 nested spans
+with 7 strictly binary nodes and nothing wider than four children.
+
+![Maximal binary branching](planarsviz_charts/most_binary_tree.png)
+
+```r
+plot_frequency_tree(bundle, selection = "most_binary", weight = "none",
+                    title = "Maximal binary branching supported by the data")
+```
+
+Renderer name `most_binary_tree`; no old file — this chart is new. The
+exporter picks the family (`most_binary` in `selections.tsv`): most strictly
+binary nodes, then most tests behind the tree, then the narrowest widest
+node.
 
 ---
 

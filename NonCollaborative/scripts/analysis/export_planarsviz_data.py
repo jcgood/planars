@@ -351,6 +351,40 @@ def capped_draw_order(members: list[int], families, cap: int) -> list[int]:
     return chosen
 
 
+def branching_profile(family, children) -> tuple[int, int]:
+    """(binary nodes, children at the widest node) for one family's tree.
+
+    A node's children are the spans directly inside it plus the positions it
+    covers that no child span covers -- what the drawn tree actually shows.
+    """
+    counts = []
+    for span in family:
+        child_spans = children.get(span, [])
+        covered = {p for child in child_spans for p in range(child.left, child.right + 1)}
+        exposed = sum(1 for p in range(span.left, span.right + 1) if p not in covered)
+        counts.append(len(child_spans) + exposed)
+    return sum(1 for n in counts if n == 2), max(counts)
+
+
+def most_binary_order(families) -> list[int]:
+    """Family numbers ordered by how binary their branching is, best first.
+
+    Every observed span rests on at least one test, so the most binary tree
+    is simply the one that packs in the most compatible spans and spreads
+    them best. Order: most strictly binary nodes, then most tests supporting
+    the tree as a whole, then the narrowest widest node, then family order.
+    """
+    ranked = []
+    for number, family in enumerate(families):
+        family_list = sorted(family, key=lambda s: s.size, reverse=True)
+        children = get_children(build_parent_map(family_list))
+        binary, widest = branching_profile(family_list, children)
+        support = sum(span.convergence for span in family_list)
+        ranked.append((-binary, -support, widest, number))
+    ranked.sort()
+    return [number for _, _, _, number in ranked]
+
+
 def export_selections(dataset: str, families, data_dir: Path,
                       conflict_groups_file: Path | None, cap: int,
                       exemplary_k: int = 6, include_sparsest: bool = True) -> dict:
@@ -366,6 +400,9 @@ def export_selections(dataset: str, families, data_dir: Path,
       across ALL families. Recovered from laminar_four_trees.r and
       laminar_freqtree.r (section 4.1; unique for nyan1308). Ties, never
       seen, go to the lower family number.
+    - most_binary, rank 1: the family that branches most binarily -- for
+      illustrating the structure with as much branching as the evidence
+      allows. See most_binary_order().
     - exemplary, ranks 1..: what laminar_analysis.generate_exemplary_trees()
       picks -- select_representative_families(k=exemplary_k), called
       directly, then (include_sparsest) the family drawing on the fewest
@@ -410,6 +447,10 @@ def export_selections(dataset: str, families, data_dir: Path,
         if members:
             selection_rows.append({"selection": f"consensus_{group_id}", "rank": 1,
                                    "family_id": family_ids[consensus(members)]})
+    for rank, family_number in enumerate(most_binary_order(families)[:1], start=1):
+        selection_rows.append({"selection": "most_binary", "rank": rank,
+                               "family_id": family_ids[family_number]})
+
     selected = select_representative_families(families, count, k=exemplary_k)
     if include_sparsest:
         def sparsity(family):

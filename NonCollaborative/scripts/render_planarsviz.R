@@ -114,6 +114,13 @@ chart_table <- function() {
   }
 
   add("freqtree", function() plot_frequency_tree(bundle))
+  selection_names <- unique(read_tsv("selections.tsv")$selection)
+  if ("most_binary" %in% selection_names) {
+    # Illustration: the most binary branching the evidence supports.
+    add("most_binary_tree", function() plot_frequency_tree(
+      bundle, selection = "most_binary", weight = "none",
+      title = 'Maximal binary branching supported by the data'))
+  }
   if (nrow(read_tsv("conflict_groups.tsv"))) {
     add("four_trees", function() plot_four_trees(bundle))
     add("conflict_groups", function() plot_conflict_groups(bundle))

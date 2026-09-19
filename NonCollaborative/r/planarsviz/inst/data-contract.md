@@ -79,7 +79,9 @@ empty.
 
 `selections.tsv` (`selection`, `rank`, `family_id`): `consensus_all` and
 `consensus_<group_id>`, the family with the highest sum of its spans' family
-counts across all families; `exemplary`, ranks 1.., the representative
+counts across all families; `most_binary`, the family whose tree branches
+most binarily (most strictly binary nodes, then most tests supporting the
+tree, then the narrowest widest node); `exemplary`, ranks 1.., the representative
 families chosen by greedy coverage (`metadata.exemplary_k` of them) plus,
 when `metadata.exemplary_include_sparsest`, the family drawing on the
 fewest tests.

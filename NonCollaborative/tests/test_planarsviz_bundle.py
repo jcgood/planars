@@ -55,7 +55,8 @@ def test_recovered_selections():
     def fid(number):
         return f"family_{number + 1:03d}"
     rows = read_tsv("selections.tsv")
-    selections = {row["selection"]: row["family_id"] for row in rows if row["selection"] != "exemplary"}
+    selections = {row["selection"]: row["family_id"] for row in rows
+                  if row["selection"] not in ("exemplary", "most_binary")}
     assert selections == {"consensus_all": fid(15), "consensus_A": fid(46),
                           "consensus_B": fid(15), "consensus_C": fid(6)}
     # generate_exemplary_trees(include_sparsest=True): six by coverage, then
@@ -73,6 +74,17 @@ def test_recovered_selections():
     assert drawn("B") == [fid(i) for i in [9, 25, 16, 18, 10, 11, 12, 13, 14, 15, 17, 19]]
     assert drawn("C") == [fid(i) for i in [0, 40, 53, 37, 1, 2, 3, 4, 5, 6, 7, 8]]
     assert len(drawn("A")) == 10
+
+
+def test_most_binary_selection_is_a_maximally_resolved_family():
+    # The illustration tree: the family that branches most binarily. It can
+    # never have fewer spans than the most resolved family, since every extra
+    # compatible span is another branching point.
+    families = {row["family_id"]: int(row["n_spans"]) for row in read_tsv("families.tsv")}
+    chosen = [row["family_id"] for row in read_tsv("selections.tsv")
+              if row["selection"] == "most_binary"]
+    assert len(chosen) == 1
+    assert families[chosen[0]] == max(families.values())
 
 
 def test_conflict_pairs_are_symmetric_as_an_undirected_relation():
