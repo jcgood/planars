@@ -120,6 +120,17 @@ chart_table <- function() {
     add("most_binary_tree", function() plot_frequency_tree(
       bundle, selection = "most_binary", weight = "none",
       title = 'Maximal binary branching supported by the data'))
+    for (h in unique(highlights$highlight_id)) {
+      local({
+        id <- h
+        name <- gsub("_", " ", id, fixed = TRUE)
+        # Same tree, with the edges out to the highlight's first and last
+        # positions traced thicker.
+        add(paste0("most_binary_tree_", id), function() plot_frequency_tree(
+          bundle, selection = "most_binary", weight = "none", emphasis = id,
+          title = paste0('Maximal binary branching, with the extent of the ', name, ' traced')))
+      })
+    }
   }
   if (nrow(read_tsv("conflict_groups.tsv"))) {
     add("four_trees", function() plot_four_trees(bundle))

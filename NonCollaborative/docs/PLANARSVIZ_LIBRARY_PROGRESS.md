@@ -677,6 +677,14 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
 - Renderer name `most_binary_tree`; copied to
   `results/nyan1308_most_binary_tree.pdf` for use before cutover. No old
   file — this chart did not exist before.
+- **Second version, 2026-09-19 at Jeff's request:** the same tree with the
+  orthographic word's extent traced in thicker lines (`emphasis`,
+  `emphasis_size`; new `planarsviz_highlight_range()`). The traced edges are
+  those covering one boundary position but not the other — for [5–19], the
+  descent to Neg1 and the edge out to Enc, drawn as a bold inverted V around
+  the word. The positions come from `highlights.tsv`, so the renderer makes
+  one such chart per highlight a bundle has (`most_binary_tree_<id>`); the
+  plain version is kept. Weighted trees re-checked, still 0.0000%.
 - Consensus note (for the record): strict consensus over the 69 keeps 5
   spans, majority rule 10 (guaranteed a tree), greedy by family count 13
   (= family_016, the existing frequency tree), greedy by test support 13

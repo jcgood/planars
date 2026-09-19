@@ -209,6 +209,21 @@ plot_laminar_overlay <- function(bundle, groups = NULL, alpha_divisor = 2,
   result
 }
 
+#' Outer extent of a named position highlight
+#'
+#' @param bundle A bundle from [read_planars_bundle()].
+#' @param highlight_id A `highlight_id` from `highlights.tsv`.
+#' @return `c(left, right)`: the first and last position the highlight's
+#'   ranges cover together (nyan1308's orthographic word: 5 and 19).
+#' @export
+planarsviz_highlight_range <- function(bundle, highlight_id) {
+  path <- file.path(bundle$bundle_dir, "data", "highlights.tsv")
+  rows <- if (file.exists(path)) utils::read.delim(path, stringsAsFactors = FALSE) else data.frame()
+  rows <- rows[rows$highlight_id == highlight_id, , drop = FALSE]
+  if (!nrow(rows)) stop("No highlight `", highlight_id, "` in this bundle.", call. = FALSE)
+  c(min(as.integer(rows$left)), max(as.integer(rows$right)))
+}
+
 #' Label colours for a named position highlight
 #'
 #' @param bundle A bundle from [read_planars_bundle()].

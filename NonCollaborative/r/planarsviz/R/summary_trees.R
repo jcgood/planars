@@ -74,11 +74,17 @@ planarsviz_selected_family <- function(bundle, selection) {
 #' @param branch_size Thickness of a fully supported branch; thinner branches
 #'   scale down from it. With `weight = "none"` every branch is fully
 #'   supported, so this is simply the line width of the whole tree.
+#' @param emphasis_range `c(left, right)` positions to trace, or `NULL`. The
+#'   edges drawn thicker are those running down to the two positions from
+#'   the smallest node containing both — the path that marks where the
+#'   stretch begins and ends.
+#' @param emphasis_size Thickness of those edges.
 #' @return A ggtree plot.
 #' @export
 planarsviz_summary_tree <- function(bundle, family_id, member_ids, title, alpha_name,
                                     legend = TRUE, weight = c("families", "tests", "none"),
-                                    branch_size = 4) {
+                                    branch_size = 4, emphasis_range = NULL,
+                                    emphasis_size = 2.5) {
   planarsviz_require_trees()
   weight <- match.arg(weight)
   `%<+%` <- ggtree::`%<+%`
@@ -110,6 +116,18 @@ planarsviz_summary_tree <- function(bundle, family_id, member_ids, title, alpha_
     freq_scaled= round(freq / n_members, 6),
     edge_size  = round(branch_size * freq / n_members, 6)
   )
+
+  if (!is.null(emphasis_range)) {
+    # A node's incoming edge is on the path between the two positions exactly
+    # when the node covers one of them and not the other: such nodes are the
+    # ancestors of one boundary tip below the node that holds both.
+    left <- min(emphasis_range)
+    right <- max(emphasis_range)
+    extent <- lapply(strsplit(node_freq$label, "-", fixed = TRUE), as.integer)
+    covers <- function(range, position) position >= range[[1]] && position <= range[[length(range)]]
+    on_path <- vapply(extent, function(range) covers(range, left) != covers(range, right), logical(1))
+    node_freq$edge_size[on_path] <- emphasis_size
+  }
 
   p <- ggtree::ggtree(freq_tree, layout='slanted', ladderize=FALSE) %<+%
     node_freq +
@@ -145,14 +163,20 @@ planarsviz_summary_tree <- function(bundle, family_id, member_ids, title, alpha_
 #'   the weighted charts' heaviest line; with `weight = "none"`, where every
 #'   branch would be drawn at that weight, it defaults to 0.5 — ggtree's own
 #'   default, so an unweighted tree matches the exemplary trees.
+#' @param emphasis A `highlight_id` from `highlights.tsv` (e.g.
+#'   `"orthographic_word"`) whose first and last positions are traced with
+#'   thicker edges, or `NULL`.
+#' @param emphasis_size Thickness of the traced edges.
 #' @return A ggtree plot with attributes `planarsviz_size` and `planarsviz_units`.
 #' @export
 plot_frequency_tree <- function(bundle, selection = "consensus_all", title = NULL,
                                 weight = c("families", "tests", "none"),
-                                branch_size = NULL) {
+                                branch_size = NULL, emphasis = NULL,
+                                emphasis_size = 2.5) {
   validate_planars_bundle(bundle)
   weight <- match.arg(weight)
   if (is.null(branch_size)) branch_size <- if (weight == "none") 0.5 else 4
+  emphasis_range <- if (is.null(emphasis)) NULL else planarsviz_highlight_range(bundle, emphasis)
   n <- nrow(bundle$families)
   if (is.null(title)) title <- paste0(n, ' maximal families — edge weight = family count')
   alpha_name <- switch(weight,
@@ -162,7 +186,7 @@ plot_frequency_tree <- function(bundle, selection = "consensus_all", title = NUL
   p <- planarsviz_summary_tree(
     bundle, planarsviz_selected_family(bundle, selection), bundle$families$family_id,
     title = title, alpha_name = alpha_name, legend = weight != "none", weight = weight,
-    branch_size = branch_size)
+    branch_size = branch_size, emphasis_range = emphasis_range, emphasis_size = emphasis_size)
   attr(p, "planarsviz_size") <- c(width = 16, height = 10)
   attr(p, "planarsviz_units") <- "in"
   p

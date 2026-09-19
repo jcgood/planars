@@ -206,6 +206,27 @@ exporter picks the family (`most_binary` in `selections.tsv`): most strictly
 binary nodes, then most tests behind the tree, then the narrowest widest
 node.
 
+A second version traces a highlight's extent — for nyan1308, the
+orthographic word — with thicker edges running down to its first and last
+positions:
+
+![Word extent traced](planarsviz_charts/most_binary_tree_orthographic_word.png)
+
+```r
+plot_frequency_tree(bundle, selection = "most_binary", weight = "none",
+                    emphasis = "orthographic_word")
+```
+
+| Option | Meaning |
+|---|---|
+| `emphasis` | A `highlight_id` from `highlights.tsv`; its first and last positions are traced. `NULL` (default) traces nothing. |
+| `emphasis_size` | Thickness of the traced edges (default 2.5). |
+
+The traced edges are those covering one of the two positions but not the
+other — the path from each boundary tip up to the smallest node holding
+both. Renderer name `most_binary_tree_<highlight_id>`, one per highlight in
+the bundle.
+
 ---
 
 ## 7. Four trees
