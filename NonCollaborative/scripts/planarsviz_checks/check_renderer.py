@@ -34,7 +34,10 @@ CHANGED = {"conflict_groups", "all_families_labeled_legend",
            "all_families_labeled_orthographic_word_legend",
            # 2026-09-16: the ForestSpans legend moved into the panel's empty
            # lower-left corner, in a bordered box.
-           "forestspans_plot", "forestspans_plot_no_tono"}
+           "forestspans_plot", "forestspans_plot_no_tono",
+           # 2026-09-19: the span chart's axis shows every position, not just
+           # the stretch the drawn spans cover.
+           "spanchart"}
 
 out_dir = Path(sys.argv[1])
 compare_dir = out_dir / "compare"

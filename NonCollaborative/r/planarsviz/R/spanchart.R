@@ -25,9 +25,14 @@
 #' @param bundle A bundle from [read_planars_bundle()].
 #' @return A ggplot object with attributes `planarsviz_size` (`c(width,
 #'   height)`) and `planarsviz_units` (`"in"`).
+#' @param positions `"all"` (default) shows every position in the planar
+#'   structure; `"drawn"` shows only the stretch the charted spans cover,
+#'   as the original script did — for nyan1308 that silently dropped
+#'   position 1, which only the excluded full root reaches.
 #' @export
-plot_span_chart <- function(bundle) {
+plot_span_chart <- function(bundle, positions = c("all", "drawn")) {
   validate_planars_bundle(bundle)
+  positions <- match.arg(positions)
   n_families <- as.integer(bundle$metadata$n_maximal_families)
   n_positions <- as.integer(bundle$metadata$n_positions)
   pos_labels_vec <- unname(planarsviz_position_labels(bundle$position_labels))
@@ -73,6 +78,9 @@ plot_span_chart <- function(bundle) {
     scale_linewidth_identity() +
     scale_x_continuous(breaks=seq_len(n_positions),
       labels=pos_labels_vec, name='Position',
+      # Without limits the axis runs only as far as the drawn spans reach,
+      # so a position no span touches loses its tick label.
+      limits=if (positions == "all") c(1, n_positions) else NULL,
       expand=expansion(add=0.5)) +
     scale_y_continuous(name='', breaks=NULL) +
     theme_minimal() +

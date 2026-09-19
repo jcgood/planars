@@ -29,29 +29,86 @@ Honesty rule: nothing below says "matches" without naming the comparison file.
 
 ## Open questions for Jeff
 
-1. **Chart files not in the inventory** (§3.2): `supercatalan_trees_n2.pdf`,
-   `_n3.pdf`, `_n4.pdf`, `_n5_sample15.pdf` (from
-   `scripts/exploratory/render_supercatalan_rows.r`), and
-   `tree_counting_equations.pdf` (LaTeX). Port, or treat as out of scope like
-   the other exploratory/LaTeX outputs? Not started.
-2. **`nyan1308_all_families_labeled_legend-JGAnn.pdf`** looks like your hand
-   annotation of the legend, not a chart output. Committed on `main` as-is;
-   not treated as a chart. Is there feedback in it the port should apply?
-3. **Display labels for nyan1308.** The planar table's `Position_Label`
-   column has short slot codes (`V`, `Un`, `PrS`…), but every chart uses
-   different labels (`Root`, `Ext`, `PreSbj`…), which lived only in
-   `laminar_analysis.py`'s `_NYAN1308_POS_LABELS`. The salvaged exporter
-   special-cased `dataset == "nyan1308"` to get them (a leak). Now: the
-   exporter reads an explicit labels file, and nyan1308's is committed as
-   `planar_tables/display_labels_nyan1308.tsv` (same 22 labels). OK to keep a
-   data file there, or should chart labels live elsewhere?
-4. **Root position.** The main project's keystone convention is
-   `Position_Name == 'v:verbstem'`, but `planar_nyan1308.tsv` has no
-   `Position_Name` column; its root row has `Elements == "root"`. The
-   exporter uses `--root-element root` (default) and records
-   `root_position` in `metadata.json`. Confirm this is the right marker.
-5. Span chart x-axis drops labels left of the first charted span — see the
-   chart 15 entry.
+1. **Settled 2026-09-19: keep them, as their own bundle.** They are research
+   output, and more general illustrations are expected. They fit the
+   library's rule (Python computes, R draws from a data folder); what they
+   lack is a *language*, not data. So: an `illustrations` bundle at
+   `results/planarsviz/illustrations/data/` holding `tree_shapes.tsv` (n,
+   shape number, Newick — exhaustive for n=2–4, sampled above that),
+   `tree_counts.tsv` (n, Catalan, little Schröder A001003, n-ary A007052)
+   and a `metadata.json` recording what is exhaustive, what is sampled, and
+   the random seed. Written by a new
+   `scripts/analysis/export_planarsviz_illustrations.py` reusing the
+   enumerator in `generate_supercatalan_rows.py`. R draws it with
+   `plot_tree_shapes(ref, n)` and a new `plot_tree_count_growth(ref)` (the
+   counts become data, so the growth of the tree space against the 69
+   families can be a chart rather than a table). Named `illustrations` and
+   not `reference` because `results/planarsviz/reference/` already holds the
+   frozen images the porting checks compare against.
+   `tree_counting_equations.pdf` stays LaTeX — typeset mathematics, which
+   ggplot would render worse — and is documented as part of this family.
+   `nyan1308_random_tree_overlay.pdf` joins it too: it was out of scope only
+   because it samples randomly, and a recorded seed is the same fix; it
+   reads both bundles, since its positions are real but its content is
+   illustrative. Scheduled as **Phase E, after cutover**, since it is purely
+   additive.
+   Original question: these five files are in `results/` but were never in
+   the §3.2 inventory — port, or treat as out of scope like the other
+   exploratory/LaTeX outputs?
+2. **Settled 2026-09-19: nothing to apply.** Jeff made the file to point at
+   something during a conversation, not as feedback on the chart. It stays
+   in `results/` as a one-off; it is not a chart output, gets no reference
+   image, and no check covers it. (What the red ellipse marks: two thick
+   edges ending in rounded line caps, which read as dark blobs. If that ever
+   does want fixing, squaring off the line ends is a one-line change to the
+   ghost-tree drawing, worth an option rather than a new default.)
+   Original question: is there feedback in it the port should apply?
+3. **Settled 2026-09-19: keep them where they are.** Jeff: "at the moment,
+   these labels are a charting concern only." So
+   `planar_tables/display_labels_<dataset>.tsv` stays the home, read by the
+   exporter via `--labels-file` (defaulting to that name), falling back to
+   the planar table's `Position_Label` and then to plain numbers. They are
+   deliberately *not* a column on `planar_nyan1308.tsv`: that file is shared
+   structure the main pipeline reads, and a charts-only column there would
+   give one fact two owners.
+   **If that changes** — if these become the canonical display names for
+   Chichewa positions rather than chart labels — the move is small: the
+   exporter reads from wherever they then live and nothing in R changes,
+   since R only ever sees `position_labels.tsv` inside the bundle.
+   Original question: the planar table's `Position_Label` column has short
+   slot codes (`V`, `Un`, `PrS`…), but every chart uses different labels
+   (`Root`, `Ext`, `PreSbj`…), which lived only in `laminar_analysis.py`'s
+   `_NYAN1308_POS_LABELS`; the salvaged exporter special-cased
+   `dataset == "nyan1308"` to get them (a leak).
+4. **Settled 2026-09-19: `Elements == "root"` for now; the pipeline's
+   keystone convention takes over once Chichewa is onboarded.** Established
+   while answering: *neither* planar table in `NonCollaborative/`
+   (nyan1308's or stan1293's) has a `Position_Name` column — they are an
+   older format than the `coded_data/` tables the main pipeline reads, so
+   `Position_Name == 'v:verbstem'` was never available here. nyan1308's root
+   row is the file's only `Elements == "root"`: position 10, label `V`,
+   description "verb root". `Elements` is used rather than `Position_Label`
+   because it says what the position contains, whereas labels are a charting
+   concern (question 3); `load_root_position()` raises if more than one row
+   matches, and with no match `root_position` is null and charts omit the
+   dotted root line instead of drawing it somewhere wrong.
+   **When issue #72 lands** (Chichewa onboarded, needs the tonosegmental and
+   intonational modules first) there will be a `coded_data` planar table
+   with a real keystone row; the exporter should then read that file and use
+   `Position_Name == 'v:verbstem'`, so the keystone has one definition
+   rather than two. Nothing to point at today.
+   Original question: confirm `--root-element root` is the right marker.
+5. **Settled 2026-09-19: fixed — the axis shows every position.** The range
+   came from the drawn spans, so nyan1308's axis started at PreSbj: only the
+   full `[1-22]` root reaches position 1, and that root is excluded from
+   this chart. Every other chart shows the whole structure, the axis is the
+   planar structure rather than the data, and the truncation is silent — a
+   reader comparing two charts would assume the axes align. Not
+   Chichewa-specific: any language whose first position is not a span
+   boundary loses it the same way. `positions = "drawn"` restores the old
+   behaviour and is what the check compares against (numbers identical);
+   the new default differs from the old file by 2.4% of pixels, all of it
+   the bars shifting as the panel widens.
 6. Span chart colour for `length` is inferred — see the chart 15 entry.
 7. **Settled 2026-09-15: fixed.** The swatch now follows the lines'
    exponent (`legend_thickness_exponent`, default `thickness_exponent`;

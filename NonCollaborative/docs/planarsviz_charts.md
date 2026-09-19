@@ -98,7 +98,11 @@ that share, colour the span's main domain type.
 plot_span_chart(bundle)
 ```
 
-No options. Canvas 14 × 8 in. Renderer name `spanchart`; old file
+| Option | Meaning |
+|---|---|
+| `positions` | `"all"` (default) shows every position in the planar structure; `"drawn"` shows only the stretch the charted spans cover, as the old file does — which silently dropped position 1, reached only by the excluded full root. |
+
+Canvas 14 × 8 in. Renderer name `spanchart`; old file
 `nyan1308_spanchart.pdf`.
 
 ---

@@ -27,6 +27,9 @@ if (status != 0) stop("R CMD INSTALL failed")
 suppressPackageStartupMessages(library(planarsviz, lib.loc = lib))
 bundle <- read_planars_bundle(bundle_dir)
 pl <- plot_span_chart(bundle)
+# The axis shows every position from 2026-09-19; positions = "drawn" is the
+# original, which the comparisons against the old script use.
+pl_old <- plot_span_chart(bundle, positions = "drawn")
 problems <- character()
 
 plain <- function(df) {
@@ -43,7 +46,7 @@ if (!library_only) {
   suppressMessages(suppressWarnings(eval(parse(text = src), envir = orig)))
   po <- get("p_spanchart", envir = orig)
   bo <- ggplot2::ggplot_build(po)
-  bl <- ggplot2::ggplot_build(pl)
+  bl <- ggplot2::ggplot_build(pl_old)
   if (length(bo$data) != length(bl$data)) problems <- c(problems, "layer count differs")
   for (k in seq_along(bo$data)) {
     a <- plain(bo$data[[k]]); b2 <- plain(bl$data[[k]])
@@ -51,10 +54,10 @@ if (!library_only) {
     res <- all.equal(a[cols], b2[cols], check.attributes = FALSE, tolerance = 1e-6)
     if (!isTRUE(res)) problems <- c(problems, sprintf("layer %d: %s", k, paste(res, collapse = "; ")))
   }
-  if (!identical(po$labels$title, pl$labels$title)) problems <- c(problems, "title differs")
+  if (!identical(po$labels$title, pl_old$labels$title)) problems <- c(problems, "title differs")
   xo <- bo$layout$panel_params[[1]]$x$get_labels(); xl <- bl$layout$panel_params[[1]]$x$get_labels()
   if (!identical(as.character(xo), as.character(xl))) problems <- c(problems, "x labels differ")
-  if (!identical(po$scales$get_scales("alpha")$name, pl$scales$get_scales("alpha")$name)) {
+  if (!identical(po$scales$get_scales("alpha")$name, pl_old$scales$get_scales("alpha")$name)) {
     problems <- c(problems, "alpha legend name differs")
   }
 }
