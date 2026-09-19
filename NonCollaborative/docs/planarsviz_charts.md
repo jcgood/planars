@@ -183,7 +183,7 @@ plot_frequency_tree(bundle)
 | `selection` | Which selection in `selections.tsv` to draw (default `"consensus_all"`). |
 | `title` | Plot title; the default names the number of families. |
 | `weight` | What branch opacity and thickness show: `"families"` (default, the share of families containing the span), `"tests"` (support relative to the best-tested span), or `"none"` (solid — shape alone). |
-| `branch_size` | Thickness of a fully supported branch. Defaults to 4, the weighted charts' heaviest line; with `weight = "none"`, where every branch would be drawn at that weight, it defaults to 1.5. |
+| `branch_size` | Thickness of a fully supported branch. Defaults to 4, the weighted charts' heaviest line; with `weight = "none"`, where every branch would be drawn at that weight, it defaults to 0.5 — ggtree's own default, matching the exemplary trees. |
 
 Canvas 16 × 10 in. Renderer name `freqtree`; old file `nyan1308_freqtree.pdf`.
 

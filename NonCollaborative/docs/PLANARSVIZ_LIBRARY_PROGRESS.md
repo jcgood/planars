@@ -667,8 +667,10 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
 - Thickness: the weighted charts scale line width up to 4 at full support,
   so drawing unweighted put every branch at that maximum and the first
   version came out far too heavy (Jeff asked). `branch_size` now controls
-  it, defaulting to 1.5 when nothing is weighted and 4 otherwise, so the
-  weighted charts are untouched (re-checked, both still 0.0000%).
+  it, defaulting to 4 as before and to 0.5 when nothing is weighted —
+  ggtree's own default, so the illustration matches the exemplary trees,
+  which pass no line width (Jeff asked for that specifically). The weighted
+  charts are untouched (re-checked, both still 0.0000%).
 - Checks: frequency tree and four trees re-checked after the `weight`
   change, both still identical (0.0000%); 14 bundle tests pass, including a
   new one pinning that `most_binary` names a maximally resolved family.
