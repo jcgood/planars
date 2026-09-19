@@ -69,6 +69,9 @@ Early prototypes for domain derivation from linguistic parameter files. Represen
 ### `docs/`
 
 - `VERIFICATION.md` — methodology, theoretical framework, and verified results for the laminar-family analysis (the two independent algorithms that both confirm 69 maximal families for nyan1308).
+- `planarsviz_guide.md` — user guide for the planarsviz chart library (`r/planarsviz/`): exporting a data bundle, drawing and rendering charts, adding a language, checking charts.
+- `planarsviz_charts.md` — chart catalogue: every planarsviz chart, its function call, options, canvas and an example image (`planarsviz_charts/`).
+- `PLAN_planarsviz_library.md` / `PLANARSVIZ_LIBRARY_PROGRESS.md` — why the library is built as it is, and the chart-by-chart record of how each port was checked, with open questions.
 
 ### `examples/`
 

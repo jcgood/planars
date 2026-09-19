@@ -1,0 +1,13 @@
+source_row	Test_Labels	Domain_Type	Left_Edge	Right_Edge	Size	Notes
+91	PitchRange-Declarative-Minimal	intonational	8	19	12	making assumptions about min/max for intonational
+92	PitchRange-Declarative-Maximal	intonational	4	24	21	
+93	PitchRange-Question-Minimal	intonational	8	19	12	
+94	PitchRange-Question-Maximal	intonational	3	24	22	
+95	Downdrift-DeclarativeContentQ-Minimal	intonational	8	19	12	
+96	Downdrift-DeclarativeContentQ-Maximal	intonational	3	24	22	
+97	Downdrift-YesNoQ-Minimal	intonational	8	19	12	
+98	Downdrift-YesNoQ-Maximal	intonational	3	24	22	
+99	FinalPitch-Declarative-Minimal	intonational	8	19	12	
+100	FinalPitch-Declarative-Maximal	intonational	4	24	21	
+101	FinalPitch-YesNoQ-Minimal	intonational	8	19	12	
+102	FinalPitch-YesNoQ-Maximal	intonational	3	24	22	

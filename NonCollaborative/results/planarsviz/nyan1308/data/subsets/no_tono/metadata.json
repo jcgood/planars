@@ -1,0 +1,23 @@
+{
+  "contract_version": "0.2.0",
+  "dataset": "nyan1308",
+  "domain_type": null,
+  "domain_types": [
+    "intonational",
+    "length",
+    "morphosyntactic",
+    "phonological"
+  ],
+  "enumeration_truncated": false,
+  "kind": "filter",
+  "n_active_tests": 51,
+  "n_conflict_pairs": 29,
+  "n_maximal_families": 24,
+  "n_positions": 22,
+  "n_unique_spans": 20,
+  "n_universal_spans": 5,
+  "source_domain_file": "domains/domains_nyan1308.tsv",
+  "source_domain_sha256": "ce2fdcb1dbdc0aad77c4546059f6246ec0218bd2ea56fb21deb1d82bd748c8bf",
+  "subset_id": "no_tono",
+  "synthetic_root": false
+}

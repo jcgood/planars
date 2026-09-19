@@ -1,0 +1,12 @@
+source_row	Test_Labels	Domain_Type	Left_Edge	Right_Edge	Size	Notes
+8	NonInterruptibility	morphosyntactic	7	21	15	
+9	NonPermutability-Strict	morphosyntactic	7	15	9	
+10	NonPermutability-Scopal	morphosyntactic	7	23	17	
+11	Ciscategorial-Maximal	morphosyntactic	7	20	14	
+12	Ciscategorial-Minimal	morphosyntactic	12	20	9	
+13	SubspanRepetition-Coordination-Maximal	morphosyntactic	3	24	22	
+14	SubspanRepetition-Coordination-Minimal	morphosyntactic	12	19	8	
+15	SubspanRepetition-Reduplication	morphosyntactic	12	19	8	
+16	BiuniquenessDeviation-2pl	morphosyntactic	11	20	10	
+17	BiuniquenessDeviation-TAMP	morphosyntactic	7	19	13	
+18	BiuniquenessDeviation-Valency	morphosyntactic	15	17	3	

@@ -1,0 +1,20 @@
+{
+  "contract_version": "0.2.0",
+  "dataset": "shifted_nyan",
+  "domain_type": "phonological",
+  "domain_types": [
+    "phonological"
+  ],
+  "enumeration_truncated": false,
+  "kind": "domain_type",
+  "n_active_tests": 21,
+  "n_conflict_pairs": 10,
+  "n_maximal_families": 6,
+  "n_positions": 24,
+  "n_unique_spans": 11,
+  "n_universal_spans": 2,
+  "source_domain_file": "tests/fixtures/domains_shifted_nyan.tsv",
+  "source_domain_sha256": "37ad82d4eb63f730ce93ab54aae6b42986aa4477edb1b6f01463c6bc30858299",
+  "subset_id": "phonological",
+  "synthetic_root": true
+}

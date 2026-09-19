@@ -1,0 +1,62 @@
+[
+  {
+    "domain_type": "intonational",
+    "domain_types": [
+      "intonational"
+    ],
+    "kind": "domain_type",
+    "n_active_tests": 12,
+    "n_maximal_families": 1,
+    "n_unique_spans": 3,
+    "path": "subsets/intonational",
+    "subset_id": "intonational"
+  },
+  {
+    "domain_type": "length",
+    "domain_types": [
+      "length"
+    ],
+    "kind": "domain_type",
+    "n_active_tests": 7,
+    "n_maximal_families": 3,
+    "n_unique_spans": 6,
+    "path": "subsets/length",
+    "subset_id": "length"
+  },
+  {
+    "domain_type": "morphosyntactic",
+    "domain_types": [
+      "morphosyntactic"
+    ],
+    "kind": "domain_type",
+    "n_active_tests": 11,
+    "n_maximal_families": 3,
+    "n_unique_spans": 10,
+    "path": "subsets/morphosyntactic",
+    "subset_id": "morphosyntactic"
+  },
+  {
+    "domain_type": "phonological",
+    "domain_types": [
+      "phonological"
+    ],
+    "kind": "domain_type",
+    "n_active_tests": 21,
+    "n_maximal_families": 6,
+    "n_unique_spans": 11,
+    "path": "subsets/phonological",
+    "subset_id": "phonological"
+  },
+  {
+    "domain_type": "tonal",
+    "domain_types": [
+      "tonal"
+    ],
+    "kind": "domain_type",
+    "n_active_tests": 44,
+    "n_maximal_families": 9,
+    "n_unique_spans": 11,
+    "path": "subsets/tonal",
+    "subset_id": "tonal"
+  }
+]

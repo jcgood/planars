@@ -1,0 +1,3 @@
+highlight_id	name	left	right	colour	layer
+orthographic_word	orthographic word (Neg1..Enc)	7	21	red	1
+orthographic_word	final vowel (FV)	19	19	#0072B5	2

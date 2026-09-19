@@ -1,0 +1,7 @@
+domain_type	colour	sort_order	legend_order	facet_order	alt_colour	colour_priority	known
+morphosyntactic	#BC3C29	1	1	1	#EE6677	1	True
+tonosegmental	#0072B5	2	5	3	#228833	3	True
+length	#E18727	3	3	5	#AA3377	5	True
+phonological	#20845E	4	2	2	#4477AA	2	True
+intonational	#7876B1	5	4	4	#CCBB44	4	True
+tonal	#7F7F7F	6	6	6	#7F7F7F	6	False

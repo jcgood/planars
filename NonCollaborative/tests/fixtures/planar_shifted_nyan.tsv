@@ -1,0 +1,25 @@
+Language_ID	Planar_Type	Position	Position_Label	Position_Type	Elements	Description	Class_Size	Notes
+shifted_nyan	verbal	1	N1	Slot	new1	added position 1 (test fixture)		
+shifted_nyan	verbal	2	N2	Slot	new2	added position 2 (test fixture)		
+shifted_nyan	verbal	3	sQM	Slot	q	Question Marker		
+shifted_nyan	verbal	4	sPrS	Zone	presubj	presubject zone		
+shifted_nyan	verbal	5	sSu	Slot	subj	subject		
+shifted_nyan	verbal	6	sPoS	Zone	postsubj	postsubject zone		
+shifted_nyan	verbal	7	sNeg	Slot	neg	negative marker		
+shifted_nyan	verbal	8	sSM	Slot	sm	Subject Marker		
+shifted_nyan	verbal	9	sNegT	Slot	neg	negative marker		
+shifted_nyan	verbal	10	sTM	Zone	tamp	tense, aspect, mood, and polarity markers		
+shifted_nyan	verbal	11	sOM	Slot	om	Object Marker		
+shifted_nyan	verbal	12	sV	Slot	root	verb root		
+shifted_nyan	verbal	13	sUn	Slot	unprod ext	unproductive verbal extensions		
+shifted_nyan	verbal	14	sSt	Slot	stat	Stative Extension		
+shifted_nyan	verbal	15	sCa	Slot	caus	Causative Extension		
+shifted_nyan	verbal	16	sAp	Slot	appl	Applicative Extension		
+shifted_nyan	verbal	17	sRc	Slot	recp	Reciprocal Extension		
+shifted_nyan	verbal	18	sPa	Slot	pass	Passive Extension		
+shifted_nyan	verbal	19	sFV	Slot	fv	inflectional Final Vowel		
+shifted_nyan	verbal	20	s2P	Slot	postfinal2p	second person plural enclitic		
+shifted_nyan	verbal	21	sEn	Zone	postfinalenc	postverbal enclitic		
+shifted_nyan	verbal	22	sOb	Slot	obj1	first object		
+shifted_nyan	verbal	23	sOT	Slot	obj2	second object		
+shifted_nyan	verbal	24	sPoO	Zone	postobj	postobject elements		

@@ -1,0 +1,20 @@
+{
+  "contract_version": "0.2.0",
+  "dataset": "nyan1308",
+  "domain_type": "tonosegmental",
+  "domain_types": [
+    "tonosegmental"
+  ],
+  "enumeration_truncated": false,
+  "kind": "domain_type",
+  "n_active_tests": 44,
+  "n_conflict_pairs": 12,
+  "n_maximal_families": 9,
+  "n_positions": 22,
+  "n_unique_spans": 11,
+  "n_universal_spans": 3,
+  "source_domain_file": "domains/domains_nyan1308.tsv",
+  "source_domain_sha256": "ce2fdcb1dbdc0aad77c4546059f6246ec0218bd2ea56fb21deb1d82bd748c8bf",
+  "subset_id": "tonosegmental",
+  "synthetic_root": true
+}
