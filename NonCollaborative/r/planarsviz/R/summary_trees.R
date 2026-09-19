@@ -71,10 +71,14 @@ planarsviz_selected_family <- function(bundle, selection) {
 #'   share of `member_ids` containing the span), `"tests"` (the span's
 #'   convergence as a share of the drawn tree's best-tested span), or
 #'   `"none"` (every branch drawn solid — for illustrating shape alone).
+#' @param branch_size Thickness of a fully supported branch; thinner branches
+#'   scale down from it. With `weight = "none"` every branch is fully
+#'   supported, so this is simply the line width of the whole tree.
 #' @return A ggtree plot.
 #' @export
 planarsviz_summary_tree <- function(bundle, family_id, member_ids, title, alpha_name,
-                                    legend = TRUE, weight = c("families", "tests", "none")) {
+                                    legend = TRUE, weight = c("families", "tests", "none"),
+                                    branch_size = 4) {
   planarsviz_require_trees()
   weight <- match.arg(weight)
   `%<+%` <- ggtree::`%<+%`
@@ -104,7 +108,7 @@ planarsviz_summary_tree <- function(bundle, family_id, member_ids, title, alpha_
     label      = c(family_spans, tips),
     freq       = freq,
     freq_scaled= round(freq / n_members, 6),
-    edge_size  = round(4 * freq / n_members, 6)
+    edge_size  = round(branch_size * freq / n_members, 6)
   )
 
   p <- ggtree::ggtree(freq_tree, layout='slanted', ladderize=FALSE) %<+%
@@ -137,12 +141,17 @@ planarsviz_summary_tree <- function(bundle, family_id, member_ids, title, alpha_
 #' @param title Plot title; the default names the number of families.
 #' @param weight What branch opacity and thickness show: `"families"`
 #'   (default), `"tests"`, or `"none"`. See [planarsviz_summary_tree()].
+#' @param branch_size Thickness of a fully supported branch. Defaults to 4,
+#'   the weighted charts' heaviest line; with `weight = "none"`, where every
+#'   branch would be drawn at that weight, it defaults to 1.5.
 #' @return A ggtree plot with attributes `planarsviz_size` and `planarsviz_units`.
 #' @export
 plot_frequency_tree <- function(bundle, selection = "consensus_all", title = NULL,
-                                weight = c("families", "tests", "none")) {
+                                weight = c("families", "tests", "none"),
+                                branch_size = NULL) {
   validate_planars_bundle(bundle)
   weight <- match.arg(weight)
+  if (is.null(branch_size)) branch_size <- if (weight == "none") 1.5 else 4
   n <- nrow(bundle$families)
   if (is.null(title)) title <- paste0(n, ' maximal families — edge weight = family count')
   alpha_name <- switch(weight,
@@ -151,7 +160,8 @@ plot_frequency_tree <- function(bundle, selection = "consensus_all", title = NUL
     none = NULL)
   p <- planarsviz_summary_tree(
     bundle, planarsviz_selected_family(bundle, selection), bundle$families$family_id,
-    title = title, alpha_name = alpha_name, legend = weight != "none", weight = weight)
+    title = title, alpha_name = alpha_name, legend = weight != "none", weight = weight,
+    branch_size = branch_size)
   attr(p, "planarsviz_size") <- c(width = 16, height = 10)
   attr(p, "planarsviz_units") <- "in"
   p

@@ -659,11 +659,16 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
 - Notable: family_031 is also what greedy selection by test support gives
   (see the consensus note below), so the most branching tree is also the
   best-attested one — they agree here, which is worth saying in a caption.
-- R: `plot_frequency_tree()` gained `title` and `weight` (`"families"`
-  default, `"tests"`, `"none"`). Drawn with `weight = "none"`: frequency
-  shading made the deep binary spine — the very structure being
-  illustrated — nearly invisible, and test weighting faded the outer
-  backbone instead, which rests on few tests.
+- R: `plot_frequency_tree()` gained `title`, `weight` (`"families"`
+  default, `"tests"`, `"none"`) and `branch_size`. Drawn with
+  `weight = "none"`: frequency shading made the deep binary spine — the very
+  structure being illustrated — nearly invisible, and test weighting faded
+  the outer backbone instead, which rests on few tests.
+- Thickness: the weighted charts scale line width up to 4 at full support,
+  so drawing unweighted put every branch at that maximum and the first
+  version came out far too heavy (Jeff asked). `branch_size` now controls
+  it, defaulting to 1.5 when nothing is weighted and 4 otherwise, so the
+  weighted charts are untouched (re-checked, both still 0.0000%).
 - Checks: frequency tree and four trees re-checked after the `weight`
   change, both still identical (0.0000%); 14 bundle tests pass, including a
   new one pinning that `most_binary` names a maximally resolved family.
