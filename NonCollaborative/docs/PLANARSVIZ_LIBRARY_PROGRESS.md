@@ -839,3 +839,28 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
   `_orthographic_word` ones and says where they come from.
 - Looked at by Claude: yes (the check output). Seen by Jeff: no.
 - Status: done.
+
+## Two things C3 must not get wrong (found 2026-09-20 while checking the concurrent session's note)
+
+C3 removes the matplotlib plotting from `laminar_tree_counts.py`. Two facts
+about that file turned up while verifying the concurrent analysis session's
+handoff note, and both would be easy to destroy by accident:
+
+- **`CLASS_COLORS` must survive.** Its only remaining in-file consumer is
+  `save_class_figure()`, which C3 deletes — so a straightforward "remove the
+  plotting" pass takes the dict with it. But
+  `scripts/analysis/class_fragmentation_test.py` (the concurrent session's
+  work, not yet committed) imports it, and so does its R plot by way of a
+  `color` column. Keep the dict, drop only the drawing.
+- **Those same five colours are also written out in
+  `export_planarsviz_data.py`'s `DOMAIN_TYPE_STYLE`** (`colour` field —
+  identical values, verified against the bundle's `domain_types.tsv`). One
+  fact, two owners, which is the defect this project keeps paying for. The
+  exporter already imports `CLASS_ORDER` from `laminar_tree_counts`, so
+  taking `colour` from `CLASS_COLORS` is not a new coupling. Deliberately
+  **not** fixed on sight: changing the exporter regenerates the bundle and
+  so needs the chart checks re-run, and the concurrent session is live in
+  these same files. Do it in C3, with the checks.
+  (The exporter's comment calling `DOMAIN_TYPE_STYLE` "the one place R gets
+  them from" is true of R and misleading about Python — fix the wording in
+  the same pass.)

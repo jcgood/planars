@@ -1,5 +1,9 @@
 .RData
 .Rhistory
+# R's default plot device file, written wherever a script is run from.
+# NonCollaborative/scripts/.gitignore already covers that directory; this
+# catches it at the repo root and anywhere else.
+Rplots.pdf
 **/.DS_Store
 __pycache__/
 *.pyc

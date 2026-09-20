@@ -69,6 +69,11 @@ C3, which edits `scripts/analysis/laminar_analysis.py`, the one file both
 tracks touch. It split `load_spans()` into `load_domain_dataframe()` +
 `aggregate_spans()`; those two need a decided home if C3 restructures the
 file. Do not commit that session's files on its behalf while it is running.
+**Two traps C3 has to avoid**, both found while checking that note and
+written up at the end of the progress doc: `CLASS_COLORS` in
+`laminar_tree_counts.py` must survive the removal of the plotting that is
+now its only in-file user, and those same five colours are duplicated in
+`export_planarsviz_data.py`'s `DOMAIN_TYPE_STYLE`.
 
 ---
 
