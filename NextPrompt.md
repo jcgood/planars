@@ -24,8 +24,10 @@ is `NonCollaborative/docs/planarsviz_guide.md` and `planarsviz_charts.md`.
 All 18 charts are ported and merged (PR #294; the hook fix #295 alongside
 it). Analysis stays in Python, an exporter writes a data bundle, and the R
 package in `NonCollaborative/r/planarsviz/` draws from it — no language
-facts in R. Old scripts are untouched and still work; the library sits
-beside them.
+facts in R. The old R scripts no longer sit beside the library: as of C2
+they are archived in `NonCollaborative/OlderFiles/planarsviz_superseded/`,
+where the porting checks still run them to prove fidelity. The superseded
+*Python* is still in place — that is what C3 removes.
 
 **Next action: Phase C3.** Phase B is finished (2026-09-20, question 6
 settled: the span chart's `length` colour stays `#AA3377`). **C1 and C2 are
@@ -72,6 +74,10 @@ both functions; `class_fragmentation_test.py` depends on them.
 `CLASS_COLORS` in `laminar_tree_counts.py` must survive the removal of the
 plotting that is now its only in-file user, and those same five colours are
 duplicated in `export_planarsviz_data.py`'s `DOMAIN_TYPE_STYLE`.
+`NonCollaborative/docs/NOTE_FOR_ANALYSIS_SESSION.md` is the reply sent back
+to that session; it asks the session to say so before C3 runs if it intends
+to keep working in those two files, so check for an answer before editing
+them.
 
 ---
 
