@@ -14,6 +14,7 @@ Example:
 from __future__ import annotations
 
 import argparse
+import collections
 import csv
 import hashlib
 import json
@@ -46,6 +47,7 @@ from laminar_tree_counts import (  # noqa: E402
     collect_counts,
 )
 from boundary_strength import compute_boundary_strength  # noqa: E402
+from class_fragmentation_test import run_test as run_fragmentation_test  # noqa: E402
 
 
 def forest_variants() -> list[tuple[str, list[str], str]]:
@@ -244,6 +246,70 @@ def export_tree_counts(domain_file: Path, domains_dir: Path, data_dir: Path) -> 
     write_tsv(data_dir / "tree_counts.tsv",
               ["condition", "class", "n_unique_spans", "n_maximal_laminar_families",
                "kind", "label", "colour"], rows)
+
+
+def export_fragmentation_test(domain_file: Path, domains_dir: Path, data_dir: Path,
+                              n_permutations: int, seed: int) -> dict:
+    """Write fragmentation_test.tsv and fragmentation_null.tsv.
+
+    Calls class_fragmentation_test.run_test() unchanged, so the numbers equal
+    that script's own committed TSVs. Groups are built from the domain types
+    the data actually has, the way export_tree_counts() does, rather than from
+    a fixed list -- a dataset with a type this project doesn't know still gets
+    a row, with the fallback colour.
+
+    The null draws go in as a tally (one row per distinct family count per
+    group) rather than one row per draw. That is lossless for everything the
+    chart and the p-value need -- only draw order is dropped, and the seed
+    reproduces that -- and it is the difference between 227 rows and
+    n_permutations x groups, which for nyan1308 at 5000 draws would be 40,000
+    rows and a file nearly twice the size of the whole rest of the bundle.
+    Decision recorded in docs/PLANARSVIZ_LIBRARY_PROGRESS.md, 2026-09-20.
+
+    Not run unless asked: at 5000 draws this takes about four minutes against
+    the 1.6 seconds the rest of the export costs, so it sits behind
+    --fragmentation-permutations rather than on the default path.
+    """
+    observed = set(
+        pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")["Domain_Type"].dropna().str.strip()
+    )
+    classes = [c for c in CLASS_ORDER if c in observed] + sorted(observed - set(CLASS_ORDER))
+    bundles = [b for b in BUNDLES if set(b[1]) & observed]
+    palette = {row["domain_type"]: row["colour"] for row in DOMAIN_TYPE_STYLE}
+
+    groups = [(c, [c]) for c in classes] + [(name, list(types)) for name, types, _c, _d in bundles]
+    summary, null_counts = run_fragmentation_test(
+        domain_file.name, domains_dir, groups=groups,
+        n_permutations=n_permutations, seed=seed,
+    )
+
+    bundle_style = {name: (display, colour) for name, _types, colour, display in bundles}
+    rows = []
+    for row in summary:
+        name = row["group"]
+        if name in bundle_style:
+            label, colour = bundle_style[name]
+            kind = "bundle"
+        else:
+            label, colour = name.title(), palette.get(name, FALLBACK_COLOUR)
+            kind = "class"
+        rows.append({k: v for k, v in row.items() if k != "color"}
+                    | {"kind": kind, "label": label, "colour": colour,
+                       "n_permutations": n_permutations, "seed": seed})
+    kind_of = {r["group"]: r["kind"] for r in rows}
+    write_tsv(data_dir / "fragmentation_test.tsv",
+              ["group", "kind", "label", "colour", "n_tests", "observed_families",
+               "null_mean", "null_p05", "null_p95", "p_value_ge_observed",
+               "n_permutations", "seed"], rows)
+
+    tally = []
+    for name, counts in null_counts.items():
+        for family_count, n in sorted(collections.Counter(counts).items()):
+            tally.append({"group": name, "kind": kind_of[name],
+                          "family_count": family_count, "n": n})
+    write_tsv(data_dir / "fragmentation_null.tsv",
+              ["group", "kind", "family_count", "n"], tally)
+    return {"fragmentation_permutations": n_permutations, "fragmentation_seed": seed}
 
 
 def export_boundary_strength(domain_file: Path, domains_dir: Path, target_dir: Path,
@@ -673,6 +739,8 @@ def export_bundle(
     conflict_group_cap: int = 12,
     exemplary_k: int = 6,
     exemplary_include_sparsest: bool = True,
+    fragmentation_permutations: int = 0,
+    fragmentation_seed: int = 0,
 ) -> Path:
     """Export one validated domain dataset and return its bundle directory.
 
@@ -811,6 +879,17 @@ def export_bundle(
                "alt_colour", "colour_priority", "known"],
               domain_type_rows(observed_types))
 
+    # Off unless asked: the permutation test is minutes, the rest of the
+    # export is seconds. A bundle without it simply has no fragmentation
+    # tables, and plot_fragmentation_test() says so rather than failing
+    # obscurely.
+    fragmentation_metadata: dict = {}
+    if fragmentation_permutations:
+        fragmentation_metadata = export_fragmentation_test(
+            domain_file, domains_dir, data_dir,
+            fragmentation_permutations, fragmentation_seed,
+        )
+
     metadata = {
         "contract_version": "0.2.0",
         "dataset": dataset,
@@ -842,6 +921,7 @@ def export_bundle(
         ),
         "enumeration_truncated": truncated,
         **selection_metadata,
+        **fragmentation_metadata,
         "producer": "scripts/analysis/export_planarsviz_data.py",
         "analysis_source": "scripts/analysis/laminar_analysis.py",
     }
@@ -974,13 +1054,25 @@ def main() -> None:
         "--no-exemplary-sparsest", action="store_true",
         help="Don't add the family with the least evidence to the exemplary selection",
     )
+    parser.add_argument(
+        "--fragmentation-permutations", type=int, default=0, metavar="N",
+        help="Also run the class-fragmentation permutation test with N draws and "
+             "put its two tables in the bundle. Off by default because it is slow: "
+             "5000 draws takes about four minutes against the rest of the export's "
+             "1.6 seconds. Use 5000 to match the committed results/ files.",
+    )
+    parser.add_argument(
+        "--fragmentation-seed", type=int, default=0,
+        help="Seed for --fragmentation-permutations (default: 0, what made the committed files)",
+    )
     args = parser.parse_args()
 
     bundle_dir = export_bundle(args.domain_file, args.output_dir, args.planar_file,
                                args.labels_file, args.root_element, args.language_name,
                                args.highlights_file, args.conflict_groups_file,
                                args.conflict_group_cap, args.exemplary_k,
-                               not args.no_exemplary_sparsest)
+                               not args.no_exemplary_sparsest,
+                               args.fragmentation_permutations, args.fragmentation_seed)
     print(f"Exported planarsviz bundle: {bundle_dir}")
 
 

@@ -26,6 +26,7 @@ Contents: [Pooled plots](#1-pooled-plots) ·
 [Tree counts](#11-tree-count-bar-charts) ·
 [Boundary strength](#12-boundary-strength) ·
 [Boundary-strength overlay](#13-boundary-strength-overlay) ·
+[Fragmentation test](#14-fragmentation-test) ·
 [Name changes](#name-changes-for-cutover)
 
 ---
@@ -417,6 +418,40 @@ plot_boundary_strength_overlay(bundle, subset = "no_tono",
 Canvas 13 × 7 in. Renderer names `boundary_strength_overlay`,
 `boundary_strength_overlay_<subset>`; old files
 `nyan1308_boundary_strength_overlay.pdf`, `_no_tono.pdf`.
+
+---
+
+## 14. Fragmentation test
+
+Is a domain type's family count higher than its own number of tests would
+predict by chance? One horizontal violin per group — the family counts under
+permuted domain-type labels — with the observed count as a filled dot and the
+one-sided p-value at the right. Domain types and bundles are two stacked
+panels on one shared x axis, so the raw scale stays comparable.
+
+![Fragmentation test](planarsviz_charts/fragmentation_test.png)
+
+```r
+plot_fragmentation_test(bundle)
+```
+
+No options: the chart draws whatever groups the bundle's table holds, in its
+own colours and labels.
+
+Canvas 10 × 6.5 in.
+
+**This chart needs a bundle exported with `--fragmentation-permutations`.**
+The permutation test takes minutes where the rest of an export takes seconds,
+so the exporter only runs it on request. Without it, `plot_fragmentation_test()`
+stops and says how to re-export.
+
+| Renderer name | Old file |
+|---|---|
+| `fragmentation_test_plot` | `nyan1308_fragmentation_test_plot.pdf` |
+
+Unlike every other chart here, this one was written in R from the start —
+there is no matplotlib original, so the chart the standalone script drew is
+itself the reference its porting check compares against.
 
 ---
 

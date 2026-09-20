@@ -157,6 +157,11 @@ chart_table <- function() {
       add(paste0("tree_count_", which), function() plot_tree_counts(bundle, which))
     })
   }
+  # Only when the bundle has it: the permutation test is slow enough that the
+  # exporter runs it on request, so a bundle without it is normal, not broken.
+  if (file.exists(file.path(data_dir, "fragmentation_test.tsv"))) {
+    add("fragmentation_test_plot", function() plot_fragmentation_test(bundle))
+  }
   add("boundary_strength", function() plot_boundary_strength(bundle))
   add("boundary_strength_distributions", function() plot_boundary_strength_distributions(bundle))
   add("boundary_strength_overlay", function() plot_boundary_strength_overlay(bundle))

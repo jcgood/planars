@@ -93,3 +93,39 @@ def test_conflict_pairs_are_symmetric_as_an_undirected_relation():
     assert len(normalized) == 65
     assert all(a != b for a, b in normalized)
     assert all(a < b for a, b in normalized)
+
+
+def test_fragmentation_tables_agree():
+    """The null tally must account for every draw, and the two fragmentation
+    tables must describe the same groups.
+
+    Written as a test rather than left to check_fragmentation.R because this
+    is the invariant that makes the tally safe to store instead of the raw
+    draws: if a group's counts stop summing to its own n_permutations, the
+    stored distribution is no longer the one the p-value came from, and the
+    violin would be drawn from an incomplete null without anything looking
+    wrong. The porting check covers the rest (numbers against the committed
+    TSVs, pixels against the reference); this is the piece worth having run
+    automatically.
+    """
+    summary = read_tsv("fragmentation_test.tsv")
+    tally = read_tsv("fragmentation_null.tsv")
+    assert summary and tally
+
+    kinds = {row["group"]: row["kind"] for row in summary}
+    draws = {row["group"]: int(row["n_permutations"]) for row in summary}
+    assert set(kinds) == {row["group"] for row in tally}
+
+    totals = {}
+    for row in tally:
+        assert row["kind"] == kinds[row["group"]]
+        totals[row["group"]] = totals.get(row["group"], 0) + int(row["n"])
+    assert totals == draws
+
+    # A tally that had silently collapsed distinct counts together would still
+    # sum correctly, so also check each group's rows are one per value.
+    seen = set()
+    for row in tally:
+        key = (row["group"], row["family_count"])
+        assert key not in seen, f"duplicate tally row for {key}"
+        seen.add(key)

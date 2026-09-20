@@ -818,12 +818,80 @@ Rscript scripts/analysis/fragmentation_test_plot.r
 The plain command reproduces the committed files exactly (5000 draws, seed 0). `--n-permutations`
 and `--seed` are adjustable; both summary files record what they were.
 
-**This is the one chart here that does not come from the `planarsviz` package.** The R script
-reads the three TSVs directly rather than a bundle. Porting it — a `fragmentation_test.tsv` in
-the bundle and a chart function beside `plot_tree_counts()` and `plot_boundary_strength()` — is
-planned as chart 19. It is also the one chart with no matplotlib original to compare a port
-against: it was written in R from the start, so `nyan1308_fragmentation_test_plot.pdf` above is
-itself the reference a port must reproduce.
+**The chart comes from the package now** (chart 19, `--plots fragmentation_test_plot`), but it is the
+one chart whose bundle tables are not written on every export:
+
+```
+python scripts/analysis/export_planarsviz_data.py \
+  --domain-file domains/domains_nyan1308.tsv \
+  --output-dir results/planarsviz --language-name Chichewa \
+  --fragmentation-permutations 5000
+```
+
+Without `--fragmentation-permutations` the bundle simply has no fragmentation tables and the
+chart says so. The test takes about four minutes where the rest of an export takes 1.6 seconds,
+which is why it is asked for rather than assumed. `scripts/analysis/fragmentation_test_plot.r`
+is still there and still draws the same chart from the committed TSVs — it is the original this
+was ported from, and, since there was never a matplotlib version, the chart it drew is the
+reference the porting check compares against.
+
+The null distributions go into the bundle as a tally (`fragmentation_null.tsv`: one row per
+distinct family count per group, with how many draws gave it) rather than one row per draw —
+227 rows instead of 40,000, losing only draw order, which the seed reproduces.
+
+## Does the real arrangement produce fewer trees than the spans' own lengths alone would predict?
+
+### nyan1308_span_placement_test_by_group_plot.pdf / nyan1308_span_placement_test.tsv / nyan1308_span_placement_null_tally.tsv
+
+**What it is:** A different question from the fragmentation test above, though it looks similar.
+That one asked whether a class's family count was surprising given how many *tests* it has,
+by shuffling which label sits on which test while every span stayed put. This one holds a
+group's own span *lengths* fixed and asks whether the real *positions* of those spans — not
+their count, their actual placement on the planar structure — produce fewer conflicting trees
+than an arbitrary placement of same-length spans would. A direct test of the Tree hypothesis:
+do real constituency domains nest more than their sizes alone would explain?
+
+The null redraws every span at a uniformly random legal left edge for its own length (a
+length-22 span has exactly one legal position on this 22-position structure; a length-2 span has
+21 — smaller spans get more freedom purely as a consequence of this constraint, nothing extra
+is built in), grouped by length so same-length spans can never collide, keeping each replicate's
+span count identical to the real group's. Every group draws over the full 22-position structure
+regardless of its own observed range, matching the project-wide convention that a subset
+analysis still spans the complete structure. Run for the pooled dataset ("all"), the five domain
+types, and the three bundles — 5000 draws each, one shared random stream across all nine so the
+whole run reproduces from one seed.
+
+- **`nyan1308_span_placement_test_by_group_plot.pdf`** — one panel per group: a histogram and
+  density curve of that group's own null distribution, the real observed count as a dashed
+  vertical line, the count and p-value printed in-panel. Panels use independent axes (`scales =
+  "free"`), not a shared one — unlike the fragmentation-test chart, the absolute family count
+  here is not comparable across groups of very different span counts, so each panel is read on
+  its own terms.
+- **`nyan1308_span_placement_test.tsv`** — one row per group. Columns: `group`, `n_spans`,
+  `n_positions`, `observed_families`, `n_permutations`, `seed`, `n_truncated`, `null_mean`,
+  `null_p05`, `null_p50`, `null_p95`, `p_value_le_observed` (the fraction of null draws at or
+  below the observed count — small means the real arrangement is unusually laminar for its
+  length profile).
+- **`nyan1308_span_placement_null_tally.tsv`** — `(group, family_count, n)`: how many of the 5000
+  draws gave each family count, per group, rather than one row per draw.
+
+**What it shows:** morphosyntactic (p=0.019) and syntax-like without tonosegmental (p=0.020) are
+genuinely more tree-like than their own span lengths predict — a real, if modest, effect.
+Syntax-like (p=0.051) and phonology-like (p=0.077) trend the same way more mildly. Tonosegmental
+(p=0.755) and intonational (p=0.901) trend the other way — not more coherent than chance given
+their sizes, if anything slightly less so, though intonational has only 3 spans and very little
+room for this number to move regardless of the real linguistic structure. The pooled result
+(p=0.335) is unremarkable on its own — the breakdown is where the real signal is, and it points
+in a different direction than the fragmentation test's own findings, since the two ask genuinely
+different questions about the same 26 spans.
+
+To regenerate:
+```
+python scripts/analysis/span_placement_test.py
+Rscript scripts/analysis/span_placement_test_plot.r
+```
+Not yet ported into the `planarsviz` package — this is exploratory work from 2026-09-20, one
+step behind the fragmentation test in that respect.
 
 ## How much tree structure each family leaves open
 

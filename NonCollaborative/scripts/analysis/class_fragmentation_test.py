@@ -163,7 +163,11 @@ def run_test(
         p_value = float(np.mean(null >= observed[name]))
         rows.append({
             "group": name,
-            "color": GROUP_COLORS[name],
+            # .get(): a dataset whose domain types aren't this project's five
+            # (the shifted test data renames one) still gets a colour rather
+            # than a KeyError. The exporter overrides this with the bundle's
+            # own palette anyway; it is here for the standalone R chart.
+            "color": GROUP_COLORS.get(name, "#7F7F7F"),
             "n_tests": n_tests[name],
             "observed_families": observed[name],
             "null_mean": round(float(null.mean()), 3),

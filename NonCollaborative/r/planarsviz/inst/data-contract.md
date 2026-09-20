@@ -104,6 +104,30 @@ weighted density curves of the summed strengths drawn by the distributions
 chart, on 400 points from the first position − 1 to the last + 1; a side
 is empty when it has fewer than two positions with any strength.
 
+`fragmentation_test.tsv` and `fragmentation_null.tsv` (in `data/` only, and
+**only when the bundle was exported with `--fragmentation-permutations`** —
+the test takes minutes where the rest of the export takes seconds, so a
+bundle without these two tables is normal and the chart says so rather than
+failing). From `class_fragmentation_test.py`'s `run_test()`.
+
+`fragmentation_test.tsv` is one row per group, a group being either a single
+domain type (`kind` class) or one of `planars_groupings.BUNDLES` (`kind`
+bundle): `group`, `kind`, `label` and `colour` for the row, `n_tests`,
+`observed_families`, then the null's `null_mean`, `null_p05`, `null_p95` and
+the one-sided `p_value_ge_observed`, then `n_permutations` and `seed`, which
+record the run that produced the numbers. Groups follow `tree_counts.tsv`'s
+convention: only domain types the data actually has, and only bundles with a
+type in it.
+
+`fragmentation_null.tsv` is the null distributions as a **tally**, not one
+row per draw: `group`, `kind`, `family_count`, `n`, where `n` is how many of
+the `n_permutations` draws gave that count. This is lossless for everything
+the chart and the p-value need — only draw order is dropped, and the seed
+reproduces that — and it is the difference between 227 rows and 40,000 for
+nyan1308 at 5000 draws. A reader that wants one row per draw expands it;
+`read_planars_fragmentation_null()` does that by default, which is also how
+the chart gets a violin identical to the one the original script drew.
+
 `forests.json` / `forests/<id>.tsv`: the trees of each per-class forest
 (Newick, span order, thickness), computed with the class's own position
 count. `overlay_groups.json` / `overlay_groups/<id>.tsv`: the trees of each
@@ -126,3 +150,6 @@ reject a bundle marked as truncated.
 - `n_unique_spans` equals the number of non-synthetic rows in `spans.tsv`.
 - `n_positions` equals the number of rows in `position_labels.tsv`.
 - `enumeration_truncated` must be `false` for production rendering.
+- When `fragmentation_null.tsv` is present, each group's `n` values sum to
+  that group's `n_permutations` in `fragmentation_test.tsv`, and every group
+  in one table appears in the other with the same `kind`.

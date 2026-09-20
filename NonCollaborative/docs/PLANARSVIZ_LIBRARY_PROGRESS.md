@@ -1109,6 +1109,107 @@ reading its own TSVs. Not started. What it needs:
   `results/nyan1308_fragmentation_test_plot.pdf` is itself the reference a
   port must reproduce. The shifted-dataset leak check applies normally; only
   the pixel comparison against an original is different.
-- **Open question for Jeff:** should the test also run per subset (`no_tono`),
-  the way `boundary_strength` is computed once for `data/` and once per entry
-  in `subsets.json`? Easy to include now, awkward to retrofit.
+### Settled by Jeff, 2026-09-20
+
+Three questions went to Jeff before any of this was built. His answers:
+
+1. **The null draws go in the bundle as a tally**, not as raw draws and not as
+   an index-plus-directory. `family_count` is a small integer with few
+   distinct values, so `(group, kind, family_count, n)` collapses nyan1308's
+   40,000 draws to **227 rows** with nothing lost but draw order, which
+   nothing uses and the seed reproduces anyway. For scale: the raw file is
+   900K against the whole rest of the bundle's 508K; the tally is about 5K.
+   The violin draws from a weight, and the p-value recomputes.
+2. **The exporter runs the test behind a flag**, not on every export and not
+   by reading the committed TSVs. A full export is 1.6 seconds; the test at
+   5000 draws is about four minutes (measured: 12.3s at 250 draws), and there
+   are two bundles, so always-on would make every export ~150× slower for the
+   chart-iteration loop. Reading the TSVs was rejected for the usual reason —
+   it would put the same numbers in two places with no single owner, which is
+   what this project keeps paying for. The flag keeps the exporter deriving
+   rather than reading, and the test is deterministic, so a bundle built with
+   the flag is reproducible by anyone. The cost accepted with it: a bundle
+   built without the flag has no fragmentation table, and the chart has to
+   say so rather than fail.
+3. **Not per-subset, for now.** The note that raised this said it was easy to
+   add now and awkward to retrofit; that is not right —
+   `export_boundary_strength()` is already called once inside the subset loop
+   and once for the full data, so adding this there later is one line using
+   machinery that already exists. Worth knowing too: only `kind: "filter"`
+   subsets have more than one domain type, and there is exactly one
+   (`no_tono`) — the six per-domain-type subsets cannot support a label
+   shuffle at all, since every row in them carries the same label. So
+   "per-subset" meant precisely "also run it for `no_tono`", roughly doubling
+   an already-slow computation to answer a secondary question nothing
+   currently asks.
+
+Everything else follows precedent rather than choice: the table shape takes
+`tree_counts.tsv`'s `kind` column, the chart function sits beside
+`plot_tree_counts()`, and `class_fragmentation_test.py` keeps its CLI and
+loses its R script, the way `boundary_strength.py` kept its CLI and lost its
+matplotlib.
+
+## Chart 19: the fragmentation test, ported (2026-09-20)
+
+Built on the three decisions above. The chart the package draws is
+**pixel-identical to the one the standalone script drew** — 0.0000% over a
+1000 × 650 render — and the bundle's numbers equal the committed TSVs exactly.
+
+- **Two new bundle tables, both only when asked.**
+  `--fragmentation-permutations N` (and `--fragmentation-seed`) on the
+  exporter writes `fragmentation_test.tsv` (one row per group: `group`,
+  `kind`, `label`, `colour`, `n_tests`, `observed_families`, the null's mean
+  and 5th/95th percentiles, `p_value_ge_observed`, `n_permutations`, `seed`)
+  and `fragmentation_null.tsv` (the tally). Both are documented in
+  `r/planarsviz/inst/data-contract.md`, and the run's draw count and seed go
+  into `metadata.json` so a bundle says what produced its p-values.
+- **227 tally rows for 40,000 draws**, exactly as the arithmetic predicted.
+  The check proves the tally lost nothing by expanding it back and comparing
+  per group against the committed raw draws, sorted — the tally drops draw
+  order and nothing else.
+- **The R expands the tally before drawing rather than using a weight.**
+  `geom_violin` does take a `weight` aesthetic, but its density estimate
+  weights and normalises differently enough that an identical result is not
+  guaranteed, and identical is this chart's whole claim. 40,000 rows is
+  nothing to hold in R, so the expansion buys exactness for no real cost.
+- **Two nyan1308 facts came out of the R in the move**: the eight display
+  labels were a hardcoded lookup and the colours came from a `color` column
+  the Python filled from its own palette. Both now come from the bundle
+  (`label`, `colour`), which is what makes the leak check meaningful.
+- **The exporter builds its groups from the domain types the data has**,
+  the way `export_tree_counts()` does, rather than from
+  `class_fragmentation_test.py`'s fixed `CLASS_GROUPS`. That is what lets the
+  shifted test data — which renames one domain type — work at all. One real
+  bug fell out of writing it: `run_test()` looked its colour up as
+  `GROUP_COLORS[name]`, which raises `KeyError` on any domain type outside
+  this project's five. Now `.get()` with the fallback grey.
+- **The published file keeps its name.** The renderer's chart is
+  `fragmentation_test_plot`, not `fragmentation_test`, so
+  `results/nyan1308_fragmentation_test_plot.pdf` is still what it was. No
+  entry needed in the name-changes table.
+- **`fragmentation_test_plot.r` stays.** It is the original the port is
+  checked against, the same reason the archived scripts stay. It still reads
+  the committed TSVs and still draws the same chart.
+- **Checks:** `scripts/planarsviz_checks/check_fragmentation.R` — numbers
+  against the committed TSVs, the tally's expansion against the committed raw
+  draws, and pixels against the frozen reference. `check_renderer.py` now
+  compares 66 charts, up from 65, with no reference unmatched. A new
+  `test_fragmentation_tables_agree` in `tests/test_planarsviz_bundle.py`
+  guards the one invariant that makes the tally safe to store instead of the
+  raw draws: every group's counts must sum to its own `n_permutations`. If
+  they stopped, the violin would be drawn from an incomplete null with
+  nothing looking wrong.
+- **The shifted-dataset leak check passes, and passing means differing.**
+  The shifted bundle was exported with the test too, and its chart differs
+  from nyan1308's by 6.16% of pixels — which is the point: a 0.0000% here
+  would mean the chart was drawing nyan1308 facts rather than the bundle in
+  front of it. What changed is exactly what should: the renamed domain type
+  appears as its own row, labelled **Tonal** and drawn in the fallback grey
+  because the palette has no entry for it, while carrying the same numbers
+  nyan1308's tonosegmental row does, the two being the same data renamed.
+  One consequence worth not mistaking for a bug: `syntaxlike` and
+  `syntaxlike_notono` come out identical there, because `syntaxlike`'s
+  definition names `tonosegmental`, which that dataset does not have, so it
+  collapses to the same two types the no-tono bundle has.
+- Looked at by Claude: yes (the new check, the renderer check, the bundle
+  diff). Seen by Jeff: no.

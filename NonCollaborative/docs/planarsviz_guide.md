@@ -21,7 +21,8 @@ environment.
 
 The exporter does all analysis by calling the existing, verified Python
 functions (`laminar_analysis.py`, `laminar_tree_counts.py`,
-`boundary_strength.py`); it never reimplements them. R never enumerates
+`boundary_strength.py`, and `class_fragmentation_test.py` when asked); it
+never reimplements them. R never enumerates
 families, builds tree shapes or chooses families: it reads those from the
 bundle. So a change to the analysis is made once, in Python, and every chart
 follows.
@@ -53,6 +54,8 @@ gives `nyan1308`, and the bundle goes to `results/planarsviz/nyan1308/`.
 | `--exemplary-k` | 6 | How many representative families the exemplary charts pick by coverage. |
 | `--no-exemplary-sparsest` | off | Don't add the family with the least evidence to the exemplary selection. |
 | `--output-dir` | `results/planarsviz` | Where bundles go. |
+| `--fragmentation-permutations` | 0 (off) | Also run the class-fragmentation permutation test with this many draws and put its two tables in the bundle. Off by default because it is slow — about four minutes at 5000 draws, against 1.6 seconds for everything else. Use 5000 to match the committed files. |
+| `--fragmentation-seed` | 0 | Seed for the above. 0 is what made the committed files. |
 
 The export refuses to write a bundle if family enumeration was cut short,
 and the R package refuses to draw from one.
@@ -156,7 +159,13 @@ what it wrote.
 ## 6. Check a chart
 
 Every chart was checked against the working script it replaces, and the
-checks are kept so any change can be re-checked:
+checks are kept so any change can be re-checked. One exception, worth knowing
+before reading a check's output: **chart 19, the fragmentation test, never had
+a matplotlib original.** It was written in R from the start, so the chart that
+script drew is itself the reference —
+`results/planarsviz/reference/nyan1308_fragmentation_test_plot.png`, frozen
+before the package could overwrite it — and `check_fragmentation.R` compares
+against that rather than running an older script.
 
 - `scripts/planarsviz_checks/check_*.R` — runs the old script in memory
   (files untouched), draws the same chart with the library, compares the

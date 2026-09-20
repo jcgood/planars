@@ -47,6 +47,50 @@ to it, and that is where the porting checks run too.
   the aggregate can be checked against the nodes it came from)
 - **Example**: `python scripts/analysis/refinement_counts.py`
 
+**`analysis/span_placement_test.py`**
+- **Purpose**: A different Tree-hypothesis test from the fragmentation test
+  below, though it looks similar. That one shuffles which *label* sits on
+  which test; this one holds a group's own span *lengths* fixed and asks
+  whether the real *positions* of those spans produce fewer conflicting
+  trees than an arbitrary placement of same-length spans would.
+- **Method**: every span redraws a uniformly random legal left edge for its
+  own length (a length-22 span has exactly one legal position on this
+  22-position structure, a length-2 span has 21 — smaller spans get more
+  freedom purely from that constraint), grouped by length so same-length
+  spans can never collide; 5000 draws, run for "all" plus the five domain
+  types plus the three bundles, one shared random stream. Every group draws
+  over the full 22-position structure regardless of its own observed range.
+- **Finding**: morphosyntactic (p=0.019) and syntax-like without
+  tonosegmental (p=0.020) are genuinely more tree-like than their own span
+  lengths predict; syntax-like (p=0.051) and phonology-like (p=0.077) trend
+  the same way more mildly. Tonosegmental (p=0.755) and intonational
+  (p=0.901) trend the other way — not more coherent than chance given their
+  sizes. The pooled result (p=0.335) is unremarkable; the breakdown is
+  where the signal is, and it points differently than the fragmentation
+  test's own findings, since the two ask genuinely different questions
+  about the same 26 spans.
+- **Output**: `results/nyan1308_span_placement_test.tsv` (one row per
+  group), `_span_placement_null_tally.tsv` (`group, family_count, n` —
+  a tally, not one row per draw)
+- **Example**: `python scripts/analysis/span_placement_test.py`
+- **Not yet ported into the package** — exploratory work from 2026-09-20,
+  one step behind the fragmentation test in that respect.
+
+**`analysis/span_placement_test_plot.r`**
+- **Purpose**: Draw the test above — one panel per group, a histogram and
+  density curve of that group's own null distribution, the observed count
+  as a dashed vertical line, count and p-value printed in-panel
+- **Input**: `results/nyan1308_span_placement_test.tsv` and
+  `_span_placement_null_tally.tsv`; it does not re-run the permutation
+- **Output**: `results/nyan1308_span_placement_test_by_group_plot.pdf`
+- **Panels use independent axes** (`scales = "free"`), not a shared one —
+  unlike `fragmentation_test_plot.r`, the absolute family count here is not
+  comparable across groups of very different span counts, so a shared axis
+  would squash the small groups and misplace their own annotations (this
+  actually happened with `scales = "free_x"` alone before the fix).
+- **Example**: `Rscript scripts/analysis/span_placement_test_plot.r` (it
+  resolves `results/` from its own location, so any working directory is fine)
+
 **`analysis/class_fragmentation_test.py`**
 - **Purpose**: Ask whether a domain class is more fragmented than its own
   number of tests would predict by chance. A class with many tests has more
@@ -66,6 +110,10 @@ to it, and that is where the porting checks run too.
   The two summary files record the draw count and seed that produced them.
 - **Imports**: `BUNDLES` from `planars_groupings.py`, `CLASS_COLORS` from
   `laminar_tree_counts.py` — each defined in one place, not redefined here
+- **Also called by the exporter**, through `run_test()`, when
+  `--fragmentation-permutations` is given. The exporter builds the groups from
+  the domain types the data actually has rather than from this file's
+  `CLASS_GROUPS`, so an unfamiliar dataset still works.
 - **Example**: `python scripts/analysis/class_fragmentation_test.py`
   (reproduces the committed files exactly: 5000 draws, seed 0)
 
@@ -78,10 +126,10 @@ to it, and that is where the porting checks run too.
 - **Output**: `results/nyan1308_fragmentation_test_plot.pdf`
 - **Example**: `Rscript scripts/analysis/fragmentation_test_plot.r` (it
   resolves `results/` from its own location, so any working directory is fine)
-- **Not yet in the package**: this is the one chart still drawn by a
-  standalone script rather than by `planarsviz` from the bundle. Porting it is
-  planned as chart 19; it has no matplotlib original, so its own committed PDF
-  is the reference a port must reproduce.
+- **Also in the package**, as chart 19 (`plot_fragmentation_test()`). This
+  script stays because it is the original the port was checked against — there
+  was never a matplotlib version, so the chart it draws is the reference. The
+  package needs a bundle exported with `--fragmentation-permutations`.
 
 **`analysis/laminar_tree_counts.py`**
 - **Purpose**: Count maximal laminar families pooled, per domain class, per
@@ -148,7 +196,7 @@ to it, and that is where the porting checks run too.
 
 ## Porting checks
 
-**`planarsviz_checks/`** — twenty checks (twelve in R, eight in Python) that
+**`planarsviz_checks/`** — twenty-one checks (thirteen in R, eight in Python) that
 prove the `planarsviz` package draws what the old scripts drew, and that the
 bundle carries the same numbers the Python analysis produces. Each runs on its
 own and says what it checked:
@@ -165,7 +213,9 @@ Both reach the archive through one place — `superseded.R` for R,
 `superseded.py` for Python — so moving it again is two edits, not fifteen.
 `check_renderer.py` compares every chart the renderer writes against the
 reference set in one pass. `check_transparency.py` is a helper the tree-count
-check calls, not a check of its own.
+check calls, not a check of its own. `check_fragmentation.R` is the one that
+works differently: chart 19 had no earlier script to run, so it compares
+against the chart that chart's own R script drew, frozen as a reference.
 
 ## Verification
 
