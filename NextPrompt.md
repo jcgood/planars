@@ -22,35 +22,32 @@ is `NonCollaborative/docs/PLAN_planarsviz_library.md`; how to use the result
 is `NonCollaborative/docs/planarsviz_guide.md` and `planarsviz_charts.md`.
 
 All 18 charts are ported and merged (PR #294; the hook fix #295 alongside
-it). Analysis stays in Python, an exporter writes a data bundle, and the R
-package in `NonCollaborative/r/planarsviz/` draws from it — no language
-facts in R. Nothing in `NonCollaborative/` writes an R script or a
-matplotlib figure any more: as of C2 the old R scripts are archived in
-`NonCollaborative/OlderFiles/planarsviz_superseded/` (where the porting
-checks still run them to prove fidelity), and as of C3 the Python that
-wrote them is gone.
+it), and **the cutover is complete** — C1 through C4, all committed and
+pushed (`57d871a`, `89beeb6`, `00b51e4`, `f7c1d31`). Analysis stays in
+Python, an exporter writes a data bundle, and the R package in
+`NonCollaborative/r/planarsviz/` draws from it. Nothing under
+`NonCollaborative/` writes an R script or a matplotlib figure any more; the
+scripts the package replaced are archived in
+`NonCollaborative/OlderFiles/planarsviz_superseded/`, where the porting
+checks still run them to prove fidelity, and **must not be deleted**.
 
-**Next action: Phase C4, the documentation pass**, the last cutover commit.
-Phase B finished 2026-09-20 (question 6 settled: the span chart's `length`
-colour stays `#AA3377`). **C1, C2 and C3 are all committed and pushed**
-(`57d871a`, `89beeb6`, `00b51e4`). C4 updates
-`NonCollaborative/results/visualizations.md` (707 lines, the big one),
-`scripts/INDEX.md`, `README_laminar_analysis.md` and
-`NonCollaborative/CLAUDE.md`. C1–C3 already did the parts that were broken
-rather than merely stale — the two unrunnable commands in
-`visualizations.md`, `scripts/INDEX.md`'s renderer entry and the new
-analysis scripts, `CHART_MECHANICS_AND_UNCERTAINTY.md`'s chart pointer,
-`CLAUDE.md`'s script locations, and every stale path in a code comment — so
-C4 is the rest. Two things C4 must state: `scripts/INDEX.md` and
-`README_laminar_analysis.md` still describe `laminar_analysis.py` as
-writing R scripts and list `results/laminar_*.r` among its outputs, and
-`make_forestspans_table_no_tono.py` no longer exists.
+**Next action: Jeff's call between two pieces of work.**
 
-After C4: **Phase E — the `illustrations` bundle**: supercatalan tree
-shapes, the counting numbers, and the random-tree overlay as a
-non-language bundle. Design agreed, recorded under question 1.
-`results/nyan1308_random_tree_overlay.r` is the one generated R script left
-in `results/`, waiting for it.
+- **Chart 19 — port the fragmentation test into `planarsviz`.** Jeff asked
+  for this through the concurrent analysis session on 2026-09-20; it is the
+  one chart still drawn by a standalone script reading its own TSVs. Written
+  up at the end of `NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md`,
+  including the two things that make it unlike the other ports: it has no
+  matplotlib original (its own committed PDF is the reference), and the
+  40,000-row null-draws table does not fit the bundle's usual shape, so that
+  needs settling before the table is written. **One open question for Jeff
+  there:** should the test also run per subset (`no_tono`), the way
+  `boundary_strength` does?
+- **Phase E — the `illustrations` bundle**: supercatalan tree shapes, the
+  counting numbers, and the random-tree overlay as a non-language bundle.
+  Design agreed, recorded under question 1.
+  `results/nyan1308_random_tree_overlay.r` is the one generated R script
+  left in `results/`, waiting for it.
 
 Five deliberate visual changes exist, each with an option restoring the old
 look, each recorded in the progress doc: conflict-group panel titles now
@@ -58,19 +55,19 @@ show, the overlay legend's thickness swatch follows the chart's exponent,
 the ForestSpans legend is an inset with a larger header, the span chart's
 axis shows every position, and two new illustration trees were added.
 
-**The second Claude session that was writing in `NonCollaborative/` has
-finished, and its work is committed** (`e32c1db`): a permutation test on
-whether each domain class is more fragmented than its test count predicts,
-a refinement count per laminar family, and the chart for the first. Its
-scripts are described in `scripts/INDEX.md` and its outputs in
-`results/visualizations.md`. C3 edited two files it imports from and both
-still work: `CLASS_COLORS` and the `load_domain_dataframe()` /
-`aggregate_spans()` split survived, and `class_fragmentation_test.py`
-reproduces its committed TSVs byte for byte after the change.
-`NonCollaborative/docs/NOTE_FOR_ANALYSIS_SESSION.md` is the reply sent back
-to that session; it asked to be told before C3 ran if that session meant to
-keep working in those files. No answer came and no commits of its landed,
-so C3 went ahead.
+**Everything under `NonCollaborative/` now runs from `NonCollaborative/`**,
+which is where the porting checks already ran. This matters for the
+exporter specifically: it records the domain file's path as given, so
+running it from the repo root writes a bundle differing from the committed
+one in that field.
+
+**The concurrent analysis session is finished and its work is committed**
+(`e32c1db`): a permutation test on whether each domain class is more
+fragmented than its test count predicts, a refinement count per laminar
+family, and the chart for the first. `NonCollaborative/docs/
+NOTE_FOR_ANALYSIS_SESSION.md` is the standing reply to it. Its scripts
+survived C3 and C4 intact and still reproduce their committed outputs byte
+for byte.
 
 ---
 
