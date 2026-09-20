@@ -1,8 +1,8 @@
 """Check the bundle reproduces the ForestSpans charts' pasted span tables.
 
-For chart 11 (docs/PLAN_planarsviz_library.md): results/nyan1308_forestspans_plot.r
-and results/nyan1308_forestspans_plot_no_tono.r (written by
-make_forestspans_table.py make_r_plot_script()) paste in one row per span --
+For chart 11 (docs/PLAN_planarsviz_library.md): the archived
+nyan1308_forestspans_plot.r and nyan1308_forestspans_plot_no_tono.r (see
+superseded.py) paste in one row per span --
 Layer, Left, Right, Count, Color -- and the tree count. This rebuilds those
 rows from the bundle the way plot_forestspans() does: observed spans only
 (synthetic root dropped), Layer = size rank inverted (sort by size then left
@@ -18,13 +18,15 @@ import csv
 import re
 from pathlib import Path
 
+from superseded import superseded
+
 NC = Path(__file__).resolve().parents[2]
 DATA = NC / "results" / "planarsviz" / "nyan1308" / "data"
 ok = True
 
 for script, data_dir in [("nyan1308_forestspans_plot.r", DATA),
                          ("nyan1308_forestspans_plot_no_tono.r", DATA / "subsets" / "no_tono")]:
-    text = (NC / "results" / script).read_text()
+    text = superseded("results", script).read_text()
     pasted = [(int(a), int(b), int(c), int(d), e) for a, b, c, d, e in
               re.findall(r'^  (\d+), (\d+), (\d+), (\d+), "(#[0-9A-F]{6})",$', text, flags=re.M)]
     n_trees = int(re.search(r'Trees\\n\(n = (\d+)\)', text).group(1))

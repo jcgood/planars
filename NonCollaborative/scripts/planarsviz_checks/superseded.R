@@ -12,6 +12,9 @@
 #   src <- readLines(superseded("results", "laminar_spanchart.r"))
 #
 # Paths are relative to NonCollaborative/, which is where the checks run from.
+#
+# superseded.py is the twin of this file, for the checks written in Python.
+# Both must name the same directory.
 
 SUPERSEDED_DIR <- file.path("OlderFiles", "planarsviz_superseded")
 

@@ -1,7 +1,8 @@
 """Check the exporter's per-class forests against the generated forest scripts.
 
-For chart 6 (docs/PLAN_planarsviz_library.md): every nyan1308_<id>_laminar_forest.r
-in results/ was written by laminar_analysis.generate_r_script(). This checks
+For chart 6 (docs/PLAN_planarsviz_library.md): every archived
+nyan1308_<id>_laminar_forest.r (see superseded.py) was written by
+laminar_analysis.generate_r_script(). This checks
 that data/forests/<id>.tsv reproduces, tree by tree, the Newick string, the
 groupOTU span list, the thickness values, and that forests.json has the same
 alpha, colour and tree count. It also checks that moving BUNDLES into
@@ -23,6 +24,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from superseded import superseded
+
 NC = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(NC / "scripts" / "analysis"))
 DATA = NC / "results" / "planarsviz" / "nyan1308" / "data"
@@ -38,11 +41,7 @@ def fail(msg):
 index = json.loads((DATA / "forests.json").read_text())
 for meta in index:
     fid = meta["forest_id"]
-    script = NC / "results" / f"nyan1308_{fid}_laminar_forest.r"
-    if not script.exists():
-        fail(f"{fid}: no generated script {script.name}")
-        continue
-    text = script.read_text()
+    text = superseded("results", f"nyan1308_{fid}_laminar_forest.r").read_text()
     alpha = float(re.search(r"alphaval <- ([0-9.]+) / 2", text).group(1))
     colour = re.search(r'color="(#[0-9A-Fa-f]{6})"', text).group(1)
     newicks = re.findall(r'read\.tree\(text="([^"]+)"\)', text)
@@ -90,7 +89,7 @@ with tempfile.TemporaryDirectory() as tmp:
             la.main(subset=subset, color=colour, tpfx=f"nyan1308_{name}_", output_dir=tmp,
                     domains_dir=str(NC / "domains"), show_trees=False)
         new = [l for l in (Path(tmp) / f"nyan1308_{name}_laminar_forest.r").read_text().splitlines() if not l.startswith("ggsave(")]
-        old = [l for l in (NC / "results" / f"nyan1308_{name}_laminar_forest.r").read_text().splitlines() if not l.startswith("ggsave(")]
+        old = [l for l in superseded("results", f"nyan1308_{name}_laminar_forest.r").read_text().splitlines() if not l.startswith("ggsave(")]
         if new != old:
             fail(f"laminar_analysis.main() output for bundle {name} differs from the committed script")
 print("bundle forest scripts regenerated and compared:", len(BUNDLES))

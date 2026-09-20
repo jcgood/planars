@@ -909,3 +909,24 @@ handoff note, and both would be easy to destroy by accident:
   top-level `scripts/`.
 - Looked at by Claude: yes (all thirteen check outputs). Seen by Jeff: no.
 - Status: done.
+
+## C2 left four checks pointing at an empty shelf (fixed 2026-09-20)
+
+C2 moved the superseded scripts and repointed the ten checks written in R,
+through the new `superseded()` helper. It missed the four written in Python:
+`verify_forest_export.py`, `verify_forestspans_export.py`,
+`verify_overlay_export.py` and `verify_selection_export.py` all still read
+`results/`, so each one crashed with a missing-file error the moment it ran.
+C2's own "all thirteen run clean" was true of the R checks it counted and
+silent about these.
+
+- **Fixed with a Python twin of the helper**, `superseded.py`, with the same
+  single-owner property and the same refuse-to-skip behaviour: a missing
+  script raises with the reason rather than letting a check quietly pass over
+  it. All four now pass against the archive.
+- **Why the same helper twice rather than one of them.** The two languages
+  cannot import from each other, so the choice was two small files naming one
+  directory, or fifteen call sites naming it. Each file says the other exists
+  and must agree with it.
+- Looked at by Claude: yes (all four check outputs). Seen by Jeff: no.
+- Status: done.

@@ -16,9 +16,10 @@ PDFs implies it still makes them. Several of them can no longer be
 regenerated either: they were written by Python generators that cutover step
 C3 removes.
 
-Every check reaches them through `superseded()` in
-`scripts/planarsviz_checks/superseded.R`, so this directory's location is
-recorded in one place.
+Every check reaches them through `superseded()` — `superseded.R` for the
+checks written in R, `superseded.py` for the ones written in Python, both in
+`scripts/planarsviz_checks/` — so this directory's location is recorded in
+one place per language.
 
 ## What is here
 
