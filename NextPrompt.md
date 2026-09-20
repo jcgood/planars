@@ -27,26 +27,29 @@ package in `NonCollaborative/r/planarsviz/` draws from it — no language
 facts in R. Old scripts are untouched and still work; the library sits
 beside them.
 
-**Next action: finish Phase B, then Phase C.** The phases, agreed with Jeff:
+**Next action: Phase C2.** Phase B is finished (2026-09-20, question 6
+settled: the span chart's `length` colour stays `#AA3377`) and **C1 is
+committed and pushed** (`57d871a`) — `results/` now holds the 65
+library-rendered charts, checked chart by chart against the frozen
+references before anything was overwritten. The phases, agreed with Jeff:
 
-- **B — six open questions** in the progress doc. Five are settled
-  (1 illustrations bundle, 2 annotated legend, 3 label location, 4 root
-  marker, 5 span-chart axis). **Question 6 is the only one left**: the span
-  chart's colour for `length` (`#AA3377`) is inferred, not observed — in
-  nyan1308 every length span also has a higher-priority type, so length
-  never decides a colour.
-- **C — cutover, four commits, in this order.** C1 point the renderer at
-  `results/` and regenerate all 63 charts there (do this first, while the
-  old scripts still exist to fall back on). C2 archive the superseded
-  scripts to `OlderFiles/` — **not delete**: `scripts/planarsviz_checks/`
-  runs the originals in memory to prove fidelity, so deleting them destroys
-  the evidence; update the checks' paths. C3 remove the superseded Python
+- **C — cutover, four commits, in this order.** ~~C1~~ done. C2 archive the
+  superseded scripts to `OlderFiles/` — **not delete**:
+  `scripts/planarsviz_checks/` runs the originals in memory to prove
+  fidelity, so deleting them destroys the evidence; update the checks'
+  paths. **C1 added one thing C2 must do:** a bundle's `plots/` is no longer
+  tracked in git, and several checks compare a shifted-bundle render against
+  `results/planarsviz/nyan1308/plots/<file>.pdf` — repoint those at
+  `results/`, which is where the published charts now are. C3 remove the
+  superseded Python
   (R-writing generators in `laminar_analysis.py`, matplotlib plotting in
   `laminar_tree_counts.py` and `boundary_strength.py`, the R half of
   `make_forestspans_table.py`) — the analysis functions and the LaTeX table
   stay, the exporter calls them. C4 update `results/visualizations.md` (707
   lines, the big one), `scripts/INDEX.md`, `README_laminar_analysis.md`,
-  `NonCollaborative/CLAUDE.md`.
+  `NonCollaborative/CLAUDE.md`. C1 already fixed `scripts/INDEX.md`'s
+  renderer entry and `CHART_MECHANICS_AND_UNCERTAINTY.md`'s chart pointer,
+  so C4 is the rest.
 - **E — the `illustrations` bundle**, after cutover: supercatalan tree
   shapes, the counting numbers, and the random-tree overlay as a
   non-language bundle. Design agreed, recorded under question 1.
@@ -56,6 +59,16 @@ look, each recorded in the progress doc: conflict-group panel titles now
 show, the overlay legend's thickness swatch follows the chart's exponent,
 the ForestSpans legend is an inset with a larger header, the span chart's
 axis shows every position, and two new illustration trees were added.
+
+**A second Claude session is writing in `NonCollaborative/` at the same
+time** (permutation tests on how fragmented each domain class is, plus a
+refinement count per laminar family). Its uncommitted working-tree changes
+and its own handoff note are in
+`NonCollaborative/docs/NOTE_FOR_REFACTOR_SESSION.md` — read that before
+C3, which edits `scripts/analysis/laminar_analysis.py`, the one file both
+tracks touch. It split `load_spans()` into `load_domain_dataframe()` +
+`aggregate_spans()`; those two need a decided home if C3 restructures the
+file. Do not commit that session's files on its behalf while it is running.
 
 ---
 
