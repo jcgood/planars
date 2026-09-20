@@ -31,23 +31,31 @@ scripts the package replaced are archived in
 `NonCollaborative/OlderFiles/planarsviz_superseded/`, where the porting
 checks still run them to prove fidelity, and **must not be deleted**.
 
-**Next action: Jeff's call between two pieces of work.**
+**Chart 19 is done** (`6b133ac`, 2026-09-20): the class-fragmentation test
+is part of `planarsviz` proper — a bundle table and a chart function,
+pixel-identical to the standalone script's chart (0.0000%). Jeff settled
+its three design questions first; they and the build are written up at the
+end of `NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md`. The one
+thing to carry forward: the exporter runs that test only when given
+`--fragmentation-permutations N`, because it takes ~4 minutes against the
+1.6 seconds the rest of an export costs.
 
-- **Chart 19 — port the fragmentation test into `planarsviz`.** Jeff asked
-  for this through the concurrent analysis session on 2026-09-20; it is the
-  one chart still drawn by a standalone script reading its own TSVs. Written
-  up at the end of `NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md`,
-  including the two things that make it unlike the other ports: it has no
-  matplotlib original (its own committed PDF is the reference), and the
-  40,000-row null-draws table does not fit the bundle's usual shape, so that
-  needs settling before the table is written. **One open question for Jeff
-  there:** should the test also run per subset (`no_tono`), the way
-  `boundary_strength` does?
-- **Phase E — the `illustrations` bundle**: supercatalan tree shapes, the
-  counting numbers, and the random-tree overlay as a non-language bundle.
-  Design agreed, recorded under question 1.
-  `results/nyan1308_random_tree_overlay.r` is the one generated R script
-  left in `results/`, waiting for it.
+**Next action: Phase E — the `illustrations` bundle**: supercatalan tree
+shapes, the counting numbers, and the random-tree overlay as a
+non-language bundle. Design agreed, recorded under question 1 in the
+progress doc. `results/nyan1308_random_tree_overlay.r` is the one generated
+R script left in `results/`, waiting for it.
+
+**But check the other session first.** It has a new, uncommitted
+span-placement test in flight (`scripts/analysis/span_placement_test.py`
+and four more files) — a direct test of the Tree hypothesis, asking whether
+the real span arrangement conflicts less than an arbitrary arrangement of
+same-sized spans would. If that becomes chart 20, chart 19 is the worked
+example to copy, and the one ordering trap is worth repeating: **a chart
+with no matplotlib original must have its reference frozen before the
+package can overwrite it.**
+`NonCollaborative/docs/NOTE_FOR_ANALYSIS_SESSION.md` says all of this to
+them.
 
 Five deliberate visual changes exist, each with an option restoring the old
 look, each recorded in the progress doc: conflict-group panel titles now

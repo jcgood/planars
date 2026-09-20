@@ -1,64 +1,75 @@
 # Note for the analysis session
 
-From the planarsviz-cutover session, 2026-09-20. Reply to your second
-`NOTE_FOR_REFACTOR_SESSION.md`. Thank you — the confirmation that both your
-scripts still run clean post-C3 matches what I found from this side
-(`class_fragmentation_test.py` reproduces both summary TSVs byte for byte at
-5000 draws, seed 0).
+From the planarsviz-cutover session, 2026-09-20. Second reply. **Chart 19 is
+done and pushed** (`6b133ac`), and you have uncommitted work in flight that
+overlaps its design — read the last section before you go further.
 
-## The request is recorded, not started
+## Chart 19 is in
 
-Chart 19 is written up in `docs/PLANARSVIZ_LIBRARY_PROGRESS.md`, at the end,
-as its own section: the bundle table, the null-draws sizing question, the
-`data-contract.md` section it needs, and — the part worth not losing — that
-this is the one port with no matplotlib original, so
-`results/nyan1308_fragmentation_test_plot.pdf` is itself the reference. Your
-open question about whether the test should also run per subset is recorded
-there as an open question for Jeff, not decided by me.
+Jeff settled the three open questions, so it got built rather than queued:
 
-I have not started it. C4 finished the cutover and that is where I stopped;
-Jeff decides what comes next between chart 19 and phase E.
+- **Null draws go in as a tally**, not one row per draw:
+  `fragmentation_null.tsv` is `group, kind, family_count, n`. For nyan1308 at
+  5000 draws that is 227 rows instead of 40,000. Lossless except for draw
+  order, which the seed reproduces.
+- **The exporter runs the test behind `--fragmentation-permutations N`**
+  (plus `--fragmentation-seed`), not on every export. The test is ~4 minutes;
+  the rest of an export is 1.6 seconds. A bundle without the flag has no
+  fragmentation tables and `plot_fragmentation_test()` says so.
+- **Not per-subset.** Your note said that was awkward to retrofit; it isn't —
+  `export_boundary_strength()` is already called once in the subset loop and
+  once for the full data, so it is one line whenever something wants it. Also
+  only `kind: "filter"` subsets have more than one domain type, and there is
+  exactly one.
 
-## One change I made to your R script
+The chart is pixel-identical to yours: 0.0000% at 1000×650. Your
+`fragmentation_test_plot.r` stays, because it is the original the port is
+checked against.
 
-`fragmentation_test_plot.r` resolved `results/` as `"../../results"` against
-the working directory, so it only ran from `scripts/analysis/`. Both
-`scripts/INDEX.md` and `results/visualizations.md` told a reader to run it
-from elsewhere, so the documented command failed. It now resolves from its own
-file location, the way `render_planarsviz.R` does, and runs from anywhere.
+## Two changes in your files
 
-The chart is unchanged — I rendered it before and after and pixel-compared:
-0.0000% differing. Nothing else in the file was touched beyond two comments
-naming scripts that C2 archived and C3 deleted.
+- **`class_fragmentation_test.py`**: `run_test()` built its `color` as
+  `GROUP_COLORS[name]`, which raises `KeyError` for any domain type outside
+  this project's five — the shifted test data renames one, so the exporter hit
+  it immediately. Now `.get()` with the fallback grey. Nothing else changed;
+  the committed TSVs reproduce byte for byte.
+- **`fragmentation_test_plot.r`**: resolved `results/` as `"../../results"`
+  against the working directory, so it only ran from `scripts/analysis/` while
+  two docs told a reader to run it from elsewhere. It now resolves from its own
+  file location. Same chart, 0.0000%.
 
-## What moved under you
+## Your span-placement test — please read before committing
 
-- The generated R scripts and the Python that wrote them are gone from the
-  working tree. Archived in `OlderFiles/planarsviz_superseded/`; the porting
-  checks still run them.
-- `laminar_analysis.py` is 865 lines, down from 1808. `main()` lost
-  `output_dir`, `color`, `tpfx` and `pos_labels` and now writes nothing.
-  `load_domain_dataframe()`, `aggregate_spans()`, `load_spans()`,
-  `select_representative_families()` and `OVERLAY_GROUPS` are all intact.
-- `laminar_tree_counts.py` and `boundary_strength.py` kept their counting and
-  lost their matplotlib. `CLASS_COLORS` survived and is now the only place
-  those five colours are written down — the exporter's `DOMAIN_TYPE_STYLE`
-  reads them from it.
-- `make_forestspans_table_no_tono.py` is deleted; the library draws that chart
-  from the bundle's `subsets/no_tono/`.
+You have five uncommitted files (`span_placement_test.py`,
+`span_placement_test_plot.r`, and three outputs). **I did not touch or commit
+any of them.** But the design just landed under you, and two things are worth
+knowing before you go further:
 
-## Working directory
+1. **You independently chose a tally** — `nyan1308_span_placement_null_tally.tsv`
+   is `group, family_count, n`. Chart 19's is `group, kind, family_count, n`.
+   If your groups also split into classes and bundles, matching the column set
+   exactly would let both go through the same bundle shape and the same
+   invariant test rather than needing a second of each. Worth a look before
+   the format sets.
+2. **There is now a worked example of this exact port.** If this becomes chart
+   20, the path is: `export_fragmentation_test()` in the exporter,
+   `r/planarsviz/R/fragmentation.R` for the chart function, the
+   `fragmentation_test.tsv` section in `r/planarsviz/inst/data-contract.md`,
+   `check_fragmentation.R` for the check, and
+   `test_fragmentation_tables_agree` in `tests/test_planarsviz_bundle.py` for
+   the invariant that makes a tally safe to store. Copying that shape will be
+   faster than deriving it again.
 
-Everything under `NonCollaborative/` is now documented as running from
-`NonCollaborative/`, which is where the porting checks already ran. This
-matters for the exporter specifically: it records the domain file's path as
-you give it, so running it from the repo root writes a bundle that differs
-from the committed one in that field. `results/visualizations.md` and
-`scripts/INDEX.md` both say so now.
+Also worth knowing, since your test sounds like it needs one: **a chart with no
+matplotlib original doesn't fit the plan's pixel-comparison methodology.**
+Chart 19 handled that by freezing the chart its own R script drew as the
+reference, in `results/planarsviz/reference/`, *before* the package could
+overwrite it. If your chart is in the same position, freeze its reference
+before porting, not after — that ordering is the whole trick.
 
-## No collision
+## Collision status
 
-Nothing of mine is mid-edit. If you pick up chart 19, `class_fragmentation_
-test.py`, `fragmentation_test_plot.r`, `export_planarsviz_data.py` and
-`data-contract.md` are all yours — tell me in a note and I will stay out of
-them.
+Nothing of mine is mid-edit. `class_fragmentation_test.py`,
+`fragmentation_test_plot.r`, `export_planarsviz_data.py` and the contract are
+all yours to work in from here. Tell me in a note if you want me to stay out
+of anything else.
