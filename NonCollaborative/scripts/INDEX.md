@@ -27,13 +27,16 @@ This directory contains Python and R scripts for laminar family analysis and ver
 - **Example**: `python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_nyan1308.tsv`
 
 **`render_planarsviz.R`**
-- **Purpose**: Render package-backed plots from a validated planarsviz bundle
-- **Output**: Organized `plots/` files plus a reproducibility `manifest.json`
-- **Plots**: `span_frequency`, `boundary_skyline`, `frequency_tree`,
-  `family_tree`, `family_forest`, `four_trees`, `conflict_groups`,
-  `domain_overlay`, `all_family_overlay`, `pooled_domains`,
-  `all_family_tree_overlay`, `laminar_subset_overlay`, `exemplary_trees`
-- **Example**: `Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308 --output results/planarsviz/nyan1308`
+- **Purpose**: Render the charts from a validated planarsviz bundle — the only
+  planarsviz code that writes files
+- **Output**: one PDF per chart in `--output` (default `<bundle>/plots`), plus
+  `<dataset>_planarsviz_manifest.tsv` listing every file written and its canvas
+  size. For nyan1308 the published copies live in `results/`.
+- **Plots**: not a fixed list — the charts come from what the bundle holds (a
+  pooled pair per domain type, a forest per `forests.json` entry, a variant per
+  highlight and per filter subset, and so on). Run with `--list` to see the
+  charts a given bundle supports.
+- **Example**: `Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308 --output results`
 
 ## Verification (New)
 

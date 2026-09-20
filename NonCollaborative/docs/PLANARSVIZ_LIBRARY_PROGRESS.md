@@ -6,9 +6,10 @@ Claude (Opus) with Jeff's authorization to proceed without waiting.
 
 Honesty rule: nothing below says "matches" without naming the comparison file.
 
-## Where things stand (2026-09-15)
+## Where things stand (2026-09-20)
 
-- **All 18 charts are ported** (63 files). Every chart copied from working R
+- **All 18 charts are ported** (65 charts as of 2026-09-19, when the
+  maximal-binary-branching chart added two). Every chart copied from working R
   reproduces its reference exactly: identical plot data and 0.0000%
   differing pixels. The two matplotlib charts (16, 17) are ported to R with
   every visual setting mapped; they differ only in fonts.
@@ -17,13 +18,20 @@ Honesty rule: nothing below says "matches" without naming the comparison file.
 - **Generalization pass done**: every chart also renders from the shifted
   test data with only the expected differences, and the shifted bundle is
   in the Python tests (13 pass).
-- **Not done, by plan**: tooling (R9: roxygen/testthat) and the cutover
-  (replacing the old scripts and `results/` files) — both wait for you.
-  Nothing on `main` was changed by this work; the old scripts still work.
+- **Cutover in progress.** C1 is done (see the entry at the end of this
+  file): `results/` now holds library-rendered charts. C2 (archive the
+  superseded scripts), C3 (remove the superseded Python) and C4 (update the
+  documentation) are still ahead, so the old scripts still exist and still
+  work. Tooling (R9: roxygen/testthat) is not done, by plan.
 - **Seen by Jeff: none yet.** Comparison images are under
   `results/planarsviz/comparisons/` (reference | new | difference).
-- **Needs you:** questions 1–11 below; the most consequential are 8 (branch
-  not pushed), 10 (scipy), 9 (invisible panel titles) and 7 (legend swatch).
+- **Phase B is finished (2026-09-20).** All eleven questions below are
+  settled or moot: question 8 (branch not pushed) went away when PR #294
+  merged, and question 11 (boundary-strength files missing from
+  `results/visualizations.md`) is folded into cutover commit C4, which
+  rewrites that file anyway.
+- **Needs you:** nothing on Phase B. Phase C (cutover) is the live work —
+  see the plan's phase list and `NextPrompt.md`'s *Now* line.
 
 ---
 
@@ -109,7 +117,13 @@ Honesty rule: nothing below says "matches" without naming the comparison file.
    behaviour and is what the check compares against (numbers identical);
    the new default differs from the old file by 2.4% of pixels, all of it
    the bars shifting as the panel widens.
-6. Span chart colour for `length` is inferred — see the chart 15 entry.
+6. **Settled 2026-09-20: keep `#AA3377`.** Jeff confirmed Tol bright's
+   purple, matching what `results/visualizations.md` already documents
+   ("length = purple") and consistent with the four observed colours. The
+   decision changes no pixel in nyan1308 — length never decides a colour
+   there — it fixes the convention for the next language, where it may.
+   Original question: the span chart's colour for `length` is inferred, not
+   observed; see the chart 15 entry.
 7. **Settled 2026-09-15: fixed.** The swatch now follows the lines'
    exponent (`legend_thickness_exponent`, default `thickness_exponent`;
    `0.5` reproduces the old legend exactly), and a swatch too thick for the
@@ -325,10 +339,11 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
   the leftmost charted span (nyan1308's axis starts at PreSbj, not QM, because
   the root `[1-22]` is excluded and nothing else starts at 1). Reproduced
   faithfully; say if it should show every position instead.
-- **Question 6 for Jeff:** the span chart's colour for `length` (`#AA3377`,
-  Tol purple) is inferred, not observed — in nyan1308 every length span also
-  has a higher-priority type, so length never decides a colour. Matches
-  `visualizations.md` ("length = purple").
+- **Question 6, settled 2026-09-20: `#AA3377` stays.** It is inferred, not
+  observed — in nyan1308 every length span also has a higher-priority type,
+  so length never decides a colour — but it matches `visualizations.md`
+  ("length = purple") and Jeff confirmed it. No pixel changes; the value
+  is now the stated convention for the next language.
 - Looked at by Claude: yes. Seen by Jeff: no.
 - Status: done pending Jeff's review.
 
@@ -783,3 +798,44 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
 - R6 search: comments and doc references only.
 - Looked at by Claude: yes (shifted side by side). Seen by Jeff: no.
 - Status: done pending Jeff's review.
+
+## Cutover C1: results/ is where the charts are rendered (2026-09-20)
+
+- **What changed.** `Rscript scripts/render_planarsviz.R --bundle
+  results/planarsviz/nyan1308 --output results --formats pdf` now writes the
+  published charts. 65 of 65 charts, 63 replacing an existing file and 2
+  under the new highlight-id name. The superseded
+  `nyan1308_all_families_labeled_wordhood.pdf` and `_wordhood_legend.pdf`
+  are deleted; everything else in `results/` keeps its name.
+- **The count is 65, not the 63 the earlier entries say.** The
+  maximal-binary-branching chart added two on 2026-09-19. Nothing was lost.
+- **Fidelity, checked before writing to `results/`.** A clean full render to
+  a scratch directory, then `check_renderer.py` on it: every chart copied
+  from working R at 0.0000% differing pixels, the five deliberate changes
+  and the six matplotlib-port font differences exactly as recorded above,
+  no reference without a render, no chart failed. `most_binary_tree` and
+  `most_binary_tree_orthographic_word` report "no reference" — correct, they
+  are new and have no old file to compare against.
+- **Manifest renamed** to `<dataset>_planarsviz_manifest.tsv`. `results/` is
+  shared with everything else this project generates, where a file called
+  `manifest.tsv` says nothing about what it belongs to. `check_renderer.py`
+  finds it by pattern and stops if a directory holds more than one.
+- **A bundle's `plots/` is no longer tracked in git**
+  (`.gitignore`: `NonCollaborative/results/planarsviz/*/plots/`; 129 files
+  untracked, not deleted). It is the renderer's default output and where
+  `scripts/planarsviz_checks/` writes its trial renders — a working area.
+  With `results/` holding the published charts, tracking both would keep two
+  copies of every chart, which is the duplication this project treats as a
+  defect. **Consequence for C2:** several checks compare a shifted-bundle
+  render against `results/planarsviz/nyan1308/plots/<file>.pdf`, which now
+  has to be rendered before those checks run. C2 repoints them at `results/`
+  (it is already updating their paths), which removes the precondition.
+- **Docs fixed on sight, not deferred to C4.** `scripts/INDEX.md`'s
+  `render_planarsviz.R` entry named a `manifest.json` that never existed,
+  listed thirteen chart names that are not the renderer's, and gave an
+  `--output` that would have written plots inside the data bundle; it now
+  says the chart list comes from `--list`. `docs/CHART_MECHANICS_AND_
+  UNCERTAINTY.md`'s pointer to the `_wordhood` files now names the
+  `_orthographic_word` ones and says where they come from.
+- Looked at by Claude: yes (the check output). Seen by Jeff: no.
+- Status: done.

@@ -15,10 +15,14 @@ Related files:
 - `scripts/analysis/laminar_analysis.py` — the actual code discussed throughout (`classify_pair`,
   `find_conflicts`, `enumerate_maximal_laminar_families`, `generate_r_overlay_script`,
   `run_domain_overlay`).
-- `results/nyan1308_all_families_labeled.r` / `.pdf` — the chart itself.
-  `results/nyan1308_all_families_labeled_wordhood.r` / `.pdf` — a variant with positions
+- `results/nyan1308_all_families_labeled.pdf` — the chart itself.
+  `results/nyan1308_all_families_labeled_orthographic_word.pdf` — a variant with positions
   5–19 (the orthographic word) in red and position 17 (FV, the final vowel) in blue
-  (colorblind-safe pairing, not red/green).
+  (colorblind-safe pairing, not red/green). Both are now drawn by the
+  `planarsviz` R package from the exported data bundle; the `.r` files of the
+  same names in `results/` are the superseded generated scripts, and the
+  variant's file name comes from the highlight id in the data, which is why it
+  is no longer called `_wordhood`.
 - `docs/PLAN_planarsviz_refactor.md` — the R-visualization refactor plan, with a "Review:
   Claude" section appended; separate track of work, not covered further here.
 

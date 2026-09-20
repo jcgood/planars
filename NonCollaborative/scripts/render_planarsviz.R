@@ -14,9 +14,11 @@
 #
 # A bundle whose family enumeration was truncated is refused (the package's
 # validator stops on it). A chart that fails is reported and the script
-# exits non-zero; nothing is skipped silently. manifest.tsv lists every file
-# written: bookkeeping, not evidence that a chart is correct -- that is what
-# scripts/planarsviz_checks/ is for.
+# exits non-zero; nothing is skipped silently. <dataset>_planarsviz_manifest.tsv
+# lists every file written: bookkeeping, not evidence that a chart is correct
+# -- that is what scripts/planarsviz_checks/ is for. It carries the dataset
+# name because the output directory is results/, shared with everything else
+# this project generates, where a file called "manifest" says nothing.
 #
 # Usage (from NonCollaborative/):
 #   Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308 \
@@ -219,9 +221,10 @@ for (name in wanted) {
     cat("wrote ", paste(result$file, collapse = ", "), "\n", sep = "")
   }
 }
-utils::write.table(manifest, file.path(output, "manifest.tsv"), sep = "\t", quote = FALSE, row.names = FALSE)
+manifest_path <- file.path(output, paste0(dataset, "_planarsviz_manifest.tsv"))
+utils::write.table(manifest, manifest_path, sep = "\t", quote = FALSE, row.names = FALSE)
 cat(nrow(manifest), " files for ", length(wanted) - length(failed), " of ", length(wanted), " charts; manifest: ",
-    file.path(output, "manifest.tsv"), "\n", sep = "")
+    manifest_path, "\n", sep = "")
 if (length(failed)) {
   cat("Charts that failed: ", paste(failed, collapse = ", "), "\n", sep = "")
   quit(status = 1)

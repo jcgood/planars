@@ -4,7 +4,7 @@ For docs/PLAN_planarsviz_library.md section 8.3: after
     Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308 --output DIR --formats pdf,png
 run
     python scripts/planarsviz_checks/check_renderer.py DIR
-Reads DIR/manifest.tsv, pairs each nyan1308_<chart>.png with
+Reads DIR's <dataset>_planarsviz_manifest.tsv, pairs each nyan1308_<chart>.png with
 results/planarsviz/reference/nyan1308_<chart>.png, and prints the
 differing-pixel share per chart (side-by-side images go to DIR/compare/).
 Charts copied from working R code must show 0.0000%; the two matplotlib
@@ -42,7 +42,11 @@ CHANGED = {"conflict_groups", "all_families_labeled_legend",
 out_dir = Path(sys.argv[1])
 compare_dir = out_dir / "compare"
 compare_dir.mkdir(exist_ok=True)
-with (out_dir / "manifest.tsv").open(newline="") as handle:
+manifests = sorted(out_dir.glob("*_planarsviz_manifest.tsv"))
+if len(manifests) != 1:
+    names = ", ".join(m.name for m in manifests) or "none"
+    sys.exit(f"{out_dir} should hold exactly one *_planarsviz_manifest.tsv; found: {names}")
+with manifests[0].open(newline="") as handle:
     rows = [r for r in csv.DictReader(handle, delimiter="\t") if r["file"].endswith(".png")]
 
 seen = set()
