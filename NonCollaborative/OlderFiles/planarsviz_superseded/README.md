@@ -14,7 +14,7 @@ They are archived rather than left in place because the published charts now
 come from the package, and a chart script sitting in `results/` next to the
 PDFs implies it still makes them. Several of them can no longer be
 regenerated either: they were written by Python generators that cutover step
-C3 removes.
+C3 removed.
 
 Every check reaches them through `superseded()` — `superseded.R` for the
 checks written in R, `superseded.py` for the ones written in Python, both in
@@ -23,8 +23,8 @@ one place per language.
 
 ## What is here
 
-`results/` — 18 generated scripts, written by the R-writing generators in
-`scripts/analysis/laminar_analysis.py`:
+`results/` — 19 generated scripts, written by the R-writing generators that
+used to live in `scripts/analysis/laminar_analysis.py`:
 
 - `laminar_conflict_groups.r`, `laminar_four_trees.r`, `laminar_freqtree.r`,
   `laminar_spanchart.r` — charts 12, 13, 14, 15
@@ -35,6 +35,10 @@ one place per language.
 - `nyan1308_exemplary_trees.r` — chart 10
 - `nyan1308_forestspans_plot.r`, `_no_tono.r` — chart 11
 - `nyan1308_<id>_laminar_forest.r` ×8 — chart 6, one per class and bundle
+- `laminar_forest.r` — an earlier, unlabelled all-families forest that sat in
+  `scripts/` rather than `results/`, which is why the C2 sweep missed it.
+  Archived in C4. No check compares against it; it is here because the Python
+  that wrote it is gone and nothing else records what it drew.
 
 `scripts/` — 3 hand-written scripts:
 

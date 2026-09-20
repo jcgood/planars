@@ -26,18 +26,28 @@
 #    color (from CLASS_COLORS / BUNDLES in the Python side, carried through
 #    the `color` column in the summary TSVs) -- no new palette invented here.
 #  - Rows within each panel ordered by n_tests ascending (bottom to top),
-#    matching the "least to most" convention already used in
-#    laminar_tree_counts.py's save_horizontal_bar_chart().
+#    matching the "least to most" convention the project's other horizontal
+#    bar charts use.
 #  - p-value printed at a fixed x position to the right of the shared axis
 #    range (not next to each violin's own right edge, which would stagger
 #    unreadably given how different the panels' ranges are) -- same
 #    plain-language framing as the module docstring: "p(>= observed)".
 #  - No title -- kept out entirely per this project's established
-#    convention (see boundary_strength_plot.r's own notes on why).
+#    convention (see the archived boundary_strength_plot.r's notes on why).
+#
+# Run from anywhere:
+#   Rscript NonCollaborative/scripts/analysis/fragmentation_test_plot.r
 
 library(ggplot2)
 
-output_dir <- "../../results"
+# Resolve results/ from this file's own location, not the working directory,
+# so the command above works from the repo root, from NonCollaborative/, or
+# from this directory.
+script_dir <- local({
+  file_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
+  if (length(file_arg)) dirname(normalizePath(sub("^--file=", "", file_arg[[1]]))) else getwd()
+})
+output_dir <- normalizePath(file.path(script_dir, "..", "..", "results"), mustWork = TRUE)
 
 class_summary <- read.delim(file.path(output_dir, "nyan1308_class_fragmentation_test.tsv"),
                              stringsAsFactors = FALSE, check.names = FALSE)

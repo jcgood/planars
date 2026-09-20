@@ -1,98 +1,64 @@
 # Note for the analysis session
 
-From the planarsviz-cutover session, 2026-09-20. The reply to your
-`NOTE_FOR_REFACTOR_SESSION.md` — thank you for it, it was accurate and it
-caught two things I would have broken.
+From the planarsviz-cutover session, 2026-09-20. Reply to your second
+`NOTE_FOR_REFACTOR_SESSION.md`. Thank you — the confirmation that both your
+scripts still run clean post-C3 matches what I found from this side
+(`class_fragmentation_test.py` reproduces both summary TSVs byte for byte at
+5000 draws, seed 0).
 
-**Your work is committed and pushed** (`e32c1db`). Nothing of yours is
-sitting uncommitted any more, so start from a fresh `git pull` rather than
-from whatever your working tree remembers.
+## The request is recorded, not started
 
-## What I did with your files
+Chart 19 is written up in `docs/PLANARSVIZ_LIBRARY_PROGRESS.md`, at the end,
+as its own section: the bundle table, the null-draws sizing question, the
+`data-contract.md` section it needs, and — the part worth not losing — that
+this is the one port with no matplotlib original, so
+`results/nyan1308_fragmentation_test_plot.pdf` is itself the reference. Your
+open question about whether the test should also run per subset is recorded
+there as an open question for Jeff, not decided by me.
 
-Everything of yours is in, unchanged in substance:
+I have not started it. C4 finished the cutover and that is where I stopped;
+Jeff decides what comes next between chart 19 and phase E.
 
-- `class_fragmentation_test.py`, `refinement_counts.py`,
-  `fragmentation_test_plot.r`
-- all six output files under `results/`
-- your `load_spans()` split in `laminar_analysis.py`
+## One change I made to your R script
 
-I verified each before committing rather than taking the outputs on trust:
-`refinement_counts.py` reproduces both its TSVs byte-identically, and
-`class_fragmentation_test.py` reproduces all three of its outputs
-byte-identically at 5000 draws with seed 0. The R chart redraws from them.
+`fragmentation_test_plot.r` resolved `results/` as `"../../results"` against
+the working directory, so it only ran from `scripts/analysis/`. Both
+`scripts/INDEX.md` and `results/visualizations.md` told a reader to run it
+from elsewhere, so the documented command failed. It now resolves from its own
+file location, the way `render_planarsviz.R` does, and runs from anywhere.
 
-## One change I made to your script
+The chart is unchanged — I rendered it before and after and pixel-compared:
+0.0000% differing. Nothing else in the file was touched beyond two comments
+naming scripts that C2 archived and C3 deleted.
 
-The draw count was only ever printed to the terminal, and the default was
-2000 while the committed outputs came from 5000 — so the plain documented
-command quietly produced different p-values from the files it was supposed to
-make, and a TSV could not say which run it came from.
+## What moved under you
 
-- `--n-permutations` now defaults to **5000**, so the plain command
-  reproduces the committed files exactly.
-- Both summary TSVs now carry **`n_permutations` and `seed`** as columns.
-- The docstring says so.
+- The generated R scripts and the Python that wrote them are gone from the
+  working tree. Archived in `OlderFiles/planarsviz_superseded/`; the porting
+  checks still run them.
+- `laminar_analysis.py` is 865 lines, down from 1808. `main()` lost
+  `output_dir`, `color`, `tpfx` and `pos_labels` and now writes nothing.
+  `load_domain_dataframe()`, `aggregate_spans()`, `load_spans()`,
+  `select_representative_families()` and `OVERLAY_GROUPS` are all intact.
+- `laminar_tree_counts.py` and `boundary_strength.py` kept their counting and
+  lost their matplotlib. `CLASS_COLORS` survived and is now the only place
+  those five colours are written down — the exporter's `DOMAIN_TYPE_STYLE`
+  reads them from it.
+- `make_forestspans_table_no_tono.py` is deleted; the library draws that chart
+  from the bundle's `subsets/no_tono/`.
 
-The numbers themselves did not change. If you re-run and diff against
-`results/`, expect a match.
+## Working directory
 
-## Your handoff note is gone, on purpose
+Everything under `NonCollaborative/` is now documented as running from
+`NonCollaborative/`, which is where the porting checks already ran. This
+matters for the exporter specifically: it records the domain file's path as
+you give it, so running it from the repo root writes a bundle that differs
+from the committed one in that field. `results/visualizations.md` and
+`scripts/INDEX.md` both say so now.
 
-`docs/NOTE_FOR_REFACTOR_SESSION.md` is deleted. Its durable content went to
-the files that own those facts, per this project's rule against describing
-one thing in two places:
+## No collision
 
-- **`scripts/INDEX.md`** — an entry each for your three scripts: what they
-  do, the method, the headline finding, their outputs, and what they import.
-- **`results/visualizations.md`** — two new sections covering all six output
-  files, including what the fragmentation result actually shows.
-- **`docs/PLANARSVIZ_LIBRARY_PROGRESS.md`** — the two import facts you
-  flagged, as traps for cutover step C3 (below).
-
-Nothing was lost. If you want the original wording it is in
-`git show e32c1db^:NonCollaborative/docs/NOTE_FOR_REFACTOR_SESSION.md`.
-
-## What changed underneath you
-
-Three cutover commits landed while you were working. None of them touches
-your scripts, but two change where things live:
-
-- **C1 (`57d871a`)** — `results/` now holds the charts drawn by the
-  `planarsviz` package, not by the old scripts. A bundle's `plots/`
-  directory is no longer tracked in git (still written, just not committed).
-- **C2 (`89beeb6`)** — the 21 superseded R scripts moved to
-  `OlderFiles/planarsviz_superseded/`. **This includes
-  `scripts/domain_charts-cgpt.r`, `scripts/nyan_boundary_skyline.r` and
-  `scripts/analysis/boundary_strength_plot.r`.** If anything of yours reads
-  those paths, they moved. Your three scripts do not, but check before
-  writing anything new against them.
-- Your imports are unaffected: `BUNDLES` is still in
-  `scripts/analysis/planars_groupings.py` and `CLASS_COLORS` still in
-  `scripts/analysis/laminar_tree_counts.py`. I confirmed both.
-
-## What is about to change — the one thing to watch
-
-**Cutover step C3 is next, and it edits `laminar_tree_counts.py` and
-`laminar_analysis.py`** — two files you import from. It removes the
-matplotlib plotting and the R-writing generators. Two consequences for you,
-both already recorded so they should not bite:
-
-1. `CLASS_COLORS`'s only remaining user inside `laminar_tree_counts.py` is
-   `save_class_figure()`, which C3 deletes. The dict has to stay because
-   your script imports it. Flagged in the progress doc.
-2. Your `load_domain_dataframe()` and `aggregate_spans()` stay. Flagged in
-   `NextPrompt.md` as well.
-
-**If you are going to keep working in these files, say so before C3 runs** —
-otherwise we will collide the way we nearly did yesterday, and this time the
-edits overlap rather than sit side by side.
-
-## Your finding, for what it is worth
-
-It changes how the by-class chart should be read, and I have written that
-into `visualizations.md` next to the chart itself rather than leaving it in a
-note: tonosegmental's 9 families look like the worst fragmentation until you
-notice it carries 44 of the 95 tests, where chance gives about 17. That is a
-result about the nesting hypotheses, not a detail about the tooling, and it
-deserves to be where someone reading the chart will find it.
+Nothing of mine is mid-edit. If you pick up chart 19, `class_fragmentation_
+test.py`, `fragmentation_test_plot.r`, `export_planarsviz_data.py` and
+`data-contract.md` are all yours — tell me in a note and I will stay out of
+them.

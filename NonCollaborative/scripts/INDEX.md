@@ -1,22 +1,31 @@
 # Scripts Index
 
-This directory contains Python and R scripts for laminar family analysis and verification.
+Every script under `analysis/`, `verification/`, `exploratory/` and
+`planarsviz_checks/`. The hand-written R and the LaTeX utilities that sit at
+the top of `scripts/` are described in `CLAUDE.md` instead.
+
+**Where to run them from:** `NonCollaborative/`. Every path below is relative
+to it, and that is where the porting checks run too.
 
 ## Core Analysis
 
 **`analysis/laminar_analysis.py`**
 - **Purpose**: Main workhorse for laminar family enumeration
-- **Input**: Domain span TSV file (`../../domains/domains_{lang_id}.tsv`)
+- **Input**: Domain span TSV file (`domains/domains_{lang_id}.tsv`)
 - **Algorithm**: Four-phase approach:
   1. Conflict detection (O(n²)) — classify span pairs as nested/disjoint/conflict
   2. Bron-Kerbosch enumeration (complement graph) — find all maximal independent sets
   3. Tree construction — build parent maps and Newick trees
   4. Analysis — test three hypotheses (Tree, Morphosyntax/Phonology divide, Word)
-- **Output**: 
-  - `../../results/{lang_id}_laminar_forest.r` — R visualization of all families
-  - `../../results/{lang_id}_laminar_analysis.md` — markdown summary
-  - Console output with statistics
-- **Dependencies**: Standard library only
+- **Output**: the four-phase report on stdout, and a result dict for callers
+  (`spans`, `adjacency`, `families`, `span_family_count`, `n_families`,
+  `truncated`). It writes nothing to disk. Until the 2026-09-20 cutover it
+  also wrote the charts' R scripts; the `planarsviz` package draws them now
+  from the bundle `export_planarsviz_data.py` writes.
+- **Run it**: `python scripts/analysis/laminar_analysis.py` prints the report
+  for nyan1308 pooled, then per domain type, then per bundle. It takes no
+  arguments — call `main()` from Python to analyse a different file.
+- **Dependencies**: `pandas`
 - **Reading the rows instead of the spans**: `load_spans()` aggregates rows
   that share a span, which throws away each row's own `Domain_Type`. Callers
   that need the per-row labels — a permutation test over which label sits on
@@ -67,7 +76,55 @@ This directory contains Python and R scripts for laminar family analysis and ver
 - **Input**: `results/nyan1308_fragmentation_null_draws.tsv` and the two
   summary TSVs; it does not re-run the permutation
 - **Output**: `results/nyan1308_fragmentation_test_plot.pdf`
-- **Example**: `Rscript scripts/analysis/fragmentation_test_plot.r`
+- **Example**: `Rscript scripts/analysis/fragmentation_test_plot.r` (it
+  resolves `results/` from its own location, so any working directory is fine)
+- **Not yet in the package**: this is the one chart still drawn by a
+  standalone script rather than by `planarsviz` from the bundle. Porting it is
+  planned as chart 19; it has no matplotlib original, so its own committed PDF
+  is the reference a port must reproduce.
+
+**`analysis/laminar_tree_counts.py`**
+- **Purpose**: Count maximal laminar families pooled, per domain class, per
+  bundle, and with size-2 (adjacent-position) spans removed
+- **Output**: `results/nyan1308_tree_counts.tsv`. The bar charts of these
+  counts are drawn by the package; until the 2026-09-20 cutover this script
+  drew them itself, in matplotlib.
+- **Also owns `CLASS_COLORS`** — the five domain-type colours, in one place.
+  `class_fragmentation_test.py` imports them and so does the exporter's
+  `DOMAIN_TYPE_STYLE`, which is how they reach R.
+- **Example**: `python scripts/analysis/laminar_tree_counts.py`
+
+**`analysis/boundary_strength.py`**
+- **Purpose**: Per-position boundary ("juncture") strength — for each cut
+  between positions, how strongly it is treated as a constituent edge across
+  the 69 families, on each side. A different unit of analysis from everything
+  else here: the object measured is a juncture, not a domain.
+- **Two measures**: `summed` (the analytical target — every span with that
+  edge counts, including nested ones) and `capped` (how many of the 69
+  families have at least one span with that edge, a reference line). See the
+  module docstring for why they diverge.
+- **Output**: `results/nyan1308_boundary_strength.tsv`; `--subset` restricts
+  the analysis to some domain types and tags the filename with them. The
+  charts are drawn by the package; this script drew them in matplotlib until
+  the cutover.
+- **Example**: `python scripts/analysis/boundary_strength.py`
+
+**`analysis/planars_groupings.py`**
+- **Purpose**: The named groupings of domain types, defined once — `BUNDLES`
+  (the three pooled morphosyntax/phonology approximations, with colours and
+  display labels) and `FILTERS` (the domain types a subset analysis leaves
+  out). Imported by `laminar_analysis.py`, `laminar_tree_counts.py`,
+  `class_fragmentation_test.py` and the exporter. Not runnable on its own.
+
+**`analysis/random_tree_overlay.py`**
+- **Purpose**: A ghost overlay of randomly sampled n-ary trees over 22
+  positions, showing how vast the tree space is next to the 69 families the
+  data actually allows. Illustration, not analysis.
+- **Output**: `results/nyan1308_random_tree_overlay.r` and its PDF — the one
+  generated R script still in `results/`. Never ported to the package
+  (it samples rather than drawing a fixed chart); scheduled for phase E.
+- **Example**: `python scripts/analysis/random_tree_overlay.py` (`--n-trees`,
+  `--n-leaves`, `--alpha`, `--seed`, `--r-only`)
 
 ## Data export
 
@@ -89,7 +146,28 @@ This directory contains Python and R scripts for laminar family analysis and ver
   charts a given bundle supports.
 - **Example**: `Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308 --output results`
 
-## Verification (New)
+## Porting checks
+
+**`planarsviz_checks/`** — twenty checks (twelve in R, eight in Python) that
+prove the `planarsviz` package draws what the old scripts drew, and that the
+bundle carries the same numbers the Python analysis produces. Each runs on its
+own and says what it checked:
+
+```
+Rscript scripts/planarsviz_checks/check_pooled.R          # one chart family
+python scripts/planarsviz_checks/verify_forest_export.py  # bundle vs. archived script
+```
+
+The `check_*.R` ones render a chart and pixel-compare it with a frozen
+reference in `results/planarsviz/reference/`; the `verify_*.py` ones compare
+the bundle's numbers with what the archived scripts have pasted into them.
+Both reach the archive through one place — `superseded.R` for R,
+`superseded.py` for Python — so moving it again is two edits, not fifteen.
+`check_renderer.py` compares every chart the renderer writes against the
+reference set in one pass. `check_transparency.py` is a helper the tree-count
+check calls, not a check of its own.
+
+## Verification
 
 **`verification/verify_barthelmemy_correspondence.py`**
 - **Purpose**: Verify laminar family algorithms on controlled toy data
@@ -135,28 +213,45 @@ This directory contains Python and R scripts for laminar family analysis and ver
 - **Status**: Archive
 - **Note**: Superseded by current catalan.py
 
-## Visualization (R) — Generated Output
+**`exploratory/generate_supercatalan_rows.py`** + **`render_supercatalan_rows.r`**
+- **Purpose**: Draw every distinct n-ary tree shape over 2, 3 and 4 leaves,
+  and 15 of the 45 over 5 leaves — one PDF per row, illustrations for the
+  counting discussion in `REFERENCES.md`
+- **Output**: `results/supercatalan_trees_n2.pdf` … `_n5_sample15.pdf`, and
+  `exploratory/supercatalan_trees.json`, the shapes the renderer reads
+- **Example**: `python scripts/exploratory/generate_supercatalan_rows.py --pdf`
+  — it launches the R renderer and `pdfcrop` itself. Don't run the `.r` file
+  directly: it reads the JSON from the working directory, so it only works
+  from `scripts/exploratory/`, which is where the Python script puts it.
+- **Status**: scheduled to move into the `illustrations` bundle in phase E
 
-**`../../results/laminar_forest.r`** (GENERATED)
-- Outputs: `laminar_forest.pdf`
-- Visualization of all maximal laminar families as dendrogram forest
-- Branch thickness = convergence strength (√families_containing_span)
+## Where the charts went
 
-**`../../results/laminar_conflict_groups.r`** (GENERATED)
-- Outputs: `laminar_conflict_groups.pdf`
-- Categorizes families by conflict patterns
-- Three-panel comparative visualization
+Until the 2026-09-20 cutover, most charts were drawn by generated R scripts
+sitting in `results/` beside the PDFs, written by generator functions in
+`analysis/laminar_analysis.py`. The `planarsviz` package replaced all of them.
 
-**Other `../../results/*.r` files** (GENERATED)
-- Language-specific overlays, frequency analysis, etc.
-- All generated by `laminar_analysis.py` — not hand-written
+- The scripts are archived in `OlderFiles/planarsviz_superseded/`, where
+  the porting checks still run them to prove the package draws the same thing.
+  Do not delete them — see that directory's `README.md`.
+- The generators are gone from `laminar_analysis.py` (cutover step C3), as is
+  the matplotlib plotting that was in `laminar_tree_counts.py` and
+  `boundary_strength.py`.
+- `results/nyan1308_random_tree_overlay.r` is the one generated R script
+  still in `results/`: it draws a random sample rather than a fixed chart, was
+  never ported, and is scheduled for phase E.
+- `planarsviz_checks/` holds the porting checks — the R ones reach the archive
+  through `superseded.R`, the Python ones through `superseded.py`.
 
 ---
 
 ## Organization Guide
 
-- **analysis/** — Core algorithms (`laminar_analysis.py`)
+- **analysis/** — Core algorithms and the exporter
 - **verification/** — Verification scripts (`verify_*.py`)
 - **exploratory/** — Prototype and archive work (`treeTraversal.py`, `catalan.py`)
+- **planarsviz_checks/** — Checks that the R package draws what the old scripts drew
 
-See `../docs/VERIFICATION.md` for methodology, results, and theoretical framework.
+See `docs/VERIFICATION.md` for methodology, results, and theoretical framework,
+`docs/planarsviz_charts.md` for every chart the package draws, and
+`results/visualizations.md` for what each artifact in `results/` shows.

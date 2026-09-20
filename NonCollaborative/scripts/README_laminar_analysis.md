@@ -4,17 +4,14 @@
 
 This directory contains Python scripts for analyzing constituency domains via **laminar family enumeration**. Given a set of observed domain spans over a planar morphosyntactic template, the analysis computes ALL maximal laminar families and tests three hypotheses about constituency structure.
 
-**Key script**: `laminar_analysis.py` — does all the heavy lifting.
+**Key script**: `analysis/laminar_analysis.py` — does all the heavy lifting.
 
-The R visualization package consumes an explicit export bundle rather than
-reconstructing analytical results. Generate one with:
+**Paths and commands in this file are relative to `NonCollaborative/`**, which
+is where they are meant to be run from.
 
-```bash
-python scripts/analysis/export_planarsviz_data.py \
-  --domain-file domains/domains_nyan1308.tsv
-```
-
-The bundle contract is documented in `r/planarsviz/inst/data-contract.md`.
+The charts are drawn by the `planarsviz` R package, which reads an exported
+data bundle rather than re-deriving anything — see "Output" below for the two
+commands. The bundle's contract is `r/planarsviz/inst/data-contract.md`.
 
 ## What is a Laminar Family?
 
@@ -63,116 +60,134 @@ Laminar families are the right mathematical object for testing three hypotheses 
 
 ### Input
 
-Place domain span TSVs in `../domains/` with filename `domains_{lang_id}.tsv`:
+Domain span TSVs live in `domains/`, named `domains_{lang_id}.tsv`, with these
+six columns:
 
 ```
-Position_Name	Element	Domain_Type	Span_Start	Span_End	Test_Name	Criterion	Value
-v:verbstem	root	morphosyntactic	10	10	ciscategorial	complete_domains	1
-v:verbstem	root	morphosyntactic	8	16	coreference	bindee_domain	reflexivization
+Test_Labels	Domain_Type	Left_Edge	Right_Edge	Size	Notes
+FreeOccurrence-Minimal-AFF/IMP2s	length	10	17	8
+FreeOccurrence-Maximal-AFF/IMP2s	length	9	17	9
 ...
 ```
 
-Each row = one span from one test. The script will:
-- Extract unique (Span_Start, Span_End, Domain_Type) tuples
-- Group by domain type for conflict analysis
+Each row is one span from one test. Loading it (`load_spans()`):
+
+- `Size` must equal `Right_Edge - Left_Edge + 1`, or the load fails outright.
+- Rows whose `Test_Labels` starts with `#` are dropped — the `#DummyRoot`
+  placeholder convention in the CCDB data.
+- Size-1 spans are dropped: one position cannot be a domain.
+- Rows with the same `[Left_Edge, Right_Edge]` become one `Span`, which keeps
+  every contributing test label and every domain type involved.
 
 ### Running
 
 ```bash
-cd scripts/analysis
-python laminar_analysis.py ../../domains/domains_{lang_id}.tsv
+python scripts/analysis/laminar_analysis.py
 ```
 
-Outputs:
-- `results/{lang_id}_laminar_forest.r` — ggtree visualization of all families
-- `results/{lang_id}_laminar_analysis.md` — summary table, findings, span occurrence
-- Console: conflict counts, family statistics, robustness analysis
+from `NonCollaborative/`. It takes no arguments: it prints the four-phase
+report for nyan1308 — pooled, then one domain type at a time, then the three
+bundles. For a different file or subset, call `main()` from Python:
 
-### Options
+```python
+import sys; sys.path.insert(0, "scripts/analysis")
+from laminar_analysis import main
+result = main(domain_file="domains_arao1248.tsv", show_trees=False)
+result["n_families"]
+```
 
-Check `laminar_analysis.py --help` for command-line flags (if implemented).
+`main()` writes nothing to disk. It returns `spans`, `adjacency`, `families`,
+`span_family_count`, `n_families` and `truncated`.
 
-## Output Artifacts
+## Output
 
-### R Visualization Files (Generated)
+**The console report** is the whole of this script's own output: conflict
+counts and which pairs conflict, the family count, each family's tree (up to
+`max_trees_to_show`), and the span-occurrence table — which spans appear in
+how many families, with the ones in *all* families marked. A span in every
+family is structurally robust; a span in few is contingent on how conflicts
+elsewhere get resolved.
 
-**`laminar_forest.r`**
-- All N maximal families rendered as a forest of dendrograms
-- Branch thickness = √(number of families span appears in)
-- Spans in all families → heaviest lines
-- Alpha transparency: all trees together approach black
-
-**`laminar_overlay.r`**
-- Same families, grouped and colored by domain type
-- Overlay visualization for conflict analysis
-
-**`laminar_conflict_groups.r`**
-- Families categorized by conflict properties
-- Panels A, B, C = different conflict patterns observed
-
-### Markdown Summary (`{lang_id}_laminar_analysis.md`)
-
-- Data summary: # spans, # conflicts, # conflict pairs
-- Result: how many maximal families found
-- **Span occurrence table**: which spans appear in how many families
-  - Robustness metric: span in all families = structurally robust
-  - Span in few families = contingent on conflict resolution elsewhere
-- Interpretation against the three hypotheses
-
-## Example Workflow
+**The charts** come from somewhere else. The analysis exports a data bundle
+and the `planarsviz` R package draws from it:
 
 ```bash
-# 1. Prepare domain TSV for Chichewa
-# (domains_nyan1308.tsv already exists)
+python scripts/analysis/export_planarsviz_data.py \
+  --domain-file domains/domains_nyan1308.tsv \
+  --output-dir results/planarsviz --language-name Chichewa
 
-# 2. Run analysis
-cd scripts/analysis
-python laminar_analysis.py ../../domains/domains_nyan1308.tsv
-
-# 3. Inspect results
-cat ../../results/nyan1308_laminar_analysis.md
-
-# 4. Render visualizations in R
-cd ../../results
-Rscript nyan1308_laminar_forest.r  # produces nyan1308_laminar_forest.pdf
-Rscript nyan1308_laminar_conflict_groups.r  # produces nyan1308_conflict_groups.pdf
+Rscript scripts/render_planarsviz.R \
+  --bundle results/planarsviz/nyan1308 --output results
 ```
+
+Until the 2026-09-20 cutover, `laminar_analysis.py` wrote the R scripts for
+those charts itself. It no longer does: the generators were removed and the
+scripts they wrote are archived in `OlderFiles/planarsviz_superseded/`,
+where the porting checks still run them to prove the package draws the same
+thing. `docs/planarsviz_charts.md` catalogues every chart;
+`results/visualizations.md` says what each one shows.
 
 ## Key Functions in `laminar_analysis.py`
 
-- `load_spans()` — read domain TSV, deduplicate tests into unique spans (size-1 spans excluded)
-- `classify_pair()` / `find_conflicts()` — classify span pairs as nested/disjoint/conflict; build the conflict graph
-- `enumerate_maximal_laminar_families()` — all maximal laminar families, via `_bron_kerbosch()` (maximal independent sets of the conflict graph)
+- `load_domain_dataframe()` — read and clean the TSV, one row per test, each
+  keeping its own `Domain_Type`. Use this when you need the per-row labels —
+  a permutation test over which label sits on which row, say.
+- `aggregate_spans()` — turn those rows into unique `Span`s.
+- `load_spans()` — the two above in sequence, with an optional domain-type
+  subset in between. The usual entry point.
+- `classify_pair()` / `find_conflicts()` — classify span pairs as
+  nested/disjoint/conflict; build the conflict graph
+- `enumerate_maximal_laminar_families()` — all maximal laminar families, via
+  `_bron_kerbosch()` (maximal independent sets of the conflict graph)
 - `build_parent_map()` / `get_children()` — tree construction
 - `span_to_newick()` — recursive Newick encoder (proper branching trees)
-- `generate_r_script()` — write a stacked-tree forest R script (`{prefix}laminar_forest.r`)
-- `generate_r_overlay_script()` / `run_domain_overlay()` — write overlay R scripts (`nyan1308_laminar_overlay.r`, `nyan1308_all_families_labeled.r`)
-- `select_representative_families()` / `generate_exemplary_trees()` — exemplary-tree R scripts
+- `select_representative_families()` — greedy-coverage pick of k structurally
+  diverse families, ties broken toward consensus. The exporter calls it for
+  the exemplary-tree charts.
+- `OVERLAY_GROUPS` — one entry per domain type: which types, what colour, and
+  the short id its charts are named after. The exporter reads it.
 
-`laminar_conflict_groups.r`, `laminar_four_trees.r`, `laminar_freqtree.r` and
-`laminar_spanchart.r` in `results/` have no generator in this file (it was never
-committed); their family-selection rules were recovered from the scripts
-themselves — see `docs/PLAN_planarsviz_library.md` §4.1.
+The conflict-groups, four-trees, frequency-tree and span charts never had a
+committed generator at all; their family-selection rules were recovered from
+the archived scripts themselves and now live in the exporter — see
+`docs/PLAN_planarsviz_library.md` §4.1.
 
 ## Troubleshooting
 
 **"No maximal families found"**
-- Check that domain TSV has valid Span_Start/Span_End columns
-- Verify at least one span exists
+- Check the TSV has `Left_Edge` and `Right_Edge` columns with real values
+- Check at least one span survives the load: size-1 spans and `#`-prefixed
+  rows are both dropped, so a file of only those loads to nothing
+
+**"Size mismatch in ..."**
+- `Size` must equal `Right_Edge - Left_Edge + 1` on every row. The loader
+  refuses the file rather than guessing, and names the offending rows.
 
 **"Only 1 family (but I expected conflicts)"**
 - All observed spans are mutually compatible — perfect tree support
 - This is actually strong support for the Tree hypothesis!
 
-**R script won't render**
-- Ensure `ggplot2`, `ape`, `ggtree`, `patchwork` are installed:
-  ```R
-  install.packages(c("ggplot2", "ape", "ggtree", "patchwork"))
-  ```
+**A chart won't render**
+- `scripts/render_planarsviz.R` installs the package into a temporary library
+  itself, so there is no install step to remember — but the package's own
+  dependencies must be there. They are listed in `r/planarsviz/DESCRIPTION`;
+  the tree charts also need `ape` and `ggtree`, under `Suggests` because the
+  other charts do not.
+- Run it from `NonCollaborative/`, and make sure the bundle exists: the
+  renderer draws from `results/planarsviz/<dataset>/`, not from the TSV.
 
 ## See Also
 
-- `../exploratory/treeTraversal.py` — earlier exploratory version (less efficient, different output format)
-- `../../results/nyan1308_laminar_analysis.md` — example output summary
-- `../../results/laminar_*.r` — generated visualization scripts
+- `scripts/INDEX.md` — every script under `analysis/`, `verification/`,
+  `exploratory/` and `planarsviz_checks/`, one entry each
+- `results/visualizations.md` — what each artifact in `results/` shows and
+  how to make it again
+- `docs/planarsviz_charts.md` — the chart catalogue: every chart the
+  package draws, its call, options and canvas
+- `docs/VERIFICATION.md` — the two independent algorithms that both
+  confirm 69 maximal families for nyan1308
+- `scripts/exploratory/treeTraversal.py` — the earlier enumerator this replaced
+  (slower, and undercounts: 16 families where the correct answer is 69)
+- `results/nyan1308_laminar_analysis.md` — a written summary from
+  2026-04-18, not generated by anything
 - Good (draft) — "Domains of linearization, constituency, and wordhood in Chichewa"

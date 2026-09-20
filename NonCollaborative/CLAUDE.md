@@ -47,12 +47,15 @@ Older timestamped CSV snapshots are archived in `OlderFiles/planar_tables/`.
 
 R and Python scripts for analysis and visualization. These are run interactively, not from the pipeline. As of the current laminar-family work, `scripts/` is organized into subfolders rather than kept flat:
 
-- **`scripts/analysis/`** — the active Chichewa/nyan1308 pipeline: `laminar_analysis.py` (core laminar-family enumeration engine), `laminar_tree_counts.py` (family-count bar charts), `random_tree_overlay.py` (ghost-overlay of sampled trees). See `scripts/README_laminar_analysis.md` for the full walkthrough and `scripts/INDEX.md` for a per-script index.
+- **`scripts/analysis/`** — the active Chichewa/nyan1308 pipeline: `laminar_analysis.py` (core laminar-family enumeration engine), `laminar_tree_counts.py` (family counts, pooled and per class), `boundary_strength.py` (per-juncture boundary strength), `class_fragmentation_test.py` + `fragmentation_test_plot.r` (is a class more fragmented than its test count predicts?), `refinement_counts.py` (how much tree structure each family leaves open), `planars_groupings.py` (the named domain-type bundles and filters, defined once), `random_tree_overlay.py` (ghost-overlay of sampled trees), and `export_planarsviz_data.py` (writes the data bundle the R package draws from). See `scripts/README_laminar_analysis.md` for the full walkthrough and `scripts/INDEX.md` for a per-script index.
 - **`scripts/verification/`** — `verify_barthelmemy_correspondence.py` and `verify_chichewa.py` cross-check the laminar-family algorithm against independent methods (exhaustive search, alternate graph formulations). See `docs/VERIFICATION.md`.
 - **`scripts/exploratory/`** — earlier prototypes kept for reference, not for new work: `treeTraversal.py` (superseded by `laminar_analysis.py`), `catalan.py`/`catalan_old.py` (Catalan-number tree enumeration), `generate_supercatalan_rows.py` + `render_supercatalan_rows.r` (super-Catalan tree-shape figures).
-- **Top-level `scripts/*.r` and `scripts/*.py`** — older, largely hand-written R visualization scripts predating the laminar-family pipeline (`constituencyforest-all.r`, `morsynconstituencyforest-all.r`, `phonconstituencyforest-all.r`, `tonosegconstituencyforest-all.r`, `allsubtypes-forest-byhand.r`, `ColorTree-Example.r`, `domainSignificance.r`, `domain_charts-older.r` — an earlier variant of the pooled charts, whose successor `domain_charts-cgpt.r` has since moved to `OlderFiles/planarsviz_superseded/scripts/` along with `nyan_boundary_skyline.r`, both replaced by the `planarsviz` package), plus a few standalone utilities: `make_file.R` (builds an element index from planar structure files), `makeLaTeXDomains.py` (domains TSV → LaTeX table), `highlight_planar_example.py` and `make_planar_latex.py` (generate the highlighted planar-table/example-card PDFs under `results/`).
+- **`scripts/planarsviz_checks/`** — twenty checks that the `planarsviz` package draws what the scripts it replaced drew, and that the exported bundle carries the same numbers the Python analysis produces. They are the evidence behind the port; they reach the archived originals through `superseded.R` (for the checks written in R) and `superseded.py` (for the ones in Python).
+- **Top-level `scripts/*.r` and `scripts/*.py`** — `render_planarsviz.R` (draws every chart from a bundle — the only planarsviz code that writes files) and `planarsviz_compare.py` (its pixel-comparison helper); `make_forestspans_table.py` (the ForestSpans LaTeX table); older, hand-written R visualization scripts predating the laminar-family pipeline (`constituencyforest-all.r`, `morsynconstituencyforest-all.r`, `phonconstituencyforest-all.r`, `tonosegconstituencyforest-all.r`, `allsubtypes-forest-byhand.r`, `ColorTree-Example.r`, `domainSignificance.r`, `domain_charts-older.r` — an earlier variant of the pooled charts, whose successor `domain_charts-cgpt.r` has since moved to `OlderFiles/planarsviz_superseded/scripts/` along with `nyan_boundary_skyline.r`, both replaced by the `planarsviz` package); plus a few standalone utilities: `make_file.R` (builds an element index from planar structure files), `makeLaTeXDomains.py` (domains TSV → LaTeX table), `highlight_planar_example.py` and `make_planar_latex.py` (generate the highlighted planar-table/example-card PDFs under `results/`). `laminar_forest.r` is a generated forest script left over from before the port; it is archived with the rest in `OlderFiles/planarsviz_superseded/results/`.
 
-`scripts/INDEX.md` and `scripts/README_laminar_analysis.md` are the authoritative, actively-maintained guides to the `analysis/`/`verification/`/`exploratory/` scripts — read those for algorithm details and usage rather than this file.
+**Nothing under `scripts/` writes an R script or a matplotlib figure any more.** Charts come from the `planarsviz` package reading a bundle: `export_planarsviz_data.py` writes the bundle, `render_planarsviz.R` draws from it. That happened in the 2026-09-20 cutover; the scripts the package replaced are archived under `OlderFiles/planarsviz_superseded/` and **must not be deleted** (see below).
+
+`scripts/INDEX.md` and `scripts/README_laminar_analysis.md` are the authoritative, actively-maintained guides to the `analysis/`/`verification/`/`exploratory/`/`planarsviz_checks/` scripts — read those for algorithm details and usage rather than this file.
 
 ### `domainGenerationTests/`
 
@@ -71,7 +74,8 @@ Early prototypes for domain derivation from linguistic parameter files. Represen
 - `VERIFICATION.md` — methodology, theoretical framework, and verified results for the laminar-family analysis (the two independent algorithms that both confirm 69 maximal families for nyan1308).
 - `planarsviz_guide.md` — user guide for the planarsviz chart library (`r/planarsviz/`): exporting a data bundle, drawing and rendering charts, adding a language, checking charts.
 - `planarsviz_charts.md` — chart catalogue: every planarsviz chart, its function call, options, canvas and an example image (`planarsviz_charts/`).
-- `PLAN_planarsviz_library.md` / `PLANARSVIZ_LIBRARY_PROGRESS.md` — why the library is built as it is, and the chart-by-chart record of how each port was checked, with open questions.
+- `PLAN_planarsviz_library.md` / `PLANARSVIZ_LIBRARY_PROGRESS.md` — why the library is built as it is, and the chart-by-chart record of how each port was checked, with open questions. **`PLANARSVIZ_LIBRARY_PROGRESS.md` is the current state of that work** — read it before resuming.
+- `CHART_MECHANICS_AND_UNCERTAINTY.md` — how the charts encode what they encode, and what they do and don't establish.
 
 ### `examples/`
 
@@ -83,7 +87,9 @@ Reference PDFs cited in `REFERENCES.md` (currently: Barthélemy 1989, on the cop
 
 ### `results/`
 
-Generated output — PDFs, `.tex` sources, `.tsv` data, and the `.r` scripts that produced them. `results/visualizations.md` documents every chart and table here: what it shows, which script generates it, and how to regenerate it. Keep that file in sync whenever a script here starts writing a new `results/` artifact.
+Generated output — PDFs, `.tex` sources and `.tsv` data — plus `results/planarsviz/`, which holds the exported data bundle, the frozen reference images the porting checks compare against, and the comparison images those checks write. `results/visualizations.md` documents every chart and table here: what it shows, what produced it, and how to regenerate it. Keep that file in sync whenever something starts writing a new `results/` artifact.
+
+The generated `.r` scripts that used to sit here beside the PDFs are gone: the `planarsviz` package draws the charts now, and those scripts are archived (see `OlderFiles/` below). The one exception is `nyan1308_random_tree_overlay.r`, which was never ported.
 
 ### `tests/`
 
@@ -93,7 +99,7 @@ A real `pytest` suite, run with `pytest NonCollaborative/tests/` from the repo r
 
 Archived scripts and data kept for historical reference. See `OlderFiles/README.md`. Do not use for new work.
 
-One exception: `OlderFiles/planarsviz_superseded/` holds the R scripts the `planarsviz` package replaced, and **those must not be deleted**. The porting checks run them to prove the package draws the same charts, so they are the evidence behind every "0.0000% differing pixels" claim in the progress file, and several can no longer be regenerated once cutover step C3 removes the Python that wrote them.
+One exception: `OlderFiles/planarsviz_superseded/` holds the R scripts the `planarsviz` package replaced, and **those must not be deleted**. The porting checks run them to prove the package draws the same charts, so they are the evidence behind every "0.0000% differing pixels" claim in the progress file, and most of them can no longer be regenerated: cutover step C3 removed the Python that wrote them.
 
 ## Data provenance
 
@@ -109,8 +115,8 @@ See also `REFERENCES.md` for the mathematical/linguistic literature behind the l
 
 ## Running scripts
 
-R scripts require `ggplot2`, `ape`, `ggtree`, `patchwork`. No package management file — install manually.
+**Run everything from `NonCollaborative/`.** That is where the porting checks run, what `scripts/INDEX.md` and `results/visualizations.md` document, and what the exported bundle records as the path it read. Two exceptions, both because the script reads a file from the working directory: `scripts/exploratory/render_supercatalan_rows.r` (run `generate_supercatalan_rows.py --pdf` instead, which launches it correctly), and `pytest`, which works from either the repo root (`pytest NonCollaborative/tests/`) or here (`pytest tests/`).
 
-Python scripts mostly use the standard library, but some depend on third-party packages already in the main project's `.venv` (`requirements.txt`): `pandas`, `networkx`, `matplotlib`, `pyyaml`. `tests/` additionally needs `pytest`.
+The `planarsviz` package's dependencies are in `r/planarsviz/DESCRIPTION`; `scripts/render_planarsviz.R` installs the package into a temporary library itself, so there is no install step. The tree charts also need `ape` and `ggtree`. The older hand-written R at the top of `scripts/` needs `ggplot2`, `ape`, `ggtree` and `patchwork` installed by hand.
 
-Scripts read data files using relative paths from their own location (or a configured `DATA_DIR`). Run from the script's directory (e.g. `cd scripts/analysis`) or adjust paths as needed.
+Python scripts depend on packages already in the main project's `.venv` (`requirements.txt`): `pandas`, `numpy`, `networkx`, `pyyaml`. `tests/` additionally needs `pytest`. Nothing here uses `matplotlib` any more — C3 removed the last of it.

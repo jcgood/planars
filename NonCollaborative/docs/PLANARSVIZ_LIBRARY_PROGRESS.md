@@ -1004,3 +1004,111 @@ port with itself, and printed the same number twice without anyone noticing.
 - Looked at by Claude: yes (all thirteen check outputs, the bundle diff, the
   five TSV diffs). Seen by Jeff: no.
 - Status: done. C4 next — the documentation pass.
+
+## Cutover C4: the documentation pass (2026-09-20)
+
+The last of the four cutover commits. Four files were named for it; a fifth
+and a sixth turned out to need the same treatment, and one more generated
+script turned up that C2 had missed.
+
+- **`results/visualizations.md`** (787 → 913 lines). Its opening told a reader
+  to run a command that no longer exists and render an R script that is no
+  longer there; both are replaced by the two commands that actually make these
+  charts. Six section headings named a generated script rather than the chart
+  it drew, and are renamed after the chart, each with the `--plots` name to
+  draw it and a pointer to its archived original. Every in-body reference to a
+  removed generator function is gone.
+- **The file was also incomplete, which the cutover exposed.** Fifteen charts
+  in `results/` had no entry at all — the coloured overlay, the eight per-class
+  forests, ForestSpans, the four boundary-strength charts, the most-binary
+  trees. Rather than write fifteen entries duplicating
+  `docs/planarsviz_charts.md`, which already catalogues every one with an
+  example image, the file now says which of the two to read for what and
+  carries a table pointing each uncovered chart at its catalogue section. Two
+  more sections cover what was left: the supercatalan illustrations, the
+  renderer manifest, the 2026-04-18 written summary, and what lives under
+  `results/planarsviz/`.
+- **`scripts/INDEX.md`.** Claimed `laminar_analysis.py` writes an R script and
+  a markdown summary — the first was true until C3, the second has not been
+  true since April. Its whole "Visualization (R) — Generated Output" section
+  described files that no longer exist, and is replaced by an account of where
+  the charts went. Six scripts in its own remit had no entry
+  (`laminar_tree_counts.py`, `boundary_strength.py`, `planars_groupings.py`,
+  `random_tree_overlay.py`, the two supercatalan ones) and now do, as does
+  `planarsviz_checks/`.
+- **`scripts/README_laminar_analysis.md`** was the worst of them. It
+  documented an input format with eight columns that do not exist
+  (`Position_Name`, `Element`, `Span_Start`, `Span_End`, `Test_Name`,
+  `Criterion`, `Value`) — the real file has six — and a command
+  `python laminar_analysis.py <file>` that has never worked, since the script
+  takes no arguments. Both corrected against the code, along with the output
+  section, the key-functions list, the troubleshooting entries and the
+  see-also links.
+- **`NonCollaborative/CLAUDE.md`.** Its `scripts/analysis/` list named three of
+  the eight scripts there; it did not mention `planarsviz_checks/`,
+  `render_planarsviz.R` or `make_forestspans_table.py` at all; and its
+  "Running scripts" section still said to `cd scripts/analysis` and listed
+  `matplotlib` as a dependency.
+
+### Three things found while checking that the commands run
+
+Every command in these files was run rather than read.
+
+- **`fragmentation_test_plot.r` could not be run as documented.** It resolved
+  `results/` as `"../../results"` against the working directory, so it only
+  worked from `scripts/analysis/` — but both `INDEX.md` and
+  `visualizations.md` told a reader to run it from elsewhere. It now resolves
+  from its own file location, the way `render_planarsviz.R` does. The chart it
+  draws is unchanged: 0.0000% differing pixels against the committed PDF.
+- **`render_supercatalan_rows.r` has the same shape of dependency** and is
+  documented rather than changed, because the Python script launches it with
+  the right working directory and is the supported way to run it. The
+  documented command is now `generate_supercatalan_rows.py --pdf`, which does
+  the whole job.
+- **One working directory, not two.** The committed bundle was exported from
+  `NonCollaborative/`, and the exporter records the domain file's path as
+  given, so running the documented command from the repo root produced a
+  bundle differing in that one field. Every command in these files now runs
+  from `NonCollaborative/`, matching the porting checks; verified by
+  re-exporting and diffing the whole bundle, which came back identical.
+
+### A generated script C2 missed
+
+`scripts/laminar_forest.r` — an earlier, unlabelled 69-family forest — sat in
+`scripts/` rather than `results/`, so C2's sweep of `results/` did not see it.
+Archived with the others. No check compares against it; it is kept because the
+Python that wrote it is gone and nothing else records what it drew.
+
+- Looked at by Claude: yes (every command in all four files run; pytest; three
+  porting checks re-run after the archive move). Seen by Jeff: no.
+- Status: done. **Cutover complete.** Phase E next — the `illustrations`
+  bundle — and chart 19, the fragmentation test, requested during C4 (below).
+
+## Chart 19, requested 2026-09-20: port the fragmentation test
+
+Jeff asked, through the analysis session, that the class-fragmentation test be
+part of `planarsviz` proper — a bundle table and a chart function, the way
+`boundary_strength` and `tree_counts` are — rather than a standalone script
+reading its own TSVs. Not started. What it needs:
+
+- A `fragmentation_test.tsv` in the bundle, combining the class and bundle
+  summary rows under a `kind` column, the way `tree_counts.tsv` already does.
+  `class_fragmentation_test.run_test()` has the same calling shape as
+  `boundary_strength.compute_boundary_strength()`, so it slots into the
+  exporter the same way.
+- A decision about the null draws. `nyan1308_fragmentation_null_draws.tsv` is
+  5000 draws × 8 groups = 40,000 rows for one language, which does not fit the
+  bundle's usual one-row-per-position/span/family shape. `subsets.json`'s
+  pattern — an index plus a directory of per-item files — may fit better than
+  one flat table. Worth settling before the table is written, not after.
+- A section in `r/planarsviz/inst/data-contract.md` for whichever shape it
+  takes, written the way the `boundary_strength.tsv` section is.
+- **This port has no matplotlib original.** Every other chart had one to
+  compare against pixel for pixel, and the plan's whole methodology assumes
+  that. This chart was written in R from the start, so
+  `results/nyan1308_fragmentation_test_plot.pdf` is itself the reference a
+  port must reproduce. The shifted-dataset leak check applies normally; only
+  the pixel comparison against an original is different.
+- **Open question for Jeff:** should the test also run per subset (`no_tono`),
+  the way `boundary_strength` is computed once for `data/` and once per entry
+  in `subsets.json`? Easy to include now, awkward to retrofit.

@@ -12,17 +12,22 @@ Related files:
   partially-resolved-tree/polytomy/refinement vocabulary, the survivor-space framing).
   This document doesn't repeat that content — see the "Counting Constituency Trees" section
   there for the full, sourced version.
-- `scripts/analysis/laminar_analysis.py` — the actual code discussed throughout (`classify_pair`,
-  `find_conflicts`, `enumerate_maximal_laminar_families`, `generate_r_overlay_script`,
-  `run_domain_overlay`).
+- `scripts/analysis/laminar_analysis.py` — the analysis discussed throughout (`classify_pair`,
+  `find_conflicts`, `enumerate_maximal_laminar_families`).
+- `r/planarsviz/R/overlays.R` — how the overlay is drawn. Until the 2026-09-20
+  cutover this was `laminar_analysis.py`'s own `generate_r_overlay_script()` /
+  `run_domain_overlay()`, which is what earlier passages here name; both are gone,
+  and the archived script they wrote is in
+  `OlderFiles/planarsviz_superseded/results/nyan1308_laminar_overlay.r`.
 - `results/nyan1308_all_families_labeled.pdf` — the chart itself.
   `results/nyan1308_all_families_labeled_orthographic_word.pdf` — a variant with positions
   5–19 (the orthographic word) in red and position 17 (FV, the final vowel) in blue
   (colorblind-safe pairing, not red/green). Both are now drawn by the
   `planarsviz` R package from the exported data bundle; the `.r` files of the
-  same names in `results/` are the superseded generated scripts, and the
-  variant's file name comes from the highlight id in the data, which is why it
-  is no longer called `_wordhood`.
+  same names are the superseded generated scripts, archived in
+  `OlderFiles/planarsviz_superseded/results/`, and the variant's file name comes
+  from the highlight id in the data, which is why it is no longer called
+  `_wordhood`.
 - `docs/PLAN_planarsviz_refactor.md` — the R-visualization refactor plan, with a "Review:
   Claude" section appended; separate track of work, not covered further here.
 
