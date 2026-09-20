@@ -17,6 +17,57 @@ This directory contains Python and R scripts for laminar family analysis and ver
   - `../../results/{lang_id}_laminar_analysis.md` — markdown summary
   - Console output with statistics
 - **Dependencies**: Standard library only
+- **Reading the rows instead of the spans**: `load_spans()` aggregates rows
+  that share a span, which throws away each row's own `Domain_Type`. Callers
+  that need the per-row labels — a permutation test over which label sits on
+  which row, say — use `load_domain_dataframe()` (read and clean, no subset
+  filter, no aggregation) and then `aggregate_spans()` themselves.
+  `load_spans()` is those two in sequence and is unchanged.
+
+**`analysis/refinement_counts.py`**
+- **Purpose**: For each of the 69 maximal laminar families, count how many
+  finer trees hide inside it at its polytomies (nodes with more than two
+  children) — i.e. how much tree structure the family leaves undetermined
+- **Two conventions, both reported** because whether constituents must be
+  binary is an open question: little Schröder per polytomy (any arity
+  allowed; this project calls the sequence "super-Catalan", see
+  `exploratory/catalan.py`) and Catalan per polytomy (binary only). Totals
+  across all 69 families: 8,599,689 against 125,032.
+- **Output**: `results/nyan1308_refinement_counts.tsv` (per family),
+  `results/nyan1308_refinement_polytomies.tsv` (per distinct polytomy, so
+  the aggregate can be checked against the nodes it came from)
+- **Example**: `python scripts/analysis/refinement_counts.py`
+
+**`analysis/class_fragmentation_test.py`**
+- **Purpose**: Ask whether a domain class is more fragmented than its own
+  number of tests would predict by chance. A class with many tests has more
+  chances to produce conflicting spans, so a raw family count cannot be read
+  as fragmentation on its own.
+- **Method**: shuffle `Domain_Type` labels across the 95 cleaned test rows,
+  holding each class's row count fixed, rebuild the conflict graph and
+  re-count families; 5000 draws. Classes and bundles share one pass — a
+  bundle's test count does not change under a per-type shuffle.
+- **Finding**: tonosegmental's 9 families look like the worst fragmentation
+  until you notice it carries 44 of the 95 tests, where chance alone gives
+  about 17 — so it is markedly *more* laminar than chance (p=0.91), as is
+  intonational. Morphosyntactic, phonological and length are unremarkable.
+- **Output**: `results/nyan1308_class_fragmentation_test.tsv` (5 domain
+  types), `_bundle_fragmentation_test.tsv` (3 bundles),
+  `_fragmentation_null_draws.tsv` (every draw, long format, for the chart).
+  The two summary files record the draw count and seed that produced them.
+- **Imports**: `BUNDLES` from `planars_groupings.py`, `CLASS_COLORS` from
+  `laminar_tree_counts.py` — each defined in one place, not redefined here
+- **Example**: `python scripts/analysis/class_fragmentation_test.py`
+  (reproduces the committed files exactly: 5000 draws, seed 0)
+
+**`analysis/fragmentation_test_plot.r`**
+- **Purpose**: Draw the test above — one horizontal violin per group (the
+  null distribution) with the observed family count as a filled dot, classes
+  and bundles as two stacked panels on a shared axis, p-value per row
+- **Input**: `results/nyan1308_fragmentation_null_draws.tsv` and the two
+  summary TSVs; it does not re-run the permutation
+- **Output**: `results/nyan1308_fragmentation_test_plot.pdf`
+- **Example**: `Rscript scripts/analysis/fragmentation_test_plot.r`
 
 ## Data export
 

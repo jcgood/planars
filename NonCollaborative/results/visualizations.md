@@ -705,3 +705,72 @@ To regenerate:
 python NonCollaborative/scripts/analysis/laminar_tree_counts.py
 ```
 `--domain-file`, `--domains-dir`, `--output-dir` are adjustable — see the script's own docstring.
+
+## Is a class more fragmented than its number of tests predicts?
+
+### nyan1308_fragmentation_test_plot.pdf / nyan1308_class_fragmentation_test.tsv / nyan1308_bundle_fragmentation_test.tsv / nyan1308_fragmentation_null_draws.tsv
+
+**What it is:** The family counts in the charts above cannot be compared across classes as they
+stand. A class with more tests has more chances to produce spans that conflict with each other,
+so a high family count may say nothing except that the class was well studied. This chart puts
+each count against what chance alone would give a class of that size.
+
+The test shuffles the `Domain_Type` labels across the 95 cleaned test rows, holding each class's
+row count fixed, rebuilds the conflict graph and re-counts maximal families — 5000 times. Only
+which label sits on which row is randomised; the spans themselves never move. Classes and the
+three bundles share one set of draws, which is sound because a bundle's own test count does not
+change under a per-type shuffle.
+
+- **`nyan1308_fragmentation_test_plot.pdf`** — one horizontal violin per group (the null
+  distribution from the 5000 draws) with the observed family count as a filled dot, classes and
+  bundles as two stacked panels on a shared axis, and the p-value printed on each row.
+- **`nyan1308_class_fragmentation_test.tsv`** — five domain types;
+  **`nyan1308_bundle_fragmentation_test.tsv`** — the three bundles. Columns: `group`, `color`,
+  `n_tests`, `observed_families`, `null_mean`, `null_p05`, `null_p95`, `p_value_ge_observed`, and
+  `n_permutations` / `seed`, which record the run that produced the file.
+- **`nyan1308_fragmentation_null_draws.tsv`** — every individual draw, long format (`group`,
+  `kind`, `family_count`), so the chart can be redrawn without re-running the permutation.
+
+**What it shows:** tonosegmental's 9 families read as the worst fragmentation in
+`nyan1308_tree_count_by_class.pdf`, but tonosegmental carries 44 of the 95 tests, and a random
+44-test sample typically yields about 17 families. It is therefore markedly *more* laminar than
+chance (p=0.91), not less — and intonational more sharply still (p=1.00, 1 family against an
+expected 3.4). Morphosyntactic, phonological and length sit where chance puts them. The bundles
+inherit the pattern: phonologylike (p=0.92) and syntaxlike (p=0.91) are each carried by their
+most laminar component, and dropping tonosegmental from syntaxlike moves it back toward
+unremarkable (p=0.77).
+
+To regenerate:
+```
+python NonCollaborative/scripts/analysis/class_fragmentation_test.py
+Rscript NonCollaborative/scripts/analysis/fragmentation_test_plot.r
+```
+The plain command reproduces the committed files exactly (5000 draws, seed 0). `--n-permutations`
+and `--seed` are adjustable; both summary files record what they were.
+
+## How much tree structure each family leaves open
+
+### nyan1308_refinement_counts.tsv / nyan1308_refinement_polytomies.tsv
+
+**What it is:** A maximal laminar family is not a single tree. Where a node has more than two
+children (a polytomy), the observed spans do not say how those children group, so each polytomy
+stands for many finer trees. These two tables count them, per family and per polytomy, generated
+by `scripts/analysis/refinement_counts.py`.
+
+Two conventions are reported side by side, because whether a constituent must be binary is an
+open question rather than a settled one:
+
+- **little Schröder per polytomy** — any arity allowed in the refinement. The project calls this
+  sequence "super-Catalan" (see `scripts/exploratory/catalan.py`). Total across all 69 families:
+  8,599,689.
+- **Catalan per polytomy** — binary refinements only. Total: 125,032.
+
+- **`nyan1308_refinement_counts.tsv`** — one row per maximal family.
+- **`nyan1308_refinement_polytomies.tsv`** — one row per distinct polytomy node (its span edges,
+  arity, how many families contain it, and its count under each convention), so the totals can be
+  checked against the nodes they were multiplied from rather than taken on trust.
+
+To regenerate:
+```
+python NonCollaborative/scripts/analysis/refinement_counts.py
+```

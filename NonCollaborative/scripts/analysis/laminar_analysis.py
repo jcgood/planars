@@ -187,6 +187,83 @@ class Span:
         return f"[{self.left}–{self.right}]"
 
 
+def load_domain_dataframe(domain_file: str, domains_dir: str | None = None,
+                          skip_prefix: str = "#") -> pd.DataFrame:
+    """Read and clean a domain TSV, without domain-type filtering or
+    span aggregation. One row per observed test, each carrying its own
+    Domain_Type — exposed separately from load_spans() (which discards this
+    row-level detail once it aggregates into unique spans) for callers that
+    need per-row Domain_Type labels themselves, e.g. permutation tests over
+    which label attaches to which row (see class_fragmentation_test.py).
+
+    Args:
+        domain_file: TSV filename.
+        domains_dir: Directory containing the file. Defaults to ../../domains/
+                     relative to this script's location.
+        skip_prefix: Rows whose Test_Labels starts with this character are
+                     excluded. Handles the '#DummyRoot' convention used in
+                     the CCDB data to mark synthetic placeholders.
+
+    Returns:
+        Cleaned dataframe: whitespace-stripped Domain_Type, size-mismatch
+        rows would already have raised, dummy-root rows removed, size-1
+        spans removed. Every row that load_spans() would have aggregated
+        from is present here, exactly once, with its own Domain_Type intact.
+    """
+    if domains_dir is None:
+        domains_dir = os.path.join(os.path.dirname(__file__), "..", "..", "domains")
+
+    df = pd.read_csv(os.path.join(domains_dir, domain_file), sep="\t")
+
+    # Clean up domain type values (trailing whitespace observed in some files)
+    df["Domain_Type"] = df["Domain_Type"].str.strip()
+
+    # Data integrity check: Size must match Right_Edge - Left_Edge + 1
+    df["_calc_size"] = df["Right_Edge"] - df["Left_Edge"] + 1
+    bad = df[df["Size"] != df["_calc_size"]]
+    if not bad.empty:
+        raise ValueError(
+            f"Size mismatch in {domain_file}:\n{bad[['Test_Labels','Left_Edge','Right_Edge','Size','_calc_size']]}"
+        )
+
+    # Skip synthetic placeholder rows (e.g. #DummyRoot)
+    if skip_prefix:
+        df = df[~df["Test_Labels"].str.startswith(skip_prefix)]
+
+    # Filter size-1 spans: a single position cannot form a meaningful domain
+    df = df[df["Size"] > 1]
+
+    return df
+
+
+def aggregate_spans(df: pd.DataFrame) -> list[Span]:
+    """Aggregate rows with the same [Left_Edge, Right_Edge] into one Span
+    each. Assumes df has already been through load_domain_dataframe()'s
+    cleaning (and any Domain_Type subset filtering the caller wants) —
+    exposed separately from load_spans() so callers that already hold a
+    cleaned/filtered/permuted dataframe (e.g. class_fragmentation_test.py)
+    don't have to duplicate this aggregation logic.
+    """
+    aggregated: dict[tuple[int, int], dict] = {}
+    for _, row in df.iterrows():
+        key = (int(row["Left_Edge"]), int(row["Right_Edge"]))
+        if key not in aggregated:
+            aggregated[key] = {"labels": [], "domain_types": set()}
+        aggregated[key]["labels"].append(row["Test_Labels"])
+        aggregated[key]["domain_types"].add(row["Domain_Type"])
+
+    return [
+        Span(
+            left=left,
+            right=right,
+            labels=tuple(data["labels"]),
+            domain_types=frozenset(data["domain_types"]),
+            convergence=len(data["labels"]),
+        )
+        for (left, right), data in sorted(aggregated.items())
+    ]
+
+
 def load_spans(domain_file: str, domains_dir: str | None = None,
                subset: list[str] | None = None,
                skip_prefix: str = "#") -> tuple[list[Span], int]:
@@ -210,52 +287,13 @@ def load_spans(domain_file: str, domains_dir: str | None = None,
         (spans, n_positions) where spans is the deduplicated list and
         n_positions is the maximum Right_Edge observed (= total positions).
     """
-    if domains_dir is None:
-        domains_dir = os.path.join(os.path.dirname(__file__), "..", "..", "domains")
-
-    df = pd.read_csv(os.path.join(domains_dir, domain_file), sep="\t")
-
-    # Clean up domain type values (trailing whitespace observed in some files)
-    df["Domain_Type"] = df["Domain_Type"].str.strip()
-
-    # Data integrity check: Size must match Right_Edge - Left_Edge + 1
-    df["_calc_size"] = df["Right_Edge"] - df["Left_Edge"] + 1
-    bad = df[df["Size"] != df["_calc_size"]]
-    if not bad.empty:
-        raise ValueError(
-            f"Size mismatch in {domain_file}:\n{bad[['Test_Labels','Left_Edge','Right_Edge','Size','_calc_size']]}"
-        )
-
-    # Skip synthetic placeholder rows (e.g. #DummyRoot)
-    if skip_prefix:
-        df = df[~df["Test_Labels"].str.startswith(skip_prefix)]
+    df = load_domain_dataframe(domain_file, domains_dir, skip_prefix=skip_prefix)
 
     # Filter by domain type if requested
     if subset:
         df = df[df["Domain_Type"].isin(subset)]
 
-    # Filter size-1 spans: a single position cannot form a meaningful domain
-    df = df[df["Size"] > 1]
-
-    # Aggregate rows with the same span into one Span object
-    aggregated: dict[tuple[int, int], dict] = {}
-    for _, row in df.iterrows():
-        key = (int(row["Left_Edge"]), int(row["Right_Edge"]))
-        if key not in aggregated:
-            aggregated[key] = {"labels": [], "domain_types": set()}
-        aggregated[key]["labels"].append(row["Test_Labels"])
-        aggregated[key]["domain_types"].add(row["Domain_Type"])
-
-    spans = [
-        Span(
-            left=left,
-            right=right,
-            labels=tuple(data["labels"]),
-            domain_types=frozenset(data["domain_types"]),
-            convergence=len(data["labels"]),
-        )
-        for (left, right), data in sorted(aggregated.items())
-    ]
+    spans = aggregate_spans(df)
 
     n_positions = int(df["Right_Edge"].max())
     return spans, n_positions
