@@ -191,9 +191,11 @@ Honesty rule: nothing below says "matches" without naming the comparison file.
   `R/data.R` (bundle reader/validator), `R/labels.R` (position labels only;
   Codex's hard-coded palette removed).
 - Tooling on this machine: R 4.6.1, ggplot2 4.0.3, ggtree 4.2.0, ape,
-  patchwork, tidyverse, here, jsonlite. **Not installed:** testthat,
-  devtools, roxygen2 — so `NAMESPACE` is hand-written and the package is
-  installed with `R CMD INSTALL`. Consistent with R9 (no tooling yet).
+  patchwork, tidyverse, here, jsonlite. **Not installed at the time:**
+  testthat, devtools, roxygen2 — so `NAMESPACE` was hand-written and the
+  package installed with `R CMD INSTALL`. Consistent with R9 (no tooling
+  yet). **roxygen2 was installed on 2026-09-20 and now generates
+  `NAMESPACE` and `man/`** — see the entry at the end of this file.
 - Comparison helper: `scripts/planarsviz_compare.py` (reference | new |
   difference image, differing-pixel fraction).
 
@@ -1218,3 +1220,61 @@ Built on the three decisions above. The chart the package draws is
   collapses to the same two types the no-tono bundle has.
 - Looked at by Claude: yes (the new check, the renderer check, the bundle
   diff). Seen by Jeff: no.
+
+## Phase D, first step: roxygen2 generates NAMESPACE and man/ (2026-09-20)
+
+The R tooling the plan held back under R9 ("no tooling until every chart
+matches") is now unblocked, since the charts match. Jeff named this **phase D**
+— the phase list agreed back in September went B, C, E and skipped D entirely,
+and the tooling was the one substantial piece of work with no letter at all.
+
+This first step was worth doing for a reason beyond hygiene: **the hand-written
+`NAMESPACE` was exporting internal helpers by accident.** `exportPattern
+("^planarsviz_")` matched every name with that prefix, so 45 objects were
+public while only 36 carried an `@export` tag. Roxygen exports only what is
+tagged, so these nine stopped being part of the API:
+
+`planarsviz_analysis_dir`, `planarsviz_house_bar_chart`,
+`planarsviz_mpl_bar_expand`, `planarsviz_mpl_breaks`, `planarsviz_mpl_theme`,
+`planarsviz_pooled_setup`, `planarsviz_require_trees`,
+`planarsviz_selected_family`, `planarsviz_vertical_bar_chart`.
+
+`planarsviz_mpl_theme` and `planarsviz_mpl_breaks` exist only to imitate
+matplotlib's defaults for the two cross-language ports; they should never have
+been callable from outside. Nothing outside the package called any of the nine
+— checked before the change, across `scripts/` — so narrowing the surface
+broke nothing.
+
+- **The trap, caught before anything ran.** The R source had 36 `@export` tags
+  and **zero** `@import`/`@importFrom` tags: every import directive lived only
+  in the hand-written `NAMESPACE`. Running roxygen straight would have
+  regenerated a `NAMESPACE` with no imports at all, and every unqualified
+  `ggplot()`, `%>%` and `mutate()` call in the package would have failed —
+  installing fine and breaking on first use. So a package-level block,
+  `R/planarsviz-package.R`, now carries those imports as roxygen tags. The
+  generated import directives were diffed against the old file's: identical,
+  no package or function added or dropped.
+- **Two helpers stayed exported on purpose-of-record:**
+  `planarsviz_ghost_tree` and `planarsviz_conflict_tree` carry their own
+  `@export` tags, written before this change, so roxygen kept them. They are
+  shared drawing primitives rather than accidents of the pattern, and dropping
+  an export is an API change rather than part of switching the mechanism, so
+  they were left alone. Cheap to revisit.
+- **The apparent tradeoff was not real.** `NAMESPACE` and `man/` are ordinary
+  committed files; `R CMD INSTALL` never needs roxygen2, only regenerating
+  them does. The package stays installable on a machine without roxygen.
+- **Result:** 36 exports, no `exportPattern`, 37 `.Rd` files (one per export
+  plus the package page). `R CMD check` goes from 2 warnings to 1 — the
+  missing-documentation warning is gone. What remains is all pre-existing and
+  unrelated: non-ASCII dashes in two strings, a stray `.DS_Store`, and the
+  undefined-globals note from bare column names in `aes()`.
+- **Still missing, and the one real cost of this change: nothing guards
+  drift.** Edit a roxygen comment without re-running roxygen and `NAMESPACE`
+  and `man/` go quietly stale. The guard — a test that regenerating produces
+  no diff — needs testthat and belongs with that work. Until it exists this is
+  an unguarded manual step.
+- Looked at by Claude: yes. The subagent's report was checked rather than
+  taken on trust: the import diff, the 36-export count, which nine names lost
+  export, and two chart checks it had not run (`check_forests.R`, which
+  exercises the ghost-tree helper, and `check_fragmentation.R`) — both
+  0.0000%. Seen by Jeff: no.

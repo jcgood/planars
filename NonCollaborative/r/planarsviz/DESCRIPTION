@@ -33,3 +33,4 @@ Imports:
 Suggests:
     ape,
     ggtree
+Config/roxygen2/version: 8.1.0
