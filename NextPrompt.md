@@ -24,35 +24,33 @@ is `NonCollaborative/docs/planarsviz_guide.md` and `planarsviz_charts.md`.
 All 18 charts are ported and merged (PR #294; the hook fix #295 alongside
 it). Analysis stays in Python, an exporter writes a data bundle, and the R
 package in `NonCollaborative/r/planarsviz/` draws from it — no language
-facts in R. The old R scripts no longer sit beside the library: as of C2
-they are archived in `NonCollaborative/OlderFiles/planarsviz_superseded/`,
-where the porting checks still run them to prove fidelity. The superseded
-*Python* is still in place — that is what C3 removes.
+facts in R. Nothing in `NonCollaborative/` writes an R script or a
+matplotlib figure any more: as of C2 the old R scripts are archived in
+`NonCollaborative/OlderFiles/planarsviz_superseded/` (where the porting
+checks still run them to prove fidelity), and as of C3 the Python that
+wrote them is gone.
 
-**Next action: Phase C3.** Phase B is finished (2026-09-20, question 6
-settled: the span chart's `length` colour stays `#AA3377`). **C1 and C2 are
-both committed and pushed** (`57d871a`, `89beeb6`): `results/` holds the 65
-library-rendered charts, and the 21 superseded R scripts are archived in
-`NonCollaborative/OlderFiles/planarsviz_superseded/`, where the porting
-checks still run them — all thirteen checks were re-run from the new
-location and pass. The phases, agreed with Jeff:
+**Next action: Phase C4, the documentation pass**, the last cutover commit.
+Phase B finished 2026-09-20 (question 6 settled: the span chart's `length`
+colour stays `#AA3377`). **C1, C2 and C3 are all committed and pushed**
+(`57d871a`, `89beeb6`, `00b51e4`). C4 updates
+`NonCollaborative/results/visualizations.md` (707 lines, the big one),
+`scripts/INDEX.md`, `README_laminar_analysis.md` and
+`NonCollaborative/CLAUDE.md`. C1–C3 already did the parts that were broken
+rather than merely stale — the two unrunnable commands in
+`visualizations.md`, `scripts/INDEX.md`'s renderer entry and the new
+analysis scripts, `CHART_MECHANICS_AND_UNCERTAINTY.md`'s chart pointer,
+`CLAUDE.md`'s script locations, and every stale path in a code comment — so
+C4 is the rest. Two things C4 must state: `scripts/INDEX.md` and
+`README_laminar_analysis.md` still describe `laminar_analysis.py` as
+writing R scripts and list `results/laminar_*.r` among its outputs, and
+`make_forestspans_table_no_tono.py` no longer exists.
 
-- **C — cutover, four commits, in this order.** ~~C1~~ ~~C2~~ done. C3 remove
-  the superseded Python
-  (R-writing generators in `laminar_analysis.py`, matplotlib plotting in
-  `laminar_tree_counts.py` and `boundary_strength.py`, the R half of
-  `make_forestspans_table.py`) — the analysis functions and the LaTeX table
-  stay, the exporter calls them. C4 update `results/visualizations.md` (707
-  lines, the big one), `scripts/INDEX.md`, `README_laminar_analysis.md`,
-  `NonCollaborative/CLAUDE.md`. C1 and C2 already did the parts that were
-  broken rather than merely stale — `scripts/INDEX.md`'s renderer entry and
-  the new analysis scripts, `CHART_MECHANICS_AND_UNCERTAINTY.md`'s chart
-  pointer, `visualizations.md`'s two unrunnable commands and its entries for
-  the fragmentation and refinement outputs, and `CLAUDE.md`'s script
-  locations — so C4 is the rest.
-- **E — the `illustrations` bundle**, after cutover: supercatalan tree
-  shapes, the counting numbers, and the random-tree overlay as a
-  non-language bundle. Design agreed, recorded under question 1.
+After C4: **Phase E — the `illustrations` bundle**: supercatalan tree
+shapes, the counting numbers, and the random-tree overlay as a
+non-language bundle. Design agreed, recorded under question 1.
+`results/nyan1308_random_tree_overlay.r` is the one generated R script left
+in `results/`, waiting for it.
 
 Five deliberate visual changes exist, each with an option restoring the old
 look, each recorded in the progress doc: conflict-group panel titles now
@@ -65,19 +63,14 @@ finished, and its work is committed** (`e32c1db`): a permutation test on
 whether each domain class is more fragmented than its test count predicts,
 a refinement count per laminar family, and the chart for the first. Its
 scripts are described in `scripts/INDEX.md` and its outputs in
-`results/visualizations.md`, so its handoff note was folded into those and
-removed rather than committed. That session also split `load_spans()` in
-`scripts/analysis/laminar_analysis.py` into `load_domain_dataframe()` +
-`aggregate_spans()` (behaviour unchanged) — C3 edits that same file, so keep
-both functions; `class_fragmentation_test.py` depends on them.
-**Two traps C3 has to avoid**, written up at the end of the progress doc:
-`CLASS_COLORS` in `laminar_tree_counts.py` must survive the removal of the
-plotting that is now its only in-file user, and those same five colours are
-duplicated in `export_planarsviz_data.py`'s `DOMAIN_TYPE_STYLE`.
+`results/visualizations.md`. C3 edited two files it imports from and both
+still work: `CLASS_COLORS` and the `load_domain_dataframe()` /
+`aggregate_spans()` split survived, and `class_fragmentation_test.py`
+reproduces its committed TSVs byte for byte after the change.
 `NonCollaborative/docs/NOTE_FOR_ANALYSIS_SESSION.md` is the reply sent back
-to that session; it asks the session to say so before C3 runs if it intends
-to keep working in those two files, so check for an answer before editing
-them.
+to that session; it asked to be told before C3 ran if that session meant to
+keep working in those files. No answer came and no commits of its landed,
+so C3 went ahead.
 
 ---
 
