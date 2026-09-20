@@ -10,7 +10,7 @@
 # tree from looking disjointed. But every tree here represents the SAME
 # thing -- one full span over n leaves -- so, as with the laminar trees,
 # every root has to sit at the same height, the way every root does in
-# results/laminar_freqtree.r; a tree that happens to need fewer levels to
+# the archived laminar_freqtree.r; a tree that happens to need fewer levels to
 # reach its leaves should look like a wide, sparse triangle, not a short
 # one. So every tree's drawing box gets the exact same fixed height
 # (TREE_HEIGHT_IN), for every tree in every row -- not scaled by that

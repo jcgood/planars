@@ -1,9 +1,11 @@
 # Exemplary trees and slides (chart 10 in docs/PLAN_planarsviz_library.md).
 #
-# Copied, at commit 43a308f, from results/nyan1308_exemplary_trees.r, the R
-# that laminar_analysis.generate_r_exemplary_trees_script() writes (see the
-# previous commit for the unchanged copy). The three blocks it repeats per
-# exemplar -- print tree, evidence panel, slide tree -- became functions.
+# Copied, at commit 43a308f, from nyan1308_exemplary_trees.r, the R that
+# laminar_analysis.generate_r_exemplary_trees_script() used to write. Both
+# are gone from the working tree: that generator was removed in cutover step
+# C3 and the script it wrote is archived in OlderFiles/planarsviz_superseded/
+# results/. The three blocks it repeats per exemplar -- print tree, evidence
+# panel, slide tree -- became functions.
 # Changes since the copy:
 #   - literals replaced with bundle data: the Newick string (families.tsv),
 #     which families and in what order (selections.tsv `exemplary`, chosen

@@ -11,7 +11,8 @@ producing only 16 maximal trees for nyan1308 where the correct enumeration
 (independently verified two ways, see docs/VERIFICATION.md) finds 69. This
 script regenerates the same table from that correct enumeration instead.
 
-Layer numbers replicate domain_charts-cgpt.r's df.plot() convention exactly,
+Layer numbers replicate the df.plot() convention of domain_charts-cgpt.r
+(archived in OlderFiles/planarsviz_superseded/scripts/) exactly,
 so they mean the same thing as "Layer" everywhere else this project uses it
 (the pooled plot, the exemplary trees): sort the dataset's unique spans by
 (Size ascending, Left_Edge ascending), assign 1..N, then invert
@@ -19,7 +20,7 @@ so they mean the same thing as "Layer" everywhere else this project uses it
 Reverse_Layer is what actually gets displayed as "Layer" everywhere in the
 project, including here.
 
-Three outputs, all to NonCollaborative/results/:
+Two outputs, both to NonCollaborative/results/:
 
 - nyan1308_forestspans_table.tex -- manuscript-ready fragment using the same
   \\Hline/\\mc macros as ChichewaWordhood.tex itself (a paste-in replacement
@@ -32,22 +33,12 @@ Three outputs, all to NonCollaborative/results/:
   PDF_WRAPPER_CROPPED uses, needed because a bare `standalone`-class
   \\pagecolor doesn't survive the bounding-box crop (confirmed there via
   pdftocairo -transp: the crop leaves it actually transparent, not white).
-- nyan1308_forestspans_plot.r (+ .pdf) -- the same 26 rows as a pooled-plot-
-  style ggtree chart, one horizontal line per span across the 22-position
-  planar structure, in the visual style of domain_charts-cgpt.r's
-  constituency.plot() (theme_bw(), same text size, same dotted root line) but
-  deliberately NOT calling that function: this chart has one row per span
-  (not per test), a single uniform line color (domain types are pooled here,
-  so a 5-color legend would be misleading -- explicit user instruction), and
-  the boxed layer-number label only at the span's LEFT edge (not both edges
-  the way constituency.plot() draws it), paired with the tree-count as plain
-  (unboxed) text immediately to its left -- typographically distinct from the
-  boxed layer number on purpose, per explicit user instruction, so a reader
-  doesn't mistake "how many trees" for another layer number.
 
-Needs xelatex on PATH (required for fontspec/Times New Roman) for the LaTeX
-outputs, and Rscript on PATH (tidyverse, here) for the plot. Pass --tex-only
-to skip both PDF/plot rendering and just write the source files.
+The chart of these same rows is drawn by the planarsviz package
+(plot_forestspans()) from the bundle export_planarsviz_data.py writes.
+
+Needs xelatex on PATH (required for fontspec/Times New Roman) for the slide
+PDF. Pass --tex-only to skip rendering it and just write the source files.
 
 Usage:
     python make_forestspans_table.py
@@ -97,55 +88,20 @@ SLIDE_WRAPPER = r"""\documentclass[preview,border=14pt]{standalone}
 """
 
 
-# Domain-type palette, copied verbatim from domain_charts-cgpt.r's group.colors
-# so the pure-color reference legend below means the same thing everywhere in
-# the project. Keep these two in sync by hand if that palette ever changes --
-# there isn't a shared file either script could import from (one's Python, one's R).
-GROUP_COLORS = {
-    "morphosyntactic": "#BC3C29",
-    "tonosegmental": "#0072B5",
-    "length": "#E18727",
-    "phonological": "#20845E",
-    "intonational": "#7876B1",
-}
-
-
-def mix_hex_colors(domain_types):
-    """Composite color for a span associated with one or more domain types.
-
-    Plain per-channel sRGB average across the pure domain-type colors involved
-    -- not a perceptual color-mixing model, just the simplest thing that makes
-    a span with N domain types visually distinct from any single one of them,
-    which is all this needs to do. A span with one type renders in that type's
-    exact pure color; unknown/empty falls back to black.
-    """
-    cols = [GROUP_COLORS[t] for t in sorted(domain_types) if t in GROUP_COLORS]
-    if not cols:
-        return "#000000"
-    rs = [int(c[1:3], 16) for c in cols]
-    gs = [int(c[3:5], 16) for c in cols]
-    bs = [int(c[5:7], 16) for c in cols]
-    r, g, b = (round(sum(vals) / len(vals)) for vals in (rs, gs, bs))
-    return "#%02X%02X%02X" % (r, g, b)
-
-
 def compute_forest_spans(domain_file="domains_nyan1308.tsv"):
     """Run the corrected laminar-family enumeration and return sorted rows.
 
-    Returns (rows, n_families, span_types):
+    Returns (rows, n_families):
       - rows: list of (layer, left, right, count) tuples, sorted the same way
         the original table appears to be (count descending; ties broken by
         layer ascending, since the original's tie order wasn't a deliberate
         choice).
-      - span_types: dict mapping (left, right) -> sorted tuple of domain-type
-        strings associated with that span, for the composite-color plot.
     """
     import laminar_analysis as la
 
     result = la.main(
         domain_file=domain_file,
         domains_dir=DOMAINS_DIR,
-        output_dir=tempfile.gettempdir(),  # this script doesn't want the R script it writes
         show_trees=False,
     )
     spans = result["spans"]
@@ -163,8 +119,7 @@ def compute_forest_spans(domain_file="domains_nyan1308.tsv"):
     ]
     rows.sort(key=lambda r: (-r[3], r[0]))
 
-    span_types = {(s.left, s.right): tuple(sorted(s.domain_types)) for s in spans}
-    return rows, n_families, span_types
+    return rows, n_families
 
 
 def make_table_body(rows):
@@ -189,179 +144,6 @@ def make_tabular_only(rows):
         lines.append("%d\t&\t%d--%d & %d \\\\" % (layer, left, right, count))
     lines += [r"\Hline", r"\end{tabular}"]
     return "\n".join(lines) + "\n"
-
-
-def make_r_plot_script(rows, n_families, span_types):
-    """Build the pooled-plot-style R script for the ForestSpans chart.
-
-    - Boxed layer-number label at BOTH edges, exactly like constituency.plot().
-    - Tree count in a single fixed-x column past the right edge (not offset
-      per-row from each span's own edge, which "ping-pongs" horizontally
-      since spans have different right edges) -- plain, unboxed, right-
-      justified text (digits line up on the ones place), with a bold
-      "Trees (n = N)" header above the column (coord_cartesian(clip="off")
-      + extra top margin, the standard ggplot idiom for a label that sits
-      outside the panel) so the column is self-explanatory without a caption.
-    - Horizontal (row) gridlines are theme_bw()'s untouched default -- they
-      run straight through the count column like every other column. Two
-      earlier approaches (removing panel.grid.major.y entirely; masking just
-      the gap before the column with a white annotate("rect")) were both
-      tried and both rejected: the first removed reference lines the chart
-      still needs, the second was fragile (scale limits silently drop
-      out-of-range geoms) for a cosmetic gain not worth the complexity.
-    - Line/label color: a composite of the span's domain type(s), computed in
-      Python (mix_hex_colors()) and passed in as literal hex strings via
-      aes(..., color = I(Color)) -- an *identity* scale, not a mapped one, so
-      it bypasses the categorical color scale entirely (there's no fixed small
-      set of "composite" categories to map, unlike a single Domain_Type).
-      Because I() colors don't feed a legend on their own, a second, invisible
-      (alpha = 0) reference layer maps the 5 pure domain-type names through a
-      real scale_color_manual() just to produce a legend key explaining what
-      the pure colors mean and that blends indicate multiple types.
-    """
-    # Plot order: count descending (most-consensus-like span on top), ties
-    # broken by layer ascending (= larger span first, since layer number is
-    # already a size rank) -- same ordering as the LaTeX table's rows, per
-    # explicit instruction, not the earlier "largest span on top" order.
-    plot_rows = sorted(rows, key=lambda r: (-r[3], r[0]))
-
-    data_lines = ["  ~Layer, ~Left, ~Right, ~Count, ~Color,"]
-    for layer, left, right, count in plot_rows:
-        color = mix_hex_colors(span_types.get((left, right), ()))
-        data_lines.append(f'  {layer}, {left}, {right}, {count}, "{color}",')
-    data_block = "\n".join(data_lines)
-
-    legend_lines = ["  ~Domain_Type, ~Color,"]
-    for domain_type, color in GROUP_COLORS.items():
-        legend_lines.append(f'  "{domain_type}", "{color}",')
-    legend_block = "\n".join(legend_lines)
-
-    return r"""# Auto-generated by make_forestspans_table.py -- do not hand-edit.
-# Regenerate with: python NonCollaborative/scripts/make_forestspans_table.py
-
-if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
-pacman::p_load(here, tidyverse)
-
-output_dir <- here("NonCollaborative", "results")
-
-forest_spans <- tribble(
-%(data_block)s
-) %%>%%
-  mutate(Layer = factor(Layer, levels = rev(unique(Layer))))
-
-long <- forest_spans %%>%%
-  pivot_longer(c(Left, Right), names_to = "Edge_Type", values_to = "Edge")
-
-# Pure domain-type colors, for the reference legend only (see docstring) --
-# not the per-span composite colors, which live in forest_spans$Color above.
-legend_colors <- tribble(
-%(legend_block)s
-)
-
-o <- 10           # position of root, matching domain_charts-cgpt.r's params
-b <- 22           # number of positions
-count_x <- b + 1  # right edge of the (now right-justified) tree-count
-                  # column -- just a touch past the axis's own right end
-margin_unit <- 1  # one position-to-position gap -- the actual panel margins
-                  # (scale_x_continuous's expand below) are set to this same
-                  # unit on the left, so the blank space before position 1
-                  # reads as "one more position-width," not a guessed number.
-
-p <- ggplot(long, aes(x = Edge, y = Layer)) +
-  geom_vline(xintercept = o, linetype = "dotted") +
-  # show.legend = FALSE on both: without it, ggplot2 folds these two layers'
-  # own key-glyph drawing functions (a colored line segment; a boxed "a", the
-  # generic placeholder geom_label always draws in a legend) into the
-  # invisible geom_point layer's "colour" legend below -- even though these
-  # two use I(Color), not the real scale -- producing a garbled box-inside-a-
-  # box glyph instead of a clean colored circle. Confirmed the actual cause
-  # (not a font/rasterizer bug, an earlier guess) by rendering and zooming
-  # into the legend after this change.
-  geom_line(aes(color = I(Color)), linewidth = 2, show.legend = FALSE) +
-  # Boxed layer number at both edges, matching constituency.plot().
-  geom_label(
-    aes(label = Layer, color = I(Color)),
-    size = 3, label.padding = unit(0.2, "lines"), fill = "white", show.legend = FALSE
-  ) +
-  # Tree count: single fixed-x column, plain (unboxed) text, right-justified
-  # (hjust = 1, count_x is the column's RIGHT edge) so digits line up on the
-  # ones place rather than the ragged look of left-justified single- vs.
-  # double-digit numbers. No masking of the gridlines here -- tried that,
-  # decided the masking logic wasn't worth the fragility (see git history if
-  # it's ever wanted back); gridlines now run straight through this column
-  # like every other.
-  geom_text(
-    data = forest_spans,
-    aes(x = count_x, label = Count),
-    hjust = 1, size = 6, color = "black", inherit.aes = TRUE
-  ) +
-  # Column header for the count, right-justified to sit above the column the
-  # same way the numbers do.
-  annotate(
-    "text", x = count_x, y = Inf, vjust = -0.3, hjust = 1,
-    label = "Trees\n(n = %(n_families)d)", fontface = "bold", size = 4
-  ) +
-  # Invisible reference layer: exists only to put a real, correctly-labeled
-  # legend on the plot for the pure domain-type colors (see docstring).
-  # fill (not color) mapped, so the legend key renders as a solid filled
-  # square, matching the filled-square swatch style used elsewhere in this
-  # project rather than an outline-only square.
-  geom_point(
-    data = legend_colors,
-    aes(x = o, y = levels(forest_spans$Layer)[1], fill = Domain_Type),
-    shape = 22, color = NA, alpha = 0, size = 3, inherit.aes = FALSE
-  ) +
-  scale_fill_manual(
-    name = "Domain type\n(spans with multiple types\ngiven blended colors)",
-    values = setNames(legend_colors$Color, legend_colors$Domain_Type),
-    breaks = c("morphosyntactic", "phonological", "length", "intonational", "tonosegmental")
-  ) +
-  guides(fill = guide_legend(override.aes = list(alpha = 1, size = 4, shape = 22))) +
-  xlab("Positions on the verbal planar structure") +
-  # No manual limits -- the panel's x-range is left to derive from the actual
-  # data (1..b for the spans, count_x for the tree-count text), then margined
-  # by a flat, principled rule instead of hand-picked numbers: margin_unit on
-  # each side, i.e. exactly one position-to-position gap. The right side
-  # ends up wider in absolute terms without a special-cased bigger number --
-  # count_x already sits one position-width past b, so the same margin_unit
-  # added past THAT is naturally "a bit more" than the left margin.
-  scale_x_continuous(
-    breaks = seq(1, b, 1),
-    expand = expansion(add = c(margin_unit, margin_unit))
-  ) +
-  coord_cartesian(clip = "off") +
-  theme_bw() +
-  theme(
-    axis.title.y = element_blank(),
-    axis.text.y = element_blank(),
-    axis.ticks.y = element_blank(),
-    text = element_text(size = 15),
-    panel.grid.minor = element_blank(),
-    plot.margin = margin(t = 60, r = 10, b = 10, l = 10),
-    legend.position = "right",
-    legend.key = element_blank(),
-    legend.title = element_text(size = 10),
-    legend.text = element_text(size = 10)
-  )
-
-ggsave(file.path(output_dir, "nyan1308_forestspans_plot.pdf"), p, width = 34, height = 24, units = "cm")
-""" % {"data_block": data_block, "legend_block": legend_block, "n_families": n_families}
-
-
-def run_r_script(r_script_path):
-    try:
-        result = subprocess.run(
-            ["Rscript", r_script_path],
-            capture_output=True, text=True, cwd=os.path.join(os.path.dirname(__file__), "..", ".."),
-        )
-    except FileNotFoundError:
-        print("Rscript not found on PATH -- skipping plot render for %s" % r_script_path)
-        return False
-    if result.returncode != 0:
-        print("Rscript failed for %s; last lines of output:" % r_script_path)
-        print("\n".join((result.stdout + result.stderr).splitlines()[-30:]))
-        return False
-    return True
 
 
 def render_pdf(tex_fragment, out_pdf_path):
@@ -393,7 +175,7 @@ def main():
     parser.add_argument("--tex-only", action="store_true", help="Skip PDF rendering, just write the .tex files")
     args = parser.parse_args()
 
-    rows, n_families, span_types = compute_forest_spans(args.domain_file)
+    rows, n_families = compute_forest_spans(args.domain_file)
     print(f"{n_families} maximal laminar families; {len(rows)} distinct spans")
 
     os.makedirs(RESULTS_DIR, exist_ok=True)
@@ -414,16 +196,6 @@ def main():
         slide_pdf_path = os.path.join(RESULTS_DIR, "nyan1308_forestspans_slide.pdf")
         if render_pdf(slide_tabular, slide_pdf_path):
             print("Wrote %s" % slide_pdf_path)
-
-    r_script = make_r_plot_script(rows, n_families, span_types)
-    r_script_path = os.path.join(RESULTS_DIR, "nyan1308_forestspans_plot.r")
-    with open(r_script_path, "w") as f:
-        f.write(r_script)
-    print("Wrote %s" % r_script_path)
-
-    if not args.tex_only:
-        if run_r_script(r_script_path):
-            print("Wrote %s" % os.path.join(RESULTS_DIR, "nyan1308_forestspans_plot.pdf"))
 
 
 if __name__ == "__main__":

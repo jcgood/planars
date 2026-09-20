@@ -13,9 +13,9 @@ divide hypothesis" in laminar_analysis.py's module docstring).
 
 FILTERS: (filter id, domain types left out). Each is a fresh analysis of
 every other observed domain type -- different spans, families and layer
-numbers from the full analysis, not a filtered view of it. `no_tono` is what
-scripts/analysis/make_forestspans_table_no_tono.py analyses
-(NON_TONOSEGMENTAL there lists the four types it keeps).
+numbers from the full analysis, not a filtered view of it. The exporter
+writes one bundle subset per filter, and the planarsviz package draws the
+no-tono variant of a chart from that subset.
 """
 
 BUNDLES: list[tuple[str, list[str], str, str]] = [

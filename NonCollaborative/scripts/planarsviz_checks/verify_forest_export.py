@@ -7,9 +7,12 @@ that data/forests/<id>.tsv reproduces, tree by tree, the Newick string, the
 groupOTU span list, the thickness values, and that forests.json has the same
 alpha, colour and tree count. It also checks that moving BUNDLES into
 planars_groupings.py changed nothing: laminar_tree_counts' bundle counts
-still equal results/nyan1308_tree_counts.tsv, and laminar_analysis.main()
-still writes byte-identical forest scripts for the bundles (ignoring the
-ggsave line, which embeds the output path).
+still equal results/nyan1308_tree_counts.tsv.
+
+Until cutover step C3 this also regenerated each bundle's forest script with
+laminar_analysis.main() and compared it byte for byte. C3 removed the R-writing
+generators, so that half is gone; the archived scripts are still the thing
+every tree above is compared against.
 
 Run from NonCollaborative/:
     python scripts/planarsviz_checks/verify_forest_export.py
@@ -21,7 +24,6 @@ import io
 import json
 import re
 import sys
-import tempfile
 from pathlib import Path
 
 from superseded import superseded
@@ -67,10 +69,8 @@ for meta in index:
         if [float(v) for v in row["strengths"].split(";")] != [float(v) for v in strengths[i]]:
             fail(f"{fid} tree {i + 1}: strengths differ")
 
-# BUNDLES refactor checks
-import laminar_analysis as la  # noqa: E402
+# BUNDLES refactor check
 import laminar_tree_counts as ltc  # noqa: E402
-from planars_groupings import BUNDLES  # noqa: E402
 
 with contextlib.redirect_stdout(io.StringIO()):
     bundle_rows = ltc.collect_bundle_counts("domains_nyan1308.tsv", NC / "domains")
@@ -83,14 +83,4 @@ for r in bundle_rows:
         fail(f"tree counts for {r['class']} differ from nyan1308_tree_counts.tsv")
 print(f"tree-count bundles checked: {len(bundle_rows)}")
 
-with tempfile.TemporaryDirectory() as tmp:
-    for name, subset, colour, _ in BUNDLES:
-        with contextlib.redirect_stdout(io.StringIO()):
-            la.main(subset=subset, color=colour, tpfx=f"nyan1308_{name}_", output_dir=tmp,
-                    domains_dir=str(NC / "domains"), show_trees=False)
-        new = [l for l in (Path(tmp) / f"nyan1308_{name}_laminar_forest.r").read_text().splitlines() if not l.startswith("ggsave(")]
-        old = [l for l in superseded("results", f"nyan1308_{name}_laminar_forest.r").read_text().splitlines() if not l.startswith("ggsave(")]
-        if new != old:
-            fail(f"laminar_analysis.main() output for bundle {name} differs from the committed script")
-print("bundle forest scripts regenerated and compared:", len(BUNDLES))
 print("ALL FOREST EXPORT CHECKS PASSED" if ok else "SOME CHECKS FAILED")

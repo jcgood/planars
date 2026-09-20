@@ -39,7 +39,12 @@ from laminar_analysis import (  # noqa: E402
     span_to_newick,
 )
 from planars_groupings import BUNDLES, FILTERS  # noqa: E402
-from laminar_tree_counts import CLASS_ORDER, collect_bundle_counts, collect_counts  # noqa: E402
+from laminar_tree_counts import (  # noqa: E402
+    CLASS_COLORS,
+    CLASS_ORDER,
+    collect_bundle_counts,
+    collect_counts,
+)
 from boundary_strength import compute_boundary_strength  # noqa: E402
 
 
@@ -47,9 +52,8 @@ def forest_variants() -> list[tuple[str, list[str], str]]:
     """(forest id, domain types, colour) for every per-class forest chart.
 
     The per-domain-type groups come from laminar_analysis.OVERLAY_GROUPS and
-    the bundles from planars_groupings.BUNDLES -- the same lists
-    laminar_analysis.py's __main__ block uses to write
-    nyan1308_{id}_laminar_forest.r -- so ids and colours match those charts.
+    the bundles from planars_groupings.BUNDLES, so ids and colours match the
+    charts that were previously drawn from nyan1308_{id}_laminar_forest.r.
     """
     variants = [(short, list(types), colour) for types, colour, short in OVERLAY_GROUPS]
     variants += [(name, list(types), colour) for name, types, colour, _ in BUNDLES]
@@ -59,8 +63,8 @@ def forest_variants() -> list[tuple[str, list[str], str]]:
 def export_forests(domain_file: Path, domains_dir: Path, data_dir: Path) -> None:
     """Write the trees of every per-class forest chart, exactly as drawn.
 
-    For each variant, replays what laminar_analysis.main(subset=...) passes to
-    generate_r_script(): the subset's own spans and position count (the
+    For each variant, the same inputs the archived per-class forest scripts
+    were written from: the subset's own spans and position count (the
     largest right edge *within the subset* -- e.g. [1-18] for length, not the
     dataset's 22; the analysis subsets in data/subsets/ use the full count
     instead, which would draw different trees), its maximal families, and for
@@ -124,7 +128,7 @@ def export_forests(domain_file: Path, domains_dir: Path, data_dir: Path) -> None
 def tree_rows(families) -> list[dict]:
     """Per-family Newick, groupOTU span order, and each span's convergence.
 
-    Same construction as generate_r_overlay_script(): spans sorted by size
+    Same construction as the archived overlay scripts: spans sorted by size
     (descending) to build the tree, then by left edge for groupOTU. Thickness
     isn't stored -- the overlay charts raise convergence to a drawing-choice
     exponent, so R does that.
@@ -147,7 +151,7 @@ def tree_rows(families) -> list[dict]:
 def export_overlay_groups(domain_file: Path, domains_dir: Path, data_dir: Path) -> None:
     """Write the trees of every group the overlay charts can stack.
 
-    Replays run_domain_overlay(): one group per laminar_analysis.OVERLAY_GROUPS
+    One group per laminar_analysis.OVERLAY_GROUPS
     entry (the subset's families, but using the FULL dataset's position count,
     unlike the per-class forests), plus group "all" (every family of the full
     dataset, drawn in black by nyan1308_all_families_labeled.r). Groups whose
@@ -328,8 +332,10 @@ def load_conflict_group_config(dataset: str, conflict_groups_file: Path | None):
 def capped_draw_order(members: list[int], families, cap: int) -> list[int]:
     """Which members of a group the conflict-groups chart draws, in order.
 
-    Recovered 2026-09-14 from results/laminar_conflict_groups.r (its generator
-    was never committed; docs/PLAN_planarsviz_library.md section 4.1). A group
+    Recovered 2026-09-14 from laminar_conflict_groups.r (its generator was
+    never committed; the script is archived in
+    OlderFiles/planarsviz_superseded/results/, and
+    docs/PLAN_planarsviz_library.md section 4.1 covers it). A group
     no larger than the cap is drawn whole, in family order. A larger group is
     seeded by greedy coverage -- repeatedly the member adding the most spans
     not yet shown, ties to the lower family number, until every span in the
@@ -403,10 +409,17 @@ def export_selections(dataset: str, families, data_dir: Path,
     - most_binary, rank 1: the family that branches most binarily -- for
       illustrating the structure with as much branching as the evidence
       allows. See most_binary_order().
-    - exemplary, ranks 1..: what laminar_analysis.generate_exemplary_trees()
-      picks -- select_representative_families(k=exemplary_k), called
-      directly, then (include_sparsest) the family drawing on the fewest
-      tests, ties by fewest domain types, if not already picked.
+    - exemplary, ranks 1..: select_representative_families(k=exemplary_k),
+      then (include_sparsest) one more beyond those -- the family drawing on
+      the fewest individual tests, ties broken by fewest distinct domain
+      types, if it is not already among them. The greedy-coverage selection
+      has no reason to pick the sparsest family on its own -- coverage and
+      consensus favour families that explain a lot, and a sparse family by
+      definition doesn't -- so this is a deliberate second axis (least
+      evidence) alongside the first (most representative), not something
+      k + 1 on the main selection would surface. For nyan1308 the two
+      sparsity criteria agree exactly: family 67 in enumeration order is the
+      unique minimum on both at once, 21 tests and 3 domain types.
     """
     family_ids = [f"family_{number:03d}" for number in range(1, len(families) + 1)]
     count: dict = {}
@@ -476,34 +489,43 @@ def export_selections(dataset: str, families, data_dir: Path,
         ),
     }
 
-# Domain-type display style: colour, the order types are sorted in within a
-# layer (df.plot()'s factor levels), the order they appear in a legend, and the
-# order of per-type panels (facet_order, from nyan_boundary_skyline.r's facet
-# levels -- a third, different order, kept as-is so that chart doesn't change).
-# Colours and the first two orders are copied from scripts/domain_charts-cgpt.r
-# (group.colors, df.plot() levels, constituency.plot() breaks). This is the
-# one place R gets them from. A domain type observed in the data but not listed
-# here gets FALLBACK_COLOUR and sorts after the known types, alphabetically.
+# Domain-type display style: the order types are sorted in within a layer
+# (df.plot()'s factor levels), the order they appear in a legend, and the order
+# of per-type panels (facet_order, from nyan_boundary_skyline.r's facet levels
+# -- a third, different order, kept as-is so that chart doesn't change). The
+# first two orders are copied from domain_charts-cgpt.r (df.plot() levels,
+# constituency.plot() breaks), archived under OlderFiles/planarsviz_superseded/.
+# A domain type observed in the data but not listed here gets FALLBACK_COLOUR
+# and sorts after the known types, alphabetically.
+#
+# The `colour` of each type is NOT written here: it is read from
+# laminar_tree_counts.CLASS_COLORS below, which is the one place in the project
+# those five colours are written down. Everything R draws in them arrives
+# through this table, so the bundle is where R gets them from, but the values
+# themselves have a single owner.
 #
 # alt_colour / colour_priority: the second palette used by the span-frequency
-# chart (results/laminar_spanchart.r, Paul Tol's "bright" colours). A span
+# chart (the archived laminar_spanchart.r, Paul Tol's "bright" colours). A span
 # with several domain types takes the alt_colour of its type with the lowest
 # colour_priority. Recovered from that script's data: morphosyntactic,
 # phonological, tonosegmental and intonational colours and the priority
 # order are exactly reproduced; length never decides a colour there (every
 # length span also has a higher-priority type), so its #AA3377 (Tol purple,
 # matching visualizations.md's "length = purple") is inferred, not observed.
-DOMAIN_TYPE_STYLE: list[dict] = [
-    {"domain_type": "morphosyntactic", "colour": "#BC3C29", "sort_order": 1, "legend_order": 1, "facet_order": 1,
+_DOMAIN_TYPE_ORDERS: list[dict] = [
+    {"domain_type": "morphosyntactic", "sort_order": 1, "legend_order": 1, "facet_order": 1,
      "alt_colour": "#EE6677", "colour_priority": 1},
-    {"domain_type": "tonosegmental", "colour": "#0072B5", "sort_order": 2, "legend_order": 5, "facet_order": 3,
+    {"domain_type": "tonosegmental", "sort_order": 2, "legend_order": 5, "facet_order": 3,
      "alt_colour": "#228833", "colour_priority": 3},
-    {"domain_type": "length", "colour": "#E18727", "sort_order": 3, "legend_order": 3, "facet_order": 5,
+    {"domain_type": "length", "sort_order": 3, "legend_order": 3, "facet_order": 5,
      "alt_colour": "#AA3377", "colour_priority": 5},
-    {"domain_type": "phonological", "colour": "#20845E", "sort_order": 4, "legend_order": 2, "facet_order": 2,
+    {"domain_type": "phonological", "sort_order": 4, "legend_order": 2, "facet_order": 2,
      "alt_colour": "#4477AA", "colour_priority": 2},
-    {"domain_type": "intonational", "colour": "#7876B1", "sort_order": 5, "legend_order": 4, "facet_order": 4,
+    {"domain_type": "intonational", "sort_order": 5, "legend_order": 4, "facet_order": 4,
      "alt_colour": "#CCBB44", "colour_priority": 4},
+]
+DOMAIN_TYPE_STYLE: list[dict] = [
+    dict(row, colour=CLASS_COLORS[row["domain_type"]]) for row in _DOMAIN_TYPE_ORDERS
 ]
 FALLBACK_COLOUR = "#7F7F7F"
 

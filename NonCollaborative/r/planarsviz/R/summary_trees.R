@@ -1,9 +1,9 @@
 # Single summary trees: the frequency tree and the four trees (charts 14 and
 # 13 in docs/PLAN_planarsviz_library.md).
 #
-# Copied, at commit 43a308f, from results/laminar_freqtree.r and
-# results/laminar_four_trees.r (generated scripts whose generator was never
-# committed; see the previous commit for the unchanged copies). The per-tree
+# Copied, at commit 43a308f, from laminar_freqtree.r and laminar_four_trees.r
+# (generated scripts whose generator was never committed; archived in
+# OlderFiles/planarsviz_superseded/results/). The per-tree
 # block both scripts repeat became planarsviz_summary_tree(). Changes since
 # the copy:
 #   - literals replaced with bundle data: the Newick string (families.tsv

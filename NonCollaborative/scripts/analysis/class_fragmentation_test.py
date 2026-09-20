@@ -39,7 +39,7 @@ just an artifact of how many tests it happens to have.
 
 n_positions is taken from the FULL (unfiltered) dataset for every
 permutation, matching the convention already used elsewhere in this
-project (run_domain_overlay(), collect_counts() in laminar_tree_counts.py)
+project (the overlay charts, collect_counts() in laminar_tree_counts.py)
 -- the root span's own right edge doesn't affect which OTHER spans
 conflict with each other, so this choice doesn't bias the null distribution,
 it just keeps every replicate's synthetic root consistent.

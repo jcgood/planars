@@ -1,9 +1,11 @@
 # Stacked see-through trees ("ghost forests"): the shared building block for
 # charts 6-9 and 12 in docs/PLAN_planarsviz_library.md.
 #
-# Copied from results/nyan1308_inton_laminar_forest.r, lines 1-37, at commit
-# 43a308f -- the R that laminar_analysis.generate_r_script() writes (see the
-# previous commit for the unchanged copy). The only changes since:
+# Copied from nyan1308_inton_laminar_forest.r, lines 1-37, at commit 43a308f
+# -- the R that laminar_analysis.generate_r_script() used to write. Both are
+# gone from the working tree: that generator was removed in cutover step C3
+# and the script it wrote is archived in OlderFiles/planarsviz_superseded/
+# results/. The only changes since:
 #   - the per-tree block (lines 10-25) became planarsviz_ghost_tree(), called
 #     once per tree instead of pasted N times with numbered variables. Each
 #     call has its own environment, so aes(size = (strengthMap[group])) sees

@@ -8,6 +8,11 @@
 # source line it comes from. Fonts differ (matplotlib's DejaVu Sans vs R's
 # default sans), so the result can't be pixel-identical.
 #
+# The matplotlib itself is gone: cutover step C3 removed the plotting from
+# laminar_tree_counts.py, leaving the counting. Every line number and function
+# name below refers to that script as it stood at 43a308f, which is where to
+# read it.
+#
 # Horizontal "house style" (save_horizontal_bar_chart(), lines 169-213),
 # used for by_class and bundles:
 #   figsize 8 x 3.8 in (173); bars sorted by value, smallest at the bottom,

@@ -1,7 +1,7 @@
 # Span-frequency chart (chart 15 in docs/PLAN_planarsviz_library.md).
 #
-# Copied from results/laminar_spanchart.r, lines 1-35, at commit 43a308f (see
-# the previous commit for the unchanged copy). That script is generated and
+# Copied from laminar_spanchart.r, lines 1-35, at commit 43a308f (archived in
+# OlderFiles/planarsviz_superseded/results/). That script is generated and
 # its generator was never committed; its pasted-in data frame is rebuilt here
 # from the bundle using rules recovered from its values (all reproduce it
 # exactly for nyan1308 -- see docs/PLANARSVIZ_LIBRARY_PROGRESS.md):

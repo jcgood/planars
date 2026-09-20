@@ -930,3 +930,77 @@ silent about these.
   and must agree with it.
 - Looked at by Claude: yes (all four check outputs). Seen by Jeff: no.
 - Status: done.
+
+## Cutover C3: the superseded Python is removed (2026-09-20)
+
+The analysis stays, the drawing goes. Nothing in `NonCollaborative/` writes an
+R script or a matplotlib figure any more; every chart comes from the
+`planarsviz` package reading the exporter's bundle.
+
+- **`laminar_analysis.py`: 1808 lines to 865.** Gone: `generate_r_script`,
+  `generate_r_overlay_script`, `run_domain_overlay`,
+  `generate_r_exemplary_trees_script`, `generate_exemplary_trees`, and the
+  `__main__` block's calls to them. `main()` lost `output_dir`, `color`,
+  `tpfx` and `pos_labels` — every one of them an argument only the R output
+  used — and now prints its report and returns, writing nothing.
+  `select_representative_families` stays: the exporter calls it.
+  `_NYAN1308_POS_LABELS` goes, because `planar_tables/
+  display_labels_nyan1308.tsv` holds the same 22 labels (checked key by key
+  before deleting, identical) and the exporter reads that file.
+- **`laminar_tree_counts.py` and `boundary_strength.py`** keep their counting
+  and lose their matplotlib. Both write the same TSV they always did:
+  regenerated and diffed byte for byte against the committed
+  `results/nyan1308_tree_counts.tsv` and
+  `results/nyan1308_boundary_strength.tsv`.
+- **`make_forestspans_table.py`** keeps the two LaTeX outputs — both
+  regenerate byte-identically — and loses `make_r_plot_script`,
+  `run_r_script`, and the domain-type palette and blend used only by that
+  chart. **`make_forestspans_table_no_tono.py` is deleted outright**: it
+  existed only to run that generator over a filtered analysis, and the
+  library draws the no-tono chart from the bundle's `subsets/no_tono/`.
+- **The duplicated palette is fixed, as the traps entry said to do it here.**
+  `export_planarsviz_data.py`'s `DOMAIN_TYPE_STYLE` no longer writes the five
+  colours out; it reads them from `laminar_tree_counts.CLASS_COLORS`, which is
+  now their only home. The orders and the second (Tol) palette stay in the
+  exporter, since they are chart facts, not domain-type facts. `CLASS_COLORS`
+  itself survived the plotting removal, the other half of that trap.
+  Regenerating the whole bundle afterwards gives files identical to the
+  committed ones, `domain_types.tsv` included.
+- **Every check still proves what it proved.** All seven Python export checks
+  and all six R porting checks re-run: pooled 0.0000%, forests 0.0000% across
+  all eight, overlays, exemplary, conflict groups, ForestSpans, summary trees,
+  skyline, boundary-strength overlay all unchanged, and each deliberate change
+  and matplotlib-port font difference reports its recorded percentage. The
+  renderer check compares all 65 renders and passes.
+- **One check lost a half it can no longer run.** `verify_forest_export.py`
+  used to regenerate each bundle's forest script with `laminar_analysis.main()`
+  and compare byte for byte. With the generator gone that half is deleted; the
+  archived scripts are still what every tree, span list and thickness value is
+  compared against, so the check's substance is intact.
+
+### A second thing C1 left pointing at itself
+
+`check_tree_counts.R` printed a transparency figure for "port" and
+"reference". Since C1 the reference it read, `results/nyan1308_tree_count_
+by_class.pdf`, has been the library's own output — so the line compared the
+port with itself, and printed the same number twice without anyone noticing.
+
+- **Caught before C3 made it unfixable.** The matplotlib that drew the real
+  reference was about to be deleted, so it was restored from `ffa9032`, run,
+  and its two transparent charts frozen as
+  `results/planarsviz/reference/nyan1308_tree_count_{by_class,bundles}
+  _transp.png`, beside the other frozen references. The check reads those now.
+- **The numbers it should have been printing**: reference 86.3% and 85.1%
+  fully transparent, port 85.1% and 83.9%. Close, and the port is slightly the
+  less transparent of the two — the difference is font and bar geometry, the
+  same source as these charts' recorded 6-8% pixel difference.
+- `check_renderer.py` skips `*_transp.png` when listing references with no
+  render; they are measurements, not charts.
+- **The concurrent session's scripts are unaffected**, which was the other
+  thing to get right: `class_fragmentation_test.py` reproduces both its
+  summary TSVs byte for byte at 5000 draws after the edits, and
+  `refinement_counts.py` and the whole `NonCollaborative/tests/` suite run
+  clean.
+- Looked at by Claude: yes (all thirteen check outputs, the bundle diff, the
+  five TSV diffs). Seen by Jeff: no.
+- Status: done. C4 next — the documentation pass.

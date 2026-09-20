@@ -8,6 +8,11 @@
 # appearance is mapped below, with its source line. Fonts differ (DejaVu Sans
 # vs R's sans), so the result can't be pixel-identical.
 #
+# The matplotlib itself is gone: cutover step C3 removed the plotting from
+# boundary_strength.py, leaving compute_boundary_strength(). Every line number
+# and function name below refers to that script as it stood at 43a308f, which
+# is where to read it.
+#
 # Bars (save_figure(), lines 126-156) -> plot_boundary_strength():
 #   figsize 11 x 7 in, two panels sharing x, left edge above right (134);
 #   bars width 0.7, #7876B1, "strength (summed)" (141-142); capped values as

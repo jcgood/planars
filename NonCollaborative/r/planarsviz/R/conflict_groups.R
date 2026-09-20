@@ -1,8 +1,8 @@
 # Conflict groups (chart 12 in docs/PLAN_planarsviz_library.md).
 #
-# Copied, at commit 43a308f, from results/laminar_conflict_groups.r (a
-# generated script whose generator was never committed; see the previous
-# commit for the unchanged copy). The per-tree block the script repeats 103
+# Copied, at commit 43a308f, from laminar_conflict_groups.r (a generated
+# script whose generator was never committed; archived in
+# OlderFiles/planarsviz_superseded/results/). The per-tree block the script repeats 103
 # times became planarsviz_conflict_tree(), and the per-panel block became a
 # loop. Changes since the copy:
 #   - literals replaced with bundle data: Newick strings (families.tsv),

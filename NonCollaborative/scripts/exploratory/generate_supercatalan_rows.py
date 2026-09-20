@@ -12,7 +12,7 @@ on a slide:
 
 Rendering is done in R (render_supercatalan_rows.r), via ggtree's
 `layout_dendrogram()` -- the same approach already proven in
-results/laminar_freqtree.r. An earlier version of this script drew the
+the archived laminar_freqtree.r. An earlier version of this script drew the
 trees directly in LaTeX/TikZ; that turned out to be the wrong tool for
 this, and an earlier version of the R rendering gave each tree a height
 proportional to its own number of levels -- so a height-1 tree came out
@@ -20,7 +20,7 @@ short and a height-3 tree came out three times as tall. That's wrong here:
 every one of these trees stands for the same thing (one full span over n
 leaves), so every root belongs at the same height regardless of how few
 levels it took to get there, exactly as every root does in
-results/laminar_freqtree.r. render_supercatalan_rows.r now fixes each
+the archived laminar_freqtree.r. render_supercatalan_rows.r now fixes each
 tree's drawing box to one shared total height and lets ggtree's own
 auto-fit stretch that tree's natural levels to reach it -- a shallow tree
 ends up a wide, sparse triangle, not a short one.

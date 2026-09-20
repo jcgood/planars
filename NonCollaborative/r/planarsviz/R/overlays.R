@@ -1,10 +1,12 @@
 # Stacked laminar overlays (charts 7, 8, 9 in docs/PLAN_planarsviz_library.md).
 #
 # Copied, at commit 43a308f, from the R that
-# laminar_analysis.generate_r_overlay_script() writes
-# (results/nyan1308_laminar_overlay.r, results/nyan1308_all_families_labeled.r)
-# and the hand edits in results/nyan1308_all_families_labeled_wordhood.r (see
-# the previous commit for the unchanged copies). One function now covers all
+# laminar_analysis.generate_r_overlay_script() used to write
+# (nyan1308_laminar_overlay.r, nyan1308_all_families_labeled.r) and the hand
+# edits in nyan1308_all_families_labeled_wordhood.r. Both are gone from the
+# working tree: that generator was removed in cutover step C3 and the scripts
+# it wrote are archived in OlderFiles/planarsviz_superseded/results/.
+# One function now covers all
 # three charts; the choices that made them different scripts are options
 # whose defaults reproduce the generator's defaults:
 #   chart 7  plot_laminar_overlay(bundle)

@@ -1,8 +1,10 @@
 # ForestSpans plot (chart 11 in docs/PLAN_planarsviz_library.md).
 #
-# Copied, at commit 43a308f, from results/nyan1308_forestspans_plot.r, the R
-# that scripts/make_forestspans_table.py make_r_plot_script() writes (see the
-# previous commit for the unchanged copy). The no-tonosegmental file is the
+# Copied, at commit 43a308f, from nyan1308_forestspans_plot.r, the R that
+# scripts/make_forestspans_table.py's make_r_plot_script() used to write.
+# Both are gone from the working tree: that generator was removed in cutover
+# step C3 and the script it wrote is archived in OlderFiles/planarsviz_superseded/results/.
+# The no-tonosegmental file is the
 # same code over a fresh analysis without tonosegmental, so it is the
 # `subset` option here, not a second function. Changes since the copy:
 #   - literals replaced with bundle data: the span table (spans.tsv of the

@@ -71,6 +71,10 @@ for row in rows:
     problems += bool(flag)
     print(f"{chart:48} {result}{flag}")
 
-missing = sorted(p.name for p in REFERENCE.glob("nyan1308_*.png") if p.name not in seen)
+# *_transp.png are not chart references: they are the frozen matplotlib
+# transparency measurements check_tree_counts.R compares against, kept here
+# because cutover step C3 removed the matplotlib that drew them.
+missing = sorted(p.name for p in REFERENCE.glob("nyan1308_*.png")
+                 if p.name not in seen and not p.name.endswith("_transp.png"))
 print(f"\n{len(rows)} renders compared; references with no render: {missing or 'none'}")
 print("RENDERER CHECK PASSED" if not problems else f"RENDERER CHECK: {problems} copied chart(s) not exact")

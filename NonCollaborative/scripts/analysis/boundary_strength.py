@@ -36,9 +36,13 @@ takes an optional `subset` of Domain_Type values -- see load_spans() in
 laminar_analysis.py for the exact values -- so a future per-domain-type or
 per-bundle breakdown is a one-argument change, not a rewrite.
 
-Outputs (under results/ by default):
+Output (under results/ by default):
   nyan1308_boundary_strength.tsv
-  nyan1308_boundary_strength.pdf
+
+The charts these numbers feed -- the per-side boundary chart and the density
+overlay -- are drawn by the planarsviz package from the bundle
+export_planarsviz_data.py writes, which calls compute_boundary_strength()
+here.
 
 Usage:
   python scripts/analysis/boundary_strength.py
@@ -52,9 +56,6 @@ import csv
 import sys
 from pathlib import Path
 from collections import defaultdict
-
-import matplotlib.pyplot as plt
-import numpy as np
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_DIR = SCRIPT_DIR.parents[1]
@@ -123,83 +124,6 @@ def write_tsv(rows: list[dict], output_dir: Path, tag: str = ""):
         writer.writerows(rows)
 
 
-def save_figure(rows: list[dict], n_families: int, output_dir: Path, tag: str = ""):
-    """Summed is the analytical target, drawn as a full-width bar. Capped is
-    only a reference point -- drawn as a short white tick mark on each bar,
-    not a second bar of equal visual weight -- plus the dotted line at
-    n_families marking capped's theoretical ceiling.
-    """
-    positions = [r["position"] for r in rows]
-
-    fig, (ax_left, ax_right) = plt.subplots(2, 1, figsize=(11, 7), sharex=True)
-    for ax, side, title in [
-        (ax_left, "left", "Left edge"),
-        (ax_right, "right", "Right edge"),
-    ]:
-        summed = [r[f"{side}_summed"] for r in rows]
-        capped = [r[f"{side}_capped"] for r in rows]
-        width = 0.7
-        ax.bar(positions, summed, width=width, color="#7876B1", label="strength (summed)")
-        ax.scatter(positions, capped, marker="_", s=260, linewidths=2,
-                   color="black", label="capped (reference only, max 69)", zorder=3)
-        ax.set_ylabel(title, fontsize=13)
-        ax.tick_params(axis="both", labelsize=11)
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.axhline(n_families, color="black", linewidth=0.7, linestyle=":", alpha=0.5)
-
-    ax_left.legend(loc="upper left", fontsize=10)
-    ax_right.set_xlabel("Position on the planar structure", fontsize=13)
-    ax_right.set_xticks(positions)
-    fig.tight_layout()
-    fig.savefig(output_dir / f"nyan1308_boundary_strength{tag}.pdf")
-    plt.close(fig)
-
-
-def save_distribution_figure(rows: list[dict], output_dir: Path, tag: str = ""):
-    """Model left-edge and right-edge juncture strength (the summed measure
-    only -- capped is not used here) as two overlapping inferred
-    distributions over position, via a weighted Gaussian KDE: each
-    position's summed strength is that position's weight, not a repeated
-    observation, so the two distributions are directly comparable in shape
-    regardless of their different total weights (gaussian_kde normalizes to
-    integrate to 1 either way).
-    """
-    from scipy.stats import gaussian_kde
-
-    positions = np.array([r["position"] for r in rows], dtype=float)
-    left_w = np.array([r["left_summed"] for r in rows], dtype=float)
-    right_w = np.array([r["right_summed"] for r in rows], dtype=float)
-
-    grid = np.linspace(positions.min() - 1, positions.max() + 1, 400)
-    left_kde = gaussian_kde(positions, weights=left_w, bw_method=0.15)(grid)
-    right_kde = gaussian_kde(positions, weights=right_w, bw_method=0.15)(grid)
-
-    fig, ax = plt.subplots(figsize=(11, 5))
-    ax.fill_between(grid, left_kde, color="#7876B1", alpha=0.5, label="left-edge strength")
-    ax.plot(grid, left_kde, color="#7876B1", linewidth=1.5)
-    ax.fill_between(grid, right_kde, color="#BC3C29", alpha=0.5, label="right-edge strength")
-    ax.plot(grid, right_kde, color="#BC3C29", linewidth=1.5)
-
-    # Rug of the raw weighted positions, so the smoothing doesn't hide where
-    # the actual discrete data points are.
-    ax.scatter(positions, [-0.005] * len(positions), s=left_w / 2, color="#7876B1",
-               alpha=0.6, clip_on=False)
-    ax.scatter(positions, [-0.012] * len(positions), s=right_w / 2, color="#BC3C29",
-               alpha=0.6, clip_on=False)
-
-    ax.set_xlim(positions.min() - 1, positions.max() + 1)
-    ax.set_xticks(positions)
-    ax.set_xlabel("Position on the planar structure", fontsize=13)
-    ax.set_ylabel("Inferred density (juncture strength)", fontsize=13)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.legend(loc="upper right", fontsize=10)
-    fig.tight_layout()
-    fig.savefig(output_dir / f"nyan1308_boundary_strength_distributions{tag}.pdf")
-    plt.close(fig)
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--domain-file", default="domains_nyan1308.tsv")
@@ -218,8 +142,6 @@ def main():
     args.output_dir.mkdir(parents=True, exist_ok=True)
     rows, n_families = compute_boundary_strength(args.domain_file, args.domains_dir, subset=subset)
     write_tsv(rows, args.output_dir, tag=tag)
-    save_figure(rows, n_families, args.output_dir, tag=tag)
-    save_distribution_figure(rows, args.output_dir, tag=tag)
 
     print(f"{n_families} maximal laminar families" + (f" ({args.subset})" if args.subset else " (all domain types pooled)"))
     print(f"{'pos':>3} {'left_summed':>11} {'left_capped':>11} {'right_summed':>12} {'right_capped':>12}")

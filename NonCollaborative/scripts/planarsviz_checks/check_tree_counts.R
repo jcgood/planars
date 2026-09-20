@@ -7,8 +7,10 @@
 # between matplotlib and ggplot, so 0% is not expected: judge the comparison
 # images by bar lengths, order, colours, label positions and margins. For the
 # two transparent charts, also renders with `pdftocairo -png -transp` and
-# reports how much of the image is fully transparent, for the reference and
-# the port.
+# reports how much of the image is fully transparent, for the port and for
+# the frozen matplotlib reference (results/planarsviz/reference/
+# <name>_transp.png -- kept because the matplotlib that drew it was removed
+# in cutover step C3).
 # library-only (shifted test data): render only, beside the nyan1308 renders.
 #
 # Run from NonCollaborative/:
@@ -37,7 +39,10 @@ compare <- function(ref, new_png, out_png) {
 }
 transparency <- function(pdf_path, stem) {
   system2("pdftocairo", c("-png", "-transp", "-r", "100", "-singlefile", shQuote(pdf_path), shQuote(stem)))
-  system2(python, c("scripts/planarsviz_checks/check_transparency.py", shQuote(paste0(stem, ".png"))), stdout = TRUE)
+  transparency_of(paste0(stem, ".png"))
+}
+transparency_of <- function(png_path) {
+  system2(python, c("scripts/planarsviz_checks/check_transparency.py", shQuote(png_path)), stdout = TRUE)
 }
 cmp_dir <- file.path(dirname(bundle_dir), "comparisons", if (library_only) "shifted" else "")
 dir.create(cmp_dir, recursive = TRUE, showWarnings = FALSE)
@@ -68,8 +73,11 @@ for (chart in c("by_class", "bundles", "all", "without_adjacent")) {
   if (isTRUE(attr(p, "planarsviz_transparent"))) {
     cat("  port:      ", transparency(pdf_path, paste0(stem, "_transp")), "\n")
     if (!library_only) {
-      cat("  reference: ", transparency(file.path("results", paste0(ref_base, ".pdf")),
-                                        file.path(tempdir(), paste0(ref_base, "_transp"))), "\n")
+      # The frozen matplotlib render, kept with the other frozen references.
+      # Not results/<name>.pdf: since cutover step C1 that file is the
+      # library's own output, so reading it compared the port with itself.
+      cat("  reference: ", transparency_of(
+        file.path(dirname(bundle_dir), "reference", paste0(ref_base, "_transp.png"))), "\n")
     }
   }
 }
