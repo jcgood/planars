@@ -50,7 +50,7 @@ R and Python scripts for analysis and visualization. These are run interactively
 - **`scripts/analysis/`** — the active Chichewa/nyan1308 pipeline: `laminar_analysis.py` (core laminar-family enumeration engine), `laminar_tree_counts.py` (family-count bar charts), `random_tree_overlay.py` (ghost-overlay of sampled trees). See `scripts/README_laminar_analysis.md` for the full walkthrough and `scripts/INDEX.md` for a per-script index.
 - **`scripts/verification/`** — `verify_barthelmemy_correspondence.py` and `verify_chichewa.py` cross-check the laminar-family algorithm against independent methods (exhaustive search, alternate graph formulations). See `docs/VERIFICATION.md`.
 - **`scripts/exploratory/`** — earlier prototypes kept for reference, not for new work: `treeTraversal.py` (superseded by `laminar_analysis.py`), `catalan.py`/`catalan_old.py` (Catalan-number tree enumeration), `generate_supercatalan_rows.py` + `render_supercatalan_rows.r` (super-Catalan tree-shape figures).
-- **Top-level `scripts/*.r` and `scripts/*.py`** — older, largely hand-written R visualization scripts predating the laminar-family pipeline (`constituencyforest-all.r`, `morsynconstituencyforest-all.r`, `phonconstituencyforest-all.r`, `tonosegconstituencyforest-all.r`, `allsubtypes-forest-byhand.r`, `ColorTree-Example.r`, `domainSignificance.r`, `domain_charts-older.r` — an earlier variant, since superseded by `domain_charts-cgpt.r` — and `nyan_boundary_skyline.r`), plus a few standalone utilities: `make_file.R` (builds an element index from planar structure files), `makeLaTeXDomains.py` (domains TSV → LaTeX table), `highlight_planar_example.py` and `make_planar_latex.py` (generate the highlighted planar-table/example-card PDFs under `results/`).
+- **Top-level `scripts/*.r` and `scripts/*.py`** — older, largely hand-written R visualization scripts predating the laminar-family pipeline (`constituencyforest-all.r`, `morsynconstituencyforest-all.r`, `phonconstituencyforest-all.r`, `tonosegconstituencyforest-all.r`, `allsubtypes-forest-byhand.r`, `ColorTree-Example.r`, `domainSignificance.r`, `domain_charts-older.r` — an earlier variant of the pooled charts, whose successor `domain_charts-cgpt.r` has since moved to `OlderFiles/planarsviz_superseded/scripts/` along with `nyan_boundary_skyline.r`, both replaced by the `planarsviz` package), plus a few standalone utilities: `make_file.R` (builds an element index from planar structure files), `makeLaTeXDomains.py` (domains TSV → LaTeX table), `highlight_planar_example.py` and `make_planar_latex.py` (generate the highlighted planar-table/example-card PDFs under `results/`).
 
 `scripts/INDEX.md` and `scripts/README_laminar_analysis.md` are the authoritative, actively-maintained guides to the `analysis/`/`verification/`/`exploratory/` scripts — read those for algorithm details and usage rather than this file.
 
@@ -92,6 +92,8 @@ A real `pytest` suite, run with `pytest NonCollaborative/tests/` from the repo r
 ### `OlderFiles/`
 
 Archived scripts and data kept for historical reference. See `OlderFiles/README.md`. Do not use for new work.
+
+One exception: `OlderFiles/planarsviz_superseded/` holds the R scripts the `planarsviz` package replaced, and **those must not be deleted**. The porting checks run them to prove the package draws the same charts, so they are the evidence behind every "0.0000% differing pixels" claim in the progress file, and several can no longer be regenerated once cutover step C3 removes the Python that wrote them.
 
 ## Data provenance
 

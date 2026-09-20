@@ -22,6 +22,7 @@ bundle_dir <- if (length(args) >= 1) args[[1]] else "results/planarsviz/nyan1308
 prefix <- if (length(args) >= 2) args[[2]] else "nyan1308"
 library_only <- length(args) >= 3 && args[[3]] == "library-only"
 python <- "/Users/jcgood/gitrepos/planars/.venv/bin/python"
+source("scripts/planarsviz_checks/superseded.R")
 
 lib <- file.path(tempdir(), "planarsviz_lib")
 dir.create(lib, showWarnings = FALSE)
@@ -76,7 +77,7 @@ size <- attr(pl, "planarsviz_size")
 new_png <- render(pl, file.path(bundle_dir, "plots", paste0(base, ".pdf")))
 
 if (library_only) {
-  nyan_pdf <- file.path(dirname(bundle_dir), "nyan1308", "plots", "nyan1308_conflict_groups.pdf")
+  nyan_pdf <- file.path("results", "nyan1308_conflict_groups.pdf")
   nyan_stem <- file.path(tempdir(), "nyan_conflict_groups")
   system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(nyan_stem)))
   cat(base, ": rendered; side by side with nyan1308: ",
@@ -85,7 +86,7 @@ if (library_only) {
   pl_old <- suppressMessages(suppressWarnings(plot_conflict_groups(bundle, panel_titles = FALSE)))
   old_png <- render(pl_old, file.path(tempdir(), "as_generated", paste0(base, ".pdf")))
 
-  src <- readLines(file.path("results", "laminar_conflict_groups.r"))
+  src <- readLines(superseded("results", "laminar_conflict_groups.r"))
   src <- src[!startsWith(src, "ggsave(")]
   orig <- new.env()
   suppressMessages(suppressWarnings(eval(parse(text = src), envir = orig)))

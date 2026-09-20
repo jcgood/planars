@@ -25,6 +25,7 @@ domain_tsv <- if (length(args) >= 2) args[[2]] else "domains/domains_nyan1308.ts
 prefix <- if (length(args) >= 3) args[[3]] else "nyan1308"
 library_only <- length(args) >= 4 && args[[4]] == "library-only"
 python <- "/Users/jcgood/gitrepos/planars/.venv/bin/python"
+source("scripts/planarsviz_checks/superseded.R")
 # Shifted-dataset domain types renamed from nyan1308's (tests/fixtures/make_shifted_nyan.py),
 # used only to pair each shifted chart with its nyan1308 counterpart.
 nyan_type_name <- c(tonal = "tonosegmental")
@@ -41,7 +42,7 @@ bundle <- read_planars_bundle(bundle_dir)
 # ---- build the working script's plots in memory ----
 orig <- NULL
 if (!library_only) {
-  src <- readLines("scripts/domain_charts-cgpt.r")
+  src <- readLines(superseded("scripts", "domain_charts-cgpt.r"))
   data_line <- grep("^domains <- read_tsv\\(here", src)
   src[data_line] <- sprintf('domains <- read_tsv("%s", show_col_types = FALSE)', domain_tsv)
   load_line <- grep("^pacman::p_load", src)
@@ -134,7 +135,7 @@ for (case in cases) {
     if (!is.null(case$type) && case$type %in% names(nyan_type_name)) {
       nyan_name <- sub(case$type, nyan_type_name[[case$type]], nyan_name, fixed = TRUE)
     }
-    nyan_pdf <- file.path(dirname(bundle_dir), "nyan1308", "plots", paste0("nyan1308_", nyan_name, ".pdf"))
+    nyan_pdf <- file.path("results", paste0("nyan1308_", nyan_name, ".pdf"))
     if (file.exists(nyan_pdf)) {
       nyan_stem <- file.path(tempdir(), paste0("nyan_", nyan_name))
       system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(nyan_stem)))

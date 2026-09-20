@@ -23,6 +23,7 @@ domain_tsv <- if (length(args) >= 2) args[[2]] else "domains/domains_nyan1308.ts
 prefix <- if (length(args) >= 3) args[[3]] else "nyan1308"
 library_only <- length(args) >= 4 && args[[4]] == "library-only"
 python <- "/Users/jcgood/gitrepos/planars/.venv/bin/python"
+source("scripts/planarsviz_checks/superseded.R")
 
 lib <- file.path(tempdir(), "planarsviz_lib")
 dir.create(lib, showWarnings = FALSE)
@@ -45,7 +46,7 @@ plain <- function(df) {
 if (!library_only) {
   tmp_out <- file.path(tempdir(), "skyline_orig_out")
   dir.create(tmp_out, showWarnings = FALSE)
-  src <- readLines("scripts/nyan_boundary_skyline.r")
+  src <- readLines(superseded("scripts", "nyan_boundary_skyline.r"))
   src[grep("^input_file <- ", src)] <- sprintf('input_file <- "%s"', normalizePath(domain_tsv))
   src[grep("^output_dir <- ", src)] <- sprintf('output_dir <- "%s"', tmp_out)
   src <- append(src, "ggsave <- function(...) invisible(NULL)", after = grep("^library\\(patchwork\\)", src))
@@ -93,7 +94,7 @@ cmp_dir <- file.path(dirname(bundle_dir), "comparisons", if (library_only) "shif
 dir.create(cmp_dir, recursive = TRUE, showWarnings = FALSE)
 
 if (library_only) {
-  nyan_pdf <- file.path(dirname(bundle_dir), "nyan1308", "plots", "nyan1308_boundary_skyline.pdf")
+  nyan_pdf <- file.path("results", "nyan1308_boundary_skyline.pdf")
   nyan_stem <- file.path(tempdir(), "nyan_skyline")
   system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(nyan_stem)))
   cat(base, ": rendered; side by side with nyan1308: ",

@@ -864,3 +864,48 @@ handoff note, and both would be easy to destroy by accident:
   (The exporter's comment calling `DOMAIN_TYPE_STYLE` "the one place R gets
   them from" is true of R and misleading about Python — fix the wording in
   the same pass.)
+
+## Cutover C2: the superseded scripts are archived, not deleted (2026-09-20)
+
+- **21 scripts moved to `OlderFiles/planarsviz_superseded/`** with `git mv`,
+  so their history follows them: 18 generated ones out of `results/` (the
+  eight chart-6 forests, chart 7's overlay, chart 8 and its `_wordhood`
+  variant, chart 10's exemplary trees, chart 11's two ForestSpans scripts,
+  and charts 12, 13, 14, 15) and 3 hand-written ones
+  (`scripts/domain_charts-cgpt.r` for charts 1-4,
+  `scripts/nyan_boundary_skyline.r` for chart 5,
+  `scripts/analysis/boundary_strength_plot.r` for chart 18).
+- **Only `results/nyan1308_random_tree_overlay.r` stays** in `results/`: it
+  was never ported (random sampling) and belongs to Phase E.
+- **Why archived rather than deleted.** The porting checks run each old
+  script in memory and compare — they are the evidence behind every
+  "0.0000% differing pixels" claim above. Several also can no longer be
+  regenerated: C3 removes the Python that wrote them. Both
+  `OlderFiles/README.md` and `NonCollaborative/CLAUDE.md` previously said
+  "do not use for new work" of the whole archive; each now carries the
+  exception, because a reader tidying `OlderFiles/` would otherwise be
+  destroying the proof without knowing it.
+- **The archive path has one owner**,
+  `scripts/planarsviz_checks/superseded.R`. Eleven sourcing sites across ten
+  checks went through it rather than each spelling the path out, and it stops
+  with an explanation if a script is missing instead of letting a check skip
+  quietly. The `results/` path deliberately did *not* get the same treatment:
+  it is referenced throughout the project already and is not going to move.
+- **C1's leftover closed.** The twelve sites that compared a shifted-bundle
+  render against `results/planarsviz/nyan1308/plots/<file>.pdf` now read
+  `results/`, so the checks no longer depend on an untracked working
+  directory having been populated first.
+- **Verified: every check still proves what it proved before.** All thirteen
+  run clean from the archive — pooled (12 charts, 0.0000%), forests (8,
+  0.0000%), skyline, spanchart, exemplary (7 exemplars x 3 layouts),
+  conflict groups, ForestSpans, summary trees, boundary-strength overlay,
+  boundary strength, tree counts. Each deliberate change and each
+  matplotlib-port font difference reports its recorded percentage, unchanged.
+- **Docs fixed in this commit rather than left for C4**, because these were
+  broken commands, not stale prose: `results/visualizations.md` told a reader
+  to run `domain_charts-cgpt.r` and `nyan_boundary_skyline.r` at paths that
+  no longer exist (now the `render_planarsviz.R` equivalents, with a pointer
+  to the archived original), and `CLAUDE.md` listed both as living in
+  top-level `scripts/`.
+- Looked at by Claude: yes (all thirteen check outputs). Seen by Jeff: no.
+- Status: done.

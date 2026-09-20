@@ -19,6 +19,7 @@ bundle_dir <- if (length(args) >= 1) args[[1]] else "results/planarsviz/nyan1308
 prefix <- if (length(args) >= 2) args[[2]] else "nyan1308"
 library_only <- length(args) >= 3 && args[[3]] == "library-only"
 python <- "/Users/jcgood/gitrepos/planars/.venv/bin/python"
+source("scripts/planarsviz_checks/superseded.R")
 
 lib <- file.path(tempdir(), "planarsviz_lib")
 dir.create(lib, showWarnings = FALSE)
@@ -77,9 +78,9 @@ orig <- NULL
 if (!library_only) {
   orig <- new.env()
   assign("ggsave", function(...) invisible(NULL), envir = orig)
-  src <- readLines(file.path("results", "nyan1308_exemplary_trees.r"))
+  src <- readLines(superseded("results", "nyan1308_exemplary_trees.r"))
   pooled_line <- grep("^source\\(here::here", src)
-  pooled_src <- readLines(file.path("scripts", "domain_charts-cgpt.r"))
+  pooled_src <- readLines(superseded("scripts", "domain_charts-cgpt.r"))
   suppressMessages(suppressWarnings({
     eval(parse(text = src[seq_len(pooled_line - 1)]), envir = orig)
     eval(parse(text = pooled_src), envir = orig)
@@ -102,7 +103,7 @@ for (i in seq_len(n_exemplars)) {
   if (library_only) {
     for (v in names(views)) {
       nyan_base <- sub(prefix, "nyan1308", bases[[v]], fixed = TRUE)
-      nyan_pdf <- file.path(dirname(bundle_dir), "nyan1308", "plots", paste0(nyan_base, ".pdf"))
+      nyan_pdf <- file.path("results", paste0(nyan_base, ".pdf"))
       if (!file.exists(nyan_pdf)) { cat(bases[[v]], ": rendered (no nyan1308 counterpart)\n"); next }
       stem <- file.path(tempdir(), paste0("nyan_", nyan_base))
       system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(stem)))

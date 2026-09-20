@@ -19,6 +19,7 @@ bundle_dir <- if (length(args) >= 1) args[[1]] else "results/planarsviz/nyan1308
 prefix <- if (length(args) >= 2) args[[2]] else "nyan1308"
 library_only <- length(args) >= 3 && args[[3]] == "library-only"
 python <- "/Users/jcgood/gitrepos/planars/.venv/bin/python"
+source("scripts/planarsviz_checks/superseded.R")
 
 lib <- file.path(tempdir(), "planarsviz_lib")
 dir.create(lib, showWarnings = FALSE)
@@ -97,7 +98,7 @@ for (case in cases) {
   old_png <- render(pl_old, paste0(base, "_legend_right"), file.path(tempdir(), "as_generated"))
 
   if (library_only) {
-    nyan_pdf <- file.path(dirname(bundle_dir), "nyan1308", "plots", paste0("nyan1308_", case$name, ".pdf"))
+    nyan_pdf <- file.path("results", paste0("nyan1308_", case$name, ".pdf"))
     stem <- file.path(tempdir(), paste0("nyan_", case$name))
     system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(stem)))
     cat(base, ": rendered; side by side with nyan1308: ",
@@ -105,7 +106,7 @@ for (case in cases) {
     next
   }
 
-  src <- readLines(file.path("results", case$script))
+  src <- readLines(superseded("results", case$script))
   src <- src[!startsWith(src, "ggsave(")]
   orig <- new.env()
   suppressMessages(suppressWarnings(eval(parse(text = src), envir = orig)))

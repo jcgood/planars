@@ -56,7 +56,7 @@ for (chart in c("by_class", "bundles", "all", "without_adjacent")) {
   ref_png <- if (library_only) {
     nyan_stem <- file.path(tempdir(), paste0("nyan_", chart))
     system2("pdftoppm", c("-png", "-r", "100", "-singlefile",
-                          shQuote(file.path(dirname(bundle_dir), "nyan1308", "plots", paste0(ref_base, ".pdf"))),
+                          shQuote(file.path("results", paste0(ref_base, ".pdf"))),
                           shQuote(nyan_stem)))
     paste0(nyan_stem, ".png")
   } else {

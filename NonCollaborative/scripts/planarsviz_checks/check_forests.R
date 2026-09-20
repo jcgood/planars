@@ -18,6 +18,7 @@ bundle_dir <- if (length(args) >= 1) args[[1]] else "results/planarsviz/nyan1308
 prefix <- if (length(args) >= 2) args[[2]] else "nyan1308"
 library_only <- length(args) >= 3 && args[[3]] == "library-only"
 python <- "/Users/jcgood/gitrepos/planars/.venv/bin/python"
+source("scripts/planarsviz_checks/superseded.R")
 
 lib <- file.path(tempdir(), "planarsviz_lib")
 dir.create(lib, showWarnings = FALSE)
@@ -52,7 +53,7 @@ for (id in ids) {
   pl <- suppressMessages(suppressWarnings(plot_laminar_forest(bundle, id)))
   problems <- character()
   if (!library_only) {
-    src <- readLines(file.path("results", paste0("nyan1308_", id, "_laminar_forest.r")))
+    src <- readLines(superseded("results", paste0("nyan1308_", id, "_laminar_forest.r")))
     src <- src[!startsWith(src, "ggsave(")]
     orig <- new.env()
     suppressMessages(suppressWarnings(eval(parse(text = src), envir = orig)))
@@ -83,7 +84,7 @@ for (id in ids) {
   png_stem <- file.path(tempdir(), base)
   system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(pdf_path), shQuote(png_stem)))
   if (library_only) {
-    nyan_pdf <- file.path(dirname(bundle_dir), "nyan1308", "plots", paste0("nyan1308_", id, "_laminar_forest.pdf"))
+    nyan_pdf <- file.path("results", paste0("nyan1308_", id, "_laminar_forest.pdf"))
     if (file.exists(nyan_pdf)) {
       nyan_stem <- file.path(tempdir(), paste0("nyan_", id))
       system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(nyan_stem)))

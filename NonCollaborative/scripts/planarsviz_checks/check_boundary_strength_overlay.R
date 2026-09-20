@@ -19,6 +19,7 @@ bundle_dir <- if (length(args) >= 1) args[[1]] else "results/planarsviz/nyan1308
 prefix <- if (length(args) >= 2) args[[2]] else "nyan1308"
 library_only <- length(args) >= 3 && args[[3]] == "library-only"
 python <- "/Users/jcgood/gitrepos/planars/.venv/bin/python"
+source("scripts/planarsviz_checks/superseded.R")
 
 lib <- file.path(tempdir(), "planarsviz_lib")
 dir.create(lib, showWarnings = FALSE)
@@ -66,7 +67,7 @@ orig <- NULL
 if (!library_only) {
   orig <- new.env()
   assign("ggsave", function(filename, plot, ...) assign("captured", plot, envir = orig), envir = orig)
-  src <- readLines(file.path("scripts", "analysis", "boundary_strength_plot.r"))
+  src <- readLines(superseded("scripts", "analysis", "boundary_strength_plot.r"))
   first_call <- grep("^plot_boundary_strength\\(", src)[[1]]
   suppressMessages(suppressWarnings(eval(parse(text = src[seq_len(first_call - 1)]), envir = orig)))
 }
@@ -96,7 +97,7 @@ for (case in cases) {
   new_png <- paste0(stem, ".png")
 
   if (library_only) {
-    nyan_pdf <- file.path(dirname(bundle_dir), "nyan1308", "plots", paste0("nyan1308_", case$name, ".pdf"))
+    nyan_pdf <- file.path("results", paste0("nyan1308_", case$name, ".pdf"))
     nyan_stem <- file.path(tempdir(), paste0("nyan_", case$name))
     system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(nyan_stem)))
     cat(base, ": rendered; side by side with nyan1308: ",
