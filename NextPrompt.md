@@ -15,6 +15,50 @@ this project is trying to remove.
 
 ## Now
 
+**Current work (2026-09-14→20): the planarsviz chart library, merged to
+`main` and now mid-cutover.** State lives in
+`NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md`; the plan it follows
+is `NonCollaborative/docs/PLAN_planarsviz_library.md`; how to use the result
+is `NonCollaborative/docs/planarsviz_guide.md` and `planarsviz_charts.md`.
+
+All 18 charts are ported and merged (PR #294; the hook fix #295 alongside
+it). Analysis stays in Python, an exporter writes a data bundle, and the R
+package in `NonCollaborative/r/planarsviz/` draws from it — no language
+facts in R. Old scripts are untouched and still work; the library sits
+beside them.
+
+**Next action: finish Phase B, then Phase C.** The phases, agreed with Jeff:
+
+- **B — six open questions** in the progress doc. Five are settled
+  (1 illustrations bundle, 2 annotated legend, 3 label location, 4 root
+  marker, 5 span-chart axis). **Question 6 is the only one left**: the span
+  chart's colour for `length` (`#AA3377`) is inferred, not observed — in
+  nyan1308 every length span also has a higher-priority type, so length
+  never decides a colour.
+- **C — cutover, four commits, in this order.** C1 point the renderer at
+  `results/` and regenerate all 63 charts there (do this first, while the
+  old scripts still exist to fall back on). C2 archive the superseded
+  scripts to `OlderFiles/` — **not delete**: `scripts/planarsviz_checks/`
+  runs the originals in memory to prove fidelity, so deleting them destroys
+  the evidence; update the checks' paths. C3 remove the superseded Python
+  (R-writing generators in `laminar_analysis.py`, matplotlib plotting in
+  `laminar_tree_counts.py` and `boundary_strength.py`, the R half of
+  `make_forestspans_table.py`) — the analysis functions and the LaTeX table
+  stay, the exporter calls them. C4 update `results/visualizations.md` (707
+  lines, the big one), `scripts/INDEX.md`, `README_laminar_analysis.md`,
+  `NonCollaborative/CLAUDE.md`.
+- **E — the `illustrations` bundle**, after cutover: supercatalan tree
+  shapes, the counting numbers, and the random-tree overlay as a
+  non-language bundle. Design agreed, recorded under question 1.
+
+Five deliberate visual changes exist, each with an option restoring the old
+look, each recorded in the progress doc: conflict-group panel titles now
+show, the overlay legend's thickness swatch follows the chart's exponent,
+the ForestSpans legend is an inset with a larger header, the span chart's
+axis shows every position, and two new illustration trees were added.
+
+---
+
 **A CI/workflow-ordering bug traced and fixed 2026-08-20, same session as
 #283/#284 below — worth reading before trusting a green local test run
 again.** Local `coded_data/` had gone unpulled for 10 days mid-session;
