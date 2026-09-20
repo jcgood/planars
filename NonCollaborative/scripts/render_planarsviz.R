@@ -15,10 +15,14 @@
 # A bundle whose family enumeration was truncated is refused (the package's
 # validator stops on it). A chart that fails is reported and the script
 # exits non-zero; nothing is skipped silently. <dataset>_planarsviz_manifest.tsv
-# lists every file written: bookkeeping, not evidence that a chart is correct
-# -- that is what scripts/planarsviz_checks/ is for. It carries the dataset
-# name because the output directory is results/, shared with everything else
-# this project generates, where a file called "manifest" says nothing.
+# lists every file in the output directory, not just the ones this run drew:
+# a --plots run merges into the manifest already there rather than replacing
+# it, and drops only rows whose file has gone. So it describes the directory,
+# which is what makes it useful after a partial render. It is bookkeeping, not
+# evidence that a chart is correct -- that is what scripts/planarsviz_checks/
+# is for. It carries the dataset name because the output directory is
+# results/, shared with everything else this project generates, where a file
+# called "manifest" says nothing.
 #
 # Usage (from NonCollaborative/):
 #   Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308 \
@@ -226,9 +230,28 @@ for (name in wanted) {
     cat("wrote ", paste(result$file, collapse = ", "), "\n", sep = "")
   }
 }
+# Merge into any manifest already there, rather than replacing it: a --plots
+# run draws some of the charts, and a manifest that then listed only those
+# would stop describing what is in the directory. Rows this run produced win;
+# older rows for charts it did not draw are kept -- but only if their file is
+# still on disk, so a chart that has gone away (the fragmentation chart
+# disappears from a bundle exported without --fragmentation-permutations)
+# drops out instead of being claimed forever.
 manifest_path <- file.path(output, paste0(dataset, "_planarsviz_manifest.tsv"))
+kept <- 0L
+if (file.exists(manifest_path)) {
+  previous <- utils::read.delim(manifest_path, stringsAsFactors = FALSE)
+  if (nrow(previous) && all(names(manifest) %in% names(previous))) {
+    stale <- previous[!previous$chart %in% manifest$chart, names(manifest), drop = FALSE]
+    stale <- stale[file.exists(file.path(output, stale$file)), , drop = FALSE]
+    kept <- nrow(stale)
+    manifest <- rbind(manifest, stale)
+  }
+}
+manifest <- manifest[order(match(manifest$chart, names(charts)), manifest$file), , drop = FALSE]
 utils::write.table(manifest, manifest_path, sep = "\t", quote = FALSE, row.names = FALSE)
-cat(nrow(manifest), " files for ", length(wanted) - length(failed), " of ", length(wanted), " charts; manifest: ",
+cat(nrow(manifest), " files for ", length(wanted) - length(failed), " of ", length(wanted), " charts",
+    if (kept) paste0(" (plus ", kept, " kept from an earlier run)") else "", "; manifest: ",
     manifest_path, "\n", sep = "")
 if (length(failed)) {
   cat("Charts that failed: ", paste(failed, collapse = ", "), "\n", sep = "")

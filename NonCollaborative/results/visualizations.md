@@ -970,9 +970,11 @@ kept because a porting check compares the bundle against it.
   `treeTraversal.py`, the superseded enumerator, so treat the prose as the
   record of a moment rather than current output.
 - `nyan1308_planarsviz_manifest.tsv` — written by `render_planarsviz.R` on
-  every run: one row per file it wrote, with that chart's canvas size. It is
-  the record of what the last render produced, and what the renderer check
-  reads to know which files to compare.
+  every run: one row per chart file here, with that chart's canvas size, and
+  what the renderer check reads to know which files to compare. A `--plots`
+  run merges into it rather than replacing it, so a partial render does not
+  shrink it to the few charts it drew; a row whose file has gone is dropped,
+  so it keeps describing what is actually in this directory.
 - `supercatalan_trees_n2.pdf`, `_n3.pdf`, `_n4.pdf`, `_n5_sample15.pdf` —
   every distinct n-ary tree shape over 2, 3 and 4 leaves, and 15 sampled
   shapes of the 45 over 5 leaves. Illustrations for the counting discussion
