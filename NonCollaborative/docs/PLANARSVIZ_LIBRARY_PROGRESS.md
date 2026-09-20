@@ -8,30 +8,35 @@ Honesty rule: nothing below says "matches" without naming the comparison file.
 
 ## Where things stand (2026-09-20)
 
-- **All 18 charts are ported** (65 charts as of 2026-09-19, when the
-  maximal-binary-branching chart added two). Every chart copied from working R
-  reproduces its reference exactly: identical plot data and 0.0000%
-  differing pixels. The two matplotlib charts (16, 17) are ported to R with
-  every visual setting mapped; they differ only in fonts.
+- **All 18 planned charts are ported, plus chart 19** (66 chart outputs as of
+  2026-09-20). Every chart copied from working R reproduces its reference
+  exactly: identical plot data and 0.0000% differing pixels. The two
+  matplotlib charts (16, 17) are ported to R with every visual setting mapped;
+  they differ only in fonts. Chart 19 (fragmentation test) was added after the
+  cutover, at Jeff's request, and is also 0.0000%.
 - **Renderer done** (`scripts/render_planarsviz.R`): draws every chart a
   bundle supports; its nyan1308 output passes `check_renderer.py`.
 - **Generalization pass done**: every chart also renders from the shifted
   test data with only the expected differences, and the shifted bundle is
-  in the Python tests (13 pass).
-- **Cutover in progress.** C1 is done (see the entry at the end of this
-  file): `results/` now holds library-rendered charts. C2 (archive the
-  superseded scripts), C3 (remove the superseded Python) and C4 (update the
-  documentation) are still ahead, so the old scripts still exist and still
-  work. Tooling (R9: roxygen/testthat) is not done, by plan.
-- **Seen by Jeff: none yet.** Comparison images are under
-  `results/planarsviz/comparisons/` (reference | new | difference).
+  in the Python tests.
+- **Cutover done, all four commits** (2026-09-20). C1 `results/` holds
+  library-rendered charts; C2 the superseded R scripts are archived in
+  `OlderFiles/planarsviz_superseded/`, where the checks still run them; C3
+  the Python that wrote them is removed; C4 the documentation matches. See
+  the four entries at the end of this file.
 - **Phase B is finished (2026-09-20).** All eleven questions below are
   settled or moot: question 8 (branch not pushed) went away when PR #294
   merged, and question 11 (boundary-strength files missing from
-  `results/visualizations.md`) is folded into cutover commit C4, which
-  rewrites that file anyway.
-- **Needs you:** nothing on Phase B. Phase C (cutover) is the live work —
-  see the plan's phase list and `NextPrompt.md`'s *Now* line.
+  `results/visualizations.md`) was folded into C4, which rewrote that file.
+- **Not done, both deliberately deferred:** Phase E (the `illustrations`
+  bundle — question 1 has its design) and tooling (R9: CI, `renv`, `lintr`,
+  `R CMD check`, `vdiffr`, roxygen/testthat), which the plan holds back until
+  the charts match. They do now, so R9 is unblocked rather than blocked.
+- **Seen by Jeff: still none.** Every "0.0000%" in this file was read by
+  Claude off a check's output; nobody has looked at the charts themselves.
+  Comparison images are under `results/planarsviz/comparisons/`
+  (reference | new | difference). This is the one outstanding item that
+  only Jeff can clear.
 
 ---
 
