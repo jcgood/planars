@@ -64,22 +64,32 @@ commits:
   the progress doc — most usefully, it had silently turned the roxygen drift
   guard from a pass into a skip.
 
-**Next action: `lintr`/`styler`, then the CI question below.**
+- **The archived scripts now refuse to run** (`b3f9ed1`). `.Rprofile` blocks
+  any `Rscript` on a file under `OlderFiles/`, because those scripts still
+  work and a direct run overwrites package-produced charts under the same
+  filenames. Guarded by a test, since `.Rprofile` gets rewritten for
+  unrelated reasons.
+- **CI settled** (`907baeb`). `NonCollaborative/tests/` had never run
+  anywhere automatically; the part needing no R now runs in CI, and the
+  roxygen guard runs pre-push. **R does not go into the CI image** — the
+  porting checks pixel-compare against Mac-rendered references and Linux
+  fonts differ, so they stay a local gate. Don't reopen this.
+- **WeasyPrint upgraded to 70.0** (`00b12cc`), clearing both Dependabot
+  alerts. Neither could reach this project; upgrading beat dismissing.
 
-**Two findings from the porting-check work, neither fixed, both needing a
-decision rather than typing:**
+**Next action: the `results/` restructure.** All six open questions were
+settled on 2026-09-20 and the plan, including the order the steps have to
+happen in and the one step with no second chance, is the last entry in
+`NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md`. Read that before
+starting; it is not repeated here. `lintr`/`styler` is the only phase D item
+left after it, and needs no decision — just work.
 
-- **`NonCollaborative/tests/` has never run in CI.** The root
-  `pyproject.toml` sets `testpaths = ["tests"]`, so CI's `pytest` never
-  reaches it — including the roxygen drift guard, which has only ever run by
-  hand. So phase D's "CI" item is not a step to add but a question: do R,
-  Bioconductor's `ggtree` and poppler go into the CI image? That is Jeff's
-  call.
-- **The checks overwrite 136 tracked comparison images.** Byte-identical
-  today, which is itself evidence the renders are deterministic, but it means
-  the test suite writes to tracked files. Moving where they write would alter
-  the checks and contradict the docs pointing at
-  `results/planarsviz/comparisons/`, so it was left alone.
+**Still open, unfixed: the checks overwrite 136 tracked comparison images.**
+Byte-identical every run, which is itself evidence the renders are
+deterministic, but it means the test suite writes to tracked files. Moving
+where they write would alter the checks and contradict the docs pointing at
+`results/planarsviz/comparisons/`, so it was left alone — worth revisiting
+during the restructure, which touches those paths anyway.
 
 **Jeff has looked at the charts and they are fine** (2026-09-20). This stood
 open from the start of the port — every `0.0000%` in the progress doc had
@@ -103,23 +113,34 @@ clear spec. Keep design calls and the final verification of correctness
 claims in the main session — pass `model: "sonnet"` explicitly, and write
 complete prompts, since a fresh agent starts cold.
 
-**The other session's span-placement work is still uncommitted** — five
-files (`scripts/analysis/span_placement_test.py`, its R plot, three outputs
-in `results/`). A direct test of the Tree hypothesis: does the real span
-arrangement conflict less than an arbitrary arrangement of same-sized spans
-would? Leave it alone unless asked. If it becomes chart 20, chart 19 is the
-worked example, and the ordering trap is worth repeating: **a chart with no
-matplotlib original must have its reference frozen before the package can
-overwrite it.** `NonCollaborative/docs/NOTE_FOR_ANALYSIS_SESSION.md` says
-this to them.
+**The analysis session's work is all committed now** (`20e5f36`, `689298d`,
+`1299e7e`, `b297871`, 2026-09-20): its handoff note, the fragmentation
+p-value change, the span-placement test, and `bundle_forest_trees.r` with its
+22 outputs. Nothing of theirs is left loose in the tree.
+
+**One of those is a change to the statistics, not a chart tweak, and is
+worth knowing before citing any fragmentation figure.** The fragmentation
+test now reports `p_value_le_observed` instead of `p_value_ge_observed`, to
+match `span_placement_test.py`. Every p moved: tonosegmental 0.91→0.143,
+intonational 1.00→0.034, phonology-like 0.92→0.160, syntax-like 0.91→0.112,
+syntax-like-without-tonosegmental 0.77→0.454. The old intonational 1.00 was a
+floor artifact — family count cannot go below 1 and its observed count is 1.
+`check_fragmentation` passing at 0.0000% does **not** independently confirm
+the new convention: the reference image was regenerated from the same changed
+code.
+
+**The ordering trap still applies, and now 25 times over:** a chart with no
+older original must have its reference frozen **before** the package can draw
+over it. The restructure plan in the progress doc makes this its first step
+for exactly that reason.
 
 **Outside planarsviz, still open:** arao1248's missing `proform` class
 (#279, waiting on Adam) keeps #247 and #281 failing; `phrasal_accent` has a
 real sheet-shape error in #291/#281 (a `general` sheet with `Element` rows
 where the construction expects `Element_A`/`Element_B` pairs) and no
 analysis module yet (#237). #157 proposes the conflict-groups chart, which
-now exists — probably closable. The Dependabot WeasyPrint dismissal is also
-still unanswered.
+now exists — probably closable. The Dependabot WeasyPrint question is
+resolved: upgraded to 70.0 rather than dismissed (`00b12cc`).
 
 Five deliberate visual changes exist, each with an option restoring the old
 look, each recorded in the progress doc: conflict-group panel titles now

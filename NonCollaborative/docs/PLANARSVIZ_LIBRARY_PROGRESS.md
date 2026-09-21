@@ -1557,3 +1557,85 @@ very charts it protects.
   directly, all 21 porting checks re-run afterwards (21 passed, 0 skipped,
   nothing under `results/` touched), and the test proved to fail by breaking
   the guard's path for real and watching it catch, then restoring.
+
+---
+
+## Phase D closed out, and the restructure decided (2026-09-20)
+
+Two of phase D's three remaining items landed, and the third turned out not to
+be a step at all.
+
+- **`lintr`/`styler`: not done, and not scheduled.** Nothing in this session
+  reached it. It is the last phase D item with no decision attached — just
+  work.
+- **CI: settled, and smaller than it looked.** `NonCollaborative/tests/` had
+  never run anywhere automatically. It now splits: a `needs_r` marker on the
+  three R-dependent files, CI running `pytest NonCollaborative/tests -m "not
+  needs_r"` (17 tests, 3 expected failures, about a minute), and the roxygen
+  guard moved to **pre-push**, where R and the pinned packages already are,
+  triggered only when `r/planarsviz/` changed.
+
+  **R does not go into the CI image, deliberately.** The 21 porting checks
+  pixel-compare against references rendered on a Mac; ggplot2's default sans
+  is Helvetica there and DejaVu Sans on Linux, so on ubuntu every glyph would
+  register as a changed pixel and they would fail wholesale on charts that are
+  correct. The alternatives — a second set of Linux references nobody looks
+  at, or macOS runners at ten times the minutes — are worse than keeping them
+  a local gate. renv is what makes "local" a reproducible specification rather
+  than an accident, which is why that had to come first.
+
+- **WeasyPrint upgraded 68.1 → 70.0**, clearing both Dependabot advisories.
+  Neither could reach this project (one needs `presentational_hints=True`, the
+  other a restrictive `url_fetcher` to bypass; `html_report.py` has neither),
+  so this was about noise rather than exposure — but dismissing would have
+  left the reasoning only in GitHub's dismissal notes.
+
+### The `results/` restructure: decided, not started
+
+Jeff asked for two things: `results/` is too flat to navigate, and it should
+be hard for a future instance to run the old code. The second is done (see the
+entry above). The first is the next real piece of work, and all six open
+questions on it were settled on 2026-09-20:
+
+1. **Scope: both, staged.** One family scheme covering `results/` and mirrored
+   inside `comparisons/` and `reference/`, landed in two commits — the
+   comparison images first, since the checks regenerate those and a mistake
+   there costs nothing, then `results/`.
+2. **Absorption: all four rows.** The package becomes the only thing that
+   writes a chart into `results/`. Forest trees and the fragmentation
+   two-bundle variant are small (the bundle already carries their data);
+   span-placement is the bulk, because its numbers have to reach the bundle
+   first through the exporter, the way `--fragmentation-permutations` already
+   does.
+3. **Forests: all eight**, registered generically over `forests.json` — 48
+   chart names. The loop is identical either way and `--plots` controls what
+   is actually drawn.
+4. CI as above.
+5. WeasyPrint as above.
+6. Small items first, then hand off — which is what this entry records.
+
+**The shape of the work**, in the order it has to happen:
+
+- Freeze a reference image for each of the 25 new charts that has none (the 22
+  forest trees, the fragmentation two-bundle variant, the two single-bundle
+  span-placement charts) **before** the package can draw over them. Chart 19's
+  all-groups reference already exists. This is the step with no second chance:
+  once the package overwrites a PDF, the evidence that the port was faithful
+  is gone.
+- Move, in two commits, teaching the renderer which family each chart belongs
+  to. The 21 checks are what prove only addresses changed.
+- Absorb the new charts, each checked against its frozen reference.
+
+**Keep the move and the absorption in separate commits.** If they land
+together, a failing check could mean either "the move broke a path" or "the
+new port draws differently", and there is no way to tell which. That
+separation is the whole reason the move is verifiable at all.
+
+**One defect the restructure should fix on the way through:**
+`nyan1308_fragmentation_test_plot.pdf` currently has two producers — the
+package draws it through the renderer, and `fragmentation_test_plot.r` also
+writes it directly. Whichever ran last wins and nothing records which. That is
+this project's own core diagnosis in miniature, a fact in more than one place
+with no owner. After absorption, `fragmentation_test_plot.r` survives only as
+the frozen reference source the porting check evaluates in memory, never as
+something you run to produce a deliverable.
