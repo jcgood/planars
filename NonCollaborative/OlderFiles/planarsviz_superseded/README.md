@@ -21,6 +21,26 @@ checks written in R, `superseded.py` for the ones written in Python, both in
 `scripts/planarsviz_checks/` — so this directory's location is recorded in
 one place per language.
 
+## One comment in here is now out of date, and must stay that way
+
+`scripts/domain_charts-cgpt.r` says, above two of its paths, that `here()`
+resolves from the planars repo root "regardless of where Rscript is invoked
+from". That stopped being true on 2026-09-20, when `renv` arrived in
+`NonCollaborative/`: `rprojroot` counts an renv project as a project root, and
+`here()` walks up only as far as the nearest one, so it now stops at
+`NonCollaborative/`. Three scripts in here build a path that way
+(`domain_charts-cgpt.r` twice, `nyan1308_forestspans_plot.r` and its
+`_no_tono.r` sibling once each for an `output_dir` that nothing writes to,
+since the checks disable `ggsave`).
+
+The comment is wrong and is being left wrong on purpose. These scripts are
+the evidence the checks compare against; editing one to correct a comment
+would mean the thing being compared is no longer quite the thing that drew
+the published charts. The checks handle it instead, by naming the file
+outright in place of the `here()` lookup — `check_pooled.R` already did this
+for its own reasons, and `check_exemplary.R` was given the same substitution
+the day renv landed, after the doubled path made it fail.
+
 ## What is here
 
 `results/` — 19 generated scripts, written by the R-writing generators that

@@ -1,0 +1,19 @@
+# Directories renv must not read when it works out which R packages this
+# project needs. Same pattern syntax as .gitignore.
+#
+# Everything listed here is a hand-written script that nothing runs any more:
+# no check executes it, no Python script launches it, and it is kept only so
+# the older work stays readable. Between them they load egg, directlabels and
+# rlist, which are not installed on this machine, and renv cannot record a
+# version for a package it cannot find. Listing them here keeps renv.lock
+# about the code that actually draws the charts.
+#
+# OlderFiles/planarsviz_superseded/ is deliberately NOT listed. The porting
+# checks run those scripts to prove the planarsviz package draws what they
+# drew, so their packages -- pacman, here, tidyverse, ggsci -- are as
+# load-bearing as the package's own, and belong in the lockfile.
+
+OlderFiles/ConstituencyConvergenceDBScripts/
+OlderFiles/MakeDomains/
+OlderFiles/scripts/
+scripts/domainSignificance.r

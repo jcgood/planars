@@ -1413,3 +1413,93 @@ stronger than hygiene.
   and the 21 snapshots recorded in one run. Seen by Jeff: no. **Nobody has
   looked at the charts themselves yet** — that item is unchanged and predates
   today.
+
+---
+
+## Phase D: renv pins the versions the charts were drawn with (2026-09-20)
+
+Every `0.0000%` above says a chart drawn by the package matches a chart drawn
+by the script it replaced. Both were drawn on this machine, by whatever R
+packages happened to be installed on it. `DESCRIPTION` named the packages but
+no version of any of them, and ggplot2 4.x changed defaults against 3.x — so
+the whole evidence chain rested on a set of versions nothing recorded. A
+fresh machine could rebuild the package, run every check, and not reproduce a
+single number.
+
+`renv.lock` in `NonCollaborative/` now records all 137, on R 4.6.1, including
+the ten the charts most depend on: ggplot2 4.0.3, ape 5.8.1, ggtree 4.2.0
+(Bioconductor), dplyr 1.2.1, patchwork 1.3.2, scales 1.4.0, jsonlite 2.0.0,
+stringr 1.6.0, tidyr 1.3.2, magrittr 2.0.5. `.Rprofile` points R at them
+whenever it starts in `NonCollaborative/`, which is where everything here
+already runs from, so no command in any guide changed. On a machine that has
+never run this project, `renv::restore()` installs the lot.
+
+- **The lockfile deliberately covers more than the package needs.** Three
+  archived scripts in `OlderFiles/planarsviz_superseded/` load `pacman`,
+  `here` and `tidyverse`, one loads `ggsci`, and
+  `scripts/exploratory/render_supercatalan_rows.r` loads `cowplot`. None of
+  those are in `DESCRIPTION`, because they are not the package's — but the
+  checks run those scripts, so pinning the package alone would have produced
+  a machine that could build planarsviz and not verify it.
+- **`.renvignore` names what renv does not read**: three directories of
+  hand-written scripts nothing runs any more, plus
+  `scripts/domainSignificance.r`. Between them they load `egg`,
+  `directlabels` and `rlist`, which are not installed here and so have no
+  version to record. `OlderFiles/planarsviz_superseded/` is deliberately not
+  ignored, for the reason above.
+
+**Three things renv broke on the way in, each worth more than the fix.**
+
+- **It silently disarmed the roxygen drift guard.** No R file mentions
+  roxygen2 — `tests/test_roxygen_up_to_date.py` invokes it from Python — so
+  renv did not pin it, and the project library did not have it. That test
+  skips when roxygen2 is absent. It would have gone from passing to skipping,
+  and a skip reads as a pass. Fixed by pinning roxygen2 8.1.0 through
+  `_dependencies.R` (a file that exists only to be read, never run), and by
+  making the test run R from `NonCollaborative/` so the pin applies even when
+  pytest is started from the repo root. The version matters as much as the
+  presence: roxygen2 writes `man/` differently across versions, so an
+  unpinned one can fail the guard over nothing.
+- **It moved `here()`.** `rprojroot` counts an renv project as a project
+  root, and `here()` stops at the nearest one — so it went from the planars
+  repo root to `NonCollaborative/`, and an archived script's
+  `here("NonCollaborative", "domains", ...)` started building a doubled path.
+  `check_exemplary.R` died on it before drawing anything. The other two
+  checks that run that script were already substituting the path rather than
+  letting `here()` find it; `check_exemplary.R` now does the same. All seven
+  exemplars back to `0.0000%` across all three views. The archived script's
+  own comment, which states the old behaviour as a guarantee, is left wrong
+  on purpose — it is evidence, not documentation — and
+  `OlderFiles/planarsviz_superseded/README.md` says so.
+- **Its own start-up notices land inside the checks' output.** The checks are
+  compared stdout *and* stderr against a snapshot, so anything R prints
+  before a check speaks counts as the check speaking. Two cases, handled
+  oppositely:
+  - Enabling Bioconductor makes renv's own bootstrap load `BiocManager` and
+    then warn that BiocManager was loaded too early. It is a warning about
+    renv, carries nothing a person could act on, and would have read as 21
+    failures. Turned off in `.Rprofile`, with the reason written there.
+  - The "project is out-of-sync" notice is the opposite: real signal. If the
+    installed packages have drifted from the lockfile, the charts were not
+    drawn by the pinned versions and the pixel comparisons are not evidence
+    of anything. But left alone it fails all fourteen R checks at once with
+    "no longer reports what it did", each pointing at a chart, for a reason
+    that has nothing to do with any chart. So `tests/test_planarsviz_checks.py`
+    now checks `renv::status()` once, up front, and fails with the two
+    commands that fix it. Proved it fires by putting a package in the
+    lockfile that is not installed, then restoring.
+
+**The confirmation that matters: all 21 porting checks pass under renv**, with
+no skips, and every chart's number unchanged. Of the 136 tracked comparison
+images the checks rewrite on each run, 134 came back byte-identical and the
+two that did not were already modified before any of this started, by separate
+fragmentation work. So introducing renv changed no chart.
+
+- Looked at by Claude: yes — the full suite run end to end (21 passed, 0
+  skipped), `renv::status()` clean, the ten recorded
+  versions read back out of the lockfile and matched against the list at the
+  end of this file, `check_exemplary.R` re-run to `0.0000%` by hand, the
+  roxygen guard confirmed passing rather than skipping from both
+  `NonCollaborative/` and the repo root, and the out-of-sync guard proved to
+  fire on a real desynchronised lockfile rather than by editing a snapshot.
+  Seen by Jeff: no. **Nobody has still looked at the charts themselves.**

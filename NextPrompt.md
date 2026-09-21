@@ -58,18 +58,13 @@ commits:
 - Also `20337d1`: the render manifest merges rather than replacing, so a
   `--plots` run no longer shrinks it to the charts it drew.
 
-**Next action: `renv`.** Jeff approved installing the R packages phase D
-needs (2026-09-20) — name each one as you install it. `renv` is the
-acceptance criterion with no partial credit, and the argument is stronger
-than hygiene: the charts were drawn with **ggplot2 4.0.3, ape 5.8.1, ggtree
-4.2.0** (Bioconductor), on R 4.6.1, and ggplot2 4.x changed defaults against
-3.x. `DESCRIPTION` names the packages but pins no versions, so every
-`0.0000%` rests on a version nothing records — a fresh machine could rebuild
-the package and not reproduce the charts. The full version list is at the end
-of `PLANARSVIZ_LIBRARY_PROGRESS.md`. Watch one trap: `renv::init()` in
-`NonCollaborative/` would scan the archived R under
-`OlderFiles/planarsviz_superseded/` too, and those scripts are deliberately
-still run by the checks. Then `lintr`/`styler`, then CI.
+- **`renv` is done** (2026-09-20). `NonCollaborative/renv.lock` pins all 137
+  packages on R 4.6.1; all 21 porting checks pass under it with no chart
+  changed. Three things it broke on the way in are fixed and written up in
+  the progress doc — most usefully, it had silently turned the roxygen drift
+  guard from a pass into a skip.
+
+**Next action: `lintr`/`styler`, then the CI question below.**
 
 **Two findings from the porting-check work, neither fixed, both needing a
 decision rather than typing:**

@@ -126,4 +126,6 @@ See also `REFERENCES.md` for the mathematical/linguistic literature behind the l
 
 The `planarsviz` package's dependencies are in `r/planarsviz/DESCRIPTION`; `scripts/render_planarsviz.R` installs the package into a temporary library itself, so there is no install step. The tree charts also need `ape` and `ggtree`. The older hand-written R at the top of `scripts/` needs `ggplot2`, `ape`, `ggtree` and `patchwork` installed by hand.
 
+**Which versions of those packages is pinned by `renv`.** `renv.lock` records all 130, `.Rprofile` makes R use them automatically whenever it starts here, and `renv::restore()` installs them on a machine that has never run this project. The lockfile deliberately covers more than `DESCRIPTION` does, because the porting checks run the archived scripts in `OlderFiles/planarsviz_superseded/` and those load `pacman`, `here`, `tidyverse` and `ggsci`. `.renvignore` lists the hand-written scripts renv does not read and says why. After changing what anything loads, run `renv::snapshot()` and commit the lockfile with the change. Full account: `docs/planarsviz_guide.md` § 7.
+
 Python scripts depend on packages already in the main project's `.venv` (`requirements.txt`): `pandas`, `numpy`, `networkx`, `pyyaml`. `tests/` additionally needs `pytest`. Nothing here uses `matplotlib` any more — C3 removed the last of it.

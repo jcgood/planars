@@ -20,6 +20,14 @@ a `Config/roxygen2/version` line into it recording the roxygen2 version
 that last ran, so this test would fail every time someone runs it with a
 newer roxygen2 even when nothing in `R/` actually changed. That line is
 not something the drift check needs to care about.
+
+Both R calls below run from `NonCollaborative/`, and that is not incidental.
+The `.Rprofile` there is what points R at the versions `renv.lock` pins,
+roxygen2 among them. Run from anywhere else, R would fall back to whatever
+is installed on the machine -- and on a machine that only ran
+`renv::restore()`, roxygen2 would be missing, so this test would *skip*
+rather than fail. A skip reads as a pass, which is the one outcome a drift
+guard must never produce by accident.
 """
 
 import shutil
@@ -41,6 +49,7 @@ def _roxygen2_available():
     result = subprocess.run(
         [RSCRIPT, "-e", 'quit(status = !requireNamespace("roxygen2", quietly=TRUE))'],
         capture_output=True,
+        cwd=NC_ROOT,
     )
     return result.returncode == 0
 
@@ -60,6 +69,7 @@ def test_namespace_and_man_match_roxygen2_output():
             [RSCRIPT, "-e", 'roxygen2::roxygenise("%s")' % scratch_package],
             capture_output=True,
             text=True,
+            cwd=NC_ROOT,
         )
         assert result.returncode == 0, (
             "roxygen2::roxygenise() failed to run against a scratch copy of "

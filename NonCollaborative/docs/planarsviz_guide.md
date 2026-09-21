@@ -178,6 +178,9 @@ against that rather than running an older script.
   numbers, trees and selections against the old scripts' own output.
 - `scripts/planarsviz_checks/check_renderer.py <render folder>` — compares a
   full nyan1308 render with the frozen reference images.
+- `pytest tests/test_planarsviz_checks.py` — runs all 21 checks above and
+  compares each one's output against a snapshot, so a drifted chart fails
+  instead of printing a number nobody reads. About six or seven minutes.
 - `pytest tests/test_planarsviz_bundle.py tests/test_planarsviz_shifted_bundle.py`
   — bundle contents for nyan1308 and for the shifted test data.
 
@@ -190,7 +193,49 @@ draws that data correctly has no nyan1308 facts built in.
 
 ---
 
-## 7. Where things are
+## 7. Package versions
+
+Section 6 compares a chart the package draws against the chart the old script
+drew. That comparison is only worth something if both were drawn by the same
+R packages — and ggplot2 4.x changed several defaults against 3.x, so "the
+same packages" is not a given across machines or across time.
+
+`renv.lock` in `NonCollaborative/` records the exact version of every R
+package these charts were drawn with: 130 of them, including ggplot2 4.0.3,
+ape 5.8.1 and ggtree 4.2.0, on R 4.6.1. `.Rprofile` makes R use them
+automatically whenever it starts in `NonCollaborative/`, so nothing in the
+guide above needs a different command.
+
+On a machine that has never run this project:
+
+```sh
+Rscript -e 'install.packages("renv")'
+Rscript -e 'renv::restore()'
+```
+
+`renv::restore()` installs every package at its recorded version into
+`NonCollaborative/renv/library/`, which is not in version control. It takes a
+while the first time. After that, `renv::status()` reports whether the
+installed packages still match the lockfile.
+
+Two things worth knowing:
+
+- **The lockfile covers more than the package's own `DESCRIPTION`.** Three of
+  the archived scripts in `OlderFiles/planarsviz_superseded/` load `pacman`,
+  `here` and `tidyverse`, and one loads `ggsci`; `render_supercatalan_rows.r`
+  loads `cowplot`. The checks run those scripts, so those versions matter as
+  much as the package's own and are pinned too.
+- **`.renvignore` lists the scripts renv does not read.** They are
+  hand-written files nothing runs any more, and they load packages that are
+  not installed here, which renv cannot record a version for. The file says
+  which and why.
+
+After changing what a script or the package loads, run `renv::snapshot()` to
+bring the lockfile back in line, and commit it with the change.
+
+---
+
+## 8. Where things are
 
 | Path | Contents |
 |---|---|

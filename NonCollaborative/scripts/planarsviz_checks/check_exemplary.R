@@ -81,6 +81,19 @@ if (!library_only) {
   src <- readLines(superseded("results", "nyan1308_exemplary_trees.r"))
   pooled_line <- grep("^source\\(here::here", src)
   pooled_src <- readLines(superseded("scripts", "domain_charts-cgpt.r"))
+  # Name the domains file outright instead of letting the archived script's
+  # here() look it up. here() used to land on the planars repo root, which is
+  # what that script's own comment says it relies on; since renv arrived it
+  # lands on NonCollaborative/ instead, because rprojroot counts an renv
+  # project as a project root, so the lookup built a doubled path and the
+  # script died before drawing anything. check_pooled.R already substitutes
+  # this same line of this same script for its own reasons -- this is that
+  # substitution, not a new idea. The file read is identical either way.
+  data_line <- grep("^domains <- read_tsv\\(here", pooled_src)
+  pooled_src[data_line] <- sprintf(
+    'domains <- read_tsv("%s", show_col_types = FALSE)',
+    "domains/domains_nyan1308.tsv"
+  )
   suppressMessages(suppressWarnings({
     eval(parse(text = src[seq_len(pooled_line - 1)]), envir = orig)
     eval(parse(text = pooled_src), envir = orig)

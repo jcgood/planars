@@ -26,20 +26,27 @@ the R code. The same functions draw any language's data.
 
 ## Status
 
-All 18 charts from the nyan1308 (Chichewa) work are reproduced: the charts
+All 19 charts from the nyan1308 (Chichewa) work are reproduced: the charts
 that were already R are identical to the old scripts' output (same plot
 data, no differing pixels); the two that were matplotlib are ported with
-every visual setting carried over (they differ only in fonts). The old
-scripts and their `results/` files are still in place until cutover. The
-porting record is `docs/PLANARSVIZ_LIBRARY_PROGRESS.md`.
+every visual setting carried over (they differ only in fonts). Cutover is
+done — nothing under `NonCollaborative/` writes a chart any other way. The
+scripts this package replaced are archived in
+`OlderFiles/planarsviz_superseded/`, where the porting checks still run them
+to prove the two draw the same thing, and must not be deleted. The porting
+record is `docs/PLANARSVIZ_LIBRARY_PROGRESS.md`.
 
 ## Requirements
 
 - R 4.2 or later with dplyr, ggplot2, jsonlite, magrittr, patchwork,
   scales, stringr and tidyr; ape and ggtree for the tree charts.
-- The project's Python environment (pandas, numpy, matplotlib) for the
-  exporter.
+- The project's Python environment (pandas, numpy) for the exporter.
 - `pdftoppm` (poppler) if you want PNG output from the renderer.
+
+Those are the packages the code needs. Which *versions* it was checked
+against is a separate question, and `NonCollaborative/renv.lock` answers it —
+see "Package versions" in
+[`docs/planarsviz_guide.md`](../../docs/planarsviz_guide.md).
 
 ## Quick start
 

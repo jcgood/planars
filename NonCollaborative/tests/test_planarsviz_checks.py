@@ -190,11 +190,53 @@ def _compare(name, output, request, extra_paths=()):
     )
 
 
+def _renv_out_of_sync():
+    """Say whether the installed R packages have drifted from renv.lock.
+
+    Worth its own check because of how the drift shows up otherwise. When the
+    project is out of sync, renv prints a one-line notice at the start of
+    every R session -- and these tests compare a check's whole output,
+    stderr included, so that line lands at the top of all fourteen R checks
+    at once. Fourteen reports of "no longer reports what it did", each
+    pointing at a chart, for a reason that has nothing to do with any chart.
+
+    It is also not a failure to paper over. The packages are pinned because
+    ggplot2 4.x draws differently from 3.x; if what is installed no longer
+    matches the lockfile, the pixel comparisons below are not evidence of
+    anything yet.
+    """
+    if shutil.which("Rscript") is None or not (NC / "renv.lock").exists():
+        return None
+    result = subprocess.run(
+        ["Rscript", "-e", "quit(status = !isTRUE(renv::status()$synchronized))"],
+        cwd=NC,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode == 0:
+        return None
+    return (result.stdout + result.stderr).strip()
+
+
 @pytest.fixture(scope="module")
 def tools():
     missing = _missing_tools()
     if missing:
         pytest.skip("not set up to draw charts here: " + ", ".join(missing))
+
+    drift = _renv_out_of_sync()
+    if drift:
+        pytest.fail(
+            "The R packages installed here no longer match NonCollaborative/"
+            "renv.lock, so these checks would compare charts drawn by the "
+            "wrong versions -- and renv's own notice about it would land in "
+            "every R check's output and fail them all for the wrong reason.\n"
+            "Fix: from NonCollaborative/, run\n"
+            "    Rscript -e 'renv::restore()'      # use the pinned versions\n"
+            "or, if the change was deliberate,\n"
+            "    Rscript -e 'renv::snapshot()'     # pin what is installed\n"
+            "renv reported:\n" + drift
+        )
 
 
 @pytest.mark.parametrize("script", R_CHECKS)
