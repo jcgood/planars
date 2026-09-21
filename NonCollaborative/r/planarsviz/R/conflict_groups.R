@@ -110,7 +110,7 @@ plot_conflict_groups <- function(bundle, other_label = "neither", panel_titles =
     drawn <- rows[!is.na(rows$draw_rank), , drop = FALSE]
     drawn <- drawn[order(drawn$draw_rank), , drop = FALSE]
     defining <- rows$defining_span_id[[1]]
-    what <- if (is.na(defining) || defining == "") other_label else paste0('[', sub("-", "–", defining, fixed = TRUE), ']')
+    what <- if (is.na(defining) || defining == "") other_label else paste0('[', sub("-", "\u2013", defining, fixed = TRUE), ']')
     make_panel(drawn$family_id, paste0('Group ', g, ': ', what, ' (', nrow(rows), ' families)'))
   })
 

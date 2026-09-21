@@ -178,7 +178,7 @@ plot_frequency_tree <- function(bundle, selection = "consensus_all", title = NUL
   if (is.null(branch_size)) branch_size <- if (weight == "none") 0.5 else 4
   emphasis_range <- if (is.null(emphasis)) NULL else planarsviz_highlight_range(bundle, emphasis)
   n <- nrow(bundle$families)
-  if (is.null(title)) title <- paste0(n, ' maximal families — edge weight = family count')
+  if (is.null(title)) title <- paste0(n, ' maximal families \u2014 edge weight = family count')
   alpha_name <- switch(weight,
     families = paste0('Proportion of ', n, ' families'),
     tests = 'Share of the best-tested span',

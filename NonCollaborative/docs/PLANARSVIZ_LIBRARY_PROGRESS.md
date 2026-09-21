@@ -1278,3 +1278,45 @@ broke nothing.
   export, and two chart checks it had not run (`check_forests.R`, which
   exercises the ghost-tree helper, and `check_fragmentation.R`) — both
   0.0000%. Seen by Jeff: no.
+
+## Phase D: the drift guard, and R CMD check reaches OK (2026-09-20)
+
+Two things, both closing gaps the roxygen switch opened or left.
+
+- **`tests/test_roxygen_up_to_date.py`** regenerates `NAMESPACE` and `man/`
+  from `R/` into a scratch copy and fails if either differs from what is
+  committed. This is the guard the previous entry said was missing: without
+  it, editing a `#'` comment and forgetting to re-run roxygen leaves both
+  quietly stale, and nothing else would notice — the package still loads,
+  `R CMD check` is content, and the mismatch surfaces much later as a wrong
+  help page or a stale export list. It skips cleanly where `Rscript` or
+  roxygen2 is absent, so the suite still passes on a machine without them.
+  **It did not need testthat**, which the previous entry assumed: the
+  project's automated suite is pytest, and putting it there avoids making the
+  package's own tests depend on roxygen2.
+  Proved twice that it fails when it should — once by the subagent that wrote
+  it (editing a `@return` line), once independently here by adding a new
+  `@export`ed function, which it caught as a `NAMESPACE` mismatch. Both
+  reverted, both confirmed passing again afterwards.
+- **`R CMD check` on a built tarball now reports `Status: OK`.** Three
+  leftovers cleared:
+  - The two non-ASCII dashes were in real strings the charts draw, so they
+    were escaped (`–`, `—`) rather than replaced. Worth recording
+    that the first attempt at this wrote *two* backslashes, which R reads as
+    a literal `—` — caught by inspecting the file's actual bytes rather
+    than trusting the edit. Both charts redraw identically afterwards,
+    including the conflict-groups titles-shown variant at its recorded
+    8.6805%, which is the render that actually contains the en-dash.
+  - `.DS_Store` was never committed — it is gitignored, and only appeared
+    because the check ran against the source directory. Checking a tarball
+    built with `R CMD build` is the real answer, and that is how the OK above
+    was obtained.
+  - The ~90 undefined-global names are declared in `planarsviz-package.R`,
+    with a note saying why they are declared rather than rewritten as
+    `.data$column`: the chart code was copied line for line from the scripts
+    the package replaced, and the porting checks compare it against those
+    scripts. `read.delim` is now imported properly too.
+- Looked at by Claude: yes — the guard's failure behaviour tested directly
+  rather than taken from the subagent's report, `R CMD check` run on a built
+  tarball, both affected chart checks re-run, full pytest suite (18 passed).
+  Seen by Jeff: no.

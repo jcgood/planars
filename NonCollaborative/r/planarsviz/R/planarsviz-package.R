@@ -16,4 +16,25 @@
 #' @importFrom stats na.omit reorder
 #' @importFrom stringr str_to_title
 #' @importFrom tidyr pivot_longer
+#' @importFrom utils read.delim
 "_PACKAGE"
+
+# Column names used inside aes() and dplyr verbs. R's code checker cannot see
+# that these are columns of a data frame rather than variables that were never
+# defined, so it reports each one; declaring them here keeps a real "you used a
+# name that does not exist" warning visible among them.
+#
+# They are declared rather than rewritten as .data$column because the chart
+# code was copied line for line from the scripts the package replaced, and the
+# porting checks compare it against those scripts. Rewriting every aes() call
+# would break that correspondence for a cosmetic gain.
+utils::globalVariables(c(
+  "alpha_val", "Boundary", "capped", "Color", "colour", "Colour", "Count",
+  "Density", "Domain_Layer", "Domain_Type", "Edge", "edge_size",
+  "family_count", "freq_scaled", "group", "label", "Label", "label_x",
+  "Layer", "left", "Left", "Left_Edge", "lw", "observed_families",
+  "p_value_ge_observed", "position", "Reverse_Domain_Layer",
+  "Reverse_Layer", "right", "Right", "Right_Edge", "side", "size", "Size",
+  "Strength", "summed", "Test_Labels", "value", "x", "x0", "x1", "y",
+  "y_rank"
+))

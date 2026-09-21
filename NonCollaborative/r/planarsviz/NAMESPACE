@@ -59,3 +59,4 @@ importFrom(stats,
 )
 importFrom(stringr,str_to_title)
 importFrom(tidyr,pivot_longer)
+importFrom(utils,read.delim)
