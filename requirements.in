@@ -10,7 +10,7 @@ pandera        # data contracts on DataFrame boundaries (Phase 6, issue #271)
 plotly
 pydantic       # data contracts on dict/JSON boundaries (Phase 6, issue #271) -- coordinator-only
 PyYAML
-weasyprint>=68.0
+weasyprint>=70.0   # 70.0 fixes GHSA-jf6q-chmf-3h3v (SSRF) and clears GHSA-jhhc-3hcp-qhm5
 
 # NonCollaborative/ analysis scripts (imported directly there)
 matplotlib       # tree-count and boundary-strength charts

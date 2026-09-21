@@ -21,7 +21,11 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-pdf = ["weasyprint", "kaleido"]
+# weasyprint>=70.0: 70.0 fixes GHSA-jf6q-chmf-3h3v and is past the range of
+# GHSA-jhhc-3hcp-qhm5. Installing this extra should not hand anyone a version
+# the project has already moved off, so the floor is stated here too and not
+# only in requirements.in.
+pdf = ["weasyprint>=70.0", "kaleido"]
 
 [project.urls]
 Repository = "https://github.com/jcgood/planars"

@@ -309,11 +309,18 @@ def render_language_report_pdf(data: dict) -> bytes:
     """
     html = render_language_report(data, static=True)
     from weasyprint import HTML  # noqa: PLC0415
-    # presentational_hints=False (WeasyPrint's own default, made explicit here)
-    # closes off GHSA-jhhc-3hcp-qhm5 (CSS injection via HTML presentational
-    # attributes, e.g. <body background="...">) -- that vulnerability only
-    # fires when presentational_hints=True, and has no patched WeasyPrint
-    # release as of this writing. Pinning the safe default explicitly means
-    # a future WeasyPrint version changing its default can't silently
-    # reopen this.
+    # presentational_hints=False is WeasyPrint's own default, made explicit.
+    # It closes off GHSA-jhhc-3hcp-qhm5 (CSS injection via HTML presentational
+    # attributes, e.g. <body background="...">), which only fires when
+    # presentational_hints=True. The advisory covers weasyprint <= 68.1 and
+    # requirements.txt now pins 70.0, so this is belt and braces rather than
+    # the only thing standing in the way -- but it stays: pinning the safe
+    # default explicitly means a future WeasyPrint changing its default
+    # cannot silently reopen it.
+    #
+    # The other advisory against this package, GHSA-jf6q-chmf-3h3v (SSRF via
+    # write_pdf's xmp_metadata= and stylesheets= ignoring a document's
+    # url_fetcher), never reached this call at all: it needs a restrictive
+    # url_fetcher to bypass, and neither that nor either parameter appears
+    # here. Fixed in 70.0 regardless.
     return HTML(string=html).write_pdf(presentational_hints=False)
