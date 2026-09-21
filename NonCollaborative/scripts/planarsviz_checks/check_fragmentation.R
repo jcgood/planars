@@ -15,7 +15,7 @@
 # It also checks the numbers, which is the half that catches a real problem:
 # the bundle's summary table must equal what class_fragmentation_test.py
 # committed to results/, and the null tally must expand back to exactly the
-# draws in results/nyan1308_fragmentation_null_draws.tsv. That is what proves
+# draws in results/counts-and-chance/nyan1308_fragmentation_null_draws.tsv. That is what proves
 # the tally lost nothing.
 #
 # library-only (shifted test data): render only, beside the nyan1308 render.
@@ -52,9 +52,9 @@ if (!library_only) {
   # reproduce exactly -- the same relationship boundary_strength and
   # tree_counts already have with their own committed files.
   summary_lib <- read_planars_fragmentation(bundle)
-  class_orig <- utils::read.delim("results/nyan1308_class_fragmentation_test.tsv",
+  class_orig <- utils::read.delim("results/counts-and-chance/nyan1308_class_fragmentation_test.tsv",
                                   stringsAsFactors = FALSE)
-  bundle_orig <- utils::read.delim("results/nyan1308_bundle_fragmentation_test.tsv",
+  bundle_orig <- utils::read.delim("results/counts-and-chance/nyan1308_bundle_fragmentation_test.tsv",
                                    stringsAsFactors = FALSE)
   orig <- rbind(class_orig, bundle_orig)
 
@@ -70,7 +70,7 @@ if (!library_only) {
 
   # The tally must expand back to exactly the committed draws. Compare as
   # sorted counts per group: the tally drops draw order and nothing else.
-  draws_orig <- utils::read.delim("results/nyan1308_fragmentation_null_draws.tsv",
+  draws_orig <- utils::read.delim("results/counts-and-chance/nyan1308_fragmentation_null_draws.tsv",
                                   stringsAsFactors = FALSE)
   draws_lib <- read_planars_fragmentation_null(bundle)
   for (g in sort(unique(draws_orig$group))) {

@@ -42,6 +42,7 @@ script_dir <- local({
 })
 results_dir <- normalizePath(file.path(script_dir, "..", "..", "results"), mustWork = TRUE)
 bundle_data_dir <- normalizePath(file.path(results_dir, "planarsviz", "nyan1308", "data"), mustWork = TRUE)
+output_dir <- normalizePath(file.path(results_dir, "laminar-families"), mustWork = TRUE)
 
 position_labels <- read.delim(file.path(bundle_data_dir, "position_labels.tsv"), stringsAsFactors = FALSE)
 posLabel <- as.list(setNames(as.character(position_labels$label), as.character(position_labels$position)))
@@ -70,7 +71,7 @@ for (forest_name in FOREST_NAMES) {
   for (i in seq_len(nrow(forest))) {
     p <- draw_tree(forest$newick[i])
     tree_num_padded <- formatC(forest$tree_number[i], width = n_digits, flag = "0")
-    out_path <- file.path(results_dir, sprintf("nyan1308_%s_tree_%s.pdf", forest_name, tree_num_padded))
+    out_path <- file.path(output_dir, sprintf("nyan1308_%s_tree_%s.pdf", forest_name, tree_num_padded))
     ggsave(out_path, p, device = "pdf", width = 12, height = 8, units = "in")
   }
   cat(sprintf("  wrote nyan1308_%s_tree_%s.pdf .. _%s.pdf\n",

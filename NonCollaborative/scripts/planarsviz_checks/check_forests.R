@@ -3,7 +3,7 @@
 # docs/PLAN_planarsviz_library.md section 7 steps 3-6.
 #
 # Default (nyan1308): for every forest in the bundle, evaluates the generated
-# script results/nyan1308_<id>_laminar_forest.r in memory (ggsave disabled;
+# script OlderFiles/planarsviz_superseded/results/nyan1308_<id>_laminar_forest.r in memory (ggsave disabled;
 # file untouched) and builds the library forest; compares every tree's
 # ggplot_build() data layer by layer; renders the library forest at the
 # script's 20x14 in canvas and pixel-compares it with the frozen reference.

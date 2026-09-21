@@ -42,8 +42,8 @@ to it, and that is where the porting checks run too.
   allowed; this project calls the sequence "super-Catalan", see
   `exploratory/catalan.py`) and Catalan per polytomy (binary only). Totals
   across all 69 families: 8,599,689 against 125,032.
-- **Output**: `results/nyan1308_refinement_counts.tsv` (per family),
-  `results/nyan1308_refinement_polytomies.tsv` (per distinct polytomy, so
+- **Output**: `results/laminar-families/nyan1308_refinement_counts.tsv` (per family),
+  `results/laminar-families/nyan1308_refinement_polytomies.tsv` (per distinct polytomy, so
   the aggregate can be checked against the nodes it came from)
 - **Example**: `python scripts/analysis/refinement_counts.py`
 
@@ -69,7 +69,7 @@ to it, and that is where the porting checks run too.
   where the signal is, and it points differently than the fragmentation
   test's own findings, since the two ask genuinely different questions
   about the same 26 spans.
-- **Output**: `results/nyan1308_span_placement_test.tsv` (one row per
+- **Output**: `results/counts-and-chance/nyan1308_span_placement_test.tsv` (one row per
   group), `_span_placement_null_tally.tsv` (`group, family_count, n` —
   a tally, not one row per draw)
 - **Example**: `python scripts/analysis/span_placement_test.py`
@@ -80,9 +80,9 @@ to it, and that is where the porting checks run too.
 - **Purpose**: Draw the test above — one panel per group, a histogram and
   density curve of that group's own null distribution, the observed count
   as a dashed vertical line, count and p-value printed in-panel
-- **Input**: `results/nyan1308_span_placement_test.tsv` and
+- **Input**: `results/counts-and-chance/nyan1308_span_placement_test.tsv` and
   `_span_placement_null_tally.tsv`; it does not re-run the permutation
-- **Output**: `results/nyan1308_span_placement_test_by_group_plot.pdf`
+- **Output**: `results/counts-and-chance/nyan1308_span_placement_test_by_group_plot.pdf`
 - **Panels use independent axes** (`scales = "free"`), not a shared one —
   unlike `fragmentation_test_plot.r`, the absolute family count here is not
   comparable across groups of very different span counts, so a shared axis
@@ -104,7 +104,7 @@ to it, and that is where the porting checks run too.
   until you notice it carries 44 of the 95 tests, where chance alone gives
   about 17 — so it is markedly *more* laminar than chance (p=0.91), as is
   intonational. Morphosyntactic, phonological and length are unremarkable.
-- **Output**: `results/nyan1308_class_fragmentation_test.tsv` (5 domain
+- **Output**: `results/counts-and-chance/nyan1308_class_fragmentation_test.tsv` (5 domain
   types), `_bundle_fragmentation_test.tsv` (3 bundles),
   `_fragmentation_null_draws.tsv` (every draw, long format, for the chart).
   The two summary files record the draw count and seed that produced them.
@@ -121,9 +121,9 @@ to it, and that is where the porting checks run too.
 - **Purpose**: Draw the test above — one horizontal violin per group (the
   null distribution) with the observed family count as a filled dot, classes
   and bundles as two stacked panels on a shared axis, p-value per row
-- **Input**: `results/nyan1308_fragmentation_null_draws.tsv` and the two
+- **Input**: `results/counts-and-chance/nyan1308_fragmentation_null_draws.tsv` and the two
   summary TSVs; it does not re-run the permutation
-- **Output**: `results/nyan1308_fragmentation_test_plot.pdf`
+- **Output**: `results/counts-and-chance/nyan1308_fragmentation_test_plot.pdf`
 - **Example**: `Rscript scripts/analysis/fragmentation_test_plot.r` (it
   resolves `results/` from its own location, so any working directory is fine)
 - **Also in the package**, as chart 19 (`plot_fragmentation_test()`). This
@@ -134,7 +134,7 @@ to it, and that is where the porting checks run too.
 **`analysis/laminar_tree_counts.py`**
 - **Purpose**: Count maximal laminar families pooled, per domain class, per
   bundle, and with size-2 (adjacent-position) spans removed
-- **Output**: `results/nyan1308_tree_counts.tsv`. The bar charts of these
+- **Output**: `results/counts-and-chance/nyan1308_tree_counts.tsv`. The bar charts of these
   counts are drawn by the package; until the 2026-09-20 cutover this script
   drew them itself, in matplotlib.
 - **Also owns `CLASS_COLORS`** — the five domain-type colours, in one place.
@@ -151,7 +151,7 @@ to it, and that is where the porting checks run too.
   edge counts, including nested ones) and `capped` (how many of the 69
   families have at least one span with that edge, a reference line). See the
   module docstring for why they diverge.
-- **Output**: `results/nyan1308_boundary_strength.tsv`; `--subset` restricts
+- **Output**: `results/boundaries/nyan1308_boundary_strength.tsv`; `--subset` restricts
   the analysis to some domain types and tags the filename with them. The
   charts are drawn by the package; this script drew them in matplotlib until
   the cutover.
@@ -184,7 +184,7 @@ to it, and that is where the porting checks run too.
   threshold, matching the talk's own "more diffuse" hedge almost exactly.
   Tonosegmental's right edge at position 17 (the final vowel) is the
   single strongest result of any group (p=0.0004).
-- **Output**: `results/nyan1308_boundary_strength_test.tsv` — one row per
+- **Output**: `results/boundaries/nyan1308_boundary_strength_test.tsv` — one row per
   (group, side, statistic, position): `observed`, `null_mean`, `null_p05`,
   `null_p95`, `p_value_ge_observed`, plus `n_permutations`/`seed`. No raw
   per-draw table — only percentiles are kept, the same choice
@@ -209,7 +209,7 @@ to it, and that is where the porting checks run too.
 - **Purpose**: A ghost overlay of randomly sampled n-ary trees over 22
   positions, showing how vast the tree space is next to the 69 families the
   data actually allows. Illustration, not analysis.
-- **Output**: `results/nyan1308_random_tree_overlay.r` and its PDF — the one
+- **Output**: `results/illustrations/nyan1308_random_tree_overlay.r` and its PDF — the one
   generated R script still in `results/`. Never ported to the package
   (it samples rather than drawing a fixed chart); scheduled for phase E.
 - **Example**: `python scripts/analysis/random_tree_overlay.py` (`--n-trees`,
@@ -308,7 +308,7 @@ against the chart that chart's own R script drew, frozen as a reference.
 - **Purpose**: Draw every distinct n-ary tree shape over 2, 3 and 4 leaves,
   and 15 of the 45 over 5 leaves — one PDF per row, illustrations for the
   counting discussion in `REFERENCES.md`
-- **Output**: `results/supercatalan_trees_n2.pdf` … `_n5_sample15.pdf`, and
+- **Output**: `results/illustrations/supercatalan_trees_n2.pdf` … `_n5_sample15.pdf`, and
   `exploratory/supercatalan_trees.json`, the shapes the renderer reads
 - **Example**: `python scripts/exploratory/generate_supercatalan_rows.py --pdf`
   — it launches the R renderer and `pdfcrop` itself. Don't run the `.r` file
@@ -328,7 +328,7 @@ sitting in `results/` beside the PDFs, written by generator functions in
 - The generators are gone from `laminar_analysis.py` (cutover step C3), as is
   the matplotlib plotting that was in `laminar_tree_counts.py` and
   `boundary_strength.py`.
-- `results/nyan1308_random_tree_overlay.r` is the one generated R script
+- `results/illustrations/nyan1308_random_tree_overlay.r` is the one generated R script
   still in `results/`: it draws a random sample rather than a fixed chart, was
   never ported, and is scheduled for phase E.
 - `planarsviz_checks/` holds the porting checks — the R ones reach the archive

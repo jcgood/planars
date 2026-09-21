@@ -8,7 +8,7 @@ The existing laminar_analysis.load_spans() function deduplicates diagnostics
 with the same positional span and excludes size-1 spans.  This script uses
 that same convention.  "Adjacent" means a span of size 2, i.e. [i, i+1].
 
-Output (under results/ by default):
+Output (under results/counts-and-chance/ by default):
   nyan1308_tree_counts.tsv  -- includes both per-class and bundle rows
 
 The bar charts these counts feed are drawn by the planarsviz package
@@ -157,7 +157,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--domain-file", default="domains_nyan1308.tsv")
     parser.add_argument("--domains-dir", type=Path, default=REPO_DIR / "domains")
-    parser.add_argument("--output-dir", type=Path, default=REPO_DIR / "results")
+    parser.add_argument("--output-dir", type=Path, default=REPO_DIR / "results" / "counts-and-chance")
     args = parser.parse_args()
 
     args.output_dir.mkdir(parents=True, exist_ok=True)

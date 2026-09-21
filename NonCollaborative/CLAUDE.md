@@ -91,7 +91,7 @@ Early prototypes for domain derivation from linguistic parameter files. Represen
 
 ### `examples/`
 
-Glossed Chichewa examples (`nyan1308_*.yaml`) transcribed for use with `scripts/highlight_planar_example.py`, which renders each into a highlighted planar-table PDF and matching example card under `results/`.
+Glossed Chichewa examples (`nyan1308_*.yaml`) transcribed for use with `scripts/highlight_planar_example.py`, which renders each into a highlighted planar-table PDF and matching example card under `results/planar-structure/`.
 
 ### `readings/`
 
@@ -99,9 +99,15 @@ Reference PDFs cited in `REFERENCES.md` (currently: Barthélemy 1989, on the cop
 
 ### `results/`
 
-Generated output — PDFs, `.tex` sources and `.tsv` data — plus `results/planarsviz/`, which holds the exported data bundle, the frozen reference images the porting checks compare against, and the comparison images those checks write. Both the reference and comparison images are grouped by topic into four subfolders (`laminar-families/`, `pooled/`, `boundaries/`, `counts-and-chance/`) rather than sitting flat — see `docs/planarsviz_guide.md` § 6. `results/visualizations.md` documents every chart and table here: what it shows, what produced it, and how to regenerate it. Keep that file in sync whenever something starts writing a new `results/` artifact.
+Generated output — PDFs, `.tex` sources and `.tsv` data — plus `results/planarsviz/`, which holds the exported data bundle, the frozen reference images the porting checks compare against, and the comparison images those checks write.
 
-The generated `.r` scripts that used to sit here beside the PDFs are gone: the `planarsviz` package draws the charts now, and those scripts are archived (see `OlderFiles/` below). The one exception is `nyan1308_random_tree_overlay.r`, which was never ported.
+**`results/` is grouped by topic, not flat.** Six folders: `laminar-families/`, `pooled/`, `boundaries/`, `counts-and-chance/`, `planar-structure/` and `illustrations/`. Only `visualizations.md` and `nyan1308_planarsviz_manifest.tsv` sit at the top. The reference and comparison images under `results/planarsviz/` mirror the first four of those names (the other two hold no package-drawn charts) — see `docs/planarsviz_guide.md` § 6.
+
+**Which folder a chart belongs to is recorded in exactly one place:** a `planarsviz_folder` attribute on the object each chart function returns, beside the `planarsviz_size` attribute that gives its canvas. The renderer reads it to decide where to write, the manifest's `file` column carries the result, and the porting checks find a chart's reference image at that same address. Nothing keeps a second copy of the mapping, so adding a chart means setting one attribute.
+
+`results/visualizations.md` documents every chart and table here: what it shows, what produced it, and how to regenerate it. Keep that file in sync whenever something starts writing a new `results/` artifact.
+
+The generated `.r` scripts that used to sit here beside the PDFs are gone: the `planarsviz` package draws the charts now, and those scripts are archived (see `OlderFiles/` below). The one exception is `illustrations/nyan1308_random_tree_overlay.r`, which was never ported.
 
 ### `tests/`
 

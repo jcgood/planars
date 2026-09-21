@@ -28,7 +28,8 @@ Usage:
     python random_tree_overlay.py --n-trees 300 --n-leaves 22 --alpha 0.015
     python random_tree_overlay.py --seed 7          # reproducible sample
 
-Output goes to NonCollaborative/results/ as nyan1308_random_tree_overlay.r (+ .pdf).
+Output goes to NonCollaborative/results/illustrations/ as
+nyan1308_random_tree_overlay.r (+ .pdf).
 """
 
 import argparse
@@ -42,7 +43,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "exploratory"))
 from catalan import all_trees_new, _ordered_forests  # noqa: E402
 
-RESULTS_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "results")
+RESULTS_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "results", "illustrations")
 
 # Same 22 ChichPlan position labels already used for the x-axis in
 # laminar_spanchart.r (pos_labels_vec, archived in

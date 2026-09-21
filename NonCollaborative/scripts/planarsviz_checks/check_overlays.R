@@ -7,9 +7,9 @@
 # plot_laminar_overlay(); compares every tree's ggplot_build() data and the
 # legend plot's data; renders the chart and its legend version at 20x14 in
 # and pixel-compares both with the frozen references.
-#   chart 7: results/nyan1308_laminar_overlay.r      -> plot_laminar_overlay(bundle)
-#   chart 8: results/nyan1308_all_families_labeled.r -> groups = "all", divisor 1, exponent 0.75
-#   chart 9: results/nyan1308_all_families_labeled_wordhood.r -> chart 8 + highlight
+#   chart 7: OlderFiles/planarsviz_superseded/results/nyan1308_laminar_overlay.r      -> plot_laminar_overlay(bundle)
+#   chart 8: OlderFiles/planarsviz_superseded/results/nyan1308_all_families_labeled.r -> groups = "all", divisor 1, exponent 0.75
+#   chart 9: OlderFiles/planarsviz_superseded/results/nyan1308_all_families_labeled_wordhood.r -> chart 8 + highlight
 # The legend's thickness swatch was fixed on 2026-09-15 (it now follows the
 # lines' exponent). The exact comparison with the old scripts uses
 # legend_thickness_exponent = 0.5, which reproduces their legend; the files

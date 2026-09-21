@@ -14,8 +14,14 @@
 #
 # A bundle whose family enumeration was truncated is refused (the package's
 # validator stops on it). A chart that fails is reported and the script
-# exits non-zero; nothing is skipped silently. <dataset>_planarsviz_manifest.tsv
-# lists every file in the output directory, not just the ones this run drew:
+# exits non-zero; nothing is skipped silently.
+#
+# Charts are written into a topic subfolder of the output directory --
+# laminar-families/, pooled/, boundaries/, counts-and-chance/ -- named by the
+# chart's own planarsviz_folder attribute, beside the attribute that gives its
+# canvas size. <dataset>_planarsviz_manifest.tsv
+# lists every file in the output directory, folder and all, not just the ones
+# this run drew:
 # a --plots run merges into the manifest already there rather than replacing
 # it, and drops only rows whose file has gone. So it describes the directory,
 # which is what makes it useful after a partial render. It is bookkeeping, not
@@ -221,17 +227,24 @@ for (name in wanted) {
     size <- attr(p, "planarsviz_size")
     units <- attr(p, "planarsviz_units")
     if (is.null(size) || is.null(units)) stop("chart function returned no canvas size")
-    pdf_path <- file.path(output, paste0(base, ".pdf"))
+    # Each chart says which topic folder it belongs in, the same way it says
+    # how big its canvas is, so there is no second table here to drift.
+    folder <- attr(p, "planarsviz_folder")
+    if (is.null(folder)) stop("chart function returned no folder")
+    dest <- file.path(output, folder)
+    dir.create(dest, recursive = TRUE, showWarnings = FALSE)
+    pdf_path <- file.path(dest, paste0(base, ".pdf"))
     suppressMessages(suppressWarnings(ggplot2::ggsave(pdf_path, p, device = "pdf", width = size[["width"]],
                                                       height = size[["height"]], units = units, limitsize = FALSE)))
     files <- if ("pdf" %in% formats) pdf_path else character()
     if ("png" %in% formats) {
-      stem <- file.path(output, base)
+      stem <- file.path(dest, base)
       system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(pdf_path), shQuote(stem)))
       files <- c(files, paste0(stem, ".png"))
       if (!"pdf" %in% formats) unlink(pdf_path)
     }
-    data.frame(chart = name, file = basename(files), width = size[["width"]], height = size[["height"]], units = units)
+    data.frame(chart = name, file = file.path(folder, basename(files)), width = size[["width"]],
+               height = size[["height"]], units = units)
   }, error = function(e) {
     failed <<- c(failed, name)
     cat("FAILED ", name, ": ", conditionMessage(e), "\n", sep = "")

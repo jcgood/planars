@@ -32,9 +32,10 @@ Usage:
     python make_planar_latex.py planar_nyan1308.tsv --variant reduced
     python make_planar_latex.py planar_nyan1308.tsv --tex-only
 
-With no --variant, both are written. Output goes to NonCollaborative/results/
-as <lang>_planar_table_<variant>.tex (+ .pdf), matching where the other
-generated charts in this project land (see results/visualizations.md).
+With no --variant, both are written. Output goes to
+NonCollaborative/results/planar-structure/ as <lang>_planar_table_<variant>.tex
+(+ .pdf), matching where the other generated charts in this project land (see
+results/visualizations.md).
 """
 
 import argparse
@@ -45,7 +46,7 @@ import tempfile
 
 import pandas as pd
 
-RESULTS_DIR = os.path.join(os.path.dirname(__file__), "..", "results")
+RESULTS_DIR = os.path.join(os.path.dirname(__file__), "..", "results", "planar-structure")
 
 # Font setup lifted verbatim from ChichewaWordhood.tex:15-20 -- Times New Roman as the
 # main font, with small caps (\sc / {\sc ...}) routed through TeX Gyre Termes's real

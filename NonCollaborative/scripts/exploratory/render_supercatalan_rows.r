@@ -1,7 +1,7 @@
 # Renders the rows described in supercatalan_trees.json (written by
 # generate_supercatalan_rows.py) to one raw, uncropped PDF per row in
-# results/ -- generate_supercatalan_rows.py crops each one afterward with
-# pdfcrop.
+# results/illustrations/ -- generate_supercatalan_rows.py crops each one
+# afterward with pdfcrop.
 #
 # Each tree is drawn with ggtree's `layout_dendrogram()`: a node's height
 # is 1 + its tallest child's height, counted up from the leaves, so a
@@ -47,7 +47,7 @@ TREE_GAP_IN     <- 0.3  # horizontal gap between separate trees in a row
 # working directory set to its own folder (scripts/exploratory/), so
 # these can just be relative paths.
 data <- fromJSON("supercatalan_trees.json", simplifyDataFrame = FALSE)
-out_dir <- file.path("..", "..", "results")
+out_dir <- file.path("..", "..", "results", "illustrations")
 
 
 # A truly zero expansion here (expand = c(0, 0)) puts the data's exact

@@ -44,7 +44,7 @@ counting logic on a randomly-repositioned replicate's spans/families
 without re-deriving it. compute_boundary_strength() is a thin wrapper
 that adds the load-from-disk step and the position range.
 
-Output (under results/ by default):
+Output (under results/boundaries/ by default):
   nyan1308_boundary_strength.tsv
 
 The charts these numbers feed -- the per-side boundary chart and the density
@@ -162,7 +162,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--domain-file", default="domains_nyan1308.tsv")
     parser.add_argument("--domains-dir", type=Path, default=REPO_DIR / "domains")
-    parser.add_argument("--output-dir", type=Path, default=REPO_DIR / "results")
+    parser.add_argument("--output-dir", type=Path, default=REPO_DIR / "results" / "boundaries")
     parser.add_argument(
         "--subset", default=None,
         help="Comma-separated Domain_Type values (e.g. morphosyntactic,length) "

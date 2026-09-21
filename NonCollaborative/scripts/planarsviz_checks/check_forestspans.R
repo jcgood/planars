@@ -2,8 +2,8 @@
 # Porting check for chart 11 (ForestSpans plot and its no-tonosegmental
 # version), docs/PLAN_planarsviz_library.md section 7 steps 3-6.
 #
-# Default (nyan1308): evaluates results/nyan1308_forestspans_plot.r and
-# results/nyan1308_forestspans_plot_no_tono.r in memory (ggsave disabled;
+# Default (nyan1308): evaluates OlderFiles/planarsviz_superseded/results/nyan1308_forestspans_plot.r and
+# OlderFiles/planarsviz_superseded/results/nyan1308_forestspans_plot_no_tono.r in memory (ggsave disabled;
 # files untouched), builds the same charts with plot_forestspans(bundle) and
 # plot_forestspans(bundle, subset = "no_tono"), compares ggplot_build() data
 # and the y-axis order, renders at 34x24 cm and pixel-compares with the

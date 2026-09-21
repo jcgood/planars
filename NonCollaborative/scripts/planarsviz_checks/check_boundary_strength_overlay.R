@@ -74,9 +74,9 @@ if (!library_only) {
 
 cases <- list(
   list(name = "boundary_strength_overlay", subset = NULL,
-       tsv = "results/nyan1308_boundary_strength.tsv", colours = c(Left = "#0072B2", Right = "#E69F00")),
+       tsv = "results/boundaries/nyan1308_boundary_strength.tsv", colours = c(Left = "#0072B2", Right = "#E69F00")),
   list(name = "boundary_strength_overlay_no_tono", subset = "no_tono",
-       tsv = "results/nyan1308_boundary_strength_no_tono.tsv", colours = c(Left = "#009E73", Right = "#CC79A7"))
+       tsv = "results/boundaries/nyan1308_boundary_strength_no_tono.tsv", colours = c(Left = "#009E73", Right = "#CC79A7"))
 )
 
 all_ok <- TRUE

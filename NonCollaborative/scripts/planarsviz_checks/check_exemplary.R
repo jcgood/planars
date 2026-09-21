@@ -2,7 +2,7 @@
 # Porting check for chart 10 (exemplary trees and slides),
 # docs/PLAN_planarsviz_library.md section 7 steps 3-6.
 #
-# Default (nyan1308): evaluates results/nyan1308_exemplary_trees.r in memory,
+# Default (nyan1308): evaluates OlderFiles/planarsviz_superseded/results/nyan1308_exemplary_trees.r in memory,
 # including the domain_charts-cgpt.r it source()s, with ggsave replaced by a
 # do-nothing function so no committed PDF is rewritten. For every exemplar
 # compares the print tree, evidence panel and slide tree's ggplot_build()

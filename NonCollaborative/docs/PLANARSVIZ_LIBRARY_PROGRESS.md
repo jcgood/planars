@@ -1759,3 +1759,81 @@ not what that snapshot is for.
   names and nothing that could mask a pixel difference, and `exemplary.R`
   checked by hand because it sets the size attribute on three different
   objects and the folder had to land on each returned one.
+
+---
+
+## The restructure, step 3: `results/` itself moves (2026-09-20)
+
+`results/` was 143 files in one flat directory. It is now six topic folders.
+140 files moved, one was deleted, and two stayed at the top: `visualizations.md`,
+which is the index, and `nyan1308_planarsviz_manifest.tsv`, which the renderer
+writes.
+
+| | files |
+|---|---|
+| `laminar-families/` | 66 |
+| `planar-structure/` | 24 |
+| `counts-and-chance/` | 17 |
+| `pooled/` | 17 |
+| `boundaries/` | 10 |
+| `illustrations/` | 6 |
+
+**Almost none of this needed a fresh decision.** Step 2 had already recorded a
+folder for every chart the package draws, so 91 of the 140 simply went where
+their reference image went — including the two that are not obvious
+(`forestspans_plot` is `pooled/`, not `laminar-families/`; `span_placement_test_*`
+is `counts-and-chance/`). Only the data tables, the LaTeX sources and the
+non-chart artifacts needed a rule. The planner that produced the move refuses
+to place a file it has no rule for rather than dropping it in a default
+folder, which caught five on its first run: the two `all_families_labeled_
+orthographic_word` charts, whose references still carry the older `wordhood`
+name, and the two `most_binary_tree` charts, which the package draws but no
+older script ever did, so step 1 had nothing to freeze for them.
+
+**Question 2 is answered.** `nyan1308_all_families_labeled_legend-JGAnn.pdf` —
+open since the port began as "not a chart output" — was a hand-annotated copy
+of the legend chart, the one file here no script produces. Jeff's call was to
+delete it rather than carry it through the restructure; it stays recoverable
+in git history.
+
+**The folder is still recorded in exactly one place.** The renderer now writes
+each chart into the subfolder its own `planarsviz_folder` attribute names, and
+records that folder in the manifest's `file` column. That retires the stopgap
+step 2 had to put in `check_renderer.py`: it indexed every reference PNG by
+filename because the manifest carried no folder, and now it looks a reference
+up at the address the manifest gives. The same attribute therefore decides
+three things — where a chart is drawn, where its reference lives, and where
+the check looks — from one assignment.
+
+**What proves the move changed nothing: 20 of the 21 checks are byte-identical**
+(7m24s). The 21st is `check_renderer.py`, which had to change: the same number
+of lines, with the first difference at line 87, the start of its list of
+references with no render, where each name now carries its folder. Every one of
+the chart rows above that is untouched.
+
+Thirteen writer scripts had their default output directory repointed at the
+right subfolder, so re-running any of them lands the file where the move put it
+instead of dropping a second copy at the top. Without that the restructure would
+have created exactly the failure this project keeps hitting — the same artifact
+in two places with nothing recording which is current.
+
+**Two stale comments fixed on the way through, neither caused by this change.**
+`check_forestspans.R`, `check_overlays.R`, `check_forests.R` and
+`check_exemplary.R` each named the script they evaluate as `results/nyan1308_*.r`.
+Those scripts were archived by cutover step C2 and the code has reached them
+through `superseded()` ever since; only the comments still pointed at a place
+the files had left.
+
+- Looked at by Claude: yes — the full suite run after the move and its single
+  failure traced to the trailing list rather than accepted from a summary; the
+  claim that file names are unique across the six folders checked rather than
+  asserted, because `visualizations.md` now tells a reader to rely on it; the
+  renderer's new output verified on a two-chart render, which also confirmed
+  the hand-rewritten manifest matches what a real render produces, column for
+  column; and the delegated script sweep checked by reading every new default
+  against the move plan rather than the agent's own table.
+
+**Next: absorption.** The package becomes the only thing that writes a chart
+into `results/`, one chart at a time, each checked against the reference step 1
+froze. The renderer check's closing list is that queue — 26 names now, shrinking
+by one as each lands.

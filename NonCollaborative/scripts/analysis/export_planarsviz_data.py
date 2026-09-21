@@ -1117,7 +1117,8 @@ def main() -> None:
         help="Also run the class-fragmentation permutation test with N draws and "
              "put its two tables in the bundle. Off by default because it is slow: "
              "5000 draws takes about four minutes against the rest of the export's "
-             "1.6 seconds. Use 5000 to match the committed results/ files.",
+             "1.6 seconds. Use 5000 to match the committed "
+             "results/counts-and-chance/ files.",
     )
     parser.add_argument(
         "--fragmentation-seed", type=int, default=0,
@@ -1130,7 +1131,7 @@ def main() -> None:
              "arrangement?) with N draws and put its table in the bundle. Off by default for the "
              "same reason as --fragmentation-permutations: one family enumeration per replicate, "
              "so 5000 draws takes minutes against the rest of the export's ~2 seconds. Use 5000 "
-             "to match the committed results/ files.",
+             "to match the committed results/boundaries/ files.",
     )
     parser.add_argument(
         "--boundary-strength-test-seed", type=int, default=0,

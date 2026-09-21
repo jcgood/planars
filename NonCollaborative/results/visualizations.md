@@ -27,6 +27,16 @@ that one field and nothing else. Add `--plots name1,name2` to the second
 command to draw only some charts; `--list` prints the names a bundle supports.
 The sections below give the `--plots` name for each chart.
 
+**Where the files sit.** `results/` is grouped by topic rather than flat:
+`laminar-families/`, `pooled/`, `boundaries/`, `counts-and-chance/`,
+`planar-structure/` and `illustrations/`. Only this file and the render
+manifest sit at the top. Each section below is headed by a bare file name,
+because file names are unique across the whole tree; for a chart the package
+draws, `nyan1308_planarsviz_manifest.tsv` gives its exact path. Which folder a
+chart belongs to is recorded once, as an attribute on the chart function
+itself, and the renderer reads it — so a new chart lands in the right place
+without anything here having to be updated to match.
+
 **Two files, two jobs.** This file says what each artifact in `results/`
 *shows* and what it means for the analysis.
 [`../docs/planarsviz_charts.md`](../docs/planarsviz_charts.md) is the chart
@@ -401,7 +411,7 @@ Rscript scripts/analysis/bundle_forest_trees.r
 
 **Not from the package, and that is the problem with them.** `bundle_forest_trees.r`
 reads the bundle, so it respects "Python computes, R draws from the bundle" — but it
-writes straight into flat `results/` with no chart name and no manifest row, so nothing
+writes straight into `results/laminar-families/` with no chart name and no manifest row, so nothing
 records that these 22 files exist or which run made them. Porting it into the package
 is the open request in `docs/NOTE_FOR_REFACTOR_SESSION.md`; when that happens, this
 script and these files are replaced by package-drawn charts with proper names, and this
@@ -432,7 +442,7 @@ section changes with them.
 
 Drawn by the `planarsviz` package from the exported data bundle. Reads the same underlying
 CCDB test data, `domains/domains_nyan1308.tsv`, by way of the bundle the
-exporter writes. PDFs are written to `results/`.
+exporter writes. PDFs are written to `results/pooled/`.
 
 To render:
 ```
@@ -482,7 +492,8 @@ are generated on every run.
 
 ## Pooled chart notes
 
-- Output directory and file naming match the laminar charts above (`results/`, `nyan1308_*.pdf`).
+- File naming matches the laminar charts above (`nyan1308_*.pdf`); these are written to
+  `results/pooled/` rather than `results/laminar-families/`.
 - Chart height scales with the number of distinct tests in that chart (`plot_height()`, 7 cm
   floor) so small classes like `length` (7 tests) don't render unreadably short.
 
@@ -726,7 +737,8 @@ exactly (`width=16, height=10`, inches) — an earlier version used a physically
 (24×16 *centimeters*, roughly half the page) that was too cramped for 22 boxed labels at this
 size, and they overlapped each other.
 
-**This is the one generated R script still sitting in `results/`.** It was never ported to the
+**This is the one generated R script still sitting in `results/`** (in
+`illustrations/`). It was never ported to the
 package — it draws a random sample rather than a fixed chart — and is scheduled to become part
 of the `illustrations` bundle in phase E of the planarsviz work.
 
@@ -1004,7 +1016,7 @@ PDF; `--tex-only` skips that and writes just the sources.)
 `nyan1308_boundary_strength_no_tono.tsv` is the same computation over the four
 non-tonosegmental domain types. The exporter writes it into the bundle at
 `results/planarsviz/nyan1308/data/subsets/no_tono/boundary_strength.tsv`, and
-the copy in `results/` carries the shorter name by hand:
+the copy in `results/boundaries/` carries the shorter name by hand:
 `boundary_strength.py --subset morphosyntactic,phonological,length,intonational`
 produces identical numbers but names its file after all four types. The copy is
 kept because a porting check compares the bundle against it.

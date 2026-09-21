@@ -20,7 +20,7 @@ so they mean the same thing as "Layer" everywhere else this project uses it
 Reverse_Layer is what actually gets displayed as "Layer" everywhere in the
 project, including here.
 
-Two outputs, both to NonCollaborative/results/:
+Two outputs, both to NonCollaborative/results/pooled/:
 
 - nyan1308_forestspans_table.tex -- manuscript-ready fragment using the same
   \\Hline/\\mc macros as ChichewaWordhood.tex itself (a paste-in replacement
@@ -52,7 +52,7 @@ import subprocess
 import sys
 import tempfile
 
-RESULTS_DIR = os.path.join(os.path.dirname(__file__), "..", "results")
+RESULTS_DIR = os.path.join(os.path.dirname(__file__), "..", "results", "pooled")
 ANALYSIS_DIR = os.path.join(os.path.dirname(__file__), "analysis")
 DOMAINS_DIR = os.path.join(os.path.dirname(__file__), "..", "domains")
 

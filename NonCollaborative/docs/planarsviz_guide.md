@@ -199,6 +199,15 @@ carries this as an attribute (`planarsviz_folder`, next to the existing
 `planarsviz_size`), so the folder a chart's images live in always matches
 what drew it; nothing outside the R package needs to know the mapping.
 
+The same attribute decides where a rendered chart itself is written. The
+renderer puts each chart in that subfolder of its output directory and
+records the folder in the manifest's `file` column, so `results/` is grouped
+the same way its reference images are, and `check_renderer.py` looks a
+reference up at the address the manifest gives rather than by hunting for a
+file of the right name. `results/` adds two folders the check side has no use
+for — `planar-structure/` and `illustrations/` — because no package-drawn
+chart belongs to either.
+
 ---
 
 ## 7. Package versions

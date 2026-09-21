@@ -4,8 +4,9 @@ For docs/PLAN_planarsviz_library.md section 8.3: after
     Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308 --output DIR --formats pdf,png
 run
     python scripts/planarsviz_checks/check_renderer.py DIR
-Reads DIR's <dataset>_planarsviz_manifest.tsv, pairs each nyan1308_<chart>.png with
-results/planarsviz/reference/nyan1308_<chart>.png, and prints the
+Reads DIR's <dataset>_planarsviz_manifest.tsv, pairs each
+<folder>/nyan1308_<chart>.png with
+results/planarsviz/reference/<folder>/nyan1308_<chart>.png, and prints the
 differing-pixel share per chart (side-by-side images go to DIR/compare/).
 Charts copied from working R code must show 0.0000%; the two matplotlib
 ports (tree_count_*, boundary_strength, _no_tono, _distributions) differ by
@@ -39,20 +40,12 @@ CHANGED = {"conflict_groups", "all_families_labeled_legend",
            # the stretch the drawn spans cover.
            "spanchart"}
 
-# The reference images now live under reference/<topic folder>/, not
-# flat in reference/ itself (see docs/PLANARSVIZ_LIBRARY_PROGRESS.md). The
-# renderer's own manifest doesn't carry a folder column yet, so this indexes
-# every reference PNG by filename instead of needing to know which folder
-# it's in.
+# Reference images live under reference/<topic folder>/, and the manifest's
+# file column now carries that same folder, so a reference is found at the
+# address the manifest gives rather than by hunting for its filename.
 ref_by_name = {}
 for path in REFERENCE.rglob("*.png"):
-    if path.name in ref_by_name:
-        sys.exit(
-            f"Two reference images share the filename {path.name!r}: "
-            f"{ref_by_name[path.name]} and {path}. check_renderer.py looks "
-            "references up by filename alone, so this is ambiguous."
-        )
-    ref_by_name[path.name] = path
+    ref_by_name[path.relative_to(REFERENCE).as_posix()] = path
 
 out_dir = Path(sys.argv[1])
 compare_dir = out_dir / "compare"
@@ -68,15 +61,18 @@ seen = set()
 problems = 0
 for row in rows:
     chart = row["chart"]
-    ref_name = f"nyan1308_{RENAMED.get(chart, chart)}.png"
+    folder = Path(row["file"]).parent.as_posix()
+    ref_name = f"{folder}/nyan1308_{RENAMED.get(chart, chart)}.png"
     seen.add(ref_name)
     ref = ref_by_name.get(ref_name)
     if ref is None:
         print(f"{chart:48} no reference")
         continue
+    comparison = compare_dir / row["file"]
+    comparison.parent.mkdir(parents=True, exist_ok=True)
     result = subprocess.run(
         [sys.executable, str(NC / "scripts" / "planarsviz_compare.py"), str(ref),
-         str(out_dir / row["file"]), str(compare_dir / row["file"])],
+         str(out_dir / row["file"]), str(comparison)],
         capture_output=True, text=True).stdout.strip()
     is_port = chart.startswith(PORTS[0]) or chart in PORTS[1:] and "overlay" not in chart
     exact = "differing_pixels=0.0000%" in result and "size_match=True" in result
@@ -90,7 +86,7 @@ for row in rows:
 # transparency measurements check_tree_counts.R compares against, kept here
 # because cutover step C3 removed the matplotlib that drew them.
 missing = sorted(name for name in ref_by_name
-                 if name.startswith("nyan1308_") and name not in seen
+                 if Path(name).name.startswith("nyan1308_") and name not in seen
                  and not name.endswith("_transp.png"))
 # One per line rather than a list on one line: this is the standing list of
 # charts still to be absorbed into the package, so it wants to read as a list

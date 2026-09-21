@@ -2,7 +2,8 @@
 
 For chart 16 (docs/PLAN_planarsviz_library.md section 4.3, step 1): the
 exporter calls collect_counts() and collect_bundle_counts(); this checks
-data/tree_counts.tsv has exactly the rows of results/nyan1308_tree_counts.tsv
+data/tree_counts.tsv has exactly the rows of
+results/counts-and-chance/nyan1308_tree_counts.tsv
 (condition, class, n_unique_spans, n_maximal_laminar_families), in order.
 
 Run from NonCollaborative/:
@@ -21,7 +22,7 @@ def read(path):
         return [[row[c] for c in COLUMNS] for row in csv.DictReader(handle, delimiter="\t")]
 
 
-script_rows = read(NC / "results" / "nyan1308_tree_counts.tsv")
+script_rows = read(NC / "results" / "counts-and-chance" / "nyan1308_tree_counts.tsv")
 bundle_rows = read(NC / "results" / "planarsviz" / "nyan1308" / "data" / "tree_counts.tsv")
 same = script_rows == bundle_rows
 print(f"script table {len(script_rows)} rows, bundle {len(bundle_rows)} rows: {'identical' if same else 'MISMATCH'}")

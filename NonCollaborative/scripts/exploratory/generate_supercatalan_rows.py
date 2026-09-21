@@ -70,7 +70,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from catalan import enumerate_trees
 
 SCRIPT_DIR = Path(__file__).parent
-OUT_DIR = SCRIPT_DIR.parent.parent / "results"
+OUT_DIR = SCRIPT_DIR.parent.parent / "results" / "illustrations"
 DATA_PATH = SCRIPT_DIR / "supercatalan_trees.json"
 R_SCRIPT = SCRIPT_DIR / "render_supercatalan_rows.r"
 CROP_MARGIN_BP = 5  # whitespace border pdfcrop leaves around each row's content

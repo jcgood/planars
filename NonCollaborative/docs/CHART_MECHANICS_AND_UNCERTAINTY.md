@@ -19,8 +19,8 @@ Related files:
   `run_domain_overlay()`, which is what earlier passages here name; both are gone,
   and the archived script they wrote is in
   `OlderFiles/planarsviz_superseded/results/nyan1308_laminar_overlay.r`.
-- `results/nyan1308_all_families_labeled.pdf` — the chart itself.
-  `results/nyan1308_all_families_labeled_orthographic_word.pdf` — a variant with positions
+- `results/laminar-families/nyan1308_all_families_labeled.pdf` — the chart itself.
+  `results/laminar-families/nyan1308_all_families_labeled_orthographic_word.pdf` — a variant with positions
   5–19 (the orthographic word) in red and position 17 (FV, the final vowel) in blue
   (colorblind-safe pairing, not red/green). Both are now drawn by the
   `planarsviz` R package from the exported data bundle; the `.r` files of the

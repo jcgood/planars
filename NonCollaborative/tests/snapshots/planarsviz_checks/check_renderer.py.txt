@@ -84,30 +84,30 @@ boundary_strength_no_tono                        size_match=True ref=(1100, 700)
 boundary_strength_overlay_no_tono                size_match=True ref=(1300, 700) new=(1300, 700) differing_pixels=0.0000%
 
 84 renders compared; 26 references with no render:
-  nyan1308_fragmentation_test_syntax_phon_plot.png
-  nyan1308_phonologylike_tree_01.png
-  nyan1308_phonologylike_tree_02.png
-  nyan1308_phonologylike_tree_03.png
-  nyan1308_phonologylike_tree_04.png
-  nyan1308_phonologylike_tree_05.png
-  nyan1308_phonologylike_tree_06.png
-  nyan1308_span_placement_test_by_group_plot.png
-  nyan1308_span_placement_test_phonologylike_plot.png
-  nyan1308_span_placement_test_syntaxlike_plot.png
-  nyan1308_syntaxlike_tree_01.png
-  nyan1308_syntaxlike_tree_02.png
-  nyan1308_syntaxlike_tree_03.png
-  nyan1308_syntaxlike_tree_04.png
-  nyan1308_syntaxlike_tree_05.png
-  nyan1308_syntaxlike_tree_06.png
-  nyan1308_syntaxlike_tree_07.png
-  nyan1308_syntaxlike_tree_08.png
-  nyan1308_syntaxlike_tree_09.png
-  nyan1308_syntaxlike_tree_10.png
-  nyan1308_syntaxlike_tree_11.png
-  nyan1308_syntaxlike_tree_12.png
-  nyan1308_syntaxlike_tree_13.png
-  nyan1308_syntaxlike_tree_14.png
-  nyan1308_syntaxlike_tree_15.png
-  nyan1308_syntaxlike_tree_16.png
+  counts-and-chance/nyan1308_fragmentation_test_syntax_phon_plot.png
+  counts-and-chance/nyan1308_span_placement_test_by_group_plot.png
+  counts-and-chance/nyan1308_span_placement_test_phonologylike_plot.png
+  counts-and-chance/nyan1308_span_placement_test_syntaxlike_plot.png
+  laminar-families/nyan1308_phonologylike_tree_01.png
+  laminar-families/nyan1308_phonologylike_tree_02.png
+  laminar-families/nyan1308_phonologylike_tree_03.png
+  laminar-families/nyan1308_phonologylike_tree_04.png
+  laminar-families/nyan1308_phonologylike_tree_05.png
+  laminar-families/nyan1308_phonologylike_tree_06.png
+  laminar-families/nyan1308_syntaxlike_tree_01.png
+  laminar-families/nyan1308_syntaxlike_tree_02.png
+  laminar-families/nyan1308_syntaxlike_tree_03.png
+  laminar-families/nyan1308_syntaxlike_tree_04.png
+  laminar-families/nyan1308_syntaxlike_tree_05.png
+  laminar-families/nyan1308_syntaxlike_tree_06.png
+  laminar-families/nyan1308_syntaxlike_tree_07.png
+  laminar-families/nyan1308_syntaxlike_tree_08.png
+  laminar-families/nyan1308_syntaxlike_tree_09.png
+  laminar-families/nyan1308_syntaxlike_tree_10.png
+  laminar-families/nyan1308_syntaxlike_tree_11.png
+  laminar-families/nyan1308_syntaxlike_tree_12.png
+  laminar-families/nyan1308_syntaxlike_tree_13.png
+  laminar-families/nyan1308_syntaxlike_tree_14.png
+  laminar-families/nyan1308_syntaxlike_tree_15.png
+  laminar-families/nyan1308_syntaxlike_tree_16.png
 RENDERER CHECK PASSED

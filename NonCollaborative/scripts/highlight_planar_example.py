@@ -41,7 +41,7 @@ table logic, and the xelatex render/compile-check step) rather than
 duplicating it -- run from the same directory, or make sure this directory
 is on PYTHONPATH, so the `import make_planar_latex` below resolves.
 
-Output goes to NonCollaborative/results/ as (add --label <x> to get
+Output goes to NonCollaborative/results/planar-structure/ as (add --label <x> to get
 ..._<example_name>_<x>.pdf instead, so a differently-styled run doesn't
 overwrite a previous one):
     <lang>_planar_table_<example_name>_highlighted.pdf

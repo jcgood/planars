@@ -53,7 +53,7 @@ script_dir <- local({
   file_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
   if (length(file_arg)) dirname(normalizePath(sub("^--file=", "", file_arg[[1]]))) else getwd()
 })
-output_dir <- normalizePath(file.path(script_dir, "..", "..", "results"), mustWork = TRUE)
+output_dir <- normalizePath(file.path(script_dir, "..", "..", "results", "counts-and-chance"), mustWork = TRUE)
 
 all_summary <- read.delim(file.path(output_dir, "nyan1308_span_placement_test.tsv"),
                            stringsAsFactors = FALSE, check.names = FALSE)
