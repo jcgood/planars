@@ -1639,3 +1639,50 @@ this project's own core diagnosis in miniature, a fact in more than one place
 with no owner. After absorption, `fragmentation_test_plot.r` survives only as
 the frozen reference source the porting check evaluates in memory, never as
 something you run to produce a deliverable.
+
+---
+
+## The restructure, step 1: 26 references frozen (2026-09-20)
+
+The step with no second chance is done. Every chart that exists in `results/`
+but has never been drawn by the package now has a frozen reference image in
+`results/planarsviz/reference/`, so the port that replaces each one can be
+checked against what the script drew. Until this was done, the first time the
+package wrote one of those PDFs the evidence would have been gone.
+
+Rendered with the same command every porting check uses — `pdftoppm -png -r
+100 -singlefile` — and named after the PDF, which is the convention the checks
+already follow.
+
+**26, not the 25 the plan named.** The plan counted the 22 forest trees, the
+fragmentation two-bundle chart, and the two single-bundle span-placement
+charts, and left out `nyan1308_span_placement_test_by_group_plot.pdf` — the
+nine-panel one. It came from the same commit as the other two, is equally
+unported, and decision 2 makes the package the only thing that writes a chart
+into `results/`, so it needs a reference on exactly the same reasoning. An
+extra frozen image costs a file; a lost original cannot be recovered.
+
+| What | Count |
+|------|-------|
+| Forest trees (`phonologylike_tree_01..06`, `syntaxlike_tree_01..16`) | 22 |
+| `fragmentation_test_syntax_phon_plot` | 1 |
+| `span_placement_test_by_group_plot`, `_syntaxlike_plot`, `_phonologylike_plot` | 3 |
+
+The freezing script refuses to overwrite an existing reference, so it could not
+have destroyed one by being run twice. Chart 19's all-groups reference, the one
+that already existed, was left untouched.
+
+- Looked at by Claude: yes — all 26 confirmed distinct by hash, none blank
+  (ink coverage 3.4% to 20.4%), canvases as expected (1200×800 for every tree,
+  1100×900 for the nine-panel, 900×320 and 900×550 for the rest), and three
+  opened and read directly: a syntax-like tree, the nine-panel span-placement
+  chart, and the fragmentation two-bundle chart. The nine-panel chart's printed
+  p-values match the numbers `results/visualizations.md` records for the same
+  run (morphosyntactic 0.019, syntax-like without tonosegmental 0.020,
+  intonational 0.901), which checks the frozen image against the committed
+  table rather than only against itself.
+
+**Next: the move.** Two commits, comparison images first, then `results/`,
+teaching the renderer which family each chart belongs to. The 21 porting checks
+are what prove only addresses changed. Absorption stays a separate commit after
+that, for the reason stated in the entry above.
