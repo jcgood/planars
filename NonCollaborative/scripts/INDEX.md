@@ -117,19 +117,12 @@ to it, and that is where the porting checks run too.
 - **Example**: `python scripts/analysis/class_fragmentation_test.py`
   (reproduces the committed files exactly: 5000 draws, seed 0)
 
-**`analysis/fragmentation_test_plot.r`**
-- **Purpose**: Draw the test above — one horizontal violin per group (the
-  null distribution) with the observed family count as a filled dot, classes
-  and bundles as two stacked panels on a shared axis, p-value per row
-- **Input**: `results/counts-and-chance/nyan1308_fragmentation_null_draws.tsv` and the two
-  summary TSVs; it does not re-run the permutation
-- **Output**: `results/counts-and-chance/nyan1308_fragmentation_test_plot.pdf`
-- **Example**: `Rscript scripts/analysis/fragmentation_test_plot.r` (it
-  resolves `results/` from its own location, so any working directory is fine)
-- **Also in the package**, as chart 19 (`plot_fragmentation_test()`). This
-  script stays because it is the original the port was checked against — there
-  was never a matplotlib version, so the chart it draws is the reference. The
-  package needs a bundle exported with `--fragmentation-permutations`.
+*(The R that drew this test, `analysis/fragmentation_test_plot.r`, was archived
+to `OlderFiles/planarsviz_superseded/scripts/analysis/` on 2026-09-21. The
+package draws both of its charts now — `plot_fragmentation_test()`, chart 19,
+with `groups` for the two-bundle variant — from a bundle exported with
+`--fragmentation-permutations`. Until then it and the package both wrote
+`nyan1308_fragmentation_test_plot.pdf` and nothing recorded which had won.)*
 
 **`analysis/laminar_tree_counts.py`**
 - **Purpose**: Count maximal laminar families pooled, per domain class, per

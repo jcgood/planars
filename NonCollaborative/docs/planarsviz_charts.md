@@ -457,12 +457,17 @@ panels on one shared x axis, so the raw scale stays comparable.
 
 ```r
 plot_fragmentation_test(bundle)
+plot_fragmentation_test(bundle, groups = c("phonologylike", "syntaxlike"))
 ```
 
-No options: the chart draws whatever groups the bundle's table holds, in its
-own colours and labels.
+| Option | Meaning |
+|---|---|
+| `groups` | Draw only these groups. Default: every group the bundle's table holds, in its own colours and labels. When what is left is all one kind, the facet strip is dropped — there is nothing for it to distinguish. |
 
-Canvas 10 × 6.5 in.
+Canvas 10 × 6.5 in for every group, 9 × 3.2 in for a filtered call. Those were
+two hardcoded `ggsave()` sizes in the script this came from and no formula
+connects them, so another `groups` list may want a size of its own — set
+`planarsviz_size` on the returned plot to change it.
 
 **This chart needs a bundle exported with `--fragmentation-permutations`.**
 The permutation test takes minutes where the rest of an export takes seconds,
@@ -472,6 +477,12 @@ stops and says how to re-export.
 | Renderer name | Old file |
 |---|---|
 | `fragmentation_test_plot` | `nyan1308_fragmentation_test_plot.pdf` |
+| `fragmentation_test_syntax_phon_plot` | `nyan1308_fragmentation_test_syntax_phon_plot.pdf` |
+
+Which two bundles the filtered variant shows is a presentation choice rather
+than anything in the data, so the renderer sets it where it sets the other
+choices that used to be separate script calls, and registers the chart only
+for a bundle that has both.
 
 Unlike every other chart here, this one was written in R from the start —
 there is no matplotlib original, so the chart the standalone script drew is

@@ -107,6 +107,7 @@ tree_count_bundles	counts-and-chance/nyan1308_tree_count_bundles.pdf	8	3.8	in
 tree_count_all	counts-and-chance/nyan1308_tree_count_all.pdf	7	5	in
 tree_count_without_adjacent	counts-and-chance/nyan1308_tree_count_without_adjacent.pdf	8	5	in
 fragmentation_test_plot	counts-and-chance/nyan1308_fragmentation_test_plot.pdf	10	6.5	in
+fragmentation_test_syntax_phon_plot	counts-and-chance/nyan1308_fragmentation_test_syntax_phon_plot.pdf	9	3.2	in
 boundary_strength	boundaries/nyan1308_boundary_strength.pdf	11	7	in
 boundary_strength_distributions	boundaries/nyan1308_boundary_strength_distributions.pdf	11	5	in
 boundary_strength_overlay	boundaries/nyan1308_boundary_strength_overlay.pdf	13	7	in

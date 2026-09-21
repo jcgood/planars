@@ -95,13 +95,20 @@ full suite is green (43 passed, 3 xfailed). One consequence to look at:
 eight forests means a full render draws the 26 trees nobody had drawn before.
 Reversing that is a `--plots` decision plus deleting 26 files.
 
-**Two producers left, in this order:** the fragmentation two-bundle variant,
-then the three span-placement charts, whose numbers have to reach the bundle
-through the exporter first the way `--fragmentation-permutations` already
-does. The fragmentation port also has to retire `fragmentation_test_plot.r`
-as a second producer of `nyan1308_fragmentation_test_plot.pdf` — the defect
-the restructure plan names. The renderer check's closing list is the queue:
-4 names now, shrinking by one as each chart lands.
+**The fragmentation two-bundle variant is absorbed too** (2026-09-21).
+`plot_fragmentation_test()` took a `groups` argument, both charts compare at
+0.0000%, and `fragmentation_test_plot.r` is archived — which closes the real
+defect the restructure plan named: it and the package both wrote
+`nyan1308_fragmentation_test_plot.pdf`, whichever ran last winning, with
+nothing recording which.
+
+**One producer left: the three span-placement charts.** Unlike the first two,
+their numbers are not in the bundle — `span_placement_test.py` writes
+committed TSVs in `results/counts-and-chance/` that no exporter reads
+(checked, not assumed). So the port starts in `export_planarsviz_data.py`
+behind a flag, the way `--fragmentation-permutations` already works, and only
+then reaches `r/planarsviz/`. The renderer check's closing list is the queue:
+3 names now, all of them these.
 
 **`NonCollaborative/docs/NOTE_FOR_REFACTOR_SESSION.md` is now history, not
 instruction**, for the forest-tree part at least: its port request is done,

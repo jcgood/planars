@@ -14,6 +14,12 @@
 #     palette; they now come from the bundle's `colour` column, spelled the way
 #     every other bundle table spells it.
 #
+# The script had a second call, drawing just two of the bundles for someone
+# presenting them on their own. That became the `groups` argument on
+# 2026-09-21, when the script was archived: it was the last thing still
+# writing a chart into results/ that the package also wrote, so whichever ran
+# last won and nothing recorded which.
+#
 # The null distributions arrive as a tally (one row per distinct family count
 # per group, with `n`) rather than one row per draw, which is the same
 # information in 227 rows instead of 40,000. They are expanded back to one row
@@ -81,14 +87,28 @@ read_planars_fragmentation_null <- function(bundle, expand = TRUE) {
 #' normalised away.
 #'
 #' @param bundle A bundle from [read_planars_bundle()].
+#' @param groups Draw only these groups, by their `group` ids, instead of
+#'   every group the test covers. When what is left is all one kind, the
+#'   panel strip is dropped rather than drawn as a single pointless label.
 #' @return A ggplot object with attributes `planarsviz_size`,
 #'   `planarsviz_units` (`"in"`), `planarsviz_transparent` and
 #'   `planarsviz_folder` (its `results/planarsviz` subfolder).
 #' @export
-plot_fragmentation_test <- function(bundle) {
+plot_fragmentation_test <- function(bundle, groups = NULL) {
   validate_planars_bundle(bundle)
   summary_df <- read_planars_fragmentation(bundle)
   null_draws <- read_planars_fragmentation_null(bundle)
+
+  if (!is.null(groups)) {
+    unknown <- setdiff(groups, summary_df$group)
+    if (length(unknown)) {
+      stop("No group `", paste(unknown, collapse = "`, `"),
+           "` in this bundle's fragmentation test. It covers: ",
+           paste(summary_df$group, collapse = ", "), ".", call. = FALSE)
+    }
+    summary_df <- summary_df[summary_df$group %in% groups, , drop = FALSE]
+    null_draws <- null_draws[null_draws$group %in% groups, , drop = FALSE]
+  }
 
   # Bottom-to-top by n_tests ascending, classes before bundles. The factor's
   # global level order sets each facet's own row order under
@@ -96,6 +116,7 @@ plot_fragmentation_test <- function(bundle) {
   summary_df <- summary_df[order(summary_df$kind == "bundle", summary_df$n_tests), ]
   group_levels <- summary_df$group
   kind_levels <- c("class", "bundle")
+  multi_kind <- length(unique(summary_df$kind)) > 1
   summary_df$group <- factor(summary_df$group, levels = group_levels)
   summary_df$kind <- factor(summary_df$kind, levels = kind_levels)
   null_draws$group <- factor(null_draws$group, levels = group_levels)
@@ -106,14 +127,20 @@ plot_fragmentation_test <- function(bundle) {
 
   # One fixed p-value x per panel, just past that panel's own widest data. A
   # single global position would either crowd the class panel or sit oddly far
-  # from the bundle panel's much wider range.
-  null_max <- stats::aggregate(family_count ~ kind, data = null_draws, FUN = max)
-  names(null_max) <- c("kind", "null_max")
-  obs_max <- stats::aggregate(observed_families ~ kind, data = summary_df, FUN = max)
-  names(obs_max) <- c("kind", "obs_max")
-  panel_max <- merge(null_max, obs_max, by = "kind")
-  panel_max$label_x <- pmax(panel_max$null_max, panel_max$obs_max) * 1.08
-  summary_df <- merge(summary_df, panel_max[, c("kind", "label_x")], by = "kind")
+  # from the bundle panel's much wider range. With one panel there is nothing
+  # to stagger, so one x serves the whole chart.
+  if (multi_kind) {
+    null_max <- stats::aggregate(family_count ~ kind, data = null_draws, FUN = max)
+    names(null_max) <- c("kind", "null_max")
+    obs_max <- stats::aggregate(observed_families ~ kind, data = summary_df, FUN = max)
+    names(obs_max) <- c("kind", "obs_max")
+    panel_max <- merge(null_max, obs_max, by = "kind")
+    panel_max$label_x <- pmax(panel_max$null_max, panel_max$obs_max) * 1.08
+    summary_df <- merge(summary_df, panel_max[, c("kind", "label_x")], by = "kind")
+  } else {
+    summary_df$label_x <- max(max(null_draws$family_count),
+                              max(summary_df$observed_families)) * 1.08
+  }
 
   p <- ggplot() +
     geom_violin(
@@ -130,8 +157,6 @@ plot_fragmentation_test <- function(bundle) {
           label = sprintf("p=%.3f", p_value_le_observed)),
       hjust = 0, size = 3.6, color = "black"
     ) +
-    facet_grid(kind ~ ., scales = "free_y", space = "free_y",
-               labeller = as_labeller(c(class = "Domain type", bundle = "Bundle"))) +
     scale_fill_manual(values = colour_map, guide = "none") +
     scale_y_discrete(labels = label_map) +
     scale_x_continuous(expand = expansion(mult = c(0.02, 0.16))) +
@@ -148,7 +173,16 @@ plot_fragmentation_test <- function(bundle) {
       plot.margin = margin(t = 10, r = 60, b = 10, l = 10)
     )
 
-  attr(p, "planarsviz_size") <- c(width = 10, height = 6.5)
+  if (multi_kind) {
+    p <- p + facet_grid(kind ~ ., scales = "free_y", space = "free_y",
+                        labeller = as_labeller(c(class = "Domain type", bundle = "Bundle")))
+  }
+
+  # Two canvases, because the script this came from hardcoded a ggsave() size
+  # for each of its two calls and no formula connects them. A `groups` list
+  # other than the pair of bundles may well want a size of its own; set the
+  # attribute on the returned plot to change it.
+  attr(p, "planarsviz_size") <- if (multi_kind) c(width = 10, height = 6.5) else c(width = 9, height = 3.2)
   attr(p, "planarsviz_units") <- "in"
   attr(p, "planarsviz_transparent") <- FALSE
   attr(p, "planarsviz_folder") <- "counts-and-chance"

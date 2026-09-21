@@ -106,6 +106,7 @@ tree_count_bundles                               size_match=False ref=(800, 381)
 tree_count_all                                   size_match=True ref=(700, 500) new=(700, 500) differing_pixels=7.2066%
 tree_count_without_adjacent                      size_match=True ref=(800, 500) new=(800, 500) differing_pixels=7.1080%
 fragmentation_test_plot                          size_match=True ref=(1000, 650) new=(1000, 650) differing_pixels=0.0000%
+fragmentation_test_syntax_phon_plot              size_match=True ref=(900, 320) new=(900, 320) differing_pixels=0.0000%
 boundary_strength_test_jump_all                  no reference
 boundary_strength_test_level_all                 no reference
 boundary_strength_test_jump_morphosyntactic      no reference
@@ -131,8 +132,7 @@ forestspans_plot_no_tono                         size_match=True ref=(1338, 945)
 boundary_strength_no_tono                        size_match=True ref=(1100, 700) new=(1100, 700) differing_pixels=5.1251%
 boundary_strength_overlay_no_tono                size_match=True ref=(1300, 700) new=(1300, 700) differing_pixels=0.0000%
 
-132 renders compared; 4 references with no render:
-  counts-and-chance/nyan1308_fragmentation_test_syntax_phon_plot.png
+133 renders compared; 3 references with no render:
   counts-and-chance/nyan1308_span_placement_test_by_group_plot.png
   counts-and-chance/nyan1308_span_placement_test_phonologylike_plot.png
   counts-and-chance/nyan1308_span_placement_test_syntaxlike_plot.png

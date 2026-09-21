@@ -187,6 +187,16 @@ chart_table <- function() {
   # exporter runs it on request, so a bundle without it is normal, not broken.
   if (file.exists(file.path(data_dir, "fragmentation_test.tsv"))) {
     add("fragmentation_test_plot", function() plot_fragmentation_test(bundle))
+    # The pair of bundles on their own, which the script this was ported from
+    # drew as a second call for presenting them without the domain types
+    # around them. Which two is a presentation choice rather than anything in
+    # the data, so it is set here with the other choices that were separate
+    # script calls -- and only when the bundle has both.
+    syntax_phon <- c("phonologylike", "syntaxlike")
+    if (all(syntax_phon %in% read_tsv("fragmentation_test.tsv")$group)) {
+      add("fragmentation_test_syntax_phon_plot",
+          function() plot_fragmentation_test(bundle, groups = syntax_phon))
+    }
   }
   # Only when the bundle has it: the permutation test is slow enough that the
   # exporter runs it on request (--boundary-strength-test-permutations), so a

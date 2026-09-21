@@ -4,10 +4,14 @@
 \alias{plot_fragmentation_test}
 \title{Plot the class-fragmentation permutation test}
 \usage{
-plot_fragmentation_test(bundle)
+plot_fragmentation_test(bundle, groups = NULL)
 }
 \arguments{
 \item{bundle}{A bundle from [read_planars_bundle()].}
+
+\item{groups}{Draw only these groups, by their `group` ids, instead of
+every group the test covers. When what is left is all one kind, the
+panel strip is dropped rather than drawn as a single pointless label.}
 }
 \value{
 A ggplot object with attributes `planarsviz_size`,

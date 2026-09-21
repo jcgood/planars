@@ -1903,3 +1903,53 @@ port also has to retire `fragmentation_test_plot.r` as a second producer of
 `nyan1308_fragmentation_test_plot.pdf`, the defect the restructure plan names. The
 span-placement charts are the bulk, because their numbers have to reach the bundle
 through the exporter first, the way `--fragmentation-permutations` already does.
+
+---
+
+## Absorption, second producer: the fragmentation two-bundle variant (2026-09-21)
+
+`plot_fragmentation_test()` gained a `groups` argument, and the renderer registers
+`fragmentation_test_syntax_phon_plot` — the two bundles drawn on their own, which the
+script had as a second call. Both charts compare against their frozen references at
+0.0000%, so the all-groups chart is untouched and the new one reproduces what the
+script drew.
+
+**This is the one that closes a real defect rather than just tidying an address.**
+`nyan1308_fragmentation_test_plot.pdf` had two producers: the package drew it through
+the renderer and `fragmentation_test_plot.r` also wrote it directly. Whichever ran last
+won and nothing recorded which — one fact in two places with no owner, which is this
+project's own diagnosis in miniature. The script is now archived in
+`OlderFiles/planarsviz_superseded/scripts/analysis/`, behind the run guard.
+
+**Two canvases, stated rather than derived.** The full chart is 10 × 6.5 in and the
+filtered one 9 × 3.2 in, because the script hardcoded a `ggsave()` size for each of its
+two calls. No formula connects them, and fitting a line through two points would have
+been invented precision, so the function carries both and the documentation says a
+different `groups` list may want a size of its own.
+
+**Which two bundles is a presentation choice, not a fact in the data**, so it is set in
+the renderer's `chart_table()`, where the renderer's own header already says rendering
+choices that were separate script calls belong — the filtered overlay's second colour
+pair is the precedent. It is guarded on the bundle actually having both groups, the
+same shape as the `file.exists()` guard on the fragmentation tables themselves.
+
+**One stale path fixed on the way through, unrelated to this change.**
+`check_fragmentation.R`'s library-only branch still read
+`results/nyan1308_fragmentation_test_plot.pdf`, a location the step-3 move emptied. It
+is not exercised by the test suite — only the no-argument form is — so it had gone
+unnoticed.
+
+The renderer check's closing queue is down from 4 names to 3, all of them
+span-placement charts.
+
+- Looked at by Claude: yes — both charts rendered and compared before anything was
+  archived, so the evidence existed before the original could be lost; the all-groups
+  chart confirmed still 0.0000% after `facet_grid()` moved from mid-chain to a
+  conditional at the end, which is where the risk of a silent change sat; and the
+  archived script confirmed to be reached by no check, by grep, rather than assumed
+  from the fact that `check_fragmentation.R` compares against an image.
+
+**Next: the three span-placement charts**, the last of the absorption. Unlike these
+two, their numbers are not in the bundle — `span_placement_test.py` writes committed
+TSVs that no exporter reads, so the port starts in `export_planarsviz_data.py` behind a
+flag, the way `--fragmentation-permutations` already works.

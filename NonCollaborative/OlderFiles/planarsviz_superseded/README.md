@@ -70,7 +70,7 @@ used to live in `scripts/analysis/laminar_analysis.py`:
   Archived in C4. No check compares against it; it is here because the Python
   that wrote it is gone and nothing else records what it drew.
 
-`scripts/` — 4 hand-written scripts:
+`scripts/` — 5 hand-written scripts:
 
 - `domain_charts-cgpt.r` — the pooled constituency charts (1–4), also
   `source()`d by the exemplary-trees script
@@ -78,19 +78,30 @@ used to live in `scripts/analysis/laminar_analysis.py`:
 - `analysis/boundary_strength_plot.r` — chart 18
 - `analysis/bundle_forest_trees.r` — the 22 individual forest trees, archived
   2026-09-21 when `plot_forest_tree()` absorbed them into the package
+- `analysis/fragmentation_test_plot.r` — chart 19 and its two-bundle variant,
+  archived 2026-09-21 when `plot_fragmentation_test(groups = )` absorbed the
+  second one
 
-## One of these is evidence in a different way
+## Two of these are evidence in a different way
 
-No check runs `analysis/bundle_forest_trees.r`. It is here because it drew the
-22 charts whose reference images were frozen in
-`results/planarsviz/reference/laminar-families/` before the package could
-overwrite them, and those references are what the renderer check compares
-`plot_forest_tree()` against. So the chain runs through the frozen images
-rather than through a live evaluation of the script — but the script is still
-the only record of how those images were made, and its header still describes
-the flat-`results/` writing the package replaced. Left unedited for the same
-reason as the out-of-date comment above: it is a record of what drew the
-published charts, not a file to keep current.
+No check runs `analysis/bundle_forest_trees.r` or
+`analysis/fragmentation_test_plot.r`. They are here because they drew charts
+whose reference images were frozen before the package could overwrite them —
+the 22 forest trees in `reference/laminar-families/`, and both fragmentation
+charts in `reference/counts-and-chance/` — and those references are what the
+checks compare the package against. So the chain runs through the frozen
+images rather than through a live evaluation of the script.
+
+They are still the only record of how those images were made, and both
+headers still describe writing into `results/` themselves, which the package
+does now. Left unedited for the same reason as the out-of-date comment above:
+they record what drew the published charts, not what is current.
+
+`fragmentation_test_plot.r` is also the clearest case for the no-running rule.
+Until it was archived, it and the package both wrote
+`nyan1308_fragmentation_test_plot.pdf` — whichever ran last won, and nothing
+anywhere recorded which. That is this project's own core diagnosis in
+miniature: one fact in two places with no owner.
 
 ## Not here
 

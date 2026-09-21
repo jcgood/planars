@@ -858,8 +858,8 @@ change under a per-type shuffle.
 - **`nyan1308_fragmentation_test_syntax_phon_plot.pdf`** — the same chart filtered to the two
   bundles (`phonologylike`, `syntaxlike`) on their own, drawn for a talk. A single un-faceted
   panel: with one `kind` left there was nothing for the facet strip to distinguish, so it is
-  dropped. Drawn by `fragmentation_test_plot.r`, **not** by the package — the package draws the
-  all-groups chart only, so this variant has no chart name and no manifest row yet.
+  dropped. Drawn by the package since 2026-09-21, as
+  `--plots fragmentation_test_syntax_phon_plot`.
 - **`nyan1308_fragmentation_null_draws.tsv`** — every individual draw, long format (`group`,
   `kind`, `family_count`), so the chart can be redrawn without re-running the permutation.
 
@@ -875,15 +875,15 @@ length sit where chance puts them. The bundles inherit the pattern: phonologylik
 syntaxlike (p=0.112) are each carried by their most laminar component, and dropping tonosegmental
 from syntaxlike moves it back toward unremarkable (p=0.454).
 
-To regenerate:
+To regenerate the tables:
 ```
 python scripts/analysis/class_fragmentation_test.py
-Rscript scripts/analysis/fragmentation_test_plot.r
 ```
 The plain command reproduces the committed files exactly (5000 draws, seed 0). `--n-permutations`
 and `--seed` are adjustable; both summary files record what they were.
 
-**The chart comes from the package now** (chart 19, `--plots fragmentation_test_plot`), but it is the
+**Both charts come from the package** (chart 19, `--plots fragmentation_test_plot` and
+`--plots fragmentation_test_syntax_phon_plot`), but this is the
 one chart whose bundle tables are not written on every export:
 
 ```
@@ -895,10 +895,12 @@ python scripts/analysis/export_planarsviz_data.py \
 
 Without `--fragmentation-permutations` the bundle simply has no fragmentation tables and the
 chart says so. The test takes about four minutes where the rest of an export takes 1.6 seconds,
-which is why it is asked for rather than assumed. `scripts/analysis/fragmentation_test_plot.r`
-is still there and still draws the same chart from the committed TSVs — it is the original this
-was ported from, and, since there was never a matplotlib version, the chart it drew is the
-reference the porting check compares against.
+which is why it is asked for rather than assumed. `fragmentation_test_plot.r`, which drew both
+charts before the package did, was archived to
+`OlderFiles/planarsviz_superseded/scripts/analysis/` on 2026-09-21 — until then it and the
+package both wrote `nyan1308_fragmentation_test_plot.pdf`, whichever ran last winning, with
+nothing recording which. Since there was never a matplotlib version, the charts it drew are the
+references the porting checks compare against.
 
 The null distributions go into the bundle as a tally (`fragmentation_null.tsv`: one row per
 distinct family count per group, with how many draws gave it) rather than one row per draw —

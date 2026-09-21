@@ -5,12 +5,16 @@
 # before reading its output. Every other chart was ported from a working
 # script that still exists, so its check runs that script in memory and
 # compares layer by layer. This chart never had such an original: it was
-# written directly in R in 2026-09 as scripts/analysis/fragmentation_test_plot.r,
-# with no matplotlib version anywhere in this project's history. So the
-# reference is the chart that script drew --
-# results/planarsviz/reference/nyan1308_fragmentation_test_plot.png, frozen
-# before the package could overwrite it -- and this check compares pixels
-# against that.
+# written directly in R in 2026-09 as scripts/analysis/fragmentation_test_plot.r
+# (archived in OlderFiles/planarsviz_superseded/scripts/analysis/ since
+# 2026-09-21), with no matplotlib version anywhere in this project's history.
+# So the reference is the chart that script drew --
+# results/planarsviz/reference/counts-and-chance/nyan1308_fragmentation_test_plot.png,
+# frozen before the package could overwrite it -- and this check compares
+# pixels against that.
+#
+# It checks only the all-groups chart. The two-bundle variant the same script
+# also drew is covered by check_renderer.py, against its own frozen reference.
 #
 # It also checks the numbers, which is the half that catches a real problem:
 # the bundle's summary table must equal what class_fragmentation_test.py
@@ -110,7 +114,7 @@ cmp_out <- file.path(cmp_dir, folder)
 dir.create(cmp_out, recursive = TRUE, showWarnings = FALSE)
 
 if (library_only) {
-  nyan_pdf <- file.path("results", "nyan1308_fragmentation_test_plot.pdf")
+  nyan_pdf <- file.path("results", "counts-and-chance", "nyan1308_fragmentation_test_plot.pdf")
   nyan_stem <- file.path(tempdir(), "nyan_fragmentation")
   system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(nyan_stem)))
   cat(base, ": rendered; side by side with nyan1308: ",
