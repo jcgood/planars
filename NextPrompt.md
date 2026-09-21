@@ -81,10 +81,12 @@ decision rather than typing:**
   the checks and contradict the docs pointing at
   `results/planarsviz/comparisons/`, so it was left alone.
 
-**Still nobody has looked at the charts.** Every `0.0000%` in the progress
-doc was read by Claude off a check's output. Comparison images are under
-`results/planarsviz/comparisons/` (reference | new | difference). This
-predates the tooling work and is the one item only Jeff can clear.
+**Jeff has looked at the charts and they are fine** (2026-09-20). This stood
+open from the start of the port — every `0.0000%` in the progress doc had
+been read by Claude off a check's output and by nobody else — and it is now
+closed. Don't re-raise it. Comparison images stay under
+`results/planarsviz/comparisons/` (reference | new | difference) for any
+future change.
 
 **After phase D: phase E — the `illustrations` bundle.** Supercatalan tree
 shapes, the counting numbers, and the random-tree overlay as a non-language

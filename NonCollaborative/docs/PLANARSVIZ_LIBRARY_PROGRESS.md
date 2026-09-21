@@ -31,17 +31,21 @@ Honesty rule: nothing below says "matches" without naming the comparison file.
 - **Phase D (the R tooling, formerly R9) is in progress.** Done: roxygen2
   generates `NAMESPACE` and `man/`; a drift guard catches a stale regeneration;
   `R CMD check` on a built tarball reports `Status: OK`; and the 21 porting
-  checks now fail on their own instead of only printing their numbers. Left:
-  `renv`, then `lintr`/`styler`, then CI — where the real question is that
+  checks now fail on their own instead of only printing their numbers; and
+  `renv` pins the package versions every one of those numbers was produced
+  with. Left: `lintr`/`styler`, then CI — where the real question is that
   `NonCollaborative/tests/` has never run in CI at all. `vdiffr` was
   considered and deliberately dropped; see the entry at the end of this file.
 - **Not done, deliberately deferred:** Phase E (the `illustrations` bundle —
   question 1 has its design).
-- **Seen by Jeff: still none.** Every "0.0000%" in this file was read by
-  Claude off a check's output; nobody has looked at the charts themselves.
-  Comparison images are under `results/planarsviz/comparisons/`
-  (reference | new | difference). This is the one outstanding item that
-  only Jeff can clear.
+- **Seen by Jeff: yes, 2026-09-20 — the charts are fine.** This was the one
+  outstanding item no tooling could clear, and it is now cleared. Every
+  "0.0000%" in this file had been read by Claude off a check's output; Jeff
+  has now looked at the charts themselves and confirmed they are right. The
+  per-chart "Seen by Jeff: no" lines further down are dated records of how
+  each port stood on its own day and are left as written; this line is the
+  current state. Comparison images remain under
+  `results/planarsviz/comparisons/` (reference | new | difference).
 
 ---
 
@@ -1502,4 +1506,5 @@ fragmentation work. So introducing renv changed no chart.
   roxygen guard confirmed passing rather than skipping from both
   `NonCollaborative/` and the repo root, and the out-of-sync guard proved to
   fire on a real desynchronised lockfile rather than by editing a snapshot.
-  Seen by Jeff: no. **Nobody has still looked at the charts themselves.**
+  **Seen by Jeff: yes — he looked at the charts the same day and confirmed
+  they are fine**, closing the item that had stood open since the port began.
