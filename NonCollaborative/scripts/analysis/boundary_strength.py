@@ -36,6 +36,14 @@ takes an optional `subset` of Domain_Type values -- see load_spans() in
 laminar_analysis.py for the exact values -- so a future per-domain-type or
 per-bundle breakdown is a one-argument change, not a rewrite.
 
+strength_from_families() is the pure per-position core -- spans and an
+already-enumerated family list in, summed/capped left/right dicts out --
+factored out so boundary_strength_test.py (the permutation test asking
+whether these numbers are higher than chance) can call the exact same
+counting logic on a randomly-repositioned replicate's spans/families
+without re-deriving it. compute_boundary_strength() is a thin wrapper
+that adds the load-from-disk step and the position range.
+
 Output (under results/ by default):
   nyan1308_boundary_strength.tsv
 
@@ -68,21 +76,27 @@ from laminar_analysis import (  # noqa: E402
 )
 
 
-def compute_boundary_strength(
-        domain_file: str,
-        domains_dir: Path,
-        subset: list[str] | None = None,
-) -> tuple[list[dict], int]:
-    """subset: Domain_Type values to include (e.g. ["morphosyntactic"]).
-    None (the default) pools every domain type, matching the rest of this
-    project's "all tests" analyses.
-    """
-    spans, n_positions = load_spans(domain_file, str(domains_dir), subset=subset)
-    adjacency = find_conflicts(spans)
-    families, truncated = enumerate_maximal_laminar_families(spans, adjacency, n_positions)
-    if truncated:
-        raise RuntimeError("Family enumeration reached MAX_FAMILIES; counts would be incomplete.")
+def strength_from_families(
+        spans: list,
+        families: list[frozenset],
+) -> tuple[dict[int, int], dict[int, int], dict[int, int], dict[int, int]]:
+    """Per-position left/right summed and capped strength from spans and
+    their already-enumerated maximal laminar families.
 
+    summed: for each position p, sum over every span S with S.left == p (or
+    S.right == p) of how many of the families contain S. Multiple
+    constituents reconfirming the same juncture -- even nested ones, even
+    within the same tree -- makes that juncture stronger; see the module
+    docstring for why this is the intended behavior, not an artifact.
+
+    capped: the number of families that have AT LEAST ONE span with
+    left == p (or right == p), counted once per family no matter how many
+    of that family's own nested spans share the edge. Bounded by
+    len(families). Kept only as a reference point -- see module docstring.
+
+    Returns dicts keyed by position; a position with no qualifying span is
+    simply absent (callers fill in 0 for the positions they report over).
+    """
     span_family_count: dict = defaultdict(int)
     for fam in families:
         for s in fam:
@@ -102,6 +116,26 @@ def compute_boundary_strength(
             left_capped[p] += 1
         for p in {s.right for s in fam}:
             right_capped[p] += 1
+
+    return left_summed, right_summed, left_capped, right_capped
+
+
+def compute_boundary_strength(
+        domain_file: str,
+        domains_dir: Path,
+        subset: list[str] | None = None,
+) -> tuple[list[dict], int]:
+    """subset: Domain_Type values to include (e.g. ["morphosyntactic"]).
+    None (the default) pools every domain type, matching the rest of this
+    project's "all tests" analyses.
+    """
+    spans, n_positions = load_spans(domain_file, str(domains_dir), subset=subset)
+    adjacency = find_conflicts(spans)
+    families, truncated = enumerate_maximal_laminar_families(spans, adjacency, n_positions)
+    if truncated:
+        raise RuntimeError("Family enumeration reached MAX_FAMILIES; counts would be incomplete.")
+
+    left_summed, right_summed, left_capped, right_capped = strength_from_families(spans, families)
 
     rows = [
         {

@@ -166,6 +166,18 @@ chart_table <- function() {
   if (file.exists(file.path(data_dir, "fragmentation_test.tsv"))) {
     add("fragmentation_test_plot", function() plot_fragmentation_test(bundle))
   }
+  # Only when the bundle has it: the permutation test is slow enough that the
+  # exporter runs it on request (--boundary-strength-test-permutations), so a
+  # bundle without it is normal, not broken.
+  if (file.exists(file.path(data_dir, "boundary_strength_test.tsv"))) {
+    for (group in unique(read_tsv("boundary_strength_test.tsv")$group)) {
+      local({
+        g <- group
+        add(paste0("boundary_strength_test_jump_", g), function() plot_boundary_strength_test(bundle, group = g, statistic = "jump"))
+        add(paste0("boundary_strength_test_level_", g), function() plot_boundary_strength_test(bundle, group = g, statistic = "level"))
+      })
+    }
+  }
   add("boundary_strength", function() plot_boundary_strength(bundle))
   add("boundary_strength_distributions", function() plot_boundary_strength_distributions(bundle))
   add("boundary_strength_overlay", function() plot_boundary_strength_overlay(bundle))

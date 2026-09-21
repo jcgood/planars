@@ -131,6 +131,28 @@ nyan1308 at 5000 draws. A reader that wants one row per draw expands it;
 `read_planars_fragmentation_null()` does that by default, which is also how
 the chart gets a violin identical to the one the original script drew.
 
+`boundary_strength_test.tsv` (in `data/` only, and **only when the bundle
+was exported with `--boundary-strength-test-permutations`** — same reason
+as the fragmentation tables: one family enumeration per replicate, so it
+takes minutes where the rest of the export takes seconds). From
+`boundary_strength_test.py`'s `run_test()`: whether `boundary_strength.tsv`'s
+per-position strength, and its jump from the previous position, is higher
+than a same-length-profile random arrangement of spans would produce.
+
+One row per (group, side, statistic, position): `group`, `kind` (`all` /
+class / bundle), `label`, `colour` for the row; `side` (`left` / `right`);
+`statistic` (`level` — the summed strength itself, or `jump` —
+`strength[p] - strength[p-1]`, signed, 0 at position 1); `position`;
+`observed`; the null's `null_mean`, `null_p05`, `null_p95`; the one-sided
+`p_value_ge_observed` (fraction of permutations with a value >= observed;
+small = unusually strong boundary evidence — the mirror image of
+`fragmentation_test.tsv`'s `p_value_le_observed`, since here MORE strength
+is the interesting direction); then `n_permutations` and `seed`. Unlike
+`fragmentation_null.tsv`, there is no raw-draw table: only the null's
+percentiles are kept, the same choice already made for
+`boundary_strength_density.tsv`'s curves, since the chart needs an envelope
+band around the observed curve rather than a distribution shape.
+
 `forests.json` / `forests/<id>.tsv`: the trees of each per-class forest
 (Newick, span order, thickness), computed with the class's own position
 count. `overlay_groups.json` / `overlay_groups/<id>.tsv`: the trees of each
@@ -156,3 +178,7 @@ reject a bundle marked as truncated.
 - When `fragmentation_null.tsv` is present, each group's `n` values sum to
   that group's `n_permutations` in `fragmentation_test.tsv`, and every group
   in one table appears in the other with the same `kind`.
+- When `boundary_strength_test.tsv` is present, every group has exactly
+  `n_positions` rows for each of `(side, statistic)` — four combinations —
+  and `statistic == "jump"` rows at `position == 1` carry `observed == 0`
+  (there is no position 0 to jump from).

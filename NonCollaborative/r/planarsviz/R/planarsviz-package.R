@@ -32,9 +32,10 @@ utils::globalVariables(c(
   "alpha_val", "Boundary", "capped", "Color", "colour", "Colour", "Count",
   "Density", "Domain_Layer", "Domain_Type", "Edge", "edge_size",
   "family_count", "freq_scaled", "group", "label", "Label", "label_x",
-  "Layer", "left", "Left", "Left_Edge", "lw", "observed_families",
+  "Layer", "left", "Left", "Left_Edge", "lw", "null_mean", "null_p05",
+  "null_p95", "observed", "observed_families",
   "p_value_le_observed", "position", "Reverse_Domain_Layer",
-  "Reverse_Layer", "right", "Right", "Right_Edge", "side", "size", "Size",
-  "Strength", "summed", "Test_Labels", "value", "x", "x0", "x1", "y",
-  "y_rank"
+  "Reverse_Layer", "right", "Right", "Right_Edge", "side", "significant",
+  "size", "Size", "Strength", "summed", "Test_Labels", "value", "x", "x0",
+  "x1", "y", "y_rank"
 ))

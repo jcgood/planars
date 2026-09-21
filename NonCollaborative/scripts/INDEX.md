@@ -156,6 +156,47 @@ to it, and that is where the porting checks run too.
   charts are drawn by the package; this script drew them in matplotlib until
   the cutover.
 - **Example**: `python scripts/analysis/boundary_strength.py`
+- **`strength_from_families()`** is the reusable core (spans + an
+  already-enumerated family list in, summed/capped left/right dicts out),
+  factored out so `boundary_strength_test.py` below can run the same
+  counting logic on a permuted replicate's own spans/families.
+
+**`analysis/boundary_strength_test.py`**
+- **Purpose**: Is `boundary_strength.py`'s per-position strength — and,
+  specifically, the jump from one position to the next — higher than a
+  same-length-profile random arrangement of spans would produce by chance?
+  A direct stress test of the "clear quantal jump" claim on the left edge
+  of the orthographic word (and the more equivocal one on the right) made
+  informally from the bar chart.
+- **Method**: reuses `span_placement_test.py`'s null model and `GROUPS`
+  list exactly (same `random_replicate()`, same "draw over the full
+  22-position structure regardless of group" convention) but computes a
+  fresh boundary-strength curve from each replicate's own family
+  enumeration, rather than just a family count. Two statistics per
+  (group, side, position): `level` (the strength itself) and `jump`
+  (`strength[p] - strength[p-1]`, signed — the direct test of a rise at a
+  candidate left edge). One-sided `p_value_ge_observed` (small = higher
+  than chance), the mirror of `span_placement_test.py`'s own convention.
+- **Finding**: on the pooled data, the left-edge jump at position 5 is
+  robustly significant (p=0.0010, 5000 draws) — the "clear jump" claim
+  holds up quantitatively. The best right-edge position (21, on the jump
+  statistic) lands at p=0.0522 — right at the edge of the conventional
+  threshold, matching the talk's own "more diffuse" hedge almost exactly.
+  Tonosegmental's right edge at position 17 (the final vowel) is the
+  single strongest result of any group (p=0.0004).
+- **Output**: `results/nyan1308_boundary_strength_test.tsv` — one row per
+  (group, side, statistic, position): `observed`, `null_mean`, `null_p05`,
+  `null_p95`, `p_value_ge_observed`, plus `n_permutations`/`seed`. No raw
+  per-draw table — only percentiles are kept, the same choice
+  `boundary_strength_density.tsv`'s precomputed curves already made, since
+  the chart needs an envelope band, not a distribution shape.
+- **Also called by the exporter**, through `run_test()`, when
+  `--boundary-strength-test-permutations` is given.
+- **Example**: `python scripts/analysis/boundary_strength_test.py`
+  (reproduces the committed file exactly: 5000 draws, seed 0)
+- **In the package** as `plot_boundary_strength_test()` — written directly
+  there from the start, like `plot_fragmentation_test()`, with no earlier
+  script to port or reference image to freeze.
 
 **`analysis/planars_groupings.py`**
 - **Purpose**: The named groupings of domain types, defined once — `BUNDLES`

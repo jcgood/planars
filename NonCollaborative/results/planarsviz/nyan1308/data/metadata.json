@@ -1,5 +1,7 @@
 {
   "analysis_source": "scripts/analysis/laminar_analysis.py",
+  "boundary_strength_test_permutations": 5000,
+  "boundary_strength_test_seed": 0,
   "conflict_group_cap": 12,
   "contract_version": "0.2.0",
   "dataset": "nyan1308",

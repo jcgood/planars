@@ -129,3 +129,29 @@ def test_fragmentation_tables_agree():
         key = (row["group"], row["family_count"])
         assert key not in seen, f"duplicate tally row for {key}"
         seen.add(key)
+
+
+def test_boundary_strength_test_covers_every_position():
+    """Every group must have exactly one row per (side, statistic, position),
+    and the jump statistic's position-1 row (no position 0 to jump from) must
+    always read 0.
+
+    Written as a test for the same reason test_fragmentation_tables_agree()
+    is: a group silently missing a position, or a jump row silently carrying
+    a stale non-zero value at position 1, would make the ribbon chart draw a
+    gap or a spurious point without anything else catching it.
+    """
+    rows = read_tsv("boundary_strength_test.tsv")
+    assert rows
+    n_positions = json.loads((BUNDLE / "metadata.json").read_text())["n_positions"]
+
+    by_group_side_statistic = {}
+    for row in rows:
+        key = (row["group"], row["side"], row["statistic"])
+        by_group_side_statistic.setdefault(key, set()).add(int(row["position"]))
+    for key, positions in by_group_side_statistic.items():
+        assert positions == set(range(1, n_positions + 1)), f"{key} does not cover every position"
+
+    for row in rows:
+        if row["statistic"] == "jump" and int(row["position"]) == 1:
+            assert float(row["observed"]) == 0.0
