@@ -92,5 +92,13 @@ for row in rows:
 missing = sorted(name for name in ref_by_name
                  if name.startswith("nyan1308_") and name not in seen
                  and not name.endswith("_transp.png"))
-print(f"\n{len(rows)} renders compared; references with no render: {missing or 'none'}")
+# One per line rather than a list on one line: this is the standing list of
+# charts still to be absorbed into the package, so it wants to read as a list
+# and to shrink a name at a time as each one lands.
+if missing:
+    print(f"\n{len(rows)} renders compared; {len(missing)} references with no render:")
+    for name in missing:
+        print(f"  {name}")
+else:
+    print(f"\n{len(rows)} renders compared; references with no render: none")
 print("RENDERER CHECK PASSED" if not problems else f"RENDERER CHECK: {problems} copied chart(s) not exact")

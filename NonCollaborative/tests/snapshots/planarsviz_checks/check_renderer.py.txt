@@ -58,6 +58,24 @@ tree_count_bundles                               size_match=False ref=(800, 381)
 tree_count_all                                   size_match=True ref=(700, 500) new=(700, 500) differing_pixels=7.2066%
 tree_count_without_adjacent                      size_match=True ref=(800, 500) new=(800, 500) differing_pixels=7.1080%
 fragmentation_test_plot                          size_match=True ref=(1000, 650) new=(1000, 650) differing_pixels=0.0000%
+boundary_strength_test_jump_all                  no reference
+boundary_strength_test_level_all                 no reference
+boundary_strength_test_jump_morphosyntactic      no reference
+boundary_strength_test_level_morphosyntactic     no reference
+boundary_strength_test_jump_phonological         no reference
+boundary_strength_test_level_phonological        no reference
+boundary_strength_test_jump_tonosegmental        no reference
+boundary_strength_test_level_tonosegmental       no reference
+boundary_strength_test_jump_intonational         no reference
+boundary_strength_test_level_intonational        no reference
+boundary_strength_test_jump_length               no reference
+boundary_strength_test_level_length              no reference
+boundary_strength_test_jump_phonologylike        no reference
+boundary_strength_test_level_phonologylike       no reference
+boundary_strength_test_jump_syntaxlike           no reference
+boundary_strength_test_level_syntaxlike          no reference
+boundary_strength_test_jump_syntaxlike_notono    no reference
+boundary_strength_test_level_syntaxlike_notono   no reference
 boundary_strength                                size_match=True ref=(1100, 700) new=(1100, 700) differing_pixels=5.7336%
 boundary_strength_distributions                  size_match=True ref=(1100, 500) new=(1100, 500) differing_pixels=10.2962%
 boundary_strength_overlay                        size_match=True ref=(1300, 700) new=(1300, 700) differing_pixels=0.0000%
@@ -65,5 +83,31 @@ forestspans_plot_no_tono                         size_match=True ref=(1338, 945)
 boundary_strength_no_tono                        size_match=True ref=(1100, 700) new=(1100, 700) differing_pixels=5.1251%
 boundary_strength_overlay_no_tono                size_match=True ref=(1300, 700) new=(1300, 700) differing_pixels=0.0000%
 
-66 renders compared; references with no render: none
+84 renders compared; 26 references with no render:
+  nyan1308_fragmentation_test_syntax_phon_plot.png
+  nyan1308_phonologylike_tree_01.png
+  nyan1308_phonologylike_tree_02.png
+  nyan1308_phonologylike_tree_03.png
+  nyan1308_phonologylike_tree_04.png
+  nyan1308_phonologylike_tree_05.png
+  nyan1308_phonologylike_tree_06.png
+  nyan1308_span_placement_test_by_group_plot.png
+  nyan1308_span_placement_test_phonologylike_plot.png
+  nyan1308_span_placement_test_syntaxlike_plot.png
+  nyan1308_syntaxlike_tree_01.png
+  nyan1308_syntaxlike_tree_02.png
+  nyan1308_syntaxlike_tree_03.png
+  nyan1308_syntaxlike_tree_04.png
+  nyan1308_syntaxlike_tree_05.png
+  nyan1308_syntaxlike_tree_06.png
+  nyan1308_syntaxlike_tree_07.png
+  nyan1308_syntaxlike_tree_08.png
+  nyan1308_syntaxlike_tree_09.png
+  nyan1308_syntaxlike_tree_10.png
+  nyan1308_syntaxlike_tree_11.png
+  nyan1308_syntaxlike_tree_12.png
+  nyan1308_syntaxlike_tree_13.png
+  nyan1308_syntaxlike_tree_14.png
+  nyan1308_syntaxlike_tree_15.png
+  nyan1308_syntaxlike_tree_16.png
 RENDERER CHECK PASSED
