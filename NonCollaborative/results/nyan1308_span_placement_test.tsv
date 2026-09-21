@@ -1,0 +1,10 @@
+group	n_spans	n_positions	observed_families	n_permutations	seed	n_truncated	null_mean	null_p05	null_p50	null_p95	p_value_le_observed
+all	26	22	69	5000	0	0	83.783	46	80	134	0.335
+morphosyntactic	10	22	3	5000	0	0	6.367	4	6	9	0.019
+phonological	11	22	6	5000	0	0	10.022	5	10	16	0.1364
+tonosegmental	11	22	9	5000	0	0	8.007	5	8	13	0.7552
+intonational	3	22	1	5000	0	0	1.099	1	1	2	0.9012
+length	6	22	3	5000	0	0	4.042	3	4	6	0.2824
+phonologylike	13	22	6	5000	0	0	11.514	6	11	19	0.077
+syntaxlike	20	22	16	5000	0	0	27.817	16	27	42	0.0514
+syntaxlike_notono	11	22	4	5000	0	0	7.739	5	8	11	0.02
