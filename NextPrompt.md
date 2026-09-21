@@ -77,27 +77,48 @@ commits:
 - **WeasyPrint upgraded to 70.0** (`00b12cc`), clearing both Dependabot
   alerts. Neither could reach this project; upgrading beat dismissing.
 
-**Next action: finish the `results/` restructure.** Steps 1 and 2 are done;
-the plan, the folder scheme and the order the rest has to happen in are the
-last three entries in
+**Next action: absorption, the last step of the `results/` restructure.**
+Steps 1, 2 and 3 are done and pushed — the references are frozen, the
+check-side images are grouped, and `results/` itself is now six topic
+folders. What remains is making the package the only thing that writes a
+chart into `results/`. The plan and the order it has to happen in are the
+last four entries in
 `NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md`. Read those before
 starting; they are not repeated here. `lintr`/`styler` is the only phase D
 item left after it, and needs no decision — just work.
 
-**Start by pushing `064952d`, which is committed locally and has never been
-pushed.** It was blocked by the roxygen pre-push guard, for a reason that is
-not a defect in it: Jeff's other Claude session (his work account) was
-mid-change on `r/planarsviz/` and had an untracked `boundary_strength_test.R`
-in the tree, so the guard regenerated a `NAMESPACE` with an export the
-committed one lacked. `NonCollaborative/docs/NOTE_FOR_BOUNDARY_STRENGTH_SESSION.md`
-is the standing note to that session and says what it has to commit to clear
-this. Check the guard passes on its own rather than reaching for
-`--no-verify` — it has been silently disarmed once before.
+**Three producers left, in this order:** the 22 forest trees
+(`bundle_forest_trees.r`), the fragmentation two-bundle variant, then the
+three span-placement charts, whose numbers have to reach the bundle through
+the exporter first the way `--fragmentation-permutations` already does.
+Start with the forest trees: biggest count, least risk, data already in the
+bundle. `NonCollaborative/docs/NOTE_FOR_REFACTOR_SESSION.md` specifies that
+port in detail — its drawing logic is copied verbatim from
+`planarsviz_exemplary_tree()` in `r/planarsviz/R/exemplary.R`, so the work is
+generalizing an existing function, and the registration precedent is the
+`exemplary_trees_<rank>` loop at `render_planarsviz.R:146-154`. Register all
+eight forests generically over `forests.json` (48 chart names); that was
+decided, and answers the open question the note itself raises.
+
+**One instruction in that note is out of date and says the opposite of what
+to do.** It states the 22 tree files are uncommitted and that there is "no
+original to preserve as a reference — the port can just replace it
+outright". Both were true when written. Since then the analysis session's
+work was committed and step 1 froze a reference image for every one of those
+22 trees, so the port is pixel-checked against them like every other chart.
+The renderer check's closing list is the queue: 26 names, shrinking by one as
+each chart lands.
 
 **Two sessions are sharing `r/planarsviz/`.** Anything uncommitted in the
 tree that this session did not write may be the other one's work in flight:
 do not commit it and do not revert it, stage your own files by name, and ask
-Jeff whose it is.
+Jeff whose it is. As of 2026-09-21 one file is in exactly that state:
+`NonCollaborative/docs/NOTE_FOR_REFACTOR_SESSION.md`, modified but not
+committed by the session that wrote it. An untracked or modified file under
+`r/planarsviz/` will also jam the roxygen pre-push guard, which is what
+blocked a push for most of 2026-09-20 — check the guard passes on its own
+rather than reaching for `--no-verify`, which has silently disarmed it
+before.
 
 **Still open, unfixed: the checks overwrite 136 tracked comparison images.**
 Byte-identical every run, which is itself evidence the renders are
