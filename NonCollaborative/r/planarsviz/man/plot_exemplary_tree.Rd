@@ -21,8 +21,9 @@ plot_exemplary_tree(
 \item{selection}{A selection from `selections.tsv`.}
 }
 \value{
-A plot with attributes `planarsviz_size` and `planarsviz_units`;
-  the page also has `planarsviz_parts` (tree, evidence).
+A plot with attributes `planarsviz_size`, `planarsviz_units` and
+  `planarsviz_folder` (its `results/planarsviz` subfolder); the page also
+  has `planarsviz_parts` (tree, evidence).
 }
 \description{
 One chart per selected family, in three views: the print page (tree

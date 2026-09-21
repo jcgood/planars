@@ -13,7 +13,8 @@ plot_laminar_forest(bundle, forest_id)
 }
 \value{
 A patchwork plot with attributes `planarsviz_size`,
-  `planarsviz_units` (`"in"`), and `planarsviz_parts` (the tree plots).
+  `planarsviz_units` (`"in"`), `planarsviz_folder` (its
+  `results/planarsviz` subfolder), and `planarsviz_parts` (the tree plots).
 }
 \description{
 All maximal families of one domain-type class (or bundle of classes), each

@@ -93,8 +93,9 @@ planarsviz_family_evidence <- function(bundle, family_id) {
 #' @param rank Which selected family (1 = first).
 #' @param view `"page"`, `"slide_tree"` or `"slide_evidence"`.
 #' @param selection A selection from `selections.tsv`.
-#' @return A plot with attributes `planarsviz_size` and `planarsviz_units`;
-#'   the page also has `planarsviz_parts` (tree, evidence).
+#' @return A plot with attributes `planarsviz_size`, `planarsviz_units` and
+#'   `planarsviz_folder` (its `results/planarsviz` subfolder); the page also
+#'   has `planarsviz_parts` (tree, evidence).
 #' @export
 plot_exemplary_tree <- function(bundle, rank = 1L, view = c("page", "slide_tree", "slide_evidence"),
                                 selection = "exemplary") {
@@ -111,6 +112,7 @@ plot_exemplary_tree <- function(bundle, rank = 1L, view = c("page", "slide_tree"
     p <- planarsviz_exemplary_tree(bundle, family_id, slide = TRUE)
     attr(p, "planarsviz_size") <- c(width = 13.333, height = 7.5)
     attr(p, "planarsviz_units") <- "in"
+    attr(p, "planarsviz_folder") <- "laminar-families"
     return(p)
   }
   ex_plot1 <- planarsviz_family_evidence(bundle, family_id)
@@ -120,6 +122,7 @@ plot_exemplary_tree <- function(bundle, rank = 1L, view = c("page", "slide_tree"
   if (view == "slide_evidence") {
     attr(ex_plot1, "planarsviz_size") <- c(width = pooled_width_cm, height = pooled_height_cm)
     attr(ex_plot1, "planarsviz_units") <- "cm"
+    attr(ex_plot1, "planarsviz_folder") <- "laminar-families"
     return(ex_plot1)
   }
   ex_tp1 <- planarsviz_exemplary_tree(bundle, family_id)
@@ -127,6 +130,7 @@ plot_exemplary_tree <- function(bundle, rank = 1L, view = c("page", "slide_tree"
     plot_layout(widths=c(tree_width_cm, pooled_width_cm))
   attr(ex_page1, "planarsviz_size") <- c(width = round(tree_width_cm + pooled_width_cm, 1), height = pooled_height_cm)
   attr(ex_page1, "planarsviz_units") <- "cm"
+  attr(ex_page1, "planarsviz_folder") <- "laminar-families"
   attr(ex_page1, "planarsviz_parts") <- list(tree = ex_tp1, evidence = ex_plot1)
   ex_page1
 }

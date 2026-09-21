@@ -13,7 +13,8 @@ plot_four_trees(bundle, other_label = "neither")
 }
 \value{
 A patchwork plot with attributes `planarsviz_size`,
-  `planarsviz_units` and `planarsviz_parts` (the panels, all-families first).
+  `planarsviz_units`, `planarsviz_folder` (its `results/planarsviz`
+  subfolder), and `planarsviz_parts` (the panels, all-families first).
 }
 \description{
 One panel for all families and one per conflict group, each showing the

@@ -1035,6 +1035,10 @@ kept because a porting check compares the bundle against it.
   bundle in phase E alongside `nyan1308_random_tree_overlay.r`.
 - `results/planarsviz/` — the exported bundle (`nyan1308/data/`), the frozen
   reference images the porting checks compare against (`reference/`), and the
-  comparison images those checks write (`comparisons/`). A bundle's own
-  `plots/` directory is written but not tracked in git; the published copies
-  are the PDFs in `results/` itself.
+  comparison images those checks write (`comparisons/`, including
+  `comparisons/shifted/`). Both `reference/` and `comparisons/` are grouped
+  by topic into four subfolders — `laminar-families/`, `pooled/`,
+  `boundaries/`, `counts-and-chance/` — so a chart's images always sit next
+  to the other charts of its kind. A bundle's own `plots/` directory is
+  written but not tracked in git; the published copies are the PDFs in
+  `results/` itself.

@@ -32,8 +32,9 @@ line beneath it. `NULL` draws the original single label (both lines at
 size 4).}
 }
 \value{
-A ggplot object with attributes `planarsviz_size` and
-  `planarsviz_units` (`"cm"`).
+A ggplot object with attributes `planarsviz_size`,
+  `planarsviz_units` (`"cm"`) and `planarsviz_folder` (its
+  `results/planarsviz` subfolder).
 }
 \description{
 One row per span, ordered by how many maximal families contain it, drawn

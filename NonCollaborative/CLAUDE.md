@@ -99,7 +99,7 @@ Reference PDFs cited in `REFERENCES.md` (currently: Barthélemy 1989, on the cop
 
 ### `results/`
 
-Generated output — PDFs, `.tex` sources and `.tsv` data — plus `results/planarsviz/`, which holds the exported data bundle, the frozen reference images the porting checks compare against, and the comparison images those checks write. `results/visualizations.md` documents every chart and table here: what it shows, what produced it, and how to regenerate it. Keep that file in sync whenever something starts writing a new `results/` artifact.
+Generated output — PDFs, `.tex` sources and `.tsv` data — plus `results/planarsviz/`, which holds the exported data bundle, the frozen reference images the porting checks compare against, and the comparison images those checks write. Both the reference and comparison images are grouped by topic into four subfolders (`laminar-families/`, `pooled/`, `boundaries/`, `counts-and-chance/`) rather than sitting flat — see `docs/planarsviz_guide.md` § 6. `results/visualizations.md` documents every chart and table here: what it shows, what produced it, and how to regenerate it. Keep that file in sync whenever something starts writing a new `results/` artifact.
 
 The generated `.r` scripts that used to sit here beside the PDFs are gone: the `planarsviz` package draws the charts now, and those scripts are archived (see `OlderFiles/` below). The one exception is `nyan1308_random_tree_overlay.r`, which was never ported.
 

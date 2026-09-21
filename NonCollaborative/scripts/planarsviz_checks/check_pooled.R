@@ -97,6 +97,9 @@ all_ok <- TRUE
 for (case in cases) {
   pl <- case$lib()
   size <- attr(pl, "planarsviz_size")
+  folder <- attr(pl, "planarsviz_folder")
+  cmp_out <- file.path(cmp_dir, folder)
+  dir.create(cmp_out, recursive = TRUE, showWarnings = FALSE)
   problems <- character()
 
   if (!library_only) {
@@ -139,7 +142,7 @@ for (case in cases) {
     if (file.exists(nyan_pdf)) {
       nyan_stem <- file.path(tempdir(), paste0("nyan_", nyan_name))
       system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(nyan_stem)))
-      pixel <- compare(paste0(nyan_stem, ".png"), paste0(png_stem, ".png"), file.path(cmp_dir, paste0(base, ".png")))
+      pixel <- compare(paste0(nyan_stem, ".png"), paste0(png_stem, ".png"), file.path(cmp_out, paste0(base, ".png")))
       cat(sprintf("%s: rendered; side by side with nyan1308_%s: %s\n", base, nyan_name, pixel))
     } else {
       cat(sprintf("%s: rendered; no nyan1308 counterpart found\n", base))
@@ -147,8 +150,8 @@ for (case in cases) {
     next
   }
 
-  ref <- file.path(dirname(bundle_dir), "reference", paste0(base, ".png"))
-  pixel <- if (file.exists(ref)) compare(ref, paste0(png_stem, ".png"), file.path(cmp_dir, paste0(base, ".png"))) else "no reference"
+  ref <- file.path(dirname(bundle_dir), "reference", folder, paste0(base, ".png"))
+  pixel <- if (file.exists(ref)) compare(ref, paste0(png_stem, ".png"), file.path(cmp_out, paste0(base, ".png"))) else "no reference"
   status_txt <- if (length(problems)) paste("NUMBERS DIFFER:", paste(problems, collapse = " | ")) else "numbers identical"
   if (length(problems)) all_ok <- FALSE
   cat(sprintf("%s: %s; pixels: %s\n", base, status_txt, pixel))

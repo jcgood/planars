@@ -39,8 +39,9 @@
 #'   column's header: `c(trees, n)` for the "Trees" line and the "(n = N)"
 #'   line beneath it. `NULL` draws the original single label (both lines at
 #'   size 4).
-#' @return A ggplot object with attributes `planarsviz_size` and
-#'   `planarsviz_units` (`"cm"`).
+#' @return A ggplot object with attributes `planarsviz_size`,
+#'   `planarsviz_units` (`"cm"`) and `planarsviz_folder` (its
+#'   `results/planarsviz` subfolder).
 #' @export
 plot_forestspans <- function(bundle, subset = NULL,
                              legend_position = c("inside", "right"),
@@ -197,5 +198,6 @@ plot_forestspans <- function(bundle, subset = NULL,
 
   attr(p, "planarsviz_size") <- c(width = 34, height = 24)
   attr(p, "planarsviz_units") <- "cm"
+  attr(p, "planarsviz_folder") <- "pooled"
   p
 }

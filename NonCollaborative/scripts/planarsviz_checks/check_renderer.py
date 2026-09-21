@@ -39,6 +39,21 @@ CHANGED = {"conflict_groups", "all_families_labeled_legend",
            # the stretch the drawn spans cover.
            "spanchart"}
 
+# The reference images now live under reference/<topic folder>/, not
+# flat in reference/ itself (see docs/PLANARSVIZ_LIBRARY_PROGRESS.md). The
+# renderer's own manifest doesn't carry a folder column yet, so this indexes
+# every reference PNG by filename instead of needing to know which folder
+# it's in.
+ref_by_name = {}
+for path in REFERENCE.rglob("*.png"):
+    if path.name in ref_by_name:
+        sys.exit(
+            f"Two reference images share the filename {path.name!r}: "
+            f"{ref_by_name[path.name]} and {path}. check_renderer.py looks "
+            "references up by filename alone, so this is ambiguous."
+        )
+    ref_by_name[path.name] = path
+
 out_dir = Path(sys.argv[1])
 compare_dir = out_dir / "compare"
 compare_dir.mkdir(exist_ok=True)
@@ -55,8 +70,8 @@ for row in rows:
     chart = row["chart"]
     ref_name = f"nyan1308_{RENAMED.get(chart, chart)}.png"
     seen.add(ref_name)
-    ref = REFERENCE / ref_name
-    if not ref.exists():
+    ref = ref_by_name.get(ref_name)
+    if ref is None:
         print(f"{chart:48} no reference")
         continue
     result = subprocess.run(
@@ -74,7 +89,8 @@ for row in rows:
 # *_transp.png are not chart references: they are the frozen matplotlib
 # transparency measurements check_tree_counts.R compares against, kept here
 # because cutover step C3 removed the matplotlib that drew them.
-missing = sorted(p.name for p in REFERENCE.glob("nyan1308_*.png")
-                 if p.name not in seen and not p.name.endswith("_transp.png"))
+missing = sorted(name for name in ref_by_name
+                 if name.startswith("nyan1308_") and name not in seen
+                 and not name.endswith("_transp.png"))
 print(f"\n{len(rows)} renders compared; references with no render: {missing or 'none'}")
 print("RENDERER CHECK PASSED" if not problems else f"RENDERER CHECK: {problems} copied chart(s) not exact")

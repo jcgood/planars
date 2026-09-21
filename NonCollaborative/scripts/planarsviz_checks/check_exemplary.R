@@ -111,6 +111,9 @@ for (i in seq_len(n_exemplars)) {
   bases <- c(page = sprintf("%s_exemplary_trees_%d", prefix, i),
              slide_tree = sprintf("%s_exemplary_trees_slide_%d_tree", prefix, i),
              slide_evidence = sprintf("%s_exemplary_trees_slide_%d_evidence", prefix, i))
+  folder <- attr(views$page, "planarsviz_folder")
+  cmp_out <- file.path(cmp_dir, folder)
+  dir.create(cmp_out, recursive = TRUE, showWarnings = FALSE)
   pngs <- vapply(names(views), function(v) render(views[[v]], bases[[v]]), character(1))
 
   if (library_only) {
@@ -121,7 +124,7 @@ for (i in seq_len(n_exemplars)) {
       stem <- file.path(tempdir(), paste0("nyan_", nyan_base))
       system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(stem)))
       cat(bases[[v]], ": rendered; side by side with nyan1308: ",
-          compare(paste0(stem, ".png"), pngs[[v]], file.path(cmp_dir, paste0(bases[[v]], ".png"))), "\n", sep = "")
+          compare(paste0(stem, ".png"), pngs[[v]], file.path(cmp_out, paste0(bases[[v]], ".png"))), "\n", sep = "")
     }
     next
   }
@@ -134,8 +137,8 @@ for (i in seq_len(n_exemplars)) {
   )
   if (length(problems)) all_ok <- FALSE
   pix <- vapply(names(views), function(v) compare(
-    file.path(dirname(bundle_dir), "reference", paste0(bases[[v]], ".png")), pngs[[v]],
-    file.path(cmp_dir, paste0(bases[[v]], ".png"))), character(1))
+    file.path(dirname(bundle_dir), "reference", folder, paste0(bases[[v]], ".png")), pngs[[v]],
+    file.path(cmp_out, paste0(bases[[v]], ".png"))), character(1))
   cat(sprintf("exemplar %d: %s\n", i,
               if (length(problems)) paste("NUMBERS DIFFER:", paste(head(problems, 5), collapse = " | ")) else "numbers identical"))
   for (v in names(views)) {

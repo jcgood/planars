@@ -1597,10 +1597,14 @@ be hard for a future instance to run the old code. The second is done (see the
 entry above). The first is the next real piece of work, and all six open
 questions on it were settled on 2026-09-20:
 
-1. **Scope: both, staged.** One family scheme covering `results/` and mirrored
+1. **Scope: both, staged.** One set of folders covering `results/` and mirrored
    inside `comparisons/` and `reference/`, landed in two commits — the
    comparison images first, since the checks regenerate those and a mistake
    there costs nothing, then `results/`.
+
+   *(This line originally said "one family scheme". That was a second meaning
+   for a word this project already uses for a maximal laminar family, which
+   the naming rule in `CLAUDE.md` forbids. The folders are folders.)*
 2. **Absorption: all four rows.** The package becomes the only thing that
    writes a chart into `results/`. Forest trees and the fragmentation
    two-bundle variant are small (the bundle already carries their data);
@@ -1686,3 +1690,72 @@ that already existed, was left untouched.
 teaching the renderer which family each chart belongs to. The 21 porting checks
 are what prove only addresses changed. Absorption stays a separate commit after
 that, for the reason stated in the entry above.
+
+---
+
+## The restructure, step 2: the check-side images move (2026-09-20)
+
+`results/planarsviz/reference/` and `results/planarsviz/comparisons/` are no
+longer flat. Both are grouped into four topic folders — `laminar-families/`,
+`pooled/`, `boundaries/`, `counts-and-chance/`. The other two folders the
+scheme defines, `planar-structure/` and `illustrations/`, hold no
+package-drawn charts, so they do not appear on this side.
+
+**Which folder a chart belongs to is recorded in exactly one place:** an
+attribute `planarsviz_folder` on the object each chart function returns, set
+right beside the `planarsviz_size` attribute that was already there. The
+renderer's own header comment gives the reasoning for size — each chart
+carries its own, "so there is no second size table here to drift" — and the
+same argument decides this. The 14 R checks read the attribute the same way
+they already read the canvas size, so no check keeps its own copy of the
+mapping.
+
+`check_renderer.py` is the exception: it works from the renderer's manifest,
+which does not carry a folder column until the next commit. It now indexes
+every reference image by filename with `rglob` and so does not need to know
+which folder anything is in, and stops if two ever share a basename.
+
+| | laminar-families | pooled | boundaries | counts-and-chance | total |
+|---|---|---|---|---|---|
+| `reference/` | 61 | 14 | 6 | 11 | 92 |
+| `comparisons/` | 39 | 14 | 6 | 5 | 64 |
+| `comparisons/shifted/` | 38 | 13 | 4 | 5 | 60 |
+| `comparisons/refcheck/` | 0 | 12 | 0 | 0 | 12 |
+
+`comparisons/refcheck/` is the one-off freshness snapshot this file mentions
+further up, which no script reads. All twelve of its images are pooled charts,
+so it moved too rather than being the only flat thing left.
+
+**What proves the move changed nothing: all 20 chart snapshots are
+byte-identical.** The checks print chart names and differing-pixel
+percentages, not paths, so a correct move leaves every recorded output exactly
+as it was. One line was an exception and had to be handled rather than
+re-recorded — `check_tree_counts.R` prints a reference image's own path for
+its transparency line, the only place any check names a file's location. The
+test's `_normalise()` now strips the topic folder from that one path, the same
+way it already strips R's temporary directory, because where the file sits is
+not what that snapshot is for.
+
+**Two tests fail after this change and neither is caused by it.**
+
+- `test_renderer_check_reports_what_it_did` — its snapshot says "references
+  with no render: none", recorded in `d673c37`, before step 1 froze 26
+  references for charts the package does not draw. The check now lists exactly
+  those 26. It fails the same way on a clean checkout with none of this
+  commit's work applied. Fixed separately in the next commit, because the
+  fix belongs to step 1.
+- `test_namespace_and_man_match_roxygen2_output` — an untracked
+  `r/planarsviz/R/boundary_strength_test.R` appeared in the working tree
+  partway through this work, from a concurrent session of Jeff's building a
+  permutation test on boundary strength. Regenerating `NAMESPACE` now would
+  export a function whose source is not committed, so it was left alone. The
+  `man/` files in this commit were regenerated before that file existed and
+  carry none of it.
+
+- Looked at by Claude: yes — the full suite run independently of the subagent
+  that did the work (20 passed, the two failures above, 7m48s), both failures
+  traced to their real causes rather than accepted from the report, the
+  `_normalise()` addition read and confirmed to strip only the four folder
+  names and nothing that could mask a pixel difference, and `exemplary.R`
+  checked by hand because it sets the size attribute on three different
+  objects and the folder had to land on each returned one.

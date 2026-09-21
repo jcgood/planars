@@ -24,7 +24,8 @@ titles never appeared.}
 }
 \value{
 A patchwork plot with attributes `planarsviz_size`,
-  `planarsviz_units` and `planarsviz_parts` (one list of trees per panel,
+  `planarsviz_units`, `planarsviz_folder` (its `results/planarsviz`
+  subfolder), and `planarsviz_parts` (one list of trees per panel,
   all-families first).
 }
 \description{

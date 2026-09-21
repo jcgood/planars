@@ -163,9 +163,9 @@ checks are kept so any change can be re-checked. One exception, worth knowing
 before reading a check's output: **chart 19, the fragmentation test, never had
 a matplotlib original.** It was written in R from the start, so the chart that
 script drew is itself the reference —
-`results/planarsviz/reference/nyan1308_fragmentation_test_plot.png`, frozen
-before the package could overwrite it — and `check_fragmentation.R` compares
-against that rather than running an older script.
+`results/planarsviz/reference/counts-and-chance/nyan1308_fragmentation_test_plot.png`,
+frozen before the package could overwrite it — and `check_fragmentation.R`
+compares against that rather than running an older script.
 
 - `scripts/planarsviz_checks/check_*.R` — runs the old script in memory
   (files untouched), draws the same chart with the library, compares the
@@ -190,6 +190,14 @@ chart drawn from nyan1308 beside the same chart from the **shifted test
 data**: nyan1308 with every position moved by two, labels renamed and one
 domain type renamed (`tests/fixtures/make_shifted_nyan.py`). A chart that
 draws that data correctly has no nyan1308 facts built in.
+
+Both `results/planarsviz/reference/` and `results/planarsviz/comparisons/`
+(including `comparisons/shifted/`) are grouped into the same four
+subfolders — `laminar-families`, `pooled`, `boundaries`,
+`counts-and-chance` — that chart is a member of. A chart's own function
+carries this as an attribute (`planarsviz_folder`, next to the existing
+`planarsviz_size`), so the folder a chart's images live in always matches
+what drew it; nothing outside the R package needs to know the mapping.
 
 ---
 
@@ -246,6 +254,6 @@ bring the lockfile back in line, and commit it with the change.
 | `scripts/render_planarsviz.R` | The renderer. |
 | `scripts/planarsviz_checks/` | Porting checks. |
 | `results/planarsviz/<dataset>/` | Bundles (`data/`) and rendered charts (`plots/`). |
-| `results/planarsviz/reference/` | Frozen images of the old charts. |
+| `results/planarsviz/reference/` | Frozen images of the old charts, grouped into `laminar-families/`, `pooled/`, `boundaries/` and `counts-and-chance/`. |
 | `docs/PLAN_planarsviz_library.md` | Why the library is built this way. |
 | `docs/PLANARSVIZ_LIBRARY_PROGRESS.md` | What was checked, chart by chart, and open questions. |

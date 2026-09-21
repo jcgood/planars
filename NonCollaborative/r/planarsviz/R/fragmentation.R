@@ -82,7 +82,8 @@ read_planars_fragmentation_null <- function(bundle, expand = TRUE) {
 #'
 #' @param bundle A bundle from [read_planars_bundle()].
 #' @return A ggplot object with attributes `planarsviz_size`,
-#'   `planarsviz_units` (`"in"`) and `planarsviz_transparent`.
+#'   `planarsviz_units` (`"in"`), `planarsviz_transparent` and
+#'   `planarsviz_folder` (its `results/planarsviz` subfolder).
 #' @export
 plot_fragmentation_test <- function(bundle) {
   validate_planars_bundle(bundle)
@@ -150,5 +151,6 @@ plot_fragmentation_test <- function(bundle) {
   attr(p, "planarsviz_size") <- c(width = 10, height = 6.5)
   attr(p, "planarsviz_units") <- "in"
   attr(p, "planarsviz_transparent") <- FALSE
+  attr(p, "planarsviz_folder") <- "counts-and-chance"
   p
 }

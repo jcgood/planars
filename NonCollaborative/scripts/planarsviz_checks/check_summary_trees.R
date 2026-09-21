@@ -83,6 +83,9 @@ all_ok <- TRUE
 for (case in cases) {
   pl <- suppressMessages(suppressWarnings(case$make()))
   size <- attr(pl, "planarsviz_size")
+  folder <- attr(pl, "planarsviz_folder")
+  cmp_out <- file.path(cmp_dir, folder)
+  dir.create(cmp_out, recursive = TRUE, showWarnings = FALSE)
   base <- paste0(prefix, "_", case$name)
   new_png <- render(pl, base, size[["width"]], size[["height"]])
 
@@ -91,7 +94,7 @@ for (case in cases) {
     stem <- file.path(tempdir(), paste0("nyan_", case$name))
     system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(stem)))
     cat(base, ": rendered; side by side with nyan1308: ",
-        compare(paste0(stem, ".png"), new_png, file.path(cmp_dir, paste0(base, ".png"))), "\n", sep = "")
+        compare(paste0(stem, ".png"), new_png, file.path(cmp_out, paste0(base, ".png"))), "\n", sep = "")
     next
   }
 
@@ -105,8 +108,8 @@ for (case in cases) {
     problems <- c(problems, same_data(get(case$objects[[i]], envir = orig), parts[[i]], case$objects[[i]]))
   }
   if (length(problems)) all_ok <- FALSE
-  pix <- compare(file.path(dirname(bundle_dir), "reference", paste0(base, ".png")), new_png,
-                 file.path(cmp_dir, paste0(base, ".png")))
+  pix <- compare(file.path(dirname(bundle_dir), "reference", folder, paste0(base, ".png")), new_png,
+                 file.path(cmp_out, paste0(base, ".png")))
   cat(base, ": ", if (length(problems)) paste("NUMBERS DIFFER:", paste(head(problems, 5), collapse = " | ")) else "numbers identical",
       "; canvas ", size[["width"]], "x", size[["height"]], " in; pixels: ", pix, "\n", sep = "")
 }

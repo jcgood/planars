@@ -95,7 +95,8 @@ read_planars_forest <- function(bundle, forest_id) {
 #' @param bundle A bundle from [read_planars_bundle()].
 #' @param forest_id A forest id from `data/forests.json`.
 #' @return A patchwork plot with attributes `planarsviz_size`,
-#'   `planarsviz_units` (`"in"`), and `planarsviz_parts` (the tree plots).
+#'   `planarsviz_units` (`"in"`), `planarsviz_folder` (its
+#'   `results/planarsviz` subfolder), and `planarsviz_parts` (the tree plots).
 #' @export
 plot_laminar_forest <- function(bundle, forest_id) {
   validate_planars_bundle(bundle)
@@ -127,6 +128,7 @@ plot_laminar_forest <- function(bundle, forest_id) {
 
   attr(forest, "planarsviz_size") <- c(width = 20, height = 14)
   attr(forest, "planarsviz_units") <- "in"
+  attr(forest, "planarsviz_folder") <- "laminar-families"
   attr(forest, "planarsviz_parts") <- plots
   forest
 }

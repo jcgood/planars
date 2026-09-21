@@ -11,7 +11,8 @@ plot_fragmentation_test(bundle)
 }
 \value{
 A ggplot object with attributes `planarsviz_size`,
-  `planarsviz_units` (`"in"`) and `planarsviz_transparent`.
+  `planarsviz_units` (`"in"`), `planarsviz_transparent` and
+  `planarsviz_folder` (its `results/planarsviz` subfolder).
 }
 \description{
 One horizontal violin per group -- the family counts under permuted domain

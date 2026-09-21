@@ -67,7 +67,8 @@ planarsviz_conflict_tree <- function(newick, group_spans, strengths, alphaval, c
 #'   titles never appeared.
 #' @param title_size Panel title size in points (the canvas is 24 x 20 in).
 #' @return A patchwork plot with attributes `planarsviz_size`,
-#'   `planarsviz_units` and `planarsviz_parts` (one list of trees per panel,
+#'   `planarsviz_units`, `planarsviz_folder` (its `results/planarsviz`
+#'   subfolder), and `planarsviz_parts` (one list of trees per panel,
 #'   all-families first).
 #' @export
 plot_conflict_groups <- function(bundle, other_label = "neither", panel_titles = TRUE,
@@ -118,6 +119,7 @@ plot_conflict_groups <- function(bundle, other_label = "neither", panel_titles =
     plot_layout(heights=c(2, 1))
   attr(forest, "planarsviz_size") <- c(width = 24, height = 20)
   attr(forest, "planarsviz_units") <- "in"
+  attr(forest, "planarsviz_folder") <- "laminar-families"
   attr(forest, "planarsviz_parts") <- c(list(panel_all$trees), lapply(group_panels, `[[`, "trees"))
   forest
 }

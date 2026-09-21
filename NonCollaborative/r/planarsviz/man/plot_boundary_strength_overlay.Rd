@@ -22,7 +22,9 @@ plot_boundary_strength_overlay(
 colours, or `NULL` for all black.}
 }
 \value{
-A ggplot object with attributes `planarsviz_size` and `planarsviz_units` (`"in"`).
+A ggplot object with attributes `planarsviz_size`,
+  `planarsviz_units` (`"in"`), and `planarsviz_folder` (its
+  `results/planarsviz` subfolder).
 }
 \description{
 Left- and right-edge boundary strength per position as dodged bars over

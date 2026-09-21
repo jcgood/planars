@@ -77,6 +77,9 @@ for (id in ids) {
     }
   }
   size <- attr(pl, "planarsviz_size")
+  folder <- attr(pl, "planarsviz_folder")
+  cmp_out <- file.path(cmp_dir, folder)
+  dir.create(cmp_out, recursive = TRUE, showWarnings = FALSE)
   base <- paste0(prefix, "_", id, "_laminar_forest")
   pdf_path <- file.path(out_dir, paste0(base, ".pdf"))
   suppressMessages(suppressWarnings(ggplot2::ggsave(pdf_path, pl, width = size[["width"]], height = size[["height"]],
@@ -89,15 +92,15 @@ for (id in ids) {
       nyan_stem <- file.path(tempdir(), paste0("nyan_", id))
       system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(nyan_stem)))
       cat(base, ": rendered; side by side with nyan1308: ",
-          compare(paste0(nyan_stem, ".png"), paste0(png_stem, ".png"), file.path(cmp_dir, paste0(base, ".png"))), "\n")
+          compare(paste0(nyan_stem, ".png"), paste0(png_stem, ".png"), file.path(cmp_out, paste0(base, ".png"))), "\n")
     } else {
       cat(base, ": rendered; no nyan1308 counterpart\n")
     }
     next
   }
-  ref <- file.path(dirname(bundle_dir), "reference", paste0(base, ".png"))
+  ref <- file.path(dirname(bundle_dir), "reference", folder, paste0(base, ".png"))
   if (length(problems)) all_ok <- FALSE
   cat(base, ": ", if (length(problems)) paste("NUMBERS DIFFER:", paste(problems, collapse = " | ")) else "numbers identical",
-      "; pixels: ", compare(ref, paste0(png_stem, ".png"), file.path(cmp_dir, paste0(base, ".png"))), "\n", sep = "")
+      "; pixels: ", compare(ref, paste0(png_stem, ".png"), file.path(cmp_out, paste0(base, ".png"))), "\n", sep = "")
 }
 if (!library_only) cat(if (all_ok) "ALL NUMBER CHECKS PASSED\n" else "SOME NUMBER CHECKS FAILED\n")

@@ -94,7 +94,9 @@ planarsviz_mpl_theme <- function() {
 #' @param bundle A bundle from [read_planars_bundle()].
 #' @param subset `NULL` for the full analysis, or a `subset_id` from `subsets.json`.
 #' @param bar_colour Bar colour.
-#' @return A patchwork plot with attributes `planarsviz_size` and `planarsviz_units` (`"in"`).
+#' @return A patchwork plot with attributes `planarsviz_size`,
+#'   `planarsviz_units` (`"in"`), and `planarsviz_folder` (its
+#'   `results/planarsviz` subfolder).
 #' @export
 plot_boundary_strength <- function(bundle, subset = NULL, bar_colour = "#7876B1") {
   validate_planars_bundle(bundle)
@@ -142,6 +144,7 @@ plot_boundary_strength <- function(bundle, subset = NULL, bar_colour = "#7876B1"
     theme(plot.background = element_rect(fill = "white", colour = NA))
   attr(p, "planarsviz_size") <- c(width = 11, height = 7)
   attr(p, "planarsviz_units") <- "in"
+  attr(p, "planarsviz_folder") <- "boundaries"
   p
 }
 
@@ -155,7 +158,9 @@ plot_boundary_strength <- function(bundle, subset = NULL, bar_colour = "#7876B1"
 #' @param bundle A bundle from [read_planars_bundle()].
 #' @param subset `NULL` for the full analysis, or a `subset_id` from `subsets.json`.
 #' @param colours Named colours for `left` and `right`.
-#' @return A ggplot object with attributes `planarsviz_size` and `planarsviz_units` (`"in"`).
+#' @return A ggplot object with attributes `planarsviz_size`,
+#'   `planarsviz_units` (`"in"`), and `planarsviz_folder` (its
+#'   `results/planarsviz` subfolder).
 #' @export
 plot_boundary_strength_distributions <- function(bundle, subset = NULL,
                                                  colours = c(left = "#7876B1", right = "#BC3C29")) {
@@ -206,5 +211,6 @@ plot_boundary_strength_distributions <- function(bundle, subset = NULL,
           legend.justification = c(1, 1), legend.margin = margin(3, 6, 3, 4))
   attr(p, "planarsviz_size") <- c(width = 11, height = 5)
   attr(p, "planarsviz_units") <- "in"
+  attr(p, "planarsviz_folder") <- "boundaries"
   p
 }

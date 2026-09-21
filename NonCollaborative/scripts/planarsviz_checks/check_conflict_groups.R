@@ -74,6 +74,9 @@ dir.create(cmp_dir, recursive = TRUE, showWarnings = FALSE)
 base <- paste0(prefix, "_conflict_groups")
 pl <- suppressMessages(suppressWarnings(plot_conflict_groups(bundle)))
 size <- attr(pl, "planarsviz_size")
+folder <- attr(pl, "planarsviz_folder")
+cmp_out <- file.path(cmp_dir, folder)
+dir.create(cmp_out, recursive = TRUE, showWarnings = FALSE)
 new_png <- render(pl, file.path(bundle_dir, "plots", paste0(base, ".pdf")))
 
 if (library_only) {
@@ -81,7 +84,7 @@ if (library_only) {
   nyan_stem <- file.path(tempdir(), "nyan_conflict_groups")
   system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(nyan_stem)))
   cat(base, ": rendered; side by side with nyan1308: ",
-      compare(paste0(nyan_stem, ".png"), new_png, file.path(cmp_dir, paste0(base, ".png"))), "\n", sep = "")
+      compare(paste0(nyan_stem, ".png"), new_png, file.path(cmp_out, paste0(base, ".png"))), "\n", sep = "")
 } else {
   pl_old <- suppressMessages(suppressWarnings(plot_conflict_groups(bundle, panel_titles = FALSE)))
   old_png <- render(pl_old, file.path(tempdir(), "as_generated", paste0(base, ".pdf")))
@@ -103,9 +106,9 @@ if (library_only) {
     }
     for (i in seq_along(names_j)) problems <- c(problems, same_data(get(names_j[[i]], envir = orig), parts[[j]][[i]], names_j[[i]]))
   }
-  ref <- file.path(dirname(bundle_dir), "reference", paste0(base, ".png"))
+  ref <- file.path(dirname(bundle_dir), "reference", folder, paste0(base, ".png"))
   pix_old <- compare(ref, old_png, file.path(tempdir(), paste0(base, "_as_generated_cmp.png")))
-  pix <- compare(ref, new_png, file.path(cmp_dir, paste0(base, ".png")))
+  pix <- compare(ref, new_png, file.path(cmp_out, paste0(base, ".png")))
   cat(base, ": ", if (length(problems)) paste("NUMBERS DIFFER:", paste(head(problems, 5), collapse = " | ")) else "numbers identical",
       "; canvas ", size[["width"]], "x", size[["height"]], " in",
       "\n  as generated (panel_titles = FALSE): ", pix_old,

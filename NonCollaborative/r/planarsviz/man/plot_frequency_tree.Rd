@@ -36,7 +36,9 @@ thicker edges, or `NULL`.}
 \item{emphasis_size}{Thickness of the traced edges.}
 }
 \value{
-A ggtree plot with attributes `planarsviz_size` and `planarsviz_units`.
+A ggtree plot with attributes `planarsviz_size`,
+  `planarsviz_units` and `planarsviz_folder` (its `results/planarsviz`
+  subfolder).
 }
 \description{
 The most consensus-like family (by default), with each branch weighted by

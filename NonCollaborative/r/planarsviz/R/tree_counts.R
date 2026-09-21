@@ -142,7 +142,8 @@ planarsviz_vertical_bar_chart <- function(labels, values, colours, width, ylim_f
 #'   class bundle), `"all"` (all tests), or `"without_adjacent"` (all tests
 #'   vs. without size-2 spans).
 #' @return A ggplot object with attributes `planarsviz_size`,
-#'   `planarsviz_units` (`"in"`) and `planarsviz_transparent`.
+#'   `planarsviz_units` (`"in"`), `planarsviz_transparent` and
+#'   `planarsviz_folder` (its `results/planarsviz` subfolder).
 #' @export
 plot_tree_counts <- function(bundle, chart = c("by_class", "bundles", "all", "without_adjacent")) {
   validate_planars_bundle(bundle)
@@ -176,5 +177,6 @@ plot_tree_counts <- function(bundle, chart = c("by_class", "bundles", "all", "wi
   attr(p, "planarsviz_size") <- size
   attr(p, "planarsviz_units") <- "in"
   attr(p, "planarsviz_transparent") <- transparent
+  attr(p, "planarsviz_folder") <- "counts-and-chance"
   p
 }

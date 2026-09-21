@@ -177,8 +177,9 @@ pooled_plot_height <- function(d) max(7, n_distinct(d$Test_Labels) * 0.7)
 #' @param domain_types `NULL` for all tests, or domain types to keep.
 #' @param layers `"global"` or `"local"` numbering when `domain_types` is set.
 #' @param group_by_domain Group rows by domain type first (all tests only).
-#' @return A ggplot object, with attribute `planarsviz_size`: the working
-#'   script's canvas as `c(width, height)` in centimetres.
+#' @return A ggplot object, with attributes `planarsviz_size` (the working
+#'   script's canvas as `c(width, height)` in centimetres) and
+#'   `planarsviz_folder` (its `results/planarsviz` subfolder).
 #' @export
 plot_pooled <- function(bundle, domain_types = NULL, layers = c("global", "local"),
                         group_by_domain = FALSE) {
@@ -219,6 +220,7 @@ plot_pooled <- function(bundle, domain_types = NULL, layers = c("global", "local
   }
   attr(p, "planarsviz_size") <- c(width = width, height = pooled_plot_height(d))
   attr(p, "planarsviz_units") <- "cm"
+  attr(p, "planarsviz_folder") <- "pooled"
   p
 }
 

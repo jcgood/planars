@@ -36,8 +36,9 @@ swatch matches the lines. `0.5` reproduces the old generated legend.}
 }
 \value{
 A patchwork plot with attributes `planarsviz_size`,
-  `planarsviz_units` (`"in"`), `planarsviz_parts` (tree plots in stacking
-  order) and, with `legend = TRUE`, `planarsviz_legend_plot`.
+  `planarsviz_units` (`"in"`), `planarsviz_folder` (its
+  `results/planarsviz` subfolder), `planarsviz_parts` (tree plots in
+  stacking order) and, with `legend = TRUE`, `planarsviz_legend_plot`.
 }
 \description{
 Every maximal family of one or more groups drawn as a faint tree and

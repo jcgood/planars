@@ -73,8 +73,9 @@ read_planars_overlay_groups <- function(bundle) {
 #'   legend's "More" thickness swatch; defaults to `thickness_exponent` so the
 #'   swatch matches the lines. `0.5` reproduces the old generated legend.
 #' @return A patchwork plot with attributes `planarsviz_size`,
-#'   `planarsviz_units` (`"in"`), `planarsviz_parts` (tree plots in stacking
-#'   order) and, with `legend = TRUE`, `planarsviz_legend_plot`.
+#'   `planarsviz_units` (`"in"`), `planarsviz_folder` (its
+#'   `results/planarsviz` subfolder), `planarsviz_parts` (tree plots in
+#'   stacking order) and, with `legend = TRUE`, `planarsviz_legend_plot`.
 #' @export
 plot_laminar_overlay <- function(bundle, groups = NULL, alpha_divisor = 2,
                                  thickness_exponent = 0.5, legend = FALSE,
@@ -206,6 +207,7 @@ plot_laminar_overlay <- function(bundle, groups = NULL, alpha_divisor = 2,
 
   attr(result, "planarsviz_size") <- c(width = 20, height = 14)
   attr(result, "planarsviz_units") <- "in"
+  attr(result, "planarsviz_folder") <- "laminar-families"
   attr(result, "planarsviz_parts") <- plots
   if (!is.null(legend_plot)) attr(result, "planarsviz_legend_plot") <- legend_plot
   result

@@ -167,7 +167,9 @@ planarsviz_summary_tree <- function(bundle, family_id, member_ids, title, alpha_
 #'   `"orthographic_word"`) whose first and last positions are traced with
 #'   thicker edges, or `NULL`.
 #' @param emphasis_size Thickness of the traced edges.
-#' @return A ggtree plot with attributes `planarsviz_size` and `planarsviz_units`.
+#' @return A ggtree plot with attributes `planarsviz_size`,
+#'   `planarsviz_units` and `planarsviz_folder` (its `results/planarsviz`
+#'   subfolder).
 #' @export
 plot_frequency_tree <- function(bundle, selection = "consensus_all", title = NULL,
                                 weight = c("families", "tests", "none"),
@@ -189,6 +191,7 @@ plot_frequency_tree <- function(bundle, selection = "consensus_all", title = NUL
     branch_size = branch_size, emphasis_range = emphasis_range, emphasis_size = emphasis_size)
   attr(p, "planarsviz_size") <- c(width = 16, height = 10)
   attr(p, "planarsviz_units") <- "in"
+  attr(p, "planarsviz_folder") <- "laminar-families"
   p
 }
 
@@ -201,7 +204,8 @@ plot_frequency_tree <- function(bundle, selection = "consensus_all", title = NUL
 #' @param bundle A bundle from [read_planars_bundle()].
 #' @param other_label Title text for the group with no defining span.
 #' @return A patchwork plot with attributes `planarsviz_size`,
-#'   `planarsviz_units` and `planarsviz_parts` (the panels, all-families first).
+#'   `planarsviz_units`, `planarsviz_folder` (its `results/planarsviz`
+#'   subfolder), and `planarsviz_parts` (the panels, all-families first).
 #' @export
 plot_four_trees <- function(bundle, other_label = "neither") {
   validate_planars_bundle(bundle)
@@ -232,6 +236,7 @@ plot_four_trees <- function(bundle, other_label = "neither") {
   }
   attr(forest, "planarsviz_size") <- c(width = 24, height = 16)
   attr(forest, "planarsviz_units") <- "in"
+  attr(forest, "planarsviz_folder") <- "laminar-families"
   attr(forest, "planarsviz_parts") <- parts
   forest
 }

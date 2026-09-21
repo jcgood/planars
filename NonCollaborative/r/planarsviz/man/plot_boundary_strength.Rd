@@ -14,7 +14,9 @@ plot_boundary_strength(bundle, subset = NULL, bar_colour = "#7876B1")
 \item{bar_colour}{Bar colour.}
 }
 \value{
-A patchwork plot with attributes `planarsviz_size` and `planarsviz_units` (`"in"`).
+A patchwork plot with attributes `planarsviz_size`,
+  `planarsviz_units` (`"in"`), and `planarsviz_folder` (its
+  `results/planarsviz` subfolder).
 }
 \description{
 For each position, how strongly it is a left (top panel) or right (bottom

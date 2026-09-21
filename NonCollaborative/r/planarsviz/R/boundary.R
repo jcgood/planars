@@ -24,7 +24,8 @@
 #'
 #' @param bundle A bundle from [read_planars_bundle()].
 #' @return A patchwork plot with attributes `planarsviz_size` (`c(width,
-#'   height)`), `planarsviz_units` (`"in"`), `planarsviz_boundary_counts` (the
+#'   height)`), `planarsviz_units` (`"in"`), `planarsviz_folder` (its
+#'   `results/planarsviz` subfolder), `planarsviz_boundary_counts` (the
 #'   per-position, per-boundary, per-type counts the working script wrote to
 #'   `nyan1308_boundary_counts.tsv`), and `planarsviz_parts` (the two panels,
 #'   for checking).
@@ -129,6 +130,7 @@ plot_boundary_skyline <- function(bundle) {
 
   attr(p, "planarsviz_size") <- c(width = 16, height = 11)
   attr(p, "planarsviz_units") <- "in"
+  attr(p, "planarsviz_folder") <- "boundaries"
   attr(p, "planarsviz_boundary_counts") <- counts
   attr(p, "planarsviz_parts") <- list(p_all = p_all, p_by_type = p_by_type)
   p

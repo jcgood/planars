@@ -55,6 +55,9 @@ for (case in cases) {
   }
   p <- suppressMessages(suppressWarnings(case$make()))
   size <- attr(p, "planarsviz_size")
+  folder <- attr(p, "planarsviz_folder")
+  cmp_out <- file.path(cmp_dir, folder)
+  dir.create(cmp_out, recursive = TRUE, showWarnings = FALSE)
   pdf_path <- file.path(bundle_dir, "plots", paste0(base, ".pdf"))
   dir.create(dirname(pdf_path), recursive = TRUE, showWarnings = FALSE)
   suppressMessages(suppressWarnings(ggplot2::ggsave(pdf_path, p, width = size[["width"]], height = size[["height"]], units = "in")))
@@ -69,8 +72,8 @@ for (case in cases) {
                           shQuote(nyan_stem)))
     paste0(nyan_stem, ".png")
   } else {
-    file.path(dirname(bundle_dir), "reference", paste0(ref_base, ".png"))
+    file.path(dirname(bundle_dir), "reference", folder, paste0(ref_base, ".png"))
   }
   cat(base, " (", size[["width"]], "x", size[["height"]], " in): ",
-      compare(ref_png, paste0(stem, ".png"), file.path(cmp_dir, paste0(base, ".png"))), "\n", sep = "")
+      compare(ref_png, paste0(stem, ".png"), file.path(cmp_out, paste0(base, ".png"))), "\n", sep = "")
 }

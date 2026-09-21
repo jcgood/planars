@@ -134,6 +134,19 @@ def _normalise(text, extra_paths=()):
     text = re.sub(r"\S*/Rtmp[A-Za-z0-9]+/+", "<tmp>/", text)
     # Any other absolute path into a system temporary directory.
     text = re.sub(r"(/private)?/(var/folders|tmp)/\S*/", "<tmp>/", text)
+    # check_tree_counts.R prints results/planarsviz/reference/<file>.png
+    # verbatim (via check_transparency.py) for its "reference:" transparency
+    # line -- the one place a check's output names a reference image's own
+    # location rather than just a chart name and a percentage. Since commit A
+    # of the results/ reorg (2026-09-20), that location includes a
+    # topic subfolder (e.g. reference/counts-and-chance/); the
+    # subfolder is where the file happens to live, not something this
+    # snapshot is meant to track, so it is stripped here the same way the R
+    # tmp directory above is.
+    text = re.sub(
+        r"(reference/)(?:laminar-families|pooled|boundaries|counts-and-chance)/",
+        r"\1", text,
+    )
     return text
 
 

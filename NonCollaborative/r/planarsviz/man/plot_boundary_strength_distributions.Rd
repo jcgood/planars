@@ -18,7 +18,9 @@ plot_boundary_strength_distributions(
 \item{colours}{Named colours for `left` and `right`.}
 }
 \value{
-A ggplot object with attributes `planarsviz_size` and `planarsviz_units` (`"in"`).
+A ggplot object with attributes `planarsviz_size`,
+  `planarsviz_units` (`"in"`), and `planarsviz_folder` (its
+  `results/planarsviz` subfolder).
 }
 \description{
 Left-edge and right-edge strength as two smoothed curves over position

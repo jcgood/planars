@@ -93,6 +93,9 @@ for (case in cases) {
   pl <- make()
   pl_legend <- make(legend = TRUE)
   base <- paste0(prefix, "_", case$name)
+  folder <- attr(pl, "planarsviz_folder")
+  cmp_out <- file.path(cmp_dir, folder)
+  dir.create(cmp_out, recursive = TRUE, showWarnings = FALSE)
   new_png <- render(pl, file.path(plots_dir, paste0(base, ".pdf")))
   new_legend_png <- render(pl_legend, file.path(plots_dir, paste0(base, "_legend.pdf")))
 
@@ -103,7 +106,7 @@ for (case in cases) {
       system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(stem)))
       cat(base, suffix, ": rendered; side by side with nyan1308: ",
           compare(paste0(stem, ".png"), if (suffix == "") new_png else new_legend_png,
-                  file.path(cmp_dir, paste0(base, suffix, ".png"))), "\n", sep = "")
+                  file.path(cmp_out, paste0(base, suffix, ".png"))), "\n", sep = "")
     }
     next
   }
@@ -128,12 +131,12 @@ for (case in cases) {
   }
   problems <- c(problems, same_data(get("legend_plot", envir = orig), attr(pl_legend_old, "planarsviz_legend_plot"), "legend"))
   if (length(problems)) all_ok <- FALSE
-  ref_dir <- file.path(dirname(bundle_dir), "reference")
-  pix <- compare(file.path(ref_dir, paste0(base, ".png")), new_png, file.path(cmp_dir, paste0(base, ".png")))
+  ref_dir <- file.path(dirname(bundle_dir), "reference", folder)
+  pix <- compare(file.path(ref_dir, paste0(base, ".png")), new_png, file.path(cmp_out, paste0(base, ".png")))
   pix_old <- compare(file.path(ref_dir, paste0(base, "_legend.png")), old_legend_png,
                      file.path(tempdir(), paste0(base, "_legend_as_generated_cmp.png")))
   pix_fixed <- compare(file.path(ref_dir, paste0(base, "_legend.png")), new_legend_png,
-                       file.path(cmp_dir, paste0(base, "_legend.png")))
+                       file.path(cmp_out, paste0(base, "_legend.png")))
   cat(base, ": ", if (length(problems)) paste("NUMBERS DIFFER:", paste(head(problems, 5), collapse = " | ")) else "numbers identical",
       "\n  chart pixels: ", pix,
       "\n  legend as generated (swatch exponent 0.5): ", pix_old,

@@ -16,7 +16,8 @@ position 1, which only the excluded full root reaches.}
 }
 \value{
 A ggplot object with attributes `planarsviz_size` (`c(width,
-  height)`) and `planarsviz_units` (`"in"`).
+  height)`), `planarsviz_units` (`"in"`), and `planarsviz_folder` (its
+  `results/planarsviz` subfolder).
 }
 \description{
 Each observed span except the full root drawn as a horizontal segment over

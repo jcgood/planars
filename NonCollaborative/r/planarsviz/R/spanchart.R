@@ -24,7 +24,8 @@
 #'
 #' @param bundle A bundle from [read_planars_bundle()].
 #' @return A ggplot object with attributes `planarsviz_size` (`c(width,
-#'   height)`) and `planarsviz_units` (`"in"`).
+#'   height)`), `planarsviz_units` (`"in"`), and `planarsviz_folder` (its
+#'   `results/planarsviz` subfolder).
 #' @param positions `"all"` (default) shows every position in the planar
 #'   structure; `"drawn"` shows only the stretch the charted spans cover,
 #'   as the original script did — for nyan1308 that silently dropped
@@ -90,5 +91,6 @@ plot_span_chart <- function(bundle, positions = c("all", "drawn")) {
 
   attr(p_spanchart, "planarsviz_size") <- c(width = 14, height = 8)
   attr(p_spanchart, "planarsviz_units") <- "in"
+  attr(p_spanchart, "planarsviz_folder") <- "laminar-families"
   p_spanchart
 }

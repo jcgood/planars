@@ -61,7 +61,9 @@
 #' @param colours Named fill colours for `Left` and `Right`.
 #' @param highlight A `highlight_id` from `highlights.tsv` for the label text
 #'   colours, or `NULL` for all black.
-#' @return A ggplot object with attributes `planarsviz_size` and `planarsviz_units` (`"in"`).
+#' @return A ggplot object with attributes `planarsviz_size`,
+#'   `planarsviz_units` (`"in"`), and `planarsviz_folder` (its
+#'   `results/planarsviz` subfolder).
 #' @export
 plot_boundary_strength_overlay <- function(bundle, subset = NULL,
                                            colours = c(Left = "#0072B2", Right = "#E69F00"),
@@ -149,5 +151,6 @@ plot_boundary_strength_overlay <- function(bundle, subset = NULL,
 
   attr(p, "planarsviz_size") <- c(width = 13, height = 7)
   attr(p, "planarsviz_units") <- "in"
+  attr(p, "planarsviz_folder") <- "boundaries"
   p
 }

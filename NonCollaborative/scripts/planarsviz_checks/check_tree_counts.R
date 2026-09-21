@@ -51,6 +51,9 @@ for (chart in c("by_class", "bundles", "all", "without_adjacent")) {
   base <- paste0(prefix, "_tree_count_", chart)
   p <- plot_tree_counts(bundle, chart)
   size <- attr(p, "planarsviz_size")
+  folder <- attr(p, "planarsviz_folder")
+  cmp_out <- file.path(cmp_dir, folder)
+  dir.create(cmp_out, recursive = TRUE, showWarnings = FALSE)
   pdf_path <- file.path(bundle_dir, "plots", paste0(base, ".pdf"))
   dir.create(dirname(pdf_path), recursive = TRUE, showWarnings = FALSE)
   suppressMessages(ggplot2::ggsave(pdf_path, p, width = size[["width"]], height = size[["height"]], units = "in"))
@@ -65,10 +68,10 @@ for (chart in c("by_class", "bundles", "all", "without_adjacent")) {
                           shQuote(nyan_stem)))
     paste0(nyan_stem, ".png")
   } else {
-    file.path(dirname(bundle_dir), "reference", paste0(ref_base, ".png"))
+    file.path(dirname(bundle_dir), "reference", folder, paste0(ref_base, ".png"))
   }
   cat(base, " (", size[["width"]], "x", size[["height"]], " in): ",
-      compare(ref_png, paste0(stem, ".png"), file.path(cmp_dir, paste0(base, ".png"))), "\n", sep = "")
+      compare(ref_png, paste0(stem, ".png"), file.path(cmp_out, paste0(base, ".png"))), "\n", sep = "")
 
   if (isTRUE(attr(p, "planarsviz_transparent"))) {
     cat("  port:      ", transparency(pdf_path, paste0(stem, "_transp")), "\n")
@@ -77,7 +80,7 @@ for (chart in c("by_class", "bundles", "all", "without_adjacent")) {
       # Not results/<name>.pdf: since cutover step C1 that file is the
       # library's own output, so reading it compared the port with itself.
       cat("  reference: ", transparency_of(
-        file.path(dirname(bundle_dir), "reference", paste0(ref_base, "_transp.png"))), "\n")
+        file.path(dirname(bundle_dir), "reference", folder, paste0(ref_base, "_transp.png"))), "\n")
     }
   }
 }

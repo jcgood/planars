@@ -21,8 +21,9 @@ plot_pooled(
 \item{group_by_domain}{Group rows by domain type first (all tests only).}
 }
 \value{
-A ggplot object, with attribute `planarsviz_size`: the working
-  script's canvas as `c(width, height)` in centimetres.
+A ggplot object, with attributes `planarsviz_size` (the working
+  script's canvas as `c(width, height)` in centimetres) and
+  `planarsviz_folder` (its `results/planarsviz` subfolder).
 }
 \description{
 One horizontal line per test across the planar positions, coloured by

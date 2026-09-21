@@ -88,6 +88,9 @@ for (case in cases) {
     next
   }
   pl <- suppressMessages(suppressWarnings(plot_forestspans(bundle, subset = case$subset)))
+  folder <- attr(pl, "planarsviz_folder")
+  cmp_out <- file.path(cmp_dir, folder)
+  dir.create(cmp_out, recursive = TRUE, showWarnings = FALSE)
   new_png <- render(pl, base)
   # The legend moved into the panel's lower-left corner on 2026-09-16; the
   # exact comparison with the old script uses the original right-hand legend.
@@ -102,7 +105,7 @@ for (case in cases) {
     stem <- file.path(tempdir(), paste0("nyan_", case$name))
     system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(stem)))
     cat(base, ": rendered; side by side with nyan1308: ",
-        compare(paste0(stem, ".png"), new_png, file.path(cmp_dir, paste0(base, ".png"))), "\n", sep = "")
+        compare(paste0(stem, ".png"), new_png, file.path(cmp_out, paste0(base, ".png"))), "\n", sep = "")
     next
   }
 
@@ -113,9 +116,9 @@ for (case in cases) {
   problems <- same_data(get("p", envir = orig), pl_old, case$name)
   if (length(problems)) all_ok <- FALSE
   size <- attr(pl, "planarsviz_size")
-  ref <- file.path(dirname(bundle_dir), "reference", paste0(base, ".png"))
+  ref <- file.path(dirname(bundle_dir), "reference", folder, paste0(base, ".png"))
   pix_old <- compare(ref, old_png, file.path(tempdir(), paste0(base, "_as_generated_cmp.png")))
-  pix <- compare(ref, new_png, file.path(cmp_dir, paste0(base, ".png")))
+  pix <- compare(ref, new_png, file.path(cmp_out, paste0(base, ".png")))
   cat(base, ": ", if (length(problems)) paste("NUMBERS DIFFER:", paste(head(problems, 5), collapse = " | ")) else "numbers identical",
       "; canvas ", size[["width"]], "x", size[["height"]], " ", attr(pl, "planarsviz_units"),
       "\n  as generated (legend right, original header): ", pix_old,
