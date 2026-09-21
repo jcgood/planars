@@ -77,26 +77,42 @@ commits:
 - **WeasyPrint upgraded to 70.0** (`00b12cc`), clearing both Dependabot
   alerts. Neither could reach this project; upgrading beat dismissing.
 
-**Next action: the `results/` restructure.** All six open questions were
-settled on 2026-09-20 and the plan, including the order the steps have to
-happen in and the one step with no second chance, is the last entry in
-`NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md`. Read that before
-starting; it is not repeated here. `lintr`/`styler` is the only phase D item
-left after it, and needs no decision — just work.
+**Next action: finish the `results/` restructure.** Steps 1 and 2 are done;
+the plan, the folder scheme and the order the rest has to happen in are the
+last three entries in
+`NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md`. Read those before
+starting; they are not repeated here. `lintr`/`styler` is the only phase D
+item left after it, and needs no decision — just work.
+
+**Start by pushing `064952d`, which is committed locally and has never been
+pushed.** It was blocked by the roxygen pre-push guard, for a reason that is
+not a defect in it: Jeff's other Claude session (his work account) was
+mid-change on `r/planarsviz/` and had an untracked `boundary_strength_test.R`
+in the tree, so the guard regenerated a `NAMESPACE` with an export the
+committed one lacked. `NonCollaborative/docs/NOTE_FOR_BOUNDARY_STRENGTH_SESSION.md`
+is the standing note to that session and says what it has to commit to clear
+this. Check the guard passes on its own rather than reaching for
+`--no-verify` — it has been silently disarmed once before.
+
+**Two sessions are sharing `r/planarsviz/`.** Anything uncommitted in the
+tree that this session did not write may be the other one's work in flight:
+do not commit it and do not revert it, stage your own files by name, and ask
+Jeff whose it is.
 
 **Still open, unfixed: the checks overwrite 136 tracked comparison images.**
 Byte-identical every run, which is itself evidence the renders are
 deterministic, but it means the test suite writes to tracked files. Moving
 where they write would alter the checks and contradict the docs pointing at
-`results/planarsviz/comparisons/`, so it was left alone — worth revisiting
-during the restructure, which touches those paths anyway.
+`results/planarsviz/comparisons/`, so it was left alone. Step 2 of the
+restructure regrouped those images into topic subfolders without changing
+that: the checks still overwrite them, just one level deeper.
 
 **Jeff has looked at the charts and they are fine** (2026-09-20). This stood
 open from the start of the port — every `0.0000%` in the progress doc had
 been read by Claude off a check's output and by nobody else — and it is now
 closed. Don't re-raise it. Comparison images stay under
-`results/planarsviz/comparisons/` (reference | new | difference) for any
-future change.
+`results/planarsviz/comparisons/<topic>/` (reference | new | difference) for
+any future change.
 
 **After phase D: phase E — the `illustrations` bundle.** Supercatalan tree
 shapes, the counting numbers, and the random-tree overlay as a non-language
