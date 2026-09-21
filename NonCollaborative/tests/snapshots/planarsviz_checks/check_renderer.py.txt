@@ -1,0 +1,69 @@
+pooled_plot                                      size_match=True ref=(1024, 2619) new=(1024, 2619) differing_pixels=0.0000%
+pooled_domainplot                                size_match=True ref=(1024, 2619) new=(1024, 2619) differing_pixels=0.0000%
+pooled_plot_intonational                         size_match=True ref=(984, 331) new=(984, 331) differing_pixels=0.0000%
+pooled_plot_intonational_global_layers           size_match=True ref=(984, 331) new=(984, 331) differing_pixels=0.0000%
+pooled_plot_length                               size_match=True ref=(984, 275) new=(984, 275) differing_pixels=0.0000%
+pooled_plot_length_global_layers                 size_match=True ref=(984, 275) new=(984, 275) differing_pixels=0.0000%
+pooled_plot_morphosyntactic                      size_match=True ref=(984, 303) new=(984, 303) differing_pixels=0.0000%
+pooled_plot_morphosyntactic_global_layers        size_match=True ref=(984, 303) new=(984, 303) differing_pixels=0.0000%
+pooled_plot_phonological                         size_match=True ref=(984, 578) new=(984, 578) differing_pixels=0.0000%
+pooled_plot_phonological_global_layers           size_match=True ref=(984, 578) new=(984, 578) differing_pixels=0.0000%
+pooled_plot_tonosegmental                        size_match=True ref=(984, 1213) new=(984, 1213) differing_pixels=0.0000%
+pooled_plot_tonosegmental_global_layers          size_match=True ref=(984, 1213) new=(984, 1213) differing_pixels=0.0000%
+boundary_skyline                                 size_match=True ref=(1600, 1100) new=(1600, 1100) differing_pixels=0.0000%
+spanchart                                        size_match=True ref=(1400, 800) new=(1400, 800) differing_pixels=2.4041%   (deliberate change)
+morsyn_laminar_forest                            size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+tono_laminar_forest                              size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+length_laminar_forest                            size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+phon_laminar_forest                              size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+inton_laminar_forest                             size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+phonologylike_laminar_forest                     size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+syntaxlike_laminar_forest                        size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+syntaxlike_notono_laminar_forest                 size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+laminar_overlay                                  size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+laminar_overlay_legend                           size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+all_families_labeled                             size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+all_families_labeled_legend                      size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0493%   (deliberate change)
+all_families_labeled_orthographic_word           size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+all_families_labeled_orthographic_word_legend    size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0493%   (deliberate change)
+freqtree                                         size_match=True ref=(1600, 1000) new=(1600, 1000) differing_pixels=0.0000%
+most_binary_tree                                 no reference
+most_binary_tree_orthographic_word               no reference
+four_trees                                       size_match=True ref=(2400, 1600) new=(2400, 1600) differing_pixels=0.0000%
+conflict_groups                                  size_match=True ref=(2400, 2000) new=(2400, 2000) differing_pixels=8.6805%   (deliberate change)
+exemplary_trees_1                                size_match=True ref=(2992, 1625) new=(2992, 1625) differing_pixels=0.0000%
+exemplary_trees_slide_1_tree                     size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0000%
+exemplary_trees_slide_1_evidence                 size_match=True ref=(984, 1625) new=(984, 1625) differing_pixels=0.0000%
+exemplary_trees_2                                size_match=True ref=(2992, 1185) new=(2992, 1185) differing_pixels=0.0000%
+exemplary_trees_slide_2_tree                     size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0000%
+exemplary_trees_slide_2_evidence                 size_match=True ref=(984, 1185) new=(984, 1185) differing_pixels=0.0000%
+exemplary_trees_3                                size_match=True ref=(2992, 881) new=(2992, 881) differing_pixels=0.0000%
+exemplary_trees_slide_3_tree                     size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0000%
+exemplary_trees_slide_3_evidence                 size_match=True ref=(984, 881) new=(984, 881) differing_pixels=0.0000%
+exemplary_trees_4                                size_match=True ref=(2992, 909) new=(2992, 909) differing_pixels=0.0000%
+exemplary_trees_slide_4_tree                     size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0000%
+exemplary_trees_slide_4_evidence                 size_match=True ref=(984, 909) new=(984, 909) differing_pixels=0.0000%
+exemplary_trees_5                                size_match=True ref=(2992, 909) new=(2992, 909) differing_pixels=0.0000%
+exemplary_trees_slide_5_tree                     size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0000%
+exemplary_trees_slide_5_evidence                 size_match=True ref=(984, 909) new=(984, 909) differing_pixels=0.0000%
+exemplary_trees_6                                size_match=True ref=(2992, 1267) new=(2992, 1267) differing_pixels=0.0000%
+exemplary_trees_slide_6_tree                     size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0000%
+exemplary_trees_slide_6_evidence                 size_match=True ref=(984, 1267) new=(984, 1267) differing_pixels=0.0000%
+exemplary_trees_7                                size_match=True ref=(2992, 578) new=(2992, 578) differing_pixels=0.0000%
+exemplary_trees_slide_7_tree                     size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0000%
+exemplary_trees_slide_7_evidence                 size_match=True ref=(984, 578) new=(984, 578) differing_pixels=0.0000%
+forestspans_plot                                 size_match=True ref=(1338, 945) new=(1338, 945) differing_pixels=5.2543%   (deliberate change)
+tree_count_by_class                              size_match=False ref=(800, 381) new=(800, 380) differing_pixels=8.1056%
+tree_count_bundles                               size_match=False ref=(800, 381) new=(800, 380) differing_pixels=6.7920%
+tree_count_all                                   size_match=True ref=(700, 500) new=(700, 500) differing_pixels=7.2066%
+tree_count_without_adjacent                      size_match=True ref=(800, 500) new=(800, 500) differing_pixels=7.1080%
+fragmentation_test_plot                          size_match=True ref=(1000, 650) new=(1000, 650) differing_pixels=0.0000%
+boundary_strength                                size_match=True ref=(1100, 700) new=(1100, 700) differing_pixels=5.7336%
+boundary_strength_distributions                  size_match=True ref=(1100, 500) new=(1100, 500) differing_pixels=10.2962%
+boundary_strength_overlay                        size_match=True ref=(1300, 700) new=(1300, 700) differing_pixels=0.0000%
+forestspans_plot_no_tono                         size_match=True ref=(1338, 945) new=(1338, 945) differing_pixels=4.2609%   (deliberate change)
+boundary_strength_no_tono                        size_match=True ref=(1100, 700) new=(1100, 700) differing_pixels=5.1251%
+boundary_strength_overlay_no_tono                size_match=True ref=(1300, 700) new=(1300, 700) differing_pixels=0.0000%
+
+66 renders compared; references with no render: none
+RENDERER CHECK PASSED

@@ -1,0 +1,8 @@
+exemplary trees: 7 drawn, 7 from bundle, identical
+freqtree: 1 drawn, 1 from bundle, identical
+four trees: 4 drawn, 4 from bundle, identical
+conflict groups: all: 69 drawn, 69 from bundle, identical
+conflict groups: A: 10 drawn, 10 from bundle, identical
+conflict groups: B: 12 drawn, 12 from bundle, identical
+conflict groups: C: 12 drawn, 12 from bundle, identical
+ALL SELECTION EXPORT CHECKS PASSED

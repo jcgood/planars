@@ -1,0 +1,3 @@
+nyan1308_freqtree: numbers identical; canvas 16x10 in; pixels: size_match=True ref=(1600, 1000) new=(1600, 1000) differing_pixels=0.0000%
+nyan1308_four_trees: numbers identical; canvas 24x16 in; pixels: size_match=True ref=(2400, 1600) new=(2400, 1600) differing_pixels=0.0000%
+ALL NUMBER CHECKS PASSED

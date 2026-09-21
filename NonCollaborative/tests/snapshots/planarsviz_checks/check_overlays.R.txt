@@ -1,0 +1,13 @@
+nyan1308_laminar_overlay: numbers identical
+  chart pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+  legend as generated (swatch exponent 0.5): size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+  legend, library default (swatch follows exponent): size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+nyan1308_all_families_labeled: numbers identical
+  chart pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+  legend as generated (swatch exponent 0.5): size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+  legend, library default (swatch follows exponent): size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0493%
+nyan1308_all_families_labeled_wordhood: numbers identical
+  chart pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+  legend as generated (swatch exponent 0.5): size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+  legend, library default (swatch follows exponent): size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0493%
+ALL NUMBER CHECKS PASSED

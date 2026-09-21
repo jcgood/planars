@@ -1,0 +1,2 @@
+groups checked: 8; draws per group: 8 x 5000
+nyan1308_fragmentation_test_plot: numbers identical; pixels: size_match=True ref=(1000, 650) new=(1000, 650) differing_pixels=0.0000%

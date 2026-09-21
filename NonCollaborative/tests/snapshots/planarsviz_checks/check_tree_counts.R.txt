@@ -1,0 +1,8 @@
+nyan1308_tree_count_by_class (8x3.8 in): size_match=False ref=(800, 381) new=(800, 380) differing_pixels=8.1056%
+  port:       <tmp>/nyan1308_tree_count_by_class_transp.png: 85.1% of pixels fully transparent; corner alpha [0, 0, 0, 0] 
+  reference:  results/planarsviz/reference/nyan1308_tree_count_by_class_transp.png: 86.3% of pixels fully transparent; corner alpha [0, 0, 0, 0] 
+nyan1308_tree_count_bundles (8x3.8 in): size_match=False ref=(800, 381) new=(800, 380) differing_pixels=6.7920%
+  port:       <tmp>/nyan1308_tree_count_bundles_transp.png: 83.9% of pixels fully transparent; corner alpha [0, 0, 0, 0] 
+  reference:  results/planarsviz/reference/nyan1308_tree_count_bundles_transp.png: 85.1% of pixels fully transparent; corner alpha [0, 0, 0, 0] 
+nyan1308_tree_count_all (7x5 in): size_match=True ref=(700, 500) new=(700, 500) differing_pixels=7.2066%
+nyan1308_tree_count_without_adjacent (8x5 in): size_match=True ref=(800, 500) new=(800, 500) differing_pixels=7.1080%

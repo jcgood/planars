@@ -1,0 +1,13 @@
+nyan1308_pooled_plot: numbers identical; pixels: size_match=True ref=(1024, 2619) new=(1024, 2619) differing_pixels=0.0000%
+nyan1308_pooled_domainplot: numbers identical; pixels: size_match=True ref=(1024, 2619) new=(1024, 2619) differing_pixels=0.0000%
+nyan1308_pooled_plot_morphosyntactic: numbers identical; pixels: size_match=True ref=(984, 303) new=(984, 303) differing_pixels=0.0000%
+nyan1308_pooled_plot_morphosyntactic_global_layers: numbers identical; pixels: size_match=True ref=(984, 303) new=(984, 303) differing_pixels=0.0000%
+nyan1308_pooled_plot_tonosegmental: numbers identical; pixels: size_match=True ref=(984, 1213) new=(984, 1213) differing_pixels=0.0000%
+nyan1308_pooled_plot_tonosegmental_global_layers: numbers identical; pixels: size_match=True ref=(984, 1213) new=(984, 1213) differing_pixels=0.0000%
+nyan1308_pooled_plot_length: numbers identical; pixels: size_match=True ref=(984, 275) new=(984, 275) differing_pixels=0.0000%
+nyan1308_pooled_plot_length_global_layers: numbers identical; pixels: size_match=True ref=(984, 275) new=(984, 275) differing_pixels=0.0000%
+nyan1308_pooled_plot_phonological: numbers identical; pixels: size_match=True ref=(984, 578) new=(984, 578) differing_pixels=0.0000%
+nyan1308_pooled_plot_phonological_global_layers: numbers identical; pixels: size_match=True ref=(984, 578) new=(984, 578) differing_pixels=0.0000%
+nyan1308_pooled_plot_intonational: numbers identical; pixels: size_match=True ref=(984, 331) new=(984, 331) differing_pixels=0.0000%
+nyan1308_pooled_plot_intonational_global_layers: numbers identical; pixels: size_match=True ref=(984, 331) new=(984, 331) differing_pixels=0.0000%
+ALL NUMBER CHECKS PASSED

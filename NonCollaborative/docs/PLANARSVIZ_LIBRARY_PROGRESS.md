@@ -28,10 +28,15 @@ Honesty rule: nothing below says "matches" without naming the comparison file.
   settled or moot: question 8 (branch not pushed) went away when PR #294
   merged, and question 11 (boundary-strength files missing from
   `results/visualizations.md`) was folded into C4, which rewrote that file.
-- **Not done, both deliberately deferred:** Phase E (the `illustrations`
-  bundle — question 1 has its design) and tooling (R9: CI, `renv`, `lintr`,
-  `R CMD check`, `vdiffr`, roxygen/testthat), which the plan holds back until
-  the charts match. They do now, so R9 is unblocked rather than blocked.
+- **Phase D (the R tooling, formerly R9) is in progress.** Done: roxygen2
+  generates `NAMESPACE` and `man/`; a drift guard catches a stale regeneration;
+  `R CMD check` on a built tarball reports `Status: OK`; and the 21 porting
+  checks now fail on their own instead of only printing their numbers. Left:
+  `renv`, then `lintr`/`styler`, then CI — where the real question is that
+  `NonCollaborative/tests/` has never run in CI at all. `vdiffr` was
+  considered and deliberately dropped; see the entry at the end of this file.
+- **Not done, deliberately deferred:** Phase E (the `illustrations` bundle —
+  question 1 has its design).
 - **Seen by Jeff: still none.** Every "0.0000%" in this file was read by
   Claude off a check's output; nobody has looked at the charts themselves.
   Comparison images are under `results/planarsviz/comparisons/`
@@ -1320,3 +1325,91 @@ Two things, both closing gaps the roxygen switch opened or left.
   rather than taken from the subagent's report, `R CMD check` run on a built
   tarball, both affected chart checks re-run, full pytest suite (18 passed).
   Seen by Jeff: no.
+
+## Phase D: the porting checks now fail on their own (2026-09-20)
+
+The 21 checks in `scripts/planarsviz_checks/` were thorough and silent. Each
+one rendered a chart, pixel-compared it against a frozen reference and
+*printed* the result; nothing anywhere said what the result had to be.
+`check_forests.R` reported `0.0000%` eight times and no test would have
+noticed if it started reporting something else. Catching a drifted chart
+depended on a person running each check by hand and reading the numbers.
+
+`tests/test_planarsviz_checks.py` closes that. It runs all 20 standalone
+checks plus the renderer check and compares each one's whole output against a
+snapshot under `tests/snapshots/planarsviz_checks/`. Re-blessing after a
+deliberate change is `pytest tests/test_planarsviz_checks.py
+--update-snapshots`, the idiom `test_tree_traversal.py` already uses.
+
+- **Snapshots of the whole output, not a table of expected percentages.** The
+  percentages alone would have missed a case that silently started skipping, a
+  canvas that changed size, a comparison that lost its reference image, and the
+  element counts the `verify_*_export.py` checks report — all real regressions.
+  It also suits what these numbers are: charts 16 and 17 are cross-language
+  ports where fonts differ, so a non-zero figure is *correct*, and five further
+  charts were changed deliberately in September, their numbers recording the
+  size of that change. None of those have a threshold to sit under. What they
+  have is a value that should not move without someone knowing.
+- **`vdiffr` was considered and deliberately not used**, though the original
+  acceptance criteria named it. vdiffr compares the package against its own
+  past output. These checks compare it against the archived scripts it
+  replaced, which is the evidence chain behind every `0.0000%` in this file;
+  rewriting them as vdiffr snapshots would have thrown that away and called it
+  progress. Jeff confirmed this call. vdiffr remains available later as a
+  second net, not a replacement.
+- **Proved it fails when it should**, on real chart code rather than by editing
+  a snapshot: the skyline's bar width changed from 0.82 to 0.70, and the test
+  caught it on both the plot data and the pixels (`0.2494%`). Reverted and
+  confirmed passing again.
+- **Three things the checks did that a snapshot could not take as-is:**
+  - `check_tree_counts.R` prints R's per-session temporary directory, which is
+    new on every run. The directory is normalised out and the filename kept,
+    since the filename is the part that carries meaning. Confirmed across two
+    separate runs that everything else is byte-identical.
+  - `check_transparency.py` has no standalone form — it reports how transparent
+    one PNG is, given its path, and `check_tree_counts.R` calls it. Its output
+    is already inside that check's snapshot, so it is excluded, alongside
+    `superseded.R`/`superseded.py`, with the reason written next to the list.
+  - `check_renderer.py` needs a full render to read. It gets its own test,
+    which renders into a temporary directory rather than `results/`.
+- **The 380-vs-381 size mismatch in `check_tree_counts.R` is real but not a
+  defect.** Two charts render 1px shorter than their references
+  (`size_match=False`). It is chart 16, a matplotlib port: matplotlib rounded
+  3.8in × 100dpi up, `pdftoppm` rounds down. Recorded as-is rather than
+  papered over.
+- **Cost: about 6m20s for the file.** Most of that is not drawing — each check
+  installs the package into its own temporary library, so `R CMD INSTALL` runs
+  once per check. Left alone, because sharing one install would mean editing
+  the checks, which is not what this change is for.
+- Skips rather than fails where R, poppler or the project virtual environment
+  are absent, so the suite still passes on a machine set up only for Python.
+
+**Two findings this turned up, neither fixed here.**
+
+- **The `NonCollaborative/` suite has never run in CI.** The root
+  `pyproject.toml` sets `testpaths = ["tests"]`, so CI's `pytest` never reaches
+  `NonCollaborative/tests/` — including `test_roxygen_up_to_date.py`, written
+  the same day, which has only ever run when invoked by hand. This changes what
+  phase D's remaining "CI" item is: not a step to add, but a decision about
+  whether R, Bioconductor's `ggtree` and poppler belong in the CI image.
+  Jeff's call, not a mechanical one.
+- **The checks overwrite 136 tracked comparison images.** They come back
+  byte-identical today, which is itself evidence the renders are deterministic,
+  but it means the test suite writes to tracked files. Not changed here:
+  moving where the checks write would alter the checks and contradict the
+  documentation pointing at `results/planarsviz/comparisons/`.
+
+**For `renv`, which is next:** the versions these charts were drawn with are
+ggplot2 4.0.3, ape 5.8.1, ggtree 4.2.0 (Bioconductor), dplyr 1.2.1, patchwork
+1.3.2, scales 1.4.0, jsonlite 2.0.0, stringr 1.6.0, tidyr 1.3.2, magrittr
+2.0.5, on R 4.6.1. `DESCRIPTION` names these packages but pins no versions,
+and ggplot2 4.x changed defaults against 3.x — so every `0.0000%` above rests
+on a version nothing records. That is the argument for `renv` here, and it is
+stronger than hygiene.
+
+- Looked at by Claude: yes — the failure behaviour proved directly by changing
+  chart code, the temp-path instability and the 1px mismatch both reproduced
+  independently rather than taken from the subagent's report that found them,
+  and the 21 snapshots recorded in one run. Seen by Jeff: no. **Nobody has
+  looked at the charts themselves yet** — that item is unchanged and predates
+  today.

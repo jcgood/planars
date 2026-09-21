@@ -1,0 +1,43 @@
+# A tibble: 26 × 4
+   Domain Left_Edge Right_Edge Count
+   <chr>      <dbl>      <dbl> <int>
+ 1 6–17           6         17    19
+ 2 5–17           5         17    10
+ 3 8–17           8         17     8
+ 4 6–16           6         16     7
+ 5 10–17         10         17     6
+ 6 1–22           1         22     5
+ 7 5–21           5         21     5
+ 8 9–17           9         17     5
+ 9 3–21           3         21     4
+10 6–10           6         10     3
+# ℹ 16 more rows
+exemplar 1: numbers identical
+  page (76 x 41.3 cm): size_match=True ref=(2992, 1625) new=(2992, 1625) differing_pixels=0.0000%
+  slide_tree (13.333 x 7.5 in): size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0000%
+  slide_evidence (25 x 41.3 cm): size_match=True ref=(984, 1625) new=(984, 1625) differing_pixels=0.0000%
+exemplar 2: numbers identical
+  page (76 x 30.1 cm): size_match=True ref=(2992, 1185) new=(2992, 1185) differing_pixels=0.0000%
+  slide_tree (13.333 x 7.5 in): size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0000%
+  slide_evidence (25 x 30.1 cm): size_match=True ref=(984, 1185) new=(984, 1185) differing_pixels=0.0000%
+exemplar 3: numbers identical
+  page (76 x 22.4 cm): size_match=True ref=(2992, 881) new=(2992, 881) differing_pixels=0.0000%
+  slide_tree (13.333 x 7.5 in): size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0000%
+  slide_evidence (25 x 22.4 cm): size_match=True ref=(984, 881) new=(984, 881) differing_pixels=0.0000%
+exemplar 4: numbers identical
+  page (76 x 23.1 cm): size_match=True ref=(2992, 909) new=(2992, 909) differing_pixels=0.0000%
+  slide_tree (13.333 x 7.5 in): size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0000%
+  slide_evidence (25 x 23.1 cm): size_match=True ref=(984, 909) new=(984, 909) differing_pixels=0.0000%
+exemplar 5: numbers identical
+  page (76 x 23.1 cm): size_match=True ref=(2992, 909) new=(2992, 909) differing_pixels=0.0000%
+  slide_tree (13.333 x 7.5 in): size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0000%
+  slide_evidence (25 x 23.1 cm): size_match=True ref=(984, 909) new=(984, 909) differing_pixels=0.0000%
+exemplar 6: numbers identical
+  page (76 x 32.2 cm): size_match=True ref=(2992, 1267) new=(2992, 1267) differing_pixels=0.0000%
+  slide_tree (13.333 x 7.5 in): size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0000%
+  slide_evidence (25 x 32.2 cm): size_match=True ref=(984, 1267) new=(984, 1267) differing_pixels=0.0000%
+exemplar 7: numbers identical
+  page (76 x 14.7 cm): size_match=True ref=(2992, 578) new=(2992, 578) differing_pixels=0.0000%
+  slide_tree (13.333 x 7.5 in): size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0000%
+  slide_evidence (25 x 14.7 cm): size_match=True ref=(984, 578) new=(984, 578) differing_pixels=0.0000%
+ALL NUMBER CHECKS PASSED

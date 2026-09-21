@@ -1,0 +1,10 @@
+morsyn: 3 trees, alpha 0.784557, colour #BC3C29, n_positions 22
+tono: 9 trees, alpha 0.400516, colour #0072B5, n_positions 17
+length: 3 trees, alpha 0.784557, colour #E18727, n_positions 18
+phon: 6 trees, alpha 0.535841, colour #20845E, n_positions 21
+inton: 1 trees, alpha 0.99, colour #7876B1, n_positions 22
+phonologylike: 6 trees, alpha 0.535841, colour #0072B5, n_positions 22
+syntaxlike: 16 trees, alpha 0.250106, colour #BC3C29, n_positions 22
+syntaxlike_notono: 4 trees, alpha 0.683772, colour #E18727, n_positions 22
+tree-count bundles checked: 3
+ALL FOREST EXPORT CHECKS PASSED

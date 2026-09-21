@@ -1,0 +1,7 @@
+nyan1308_forestspans_plot: numbers identical; canvas 34x24 cm
+  as generated (legend right, original header): size_match=True ref=(1338, 945) new=(1338, 945) differing_pixels=0.0000%
+  library default (inset legend, larger header): size_match=True ref=(1338, 945) new=(1338, 945) differing_pixels=5.2543%
+nyan1308_forestspans_plot_no_tono: numbers identical; canvas 34x24 cm
+  as generated (legend right, original header): size_match=True ref=(1338, 945) new=(1338, 945) differing_pixels=0.0000%
+  library default (inset legend, larger header): size_match=True ref=(1338, 945) new=(1338, 945) differing_pixels=4.2609%
+ALL NUMBER CHECKS PASSED

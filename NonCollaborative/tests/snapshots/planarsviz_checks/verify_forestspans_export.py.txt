@@ -1,0 +1,3 @@
+nyan1308_forestspans_plot.r: 26 pasted rows, 26 from bundle; trees 69 vs 69: identical
+nyan1308_forestspans_plot_no_tono.r: 20 pasted rows, 20 from bundle; trees 24 vs 24: identical
+ALL FORESTSPANS EXPORT CHECKS PASSED

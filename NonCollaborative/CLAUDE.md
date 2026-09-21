@@ -93,7 +93,14 @@ The generated `.r` scripts that used to sit here beside the PDFs are gone: the `
 
 ### `tests/`
 
-A real `pytest` suite, run with `pytest NonCollaborative/tests/` from the repo root (or `pytest tests/` from inside `NonCollaborative/`). `test_tree_traversal.py` runs `scripts/exploratory/treeTraversal.py` against each `domains/*.tsv` file and compares its output to the checked-in snapshots in `tests/snapshots/`; known-hanging inputs are marked `xfail` rather than fixed. Run `pytest --update-snapshots` to regenerate snapshots after a deliberate output change.
+A real `pytest` suite, run with `pytest NonCollaborative/tests/` from the repo root (or `pytest tests/` from inside `NonCollaborative/`). **It is not run by CI** — the root `pyproject.toml` sets `testpaths = ["tests"]`, so CI's `pytest` never reaches this directory. Running it is currently a manual step.
+
+- `test_tree_traversal.py` runs `scripts/exploratory/treeTraversal.py` against each `domains/*.tsv` file and compares its output to the checked-in snapshots in `tests/snapshots/`; known-hanging inputs are marked `xfail` rather than fixed.
+- `test_planarsviz_checks.py` runs all 21 porting checks in `scripts/planarsviz_checks/` and compares each one's whole output to a snapshot under `tests/snapshots/planarsviz_checks/`, so a drifted chart fails instead of printing a number nobody reads. Takes about 6m20s — most of it `R CMD INSTALL`, once per check. Skips cleanly without R, poppler or the project venv.
+- `test_roxygen_up_to_date.py` fails if `r/planarsviz/`'s `NAMESPACE` or `man/` no longer match what roxygen2 would generate from `R/`.
+- `test_planarsviz_bundle.py` and `test_planarsviz_shifted_bundle.py` check the exported data bundles.
+
+Run `pytest --update-snapshots` to regenerate snapshots after a deliberate output change — then read the diff before committing it. A snapshot updated without being read is worse than no snapshot, because it looks like evidence.
 
 ### `OlderFiles/`
 

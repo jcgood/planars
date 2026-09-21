@@ -1,0 +1,12 @@
+nyan1308_laminar_overlay.r
+  morsyn: script 3 trees, export 3 trees, colour #BC3C29
+  tono: script 9 trees, export 9 trees, colour #0072B5
+  length: script 3 trees, export 3 trees, colour #E18727
+  phon: script 6 trees, export 6 trees, colour #20845E
+  inton: script 1 trees, export 1 trees, colour #7876B1
+  alpha 0.094435 = formula over 22 trees
+nyan1308_all_families_labeled.r
+  all: script 69 trees, export 69 trees, colour black
+  alpha 0.064563 = formula over 69 trees
+wordhood script lines not in the all-families script: 15
+ALL OVERLAY EXPORT CHECKS PASSED

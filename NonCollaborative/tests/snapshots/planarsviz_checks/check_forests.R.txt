@@ -1,0 +1,9 @@
+nyan1308_morsyn_laminar_forest: numbers identical; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+nyan1308_tono_laminar_forest: numbers identical; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+nyan1308_length_laminar_forest: numbers identical; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+nyan1308_phon_laminar_forest: numbers identical; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+nyan1308_inton_laminar_forest: numbers identical; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+nyan1308_phonologylike_laminar_forest: numbers identical; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+nyan1308_syntaxlike_laminar_forest: numbers identical; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+nyan1308_syntaxlike_notono_laminar_forest: numbers identical; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
+ALL NUMBER CHECKS PASSED

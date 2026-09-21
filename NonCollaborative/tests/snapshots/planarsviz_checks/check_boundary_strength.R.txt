@@ -1,0 +1,3 @@
+nyan1308_boundary_strength (11x7 in): size_match=True ref=(1100, 700) new=(1100, 700) differing_pixels=5.7336%
+nyan1308_boundary_strength_no_tono (11x7 in): size_match=True ref=(1100, 700) new=(1100, 700) differing_pixels=5.1251%
+nyan1308_boundary_strength_distributions (11x5 in): size_match=True ref=(1100, 500) new=(1100, 500) differing_pixels=10.2962%

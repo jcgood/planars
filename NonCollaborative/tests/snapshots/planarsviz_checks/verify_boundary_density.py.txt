@@ -1,0 +1,8 @@
+data             largest difference from scipy 4.025e-16: identical
+intonational     largest difference from scipy 1.332e-15: identical
+length           largest difference from scipy 1.266e-14: identical
+morphosyntactic  largest difference from scipy 6.661e-16: identical
+no_tono          largest difference from scipy 3.331e-16: identical
+phonological     largest difference from scipy 2.498e-16: identical
+tonosegmental    largest difference from scipy 8.049e-16: identical
+DENSITY MATCHES SCIPY

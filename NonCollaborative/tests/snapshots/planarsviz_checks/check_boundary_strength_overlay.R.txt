@@ -1,0 +1,3 @@
+nyan1308_boundary_strength_overlay: numbers identical; canvas 13x7 in; pixels: size_match=True ref=(1300, 700) new=(1300, 700) differing_pixels=0.0000%
+nyan1308_boundary_strength_overlay_no_tono: numbers identical; canvas 13x7 in; pixels: size_match=True ref=(1300, 700) new=(1300, 700) differing_pixels=0.0000%
+ALL NUMBER CHECKS PASSED

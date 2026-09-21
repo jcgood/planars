@@ -45,16 +45,51 @@ commits:
   and `man/`; nine internal helpers stopped being exported by accident;
   `tests/test_roxygen_up_to_date.py` fails if either goes stale; and
   `R CMD check` on a built tarball reports **`Status: OK`**.
+- **The porting checks now fail on their own** (2026-09-20).
+  `NonCollaborative/tests/test_planarsviz_checks.py` runs all 21 checks and
+  snapshots each one's whole output, so a drifted chart fails the suite
+  instead of printing a number nobody reads. Proved by changing real chart
+  code (skyline bar width 0.82→0.70) and watching it caught, then reverted.
+  Takes about 6m20s. **`vdiffr` was deliberately dropped** even though the
+  original acceptance criteria named it: it compares the package against its
+  own past output, where these checks compare it against the archived scripts
+  it replaced — which is the evidence behind every `0.0000%` claim. Jeff
+  confirmed. It stays available later as a second net, not a replacement.
 - Also `20337d1`: the render manifest merges rather than replacing, so a
   `--plots` run no longer shrinks it to the charts it drew.
 
-**Next action: finish phase D — `testthat` + `vdiffr`.** The 21 checks in
-`scripts/planarsviz_checks/` are thorough but they *print* rather than
-*fail*: `check_forests.R` reports `0.0000%` and nothing asserts it must.
-Converting them into tests that fail on their own is the piece with real
-value and the largest piece left. Then `renv` (the one acceptance criterion
-with no partial credit — nothing currently records which versions of `ape`,
-`ggtree` and `patchwork` the package needs), then `lintr`/`styler`, then CI.
+**Next action: `renv`.** Jeff approved installing the R packages phase D
+needs (2026-09-20) — name each one as you install it. `renv` is the
+acceptance criterion with no partial credit, and the argument is stronger
+than hygiene: the charts were drawn with **ggplot2 4.0.3, ape 5.8.1, ggtree
+4.2.0** (Bioconductor), on R 4.6.1, and ggplot2 4.x changed defaults against
+3.x. `DESCRIPTION` names the packages but pins no versions, so every
+`0.0000%` rests on a version nothing records — a fresh machine could rebuild
+the package and not reproduce the charts. The full version list is at the end
+of `PLANARSVIZ_LIBRARY_PROGRESS.md`. Watch one trap: `renv::init()` in
+`NonCollaborative/` would scan the archived R under
+`OlderFiles/planarsviz_superseded/` too, and those scripts are deliberately
+still run by the checks. Then `lintr`/`styler`, then CI.
+
+**Two findings from the porting-check work, neither fixed, both needing a
+decision rather than typing:**
+
+- **`NonCollaborative/tests/` has never run in CI.** The root
+  `pyproject.toml` sets `testpaths = ["tests"]`, so CI's `pytest` never
+  reaches it — including the roxygen drift guard, which has only ever run by
+  hand. So phase D's "CI" item is not a step to add but a question: do R,
+  Bioconductor's `ggtree` and poppler go into the CI image? That is Jeff's
+  call.
+- **The checks overwrite 136 tracked comparison images.** Byte-identical
+  today, which is itself evidence the renders are deterministic, but it means
+  the test suite writes to tracked files. Moving where they write would alter
+  the checks and contradict the docs pointing at
+  `results/planarsviz/comparisons/`, so it was left alone.
+
+**Still nobody has looked at the charts.** Every `0.0000%` in the progress
+doc was read by Claude off a check's output. Comparison images are under
+`results/planarsviz/comparisons/` (reference | new | difference). This
+predates the tooling work and is the one item only Jeff can clear.
 
 **After phase D: phase E — the `illustrations` bundle.** Supercatalan tree
 shapes, the counting numbers, and the random-tree overlay as a non-language

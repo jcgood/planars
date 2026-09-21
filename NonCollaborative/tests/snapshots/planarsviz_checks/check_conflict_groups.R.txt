@@ -1,0 +1,4 @@
+nyan1308_conflict_groups: numbers identical; canvas 24x20 in
+  as generated (panel_titles = FALSE): size_match=True ref=(2400, 2000) new=(2400, 2000) differing_pixels=0.0000%
+  library default (titles shown): size_match=True ref=(2400, 2000) new=(2400, 2000) differing_pixels=8.6805%
+ALL NUMBER CHECKS PASSED
