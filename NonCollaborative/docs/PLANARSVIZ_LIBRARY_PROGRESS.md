@@ -1508,3 +1508,52 @@ fragmentation work. So introducing renv changed no chart.
   fire on a real desynchronised lockfile rather than by editing a snapshot.
   **Seen by Jeff: yes — he looked at the charts the same day and confirmed
   they are fine**, closing the item that had stood open since the port began.
+
+---
+
+## The archived scripts now refuse to run (2026-09-20)
+
+Jeff asked for something making it hard for a future Claude instance to run
+the old code by accident. The hazard is specific to this archive rather than
+general: `OlderFiles/planarsviz_superseded/` is kept *because* its scripts
+still work. A porting check reads a script's text and evaluates it in memory
+with `ggsave` replaced by a do-nothing function, so nothing reaches the disk.
+Run the same file with `Rscript` and `ggsave` is live — and it writes its old
+output over a chart the package produced, under the same filename. Nothing in
+`results/` records which program wrote which file, so the swap is silent: the
+chart just becomes wrong and stays wrong.
+
+Three layers, because a note alone only works on an instance that reads it and
+a guard alone only works where it is installed.
+
+- **`NonCollaborative/.Rprofile` refuses the direct run.** R starting in
+  `NonCollaborative/` quits with status 1 for any file under `OlderFiles/`,
+  naming what was refused, what to use instead (the renderer, or the relevant
+  check), and the deliberate override `PLANARS_RUN_ARCHIVED=1`. It fires on
+  `--file=` in `commandArgs()`, so it catches the accident and nothing else —
+  the checks never launch these files through `Rscript`.
+- **A rule near the top of `NonCollaborative/CLAUDE.md`**, which is the one
+  file guaranteed to be in a future instance's context. It states the specific
+  hazard rather than a generic "don't use old code", because the generic
+  version is exactly what an instance talks itself past.
+- **"Do not run" in `OlderFiles/README.md` and the archive's own README**,
+  which previously said only "do not use for new work" and "do not delete".
+
+**Declined: a banner comment at the top of each archived script.** It would
+work, and it contradicts what this file's own archive README says — those
+scripts are evidence, and editing 22 of them to add a warning is the thing
+that argument forbids. The guard belongs outside the frozen files.
+
+`tests/test_archived_scripts_refuse_to_run.py` keeps the guard honest.
+`.Rprofile` is infrastructure that gets rewritten for unrelated reasons (it
+also sets up renv), and nothing else would notice the guard vanishing until a
+chart was already overwritten. Three cases: the refusal happens *before* the
+script's code runs, the override still works, and files outside the archive
+are untouched. It drives a throwaway probe rather than a real archived script
+— proving the guard by running something it exists to stop would write the
+very charts it protects.
+
+- Looked at by Claude: yes — the refusal and the override both exercised
+  directly, all 21 porting checks re-run afterwards (21 passed, 0 skipped,
+  nothing under `results/` touched), and the test proved to fail by breaking
+  the guard's path for real and watching it catch, then restoring.

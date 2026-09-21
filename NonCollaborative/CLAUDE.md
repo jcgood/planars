@@ -4,6 +4,18 @@ Personal R/Python working area for the planars project — scripts, prototypes, 
 
 This folder contains the precursor work that evolved into the main pipeline, plus ongoing exploratory analysis and visualization code, most of it now built around the Chichewa (nyan1308) laminar-family analysis described in `docs/VERIFICATION.md`.
 
+## Do not run the old code
+
+**Nothing under `OlderFiles/` may be run.** Not as a shortcut, not to see what a chart used to look like, not to regenerate something that seems missing.
+
+This matters more here than the usual "don't use old code" warning, because the old code still works. `OlderFiles/planarsviz_superseded/` holds the R scripts the `planarsviz` package replaced, and they are kept deliberately: the porting checks run them to prove the package draws what they drew. The checks read each script's text and evaluate it in memory **with `ggsave` disabled**, so nothing is written. Run the same file with `Rscript` and `ggsave` is live — and it writes its old output straight over charts the package produced, under the same filenames, with nothing anywhere recording which program made the file you are now looking at.
+
+`.Rprofile` enforces this: R started in `NonCollaborative/` refuses to run any file under `OlderFiles/` and says what to run instead. The escape hatch, for the rare deliberate case, is `PLANARS_RUN_ARCHIVED=1 Rscript <file>` — if you find yourself reaching for it, stop and check you are not about to overwrite a committed chart.
+
+The same rule applies more loosely to the hand-written R at the top of `scripts/` (`constituencyforest-all.r`, `domainSignificance.r` and their siblings) and to `domainGenerationTests/`: those predate the current pipeline, are not guarded, and are there to be read rather than executed.
+
+**To draw a chart, use the package.** `Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308`. To check one against the script it replaced, run its check in `scripts/planarsviz_checks/`.
+
 ## Relationship to the main pipeline
 
 Several scripts here are early versions of code that was later formalized:
@@ -98,6 +110,7 @@ A real `pytest` suite, run with `pytest NonCollaborative/tests/` from the repo r
 - `test_tree_traversal.py` runs `scripts/exploratory/treeTraversal.py` against each `domains/*.tsv` file and compares its output to the checked-in snapshots in `tests/snapshots/`; known-hanging inputs are marked `xfail` rather than fixed.
 - `test_planarsviz_checks.py` runs all 21 porting checks in `scripts/planarsviz_checks/` and compares each one's whole output to a snapshot under `tests/snapshots/planarsviz_checks/`, so a drifted chart fails instead of printing a number nobody reads. Takes about 6m20s — most of it `R CMD INSTALL`, once per check. Skips cleanly without R, poppler or the project venv.
 - `test_roxygen_up_to_date.py` fails if `r/planarsviz/`'s `NAMESPACE` or `man/` no longer match what roxygen2 would generate from `R/`.
+- `test_archived_scripts_refuse_to_run.py` checks that `.Rprofile` still blocks a direct `Rscript` run of anything under `OlderFiles/`, that `PLANARS_RUN_ARCHIVED=1` still overrides it, and that scripts outside the archive are unaffected. It drives a throwaway probe file, not a real archived script — proving the guard by running something it is meant to stop would write the very charts it protects.
 - `test_planarsviz_bundle.py` and `test_planarsviz_shifted_bundle.py` check the exported data bundles.
 
 Run `pytest --update-snapshots` to regenerate snapshots after a deliberate output change — then read the diff before committing it. A snapshot updated without being read is worse than no snapshot, because it looks like evidence.

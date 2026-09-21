@@ -10,6 +10,16 @@ package draws what these scripts drew by running each old script in memory
 by layer against the package's chart. Delete a script here and its check stops
 being able to prove anything.
 
+**Do not run these either.** They still work, which is precisely the hazard.
+The checks are safe because they evaluate a script's text in memory with
+`ggsave` disabled; run the same file with `Rscript` and `ggsave` is live, and
+it writes its old output over a chart the package produced, under the same
+filename, with nothing recording the swap. `.Rprofile` in `NonCollaborative/`
+refuses the direct run and names what to use instead;
+`PLANARS_RUN_ARCHIVED=1 Rscript <file>` is the deliberate override. So the two
+rules here point the same way: these files are read and evaluated by the
+checks, and touched by nothing else — not deleted, not edited, not run.
+
 They are archived rather than left in place because the published charts now
 come from the package, and a chart script sitting in `results/` next to the
 PDFs implies it still makes them. Several of them can no longer be
