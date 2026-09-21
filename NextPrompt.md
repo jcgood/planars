@@ -58,7 +58,7 @@ commits:
 - Also `20337d1`: the render manifest merges rather than replacing, so a
   `--plots` run no longer shrinks it to the charts it drew.
 
-- **`renv` is done** (2026-09-20). `NonCollaborative/renv.lock` pins all 137
+- **`renv` is done** (`d4b5608`, 2026-09-20). `NonCollaborative/renv.lock` pins all 137
   packages on R 4.6.1; all 21 porting checks pass under it with no chart
   changed. Three things it broke on the way in are fixed and written up in
   the progress doc — most usefully, it had silently turned the roxygen drift
