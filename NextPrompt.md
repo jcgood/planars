@@ -15,47 +15,79 @@ this project is trying to remove.
 
 ## Now
 
-**Current work (2026-09-14→20): the planarsviz chart library, merged to
-`main` and now mid-cutover.** State lives in
-`NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md`; the plan it follows
-is `NonCollaborative/docs/PLAN_planarsviz_library.md`; how to use the result
-is `NonCollaborative/docs/planarsviz_guide.md` and `planarsviz_charts.md`.
+**Current work (2026-09-14→20): the planarsviz chart package.** Merged to
+`main`, cut over, and now in phase D — the R tooling. State lives in
+`NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md`; the execution plan is
+`NonCollaborative/docs/PLAN_planarsviz_library.md`, whose goals and
+architecture still come from `PLAN_planarsviz_refactor.md` (that file also
+holds the acceptance criteria phase D is working toward); how to use the
+result is `planarsviz_guide.md` and `planarsviz_charts.md`.
 
-All 18 charts are ported and merged (PR #294; the hook fix #295 alongside
-it), and **the cutover is complete** — C1 through C4, all committed and
-pushed (`57d871a`, `89beeb6`, `00b51e4`, `f7c1d31`). Analysis stays in
-Python, an exporter writes a data bundle, and the R package in
-`NonCollaborative/r/planarsviz/` draws from it. Nothing under
-`NonCollaborative/` writes an R script or a matplotlib figure any more; the
-scripts the package replaced are archived in
-`NonCollaborative/OlderFiles/planarsviz_superseded/`, where the porting
-checks still run them to prove fidelity, and **must not be deleted**.
+**It is a package, not a library.** In R a library is the directory packages
+are installed into. The docs say "library" in places, which is fine for
+prose, but be exact in the package's own README and anywhere describing
+installation.
 
-**Chart 19 is done** (`6b133ac`, 2026-09-20): the class-fragmentation test
-is part of `planarsviz` proper — a bundle table and a chart function,
-pixel-identical to the standalone script's chart (0.0000%). Jeff settled
-its three design questions first; they and the build are written up at the
-end of `NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md`. The one
-thing to carry forward: the exporter runs that test only when given
-`--fragmentation-permutations N`, because it takes ~4 minutes against the
-1.6 seconds the rest of an export costs.
+**Done and pushed.** All 18 planned charts plus chart 19 (the
+class-fragmentation test), the four cutover commits, and two phase D
+commits:
 
-**Next action: Phase E — the `illustrations` bundle**: supercatalan tree
-shapes, the counting numbers, and the random-tree overlay as a
-non-language bundle. Design agreed, recorded under question 1 in the
-progress doc. `results/nyan1308_random_tree_overlay.r` is the one generated
-R script left in `results/`, waiting for it.
+- **Cutover C1–C4** (`57d871a`, `89beeb6`, `00b51e4`, `f7c1d31`). Nothing
+  under `NonCollaborative/` writes an R script or a matplotlib figure any
+  more. The scripts the package replaced are archived in
+  `NonCollaborative/OlderFiles/planarsviz_superseded/`, where the porting
+  checks still run them to prove fidelity, and **must not be deleted**.
+- **Chart 19** (`6b133ac`). The exporter runs that permutation test only
+  when given `--fragmentation-permutations N` — it takes about four minutes
+  against the 1.6 seconds the rest of an export costs, so a bundle without
+  the flag simply has no fragmentation tables.
+- **Phase D so far** (`ff5b8f6`, `f18544b`): roxygen2 generates `NAMESPACE`
+  and `man/`; nine internal helpers stopped being exported by accident;
+  `tests/test_roxygen_up_to_date.py` fails if either goes stale; and
+  `R CMD check` on a built tarball reports **`Status: OK`**.
+- Also `20337d1`: the render manifest merges rather than replacing, so a
+  `--plots` run no longer shrinks it to the charts it drew.
 
-**But check the other session first.** It has a new, uncommitted
-span-placement test in flight (`scripts/analysis/span_placement_test.py`
-and four more files) — a direct test of the Tree hypothesis, asking whether
-the real span arrangement conflicts less than an arbitrary arrangement of
-same-sized spans would. If that becomes chart 20, chart 19 is the worked
-example to copy, and the one ordering trap is worth repeating: **a chart
-with no matplotlib original must have its reference frozen before the
-package can overwrite it.**
-`NonCollaborative/docs/NOTE_FOR_ANALYSIS_SESSION.md` says all of this to
-them.
+**Next action: finish phase D — `testthat` + `vdiffr`.** The 21 checks in
+`scripts/planarsviz_checks/` are thorough but they *print* rather than
+*fail*: `check_forests.R` reports `0.0000%` and nothing asserts it must.
+Converting them into tests that fail on their own is the piece with real
+value and the largest piece left. Then `renv` (the one acceptance criterion
+with no partial credit — nothing currently records which versions of `ape`,
+`ggtree` and `patchwork` the package needs), then `lintr`/`styler`, then CI.
+
+**After phase D: phase E — the `illustrations` bundle.** Supercatalan tree
+shapes, the counting numbers, and the random-tree overlay as a non-language
+bundle. Design agreed, recorded under question 1 in the progress doc.
+`results/nyan1308_random_tree_overlay.r` is the one generated R script left
+in `results/`, waiting for it. (There is no phase D in the original letter
+scheme — it went B, C, E. D is where the tooling was slotted in.)
+
+**How to work: orchestrate Sonnet subagents.** Jeff asked (2026-09-20) that
+work be structured this way wherever possible, to save tokens. The saving is
+mostly that an agent's tool output never enters the main context. Good
+candidates: running check suites, multi-file sweeps, mechanical edits with a
+clear spec. Keep design calls and the final verification of correctness
+claims in the main session — pass `model: "sonnet"` explicitly, and write
+complete prompts, since a fresh agent starts cold.
+
+**The other session's span-placement work is still uncommitted** — five
+files (`scripts/analysis/span_placement_test.py`, its R plot, three outputs
+in `results/`). A direct test of the Tree hypothesis: does the real span
+arrangement conflict less than an arbitrary arrangement of same-sized spans
+would? Leave it alone unless asked. If it becomes chart 20, chart 19 is the
+worked example, and the ordering trap is worth repeating: **a chart with no
+matplotlib original must have its reference frozen before the package can
+overwrite it.** `NonCollaborative/docs/NOTE_FOR_ANALYSIS_SESSION.md` says
+this to them.
+
+**Outside planarsviz, still open:** arao1248's missing `proform` class
+(#279, waiting on Adam) keeps #247 and #281 failing; `phrasal_accent` has a
+real sheet-shape error in #291/#281 (a `general` sheet with `Element` rows
+where the construction expects `Element_A`/`Element_B` pairs) and no
+analysis module yet (#237). #157 proposes the conflict-groups chart, which
+now exists — probably closable. The Dependabot WeasyPrint dismissal is also
+still unanswered.
 
 Five deliberate visual changes exist, each with an option restoring the old
 look, each recorded in the progress doc: conflict-group panel titles now
