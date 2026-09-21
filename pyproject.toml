@@ -34,3 +34,11 @@ schemas = ["*.yaml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    # Tests that need R installed, and usually the pinned R packages that
+    # NonCollaborative/renv.lock records. CI has no R, so it runs the
+    # NonCollaborative suite as: pytest NonCollaborative/tests -m "not needs_r".
+    # Running them needs a Mac set up for the chart work; see
+    # NonCollaborative/CLAUDE.md.
+    "needs_r: requires R (and, for the chart checks, poppler)",
+]

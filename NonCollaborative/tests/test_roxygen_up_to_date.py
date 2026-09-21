@@ -54,10 +54,13 @@ def _roxygen2_available():
     return result.returncode == 0
 
 
-pytestmark = pytest.mark.skipif(
-    not _roxygen2_available(),
-    reason="Rscript and/or the roxygen2 R package are not installed on this machine.",
-)
+pytestmark = [
+    pytest.mark.needs_r,
+    pytest.mark.skipif(
+        not _roxygen2_available(),
+        reason="Rscript and/or the roxygen2 R package are not installed on this machine.",
+    ),
+]
 
 
 def test_namespace_and_man_match_roxygen2_output():

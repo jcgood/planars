@@ -16,3 +16,18 @@ repos:
         pass_filenames: false
         always_run: true
         stages: [pre-push]
+
+      # The planarsviz package's NAMESPACE and man/ pages are generated from
+      # the #' comments in its R/ files. Edit a comment without re-running
+      # roxygen2 and they quietly fall out of step: the package still loads,
+      # R CMD check still passes, and the wrong help page surfaces months
+      # later. This check runs here rather than in CI because CI has no R --
+      # and it takes about 7 seconds, only when the package itself changed.
+      # It skips cleanly on a machine without R or roxygen2.
+      - id: roxygen-up-to-date
+        name: Check the planarsviz R docs match its source
+        entry: .venv/bin/python -m pytest NonCollaborative/tests/test_roxygen_up_to_date.py -q
+        language: system
+        pass_filenames: false
+        files: ^NonCollaborative/r/planarsviz/
+        stages: [pre-push]

@@ -36,9 +36,12 @@ ARCHIVE = NC_ROOT / "OlderFiles"
 
 RSCRIPT = shutil.which("Rscript")
 
-pytestmark = pytest.mark.skipif(
-    RSCRIPT is None, reason="Rscript is not installed on this machine."
-)
+pytestmark = [
+    pytest.mark.needs_r,
+    pytest.mark.skipif(
+        RSCRIPT is None, reason="Rscript is not installed on this machine."
+    ),
+]
 
 
 @pytest.fixture

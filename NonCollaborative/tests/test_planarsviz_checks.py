@@ -58,6 +58,13 @@ SNAPSHOTS = Path(__file__).parent / "snapshots" / "planarsviz_checks"
 VENV_PYTHON = NC.parent / ".venv" / "bin" / "python"
 BUNDLE = NC / "results" / "planarsviz" / "nyan1308"
 
+# These need R, the pinned R packages, and poppler. They also compare against
+# reference images rendered on a Mac, so they cannot run on a Linux CI runner
+# even with all three installed -- the fonts differ and every glyph would
+# register as a changed pixel. CI runs this directory as
+# `pytest NonCollaborative/tests -m "not needs_r"`.
+pytestmark = pytest.mark.needs_r
+
 # Every check script that can be run on its own, with no arguments.
 #
 # Two files in that directory are deliberately absent from this list:

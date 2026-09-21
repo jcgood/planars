@@ -105,7 +105,11 @@ The generated `.r` scripts that used to sit here beside the PDFs are gone: the `
 
 ### `tests/`
 
-A real `pytest` suite, run with `pytest NonCollaborative/tests/` from the repo root (or `pytest tests/` from inside `NonCollaborative/`). **It is not run by CI** — the root `pyproject.toml` sets `testpaths = ["tests"]`, so CI's `pytest` never reaches this directory. Running it is currently a manual step.
+A real `pytest` suite, run with `pytest NonCollaborative/tests/` from the repo root (or `pytest tests/` from inside `NonCollaborative/`). The root `pyproject.toml` sets `testpaths = ["tests"]`, so a bare `pytest` never reaches this directory — it has to be named.
+
+**CI runs the part of it that needs no R**, as `pytest NonCollaborative/tests -m "not needs_r"`: the two bundle tests and the tree-traversal snapshots, about a minute. The rest is marked `needs_r` and stays a local step. That is not a gap waiting to be closed — the chart checks pixel-compare against reference images rendered on a Mac, and Linux fonts differ enough that every glyph would read as a changed pixel, so on a CI runner they would fail on charts that are perfectly fine.
+
+Two of the R-dependent checks run on **pre-push** instead, where R and the pinned packages already are: `check-snapshots` always, and `roxygen-up-to-date` when anything under `r/planarsviz/` changed (about 7 seconds). See `.pre-commit-config.yaml`.
 
 - `test_tree_traversal.py` runs `scripts/exploratory/treeTraversal.py` against each `domains/*.tsv` file and compares its output to the checked-in snapshots in `tests/snapshots/`; known-hanging inputs are marked `xfail` rather than fixed.
 - `test_planarsviz_checks.py` runs all 21 porting checks in `scripts/planarsviz_checks/` and compares each one's whole output to a snapshot under `tests/snapshots/planarsviz_checks/`, so a drifted chart fails instead of printing a number nobody reads. Takes about 6m20s — most of it `R CMD INSTALL`, once per check. Skips cleanly without R, poppler or the project venv.

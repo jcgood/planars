@@ -46,3 +46,13 @@ jobs:
 
       - name: Run tests
         run: pytest
+
+      # NonCollaborative/tests/ is not on testpaths, so the run above never
+      # reaches it. Most of it needs R, and the chart checks additionally
+      # compare against reference images rendered on a Mac -- Linux fonts
+      # differ, so every glyph would count as a changed pixel and they would
+      # fail here on charts that are fine. Those are marked needs_r and stay a
+      # local gate. What is left needs nothing but Python and had never run
+      # anywhere automatically.
+      - name: Run the NonCollaborative tests that need no R
+        run: pytest NonCollaborative/tests -m "not needs_r"
