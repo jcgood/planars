@@ -3,9 +3,10 @@
 # section 8.3). The only planarsviz code that writes files.
 #
 # Which charts exist is read from the bundle, not typed in: one pooled chart
-# per observed domain type, one forest per forests.json entry, one exemplary
-# chart per selected family, a filtered variant for every filter subset
-# (e.g. no_tono), a highlight variant for every highlight, the conflict-group
+# per observed domain type, one forest per forests.json entry plus one chart
+# per tree in that forest, one exemplary chart per selected family, a
+# filtered variant for every filter subset (e.g. no_tono), a highlight
+# variant for every highlight, the conflict-group
 # charts only when the bundle defines groups. Each chart function carries its
 # own canvas size (copied from the working script's ggsave() call when the
 # chart was ported), so there is no second size table here to drift.
@@ -106,6 +107,21 @@ chart_table <- function() {
     local({
       id <- f$forest_id
       add(paste0(id, "_laminar_forest"), function() plot_laminar_forest(bundle, id))
+      # Plus every one of that forest's families as its own tree. Every
+      # forest gets these, not only the three bundle forests, because the
+      # loop is the same either way and --plots decides what is drawn.
+      # Numbers are padded to at least two digits, as bundle_forest_trees.r
+      # padded them before the package absorbed it, so tree 10 sorts after
+      # tree 9 in a directory listing.
+      n_trees <- as.integer(f$n_trees)
+      digits <- max(2L, nchar(as.character(n_trees)))
+      for (k in seq_len(n_trees)) {
+        local({
+          number <- k
+          add(paste0(id, "_tree_", formatC(number, width = digits, flag = "0")),
+              function() plot_forest_tree(bundle, id, number))
+        })
+      }
     })
   }
 

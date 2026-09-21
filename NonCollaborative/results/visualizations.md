@@ -390,32 +390,43 @@ depending on how many tests that family draws on (same as the print file's poole
 
 ---
 
-## nyan1308_phonologylike_tree_01.pdf .. _06.pdf / nyan1308_syntaxlike_tree_01.pdf .. _16.pdf
+## nyan1308_&lt;forest&gt;_tree_01.pdf .. (48 files, one per family per forest)
 
-**What they are:** every individual maximal family in a named forest, one tree per
+**What they are:** every individual maximal family in a forest, one tree per
 page. The other two ways of looking at a forest both lose the individual trees: the
 ghost-overlay charts (`nyan1308_phonologylike_laminar_forest.pdf` and its siblings)
 stack every family into one semi-transparent image, and the exemplary-tree charts show
 a curated seven-family subset of the *pooled* analysis only. These show each family in
-a forest on its own terms — 6 for phonology-like, 16 for syntax-like.
+a forest on its own terms — 3 for `morsyn`, 9 for `tono`, 3 for `length`, 6 for
+`phon`, 1 for `inton`, 6 for `phonologylike`, 16 for `syntaxlike`, 4 for
+`syntaxlike_notono`.
 
-The drawing is `planarsviz_exemplary_tree()`'s, copied: same layout, same boxed
-"number over name" tip labels, same margins. What differs is only what it is keyed by —
-`(forest_name, tree_number)` read from the bundle's `data/forests/<name>.tsv`, rather
-than `family_id` read from `bundle$families`.
+The drawing is the exemplary trees': same layout, same boxed "number over name" tip
+labels, same margins. Since 2026-09-21 it is literally the same code —
+`planarsviz_labelled_tree()`, which both `plot_forest_tree()` and
+`planarsviz_exemplary_tree()` call. What differs is only what the tree is keyed by:
+`(forest_id, tree_number)` read from the bundle's `data/forests/<id>.tsv`, rather than
+`family_id` read from `bundle$families`.
 
-To regenerate:
+To regenerate one:
 ```
-Rscript scripts/analysis/bundle_forest_trees.r
+Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308 \
+  --output results --plots syntaxlike_tree_09
 ```
+or leave `--plots` off to draw every chart in the bundle.
 
-**Not from the package, and that is the problem with them.** `bundle_forest_trees.r`
-reads the bundle, so it respects "Python computes, R draws from the bundle" — but it
-writes straight into `results/laminar-families/` with no chart name and no manifest row, so nothing
-records that these 22 files exist or which run made them. Porting it into the package
-is the open request in `docs/NOTE_FOR_REFACTOR_SESSION.md`; when that happens, this
-script and these files are replaced by package-drawn charts with proper names, and this
-section changes with them.
+**Only 22 of the 48 have a reference image.** Before the package absorbed these,
+a standalone script drew the `phonologylike` and `syntaxlike` trees and nothing else;
+those 22 were frozen as reference images and the port is checked against them at
+0.0000%. The other 26 — `morsyn`, `tono`, `length`, `phon`, `inton`,
+`syntaxlike_notono` — had never been drawn by anything, so the renderer check reports
+"no reference" for them, the same way it does for `most_binary_tree`.
+
+`scripts/analysis/bundle_forest_trees.r`, which drew these 22 straight into
+`results/laminar-families/` with no chart name and no manifest row, was archived to
+`OlderFiles/planarsviz_superseded/scripts/analysis/` on the same day. It must not be
+run: it would write its own output over the package's under the same filenames, which
+is what `.Rprofile`'s guard on `OlderFiles/` exists to prevent.
 
 ---
 

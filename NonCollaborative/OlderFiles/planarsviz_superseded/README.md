@@ -70,12 +70,27 @@ used to live in `scripts/analysis/laminar_analysis.py`:
   Archived in C4. No check compares against it; it is here because the Python
   that wrote it is gone and nothing else records what it drew.
 
-`scripts/` — 3 hand-written scripts:
+`scripts/` — 4 hand-written scripts:
 
 - `domain_charts-cgpt.r` — the pooled constituency charts (1–4), also
   `source()`d by the exemplary-trees script
 - `nyan_boundary_skyline.r` — chart 5
 - `analysis/boundary_strength_plot.r` — chart 18
+- `analysis/bundle_forest_trees.r` — the 22 individual forest trees, archived
+  2026-09-21 when `plot_forest_tree()` absorbed them into the package
+
+## One of these is evidence in a different way
+
+No check runs `analysis/bundle_forest_trees.r`. It is here because it drew the
+22 charts whose reference images were frozen in
+`results/planarsviz/reference/laminar-families/` before the package could
+overwrite them, and those references are what the renderer check compares
+`plot_forest_tree()` against. So the chain runs through the frozen images
+rather than through a live evaluation of the script — but the script is still
+the only record of how those images were made, and its header still describes
+the flat-`results/` writing the package replaced. Left unedited for the same
+reason as the out-of-date comment above: it is a record of what drew the
+published charts, not a file to keep current.
 
 ## Not here
 

@@ -22,19 +22,17 @@
 #     slide tree 13.333 x 7.5 in;
 #   - library(), source() and ggsave() removed.
 
-#' Tree panel for an exemplary family
-#'
-#' @param bundle A bundle from [read_planars_bundle()].
-#' @param family_id The family to draw.
-#' @param slide `FALSE` for the print page's tree (label size 5), `TRUE` for
-#'   the 16:9 slide tree (label size 4.6, tighter label padding).
-#' @return A ggtree plot.
-#' @export
-planarsviz_exemplary_tree <- function(bundle, family_id, slide = FALSE) {
+# One family's tree, drawn solid with a boxed "N\nName" label at every tip.
+#
+# Hoisted out of planarsviz_exemplary_tree() on 2026-09-21, when the
+# individual forest trees were absorbed into the package (R/forest_trees.R).
+# Both draw the same tree; they differ only in where the Newick string comes
+# from -- a family_id in the pooled analysis, a tree_number in a forest -- so
+# the drawing itself lives here once instead of in two copies. The two
+# branches below are the code as it stood before that move, unchanged, since
+# the absorbed charts have to match frozen reference images pixel for pixel.
+planarsviz_labelled_tree <- function(newick, posLabel, slide = FALSE) {
   planarsviz_require_trees()
-  posLabel <- as.list(planarsviz_position_labels(bundle$position_labels))
-  newick <- bundle$families$newick[bundle$families$family_id == family_id]
-  if (length(newick) != 1L) stop("No family `", family_id, "` with a Newick string in this bundle.", call. = FALSE)
   ex_tree1 <- ape::read.tree(text = newick)
   if (!isTRUE(slide)) {
     ex_tp1 <- ggtree::ggtree(ex_tree1, layout="slanted", ladderize=FALSE) +
@@ -57,6 +55,21 @@ planarsviz_exemplary_tree <- function(bundle, family_id, slide = FALSE) {
         plot.margin=margin(t=10, r=10, b=25, l=10, unit="pt"))
   }
   ex_tp1
+}
+
+#' Tree panel for an exemplary family
+#'
+#' @param bundle A bundle from [read_planars_bundle()].
+#' @param family_id The family to draw.
+#' @param slide `FALSE` for the print page's tree (label size 5), `TRUE` for
+#'   the 16:9 slide tree (label size 4.6, tighter label padding).
+#' @return A ggtree plot.
+#' @export
+planarsviz_exemplary_tree <- function(bundle, family_id, slide = FALSE) {
+  posLabel <- as.list(planarsviz_position_labels(bundle$position_labels))
+  newick <- bundle$families$newick[bundle$families$family_id == family_id]
+  if (length(newick) != 1L) stop("No family `", family_id, "` with a Newick string in this bundle.", call. = FALSE)
+  planarsviz_labelled_tree(newick, posLabel, slide = slide)
 }
 
 #' Evidence panel for a family: the tests that produced its spans

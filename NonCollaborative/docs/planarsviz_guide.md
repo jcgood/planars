@@ -117,12 +117,12 @@ Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308 --forma
 | `--list` | — | Print the chart names and stop. |
 
 The renderer works out which charts exist from the bundle: one pooled pair
-per domain type present, one forest per class, filtered variants only when
-there is something to filter, conflict-group charts only when groups are
-defined, and so on. Files are named `<dataset>_<chart>.pdf`. It installs
-the package into a temporary library itself, reports every chart that
-fails, exits with an error if any did, and writes `manifest.tsv` listing
-what it wrote.
+per domain type present, one forest per class and one tree chart per family
+in that forest, filtered variants only when there is something to filter,
+conflict-group charts only when groups are defined, and so on. Files are
+named `<dataset>_<chart>.pdf`. It installs the package into a temporary
+library itself, reports every chart that fails, exits with an error if any
+did, and writes `manifest.tsv` listing what it wrote.
 
 ---
 

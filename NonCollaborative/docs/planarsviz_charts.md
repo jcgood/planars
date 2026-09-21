@@ -17,6 +17,7 @@ Contents: [Pooled plots](#1-pooled-plots) ·
 [Boundary skyline](#2-boundary-frequency-skyline) ·
 [Span chart](#3-span-frequency-chart) ·
 [Forests](#4-per-class-laminar-forests) ·
+[One family of a forest](#4a-one-family-of-a-forest-on-its-own) ·
 [Overlays](#5-stacked-overlays) ·
 [Frequency tree](#6-frequency-tree) ·
 [Four trees](#7-four-trees) ·
@@ -126,6 +127,29 @@ plot_laminar_forest(bundle, "phon")
 
 Canvas 20 × 14 in. Renderer name `<id>_laminar_forest`; old file
 `nyan1308_<id>_laminar_forest.pdf`.
+
+### 4a. One family of a forest, on its own
+
+The same forest taken apart: each maximal family drawn as its own labelled
+tree, rather than stacked with the rest. Drawn by the same code as the
+exemplary trees below, keyed by forest and tree number instead of family id.
+
+![One syntax-like family](planarsviz_charts/syntaxlike_tree_09.png)
+
+```r
+plot_forest_tree(bundle, "syntaxlike", 9)
+```
+
+| Option | Meaning |
+|---|---|
+| `forest_id` | As above. |
+| `tree_number` | Which family of that forest, as numbered in `data/forests/<forest_id>.tsv` (1 = first). |
+
+Canvas 12 × 8 in. Renderer names `<id>_tree_<nn>`, one per tree of every
+forest — 48 for nyan1308, the number padded to at least two digits. Old files
+`nyan1308_phonologylike_tree_01.pdf` … `_06.pdf` and
+`nyan1308_syntaxlike_tree_01.pdf` … `_16.pdf`; the other six forests' trees
+had no older file, having never been drawn before the package drew them.
 
 ---
 

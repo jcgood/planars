@@ -100,6 +100,7 @@ its intended canvas size attached as `planarsviz_size` and
 | Boundary-frequency skyline | `plot_boundary_skyline()` |
 | Span-frequency chart | `plot_span_chart()` |
 | Per-class laminar forests | `plot_laminar_forest()` |
+| One family of a forest, on its own | `plot_forest_tree()` |
 | Stacked overlays (coloured, all families, highlighted) | `plot_laminar_overlay()` |
 | Frequency tree | `plot_frequency_tree()` |
 | Four trees | `plot_four_trees()` |
@@ -109,6 +110,8 @@ its intended canvas size attached as `planarsviz_size` and
 | Tree-count bar charts | `plot_tree_counts()` |
 | Boundary strength, distributions | `plot_boundary_strength()`, `plot_boundary_strength_distributions()` |
 | Boundary-strength overlay | `plot_boundary_strength_overlay()` |
+| Class-fragmentation permutation test | `plot_fragmentation_test()` |
+| Boundary-strength permutation test | `plot_boundary_strength_test()` |
 
 Reading data: `read_planars_bundle()`, `read_planars_subset()`,
 `validate_planars_bundle()`, and `read_planars_*()` for each data file.

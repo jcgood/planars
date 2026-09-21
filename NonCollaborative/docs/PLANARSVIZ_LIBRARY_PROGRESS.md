@@ -1837,3 +1837,69 @@ the files had left.
 into `results/`, one chart at a time, each checked against the reference step 1
 froze. The renderer check's closing list is that queue — 26 names now, shrinking
 by one as each lands.
+
+---
+
+## Absorption, first producer: the 22 forest trees (2026-09-21)
+
+The package now draws every individual maximal-family tree. `plot_forest_tree(bundle,
+forest_id, tree_number)` is new, in `r/planarsviz/R/forest_trees.R`, and the renderer
+registers one chart per tree for **all eight** forests in `forests.json` — 48 names,
+`<forest_id>_tree_<nn>`, the number padded to at least two digits so tree 10 sorts
+after tree 9. That was decision 3 of the restructure plan, taken because the loop is
+the same either way.
+
+`scripts/analysis/bundle_forest_trees.r`, which drew these 22 PDFs straight into
+`results/laminar-families/` with no chart name and no manifest row, is archived in
+`OlderFiles/planarsviz_superseded/scripts/analysis/`. That puts it behind `.Rprofile`'s
+refusal-to-run guard, confirmed by running it and watching the guard stop it — which
+matters more here than for the other archived scripts, because its filenames are
+exactly the ones the package now writes.
+
+**The drawing is not a copy.** The old script's tree-drawing block was itself copied
+verbatim out of `planarsviz_exemplary_tree()`, so absorbing it by pasting that block a
+third time would have left the project with three copies of one chart's code — this
+project's own diagnosis in miniature. Instead the block was hoisted into
+`planarsviz_labelled_tree(newick, posLabel, slide)`, an internal function both
+`plot_forest_tree()` and `planarsviz_exemplary_tree()` now call. The two branches
+inside it are unchanged from what they were; only the lookup moved out.
+
+**What proves it: 0.0000% on all 22, and on the exemplary trees the refactor could
+have disturbed.** The renderer check compares each render against the reference step 1
+froze, at 1200×800 for every tree. The seven exemplary print pages and their fourteen
+slides are all still 0.0000% too, which is the half that shows the hoist changed
+nothing for the charts that were already working.
+
+The renderer check's closing queue is down from 26 names to 4 — the fragmentation
+two-bundle variant and the three span-placement charts. The 26 forest trees that were
+never drawn before (`morsyn`, `tono`, `length`, `phon`, `inton`, `syntaxlike_notono`)
+report "no reference", the same way `most_binary_tree` and the boundary-strength test
+charts already do.
+
+**`results/` grew by 26 files, and this is the part worth a second look.** The point
+of the absorption was that nothing recorded the 22 trees' existence: they sat in
+`results/laminar-families/` with no manifest row. Redrawing them through the package
+fixes that — the manifest now carries all 48 tree rows, 115 rows in total. But
+registering all eight forests means a full render draws the other 26 as well, so
+`results/laminar-families/` went from 63 PDFs to 89. They were drawn rather than left
+out because otherwise what is in `results/` would depend on which `--plots` list was
+last used rather than on the renderer, which is the same shape of defect the
+absorption set out to remove. Reversing it is a one-line `--plots` decision and
+deleting 26 files, if Jeff would rather the directory stayed smaller.
+
+The 22 that already existed show as modified rather than unchanged: the package's PDF
+carries a different creation timestamp. The drawing is identical — one was re-rendered
+straight into `results/` and compared against its frozen reference at 0.0000%.
+
+- Looked at by Claude: yes — the snapshot diff read line by line and confirmed to
+  contain only new tree rows and the shortened queue, with no existing chart's
+  comparison altered; the guard verified by running the archived script rather than
+  assuming; the generated `NAMESPACE` checked to add `plot_forest_tree` and nothing
+  else, in particular not the new internal helper.
+
+**Next: the fragmentation two-bundle variant**, then the three span-placement charts.
+The fragmentation one is small — the bundle already carries what it needs, and the
+port also has to retire `fragmentation_test_plot.r` as a second producer of
+`nyan1308_fragmentation_test_plot.pdf`, the defect the restructure plan names. The
+span-placement charts are the bulk, because their numbers have to reach the bundle
+through the exporter first, the way `--fragmentation-permutations` already does.

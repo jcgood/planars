@@ -230,9 +230,9 @@ to it, and that is where the porting checks run too.
   `<dataset>_planarsviz_manifest.tsv` listing every file written and its canvas
   size. For nyan1308 the published copies live in `results/`.
 - **Plots**: not a fixed list — the charts come from what the bundle holds (a
-  pooled pair per domain type, a forest per `forests.json` entry, a variant per
-  highlight and per filter subset, and so on). Run with `--list` to see the
-  charts a given bundle supports.
+  pooled pair per domain type, a forest per `forests.json` entry plus one chart
+  per tree in that forest, a variant per highlight and per filter subset, and so
+  on). Run with `--list` to see the charts a given bundle supports.
 - **Example**: `Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308 --output results`
 
 ## Porting checks
