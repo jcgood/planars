@@ -45,7 +45,7 @@ commits:
   and `man/`; nine internal helpers stopped being exported by accident;
   `tests/test_roxygen_up_to_date.py` fails if either goes stale; and
   `R CMD check` on a built tarball reports **`Status: OK`**.
-- **The porting checks now fail on their own** (2026-09-20).
+- **The porting checks now fail on their own** (`d673c37`, 2026-09-20).
   `NonCollaborative/tests/test_planarsviz_checks.py` runs all 21 checks and
   snapshots each one's whole output, so a drifted chart fails the suite
   instead of printing a number nobody reads. Proved by changing real chart
