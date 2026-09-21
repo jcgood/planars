@@ -114,8 +114,11 @@ failing). From `class_fragmentation_test.py`'s `run_test()`.
 domain type (`kind` class) or one of `planars_groupings.BUNDLES` (`kind`
 bundle): `group`, `kind`, `label` and `colour` for the row, `n_tests`,
 `observed_families`, then the null's `null_mean`, `null_p05`, `null_p95` and
-the one-sided `p_value_ge_observed`, then `n_permutations` and `seed`, which
-record the run that produced the numbers. Groups follow `tree_counts.tsv`'s
+the one-sided `p_value_le_observed` (fraction of permutations with family
+count <= observed; small = unusually laminar -- same convention and column
+name as `span_placement_test.py`'s own p-value), then `n_permutations` and
+`seed`, which record the run that produced the numbers. Groups follow
+`tree_counts.tsv`'s
 convention: only domain types the data actually has, and only bundles with a
 type in it.
 

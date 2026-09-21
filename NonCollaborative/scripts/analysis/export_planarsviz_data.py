@@ -299,7 +299,7 @@ def export_fragmentation_test(domain_file: Path, domains_dir: Path, data_dir: Pa
     kind_of = {r["group"]: r["kind"] for r in rows}
     write_tsv(data_dir / "fragmentation_test.tsv",
               ["group", "kind", "label", "colour", "n_tests", "observed_families",
-               "null_mean", "null_p05", "null_p95", "p_value_ge_observed",
+               "null_mean", "null_p05", "null_p95", "p_value_le_observed",
                "n_permutations", "seed"], rows)
 
     tally = []

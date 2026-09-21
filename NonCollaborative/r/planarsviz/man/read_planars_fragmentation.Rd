@@ -12,7 +12,7 @@ read_planars_fragmentation(bundle)
 \value{
 A data frame: `group`, `kind`, `label`, `colour`, `n_tests`,
   `observed_families`, `null_mean`, `null_p05`, `null_p95`,
-  `p_value_ge_observed`, `n_permutations`, `seed`.
+  `p_value_le_observed`, `n_permutations`, `seed`.
 }
 \description{
 Read the fragmentation test summary from a bundle

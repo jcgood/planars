@@ -59,7 +59,7 @@ if (!library_only) {
   orig <- rbind(class_orig, bundle_orig)
 
   shared <- c("group", "n_tests", "observed_families", "null_mean",
-              "null_p05", "null_p95", "p_value_ge_observed", "n_permutations", "seed")
+              "null_p05", "null_p95", "p_value_le_observed", "n_permutations", "seed")
   a <- orig[order(orig$group), shared]
   b <- summary_lib[order(summary_lib$group), shared]
   rownames(a) <- NULL

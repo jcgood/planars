@@ -31,11 +31,15 @@ permutation draws in one pass rather than needing separate runs. Test
 identity (Left_Edge/Right_Edge/Size/Test_Labels) is held fixed throughout
 -- only which label attaches to which row is randomized.
 
-One-sided p-value per group: the fraction of permutations whose family
-count is >= the observed one. A small p-value means that group's tests
-produce more mutually-conflicting spans than a same-sized random sample
-from the whole dataset typically would -- i.e. its fragmentation is not
-just an artifact of how many tests it happens to have.
+One-sided p-value per group (p_value_le_observed): the fraction of
+permutations whose family count is <= the observed one -- same convention
+as span_placement_test.py's p_value_le_observed, so "small p = unusually
+laminar" reads the same way in both tables. A small p-value means that
+group's tests produce fewer mutually-conflicting spans (i.e. are more
+laminar) than a same-sized random sample from the whole dataset typically
+would. A large p-value means the reverse: that group is more fragmented
+than its test count alone would predict -- its fragmentation is not just
+an artifact of how many tests it happens to have.
 
 n_positions is taken from the FULL (unfiltered) dataset for every
 permutation, matching the convention already used elsewhere in this
@@ -160,7 +164,7 @@ def run_test(
     rows = []
     for name, _types in groups:
         null = np.array(null_counts[name])
-        p_value = float(np.mean(null >= observed[name]))
+        p_value = float(np.mean(null <= observed[name]))
         rows.append({
             "group": name,
             # .get(): a dataset whose domain types aren't this project's five
@@ -173,7 +177,7 @@ def run_test(
             "null_mean": round(float(null.mean()), 3),
             "null_p05": int(np.percentile(null, 5)),
             "null_p95": int(np.percentile(null, 95)),
-            "p_value_ge_observed": round(p_value, 4),
+            "p_value_le_observed": round(p_value, 4),
         })
     return rows, null_counts
 
@@ -240,11 +244,11 @@ def main():
 
     def show(title, rows):
         print(f"\n{title}")
-        print(f"{'group':20} {'n_tests':>7} {'observed':>8} {'null_mean':>9} {'null_p05-p95':>13} {'p(>=obs)':>9}")
+        print(f"{'group':20} {'n_tests':>7} {'observed':>8} {'null_mean':>9} {'null_p05-p95':>13} {'p(<=obs)':>9}")
         for r in rows:
             print(
                 f"{r['group']:20} {r['n_tests']:7d} {r['observed_families']:8d} "
-                f"{r['null_mean']:9.2f} {r['null_p05']:5d}-{r['null_p95']:<6d} {r['p_value_ge_observed']:9.4f}"
+                f"{r['null_mean']:9.2f} {r['null_p05']:5d}-{r['null_p95']:<6d} {r['p_value_le_observed']:9.4f}"
             )
 
     print(f"{args.n_permutations} permutations, seed={args.seed}")

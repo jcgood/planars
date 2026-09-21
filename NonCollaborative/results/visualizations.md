@@ -796,19 +796,32 @@ change under a per-type shuffle.
   bundles as two stacked panels on a shared axis, and the p-value printed on each row.
 - **`nyan1308_class_fragmentation_test.tsv`** — five domain types;
   **`nyan1308_bundle_fragmentation_test.tsv`** — the three bundles. Columns: `group`, `color`,
-  `n_tests`, `observed_families`, `null_mean`, `null_p05`, `null_p95`, `p_value_ge_observed`, and
-  `n_permutations` / `seed`, which record the run that produced the file.
+  `n_tests`, `observed_families`, `null_mean`, `null_p05`, `null_p95`, `p_value_le_observed`, and
+  `n_permutations` / `seed`, which record the run that produced the file. `p_value_le_observed` is
+  the fraction of permutations with family count <= observed; small = unusually laminar, the same
+  "small p = more tree-like" direction `span_placement_test.py`'s own p-value uses (see "Does the
+  real arrangement produce fewer trees..." below) — this column used to be `p_value_ge_observed`
+  (fraction >= observed, so small p meant *more fragmented*), which pointed the opposite way from
+  every other p-value in this file and was flipped to match.
+- **`nyan1308_fragmentation_test_syntax_phon_plot.pdf`** — the same chart filtered to the two
+  bundles (`phonologylike`, `syntaxlike`) on their own, drawn for a talk. A single un-faceted
+  panel: with one `kind` left there was nothing for the facet strip to distinguish, so it is
+  dropped. Drawn by `fragmentation_test_plot.r`, **not** by the package — the package draws the
+  all-groups chart only, so this variant has no chart name and no manifest row yet.
 - **`nyan1308_fragmentation_null_draws.tsv`** — every individual draw, long format (`group`,
   `kind`, `family_count`), so the chart can be redrawn without re-running the permutation.
 
 **What it shows:** tonosegmental's 9 families read as the worst fragmentation in
 `nyan1308_tree_count_by_class.pdf`, but tonosegmental carries 44 of the 95 tests, and a random
 44-test sample typically yields about 17 families. It is therefore markedly *more* laminar than
-chance (p=0.91), not less — and intonational more sharply still (p=1.00, 1 family against an
-expected 3.4). Morphosyntactic, phonological and length sit where chance puts them. The bundles
-inherit the pattern: phonologylike (p=0.92) and syntaxlike (p=0.91) are each carried by their
-most laminar component, and dropping tonosegmental from syntaxlike moves it back toward
-unremarkable (p=0.77).
+chance (p=0.143), not less — and intonational more sharply still (p=0.034, 1 family against an
+expected 3.4; 1 is also the theoretical floor for any nonempty span set, per REFERENCES.md's "hard
+floor at exactly 1 survivor" — under the old `p_value_ge_observed` convention this floor made
+intonational's p trivially 1.0 no matter how surprising the result was, since every null draw is
+also >= 1; `p_value_le_observed` doesn't have that degeneracy). Morphosyntactic, phonological and
+length sit where chance puts them. The bundles inherit the pattern: phonologylike (p=0.160) and
+syntaxlike (p=0.112) are each carried by their most laminar component, and dropping tonosegmental
+from syntaxlike moves it back toward unremarkable (p=0.454).
 
 To regenerate:
 ```
@@ -872,6 +885,11 @@ whole run reproduces from one seed.
   `null_p05`, `null_p50`, `null_p95`, `p_value_le_observed` (the fraction of null draws at or
   below the observed count — small means the real arrangement is unusually laminar for its
   length profile).
+- **`nyan1308_span_placement_test_syntaxlike_plot.pdf`** and
+  **`nyan1308_span_placement_test_phonologylike_plot.pdf`** — each bundle on its own, one panel,
+  filled in that bundle's own laminar-forest colour (`#BC3C29` and `#0072B5`) rather than the
+  neutral blue the nine-panel chart uses, with larger axis and title text for projection. They
+  replace an earlier combined two-bundle file, which is deleted rather than kept alongside them.
 - **`nyan1308_span_placement_null_tally.tsv`** — `(group, family_count, n)`: how many of the 5000
   draws gave each family count, per group, rather than one row per draw.
 

@@ -33,7 +33,7 @@ utils::globalVariables(c(
   "Density", "Domain_Layer", "Domain_Type", "Edge", "edge_size",
   "family_count", "freq_scaled", "group", "label", "Label", "label_x",
   "Layer", "left", "Left", "Left_Edge", "lw", "observed_families",
-  "p_value_ge_observed", "position", "Reverse_Domain_Layer",
+  "p_value_le_observed", "position", "Reverse_Domain_Layer",
   "Reverse_Layer", "right", "Right", "Right_Edge", "side", "size", "Size",
   "Strength", "summed", "Test_Labels", "value", "x", "x0", "x1", "y",
   "y_rank"

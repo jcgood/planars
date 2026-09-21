@@ -29,7 +29,7 @@
 #' @param bundle A bundle from [read_planars_bundle()].
 #' @return A data frame: `group`, `kind`, `label`, `colour`, `n_tests`,
 #'   `observed_families`, `null_mean`, `null_p05`, `null_p95`,
-#'   `p_value_ge_observed`, `n_permutations`, `seed`.
+#'   `p_value_le_observed`, `n_permutations`, `seed`.
 #' @export
 read_planars_fragmentation <- function(bundle) {
   path <- file.path(bundle$bundle_dir, "data", "fragmentation_test.tsv")
@@ -126,7 +126,7 @@ plot_fragmentation_test <- function(bundle) {
     geom_text(
       data = summary_df,
       aes(x = label_x, y = group,
-          label = sprintf("p=%.3f", p_value_ge_observed)),
+          label = sprintf("p=%.3f", p_value_le_observed)),
       hjust = 0, size = 3.6, color = "black"
     ) +
     facet_grid(kind ~ ., scales = "free_y", space = "free_y",
