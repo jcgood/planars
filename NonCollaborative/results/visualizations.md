@@ -380,6 +380,35 @@ depending on how many tests that family draws on (same as the print file's poole
 
 ---
 
+## nyan1308_phonologylike_tree_01.pdf .. _06.pdf / nyan1308_syntaxlike_tree_01.pdf .. _16.pdf
+
+**What they are:** every individual maximal family in a named forest, one tree per
+page. The other two ways of looking at a forest both lose the individual trees: the
+ghost-overlay charts (`nyan1308_phonologylike_laminar_forest.pdf` and its siblings)
+stack every family into one semi-transparent image, and the exemplary-tree charts show
+a curated seven-family subset of the *pooled* analysis only. These show each family in
+a forest on its own terms — 6 for phonology-like, 16 for syntax-like.
+
+The drawing is `planarsviz_exemplary_tree()`'s, copied: same layout, same boxed
+"number over name" tip labels, same margins. What differs is only what it is keyed by —
+`(forest_name, tree_number)` read from the bundle's `data/forests/<name>.tsv`, rather
+than `family_id` read from `bundle$families`.
+
+To regenerate:
+```
+Rscript scripts/analysis/bundle_forest_trees.r
+```
+
+**Not from the package, and that is the problem with them.** `bundle_forest_trees.r`
+reads the bundle, so it respects "Python computes, R draws from the bundle" — but it
+writes straight into flat `results/` with no chart name and no manifest row, so nothing
+records that these 22 files exist or which run made them. Porting it into the package
+is the open request in `docs/NOTE_FOR_REFACTOR_SESSION.md`; when that happens, this
+script and these files are replaced by package-drawn charts with proper names, and this
+section changes with them.
+
+---
+
 ## Laminar family notes
 
 - The renderer writes every chart to whatever `--output` names, so the PDF lands where you asked
