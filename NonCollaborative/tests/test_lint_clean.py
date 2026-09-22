@@ -63,7 +63,7 @@ def test_planarsviz_package_has_no_lints():
         [
             RSCRIPT, "-e",
             'lints <- lintr::lint_package("r/planarsviz"); '
-            'cat(length(lints), "\\n"); '
+            'cat("LINT_COUNT:", length(lints), "\\n", sep = ""); '
             "print(lints)",
         ],
         capture_output=True,
@@ -74,9 +74,16 @@ def test_planarsviz_package_has_no_lints():
         "lintr::lint_package() failed to run against r/planarsviz. Its output was:\n"
         + result.stdout + result.stderr
     )
-    count_line = result.stdout.strip().splitlines()[0]
-    assert count_line == "0", (
-        f"r/planarsviz has {count_line} lintr finding(s) that r/planarsviz/.lintr "
+    # A prefixed marker, not just "the first line", because renv itself can print
+    # its own startup noise (an out-of-sync warning, a large-dependency-scan
+    # notice) ahead of this on stdout -- seen for real the first time this test
+    # ran against a freshly-recorded renv.lock entry, before anything had made
+    # renv's implicit scanner notice lintr/styler were actually in use.
+    count_lines = [line for line in result.stdout.splitlines() if line.startswith("LINT_COUNT:")]
+    assert count_lines, "Expected a LINT_COUNT: line in lintr's output but found none:\n" + result.stdout
+    count = count_lines[0].removeprefix("LINT_COUNT:")
+    assert count == "0", (
+        f"r/planarsviz has {count} lintr finding(s) that r/planarsviz/.lintr "
         "does not already excuse:\n\n" + result.stdout + "\n"
         "Fix the finding, or if it is a false positive from something the package "
         "does on purpose, add a documented exception to r/planarsviz/.lintr the "
