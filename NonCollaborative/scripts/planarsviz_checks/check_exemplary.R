@@ -8,7 +8,8 @@
 # compares the print tree, evidence panel and slide tree's ggplot_build()
 # data with the library's, then renders the print page, slide tree and slide
 # evidence at the script's sizes and pixel-compares with the references.
-# library-only (shifted test data): render only, beside the nyan1308 renders.
+# library-only (shifted test data): render only, beside the nyan1308 renders,
+# under results/planarsviz/comparisons/shifted_nyan/shifted/.
 #
 # Run from NonCollaborative/:
 #   Rscript scripts/planarsviz_checks/check_exemplary.R
@@ -68,7 +69,7 @@ render <- function(p, base) {
   system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(pdf_path), shQuote(stem)))
   paste0(stem, ".png")
 }
-cmp_dir <- file.path(dirname(bundle_dir), "comparisons", if (library_only) "shifted" else "")
+cmp_dir <- file.path(dirname(bundle_dir), "comparisons", prefix, if (library_only) "shifted" else "")
 dir.create(cmp_dir, recursive = TRUE, showWarnings = FALSE)
 
 selections <- read_planars_selections(bundle)
@@ -119,7 +120,7 @@ for (i in seq_len(n_exemplars)) {
   if (library_only) {
     for (v in names(views)) {
       nyan_base <- sub(prefix, "nyan1308", bases[[v]], fixed = TRUE)
-      nyan_pdf <- file.path("results", paste0(nyan_base, ".pdf"))
+      nyan_pdf <- file.path("results", "nyan1308", folder, paste0(nyan_base, ".pdf"))
       if (!file.exists(nyan_pdf)) { cat(bases[[v]], ": rendered (no nyan1308 counterpart)\n"); next }
       stem <- file.path(tempdir(), paste0("nyan_", nyan_base))
       system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(stem)))
@@ -137,7 +138,7 @@ for (i in seq_len(n_exemplars)) {
   )
   if (length(problems)) all_ok <- FALSE
   pix <- vapply(names(views), function(v) compare(
-    file.path(dirname(bundle_dir), "reference", folder, paste0(bases[[v]], ".png")), pngs[[v]],
+    file.path(dirname(bundle_dir), "reference", prefix, folder, paste0(bases[[v]], ".png")), pngs[[v]],
     file.path(cmp_out, paste0(bases[[v]], ".png"))), character(1))
   cat(sprintf("exemplar %d: %s\n", i,
               if (length(problems)) paste("NUMBERS DIFFER:", paste(head(problems, 5), collapse = " | ")) else "numbers identical"))

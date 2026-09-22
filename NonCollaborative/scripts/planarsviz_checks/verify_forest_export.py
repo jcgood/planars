@@ -7,7 +7,7 @@ that data/forests/<id>.tsv reproduces, tree by tree, the Newick string, the
 groupOTU span list, the thickness values, and that forests.json has the same
 alpha, colour and tree count. It also checks that moving BUNDLES into
 planars_groupings.py changed nothing: laminar_tree_counts' bundle counts
-still equal results/counts-and-chance/nyan1308_tree_counts.tsv.
+still equal results/nyan1308/counts-and-chance/nyan1308_tree_counts.tsv.
 
 Until cutover step C3 this also regenerated each bundle's forest script with
 laminar_analysis.main() and compared it byte for byte. C3 removed the R-writing
@@ -75,7 +75,7 @@ import laminar_tree_counts as ltc  # noqa: E402
 with contextlib.redirect_stdout(io.StringIO()):
     bundle_rows = ltc.collect_bundle_counts("domains_nyan1308.tsv", NC / "domains")
 committed = {(r["condition"], r["class"]): r for r in csv.DictReader(
-    (NC / "results" / "counts-and-chance" / "nyan1308_tree_counts.tsv").open(), delimiter="\t")}
+    (NC / "results" / "nyan1308" / "counts-and-chance" / "nyan1308_tree_counts.tsv").open(), delimiter="\t")}
 for r in bundle_rows:
     c = committed.get((r["condition"], r["class"]))
     if c is None or int(c["n_maximal_laminar_families"]) != r["n_maximal_laminar_families"] \

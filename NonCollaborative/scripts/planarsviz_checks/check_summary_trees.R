@@ -8,7 +8,8 @@
 # compares every panel's ggplot_build() data, title and opacity-scale name,
 # renders at the scripts' canvas sizes and pixel-compares with the frozen
 # references.
-# library-only (shifted test data): render only, beside the nyan1308 renders.
+# library-only (shifted test data): render only, beside the nyan1308 renders,
+# under results/planarsviz/comparisons/shifted_nyan/shifted/.
 #
 # Run from NonCollaborative/:
 #   Rscript scripts/planarsviz_checks/check_summary_trees.R
@@ -69,7 +70,7 @@ render <- function(p, base, width, height) {
   system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(pdf_path), shQuote(stem)))
   paste0(stem, ".png")
 }
-cmp_dir <- file.path(dirname(bundle_dir), "comparisons", if (library_only) "shifted" else "")
+cmp_dir <- file.path(dirname(bundle_dir), "comparisons", prefix, if (library_only) "shifted" else "")
 dir.create(cmp_dir, recursive = TRUE, showWarnings = FALSE)
 
 cases <- list(
@@ -90,7 +91,7 @@ for (case in cases) {
   new_png <- render(pl, base, size[["width"]], size[["height"]])
 
   if (library_only) {
-    nyan_pdf <- file.path("results", paste0("nyan1308_", case$name, ".pdf"))
+    nyan_pdf <- file.path("results", "nyan1308", folder, paste0("nyan1308_", case$name, ".pdf"))
     stem <- file.path(tempdir(), paste0("nyan_", case$name))
     system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(stem)))
     cat(base, ": rendered; side by side with nyan1308: ",
@@ -108,7 +109,7 @@ for (case in cases) {
     problems <- c(problems, same_data(get(case$objects[[i]], envir = orig), parts[[i]], case$objects[[i]]))
   }
   if (length(problems)) all_ok <- FALSE
-  pix <- compare(file.path(dirname(bundle_dir), "reference", folder, paste0(base, ".png")), new_png,
+  pix <- compare(file.path(dirname(bundle_dir), "reference", prefix, folder, paste0(base, ".png")), new_png,
                  file.path(cmp_out, paste0(base, ".png")))
   cat(base, ": ", if (length(problems)) paste("NUMBERS DIFFER:", paste(head(problems, 5), collapse = " | ")) else "numbers identical",
       "; canvas ", size[["width"]], "x", size[["height"]], " in; pixels: ", pix, "\n", sep = "")

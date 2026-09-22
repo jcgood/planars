@@ -7,7 +7,8 @@
 # file untouched) and builds the library forest; compares every tree's
 # ggplot_build() data layer by layer; renders the library forest at the
 # script's 20x14 in canvas and pixel-compares it with the frozen reference.
-# library-only (shifted test data): render only, beside the nyan1308 render.
+# library-only (shifted test data): render only, beside the nyan1308 render,
+# under results/planarsviz/comparisons/shifted_nyan/shifted/.
 #
 # Run from NonCollaborative/:
 #   Rscript scripts/planarsviz_checks/check_forests.R
@@ -45,7 +46,7 @@ compare <- function(ref, new_png, out_png) {
 }
 out_dir <- file.path(bundle_dir, "plots")
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
-cmp_dir <- file.path(dirname(bundle_dir), "comparisons", if (library_only) "shifted" else "")
+cmp_dir <- file.path(dirname(bundle_dir), "comparisons", prefix, if (library_only) "shifted" else "")
 dir.create(cmp_dir, recursive = TRUE, showWarnings = FALSE)
 
 all_ok <- TRUE
@@ -87,7 +88,7 @@ for (id in ids) {
   png_stem <- file.path(tempdir(), base)
   system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(pdf_path), shQuote(png_stem)))
   if (library_only) {
-    nyan_pdf <- file.path("results", paste0("nyan1308_", id, "_laminar_forest.pdf"))
+    nyan_pdf <- file.path("results", "nyan1308", folder, paste0("nyan1308_", id, "_laminar_forest.pdf"))
     if (file.exists(nyan_pdf)) {
       nyan_stem <- file.path(tempdir(), paste0("nyan_", id))
       system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(nyan_stem)))
@@ -98,7 +99,7 @@ for (id in ids) {
     }
     next
   }
-  ref <- file.path(dirname(bundle_dir), "reference", folder, paste0(base, ".png"))
+  ref <- file.path(dirname(bundle_dir), "reference", prefix, folder, paste0(base, ".png"))
   if (length(problems)) all_ok <- FALSE
   cat(base, ": ", if (length(problems)) paste("NUMBERS DIFFER:", paste(problems, collapse = " | ")) else "numbers identical",
       "; pixels: ", compare(ref, paste0(png_stem, ".png"), file.path(cmp_out, paste0(base, ".png"))), "\n", sep = "")

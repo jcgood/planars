@@ -13,7 +13,7 @@
 # library-only mode (the shifted test dataset, section 10): the working script
 # can't draw that data (its domain types are typed in), so only the library
 # renders; each chart is saved side by side with its nyan1308 library render
-# under results/planarsviz/comparisons/shifted/ for inspection.
+# under results/planarsviz/comparisons/shifted_nyan/shifted/ for inspection.
 #
 # Run from NonCollaborative/:
 #   Rscript scripts/planarsviz_checks/check_pooled.R
@@ -84,7 +84,7 @@ plain <- function(df) {
 
 out_dir <- file.path(bundle_dir, "plots")
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
-cmp_dir <- file.path(dirname(bundle_dir), "comparisons")
+cmp_dir <- file.path(dirname(bundle_dir), "comparisons", prefix)
 if (library_only) cmp_dir <- file.path(cmp_dir, "shifted")
 dir.create(cmp_dir, recursive = TRUE, showWarnings = FALSE)
 
@@ -138,7 +138,7 @@ for (case in cases) {
     if (!is.null(case$type) && case$type %in% names(nyan_type_name)) {
       nyan_name <- sub(case$type, nyan_type_name[[case$type]], nyan_name, fixed = TRUE)
     }
-    nyan_pdf <- file.path("results", paste0("nyan1308_", nyan_name, ".pdf"))
+    nyan_pdf <- file.path("results", "nyan1308", folder, paste0("nyan1308_", nyan_name, ".pdf"))
     if (file.exists(nyan_pdf)) {
       nyan_stem <- file.path(tempdir(), paste0("nyan_", nyan_name))
       system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(nyan_stem)))
@@ -150,7 +150,7 @@ for (case in cases) {
     next
   }
 
-  ref <- file.path(dirname(bundle_dir), "reference", folder, paste0(base, ".png"))
+  ref <- file.path(dirname(bundle_dir), "reference", prefix, folder, paste0(base, ".png"))
   pixel <- if (file.exists(ref)) compare(ref, paste0(png_stem, ".png"), file.path(cmp_out, paste0(base, ".png"))) else "no reference"
   status_txt <- if (length(problems)) paste("NUMBERS DIFFER:", paste(problems, collapse = " | ")) else "numbers identical"
   if (length(problems)) all_ok <- FALSE

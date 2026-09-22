@@ -48,7 +48,7 @@ project (the overlay charts, collect_counts() in laminar_tree_counts.py)
 conflict with each other, so this choice doesn't bias the null distribution,
 it just keeps every replicate's synthetic root consistent.
 
-Outputs (under results/counts-and-chance/ by default):
+Outputs (under results/nyan1308/counts-and-chance/ by default):
   nyan1308_class_fragmentation_test.tsv    -- the 5 singleton domain types
   nyan1308_bundle_fragmentation_test.tsv   -- the 3 pooled bundles
   nyan1308_fragmentation_null_draws.tsv    -- every individual permutation's
@@ -67,8 +67,8 @@ Usage:
   python scripts/analysis/class_fragmentation_test.py
   python scripts/analysis/class_fragmentation_test.py --n-permutations 2000
 
-The plain command reproduces the committed results/counts-and-chance/ files
-exactly (5000 draws, seed 0). Both summary TSVs record the draw count and
+The plain command reproduces the committed results/nyan1308/counts-and-chance/
+files exactly (5000 draws, seed 0). Both summary TSVs record the draw count and
 seed that made them, so a file can always say where its p-values came from.
 """
 
@@ -211,9 +211,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--domain-file", default="domains_nyan1308.tsv")
     parser.add_argument("--domains-dir", type=Path, default=REPO_DIR / "domains")
-    parser.add_argument("--output-dir", type=Path, default=REPO_DIR / "results" / "counts-and-chance")
-    # 5000 is what produced the committed results/counts-and-chance/ files, so
-    # the plain command reproduces them.
+    parser.add_argument("--output-dir", type=Path, default=REPO_DIR / "results" / "nyan1308" / "counts-and-chance")
+    # 5000 is what produced the committed results/nyan1308/counts-and-chance/
+    # files, so the plain command reproduces them.
     parser.add_argument("--n-permutations", type=int, default=5000)
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()

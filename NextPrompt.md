@@ -27,86 +27,15 @@ matters for the exporter specifically: it records the domain file's path as
 given, so running it from the repo root writes a bundle that differs from the
 committed one in that field.
 
-### Next action: give `results/` a per-language folder layer
+### Next action: `lintr`/`styler`, the last phase D item
 
-So a second language can land beside nyan1308. The bundle is already
-per-language (`results/planarsviz/<dataset>/`); three places are not:
-
-| | files | today | wanted |
-|---|---|---|---|
-| `results/` | ~170 | `laminar-families/nyan1308_*.pdf` | `nyan1308/laminar-families/nyan1308_*.pdf` |
-| `results/planarsviz/reference/` | 92 | `pooled/nyan1308_*.png` | `nyan1308/pooled/nyan1308_*.png` |
-| `results/planarsviz/comparisons/` | 136 | same shape | same shape |
-
-(`comparisons/shifted/` and `comparisons/refcheck/` sit under `comparisons/`
-and follow it.)
-
-**The prefix question is settled: files keep it.** So
-`results/nyan1308/pooled/nyan1308_pooled_plot.pdf`, not
-`.../pooled/pooled_plot.pdf`. Decided by Jeff 2026-09-22; don't reopen it.
-
-Two reasons, because it looks at first like the naming rule forbids it. The
-rule is about a fact with *no single owner* that can drift — a planar
-structure living as both a Sheet and a TSV. Here the folder and the prefix
-both come from one variable in one line of the renderer, so they cannot
-disagree; it is redundancy, not the dangerous kind. And these files leave the
-folder constantly — into a talk, an email to Adam, a Downloads folder — where
-`pooled_plot.pdf` says nothing and `nyan1308_pooled_plot.pdf` still does.
-
-**This makes the move a pure move.** No file is renamed: the 92 reference
-images and 136 comparison images change address only, `visualizations.md` and
-the chart catalogue keep every filename they name, and the archived scripts'
-own filenames are untouched. What changes is the renderer's output path, the
-manifest's `file` column, and the checks' idea of where to look.
-
-**Worth knowing, in case it changes the priority:** the prefix already lets a
-second language work without any folder — `arao1248_pooled_plot.pdf` and
-`nyan1308_pooled_plot.pdf` coexist fine. So this buys navigation, not
-capability: `laminar-families/` would otherwise go from 66 files to 132 per
-language added. Jeff asked for it knowing that.
-
-**Fix on the way through:** `check_renderer.py` hardcodes `nyan1308` at lines
-65 and 89, so it would silently find nothing for a second language. A real
-scaling bug, already present, independent of any move — the dataset is in the
-manifest.
-
-**What makes it small:** the renderer already knows the dataset, so writing
-into `<output>/<dataset>/<folder>/` is about one line plus the manifest's
-`file` column; eleven of the thirteen R checks already take the dataset as an
-argument (the shifted-bundle runs pass `shifted_nyan` through it today, so
-that path is exercised, not theoretical). The bulk is moving ~400 files.
-
-**Method, which worked twice already** (restructure steps 2 and 3): move in
-its own commit, separate from any behaviour change, and let the 21 porting
-checks prove only addresses changed. Keep a move and a port out of the same
-commit — if they land together, a failing check could mean either "the move
-broke a path" or "the new code draws differently", with no way to tell which.
-The ordering trap that governed absorption does not apply here: no new chart
-is being drawn, so there is nothing to freeze first.
-
-**What success looks like:** because the checks print chart names and
-percentages rather than paths, a correct move leaves nearly every snapshot
-byte-identical. Expect exactly two to move, both for reasons that are not
-chart changes:
-
-- `check_renderer.py`, whose trailing list prints each reference's own
-  address.
-- `check_tree_counts.R`, the one check that prints a reference image's path —
-  and this one needs a code fix, not a re-record. `_normalise()` in
-  `tests/test_planarsviz_checks.py:146` strips `reference/<topic>/` with a
-  regex that names the four topic folders; once the path is
-  `reference/<dataset>/<topic>/` it stops matching, and the snapshot changes
-  for a reason the snapshot is not meant to track. Extend it to strip the
-  dataset segment too, the same way it already strips R's temp directory.
-
-Anything else moving means the move broke something. That is the whole
-signal — don't re-record a snapshot to make it green.
-
-**After it, `lintr`/`styler` is the last phase D item** and needs no decision —
-just work. Then phase E, the `illustrations` bundle (design agreed, recorded
-under question 1 in the progress doc);
-`results/illustrations/nyan1308_random_tree_overlay.r` is the one generated R
-script left in `results/`, waiting for it.
+The per-language folder layer (`results/` and its reference/comparisons
+mirror all nest under a dataset folder now) is done — see the
+"per-language folder layer" entry at the end of the progress doc for what
+changed and how it was verified. Needs no decision, just work. Then phase E,
+the `illustrations` bundle (design agreed, recorded under question 1 in the
+progress doc); `results/illustrations/nyan1308_random_tree_overlay.r` is the
+one generated R script left in `results/`, waiting for it.
 
 ### Things that will bite
 

@@ -42,8 +42,8 @@ to it, and that is where the porting checks run too.
   allowed; this project calls the sequence "super-Catalan", see
   `exploratory/catalan.py`) and Catalan per polytomy (binary only). Totals
   across all 69 families: 8,599,689 against 125,032.
-- **Output**: `results/laminar-families/nyan1308_refinement_counts.tsv` (per family),
-  `results/laminar-families/nyan1308_refinement_polytomies.tsv` (per distinct polytomy, so
+- **Output**: `results/nyan1308/laminar-families/nyan1308_refinement_counts.tsv` (per family),
+  `results/nyan1308/laminar-families/nyan1308_refinement_polytomies.tsv` (per distinct polytomy, so
   the aggregate can be checked against the nodes it came from)
 - **Example**: `python scripts/analysis/refinement_counts.py`
 
@@ -69,7 +69,7 @@ to it, and that is where the porting checks run too.
   where the signal is, and it points differently than the fragmentation
   test's own findings, since the two ask genuinely different questions
   about the same 26 spans.
-- **Output**: `results/counts-and-chance/nyan1308_span_placement_test.tsv` (one row per
+- **Output**: `results/nyan1308/counts-and-chance/nyan1308_span_placement_test.tsv` (one row per
   group), `_span_placement_null_tally.tsv` (`group, family_count, n` —
   a tally, not one row per draw)
 - **Example**: `python scripts/analysis/span_placement_test.py`
@@ -100,7 +100,7 @@ annotations, which actually happened with `scales = "free_x"` alone.)*
   until you notice it carries 44 of the 95 tests, where chance alone gives
   about 17 — so it is markedly *more* laminar than chance (p=0.91), as is
   intonational. Morphosyntactic, phonological and length are unremarkable.
-- **Output**: `results/counts-and-chance/nyan1308_class_fragmentation_test.tsv` (5 domain
+- **Output**: `results/nyan1308/counts-and-chance/nyan1308_class_fragmentation_test.tsv` (5 domain
   types), `_bundle_fragmentation_test.tsv` (3 bundles),
   `_fragmentation_null_draws.tsv` (every draw, long format, for the chart).
   The two summary files record the draw count and seed that produced them.
@@ -123,7 +123,7 @@ with `groups` for the two-bundle variant — from a bundle exported with
 **`analysis/laminar_tree_counts.py`**
 - **Purpose**: Count maximal laminar families pooled, per domain class, per
   bundle, and with size-2 (adjacent-position) spans removed
-- **Output**: `results/counts-and-chance/nyan1308_tree_counts.tsv`. The bar charts of these
+- **Output**: `results/nyan1308/counts-and-chance/nyan1308_tree_counts.tsv`. The bar charts of these
   counts are drawn by the package; until the 2026-09-20 cutover this script
   drew them itself, in matplotlib.
 - **Also owns `CLASS_COLORS`** — the five domain-type colours, in one place.
@@ -140,7 +140,7 @@ with `groups` for the two-bundle variant — from a bundle exported with
   edge counts, including nested ones) and `capped` (how many of the 69
   families have at least one span with that edge, a reference line). See the
   module docstring for why they diverge.
-- **Output**: `results/boundaries/nyan1308_boundary_strength.tsv`; `--subset` restricts
+- **Output**: `results/nyan1308/boundaries/nyan1308_boundary_strength.tsv`; `--subset` restricts
   the analysis to some domain types and tags the filename with them. The
   charts are drawn by the package; this script drew them in matplotlib until
   the cutover.
@@ -173,7 +173,7 @@ with `groups` for the two-bundle variant — from a bundle exported with
   threshold, matching the talk's own "more diffuse" hedge almost exactly.
   Tonosegmental's right edge at position 17 (the final vowel) is the
   single strongest result of any group (p=0.0004).
-- **Output**: `results/boundaries/nyan1308_boundary_strength_test.tsv` — one row per
+- **Output**: `results/nyan1308/boundaries/nyan1308_boundary_strength_test.tsv` — one row per
   (group, side, statistic, position): `observed`, `null_mean`, `null_p05`,
   `null_p95`, `p_value_ge_observed`, plus `n_permutations`/`seed`. No raw
   per-draw table — only percentiles are kept, the same choice
@@ -229,7 +229,7 @@ with `groups` for the two-bundle variant — from a bundle exported with
   cross far more chaotically than real domains and the default 1000
   truncates this null badly. A truncated draw counts as its cap rather than
   its real value, so a bundle test fails if any draw hits even the raised one.
-- **Output**: `results/counts-and-chance/nyan1308_arbitrary_layers_test.tsv`
+- **Output**: `results/nyan1308/counts-and-chance/nyan1308_arbitrary_layers_test.tsv`
   and `_arbitrary_layers_null_tally.tsv`
 - **Example**: `python scripts/analysis/arbitrary_layers_test.py`
 - **Also in the bundle**, behind `--arbitrary-layers-permutations`, drawn by

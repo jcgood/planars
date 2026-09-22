@@ -1268,7 +1268,7 @@ def main() -> None:
              "put its two tables in the bundle. Off by default because it is slow: "
              "5000 draws takes about four minutes against the rest of the export's "
              "1.6 seconds. Use 5000 to match the committed "
-             "results/counts-and-chance/ files.",
+             "results/nyan1308/counts-and-chance/ files.",
     )
     parser.add_argument(
         "--fragmentation-seed", type=int, default=0,
@@ -1281,7 +1281,7 @@ def main() -> None:
              "arrangement?) with N draws and put its table in the bundle. Off by default for the "
              "same reason as --fragmentation-permutations: one family enumeration per replicate, "
              "so 5000 draws takes minutes against the rest of the export's ~2 seconds. Use 5000 "
-             "to match the committed results/boundaries/ files.",
+             "to match the committed results/nyan1308/boundaries/ files.",
     )
     parser.add_argument(
         "--boundary-strength-test-seed", type=int, default=0,
@@ -1293,7 +1293,7 @@ def main() -> None:
              "group's spans give fewer laminar families than those same span lengths placed at "
              "random?) with N draws and put its tables in the bundle. Off by default for the "
              "same reason as --fragmentation-permutations: one family enumeration per replicate. "
-             "Use 5000 to match the committed results/counts-and-chance/ files.",
+             "Use 5000 to match the committed results/nyan1308/counts-and-chance/ files.",
     )
     parser.add_argument(
         "--span-placement-seed", type=int, default=0,
@@ -1306,7 +1306,7 @@ def main() -> None:
              "draws and put its tables in the bundle. The most naive of the three nulls: it "
              "knows only how many spans a group has, not how big they are. Off by default for "
              "the same reason as --fragmentation-permutations. Use 5000 to match the committed "
-             "results/counts-and-chance/ files.",
+             "results/nyan1308/counts-and-chance/ files.",
     )
     parser.add_argument(
         "--arbitrary-layers-seed", type=int, default=0,

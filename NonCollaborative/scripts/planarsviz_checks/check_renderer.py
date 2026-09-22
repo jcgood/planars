@@ -5,8 +5,10 @@ For docs/PLAN_planarsviz_library.md section 8.3: after
 run
     python scripts/planarsviz_checks/check_renderer.py DIR
 Reads DIR's <dataset>_planarsviz_manifest.tsv, pairs each
-<folder>/nyan1308_<chart>.png with
-results/planarsviz/reference/<folder>/nyan1308_<chart>.png, and prints the
+<dataset>/<folder>/<dataset>_<chart>.png with
+results/planarsviz/reference/<dataset>/<folder>/<dataset>_<chart>.png (the
+dataset comes from the manifest row's own file path, not a fixed name, so
+this works for whichever dataset DIR was rendered from), and prints the
 differing-pixel share per chart (side-by-side images go to DIR/compare/).
 Charts copied from working R code must show 0.0000%; the two matplotlib
 ports (tree_count_*, boundary_strength, _no_tono, _distributions) differ by
@@ -58,11 +60,14 @@ with manifests[0].open(newline="") as handle:
     rows = [r for r in csv.DictReader(handle, delimiter="\t") if r["file"].endswith(".png")]
 
 seen = set()
+datasets = set()
 problems = 0
 for row in rows:
     chart = row["chart"]
     folder = Path(row["file"]).parent.as_posix()
-    ref_name = f"{folder}/nyan1308_{RENAMED.get(chart, chart)}.png"
+    dataset = Path(row["file"]).parts[0]
+    datasets.add(dataset)
+    ref_name = f"{folder}/{dataset}_{RENAMED.get(chart, chart)}.png"
     seen.add(ref_name)
     ref = ref_by_name.get(ref_name)
     if ref is None:
@@ -85,8 +90,11 @@ for row in rows:
 # *_transp.png are not chart references: they are the frozen matplotlib
 # transparency measurements check_tree_counts.R compares against, kept here
 # because cutover step C3 removed the matplotlib that drew them.
+# Restricted to the dataset(s) this run's manifest actually covers, so running
+# the renderer for one dataset doesn't report every other dataset's whole
+# reference tree as "no render".
 missing = sorted(name for name in ref_by_name
-                 if Path(name).name.startswith("nyan1308_") and name not in seen
+                 if Path(name).parts[0] in datasets and name not in seen
                  and not name.endswith("_transp.png"))
 # One per line rather than a list on one line: this is the standing list of
 # charts still to be absorbed into the package, so it wants to read as a list

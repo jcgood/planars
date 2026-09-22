@@ -27,15 +27,19 @@ that one field and nothing else. Add `--plots name1,name2` to the second
 command to draw only some charts; `--list` prints the names a bundle supports.
 The sections below give the `--plots` name for each chart.
 
-**Where the files sit.** `results/` is grouped by topic rather than flat:
-`laminar-families/`, `pooled/`, `boundaries/`, `counts-and-chance/`,
-`planar-structure/` and `illustrations/`. Only this file and the render
-manifest sit at the top. Each section below is headed by a bare file name,
-because file names are unique across the whole tree; for a chart the package
-draws, `nyan1308_planarsviz_manifest.tsv` gives its exact path. Which folder a
-chart belongs to is recorded once, as an attribute on the chart function
-itself, and the renderer reads it — so a new chart lands in the right place
-without anything here having to be updated to match.
+**Where the files sit.** `results/` is grouped by language first, then topic:
+the four topic folders a chart can land in — `laminar-families/`, `pooled/`,
+`boundaries/`, `counts-and-chance/` — sit under `results/nyan1308/`, so a
+second language's charts land beside nyan1308's rather than colliding with
+them. `planar-structure/` and `illustrations/` are unrelated to the
+`planarsviz` package and are not nested this way. Only this file and the
+render manifest sit at the top of `results/` itself. Each section below is
+headed by a bare file name, because file names are unique across the whole
+tree; for a chart the package draws, `nyan1308_planarsviz_manifest.tsv` gives
+its exact path. Which folder a chart belongs to is recorded once, as an
+attribute on the chart function itself, and the renderer reads it — so a new
+chart lands in the right place without anything here having to be updated to
+match.
 
 **Two files, two jobs.** This file says what each artifact in `results/`
 *shows* and what it means for the analysis.
@@ -423,7 +427,7 @@ those 22 were frozen as reference images and the port is checked against them at
 "no reference" for them, the same way it does for `most_binary_tree`.
 
 `scripts/analysis/bundle_forest_trees.r`, which drew these 22 straight into
-`results/laminar-families/` with no chart name and no manifest row, was archived to
+`results/nyan1308/laminar-families/` with no chart name and no manifest row, was archived to
 `OlderFiles/planarsviz_superseded/scripts/analysis/` on the same day. It must not be
 run: it would write its own output over the package's under the same filenames, which
 is what `.Rprofile`'s guard on `OlderFiles/` exists to prevent.
@@ -453,7 +457,7 @@ is what `.Rprofile`'s guard on `OlderFiles/` exists to prevent.
 
 Drawn by the `planarsviz` package from the exported data bundle. Reads the same underlying
 CCDB test data, `domains/domains_nyan1308.tsv`, by way of the bundle the
-exporter writes. PDFs are written to `results/pooled/`.
+exporter writes. PDFs are written to `results/nyan1308/pooled/`.
 
 To render:
 ```
@@ -504,7 +508,7 @@ are generated on every run.
 ## Pooled chart notes
 
 - File naming matches the laminar charts above (`nyan1308_*.pdf`); these are written to
-  `results/pooled/` rather than `results/laminar-families/`.
+  `results/nyan1308/pooled/` rather than `results/nyan1308/laminar-families/`.
 - Chart height scales with the number of distinct tests in that chart (`plot_height()`, 7 cm
   floor) so small classes like `length` (7 tests) don't render unreadably short.
 
@@ -1097,7 +1101,7 @@ PDF; `--tex-only` skips that and writes just the sources.)
 `nyan1308_boundary_strength_no_tono.tsv` is the same computation over the four
 non-tonosegmental domain types. The exporter writes it into the bundle at
 `results/planarsviz/nyan1308/data/subsets/no_tono/boundary_strength.tsv`, and
-the copy in `results/boundaries/` carries the shorter name by hand:
+the copy in `results/nyan1308/boundaries/` carries the shorter name by hand:
 `boundary_strength.py --subset morphosyntactic,phonological,length,intonational`
 produces identical numbers but names its file after all four types. The copy is
 kept because a porting check compares the bundle against it.

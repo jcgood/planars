@@ -65,7 +65,7 @@ fragmentation test's own null-draws table (see
 docs/PLANARSVIZ_LIBRARY_PROGRESS.md's "Chart 19" section): 5000 raw draws
 collapsed to at most a few hundred distinct integers, per group.
 
-Outputs (under results/counts-and-chance/ by default):
+Outputs (under results/nyan1308/counts-and-chance/ by default):
   nyan1308_span_placement_test.tsv        -- one row per group: n_spans,
                                               observed count, null summary
                                               stats, p-value, plus
@@ -229,7 +229,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--domain-file", default="domains_nyan1308.tsv")
     parser.add_argument("--domains-dir", type=Path, default=REPO_DIR / "domains")
-    parser.add_argument("--output-dir", type=Path, default=REPO_DIR / "results" / "counts-and-chance")
+    parser.add_argument("--output-dir", type=Path, default=REPO_DIR / "results" / "nyan1308" / "counts-and-chance")
     parser.add_argument("--n-permutations", type=int, default=5000)
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()

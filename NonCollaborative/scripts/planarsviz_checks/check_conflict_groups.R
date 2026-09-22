@@ -11,7 +11,8 @@
 # exact pixel comparison uses panel_titles = FALSE, which reproduces the old
 # chart; plots/ and comparisons/ get the library's default (titled) chart,
 # and the report gives both pixel figures.
-# library-only (shifted test data): render only, beside the nyan1308 render.
+# library-only (shifted test data): render only, beside the nyan1308 render,
+# under results/planarsviz/comparisons/shifted_nyan/shifted/.
 #
 # Run from NonCollaborative/:
 #   Rscript scripts/planarsviz_checks/check_conflict_groups.R
@@ -68,7 +69,7 @@ render <- function(p, pdf_path) {
   system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(pdf_path), shQuote(stem)))
   paste0(stem, ".png")
 }
-cmp_dir <- file.path(dirname(bundle_dir), "comparisons", if (library_only) "shifted" else "")
+cmp_dir <- file.path(dirname(bundle_dir), "comparisons", prefix, if (library_only) "shifted" else "")
 dir.create(cmp_dir, recursive = TRUE, showWarnings = FALSE)
 
 base <- paste0(prefix, "_conflict_groups")
@@ -80,7 +81,7 @@ dir.create(cmp_out, recursive = TRUE, showWarnings = FALSE)
 new_png <- render(pl, file.path(bundle_dir, "plots", paste0(base, ".pdf")))
 
 if (library_only) {
-  nyan_pdf <- file.path("results", "nyan1308_conflict_groups.pdf")
+  nyan_pdf <- file.path("results", "nyan1308", folder, "nyan1308_conflict_groups.pdf")
   nyan_stem <- file.path(tempdir(), "nyan_conflict_groups")
   system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(nyan_stem)))
   cat(base, ": rendered; side by side with nyan1308: ",
@@ -106,7 +107,7 @@ if (library_only) {
     }
     for (i in seq_along(names_j)) problems <- c(problems, same_data(get(names_j[[i]], envir = orig), parts[[j]][[i]], names_j[[i]]))
   }
-  ref <- file.path(dirname(bundle_dir), "reference", folder, paste0(base, ".png"))
+  ref <- file.path(dirname(bundle_dir), "reference", prefix, folder, paste0(base, ".png"))
   pix_old <- compare(ref, old_png, file.path(tempdir(), paste0(base, "_as_generated_cmp.png")))
   pix <- compare(ref, new_png, file.path(cmp_out, paste0(base, ".png")))
   cat(base, ": ", if (length(problems)) paste("NUMBERS DIFFER:", paste(head(problems, 5), collapse = " | ")) else "numbers identical",

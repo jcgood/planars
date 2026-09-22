@@ -15,7 +15,8 @@
 # legend_thickness_exponent = 0.5, which reproduces their legend; the files
 # written to plots/ and comparisons/ are the library's default (fixed)
 # charts, and the report gives both pixel figures.
-# library-only (shifted test data): render only, beside the nyan1308 renders.
+# library-only (shifted test data): render only, beside the nyan1308 renders,
+# under results/planarsviz/comparisons/shifted_nyan/shifted/.
 #
 # Run from NonCollaborative/:
 #   Rscript scripts/planarsviz_checks/check_overlays.R
@@ -70,7 +71,7 @@ render <- function(p, pdf_path) {
   system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(pdf_path), shQuote(stem)))
   paste0(stem, ".png")
 }
-cmp_dir <- file.path(dirname(bundle_dir), "comparisons", if (library_only) "shifted" else "")
+cmp_dir <- file.path(dirname(bundle_dir), "comparisons", prefix, if (library_only) "shifted" else "")
 dir.create(cmp_dir, recursive = TRUE, showWarnings = FALSE)
 plots_dir <- file.path(bundle_dir, "plots")
 
@@ -101,7 +102,7 @@ for (case in cases) {
 
   if (library_only) {
     for (suffix in c("", "_legend")) {
-      nyan_pdf <- file.path("results", paste0("nyan1308_", case$name, suffix, ".pdf"))
+      nyan_pdf <- file.path("results", "nyan1308", folder, paste0("nyan1308_", case$name, suffix, ".pdf"))
       stem <- file.path(tempdir(), paste0("nyan_", case$name, suffix))
       system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(stem)))
       cat(base, suffix, ": rendered; side by side with nyan1308: ",
@@ -131,7 +132,7 @@ for (case in cases) {
   }
   problems <- c(problems, same_data(get("legend_plot", envir = orig), attr(pl_legend_old, "planarsviz_legend_plot"), "legend"))
   if (length(problems)) all_ok <- FALSE
-  ref_dir <- file.path(dirname(bundle_dir), "reference", folder)
+  ref_dir <- file.path(dirname(bundle_dir), "reference", prefix, folder)
   pix <- compare(file.path(ref_dir, paste0(base, ".png")), new_png, file.path(cmp_out, paste0(base, ".png")))
   pix_old <- compare(file.path(ref_dir, paste0(base, "_legend.png")), old_legend_png,
                      file.path(tempdir(), paste0(base, "_legend_as_generated_cmp.png")))

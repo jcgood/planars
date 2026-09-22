@@ -40,7 +40,7 @@ fragmentation_null.tsv's tally (which exists because that chart draws an
 actual violin from the distribution shape; a boundary-strength chart only
 needs an envelope band around the observed curve).
 
-Outputs (under results/boundaries/ by default):
+Outputs (under results/nyan1308/boundaries/ by default):
   nyan1308_boundary_strength_test.tsv -- one row per (group, side, statistic,
     position): group, kind, label, colour, side, statistic, position,
     observed, null_mean, null_p05, null_p95, p_value_ge_observed,
@@ -195,7 +195,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--domain-file", default="domains_nyan1308.tsv")
     parser.add_argument("--domains-dir", type=Path, default=REPO_DIR / "domains")
-    parser.add_argument("--output-dir", type=Path, default=REPO_DIR / "results" / "boundaries")
+    parser.add_argument("--output-dir", type=Path, default=REPO_DIR / "results" / "nyan1308" / "boundaries")
     parser.add_argument("--n-permutations", type=int, default=5000)
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()

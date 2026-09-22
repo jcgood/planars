@@ -2100,3 +2100,74 @@ moved to `scripts/exploratory/max_fragmentation_search.py` with its sibling. Its
 figure was computed at the same wrong layer count and has **not** been re-derived; the
 script's default is corrected but the search has not been re-run, and both the script and
 `scripts/INDEX.md` say so rather than leaving a stale number to be quoted.
+
+---
+
+## The per-language folder layer — done (2026-09-22)
+
+`results/`, `results/planarsviz/reference/` and `results/planarsviz/comparisons/` all
+now nest their four chart-topic folders (`laminar-families/`, `pooled/`, `boundaries/`,
+`counts-and-chance/`) under a dataset folder, so a second language's charts can land
+beside nyan1308's instead of colliding with them. 385 files moved as a pure `git mv`
+(157 under `results/nyan1308/`, 92 under `reference/nyan1308/`, 136 under
+`comparisons/`); no file was renamed, only re-addressed. Filenames keep the `nyan1308_`
+prefix — settled by Jeff the same day, see `NextPrompt.md`.
+
+**The dataset segment is `prefix`-driven, not hardcoded, everywhere a check reads or
+writes it.** `render_planarsviz.R`'s `dest` and its manifest's `file` column gained one
+`dataset` path component; all thirteen `check_*.R` scripts' `reference/` and
+`comparisons/` lookups gained one `prefix` component the same way, since `prefix` was
+already threaded through every one of them for filenames. That makes a second real
+language's checks work with no further code change — the one deliberate exception is
+each check's `nyan_pdf`/`ref_base` lookup for its `library-only` (shifted-data) branch,
+which stays hardcoded to `results/nyan1308/<folder>/nyan1308_*` on purpose: that branch's
+whole point is comparing the shifted render against nyan1308's specifically, not against
+whichever dataset the check happened to be run for.
+
+**`comparisons/shifted/` and `comparisons/refcheck/` follow the same `prefix` rule, not a
+special case.** `shifted/`'s own cmp_dir already used a literal `"shifted"` subfolder
+name independent of the dataset; since `prefix` is `"shifted_nyan"` for that mode, its new
+address is `comparisons/shifted_nyan/shifted/<topic>/` — confirmed by actually running
+`check_pooled.R ... shifted_nyan library-only`, which found `results/nyan1308/pooled/`
+correctly and wrote its comparison images to the new nested path with no code left
+pointing at the old one. `refcheck/` is a manual, code-untouched freshness snapshot of
+nyan1308 pooled charts, so it just moved to `comparisons/nyan1308/refcheck/` by hand.
+
+**`check_renderer.py`'s hardcoded `nyan1308`, flagged as a real scaling bug before this
+started, is fixed properly rather than patched around.** It now reads the dataset off
+each manifest row's own `file` path instead of assuming a name, and its "references with
+no render" scan is restricted to the dataset(s) actually present in the run's manifest —
+so running it for one language never reports every other language's whole reference tree
+as unrendered.
+
+**Seven Python analysis producers' `--output-dir` defaults moved too, not just the R
+side.** `boundary_strength.py`, `boundary_strength_test.py`, `class_fragmentation_test.py`,
+`laminar_tree_counts.py`, `span_placement_test.py`, `refinement_counts.py`,
+`arbitrary_layers_test.py` (plus `make_forestspans_table.py`, not in `scripts/analysis/`)
+all default their output into the flat pre-move folders; left alone, the next ordinary
+re-run of any of them would have quietly recreated the old flat layout underneath the new
+one. Their own filename prefix is still hardcoded to `nyan1308` regardless of
+`--domain-file` — a separate, deeper bug, out of scope here and not touched.
+
+**One line needed a real fix, not a re-record, because it names a path rather than a
+chart:** `check_tree_counts.R`'s "reference:" transparency line prints
+`results/planarsviz/reference/<dataset>/<topic>/<file>` verbatim. `_normalise()` in
+`tests/test_planarsviz_checks.py` already stripped the topic segment from the 2026-09-20
+topic-folder move; extended to strip the dataset segment the same way, confirmed by
+running `check_tree_counts.R` directly and checking the regex against its actual printed
+line before trusting the snapshot.
+
+**What proves the move changed nothing:** `git status` shows exactly 385 renames and 35
+text-file edits, nothing else. A full re-render of nyan1308's 137 charts into a scratch
+directory, then `check_renderer.py` against the moved reference tree, reports "137 renders
+compared; references with no render: none" and `RENDERER CHECK PASSED` — the same
+deliberate/font-only differences as before, nothing newly inexact. The two snapshot tests
+most likely to catch a normalisation mistake
+(`test_r_check_reports_what_it_did[check_tree_counts.R]`,
+`test_renderer_check_reports_what_it_did`) pass unchanged. `pytest NonCollaborative/tests
+-m "not needs_r"` (the CI subset) passes in full.
+
+**Next: `lintr`/`styler`, the last phase D item, needs no decision — just work.** Then
+phase E, the `illustrations` bundle (design agreed, recorded under question 1 above);
+`planar-structure/` and `illustrations/` were deliberately left out of this move — they
+hold no `planarsviz`-drawn charts and are produced by unrelated scripts.

@@ -17,10 +17,11 @@
 # validator stops on it). A chart that fails is reported and the script
 # exits non-zero; nothing is skipped silently.
 #
-# Charts are written into a topic subfolder of the output directory --
+# Charts are written into <dataset>/<topic>/, where <topic> is one of
 # laminar-families/, pooled/, boundaries/, counts-and-chance/ -- named by the
 # chart's own planarsviz_folder attribute, beside the attribute that gives its
-# canvas size. <dataset>_planarsviz_manifest.tsv
+# canvas size. So a second dataset's charts land beside the first's rather
+# than colliding with it. <dataset>_planarsviz_manifest.tsv
 # lists every file in the output directory, folder and all, not just the ones
 # this run drew:
 # a --plots run merges into the manifest already there rather than replacing
@@ -279,7 +280,7 @@ for (name in wanted) {
     # how big its canvas is, so there is no second table here to drift.
     folder <- attr(p, "planarsviz_folder")
     if (is.null(folder)) stop("chart function returned no folder")
-    dest <- file.path(output, folder)
+    dest <- file.path(output, dataset, folder)
     dir.create(dest, recursive = TRUE, showWarnings = FALSE)
     pdf_path <- file.path(dest, paste0(base, ".pdf"))
     suppressMessages(suppressWarnings(ggplot2::ggsave(pdf_path, p, device = "pdf", width = size[["width"]],
@@ -291,7 +292,7 @@ for (name in wanted) {
       files <- c(files, paste0(stem, ".png"))
       if (!"pdf" %in% formats) unlink(pdf_path)
     }
-    data.frame(chart = name, file = file.path(folder, basename(files)), width = size[["width"]],
+    data.frame(chart = name, file = file.path(dataset, folder, basename(files)), width = size[["width"]],
                height = size[["height"]], units = units)
   }, error = function(e) {
     failed <<- c(failed, name)

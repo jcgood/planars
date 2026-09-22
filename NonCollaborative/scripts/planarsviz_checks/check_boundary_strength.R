@@ -10,7 +10,8 @@
 # by bar heights, marker positions, curve shapes, ticks, labels and margins.
 # The no-tono legend deliberately says its own family count (24), not the
 # reference's typed-in 69.
-# library-only (shifted test data): render only, beside the nyan1308 renders.
+# library-only (shifted test data): render only, beside the nyan1308 renders,
+# under results/planarsviz/comparisons/shifted_nyan/shifted/.
 #
 # Run from NonCollaborative/:
 #   Rscript scripts/planarsviz_checks/check_boundary_strength.R
@@ -36,7 +37,7 @@ bundle <- read_planars_bundle(bundle_dir)
 compare <- function(ref, new_png, out_png) {
   system2(python, c("scripts/planarsviz_compare.py", shQuote(ref), shQuote(new_png), shQuote(out_png)), stdout = TRUE)
 }
-cmp_dir <- file.path(dirname(bundle_dir), "comparisons", if (library_only) "shifted" else "")
+cmp_dir <- file.path(dirname(bundle_dir), "comparisons", prefix, if (library_only) "shifted" else "")
 dir.create(cmp_dir, recursive = TRUE, showWarnings = FALSE)
 subset_ids <- vapply(jsonlite::read_json(file.path(bundle_dir, "data", "subsets.json")),
                      function(s) s$subset_id, character(1))
@@ -68,11 +69,11 @@ for (case in cases) {
   ref_png <- if (library_only) {
     nyan_stem <- file.path(tempdir(), paste0("nyan_", case$name))
     system2("pdftoppm", c("-png", "-r", "100", "-singlefile",
-                          shQuote(file.path("results", paste0(ref_base, ".pdf"))),
+                          shQuote(file.path("results", "nyan1308", folder, paste0(ref_base, ".pdf"))),
                           shQuote(nyan_stem)))
     paste0(nyan_stem, ".png")
   } else {
-    file.path(dirname(bundle_dir), "reference", folder, paste0(ref_base, ".png"))
+    file.path(dirname(bundle_dir), "reference", prefix, folder, paste0(ref_base, ".png"))
   }
   cat(base, " (", size[["width"]], "x", size[["height"]], " in): ",
       compare(ref_png, paste0(stem, ".png"), file.path(cmp_out, paste0(base, ".png"))), "\n", sep = "")

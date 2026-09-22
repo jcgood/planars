@@ -138,13 +138,14 @@ def _normalise(text, extra_paths=()):
     # verbatim (via check_transparency.py) for its "reference:" transparency
     # line -- the one place a check's output names a reference image's own
     # location rather than just a chart name and a percentage. Since commit A
-    # of the results/ reorg (2026-09-20), that location includes a
-    # topic subfolder (e.g. reference/counts-and-chance/); the
-    # subfolder is where the file happens to live, not something this
-    # snapshot is meant to track, so it is stripped here the same way the R
-    # tmp directory above is.
+    # of the results/ reorg (2026-09-20), that location includes a topic
+    # subfolder (e.g. reference/counts-and-chance/); since the per-language
+    # folder layer (2026-09-22) it includes a dataset subfolder ahead of that
+    # (e.g. reference/nyan1308/counts-and-chance/). Both are where the file
+    # happens to live, not something this snapshot is meant to track, so both
+    # are stripped here the same way the R tmp directory above is.
     text = re.sub(
-        r"(reference/)(?:laminar-families|pooled|boundaries|counts-and-chance)/",
+        r"(reference/)[^/\s]+/(?:laminar-families|pooled|boundaries|counts-and-chance)/",
         r"\1", text,
     )
     return text

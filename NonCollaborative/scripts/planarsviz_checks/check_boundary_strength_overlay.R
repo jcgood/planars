@@ -8,7 +8,8 @@
 # committed TSVs, builds the same charts with
 # plot_boundary_strength_overlay(), compares ggplot_build() data, renders at
 # 13x7 in and pixel-compares with the frozen references.
-# library-only (shifted test data): render only, beside the nyan1308 renders.
+# library-only (shifted test data): render only, beside the nyan1308 renders,
+# under results/planarsviz/comparisons/shifted_nyan/shifted/.
 #
 # Run from NonCollaborative/:
 #   Rscript scripts/planarsviz_checks/check_boundary_strength_overlay.R
@@ -58,7 +59,7 @@ same_data <- function(po, pl, what) {
 compare <- function(ref, new_png, out_png) {
   system2(python, c("scripts/planarsviz_compare.py", shQuote(ref), shQuote(new_png), shQuote(out_png)), stdout = TRUE)
 }
-cmp_dir <- file.path(dirname(bundle_dir), "comparisons", if (library_only) "shifted" else "")
+cmp_dir <- file.path(dirname(bundle_dir), "comparisons", prefix, if (library_only) "shifted" else "")
 dir.create(cmp_dir, recursive = TRUE, showWarnings = FALSE)
 subset_ids <- vapply(jsonlite::read_json(file.path(bundle_dir, "data", "subsets.json")),
                      function(s) s$subset_id, character(1))
@@ -74,9 +75,9 @@ if (!library_only) {
 
 cases <- list(
   list(name = "boundary_strength_overlay", subset = NULL,
-       tsv = "results/boundaries/nyan1308_boundary_strength.tsv", colours = c(Left = "#0072B2", Right = "#E69F00")),
+       tsv = "results/nyan1308/boundaries/nyan1308_boundary_strength.tsv", colours = c(Left = "#0072B2", Right = "#E69F00")),
   list(name = "boundary_strength_overlay_no_tono", subset = "no_tono",
-       tsv = "results/boundaries/nyan1308_boundary_strength_no_tono.tsv", colours = c(Left = "#009E73", Right = "#CC79A7"))
+       tsv = "results/nyan1308/boundaries/nyan1308_boundary_strength_no_tono.tsv", colours = c(Left = "#009E73", Right = "#CC79A7"))
 )
 
 all_ok <- TRUE
@@ -100,7 +101,7 @@ for (case in cases) {
   new_png <- paste0(stem, ".png")
 
   if (library_only) {
-    nyan_pdf <- file.path("results", paste0("nyan1308_", case$name, ".pdf"))
+    nyan_pdf <- file.path("results", "nyan1308", folder, paste0("nyan1308_", case$name, ".pdf"))
     nyan_stem <- file.path(tempdir(), paste0("nyan_", case$name))
     system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(nyan_stem)))
     cat(base, ": rendered; side by side with nyan1308: ",
@@ -112,7 +113,7 @@ for (case in cases) {
     get("plot_boundary_strength", envir = orig)(case$tsv, paste0(case$name, ".pdf"), case$colours)))
   problems <- same_data(get("captured", envir = orig), pl, case$name)
   if (length(problems)) all_ok <- FALSE
-  pix <- compare(file.path(dirname(bundle_dir), "reference", folder, paste0(base, ".png")), new_png,
+  pix <- compare(file.path(dirname(bundle_dir), "reference", prefix, folder, paste0(base, ".png")), new_png,
                  file.path(cmp_out, paste0(base, ".png")))
   cat(base, ": ", if (length(problems)) paste("NUMBERS DIFFER:", paste(head(problems, 5), collapse = " | ")) else "numbers identical",
       "; canvas ", size[["width"]], "x", size[["height"]], " in; pixels: ", pix, "\n", sep = "")

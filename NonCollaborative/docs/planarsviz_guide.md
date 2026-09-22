@@ -165,7 +165,7 @@ checks are kept so any change can be re-checked. One exception, worth knowing
 before reading a check's output: **chart 19, the fragmentation test, never had
 a matplotlib original.** It was written in R from the start, so the chart that
 script drew is itself the reference —
-`results/planarsviz/reference/counts-and-chance/nyan1308_fragmentation_test_plot.png`,
+`results/planarsviz/reference/nyan1308/counts-and-chance/nyan1308_fragmentation_test_plot.png`,
 frozen before the package could overwrite it — and `check_fragmentation.R`
 compares against that rather than running an older script.
 
@@ -187,19 +187,21 @@ compares against that rather than running an older script.
   — bundle contents for nyan1308 and for the shifted test data.
 
 Comparison images (reference | new | differences) are in
-`results/planarsviz/comparisons/`, and `comparisons/shifted/` holds each
-chart drawn from nyan1308 beside the same chart from the **shifted test
-data**: nyan1308 with every position moved by two, labels renamed and one
-domain type renamed (`tests/fixtures/make_shifted_nyan.py`). A chart that
-draws that data correctly has no nyan1308 facts built in.
+`results/planarsviz/comparisons/nyan1308/`, and
+`comparisons/shifted_nyan/shifted/` holds each chart drawn from nyan1308
+beside the same chart from the **shifted test data**: nyan1308 with every
+position moved by two, labels renamed and one domain type renamed
+(`tests/fixtures/make_shifted_nyan.py`). A chart that draws that data
+correctly has no nyan1308 facts built in.
 
 Both `results/planarsviz/reference/` and `results/planarsviz/comparisons/`
-(including `comparisons/shifted/`) are grouped into the same four
-subfolders — `laminar-families`, `pooled`, `boundaries`,
-`counts-and-chance` — that chart is a member of. A chart's own function
-carries this as an attribute (`planarsviz_folder`, next to the existing
-`planarsviz_size`), so the folder a chart's images live in always matches
-what drew it; nothing outside the R package needs to know the mapping.
+are grouped by dataset first — `nyan1308/`, or `shifted_nyan/` for the
+shifted-mode comparisons — and then into the same four subfolders —
+`laminar-families`, `pooled`, `boundaries`, `counts-and-chance` — that chart
+is a member of. A chart's own function carries this as an attribute
+(`planarsviz_folder`, next to the existing `planarsviz_size`), so the folder
+a chart's images live in always matches what drew it; nothing outside the R
+package needs to know the mapping.
 
 The same attribute decides where a rendered chart itself is written. The
 renderer puts each chart in that subfolder of its output directory and
@@ -264,7 +266,8 @@ bring the lockfile back in line, and commit it with the change.
 | `scripts/analysis/planars_groupings.py` | Class bundles and filters. |
 | `scripts/render_planarsviz.R` | The renderer. |
 | `scripts/planarsviz_checks/` | Porting checks. |
+| `results/<dataset>/` | Published charts, grouped into `laminar-families/`, `pooled/`, `boundaries/` and `counts-and-chance/`. |
 | `results/planarsviz/<dataset>/` | Bundles (`data/`) and rendered charts (`plots/`). |
-| `results/planarsviz/reference/` | Frozen images of the old charts, grouped into `laminar-families/`, `pooled/`, `boundaries/` and `counts-and-chance/`. |
+| `results/planarsviz/reference/<dataset>/` | Frozen images of the old charts, grouped into `laminar-families/`, `pooled/`, `boundaries/` and `counts-and-chance/`. |
 | `docs/PLAN_planarsviz_library.md` | Why the library is built this way. |
 | `docs/PLANARSVIZ_LIBRARY_PROGRESS.md` | What was checked, chart by chart, and open questions. |

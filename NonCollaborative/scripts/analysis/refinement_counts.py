@@ -54,7 +54,7 @@ both refined into some common tree T (fully resolved or not), all of their
 spans together would have to be pairwise compatible, contradicting
 maximality unless the two families were the same to begin with.
 
-Outputs (under results/laminar-families/ by default):
+Outputs (under results/nyan1308/laminar-families/ by default):
   nyan1308_refinement_counts.tsv       -- one row per family: n_spans,
                                            n_polytomies, max_arity,
                                            schroder_total, catalan_total
@@ -262,7 +262,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--domain-file", default="domains_nyan1308.tsv")
     parser.add_argument("--domains-dir", type=Path, default=REPO_DIR / "domains")
-    parser.add_argument("--output-dir", type=Path, default=REPO_DIR / "results" / "laminar-families")
+    parser.add_argument("--output-dir", type=Path, default=REPO_DIR / "results" / "nyan1308" / "laminar-families")
     parser.add_argument(
         "--subset", default=None,
         help="Comma-separated Domain_Type values (e.g. morphosyntactic,length) "

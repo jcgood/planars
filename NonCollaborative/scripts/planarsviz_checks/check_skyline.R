@@ -11,7 +11,7 @@
 # pixel-compares it with the frozen reference.
 #
 # library-only (shifted test data): render only, side by side with the
-# nyan1308 library render.
+# nyan1308 library render, under results/planarsviz/comparisons/shifted_nyan/shifted/.
 #
 # Run from NonCollaborative/:
 #   Rscript scripts/planarsviz_checks/check_skyline.R
@@ -90,19 +90,19 @@ system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(pdf_path), shQ
 compare <- function(ref, new_png, out_png) {
   system2(python, c("scripts/planarsviz_compare.py", shQuote(ref), shQuote(new_png), shQuote(out_png)), stdout = TRUE)
 }
-cmp_dir <- file.path(dirname(bundle_dir), "comparisons", if (library_only) "shifted" else "")
+cmp_dir <- file.path(dirname(bundle_dir), "comparisons", prefix, if (library_only) "shifted" else "")
 folder <- attr(pl, "planarsviz_folder")
 cmp_out <- file.path(cmp_dir, folder)
 dir.create(cmp_out, recursive = TRUE, showWarnings = FALSE)
 
 if (library_only) {
-  nyan_pdf <- file.path("results", "nyan1308_boundary_skyline.pdf")
+  nyan_pdf <- file.path("results", "nyan1308", folder, "nyan1308_boundary_skyline.pdf")
   nyan_stem <- file.path(tempdir(), "nyan_skyline")
   system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(nyan_pdf), shQuote(nyan_stem)))
   cat(base, ": rendered; side by side with nyan1308: ",
       compare(paste0(nyan_stem, ".png"), paste0(png_stem, ".png"), file.path(cmp_out, paste0(base, ".png"))), "\n")
 } else {
-  ref <- file.path(dirname(bundle_dir), "reference", folder, paste0(base, ".png"))
+  ref <- file.path(dirname(bundle_dir), "reference", prefix, folder, paste0(base, ".png"))
   pixel <- compare(ref, paste0(png_stem, ".png"), file.path(cmp_out, paste0(base, ".png")))
   cat(base, ": ", if (length(problems)) paste("NUMBERS DIFFER:", paste(problems, collapse = " | ")) else "numbers identical",
       "; pixels: ", pixel, "\n", sep = "")
