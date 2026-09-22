@@ -204,6 +204,48 @@ with `groups` for the two-bundle variant — from a bundle exported with
 - **Example**: `python scripts/analysis/random_tree_overlay.py` (`--n-trees`,
   `--n-leaves`, `--alpha`, `--seed`, `--r-only`)
 
+### Scratch: the 25-arbitrary-layers question (2026-09-21)
+
+**Committed so the numbers survive, deliberately not formalized.** These two
+scripts answer a follow-on question of Jeff's about the boundary-strength
+result and are named `scratch_` because nothing has decided yet whether they
+should become a proper test, a note in `results/visualizations.md`, or
+nothing. They print and return; neither writes a file, so neither is a
+producer of anything in `results/`. Both reuse `laminar_analysis.py`'s real
+`find_conflicts` / `enumerate_maximal_laminar_families` unchanged — different
+inputs fed to the validated machinery, not a new algorithm.
+
+**`analysis/scratch_25layers_covering.py`**
+- **Question**: given 25 layers over the 22-position structure, one fixed as
+  the full-span root and 24 free in both size and placement — (A) how
+  fragmented can such a covering get, and (B) where does nyan1308's real 69
+  sit against chance for 25 *fully arbitrary* layers?
+- **(B)'s null is deliberately more naive than `span_placement_test.py`'s**,
+  which holds each span's real length fixed and randomizes only position.
+  This one randomizes size too, so it knows nothing about how big real
+  linguistic domains are.
+- **Finding**: over 3000 draws, mean 78.1, p05/median/p95 = 40/74/131;
+  observed 69 gives `P(chance <= 69) = 0.4380` — almost exactly the median.
+  (A)'s best is 1238 families from a randomized local search: a lower bound
+  from a cheap search, not a certified maximum.
+- **`laminar_analysis.MAX_FAMILIES` is monkeypatched to 50,000 inside this
+  script only** — arbitrary intervals cross far more chaotically than real
+  domains, and the project's own 1000 cap was undercounting. The committed
+  module is untouched.
+- **Open question for Jeff**: the script reads "25 layers" as 25 total
+  (1 root + 24 free), one fewer than nyan1308's real 26 domains. `N_FREE` is
+  the single knob if that reading is wrong.
+
+**`analysis/scratch_25layers_describe_best.py`**
+- **Purpose**: describe the 1238-family covering rather than just report it —
+  an ASCII bracket diagram, and a factoring into independent conflict-graph
+  components (one 22-span tangled cluster worth 619 ways, one trivial 2-span
+  pair worth 2; 619 x 2 = 1238, which is where the number comes from).
+
+**`analysis/scratch_25layers_run_output_3000draws.txt`** — the captured output
+of the 3000-draw run, which takes a few minutes, so the numbers can be read
+without re-running it.
+
 ## Data export
 
 **`analysis/export_planarsviz_data.py`**
