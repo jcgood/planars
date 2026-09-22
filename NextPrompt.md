@@ -3,9 +3,11 @@
 Standing prompt for resuming work in a fresh Claude session. Open a new session
 and say: **"Read NextPrompt.md and carry on."**
 
-**This file holds no state.** What is done, what is next, and why lives in
-`docs/data-layer-progress.md` and the issue tracker, which own those facts. The
-one thing here that needs editing between sessions is the *Now* line below.
+**This file holds no state.** What is done, what is next, and why lives in the
+progress doc for whichever work is live — `NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md`
+for the chart package, `docs/data-layer-progress.md` for the data layer — and
+in the issue tracker, which own those facts. The
+one thing here that needs editing between sessions is the *Now* section below.
 Everything else is standing instruction and should change rarely. If you find
 yourself copying a paragraph of status into this file, it belongs in the
 progress doc instead — a second description of the same fact is the exact defect
@@ -15,220 +17,98 @@ this project is trying to remove.
 
 ## Now
 
-**Current work (2026-09-14→20): the planarsviz chart package.** Merged to
-`main`, cut over, and now in phase D — the R tooling. State lives in
-`NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md`; the execution plan is
-`NonCollaborative/docs/PLAN_planarsviz_library.md`, whose goals and
-architecture still come from `PLAN_planarsviz_refactor.md` (that file also
-holds the acceptance criteria phase D is working toward); how to use the
-result is `planarsviz_guide.md` and `planarsviz_charts.md`.
+**Current work: `NonCollaborative/`, the planarsviz chart package.** State lives
+in `NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md` — read its last few
+entries before starting. How to use the result is `planarsviz_guide.md` and
+`planarsviz_charts.md`.
 
-**It is a package, not a library.** In R a library is the directory packages
-are installed into. The docs say "library" in places, which is fine for
-prose, but be exact in the package's own README and anywhere describing
-installation.
+**Everything under `NonCollaborative/` runs from `NonCollaborative/`.** This
+matters for the exporter specifically: it records the domain file's path as
+given, so running it from the repo root writes a bundle that differs from the
+committed one in that field.
 
-**Done and pushed.** All 18 planned charts plus chart 19 (the
-class-fragmentation test), the four cutover commits, and two phase D
-commits:
+### Next action: give `results/` a per-language folder layer
 
-- **Cutover C1–C4** (`57d871a`, `89beeb6`, `00b51e4`, `f7c1d31`). Nothing
-  under `NonCollaborative/` writes an R script or a matplotlib figure any
-  more. The scripts the package replaced are archived in
-  `NonCollaborative/OlderFiles/planarsviz_superseded/`, where the porting
-  checks still run them to prove fidelity, and **must not be deleted**.
-- **Chart 19** (`6b133ac`). The exporter runs that permutation test only
-  when given `--fragmentation-permutations N` — it takes about four minutes
-  against the 1.6 seconds the rest of an export costs, so a bundle without
-  the flag simply has no fragmentation tables.
-- **Phase D so far** (`ff5b8f6`, `f18544b`): roxygen2 generates `NAMESPACE`
-  and `man/`; nine internal helpers stopped being exported by accident;
-  `tests/test_roxygen_up_to_date.py` fails if either goes stale; and
-  `R CMD check` on a built tarball reports **`Status: OK`**.
-- **The porting checks now fail on their own** (`d673c37`, 2026-09-20).
-  `NonCollaborative/tests/test_planarsviz_checks.py` runs all 21 checks and
-  snapshots each one's whole output, so a drifted chart fails the suite
-  instead of printing a number nobody reads. Proved by changing real chart
-  code (skyline bar width 0.82→0.70) and watching it caught, then reverted.
-  Takes about 6m20s. **`vdiffr` was deliberately dropped** even though the
-  original acceptance criteria named it: it compares the package against its
-  own past output, where these checks compare it against the archived scripts
-  it replaced — which is the evidence behind every `0.0000%` claim. Jeff
-  confirmed. It stays available later as a second net, not a replacement.
-- Also `20337d1`: the render manifest merges rather than replacing, so a
-  `--plots` run no longer shrinks it to the charts it drew.
+So a second language can land beside nyan1308. The bundle is already
+per-language (`results/planarsviz/<dataset>/`); three places are not:
 
-- **`renv` is done** (`d4b5608`, 2026-09-20). `NonCollaborative/renv.lock` pins all 137
-  packages on R 4.6.1; all 21 porting checks pass under it with no chart
-  changed. Three things it broke on the way in are fixed and written up in
-  the progress doc — most usefully, it had silently turned the roxygen drift
-  guard from a pass into a skip.
+| | files | today | wanted |
+|---|---|---|---|
+| `results/` | ~170 | `laminar-families/nyan1308_*.pdf` | `nyan1308/laminar-families/*.pdf` |
+| `results/planarsviz/reference/` | 92 | `reference/pooled/nyan1308_*.png` | `reference/nyan1308/pooled/*.png` |
+| `results/planarsviz/comparisons/` | 136 | same shape | same shape |
 
-- **The archived scripts now refuse to run** (`b3f9ed1`). `.Rprofile` blocks
-  any `Rscript` on a file under `OlderFiles/`, because those scripts still
-  work and a direct run overwrites package-produced charts under the same
-  filenames. Guarded by a test, since `.Rprofile` gets rewritten for
-  unrelated reasons.
-- **CI settled** (`907baeb`). `NonCollaborative/tests/` had never run
-  anywhere automatically; the part needing no R now runs in CI, and the
-  roxygen guard runs pre-push. **R does not go into the CI image** — the
-  porting checks pixel-compare against Mac-rendered references and Linux
-  fonts differ, so they stay a local gate. Don't reopen this.
-- **WeasyPrint upgraded to 70.0** (`00b12cc`), clearing both Dependabot
-  alerts. Neither could reach this project; upgrading beat dismissing.
+**Settle this first, with Jeff:** does the `nyan1308_` filename prefix survive
+a folder that already names the language? Keeping both is the same fact in two
+places, which this project keeps removing; dropping it renames every file and
+every reference image. It was asked on 2026-09-21 and is still open.
 
-**The `results/` restructure is finished, absorption included** (2026-09-21).
-All four steps are done and pushed: references frozen, check-side images
-grouped, `results/` itself reorganised into six topic folders, and all three
-remaining producers absorbed into the package. The renderer check now reports
-**"references with no render: none"** — nothing under `NonCollaborative/`
-writes a chart into `results/` except `render_planarsviz.R`. Three scripts
-(`bundle_forest_trees.r`, `fragmentation_test_plot.r`,
-`span_placement_test_plot.r`) are archived behind the `OlderFiles/` run guard.
-The per-producer detail is in the last three entries of
-`NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md`; read those rather than
-a paraphrase here.
+**Fix on the way through:** `check_renderer.py` hardcodes `nyan1308` at lines
+65 and 89, so it would silently find nothing for a second language. A real
+scaling bug, already present, independent of any move — the dataset is in the
+manifest.
 
-Two things worth carrying forward from that work. `results/laminar-families/`
-grew from 63 PDFs to 89 — registering all eight forests means a full render
-draws the 26 trees nobody had drawn before; Jeff confirmed that is fine. And
-the span-placement port added `--span-placement-permutations` to the exporter,
-so **a full re-export now needs all three permutation flags together**
-(`--fragmentation-permutations 5000 --boundary-strength-test-permutations 5000
---span-placement-permutations 5000`), or the tables left un-asked-for drop out
-of the bundle.
+**What makes it small:** the renderer already knows the dataset, so writing
+into `<output>/<dataset>/<folder>/` is about one line plus the manifest's
+`file` column; eleven of the thirteen R checks already take the dataset as an
+argument (the shifted-bundle runs pass `shifted_nyan` through it today, so
+that path is exercised, not theoretical). The bulk is moving ~400 files.
 
-**A fourth permutation test landed 2026-09-22: arbitrary layers.** The
-25-layers scratch work is now `scripts/analysis/arbitrary_layers_test.py`,
-integrated like the other three — exporter flag
-(`--arbitrary-layers-permutations`), two bundle tables, a chart, a contract
-entry, a bundle invariant test. Two things to know. Its scratch version asked
-about 25 layers where nyan1308 has 26 domains; corrected, the pooled result
-is `P(chance <= 69) = 0.2866`, and the old 0.4380 should not be quoted. And
-the pooled number is the least interesting part — per group, syntax-like
-(p=0.014) and morphosyntactic (p=0.044) are unusually laminar even against
-this weakest null. Full account in the progress doc.
+**Method, which worked twice already** (restructure steps 2 and 3): move in
+its own commit, separate from any behaviour change, and let the 21 porting
+checks prove only addresses changed. Keep a move and a port out of the same
+commit — if they land together, a failing check could mean either "the move
+broke a path" or "the new code draws differently", with no way to tell which.
+The ordering trap that governed absorption does not apply here: no new chart
+is being drawn, so there is nothing to freeze first.
 
-**A full re-export now needs four flags**, not three: add
-`--arbitrary-layers-permutations 5000` to the three named above. The
-`export_bundle()` call passes them by name now, because passing them
-positionally is how the new test silently stayed switched off on its first
-run.
+**After it, `lintr`/`styler` is the last phase D item** and needs no decision —
+just work. Then phase E, the `illustrations` bundle (design agreed, recorded
+under question 1 in the progress doc);
+`results/illustrations/nyan1308_random_tree_overlay.r` is the one generated R
+script left in `results/`, waiting for it.
 
-**Next action: the per-language folder layer**, asked for 2026-09-21 and
-deliberately queued behind absorption so a move and a port could not fail
-together. `results/` and the check-side images gain a `<dataset>/` level so a
-second language can land beside nyan1308. The bundle is already per-language;
-these three places are not. Sized at the time: the renderer is one line (it
-already knows the dataset), eleven of the thirteen R checks already take the
-dataset as an argument, and the bulk is moving about 400 files — the same
-shape as restructure steps 2 and 3, which were one commit each.
+### Things that will bite
 
-**Two things to settle before starting it.** Whether the `nyan1308_` filename
-prefix survives a folder that already carries the language (keeping both is
-the same fact in two places, which this project keeps removing; dropping it
-renames every file and every reference image). And `check_renderer.py`, which
-hardcodes `nyan1308` at lines 65 and 89 and would silently find nothing for a
-second language — a scaling bug already present, independent of any move, and
-cheap to fix since the dataset is in the manifest.
+- **A full bundle re-export needs all four permutation flags together** —
+  `--fragmentation-permutations 5000 --boundary-strength-test-permutations 5000
+  --span-placement-permutations 5000 --arbitrary-layers-permutations 5000` —
+  or the tables left un-asked-for drop out of the bundle. It takes ~11 minutes.
+- **After any re-export, `git status` on `results/planarsviz/<dataset>/` is the
+  check that matters.** Every committed bundle file should come back
+  byte-identical except what you meant to change. That settles in seconds what
+  the 9-minute suite samples, because unchanged inputs plus untouched shared
+  code means unchanged charts by construction.
+- **`R CMD INSTALL` runs once per check**, so the full suite is ~9 minutes and
+  the renderer test alone ~2.5. The renderer test compares all 137 charts in
+  one pass, so it is usually the one worth running.
+- **Jeff runs parallel sessions.** Anything uncommitted you did not write may
+  be another one's work in flight: do not commit it and do not revert it, stage
+  your own files by name, and ask whose it is.
+- **An untracked or modified file under `r/planarsviz/` jams the roxygen
+  pre-push guard.** Check the guard passes on its own rather than reaching for
+  `--no-verify`, which has silently disarmed it before.
+- **R does not go into the CI image.** The porting checks pixel-compare against
+  Mac-rendered references and Linux fonts differ, so they stay a local gate.
+  Don't reopen this.
 
-After that, `lintr`/`styler` is the only phase D item left, and needs no
-decision — just work.
+### Recently finished, so don't redo it
 
-**`NonCollaborative/docs/NOTE_FOR_REFACTOR_SESSION.md` is now history, not
-instruction**, for the forest-tree part at least: its port request is done,
-and its claim that there was "no original to preserve as a reference" was
-already out of date before this session started.
+The `results/` restructure and all of absorption (2026-09-20/22). Nothing under
+`NonCollaborative/` writes a chart into `results/` except
+`render_planarsviz.R`; the renderer check reports "references with no render:
+none". Four permutation tests now exist — fragmentation, span placement,
+boundary strength, arbitrary layers — each integrated the same way: a
+`run_test()`, an exporter flag, bundle tables, a chart, a contract entry and a
+bundle invariant test. Three superseded scripts are archived behind the
+`OlderFiles/` run guard and must not be deleted or run.
 
-**Two sessions are sharing `r/planarsviz/`.** Anything uncommitted in the
-tree that this session did not write may be the other one's work in flight:
-do not commit it and do not revert it, stage your own files by name, and ask
-Jeff whose it is. As of 2026-09-21 one file is in exactly that state:
-`NonCollaborative/docs/NOTE_FOR_REFACTOR_SESSION.md`, modified but not
-committed by the session that wrote it. An untracked or modified file under
-`r/planarsviz/` will also jam the roxygen pre-push guard, which is what
-blocked a push for most of 2026-09-20 — check the guard passes on its own
-rather than reaching for `--no-verify`, which has silently disarmed it
-before.
-
-**Still open, unfixed: the checks overwrite 136 tracked comparison images.**
-Byte-identical every run, which is itself evidence the renders are
-deterministic, but it means the test suite writes to tracked files. Moving
-where they write would alter the checks and contradict the docs pointing at
-`results/planarsviz/comparisons/`, so it was left alone. Step 2 of the
-restructure regrouped those images into topic subfolders without changing
-that: the checks still overwrite them, just one level deeper.
-
-**Jeff has looked at the charts and they are fine** (2026-09-20). This stood
-open from the start of the port — every `0.0000%` in the progress doc had
-been read by Claude off a check's output and by nobody else — and it is now
-closed. Don't re-raise it. Comparison images stay under
-`results/planarsviz/comparisons/<topic>/` (reference | new | difference) for
-any future change.
-
-**After phase D: phase E — the `illustrations` bundle.** Supercatalan tree
-shapes, the counting numbers, and the random-tree overlay as a non-language
-bundle. Design agreed, recorded under question 1 in the progress doc.
-`results/nyan1308_random_tree_overlay.r` is the one generated R script left
-in `results/`, waiting for it. (There is no phase D in the original letter
-scheme — it went B, C, E. D is where the tooling was slotted in.)
-
-**How to work: orchestrate Sonnet subagents.** Jeff asked (2026-09-20) that
-work be structured this way wherever possible, to save tokens. The saving is
-mostly that an agent's tool output never enters the main context. Good
-candidates: running check suites, multi-file sweeps, mechanical edits with a
-clear spec. Keep design calls and the final verification of correctness
-claims in the main session — pass `model: "sonnet"` explicitly, and write
-complete prompts, since a fresh agent starts cold.
-
-**The analysis session's work is all committed now** (`20e5f36`, `689298d`,
-`1299e7e`, `b297871`, 2026-09-20): its handoff note, the fragmentation
-p-value change, the span-placement test, and `bundle_forest_trees.r` with its
-22 outputs. Nothing of theirs is left loose in the tree.
-
-**One of those is a change to the statistics, not a chart tweak, and is
-worth knowing before citing any fragmentation figure.** The fragmentation
-test now reports `p_value_le_observed` instead of `p_value_ge_observed`, to
-match `span_placement_test.py`. Every p moved: tonosegmental 0.91→0.143,
-intonational 1.00→0.034, phonology-like 0.92→0.160, syntax-like 0.91→0.112,
-syntax-like-without-tonosegmental 0.77→0.454. The old intonational 1.00 was a
-floor artifact — family count cannot go below 1 and its observed count is 1.
-`check_fragmentation` passing at 0.0000% does **not** independently confirm
-the new convention: the reference image was regenerated from the same changed
-code.
-
-**The ordering trap still applies, and now 25 times over:** a chart with no
-older original must have its reference frozen **before** the package can draw
-over it. The restructure plan in the progress doc makes this its first step
-for exactly that reason.
-
-**Outside planarsviz, still open:** arao1248's missing `proform` class
-(#279, waiting on Adam) keeps #247 and #281 failing; `phrasal_accent` has a
-real sheet-shape error in #291/#281 (a `general` sheet with `Element` rows
-where the construction expects `Element_A`/`Element_B` pairs) and no
-analysis module yet (#237). #157 proposes the conflict-groups chart, which
-now exists — probably closable. The Dependabot WeasyPrint question is
-resolved: upgraded to 70.0 rather than dismissed (`00b12cc`).
-
-Five deliberate visual changes exist, each with an option restoring the old
-look, each recorded in the progress doc: conflict-group panel titles now
-show, the overlay legend's thickness swatch follows the chart's exponent,
-the ForestSpans legend is an inset with a larger header, the span chart's
-axis shows every position, and two new illustration trees were added.
-
-**Everything under `NonCollaborative/` now runs from `NonCollaborative/`**,
-which is where the porting checks already ran. This matters for the
-exporter specifically: it records the domain file's path as given, so
-running it from the repo root writes a bundle differing from the committed
-one in that field.
-
-**The concurrent analysis session is finished and its work is committed**
-(`e32c1db`): a permutation test on whether each domain class is more
-fragmented than its test count predicts, a refinement count per laminar
-family, and the chart for the first. `NonCollaborative/docs/
-NOTE_FOR_ANALYSIS_SESSION.md` is the standing reply to it. Its scripts
-survived C3 and C4 intact and still reproduce their committed outputs byte
-for byte.
+Two numbers worth not misquoting: the arbitrary-layers test's pooled result is
+`P(chance <= 69) = 0.2866`, not the scratch's 0.4380, which asked about 25
+layers where nyan1308 has 26. And its per-group breakdown is the interesting
+part — syntax-like p=0.014, morphosyntactic p=0.044. Separately,
+`scripts/exploratory/max_fragmentation_search.py`'s 1238-family figure is still
+at the old 25-layer count and has not been re-derived.
 
 ---
 
