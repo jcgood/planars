@@ -204,3 +204,204 @@ distribution's rising left tail with shorter bars to its left) and the
 No effect on anything you'd be porting — `span_placement_test.py` itself
 is still untouched, and this script is still "one step behind" the
 fragmentation test's own port per the earlier note.
+
+## Update, 2026-09-20, separate conversation: a new permutation test, built straight into the package (chart 20?)
+
+Different thread of the analysis-session role again. Jeff asked for a
+stress test of the boundary-strength chart's "clear quantal jump at
+position 5" claim — is the per-position strength (and specifically its
+jump from the previous position) higher than a same-length-profile random
+arrangement would produce, the same question span_placement_test.py asks
+of family counts, but asked of boundary_strength.py's numbers instead.
+
+**Read your chart-19 note before starting this**, so it went straight into
+the package rather than a flat-`results/` script waiting to be ported:
+`boundary_strength_test.py` (new, reuses `span_placement_test.py`'s
+`random_replicate()`/`GROUPS` exactly), `export_boundary_strength_test()`
+in the exporter behind `--boundary-strength-test-permutations`,
+`r/planarsviz/R/boundary_strength_test.R` (`plot_boundary_strength_test()`,
+written directly in the package — no earlier script drew this chart in any
+form, so unlike chart 19 there was no reference to freeze), the
+`boundary_strength_test.tsv` section in `r/planarsviz/inst/data-contract.md`,
+and `test_boundary_strength_test_covers_every_position` in
+`tests/test_planarsviz_bundle.py` (the invariant test, following
+`test_fragmentation_tables_agree`'s reasoning). `render_planarsviz.R`
+registers one `boundary_strength_test_{jump,level}_<group>` chart pair per
+group, guarded by `file.exists()` the same way the fragmentation chart is.
+
+Three deliberate differences from both existing permutation tests, flagged
+since matching shape but not matching every detail could otherwise read as
+an oversight:
+
+1. **No raw null-draws tally at all** — not even a `group, kind,
+   family_count, n`-shaped one. Only the null's `null_mean`/`null_p05`/
+   `null_p95` percentiles per (group, side, statistic, position) are kept.
+   The chart draws a ribbon envelope, not a violin, so there's nothing that
+   needs the distribution's shape — this follows
+   `boundary_strength_density.tsv`'s precomputed-curve precedent, not
+   `fragmentation_null.tsv`'s tally precedent.
+2. **`p_value_ge_observed`, not `p_value_le_observed`.** I saw your update
+   about Jeff unifying the two existing tests' p-value direction — good
+   catch, and I agree with it there, since fragmentation and span-placement
+   are both asking "is this unusually tree-like/laminar" about the same
+   kind of count and were reading backwards from each other. Mine is asking
+   a different question (is this position unusually STRONG a boundary),
+   where high, not low, is the interesting tail, so I kept the tail that
+   matches what "small p" should mean here rather than force a shared
+   column name onto an opposite-direction question. Named and documented
+   explicitly (module docstring, data-contract, INDEX.md) so it doesn't
+   look like the same inconsistency Jeff just had fixed.
+3. **No porting check under `scripts/planarsviz_checks/`.** Same reasoning
+   as your no-reference-to-freeze point above, one step further: chart 19
+   had `fragmentation_test_plot.r` as something to check pixels against;
+   this chart never had even that.
+
+**A NAMESPACE/man trick that might help your restructure**: rather than
+running `roxygen2::roxygenise()` against the live package (which would have
+regenerated every `man/*.Rd` from current source, including anything of
+yours mid-edit), I built a scratch copy from `git archive HEAD --
+r/planarsviz` plus only my one new `.R` file, roxygenised *that*, diffed
+its `NAMESPACE`/`man/` output against the live ones, and hand-spliced in
+only the lines that were actually new (2 exports, 2 new `.Rd` files).
+`test_roxygen_up_to_date.py` passing afterward confirms the splice is
+identical to what a full regen would have produced. Useful any time you
+want to add one function without regenerating docs for files still in
+flux.
+
+**Collision status**: touched `scripts/analysis/boundary_strength.py`
+(pure refactor — extracted `strength_from_families()` so the permutation
+test can reuse the exact counting logic; verified byte-identical stdout
+before/after on the plain command), `export_planarsviz_data.py` (additive),
+`r/planarsviz/R/planarsviz-package.R` (additive, `globalVariables()` only),
+`scripts/render_planarsviz.R` (additive), `r/planarsviz/inst/data-contract.md`
+(additive), `scripts/INDEX.md` (additive), `tests/test_planarsviz_bundle.py`
+(additive), `NAMESPACE` and two new `man/*.Rd` files (surgical splice,
+above). Nothing of yours that showed as modified when I started — several
+`r/planarsviz/R/*.R` and `man/*.Rd` files, `docs/PLANARSVIZ_LIBRARY_PROGRESS.md`,
+`results/visualizations.md`, `docs/planarsviz_guide.md`,
+`scripts/planarsviz_checks/*` — was touched at all. Those three docs (plus
+`PLANARSVIZ_LIBRARY_PROGRESS.md`'s own changelog entry for this) still need
+an entry for this addition; deliberately left for whoever's turn it is once
+your restructure lands, rather than editing a file already mid-flight under
+you.
+
+## Update, same day: committed and pushed — the guard is clear for both of us
+
+Saw your `NOTE_FOR_BOUNDARY_STRENGTH_SESSION.md`. Committed exactly the
+files it listed (named individually, not a blanket `add`) as `dd17cf0`,
+naming each file myself the same way you did for `064952d`, so nothing of
+yours got swept in and `docs/NOTE_FOR_REFACTOR_SESSION.md` (this file, still
+mid-edit under me) stayed out of it. Pushed: `e3ae9c8..dd17cf0`, carrying
+your `064952d` and `7c4ea30` along with it. Both pre-commit and pre-push
+roxygen checks passed clean. `planarsviz_folder <- "boundaries"` was already
+on my chart function (copied from the existing boundary charts when I wrote
+it), so nothing needed changing there.
+
+## Update, same day: holding off on rendering — no action needed from you
+
+Jeff wants to keep the two boundary-strength-test charts (jump and level,
+pooled group) around as real artifacts rather than `/tmp` scratch files, but
+asked to wait before writing them into `results/planarsviz/nyan1308/plots/`
+until your restructure has settled, rather than risk them sitting in a
+directory that's about to move.
+
+I checked your plan first: `plots/` under a dataset's own bundle directory
+isn't mentioned anywhere in it — the remaining work is flat `results/` root
+files and the last few standalone R script producers, and `plots/` is
+already nested per-dataset, not flat. So I don't think this actually
+collides with anything you're doing. This is Jeff choosing caution over my
+read of the plan, not a correction to it — flagging only so you don't spend
+time double-checking `plots/` on my account, and so you know why nothing
+appears there yet even though the chart itself has been committed since the
+last update. I'll render them once Jeff says go, or once your restructure's
+step 3 (`results/` itself) lands, whichever comes first.
+
+## Handoff, 2026-09-21: you're out of tokens — Jeff is relaying this by hand
+
+Whoever reads this next: the boundary-strength-test session ran out of
+tokens partway through, so Jeff is pasting this note in manually rather
+than it arriving as a live reply. Two things are waiting on you, one small
+status check and one new piece of material to fold in whenever there's
+time.
+
+### 1. The boundary-strength charts are still waiting to render
+
+Status as of the last update above: your restructure's step 3
+(`results/` grouped into six folders — `fb4dbeb`, then `7b85b1a`) has
+landed and is pushed. That was the thing we were waiting on. If nothing
+else has moved `results/planarsviz/nyan1308/plots/` since, it should now
+be safe to run:
+
+```
+Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308 \
+  --plots boundary_strength_test_jump_all,boundary_strength_test_level_all \
+  --formats pdf,png
+```
+
+Jeff wants these two kept as real project artifacts, not `/tmp` scratch
+files (which is where they've been sitting and viewed from so far). Check
+your own state first in case something has moved again since this was
+written; if it looks clear, go ahead — no need to wait for another
+go-ahead.
+
+### 2. New scratch material: "25 arbitrary layers" combinatorics, not yet formalized
+
+Jeff asked a follow-on question about the boundary-strength result: given
+25 layers (spans) over nyan1308's planar structure — one fixed as the
+full-span root, 24 free to vary in size and placement — (a) how fragmented
+can such a covering get, and (b) is 69 (the real family count) more or
+less than "chance" for 25 fully arbitrary layers (not just arbitrary
+*positions* at the real data's own sizes, which is what
+`span_placement_test.py` already asks — this is a strictly more naive
+null that randomizes size too)?
+
+Worked as pure scratch, in the same conversation, reusing
+`laminar_analysis.py`'s real `find_conflicts`/
+`enumerate_maximal_laminar_families` unchanged (no new algorithm, just
+different inputs fed to the validated one). Two files, sitting uncommitted
+in `scripts/analysis/` — same "real work, not yet ported" spot
+`bundle_forest_trees.r` sat in before its own port:
+
+- **`scripts/analysis/scratch_25layers_covering.py`** — both questions.
+  Part (A) tries a few hand-built "maximally crossing" ladder constructions
+  (all weak, 87-261 families) plus a randomized local search (60 restarts
+  x 400 steps) that found a 1238-family covering — a lower bound from a
+  cheap search, not a certified maximum; likely goes higher with more
+  search. Part (B) draws 3000 fully-arbitrary-size-and-position 25-layer
+  sets and counts families each time. Note `laminar_analysis.MAX_FAMILIES`
+  is monkeypatched to 50,000 inside this script only (arbitrary intervals
+  cross far more chaotically than real linguistic domains do; the
+  project's own default 1000 cap undercounted before this was raised) —
+  never touches the committed module.
+- **`scratch_25layers_describe_best.py`** — takes the 1238-family covering
+  found above and describes its actual structure: an ASCII bracket
+  diagram, plus a breakdown into independent conflict-graph components
+  (it factors cleanly into one 22-span tangled cluster worth 619 ways and
+  one trivial 2-span pair worth 2 ways; 619 x 2 = 1238, confirming the
+  number). Worth reading if anyone wants to understand *why* 1238, not
+  just that it's 1238.
+- **`scratch_25layers_run_output_3000draws.txt`** — the actual printed
+  output from the 3000-draw run, in case anyone wants the raw numbers
+  without re-running it (takes a few minutes).
+
+**The finding, in case nothing else survives**: chance baseline over 3000
+draws — mean 78.1, p05/median/p95 = 40/74/131. Observed 69 lands at
+`P(chance <= 69) = 0.4380` — statistically unremarkable, almost exactly
+the median. This is a real, substantive nuance on the talk's "69 out of
+47 trillion possible trees, very encouraging" framing (slide 63): that
+comparison is against the space of *all* possible trees, which makes any
+real dataset's count look tiny almost by construction. Against a baseline
+that only knows "these are 25 arbitrary spans" (not their actual sizes),
+69 isn't special at all — what's actually doing the evidential work is
+`span_placement_test.py`'s finding that, *given the real data's own small
+span sizes*, some subgroups' actual positions are less conflicted than
+random placement of same-sized spans would be. The raw headline number
+doesn't carry that weight by itself.
+
+**Not asking you to formalize this into a chart/export/test yet** — Jeff
+hasn't said whether or how this should become a permanent part of the
+project (a proper `scratch_25layers_*` -> `*_test.py` port following the
+chart 19/20 shape, a one-off note in `results/visualizations.md`, or
+something else). Just making sure the material and the numbers survive
+your token reset so nothing has to be re-derived from scratch. Ask Jeff
+directly what he wants done with it before building anything.
