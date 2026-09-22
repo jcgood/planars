@@ -50,6 +50,7 @@ from boundary_strength import compute_boundary_strength  # noqa: E402
 from class_fragmentation_test import run_test as run_fragmentation_test  # noqa: E402
 from boundary_strength_test import run_test as run_boundary_strength_test  # noqa: E402
 from span_placement_test import run_test as run_span_placement_test  # noqa: E402
+from arbitrary_layers_test import run_test as run_arbitrary_layers_test  # noqa: E402
 
 
 def forest_variants() -> list[tuple[str, list[str], str]]:
@@ -380,6 +381,66 @@ def export_span_placement_test(domain_file: Path, domains_dir: Path, data_dir: P
     write_tsv(data_dir / "span_placement_null.tsv",
               ["group", "kind", "family_count", "n"], tally)
     return {"span_placement_permutations": n_permutations, "span_placement_seed": seed}
+
+
+def export_arbitrary_layers_test(domain_file: Path, domains_dir: Path, data_dir: Path,
+                                 n_permutations: int, seed: int) -> dict:
+    """Write arbitrary_layers_test.tsv and arbitrary_layers_null.tsv: is a
+    group's family count remarkable for that many spans of arbitrary size at
+    arbitrary positions?
+
+    The most naive of the three permutation nulls -- see
+    arbitrary_layers_test.py's module docstring for how the three differ and
+    why the weakest one is the one a raw family count is usually read against.
+
+    Calls arbitrary_layers_test.run_test() unchanged, so the numbers equal
+    that script's own committed TSVs. Group order, labels and colours follow
+    export_span_placement_test() exactly, including its pooled row, and for
+    the same reason: run_test() advances one shared random stream across the
+    groups in the order given.
+
+    Not run unless asked, for the same reason as --fragmentation-permutations.
+    """
+    observed = set(
+        pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")["Domain_Type"].dropna().str.strip()
+    )
+    classes = [c for c in CLASS_ORDER if c in observed] + sorted(observed - set(CLASS_ORDER))
+    bundles = [b for b in BUNDLES if set(b[1]) & observed]
+    palette = {row["domain_type"]: row["colour"] for row in DOMAIN_TYPE_STYLE}
+    bundle_style = {name: (display, colour) for name, _types, colour, display in bundles}
+
+    groups = [("all", None)] + [(c, [c]) for c in classes] + [(name, list(types)) for name, types, _c, _d in bundles]
+    summary, null_tallies = run_arbitrary_layers_test(
+        domain_file.name, domains_dir, groups=groups,
+        n_permutations=n_permutations, seed=seed,
+    )
+
+    rows = []
+    for row in summary:
+        name = row["group"]
+        if name == "all":
+            kind, label, colour = "all", "All (pooled)", "#0072B2"
+        elif name in bundle_style:
+            label, colour = bundle_style[name]
+            kind = "bundle"
+        else:
+            label, colour = name.title(), palette.get(name, FALLBACK_COLOUR)
+            kind = "class"
+        rows.append(dict(row) | {"kind": kind, "label": label, "colour": colour})
+    write_tsv(data_dir / "arbitrary_layers_test.tsv",
+              ["group", "kind", "label", "colour", "n_spans", "n_positions", "includes_root",
+               "observed_families", "null_mean", "null_p05", "null_p50", "null_p95",
+               "p_value_le_observed", "n_truncated", "n_permutations", "seed"], rows)
+
+    kind_of = {r["group"]: r["kind"] for r in rows}
+    tally = []
+    for name, counts in null_tallies.items():
+        for family_count in sorted(counts):
+            tally.append({"group": name, "kind": kind_of[name],
+                          "family_count": family_count, "n": counts[family_count]})
+    write_tsv(data_dir / "arbitrary_layers_null.tsv",
+              ["group", "kind", "family_count", "n"], tally)
+    return {"arbitrary_layers_permutations": n_permutations, "arbitrary_layers_seed": seed}
 
 
 def export_boundary_strength_test(domain_file: Path, domains_dir: Path, data_dir: Path,
@@ -862,6 +923,8 @@ def export_bundle(
     boundary_strength_test_seed: int = 0,
     span_placement_permutations: int = 0,
     span_placement_seed: int = 0,
+    arbitrary_layers_permutations: int = 0,
+    arbitrary_layers_seed: int = 0,
 ) -> Path:
     """Export one validated domain dataset and return its bundle directory.
 
@@ -1025,6 +1088,13 @@ def export_bundle(
             span_placement_permutations, span_placement_seed,
         )
 
+    arbitrary_layers_metadata: dict = {}
+    if arbitrary_layers_permutations:
+        arbitrary_layers_metadata = export_arbitrary_layers_test(
+            domain_file, domains_dir, data_dir,
+            arbitrary_layers_permutations, arbitrary_layers_seed,
+        )
+
     metadata = {
         "contract_version": "0.2.0",
         "dataset": dataset,
@@ -1059,6 +1129,7 @@ def export_bundle(
         **fragmentation_metadata,
         **boundary_strength_test_metadata,
         **span_placement_metadata,
+        **arbitrary_layers_metadata,
         "producer": "scripts/analysis/export_planarsviz_data.py",
         "analysis_source": "scripts/analysis/laminar_analysis.py",
     }
@@ -1228,6 +1299,19 @@ def main() -> None:
         "--span-placement-seed", type=int, default=0,
         help="Seed for --span-placement-permutations (default: 0, what made the committed files)",
     )
+    parser.add_argument(
+        "--arbitrary-layers-permutations", type=int, default=0, metavar="N",
+        help="Also run the arbitrary-layers permutation test (is a group's family count "
+             "remarkable for that many spans of arbitrary size at arbitrary positions?) with N "
+             "draws and put its tables in the bundle. The most naive of the three nulls: it "
+             "knows only how many spans a group has, not how big they are. Off by default for "
+             "the same reason as --fragmentation-permutations. Use 5000 to match the committed "
+             "results/counts-and-chance/ files.",
+    )
+    parser.add_argument(
+        "--arbitrary-layers-seed", type=int, default=0,
+        help="Seed for --arbitrary-layers-permutations (default: 0, what made the committed files)",
+    )
     args = parser.parse_args()
 
     bundle_dir = export_bundle(args.domain_file, args.output_dir, args.planar_file,
@@ -1235,11 +1319,20 @@ def main() -> None:
                                args.highlights_file, args.conflict_groups_file,
                                args.conflict_group_cap, args.exemplary_k,
                                not args.no_exemplary_sparsest,
-                               args.fragmentation_permutations, args.fragmentation_seed,
-                               args.boundary_strength_test_permutations,
-                               args.boundary_strength_test_seed,
-                               args.span_placement_permutations,
-                               args.span_placement_seed)
+                               # By name, not position: these are the tail of a long
+                               # signature and each new permutation test adds a pair.
+                               # Passed positionally, an addition that misses this call
+                               # silently leaves the new test switched off rather than
+                               # failing -- which is exactly what happened when
+                               # --arbitrary-layers-permutations was added.
+                               fragmentation_permutations=args.fragmentation_permutations,
+                               fragmentation_seed=args.fragmentation_seed,
+                               boundary_strength_test_permutations=args.boundary_strength_test_permutations,
+                               boundary_strength_test_seed=args.boundary_strength_test_seed,
+                               span_placement_permutations=args.span_placement_permutations,
+                               span_placement_seed=args.span_placement_seed,
+                               arbitrary_layers_permutations=args.arbitrary_layers_permutations,
+                               arbitrary_layers_seed=args.arbitrary_layers_seed)
     print(f"Exported planarsviz bundle: {bundle_dir}")
 
 

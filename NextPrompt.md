@@ -98,6 +98,23 @@ so **a full re-export now needs all three permutation flags together**
 --span-placement-permutations 5000`), or the tables left un-asked-for drop out
 of the bundle.
 
+**A fourth permutation test landed 2026-09-22: arbitrary layers.** The
+25-layers scratch work is now `scripts/analysis/arbitrary_layers_test.py`,
+integrated like the other three — exporter flag
+(`--arbitrary-layers-permutations`), two bundle tables, a chart, a contract
+entry, a bundle invariant test. Two things to know. Its scratch version asked
+about 25 layers where nyan1308 has 26 domains; corrected, the pooled result
+is `P(chance <= 69) = 0.2866`, and the old 0.4380 should not be quoted. And
+the pooled number is the least interesting part — per group, syntax-like
+(p=0.014) and morphosyntactic (p=0.044) are unusually laminar even against
+this weakest null. Full account in the progress doc.
+
+**A full re-export now needs four flags**, not three: add
+`--arbitrary-layers-permutations 5000` to the three named above. The
+`export_bundle()` call passes them by name now, because passing them
+positionally is how the new test silently stayed switched off on its first
+run.
+
 **Next action: the per-language folder layer**, asked for 2026-09-21 and
 deliberately queued behind absorption so a move and a port could not fail
 together. `results/` and the check-side images gain a `<dataset>/` level so a

@@ -1,5 +1,7 @@
 {
   "analysis_source": "scripts/analysis/laminar_analysis.py",
+  "arbitrary_layers_permutations": 5000,
+  "arbitrary_layers_seed": 0,
   "boundary_strength_test_permutations": 5000,
   "boundary_strength_test_seed": 0,
   "conflict_group_cap": 12,

@@ -2024,3 +2024,79 @@ settle first: whether the `nyan1308_` filename prefix survives a folder that alr
 carries the language, and `check_renderer.py`, which hardcodes `nyan1308` at lines 65
 and 89 and so would silently find nothing for a second language today — a scaling bug
 already present, independent of any move.
+
+---
+
+## A fourth permutation test: arbitrary layers (2026-09-22)
+
+The 25-layers scratch work is now `scripts/analysis/arbitrary_layers_test.py`, integrated
+the way the other three tests are: a `run_test()` of the same shape, an exporter
+function behind `--arbitrary-layers-permutations`, two bundle tables, a chart, a
+data-contract entry, a bundle invariant test and docs.
+
+**It was asking the wrong question.** The scratch read "25 layers, like we have" as 25
+total; nyan1308 has 26 distinct observed domains. Jeff confirmed 26. Correcting it moves
+the pooled result from `P(chance <= 69) = 0.4380` to **0.2866** — same verdict,
+different number, and the old one should not be quoted.
+
+**Per-group, not just pooled, and that is where the finding is.** The scratch asked only
+about the pooled count. Every other test in this project covers the nine groups, and
+extending it was the point of integrating rather than transcribing:
+
+| group | observed | null mean | p(<=obs) |
+|---|---|---|---|
+| all (pooled) | 69 | 90.9 | 0.287 |
+| morphosyntactic | 3 | 6.5 | **0.044** |
+| phonological | 6 | 9.6 | 0.152 |
+| tonosegmental | 9 | 9.6 | 0.540 |
+| intonational | 1 | 1.3 | 0.666 |
+| length | 3 | 3.5 | 0.549 |
+| phonology-like | 6 | 11.6 | 0.058 |
+| syntax-like | 16 | 37.4 | **0.014** |
+| syntax-like (no tono) | 4 | 7.9 | 0.064 |
+
+The pooled "nothing to see" masks real subgroup structure: syntax-like and
+morphosyntactic are unusually laminar even against this weakest null. So the nuance the
+scratch found is real but narrower than it looked — it is the *pooled headline* that
+does not carry weight, not the result.
+
+**Where the root goes**, which is what keeps null and observed comparable: if a group's
+real spans include the full-structure span, the null fixes it and draws the rest freely;
+otherwise all are free. Four of the nine groups do not have it. The `includes_root`
+column records which applied, and a bundle test asserts it.
+
+**The enumeration cap.** Arbitrary intervals cross far more chaotically than real
+domains, and `MAX_FAMILIES`'s default of 1000 truncates this null badly — a truncated
+draw counts as its cap, biasing every summary downward. The scratch monkeypatched the
+module global; the test uses a `raised_family_cap()` context manager that restores it,
+because the exporter imports the same module in the same process. A bundle test fails if
+any draw hit even the raised cap. None did.
+
+**The drawing is shared, not copied.** This chart is the span-placement chart from
+different tables, so the panels moved to `R/null_panels.R` and both call it. The
+span-placement charts still compare at 0.0000% against their frozen references after the
+hoist, which is what says the move changed nothing.
+
+**One real bug, mine, caught by the cheap check rather than by a test.** The first
+re-export produced no new tables at all. `export_bundle()` is called with fifteen
+positional arguments and I had added the parameters without adding them to the call, so
+the new test silently stayed switched off — no error, no output, nothing to notice
+except that `git status` showed no new files. The four permutation-test arguments are
+now passed by name, with a comment saying why, so the next addition that misses this
+call fails instead of no-opping.
+
+- Looked at by Claude: yes — the module checked against an independent run of the
+  scratch's own algorithm at the corrected count before anything else was built (same
+  mean to one decimal, same median, p within 0.01, from different RNG streams, which is
+  distributional agreement rather than byte equality and is the most these two
+  implementations can give); the bundle tables compared row by row against the committed
+  TSVs; the chart read rather than assumed; and the `includes_root` column confirmed to
+  vary across groups rather than being constant and therefore meaningless.
+
+**What was left as exploratory, deliberately.** The scratch's other half searched for the
+*most* fragmented covering achievable and found 1238 families. That is a search for a
+bound, not a hypothesis test, and does not fit the shape the four tests share, so it
+moved to `scripts/exploratory/max_fragmentation_search.py` with its sibling. Its 1238
+figure was computed at the same wrong layer count and has **not** been re-derived; the
+script's default is corrected but the search has not been re-run, and both the script and
+`scripts/INDEX.md` say so rather than leaving a stale number to be quoted.

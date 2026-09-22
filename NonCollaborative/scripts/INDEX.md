@@ -204,47 +204,36 @@ with `groups` for the two-bundle variant — from a bundle exported with
 - **Example**: `python scripts/analysis/random_tree_overlay.py` (`--n-trees`,
   `--n-leaves`, `--alpha`, `--seed`, `--r-only`)
 
-### Scratch: the 25-arbitrary-layers question (2026-09-21)
-
-**Committed so the numbers survive, deliberately not formalized.** These two
-scripts answer a follow-on question of Jeff's about the boundary-strength
-result and are named `scratch_` because nothing has decided yet whether they
-should become a proper test, a note in `results/visualizations.md`, or
-nothing. They print and return; neither writes a file, so neither is a
-producer of anything in `results/`. Both reuse `laminar_analysis.py`'s real
-`find_conflicts` / `enumerate_maximal_laminar_families` unchanged — different
-inputs fed to the validated machinery, not a new algorithm.
-
-**`analysis/scratch_25layers_covering.py`**
-- **Question**: given 25 layers over the 22-position structure, one fixed as
-  the full-span root and 24 free in both size and placement — (A) how
-  fragmented can such a covering get, and (B) where does nyan1308's real 69
-  sit against chance for 25 *fully arbitrary* layers?
-- **(B)'s null is deliberately more naive than `span_placement_test.py`'s**,
-  which holds each span's real length fixed and randomizes only position.
-  This one randomizes size too, so it knows nothing about how big real
-  linguistic domains are.
-- **Finding**: over 3000 draws, mean 78.1, p05/median/p95 = 40/74/131;
-  observed 69 gives `P(chance <= 69) = 0.4380` — almost exactly the median.
-  (A)'s best is 1238 families from a randomized local search: a lower bound
-  from a cheap search, not a certified maximum.
-- **`laminar_analysis.MAX_FAMILIES` is monkeypatched to 50,000 inside this
-  script only** — arbitrary intervals cross far more chaotically than real
-  domains, and the project's own 1000 cap was undercounting. The committed
-  module is untouched.
-- **Open question for Jeff**: the script reads "25 layers" as 25 total
-  (1 root + 24 free), one fewer than nyan1308's real 26 domains. `N_FREE` is
-  the single knob if that reading is wrong.
-
-**`analysis/scratch_25layers_describe_best.py`**
-- **Purpose**: describe the 1238-family covering rather than just report it —
-  an ASCII bracket diagram, and a factoring into independent conflict-graph
-  components (one 22-span tangled cluster worth 619 ways, one trivial 2-span
-  pair worth 2; 619 x 2 = 1238, which is where the number comes from).
-
-**`analysis/scratch_25layers_run_output_3000draws.txt`** — the captured output
-of the 3000-draw run, which takes a few minutes, so the numbers can be read
-without re-running it.
+**`analysis/arbitrary_layers_test.py`**
+- **Purpose**: the third and weakest of the project's three permutation
+  nulls. It holds nothing about the real data except how many spans a group
+  has: each draw picks that many intervals of arbitrary size at arbitrary
+  positions. This is the baseline a raw family count is implicitly read
+  against, which is why it is worth measuring rather than assuming.
+- **How the three differ**: `class_fragmentation_test.py` shuffles which
+  domain-type label sits on which test with every span fixed in place;
+  `span_placement_test.py` holds each span's own length and randomizes its
+  position; this one randomizes size and position together.
+- **The root**: if a group's real spans include the full-structure span, the
+  null fixes it and draws the rest freely; otherwise all are free. The
+  `includes_root` column records which, and it is what keeps a group's null
+  and its observed set comparable.
+- **Finding**: pooled, nyan1308's 69 families sit at p=0.287 against a null
+  averaging 90.9 — unremarkable. The breakdown is where the signal is:
+  syntax-like (p=0.014) and morphosyntactic (p=0.044) are unusually laminar
+  even against this weakest null; phonology-like (p=0.058) and syntax-like
+  without tonosegmental (p=0.064) sit just outside; tonosegmental (0.540),
+  intonational (0.666) and length (0.549) are not.
+- **The enumeration cap is raised to 50,000 for the duration of a run and
+  restored afterwards** (`raised_family_cap()`), because arbitrary intervals
+  cross far more chaotically than real domains and the default 1000
+  truncates this null badly. A truncated draw counts as its cap rather than
+  its real value, so a bundle test fails if any draw hits even the raised one.
+- **Output**: `results/counts-and-chance/nyan1308_arbitrary_layers_test.tsv`
+  and `_arbitrary_layers_null_tally.tsv`
+- **Example**: `python scripts/analysis/arbitrary_layers_test.py`
+- **Also in the bundle**, behind `--arbitrary-layers-permutations`, drawn by
+  the package as `plot_arbitrary_layers_test()`.
 
 ## Data export
 
@@ -319,6 +308,32 @@ against the chart that chart's own R script drew, frozen as a reference.
   routine CI step.
 
 ## Exploratory / Archive
+
+**`exploratory/max_fragmentation_search.py`**
+- **Purpose**: how fragmented *can* a covering of N layers over the planar
+  structure get? A few hand-built "maximally crossing" ladders plus a
+  randomized local search, using the real family-count function as the
+  objective. Whatever it finds is a lower bound from a cheap search, not a
+  certified maximum — the conflict graph induced by crossing intervals is a
+  circle graph and no closed form is derived here.
+- **Status**: exploratory. The chance-baseline half of this script became
+  `analysis/arbitrary_layers_test.py` on 2026-09-22; what is left is the
+  search, which looks for a bound rather than testing a hypothesis and so
+  does not fit the shape the project's permutation tests share.
+- **Its published 1238-family figure is for the wrong layer count.** Both
+  halves originally ran at 25 total layers where nyan1308 has 26. `N_FREE` is
+  corrected, but the search has not been re-run, so do not quote 1238 for 26
+  layers.
+- **Note**: raises `laminar_analysis.MAX_FAMILIES` by monkeypatch, not the
+  restoring context manager `arbitrary_layers_test.py` uses. Fine in a
+  standalone run; another reason not to import it.
+
+**`exploratory/max_fragmentation_describe.py`**
+- **Purpose**: describe a fragmented covering rather than just count it — an
+  ASCII bracket diagram and a factoring into independent conflict-graph
+  components, which is what explains a high count (independent clusters
+  multiply their option counts together).
+- **Status**: exploratory; its hardcoded covering is the old 25-layer one.
 
 **`exploratory/treeTraversal.py`**
 - **Purpose**: Earlier prototype for tree traversal and analysis

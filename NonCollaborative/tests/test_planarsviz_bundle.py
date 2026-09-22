@@ -179,6 +179,64 @@ def test_span_placement_tables_agree():
     assert len({row["n_positions"] for row in summary}) == 1
 
 
+def test_arbitrary_layers_tables_agree():
+    """The arbitrary-layers tables must hold together the way the
+    span-placement ones do, plus the two things particular to this test.
+
+    The shared part is test_span_placement_tables_agree()'s: the tally
+    accounts for every draw, the two tables describe the same groups, and the
+    group order the shared random stream depends on is preserved.
+
+    The first particular one is `includes_root`. It records whether a group's
+    real spans contain the full-structure span, and the null mirrors that. If
+    it ever disagreed with the data, the null would be drawing a differently
+    shaped set than the observed one it is compared against, and every p-value
+    would be quietly wrong rather than visibly broken.
+
+    The second is truncation. This null crosses far more chaotically than the
+    other two, so the enumeration cap is raised for it; a draw that hit even
+    the raised cap is counted as the cap instead of its real value, which
+    biases the whole summary downward. n_truncated must be zero.
+    """
+    summary = read_tsv("arbitrary_layers_test.tsv")
+    tally = read_tsv("arbitrary_layers_null.tsv")
+    assert summary and tally
+
+    kinds = {row["group"]: row["kind"] for row in summary}
+    draws = {row["group"]: int(row["n_permutations"]) for row in summary}
+    assert set(kinds) == {row["group"] for row in tally}
+
+    totals = {}
+    for row in tally:
+        assert row["kind"] == kinds[row["group"]]
+        totals[row["group"]] = totals.get(row["group"], 0) + int(row["n"])
+    assert totals == draws
+
+    seen = set()
+    for row in tally:
+        key = (row["group"], row["family_count"])
+        assert key not in seen, f"duplicate tally row for {key}"
+        seen.add(key)
+
+    order = [row["kind"] for row in summary]
+    assert order[0] == "all", f"first row is {order[0]}, not the pooled group"
+    assert order == sorted(order, key=["all", "class", "bundle"].index), (
+        f"groups are out of order: {order}"
+    )
+
+    for row in summary:
+        assert row["includes_root"] in {"y", "n"}, row
+        assert int(row["n_truncated"]) == 0, (
+            f"{row['group']} had {row['n_truncated']} draws hit the family cap; "
+            f"its null summary is biased downward"
+        )
+
+    # The pooled group is the whole dataset, so if any group contains the
+    # full-structure span it does. nyan1308's does (synthetic_root is false).
+    pooled = next(row for row in summary if row["group"] == "all")
+    assert pooled["includes_root"] == "y"
+
+
 def test_boundary_strength_test_covers_every_position():
     """Every group must have exactly one row per (side, statistic, position),
     and the jump statistic's position-1 row (no position 0 to jump from) must

@@ -29,6 +29,7 @@ Contents: [Pooled plots](#1-pooled-plots) ·
 [Boundary-strength overlay](#13-boundary-strength-overlay) ·
 [Fragmentation test](#14-fragmentation-test) ·
 [Span placement](#15-span-placement-test) ·
+[Arbitrary layers](#16-arbitrary-layers-test) ·
 [Name changes](#name-changes-for-cutover)
 
 ---
@@ -527,6 +528,43 @@ for the same reason as the fragmentation chart.
 | `span_placement_test_by_group_plot` | `nyan1308_span_placement_test_by_group_plot.pdf` |
 | `span_placement_test_syntaxlike_plot` | `nyan1308_span_placement_test_syntaxlike_plot.pdf` |
 | `span_placement_test_phonologylike_plot` | `nyan1308_span_placement_test_phonologylike_plot.pdf` |
+
+---
+
+## 16. Arbitrary-layers test
+
+The same panels as chart 15, from the weakest of the project's three nulls:
+one that knows only *how many* spans a group has, not how big they are. Every
+draw picks that many intervals of arbitrary size at arbitrary positions. This
+is the baseline a raw family count is implicitly read against, which is why it
+is worth measuring rather than assuming.
+
+```r
+plot_arbitrary_layers_test(bundle)
+plot_arbitrary_layers_test(bundle, groups = "syntaxlike", view = "standalone")
+```
+
+| Option | Meaning |
+|---|---|
+| `groups` | Draw only these groups, in the order given. Default: all nine. |
+| `view` | As chart 15. Only the grid is registered in the renderer — nobody has asked for a standalone group here. |
+
+Canvas 11 × 9 in for the grid, 9 × 5.5 in standalone, sharing chart 15's two
+presentations through `R/null_panels.R`: the two charts are the same drawing
+from different tables, so the drawing lives in one place.
+
+**This chart needs a bundle exported with `--arbitrary-layers-permutations`.**
+
+| Renderer name | Old file |
+|---|---|
+| `arbitrary_layers_test_by_group_plot` | *(none — no earlier script drew this)* |
+
+**It is the one chart here with no reference image.** Every other chart was
+ported from something that already drew it; this one was integrated from
+scratch work that printed numbers and drew nothing. The renderer check reports
+it as having no reference. What it is checked against instead is
+`arbitrary_layers_test.py`'s committed TSVs, which the bundle must reproduce,
+and a bundle test that fails if the null was truncated.
 
 ---
 

@@ -1,8 +1,14 @@
-"""SCRATCH -- describe the 1238-family covering found by laminar_25layers.py:
-an ASCII bracket diagram, plus a look at whether the conflict graph is one
-big tangle or several smaller independent clusters (the latter would explain
-a high family count combinatorially: independent clusters MULTIPLY their own
-option counts together)."""
+"""Exploratory -- describe the fragmented covering max_fragmentation_search.py
+finds: an ASCII bracket diagram, plus a look at whether the conflict graph is
+one big tangle or several smaller independent clusters (the latter would
+explain a high family count combinatorially: independent clusters MULTIPLY
+their own option counts together).
+
+The covering hardcoded below is the 1238-family one found at the OLD, wrong
+layer count of 25. nyan1308 has 26 domains, and the search was corrected to
+match on 2026-09-22, so re-run the search and paste its new best in before
+reading anything into this at 26 layers.
+"""
 import sys
 sys.path.insert(0, "/Users/jcgood/gitrepos/planars/NonCollaborative/scripts/analysis")
 from laminar_analysis import Span, find_conflicts, enumerate_maximal_laminar_families

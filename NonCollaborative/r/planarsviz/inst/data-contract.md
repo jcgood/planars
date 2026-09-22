@@ -162,6 +162,29 @@ The pooled row's `label` is `All (pooled)` where
 one pools tests. Each table carries its own `label` column for exactly that
 reason.
 
+`arbitrary_layers_test.tsv` and `arbitrary_layers_null.tsv` (in `data/` only,
+and **only when the bundle was exported with
+`--arbitrary-layers-permutations`**). From `arbitrary_layers_test.py`'s
+`run_test()`: is a group's family count remarkable for that many spans of
+arbitrary size at arbitrary positions?
+
+Same columns, same group order and the same load-bearing ordering rule as
+`span_placement_test.tsv`, plus one: **`includes_root`** (`y`/`n`), whether
+that group's real spans contain the full-structure span. When they do, the
+null fixes that span and draws the rest freely; when they do not, it draws all
+of them freely. The column records which, because it is what keeps a group's
+null and its observed set comparable — same span count, same presence or
+absence of a span covering everything, with only the arbitrary sizes and
+positions varying.
+
+**This is the weakest of the three nulls**, and the ordering is the point:
+`fragmentation_test.tsv` shuffles domain-type labels with every span fixed in
+place, `span_placement_test.tsv` holds each span's real length and randomizes
+its position, and this one randomizes size and position together, knowing only
+how many spans a group has. A raw family count read aloud is implicitly being
+compared against something like this null, which is why it is worth having
+measured rather than assumed.
+
 `boundary_strength_test.tsv` (in `data/` only, and **only when the bundle
 was exported with `--boundary-strength-test-permutations`** — same reason
 as the fragmentation tables: one family enumeration per replicate, so it

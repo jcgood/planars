@@ -214,6 +214,12 @@ chart_table <- function() {
       })
     }
   }
+  # The same chart from the weakest of the three nulls. Grid only: nobody has
+  # asked for a standalone group here, and a chart nobody wants is still a
+  # chart someone has to look at.
+  if (file.exists(file.path(data_dir, "arbitrary_layers_test.tsv"))) {
+    add("arbitrary_layers_test_by_group_plot", function() plot_arbitrary_layers_test(bundle))
+  }
   # Only when the bundle has it: the permutation test is slow enough that the
   # exporter runs it on request (--boundary-strength-test-permutations), so a
   # bundle without it is normal, not broken.

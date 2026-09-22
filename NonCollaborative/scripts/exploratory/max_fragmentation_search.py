@@ -1,8 +1,22 @@
-"""SCRATCH -- not part of the project, not exported yet.
+"""Exploratory: how fragmented can a covering of N layers get?
 
-Jeff's question: given 25 "layers" (spans) over the Chichewa planar
+**Part (B) of this file is superseded.** The chance-baseline question it
+answered is now scripts/analysis/arbitrary_layers_test.py, a proper test with
+committed TSVs, bundle tables and a chart. What is still only here is part
+(A), the search for a maximally fragmented covering, which is a search for a
+bound rather than a hypothesis test and so does not fit that shape.
+
+**Both parts were first run at the wrong layer count.** They used 25 total
+layers where nyan1308 has 26 distinct observed domains; Jeff confirmed on
+2026-09-22 that 26 is what the question meant. N_FREE below has been corrected
+to 25 (+ the fixed root = 26), so a fresh run asks the right question -- but
+the 1238-family figure that was reported from this search was computed at the
+old count and has not been re-derived. Do not quote it for 26 layers without
+re-running.
+
+Jeff's question: given 26 "layers" (spans) over the Chichewa planar
 structure (n_positions = 22, matching nyan1308), one of which must be the
-full-span root [1-22] and the other 24 free to vary in size and placement:
+full-span root [1-22] and the other 25 free to vary in size and placement:
 
   (A) What's the most laminarly FRAGMENTED covering achievable with those
       25 layers -- i.e. how high can the maximal-laminar-family count go?
@@ -45,8 +59,8 @@ more chaotically than real linguistic domains do, and 1000 turned out to
 be too low to let the (B) simulation run without truncation. Only ever
 touches this script's own import of the module, not the committed file.
 
-Usage:
-  python laminar_25layers.py
+Usage, from NonCollaborative/:
+  python scripts/exploratory/max_fragmentation_search.py
 """
 
 from __future__ import annotations
@@ -65,7 +79,7 @@ laminar_analysis.MAX_FAMILIES = 50_000  # see module docstring above
 from laminar_analysis import Span, find_conflicts, enumerate_maximal_laminar_families  # noqa: E402
 
 N_POSITIONS = 22
-N_FREE = 24  # + the fixed root = 25 total layers
+N_FREE = 25  # + the fixed root = 26 total layers, matching nyan1308's 26 domains
 ROOT = Span(1, N_POSITIONS)
 
 ALL_LEGAL_INTERVALS = [
