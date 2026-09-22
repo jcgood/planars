@@ -47,10 +47,16 @@ read_planars_overlay_groups <- function(bundle) {
   if (!file.exists(path)) stop("Bundle has no overlay_groups.json; re-export it.", call. = FALSE)
   index <- jsonlite::read_json(path, simplifyVector = FALSE)
   lapply(index, function(meta) {
-    list(meta = meta,
-         trees = utils::read.delim(file.path(bundle$bundle_dir, "data", "overlay_groups",
-                                             paste0(meta$group_id, ".tsv")),
-                                   stringsAsFactors = FALSE, colClasses = "character"))
+    list(
+      meta = meta,
+      trees = utils::read.delim(
+        file.path(
+          bundle$bundle_dir, "data", "overlay_groups",
+          paste0(meta$group_id, ".tsv")
+        ),
+        stringsAsFactors = FALSE, colClasses = "character"
+      )
+    )
   })
 }
 
@@ -89,14 +95,16 @@ plot_laminar_overlay <- function(bundle, groups = NULL, alpha_divisor = 2,
   missing <- setdiff(groups, ids)
   if (length(missing)) {
     stop("Overlay group(s) not in this bundle: ", paste(missing, collapse = ", "),
-         ". Available: ", paste(ids, collapse = ", "), call. = FALSE)
+      ". Available: ", paste(ids, collapse = ", "),
+      call. = FALSE
+    )
   }
   chosen <- all_groups[match(groups, ids)]
   chosen <- Filter(function(g) nrow(g$trees) > 0, chosen)
   n_total <- sum(vapply(chosen, function(g) nrow(g$trees), integer(1)))
-  alphaval <- round((1 - 0.01 ^ (1 / n_total)) / alpha_divisor, 6)
+  alphaval <- round((1 - 0.01^(1 / n_total)) / alpha_divisor, 6)
   labels <- planarsviz_position_labels(bundle$position_labels)
-  posLabel <- as.list(labels)
+  pos_label <- as.list(labels)
 
   plots <- list()
   for (g in chosen) {
@@ -105,7 +113,7 @@ plot_laminar_overlay <- function(bundle, groups = NULL, alpha_divisor = 2,
       plots[[length(plots) + 1]] <- planarsviz_ghost_tree(
         newick = g$trees$newick[[i]],
         group_spans = strsplit(g$trees$group_spans[[i]], ";", fixed = TRUE)[[1]],
-        strengths = round(pmax(convergence, 1) ^ thickness_exponent, 4),
+        strengths = round(pmax(convergence, 1)^thickness_exponent, 4),
         alphaval = alphaval,
         colour = g$meta$colour,
         spacer_lineheight = NULL
@@ -115,21 +123,25 @@ plot_laminar_overlay <- function(bundle, groups = NULL, alpha_divisor = 2,
   n <- length(plots)
 
   if (is.null(highlight)) {
-    plots[[n]] <- plots[[n]] + ggtree::geom_tiplab(geom="label", size=6, angle=0,
-      offset=-1, hjust=0.5, vjust=0.35, alpha=1, label.size=0,
-      aes(label=paste(label, posLabel[label], sep="\n")), lineheight=1)
+    plots[[n]] <- plots[[n]] + ggtree::geom_tiplab(
+      geom = "label", size = 6, angle = 0,
+      offset = -1, hjust = 0.5, vjust = 0.35, alpha = 1, label.size = 0,
+      aes(label = paste(label, pos_label[label], sep = "\n")), lineheight = 1
+    )
   } else {
-    wordColor <- planarsviz_highlight_colours(bundle, highlight)
-    plots[[n]] <- plots[[n]] + ggtree::geom_tiplab(geom="label", size=6, angle=0,
-      offset=-1, hjust=0.5, vjust=0.35, alpha=1, label.size=0,
-      aes(label=paste(label, posLabel[label], sep="\n"), colour=wordColor[label]),
-      lineheight=1) +
+    word_color <- planarsviz_highlight_colours(bundle, highlight)
+    plots[[n]] <- plots[[n]] + ggtree::geom_tiplab(
+      geom = "label", size = 6, angle = 0,
+      offset = -1, hjust = 0.5, vjust = 0.35, alpha = 1, label.size = 0,
+      aes(label = paste(label, pos_label[label], sep = "\n"), colour = word_color[label]),
+      lineheight = 1
+    ) +
       scale_colour_identity()
   }
 
-  treelayout <- do.call(c, rep(list(patchwork::area(t=1, l=1, b=5, r=1)), n))
-  forest <- Reduce(`+`, plots) + plot_layout(design=treelayout)
-  bg_theme <- theme(plot.background=element_rect(fill='white', color=NA))
+  treelayout <- do.call(c, rep(list(patchwork::area(t = 1, l = 1, b = 5, r = 1)), n))
+  forest <- Reduce(`+`, plots) + plot_layout(design = treelayout)
+  bg_theme <- theme(plot.background = element_rect(fill = "white", color = NA))
 
   legend_plot <- NULL
   if (!isTRUE(legend)) {
@@ -141,35 +153,49 @@ plot_laminar_overlay <- function(bundle, groups = NULL, alpha_divisor = 2,
     style <- style[order(style$sort_order), , drop = FALSE]
     legend_data <- data.frame(
       Domain_Type = factor(style$domain_type,
-        levels=style$domain_type),
-      x=1, y=1
+        levels = style$domain_type
+      ),
+      x = 1, y = 1
     )
-    legend_plot <- ggplot(legend_data, aes(x=x, y=y, color=Domain_Type)) +
-      geom_point(size=3, alpha=0) +
-      scale_color_manual(values=stats::setNames(style$colour, style$domain_type),
-        name="Domain type") +
-      guides(color=guide_legend(override.aes=list(alpha=1))) +
-      theme_void() + theme(legend.position="inside", legend.position.inside=c(0.02, 0.98), legend.justification=c("left", "top"), legend.direction="vertical",
-        legend.background=element_rect(fill="white", color="black", linewidth=0.5),
-        legend.text=element_text(size=26), legend.title=element_text(size=28, face="bold"),
-        legend.key.height=unit(2.2, "lines"), legend.key.width=unit(1.2, "lines"),
-        legend.spacing.y=unit(0.45, "in"), legend.margin=margin(18, 20, 18, 20),
-        plot.margin=margin(8, 8, 8, 8))
-    result <- forest + patchwork::inset_element(legend_plot, left=0.002, bottom=0.55, right=0.40, top=0.97, align_to="panel", on_top=TRUE)
+    legend_plot <- ggplot(legend_data, aes(x = x, y = y, color = Domain_Type)) +
+      geom_point(size = 3, alpha = 0) +
+      scale_color_manual(
+        values = stats::setNames(style$colour, style$domain_type),
+        name = "Domain type"
+      ) +
+      guides(color = guide_legend(override.aes = list(alpha = 1))) +
+      theme_void() +
+      theme(
+        legend.position = "inside", legend.position.inside = c(0.02, 0.98),
+        legend.justification = c("left", "top"), legend.direction = "vertical",
+        legend.background = element_rect(fill = "white", color = "black", linewidth = 0.5),
+        legend.text = element_text(size = 26), legend.title = element_text(size = 28, face = "bold"),
+        legend.key.height = unit(2.2, "lines"), legend.key.width = unit(1.2, "lines"),
+        legend.spacing.y = unit(0.45, "in"), legend.margin = margin(18, 20, 18, 20),
+        plot.margin = margin(8, 8, 8, 8)
+      )
+    result <- forest + patchwork::inset_element(
+      legend_plot,
+      left = 0.002, bottom = 0.55, right = 0.40, top = 0.97,
+      align_to = "panel", on_top = TRUE
+    )
   } else {
     # Swatch values with the generator's formulas, except that the thickness
     # swatches use legend_thickness_exponent (default: the lines' own
     # exponent; the generator always used 0.5).
-    max_conv <- max(1L, unlist(lapply(chosen, function(g)
-      as.integer(unlist(strsplit(g$trees$group_convergence, ";", fixed = TRUE))))))
-    dark_hi <- round(1 - (1 - alphaval) ^ n_total, 6)
+    max_conv <- max(1L, unlist(lapply(chosen, function(g) {
+      as.integer(unlist(strsplit(g$trees$group_convergence, ";", fixed = TRUE)))
+    })))
+    dark_hi <- round(1 - (1 - alphaval)^n_total, 6)
     dark_lo <- 0.4
-    thick_hi <- round(max_conv ^ legend_thickness_exponent, 4)
-    thick_lo <- round(1 ^ legend_thickness_exponent, 4)
+    thick_hi <- round(max_conv^legend_thickness_exponent, 4)
+    thick_lo <- round(1^legend_thickness_exponent, 4)
     legend_header_data <- data.frame(
       y = c(7, 3.65),
-      label = c("Darkness: Trees sharing span",
-        "Thickness: Tests supporting span")
+      label = c(
+        "Darkness: Trees sharing span",
+        "Thickness: Tests supporting span"
+      )
     )
     legend_swatch_data <- data.frame(
       y = c(6.0, 5.15, 2.65, 1.8),
@@ -188,21 +214,32 @@ plot_laminar_overlay <- function(bundle, groups = NULL, alpha_divisor = 2,
     legend_swatch_data$x0 <- inset
     legend_swatch_data$x1 <- 0.9 - inset
     legend_plot <- ggplot() +
-      geom_text(data=legend_header_data, aes(x=0, y=y, label=label),
-        hjust=0, size=7) +
-      geom_segment(data=legend_swatch_data,
-        aes(x=x0, xend=x1, y=y, yend=y, alpha=alpha_val, linewidth=lw),
-        color="black", lineend="round") +
-      geom_text(data=legend_swatch_data, aes(x=1.05, y=y, label=label),
-        hjust=0, size=5.8) +
-      scale_alpha_identity() + scale_linewidth_identity() +
-      xlim(0, 4.9) + ylim(1.3, 7.5) +
+      geom_text(
+        data = legend_header_data, aes(x = 0, y = y, label = label),
+        hjust = 0, size = 7
+      ) +
+      geom_segment(
+        data = legend_swatch_data,
+        aes(x = x0, xend = x1, y = y, yend = y, alpha = alpha_val, linewidth = lw),
+        color = "black", lineend = "round"
+      ) +
+      geom_text(
+        data = legend_swatch_data, aes(x = 1.05, y = y, label = label),
+        hjust = 0, size = 5.8
+      ) +
+      scale_alpha_identity() +
+      scale_linewidth_identity() +
+      xlim(0, 4.9) +
+      ylim(1.3, 7.5) +
       theme_void() +
-      theme(plot.background=element_rect(fill="white", color="black", linewidth=1.2),
-        plot.margin=margin(6, 8, 6, 6))
+      theme(
+        plot.background = element_rect(fill = "white", color = "black", linewidth = 1.2),
+        plot.margin = margin(6, 8, 6, 6)
+      )
     result <- (forest & bg_theme) + patchwork::inset_element(legend_plot,
-      left=0.01, bottom=0.67, right=0.27, top=0.97,
-      align_to="panel", on_top=TRUE)
+      left = 0.01, bottom = 0.67, right = 0.27, top = 0.97,
+      align_to = "panel", on_top = TRUE
+    )
   }
 
   attr(result, "planarsviz_size") <- c(width = 20, height = 14)
@@ -243,10 +280,10 @@ planarsviz_highlight_colours <- function(bundle, highlight_id, default = "black"
   rows <- rows[rows$highlight_id == highlight_id, , drop = FALSE]
   if (!nrow(rows)) stop("No highlight `", highlight_id, "` in this bundle.", call. = FALSE)
   n_positions <- as.integer(bundle$metadata$n_positions)
-  wordColor <- stats::setNames(rep(default, n_positions), as.character(seq_len(n_positions)))
+  word_color <- stats::setNames(rep(default, n_positions), as.character(seq_len(n_positions)))
   rows <- rows[order(rows$layer), , drop = FALSE]
   for (i in seq_len(nrow(rows))) {
-    wordColor[as.character(rows$left[[i]]:rows$right[[i]])] <- rows$colour[[i]]
+    word_color[as.character(rows$left[[i]]:rows$right[[i]])] <- rows$colour[[i]]
   }
-  wordColor
+  word_color
 }

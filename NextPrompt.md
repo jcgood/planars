@@ -27,15 +27,24 @@ matters for the exporter specifically: it records the domain file's path as
 given, so running it from the repo root writes a bundle that differs from the
 committed one in that field.
 
-### Next action: `lintr`/`styler`, the last phase D item
+### Next action: Phase E, the `illustrations` bundle
 
-The per-language folder layer (`results/` and its reference/comparisons
-mirror all nest under a dataset folder now) is done — see the
-"per-language folder layer" entry at the end of the progress doc for what
-changed and how it was verified. Needs no decision, just work. Then phase E,
-the `illustrations` bundle (design agreed, recorded under question 1 in the
-progress doc); `results/illustrations/nyan1308_random_tree_overlay.r` is the
-one generated R script left in `results/`, waiting for it.
+Phase D is fully closed (2026-09-22) — the per-language folder layer and
+`lintr`/`styler` (installed, configured, both with a pre-push drift guard)
+were its last two items; see the two entries at the end of the progress doc.
+
+Phase E's design was settled under question 1 in the progress doc (search
+for "Phase E" there): a new `results/planarsviz/illustrations/` bundle,
+written by a new `scripts/analysis/export_planarsviz_illustrations.py` that
+reuses the enumerator in `generate_supercatalan_rows.py`, holding
+`tree_shapes.tsv`, `tree_counts.tsv` (Catalan / little Schröder A001003 /
+n-ary A007052) and a `metadata.json`. Two new R chart functions,
+`plot_tree_shapes(ref, n)` and `plot_tree_count_growth(ref)`. Two existing
+files fold in: `tree_counting_equations.pdf` stays LaTeX (typeset maths, not
+a chart) but gets documented as part of this family, and
+`results/illustrations/nyan1308_random_tree_overlay.r` — the one generated R
+script still sitting unabsorbed in `results/` — gets ported, recording its
+random seed so it's reproducible rather than a one-off sample.
 
 ### Things that will bite
 

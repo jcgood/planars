@@ -39,10 +39,12 @@ plot_forest_tree <- function(bundle, forest_id, tree_number) {
   row <- which(as.integer(trees$tree_number) == as.integer(tree_number))
   if (length(row) != 1L) {
     stop("Forest `", forest_id, "` has no tree ", tree_number,
-         " (it has ", nrow(trees), ").", call. = FALSE)
+      " (it has ", nrow(trees), ").",
+      call. = FALSE
+    )
   }
-  posLabel <- as.list(planarsviz_position_labels(bundle$position_labels))
-  p <- planarsviz_labelled_tree(trees$newick[[row]], posLabel)
+  pos_label <- as.list(planarsviz_position_labels(bundle$position_labels))
+  p <- planarsviz_labelled_tree(trees$newick[[row]], pos_label)
   attr(p, "planarsviz_size") <- c(width = 12, height = 8)
   attr(p, "planarsviz_units") <- "in"
   attr(p, "planarsviz_folder") <- "laminar-families"

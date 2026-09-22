@@ -48,7 +48,7 @@
 # matplotlib's AutoLocator ticks for an axis from `lower` to `limit`.
 planarsviz_mpl_breaks <- function(limit, nbins = 9, lower = 0) {
   raw <- (limit - lower) / nbins
-  scale <- 10 ^ floor(log10(raw))
+  scale <- 10^floor(log10(raw))
   steps <- c(1, 2, 2.5, 5, 10) * scale
   step <- steps[steps >= raw - 1e-9][1]
   seq(ceiling(lower / step - 1e-9) * step, floor(limit / step + 1e-9) * step, by = step)
@@ -77,18 +77,24 @@ read_planars_tree_counts <- function(bundle) {
 planarsviz_house_bar_chart <- function(labels, values, colours, xlabel = "Number of trees") {
   # Ascending, ties in input order; the first level is drawn lowest.
   ord <- order(values, seq_along(values))
-  d <- data.frame(label = factor(labels[ord], levels = labels[ord]),
-                  value = values[ord], colour = colours[ord], stringsAsFactors = FALSE)
+  d <- data.frame(
+    label = factor(labels[ord], levels = labels[ord]),
+    value = values[ord], colour = colours[ord], stringsAsFactors = FALSE
+  )
   xmax <- max(values) * 1.2
   # 6 pt offset as a share of the x range; the 8 in canvas leaves a panel of
   # roughly 6 in (432 pt) after the y labels.
   nudge <- xmax * 6 / 432
   ggplot(d, aes(x = value, y = label)) +
     geom_col(aes(fill = I(colour)), width = 0.45) +
-    geom_text(aes(x = value + nudge, label = value), hjust = 0, vjust = 0.5,
-              size = 15 / .pt, colour = "black") +
-    scale_x_continuous(limits = c(0, xmax), expand = c(0, 0),
-                       breaks = planarsviz_mpl_breaks(xmax)) +
+    geom_text(aes(x = value + nudge, label = value),
+      hjust = 0, vjust = 0.5,
+      size = 15 / .pt, colour = "black"
+    ) +
+    scale_x_continuous(
+      limits = c(0, xmax), expand = c(0, 0),
+      breaks = planarsviz_mpl_breaks(xmax)
+    ) +
     scale_y_discrete(expand = planarsviz_mpl_bar_expand(nrow(d), 0.45)) +
     labs(x = xlabel, y = NULL) +
     theme_minimal() +
@@ -105,8 +111,10 @@ planarsviz_house_bar_chart <- function(labels, values, colours, xlabel = "Number
 }
 
 planarsviz_vertical_bar_chart <- function(labels, values, colours, width, ylim_factor, title) {
-  d <- data.frame(label = factor(labels, levels = labels), value = values,
-                  colour = colours, stringsAsFactors = FALSE)
+  d <- data.frame(
+    label = factor(labels, levels = labels), value = values,
+    colour = colours, stringsAsFactors = FALSE
+  )
   ymax <- max(values) * ylim_factor
   # 5 pt offset as a share of the y range; a 5 in canvas leaves a panel of
   # roughly 4.2 in (302 pt) after the title and x labels.
@@ -114,8 +122,10 @@ planarsviz_vertical_bar_chart <- function(labels, values, colours, width, ylim_f
   ggplot(d, aes(x = label, y = value)) +
     geom_col(aes(fill = I(colour)), width = width) +
     geom_text(aes(y = value + nudge, label = value), vjust = 0, size = 12 / .pt) +
-    scale_y_continuous(limits = c(0, ymax), expand = c(0, 0),
-                       breaks = planarsviz_mpl_breaks(ymax)) +
+    scale_y_continuous(
+      limits = c(0, ymax), expand = c(0, 0),
+      breaks = planarsviz_mpl_breaks(ymax)
+    ) +
     scale_x_discrete(expand = planarsviz_mpl_bar_expand(nrow(d), width)) +
     labs(x = NULL, y = "Number of maximal laminar families", title = title) +
     theme_bw() +
@@ -162,15 +172,18 @@ plot_tree_counts <- function(bundle, chart = c("by_class", "bundles", "all", "wi
     transparent <- TRUE
   } else if (chart == "all") {
     p <- planarsviz_vertical_bar_chart("All tests", value_of("all_tests"), "#444444",
-                                       width = 0.55, ylim_factor = 1.18,
-                                       title = paste0(title_stem, ": all tests"))
+      width = 0.55, ylim_factor = 1.18,
+      title = paste0(title_stem, ": all tests")
+    )
     size <- c(width = 7, height = 5)
     transparent <- FALSE
   } else {
     p <- planarsviz_vertical_bar_chart(c("All tests", "Without size-2 spans"),
-                                       c(value_of("all_tests"), value_of("without_adjacent_spans")),
-                                       c("#777777", "#222222"), width = 0.6, ylim_factor = 1.25,
-                                       title = paste0(title_stem, ": effect of removing adjacent spans"))
+      c(value_of("all_tests"), value_of("without_adjacent_spans")),
+      c("#777777", "#222222"),
+      width = 0.6, ylim_factor = 1.25,
+      title = paste0(title_stem, ": effect of removing adjacent spans")
+    )
     size <- c(width = 8, height = 5)
     transparent <- FALSE
   }

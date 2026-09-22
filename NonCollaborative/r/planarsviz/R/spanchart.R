@@ -69,25 +69,34 @@ plot_span_chart <- function(bundle, positions = c("all", "drawn")) {
   )
 
   p_spanchart <- ggplot(span_data) +
-    geom_segment(aes(x=left, xend=right, y=y_rank, yend=y_rank,
-      color=color, alpha=freq_scaled, linewidth=lw)) +
-    geom_text(aes(x=(left+right)/2, y=y_rank+0.45, label=label),
-      size=2.8, hjust=0.5) +
-    scale_color_identity(guide='none') +
-    scale_alpha_continuous(range=c(0.15, 1.0),
-      name=paste0('Proportion of ', n_families, ' families')) +
+    geom_segment(aes(
+      x = left, xend = right, y = y_rank, yend = y_rank,
+      color = color, alpha = freq_scaled, linewidth = lw
+    )) +
+    geom_text(aes(x = (left + right) / 2, y = y_rank + 0.45, label = label),
+      size = 2.8, hjust = 0.5
+    ) +
+    scale_color_identity(guide = "none") +
+    scale_alpha_continuous(
+      range = c(0.15, 1.0),
+      name = paste0("Proportion of ", n_families, " families")
+    ) +
     scale_linewidth_identity() +
-    scale_x_continuous(breaks=seq_len(n_positions),
-      labels=pos_labels_vec, name='Position',
+    scale_x_continuous(
+      breaks = seq_len(n_positions),
+      labels = pos_labels_vec, name = "Position",
       # Without limits the axis runs only as far as the drawn spans reach,
       # so a position no span touches loses its tick label.
-      limits=if (positions == "all") c(1, n_positions) else NULL,
-      expand=expansion(add=0.5)) +
-    scale_y_continuous(name='', breaks=NULL) +
+      limits = if (positions == "all") c(1, n_positions) else NULL,
+      expand = expansion(add = 0.5)
+    ) +
+    scale_y_continuous(name = "", breaks = NULL) +
     theme_minimal() +
-    theme(panel.grid.major.y=element_blank(),
-      axis.text.x=element_text(angle=90, vjust=0.5, hjust=1)) +
-    ggtitle(paste0(n_families, ' maximal families: span frequencies'))
+    theme(
+      panel.grid.major.y = element_blank(),
+      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)
+    ) +
+    ggtitle(paste0(n_families, " maximal families: span frequencies"))
 
   attr(p_spanchart, "planarsviz_size") <- c(width = 14, height = 8)
   attr(p_spanchart, "planarsviz_units") <- "in"

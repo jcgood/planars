@@ -41,8 +41,10 @@ read_planars_fragmentation <- function(bundle) {
   path <- file.path(bundle$bundle_dir, "data", "fragmentation_test.tsv")
   if (!file.exists(path)) {
     stop("This bundle has no fragmentation_test.tsv. The permutation test is ",
-         "slow, so the exporter only runs it when asked: re-export with ",
-         "--fragmentation-permutations 5000.", call. = FALSE)
+      "slow, so the exporter only runs it when asked: re-export with ",
+      "--fragmentation-permutations 5000.",
+      call. = FALSE
+    )
   }
   utils::read.delim(path, stringsAsFactors = FALSE, colClasses = c(
     n_tests = "integer", observed_families = "integer",
@@ -62,13 +64,17 @@ read_planars_fragmentation_null <- function(bundle, expand = TRUE) {
   path <- file.path(bundle$bundle_dir, "data", "fragmentation_null.tsv")
   if (!file.exists(path)) {
     stop("This bundle has no fragmentation_null.tsv. The permutation test is ",
-         "slow, so the exporter only runs it when asked: re-export with ",
-         "--fragmentation-permutations 5000.", call. = FALSE)
+      "slow, so the exporter only runs it when asked: re-export with ",
+      "--fragmentation-permutations 5000.",
+      call. = FALSE
+    )
   }
   tally <- utils::read.delim(path, stringsAsFactors = FALSE, colClasses = c(
     family_count = "integer", n = "integer"
   ), na.strings = character(), comment.char = "")
-  if (!expand) return(tally)
+  if (!expand) {
+    return(tally)
+  }
   idx <- rep(seq_len(nrow(tally)), tally$n)
   data.frame(
     group = tally$group[idx],
@@ -103,8 +109,10 @@ plot_fragmentation_test <- function(bundle, groups = NULL) {
     unknown <- setdiff(groups, summary_df$group)
     if (length(unknown)) {
       stop("No group `", paste(unknown, collapse = "`, `"),
-           "` in this bundle's fragmentation test. It covers: ",
-           paste(summary_df$group, collapse = ", "), ".", call. = FALSE)
+        "` in this bundle's fragmentation test. It covers: ",
+        paste(summary_df$group, collapse = ", "), ".",
+        call. = FALSE
+      )
     }
     summary_df <- summary_df[summary_df$group %in% groups, , drop = FALSE]
     null_draws <- null_draws[null_draws$group %in% groups, , drop = FALSE]
@@ -138,8 +146,10 @@ plot_fragmentation_test <- function(bundle, groups = NULL) {
     panel_max$label_x <- pmax(panel_max$null_max, panel_max$obs_max) * 1.08
     summary_df <- merge(summary_df, panel_max[, c("kind", "label_x")], by = "kind")
   } else {
-    summary_df$label_x <- max(max(null_draws$family_count),
-                              max(summary_df$observed_families)) * 1.08
+    summary_df$label_x <- max(
+      max(null_draws$family_count),
+      max(summary_df$observed_families)
+    ) * 1.08
   }
 
   p <- ggplot() +
@@ -153,8 +163,10 @@ plot_fragmentation_test <- function(bundle, groups = NULL) {
     ) +
     geom_text(
       data = summary_df,
-      aes(x = label_x, y = group,
-          label = sprintf("p=%.3f", p_value_le_observed)),
+      aes(
+        x = label_x, y = group,
+        label = sprintf("p=%.3f", p_value_le_observed)
+      ),
       hjust = 0, size = 3.6, color = "black"
     ) +
     scale_fill_manual(values = colour_map, guide = "none") +
@@ -174,8 +186,10 @@ plot_fragmentation_test <- function(bundle, groups = NULL) {
     )
 
   if (multi_kind) {
-    p <- p + facet_grid(kind ~ ., scales = "free_y", space = "free_y",
-                        labeller = as_labeller(c(class = "Domain type", bundle = "Bundle")))
+    p <- p + facet_grid(kind ~ .,
+      scales = "free_y", space = "free_y",
+      labeller = as_labeller(c(class = "Domain type", bundle = "Bundle"))
+    )
   }
 
   # Two canvases, because the script this came from hardcoded a ggsave() size

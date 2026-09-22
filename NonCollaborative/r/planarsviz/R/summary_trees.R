@@ -51,7 +51,9 @@ planarsviz_selected_family <- function(bundle, selection) {
   hit <- selections$family_id[selections$selection == selection & selections$rank == 1L]
   if (!length(hit)) {
     stop("No selection `", selection, "` in this bundle. Available: ",
-         paste(unique(selections$selection), collapse = ", "), call. = FALSE)
+      paste(unique(selections$selection), collapse = ", "),
+      call. = FALSE
+    )
   }
   hit[[1]]
 }
@@ -88,7 +90,7 @@ planarsviz_summary_tree <- function(bundle, family_id, member_ids, title, alpha_
   planarsviz_require_trees()
   weight <- match.arg(weight)
   `%<+%` <- ggtree::`%<+%`
-  posLabel <- as.list(planarsviz_position_labels(bundle$position_labels))
+  pos_label <- as.list(planarsviz_position_labels(bundle$position_labels))
   newick <- bundle$families$newick[bundle$families$family_id == family_id]
   if (length(newick) != 1L) stop("No family `", family_id, "` with a Newick string in this bundle.", call. = FALSE)
   n_members <- length(member_ids)
@@ -111,10 +113,10 @@ planarsviz_summary_tree <- function(bundle, family_id, member_ids, title, alpha_
   freq_tree <- ape::read.tree(text = newick)
 
   node_freq <- data.frame(
-    label      = c(family_spans, tips),
-    freq       = freq,
-    freq_scaled= round(freq / n_members, 6),
-    edge_size  = round(branch_size * freq / n_members, 6)
+    label = c(family_spans, tips),
+    freq = freq,
+    freq_scaled = round(freq / n_members, 6),
+    edge_size = round(branch_size * freq / n_members, 6)
   )
 
   if (!is.null(emphasis_range)) {
@@ -129,22 +131,28 @@ planarsviz_summary_tree <- function(bundle, family_id, member_ids, title, alpha_
     node_freq$edge_size[on_path] <- emphasis_size
   }
 
-  p <- ggtree::ggtree(freq_tree, layout='slanted', ladderize=FALSE) %<+%
+  p <- ggtree::ggtree(freq_tree, layout = "slanted", ladderize = FALSE) %<+%
     node_freq +
     ggtree::layout_dendrogram() +
-    aes(alpha=freq_scaled, size=edge_size) +
+    aes(alpha = freq_scaled, size = edge_size) +
     scale_size_identity() +
     # With one weight for every branch the scale would otherwise map them all
     # to the middle of its range, drawing a solid tree in grey.
-    scale_alpha_continuous(range=c(0.05, 1.0), name=alpha_name,
-      limits=if (weight == "none") c(0, 1) else NULL) +
-    ggtree::geom_tiplab(geom='label', size=5, angle=0,
-      offset=-1, hjust=0.5, alpha=1, label.size=0,
-      aes(label=paste(label, posLabel[label], sep="\n")), lineheight=1) +
-    theme(panel.background=element_blank(),
-      plot.background=element_blank()) +
+    scale_alpha_continuous(
+      range = c(0.05, 1.0), name = alpha_name,
+      limits = if (weight == "none") c(0, 1) else NULL
+    ) +
+    ggtree::geom_tiplab(
+      geom = "label", size = 5, angle = 0,
+      offset = -1, hjust = 0.5, alpha = 1, label.size = 0,
+      aes(label = paste(label, pos_label[label], sep = "\n")), lineheight = 1
+    ) +
+    theme(
+      panel.background = element_blank(),
+      plot.background = element_blank()
+    ) +
     ggtitle(title)
-  if (!isTRUE(legend)) p <- p + theme(legend.position='none')
+  if (!isTRUE(legend)) p <- p + theme(legend.position = "none")
   p
 }
 
@@ -180,15 +188,17 @@ plot_frequency_tree <- function(bundle, selection = "consensus_all", title = NUL
   if (is.null(branch_size)) branch_size <- if (weight == "none") 0.5 else 4
   emphasis_range <- if (is.null(emphasis)) NULL else planarsviz_highlight_range(bundle, emphasis)
   n <- nrow(bundle$families)
-  if (is.null(title)) title <- paste0(n, ' maximal families \u2014 edge weight = family count')
+  if (is.null(title)) title <- paste0(n, " maximal families \u2014 edge weight = family count")
   alpha_name <- switch(weight,
-    families = paste0('Proportion of ', n, ' families'),
-    tests = 'Share of the best-tested span',
-    none = NULL)
+    families = paste0("Proportion of ", n, " families"),
+    tests = "Share of the best-tested span",
+    none = NULL
+  )
   p <- planarsviz_summary_tree(
     bundle, planarsviz_selected_family(bundle, selection), bundle$families$family_id,
     title = title, alpha_name = alpha_name, legend = weight != "none", weight = weight,
-    branch_size = branch_size, emphasis_range = emphasis_range, emphasis_size = emphasis_size)
+    branch_size = branch_size, emphasis_range = emphasis_range, emphasis_size = emphasis_size
+  )
   attr(p, "planarsviz_size") <- c(width = 16, height = 10)
   attr(p, "planarsviz_units") <- "in"
   attr(p, "planarsviz_folder") <- "laminar-families"
@@ -213,16 +223,18 @@ plot_four_trees <- function(bundle, other_label = "neither") {
   n <- nrow(bundle$families)
   p_all <- planarsviz_summary_tree(
     bundle, planarsviz_selected_family(bundle, "consensus_all"), bundle$families$family_id,
-    title = paste0('All ', n, ' families (representative)'),
-    alpha_name = paste0('Prop. of ', n, ' families'), legend = FALSE)
+    title = paste0("All ", n, " families (representative)"),
+    alpha_name = paste0("Prop. of ", n, " families"), legend = FALSE
+  )
   panels <- lapply(unique(groups$group_id), function(g) {
     rows <- groups[groups$group_id == g, , drop = FALSE]
     defining <- rows$defining_span_id[[1]]
-    what <- if (is.na(defining) || defining == "") other_label else paste0('[', defining, ']')
+    what <- if (is.na(defining) || defining == "") other_label else paste0("[", defining, "]")
     planarsviz_summary_tree(
       bundle, planarsviz_selected_family(bundle, paste0("consensus_", g)), rows$family_id,
-      title = paste0('Group ', g, ': ', what, ' (', nrow(rows), ' families)'),
-      alpha_name = paste0('Prop. of ', nrow(rows), ' families'), legend = FALSE)
+      title = paste0("Group ", g, ": ", what, " (", nrow(rows), " families)"),
+      alpha_name = paste0("Prop. of ", nrow(rows), " families"), legend = FALSE
+    )
   })
   parts <- c(list(p_all), panels)
 
@@ -230,9 +242,9 @@ plot_four_trees <- function(bundle, other_label = "neither") {
   # number of groups is laid out two panels per row.
   forest <- if (length(panels) == 3L) {
     (parts[[1]] | parts[[2]]) / (parts[[3]] | parts[[4]]) +
-      plot_layout(guides='collect')
+      plot_layout(guides = "collect")
   } else {
-    patchwork::wrap_plots(parts, ncol = 2) + plot_layout(guides='collect')
+    patchwork::wrap_plots(parts, ncol = 2) + plot_layout(guides = "collect")
   }
   attr(forest, "planarsviz_size") <- c(width = 24, height = 16)
   attr(forest, "planarsviz_units") <- "in"

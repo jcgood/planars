@@ -31,3 +31,23 @@ repos:
         pass_filenames: false
         files: ^NonCollaborative/r/planarsviz/
         stages: [pre-push]
+
+      # Phase D's tooling pass (2026-09-22) added lintr and styler as the
+      # package's lint/format tools. Same reasoning as the roxygen guard
+      # above: runs here because CI has no R, only when the package changed,
+      # and skips cleanly on a machine without R or these packages.
+      - id: lint-clean
+        name: Check the planarsviz package has no lintr findings
+        entry: .venv/bin/python -m pytest NonCollaborative/tests/test_lint_clean.py -q
+        language: system
+        pass_filenames: false
+        files: ^NonCollaborative/r/planarsviz/
+        stages: [pre-push]
+
+      - id: styler-up-to-date
+        name: Check the planarsviz R source matches styler's formatting
+        entry: .venv/bin/python -m pytest NonCollaborative/tests/test_styler_up_to_date.py -q
+        language: system
+        pass_filenames: false
+        files: ^NonCollaborative/r/planarsviz/
+        stages: [pre-push]

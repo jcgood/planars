@@ -41,7 +41,9 @@
 # close, not exact.
 
 planarsviz_analysis_dir <- function(bundle, subset = NULL) {
-  if (is.null(subset)) return(file.path(bundle$bundle_dir, "data"))
+  if (is.null(subset)) {
+    return(file.path(bundle$bundle_dir, "data"))
+  }
   index <- jsonlite::read_json(file.path(bundle$bundle_dir, "data", "subsets.json"), simplifyVector = TRUE)
   hit <- index$path[index$subset_id == subset]
   if (!length(hit)) {
@@ -113,15 +115,19 @@ plot_boundary_strength <- function(bundle, subset = NULL, bar_colour = "#7876B1"
   half_tick <- sqrt(260) / 2 / (10.1 * 72 / diff(xlim))
 
   panel <- function(side, ylabel, top_panel) {
-    d <- data.frame(position = positions,
-                    summed = strength[[paste0(side, "_summed")]],
-                    capped = strength[[paste0(side, "_capped")]])
+    d <- data.frame(
+      position = positions,
+      summed = strength[[paste0(side, "_summed")]],
+      capped = strength[[paste0(side, "_capped")]]
+    )
     ytop <- max(d$summed, d$capped, n_families) * 1.05
     p <- ggplot(d, aes(x = position)) +
       geom_col(aes(y = summed, fill = "strength (summed)"), width = 0.7) +
       geom_hline(yintercept = n_families, linetype = "dotted", linewidth = 0.7 / .pt, alpha = 0.5) +
-      geom_segment(aes(x = position - half_tick, xend = position + half_tick,
-                       y = capped, yend = capped, colour = capped_label), linewidth = 2 / .pt) +
+      geom_segment(aes(
+        x = position - half_tick, xend = position + half_tick,
+        y = capped, yend = capped, colour = capped_label
+      ), linewidth = 2 / .pt) +
       scale_fill_manual(values = stats::setNames(bar_colour, "strength (summed)"), name = NULL) +
       scale_colour_manual(values = stats::setNames("black", capped_label), name = NULL) +
       guides(colour = guide_legend(order = 1), fill = guide_legend(order = 2)) +
@@ -131,10 +137,12 @@ plot_boundary_strength <- function(bundle, subset = NULL, bar_colour = "#7876B1"
       planarsviz_mpl_theme() +
       theme(axis.title = element_text(size = 13), axis.text = element_text(size = 11, colour = "black"))
     if (top_panel) {
-      p + theme(axis.text.x = element_blank(),
-                legend.position = "inside", legend.position.inside = c(0.005, 0.995),
-                legend.justification = c(0, 1), legend.box = "vertical",
-                legend.spacing.y = unit(0, "pt"), legend.margin = margin(3, 6, 3, 4))
+      p + theme(
+        axis.text.x = element_blank(),
+        legend.position = "inside", legend.position.inside = c(0.005, 0.995),
+        legend.justification = c(0, 1), legend.box = "vertical",
+        legend.spacing.y = unit(0, "pt"), legend.margin = margin(3, 6, 3, 4)
+      )
     } else {
       p + theme(legend.position = "none")
     }
@@ -184,7 +192,7 @@ plot_boundary_strength_distributions <- function(bundle, subset = NULL,
   # matplotlib draws nothing for a zero-area dot; ggplot would still draw a
   # speck (the point's outline), so leave zero-strength positions out.
   rug <- rug[rug$area > 0, , drop = FALSE]
-  rug$size <- sqrt(rug$area) / .pt  # matplotlib s is area in pt^2; ggplot size is roughly diameter in mm
+  rug$size <- sqrt(rug$area) / .pt # matplotlib s is area in pt^2; ggplot size is roughly diameter in mm
 
   ylow <- min(-0.012, curves$y)
   yhigh <- max(curves$y)
@@ -200,15 +208,19 @@ plot_boundary_strength_distributions <- function(bundle, subset = NULL,
     scale_colour_manual(values = fill_values, guide = "none") +
     scale_size_identity() +
     scale_x_continuous(breaks = strength$position, limits = xlim, expand = c(0, 0)) +
-    scale_y_continuous(limits = ylim, expand = c(0, 0),
-                       breaks = planarsviz_mpl_breaks(ylim[[2]], lower = ylim[[1]]),
-                       labels = scales::label_number(accuracy = 0.01)) +
+    scale_y_continuous(
+      limits = ylim, expand = c(0, 0),
+      breaks = planarsviz_mpl_breaks(ylim[[2]], lower = ylim[[1]]),
+      labels = scales::label_number(accuracy = 0.01)
+    ) +
     labs(x = "Position on the planar structure", y = "Inferred density (juncture strength)") +
     coord_cartesian(clip = "off") +
     planarsviz_mpl_theme() +
-    theme(axis.title = element_text(size = 13), axis.text = element_text(size = 10, colour = "black"),
-          legend.position = "inside", legend.position.inside = c(0.995, 0.995),
-          legend.justification = c(1, 1), legend.margin = margin(3, 6, 3, 4))
+    theme(
+      axis.title = element_text(size = 13), axis.text = element_text(size = 10, colour = "black"),
+      legend.position = "inside", legend.position.inside = c(0.995, 0.995),
+      legend.justification = c(1, 1), legend.margin = margin(3, 6, 3, 4)
+    )
   attr(p, "planarsviz_size") <- c(width = 11, height = 5)
   attr(p, "planarsviz_units") <- "in"
   attr(p, "planarsviz_folder") <- "boundaries"

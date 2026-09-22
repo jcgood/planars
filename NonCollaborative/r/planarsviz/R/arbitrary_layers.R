@@ -28,8 +28,10 @@ read_planars_arbitrary_layers <- function(bundle) {
   path <- file.path(bundle$bundle_dir, "data", "arbitrary_layers_test.tsv")
   if (!file.exists(path)) {
     stop("This bundle has no arbitrary_layers_test.tsv. The permutation test is ",
-         "slow, so the exporter only runs it when asked: re-export with ",
-         "--arbitrary-layers-permutations 5000.", call. = FALSE)
+      "slow, so the exporter only runs it when asked: re-export with ",
+      "--arbitrary-layers-permutations 5000.",
+      call. = FALSE
+    )
   }
   utils::read.delim(path, stringsAsFactors = FALSE, colClasses = c(
     n_spans = "integer", n_positions = "integer", observed_families = "integer",
@@ -49,8 +51,10 @@ read_planars_arbitrary_layers_null <- function(bundle) {
   path <- file.path(bundle$bundle_dir, "data", "arbitrary_layers_null.tsv")
   if (!file.exists(path)) {
     stop("This bundle has no arbitrary_layers_null.tsv. The permutation test is ",
-         "slow, so the exporter only runs it when asked: re-export with ",
-         "--arbitrary-layers-permutations 5000.", call. = FALSE)
+      "slow, so the exporter only runs it when asked: re-export with ",
+      "--arbitrary-layers-permutations 5000.",
+      call. = FALSE
+    )
   }
   utils::read.delim(path, stringsAsFactors = FALSE, colClasses = c(
     family_count = "integer", n = "integer"

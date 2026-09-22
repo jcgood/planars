@@ -31,28 +31,36 @@
 # the drawing itself lives here once instead of in two copies. The two
 # branches below are the code as it stood before that move, unchanged, since
 # the absorbed charts have to match frozen reference images pixel for pixel.
-planarsviz_labelled_tree <- function(newick, posLabel, slide = FALSE) {
+planarsviz_labelled_tree <- function(newick, pos_label, slide = FALSE) {
   planarsviz_require_trees()
   ex_tree1 <- ape::read.tree(text = newick)
   if (!isTRUE(slide)) {
-    ex_tp1 <- ggtree::ggtree(ex_tree1, layout="slanted", ladderize=FALSE) +
+    ex_tp1 <- ggtree::ggtree(ex_tree1, layout = "slanted", ladderize = FALSE) +
       ggtree::layout_dendrogram() +
-      ggtree::geom_tiplab(geom="label", size=5, angle=0,
-        offset=-1, hjust=0.5, vjust=0.35, alpha=1, label.size=0,
-        aes(label=paste(label, posLabel[label], sep="\n")), lineheight=1) +
-      theme(panel.background=element_blank(),
-        plot.background=element_blank(), legend.position="none",
-        plot.margin=margin(t=10, r=10, b=25, l=10, unit="pt"))
+      ggtree::geom_tiplab(
+        geom = "label", size = 5, angle = 0,
+        offset = -1, hjust = 0.5, vjust = 0.35, alpha = 1, label.size = 0,
+        aes(label = paste(label, pos_label[label], sep = "\n")), lineheight = 1
+      ) +
+      theme(
+        panel.background = element_blank(),
+        plot.background = element_blank(), legend.position = "none",
+        plot.margin = margin(t = 10, r = 10, b = 25, l = 10, unit = "pt")
+      )
   } else {
-    ex_tp1 <- ggtree::ggtree(ex_tree1, layout="slanted", ladderize=FALSE) +
+    ex_tp1 <- ggtree::ggtree(ex_tree1, layout = "slanted", ladderize = FALSE) +
       ggtree::layout_dendrogram() +
-      ggtree::geom_tiplab(geom="label", size=4.6, angle=0,
-        offset=-1, hjust=0.5, vjust=0.35, alpha=1, label.size=0,
-        label.padding=unit(0.12, "lines"),
-        aes(label=paste(label, posLabel[label], sep="\n")), lineheight=1) +
-      theme(panel.background=element_blank(),
-        plot.background=element_blank(), legend.position="none",
-        plot.margin=margin(t=10, r=10, b=25, l=10, unit="pt"))
+      ggtree::geom_tiplab(
+        geom = "label", size = 4.6, angle = 0,
+        offset = -1, hjust = 0.5, vjust = 0.35, alpha = 1, label.size = 0,
+        label.padding = unit(0.12, "lines"),
+        aes(label = paste(label, pos_label[label], sep = "\n")), lineheight = 1
+      ) +
+      theme(
+        panel.background = element_blank(),
+        plot.background = element_blank(), legend.position = "none",
+        plot.margin = margin(t = 10, r = 10, b = 25, l = 10, unit = "pt")
+      )
   }
   ex_tp1
 }
@@ -66,10 +74,10 @@ planarsviz_labelled_tree <- function(newick, posLabel, slide = FALSE) {
 #' @return A ggtree plot.
 #' @export
 planarsviz_exemplary_tree <- function(bundle, family_id, slide = FALSE) {
-  posLabel <- as.list(planarsviz_position_labels(bundle$position_labels))
+  pos_label <- as.list(planarsviz_position_labels(bundle$position_labels))
   newick <- bundle$families$newick[bundle$families$family_id == family_id]
   if (length(newick) != 1L) stop("No family `", family_id, "` with a Newick string in this bundle.", call. = FALSE)
-  planarsviz_labelled_tree(newick, posLabel, slide = slide)
+  planarsviz_labelled_tree(newick, pos_label, slide = slide)
 }
 
 #' Evidence panel for a family: the tests that produced its spans
@@ -140,7 +148,7 @@ plot_exemplary_tree <- function(bundle, rank = 1L, view = c("page", "slide_tree"
   }
   ex_tp1 <- planarsviz_exemplary_tree(bundle, family_id)
   ex_page1 <- (ex_tp1 | ex_plot1) +
-    plot_layout(widths=c(tree_width_cm, pooled_width_cm))
+    plot_layout(widths = c(tree_width_cm, pooled_width_cm))
   attr(ex_page1, "planarsviz_size") <- c(width = round(tree_width_cm + pooled_width_cm, 1), height = pooled_height_cm)
   attr(ex_page1, "planarsviz_units") <- "cm"
   attr(ex_page1, "planarsviz_folder") <- "laminar-families"

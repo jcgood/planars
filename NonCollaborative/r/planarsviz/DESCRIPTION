@@ -32,5 +32,7 @@ Imports:
     utils
 Suggests:
     ape,
-    ggtree
+    ggtree,
+    lintr,
+    styler
 Config/roxygen2/version: 8.1.0

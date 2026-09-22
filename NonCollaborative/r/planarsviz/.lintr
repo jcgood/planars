@@ -1,0 +1,52 @@
+linters: linters_with_defaults(
+  # ggplot2 is brought in with import(ggplot2) rather than per-function
+  # importFrom, and most of the package's aes() calls reference bare data
+  # columns (Domain_Type, Left_Edge, ...) — the two things object_usage_linter
+  # cannot resolve without a live namespace. Confirmed by running lint_package()
+  # and reading the findings: 658 of 939 total hits, none a real bug, all
+  # either "no visible global function" for an imported ggplot2 verb or "no
+  # visible binding" for an NSE column name. This is a known limitation of
+  # object_usage_linter with import()-style imports, not a codebase issue.
+  object_usage_linter = NULL,
+  # styler is the authoritative formatter for this package (run via
+  # styler::style_pkg()); its wrapped-condition indent conflicts with
+  # indentation_linter's own default expectation, so the two would fight each
+  # other. Confirmed the only hits are exactly this disagreement, not a real
+  # inconsistency: every flagged line is a multi-line `if` condition styler
+  # left at a 4-space continuation where indentation_linter wants 8.
+  indentation_linter = NULL,
+  # False positives on prose, not commented-out code: several file headers
+  # document a ported script's original parameter values by citing its line
+  # numbers and literals (hex colours, point sizes), which read as code-shaped
+  # to this linter's heuristic. Confirmed by reading both flagged lines.
+  commented_code_linter = NULL,
+  # `{ if (cond) geom_vline(...) }` is used four times to splice an optional
+  # layer into a ggplot `+` chain — the brace has to start its own line
+  # because the whole block is one expression in that chain, not a control
+  # structure whose brace could move up. brace_linter's default assumes every
+  # opening brace follows a keyword; this idiom doesn't have one.
+  brace_linter = NULL,
+  # magrittr's `%>%` is an actual Import (not a leftover), used consistently
+  # throughout, and pooled.R is a deliberately-preserved near-copy of the
+  # original script it was ported from — so `%>%` is this project's chosen
+  # pipe, not an inconsistency to resolve toward the native `|>`.
+  pipe_consistency_linter = pipe_consistency_linter(pipe = "%>%"),
+  # 120 covers everything but 3 lines (fixed by hand); the tidyverse default
+  # of 80 does not match how this codebase already wraps ggplot chains and
+  # long inline comments.
+  line_length_linter = line_length_linter(120L),
+  # The project's read_planars_*() / plot_*() naming convention legitimately
+  # produces names in the mid-30s once the analysis they read or draw has a
+  # descriptive name of its own (e.g. read_planars_boundary_strength_test);
+  # shortening them would be an API change made to satisfy a linter, not a
+  # readability improvement.
+  object_length_linter = object_length_linter(length = 40L)
+  )
+exclusions: list(
+  # pooled.R is a deliberately near-verbatim copy of the original
+  # scripts/domain_charts-cgpt.r (see its own header): dot-separated names
+  # like df.plot and group.colors are the original script's style, kept so a
+  # reader can diff this file against the archived original and see only the
+  # documented changes -- renaming them here would be an undocumented one.
+  "R/pooled.R" = list(object_name_linter = c(15, 38, 65, 85, 122, 196))
+  )

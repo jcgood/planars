@@ -78,21 +78,25 @@ plot_forestspans <- function(bundle, subset = NULL,
   # not the per-span composite colors, which live in forest_spans$Color above.
   style <- planarsviz_domain_types(bundle)
   style <- style[order(style$sort_order), , drop = FALSE]
-  legend_colors <- data.frame(Domain_Type = style$domain_type, Color = style$colour,
-                              stringsAsFactors = FALSE)
+  legend_colors <- data.frame(
+    Domain_Type = style$domain_type, Color = style$colour,
+    stringsAsFactors = FALSE
+  )
 
   o <- bundle$metadata$root_position
   if (!is.null(o)) o <- as.numeric(o)
   b <- as.numeric(bundle$metadata$n_positions)
-  count_x <- b + 1  # right edge of the (now right-justified) tree-count
-                    # column -- just a touch past the axis's own right end
-  margin_unit <- 1  # one position-to-position gap -- the actual panel margins
-                    # (scale_x_continuous's expand below) are set to this same
-                    # unit on the left, so the blank space before position 1
-                    # reads as "one more position-width," not a guessed number.
+  count_x <- b + 1 # right edge of the (now right-justified) tree-count
+  # column -- just a touch past the axis's own right end
+  margin_unit <- 1 # one position-to-position gap -- the actual panel margins
+  # (scale_x_continuous's expand below) are set to this same
+  # unit on the left, so the blank space before position 1
+  # reads as "one more position-width," not a guessed number.
 
   p <- ggplot(long, aes(x = Edge, y = Layer)) +
-    { if (!is.null(o)) geom_vline(xintercept = o, linetype = "dotted") } +
+    {
+      if (!is.null(o)) geom_vline(xintercept = o, linetype = "dotted")
+    } +
     # show.legend = FALSE on both: without it, ggplot2 folds these two layers'
     # own key-glyph drawing functions (a colored line segment; a boxed "a", the
     # generic placeholder geom_label always draws in a legend) into the
@@ -123,7 +127,8 @@ plot_forestspans <- function(bundle, subset = NULL,
     {
       if (is.null(count_header_size)) {
         annotate(
-          "text", x = count_x, y = Inf, vjust = -0.3, hjust = 1,
+          "text",
+          x = count_x, y = Inf, vjust = -0.3, hjust = 1,
           label = paste0("Trees\n(n = ", n_families, ")"), fontface = "bold", size = 4
         )
       } else {
@@ -131,13 +136,15 @@ plot_forestspans <- function(bundle, subset = NULL,
         n_size <- count_header_size[[2]]
         list(
           annotate(
-            "text", x = count_x, y = Inf, vjust = -0.3, hjust = 1,
+            "text",
+            x = count_x, y = Inf, vjust = -0.3, hjust = 1,
             label = paste0("(n = ", n_families, ")"), fontface = "bold", size = n_size
           ),
           # vjust is measured in this label's own height, so lift "Trees" by
           # the "(n = N)" line's height expressed in "Trees" heights.
           annotate(
-            "text", x = count_x, y = Inf, vjust = -0.3 - 1.25 * n_size / trees_size, hjust = 1,
+            "text",
+            x = count_x, y = Inf, vjust = -0.3 - 1.25 * n_size / trees_size, hjust = 1,
             label = "Trees", fontface = "bold", size = trees_size
           )
         )

@@ -29,20 +29,24 @@
 # is not safe in the grid, where several groups have their observed count at
 # the panel's own axis minimum and a left-extending label gets clipped. Both
 # were seen happening.
-NULL_PANEL_VIEWS <- list(
+null_panel_views <- list(
   # The multi-panel grid. These numbers reproduce theme_bw(base_size = 11)'s
   # own automatic axis sizes and the strip size the chart already used.
-  grid = list(ncol = 3, width = 11, height = 9,
-              y_top_pad = 0.38, annotation_size = 3.1, label_y_frac = 1.35,
-              label_hjust = -0.05, x_left_pad = 0.05,
-              axis_text_size = 8.8, axis_title_size = 11, strip_text_size = 9),
+  grid = list(
+    ncol = 3, width = 11, height = 9,
+    y_top_pad = 0.38, annotation_size = 3.1, label_y_frac = 1.35,
+    label_hjust = -0.05, x_left_pad = 0.05,
+    axis_text_size = 8.8, axis_title_size = 11, strip_text_size = 9
+  ),
   # One group meant to stand alone rather than sit packed into a grid: the
   # group's own colour, a bigger annotation, and an axis that hugs the data
   # instead of reserving headroom purely for the label.
-  standalone = list(ncol = 1, width = 9, height = 5.5,
-                    y_top_pad = 0.06, annotation_size = 5, label_y_frac = 0.9,
-                    label_hjust = 1.05, x_left_pad = 0.14,
-                    axis_text_size = 13, axis_title_size = 14, strip_text_size = 15)
+  standalone = list(
+    ncol = 1, width = 9, height = 5.5,
+    y_top_pad = 0.06, annotation_size = 5, label_y_frac = 0.9,
+    label_hjust = 1.05, x_left_pad = 0.14,
+    axis_text_size = 13, axis_title_size = 14, strip_text_size = 15
+  )
 )
 
 # Resolve `groups` against a summary table and narrow both tables to it,
@@ -53,21 +57,25 @@ planarsviz_null_select <- function(summary_df, tally, groups, view, what) {
   unknown <- setdiff(groups, summary_df$group)
   if (length(unknown)) {
     stop("No group `", paste(unknown, collapse = "`, `"),
-         "` in this bundle's ", what, ". It covers: ",
-         paste(summary_df$group, collapse = ", "), ".", call. = FALSE)
+      "` in this bundle's ", what, ". It covers: ",
+      paste(summary_df$group, collapse = ", "), ".",
+      call. = FALSE
+    )
   }
   if (view == "standalone" && length(groups) != 1L) {
     stop("The standalone view draws one group; ", length(groups), " were asked for.", call. = FALSE)
   }
-  list(groups = groups,
-       summary_df = summary_df[match(groups, summary_df$group), , drop = FALSE],
-       tally = tally[tally$group %in% groups, , drop = FALSE])
+  list(
+    groups = groups,
+    summary_df = summary_df[match(groups, summary_df$group), , drop = FALSE],
+    tally = tally[tally$group %in% groups, , drop = FALSE]
+  )
 }
 
 # Draw the panels. `neutral` is the grid's single fill; standalone uses the
 # group's own colour instead.
 planarsviz_null_panels <- function(summary_df, tally, groups, view, x_lab, neutral) {
-  settings <- NULL_PANEL_VIEWS[[view]]
+  settings <- null_panel_views[[view]]
   labels <- stats::setNames(summary_df$label, summary_df$group)
   fill_colour <- if (view == "standalone") summary_df$colour[[1]] else neutral
 
@@ -79,31 +87,41 @@ planarsviz_null_panels <- function(summary_df, tally, groups, view, x_lab, neutr
   density_df <- do.call(rbind, lapply(split(tally, tally$group), function(sub) {
     peak_height <- max(sub$n)
     bw <- max(1, diff(range(sub$family_count)) / 15)
-    dens <- stats::density(sub$family_count, weights = sub$n / sum(sub$n), bw = bw,
-                           from = min(sub$family_count) - 1, to = max(sub$family_count) + 1, n = 256)
+    dens <- stats::density(sub$family_count,
+      weights = sub$n / sum(sub$n), bw = bw,
+      from = min(sub$family_count) - 1, to = max(sub$family_count) + 1, n = 256
+    )
     data.frame(group = sub$group[1], x = dens$x, y = dens$y * peak_height / max(dens$y))
   }))
 
   peak_by_group <- stats::aggregate(n ~ group, data = tally, FUN = max)
   names(peak_by_group) <- c("group", "peak_height")
   summary_df <- merge(summary_df, peak_by_group, by = "group")
-  summary_df$annotation <- sprintf("obs = %d\np(<=obs) = %.3f",
-                                   summary_df$observed_families, summary_df$p_value_le_observed)
+  summary_df$annotation <- sprintf(
+    "obs = %d\np(<=obs) = %.3f",
+    summary_df$observed_families, summary_df$p_value_le_observed
+  )
   # label_y_frac is deliberately independent of y_top_pad. The two were once
   # coupled, which quietly moved the grid chart's labels when the padding
   # changed.
   summary_df$label_y <- summary_df$peak_height * settings$label_y_frac
 
   p <- ggplot() +
-    geom_col(data = tally, aes(x = family_count, y = n),
-             fill = fill_colour, alpha = 0.55, width = 1, color = NA) +
+    geom_col(
+      data = tally, aes(x = family_count, y = n),
+      fill = fill_colour, alpha = 0.55, width = 1, color = NA
+    ) +
     geom_line(data = density_df, aes(x = x, y = y), color = fill_colour, linewidth = 0.8) +
-    geom_vline(data = summary_df, aes(xintercept = observed_families),
-               linetype = "dashed", color = "black", linewidth = 0.7) +
-    geom_text(data = summary_df, aes(x = observed_families, y = label_y, label = annotation),
-              hjust = settings$label_hjust, vjust = 1, size = settings$annotation_size,
-              color = "black") +
-    facet_wrap(~ group, scales = "free", ncol = settings$ncol) +
+    geom_vline(
+      data = summary_df, aes(xintercept = observed_families),
+      linetype = "dashed", color = "black", linewidth = 0.7
+    ) +
+    geom_text(
+      data = summary_df, aes(x = observed_families, y = label_y, label = annotation),
+      hjust = settings$label_hjust, vjust = 1, size = settings$annotation_size,
+      color = "black"
+    ) +
+    facet_wrap(~group, scales = "free", ncol = settings$ncol) +
     scale_x_continuous(expand = expansion(mult = c(settings$x_left_pad, 0.05))) +
     scale_y_continuous(expand = expansion(mult = c(0, settings$y_top_pad))) +
     labs(x = x_lab, y = "Permutations producing that count") +

@@ -47,20 +47,25 @@ planarsviz_ghost_tree <- function(newick, group_spans, strengths, alphaval, colo
   spans <- lapply(strsplit(group_spans, "-", fixed = TRUE), as.numeric)
   names(spans) <- letters[seq_along(spans)]
   tree1grouped <- ggtree::groupOTU(tree1, spans)
-  strengthMap1 <- c(0.5, strengths)
-  spacer_args <- list(geom="label", size=5, angle=0,
-    offset=-1, hjust=0.5, vjust=0.35, alpha=0, colour=NA, fill=NA)
+  strength_map1 <- c(0.5, strengths)
+  spacer_args <- list(
+    geom = "label", size = 5, angle = 0,
+    offset = -1, hjust = 0.5, vjust = 0.35, alpha = 0, colour = NA, fill = NA
+  )
   if (!is.null(spacer_lineheight)) spacer_args$lineheight <- spacer_lineheight
   treeplot1 <- ggtree::ggtree(tree1grouped,
-    aes(size=(strengthMap1[group])),
-    layout="slanted", ladderize=FALSE,
-    alpha=alphaval, color=colour) +
+    aes(size = (strength_map1[group])),
+    layout = "slanted", ladderize = FALSE,
+    alpha = alphaval, color = colour
+  ) +
     ggtree::layout_dendrogram() +
     do.call(ggtree::geom_tiplab, spacer_args) +
-    theme(panel.background=element_blank(),
-      plot.background=element_blank(),
-      legend.position="none",
-      plot.margin=margin(t=5, r=5, b=25, l=5, unit="pt")) +
+    theme(
+      panel.background = element_blank(),
+      plot.background = element_blank(),
+      legend.position = "none",
+      plot.margin = margin(t = 5, r = 5, b = 25, l = 5, unit = "pt")
+    ) +
     scale_size_identity()
   treeplot1
 }
@@ -82,7 +87,8 @@ read_planars_forest <- function(bundle, forest_id) {
     stop("No forest `", forest_id, "` in this bundle. Available: ", paste(ids, collapse = ", "), call. = FALSE)
   }
   trees <- utils::read.delim(file.path(bundle$bundle_dir, "data", "forests", paste0(forest_id, ".tsv")),
-                             stringsAsFactors = FALSE, colClasses = "character")
+    stringsAsFactors = FALSE, colClasses = "character"
+  )
   list(meta = meta[[1]], trees = trees)
 }
 
@@ -106,7 +112,7 @@ plot_laminar_forest <- function(bundle, forest_id) {
   trees <- forest_data$trees
   alphaval <- meta$alpha / 2
   labels <- planarsviz_position_labels(bundle$position_labels)
-  posLabel <- as.list(labels)
+  pos_label <- as.list(labels)
 
   plots <- lapply(seq_len(nrow(trees)), function(i) {
     planarsviz_ghost_tree(
@@ -118,13 +124,15 @@ plot_laminar_forest <- function(bundle, forest_id) {
     )
   })
   n <- length(plots)
-  plots[[n]] <- plots[[n]] + ggtree::geom_tiplab(geom="label", size=6, angle=0,
-    offset=-1, hjust=0.5, vjust=0.35, alpha=1, label.size=0,
-    aes(label=paste(label, posLabel[label], sep="\n")), lineheight=1)
+  plots[[n]] <- plots[[n]] + ggtree::geom_tiplab(
+    geom = "label", size = 6, angle = 0,
+    offset = -1, hjust = 0.5, vjust = 0.35, alpha = 1, label.size = 0,
+    aes(label = paste(label, pos_label[label], sep = "\n")), lineheight = 1
+  )
 
-  treelayout <- do.call(c, rep(list(patchwork::area(t=1, l=1, b=5, r=1)), n))
-  forest <- Reduce(`+`, plots) + plot_layout(design=treelayout)
-  forest <- forest & theme(plot.background=element_rect(fill='white', color=NA))
+  treelayout <- do.call(c, rep(list(patchwork::area(t = 1, l = 1, b = 5, r = 1)), n))
+  forest <- Reduce(`+`, plots) + plot_layout(design = treelayout)
+  forest <- forest & theme(plot.background = element_rect(fill = "white", color = NA))
 
   attr(forest, "planarsviz_size") <- c(width = 20, height = 14)
   attr(forest, "planarsviz_units") <- "in"

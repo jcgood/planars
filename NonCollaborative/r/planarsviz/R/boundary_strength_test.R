@@ -20,8 +20,10 @@ read_planars_boundary_strength_test <- function(bundle) {
   path <- file.path(bundle$bundle_dir, "data", "boundary_strength_test.tsv")
   if (!file.exists(path)) {
     stop("This bundle has no boundary_strength_test.tsv. The permutation test is ",
-         "slow, so the exporter only runs it when asked: re-export with ",
-         "--boundary-strength-test-permutations 5000.", call. = FALSE)
+      "slow, so the exporter only runs it when asked: re-export with ",
+      "--boundary-strength-test-permutations 5000.",
+      call. = FALSE
+    )
   }
   utils::read.delim(path, stringsAsFactors = FALSE, colClasses = c(
     position = "integer", observed = "numeric", null_mean = "numeric",
@@ -59,7 +61,9 @@ plot_boundary_strength_test <- function(bundle, group = "all", statistic = "jump
   available <- unique(test$group)
   if (!group %in% available) {
     stop("No group '", group, "' in this bundle's boundary_strength_test.tsv. Available: ",
-         paste(available, collapse = ", "), call. = FALSE)
+      paste(available, collapse = ", "),
+      call. = FALSE
+    )
   }
   test <- test[test$group == group & test$statistic == statistic, , drop = FALSE]
   test$significant <- test$p_value_ge_observed < alpha
@@ -73,12 +77,17 @@ plot_boundary_strength_test <- function(bundle, group = "all", statistic = "jump
     if (pad == 0) pad <- 1
     p <- ggplot(d, aes(x = position)) +
       geom_ribbon(aes(ymin = null_p05, ymax = null_p95),
-                  fill = "grey60", alpha = 0.3) +
-      geom_line(aes(y = null_mean), colour = "grey40", linetype = "dashed",
-                linewidth = 0.7 / .pt) +
+        fill = "grey60", alpha = 0.3
+      ) +
+      geom_line(aes(y = null_mean),
+        colour = "grey40", linetype = "dashed",
+        linewidth = 0.7 / .pt
+      ) +
       geom_line(aes(y = observed), colour = line_colour, linewidth = 1 / .pt) +
-      geom_point(aes(y = observed, fill = significant), shape = 21, size = 2.4,
-                 colour = line_colour, stroke = 0.8) +
+      geom_point(aes(y = observed, fill = significant),
+        shape = 21, size = 2.4,
+        colour = line_colour, stroke = 0.8
+      ) +
       scale_fill_manual(
         values = c(`TRUE` = line_colour, `FALSE` = "white"),
         labels = c(`TRUE` = paste0("p < ", alpha), `FALSE` = paste0("p ≥ ", alpha)),
@@ -90,9 +99,11 @@ plot_boundary_strength_test <- function(bundle, group = "all", statistic = "jump
       planarsviz_mpl_theme() +
       theme(axis.title = element_text(size = 13), axis.text = element_text(size = 11, colour = "black"))
     if (top_panel) {
-      p + theme(axis.text.x = element_blank(),
-                legend.position = "inside", legend.position.inside = c(0.005, 0.995),
-                legend.justification = c(0, 1), legend.margin = margin(3, 6, 3, 4))
+      p + theme(
+        axis.text.x = element_blank(),
+        legend.position = "inside", legend.position.inside = c(0.005, 0.995),
+        legend.justification = c(0, 1), legend.margin = margin(3, 6, 3, 4)
+      )
     } else {
       p + theme(legend.position = "none")
     }

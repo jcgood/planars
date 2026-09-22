@@ -41,12 +41,15 @@ planarsviz_conflict_tree <- function(newick, group_spans, strengths, alphaval, c
   all_tree1_g <- ggtree::groupOTU(all_tree1, spans)
   all_sm1 <- c(0.5, strengths)
   all_tp1 <- ggtree::ggtree(all_tree1_g,
-    aes(size=(all_sm1[group])),
-    layout='slanted', ladderize=FALSE) +
+    aes(size = (all_sm1[group])),
+    layout = "slanted", ladderize = FALSE
+  ) +
     ggtree::layout_dendrogram() +
-    theme(panel.background=element_blank(),
-      plot.background=element_blank(),
-      legend.position='none') +
+    theme(
+      panel.background = element_blank(),
+      plot.background = element_blank(),
+      legend.position = "none"
+    ) +
     scale_size_identity()
   all_tp1$layers[[1]]$aes_params$alpha <- alphaval
   all_tp1$layers[[1]]$aes_params$colour <- colour
@@ -87,36 +90,41 @@ plot_conflict_groups <- function(bundle, other_label = "neither", panel_titles =
       newick = bundle$families$newick[bundle$families$family_id == family_id],
       group_spans = paste(s$left, s$right, sep = "-"),
       strengths = round(sqrt(s$family_frequency), 4),
-      alphaval = alphaval)
+      alphaval = alphaval
+    )
   }
   make_panel <- function(family_ids, title) {
-    alphaval <- round(1 - 0.01 ^ (1 / length(family_ids)), 6)
+    alphaval <- round(1 - 0.01^(1 / length(family_ids)), 6)
     trees <- lapply(family_ids, tree_for, alphaval = alphaval)
-    panel_design <- do.call(c, rep(list(patchwork::area(t=1, l=1, b=5, r=1)), length(trees)))
+    panel_design <- do.call(c, rep(list(patchwork::area(t = 1, l = 1, b = 5, r = 1)), length(trees)))
     panel <- Reduce(`+`, trees) +
-      plot_layout(design=panel_design)
+      plot_layout(design = panel_design)
     panel <- if (isTRUE(panel_titles)) {
       patchwork::wrap_elements(full = panel) + ggtitle(title) +
         theme(plot.title = element_text(size = title_size))
     } else {
-      panel + plot_annotation(title=title)
+      panel + plot_annotation(title = title)
     }
     list(panel = panel, trees = trees)
   }
 
   n <- nrow(bundle$families)
-  panel_all <- make_panel(bundle$families$family_id, paste0('All ', n, ' families'))
+  panel_all <- make_panel(bundle$families$family_id, paste0("All ", n, " families"))
   group_panels <- lapply(unique(groups$group_id), function(g) {
     rows <- groups[groups$group_id == g, , drop = FALSE]
     drawn <- rows[!is.na(rows$draw_rank), , drop = FALSE]
     drawn <- drawn[order(drawn$draw_rank), , drop = FALSE]
     defining <- rows$defining_span_id[[1]]
-    what <- if (is.na(defining) || defining == "") other_label else paste0('[', sub("-", "\u2013", defining, fixed = TRUE), ']')
-    make_panel(drawn$family_id, paste0('Group ', g, ': ', what, ' (', nrow(rows), ' families)'))
+    what <- if (is.na(defining) || defining == "") {
+      other_label
+    } else {
+      paste0("[", sub("-", "\u2013", defining, fixed = TRUE), "]")
+    }
+    make_panel(drawn$family_id, paste0("Group ", g, ": ", what, " (", nrow(rows), " families)"))
   })
 
   forest <- (panel_all$panel / Reduce(`|`, lapply(group_panels, `[[`, "panel"))) +
-    plot_layout(heights=c(2, 1))
+    plot_layout(heights = c(2, 1))
   attr(forest, "planarsviz_size") <- c(width = 24, height = 20)
   attr(forest, "planarsviz_units") <- "in"
   attr(forest, "planarsviz_folder") <- "laminar-families"

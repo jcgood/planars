@@ -57,8 +57,10 @@ read_planars_subset <- function(bundle, subset_id) {
   match_row <- index[index$subset_id == subset_id, , drop = FALSE]
   if (!nrow(match_row)) stop("Unknown planarsviz subset: ", subset_id, call. = FALSE)
   subset_dir <- file.path(bundle$bundle_dir, "data", match_row$path[[1L]])
-  required <- c("metadata.json", "spans.tsv", "tests.tsv", "families.tsv",
-                "family_membership.tsv", "conflict_pairs.tsv")
+  required <- c(
+    "metadata.json", "spans.tsv", "tests.tsv", "families.tsv",
+    "family_membership.tsv", "conflict_pairs.tsv"
+  )
   missing <- required[!file.exists(file.path(subset_dir, required))]
   if (length(missing)) stop("Subset is missing: ", paste(missing, collapse = ", "), call. = FALSE)
   subset <- list(
@@ -128,10 +130,10 @@ validate_planars_bundle <- function(bundle) {
     nrow(spans)
   }
   if (n_observed_spans != as.integer(metadata$n_unique_spans) ||
-      nrow(bundle$families) != as.integer(metadata$n_maximal_families) ||
-      nrow(bundle$conflict_pairs) != as.integer(metadata$n_conflict_pairs) ||
-      nrow(bundle$tests) != as.integer(metadata$n_active_tests) ||
-      nrow(bundle$position_labels) != as.integer(metadata$n_positions)) {
+    nrow(bundle$families) != as.integer(metadata$n_maximal_families) ||
+    nrow(bundle$conflict_pairs) != as.integer(metadata$n_conflict_pairs) ||
+    nrow(bundle$tests) != as.integer(metadata$n_active_tests) ||
+    nrow(bundle$position_labels) != as.integer(metadata$n_positions)) {
     stop("Bundle table counts do not match metadata.", call. = FALSE)
   }
 
@@ -139,11 +141,11 @@ validate_planars_bundle <- function(bundle) {
   known_families <- bundle$families$family_id
   membership <- bundle$family_membership
   if (any(!membership$span_id %in% known_spans) ||
-      any(!membership$family_id %in% known_families)) {
+    any(!membership$family_id %in% known_families)) {
     stop("Family membership references an unknown family or span.", call. = FALSE)
   }
   if (any(!bundle$conflict_pairs$span_id_a %in% known_spans) ||
-      any(!bundle$conflict_pairs$span_id_b %in% known_spans)) {
+    any(!bundle$conflict_pairs$span_id_b %in% known_spans)) {
     stop("Conflict pairs reference an unknown span.", call. = FALSE)
   }
   invisible(bundle)

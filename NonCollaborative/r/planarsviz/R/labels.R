@@ -15,7 +15,7 @@ planarsviz_position_labels <- function(position_labels) {
   }
   positions <- as.integer(position_labels$position)
   if (anyNA(positions) || anyDuplicated(positions) || any(positions < 1L) ||
-      any(!nzchar(as.character(position_labels$label)))) {
+    any(!nzchar(as.character(position_labels$label)))) {
     stop("Position labels must have unique positive positions and non-empty labels.", call. = FALSE)
   }
   labels <- as.character(position_labels$label)

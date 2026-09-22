@@ -100,7 +100,7 @@ plot_boundary_strength_overlay <- function(bundle, subset = NULL,
   # ---- boxed position labels, drawn manually (see notes above) ----
   y_upper <- max_strength * 1.08
   label_y <- -0.09 * max_strength
-  y_lower <- label_y - 0.05 * max_strength  # extra buffer below the label row itself
+  y_lower <- label_y - 0.05 * max_strength # extra buffer below the label row itself
 
   label_colors <- if (is.null(highlight)) {
     stats::setNames(rep("black", n_positions), as.character(seq_len(n_positions)))

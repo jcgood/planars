@@ -12,7 +12,7 @@
 #     chart families that script builds.
 
 # Ensures test rows become two edges (L/R) and layers are computed consistently
-df.plot <- function(d, type_levels){
+df.plot <- function(d, type_levels) {
   d <- d %>%
     mutate(
       Domain_Type = factor(
@@ -21,7 +21,7 @@ df.plot <- function(d, type_levels){
       )
     ) %>%
     arrange(desc(Size), Left_Edge) %>%
-    group_by(Size, Left_Edge) %>%              # group for layer IDs
+    group_by(Size, Left_Edge) %>% # group for layer IDs
     mutate(Layer = cur_group_id()) %>%
     ungroup() %>%
     arrange(Layer, Domain_Type, Left_Edge, Test_Labels) %>%
@@ -35,7 +35,7 @@ df.plot <- function(d, type_levels){
 }
 
 # Domain-focused version; remove desc() from group_by
-df.domain.plot <- function(d, type_levels){
+df.domain.plot <- function(d, type_levels) {
   d <- d %>%
     mutate(
       Domain_Type = factor(
@@ -62,7 +62,7 @@ df.domain.plot <- function(d, type_levels){
 # Domain_Type (the per-class charts), a 5-item color legend is both misleading (it lists
 # types that aren't in the chart) and a waste of vertical space on already-short charts —
 # so swap it for a plain title instead. Multi-domain charts (the pooled ones) keep the legend.
-finish.constituency.plot <- function(p, c){
+finish.constituency.plot <- function(p, c) {
   domain_types <- unique(na.omit(as.character(c$Domain_Type)))
 
   if (length(domain_types) == 1) {
@@ -82,15 +82,17 @@ finish.constituency.plot <- function(p, c){
   }
 }
 
-constituency.plot <- function(c, b, o, group.colors, legend_breaks){
+constituency.plot <- function(c, b, o, group.colors, legend_breaks) {
   p <- ggplot(c, aes(
     x = Edge,
     # Largest domain on top: ascending Size puts the highest value (largest
     # domain) at the last factor level, which ggplot draws at the top.
-    y = reorder(Test_Labels, Size*100 + as.numeric(Layer)),
+    y = reorder(Test_Labels, Size * 100 + as.numeric(Layer)),
     label = Reverse_Layer
   )) +
-    { if (!is.null(o)) geom_vline(xintercept = o, linetype = "dotted") } +
+    {
+      if (!is.null(o)) geom_vline(xintercept = o, linetype = "dotted")
+    } +
     geom_line(aes(color = Domain_Type), linewidth = 2) +
     labs(color = "Domain Type:") +
     geom_label(
@@ -106,7 +108,6 @@ constituency.plot <- function(c, b, o, group.colors, legend_breaks){
       values = group.colors,
       breaks = legend_breaks
     ) +
-
     theme_bw() +
     theme(
       axis.title.y = element_blank(),
@@ -118,13 +119,15 @@ constituency.plot <- function(c, b, o, group.colors, legend_breaks){
 }
 
 
-constituency.domain.plot <- function(c, b, o, group.colors, legend_breaks){
+constituency.domain.plot <- function(c, b, o, group.colors, legend_breaks) {
   p <- ggplot(c, aes(
     x = Edge,
     y = reorder(Test_Labels, Layer),
     label = Reverse_Domain_Layer
   )) +
-    { if (!is.null(o)) geom_vline(xintercept = o, linetype = "dotted") } +
+    {
+      if (!is.null(o)) geom_vline(xintercept = o, linetype = "dotted")
+    } +
     geom_line(aes(color = Domain_Type), linewidth = 2) +
     labs(color = "Domain Type:") +
     geom_label(
@@ -140,7 +143,6 @@ constituency.domain.plot <- function(c, b, o, group.colors, legend_breaks){
       values = group.colors,
       breaks = legend_breaks
     ) +
-
     theme_bw() +
     theme(
       axis.title.y = element_blank(),

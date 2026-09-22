@@ -28,14 +28,16 @@ Honesty rule: nothing below says "matches" without naming the comparison file.
   settled or moot: question 8 (branch not pushed) went away when PR #294
   merged, and question 11 (boundary-strength files missing from
   `results/visualizations.md`) was folded into C4, which rewrote that file.
-- **Phase D (the R tooling, formerly R9) is in progress.** Done: roxygen2
+- **Phase D (the R tooling, formerly R9) is done (2026-09-22).** roxygen2
   generates `NAMESPACE` and `man/`; a drift guard catches a stale regeneration;
-  `R CMD check` on a built tarball reports `Status: OK`; and the 21 porting
-  checks now fail on their own instead of only printing their numbers; and
+  `R CMD check` on a built tarball reports `Status: OK`; the 21 porting
+  checks now fail on their own instead of only printing their numbers;
   `renv` pins the package versions every one of those numbers was produced
-  with. Left: `lintr`/`styler`, then CI — where the real question is that
-  `NonCollaborative/tests/` has never run in CI at all. `vdiffr` was
-  considered and deliberately dropped; see the entry at the end of this file.
+  with; `lintr`/`styler` are installed, configured and clean, each with its
+  own drift guard (see "Phase D's last item" near the end of this file); and
+  CI now runs the R-independent slice of `NonCollaborative/tests/`, which had
+  never run in CI at all before this phase. `vdiffr` was considered and
+  deliberately dropped; see the entry at the end of this file.
 - **Not done, deliberately deferred:** Phase E (the `illustrations` bundle —
   question 1 has its design).
 - **Seen by Jeff: yes, 2026-09-20 — the charts are fine.** This was the one
@@ -2171,3 +2173,88 @@ most likely to catch a normalisation mistake
 phase E, the `illustrations` bundle (design agreed, recorded under question 1 above);
 `planar-structure/` and `illustrations/` were deliberately left out of this move — they
 hold no `planarsviz`-drawn charts and are produced by unrelated scripts.
+
+---
+
+## Phase D's last item: `lintr`/`styler`, and phase D is now fully closed (2026-09-22)
+
+Neither tool was installed anywhere before this — no `.lintr`, no packages in `renv.lock`,
+`requireNamespace()` returned `FALSE` for both. Installed via `renv::install()`, added to
+`DESCRIPTION`'s `Suggests`, and recorded (with their own transitive dependencies —
+`R.cache`, `R.methodsS3`, `R.oo`, `R.utils`, `rex`, `xmlparsedata`) into `renv.lock` with
+`renv::record()`, since neither is `library()`-called anywhere renv's implicit dependency
+scanner looks; only the two new drift-guard tests reference them, and those are Python
+files invoking `Rscript -e`, not R source renv scans.
+
+**`styler::style_pkg()` first, before lintr, so the two passes wouldn't disagree with each
+other about what to fix.** 19 of 21 files changed, all cosmetic — brace placement on
+multi-line calls, wrapping long `ggplot`/`theme()` chains. Confirmed behaviour-preserving
+the same way the folder move was: re-rendered all 137 nyan1308 charts and ran
+`check_renderer.py` against the (unmoved) reference tree, getting the exact same
+percentages as before styling (including the same deliberate/font-only differences),
+nothing newly inexact.
+
+**`lintr::lint_package()` found 939 findings, and 658 of them were one false positive
+repeated:** `object_usage_linter`'s "no visible global function/binding" for practically
+every `ggplot2` verb and `aes()` column name in the package. Confirmed rather than assumed
+by reading a sample: the package brings in `ggplot2` with `import(ggplot2)` in `NAMESPACE`
+rather than per-function `importFrom`, which is a known blind spot for this linter — it has
+no way to know which names that whole-package import provides. Disabled in the new
+`r/planarsviz/.lintr`, with the finding count and the reasoning written into the config
+file itself, not just here.
+
+**The rest sorted into three small piles, all resolved the same session:**
+
+- **Real, mechanical fixes:** three camelCase variables (`posLabel`, `strengthMap1`,
+  `wordColor`) renamed to the package's snake_case convention, all local to internal
+  (non-exported) helpers so the rename is call-site-safe; a module constant
+  (`NULL_PANEL_VIEWS`, in the file hoisted for the arbitrary-layers work two entries up)
+  lowercased to match everything else in the package rather than kept as a special case;
+  three lines over 120 characters wrapped.
+- **Config exceptions, each with its own reasoning written next to it in `.lintr`:**
+  `indentation_linter` (disagrees with styler's own wrapped-condition indent — styler is
+  the authoritative formatter here, so the redundant, sometimes-contradictory check is the
+  one to drop, not styler's output), `commented_code_linter` (false-positives on two file
+  headers' prose citations of an archived script's line numbers and literal values, which
+  read as code-shaped to the heuristic), `brace_linter` (four uses of
+  `{ if (cond) geom_vline(...) }` spliced into a `ggplot` `+` chain — a bare block used as
+  one expression, not a control structure whose brace could move up), `pipe_consistency_linter`
+  (declared `%>%` as this project's pipe rather than the default `|>`, since magrittr is an
+  actual `Import` used consistently and `pooled.R` is a deliberately near-verbatim copy of
+  the script it was ported from), `object_length_linter` (raised to 40 characters, since the
+  `read_planars_*()`/`plot_*()` naming convention legitimately produces names in the
+  mid-30s once the thing being read or drawn has a descriptive name of its own).
+- **One per-file exclusion, not a package-wide one:** `pooled.R`'s six dot-separated names
+  (`df.plot`, `constituency.domain.plot`, `group.colors`, …) are `object_name_linter`
+  findings everywhere else in the package would also be findings, but this file's own
+  header says it is kept as a near-verbatim copy of `scripts/domain_charts-cgpt.r` so a
+  reader can diff it against the archived original — renaming these would be an
+  undocumented deviation from that contract. Excluded by exact line number in `.lintr`
+  rather than disabling the linter package-wide, since every other file's names are
+  genuinely checked.
+
+**Two new drift guards, mirroring `test_roxygen_up_to_date.py`'s shape exactly:**
+`test_lint_clean.py` fails if `lint_package()` finds anything `.lintr` doesn't already
+excuse; `test_styler_up_to_date.py` runs `style_pkg(dry = "fail")`, which restyles nothing
+and just reports whether restyling would change anything. Both wired into
+`.pre-commit-config.yaml` at `pre-push`, gated on `files:
+^NonCollaborative/r/planarsviz/` like the roxygen guard, for the same reason: CI has no R,
+this takes seconds only when the package itself changed, and both skip cleanly (never
+fail) on a machine without R or these packages, since a skip that reads as a pass is
+useless for a drift guard but a hard failure on a machine that was never supposed to run
+this check is worse.
+
+**The styler guard caught a real slip before it shipped.** Writing `test_styler_up_to_date.py`
+and running it against the already-styled tree failed: `overlays.R` "would be modified by
+styler." Cause: the hand-fix for one of the three overlong lines (wrapping
+`patchwork::inset_element(...)` across several lines) didn't happen to match styler's own
+wrapping. Ran `styler::style_pkg()` again — one file changed, this time to a fixed point
+(a third run confirmed nothing left to change) — re-ran `lint_package()` (still 0) and the
+renderer check (still the same numbers) to confirm the second pass changed nothing it
+shouldn't have. Lesson for next time doing this: run styler *last*, after any hand-edits
+made in response to lint findings, not before — or run it once more right before calling
+the pass done.
+
+**Phase D is now fully closed.** Every item — roxygen2, the drift guard, `R CMD check`
+reaching OK, CI, renv, and now lintr/styler — is done. Next: phase E, the `illustrations`
+bundle.
