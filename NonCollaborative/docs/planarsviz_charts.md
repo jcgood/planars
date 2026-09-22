@@ -28,6 +28,7 @@ Contents: [Pooled plots](#1-pooled-plots) ·
 [Boundary strength](#12-boundary-strength) ·
 [Boundary-strength overlay](#13-boundary-strength-overlay) ·
 [Fragmentation test](#14-fragmentation-test) ·
+[Span placement](#15-span-placement-test) ·
 [Name changes](#name-changes-for-cutover)
 
 ---
@@ -487,6 +488,45 @@ for a bundle that has both.
 Unlike every other chart here, this one was written in R from the start —
 there is no matplotlib original, so the chart the standalone script drew is
 itself the reference its porting check compares against.
+
+---
+
+## 15. Span-placement test
+
+Does the real arrangement of a group's spans give fewer laminar families than
+those same span *lengths* placed at random would? One panel per group: its
+null distribution of family counts, its real count as a dashed line, and its
+p-value in the panel. Panels share no axis — an absolute family count is not
+comparable across groups with very different span counts, and the comparable
+quantity is each panel's own p-value.
+
+![Span-placement test](planarsviz_charts/span_placement_test_syntaxlike_plot.png)
+
+```r
+plot_span_placement_test(bundle)
+plot_span_placement_test(bundle, groups = "syntaxlike", view = "standalone")
+```
+
+| Option | Meaning |
+|---|---|
+| `groups` | Draw only these groups, in the order given. Default: all nine. |
+| `view` | `"grid"` (the default) packs the panels three across in a neutral colour, with room above each peak for its label. `"standalone"` draws one group in its own colour, with a larger label and an axis that hugs the data. |
+
+Canvas 11 × 9 in for the grid, 9 × 5.5 in standalone. The ten numbers that
+differ between the two views are not independent knobs — at the standalone
+label's larger size a right-extending label runs into the bars, and in the
+grid a left-extending one gets clipped where a group's observed count sits at
+its panel's axis minimum — so they travel together as one `view` rather than
+as ten arguments.
+
+**This chart needs a bundle exported with `--span-placement-permutations`**,
+for the same reason as the fragmentation chart.
+
+| Renderer name | Old file |
+|---|---|
+| `span_placement_test_by_group_plot` | `nyan1308_span_placement_test_by_group_plot.pdf` |
+| `span_placement_test_syntaxlike_plot` | `nyan1308_span_placement_test_syntaxlike_plot.pdf` |
+| `span_placement_test_phonologylike_plot` | `nyan1308_span_placement_test_phonologylike_plot.pdf` |
 
 ---
 

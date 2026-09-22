@@ -198,6 +198,22 @@ chart_table <- function() {
           function() plot_fragmentation_test(bundle, groups = syntax_phon))
     }
   }
+  # Only when the bundle has it, same as the fragmentation tables above.
+  # The grid is every group at once; the two standalone charts are the
+  # bundles someone presents on their own, so which two is a presentation
+  # choice and sits here rather than in the data.
+  if (file.exists(file.path(data_dir, "span_placement_test.tsv"))) {
+    add("span_placement_test_by_group_plot", function() plot_span_placement_test(bundle))
+    for (group in c("syntaxlike", "phonologylike")) {
+      local({
+        g <- group
+        if (g %in% read_tsv("span_placement_test.tsv")$group) {
+          add(paste0("span_placement_test_", g, "_plot"),
+              function() plot_span_placement_test(bundle, groups = g, view = "standalone"))
+        }
+      })
+    }
+  }
   # Only when the bundle has it: the permutation test is slow enough that the
   # exporter runs it on request (--boundary-strength-test-permutations), so a
   # bundle without it is normal, not broken.

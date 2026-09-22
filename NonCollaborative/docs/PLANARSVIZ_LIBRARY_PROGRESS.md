@@ -1953,3 +1953,74 @@ span-placement charts.
 two, their numbers are not in the bundle — `span_placement_test.py` writes committed
 TSVs that no exporter reads, so the port starts in `export_planarsviz_data.py` behind a
 flag, the way `--fragmentation-permutations` already works.
+
+---
+
+## Absorption, third producer: the span-placement charts — and it is done (2026-09-21)
+
+All three span-placement charts come from the package, the renderer check's closing
+queue is empty, and nothing under `NonCollaborative/` writes a chart into `results/`
+except `render_planarsviz.R`. That was the whole point of the absorption.
+
+**This one started in Python, unlike the other two.** Their numbers were already in the
+bundle; these were not — `span_placement_test.py` wrote committed TSVs that no exporter
+read. So `export_span_placement_test()` is new, behind
+`--span-placement-permutations`, built on `export_boundary_strength_test()`, which
+turned out to be an exact template: same `[("all", None)] + classes + bundles` group
+shape, same label/colour assignment. It calls `span_placement_test.run_test()`
+unchanged.
+
+**The group order is load-bearing and now says so in three places.** `run_test()`
+advances one shared random stream across the groups in the order it is given them, so
+a different order would give different, still valid but no longer comparable, draws.
+That is recorded in the exporter's docstring, in the data contract, and as an assertion
+in `test_span_placement_tables_agree` — the kind of drift a pixel check would only
+catch by accident.
+
+**One `view` argument rather than ten.** The script had three calls and two settings
+between them, and its own comments explain why the ten numbers are not independent
+knobs: at the standalone chart's larger annotation a right-extending label runs into
+the bars, and in the grid a left-extending one gets clipped where a group's observed
+count sits at its panel's axis minimum. Both were seen happening, not reasoned about.
+So the two sets travel together.
+
+**Evidence, and a deliberately cheaper route to it.** Jeff asked whether the full check
+suite was needed here, since this shouldn't be able to break rendering. It largely
+isn't, and the reason is worth recording rather than treating as a shortcut:
+
+- The new R file shares no code with any existing chart, and the three renderer
+  registrations are additive. Neither can change another chart.
+- The one thing that *could* was re-exporting the bundle, which rewrites ~100 files
+  that every chart reads. `git status` settles that completely and in seconds: every
+  committed bundle file came back byte-identical except the two new tables and
+  `metadata.json`, whose diff is the two new keys and nothing else. Byte-identical
+  inputs plus untouched shared code means unchanged outputs by construction, which is a
+  stronger argument than sampling 20 charts.
+- What still had to run is the part nothing else proves: the three new charts against
+  the references step 1 froze. All three at 0.0000% — 1100x900 for the grid, 900x550
+  for each standalone — checked against a scratch bundle before the real one was
+  touched, so the evidence existed before anything could be lost.
+
+The fallback was stated in advance: if the re-export had moved a byte, the full suite
+would have run. It did not.
+
+- Looked at by Claude: yes — the exported summary and tally compared row by row against
+  the committed TSVs before any chart was drawn (no mismatches, 329 tally rows
+  identical, every group summing to 5000); the `metadata.json` diff read rather than
+  assumed; and one real bug caught while writing the chart function, where the grid
+  view read its neutral fill from the pooled row *after* narrowing the table, so asking
+  for the grid without `all` in `groups` would have failed on an empty subscript.
+
+**Absorption is complete.** `bundle_forest_trees.r`, `fragmentation_test_plot.r` and
+`span_placement_test_plot.r` are all archived behind the `OlderFiles/` run guard. The
+renderer check reports no references without a render.
+
+**Next: the per-language folder layer**, asked for 2026-09-21 — `results/` and the
+check-side images gain a `<dataset>/` level so a second language can land beside
+nyan1308. Sized at the time: the renderer is one line (it already has the dataset), and
+eleven of the thirteen R checks already take the dataset as an argument. The bulk is
+moving about 400 files, the same shape as restructure steps 2 and 3. Two things to
+settle first: whether the `nyan1308_` filename prefix survives a folder that already
+carries the language, and `check_renderer.py`, which hardcodes `nyan1308` at lines 65
+and 89 and so would silently find nothing for a second language today — a scaling bug
+already present, independent of any move.

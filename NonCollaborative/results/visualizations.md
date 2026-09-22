@@ -957,13 +957,25 @@ room for this number to move regardless of the real linguistic structure. The po
 in a different direction than the fragmentation test's own findings, since the two ask genuinely
 different questions about the same 26 spans.
 
-To regenerate:
+To regenerate the tables:
 ```
 python scripts/analysis/span_placement_test.py
-Rscript scripts/analysis/span_placement_test_plot.r
 ```
-Not yet ported into the `planarsviz` package — this is exploratory work from 2026-09-20, one
-step behind the fragmentation test in that respect.
+
+**All three charts come from the package** since 2026-09-21 —
+`--plots span_placement_test_by_group_plot`, `_syntaxlike_plot`, `_phonologylike_plot`. Like the
+fragmentation chart, they need a bundle exported with the test asked for:
+
+```
+python scripts/analysis/export_planarsviz_data.py \
+  --domain-file domains/domains_nyan1308.tsv \
+  --planar-file planar_tables/planar_nyan1308.tsv --language-name Chichewa \
+  --span-placement-permutations 5000
+```
+
+The exporter calls `span_placement_test.py`'s own `run_test()`, so the bundle and the committed
+TSVs above carry the same numbers. `span_placement_test_plot.r`, which drew all three charts
+before the package did, was archived to `OlderFiles/planarsviz_superseded/scripts/analysis/`.
 
 ## How much tree structure each family leaves open
 

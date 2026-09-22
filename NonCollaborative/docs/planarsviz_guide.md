@@ -21,7 +21,8 @@ environment.
 
 The exporter does all analysis by calling the existing, verified Python
 functions (`laminar_analysis.py`, `laminar_tree_counts.py`,
-`boundary_strength.py`, and `class_fragmentation_test.py` when asked); it
+`boundary_strength.py`, and — when asked — `class_fragmentation_test.py`,
+`boundary_strength_test.py` and `span_placement_test.py`); it
 never reimplements them. R never enumerates
 families, builds tree shapes or chooses families: it reads those from the
 bundle. So a change to the analysis is made once, in Python, and every chart

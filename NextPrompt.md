@@ -77,38 +77,46 @@ commits:
 - **WeasyPrint upgraded to 70.0** (`00b12cc`), clearing both Dependabot
   alerts. Neither could reach this project; upgrading beat dismissing.
 
-**Next action: absorption, the last step of the `results/` restructure.**
-Steps 1, 2 and 3 are done and pushed — the references are frozen, the
-check-side images are grouped, and `results/` itself is now six topic
-folders. The first producer is absorbed too (below). What remains is the
-other two. The plan and the order it has to happen in are the last entries
-in `NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md`. Read those before
-starting; they are not repeated here. `lintr`/`styler` is the only phase D
-item left after it, and needs no decision — just work.
+**The `results/` restructure is finished, absorption included** (2026-09-21).
+All four steps are done and pushed: references frozen, check-side images
+grouped, `results/` itself reorganised into six topic folders, and all three
+remaining producers absorbed into the package. The renderer check now reports
+**"references with no render: none"** — nothing under `NonCollaborative/`
+writes a chart into `results/` except `render_planarsviz.R`. Three scripts
+(`bundle_forest_trees.r`, `fragmentation_test_plot.r`,
+`span_placement_test_plot.r`) are archived behind the `OlderFiles/` run guard.
+The per-producer detail is in the last three entries of
+`NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md`; read those rather than
+a paraphrase here.
 
-**The forest trees are absorbed** (2026-09-21). `plot_forest_tree()` is in the
-package, the renderer registers one chart per tree for all eight forests (48
-names), all 22 that had a frozen reference compare at 0.0000%, and
-`bundle_forest_trees.r` is archived behind the `OlderFiles/` run guard. The
-full suite is green (43 passed, 3 xfailed). One consequence to look at:
-`results/laminar-families/` grew from 63 PDFs to 89, because registering all
-eight forests means a full render draws the 26 trees nobody had drawn before.
-Reversing that is a `--plots` decision plus deleting 26 files.
+Two things worth carrying forward from that work. `results/laminar-families/`
+grew from 63 PDFs to 89 — registering all eight forests means a full render
+draws the 26 trees nobody had drawn before; Jeff confirmed that is fine. And
+the span-placement port added `--span-placement-permutations` to the exporter,
+so **a full re-export now needs all three permutation flags together**
+(`--fragmentation-permutations 5000 --boundary-strength-test-permutations 5000
+--span-placement-permutations 5000`), or the tables left un-asked-for drop out
+of the bundle.
 
-**The fragmentation two-bundle variant is absorbed too** (2026-09-21).
-`plot_fragmentation_test()` took a `groups` argument, both charts compare at
-0.0000%, and `fragmentation_test_plot.r` is archived — which closes the real
-defect the restructure plan named: it and the package both wrote
-`nyan1308_fragmentation_test_plot.pdf`, whichever ran last winning, with
-nothing recording which.
+**Next action: the per-language folder layer**, asked for 2026-09-21 and
+deliberately queued behind absorption so a move and a port could not fail
+together. `results/` and the check-side images gain a `<dataset>/` level so a
+second language can land beside nyan1308. The bundle is already per-language;
+these three places are not. Sized at the time: the renderer is one line (it
+already knows the dataset), eleven of the thirteen R checks already take the
+dataset as an argument, and the bulk is moving about 400 files — the same
+shape as restructure steps 2 and 3, which were one commit each.
 
-**One producer left: the three span-placement charts.** Unlike the first two,
-their numbers are not in the bundle — `span_placement_test.py` writes
-committed TSVs in `results/counts-and-chance/` that no exporter reads
-(checked, not assumed). So the port starts in `export_planarsviz_data.py`
-behind a flag, the way `--fragmentation-permutations` already works, and only
-then reaches `r/planarsviz/`. The renderer check's closing list is the queue:
-3 names now, all of them these.
+**Two things to settle before starting it.** Whether the `nyan1308_` filename
+prefix survives a folder that already carries the language (keeping both is
+the same fact in two places, which this project keeps removing; dropping it
+renames every file and every reference image). And `check_renderer.py`, which
+hardcodes `nyan1308` at lines 65 and 89 and would silently find nothing for a
+second language — a scaling bug already present, independent of any move, and
+cheap to fix since the dataset is in the manifest.
+
+After that, `lintr`/`styler` is the only phase D item left, and needs no
+decision — just work.
 
 **`NonCollaborative/docs/NOTE_FOR_REFACTOR_SESSION.md` is now history, not
 instruction**, for the forest-tree part at least: its port request is done,

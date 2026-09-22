@@ -1,0 +1,10 @@
+group	kind	label	colour	n_spans	n_positions	observed_families	null_mean	null_p05	null_p50	null_p95	p_value_le_observed	n_truncated	n_permutations	seed
+all	all	All (pooled)	#0072B2	26	22	69	83.783	46	80	134	0.335	0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	10	22	3	6.367	4	6	9	0.019	0	5000	0
+phonological	class	Phonological	#20845E	11	22	6	10.022	5	10	16	0.1364	0	5000	0
+tonosegmental	class	Tonosegmental	#0072B5	11	22	9	8.007	5	8	13	0.7552	0	5000	0
+intonational	class	Intonational	#7876B1	3	22	1	1.099	1	1	2	0.9012	0	5000	0
+length	class	Length	#E18727	6	22	3	4.042	3	4	6	0.2824	0	5000	0
+phonologylike	bundle	Phonology-like	#0072B5	13	22	6	11.514	6	11	19	0.077	0	5000	0
+syntaxlike	bundle	Syntax-like	#BC3C29	20	22	16	27.817	16	27	42	0.0514	0	5000	0
+syntaxlike_notono	bundle	Syntax-like (no Tono)	#E18727	11	22	4	7.739	5	8	11	0.02	0	5000	0

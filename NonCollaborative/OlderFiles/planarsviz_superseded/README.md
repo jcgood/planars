@@ -70,7 +70,7 @@ used to live in `scripts/analysis/laminar_analysis.py`:
   Archived in C4. No check compares against it; it is here because the Python
   that wrote it is gone and nothing else records what it drew.
 
-`scripts/` — 5 hand-written scripts:
+`scripts/` — 6 hand-written scripts:
 
 - `domain_charts-cgpt.r` — the pooled constituency charts (1–4), also
   `source()`d by the exemplary-trees script
@@ -81,18 +81,21 @@ used to live in `scripts/analysis/laminar_analysis.py`:
 - `analysis/fragmentation_test_plot.r` — chart 19 and its two-bundle variant,
   archived 2026-09-21 when `plot_fragmentation_test(groups = )` absorbed the
   second one
+- `analysis/span_placement_test_plot.r` — the three span-placement charts,
+  archived 2026-09-21 when `plot_span_placement_test()` absorbed all three
 
-## Two of these are evidence in a different way
+## Three of these are evidence in a different way
 
-No check runs `analysis/bundle_forest_trees.r` or
-`analysis/fragmentation_test_plot.r`. They are here because they drew charts
-whose reference images were frozen before the package could overwrite them —
-the 22 forest trees in `reference/laminar-families/`, and both fragmentation
-charts in `reference/counts-and-chance/` — and those references are what the
-checks compare the package against. So the chain runs through the frozen
-images rather than through a live evaluation of the script.
+No check runs `analysis/bundle_forest_trees.r`,
+`analysis/fragmentation_test_plot.r` or `analysis/span_placement_test_plot.r`.
+They are here because they drew charts whose reference images were frozen
+before the package could overwrite them — the 22 forest trees in
+`reference/laminar-families/`, and both fragmentation charts and all three
+span-placement charts in `reference/counts-and-chance/` — and those references
+are what the checks compare the package against. So the chain runs through the
+frozen images rather than through a live evaluation of the script.
 
-They are still the only record of how those images were made, and both
+They are still the only record of how those images were made, and all three
 headers still describe writing into `results/` themselves, which the package
 does now. Left unedited for the same reason as the out-of-date comment above:
 they record what drew the published charts, not what is current.

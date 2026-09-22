@@ -49,6 +49,7 @@ from laminar_tree_counts import (  # noqa: E402
 from boundary_strength import compute_boundary_strength  # noqa: E402
 from class_fragmentation_test import run_test as run_fragmentation_test  # noqa: E402
 from boundary_strength_test import run_test as run_boundary_strength_test  # noqa: E402
+from span_placement_test import run_test as run_span_placement_test  # noqa: E402
 
 
 def forest_variants() -> list[tuple[str, list[str], str]]:
@@ -311,6 +312,74 @@ def export_fragmentation_test(domain_file: Path, domains_dir: Path, data_dir: Pa
     write_tsv(data_dir / "fragmentation_null.tsv",
               ["group", "kind", "family_count", "n"], tally)
     return {"fragmentation_permutations": n_permutations, "fragmentation_seed": seed}
+
+
+def export_span_placement_test(domain_file: Path, domains_dir: Path, data_dir: Path,
+                               n_permutations: int, seed: int) -> dict:
+    """Write span_placement_test.tsv and span_placement_null.tsv: does the
+    real arrangement of a group's spans produce fewer laminar families than
+    the same span *lengths* placed at random would?
+
+    Calls span_placement_test.run_test() unchanged, so the numbers equal that
+    script's own committed nyan1308_span_placement_test.tsv. Groups and their
+    label/colour follow export_boundary_strength_test()'s convention, which
+    means the same group order that script's own GROUPS uses -- "all" first,
+    then the domain types in CLASS_ORDER, then the bundles. The order is
+    load-bearing, not cosmetic: run_test() advances one shared random stream
+    across the groups in the order given, so a different order would give
+    different (still valid, but no longer comparable) null draws.
+
+    The pooled row is labelled "All (pooled)" rather than
+    export_boundary_strength_test()'s "All tests", because this test pools
+    spans and that one pools tests. Each table carries its own label column
+    for exactly this reason.
+
+    Null counts go in as a tally, for the same reason and in the same shape
+    as export_fragmentation_test()'s.
+
+    Not run unless asked, for the same reason as --fragmentation-permutations:
+    one family enumeration per replicate costs minutes.
+    """
+    observed = set(
+        pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")["Domain_Type"].dropna().str.strip()
+    )
+    classes = [c for c in CLASS_ORDER if c in observed] + sorted(observed - set(CLASS_ORDER))
+    bundles = [b for b in BUNDLES if set(b[1]) & observed]
+    palette = {row["domain_type"]: row["colour"] for row in DOMAIN_TYPE_STYLE}
+    bundle_style = {name: (display, colour) for name, _types, colour, display in bundles}
+
+    groups = [("all", None)] + [(c, [c]) for c in classes] + [(name, list(types)) for name, types, _c, _d in bundles]
+    summary, null_tallies = run_span_placement_test(
+        domain_file.name, domains_dir, groups=groups,
+        n_permutations=n_permutations, seed=seed,
+    )
+
+    rows = []
+    for row in summary:
+        name = row["group"]
+        if name == "all":
+            kind, label, colour = "all", "All (pooled)", "#0072B2"
+        elif name in bundle_style:
+            label, colour = bundle_style[name]
+            kind = "bundle"
+        else:
+            label, colour = name.title(), palette.get(name, FALLBACK_COLOUR)
+            kind = "class"
+        rows.append(dict(row) | {"kind": kind, "label": label, "colour": colour})
+    write_tsv(data_dir / "span_placement_test.tsv",
+              ["group", "kind", "label", "colour", "n_spans", "n_positions",
+               "observed_families", "null_mean", "null_p05", "null_p50", "null_p95",
+               "p_value_le_observed", "n_truncated", "n_permutations", "seed"], rows)
+
+    kind_of = {r["group"]: r["kind"] for r in rows}
+    tally = []
+    for name, counts in null_tallies.items():
+        for family_count in sorted(counts):
+            tally.append({"group": name, "kind": kind_of[name],
+                          "family_count": family_count, "n": counts[family_count]})
+    write_tsv(data_dir / "span_placement_null.tsv",
+              ["group", "kind", "family_count", "n"], tally)
+    return {"span_placement_permutations": n_permutations, "span_placement_seed": seed}
 
 
 def export_boundary_strength_test(domain_file: Path, domains_dir: Path, data_dir: Path,
@@ -791,6 +860,8 @@ def export_bundle(
     fragmentation_seed: int = 0,
     boundary_strength_test_permutations: int = 0,
     boundary_strength_test_seed: int = 0,
+    span_placement_permutations: int = 0,
+    span_placement_seed: int = 0,
 ) -> Path:
     """Export one validated domain dataset and return its bundle directory.
 
@@ -947,6 +1018,13 @@ def export_bundle(
             boundary_strength_test_permutations, boundary_strength_test_seed,
         )
 
+    span_placement_metadata: dict = {}
+    if span_placement_permutations:
+        span_placement_metadata = export_span_placement_test(
+            domain_file, domains_dir, data_dir,
+            span_placement_permutations, span_placement_seed,
+        )
+
     metadata = {
         "contract_version": "0.2.0",
         "dataset": dataset,
@@ -980,6 +1058,7 @@ def export_bundle(
         **selection_metadata,
         **fragmentation_metadata,
         **boundary_strength_test_metadata,
+        **span_placement_metadata,
         "producer": "scripts/analysis/export_planarsviz_data.py",
         "analysis_source": "scripts/analysis/laminar_analysis.py",
     }
@@ -1137,6 +1216,18 @@ def main() -> None:
         "--boundary-strength-test-seed", type=int, default=0,
         help="Seed for --boundary-strength-test-permutations (default: 0, what made the committed files)",
     )
+    parser.add_argument(
+        "--span-placement-permutations", type=int, default=0, metavar="N",
+        help="Also run the span-placement permutation test (does the real arrangement of a "
+             "group's spans give fewer laminar families than those same span lengths placed at "
+             "random?) with N draws and put its tables in the bundle. Off by default for the "
+             "same reason as --fragmentation-permutations: one family enumeration per replicate. "
+             "Use 5000 to match the committed results/counts-and-chance/ files.",
+    )
+    parser.add_argument(
+        "--span-placement-seed", type=int, default=0,
+        help="Seed for --span-placement-permutations (default: 0, what made the committed files)",
+    )
     args = parser.parse_args()
 
     bundle_dir = export_bundle(args.domain_file, args.output_dir, args.planar_file,
@@ -1146,7 +1237,9 @@ def main() -> None:
                                not args.no_exemplary_sparsest,
                                args.fragmentation_permutations, args.fragmentation_seed,
                                args.boundary_strength_test_permutations,
-                               args.boundary_strength_test_seed)
+                               args.boundary_strength_test_seed,
+                               args.span_placement_permutations,
+                               args.span_placement_seed)
     print(f"Exported planarsviz bundle: {bundle_dir}")
 
 

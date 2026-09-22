@@ -131,6 +131,54 @@ def test_fragmentation_tables_agree():
         seen.add(key)
 
 
+def test_span_placement_tables_agree():
+    """The span-placement null tally must account for every draw, describe the
+    same groups as the summary, and keep the group order the numbers depend on.
+
+    The first two are test_fragmentation_tables_agree()'s reasoning exactly:
+    a tally that stops summing to its own n_permutations is no longer the
+    distribution the p-value came from, and nothing would look wrong.
+
+    The third is particular to this test. `span_placement_test.run_test()`
+    advances one shared random stream across the groups in the order it is
+    given them, so the order in the table is what says which draws each group
+    got. If an export ever reordered them the numbers would still be
+    internally consistent and still wrong against the committed TSVs, which
+    is the kind of drift a pixel check would only catch by accident.
+    """
+    summary = read_tsv("span_placement_test.tsv")
+    tally = read_tsv("span_placement_null.tsv")
+    assert summary and tally
+
+    kinds = {row["group"]: row["kind"] for row in summary}
+    draws = {row["group"]: int(row["n_permutations"]) for row in summary}
+    assert set(kinds) == {row["group"] for row in tally}
+
+    totals = {}
+    for row in tally:
+        assert row["kind"] == kinds[row["group"]]
+        totals[row["group"]] = totals.get(row["group"], 0) + int(row["n"])
+    assert totals == draws
+
+    seen = set()
+    for row in tally:
+        key = (row["group"], row["family_count"])
+        assert key not in seen, f"duplicate tally row for {key}"
+        seen.add(key)
+
+    # Pooled first, then classes, then bundles -- the order run_test() was
+    # given, and so the order its shared random stream assumed.
+    order = [row["kind"] for row in summary]
+    assert order[0] == "all", f"first row is {order[0]}, not the pooled group"
+    assert order == sorted(order, key=["all", "class", "bundle"].index), (
+        f"groups are out of order: {order}"
+    )
+
+    # Every group re-places its spans over the FULL structure, not its own
+    # observed range, so one n_positions serves them all.
+    assert len({row["n_positions"] for row in summary}) == 1
+
+
 def test_boundary_strength_test_covers_every_position():
     """Every group must have exactly one row per (side, statistic, position),
     and the jump statistic's position-1 row (no position 0 to jump from) must

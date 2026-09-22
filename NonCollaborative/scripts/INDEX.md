@@ -73,23 +73,19 @@ to it, and that is where the porting checks run too.
   group), `_span_placement_null_tally.tsv` (`group, family_count, n` —
   a tally, not one row per draw)
 - **Example**: `python scripts/analysis/span_placement_test.py`
-- **Not yet ported into the package** — exploratory work from 2026-09-20,
-  one step behind the fragmentation test in that respect.
+- **Also in the bundle**, since 2026-09-21: the exporter calls this same
+  `run_test()` behind `--span-placement-permutations`, so the package's
+  charts and the committed TSVs above carry the same numbers.
 
-**`analysis/span_placement_test_plot.r`**
-- **Purpose**: Draw the test above — one panel per group, a histogram and
-  density curve of that group's own null distribution, the observed count
-  as a dashed vertical line, count and p-value printed in-panel
-- **Input**: `results/counts-and-chance/nyan1308_span_placement_test.tsv` and
-  `_span_placement_null_tally.tsv`; it does not re-run the permutation
-- **Output**: `results/counts-and-chance/nyan1308_span_placement_test_by_group_plot.pdf`
-- **Panels use independent axes** (`scales = "free"`), not a shared one —
-  unlike `fragmentation_test_plot.r`, the absolute family count here is not
-  comparable across groups of very different span counts, so a shared axis
-  would squash the small groups and misplace their own annotations (this
-  actually happened with `scales = "free_x"` alone before the fix).
-- **Example**: `Rscript scripts/analysis/span_placement_test_plot.r` (it
-  resolves `results/` from its own location, so any working directory is fine)
+*(The R that drew this test, `analysis/span_placement_test_plot.r`, was
+archived to `OlderFiles/planarsviz_superseded/scripts/analysis/` on
+2026-09-21. The package draws all three of its charts now —
+`plot_span_placement_test()`, with `groups` and `view` — from a bundle
+exported with `--span-placement-permutations`. Panels there still use
+independent axes (`scales = "free"`), unlike the fragmentation chart: the
+absolute family count is not comparable across groups of very different span
+counts, so a shared axis would squash the small groups and misplace their own
+annotations, which actually happened with `scales = "free_x"` alone.)*
 
 **`analysis/class_fragmentation_test.py`**
 - **Purpose**: Ask whether a domain class is more fragmented than its own

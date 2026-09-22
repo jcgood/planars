@@ -111,6 +111,7 @@ its intended canvas size attached as `planarsviz_size` and
 | Boundary strength, distributions | `plot_boundary_strength()`, `plot_boundary_strength_distributions()` |
 | Boundary-strength overlay | `plot_boundary_strength_overlay()` |
 | Class-fragmentation permutation test | `plot_fragmentation_test()` |
+| Span-placement permutation test | `plot_span_placement_test()` |
 | Boundary-strength permutation test | `plot_boundary_strength_test()` |
 
 Reading data: `read_planars_bundle()`, `read_planars_subset()`,

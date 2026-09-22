@@ -131,6 +131,37 @@ nyan1308 at 5000 draws. A reader that wants one row per draw expands it;
 `read_planars_fragmentation_null()` does that by default, which is also how
 the chart gets a violin identical to the one the original script drew.
 
+`span_placement_test.tsv` and `span_placement_null.tsv` (in `data/` only, and
+**only when the bundle was exported with `--span-placement-permutations`** —
+same reason as the fragmentation tables). From `span_placement_test.py`'s
+`run_test()`: does the real arrangement of a group's spans give fewer
+laminar families than those same span *lengths* placed at random would?
+
+`span_placement_test.tsv` is one row per group, a group being the pooled
+dataset (`kind` all), a single domain type (`kind` class) or one of
+`planars_groupings.BUNDLES` (`kind` bundle): `group`, `kind`, `label`,
+`colour`, `n_spans`, `n_positions`, `observed_families`, the null's
+`null_mean`, `null_p05`, `null_p50`, `null_p95`, the one-sided
+`p_value_le_observed` (same direction and column name as
+`fragmentation_test.tsv`'s), `n_truncated`, then `n_permutations` and `seed`.
+
+**The row order is load-bearing, not cosmetic.** `run_test()` advances one
+shared random stream across the groups in the order it is given them, so the
+exporter passes them in `span_placement_test.py`'s own order — pooled first,
+then the domain types in `CLASS_ORDER`, then the bundles — and a different
+order would give different, still valid but no longer comparable, draws.
+
+`span_placement_null.tsv` is the null distributions as a tally, the same
+shape and for the same reason as `fragmentation_null.tsv`: `group`, `kind`,
+`family_count`, `n`. Unlike that one it is **not** expanded back to one row
+per draw, because this chart draws the tally directly as bars and weights its
+own density curve by `n`.
+
+The pooled row's `label` is `All (pooled)` where
+`boundary_strength_test.tsv`'s is `All tests`: this test pools spans and that
+one pools tests. Each table carries its own `label` column for exactly that
+reason.
+
 `boundary_strength_test.tsv` (in `data/` only, and **only when the bundle
 was exported with `--boundary-strength-test-permutations`** — same reason
 as the fragmentation tables: one family enumeration per replicate, so it
