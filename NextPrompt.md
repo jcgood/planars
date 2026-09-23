@@ -30,12 +30,13 @@ matters for the exporter specifically: it records the domain file's path as
 given, so running it from the repo root writes a bundle that differs from the
 committed one in that field.
 
-### Next action: Jeff's three step-4 questions, then step 5
+### Next action: carry out Jeff's three step-4 answers, then step 5
 
 Step 4 is done: all 21 CCDB structures drawn by
 `python scripts/planarsviz_ccdb_batch.py --apply`, reviewed, and six
-problems fixed. Three questions remain open for Jeff, listed under "Step 4
-as built" in the progress file; settle those first, then the plan's step 5
+problems fixed. Jeff has answered the three questions it left (under "Step
+4 as built" in the progress file: "Jeff's answers"); carry those out, leaving
+nyan1308's charts identical, re-run the batch, then the plan's step 5
 (documentation and the tutorial).
 
 ### Things that will bite

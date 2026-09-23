@@ -18,7 +18,8 @@ plan says what and why. Update it at every step boundary, in the same commit.
   squashed exemplary trees, now fixed.
 - **Step 3a, one command for one language: done (2026-09-23).**
   `scripts/planarsviz_language.py`; details under "Step 3a as built".
-- **Step 4, all 21: done apart from three questions for Jeff (2026-09-23).**
+- **Step 4, all 21: done apart from three follow-ups Jeff has decided but
+  that aren't carried out yet (2026-09-23).**
   All 21 export and render with no chart failing; seven review agents
   looked through 20 of them (Chácobo verbal had already been looked at);
   six display problems fixed. Details under "Step 4 as built".
@@ -314,7 +315,15 @@ Fixed (each leaves nyan1308's 137 charts identical, by the renderer check):
   now always in range.
 - (Step 3a's command also carries `planar_type` now; see its docstring.)
 
-Not changed, for Jeff (the three questions):
+**Jeff's answers (2026-09-23), not yet carried out:**
+
+1. Per-type forests: **run 1..n for CCDB bundles; nyan1308's unchanged.**
+2. IPA: **draw with cairo PDF only for a chart whose text the standard fonts
+   can't draw;** every other chart, nyan1308's included, as now.
+3. Capped count: **leave the placeholder root out**, as the summed count
+   does; update `test_planarsviz_shifted_bundle.py`'s expected value.
+
+The three questions as they were put:
 
 1. **Per-type forests stop at that type's last position** (`indet_*`,
    `phon_*`, `morsyn_*` in 11 structures), while the pooled forests and
