@@ -105,7 +105,9 @@ Points to know:
   each chart was designed for is attached as `planarsviz_size` (width,
   height) and `planarsviz_units` (`"in"` or `"cm"`). Tree charts in
   particular were tuned for their canvas — label placement is measured
-  against it — so use it unless you have a reason not to.
+  against it — so use it unless you have a reason not to. The width grows
+  with the number of positions beyond nyan1308's 22 (never shrinks), so a
+  longer planar structure gets room rather than crowded labels.
 - **Variants are options, not separate functions.** A chart restricted to
   some domain types, with a highlighted word, or with a legend is the same
   function with an argument (see the catalogue).

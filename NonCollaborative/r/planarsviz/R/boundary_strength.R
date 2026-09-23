@@ -150,7 +150,7 @@ plot_boundary_strength <- function(bundle, subset = NULL, bar_colour = "#7876B1"
 
   p <- (panel("left", "Left edge", TRUE) / panel("right", "Right edge", FALSE)) &
     theme(plot.background = element_rect(fill = "white", colour = NA))
-  attr(p, "planarsviz_size") <- c(width = 11, height = 7)
+  attr(p, "planarsviz_size") <- c(width = 11 * planarsviz_position_scale(bundle), height = 7)
   attr(p, "planarsviz_units") <- "in"
   attr(p, "planarsviz_folder") <- "boundaries"
   p
@@ -221,7 +221,7 @@ plot_boundary_strength_distributions <- function(bundle, subset = NULL,
       legend.position = "inside", legend.position.inside = c(0.995, 0.995),
       legend.justification = c(1, 1), legend.margin = margin(3, 6, 3, 4)
     )
-  attr(p, "planarsviz_size") <- c(width = 11, height = 5)
+  attr(p, "planarsviz_size") <- c(width = 11 * planarsviz_position_scale(bundle), height = 5)
   attr(p, "planarsviz_units") <- "in"
   attr(p, "planarsviz_folder") <- "boundaries"
   p

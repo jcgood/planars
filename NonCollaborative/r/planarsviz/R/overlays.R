@@ -126,14 +126,14 @@ plot_laminar_overlay <- function(bundle, groups = NULL, alpha_divisor = 2,
     plots[[n]] <- plots[[n]] + ggtree::geom_tiplab(
       geom = "label", size = 6, angle = 0,
       offset = -1, hjust = 0.5, vjust = 0.35, alpha = 1, label.size = 0,
-      aes(label = paste(label, pos_label[label], sep = "\n")), lineheight = 1
+      aes(label = planarsviz_tip_label(label, pos_label[label])), lineheight = 1
     )
   } else {
     word_color <- planarsviz_highlight_colours(bundle, highlight)
     plots[[n]] <- plots[[n]] + ggtree::geom_tiplab(
       geom = "label", size = 6, angle = 0,
       offset = -1, hjust = 0.5, vjust = 0.35, alpha = 1, label.size = 0,
-      aes(label = paste(label, pos_label[label], sep = "\n"), colour = word_color[label]),
+      aes(label = planarsviz_tip_label(label, pos_label[label]), colour = word_color[label]),
       lineheight = 1
     ) +
       scale_colour_identity()
@@ -242,7 +242,7 @@ plot_laminar_overlay <- function(bundle, groups = NULL, alpha_divisor = 2,
     )
   }
 
-  attr(result, "planarsviz_size") <- c(width = 20, height = 14)
+  attr(result, "planarsviz_size") <- c(width = 20 * planarsviz_position_scale(bundle), height = 14)
   attr(result, "planarsviz_units") <- "in"
   attr(result, "planarsviz_folder") <- "laminar-families"
   attr(result, "planarsviz_parts") <- plots

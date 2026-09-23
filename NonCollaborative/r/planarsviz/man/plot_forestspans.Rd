@@ -7,7 +7,7 @@
 plot_forestspans(
   bundle,
   subset = NULL,
-  legend_position = c("inside", "right"),
+  legend_position = c("auto", "inside", "right"),
   legend_inside = c(0.012, 0.02),
   count_header_size = c(6, 4.5)
 )
@@ -19,9 +19,12 @@ plot_forestspans(
 `subsets.json` (a fresh analysis of part of the data, e.g. `"no_tono"`);
 its layer numbers and counts are its own, not the full chart's.}
 
-\item{legend_position}{`"inside"` (default) puts the colour key in the
-empty lower-left corner of the panel, in a bordered white box;
-`"right"` puts it beside the panel, as the original script did.}
+\item{legend_position}{`"inside"` puts the colour key in the lower-left
+corner of the panel, in a bordered white box; `"right"` puts it beside
+the panel, as the original script did. `"auto"` (default) chooses
+`"inside"` when that corner is empty -- no span in the bottom quarter of
+rows starts in the leftmost fifth of the axis, as in nyan1308 -- and
+`"right"` otherwise, so the key never covers a span.}
 
 \item{legend_inside}{Position of the inset legend's lower-left corner, as
 a share of the panel.}

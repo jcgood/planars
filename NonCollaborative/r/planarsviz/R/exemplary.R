@@ -19,7 +19,8 @@
 #     stay global (section 5);
 #   - canvas sizes computed with the generator's formulas: evidence height
 #     max(7, tests x 0.7) cm rounded to 2 places, print page 51 + 25 cm wide,
-#     slide tree 13.333 x 7.5 in;
+#     slide tree 13.333 x 7.5 in -- every width then widened for structures
+#     with more than 22 positions (planarsviz_position_scale(), R/labels.R);
 #   - library(), source() and ggsave() removed.
 
 # One family's tree, drawn solid with a boxed "N\nName" label at every tip.
@@ -40,7 +41,7 @@ planarsviz_labelled_tree <- function(newick, pos_label, slide = FALSE) {
       ggtree::geom_tiplab(
         geom = "label", size = 5, angle = 0,
         offset = -1, hjust = 0.5, vjust = 0.35, alpha = 1, label.size = 0,
-        aes(label = paste(label, pos_label[label], sep = "\n")), lineheight = 1
+        aes(label = planarsviz_tip_label(label, pos_label[label])), lineheight = 1
       ) +
       theme(
         panel.background = element_blank(),
@@ -54,7 +55,7 @@ planarsviz_labelled_tree <- function(newick, pos_label, slide = FALSE) {
         geom = "label", size = 4.6, angle = 0,
         offset = -1, hjust = 0.5, vjust = 0.35, alpha = 1, label.size = 0,
         label.padding = unit(0.12, "lines"),
-        aes(label = paste(label, pos_label[label], sep = "\n")), lineheight = 1
+        aes(label = planarsviz_tip_label(label, pos_label[label])), lineheight = 1
       ) +
       theme(
         panel.background = element_blank(),
@@ -131,14 +132,14 @@ plot_exemplary_tree <- function(bundle, rank = 1L, view = c("page", "slide_tree"
 
   if (view == "slide_tree") {
     p <- planarsviz_exemplary_tree(bundle, family_id, slide = TRUE)
-    attr(p, "planarsviz_size") <- c(width = 13.333, height = 7.5)
+    attr(p, "planarsviz_size") <- c(width = 13.333 * planarsviz_position_scale(bundle), height = 7.5)
     attr(p, "planarsviz_units") <- "in"
     attr(p, "planarsviz_folder") <- "laminar-families"
     return(p)
   }
   ex_plot1 <- planarsviz_family_evidence(bundle, family_id)
-  tree_width_cm <- 51.0
-  pooled_width_cm <- 25.0
+  tree_width_cm <- 51.0 * planarsviz_position_scale(bundle)
+  pooled_width_cm <- 25.0 * planarsviz_position_scale(bundle)
   pooled_height_cm <- round(max(7.0, attr(ex_plot1, "planarsviz_n_tests") * 0.7), 2)
   if (view == "slide_evidence") {
     attr(ex_plot1, "planarsviz_size") <- c(width = pooled_width_cm, height = pooled_height_cm)

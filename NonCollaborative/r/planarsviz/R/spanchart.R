@@ -98,7 +98,7 @@ plot_span_chart <- function(bundle, positions = c("all", "drawn")) {
     ) +
     ggtitle(paste0(n_families, " maximal families: span frequencies"))
 
-  attr(p_spanchart, "planarsviz_size") <- c(width = 14, height = 8)
+  attr(p_spanchart, "planarsviz_size") <- c(width = 14 * planarsviz_position_scale(bundle), height = 8)
   attr(p_spanchart, "planarsviz_units") <- "in"
   attr(p_spanchart, "planarsviz_folder") <- "laminar-families"
   p_spanchart

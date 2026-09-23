@@ -6,6 +6,12 @@ canvas it was designed for, and an example from nyan1308 (Chichewa). The
 what follows the dataset in the file name; **old file** is the file in
 `results/` it replaces.
 
+The canvases below are for 22 positions (nyan1308). Every chart with a
+position axis is widened in proportion for a structure with more
+(28 positions: 28/22 of the width); one with 22 or fewer keeps the width
+shown. Heights and the count and permutation-test charts, which have no
+position axis, do not change.
+
 Setup for every example:
 
 ```r

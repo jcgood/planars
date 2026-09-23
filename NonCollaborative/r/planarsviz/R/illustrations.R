@@ -226,7 +226,7 @@ plot_random_tree_overlay <- function(ref, bundle, alpha = 0.02) {
     ggtree::geom_tiplab(
       geom = "label", size = 5, angle = 0,
       offset = -1, hjust = 0.5, vjust = 1.25, alpha = 1, label.size = 0,
-      aes(label = paste(label, pos_label[label], sep = "\n")), lineheight = 1
+      aes(label = planarsviz_tip_label(label, pos_label[label])), lineheight = 1
     ) +
     theme(plot.margin = margin(t = 5, r = 5, b = 25, l = 5, unit = "pt"))
 

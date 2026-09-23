@@ -128,7 +128,7 @@ plot_boundary_skyline <- function(bundle) {
       )
     )
 
-  attr(p, "planarsviz_size") <- c(width = 16, height = 11)
+  attr(p, "planarsviz_size") <- c(width = 16 * planarsviz_position_scale(bundle), height = 11)
   attr(p, "planarsviz_units") <- "in"
   attr(p, "planarsviz_folder") <- "boundaries"
   attr(p, "planarsviz_boundary_counts") <- counts

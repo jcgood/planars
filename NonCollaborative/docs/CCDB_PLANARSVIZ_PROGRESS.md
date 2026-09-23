@@ -12,9 +12,15 @@ plan says what and why. Update it at every step boundary, in the same commit.
 - **Step 2.1, axis from the planar table: done** (`226a4f8`). Details below.
 - **Steps 2.2–2.4: done** (this commit; a Sonnet agent from the brief below,
   then reviewed). Details under "Steps 2.2–2.4 as built".
-- Steps 3–5: not started. Next is step 3: export and render every CCDB
-  structure, starting with `chac1251_verbal` (`--groupings ccdb
-  --root-position 8`).
+- **Step 3: in progress (2026-09-23).** `chac1251_verbal` exported and
+  rendered, 91 of 91 charts; five display problems found and fixed (see
+  "Step 3 findings"). Next: Jeff looks through its charts in
+  `results/chac1251_verbal/`, then step 3a (one command for one language).
+- Steps 4–5: not started.
+- Open, not blocking: `results/planarsviz/` holds data bundles and reference
+  images, not code, and its name suggests otherwise (Jeff, 2026-09-23). A
+  rename (e.g. `results/chart_data/`) touches the exporter, renderer, checks
+  and docs, so it is its own change, after step 3.
 
 ## Decisions made while working (in addition to the plan's §6)
 
@@ -174,20 +180,42 @@ tutorial, so it records the real route, detours included.
 
    Printed `182 files for 1 of 1 charts (plus 180 kept from an earlier run)`.
 
+4. After the display fixes below, redrew everything with the command in 2
+   (about 75 s). Printed `182 files for 91 of 91 charts`, exit code 0. The
+   package's help pages were regenerated first, since `plot_forestspans()`
+   gained an option:
+
+   ```sh
+   Rscript -e 'roxygen2::roxygenise("r/planarsviz")'
+   ```
+
 ## Step 3 findings (Chácobo verbal)
 
 - **Fixed: `boundary_strength_overlay` failed** because the chart's
   `highlight` defaults to nyan1308's `orthographic_word`. The renderer now
   passes that highlight only when the bundle has it, and black labels
   otherwise. The package default is unchanged.
-- **Doubled position labels.** CCDB tables have no position names, so the
-  number stands in for the name and boxed labels read "1 / 1" (overlays,
-  trees, forests, exemplary trees, boundary-strength overlay).
-- **`pooled_plot` x axis crowded:** positions 10–28 run together at its
-  fixed width.
-- **Exemplary trees: legend cut off at the right** ("indeterm…") — a third
-  domain type makes it wider than the canvas allows.
-- **`forestspans_plot`: inset legend covers the left end of span 3.**
+- **Fixed: doubled position labels.** CCDB tables have no position names,
+  so the number stood in for the name and boxed labels read "1 / 1".
+  `planarsviz_tip_label()` (`R/labels.R`) now shows the number once when the
+  name is just the number again; all seven places that built the label use
+  it.
+- **Fixed: crowded position axes.** Every fixed canvas width was tuned on
+  nyan1308's 22 positions. Charts with a position axis now multiply their
+  width by `planarsviz_position_scale()` (`R/labels.R`): n / 22, never below 1
+  (Jeff's request, 2026-09-23). Heights, and charts with no position axis,
+  are unchanged.
+- **Fixed: pooled-plot legend off the right edge** (pooled charts and the
+  exemplary evidence panel). Its justification of 1.25 overshoots by a
+  quarter of the room beside the legend: small for nyan1308's five-type
+  legend, which nearly fills the width, but enough to push CCDB's three-type
+  legend off, and more so once the canvas widened. Fewer than five entries
+  now sit flush right.
+- **Fixed: `forestspans_plot` inset legend covered span 3.** New default
+  `legend_position = "auto"`: inset when no span in the bottom quarter of
+  rows starts in the leftmost fifth of the axis, beside the panel otherwise.
+- Each fix leaves nyan1308's 137 charts identical (renderer check, run after
+  each).
 - Fine as drawn: spanchart, boundary_strength, the permutation-test grids,
   tree counts, the per-bundle forests (pink `#EE4C97` reads well).
 - The y-axis-every-50 worry in `boundary_strength_overlay` doesn't bite

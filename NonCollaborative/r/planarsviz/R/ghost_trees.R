@@ -127,14 +127,14 @@ plot_laminar_forest <- function(bundle, forest_id) {
   plots[[n]] <- plots[[n]] + ggtree::geom_tiplab(
     geom = "label", size = 6, angle = 0,
     offset = -1, hjust = 0.5, vjust = 0.35, alpha = 1, label.size = 0,
-    aes(label = paste(label, pos_label[label], sep = "\n")), lineheight = 1
+    aes(label = planarsviz_tip_label(label, pos_label[label])), lineheight = 1
   )
 
   treelayout <- do.call(c, rep(list(patchwork::area(t = 1, l = 1, b = 5, r = 1)), n))
   forest <- Reduce(`+`, plots) + plot_layout(design = treelayout)
   forest <- forest & theme(plot.background = element_rect(fill = "white", color = NA))
 
-  attr(forest, "planarsviz_size") <- c(width = 20, height = 14)
+  attr(forest, "planarsviz_size") <- c(width = 20 * planarsviz_position_scale(bundle), height = 14)
   attr(forest, "planarsviz_units") <- "in"
   attr(forest, "planarsviz_folder") <- "laminar-families"
   attr(forest, "planarsviz_parts") <- plots

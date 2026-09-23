@@ -109,7 +109,7 @@ plot_boundary_strength_overlay <- function(bundle, subset = NULL,
   }
   label_df <- data.frame(
     Position = seq_len(n_positions),
-    Label = paste(seq_len(n_positions), position_labels[seq_len(n_positions)], sep = "\n"),
+    Label = planarsviz_tip_label(seq_len(n_positions), position_labels[seq_len(n_positions)]),
     Colour = label_colors[as.character(seq_len(n_positions))]
   )
 
@@ -149,7 +149,7 @@ plot_boundary_strength_overlay <- function(bundle, subset = NULL,
       legend.position = "top"
     )
 
-  attr(p, "planarsviz_size") <- c(width = 13, height = 7)
+  attr(p, "planarsviz_size") <- c(width = 13 * planarsviz_position_scale(bundle), height = 7)
   attr(p, "planarsviz_units") <- "in"
   attr(p, "planarsviz_folder") <- "boundaries"
   p

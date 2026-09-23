@@ -30,9 +30,12 @@
 #' @param subset `NULL` for the full analysis, or a `subset_id` from
 #'   `subsets.json` (a fresh analysis of part of the data, e.g. `"no_tono"`);
 #'   its layer numbers and counts are its own, not the full chart's.
-#' @param legend_position `"inside"` (default) puts the colour key in the
-#'   empty lower-left corner of the panel, in a bordered white box;
-#'   `"right"` puts it beside the panel, as the original script did.
+#' @param legend_position `"inside"` puts the colour key in the lower-left
+#'   corner of the panel, in a bordered white box; `"right"` puts it beside
+#'   the panel, as the original script did. `"auto"` (default) chooses
+#'   `"inside"` when that corner is empty -- no span in the bottom quarter of
+#'   rows starts in the leftmost fifth of the axis, as in nyan1308 -- and
+#'   `"right"` otherwise, so the key never covers a span.
 #' @param legend_inside Position of the inset legend's lower-left corner, as
 #'   a share of the panel.
 #' @param count_header_size Text sizes (ggplot size units) of the count
@@ -44,7 +47,7 @@
 #'   `results/planarsviz` subfolder).
 #' @export
 plot_forestspans <- function(bundle, subset = NULL,
-                             legend_position = c("inside", "right"),
+                             legend_position = c("auto", "inside", "right"),
                              legend_inside = c(0.012, 0.02),
                              count_header_size = c(6, 4.5)) {
   legend_position <- match.arg(legend_position)
@@ -190,9 +193,16 @@ plot_forestspans <- function(bundle, subset = NULL,
       legend.text = element_text(size = 10)
     )
 
+  if (legend_position == "auto") {
+    # The rows at the bottom are the spans in the fewest families. In nyan1308
+    # they all start well right of position 1, leaving the corner empty; in a
+    # CCDB structure one can start at position 1 and run under the key. The
+    # x range is 0 to count_x + 1 (the one-position margins either side).
+    bottom_rows <- tail(forest_spans, ceiling(nrow(forest_spans) / 4))
+    corner_clear <- all(bottom_rows$Left > 0.2 * (count_x + margin_unit))
+    legend_position <- if (corner_clear) "inside" else "right"
+  }
   if (legend_position == "inside") {
-    # The lower-left of the panel is empty: the rows there are the spans with
-    # the fewest families, which all start well right of position 1.
     p <- p + theme(
       legend.position = "inside",
       legend.position.inside = legend_inside,
@@ -203,7 +213,7 @@ plot_forestspans <- function(bundle, subset = NULL,
     )
   }
 
-  attr(p, "planarsviz_size") <- c(width = 34, height = 24)
+  attr(p, "planarsviz_size") <- c(width = 34 * planarsviz_position_scale(bundle), height = 24)
   attr(p, "planarsviz_units") <- "cm"
   attr(p, "planarsviz_folder") <- "pooled"
   p

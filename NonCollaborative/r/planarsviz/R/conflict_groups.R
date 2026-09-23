@@ -125,7 +125,7 @@ plot_conflict_groups <- function(bundle, other_label = "neither", panel_titles =
 
   forest <- (panel_all$panel / Reduce(`|`, lapply(group_panels, `[[`, "panel"))) +
     plot_layout(heights = c(2, 1))
-  attr(forest, "planarsviz_size") <- c(width = 24, height = 20)
+  attr(forest, "planarsviz_size") <- c(width = 24 * planarsviz_position_scale(bundle), height = 20)
   attr(forest, "planarsviz_units") <- "in"
   attr(forest, "planarsviz_folder") <- "laminar-families"
   attr(forest, "planarsviz_parts") <- c(list(panel_all$trees), lapply(group_panels, `[[`, "trees"))

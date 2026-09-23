@@ -115,7 +115,7 @@ plot_boundary_strength_test <- function(bundle, group = "all", statistic = "jump
       theme = theme(plot.title = element_text(size = 12))
     ) &
     theme(plot.background = element_rect(fill = "white", colour = NA))
-  attr(p, "planarsviz_size") <- c(width = 11, height = 7)
+  attr(p, "planarsviz_size") <- c(width = 11 * planarsviz_position_scale(bundle), height = 7)
   attr(p, "planarsviz_units") <- "in"
   attr(p, "planarsviz_folder") <- "boundaries"
   p

@@ -145,7 +145,7 @@ planarsviz_summary_tree <- function(bundle, family_id, member_ids, title, alpha_
     ggtree::geom_tiplab(
       geom = "label", size = 5, angle = 0,
       offset = -1, hjust = 0.5, alpha = 1, label.size = 0,
-      aes(label = paste(label, pos_label[label], sep = "\n")), lineheight = 1
+      aes(label = planarsviz_tip_label(label, pos_label[label])), lineheight = 1
     ) +
     theme(
       panel.background = element_blank(),
@@ -199,7 +199,7 @@ plot_frequency_tree <- function(bundle, selection = "consensus_all", title = NUL
     title = title, alpha_name = alpha_name, legend = weight != "none", weight = weight,
     branch_size = branch_size, emphasis_range = emphasis_range, emphasis_size = emphasis_size
   )
-  attr(p, "planarsviz_size") <- c(width = 16, height = 10)
+  attr(p, "planarsviz_size") <- c(width = 16 * planarsviz_position_scale(bundle), height = 10)
   attr(p, "planarsviz_units") <- "in"
   attr(p, "planarsviz_folder") <- "laminar-families"
   p
@@ -246,7 +246,7 @@ plot_four_trees <- function(bundle, other_label = "neither") {
   } else {
     patchwork::wrap_plots(parts, ncol = 2) + plot_layout(guides = "collect")
   }
-  attr(forest, "planarsviz_size") <- c(width = 24, height = 16)
+  attr(forest, "planarsviz_size") <- c(width = 24 * planarsviz_position_scale(bundle), height = 16)
   attr(forest, "planarsviz_units") <- "in"
   attr(forest, "planarsviz_folder") <- "laminar-families"
   attr(forest, "planarsviz_parts") <- parts

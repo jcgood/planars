@@ -62,7 +62,13 @@ df.domain.plot <- function(d, type_levels) {
 # Domain_Type (the per-class charts), a 5-item color legend is both misleading (it lists
 # types that aren't in the chart) and a waste of vertical space on already-short charts —
 # so swap it for a plain title instead. Multi-domain charts (the pooled ones) keep the legend.
-finish.constituency.plot <- function(p, c) {
+#
+# The legend's horizontal justification of 1.25 (past flush right) was tuned on
+# nyan1308's five-type legend, which nearly fills the width, so the overshoot
+# is small. ggplot scales that overshoot by the room left beside the legend,
+# so a shorter legend (CCDB's three types) is pushed off the right edge; with
+# fewer than five entries the legend sits flush right instead.
+finish.constituency.plot <- function(p, c, n_legend_entries = 5L) {
   domain_types <- unique(na.omit(as.character(c$Domain_Type)))
 
   if (length(domain_types) == 1) {
@@ -77,7 +83,7 @@ finish.constituency.plot <- function(p, c) {
       theme(
         legend.direction = "horizontal",
         legend.position = "top",
-        legend.justification = c(1.25, 0)
+        legend.justification = c(if (n_legend_entries >= 5L) 1.25 else 1, 0)
       )
   }
 }
@@ -115,7 +121,7 @@ constituency.plot <- function(c, b, o, group.colors, legend_breaks) {
       panel.grid.minor = element_blank()
     )
 
-  finish.constituency.plot(p, c)
+  finish.constituency.plot(p, c, length(legend_breaks))
 }
 
 
@@ -150,7 +156,7 @@ constituency.domain.plot <- function(c, b, o, group.colors, legend_breaks) {
       panel.grid.minor = element_blank()
     )
 
-  finish.constituency.plot(p, c)
+  finish.constituency.plot(p, c, length(legend_breaks))
 }
 
 # Chart height scales with how many tests it contains, with a floor so small
@@ -220,7 +226,7 @@ plot_pooled <- function(bundle, domain_types = NULL, layers = c("global", "local
     p <- constituency.plot(d, b, o, group.colors, legend_breaks)
     width <- 25
   }
-  attr(p, "planarsviz_size") <- c(width = width, height = pooled_plot_height(d))
+  attr(p, "planarsviz_size") <- c(width = width * planarsviz_position_scale(bundle), height = pooled_plot_height(d))
   attr(p, "planarsviz_units") <- "cm"
   attr(p, "planarsviz_folder") <- "pooled"
   p
