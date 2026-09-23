@@ -9,9 +9,12 @@ plan says what and why. Update it at every step boundary, in the same commit.
   wrote all 21 structures from CCDB commit `e3d5386`. Checked by a separate
   pass that never read the script: 463 tests in both, every value exact,
   built labels unique.
-- **Step 2.1, axis from the planar table: done** (this commit). Details below.
-- **Steps 2.2–2.4: not started.** Brief for them below.
-- Steps 3–5: not started.
+- **Step 2.1, axis from the planar table: done** (`226a4f8`). Details below.
+- **Steps 2.2–2.4: done** (this commit; a Sonnet agent from the brief below,
+  then reviewed). Details under "Steps 2.2–2.4 as built".
+- Steps 3–5: not started. Next is step 3: export and render every CCDB
+  structure, starting with `chac1251_verbal` (`--groupings ccdb
+  --root-position 8`).
 
 ## Decisions made while working (in addition to the plan's §6)
 
@@ -60,6 +63,38 @@ Evidence nyan1308 is unchanged: a full export with all four permutation tests
 at 5000 draws, compared file by file with the committed bundle — 86 files, 0
 differ. `pytest NonCollaborative/tests -m "not needs_r"` passes. On
 Mebengokre, `load_spans()` now returns 32 positions (was 22).
+
+## Steps 2.2–2.4 as built
+
+As the brief below, plus:
+
+- **`domain_types.tsv` now lists only the domain types a dataset has.**
+  Before, it listed every known type whether observed or not; with
+  `indeterminate` known, that would have given nyan1308 a row for a type it
+  never uses. Unknown types are still numbered after every known style
+  (the agent's first version numbered them after the rows kept, which gave
+  the shifted test data's `tonal` the same order numbers as `intonational`
+  and `length` — caught in review). The committed `shifted_nyan` bundle was
+  re-exported for this: its unused `tonosegmental` row is gone and `tonal`
+  moves from 6 to 7. R uses these numbers only as relative order, which is
+  unchanged, and `shifted_nyan` has no reference images.
+- `metadata.json` gains `groupings` and `root_position_source`. The R bundle
+  check does not require either.
+- The exporter's `main()` now passes every argument after the first three by
+  name, since two new ones went into the middle of the old positional run.
+- A planar table with no `Position_Label` column skips the "positions run
+  1..N with no gaps" check that the labelled branch makes. All 21 CCDB tables
+  are contiguous, so this matters only for a future import.
+- **The `ccdb` bundle colour, `#FFDC91`, is provisional — Jeff's call.** It
+  is the next unused colour of the palette the class colours come from, but
+  it is a pale yellow that may read poorly as thin lines on white.
+
+Evidence: nyan1308 re-exported in place with all four permutation tests at
+5000 draws — only `metadata.json` changes, by the two new keys. The no-R
+test suite passes. `chac1251_verbal` exported with `--groupings ccdb
+--root-position 8` has 28 positions, 29 families, forests `indet` (4
+trees) and `morsyn_indet` (8 trees), root 8, labels 1–28, and exactly
+three `domain_types.tsv` rows.
 
 ## Brief for steps 2.2–2.4 (one Sonnet agent, then review)
 

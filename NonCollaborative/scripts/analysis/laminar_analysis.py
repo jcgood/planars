@@ -725,12 +725,17 @@ def report_convergence(span_family_count: dict[Span, int],
 # id its charts are named after. The colours match the pooled-plot convention.
 # Read by export_planarsviz_data.py, which turns each entry into one forest and
 # one overlay group in the bundle the planarsviz package draws from.
+#
+# `indeterminate` (CCDB's third domain type, absent from nyan1308) is appended
+# last rather than interleaved with the other five, so nyan1308's forests and
+# overlay groups keep the same order they always had.
 OVERLAY_GROUPS: list[tuple[list[str], str, str]] = [
     (["morphosyntactic"], "#BC3C29", "morsyn"),
     (["tonosegmental"],   "#0072B5", "tono"),
     (["length"],          "#E18727", "length"),
     (["phonological"],    "#20845E", "phon"),
     (["intonational"],    "#7876B1", "inton"),
+    (["indeterminate"],   "#6F99AD", "indet"),
 ]
 
 

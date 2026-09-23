@@ -49,6 +49,8 @@ gives `nyan1308`, and the bundle goes to `results/planarsviz/nyan1308/`.
 | `--planar-file` | `planar_tables/planar_<dataset>.tsv` if present | The planar table; supplies position labels and the root position. |
 | `--labels-file` | `planar_tables/display_labels_<dataset>.tsv` if present | Chart labels for positions, when they differ from the planar table's `Position_Label` codes. |
 | `--root-element` | `root` | The `Elements` value marking the root position in the planar table. |
+| `--root-position` | none | Position number that is the root, overriding the `Elements == root_element` lookup (validated against 1..n_positions). Needed for planar tables -- every CCDB one -- that don't mark a root position in `Elements` at all. |
+| `--groupings` | `chichewa` | Named set of domain-type bundles/filters this dataset is analysed with (`scripts/analysis/planars_groupings.py`'s `GROUPINGS`): `chichewa` for nyan1308's phonology-like/syntax-like bundles and `no_tono` filter, or `ccdb` for the single morphosyntactic + indeterminate bundle CCDB structures use. |
 | `--language-name` | none (titles use the dataset id) | Name used in chart titles, e.g. "Chichewa (nyan1308)". |
 | `--highlights-file` | `planar_tables/highlights_<dataset>.tsv` if present | Named position ranges, e.g. the orthographic word. |
 | `--conflict-groups-file` | `planar_tables/conflict_groups_<dataset>.tsv` if present | The spans that split families into conflict groups. |

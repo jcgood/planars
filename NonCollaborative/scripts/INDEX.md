@@ -191,8 +191,13 @@ with `groups` for the two-bundle variant — from a bundle exported with
 - **Purpose**: The named groupings of domain types, defined once — `BUNDLES`
   (the three pooled morphosyntax/phonology approximations, with colours and
   display labels) and `FILTERS` (the domain types a subset analysis leaves
-  out). Imported by `laminar_analysis.py`, `laminar_tree_counts.py`,
-  `class_fragmentation_test.py` and the exporter. Not runnable on its own.
+  out), plus `GROUPINGS`, which packages the two under a dataset name: the
+  exporter's `--groupings` picks `"chichewa"` (today's `BUNDLES`/`FILTERS`,
+  unchanged) or `"ccdb"` (one bundle, morphosyntactic + indeterminate, no
+  filters). Imported by `laminar_analysis.py`, `laminar_tree_counts.py`,
+  `class_fragmentation_test.py` and the exporter (which reads `GROUPINGS`;
+  the other three still read `BUNDLES` directly, since they aren't wired up
+  for non-Chichewa datasets). Not runnable on its own.
 
 **`analysis/export_planarsviz_illustrations.py`**
 - **Purpose**: Writes the `illustrations` bundle — the one `planarsviz`

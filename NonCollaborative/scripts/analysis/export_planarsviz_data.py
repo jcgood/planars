@@ -39,7 +39,7 @@ from laminar_analysis import (  # noqa: E402
     select_representative_families,
     span_to_newick,
 )
-from planars_groupings import BUNDLES, FILTERS  # noqa: E402
+from planars_groupings import GROUPINGS  # noqa: E402
 from laminar_tree_counts import (  # noqa: E402
     CLASS_COLORS,
     CLASS_ORDER,
@@ -53,19 +53,20 @@ from span_placement_test import run_test as run_span_placement_test  # noqa: E40
 from arbitrary_layers_test import run_test as run_arbitrary_layers_test  # noqa: E402
 
 
-def forest_variants() -> list[tuple[str, list[str], str]]:
+def forest_variants(bundles: list) -> list[tuple[str, list[str], str]]:
     """(forest id, domain types, colour) for every per-class forest chart.
 
     The per-domain-type groups come from laminar_analysis.OVERLAY_GROUPS and
-    the bundles from planars_groupings.BUNDLES, so ids and colours match the
-    charts that were previously drawn from nyan1308_{id}_laminar_forest.r.
+    the bundles from the dataset's chosen grouping set (--groupings; see
+    planars_groupings.GROUPINGS), so ids and colours match the charts that
+    were previously drawn from nyan1308_{id}_laminar_forest.r.
     """
     variants = [(short, list(types), colour) for types, colour, short in OVERLAY_GROUPS]
-    variants += [(name, list(types), colour) for name, types, colour, _ in BUNDLES]
+    variants += [(name, list(types), colour) for name, types, colour, _ in bundles]
     return variants
 
 
-def export_forests(domain_file: Path, domains_dir: Path, data_dir: Path) -> None:
+def export_forests(domain_file: Path, domains_dir: Path, data_dir: Path, bundles: list) -> None:
     """Write the trees of every per-class forest chart, exactly as drawn.
 
     For each variant, the same inputs the archived per-class forest scripts
@@ -83,7 +84,7 @@ def export_forests(domain_file: Path, domains_dir: Path, data_dir: Path) -> None
         pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")["Domain_Type"].dropna().str.strip()
     )
     index = []
-    for forest_id, types, colour in forest_variants():
+    for forest_id, types, colour in forest_variants(bundles):
         # Skip a forest none of whose domain types occur in this dataset:
         # load_spans() fails on an empty subset rather than returning nothing.
         # Found by the shifted test dataset, where tonosegmental is renamed.
@@ -216,7 +217,7 @@ def export_highlights(dataset: str, data_dir: Path, highlights_file: Path | None
     write_tsv(data_dir / "highlights.tsv", fields, rows)
 
 
-def export_tree_counts(domain_file: Path, domains_dir: Path, data_dir: Path) -> None:
+def export_tree_counts(domain_file: Path, domains_dir: Path, data_dir: Path, bundles: list) -> None:
     """Write tree_counts.tsv: the numbers behind the tree-count bar charts.
 
     Calls laminar_tree_counts.collect_counts() and collect_bundle_counts()
@@ -229,12 +230,15 @@ def export_tree_counts(domain_file: Path, domains_dir: Path, data_dir: Path) -> 
     (the type's colour from DOMAIN_TYPE_STYLE or the fallback grey, or the
     bundle's colour); empty for the all-tests rows, whose bar colours are a
     chart choice.
+
+    `bundles` is the dataset's chosen grouping set (--groupings); only its
+    entries with an observed type are counted, same as for classes.
     """
     observed = set(
         pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")["Domain_Type"].dropna().str.strip()
     )
     classes = [c for c in CLASS_ORDER if c in observed] + sorted(observed - set(CLASS_ORDER))
-    bundles = [b for b in BUNDLES if set(b[1]) & observed]
+    bundles = [b for b in bundles if set(b[1]) & observed]
     palette = {row["domain_type"]: row["colour"] for row in DOMAIN_TYPE_STYLE}
     bundle_style = {name: (display, colour) for name, _types, colour, display in bundles}
 
@@ -253,7 +257,7 @@ def export_tree_counts(domain_file: Path, domains_dir: Path, data_dir: Path) -> 
 
 
 def export_fragmentation_test(domain_file: Path, domains_dir: Path, data_dir: Path,
-                              n_permutations: int, seed: int,
+                              n_permutations: int, seed: int, bundles: list,
                               n_positions: int | None = None) -> dict:
     """Write fragmentation_test.tsv and fragmentation_null.tsv.
 
@@ -261,7 +265,8 @@ def export_fragmentation_test(domain_file: Path, domains_dir: Path, data_dir: Pa
     that script's own committed TSVs. Groups are built from the domain types
     the data actually has, the way export_tree_counts() does, rather than from
     a fixed list -- a dataset with a type this project doesn't know still gets
-    a row, with the fallback colour.
+    a row, with the fallback colour. `bundles` is the dataset's chosen
+    grouping set (--groupings); only its entries with an observed type run.
 
     The null draws go in as a tally (one row per distinct family count per
     group) rather than one row per draw. That is lossless for everything the
@@ -279,7 +284,7 @@ def export_fragmentation_test(domain_file: Path, domains_dir: Path, data_dir: Pa
         pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")["Domain_Type"].dropna().str.strip()
     )
     classes = [c for c in CLASS_ORDER if c in observed] + sorted(observed - set(CLASS_ORDER))
-    bundles = [b for b in BUNDLES if set(b[1]) & observed]
+    bundles = [b for b in bundles if set(b[1]) & observed]
     palette = {row["domain_type"]: row["colour"] for row in DOMAIN_TYPE_STYLE}
 
     groups = [(c, [c]) for c in classes] + [(name, list(types)) for name, types, _c, _d in bundles]
@@ -318,7 +323,7 @@ def export_fragmentation_test(domain_file: Path, domains_dir: Path, data_dir: Pa
 
 
 def export_span_placement_test(domain_file: Path, domains_dir: Path, data_dir: Path,
-                               n_permutations: int, seed: int,
+                               n_permutations: int, seed: int, bundles: list,
                                n_positions: int | None = None) -> dict:
     """Write span_placement_test.tsv and span_placement_null.tsv: does the
     real arrangement of a group's spans produce fewer laminar families than
@@ -328,10 +333,11 @@ def export_span_placement_test(domain_file: Path, domains_dir: Path, data_dir: P
     script's own committed nyan1308_span_placement_test.tsv. Groups and their
     label/colour follow export_boundary_strength_test()'s convention, which
     means the same group order that script's own GROUPS uses -- "all" first,
-    then the domain types in CLASS_ORDER, then the bundles. The order is
-    load-bearing, not cosmetic: run_test() advances one shared random stream
-    across the groups in the order given, so a different order would give
-    different (still valid, but no longer comparable) null draws.
+    then the domain types in CLASS_ORDER, then the bundles (`bundles` is the
+    dataset's chosen grouping set, --groupings). The order is load-bearing,
+    not cosmetic: run_test() advances one shared random stream across the
+    groups in the order given, so a different order would give different
+    (still valid, but no longer comparable) null draws.
 
     The pooled row is labelled "All (pooled)" rather than
     export_boundary_strength_test()'s "All tests", because this test pools
@@ -348,7 +354,7 @@ def export_span_placement_test(domain_file: Path, domains_dir: Path, data_dir: P
         pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")["Domain_Type"].dropna().str.strip()
     )
     classes = [c for c in CLASS_ORDER if c in observed] + sorted(observed - set(CLASS_ORDER))
-    bundles = [b for b in BUNDLES if set(b[1]) & observed]
+    bundles = [b for b in bundles if set(b[1]) & observed]
     palette = {row["domain_type"]: row["colour"] for row in DOMAIN_TYPE_STYLE}
     bundle_style = {name: (display, colour) for name, _types, colour, display in bundles}
 
@@ -387,7 +393,7 @@ def export_span_placement_test(domain_file: Path, domains_dir: Path, data_dir: P
 
 
 def export_arbitrary_layers_test(domain_file: Path, domains_dir: Path, data_dir: Path,
-                                 n_permutations: int, seed: int,
+                                 n_permutations: int, seed: int, bundles: list,
                                  n_positions: int | None = None) -> dict:
     """Write arbitrary_layers_test.tsv and arbitrary_layers_null.tsv: is a
     group's family count remarkable for that many spans of arbitrary size at
@@ -401,7 +407,8 @@ def export_arbitrary_layers_test(domain_file: Path, domains_dir: Path, data_dir:
     that script's own committed TSVs. Group order, labels and colours follow
     export_span_placement_test() exactly, including its pooled row, and for
     the same reason: run_test() advances one shared random stream across the
-    groups in the order given.
+    groups in the order given. `bundles` is the dataset's chosen grouping set
+    (--groupings).
 
     Not run unless asked, for the same reason as --fragmentation-permutations.
     """
@@ -409,7 +416,7 @@ def export_arbitrary_layers_test(domain_file: Path, domains_dir: Path, data_dir:
         pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")["Domain_Type"].dropna().str.strip()
     )
     classes = [c for c in CLASS_ORDER if c in observed] + sorted(observed - set(CLASS_ORDER))
-    bundles = [b for b in BUNDLES if set(b[1]) & observed]
+    bundles = [b for b in bundles if set(b[1]) & observed]
     palette = {row["domain_type"]: row["colour"] for row in DOMAIN_TYPE_STYLE}
     bundle_style = {name: (display, colour) for name, _types, colour, display in bundles}
 
@@ -448,7 +455,7 @@ def export_arbitrary_layers_test(domain_file: Path, domains_dir: Path, data_dir:
 
 
 def export_boundary_strength_test(domain_file: Path, domains_dir: Path, data_dir: Path,
-                                  n_permutations: int, seed: int,
+                                  n_permutations: int, seed: int, bundles: list,
                                   n_positions: int | None = None) -> dict:
     """Write boundary_strength_test.tsv: is the per-position boundary
     strength (and its jump from the previous position) higher than a
@@ -457,7 +464,8 @@ def export_boundary_strength_test(domain_file: Path, domains_dir: Path, data_dir
     Calls boundary_strength_test.run_test() unchanged, so the numbers equal
     that script's own committed nyan1308_boundary_strength_test.tsv. Groups
     and their label/colour follow export_fragmentation_test()'s convention
-    exactly (only domain types the data actually has, only bundles with a
+    exactly (only domain types the data actually has, only entries of
+    `bundles` -- the dataset's chosen grouping set, --groupings -- with a
     type in it).
 
     Not run unless asked, for the same reason as
@@ -469,7 +477,7 @@ def export_boundary_strength_test(domain_file: Path, domains_dir: Path, data_dir
         pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")["Domain_Type"].dropna().str.strip()
     )
     classes = [c for c in CLASS_ORDER if c in observed] + sorted(observed - set(CLASS_ORDER))
-    bundles = [b for b in BUNDLES if set(b[1]) & observed]
+    bundles = [b for b in bundles if set(b[1]) & observed]
     palette = {row["domain_type"]: row["colour"] for row in DOMAIN_TYPE_STYLE}
     bundle_style = {name: (display, colour) for name, _types, colour, display in bundles}
 
@@ -765,6 +773,12 @@ def export_selections(dataset: str, families, data_dir: Path,
 # order are exactly reproduced; length never decides a colour there (every
 # length span also has a higher-priority type), so its #AA3377 (Tol purple,
 # matching visualizations.md's "length = purple") is inferred, not observed.
+#
+# `indeterminate` (CCDB's third domain type, absent from nyan1308) is
+# appended after the five nyan1308 types rather than interleaved among them,
+# so every existing sort/legend/facet order is unchanged. Its alt_colour,
+# #66CCEE, is the one member of Tol's "bright" palette none of the five
+# nyan1308 types already use.
 _DOMAIN_TYPE_ORDERS: list[dict] = [
     {"domain_type": "morphosyntactic", "sort_order": 1, "legend_order": 1, "facet_order": 1,
      "alt_colour": "#EE6677", "colour_priority": 1},
@@ -776,6 +790,8 @@ _DOMAIN_TYPE_ORDERS: list[dict] = [
      "alt_colour": "#4477AA", "colour_priority": 2},
     {"domain_type": "intonational", "sort_order": 5, "legend_order": 4, "facet_order": 4,
      "alt_colour": "#CCBB44", "colour_priority": 4},
+    {"domain_type": "indeterminate", "sort_order": 6, "legend_order": 6, "facet_order": 6,
+     "alt_colour": "#66CCEE", "colour_priority": 6},
 ]
 DOMAIN_TYPE_STYLE: list[dict] = [
     dict(row, colour=CLASS_COLORS[row["domain_type"]]) for row in _DOMAIN_TYPE_ORDERS
@@ -784,19 +800,33 @@ FALLBACK_COLOUR = "#7F7F7F"
 
 
 def domain_type_rows(observed: list[str]) -> list[dict]:
-    """Style rows for every known domain type plus any unknown observed one."""
-    rows = [dict(row, known=True) for row in DOMAIN_TYPE_STYLE]
+    """Style rows for every known domain type this dataset observes, plus any
+    unknown observed one.
+
+    Filtered by `observed` on both sides (not just the unknown-type half, as
+    before DOMAIN_TYPE_STYLE covered a sixth type -- `indeterminate` --
+    outside nyan1308's five): CCDB datasets observe only a few of the known
+    types (e.g. chac1251_verbal has no tonosegmental, length or intonational
+    tests), and listing a style row for a type absent from this dataset's own
+    tests.tsv is misleading, not merely unused.
+    """
+    observed_set = set(observed)
+    rows = [dict(row, known=True) for row in DOMAIN_TYPE_STYLE if row["domain_type"] in observed_set]
     known = {row["domain_type"] for row in rows}
     extra = sorted(t for t in observed if t not in known)
+    # Number unknown types after every known style, not after the rows kept:
+    # the kept rows keep their own order numbers, gaps and all, so counting
+    # only them would hand an unknown type a number a known type already has.
+    base = len(DOMAIN_TYPE_STYLE)
     for i, domain_type in enumerate(extra, start=1):
         rows.append({
             "domain_type": domain_type,
             "colour": FALLBACK_COLOUR,
-            "sort_order": len(DOMAIN_TYPE_STYLE) + i,
-            "legend_order": len(DOMAIN_TYPE_STYLE) + i,
-            "facet_order": len(DOMAIN_TYPE_STYLE) + i,
+            "sort_order": base + i,
+            "legend_order": base + i,
+            "facet_order": base + i,
             "alt_colour": FALLBACK_COLOUR,
-            "colour_priority": len(DOMAIN_TYPE_STYLE) + i,
+            "colour_priority": base + i,
             "known": False,
         })
     return rows
@@ -896,7 +926,9 @@ def load_position_labels(planar_file: Path | None, n_positions: int,
     Priority: an explicit two-column labels file (position, label) — used when
     a dataset's chart labels differ from its planar table's short slot codes,
     as nyan1308's do; then the planar table's Position_Label column; then
-    numeric labels.
+    numeric labels — the last fallback, used both when there is no planar
+    table and when the planar table has no Position_Label column (true of
+    every CCDB planar table; nothing in CCDB corresponds to that column).
     """
     if labels_file is not None:
         with labels_file.open(encoding="utf-8", newline="") as handle:
@@ -916,6 +948,14 @@ def load_position_labels(planar_file: Path | None, n_positions: int,
 
     with planar_file.open(encoding="utf-8", newline="") as handle:
         rows = list(csv.DictReader(handle, delimiter="\t"))
+    if rows and "Position_Label" not in rows[0]:
+        # No Position_Label column at all -- true of every CCDB planar table
+        # (chac1251_verbal's columns end at Elements) -- so there is nothing
+        # to read; fall back to plain numbers rather than a KeyError.
+        return [
+            {"position": position, "label": str(position)}
+            for position in range(1, n_positions + 1)
+        ]
     labels = [
         {"position": int(row["Position"]), "label": row["Position_Label"]}
         for row in rows
@@ -932,6 +972,8 @@ def export_bundle(
     planar_file: Path | None = None,
     labels_file: Path | None = None,
     root_element: str = "root",
+    root_position_override: int | None = None,
+    groupings: str = "chichewa",
     language_name: str | None = None,
     highlights_file: Path | None = None,
     conflict_groups_file: Path | None = None,
@@ -952,15 +994,28 @@ def export_bundle(
     In addition to the all-domain bundle, export one nested bundle for each
     observed ``Domain_Type``.  All family results are produced by the same
     analysis functions; this file only serializes their results.
+
+    ``groupings`` selects which named set of BUNDLES/FILTERS
+    (planars_groupings.GROUPINGS) this dataset is analysed with: "chichewa"
+    (default) for nyan1308's phonology-like/syntax-like bundles and no_tono
+    filter, or "ccdb" for the single morphosyntactic + indeterminate bundle
+    CCDB structures use. ``root_position_override`` overrides the planar table's
+    ``Elements == root_element`` lookup with an explicit position number
+    (validated against 1..n_positions), for planar tables -- like every CCDB
+    one -- that don't mark a root position in ``Elements`` at all.
     """
     if not domain_file.exists():
         raise FileNotFoundError(domain_file)
+    if groupings not in GROUPINGS:
+        raise ValueError(f"--groupings must be one of {sorted(GROUPINGS)}: {groupings!r}")
 
     dataset = domain_file.stem.removeprefix("domains_")
     domains_dir = domain_file.parent
     bundle_dir = output_root / dataset
     data_dir = bundle_dir / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
+    bundles = GROUPINGS[groupings]["bundles"]
+    filters = GROUPINGS[groupings]["filters"]
 
     tests = pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")
     active_source_rows = [
@@ -1082,7 +1137,21 @@ def export_bundle(
         labels_file = candidate if candidate.exists() else None
     position_rows = load_position_labels(planar_file, n_positions, labels_file)
     write_tsv(data_dir / "position_labels.tsv", ["position", "label"], position_rows)
-    root_position = load_root_position(planar_file, root_element)
+
+    # --root-position wins outright when given: some planar tables (every
+    # CCDB one) have no Elements == root_element row at all. Otherwise fall
+    # back to that lookup, as before.
+    if root_position_override is not None:
+        if not (1 <= root_position_override <= n_positions):
+            raise ValueError(
+                f"--root-position must be between 1 and {n_positions}: {root_position_override}"
+            )
+        root_position = root_position_override
+        root_position_source = "--root-position"
+    else:
+        root_position = load_root_position(planar_file, root_element)
+        root_position_source = "planar_table (Elements == root_element)" if root_position is not None else None
+
     observed_types = sorted(t.strip() for t in tests["Domain_Type"].dropna().unique())
     write_tsv(data_dir / "domain_types.tsv",
               ["domain_type", "colour", "sort_order", "legend_order", "facet_order",
@@ -1097,28 +1166,28 @@ def export_bundle(
     if fragmentation_permutations:
         fragmentation_metadata = export_fragmentation_test(
             domain_file, domains_dir, data_dir,
-            fragmentation_permutations, fragmentation_seed, n_positions,
+            fragmentation_permutations, fragmentation_seed, bundles, n_positions,
         )
 
     boundary_strength_test_metadata: dict = {}
     if boundary_strength_test_permutations:
         boundary_strength_test_metadata = export_boundary_strength_test(
             domain_file, domains_dir, data_dir,
-            boundary_strength_test_permutations, boundary_strength_test_seed, n_positions,
+            boundary_strength_test_permutations, boundary_strength_test_seed, bundles, n_positions,
         )
 
     span_placement_metadata: dict = {}
     if span_placement_permutations:
         span_placement_metadata = export_span_placement_test(
             domain_file, domains_dir, data_dir,
-            span_placement_permutations, span_placement_seed, n_positions,
+            span_placement_permutations, span_placement_seed, bundles, n_positions,
         )
 
     arbitrary_layers_metadata: dict = {}
     if arbitrary_layers_permutations:
         arbitrary_layers_metadata = export_arbitrary_layers_test(
             domain_file, domains_dir, data_dir,
-            arbitrary_layers_permutations, arbitrary_layers_seed, n_positions,
+            arbitrary_layers_permutations, arbitrary_layers_seed, bundles, n_positions,
         )
 
     metadata = {
@@ -1140,6 +1209,8 @@ def export_bundle(
         ),
         "root_element": root_element,
         "root_position": root_position,
+        "root_position_source": root_position_source,
+        "groupings": groupings,
         "n_positions": n_positions,
         "n_active_tests": len(tests),
         "n_unique_spans": len(spans),
@@ -1164,15 +1235,17 @@ def export_bundle(
     )
 
     # Fresh analyses of part of the data: one per observed domain type
-    # (kind "domain_type"), and one per planars_groupings.FILTERS entry that
-    # leaves out a type this dataset actually has (kind "filter"; e.g.
-    # no_tono, the ForestSpans no-tonosegmental chart).
+    # (kind "domain_type"), and one per entry of the dataset's chosen
+    # grouping set's filters (planars_groupings.GROUPINGS[groupings]
+    # ["filters"]) that leaves out a type this dataset actually has (kind
+    # "filter"; e.g. no_tono, the ForestSpans no-tonosegmental chart -- ccdb
+    # has no filters, so this loop is a no-op for CCDB datasets).
     domain_types = sorted(t.strip() for t in tests["Domain_Type"].dropna().unique())
     subset_specs = [
         (domain_type.lower().replace(" ", "_").replace("-", "_"), "domain_type", [domain_type])
         for domain_type in domain_types
     ]
-    for filter_id, excluded in FILTERS:
+    for filter_id, excluded in filters:
         if set(excluded) & set(domain_types):
             subset_specs.append((filter_id, "filter", [t for t in domain_types if t not in excluded]))
     subset_index = []
@@ -1241,10 +1314,10 @@ def export_bundle(
     (data_dir / "subsets.json").write_text(
         json.dumps(subset_index, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
-    export_forests(domain_file, domains_dir, data_dir)
+    export_forests(domain_file, domains_dir, data_dir, bundles)
     export_overlay_groups(domain_file, domains_dir, data_dir, n_positions)
     export_highlights(dataset, data_dir, highlights_file)
-    export_tree_counts(domain_file, domains_dir, data_dir)
+    export_tree_counts(domain_file, domains_dir, data_dir, bundles)
     export_boundary_strength(domain_file, domains_dir, data_dir, n_positions=n_positions)
     return bundle_dir
 
@@ -1263,6 +1336,21 @@ def main() -> None:
     parser.add_argument(
         "--root-element", default="root",
         help="Elements value marking the root position in the planar table (default: root)",
+    )
+    parser.add_argument(
+        "--root-position", type=int, default=None, metavar="N",
+        help="Position number that is the root, overriding the planar table's "
+             "Elements == root_element lookup (validated against 1..n_positions). "
+             "Needed for planar tables -- every CCDB one -- that don't mark a root "
+             "position in Elements at all.",
+    )
+    parser.add_argument(
+        "--groupings", choices=sorted(GROUPINGS), default="chichewa",
+        help="Named set of domain-type bundles/filters this dataset is analysed "
+             "with (planars_groupings.GROUPINGS): 'chichewa' (default) for "
+             "nyan1308's phonology-like/syntax-like bundles and no_tono filter, "
+             "or 'ccdb' for the single morphosyntactic + indeterminate bundle "
+             "CCDB structures use.",
     )
     parser.add_argument(
         "--language-name", default=None,
@@ -1341,16 +1429,24 @@ def main() -> None:
     args = parser.parse_args()
 
     bundle_dir = export_bundle(args.domain_file, args.output_dir, args.planar_file,
-                               args.labels_file, args.root_element, args.language_name,
-                               args.highlights_file, args.conflict_groups_file,
-                               args.conflict_group_cap, args.exemplary_k,
-                               not args.no_exemplary_sparsest,
-                               # By name, not position: these are the tail of a long
-                               # signature and each new permutation test adds a pair.
-                               # Passed positionally, an addition that misses this call
-                               # silently leaves the new test switched off rather than
-                               # failing -- which is exactly what happened when
-                               # --arbitrary-layers-permutations was added.
+                               # By name, not position, from here down: this is
+                               # the tail of a long signature and each new
+                               # option (a permutation test, --root-position,
+                               # --groupings) adds another. Passed positionally,
+                               # an addition that misses this call silently
+                               # leaves the new option at its default rather
+                               # than failing -- which is exactly what happened
+                               # when --arbitrary-layers-permutations was added.
+                               labels_file=args.labels_file,
+                               root_element=args.root_element,
+                               root_position_override=args.root_position,
+                               groupings=args.groupings,
+                               language_name=args.language_name,
+                               highlights_file=args.highlights_file,
+                               conflict_groups_file=args.conflict_groups_file,
+                               conflict_group_cap=args.conflict_group_cap,
+                               exemplary_k=args.exemplary_k,
+                               exemplary_include_sparsest=not args.no_exemplary_sparsest,
                                fragmentation_permutations=args.fragmentation_permutations,
                                fragmentation_seed=args.fragmentation_seed,
                                boundary_strength_test_permutations=args.boundary_strength_test_permutations,
