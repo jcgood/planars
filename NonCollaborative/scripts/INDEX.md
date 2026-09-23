@@ -262,6 +262,19 @@ with `groups` for the two-bundle variant — from a bundle exported with
   on). Run with `--list` to see the charts a given bundle supports.
 - **Example**: `Rscript scripts/render_planarsviz.R --bundle results/chart_data/nyan1308 --output results`
 
+**`planarsviz_language.py`**
+- **Purpose**: Draw every chart for one language in one step: works out the
+  exporter's options from the dataset name (root position, groupings and
+  display name from `planar_tables/chart_settings_<dataset>.json` or a CCDB
+  structure's `planar_tables/ccdb_<dataset>.json`), prints the exporter and
+  renderer commands, and with `--apply` runs them. Holds no analysis or
+  drawing code of its own.
+- **Output**: the bundle in `results/chart_data/<dataset>/`, the charts in
+  `results/<dataset>/<topic>/`
+- **Example**: `python scripts/planarsviz_language.py chac1251_verbal --apply`
+  (dry run without `--apply`; `--no-permutations` to skip the four
+  permutation tests)
+
 ## Porting checks
 
 **`planarsviz_checks/`** — twenty-three checks (fourteen in R, nine in Python) that

@@ -147,6 +147,11 @@ did, and writes `manifest.tsv` listing what it wrote.
 
 ## 5. Add a new language
 
+A language already in the CCDB needs none of steps 1–5:
+`python scripts/analysis/import_ccdb.py --planar-id <Planar_ID> --apply`
+writes its domains file, planar table and `ccdb_<Planar_ID>.json` (root
+position, language name), and step 6 does the rest.
+
 1. **Domains file** — `domains/domains_<dataset>.tsv`, in the CCDB column
    format.
 2. **Planar table** — `planar_tables/planar_<dataset>.tsv`, one row per
@@ -154,6 +159,11 @@ did, and writes `manifest.tsv` listing what it wrote.
    `--root-element`).
 3. **Optional settings files** in `planar_tables/`, each picked up
    automatically by name:
+   - `chart_settings_<dataset>.json` — read by the one-language command in
+     step 6, not by the exporter: optional keys `language_name` (chart
+     titles), `groupings` and `root_position`, which it passes to the
+     exporter as the matching options. nyan1308's gives only its name,
+     `Chichewa`.
    - `display_labels_<dataset>.tsv` — columns `position`, `label`; every
      position from 1 to the last.
    - `highlights_<dataset>.tsv` — columns `highlight_id`, `name`, `left`,
@@ -169,9 +179,23 @@ did, and writes `manifest.tsv` listing what it wrote.
    Add a row there to give it a proper colour.
 5. **Groupings** — class bundles (`BUNDLES`) and filters that leave out
    domain types (`FILTERS`, e.g. `no_tono`) are defined once in
-   `scripts/analysis/planars_groupings.py`.
-6. Export, then render. Look at the charts; nothing about nyan1308 is
-   assumed in the R code, but a new language is the real test.
+   `scripts/analysis/planars_groupings.py`, as named sets in `GROUPINGS`
+   (`chichewa`, `ccdb`) that a dataset picks with `--groupings`.
+6. **Export, then render, with one command:**
+
+   ```sh
+   python scripts/planarsviz_language.py <dataset>            # dry run: prints both commands
+   python scripts/planarsviz_language.py <dataset> --apply    # runs them
+   ```
+
+   It works out the root position, groupings and display name from the
+   settings files above (a CCDB structure's from its `ccdb_<dataset>.json`),
+   shows where each came from, and runs the exporter and then the renderer
+   with all four permutation tests at 5000 draws. `--no-permutations` skips
+   them (seconds instead of minutes, but the bundle then lacks their tables
+   and charts); `--formats` and `--plots` pass through to the renderer.
+   Look at the charts: nothing about nyan1308 is assumed in the R code, but
+   a new language is the real test.
 
 ---
 

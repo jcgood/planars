@@ -30,11 +30,12 @@ matters for the exporter specifically: it records the domain file's path as
 given, so running it from the repo root writes a bundle that differs from the
 committed one in that field.
 
-### Next action: the CCDB plan's step 3a
+### Next action: the CCDB plan's step 4
 
-One command for one language (`scripts/planarsviz_language.py`, plan §3
-"Step 3a"). Step 3 (Chácobo verbal) is done; its command log in the progress
-doc shows which exporter and renderer options actually matter.
+All 21 CCDB structures, as a loop over the one-language command
+(`python scripts/planarsviz_language.py <Planar_ID> --apply`, step 3a),
+writing one summary of what failed, was skipped, or looks odd (plan §3
+"Step 4").
 
 ### Things that will bite
 

@@ -16,7 +16,9 @@ plan says what and why. Update it at every step boundary, in the same commit.
   rendered, 91 of 91 charts; six display problems found and fixed (see
   "Step 3 findings"). Jeff looked through the charts: good apart from the
   squashed exemplary trees, now fixed.
-- **Step 3a: next** — one command for one language.
+- **Step 3a, one command for one language: done (2026-09-23).**
+  `scripts/planarsviz_language.py`; details under "Step 3a as built".
+- **Step 4, all 21: next.**
 - Steps 4–5: not started.
 - Resolved: `results/planarsviz/` held data bundles and reference images, not
   code, and its name suggested otherwise (Jeff, 2026-09-23). Renamed/split
@@ -229,6 +231,42 @@ tutorial, so it records the real route, detours included.
   tree counts, the per-bundle forests (pink `#EE4C97` reads well).
 - The y-axis-every-50 worry in `boundary_strength_overlay` doesn't bite
   here: Chácobo's largest strength is 154. It will for smaller structures.
+
+## Step 3a as built
+
+`python scripts/planarsviz_language.py <dataset>` prints where each setting
+comes from and the exporter and renderer commands in full; `--apply` runs
+them, timing each, and stops at the first failure. `--permutations N`
+(default 5000, all four tests), `--no-permutations` (warns when the existing
+bundle has test tables that would be dropped), and `--formats`/`--plots`
+passed to the renderer. Runs both scripts from `NonCollaborative/`
+whatever directory it is started from.
+
+Where the settings come from, first match wins:
+`planar_tables/chart_settings_<dataset>.json` (new; optional keys
+`language_name`, `groupings`, `root_position` — nyan1308's holds only
+`"Chichewa"`), then the CCDB import's `planar_tables/ccdb_<dataset>.json`
+(root position; name shown as "Chácobo (verbal)"; groupings always `ccdb`),
+then the exporter's defaults. No new per-structure settings table: the CCDB
+import already writes every structure's root position and language name,
+and a second copy of those would be two owners of one fact.
+
+Evidence: both committed datasets run through it with `--apply`, then
+compared with what is committed. Bundles: no file changed, for either.
+Charts: all 137 nyan1308 and 91 Chácobo PDFs identical once the creation
+and modification dates R stamps into every PDF are removed; those
+date-only copies were then discarded.
+
+Command log, from `NonCollaborative/`:
+
+```sh
+python scripts/planarsviz_language.py chac1251_verbal           # dry run
+python scripts/planarsviz_language.py chac1251_verbal --apply   # export 170 s, render 53 s
+python scripts/planarsviz_language.py nyan1308 --apply          # export 526 s, render 127 s
+```
+
+The two `--apply` runs went in parallel, so their times are a little slower
+than either would be alone.
 
 ## Likely trouble in step 3 (from a read-only survey of the code, 2026-09-22)
 
