@@ -1,0 +1,6 @@
+n=2: 1 shapes checked (1 total, exhaustive)
+n=3: 3 shapes checked (3 total, exhaustive)
+n=4: 11 shapes checked (11 total, exhaustive)
+n=5: 15 shapes checked (45 total, sampled 15)
+tree_count_growth: 15 rows (n=1..15) checked
+ALL TREE SHAPE/COUNT CHECKS PASSED

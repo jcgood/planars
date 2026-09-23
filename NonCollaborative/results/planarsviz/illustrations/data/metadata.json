@@ -1,0 +1,37 @@
+{
+  "contract_version": 1,
+  "dataset": "illustrations",
+  "tree_shapes": {
+    "rows": [
+      {
+        "n": 2,
+        "exhaustive": true,
+        "sample_size": null
+      },
+      {
+        "n": 3,
+        "exhaustive": true,
+        "sample_size": null
+      },
+      {
+        "n": 4,
+        "exhaustive": true,
+        "sample_size": null
+      },
+      {
+        "n": 5,
+        "exhaustive": false,
+        "sample_size": 15
+      }
+    ]
+  },
+  "tree_count_growth": {
+    "n_min": 1,
+    "n_max": 15
+  },
+  "random_trees": {
+    "n_trees": 200,
+    "n_leaves": 22,
+    "seed": 0
+  }
+}

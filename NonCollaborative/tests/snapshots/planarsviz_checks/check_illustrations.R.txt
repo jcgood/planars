@@ -1,0 +1,6 @@
+illustrations_tree_shapes_n2 (0.79x0.9 in): size_match=True ref=(78, 89) new=(78, 89) differing_pixels=0.0000%
+illustrations_tree_shapes_n3 (3.63x0.9 in): size_match=True ref=(363, 89) new=(363, 89) differing_pixels=0.0000%
+illustrations_tree_shapes_n4 (16.53x0.9 in): size_match=True ref=(1653, 89) new=(1653, 89) differing_pixels=0.0000%
+illustrations_tree_shapes_n5 (25.95x0.9 in): size_match=True ref=(2595, 89) new=(2595, 89) differing_pixels=0.0000%
+illustrations_tree_count_growth (7x5 in): size_match=True ref=(700, 500) new=(700, 500) differing_pixels=0.0000%
+(random_tree_overlay is not pixel-checked here -- see this script's header comment; verify_random_trees_export.py checks its data.)
