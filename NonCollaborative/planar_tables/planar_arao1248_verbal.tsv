@@ -1,0 +1,19 @@
+Language_ID	Language_Name	Planar_ID	Planar_Type	Position_ID	Position	Position_Type	Elements
+arao1248	Araona	arao1248_verbal	verbal	arao1248_v_1	1	slot	Xp (Np, Pp, S), Adverbials
+arao1248	Araona	arao1248_verbal	verbal	arao1248_v_2	2	zone	'P2'''
+arao1248	Araona	arao1248_verbal	verbal	arao1248_v_3	3	zone	Xp (Np, Pp,S), Adverbials
+arao1248	Araona	arao1248_verbal	verbal	arao1248_v_4	4	slot	'Prefix'''
+arao1248	Araona	arao1248_verbal	verbal	arao1248_v_5	5	slot	Noun
+arao1248	Araona	arao1248_verbal	verbal	arao1248_v_6	6	slot	Core Verb Root
+arao1248	Araona	arao1248_verbal	verbal	arao1248_v_7	7	zone	Motion, Time Of Day, Aspectual, Manner, Root
+arao1248	Araona	arao1248_verbal	verbal	arao1248_v_8	8	slot	Affectionate, Small
+arao1248	Araona	arao1248_verbal	verbal	arao1248_v_9	9	slot	With Difficulty, Almost
+arao1248	Araona	arao1248_verbal	verbal	arao1248_v_10	10	slot	Interactional
+arao1248	Araona	arao1248_verbal	verbal	arao1248_v_11	11	slot	Caus., Cmpl.
+arao1248	Araona	arao1248_verbal	verbal	arao1248_v_12	12	slot	3a
+arao1248	Araona	arao1248_verbal	verbal	arao1248_v_13	13	slot	Finality Marker
+arao1248	Araona	arao1248_verbal	verbal	arao1248_v_14	14	slot	Tense, Aspect, Posture, Negation, Wandering, Clause-Linkage
+arao1248	Araona	arao1248_verbal	verbal	arao1248_v_15	15	slot	Limitative, Again
+arao1248	Araona	arao1248_verbal	verbal	arao1248_v_16	16	slot	Auxiliary
+arao1248	Araona	arao1248_verbal	verbal	arao1248_v_17	17	slot	Connector
+arao1248	Araona	arao1248_verbal	verbal	arao1248_v_18	18	zone	Xp (Np, Pp, Adv)

@@ -1,0 +1,15 @@
+{
+  "ccdb_commit": "e3d5386a2b14b5e6b19435042f1d52754a044e15",
+  "ccdb_source_files": [
+    "domains.tsv",
+    "planar.tsv",
+    "input/overlaps.tsv"
+  ],
+  "language_id": "mart1259",
+  "language_name": "Martinican",
+  "n_positions": 27,
+  "n_tests": 12,
+  "planar_id": "mart1259_verbal",
+  "planar_type": "verbal",
+  "root_position": 18
+}

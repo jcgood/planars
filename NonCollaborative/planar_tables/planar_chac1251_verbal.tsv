@@ -1,0 +1,29 @@
+Language_ID	Language_Name	Planar_ID	Planar_Type	Position_ID	Position	Position_Type	Elements
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_1	1	slot	Connector
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_2	2	zone	Noun Phrase {A,S,P,R,T}, Adverbial, Postpositional Phrase
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_3	3	slot	Tsi
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_4	4	slot	Evidential/Modal
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_5	5	slot	Affective
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_6	6	slot	Noun Phrase {A,S,P,R,T}, Adverbial, Postpositional Phrase
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_7	7	slot	Body Part Incorporation
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_8	8	slot	Verb Core
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_9	9	slot	Valence 1 (Transitivity)
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_10	10	slot	Valence 2 (Antipassive -Mis, Causative1 -Wa)
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_11	11	zone	Valence 3 (Passive -ʔaka, Interactional -Na), Negation =Yama
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_12	12	zone	Valence 4 (Interactional =Bɨki, Causative2 =Ma)
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_13	13	slot	Completive =Yo
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_14	14	slot	Associated Motion
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_15	15	slot	Punctual =Tapi
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_16	16	zone	Aspect, Durative =Kas
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_17	17	zone	Adverbial/Modal
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_18	18	slot	Tsi
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_19	19	slot	Evidential/Modal
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_20	20	zone	Noun Phrase (A,S), Postpositional Phrase
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_21	21	slot	Transitive (Wa)
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_22	22	slot	Third Person Plural =Kan, Aspect: Durative, Associated Motion, Adverbial
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_23	23	slot	Temporal Distance
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_24	24	slot	Clause Rank And Type
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_25	25	slot	Evidential/Modal
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_26	26	slot	Noun Phrase {A,S}
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_27	27	slot	Affective/Modal
+chac1251	Chácobo	chac1251_verbal	verbal	chac1251_v_28	28	slot	Noun Phrase {P}, Postpositional Phrase

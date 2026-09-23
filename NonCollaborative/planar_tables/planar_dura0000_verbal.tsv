@@ -1,0 +1,30 @@
+Language_ID	Language_Name	Planar_ID	Planar_Type	Position_ID	Position	Position_Type	Elements
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_1	1	slot	Connectors, Question Marker
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_2	2	slot	Question Words
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_3	3	slot	Focus (S/A/P, Obl, Etc.)
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_4	4	slot	Realis Negation
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_5	5	zone	Adverbials
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_6	6	slot	Additive
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_7	7	slot	Intensifier
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_8	8	slot	Intensifier/Again
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_9	9	slot	Intensifier/Again
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_10	10	slot	Additive
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_11	11	slot	Modals
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_12	12	slot	Perfective, Irrealis Negation
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_13	13	slot	Causative `Do’
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_14	14	slot	Irr/Pfv Class Markers
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_15	15	slot	Iterative
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_16	16	slot	Transitivizer `Put’
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_17	17	slot	Verb Core
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_18	18	slot	Additive
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_19	19	slot	Reciprocal
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_20	20	slot	Temporal Adv.
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_21	21	slot	Intensifier
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_22	22	slot	Intensifier/Again
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_23	23	slot	Intensifier/Again
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_24	24	slot	Additive
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_25	25	slot	Inside/Being
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_26	26	slot	S/A
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_27	27	slot	P
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_28	28	zone	Obl, Pp, Loc, Adv.
+dura0000	San Martín Duraznos Mixtec	dura0000_verbal	verbal	dura0000_v_29	29	slot	Discourse Markers

@@ -1,0 +1,15 @@
+{
+  "ccdb_commit": "e3d5386a2b14b5e6b19435042f1d52754a044e15",
+  "ccdb_source_files": [
+    "domains.tsv",
+    "planar.tsv",
+    "input/overlaps.tsv"
+  ],
+  "language_id": "siks1238",
+  "language_name": "Blackfoot",
+  "n_positions": 14,
+  "n_tests": 32,
+  "planar_id": "siks1238_verbal",
+  "planar_type": "verbal",
+  "root_position": 6
+}

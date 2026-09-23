@@ -1,0 +1,15 @@
+{
+  "ccdb_commit": "e3d5386a2b14b5e6b19435042f1d52754a044e15",
+  "ccdb_source_files": [
+    "domains.tsv",
+    "planar.tsv",
+    "input/overlaps.tsv"
+  ],
+  "language_id": "kiow1266",
+  "language_name": "Kiowa",
+  "n_positions": 39,
+  "n_tests": 17,
+  "planar_id": "kiow1266_verbal",
+  "planar_type": "verbal",
+  "root_position": 29
+}

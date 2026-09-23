@@ -1,0 +1,22 @@
+Language_ID	Language_Name	Planar_ID	Planar_Type	Position_ID	Position	Position_Type	Elements
+yucu1253	Yukuna	yucu1253_verbal	verbal	yucu1253_v_1	1	slot	Connectors
+yucu1253	Yukuna	yucu1253_verbal	verbal	yucu1253_v_2	2	slot	Adverbial Interrogatives
+yucu1253	Yukuna	yucu1253_verbal	verbal	yucu1253_v_3	3	zone	Adverbials
+yucu1253	Yukuna	yucu1253_verbal	verbal	yucu1253_v_4	4	slot	Negation
+yucu1253	Yukuna	yucu1253_verbal	verbal	yucu1253_v_5	5	slot	Constituent Focus/Interrogative
+yucu1253	Yukuna	yucu1253_verbal	verbal	yucu1253_v_6	6	slot	Negation
+yucu1253	Yukuna	yucu1253_verbal	verbal	yucu1253_v_7	7	slot	Indefinite Proforms
+yucu1253	Yukuna	yucu1253_verbal	verbal	yucu1253_v_8	8	slot	S/A Np
+yucu1253	Yukuna	yucu1253_verbal	verbal	yucu1253_v_9	9	slot	Person Indexes (S/A)
+yucu1253	Yukuna	yucu1253_verbal	verbal	yucu1253_v_10	10	slot	Verb Core
+yucu1253	Yukuna	yucu1253_verbal	verbal	yucu1253_v_11	11	slot	Valency
+yucu1253	Yukuna	yucu1253_verbal	verbal	yucu1253_v_12	12	slot	Negation
+yucu1253	Yukuna	yucu1253_verbal	verbal	yucu1253_v_13	13	slot	Tense
+yucu1253	Yukuna	yucu1253_verbal	verbal	yucu1253_v_14	14	slot	Nominalization, Mood
+yucu1253	Yukuna	yucu1253_verbal	verbal	yucu1253_v_15	15	slot	Gender/Number
+yucu1253	Yukuna	yucu1253_verbal	verbal	yucu1253_v_16	16	slot	Imperative
+yucu1253	Yukuna	yucu1253_verbal	verbal	yucu1253_v_17	17	slot	Middle
+yucu1253	Yukuna	yucu1253_verbal	verbal	yucu1253_v_18	18	slot	Perfective
+yucu1253	Yukuna	yucu1253_verbal	verbal	yucu1253_v_19	19	zone	Habitual, Frustrative
+yucu1253	Yukuna	yucu1253_verbal	verbal	yucu1253_v_20	20	slot	Discourse Markers
+yucu1253	Yukuna	yucu1253_verbal	verbal	yucu1253_v_21	21	zone	P, Pp, Obl, Adv, Remote Past

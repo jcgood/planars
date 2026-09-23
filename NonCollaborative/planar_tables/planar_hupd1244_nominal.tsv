@@ -1,0 +1,16 @@
+Language_ID	Language_Name	Planar_ID	Planar_Type	Position_ID	Position	Position_Type	Elements
+hupd1244	Hup	hupd1244_nominal	nominal	hupd1244_n_1	1	slot	Demonstrative
+hupd1244	Hup	hupd1244_nominal	nominal	hupd1244_n_2	2	zone	Np{Poss}-Nɨh
+hupd1244	Hup	hupd1244_nominal	nominal	hupd1244_n_3	3	slot	Quantifier, Numeral
+hupd1244	Hup	hupd1244_nominal	nominal	hupd1244_n_4	4	slot	Relative Clause
+hupd1244	Hup	hupd1244_nominal	nominal	hupd1244_n_5	5	zone	Root (Or Compounded Roots)
+hupd1244	Hup	hupd1244_nominal	nominal	hupd1244_n_6	6	zone	Classifier
+hupd1244	Hup	hupd1244_nominal	nominal	hupd1244_n_7	7	zone	Adjective
+hupd1244	Hup	hupd1244_nominal	nominal	hupd1244_n_8	8	slot	‘Respect’ Markers =Wǝd (M), =Wa (F)
+hupd1244	Hup	hupd1244_nominal	nominal	hupd1244_n_9	9	slot	Deceased Marker =Cud
+hupd1244	Hup	hupd1244_nominal	nominal	hupd1244_n_10	10	slot	Augmentative =Pog, Diminutive =Mæh
+hupd1244	Hup	hupd1244_nominal	nominal	hupd1244_n_11	11	slot	Plural =D’ǝh
+hupd1244	Hup	hupd1244_nominal	nominal	hupd1244_n_12	12	zone	Case -Ǎn, -An, -V́́t
+hupd1244	Hup	hupd1244_nominal	nominal	hupd1244_n_13	13	slot	Intensifier =Hup
+hupd1244	Hup	hupd1244_nominal	nominal	hupd1244_n_14	14	slot	Parallel Marker =Hin
+hupd1244	Hup	hupd1244_nominal	nominal	hupd1244_n_15	15	zone	Topic/Focus/Contrast/Evidentiality

@@ -1,0 +1,15 @@
+{
+  "ccdb_commit": "e3d5386a2b14b5e6b19435042f1d52754a044e15",
+  "ccdb_source_files": [
+    "domains.tsv",
+    "planar.tsv",
+    "input/overlaps.tsv"
+  ],
+  "language_id": "sout2991",
+  "language_name": "South Bolivian Quechua",
+  "n_positions": 42,
+  "n_tests": 20,
+  "planar_id": "sout2991_verbal",
+  "planar_type": "verbal",
+  "root_position": 12
+}

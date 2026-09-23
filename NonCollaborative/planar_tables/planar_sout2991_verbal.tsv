@@ -1,0 +1,43 @@
+Language_ID	Language_Name	Planar_ID	Planar_Type	Position_ID	Position	Position_Type	Elements
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_1	1	zone	Np, Pp, S
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_2	2	slot	Already =�A
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_3	3	slot	Already =Raq
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_4	4	slot	Certainly =Puni
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_5	5	slot	Adverbial, Coord. =Taq
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_6	6	slot	Uncertainty =Sina
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_7	7	slot	Also =Pis
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_8	8	slot	Top., Neg., Dub., Assert. =Chu, =Chus, =Ch�, =Pis
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_9	9	slot	Interrogative =Ri, , =R�
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_10	10	slot	Topic Marker =Qa
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_11	11	zone	Np, Pp, S
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_12	12	slot	Verb Root
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_13	13	slot	Derivational Suffixes And Clusters
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_14	14	slot	Inceptive -Ri
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_15	15	slot	Reciprocal -Na
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_16	16	zone	Adverbial, Assistive -Rqu,-Rpa,-Ysi
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_17	17	slot	Affective -Ri
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_18	18	slot	Causative, Passive -Chi, -Chiku
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_19	19	slot	Reflexive, Motion, Adverbial -Ku,-Mu,-Pu, -Kampu,-Kapu,-Mpu
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_20	20	slot	Proximal Future -Naya
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_21	21	slot	Progressive -Sha
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_22	22	slot	Limitative -Lla
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_23	23	slot	1.Obj -Wa
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_24	24	slot	When -Qti
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_25	25	zone	Tame, Second Person -Rqa,-Sqa,-Na, -Su,-Sa
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_26	26	slot	A/Sperson -Ni, -Yki,-Nki,-N
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_27	27	slot	Future:3.Obj -Q(A)
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_28	28	slot	Person -N
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_29	29	slot	Plural -Chik, -Yku, -Ku
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_30	30	slot	Limitative -Lla
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_31	31	zone	Np, Pp, S
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_32	32	slot	Already =�A
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_33	33	slot	Already =Raq
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_34	34	slot	Certainly =Puni
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_35	35	slot	Adverbial, Coord. =Taq
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_36	36	slot	Uncertainty =Sina
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_37	37	slot	Also =Pis
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_38	38	slot	Top., Neg., Dub., Assert. =Chu, =Chus, =Ch�
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_39	39	slot	Interrogative =Ri, =R�
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_40	40	slot	Topic Marker =Qa
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_41	41	slot	Regretative Karqa, Kaq
+sout2991	South Bolivian Quechua	sout2991_verbal	verbal	sout2991_v_42	42	zone	Np, Pp, S

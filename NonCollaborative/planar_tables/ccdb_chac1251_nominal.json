@@ -1,0 +1,15 @@
+{
+  "ccdb_commit": "e3d5386a2b14b5e6b19435042f1d52754a044e15",
+  "ccdb_source_files": [
+    "domains.tsv",
+    "planar.tsv",
+    "input/overlaps.tsv"
+  ],
+  "language_id": "chac1251",
+  "language_name": "Ch\u00e1cobo",
+  "n_positions": 12,
+  "n_tests": 26,
+  "planar_id": "chac1251_nominal",
+  "planar_type": "nominal",
+  "root_position": 4
+}

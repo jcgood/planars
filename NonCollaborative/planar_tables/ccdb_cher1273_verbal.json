@@ -1,0 +1,15 @@
+{
+  "ccdb_commit": "e3d5386a2b14b5e6b19435042f1d52754a044e15",
+  "ccdb_source_files": [
+    "domains.tsv",
+    "planar.tsv",
+    "input/overlaps.tsv"
+  ],
+  "language_id": "cher1273",
+  "language_name": "Oklahoma Cherokee",
+  "n_positions": 24,
+  "n_tests": 21,
+  "planar_id": "cher1273_verbal",
+  "planar_type": "verbal",
+  "root_position": 12
+}

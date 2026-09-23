@@ -1,0 +1,33 @@
+Language_ID	Language_Name	Planar_ID	Planar_Type	Position_ID	Position	Position_Type	Elements
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_1	1	zone	Np{A,S,O,Oblique}
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_2	2	slot	Subject Proclitic {S, A} (Marginal)
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_3	3	zone	Valence: (Causative Root), Interactional ʔũh-, Reflexive/Passive Hup-, O (Simplex)
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_4	4	slot	Causative Root
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_5	5	slot	Factitive Hi-
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_6	6	zone	Verb Base (One Or More Compounded Roots)
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_7	7	slot	Telic -Yɨʔ
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_8	8	slot	Venitive -ʔay
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_9	9	slot	Applicative -ʔũh
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_10	10	slot	Completive -Cɨ̃p / -Cɨ̃w
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_11	11	slot	Emphasis -Pog
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_12	12	slot	Counterfactual -Tæ̃ʔ
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_13	13	slot	Perfective -ʔeʔ
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_14	14	slot	Clausal Negative -Nɨ́h
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_15	15	slot	Habitual -Bɨg , Distributive -Pɨd, Future -Teg
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_16	16	slot	Evidentials -Hɔ̃, -Cud, -Mah, Frustrative -Yæ̃h, Repetitive -B’ay
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_17	17	slot	Inchoative -Ay
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_18	18	slot	Inferred -Ni
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_19	19	slot	Filler -Vw
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_20	20	slot	Boundary
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_21	21	slot	Counterfactual =Tih
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_22	22	slot	Emphatic Coordinator =Nih
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_23	23	zone	Evidentials =Cud,  =Hɔ̃
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_24	24	slot	Repetitive =B’ay
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_25	25	slot	Emphasis =Pog
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_26	26	slot	Reportative =Mah
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_27	27	slot	Habitual Bɨ́g, Distributive Pɨ́d
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_28	28	slot	Frustrative Yæ̃́h
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_29	29	slot	Contrast J’ám / J’ã́h, Páh, Tán
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_30	30	zone	Intensifier Mún, Adversative Conjunction Kǎh, Persistive Tæ, Epistemic Modality ʔũh, Etc.
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_31	31	zone	Np{A,S,O,Oblique}
+hupd1244	Hup	hupd1244_verbal	verbal	hupd1244_v_32	32	slot	Declarative -Vh

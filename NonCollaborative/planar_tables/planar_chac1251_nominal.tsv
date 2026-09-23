@@ -1,0 +1,13 @@
+Language_ID	Language_Name	Planar_ID	Planar_Type	Position_ID	Position	Position_Type	Elements
+chac1251	Chácobo	chac1251_nominal	nominal	chac1251_n_1	1	zone	Possessor Np, Relative Clause, Quantifier, Zone Numeral, Demonstrative
+chac1251	Chácobo	chac1251_nominal	nominal	chac1251_n_2	2	slot	Genitive Noun Complex
+chac1251	Chácobo	chac1251_nominal	nominal	chac1251_n_3	3	slot	Prefix
+chac1251	Chácobo	chac1251_nominal	nominal	chac1251_n_4	4	slot	Noun Root
+chac1251	Chácobo	chac1251_nominal	nominal	chac1251_n_5	5	slot	Augmentative, Veridative, Similative
+chac1251	Chácobo	chac1251_nominal	nominal	chac1251_n_6	6	slot	Adjective, Xeni-Phrase
+chac1251	Chácobo	chac1251_nominal	nominal	chac1251_n_7	7	zone	Numeral, Relative Clause, Demonstrative
+chac1251	Chácobo	chac1251_nominal	nominal	chac1251_n_8	8	slot	Conjunct
+chac1251	Chácobo	chac1251_nominal	nominal	chac1251_n_9	9	zone	Plural, Dative
+chac1251	Chácobo	chac1251_nominal	nominal	chac1251_n_10	10	slot	Case
+chac1251	Chácobo	chac1251_nominal	nominal	chac1251_n_11	11	slot	Limitative, Interactive
+chac1251	Chácobo	chac1251_nominal	nominal	chac1251_n_12	12	slot	Equalative

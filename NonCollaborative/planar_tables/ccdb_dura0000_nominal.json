@@ -1,0 +1,15 @@
+{
+  "ccdb_commit": "e3d5386a2b14b5e6b19435042f1d52754a044e15",
+  "ccdb_source_files": [
+    "domains.tsv",
+    "planar.tsv",
+    "input/overlaps.tsv"
+  ],
+  "language_id": "dura0000",
+  "language_name": "San Marti\u0301n Duraznos Mixtec",
+  "n_positions": 13,
+  "n_tests": 19,
+  "planar_id": "dura0000_nominal",
+  "planar_type": "nominal",
+  "root_position": 8
+}

@@ -1,0 +1,15 @@
+{
+  "ccdb_commit": "e3d5386a2b14b5e6b19435042f1d52754a044e15",
+  "ccdb_source_files": [
+    "domains.tsv",
+    "planar.tsv",
+    "input/overlaps.tsv"
+  ],
+  "language_id": "moco1246",
+  "language_name": "Mocov\u00ed",
+  "n_positions": 20,
+  "n_tests": 22,
+  "planar_id": "moco1246_verbal",
+  "planar_type": "verbal",
+  "root_position": 7
+}

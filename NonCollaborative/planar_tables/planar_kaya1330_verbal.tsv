@@ -1,0 +1,33 @@
+Language_ID	Language_Name	Planar_ID	Planar_Type	Position_ID	Position	Position_Type	Elements
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_1	1	slot	Polar Interrogative Particle
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_2	2	slot	Xp Fronted For Contrast
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_3	3	slot	Tense/Mood Marker
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_4	4	slot	Nominative Subject Np Or Pronoun
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_5	5	zone	Particles Of Varied Semantics
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_6	6	slot	Subject Paucal Number
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_7	7	slot	Oblique Subject Np Or Index
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_8	8	slot	Oblique Subject Marker
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_9	9	zone	Xp (Adjuncts)
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_10	10	slot	Direct Object Np Or Index
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_11	11	slot	'``Preverb'''''
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_12	12	slot	Subject Person
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_13	13	slot	Valency-Reducing Prefixes
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_14	14	slot	Transitivity Prefixes
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_15	15	slot	Gmverb Root
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_16	16	slot	Non-Finiteness Suffix
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_17	17	slot	P (Governed By Auxiliary)
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_18	18	slot	Subject Person (On Aux.)
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_19	19	slot	Auxiliary Root
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_20	20	slot	Non-Finiteness Suffix
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_21	21	zone	Non-Verbal Governing Modifier
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_22	22	slot	Light Manner Verbs
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_23	23	slot	Nominal Subordinate Clause
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_24	24	zone	Modifiers
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_25	25	slot	Complement Np
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_26	26	slot	Nominal Relator
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_27	27	slot	Noun Root
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_28	28	zone	Governing Modifier
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_29	29	slot	Dimunitive And Related
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_30	30	zone	Determiners And Related
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_31	31	slot	Adposition Or Case
+kaya1330	Mebengokre	kaya1330_verbal	verbal	kaya1330_v_32	32	slot	Focus-Sensitive Particles

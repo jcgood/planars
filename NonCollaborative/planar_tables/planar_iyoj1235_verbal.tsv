@@ -1,0 +1,47 @@
+Language_ID	Language_Name	Planar_ID	Planar_Type	Position_ID	Position	Position_Type	Elements
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_1	1	zone	Conjunction Or Conjunctive Locution; Interrogative Ma?
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_2	2	zone	Topic: Dp {A,S}, Adverb, Adverbial Clause
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_3	3	zone	Focalized Adverb Or Advp
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_4	4	slot	Complementizers Ti, Ka;
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_5	5	zone	N’, N, Light Dp, Pronoun/Adverb
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_6	6	zone	N’, N, Light Dp, Pronoun/Adverb
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_7	7	slot	Mirative ‑P’an; Reportative ‑Jen
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_8	8	slot	Prospective Ja
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_9	9	slot	Incompletive ‑Ta(J)
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_10	10	slot	Negation Je
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_11	11	slot	Indirect Evidential ‑T’i; Mirative –P’an
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_12	12	slot	Interrogative ‑Mi
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_13	13	slot	Demonstrative Kyak ‘That (Way)’
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_14	14	slot	Cross Referencing Active/Nonactive Markers
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_15	15	slot	Reflexive/Reciprocal Ni(N); Antipassive Ka
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_16	16	slot	Predicate Base 
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_17	17	slot	Participle -K
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_18	18	slot	Causative; Antipassive; Verbalizer
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_19	19	slot	Concord  1
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_20	20	slot	Concord 2
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_21	21	slot	Perdurative ‑Jli
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_22	22	slot	Momentary ‑A
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_23	23	slot	Irrealis ‑A
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_24	24	slot	Reportative ‑Jen
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_25	25	slot	Indirect Evidential ‑T’i
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_26	26	slot	Mirative ‑P’an
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_27	27	slot	Incompletive ‑Ta(J)
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_28	28	slot	Interrogative ‑Mi
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_29	29	slot	Concord (3pl, A/S)‑Is
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_30	30	slot	Applicative: Orientation ‑A(J)
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_31	31	slot	Applicative: Instrumental ‑E(J)
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_32	32	slot	Applicative: Distal ‑Ey
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_33	33	slot	Applicative: Locatives ‑Jiy, ‑Jam
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_34	34	slot	Applicative: Punctual Locative ‑’E, Distributive/Comitative ‑K’i, And Possibly Others
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_35	35	slot	Oblique Marker (Only Realized If Position 36 Is Filled)
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_36	36	slot	Applicative
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_37	37	slot	Pluractional/Downwards -Jen
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_38	38	slot	Pluractional/Iterative –’Ni(J)
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_39	39	slot	Remote Past –Pe(J); Perfect –(’V…)Je(J)
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_40	40	zone?	Temporal, Aspectual And Discourse Particles
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_41	41	slot	Locatives
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_42	42	zone	N/, N’, Light Dp
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_43	43	zone	N/, N’, Light Dp
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_44	44	slot	Adpositions-Applicatives
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_45	45	zone	Heavy Dp (A, S, O, Obl, Possessor Of 43)
+iyoj1235	Chorote	iyoj1235_verbal	verbal	iyoj1235_v_46	46	zone	Heavy Dp (A, S, O, Obl); S

@@ -1,0 +1,28 @@
+Language_ID	Language_Name	Planar_ID	Planar_Type	Position_ID	Position	Position_Type	Elements
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_1	1	zone	Sentence Adverbs
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_2	2	zone	Adverbial Clauses
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_3	3	slot	Interrogative Marker
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_4	4	slot	Obligation Fok
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_5	5	zone	Np, Subject Pronouns (A, S)
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_6	6	zone	Adverbial
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_7	7	slot	Copula Sé
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_8	8	slot	Negative Marker Pa (Neg), Pé (Neg), Poko (Not.yet)
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_9	9	slot	Tense Marker Té (Pst)
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_10	10	zone	Adverbial
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_11	11	slot	Tense Marker Ka (Ipfv), Ké (Fut), Key (Fut), Kay (Fut)
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_12	12	slot	Modal Pé ʻCanʼ
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_13	13	slot	Negative Marker Pa (Neg)
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_14	14	slot	Causative Fè
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_15	15	slot	Np (Causee); Causee Pronouns
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_16	16	zone	Adverbial
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_17	17	slot	Derivational Morpheme
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_18	18	slot	V Base
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_19	19	slot	Object Pronouns (Recipient)
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_20	20	slot	Object Pronouns (Patient)
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_21	21	zone	Adverbial
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_22	22	zone	Np, Complement Clauses
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_23	23	zone	Adverbial
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_24	24	slot	Pp
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_25	25	slot	Negative Marker …Ankò
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_26	26	zone	Adverbial Clauses
+mart1259	Martinican	mart1259_verbal	verbal	mart1259_v_27	27	zone	Sentence Adverbs

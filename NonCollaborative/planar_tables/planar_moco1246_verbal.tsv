@@ -1,0 +1,21 @@
+Language_ID	Language_Name	Planar_ID	Planar_Type	Position_ID	Position	Position_Type	Elements
+moco1246	Mocoví	moco1246_verbal	verbal	moco1246_v_1	1	slot	Clause Linkers
+moco1246	Mocoví	moco1246_verbal	verbal	moco1246_v_2	2	zone	S/A, Adverbs
+moco1246	Mocoví	moco1246_verbal	verbal	moco1246_v_3	3	slot	1st, 2nd P
+moco1246	Mocoví	moco1246_verbal	verbal	moco1246_v_4	4	slot	Negation
+moco1246	Mocoví	moco1246_verbal	verbal	moco1246_v_5	5	slot	Subject Defocusing
+moco1246	Mocoví	moco1246_verbal	verbal	moco1246_v_6	6	slot	Bound Person Forms
+moco1246	Mocoví	moco1246_verbal	verbal	moco1246_v_7	7	slot	Verb Core
+moco1246	Mocoví	moco1246_verbal	verbal	moco1246_v_8	8	slot	Valence Modifier I
+moco1246	Mocoví	moco1246_verbal	verbal	moco1246_v_9	9	slot	Causee
+moco1246	Mocoví	moco1246_verbal	verbal	moco1246_v_10	10	slot	Valence Modifier Ii
+moco1246	Mocoví	moco1246_verbal	verbal	moco1246_v_11	11	slot	'1stpl, 2nd S/A, 3rd`Pl'' P'
+moco1246	Mocoví	moco1246_verbal	verbal	moco1246_v_12	12	slot	Aspect
+moco1246	Mocoví	moco1246_verbal	verbal	moco1246_v_13	13	slot	Desiderative
+moco1246	Mocoví	moco1246_verbal	verbal	moco1246_v_14	14	slot	Reflexive, Reciprocal
+moco1246	Mocoví	moco1246_verbal	verbal	moco1246_v_15	15	zone	Transitivizer, Directionals, Locatives
+moco1246	Mocoví	moco1246_verbal	verbal	moco1246_v_16	16	slot	Non-Subject Plural
+moco1246	Mocoví	moco1246_verbal	verbal	moco1246_v_17	17	slot	Diminutives
+moco1246	Mocoví	moco1246_verbal	verbal	moco1246_v_18	18	slot	Temporal/ Evid?
+moco1246	Mocoví	moco1246_verbal	verbal	moco1246_v_19	19	slot	3rd P Or A
+moco1246	Mocoví	moco1246_verbal	verbal	moco1246_v_20	20	slot	Oblique Nominals

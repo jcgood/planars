@@ -243,8 +243,21 @@ many bundles at once, and is out of scope until steps 1–5 are done.
    phonological on its own. No filters. Alternatives considered: no bundles
    (Claude's recommendation), pooling indeterminate both ways, and a
    no-indeterminate filter.
-3. **Chart labels: CCDB's `Test_Labels`** ("Ciscat. Sel. Max. broad"), the
-   short labels written for plotting, over the long `Domain_ID`.
+3. **Chart labels: built from CCDB's `Domain_ID`, for all 21 structures**
+   (revised 2026-09-22; first choice was CCDB's short `Test_Labels`). The
+   language prefix is dropped and `_`/`.` become spaces:
+   `arao1248_v_ciscategorial.selection_maximal_broad` →
+   "ciscategorial selection maximal broad". Why the first choice failed, found
+   by the import script: 8 structures have no short labels at all (every row
+   `NA`, Chácobo verbal among them), and 3 have duplicates that look like
+   CCDB errors (e.g. Yukuna's minimal tone-dissimilation test labelled "Tone
+   Diss. Max."). Labels must be unique because the pooled plots use them as
+   row names and would merge two tests onto one row, and the exemplary charts
+   look tests up by label. Built labels are always unique and the same style
+   in every language; median 37 characters, the same as Chichewa's longest,
+   with a few much longer (97 in Chorote). CCDB's own label is kept beside it
+   as `CCDB_Test_Labels`. The missing and duplicated CCDB labels are worth
+   reporting to the CCDB project; that is Jeff's call, not part of this work.
 4. **Permutation tests: run for all 21.** Weak results per structure are
    still results, and a view across languages may show a pattern no single
    one does. Claude had recommended off by default. Cost: nyan1308's

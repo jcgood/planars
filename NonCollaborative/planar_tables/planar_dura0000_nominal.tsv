@@ -1,0 +1,14 @@
+Language_ID	Language_Name	Planar_ID	Planar_Type	Position_ID	Position	Position_Type	Elements
+dura0000	San Martín Duraznos Mixtec	dura0000_nominal	nominal	dura0000_n_1	1	slot	Prepositions
+dura0000	San Martín Duraznos Mixtec	dura0000_nominal	nominal	dura0000_n_2	2	slot	Topicalizer
+dura0000	San Martín Duraznos Mixtec	dura0000_nominal	nominal	dura0000_n_3	3	slot	Other
+dura0000	San Martín Duraznos Mixtec	dura0000_nominal	nominal	dura0000_n_4	4	slot	Numerals
+dura0000	San Martín Duraznos Mixtec	dura0000_nominal	nominal	dura0000_n_5	5	slot	Quantifiers 1
+dura0000	San Martín Duraznos Mixtec	dura0000_nominal	nominal	dura0000_n_6	6	slot	Quantifiers 2
+dura0000	San Martín Duraznos Mixtec	dura0000_nominal	nominal	dura0000_n_7	7	slot	Classifier
+dura0000	San Martín Duraznos Mixtec	dura0000_nominal	nominal	dura0000_n_8	8	slot	Noun Base
+dura0000	San Martín Duraznos Mixtec	dura0000_nominal	nominal	dura0000_n_9	9	slot	Compound (2nd Part)
+dura0000	San Martín Duraznos Mixtec	dura0000_nominal	nominal	dura0000_n_10	10	zone	Adjectives
+dura0000	San Martín Duraznos Mixtec	dura0000_nominal	nominal	dura0000_n_11	11	zone	Possessor
+dura0000	San Martín Duraznos Mixtec	dura0000_nominal	nominal	dura0000_n_12	12	slot	Demonstrative
+dura0000	San Martín Duraznos Mixtec	dura0000_nominal	nominal	dura0000_n_13	13	zone	Relative Clause

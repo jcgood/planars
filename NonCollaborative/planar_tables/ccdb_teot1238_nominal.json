@@ -1,0 +1,15 @@
+{
+  "ccdb_commit": "e3d5386a2b14b5e6b19435042f1d52754a044e15",
+  "ccdb_source_files": [
+    "domains.tsv",
+    "planar.tsv",
+    "input/overlaps.tsv"
+  ],
+  "language_id": "teot1238",
+  "language_name": "Teotitla\u0301n del Valle Zapotec",
+  "n_positions": 20,
+  "n_tests": 18,
+  "planar_id": "teot1238_nominal",
+  "planar_type": "nominal",
+  "root_position": 8
+}

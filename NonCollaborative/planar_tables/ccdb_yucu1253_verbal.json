@@ -1,0 +1,15 @@
+{
+  "ccdb_commit": "e3d5386a2b14b5e6b19435042f1d52754a044e15",
+  "ccdb_source_files": [
+    "domains.tsv",
+    "planar.tsv",
+    "input/overlaps.tsv"
+  ],
+  "language_id": "yucu1253",
+  "language_name": "Yukuna",
+  "n_positions": 21,
+  "n_tests": 24,
+  "planar_id": "yucu1253_verbal",
+  "planar_type": "verbal",
+  "root_position": 10
+}

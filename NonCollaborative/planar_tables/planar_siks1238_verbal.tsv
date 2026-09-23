@@ -1,0 +1,15 @@
+Language_ID	Language_Name	Planar_ID	Planar_Type	Position_ID	Position	Position_Type	Elements
+siks1238	Blackfoot	siks1238_verbal	verbal	siks1238_v_1	1	slot	Proclitic
+siks1238	Blackfoot	siks1238_verbal	verbal	siks1238_v_2	2	zone	Dps, Adjuncts
+siks1238	Blackfoot	siks1238_verbal	verbal	siks1238_v_3	3	slot	Person Prefix
+siks1238	Blackfoot	siks1238_verbal	verbal	siks1238_v_4	4	zone	Preverbs (Incl. Root)
+siks1238	Blackfoot	siks1238_verbal	verbal	siks1238_v_5	5	slot	Medial
+siks1238	Blackfoot	siks1238_verbal	verbal	siks1238_v_6	6	slot	Concrete Final (Incl. Root)
+siks1238	Blackfoot	siks1238_verbal	verbal	siks1238_v_7	7	slot	Abstract Final
+siks1238	Blackfoot	siks1238_verbal	verbal	siks1238_v_8	8	slot	Theme Suffix
+siks1238	Blackfoot	siks1238_verbal	verbal	siks1238_v_9	9	slot	Clause-Typing Suffix
+siks1238	Blackfoot	siks1238_verbal	verbal	siks1238_v_10	10	slot	Plural Agreement
+siks1238	Blackfoot	siks1238_verbal	verbal	siks1238_v_11	11	slot	Complementizer
+siks1238	Blackfoot	siks1238_verbal	verbal	siks1238_v_12	12	slot	Dp/Clitic
+siks1238	Blackfoot	siks1238_verbal	verbal	siks1238_v_13	13	slot	Dp/Clitic
+siks1238	Blackfoot	siks1238_verbal	verbal	siks1238_v_14	14	slot	Bare Np, Bare Plural

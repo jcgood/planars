@@ -1,0 +1,15 @@
+{
+  "ccdb_commit": "e3d5386a2b14b5e6b19435042f1d52754a044e15",
+  "ccdb_source_files": [
+    "domains.tsv",
+    "planar.tsv",
+    "input/overlaps.tsv"
+  ],
+  "language_id": "kaya1330",
+  "language_name": "Mebengokre",
+  "n_positions": 32,
+  "n_tests": 15,
+  "planar_id": "kaya1330_verbal",
+  "planar_type": "verbal",
+  "root_position": 15
+}

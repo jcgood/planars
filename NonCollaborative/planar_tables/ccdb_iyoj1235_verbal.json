@@ -1,0 +1,15 @@
+{
+  "ccdb_commit": "e3d5386a2b14b5e6b19435042f1d52754a044e15",
+  "ccdb_source_files": [
+    "domains.tsv",
+    "planar.tsv",
+    "input/overlaps.tsv"
+  ],
+  "language_id": "iyoj1235",
+  "language_name": "Chorote",
+  "n_positions": 46,
+  "n_tests": 28,
+  "planar_id": "iyoj1235_verbal",
+  "planar_type": "verbal",
+  "root_position": 16
+}

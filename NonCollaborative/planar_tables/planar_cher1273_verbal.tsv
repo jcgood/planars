@@ -1,0 +1,25 @@
+Language_ID	Language_Name	Planar_ID	Planar_Type	Position_ID	Position	Position_Type	Elements
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_1	1	zone	Np{A,S,P}; Pp; Adv
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_2	2	slot	Irrealis Y(I)-; Relative C(I)-
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_3	3	slot	Translocative W(I)-
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_4	4	slot	Partitive N(I)-/Ii- ~ Iy-
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_5	5	slot	Distributive Tee-/Ti- ~ C-/Too-
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_6	6	slot	Cislocative Ta(Y)-/Ti(Y)- ~ C-
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_7	7	slot	Iterative Vv- ~ V́ʔ-/Ii- ~ Íʔ-
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_8	8	slot	Negative Ka(Y)-/Kee-
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_9	9	slot	Pronominal Prefixes
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_10	10	slot	Middle Ata(A)-/ Ali-/ At-; Reflexive Ataat-/ Ata(A)-/ At-
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_11	11	slot	Incorporated Noun Root, Compounded Verb Root
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_12	12	slot	Verb Root
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_13	13	slot	Aspectual (Perfective, Only To Host The Following Derivational Suffixes In Positions 14 - 20)
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_14	14	slot	Duplicative -Iis-
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_15	15	slot	Repetitive -Iiloo-
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_16	16	slot	Causative (Can Be Repeated)
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_17	17	slot	Completive -O-
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_18	18	zone	Dative -E(E)-; Ambulative -Iit-
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_19	19	slot	Venitive -Ii-; Andative -Ee-
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_20	20	slot	Inceptive -Iit-
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_21	21	slot	Aspectual (Present; Imperfective; Perfective; Punctual; Infinitive)
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_22	22	slot	Modal (Indicative -A; Assertive -Vv́ʔi; Reportative -Ééʔi; Habitual -Óóʔi; Future Imperative -Vvʔi; Participial; Nominal -I)
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_23	23	zone	Clitics (Interrogative, Discursive)
+cher1273	Oklahoma Cherokee	cher1273_verbal	verbal	cher1273_v_24	24	zone	Np{A,S,P}; Pp; Adv

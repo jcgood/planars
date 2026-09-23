@@ -1,0 +1,22 @@
+Language_ID	Language_Name	Planar_ID	Planar_Type	Position_ID	Position	Position_Type	Elements
+zenz1235	Zenzontepec Chatino	zenz1235_verbal	verbal	zenz1235_v_1	1	slot	Conjunction
+zenz1235	Zenzontepec Chatino	zenz1235_verbal	verbal	zenz1235_v_2	2	zone	Np (A, S, P)
+zenz1235	Zenzontepec Chatino	zenz1235_verbal	verbal	zenz1235_v_3	3	zone	Adverbial
+zenz1235	Zenzontepec Chatino	zenz1235_verbal	verbal	zenz1235_v_4	4	slot	Mood (Conditional, Interrogative)
+zenz1235	Zenzontepec Chatino	zenz1235_verbal	verbal	zenz1235_v_5	5	zone	Mood (Negation, Hypothetical)
+zenz1235	Zenzontepec Chatino	zenz1235_verbal	verbal	zenz1235_v_6	6	zone	Adverbial
+zenz1235	Zenzontepec Chatino	zenz1235_verbal	verbal	zenz1235_v_7	7	slot	Aspect-Mood
+zenz1235	Zenzontepec Chatino	zenz1235_verbal	verbal	zenz1235_v_8	8	slot	Transitivity
+zenz1235	Zenzontepec Chatino	zenz1235_verbal	verbal	zenz1235_v_9	9	slot	Auxiliary
+zenz1235	Zenzontepec Chatino	zenz1235_verbal	verbal	zenz1235_v_10	10	slot	Aspect-Mood
+zenz1235	Zenzontepec Chatino	zenz1235_verbal	verbal	zenz1235_v_11	11	slot	Causative, Iterative
+zenz1235	Zenzontepec Chatino	zenz1235_verbal	verbal	zenz1235_v_12	12	slot	Transitivity
+zenz1235	Zenzontepec Chatino	zenz1235_verbal	verbal	zenz1235_v_13	13	slot	Verb Root
+zenz1235	Zenzontepec Chatino	zenz1235_verbal	verbal	zenz1235_v_14	14	slot	Compound Stem, Applicative
+zenz1235	Zenzontepec Chatino	zenz1235_verbal	verbal	zenz1235_v_15	15	zone	Adverbial
+zenz1235	Zenzontepec Chatino	zenz1235_verbal	verbal	zenz1235_v_16	16	slot	Essence
+zenz1235	Zenzontepec Chatino	zenz1235_verbal	verbal	zenz1235_v_17	17	zone	Subject Np (A, S)
+zenz1235	Zenzontepec Chatino	zenz1235_verbal	verbal	zenz1235_v_18	18	zone	Np (P, T, R)
+zenz1235	Zenzontepec Chatino	zenz1235_verbal	verbal	zenz1235_v_19	19	zone	Adverbial
+zenz1235	Zenzontepec Chatino	zenz1235_verbal	verbal	zenz1235_v_20	20	slot	Tense
+zenz1235	Zenzontepec Chatino	zenz1235_verbal	verbal	zenz1235_v_21	21	zone	Discourse Marker, Adverbial
