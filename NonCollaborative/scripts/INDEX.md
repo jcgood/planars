@@ -206,7 +206,7 @@ with `groups` for the two-bundle variant — from a bundle exported with
   count growth, and a uniformly-random tree sample for the ghost-overlay
   chart. Reuses `catalan.py`'s enumeration and sampling directly rather than
   re-deriving either.
-- **Output**: `results/planarsviz/illustrations/data/tree_shapes.tsv`,
+- **Output**: `results/chart_data/illustrations/data/tree_shapes.tsv`,
   `tree_count_growth.tsv`, `random_trees.tsv`, `metadata.json`.
 - **Example**: `python scripts/analysis/export_planarsviz_illustrations.py`
   (`--seed`, `--n-random-trees`, `--n-leaves`, `--tree-counts-max-n`)
@@ -246,7 +246,7 @@ with `groups` for the two-bundle variant — from a bundle exported with
 
 **`analysis/export_planarsviz_data.py`**
 - **Purpose**: Export validated Python analysis results for the `planarsviz` R package
-- **Output**: `results/planarsviz/<dataset>/data/` TSV/JSON bundle
+- **Output**: `results/chart_data/<dataset>/data/` TSV/JSON bundle
 - **Source of truth**: Reuses `laminar_analysis.py`; does not re-enumerate families
 - **Example**: `python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_nyan1308.tsv`
 
@@ -260,7 +260,7 @@ with `groups` for the two-bundle variant — from a bundle exported with
   pooled pair per domain type, a forest per `forests.json` entry plus one chart
   per tree in that forest, a variant per highlight and per filter subset, and so
   on). Run with `--list` to see the charts a given bundle supports.
-- **Example**: `Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308 --output results`
+- **Example**: `Rscript scripts/render_planarsviz.R --bundle results/chart_data/nyan1308 --output results`
 
 ## Porting checks
 
@@ -275,7 +275,7 @@ python scripts/planarsviz_checks/verify_forest_export.py  # bundle vs. archived 
 ```
 
 The `check_*.R` ones render a chart and pixel-compare it with a frozen
-reference in `results/planarsviz/reference/`; the `verify_*.py` ones compare
+reference in `results/chart_checks/reference/`; the `verify_*.py` ones compare
 the bundle's numbers with what the archived scripts have pasted into them.
 Both reach the archive through one place — `superseded.R` for R,
 `superseded.py` for Python — so moving it again is two edits, not fifteen.

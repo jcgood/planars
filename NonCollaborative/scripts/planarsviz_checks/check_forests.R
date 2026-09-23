@@ -8,14 +8,14 @@
 # ggplot_build() data layer by layer; renders the library forest at the
 # script's 20x14 in canvas and pixel-compares it with the frozen reference.
 # library-only (shifted test data): render only, beside the nyan1308 render,
-# under results/planarsviz/comparisons/shifted_nyan/shifted/.
+# under results/chart_checks/comparisons/shifted_nyan/shifted/.
 #
 # Run from NonCollaborative/:
 #   Rscript scripts/planarsviz_checks/check_forests.R
-#   Rscript scripts/planarsviz_checks/check_forests.R results/planarsviz/shifted_nyan shifted_nyan library-only
+#   Rscript scripts/planarsviz_checks/check_forests.R results/chart_data/shifted_nyan shifted_nyan library-only
 
 args <- commandArgs(trailingOnly = TRUE)
-bundle_dir <- if (length(args) >= 1) args[[1]] else "results/planarsviz/nyan1308"
+bundle_dir <- if (length(args) >= 1) args[[1]] else "results/chart_data/nyan1308"
 prefix <- if (length(args) >= 2) args[[2]] else "nyan1308"
 library_only <- length(args) >= 3 && args[[3]] == "library-only"
 python <- "/Users/jcgood/gitrepos/planars/.venv/bin/python"
@@ -24,7 +24,7 @@ source("scripts/planarsviz_checks/superseded.R")
 lib <- file.path(tempdir(), "planarsviz_lib")
 dir.create(lib, showWarnings = FALSE)
 status <- system2("R", c("CMD", "INSTALL", "--no-test-load", paste0("--library=", lib),
-                         "r/planarsviz"), stdout = FALSE, stderr = FALSE)
+                         "planarsviz"), stdout = FALSE, stderr = FALSE)
 if (status != 0) stop("R CMD INSTALL failed")
 suppressPackageStartupMessages({
   library(planarsviz, lib.loc = lib)
@@ -46,7 +46,7 @@ compare <- function(ref, new_png, out_png) {
 }
 out_dir <- file.path(bundle_dir, "plots")
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
-cmp_dir <- file.path(dirname(bundle_dir), "comparisons", prefix, if (library_only) "shifted" else "")
+cmp_dir <- file.path(dirname(dirname(bundle_dir)), "chart_checks", "comparisons", prefix, if (library_only) "shifted" else "")
 dir.create(cmp_dir, recursive = TRUE, showWarnings = FALSE)
 
 all_ok <- TRUE
@@ -99,7 +99,7 @@ for (id in ids) {
     }
     next
   }
-  ref <- file.path(dirname(bundle_dir), "reference", prefix, folder, paste0(base, ".png"))
+  ref <- file.path(dirname(dirname(bundle_dir)), "chart_checks", "reference", prefix, folder, paste0(base, ".png"))
   if (length(problems)) all_ok <- FALSE
   cat(base, ": ", if (length(problems)) paste("NUMBERS DIFFER:", paste(problems, collapse = " | ")) else "numbers identical",
       "; pixels: ", compare(ref, paste0(png_stem, ".png"), file.path(cmp_out, paste0(base, ".png"))), "\n", sep = "")

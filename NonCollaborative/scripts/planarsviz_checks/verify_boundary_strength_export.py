@@ -15,7 +15,7 @@ import csv
 from pathlib import Path
 
 NC = Path(__file__).resolve().parents[2]
-DATA = NC / "results" / "planarsviz" / "nyan1308" / "data"
+DATA = NC / "results" / "chart_data" / "nyan1308" / "data"
 COLUMNS = ["position", "left_summed", "left_capped", "right_summed", "right_capped"]
 ok = True
 

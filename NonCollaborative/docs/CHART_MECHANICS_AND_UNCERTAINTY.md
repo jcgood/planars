@@ -14,7 +14,7 @@ Related files:
   there for the full, sourced version.
 - `scripts/analysis/laminar_analysis.py` — the analysis discussed throughout (`classify_pair`,
   `find_conflicts`, `enumerate_maximal_laminar_families`).
-- `r/planarsviz/R/overlays.R` — how the overlay is drawn. Until the 2026-09-20
+- `planarsviz/R/overlays.R` — how the overlay is drawn. Until the 2026-09-20
   cutover this was `laminar_analysis.py`'s own `generate_r_overlay_script()` /
   `run_domain_overlay()`, which is what earlier passages here name; both are gone,
   and the archived script they wrote is in

@@ -36,7 +36,7 @@ by Python and draws the chart. Two properties matter above everything else:
 
 ## 2. Where the previous attempt (Codex) went wrong — do not repeat these
 
-Each item below is something that actually happened in `r/planarsviz/` and the
+Each item below is something that actually happened in `planarsviz/` and the
 documents it produced. They are the reason this plan exists.
 
 | # | What went wrong | Example in the old code | The rule that prevents it |
@@ -79,7 +79,7 @@ documents it produced. They are the reason this plan exists.
 - **R9 — No tooling yet.** No CI, `renv`, `lintr`, `styler`, `R CMD check`, or
   `vdiffr` until every chart in §4 is done.
 - **R10 — Branch only.** Never write to `NonCollaborative/results/` outside
-  `results/planarsviz/`, and never commit presentation files.
+  `results/chart_data/`, and never commit presentation files.
 - **Honesty rule.** The progress file (§9) records what was actually done and
   seen. Never write "verified", "matches", or "complete" without naming the
   comparison file that shows it. If a check was skipped, say so.
@@ -100,7 +100,8 @@ Done by Claude (Opus), 2026-09-14/15 — see `git log` on `main`:
   regenerated pooled/skyline PDFs, the Nyangatom → Chichewa naming fix, the
   doc updates, this plan, and the earlier review feedback.
 - **Not** committed (left untracked on `main`, untouched): Codex's `r/`,
-  `.github/`, `renv.lock`, `planarsviz.Rcheck/`, `results/planarsviz/`,
+  `.github/`, `renv.lock`, `planarsviz.Rcheck/`, `results/chart_data/` and
+  `results/chart_checks/`,
   `scripts/render_planarsviz.R`, `scripts/analysis/export_planarsviz_data.py`,
   `tests/test_planarsviz_bundle.py`, `docs/CLAUDE_PLANARSVIZ_HANDOFF.md`,
   `docs/PLANARSVIZ_RECONCILIATION.md`, and the stray
@@ -116,7 +117,7 @@ Steps:
    ```
    All library work happens in `/Users/jcgood/gitrepos/planars-planarsviz/`.
    Presentation work continues in the original checkout.
-3. Codex's `r/planarsviz/` is untracked, so it will **not** appear in the new
+3. Codex's `planarsviz/` is untracked, so it will **not** appear in the new
    worktree. That is intended. Copy only the salvage files listed in §3.1 into
    the worktree by hand; leave the rest behind (Jeff decides later whether to
    delete it from `main`).
@@ -132,7 +133,7 @@ Kept (checked in this session; still re-read before relying on them):
   truncated; position 10 = "Root").
 - `tests/test_planarsviz_bundle.py` — **except** `test_render_manifest_points_to_existing_staged_outputs`,
   which only counts files (34) and must be deleted.
-- From `r/planarsviz/R/`: `read_planars_bundle()`, `read_planars_subset()`,
+- From `planarsviz/R/`: `read_planars_bundle()`, `read_planars_subset()`,
   `validate_planars_bundle()` (in `data.R`), and `planarsviz_position_labels()`
   (in `palettes.R`). Also `DESCRIPTION`, `NAMESPACE` (rebuild it), `LICENSE`,
   `inst/data-contract.md`.
@@ -140,7 +141,7 @@ Kept (checked in this session; still re-read before relying on them):
 Discarded — do not copy, do not consult as a reference for how a chart should
 look: every `plots_*.R`, `tree_helpers.R`, `scales.R`, `themes.R`, `config.R`,
 `scripts/render_planarsviz.R`, `.github/`, `renv.lock`, `planarsviz.Rcheck/`,
-the existing `results/planarsviz/nyan1308/plots/`, and the three status docs
+the existing `results/chart_data/nyan1308/plots/`, and the three status docs
 (`CLAUDE_PLANARSVIZ_HANDOFF.md`, `PLANARSVIZ_RECONCILIATION.md`, and the review
 feedback — they describe the discarded code).
 
@@ -191,7 +192,7 @@ the giant generated file.
 | 17 | `nyan1308_boundary_strength.pdf`, `nyan1308_boundary_strength_distributions.pdf`, `nyan1308_boundary_strength_no_tono.pdf` | **matplotlib**: `scripts/analysis/boundary_strength.py` (`compute_boundary_strength()`, `save_figure()`, `save_distribution_figure()`) | Cross-language port — §4.3. Per-juncture strength across the maximal families, "summed" (primary) and "capped" (reference line) measures. `_no_tono` is the domain-type filter option (§4.2). Numbers in `nyan1308_boundary_strength.tsv` / `_no_tono.tsv`. |
 | 18 | `nyan1308_boundary_strength_overlay.pdf`, `nyan1308_boundary_strength_overlay_no_tono.pdf` | **R, hand-written**: `scripts/analysis/boundary_strength_plot.r` (one function, one call per variant) | Copy directly (rule R1). Reads the chart-17 TSVs. Dodged left/right bars in the style of chart 5's top panel; boxed "N\nName" position labels with the orthographic-word highlight (§4.2); explicit negative y headroom for the labels (see the script's own comments). `_no_tono` is the filter option. Design charts 5, 17 and 18 so one boundary function covers them via options (§1, point 3), as long as each option's defaults reproduce its reference. |
 
-| 19 | `nyan1308_fragmentation_test_plot.pdf` | **R, hand-written**: `scripts/analysis/fragmentation_test_plot.r`, reading `class_fragmentation_test.py`'s three TSVs | Added 2026-09-20, after the cutover, at Jeff's request. Copy directly (rule R1), but note what makes it unlike every other row here: **it has no matplotlib original and never did**, so §4.3's pixel-comparison-against-the-original does not apply. The chart the R script draws is itself the reference, frozen as `results/planarsviz/reference/nyan1308_fragmentation_test_plot.png` before the package could overwrite it. The shifted-dataset leak check applies normally. The two bundle tables are written only when the exporter is given `--fragmentation-permutations`, because the test is minutes where the rest of an export is seconds. |
+| 19 | `nyan1308_fragmentation_test_plot.pdf` | **R, hand-written**: `scripts/analysis/fragmentation_test_plot.r`, reading `class_fragmentation_test.py`'s three TSVs | Added 2026-09-20, after the cutover, at Jeff's request. Copy directly (rule R1), but note what makes it unlike every other row here: **it has no matplotlib original and never did**, so §4.3's pixel-comparison-against-the-original does not apply. The chart the R script draws is itself the reference, frozen as `results/chart_checks/reference/nyan1308_fragmentation_test_plot.png` before the package could overwrite it. The shifted-dataset leak check applies normally. The two bundle tables are written only when the exporter is given `--fragmentation-permutations`, because the test is minutes where the rest of an export is seconds. |
 
 **Out of scope for the library** (leave on their current path): the LaTeX tables
 and example cards (`make_planar_latex.py`, `highlight_planar_example.py`,
@@ -385,13 +386,13 @@ PDF in `results/` is current, then convert it to PNG at a fixed resolution into
 the worktree:
 ```
 pdftoppm -png -r 100 -singlefile <results>/<chart>.pdf \
-  /Users/jcgood/gitrepos/planars-planarsviz/NonCollaborative/results/planarsviz/reference/<chart>
+  /Users/jcgood/gitrepos/planars-planarsviz/NonCollaborative/results/chart_checks/reference/<chart>
 ```
 Commit the reference PNGs on the branch. Never regenerate a reference to make a
 comparison pass.
 
 **Step 1 — copy.** Paste the source-of-truth code into a new function in
-`r/planarsviz/R/`. Commit it *unchanged except for being wrapped in a function*,
+`planarsviz/R/`. Commit it *unchanged except for being wrapped in a function*,
 with a comment naming the exact source file and line range it came from. This
 commit is what makes later review possible: the next diff shows only the
 literal-to-data replacements.
@@ -401,7 +402,7 @@ alpha, thickness vector, Newick string, family IDs, root position, position
 count), read it from the bundle instead. If a value isn't in the bundle yet, add
 it to the exporter (§8.1) — do not compute it in R.
 
-**Step 3 — render** to `results/planarsviz/nyan1308/plots/<chart>.pdf` at the
+**Step 3 — render** to `results/chart_data/nyan1308/plots/<chart>.pdf` at the
 **same width, height, and units** as the source's `ggsave()` call, then PNG it
 with the same `pdftoppm` command as step 0.
 
@@ -413,7 +414,7 @@ with the same `pdftoppm` command as step 0.
   difference.
 - *Pixels:* write a side-by-side image and a difference image with Python/PIL
   (reference | library | abs difference) to
-  `results/planarsviz/comparisons/<chart>.png`, and report the fraction of
+  `results/chart_checks/comparisons/<chart>.png`, and report the fraction of
   differing pixels. Small anti-aliasing differences are fine; anything that
   shifts a label, line, or legend is not.
 
@@ -423,7 +424,7 @@ labels and legends — earlier bugs were only visible when zoomed.
 
 **Step 6 — shifted-dataset check.** Render the same chart from the shifted test
 bundle (§10), save the nyan1308-vs-shifted side-by-side to
-`results/planarsviz/comparisons/shifted/<chart>.png`, and look at it. The only
+`results/chart_checks/comparisons/shifted/<chart>.png`, and look at it. The only
 differences allowed are the expected ones listed in §10.3. Anything else is a
 leaked nyan1308 assumption: fix it (§10.3 step 4) and redo steps 3–5 for
 nyan1308.
@@ -440,7 +441,7 @@ next chart.
 ## 8. Library structure
 
 ```
-r/planarsviz/
+planarsviz/
   R/
     data.R            # kept: read_planars_bundle(), read_planars_subset(), validate_planars_bundle()
     labels.R          # kept: planarsviz_position_labels()
@@ -513,7 +514,7 @@ Titles and legend text that contain numbers must build them from data.
 
 Search command for R6 (run in the worktree, from `NonCollaborative/`):
 ```
-grep -nE '"[0-9]+-[0-9]+"|\b(22|69|95|26|65)\b|xintercept *= *10|QM|PostObj|Root' r/planarsviz/R/*.R
+grep -nE '"[0-9]+-[0-9]+"|\b(22|69|95|26|65)\b|xintercept *= *10|QM|PostObj|Root' planarsviz/R/*.R
 ```
 Every hit must be justified in a comment or removed.
 
@@ -537,8 +538,8 @@ commit as each step. For every chart:
 - Source copied: <file>:<lines>, commit <hash>
 - Literals replaced: <list>, exporter fields added: <list>
 - Numbers comparison: <result, differences and why>
-- Pixel comparison: results/planarsviz/comparisons/<chart>.png, <n>% differing pixels
-- Shifted-dataset check: results/planarsviz/comparisons/shifted/<chart>.png, only expected differences? yes / <leaks found and how fixed>
+- Pixel comparison: results/chart_checks/comparisons/<chart>.png, <n>% differing pixels
+- Shifted-dataset check: results/chart_checks/comparisons/shifted/<chart>.png, only expected differences? yes / <leaks found and how fixed>
 - §5 fixes checked: <list>
 - R6 search: clean / <justified hits>
 - Looked at by Claude: yes (what was checked)  |  Seen by Jeff: yes/no, date
@@ -613,7 +614,7 @@ bug, fixed before any chart is rendered:
    Tree shapes, darkness, thickness, layer numbers, tree counts, ordering, and
    legend wording (other than the renamed type) are unchanged.
 3. For each chart, save a side-by-side (nyan1308 vs. shifted) to
-   `results/planarsviz/comparisons/shifted/<chart>.png` and look at it. List any
+   `results/chart_checks/comparisons/shifted/<chart>.png` and look at it. List any
    chart that breaks or differs in anything other than the expected changes —
    each is a leaked nyan1308 assumption.
 4. Fix each leak by moving the fact into the exporter or a function argument

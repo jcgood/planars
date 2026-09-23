@@ -9,14 +9,14 @@
 # plot_boundary_strength_overlay(), compares ggplot_build() data, renders at
 # 13x7 in and pixel-compares with the frozen references.
 # library-only (shifted test data): render only, beside the nyan1308 renders,
-# under results/planarsviz/comparisons/shifted_nyan/shifted/.
+# under results/chart_checks/comparisons/shifted_nyan/shifted/.
 #
 # Run from NonCollaborative/:
 #   Rscript scripts/planarsviz_checks/check_boundary_strength_overlay.R
-#   Rscript scripts/planarsviz_checks/check_boundary_strength_overlay.R results/planarsviz/shifted_nyan shifted_nyan library-only
+#   Rscript scripts/planarsviz_checks/check_boundary_strength_overlay.R results/chart_data/shifted_nyan shifted_nyan library-only
 
 args <- commandArgs(trailingOnly = TRUE)
-bundle_dir <- if (length(args) >= 1) args[[1]] else "results/planarsviz/nyan1308"
+bundle_dir <- if (length(args) >= 1) args[[1]] else "results/chart_data/nyan1308"
 prefix <- if (length(args) >= 2) args[[2]] else "nyan1308"
 library_only <- length(args) >= 3 && args[[3]] == "library-only"
 python <- "/Users/jcgood/gitrepos/planars/.venv/bin/python"
@@ -25,7 +25,7 @@ source("scripts/planarsviz_checks/superseded.R")
 lib <- file.path(tempdir(), "planarsviz_lib")
 dir.create(lib, showWarnings = FALSE)
 status <- system2("R", c("CMD", "INSTALL", "--no-test-load", paste0("--library=", lib),
-                         "r/planarsviz"), stdout = FALSE, stderr = FALSE)
+                         "planarsviz"), stdout = FALSE, stderr = FALSE)
 if (status != 0) stop("R CMD INSTALL failed")
 suppressPackageStartupMessages({
   library(planarsviz, lib.loc = lib)
@@ -59,7 +59,7 @@ same_data <- function(po, pl, what) {
 compare <- function(ref, new_png, out_png) {
   system2(python, c("scripts/planarsviz_compare.py", shQuote(ref), shQuote(new_png), shQuote(out_png)), stdout = TRUE)
 }
-cmp_dir <- file.path(dirname(bundle_dir), "comparisons", prefix, if (library_only) "shifted" else "")
+cmp_dir <- file.path(dirname(dirname(bundle_dir)), "chart_checks", "comparisons", prefix, if (library_only) "shifted" else "")
 dir.create(cmp_dir, recursive = TRUE, showWarnings = FALSE)
 subset_ids <- vapply(jsonlite::read_json(file.path(bundle_dir, "data", "subsets.json")),
                      function(s) s$subset_id, character(1))
@@ -113,7 +113,7 @@ for (case in cases) {
     get("plot_boundary_strength", envir = orig)(case$tsv, paste0(case$name, ".pdf"), case$colours)))
   problems <- same_data(get("captured", envir = orig), pl, case$name)
   if (length(problems)) all_ok <- FALSE
-  pix <- compare(file.path(dirname(bundle_dir), "reference", prefix, folder, paste0(base, ".png")), new_png,
+  pix <- compare(file.path(dirname(dirname(bundle_dir)), "chart_checks", "reference", prefix, folder, paste0(base, ".png")), new_png,
                  file.path(cmp_out, paste0(base, ".png")))
   cat(base, ": ", if (length(problems)) paste("NUMBERS DIFFER:", paste(head(problems, 5), collapse = " | ")) else "numbers identical",
       "; canvas ", size[["width"]], "x", size[["height"]], " in; pixels: ", pix, "\n", sep = "")

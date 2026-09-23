@@ -11,7 +11,7 @@ is where they are meant to be run from.
 
 The charts are drawn by the `planarsviz` R package, which reads an exported
 data bundle rather than re-deriving anything — see "Output" below for the two
-commands. The bundle's contract is `r/planarsviz/inst/data-contract.md`.
+commands. The bundle's contract is `planarsviz/inst/data-contract.md`.
 
 ## What is a Laminar Family?
 
@@ -114,10 +114,10 @@ and the `planarsviz` R package draws from it:
 ```bash
 python scripts/analysis/export_planarsviz_data.py \
   --domain-file domains/domains_nyan1308.tsv \
-  --output-dir results/planarsviz --language-name Chichewa
+  --output-dir results/chart_data --language-name Chichewa
 
 Rscript scripts/render_planarsviz.R \
-  --bundle results/planarsviz/nyan1308 --output results
+  --bundle results/chart_data/nyan1308 --output results
 ```
 
 Until the 2026-09-20 cutover, `laminar_analysis.py` wrote the R scripts for
@@ -170,11 +170,11 @@ the archived scripts themselves and now live in the exporter — see
 **A chart won't render**
 - `scripts/render_planarsviz.R` installs the package into a temporary library
   itself, so there is no install step to remember — but the package's own
-  dependencies must be there. They are listed in `r/planarsviz/DESCRIPTION`;
+  dependencies must be there. They are listed in `planarsviz/DESCRIPTION`;
   the tree charts also need `ape` and `ggtree`, under `Suggests` because the
   other charts do not.
 - Run it from `NonCollaborative/`, and make sure the bundle exists: the
-  renderer draws from `results/planarsviz/<dataset>/`, not from the TSV.
+  renderer draws from `results/chart_data/<dataset>/`, not from the TSV.
 
 ## See Also
 

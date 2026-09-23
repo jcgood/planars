@@ -23,7 +23,7 @@ def read(path):
 
 
 script_rows = read(NC / "results" / "nyan1308" / "counts-and-chance" / "nyan1308_tree_counts.tsv")
-bundle_rows = read(NC / "results" / "planarsviz" / "nyan1308" / "data" / "tree_counts.tsv")
+bundle_rows = read(NC / "results" / "chart_data" / "nyan1308" / "data" / "tree_counts.tsv")
 same = script_rows == bundle_rows
 print(f"script table {len(script_rows)} rows, bundle {len(bundle_rows)} rows: {'identical' if same else 'MISMATCH'}")
 if not same:

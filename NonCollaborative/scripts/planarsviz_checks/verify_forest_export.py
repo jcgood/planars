@@ -30,7 +30,7 @@ from superseded import superseded
 
 NC = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(NC / "scripts" / "analysis"))
-DATA = NC / "results" / "planarsviz" / "nyan1308" / "data"
+DATA = NC / "results" / "chart_data" / "nyan1308" / "data"
 ok = True
 
 

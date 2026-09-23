@@ -57,7 +57,7 @@ Honesty rule: nothing below says "matches" without naming the comparison file.
   per-chart "Seen by Jeff: no" lines further down are dated records of how
   each port stood on its own day and are left as written; this line is the
   current state. Comparison images remain under
-  `results/planarsviz/comparisons/` (reference | new | difference).
+  `results/chart_checks/comparisons/` (reference | new | difference).
 
 ---
 
@@ -67,7 +67,7 @@ Honesty rule: nothing below says "matches" without naming the comparison file.
    output, and more general illustrations are expected. They fit the
    library's rule (Python computes, R draws from a data folder); what they
    lack is a *language*, not data. So: an `illustrations` bundle at
-   `results/planarsviz/illustrations/data/` holding `tree_shapes.tsv` (n,
+   `results/chart_data/illustrations/data/` holding `tree_shapes.tsv` (n,
    shape number, Newick — exhaustive for n=2–4, sampled above that),
    `tree_counts.tsv` (n, Catalan, little Schröder A001003, n-ary A007052)
    and a `metadata.json` recording what is exhaustive, what is sampled, and
@@ -77,7 +77,7 @@ Honesty rule: nothing below says "matches" without naming the comparison file.
    `plot_tree_shapes(ref, n)` and a new `plot_tree_count_growth(ref)` (the
    counts become data, so the growth of the tree space against the 69
    families can be a chart rather than a table). Named `illustrations` and
-   not `reference` because `results/planarsviz/reference/` already holds the
+   not `reference` because `results/chart_checks/reference/` already holds the
    frozen images the porting checks compare against.
    `tree_counting_equations.pdf` stays LaTeX — typeset mathematics, which
    ggplot would render worse — and is documented as part of this family.
@@ -208,7 +208,7 @@ Honesty rule: nothing below says "matches" without naming the comparison file.
   (question 8).
 - Salvaged into the worktree: `scripts/analysis/export_planarsviz_data.py`,
   `tests/test_planarsviz_bundle.py` (file-counting manifest test deleted),
-  `r/planarsviz/{DESCRIPTION,LICENSE,inst/data-contract.md}`,
+  `planarsviz/{DESCRIPTION,LICENSE,inst/data-contract.md}`,
   `R/data.R` (bundle reader/validator), `R/labels.R` (position labels only;
   Codex's hard-coded palette removed).
 - Tooling on this machine: R 4.6.1, ggplot2 4.0.3, ggtree 4.2.0, ape,
@@ -261,7 +261,7 @@ Every `*.pdf` in `NonCollaborative/results/` at `43a308f`:
 | `supercatalan_trees_*.pdf` ×4, `tree_counting_equations.pdf` | **not in inventory — question 1** |
 | `nyan1308_all_families_labeled_legend-JGAnn.pdf` | not a chart output — question 2 |
 
-Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
+Reference images: 63 PNGs at 100 dpi in `results/chart_checks/reference/`
 (every in-scope PDF above), taken from the committed PDFs at `43a308f`.
 
 ---
@@ -270,7 +270,7 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
 
 - `tests/fixtures/make_shifted_nyan.py` → `domains_shifted_nyan.tsv`,
   `planar_shifted_nyan.tsv`, `display_labels_shifted_nyan.tsv`; exported as
-  `results/planarsviz/shifted_nyan/` with `--language-name "Shifted test data"`.
+  `results/chart_data/shifted_nyan/` with `--language-name "Shifted test data"`.
 - **Leak found and fixed on first export (exporter, not R):** the shifted
   data doesn't cover position 1, so the family enumeration adds a synthetic
   root `[1-24]` to every family, but the main span table didn't list it —
@@ -300,7 +300,7 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
 - Numbers comparison (`scripts/planarsviz_checks/check_pooled.R`): for all 12,
   every ggplot_build layer data frame, y-axis labels, title and canvas size
   identical to the working script.
-- Pixel comparison: `results/planarsviz/comparisons/nyan1308_pooled_*.png`,
+- Pixel comparison: `results/chart_checks/comparisons/nyan1308_pooled_*.png`,
   0.0000% differing pixels, all 12.
 - Shifted-dataset check: `comparisons/shifted/shifted_nyan_pooled_*.png`.
   Only expected differences: positions +2 with empty 1–2, axis to 24, root
@@ -830,7 +830,7 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
 ## Cutover C1: results/ is where the charts are rendered (2026-09-20)
 
 - **What changed.** `Rscript scripts/render_planarsviz.R --bundle
-  results/planarsviz/nyan1308 --output results --formats pdf` now writes the
+  results/chart_data/nyan1308 --output results --formats pdf` now writes the
   published charts. 65 of 65 charts, 63 replacing an existing file and 2
   under the new highlight-id name. The superseded
   `nyan1308_all_families_labeled_wordhood.pdf` and `_wordhood_legend.pdf`
@@ -849,13 +849,13 @@ Reference images: 63 PNGs at 100 dpi in `results/planarsviz/reference/`
   `manifest.tsv` says nothing about what it belongs to. `check_renderer.py`
   finds it by pattern and stops if a directory holds more than one.
 - **A bundle's `plots/` is no longer tracked in git**
-  (`.gitignore`: `NonCollaborative/results/planarsviz/*/plots/`; 129 files
+  (`.gitignore`: `NonCollaborative/results/chart_data/*/plots/`; 129 files
   untracked, not deleted). It is the renderer's default output and where
   `scripts/planarsviz_checks/` writes its trial renders — a working area.
   With `results/` holding the published charts, tracking both would keep two
   copies of every chart, which is the duplication this project treats as a
   defect. **Consequence for C2:** several checks compare a shifted-bundle
-  render against `results/planarsviz/nyan1308/plots/<file>.pdf`, which now
+  render against `results/chart_data/nyan1308/plots/<file>.pdf`, which now
   has to be rendered before those checks run. C2 repoints them at `results/`
   (it is already updating their paths), which removes the precondition.
 - **Docs fixed on sight, not deferred to C4.** `scripts/INDEX.md`'s
@@ -920,7 +920,7 @@ handoff note, and both would be easy to destroy by accident:
   quietly. The `results/` path deliberately did *not* get the same treatment:
   it is referenced throughout the project already and is not going to move.
 - **C1's leftover closed.** The twelve sites that compared a shifted-bundle
-  render against `results/planarsviz/nyan1308/plots/<file>.pdf` now read
+  render against `results/chart_data/nyan1308/plots/<file>.pdf` now read
   `results/`, so the checks no longer depend on an untracked working
   directory having been populated first.
 - **Verified: every check still proves what it proved before.** All thirteen
@@ -1016,7 +1016,7 @@ port with itself, and printed the same number twice without anyone noticing.
 - **Caught before C3 made it unfixable.** The matplotlib that drew the real
   reference was about to be deleted, so it was restored from `ffa9032`, run,
   and its two transparent charts frozen as
-  `results/planarsviz/reference/nyan1308_tree_count_{by_class,bundles}
+  `results/chart_checks/reference/nyan1308_tree_count_{by_class,bundles}
   _transp.png`, beside the other frozen references. The check reads those now.
 - **The numbers it should have been printing**: reference 86.3% and 85.1%
   fully transparent, port 85.1% and 83.9%. Close, and the port is slightly the
@@ -1055,7 +1055,7 @@ script turned up that C2 had missed.
   carries a table pointing each uncovered chart at its catalogue section. Two
   more sections cover what was left: the supercatalan illustrations, the
   renderer manifest, the 2026-04-18 written summary, and what lives under
-  `results/planarsviz/`.
+  `results/chart_data/` and `results/chart_checks/`.
 - **`scripts/INDEX.md`.** Claimed `laminar_analysis.py` writes an R script and
   a markdown summary — the first was true until C3, the second has not been
   true since April. Its whole "Visualization (R) — Generated Output" section
@@ -1129,7 +1129,7 @@ reading its own TSVs. Not started. What it needs:
   bundle's usual one-row-per-position/span/family shape. `subsets.json`'s
   pattern — an index plus a directory of per-item files — may fit better than
   one flat table. Worth settling before the table is written, not after.
-- A section in `r/planarsviz/inst/data-contract.md` for whichever shape it
+- A section in `planarsviz/inst/data-contract.md` for whichever shape it
   takes, written the way the `boundary_strength.tsv` section is.
 - **This port has no matplotlib original.** Every other chart had one to
   compare against pixel for pixel, and the plan's whole methodology assumes
@@ -1189,7 +1189,7 @@ Built on the three decisions above. The chart the package draws is
   `kind`, `label`, `colour`, `n_tests`, `observed_families`, the null's mean
   and 5th/95th percentiles, `p_value_ge_observed`, `n_permutations`, `seed`)
   and `fragmentation_null.tsv` (the tally). Both are documented in
-  `r/planarsviz/inst/data-contract.md`, and the run's draw count and seed go
+  `planarsviz/inst/data-contract.md`, and the run's draw count and seed go
   into `metadata.json` so a bundle says what produced its p-values.
 - **227 tally rows for 40,000 draws**, exactly as the arithmetic predicted.
   The check proves the tally lost nothing by expanding it back and comparing
@@ -1413,7 +1413,7 @@ deliberate change is `pytest tests/test_planarsviz_checks.py
   byte-identical today, which is itself evidence the renders are deterministic,
   but it means the test suite writes to tracked files. Not changed here:
   moving where the checks write would alter the checks and contradict the
-  documentation pointing at `results/planarsviz/comparisons/`.
+  documentation pointing at `results/chart_checks/comparisons/`.
 
 **For `renv`, which is next:** the versions these charts were drawn with are
 ggplot2 4.0.3, ape 5.8.1, ggtree 4.2.0 (Bioconductor), dplyr 1.2.1, patchwork
@@ -1585,7 +1585,7 @@ be a step at all.
   three R-dependent files, CI running `pytest NonCollaborative/tests -m "not
   needs_r"` (17 tests, 3 expected failures, about a minute), and the roxygen
   guard moved to **pre-push**, where R and the pinned packages already are,
-  triggered only when `r/planarsviz/` changed.
+  triggered only when `planarsviz/` changed.
 
   **R does not go into the CI image, deliberately.** The 21 porting checks
   pixel-compare against references rendered on a Mac; ggplot2's default sans
@@ -1662,7 +1662,7 @@ something you run to produce a deliverable.
 
 The step with no second chance is done. Every chart that exists in `results/`
 but has never been drawn by the package now has a frozen reference image in
-`results/planarsviz/reference/`, so the port that replaces each one can be
+`results/chart_checks/reference/`, so the port that replaces each one can be
 checked against what the script drew. Until this was done, the first time the
 package wrote one of those PDFs the evidence would have been gone.
 
@@ -1707,7 +1707,7 @@ that, for the reason stated in the entry above.
 
 ## The restructure, step 2: the check-side images move (2026-09-20)
 
-`results/planarsviz/reference/` and `results/planarsviz/comparisons/` are no
+`results/chart_checks/reference/` and `results/chart_checks/comparisons/` are no
 longer flat. Both are grouped into four topic folders — `laminar-families/`,
 `pooled/`, `boundaries/`, `counts-and-chance/`. The other two folders the
 scheme defines, `planar-structure/` and `illustrations/`, hold no
@@ -1757,7 +1757,7 @@ not what that snapshot is for.
   commit's work applied. Fixed separately in the next commit, because the
   fix belongs to step 1.
 - `test_namespace_and_man_match_roxygen2_output` — an untracked
-  `r/planarsviz/R/boundary_strength_test.R` appeared in the working tree
+  `planarsviz/R/boundary_strength_test.R` appeared in the working tree
   partway through this work, from a concurrent session of Jeff's building a
   permutation test on boundary strength. Regenerating `NAMESPACE` now would
   export a function whose source is not committed, so it was left alone. The
@@ -1855,7 +1855,7 @@ by one as each lands.
 ## Absorption, first producer: the 22 forest trees (2026-09-21)
 
 The package now draws every individual maximal-family tree. `plot_forest_tree(bundle,
-forest_id, tree_number)` is new, in `r/planarsviz/R/forest_trees.R`, and the renderer
+forest_id, tree_number)` is new, in `planarsviz/R/forest_trees.R`, and the renderer
 registers one chart per tree for **all eight** forests in `forests.json` — 48 names,
 `<forest_id>_tree_<nn>`, the number padded to at least two digits so tree 10 sorts
 after tree 9. That was decision 3 of the restructure plan, taken because the loop is
@@ -2117,7 +2117,7 @@ script's default is corrected but the search has not been re-run, and both the s
 
 ## The per-language folder layer — done (2026-09-22)
 
-`results/`, `results/planarsviz/reference/` and `results/planarsviz/comparisons/` all
+`results/`, `results/chart_checks/reference/` and `results/chart_checks/comparisons/` all
 now nest their four chart-topic folders (`laminar-families/`, `pooled/`, `boundaries/`,
 `counts-and-chance/`) under a dataset folder, so a second language's charts can land
 beside nyan1308's instead of colliding with them. 385 files moved as a pure `git mv`
@@ -2163,7 +2163,7 @@ one. Their own filename prefix is still hardcoded to `nyan1308` regardless of
 
 **One line needed a real fix, not a re-record, because it names a path rather than a
 chart:** `check_tree_counts.R`'s "reference:" transparency line prints
-`results/planarsviz/reference/<dataset>/<topic>/<file>` verbatim. `_normalise()` in
+`results/chart_checks/reference/<dataset>/<topic>/<file>` verbatim. `_normalise()` in
 `tests/test_planarsviz_checks.py` already stripped the topic segment from the 2026-09-20
 topic-folder move; extended to strip the dataset segment the same way, confirmed by
 running `check_tree_counts.R` directly and checking the regex against its actual printed
@@ -2210,7 +2210,7 @@ every `ggplot2` verb and `aes()` column name in the package. Confirmed rather th
 by reading a sample: the package brings in `ggplot2` with `import(ggplot2)` in `NAMESPACE`
 rather than per-function `importFrom`, which is a known blind spot for this linter — it has
 no way to know which names that whole-package import provides. Disabled in the new
-`r/planarsviz/.lintr`, with the finding count and the reasoning written into the config
+`planarsviz/.lintr`, with the finding count and the reasoning written into the config
 file itself, not just here.
 
 **The rest sorted into three small piles, all resolved the same session:**
@@ -2248,7 +2248,7 @@ file itself, not just here.
 excuse; `test_styler_up_to_date.py` runs `style_pkg(dry = "fail")`, which restyles nothing
 and just reports whether restyling would change anything. Both wired into
 `.pre-commit-config.yaml` at `pre-push`, gated on `files:
-^NonCollaborative/r/planarsviz/` like the roxygen guard, for the same reason: CI has no R,
+^NonCollaborative/planarsviz/` like the roxygen guard, for the same reason: CI has no R,
 this takes seconds only when the package itself changed, and both skip cleanly (never
 fail) on a machine without R or these packages, since a skip that reads as a pass is
 useless for a drift guard but a hard failure on a machine that was never supposed to run
@@ -2273,7 +2273,7 @@ bundle.
 
 ## Phase E: the illustrations bundle, and no generated script writes into `results/` any more (2026-09-22)
 
-Question 1's design (see above) built as specified: a new `results/planarsviz/illustrations/`
+Question 1's design (see above) built as specified: a new `results/chart_data/illustrations/`
 bundle (`scripts/analysis/export_planarsviz_illustrations.py`), read by
 `read_planars_illustrations()` rather than `read_planars_bundle()` since it has no
 spans/tests/families to validate — it is pure tree-shape combinatorics with no language behind
@@ -2343,7 +2343,7 @@ brand-new dataset with no changes at all, which is exactly what building it gene
 checks the sample is well-formed (every tree has exactly the right leaves, once each) and
 reproduces from its seed; nothing can or should check that a fresh random sample "looks like" a
 specific frozen image, since looking different from the last sample is the entire content of the
-chart. `results/planarsviz/reference/illustrations/illustrations_random_tree_overlay.png` is
+chart. `results/chart_checks/reference/illustrations/illustrations_random_tree_overlay.png` is
 frozen the same way every other chart's reference is (so a future code change to the *drawing*
 still gets caught), but a human still needs to look at it once — recorded here as **Seen by Jeff:
 no** — the same status every other absorbed chart in this project started from.
@@ -2372,7 +2372,7 @@ changes a number fails even without R installed.
 (mechanism, absorption, the `pdfcrop` difference, the seed story) rather than left describing
 scripts that no longer run; `docs/planarsviz_charts.md` gained catalogue section 17 (three
 subsections) plus three new example images and a "Name changes" table entry;
-`r/planarsviz/inst/data-contract.md` gained an "Illustrations bundle" section describing the
+`planarsviz/inst/data-contract.md` gained an "Illustrations bundle" section describing the
 different (simpler) contract; `scripts/INDEX.md` and `CLAUDE.md` updated wherever they named the
 now-archived scripts or the now-stale "one generated script left" claim; `OlderFiles/
 planarsviz_superseded/README.md` gained a "Phase E" section for the three newly-archived files.

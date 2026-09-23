@@ -53,8 +53,8 @@ knowing before you go further:
    the format sets.
 2. **There is now a worked example of this exact port.** If this becomes chart
    20, the path is: `export_fragmentation_test()` in the exporter,
-   `r/planarsviz/R/fragmentation.R` for the chart function, the
-   `fragmentation_test.tsv` section in `r/planarsviz/inst/data-contract.md`,
+   `planarsviz/R/fragmentation.R` for the chart function, the
+   `fragmentation_test.tsv` section in `planarsviz/inst/data-contract.md`,
    `check_fragmentation.R` for the check, and
    `test_fragmentation_tables_agree` in `tests/test_planarsviz_bundle.py` for
    the invariant that makes a tally safe to store. Copying that shape will be
@@ -63,7 +63,7 @@ knowing before you go further:
 Also worth knowing, since your test sounds like it needs one: **a chart with no
 matplotlib original doesn't fit the plan's pixel-comparison methodology.**
 Chart 19 handled that by freezing the chart its own R script drew as the
-reference, in `results/planarsviz/reference/`, *before* the package could
+reference, in `results/chart_checks/reference/`, *before* the package could
 overwrite it. If your chart is in the same position, freeze its reference
 before porting, not after — that ordering is the whole trick.
 

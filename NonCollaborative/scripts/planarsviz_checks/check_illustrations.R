@@ -46,24 +46,24 @@ python <- "/Users/jcgood/gitrepos/planars/.venv/bin/python"
 lib <- file.path(tempdir(), "planarsviz_lib")
 dir.create(lib, showWarnings = FALSE)
 status <- system2("R", c("CMD", "INSTALL", "--no-test-load", paste0("--library=", lib),
-                         "r/planarsviz"), stdout = FALSE, stderr = FALSE)
+                         "planarsviz"), stdout = FALSE, stderr = FALSE)
 if (status != 0) stop("R CMD INSTALL failed")
 suppressPackageStartupMessages({
   library(planarsviz, lib.loc = lib)
   library(ggplot2)
 })
 
-ref <- read_planars_illustrations("results/planarsviz/illustrations")
-bundle <- read_planars_bundle("results/planarsviz/nyan1308")
+ref <- read_planars_illustrations("results/chart_data/illustrations")
+bundle <- read_planars_bundle("results/chart_data/nyan1308")
 
 compare <- function(reference, new_png, out_png) {
   system2(python, c("scripts/planarsviz_compare.py", shQuote(reference), shQuote(new_png), shQuote(out_png)),
           stdout = TRUE)
 }
-reference_dir <- file.path("results", "planarsviz", "reference", "illustrations")
-cmp_dir <- file.path("results", "planarsviz", "comparisons", "illustrations")
+reference_dir <- file.path("results", "chart_checks", "reference", "illustrations")
+cmp_dir <- file.path("results", "chart_checks", "comparisons", "illustrations")
 dir.create(cmp_dir, recursive = TRUE, showWarnings = FALSE)
-out_dir <- file.path("results", "planarsviz", "illustrations", "plots")
+out_dir <- file.path("results", "chart_data", "illustrations", "plots")
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
 render_and_compare <- function(base, p) {

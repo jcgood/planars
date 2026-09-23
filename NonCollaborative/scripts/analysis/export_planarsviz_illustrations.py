@@ -124,7 +124,7 @@ def write_tsv(rows, path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--output-dir", type=Path, default=REPO_DIR / "results" / "planarsviz")
+    parser.add_argument("--output-dir", type=Path, default=REPO_DIR / "results" / "chart_data")
     parser.add_argument(
         "--tree-counts-max-n", type=int, default=15,
         help="Largest leaf count in tree_count_growth.tsv (default: 15 -- both sequences "

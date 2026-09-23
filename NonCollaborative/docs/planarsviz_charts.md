@@ -16,7 +16,7 @@ Setup for every example:
 
 ```r
 library(planarsviz)
-bundle <- read_planars_bundle("results/planarsviz/nyan1308")
+bundle <- read_planars_bundle("results/chart_data/nyan1308")
 ```
 
 Contents: [Pooled plots](#1-pooled-plots) ·
@@ -584,8 +584,8 @@ tree-shape combinatorics, kept separate because the library's rule is
 language. Setup differs from every chart above:
 
 ```r
-ref <- read_planars_illustrations("results/planarsviz/illustrations")
-bundle <- read_planars_bundle("results/planarsviz/nyan1308")  # for 17b/17c only
+ref <- read_planars_illustrations("results/chart_data/illustrations")
+bundle <- read_planars_bundle("results/chart_data/nyan1308")  # for 17b/17c only
 ```
 
 ### 17a. Tree shapes

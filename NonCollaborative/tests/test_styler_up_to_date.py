@@ -1,4 +1,4 @@
-"""Checks that `r/planarsviz`'s R source matches what styler would write.
+"""Checks that `planarsviz`'s R source matches what styler would write.
 
 Phase D's tooling pass (2026-09-22) ran `styler::style_pkg()` once over the
 whole package -- 19 of 21 files changed, all cosmetic (brace placement, call
@@ -10,7 +10,7 @@ unrelated-looking diff.
 
 This test runs styler in its `dry = "fail"` mode, which restyles nothing and
 just reports whether restyling would change anything. If it would, someone
-edited `R/` without running `styler::style_pkg("r/planarsviz")` afterward.
+edited `R/` without running `styler::style_pkg("planarsviz")` afterward.
 
 Both R calls below run from `NonCollaborative/`, for the same reason
 `test_roxygen_up_to_date.py` does: `.Rprofile` there is what points R at
@@ -28,7 +28,7 @@ from pathlib import Path
 import pytest
 
 NC_ROOT = Path(__file__).parents[1]
-PACKAGE_DIR = NC_ROOT / "r" / "planarsviz"
+PACKAGE_DIR = NC_ROOT / "planarsviz"
 
 RSCRIPT = shutil.which("Rscript")
 
@@ -57,17 +57,17 @@ def test_planarsviz_r_source_is_styled():
     result = subprocess.run(
         [
             RSCRIPT, "-e",
-            'styler::style_pkg("r/planarsviz", filetype = "R", dry = "fail")',
+            'styler::style_pkg("planarsviz", filetype = "R", dry = "fail")',
         ],
         capture_output=True,
         text=True,
         cwd=NC_ROOT,
     )
     assert result.returncode == 0, (
-        "r/planarsviz/R/*.R does not match what styler::style_pkg() would write. "
+        "planarsviz/R/*.R does not match what styler::style_pkg() would write. "
         "Someone edited R/ without re-running styler afterward. Its output was:\n"
         + result.stdout + result.stderr
         + "\nFix: from NC, run\n"
-        '    Rscript -e \'styler::style_pkg("r/planarsviz")\'\n'
+        '    Rscript -e \'styler::style_pkg("planarsviz")\'\n'
         "review the diff, then commit it."
     )

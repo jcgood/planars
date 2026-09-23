@@ -18,7 +18,7 @@ import numpy as np
 from scipy.stats import gaussian_kde
 
 NC = Path(__file__).resolve().parents[2]
-DATA = NC / "results" / "planarsviz" / "nyan1308" / "data"
+DATA = NC / "results" / "chart_data" / "nyan1308" / "data"
 TOLERANCE = 1e-12
 ok = True
 

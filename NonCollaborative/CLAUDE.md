@@ -14,7 +14,7 @@ This matters more here than the usual "don't use old code" warning, because the 
 
 The same rule applies more loosely to the hand-written R at the top of `scripts/` (`constituencyforest-all.r`, `domainSignificance.r` and their siblings) and to `domainGenerationTests/`: those predate the current pipeline, are not guarded, and are there to be read rather than executed.
 
-**To draw a chart, use the package.** `Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308`. To check one against the script it replaced, run its check in `scripts/planarsviz_checks/`.
+**To draw a chart, use the package.** `Rscript scripts/render_planarsviz.R --bundle results/chart_data/nyan1308`. To check one against the script it replaced, run its check in `scripts/planarsviz_checks/`.
 
 ## Relationship to the main pipeline
 
@@ -84,7 +84,7 @@ Early prototypes for domain derivation from linguistic parameter files. Represen
 ### `docs/`
 
 - `VERIFICATION.md` — methodology, theoretical framework, and verified results for the laminar-family analysis (the two independent algorithms that both confirm 69 maximal families for nyan1308).
-- `planarsviz_guide.md` — user guide for the planarsviz chart library (`r/planarsviz/`): exporting a data bundle, drawing and rendering charts, adding a language, checking charts.
+- `planarsviz_guide.md` — user guide for the planarsviz chart library (`planarsviz/`): exporting a data bundle, drawing and rendering charts, adding a language, checking charts.
 - `planarsviz_charts.md` — chart catalogue: every planarsviz chart, its function call, options, canvas and an example image (`planarsviz_charts/`).
 - `PLAN_planarsviz_library.md` / `PLANARSVIZ_LIBRARY_PROGRESS.md` — why the library is built as it is, and the chart-by-chart record of how each port was checked, with open questions. **`PLANARSVIZ_LIBRARY_PROGRESS.md` is the current state of that work** — read it before resuming.
 - `PLAN_ccdb_planarsviz.md` / `CCDB_PLANARSVIZ_PROGRESS.md` — putting the 21 planar structures of the Constituency and Convergence Database (imported by `scripts/analysis/import_ccdb.py` into `domains/` and `planar_tables/` as `*_<Planar_ID>.*`) through the same analysis and charts as nyan1308. **`CCDB_PLANARSVIZ_PROGRESS.md` is the current state of that work** — read it before resuming.
@@ -101,9 +101,9 @@ Reference PDFs cited in `REFERENCES.md` (currently: Barthélemy 1989, on the cop
 
 ### `results/`
 
-Generated output — PDFs, `.tex` sources and `.tsv` data — plus `results/planarsviz/`, which holds the exported data bundle, the frozen reference images the porting checks compare against, and the comparison images those checks write.
+Generated output — PDFs, `.tex` sources and `.tsv` data — plus `results/chart_data/`, which holds the exported data bundle, and `results/chart_checks/`, which holds the frozen reference images the porting checks compare against and the comparison images those checks write.
 
-**`results/` is grouped by language first, then by topic — except the one dataset with no language.** The four topic folders a `planarsviz` chart can land in for a real language — `laminar-families/`, `pooled/`, `boundaries/`, `counts-and-chance/` — sit under a per-language folder (`results/nyan1308/`), so a second language's charts land beside nyan1308's rather than colliding with them (2026-09-22). `illustrations/` is also `planarsviz`-drawn (phase E, 2026-09-22) but stays flat rather than nesting a topic folder inside it: that bundle has exactly one topic, itself, so its charts' `planarsviz_folder` is `""` and they land directly in `results/illustrations/`. `planar-structure/` is unrelated to the `planarsviz` package entirely and also sits flat. Only `visualizations.md`, `nyan1308_planarsviz_manifest.tsv` and `illustrations_planarsviz_manifest.tsv` sit at the very top alongside these folders. The reference and comparison images under `results/planarsviz/` mirror the same layout (`reference/nyan1308/<topic>/`, `reference/illustrations/` flat) — see `docs/planarsviz_guide.md` § 6.
+**`results/` is grouped by language first, then by topic — except the one dataset with no language.** The four topic folders a `planarsviz` chart can land in for a real language — `laminar-families/`, `pooled/`, `boundaries/`, `counts-and-chance/` — sit under a per-language folder (`results/nyan1308/`), so a second language's charts land beside nyan1308's rather than colliding with them (2026-09-22). `illustrations/` is also `planarsviz`-drawn (phase E, 2026-09-22) but stays flat rather than nesting a topic folder inside it: that bundle has exactly one topic, itself, so its charts' `planarsviz_folder` is `""` and they land directly in `results/illustrations/`. `planar-structure/` is unrelated to the `planarsviz` package entirely and also sits flat. Only `visualizations.md`, `nyan1308_planarsviz_manifest.tsv` and `illustrations_planarsviz_manifest.tsv` sit at the very top alongside these folders. The reference and comparison images under `results/chart_checks/` mirror the same layout (`reference/nyan1308/<topic>/`, `reference/illustrations/` flat) — see `docs/planarsviz_guide.md` § 6.
 
 **Which folder a chart belongs to is recorded in exactly one place:** a `planarsviz_folder` attribute on the object each chart function returns, beside the `planarsviz_size` attribute that gives its canvas. The renderer reads it to decide where to write, the manifest's `file` column carries the result, and the porting checks find a chart's reference image at that same address. Nothing keeps a second copy of the mapping, so adding a chart means setting one attribute.
 
@@ -117,11 +117,11 @@ A real `pytest` suite, run with `pytest NonCollaborative/tests/` from the repo r
 
 **CI runs the part of it that needs no R**, as `pytest NonCollaborative/tests -m "not needs_r"`: the two bundle tests and the tree-traversal snapshots, about a minute. The rest is marked `needs_r` and stays a local step. That is not a gap waiting to be closed — the chart checks pixel-compare against reference images rendered on a Mac, and Linux fonts differ enough that every glyph would read as a changed pixel, so on a CI runner they would fail on charts that are perfectly fine.
 
-Two of the R-dependent checks run on **pre-push** instead, where R and the pinned packages already are: `check-snapshots` always, and `roxygen-up-to-date` when anything under `r/planarsviz/` changed (about 7 seconds). See `.pre-commit-config.yaml`.
+Two of the R-dependent checks run on **pre-push** instead, where R and the pinned packages already are: `check-snapshots` always, and `roxygen-up-to-date` when anything under `planarsviz/` changed (about 7 seconds). See `.pre-commit-config.yaml`.
 
 - `test_tree_traversal.py` runs `scripts/exploratory/treeTraversal.py` against each `domains/*.tsv` file and compares its output to the checked-in snapshots in `tests/snapshots/`; known-hanging inputs are marked `xfail` rather than fixed.
 - `test_planarsviz_checks.py` runs all 23 porting checks in `scripts/planarsviz_checks/` and compares each one's whole output to a snapshot under `tests/snapshots/planarsviz_checks/`, so a drifted chart fails instead of printing a number nobody reads. Takes about 6m20s — most of it `R CMD INSTALL`, once per check. Skips cleanly without R, poppler or the project venv.
-- `test_roxygen_up_to_date.py` fails if `r/planarsviz/`'s `NAMESPACE` or `man/` no longer match what roxygen2 would generate from `R/`.
+- `test_roxygen_up_to_date.py` fails if `planarsviz/`'s `NAMESPACE` or `man/` no longer match what roxygen2 would generate from `R/`.
 - `test_archived_scripts_refuse_to_run.py` checks that `.Rprofile` still blocks a direct `Rscript` run of anything under `OlderFiles/`, that `PLANARS_RUN_ARCHIVED=1` still overrides it, and that scripts outside the archive are unaffected. It drives a throwaway probe file, not a real archived script — proving the guard by running something it is meant to stop would write the very charts it protects.
 - `test_planarsviz_bundle.py` and `test_planarsviz_shifted_bundle.py` check the exported data bundles.
 
@@ -149,7 +149,7 @@ See also `REFERENCES.md` for the mathematical/linguistic literature behind the l
 
 **Run everything from `NonCollaborative/`.** That is where the porting checks run, what `scripts/INDEX.md` and `results/visualizations.md` document, and what the exported bundle records as the path it read. The one exception is `pytest`, which works from either the repo root (`pytest NonCollaborative/tests/`) or here (`pytest tests/`).
 
-The `planarsviz` package's dependencies are in `r/planarsviz/DESCRIPTION`; `scripts/render_planarsviz.R` installs the package into a temporary library itself, so there is no install step. The tree charts also need `ape` and `ggtree`. The older hand-written R at the top of `scripts/` needs `ggplot2`, `ape`, `ggtree` and `patchwork` installed by hand.
+The `planarsviz` package's dependencies are in `planarsviz/DESCRIPTION`; `scripts/render_planarsviz.R` installs the package into a temporary library itself, so there is no install step. The tree charts also need `ape` and `ggtree`. The older hand-written R at the top of `scripts/` needs `ggplot2`, `ape`, `ggtree` and `patchwork` installed by hand.
 
 **Which versions of those packages is pinned by `renv`.** `renv.lock` records all 130, `.Rprofile` makes R use them automatically whenever it starts here, and `renv::restore()` installs them on a machine that has never run this project. The lockfile deliberately covers more than `DESCRIPTION` does, because the porting checks run the archived scripts in `OlderFiles/planarsviz_superseded/` and those load `pacman`, `here`, `tidyverse` and `ggsci`. `.renvignore` lists the hand-written scripts renv does not read and says why. After changing what anything loads, run `renv::snapshot()` and commit the lockfile with the change. Full account: `docs/planarsviz_guide.md` § 7.
 

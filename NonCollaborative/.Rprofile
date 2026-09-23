@@ -43,7 +43,7 @@ local({
     "directly writes its old output straight over charts the planarsviz\n",
     "package produced, under the same filenames.\n\n",
     "To draw a chart, use the package:\n",
-    "  Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308\n\n",
+    "  Rscript scripts/render_planarsviz.R --bundle results/chart_data/nyan1308\n\n",
     "To check a chart against the script it replaced, use its check:\n",
     "  Rscript scripts/planarsviz_checks/check_<name>.R\n\n",
     "If you really do mean to run this file, say so:\n",

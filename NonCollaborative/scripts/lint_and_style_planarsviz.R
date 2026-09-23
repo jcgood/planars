@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-# Run styler then lintr over r/planarsviz -- the manual entry point for phase
+# Run styler then lintr over planarsviz -- the manual entry point for phase
 # D's tooling pass (2026-09-22). tests/test_styler_up_to_date.py and
 # tests/test_lint_clean.py call styler::style_pkg()/lintr::lint_package()
 # directly rather than sourcing this file, so it is not part of either guard;
@@ -14,7 +14,7 @@
 library(styler)
 library(lintr)
 
-style_pkg("r/planarsviz", filetype = "R")
-lints <- lint_package("r/planarsviz")
+style_pkg("planarsviz", filetype = "R")
+lints <- lint_package("planarsviz")
 print(lints)
 if (length(lints)) quit(status = 1)

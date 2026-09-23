@@ -8,7 +8,7 @@ script serializes those results into a small, inspectable data bundle for R.
 Example:
     python scripts/analysis/export_planarsviz_data.py \
         --domain-file domains_nyan1308.tsv \
-        --output-dir results/planarsviz
+        --output-dir results/chart_data
 """
 
 from __future__ import annotations
@@ -1326,7 +1326,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--domain-file", type=Path, required=True)
     parser.add_argument(
-        "--output-dir", type=Path, default=REPO_DIR / "results" / "planarsviz"
+        "--output-dir", type=Path, default=REPO_DIR / "results" / "chart_data"
     )
     parser.add_argument("--planar-file", type=Path, default=None)
     parser.add_argument(

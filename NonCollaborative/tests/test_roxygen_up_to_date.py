@@ -1,8 +1,8 @@
 """Checks that the committed R package files match what roxygen2 would write.
 
-The `r/planarsviz` package's `NAMESPACE` file and its `man/*.Rd` help pages
+The `planarsviz` package's `NAMESPACE` file and its `man/*.Rd` help pages
 are not typed by hand. They are generated from the `#'` comments sitting
-above each function in `r/planarsviz/R/*.R`. If someone edits one of those
+above each function in `planarsviz/R/*.R`. If someone edits one of those
 comments -- adding a parameter, changing what a function returns, fixing a
 typo in a description -- and forgets to re-run roxygen2 afterward, the
 comment and the generated files quietly fall out of step. Nothing else
@@ -38,7 +38,7 @@ from pathlib import Path
 import pytest
 
 NC_ROOT = Path(__file__).parents[1]
-PACKAGE_DIR = NC_ROOT / "r" / "planarsviz"
+PACKAGE_DIR = NC_ROOT / "planarsviz"
 
 RSCRIPT = shutil.which("Rscript")
 
@@ -76,17 +76,17 @@ def test_namespace_and_man_match_roxygen2_output():
         )
         assert result.returncode == 0, (
             "roxygen2::roxygenise() failed to run against a scratch copy of "
-            "r/planarsviz. Its output was:\n" + result.stdout + result.stderr
+            "planarsviz. Its output was:\n" + result.stdout + result.stderr
         )
 
         committed_namespace = (PACKAGE_DIR / "NAMESPACE").read_text()
         regenerated_namespace = (scratch_package / "NAMESPACE").read_text()
         assert committed_namespace == regenerated_namespace, (
-            "r/planarsviz/NAMESPACE does not match what roxygen2 generates from "
-            "the #' comments in r/planarsviz/R/*.R right now. Someone edited a "
+            "planarsviz/NAMESPACE does not match what roxygen2 generates from "
+            "the #' comments in planarsviz/R/*.R right now. Someone edited a "
             "roxygen comment (an @export, @import, or similar tag) without "
             "re-running roxygen2 afterward. Fix: from NC, run\n"
-            '    Rscript -e \'roxygen2::roxygenise("r/planarsviz")\'\n'
+            '    Rscript -e \'roxygen2::roxygenise("planarsviz")\'\n'
             "then commit the updated NAMESPACE."
         )
 
@@ -98,12 +98,12 @@ def test_namespace_and_man_match_roxygen2_output():
         missing = sorted(regenerated_files - committed_files)
         extra = sorted(committed_files - regenerated_files)
         assert not missing and not extra, (
-            "r/planarsviz/man/ does not contain the same set of help pages that "
+            "planarsviz/man/ does not contain the same set of help pages that "
             "roxygen2 generates from R/ right now.\n"
             + ("Help pages roxygen2 would add: %s\n" % ", ".join(missing) if missing else "")
             + ("Help pages committed but no longer generated: %s\n" % ", ".join(extra) if extra else "")
             + "Fix: from NC, run\n"
-            '    Rscript -e \'roxygen2::roxygenise("r/planarsviz")\'\n'
+            '    Rscript -e \'roxygen2::roxygenise("planarsviz")\'\n'
             "then commit the result (including any man/ files it deletes or adds)."
         )
 
@@ -112,10 +112,10 @@ def test_namespace_and_man_match_roxygen2_output():
             if (committed_man_dir / name).read_text() != (regenerated_man_dir / name).read_text()
         )
         assert not differing, (
-            "The following r/planarsviz/man/ help pages are out of date with the "
-            "#' comments in r/planarsviz/R/*.R: " + ", ".join(differing) + ". "
+            "The following planarsviz/man/ help pages are out of date with the "
+            "#' comments in planarsviz/R/*.R: " + ", ".join(differing) + ". "
             "Someone edited a roxygen comment (an @param, @return, description, "
             "or similar tag) without re-running roxygen2 afterward. Fix: from NC, run\n"
-            '    Rscript -e \'roxygen2::roxygenise("r/planarsviz")\'\n'
+            '    Rscript -e \'roxygen2::roxygenise("planarsviz")\'\n'
             "then commit the updated man/ files."
         )

@@ -12,11 +12,11 @@ cd NonCollaborative
 
 python scripts/analysis/export_planarsviz_data.py \
   --domain-file domains/domains_nyan1308.tsv \
-  --output-dir results/planarsviz \
+  --output-dir results/chart_data \
   --language-name Chichewa
 
 Rscript scripts/render_planarsviz.R \
-  --bundle results/planarsviz/nyan1308 \
+  --bundle results/chart_data/nyan1308 \
   --output results
 ```
 
@@ -414,7 +414,7 @@ labels, same margins. Since 2026-09-21 it is literally the same code —
 
 To regenerate one:
 ```
-Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308 \
+Rscript scripts/render_planarsviz.R --bundle results/chart_data/nyan1308 \
   --output results --plots syntaxlike_tree_09
 ```
 or leave `--plots` off to draw every chart in the bundle.
@@ -448,7 +448,7 @@ is what `.Rprofile`'s guard on `OlderFiles/` exists to prevent.
   `docs/PLAN_planarsviz_library.md` §4.1 for how each was recovered.
 - `scripts/render_planarsviz.R` installs the package into a temporary library itself, so there
   is no install step to remember. The package's own dependencies are in
-  `r/planarsviz/DESCRIPTION`; the tree charts additionally need `ape` and `ggtree`, which are
+  `planarsviz/DESCRIPTION`; the tree charts additionally need `ape` and `ggtree`, which are
   listed under `Suggests` because the other charts do not.
 
 ---
@@ -461,7 +461,7 @@ exporter writes. PDFs are written to `results/nyan1308/pooled/`.
 
 To render:
 ```
-Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308 \
+Rscript scripts/render_planarsviz.R --bundle results/chart_data/nyan1308 \
   --output results --plots pooled_plot,pooled_domainplot
 ```
 Leave `--plots` off to draw every chart the bundle supports.
@@ -517,7 +517,7 @@ are generated on every run.
 Drawn by the `planarsviz` package from the exported data bundle:
 
 ```
-Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308 \
+Rscript scripts/render_planarsviz.R --bundle results/chart_data/nyan1308 \
   --output results --plots boundary_skyline
 ```
 
@@ -731,13 +731,13 @@ white background, `standalone` class, generated the same way as the planar-table
 **What it is:** A ghost-overlay diagram of 200 uniformly-randomly-sampled n-ary trees over 22
 leaves (nyan1308's real positions), illustrating how vast the A001003(22) = 47,574,827,600,981
 tree space is relative to the 69 actual maximal laminar families found for nyan1308. Drawn by the
-`planarsviz` package's `plot_random_tree_overlay()` (`r/planarsviz/R/illustrations.R`) from the
+`planarsviz` package's `plot_random_tree_overlay()` (`planarsviz/R/illustrations.R`) from the
 `illustrations` bundle's `random_trees.tsv`, using nyan1308's own bundle only for its position
 labels — the positions are real, the sample is not this language's actual data. `--plots
 random_tree_overlay` on the command below draws it.
 ```
-Rscript scripts/render_planarsviz.R --bundle results/planarsviz/illustrations \
-  --positions-bundle results/planarsviz/nyan1308 --output results
+Rscript scripts/render_planarsviz.R --bundle results/chart_data/illustrations \
+  --positions-bundle results/chart_data/nyan1308 --output results
 ```
 Reuses the same "stack N ghost trees on one shared `patchwork` cell" mechanism
 `plot_laminar_overlay()` uses for chart 7, minus the `groupOTU`/branch-thickness mapping — there's
@@ -879,7 +879,7 @@ one chart whose bundle tables are not written on every export:
 ```
 python scripts/analysis/export_planarsviz_data.py \
   --domain-file domains/domains_nyan1308.tsv \
-  --output-dir results/planarsviz --language-name Chichewa \
+  --output-dir results/chart_data --language-name Chichewa \
   --fragmentation-permutations 5000
 ```
 
@@ -1139,7 +1139,7 @@ PDF; `--tex-only` skips that and writes just the sources.)
 
 `nyan1308_boundary_strength_no_tono.tsv` is the same computation over the four
 non-tonosegmental domain types. The exporter writes it into the bundle at
-`results/planarsviz/nyan1308/data/subsets/no_tono/boundary_strength.tsv`, and
+`results/chart_data/nyan1308/data/subsets/no_tono/boundary_strength.tsv`, and
 the copy in `results/nyan1308/boundaries/` carries the shorter name by hand:
 `boundary_strength.py --subset morphosyntactic,phonological,length,intonational`
 produces identical numbers but names its file after all four types. The copy is
@@ -1174,12 +1174,13 @@ kept because a porting check compares the bundle against it.
   post-processes a chart's PDF after drawing it, for any chart, so these are
   a few percent larger (the fixed canvas the two scripts drew before
   cropping, not the cropped result) with no content difference.
-- `results/planarsviz/` — the exported bundle (`nyan1308/data/`), the frozen
-  reference images the porting checks compare against (`reference/`), and the
-  comparison images those checks write (`comparisons/`). Both are grouped by
-  dataset first and then by topic — see
+- `results/chart_data/` — the exported bundle (`nyan1308/data/`) and each
+  bundle's own `plots/` directory, written but not tracked in git; the
+  published copies are the PDFs in `results/` itself.
+  `results/chart_checks/` holds the frozen reference images the porting
+  checks compare against (`reference/`) and the comparison images those
+  checks write (`comparisons/`). Both are grouped by dataset first and then
+  by topic — see
   [`../docs/planarsviz_guide.md` §6](../docs/planarsviz_guide.md#6-check-a-chart)
   for the current layout (`reference/nyan1308/<topic>/`,
-  `comparisons/shifted_nyan/shifted/` for the shifted-data comparisons). A
-  bundle's own `plots/` directory is written but not tracked in git; the
-  published copies are the PDFs in `results/` itself.
+  `comparisons/shifted_nyan/shifted/` for the shifted-data comparisons).

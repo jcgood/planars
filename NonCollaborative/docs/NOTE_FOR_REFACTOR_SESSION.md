@@ -16,7 +16,7 @@ family tree in a named forest, one PDF per tree, as opposed to:
 - the exemplary-tree charts, which show a curated 7-family subset of the
   *pooled* analysis only.
 
-It reads `results/planarsviz/nyan1308/data/forests/<name>.tsv` (already
+It reads `results/chart_data/nyan1308/data/forests/<name>.tsv` (already
 exported — `tree_number`, `newick`, plus `group_spans`/`strengths` it
 doesn't use) directly, so it complies with "Python computes, R only draws
 from the bundle." What it doesn't comply with: it writes straight to flat
@@ -26,11 +26,11 @@ that these files exist or how they were made. Current output: 22 files —
 `nyan1308_syntaxlike_tree_01.pdf`..`_16.pdf`.
 
 Its drawing logic is not new — it's copied verbatim from
-`planarsviz_exemplary_tree()` in `r/planarsviz/R/exemplary.R` (same layout,
+`planarsviz_exemplary_tree()` in `planarsviz/R/exemplary.R` (same layout,
 same boxed "N\nName" tip labels, same margins), just keyed by
 `(forest_name, tree_number)` reading `forests/<name>.tsv` instead of by
 `family_id` reading `bundle$families`. I didn't generalize that function or
-touch `r/planarsviz/R/` myself — that's your package to edit, and I didn't
+touch `planarsviz/R/` myself — that's your package to edit, and I didn't
 want to risk the kind of collision the handoff notes exist to prevent.
 
 ## The request
@@ -143,14 +143,14 @@ same permutation, same underlying counts, only the reported tail and its
 column name changed. Propagated the rename through everything that reads that
 column: `export_planarsviz_data.py`, `fragmentation_test_plot.r` (the `aes()`
 label and its design-note comment — done *before* the `plot_fragmentation_test()`
-refactor above landed on top of it), `r/planarsviz/R/fragmentation.R`,
-`r/planarsviz/R/planarsviz-package.R`'s `globalVariables()`,
-`r/planarsviz/inst/data-contract.md`, and `check_fragmentation.R`'s
+refactor above landed on top of it), `planarsviz/R/fragmentation.R`,
+`planarsviz/R/planarsviz-package.R`'s `globalVariables()`,
+`planarsviz/inst/data-contract.md`, and `check_fragmentation.R`'s
 shared-columns list. Regenerated `man/read_planars_fragmentation.Rd` via
 `roxygen2::roxygenise(".")` (one-line diff), the committed
 `nyan1308_class_fragmentation_test.tsv`/`nyan1308_bundle_fragmentation_test.tsv`
 (5000 draws, seed 0 — same as before, only the one column differs), the frozen
-porting reference `results/planarsviz/reference/nyan1308_fragmentation_test_plot.png`,
+porting reference `results/chart_checks/reference/nyan1308_fragmentation_test_plot.png`,
 and both bundles' `data/fragmentation_test.tsv` (`nyan1308`, `shifted_nyan`)
 via `export_planarsviz_data.py --fragmentation-permutations 5000
 --fragmentation-seed 0`. Ran `check_fragmentation.R` both ways afterward:
@@ -219,10 +219,10 @@ the package rather than a flat-`results/` script waiting to be ported:
 `boundary_strength_test.py` (new, reuses `span_placement_test.py`'s
 `random_replicate()`/`GROUPS` exactly), `export_boundary_strength_test()`
 in the exporter behind `--boundary-strength-test-permutations`,
-`r/planarsviz/R/boundary_strength_test.R` (`plot_boundary_strength_test()`,
+`planarsviz/R/boundary_strength_test.R` (`plot_boundary_strength_test()`,
 written directly in the package — no earlier script drew this chart in any
 form, so unlike chart 19 there was no reference to freeze), the
-`boundary_strength_test.tsv` section in `r/planarsviz/inst/data-contract.md`,
+`boundary_strength_test.tsv` section in `planarsviz/inst/data-contract.md`,
 and `test_boundary_strength_test_covers_every_position` in
 `tests/test_planarsviz_bundle.py` (the invariant test, following
 `test_fragmentation_tables_agree`'s reasoning). `render_planarsviz.R`
@@ -272,12 +272,12 @@ flux.
 (pure refactor — extracted `strength_from_families()` so the permutation
 test can reuse the exact counting logic; verified byte-identical stdout
 before/after on the plain command), `export_planarsviz_data.py` (additive),
-`r/planarsviz/R/planarsviz-package.R` (additive, `globalVariables()` only),
-`scripts/render_planarsviz.R` (additive), `r/planarsviz/inst/data-contract.md`
+`planarsviz/R/planarsviz-package.R` (additive, `globalVariables()` only),
+`scripts/render_planarsviz.R` (additive), `planarsviz/inst/data-contract.md`
 (additive), `scripts/INDEX.md` (additive), `tests/test_planarsviz_bundle.py`
 (additive), `NAMESPACE` and two new `man/*.Rd` files (surgical splice,
 above). Nothing of yours that showed as modified when I started — several
-`r/planarsviz/R/*.R` and `man/*.Rd` files, `docs/PLANARSVIZ_LIBRARY_PROGRESS.md`,
+`planarsviz/R/*.R` and `man/*.Rd` files, `docs/PLANARSVIZ_LIBRARY_PROGRESS.md`,
 `results/visualizations.md`, `docs/planarsviz_guide.md`,
 `scripts/planarsviz_checks/*` — was touched at all. Those three docs (plus
 `PLANARSVIZ_LIBRARY_PROGRESS.md`'s own changelog entry for this) still need
@@ -301,7 +301,7 @@ it), so nothing needed changing there.
 
 Jeff wants to keep the two boundary-strength-test charts (jump and level,
 pooled group) around as real artifacts rather than `/tmp` scratch files, but
-asked to wait before writing them into `results/planarsviz/nyan1308/plots/`
+asked to wait before writing them into `results/chart_data/nyan1308/plots/`
 until your restructure has settled, rather than risk them sitting in a
 directory that's about to move.
 
@@ -329,11 +329,11 @@ time.
 Status as of the last update above: your restructure's step 3
 (`results/` grouped into six folders — `fb4dbeb`, then `7b85b1a`) has
 landed and is pushed. That was the thing we were waiting on. If nothing
-else has moved `results/planarsviz/nyan1308/plots/` since, it should now
+else has moved `results/chart_data/nyan1308/plots/` since, it should now
 be safe to run:
 
 ```
-Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308 \
+Rscript scripts/render_planarsviz.R --bundle results/chart_data/nyan1308 \
   --plots boundary_strength_test_jump_all,boundary_strength_test_level_all \
   --formats pdf,png
 ```

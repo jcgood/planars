@@ -2,7 +2,7 @@
 
 Unlike test_planarsviz_bundle.py's nyan1308 bundle, this one has no language
 behind it (phase E, docs/PLANARSVIZ_LIBRARY_PROGRESS.md, 2026-09-22) -- see
-r/planarsviz/inst/data-contract.md's "Illustrations bundle" section for the
+planarsviz/inst/data-contract.md's "Illustrations bundle" section for the
 contract these assertions are checking.
 """
 
@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).parents[1]
-BUNDLE = ROOT / "results" / "planarsviz" / "illustrations" / "data"
+BUNDLE = ROOT / "results" / "chart_data" / "illustrations" / "data"
 
 
 def read_tsv(name):

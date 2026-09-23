@@ -11,7 +11,7 @@ recorded no seed at all), and the whole reason this bundle exists rather
 than just fixing that file in place.
 
 This does not, and cannot, check that the sample "looks right" -- that is
-what results/planarsviz/reference/illustrations/
+what results/chart_checks/reference/illustrations/
 illustrations_random_tree_overlay.png is for a human to look at.
 
 Run from NonCollaborative/:
@@ -30,7 +30,7 @@ sys.path.insert(0, str(NC / "scripts" / "exploratory"))
 
 from catalan import sample_labeled_tree  # noqa: E402
 
-DATA = NC / "results" / "planarsviz" / "illustrations" / "data"
+DATA = NC / "results" / "chart_data" / "illustrations" / "data"
 ok = True
 
 

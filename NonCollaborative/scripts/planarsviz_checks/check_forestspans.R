@@ -9,14 +9,14 @@
 # and the y-axis order, renders at 34x24 cm and pixel-compares with the
 # frozen references.
 # library-only (shifted test data): render only, beside the nyan1308 renders,
-# under results/planarsviz/comparisons/shifted_nyan/shifted/.
+# under results/chart_checks/comparisons/shifted_nyan/shifted/.
 #
 # Run from NonCollaborative/:
 #   Rscript scripts/planarsviz_checks/check_forestspans.R
-#   Rscript scripts/planarsviz_checks/check_forestspans.R results/planarsviz/shifted_nyan shifted_nyan library-only
+#   Rscript scripts/planarsviz_checks/check_forestspans.R results/chart_data/shifted_nyan shifted_nyan library-only
 
 args <- commandArgs(trailingOnly = TRUE)
-bundle_dir <- if (length(args) >= 1) args[[1]] else "results/planarsviz/nyan1308"
+bundle_dir <- if (length(args) >= 1) args[[1]] else "results/chart_data/nyan1308"
 prefix <- if (length(args) >= 2) args[[2]] else "nyan1308"
 library_only <- length(args) >= 3 && args[[3]] == "library-only"
 python <- "/Users/jcgood/gitrepos/planars/.venv/bin/python"
@@ -25,7 +25,7 @@ source("scripts/planarsviz_checks/superseded.R")
 lib <- file.path(tempdir(), "planarsviz_lib")
 dir.create(lib, showWarnings = FALSE)
 status <- system2("R", c("CMD", "INSTALL", "--no-test-load", paste0("--library=", lib),
-                         "r/planarsviz"), stdout = FALSE, stderr = FALSE)
+                         "planarsviz"), stdout = FALSE, stderr = FALSE)
 if (status != 0) stop("R CMD INSTALL failed")
 suppressPackageStartupMessages({
   library(planarsviz, lib.loc = lib)
@@ -71,7 +71,7 @@ render <- function(p, base, dir = file.path(bundle_dir, "plots")) {
   system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(pdf_path), shQuote(stem)))
   paste0(stem, ".png")
 }
-cmp_dir <- file.path(dirname(bundle_dir), "comparisons", prefix, if (library_only) "shifted" else "")
+cmp_dir <- file.path(dirname(dirname(bundle_dir)), "chart_checks", "comparisons", prefix, if (library_only) "shifted" else "")
 dir.create(cmp_dir, recursive = TRUE, showWarnings = FALSE)
 
 subset_ids <- vapply(jsonlite::read_json(file.path(bundle_dir, "data", "subsets.json")),
@@ -117,7 +117,7 @@ for (case in cases) {
   problems <- same_data(get("p", envir = orig), pl_old, case$name)
   if (length(problems)) all_ok <- FALSE
   size <- attr(pl, "planarsviz_size")
-  ref <- file.path(dirname(bundle_dir), "reference", prefix, folder, paste0(base, ".png"))
+  ref <- file.path(dirname(dirname(bundle_dir)), "chart_checks", "reference", prefix, folder, paste0(base, ".png"))
   pix_old <- compare(ref, old_png, file.path(tempdir(), paste0(base, "_as_generated_cmp.png")))
   pix <- compare(ref, new_png, file.path(cmp_out, paste0(base, ".png")))
   cat(base, ": ", if (length(problems)) paste("NUMBERS DIFFER:", paste(head(problems, 5), collapse = " | ")) else "numbers identical",

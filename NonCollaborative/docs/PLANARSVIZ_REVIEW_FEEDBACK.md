@@ -12,8 +12,8 @@ treat "reconciliation complete" as not yet accurate until these are addressed.
 
 ## Method
 
-Rendered `results/planarsviz/nyan1308/plots/pooled/all_family_overlay.pdf`
-and `results/planarsviz/nyan1308/plots/exemplary/family_001.pdf` to PNG and
+Rendered `results/chart_data/nyan1308/plots/pooled/all_family_overlay.pdf`
+and `results/chart_data/nyan1308/plots/exemplary/family_001.pdf` to PNG and
 inspected them directly, alongside the corresponding legacy outputs
 (`results/nyan1308_all_families_labeled.pdf`,
 `results/nyan1308_exemplary_trees_*.pdf`). No changes were made to any

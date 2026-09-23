@@ -9,7 +9,7 @@ docs/PLAN_planarsviz_library.md section 10.2. Build and export it first:
         --highlights-file tests/fixtures/highlights_shifted_nyan.tsv \
         --conflict-groups-file tests/fixtures/conflict_groups_shifted_nyan.tsv \
         --language-name "Shifted test data" \
-        --output-dir results/planarsviz
+        --output-dir results/chart_data
 """
 
 import csv
@@ -19,8 +19,8 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).parents[1]
-NYAN = ROOT / "results" / "planarsviz" / "nyan1308" / "data"
-SHIFTED = ROOT / "results" / "planarsviz" / "shifted_nyan" / "data"
+NYAN = ROOT / "results" / "chart_data" / "nyan1308" / "data"
+SHIFTED = ROOT / "results" / "chart_data" / "shifted_nyan" / "data"
 SHIFT = 2
 
 pytestmark = pytest.mark.skipif(not SHIFTED.exists(), reason="shifted bundle not exported")

@@ -7,8 +7,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).parents[1]
-BUNDLE = ROOT / "results" / "planarsviz" / "nyan1308" / "data"
-RESULTS = ROOT / "results" / "planarsviz" / "nyan1308"
+BUNDLE = ROOT / "results" / "chart_data" / "nyan1308" / "data"
+RESULTS = ROOT / "results" / "chart_data" / "nyan1308"
 SOURCE = ROOT / "domains" / "domains_nyan1308.tsv"
 
 

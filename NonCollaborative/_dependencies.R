@@ -4,7 +4,7 @@
 # That misses tools invoked from outside R -- and roxygen2 is one:
 # tests/test_roxygen_up_to_date.py runs it through Rscript to check that the
 # package's NAMESPACE and man/ still match what the roxygen comments in
-# r/planarsviz/R/ would generate.
+# planarsviz/R/ would generate.
 #
 # Left unpinned, that test does not fail -- it *skips*, because it skips when
 # roxygen2 is not installed, and the project library would not have it. A

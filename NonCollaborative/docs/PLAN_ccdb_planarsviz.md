@@ -275,7 +275,7 @@ Every subagent result is checked by the main session before it is committed.
 
 **Before step 1: a map of what assumes Chichewa (1 read-only agent).** One
 agent searches the exporter, `laminar_analysis.py`, the permutation-test
-scripts and `r/planarsviz/R/` for anything that quietly assumes nyan1308:
+scripts and `planarsviz/R/` for anything that quietly assumes nyan1308:
 22 positions, 69 families, fixed canvas sizes, label widths, the "6
 exemplary / 12 per conflict group" caps, type names. It returns a list with
 file and line, and nothing is changed. This turns step 3's "expected

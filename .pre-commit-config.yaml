@@ -29,7 +29,7 @@ repos:
         entry: .venv/bin/python -m pytest NonCollaborative/tests/test_roxygen_up_to_date.py -q
         language: system
         pass_filenames: false
-        files: ^NonCollaborative/r/planarsviz/
+        files: ^NonCollaborative/planarsviz/
         stages: [pre-push]
 
       # Phase D's tooling pass (2026-09-22) added lintr and styler as the
@@ -41,7 +41,7 @@ repos:
         entry: .venv/bin/python -m pytest NonCollaborative/tests/test_lint_clean.py -q
         language: system
         pass_filenames: false
-        files: ^NonCollaborative/r/planarsviz/
+        files: ^NonCollaborative/planarsviz/
         stages: [pre-push]
 
       - id: styler-up-to-date
@@ -49,5 +49,5 @@ repos:
         entry: .venv/bin/python -m pytest NonCollaborative/tests/test_styler_up_to_date.py -q
         language: system
         pass_filenames: false
-        files: ^NonCollaborative/r/planarsviz/
+        files: ^NonCollaborative/planarsviz/
         stages: [pre-push]

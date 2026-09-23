@@ -17,10 +17,11 @@ plan says what and why. Update it at every step boundary, in the same commit.
   "Step 3 findings"). Next: Jeff looks through its charts in
   `results/chac1251_verbal/`, then step 3a (one command for one language).
 - Steps 4–5: not started.
-- Open, not blocking: `results/planarsviz/` holds data bundles and reference
-  images, not code, and its name suggests otherwise (Jeff, 2026-09-23). A
-  rename (e.g. `results/chart_data/`) touches the exporter, renderer, checks
-  and docs, so it is its own change, after step 3.
+- Resolved: `results/planarsviz/` held data bundles and reference images, not
+  code, and its name suggested otherwise (Jeff, 2026-09-23). Renamed/split
+  2026-09-23 into `results/chart_data/` (bundles) and `results/chart_checks/`
+  (reference and comparison images); exporter, renderer, checks and docs
+  updated to match.
 
 ## Decisions made while working (in addition to the plan's §6)
 
@@ -147,13 +148,13 @@ tutorial, so it records the real route, detours included.
    ```sh
    python scripts/analysis/export_planarsviz_data.py \
      --domain-file domains/domains_chac1251_verbal.tsv \
-     --output-dir results/planarsviz --groupings ccdb --root-position 8 \
+     --output-dir results/chart_data --groupings ccdb --root-position 8 \
      --language-name "Chácobo (verbal)" \
      --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 \
      --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
    ```
 
-   Printed one line: `Exported planarsviz bundle: results/planarsviz/chac1251_verbal`.
+   Printed one line: `Exported planarsviz bundle: results/chart_data/chac1251_verbal`.
    About a quarter of nyan1308's ~11 minutes, so all 21 at 5000 draws is
    well under an hour. The planar table and domain file are found from
    `--domain-file` alone.
@@ -161,7 +162,7 @@ tutorial, so it records the real route, detours included.
 2. Render every chart, PDF and PNG (1 min 13 s):
 
    ```sh
-   Rscript scripts/render_planarsviz.R --bundle results/planarsviz/chac1251_verbal \
+   Rscript scripts/render_planarsviz.R --bundle results/chart_data/chac1251_verbal \
      --output results --formats pdf,png
    ```
 
@@ -174,7 +175,7 @@ tutorial, so it records the real route, detours included.
 3. Fixed the failure in the renderer (see below), then redrew just that chart:
 
    ```sh
-   Rscript scripts/render_planarsviz.R --bundle results/planarsviz/chac1251_verbal \
+   Rscript scripts/render_planarsviz.R --bundle results/chart_data/chac1251_verbal \
      --output results --formats pdf,png --plots boundary_strength_overlay
    ```
 
@@ -186,7 +187,7 @@ tutorial, so it records the real route, detours included.
    gained an option:
 
    ```sh
-   Rscript -e 'roxygen2::roxygenise("r/planarsviz")'
+   Rscript -e 'roxygen2::roxygenise("planarsviz")'
    ```
 
 ## Step 3 findings (Chácobo verbal)

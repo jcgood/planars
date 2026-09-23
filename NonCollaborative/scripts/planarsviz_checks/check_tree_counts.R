@@ -8,18 +8,18 @@
 # images by bar lengths, order, colours, label positions and margins. For the
 # two transparent charts, also renders with `pdftocairo -png -transp` and
 # reports how much of the image is fully transparent, for the port and for
-# the frozen matplotlib reference (results/planarsviz/reference/
+# the frozen matplotlib reference (results/chart_checks/reference/
 # <name>_transp.png -- kept because the matplotlib that drew it was removed
 # in cutover step C3).
 # library-only (shifted test data): render only, beside the nyan1308 renders,
-# under results/planarsviz/comparisons/shifted_nyan/shifted/.
+# under results/chart_checks/comparisons/shifted_nyan/shifted/.
 #
 # Run from NonCollaborative/:
 #   Rscript scripts/planarsviz_checks/check_tree_counts.R
-#   Rscript scripts/planarsviz_checks/check_tree_counts.R results/planarsviz/shifted_nyan shifted_nyan library-only
+#   Rscript scripts/planarsviz_checks/check_tree_counts.R results/chart_data/shifted_nyan shifted_nyan library-only
 
 args <- commandArgs(trailingOnly = TRUE)
-bundle_dir <- if (length(args) >= 1) args[[1]] else "results/planarsviz/nyan1308"
+bundle_dir <- if (length(args) >= 1) args[[1]] else "results/chart_data/nyan1308"
 prefix <- if (length(args) >= 2) args[[2]] else "nyan1308"
 library_only <- length(args) >= 3 && args[[3]] == "library-only"
 python <- "/Users/jcgood/gitrepos/planars/.venv/bin/python"
@@ -27,7 +27,7 @@ python <- "/Users/jcgood/gitrepos/planars/.venv/bin/python"
 lib <- file.path(tempdir(), "planarsviz_lib")
 dir.create(lib, showWarnings = FALSE)
 status <- system2("R", c("CMD", "INSTALL", "--no-test-load", paste0("--library=", lib),
-                         "r/planarsviz"), stdout = FALSE, stderr = FALSE)
+                         "planarsviz"), stdout = FALSE, stderr = FALSE)
 if (status != 0) stop("R CMD INSTALL failed")
 suppressPackageStartupMessages({
   library(planarsviz, lib.loc = lib)
@@ -45,7 +45,7 @@ transparency <- function(pdf_path, stem) {
 transparency_of <- function(png_path) {
   system2(python, c("scripts/planarsviz_checks/check_transparency.py", shQuote(png_path)), stdout = TRUE)
 }
-cmp_dir <- file.path(dirname(bundle_dir), "comparisons", prefix, if (library_only) "shifted" else "")
+cmp_dir <- file.path(dirname(dirname(bundle_dir)), "chart_checks", "comparisons", prefix, if (library_only) "shifted" else "")
 dir.create(cmp_dir, recursive = TRUE, showWarnings = FALSE)
 
 for (chart in c("by_class", "bundles", "all", "without_adjacent")) {
@@ -69,7 +69,7 @@ for (chart in c("by_class", "bundles", "all", "without_adjacent")) {
                           shQuote(nyan_stem)))
     paste0(nyan_stem, ".png")
   } else {
-    file.path(dirname(bundle_dir), "reference", prefix, folder, paste0(ref_base, ".png"))
+    file.path(dirname(dirname(bundle_dir)), "chart_checks", "reference", prefix, folder, paste0(ref_base, ".png"))
   }
   cat(base, " (", size[["width"]], "x", size[["height"]], " in): ",
       compare(ref_png, paste0(stem, ".png"), file.path(cmp_out, paste0(base, ".png"))), "\n", sep = "")
@@ -81,7 +81,7 @@ for (chart in c("by_class", "bundles", "all", "without_adjacent")) {
       # Not results/<name>.pdf: since cutover step C1 that file is the
       # library's own output, so reading it compared the port with itself.
       cat("  reference: ", transparency_of(
-        file.path(dirname(bundle_dir), "reference", prefix, folder, paste0(ref_base, "_transp.png"))), "\n")
+        file.path(dirname(dirname(bundle_dir)), "chart_checks", "reference", prefix, folder, paste0(ref_base, "_transp.png"))), "\n")
     }
   }
 }

@@ -20,7 +20,7 @@ sys.path.insert(0, str(NC / "scripts" / "exploratory"))
 
 from catalan import all_trees_new, catalan_number, enumerate_trees  # noqa: E402
 
-DATA = NC / "results" / "planarsviz" / "illustrations" / "data"
+DATA = NC / "results" / "chart_data" / "illustrations" / "data"
 ok = True
 
 

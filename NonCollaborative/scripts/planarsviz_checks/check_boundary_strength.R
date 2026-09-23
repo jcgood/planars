@@ -11,14 +11,14 @@
 # The no-tono legend deliberately says its own family count (24), not the
 # reference's typed-in 69.
 # library-only (shifted test data): render only, beside the nyan1308 renders,
-# under results/planarsviz/comparisons/shifted_nyan/shifted/.
+# under results/chart_checks/comparisons/shifted_nyan/shifted/.
 #
 # Run from NonCollaborative/:
 #   Rscript scripts/planarsviz_checks/check_boundary_strength.R
-#   Rscript scripts/planarsviz_checks/check_boundary_strength.R results/planarsviz/shifted_nyan shifted_nyan library-only
+#   Rscript scripts/planarsviz_checks/check_boundary_strength.R results/chart_data/shifted_nyan shifted_nyan library-only
 
 args <- commandArgs(trailingOnly = TRUE)
-bundle_dir <- if (length(args) >= 1) args[[1]] else "results/planarsviz/nyan1308"
+bundle_dir <- if (length(args) >= 1) args[[1]] else "results/chart_data/nyan1308"
 prefix <- if (length(args) >= 2) args[[2]] else "nyan1308"
 library_only <- length(args) >= 3 && args[[3]] == "library-only"
 python <- "/Users/jcgood/gitrepos/planars/.venv/bin/python"
@@ -26,7 +26,7 @@ python <- "/Users/jcgood/gitrepos/planars/.venv/bin/python"
 lib <- file.path(tempdir(), "planarsviz_lib")
 dir.create(lib, showWarnings = FALSE)
 status <- system2("R", c("CMD", "INSTALL", "--no-test-load", paste0("--library=", lib),
-                         "r/planarsviz"), stdout = FALSE, stderr = FALSE)
+                         "planarsviz"), stdout = FALSE, stderr = FALSE)
 if (status != 0) stop("R CMD INSTALL failed")
 suppressPackageStartupMessages({
   library(planarsviz, lib.loc = lib)
@@ -37,7 +37,7 @@ bundle <- read_planars_bundle(bundle_dir)
 compare <- function(ref, new_png, out_png) {
   system2(python, c("scripts/planarsviz_compare.py", shQuote(ref), shQuote(new_png), shQuote(out_png)), stdout = TRUE)
 }
-cmp_dir <- file.path(dirname(bundle_dir), "comparisons", prefix, if (library_only) "shifted" else "")
+cmp_dir <- file.path(dirname(dirname(bundle_dir)), "chart_checks", "comparisons", prefix, if (library_only) "shifted" else "")
 dir.create(cmp_dir, recursive = TRUE, showWarnings = FALSE)
 subset_ids <- vapply(jsonlite::read_json(file.path(bundle_dir, "data", "subsets.json")),
                      function(s) s$subset_id, character(1))
@@ -73,7 +73,7 @@ for (case in cases) {
                           shQuote(nyan_stem)))
     paste0(nyan_stem, ".png")
   } else {
-    file.path(dirname(bundle_dir), "reference", prefix, folder, paste0(ref_base, ".png"))
+    file.path(dirname(dirname(bundle_dir)), "chart_checks", "reference", prefix, folder, paste0(ref_base, ".png"))
   }
   cat(base, " (", size[["width"]], "x", size[["height"]], " in): ",
       compare(ref_png, paste0(stem, ".png"), file.path(cmp_out, paste0(base, ".png"))), "\n", sep = "")

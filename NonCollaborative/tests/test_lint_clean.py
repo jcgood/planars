@@ -1,9 +1,9 @@
-"""Checks that `r/planarsviz` has no outstanding lintr findings.
+"""Checks that `planarsviz` has no outstanding lintr findings.
 
 Phase D's tooling pass (2026-09-22) ran `lintr::lint_package()` once, read
 every finding, and resolved each one: a real fix (a handful of camelCase
 variable names renamed to match the package's snake_case convention, three
-overlong lines wrapped) or a documented exception in `r/planarsviz/.lintr`
+overlong lines wrapped) or a documented exception in `planarsviz/.lintr`
 for a linter whose default does not fit something this package does on
 purpose (ggplot2 brought in with `import()` rather than per-function
 `importFrom`, `%>%` as the project's chosen pipe, dot-separated names kept
@@ -33,7 +33,7 @@ from pathlib import Path
 import pytest
 
 NC_ROOT = Path(__file__).parents[1]
-PACKAGE_DIR = NC_ROOT / "r" / "planarsviz"
+PACKAGE_DIR = NC_ROOT / "planarsviz"
 
 RSCRIPT = shutil.which("Rscript")
 
@@ -62,7 +62,7 @@ def test_planarsviz_package_has_no_lints():
     result = subprocess.run(
         [
             RSCRIPT, "-e",
-            'lints <- lintr::lint_package("r/planarsviz"); '
+            'lints <- lintr::lint_package("planarsviz"); '
             'cat("LINT_COUNT:", length(lints), "\\n", sep = ""); '
             "print(lints)",
         ],
@@ -71,7 +71,7 @@ def test_planarsviz_package_has_no_lints():
         cwd=NC_ROOT,
     )
     assert result.returncode == 0, (
-        "lintr::lint_package() failed to run against r/planarsviz. Its output was:\n"
+        "lintr::lint_package() failed to run against planarsviz. Its output was:\n"
         + result.stdout + result.stderr
     )
     # A prefixed marker, not just "the first line", because renv itself can print
@@ -83,10 +83,10 @@ def test_planarsviz_package_has_no_lints():
     assert count_lines, "Expected a LINT_COUNT: line in lintr's output but found none:\n" + result.stdout
     count = count_lines[0].removeprefix("LINT_COUNT:")
     assert count == "0", (
-        f"r/planarsviz has {count} lintr finding(s) that r/planarsviz/.lintr "
+        f"planarsviz has {count} lintr finding(s) that planarsviz/.lintr "
         "does not already excuse:\n\n" + result.stdout + "\n"
         "Fix the finding, or if it is a false positive from something the package "
-        "does on purpose, add a documented exception to r/planarsviz/.lintr the "
+        "does on purpose, add a documented exception to planarsviz/.lintr the "
         "way the existing ones are written -- with the reasoning, not just the "
         "linter name."
     )

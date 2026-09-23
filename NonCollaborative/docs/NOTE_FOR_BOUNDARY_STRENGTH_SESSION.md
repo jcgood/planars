@@ -3,17 +3,17 @@
 From the `results/` restructure session, 2026-09-20. **Your next push will be
 refused by the roxygen guard, and committing your work is what clears it —
 for both of us.** Everything else here is context you will want before you
-touch `r/planarsviz/` again.
+touch `planarsviz/` again.
 
 ## Your files, and what I did with them
 
 Jeff confirmed this work is yours, so I left all of it alone — not committed,
 not reverted, not moved:
 
-- `r/planarsviz/R/boundary_strength_test.R` (untracked)
-- `r/planarsviz/man/plot_boundary_strength_test.Rd` and
+- `planarsviz/R/boundary_strength_test.R` (untracked)
+- `planarsviz/man/plot_boundary_strength_test.Rd` and
   `read_planars_boundary_strength_test.Rd` (untracked)
-- `r/planarsviz/NAMESPACE` (modified — now exports `plot_boundary_strength_test`)
+- `planarsviz/NAMESPACE` (modified — now exports `plot_boundary_strength_test`)
 - `scripts/analysis/boundary_strength.py` (modified — `strength_from_families()`
   split out of `compute_boundary_strength()`)
 - `scripts/analysis/boundary_strength_test.py` (untracked)
@@ -26,7 +26,7 @@ so none of the above is in it.
 ## Why the push fails
 
 `.pre-commit-config.yaml` runs the `roxygen-up-to-date` check before every
-push where anything under `r/planarsviz/` changed. It regenerates `NAMESPACE`
+push where anything under `planarsviz/` changed. It regenerates `NAMESPACE`
 from the R sources **as they sit in the working tree** and compares it with
 the committed one.
 
@@ -47,14 +47,14 @@ the sources and `NAMESPACE` agree inside one commit, the guard passes.
 disarmed once without anyone noticing — `renv` turned it from a pass into a
 skip, and a skip reads as a pass. It is worth keeping honest.
 
-## What changed under you in `r/planarsviz/`
+## What changed under you in `planarsviz/`
 
 I have a commit ready (`064952d`, local only until the push clears) that adds
 a `planarsviz_folder` attribute to every chart function, set right beside the
 `planarsviz_size` attribute that was already there. It names which subfolder
-of `results/planarsviz/` that chart's images live in.
+of `results/chart_checks/` that chart's images live in.
 
-`results/planarsviz/reference/` and `comparisons/` are no longer flat. They
+`results/chart_checks/reference/` and `comparisons/` are no longer flat. They
 are grouped into `laminar-families/`, `pooled/`, `boundaries/` and
 `counts-and-chance/`, and the 14 porting checks now read the attribute to find
 the right one. The same commit regenerated all 15 existing `man/` pages to
@@ -79,7 +79,7 @@ before the package ever draws that file**:
 
 ```
 pdftoppm -png -r 100 -singlefile results/nyan1308_<name>.pdf \
-  results/planarsviz/reference/boundaries/nyan1308_<name>
+  results/chart_checks/reference/boundaries/nyan1308_<name>
 ```
 
 Run it from `NonCollaborative/`. Once the package overwrites a chart that a

@@ -33,7 +33,7 @@
 # called "manifest" says nothing.
 #
 # Usage (from NonCollaborative/):
-#   Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308 \
+#   Rscript scripts/render_planarsviz.R --bundle results/chart_data/nyan1308 \
 #     [--output DIR] [--plots all|name,name,...] [--formats pdf,png] [--list]
 # --output defaults to <bundle>/plots. --plots takes chart names as printed by
 # --list (the file name without the dataset prefix). png is made from the PDF
@@ -43,14 +43,14 @@
 # variants are named after the highlight id (all_families_labeled_orthographic_word),
 # not "wordhood", because the name has to come from the data.
 #
-# --bundle can also be the illustrations bundle (results/planarsviz/illustrations),
+# --bundle can also be the illustrations bundle (results/chart_data/illustrations),
 # detected by the presence of data/tree_shapes.tsv rather than a flag, since
 # that bundle has no language behind it to name one. Its random-tree overlay
 # needs a real language's position labels, which is what --positions-bundle
 # is for (any ordinary --bundle path); the tree-shape and tree-count-growth
 # charts don't need it and are still listed without it.
-#   Rscript scripts/render_planarsviz.R --bundle results/planarsviz/illustrations \
-#     --positions-bundle results/planarsviz/nyan1308 --output results
+#   Rscript scripts/render_planarsviz.R --bundle results/chart_data/illustrations \
+#     --positions-bundle results/chart_data/nyan1308 --output results
 
 parse_args <- function(args) {
   out <- list(bundle = NULL, positions_bundle = NULL, output = NULL, plots = "all",
@@ -82,8 +82,8 @@ script_dir <- local({
 lib <- file.path(tempdir(), "planarsviz_lib")
 dir.create(lib, showWarnings = FALSE)
 status <- system2("R", c("CMD", "INSTALL", "--no-test-load", paste0("--library=", lib),
-                         shQuote(file.path(script_dir, "..", "r", "planarsviz"))), stdout = FALSE, stderr = FALSE)
-if (status != 0) stop("R CMD INSTALL of r/planarsviz failed.", call. = FALSE)
+                         shQuote(file.path(script_dir, "..", "planarsviz"))), stdout = FALSE, stderr = FALSE)
+if (status != 0) stop("R CMD INSTALL of planarsviz failed.", call. = FALSE)
 suppressPackageStartupMessages({
   library(planarsviz, lib.loc = lib)
   library(ggplot2)

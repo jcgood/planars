@@ -30,7 +30,7 @@ conflict_groups_shifted_nyan.tsv. Export its bundle with:
         --highlights-file tests/fixtures/highlights_shifted_nyan.tsv \\
         --conflict-groups-file tests/fixtures/conflict_groups_shifted_nyan.tsv \\
         --language-name "Shifted test data" \\
-        --output-dir results/planarsviz
+        --output-dir results/chart_data
 """
 
 import csv

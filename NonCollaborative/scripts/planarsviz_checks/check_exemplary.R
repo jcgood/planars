@@ -9,14 +9,14 @@
 # data with the library's, then renders the print page, slide tree and slide
 # evidence at the script's sizes and pixel-compares with the references.
 # library-only (shifted test data): render only, beside the nyan1308 renders,
-# under results/planarsviz/comparisons/shifted_nyan/shifted/.
+# under results/chart_checks/comparisons/shifted_nyan/shifted/.
 #
 # Run from NonCollaborative/:
 #   Rscript scripts/planarsviz_checks/check_exemplary.R
-#   Rscript scripts/planarsviz_checks/check_exemplary.R results/planarsviz/shifted_nyan shifted_nyan library-only
+#   Rscript scripts/planarsviz_checks/check_exemplary.R results/chart_data/shifted_nyan shifted_nyan library-only
 
 args <- commandArgs(trailingOnly = TRUE)
-bundle_dir <- if (length(args) >= 1) args[[1]] else "results/planarsviz/nyan1308"
+bundle_dir <- if (length(args) >= 1) args[[1]] else "results/chart_data/nyan1308"
 prefix <- if (length(args) >= 2) args[[2]] else "nyan1308"
 library_only <- length(args) >= 3 && args[[3]] == "library-only"
 python <- "/Users/jcgood/gitrepos/planars/.venv/bin/python"
@@ -25,7 +25,7 @@ source("scripts/planarsviz_checks/superseded.R")
 lib <- file.path(tempdir(), "planarsviz_lib")
 dir.create(lib, showWarnings = FALSE)
 status <- system2("R", c("CMD", "INSTALL", "--no-test-load", paste0("--library=", lib),
-                         "r/planarsviz"), stdout = FALSE, stderr = FALSE)
+                         "planarsviz"), stdout = FALSE, stderr = FALSE)
 if (status != 0) stop("R CMD INSTALL failed")
 suppressPackageStartupMessages({
   library(planarsviz, lib.loc = lib)
@@ -69,7 +69,7 @@ render <- function(p, base) {
   system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(pdf_path), shQuote(stem)))
   paste0(stem, ".png")
 }
-cmp_dir <- file.path(dirname(bundle_dir), "comparisons", prefix, if (library_only) "shifted" else "")
+cmp_dir <- file.path(dirname(dirname(bundle_dir)), "chart_checks", "comparisons", prefix, if (library_only) "shifted" else "")
 dir.create(cmp_dir, recursive = TRUE, showWarnings = FALSE)
 
 selections <- read_planars_selections(bundle)
@@ -138,7 +138,7 @@ for (i in seq_len(n_exemplars)) {
   )
   if (length(problems)) all_ok <- FALSE
   pix <- vapply(names(views), function(v) compare(
-    file.path(dirname(bundle_dir), "reference", prefix, folder, paste0(bases[[v]], ".png")), pngs[[v]],
+    file.path(dirname(dirname(bundle_dir)), "chart_checks", "reference", prefix, folder, paste0(bases[[v]], ".png")), pngs[[v]],
     file.path(cmp_out, paste0(bases[[v]], ".png"))), character(1))
   cat(sprintf("exemplar %d: %s\n", i,
               if (length(problems)) paste("NUMBERS DIFFER:", paste(head(problems, 5), collapse = " | ")) else "numbers identical"))

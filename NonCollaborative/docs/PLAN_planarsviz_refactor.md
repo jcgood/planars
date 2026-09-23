@@ -10,7 +10,7 @@ Visual redesign is a later project.
 
 ## Decisions
 
-- Create a local R package at `NonCollaborative/r/planarsviz/`.
+- Create a local R package at `NonCollaborative/planarsviz/`.
 - Keep Python as the source of truth for laminar-family enumeration.
 - Add a small Python export layer for a documented Python-to-R data contract.
 - Use readable TSV files plus one JSON metadata file.
@@ -20,7 +20,7 @@ Visual redesign is a later project.
 - Preserve current visual appearance before attempting redesign.
 - Use `renv` and explicit dependency management, with the heavier release
   checks staged so they do not block initial utility extraction.
-- Stage new outputs under `results/planarsviz/` in an organized hierarchy.
+- Stage new outputs under `results/chart_data/` in an organized hierarchy.
 - Support PDF and PNG outputs, with optional SVG support.
 - Use validated R configuration objects for rendering options.
 - Keep old scripts and outputs available during migration.
@@ -135,7 +135,7 @@ Add a small export layer without changing the enumeration algorithm. A typical
 bundle should contain:
 
 ```text
-results/planarsviz/nyan1308/data/
+results/chart_data/nyan1308/data/
 ├── spans.tsv
 ├── tests.tsv
 ├── families.tsv
@@ -177,7 +177,7 @@ how to regenerate the bundle, and which validation checks R performs.
 During migration, write only to:
 
 ```text
-results/planarsviz/
+results/chart_data/
 └── nyan1308/
     ├── data/
     ├── manifests/
@@ -210,7 +210,7 @@ directory.
 
 ### Phase 1: Scaffold the package
 
-- Create `r/planarsviz/` and package metadata.
+- Create `planarsviz/` and package metadata.
 - Add dependency declarations and the initial package test infrastructure.
 - Add `renv` early enough to record the working environment, but defer strict
   lockfile/clean-install enforcement until the package API and dependency set
@@ -338,7 +338,7 @@ presentation scripts in the existing worktree without waiting for the refactor.
 The refactor must:
 
 - never overwrite presentation outputs during development
-- write to `results/planarsviz/`
+- write to `results/chart_data/`
 - treat presentation-side edits as user-owned changes
 - reconcile and port those edits before final cutover
 - rerun the complete regression suite after every ported change

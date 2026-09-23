@@ -42,7 +42,7 @@ in step 3" lists what to expect.
   `--fragmentation-permutations 5000 --boundary-strength-test-permutations 5000
   --span-placement-permutations 5000 --arbitrary-layers-permutations 5000` —
   or the tables left un-asked-for drop out of the bundle. It takes ~11 minutes.
-- **After any re-export, `git status` on `results/planarsviz/<dataset>/` is the
+- **After any re-export, `git status` on `results/chart_data/<dataset>/` is the
   check that matters.** Every committed bundle file should come back
   byte-identical except what you meant to change. That settles in seconds what
   the 9-minute suite samples, because unchanged inputs plus untouched shared
@@ -53,7 +53,7 @@ in step 3" lists what to expect.
 - **Jeff runs parallel sessions.** Anything uncommitted you did not write may
   be another one's work in flight: do not commit it and do not revert it, stage
   your own files by name, and ask whose it is.
-- **An untracked or modified file under `r/planarsviz/` jams the roxygen
+- **An untracked or modified file under `planarsviz/` jams the roxygen
   pre-push guard.** Check the guard passes on its own rather than reaching for
   `--no-verify`, which has silently disarmed it before.
 - **R does not go into the CI image.** The porting checks pixel-compare against

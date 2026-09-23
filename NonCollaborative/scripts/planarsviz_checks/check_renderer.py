@@ -1,12 +1,12 @@
 """Compare every PNG the renderer wrote with the frozen reference images.
 
 For docs/PLAN_planarsviz_library.md section 8.3: after
-    Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308 --output DIR --formats pdf,png
+    Rscript scripts/render_planarsviz.R --bundle results/chart_data/nyan1308 --output DIR --formats pdf,png
 run
     python scripts/planarsviz_checks/check_renderer.py DIR
 Reads DIR's <dataset>_planarsviz_manifest.tsv, pairs each
 <dataset>/<folder>/<dataset>_<chart>.png with
-results/planarsviz/reference/<dataset>/<folder>/<dataset>_<chart>.png (the
+results/chart_checks/reference/<dataset>/<folder>/<dataset>_<chart>.png (the
 dataset comes from the manifest row's own file path, not a fixed name, so
 this works for whichever dataset DIR was rendered from), and prints the
 differing-pixel share per chart (side-by-side images go to DIR/compare/).
@@ -26,7 +26,7 @@ import sys
 from pathlib import Path
 
 NC = Path(__file__).resolve().parents[2]
-REFERENCE = NC / "results" / "planarsviz" / "reference"
+REFERENCE = NC / "results" / "chart_checks" / "reference"
 RENAMED = {"all_families_labeled_orthographic_word": "all_families_labeled_wordhood",
            "all_families_labeled_orthographic_word_legend": "all_families_labeled_wordhood_legend"}
 PORTS = ("tree_count_", "boundary_strength", "boundary_strength_no_tono", "boundary_strength_distributions")

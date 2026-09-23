@@ -3,7 +3,7 @@
 How to go from a domains file to finished charts, how to add a new
 language, and how to check that a chart is right. For what each chart shows
 and its options, see the [chart catalogue](planarsviz_charts.md). For the
-package overview, see [`r/planarsviz/README.md`](../r/planarsviz/README.md).
+package overview, see [`planarsviz/README.md`](../planarsviz/README.md).
 
 All commands run from `NonCollaborative/`, using the project's Python
 environment.
@@ -14,7 +14,7 @@ environment.
 
 | Step | Tool | Output |
 |---|---|---|
-| Analyse and export | `scripts/analysis/export_planarsviz_data.py` (Python) | a bundle: `results/planarsviz/<dataset>/data/` |
+| Analyse and export | `scripts/analysis/export_planarsviz_data.py` (Python) | a bundle: `results/chart_data/<dataset>/data/` |
 | Draw | the `planarsviz` R package, `plot_*()` functions | ggplot / patchwork objects |
 | Save everything | `scripts/render_planarsviz.R` | PDFs and PNGs, plus `manifest.tsv` |
 | Check | `scripts/planarsviz_checks/` | comparison images and pass/fail messages |
@@ -41,7 +41,7 @@ python scripts/analysis/export_planarsviz_data.py \
 ```
 
 The dataset name comes from the domains file name: `domains_nyan1308.tsv`
-gives `nyan1308`, and the bundle goes to `results/planarsviz/nyan1308/`.
+gives `nyan1308`, and the bundle goes to `results/chart_data/nyan1308/`.
 
 | Option | Default | What it does |
 |---|---|---|
@@ -57,7 +57,7 @@ gives `nyan1308`, and the bundle goes to `results/planarsviz/nyan1308/`.
 | `--conflict-group-cap` | 12 | Most trees the conflict-groups chart draws per group. |
 | `--exemplary-k` | 6 | How many representative families the exemplary charts pick by coverage. |
 | `--no-exemplary-sparsest` | off | Don't add the family with the least evidence to the exemplary selection. |
-| `--output-dir` | `results/planarsviz` | Where bundles go. |
+| `--output-dir` | `results/chart_data` | Where bundles go. |
 | `--fragmentation-permutations` | 0 (off) | Also run the class-fragmentation permutation test with this many draws and put its two tables in the bundle. Off by default because it is slow — about four minutes at 5000 draws, against 1.6 seconds for everything else. Use 5000 to match the committed files. |
 | `--fragmentation-seed` | 0 | Seed for the above. 0 is what made the committed files. |
 | `--boundary-strength-test-permutations` | 0 (off) | Also run the boundary-strength permutation test (is the per-position strength, and its jump from the previous position, higher than a same-length-profile random arrangement?) with this many draws and put its table in the bundle. Off by default for the same reason as `--fragmentation-permutations`: one family enumeration per replicate. Use 5000 to match the committed files. |
@@ -83,14 +83,14 @@ and the R package refuses to draw from one.
 Install the package once (or after changing its code):
 
 ```sh
-R CMD INSTALL r/planarsviz
+R CMD INSTALL planarsviz
 ```
 
 Then:
 
 ```r
 library(planarsviz)
-bundle <- read_planars_bundle("results/planarsviz/nyan1308")
+bundle <- read_planars_bundle("results/chart_data/nyan1308")
 
 p <- plot_laminar_overlay(bundle, groups = "all", alpha_divisor = 1,
                           thickness_exponent = 0.75, highlight = "orthographic_word")
@@ -123,7 +123,7 @@ Points to know:
 ## 4. Render everything
 
 ```sh
-Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308 --formats pdf,png
+Rscript scripts/render_planarsviz.R --bundle results/chart_data/nyan1308 --formats pdf,png
 ```
 
 | Option | Default | What it does |
@@ -182,7 +182,7 @@ checks are kept so any change can be re-checked. One exception, worth knowing
 before reading a check's output: **the fragmentation test (catalogue §14)
 never had a matplotlib original.** It was written in R from the start, so the
 chart that script drew is itself the reference —
-`results/planarsviz/reference/nyan1308/counts-and-chance/nyan1308_fragmentation_test_plot.png`,
+`results/chart_checks/reference/nyan1308/counts-and-chance/nyan1308_fragmentation_test_plot.png`,
 frozen before the package could overwrite it — and `check_fragmentation.R`
 compares against that rather than running an older script.
 
@@ -204,14 +204,14 @@ compares against that rather than running an older script.
   — bundle contents for nyan1308 and for the shifted test data.
 
 Comparison images (reference | new | differences) are in
-`results/planarsviz/comparisons/nyan1308/`, and
+`results/chart_checks/comparisons/nyan1308/`, and
 `comparisons/shifted_nyan/shifted/` holds each chart drawn from nyan1308
 beside the same chart from the **shifted test data**: nyan1308 with every
 position moved by two, labels renamed and one domain type renamed
 (`tests/fixtures/make_shifted_nyan.py`). A chart that draws that data
 correctly has no nyan1308 facts built in.
 
-Both `results/planarsviz/reference/` and `results/planarsviz/comparisons/`
+Both `results/chart_checks/reference/` and `results/chart_checks/comparisons/`
 are grouped by dataset first — `nyan1308/`, or `shifted_nyan/` for the
 shifted-mode comparisons — and then into the same four subfolders —
 `laminar-families`, `pooled`, `boundaries`, `counts-and-chance` — that chart
@@ -282,14 +282,15 @@ bring the lockfile back in line, and commit it with the change.
 
 | Path | Contents |
 |---|---|
-| `r/planarsviz/` | The R package (`R/` one file per chart family). |
-| `r/planarsviz/inst/data-contract.md` | Every bundle file and column. |
+| `planarsviz/` | The R package (`R/` one file per chart family). |
+| `planarsviz/inst/data-contract.md` | Every bundle file and column. |
 | `scripts/analysis/export_planarsviz_data.py` | The exporter. |
 | `scripts/analysis/planars_groupings.py` | Class bundles and filters. |
 | `scripts/render_planarsviz.R` | The renderer. |
 | `scripts/planarsviz_checks/` | Porting checks. |
 | `results/<dataset>/` | Published charts, grouped into `laminar-families/`, `pooled/`, `boundaries/` and `counts-and-chance/`. |
-| `results/planarsviz/<dataset>/` | Bundles (`data/`) and rendered charts (`plots/`). |
-| `results/planarsviz/reference/<dataset>/` | Frozen images of the old charts, grouped into `laminar-families/`, `pooled/`, `boundaries/` and `counts-and-chance/`. |
+| `results/chart_data/<dataset>/` | Bundles (`data/`) and rendered charts (`plots/`). |
+| `results/chart_checks/reference/<dataset>/` | Frozen images of the old charts, grouped into `laminar-families/`, `pooled/`, `boundaries/` and `counts-and-chance/`. |
+| `results/chart_checks/comparisons/<dataset>/` | Side-by-side and difference images (reference \| new \| difference) the porting checks write. |
 | `docs/PLAN_planarsviz_library.md` | Why the library is built this way. |
 | `docs/PLANARSVIZ_LIBRARY_PROGRESS.md` | What was checked, chart by chart, and open questions. |

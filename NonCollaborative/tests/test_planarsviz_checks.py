@@ -56,7 +56,7 @@ NC = Path(__file__).resolve().parent.parent
 CHECKS = NC / "scripts" / "planarsviz_checks"
 SNAPSHOTS = Path(__file__).parent / "snapshots" / "planarsviz_checks"
 VENV_PYTHON = NC.parent / ".venv" / "bin" / "python"
-BUNDLE = NC / "results" / "planarsviz" / "nyan1308"
+BUNDLE = NC / "results" / "chart_data" / "nyan1308"
 
 # These need R, the pinned R packages, and poppler. They also compare against
 # reference images rendered on a Mac, so they cannot run on a Linux CI runner
@@ -137,7 +137,7 @@ def _normalise(text, extra_paths=()):
     text = re.sub(r"\S*/Rtmp[A-Za-z0-9]+/+", "<tmp>/", text)
     # Any other absolute path into a system temporary directory.
     text = re.sub(r"(/private)?/(var/folders|tmp)/\S*/", "<tmp>/", text)
-    # check_tree_counts.R prints results/planarsviz/reference/<file>.png
+    # check_tree_counts.R prints results/chart_checks/reference/<file>.png
     # verbatim (via check_transparency.py) for its "reference:" transparency
     # line -- the one place a check's output names a reference image's own
     # location rather than just a chart name and a percentage. Since commit A
@@ -209,7 +209,7 @@ def _compare(name, output, request, extra_paths=()):
         f"{actual_lines[first] if first < len(actual_lines) else '<nothing>'}\n"
         f"\n"
         f"If a chart changed on purpose, look at the comparison image under "
-        f"results/planarsviz/comparisons/ first, then re-record with "
+        f"results/chart_checks/comparisons/ first, then re-record with "
         f"--update-snapshots."
     )
 

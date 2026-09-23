@@ -30,4 +30,4 @@ book_proposal/
 # output and where scripts/planarsviz_checks/ writes its trial renders. The
 # published nyan1308 charts live in NonCollaborative/results/, so tracking
 # both would keep two copies of every chart.
-NonCollaborative/results/planarsviz/*/plots/
+NonCollaborative/results/chart_data/*/plots/

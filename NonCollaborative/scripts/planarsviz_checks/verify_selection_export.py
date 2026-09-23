@@ -20,7 +20,7 @@ from pathlib import Path
 from superseded import superseded
 
 NC = Path(__file__).resolve().parents[2]
-DATA = NC / "results" / "planarsviz" / "nyan1308" / "data"
+DATA = NC / "results" / "chart_data" / "nyan1308" / "data"
 ok = True
 
 

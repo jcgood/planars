@@ -7,20 +7,20 @@
 # file writes disabled; the script file itself is not modified) and from the
 # planarsviz library -- then compares ggplot_build() layer data, axis labels,
 # title and canvas size, renders the library plot at the working script's
-# canvas size to results/planarsviz/<dataset>/plots/, and pixel-compares it
+# canvas size to results/chart_data/<dataset>/plots/, and pixel-compares it
 # with the frozen reference PNG.
 #
 # library-only mode (the shifted test dataset, section 10): the working script
 # can't draw that data (its domain types are typed in), so only the library
 # renders; each chart is saved side by side with its nyan1308 library render
-# under results/planarsviz/comparisons/shifted_nyan/shifted/ for inspection.
+# under results/chart_checks/comparisons/shifted_nyan/shifted/ for inspection.
 #
 # Run from NonCollaborative/:
 #   Rscript scripts/planarsviz_checks/check_pooled.R
-#   Rscript scripts/planarsviz_checks/check_pooled.R results/planarsviz/shifted_nyan tests/fixtures/domains_shifted_nyan.tsv shifted_nyan library-only
+#   Rscript scripts/planarsviz_checks/check_pooled.R results/chart_data/shifted_nyan tests/fixtures/domains_shifted_nyan.tsv shifted_nyan library-only
 
 args <- commandArgs(trailingOnly = TRUE)
-bundle_dir <- if (length(args) >= 1) args[[1]] else "results/planarsviz/nyan1308"
+bundle_dir <- if (length(args) >= 1) args[[1]] else "results/chart_data/nyan1308"
 domain_tsv <- if (length(args) >= 2) args[[2]] else "domains/domains_nyan1308.tsv"
 prefix <- if (length(args) >= 3) args[[3]] else "nyan1308"
 library_only <- length(args) >= 4 && args[[4]] == "library-only"
@@ -34,7 +34,7 @@ nyan_type_name <- c(tonal = "tonosegmental")
 lib <- file.path(tempdir(), "planarsviz_lib")
 dir.create(lib, showWarnings = FALSE)
 status <- system2("R", c("CMD", "INSTALL", "--no-test-load", paste0("--library=", lib),
-                         "r/planarsviz"), stdout = FALSE, stderr = FALSE)
+                         "planarsviz"), stdout = FALSE, stderr = FALSE)
 if (status != 0) stop("R CMD INSTALL failed")
 suppressPackageStartupMessages(library(planarsviz, lib.loc = lib))
 bundle <- read_planars_bundle(bundle_dir)
@@ -84,7 +84,7 @@ plain <- function(df) {
 
 out_dir <- file.path(bundle_dir, "plots")
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
-cmp_dir <- file.path(dirname(bundle_dir), "comparisons", prefix)
+cmp_dir <- file.path(dirname(dirname(bundle_dir)), "chart_checks", "comparisons", prefix)
 if (library_only) cmp_dir <- file.path(cmp_dir, "shifted")
 dir.create(cmp_dir, recursive = TRUE, showWarnings = FALSE)
 
@@ -150,7 +150,7 @@ for (case in cases) {
     next
   }
 
-  ref <- file.path(dirname(bundle_dir), "reference", prefix, folder, paste0(base, ".png"))
+  ref <- file.path(dirname(dirname(bundle_dir)), "chart_checks", "reference", prefix, folder, paste0(base, ".png"))
   pixel <- if (file.exists(ref)) compare(ref, paste0(png_stem, ".png"), file.path(cmp_out, paste0(base, ".png"))) else "no reference"
   status_txt <- if (length(problems)) paste("NUMBERS DIFFER:", paste(problems, collapse = " | ")) else "numbers identical"
   if (length(problems)) all_ok <- FALSE

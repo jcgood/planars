@@ -11,14 +11,14 @@
 # pixel-compares it with the frozen reference.
 #
 # library-only (shifted test data): render only, side by side with the
-# nyan1308 library render, under results/planarsviz/comparisons/shifted_nyan/shifted/.
+# nyan1308 library render, under results/chart_checks/comparisons/shifted_nyan/shifted/.
 #
 # Run from NonCollaborative/:
 #   Rscript scripts/planarsviz_checks/check_skyline.R
-#   Rscript scripts/planarsviz_checks/check_skyline.R results/planarsviz/shifted_nyan tests/fixtures/domains_shifted_nyan.tsv shifted_nyan library-only
+#   Rscript scripts/planarsviz_checks/check_skyline.R results/chart_data/shifted_nyan tests/fixtures/domains_shifted_nyan.tsv shifted_nyan library-only
 
 args <- commandArgs(trailingOnly = TRUE)
-bundle_dir <- if (length(args) >= 1) args[[1]] else "results/planarsviz/nyan1308"
+bundle_dir <- if (length(args) >= 1) args[[1]] else "results/chart_data/nyan1308"
 domain_tsv <- if (length(args) >= 2) args[[2]] else "domains/domains_nyan1308.tsv"
 prefix <- if (length(args) >= 3) args[[3]] else "nyan1308"
 library_only <- length(args) >= 4 && args[[4]] == "library-only"
@@ -28,7 +28,7 @@ source("scripts/planarsviz_checks/superseded.R")
 lib <- file.path(tempdir(), "planarsviz_lib")
 dir.create(lib, showWarnings = FALSE)
 status <- system2("R", c("CMD", "INSTALL", "--no-test-load", paste0("--library=", lib),
-                         "r/planarsviz"), stdout = FALSE, stderr = FALSE)
+                         "planarsviz"), stdout = FALSE, stderr = FALSE)
 if (status != 0) stop("R CMD INSTALL failed")
 suppressPackageStartupMessages(library(planarsviz, lib.loc = lib))
 bundle <- read_planars_bundle(bundle_dir)
@@ -90,7 +90,7 @@ system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(pdf_path), shQ
 compare <- function(ref, new_png, out_png) {
   system2(python, c("scripts/planarsviz_compare.py", shQuote(ref), shQuote(new_png), shQuote(out_png)), stdout = TRUE)
 }
-cmp_dir <- file.path(dirname(bundle_dir), "comparisons", prefix, if (library_only) "shifted" else "")
+cmp_dir <- file.path(dirname(dirname(bundle_dir)), "chart_checks", "comparisons", prefix, if (library_only) "shifted" else "")
 folder <- attr(pl, "planarsviz_folder")
 cmp_out <- file.path(cmp_dir, folder)
 dir.create(cmp_out, recursive = TRUE, showWarnings = FALSE)
@@ -102,7 +102,7 @@ if (library_only) {
   cat(base, ": rendered; side by side with nyan1308: ",
       compare(paste0(nyan_stem, ".png"), paste0(png_stem, ".png"), file.path(cmp_out, paste0(base, ".png"))), "\n")
 } else {
-  ref <- file.path(dirname(bundle_dir), "reference", prefix, folder, paste0(base, ".png"))
+  ref <- file.path(dirname(dirname(bundle_dir)), "chart_checks", "reference", prefix, folder, paste0(base, ".png"))
   pixel <- compare(ref, paste0(png_stem, ".png"), file.path(cmp_out, paste0(base, ".png")))
   cat(base, ": ", if (length(problems)) paste("NUMBERS DIFFER:", paste(problems, collapse = " | ")) else "numbers identical",
       "; pixels: ", pixel, "\n", sep = "")
