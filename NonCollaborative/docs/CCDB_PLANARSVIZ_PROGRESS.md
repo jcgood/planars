@@ -130,6 +130,69 @@ three `domain_types.tsv` rows.
    an `indet` forest, the `morsyn_indet` bundle, root 8, and numbered
    position labels.
 
+## Step 3 command log (Chácobo verbal, 2026-09-23)
+
+Every command exactly as typed, from `NonCollaborative/`, with what it
+printed and how long it took. This is the raw material for step 5's
+tutorial, so it records the real route, detours included.
+
+1. Export, all four permutation tests at 5000 draws (2 min 38 s):
+
+   ```sh
+   python scripts/analysis/export_planarsviz_data.py \
+     --domain-file domains/domains_chac1251_verbal.tsv \
+     --output-dir results/planarsviz --groupings ccdb --root-position 8 \
+     --language-name "Chácobo (verbal)" \
+     --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 \
+     --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
+   ```
+
+   Printed one line: `Exported planarsviz bundle: results/planarsviz/chac1251_verbal`.
+   About a quarter of nyan1308's ~11 minutes, so all 21 at 5000 draws is
+   well under an hour. The planar table and domain file are found from
+   `--domain-file` alone.
+
+2. Render every chart, PDF and PNG (1 min 13 s):
+
+   ```sh
+   Rscript scripts/render_planarsviz.R --bundle results/planarsviz/chac1251_verbal \
+     --output results --formats pdf,png
+   ```
+
+   Printed one `wrote ...` line per chart, then
+   `180 files for 90 of 91 charts` and
+   `FAILED boundary_strength_overlay: No highlight 'orthographic_word' in this bundle.`
+   Exit code 1. Charts land in `results/chac1251_verbal/<topic>/`, with
+   `results/chac1251_verbal_planarsviz_manifest.tsv` beside nyan1308's.
+
+3. Fixed the failure in the renderer (see below), then redrew just that chart:
+
+   ```sh
+   Rscript scripts/render_planarsviz.R --bundle results/planarsviz/chac1251_verbal \
+     --output results --formats pdf,png --plots boundary_strength_overlay
+   ```
+
+   Printed `182 files for 1 of 1 charts (plus 180 kept from an earlier run)`.
+
+## Step 3 findings (Chácobo verbal)
+
+- **Fixed: `boundary_strength_overlay` failed** because the chart's
+  `highlight` defaults to nyan1308's `orthographic_word`. The renderer now
+  passes that highlight only when the bundle has it, and black labels
+  otherwise. The package default is unchanged.
+- **Doubled position labels.** CCDB tables have no position names, so the
+  number stands in for the name and boxed labels read "1 / 1" (overlays,
+  trees, forests, exemplary trees, boundary-strength overlay).
+- **`pooled_plot` x axis crowded:** positions 10–28 run together at its
+  fixed width.
+- **Exemplary trees: legend cut off at the right** ("indeterm…") — a third
+  domain type makes it wider than the canvas allows.
+- **`forestspans_plot`: inset legend covers the left end of span 3.**
+- Fine as drawn: spanchart, boundary_strength, the permutation-test grids,
+  tree counts, the per-bundle forests (pink `#EE4C97` reads well).
+- The y-axis-every-50 worry in `boundary_strength_overlay` doesn't bite
+  here: Chácobo's largest strength is 154. It will for smaller structures.
+
 ## Likely trouble in step 3 (from a read-only survey of the code, 2026-09-22)
 
 Most likely to show first on Chácobo verbal (28 positions, 29 families):

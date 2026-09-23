@@ -267,7 +267,11 @@ chart_table <- function() {
   }
   add("boundary_strength", function() plot_boundary_strength(bundle))
   add("boundary_strength_distributions", function() plot_boundary_strength_distributions(bundle))
-  add("boundary_strength_overlay", function() plot_boundary_strength_overlay(bundle))
+  # The overlay colours its position labels by nyan1308's orthographic word;
+  # a bundle without that highlight (every CCDB one) gets black labels rather
+  # than a failed chart.
+  overlay_highlight <- if ("orthographic_word" %in% highlights$highlight_id) "orthographic_word" else NULL
+  add("boundary_strength_overlay", function() plot_boundary_strength_overlay(bundle, highlight = overlay_highlight))
   for (f in filters) {
     local({
       id <- f$subset_id
@@ -276,7 +280,8 @@ chart_table <- function() {
       # The working script drew filtered overlays in a second colour pair so
       # the two are never mistaken for each other.
       add(paste0("boundary_strength_overlay_", id), function()
-        plot_boundary_strength_overlay(bundle, subset = id, colours = c(Left = "#009E73", Right = "#CC79A7")))
+        plot_boundary_strength_overlay(bundle, subset = id, colours = c(Left = "#009E73", Right = "#CC79A7"),
+                                       highlight = overlay_highlight))
     })
   }
   charts
