@@ -48,5 +48,8 @@ exclusions: list(
   # like df.plot and group.colors are the original script's style, kept so a
   # reader can diff this file against the archived original and see only the
   # documented changes -- renaming them here would be an undocumented one.
-  "R/pooled.R" = list(object_name_linter = c(15, 38, 65, 85, 122, 196))
+  # Excused for the whole file (Inf) rather than by line number: the line
+  # list went stale the first time a comment was added above those names
+  # (2026-09-23), and the reason applies to the file, not to six lines.
+  "R/pooled.R" = list(object_name_linter = Inf)
   )

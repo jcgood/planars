@@ -42,6 +42,8 @@ planarsviz_tip_label <- function(number, name) {
 # identical to the reference images.
 planarsviz_position_scale <- function(bundle, baseline = 22L) {
   n_positions <- as.integer(bundle$metadata$n_positions)
-  if (length(n_positions) != 1L || is.na(n_positions)) return(1)
+  if (length(n_positions) != 1L || is.na(n_positions)) {
+    return(1)
+  }
   max(1, n_positions / baseline)
 }
