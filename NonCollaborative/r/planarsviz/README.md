@@ -114,9 +114,14 @@ its intended canvas size attached as `planarsviz_size` and
 | Span-placement permutation test | `plot_span_placement_test()` |
 | Arbitrary-layers permutation test | `plot_arbitrary_layers_test()` |
 | Boundary-strength permutation test | `plot_boundary_strength_test()` |
+| Tree shapes (illustrations bundle) | `plot_tree_shapes()` |
+| Tree-shape count growth (illustrations bundle) | `plot_tree_count_growth()` |
+| Random tree overlay (illustrations bundle) | `plot_random_tree_overlay()` |
 
 Reading data: `read_planars_bundle()`, `read_planars_subset()`,
-`validate_planars_bundle()`, and `read_planars_*()` for each data file.
+`validate_planars_bundle()`, `read_planars_illustrations()` (the
+illustrations bundle, the one with no language behind it — pure tree-shape
+combinatorics), and `read_planars_*()` for each data file.
 
 ## License
 

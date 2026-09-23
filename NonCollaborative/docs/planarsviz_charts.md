@@ -31,6 +31,7 @@ Contents: [Pooled plots](#1-pooled-plots) ·
 [Span placement](#15-span-placement-test) ·
 [Arbitrary layers](#16-arbitrary-layers-test) ·
 [Illustrations](#17-illustrations) ·
+[Boundary-strength test](#18-boundary-strength-test) ·
 [Name changes](#name-changes-for-cutover)
 
 ---
@@ -652,6 +653,68 @@ well-formed tree over exactly the right leaves
 recorded seed reproduces it exactly. `metadata.json`'s `random_trees.seed`
 is what makes that possible at all — the script this replaced never
 recorded one.
+
+---
+
+## 18. Boundary-strength test
+
+Is a position's boundary strength (chart 12's summed strength) — and
+especially its *jump* from the previous position — higher than the same
+spans placed at random would give? It reuses `span_placement_test.py`'s
+null: each span keeps its length, position is randomized over the whole
+structure. This is the direct test of the "clear jump at the left edge of
+the orthographic word" reading of chart 12.
+
+For one group, two stacked panels, left edge on top and right edge below.
+At each position: the real value (line and points) against the null's
+5th–95th percentile band (ribbon) and mean (dashed). Points with
+`p_value_ge_observed` below `alpha` are filled, the rest open, so a run of
+filled points stands out from noise.
+
+![Boundary-strength test](planarsviz_charts/boundary_strength_test_jump_all.png)
+
+```r
+plot_boundary_strength_test(bundle)                          # pooled, jump
+plot_boundary_strength_test(bundle, statistic = "level")
+plot_boundary_strength_test(bundle, group = "tonosegmental")
+```
+
+| Option | Meaning |
+|---|---|
+| `group` | `"all"` (the default — pooled), a domain type, or a bundle name. |
+| `statistic` | `"jump"` (the default: strength at p minus strength at p−1) or `"level"` (the strength itself). |
+| `alpha` | Significance threshold for filled vs. open points (default 0.05). |
+| `line_colour` | Observed-curve colour. |
+
+Canvas 11 × 7 in. Folder: `boundaries`.
+
+**This chart needs a bundle exported with
+`--boundary-strength-test-permutations`.** Without it,
+`plot_boundary_strength_test()` stops and says: "This bundle has no
+boundary_strength_test.tsv. The permutation test is slow, so the exporter
+only runs it when asked: re-export with
+`--boundary-strength-test-permutations 5000`." Use 5000 to match the
+committed files.
+
+| Renderer name | Old file |
+|---|---|
+| `boundary_strength_test_jump_<group>`, `boundary_strength_test_level_<group>` | none |
+
+One pair of files per group in the bundle's table — for nyan1308 that is
+nine groups (`all`, the five domain types, `syntaxlike`,
+`syntaxlike_notono`, `phonologylike`), so 18 files.
+
+Like §16, this chart has no reference image: it was written in the package
+from the start, with no earlier script or chart to port or freeze. What
+checks it instead: `tests/test_planarsviz_bundle.py`'s
+`test_boundary_strength_test_covers_every_position` confirms every group has
+exactly one row per (side, statistic, position) and that the jump
+statistic's position-1 row is always zero — a shape check, not a check of
+the p-values or observed strengths themselves. No `scripts/planarsviz_checks/`
+check compares this chart's numbers against an independent run, unlike the
+fragmentation test's `check_fragmentation.R`: `boundary_strength_test.py`'s
+`run_test()` is the only place these numbers are computed, so there is
+nothing separate to check it against.
 
 ---
 

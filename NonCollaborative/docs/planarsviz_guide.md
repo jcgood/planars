@@ -58,6 +58,18 @@ gives `nyan1308`, and the bundle goes to `results/planarsviz/nyan1308/`.
 | `--output-dir` | `results/planarsviz` | Where bundles go. |
 | `--fragmentation-permutations` | 0 (off) | Also run the class-fragmentation permutation test with this many draws and put its two tables in the bundle. Off by default because it is slow — about four minutes at 5000 draws, against 1.6 seconds for everything else. Use 5000 to match the committed files. |
 | `--fragmentation-seed` | 0 | Seed for the above. 0 is what made the committed files. |
+| `--boundary-strength-test-permutations` | 0 (off) | Also run the boundary-strength permutation test (is the per-position strength, and its jump from the previous position, higher than a same-length-profile random arrangement?) with this many draws and put its table in the bundle. Off by default for the same reason as `--fragmentation-permutations`: one family enumeration per replicate. Use 5000 to match the committed files. |
+| `--boundary-strength-test-seed` | 0 | Seed for the above. 0 is what made the committed files. |
+| `--span-placement-permutations` | 0 (off) | Also run the span-placement permutation test (does the real arrangement of a group's spans give fewer laminar families than those same span lengths placed at random?) with this many draws and put its tables in the bundle. Off by default for the same reason. Use 5000 to match the committed files. |
+| `--span-placement-seed` | 0 | Seed for the above. 0 is what made the committed files. |
+| `--arbitrary-layers-permutations` | 0 (off) | Also run the arbitrary-layers permutation test (is a group's family count remarkable for that many spans of arbitrary size at arbitrary positions? — the most naive of the three nulls) with this many draws and put its tables in the bundle. Off by default for the same reason. Use 5000 to match the committed files. |
+| `--arbitrary-layers-seed` | 0 | Seed for the above. 0 is what made the committed files. |
+
+At 5000 draws (what the committed files use), measured on nyan1308: the
+fragmentation test takes about four minutes; the boundary-strength,
+span-placement and arbitrary-layers tests take about a minute and a half
+each. Switching on all four adds roughly eight to nine minutes to an export
+that otherwise takes a couple of seconds.
 
 The export refuses to write a bundle if family enumeration was cut short,
 and the R package refuses to draw from one.
@@ -112,7 +124,8 @@ Rscript scripts/render_planarsviz.R --bundle results/planarsviz/nyan1308 --forma
 
 | Option | Default | What it does |
 |---|---|---|
-| `--bundle` | (required) | The bundle folder. |
+| `--bundle` | (required) | The bundle folder. Can also be the `illustrations` bundle (detected by the presence of `data/tree_shapes.tsv`), which has no language behind it. |
+| `--positions-bundle` | none (off) | Only used with the `illustrations` bundle: an ordinary language bundle (any `--bundle` path). Gives `tree_count_growth` its dotted reference line at that language's observed family count, and supplies the real position labels `random_tree_overlay` needs. Without it, `tree_count_growth` is drawn with no reference line and `random_tree_overlay` is skipped entirely; the tree-shape charts don't use it either way. |
 | `--output` | `<bundle>/plots` | Where files go. |
 | `--plots` | `all` | Comma-separated chart names; `--list` prints the names a bundle supports. |
 | `--formats` | `pdf` | `pdf`, `png`, or both (PNG via `pdftoppm` at 100 dpi). |
@@ -162,9 +175,9 @@ did, and writes `manifest.tsv` listing what it wrote.
 
 Every chart was checked against the working script it replaces, and the
 checks are kept so any change can be re-checked. One exception, worth knowing
-before reading a check's output: **chart 19, the fragmentation test, never had
-a matplotlib original.** It was written in R from the start, so the chart that
-script drew is itself the reference —
+before reading a check's output: **the fragmentation test (catalogue §14)
+never had a matplotlib original.** It was written in R from the start, so the
+chart that script drew is itself the reference —
 `results/planarsviz/reference/nyan1308/counts-and-chance/nyan1308_fragmentation_test_plot.png`,
 frozen before the package could overwrite it — and `check_fragmentation.R`
 compares against that rather than running an older script.

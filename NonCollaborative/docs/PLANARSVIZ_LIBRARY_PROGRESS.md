@@ -6,10 +6,12 @@ Claude (Opus) with Jeff's authorization to proceed without waiting.
 
 Honesty rule: nothing below says "matches" without naming the comparison file.
 
-## Where things stand (2026-09-20)
+## Where things stand (2026-09-22)
 
 - **All 18 planned charts are ported, plus chart 19** (66 chart outputs as of
-  2026-09-20). Every chart copied from working R reproduces its reference
+  2026-09-20; by 2026-09-22 a full render is 137 files for nyan1308, per
+  `results/nyan1308_planarsviz_manifest.tsv`, plus 6 for the illustrations
+  bundle). Every chart copied from working R reproduces its reference
   exactly: identical plot data and 0.0000% differing pixels. The two
   matplotlib charts (16, 17) are ported to R with every visual setting mapped;
   they differ only in fonts. Chart 19 (fragmentation test) was added after the
@@ -43,6 +45,11 @@ Honesty rule: nothing below says "matches" without naming the comparison file.
   this file. 23 porting checks now (was 21). **Seen by Jeff: yes,
   2026-09-22** — the one genuinely new thing, the random-tree overlay's
   fresh (differently) seeded sample, is fine.
+- **Next, planned and not started:** the CCDB languages
+  (`docs/PLAN_ccdb_planarsviz.md` — 21 planar structures from the
+  Constituency and Convergence Database through the same analysis and
+  charts), and closing the documentation gaps in
+  `docs/PLAN_planarsviz_doc_fixes.md`.
 - **Seen by Jeff: yes, 2026-09-20 — the charts are fine.** This was the one
   outstanding item no tooling could clear, and it is now cleared. Every
   "0.0000%" in this file had been read by Claude off a check's output; Jeff

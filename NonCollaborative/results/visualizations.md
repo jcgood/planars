@@ -1023,6 +1023,59 @@ value, biasing every summary downward. `arbitrary_layers_test.py` raises it to 5
 duration of a run and restores it afterwards, so no other caller is affected, and a bundle test
 fails if any draw hit the raised cap anyway.
 
+## Is the jump in boundary strength more than chance?
+
+### nyan1308_boundary_strength_test_jump_&lt;group&gt;.pdf / _level_&lt;group&gt;.pdf / nyan1308_boundary_strength_test.tsv
+
+**What it is:** a direct stress test of the "clear jump at the left edge of the orthographic
+word" reading of the boundary-strength bars above. It asks whether a position's boundary
+strength — and specifically its *jump* from the previous position — is higher than a
+same-length-profile random arrangement of spans would produce. Reuses
+`span_placement_test.py`'s null exactly (every span keeps its own length, position is
+randomized over the whole 22-position structure) but recomputes a fresh boundary-strength curve
+from each replicate's own family enumeration, for the pooled set, the five domain types and the
+three bundles — nine groups, 5000 draws, seed 0, one shared random stream.
+
+The p-value direction is the mirror of the other three permutation tests: `p_value_ge_observed`
+is the fraction of null draws at or *above* the observed value, so a small p-value here means
+*more* strength than chance, not fewer families. (The other three tests' `p_value_le_observed`
+runs the other way — small means fewer families than chance.)
+
+- **`nyan1308_boundary_strength_test.tsv`** — one row per (group, side, statistic, position):
+  `observed`, `null_mean`, `null_p05`, `null_p95`, `p_value_ge_observed`, `n_permutations`,
+  `seed`. No per-draw table — only percentiles are kept, since the chart needs an envelope band
+  rather than a distribution shape.
+- **The 18 PDFs** — one `_jump_<group>` and one `_level_<group>` per group (`all`, the five
+  domain types, `syntaxlike`, `syntaxlike_notono`, `phonologylike`): two stacked panels, left
+  edge on top and right edge below, the observed curve against the null's 5th–95th percentile
+  band and mean, with points below `alpha` (default 0.05) filled in.
+
+**What it shows:** on the pooled data, the left-edge jump at position 5 is robustly significant
+(observed 260, p=0.0010) — the "clear jump" claim holds up quantitatively. The best right-edge
+result (position 21, jump statistic) lands at p=0.0522 — right at the edge of the conventional
+threshold, matching the "more diffuse" right-edge reading almost exactly. The single strongest
+result of any group is tonosegmental's right edge at position 17 (the final vowel), on the
+*level* statistic rather than jump: observed strength 23 against a null averaging about 2,
+p=0.0004.
+
+To regenerate the table:
+```
+python scripts/analysis/boundary_strength_test.py
+```
+This reproduces the committed file exactly (5000 draws, seed 0).
+
+The charts come from the package (`plot_boundary_strength_test()`, catalogue §18) and need a
+bundle exported with the test asked for:
+```
+python scripts/analysis/export_planarsviz_data.py \
+  --domain-file domains/domains_nyan1308.tsv \
+  --planar-file planar_tables/planar_nyan1308.tsv --language-name Chichewa \
+  --boundary-strength-test-permutations 5000
+```
+The exporter calls `boundary_strength_test.py`'s own `run_test()`, so the bundle and the
+committed TSV above carry the same numbers. Like the arbitrary-layers test, this chart has no
+reference image — it was written in the package from the start, with no earlier script to port.
+
 ## How much tree structure each family leaves open
 
 ### nyan1308_refinement_counts.tsv / nyan1308_refinement_polytomies.tsv
@@ -1123,10 +1176,10 @@ kept because a porting check compares the bundle against it.
   cropping, not the cropped result) with no content difference.
 - `results/planarsviz/` — the exported bundle (`nyan1308/data/`), the frozen
   reference images the porting checks compare against (`reference/`), and the
-  comparison images those checks write (`comparisons/`, including
-  `comparisons/shifted/`). Both `reference/` and `comparisons/` are grouped
-  by topic into four subfolders — `laminar-families/`, `pooled/`,
-  `boundaries/`, `counts-and-chance/` — so a chart's images always sit next
-  to the other charts of its kind. A bundle's own `plots/` directory is
-  written but not tracked in git; the published copies are the PDFs in
-  `results/` itself.
+  comparison images those checks write (`comparisons/`). Both are grouped by
+  dataset first and then by topic — see
+  [`../docs/planarsviz_guide.md` §6](../docs/planarsviz_guide.md#6-check-a-chart)
+  for the current layout (`reference/nyan1308/<topic>/`,
+  `comparisons/shifted_nyan/shifted/` for the shifted-data comparisons). A
+  bundle's own `plots/` directory is written but not tracked in git; the
+  published copies are the PDFs in `results/` itself.
