@@ -236,3 +236,58 @@ reject a bundle marked as truncated.
   `n_positions` rows for each of `(side, statistic)` — four combinations —
   and `statistic == "jump"` rows at `position == 1` carry `observed == 0`
   (there is no position 0 to jump from).
+
+## Illustrations bundle
+
+`results/planarsviz/illustrations/` (phase E, 2026-09-22) is a different
+contract, not a variant of the one above: it is pure tree-shape
+combinatorics with no language behind it, so none of `read_planars_bundle()`'s
+required tables (spans, tests, families, ...) apply. Read with
+`read_planars_illustrations()` instead of `read_planars_bundle()`. Written by
+`scripts/analysis/export_planarsviz_illustrations.py`.
+
+```text
+data/
+├── metadata.json
+├── tree_shapes.tsv
+├── tree_count_growth.tsv
+└── random_trees.tsv
+```
+
+`tree_shapes.tsv`: `n` (leaf count), `shape_number` (1-indexed within `n`, in
+`enumerate_trees()`'s own enumeration order), `n_shapes_total` (how many
+shapes exist for that `n`, whether or not all are present as rows), `newick`,
+`height`. Exhaustive for small `n` (2–4 leaves); above that, `shape_number`
+runs 1..k for whatever sample size the exporter used, not 1..`n_shapes_total`
+— `n_shapes_total` is what tells a reader the row count is a sample, not the
+whole space.
+
+`tree_count_growth.tsv`: `n`, `catalan` (binary trees, `catalan_number()`),
+`little_schroder` (n-ary trees, OEIS A001003, `all_trees_new()`) — both from
+`scripts/exploratory/catalan.py`, both reindexed by leaf count so they share
+one x axis. Deliberately not named `tree_counts.tsv`: that name already
+belongs to the per-language bundle's own laminar-family counts (a completely
+different schema), and this project's bundles never reuse a filename for two
+different contracts.
+
+`random_trees.tsv`: `tree_number` (1-indexed), `newick` (real position
+numbers as leaves, matching whatever bundle's `n_positions` the sample was
+drawn for — `plot_random_tree_overlay()` checks this and refuses a mismatch).
+Sampled uniformly at random (a counting recurrence turned into weighted
+choices at each split, not an approximation) by `catalan.py`'s
+`sample_labeled_tree()`. `metadata.json`'s `random_trees.seed` records the
+seed that produced it, the one thing the generated-R-script version this
+bundle replaced never had — re-running the exporter with the same seed
+reproduces the table exactly (`verify_random_trees_export.py` checks this).
+
+`metadata.json`: `contract_version`, `dataset` (always `"illustrations"` —
+what tells `render_planarsviz.R` which reader to use and what to name output
+files), `tree_shapes` (which `n` values are exhaustive vs. sampled and at
+what sample size), `tree_count_growth` (`n_min`/`n_max`), `random_trees`
+(`n_trees`, `n_leaves`, `seed`).
+
+Every chart this bundle draws sets `planarsviz_folder` to `""`, not a topic
+name: the bundle has exactly one topic, itself, so a second-level folder
+would just repeat the dataset name (`render_planarsviz.R` and
+`check_renderer.py` both treat `""` as "no subfolder" for exactly this
+reason).

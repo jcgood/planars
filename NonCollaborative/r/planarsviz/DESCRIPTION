@@ -32,6 +32,7 @@ Imports:
     utils
 Suggests:
     ape,
+    cowplot,
     ggtree,
     lintr,
     styler

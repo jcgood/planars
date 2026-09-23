@@ -180,7 +180,7 @@ compares against that rather than running an older script.
   numbers, trees and selections against the old scripts' own output.
 - `scripts/planarsviz_checks/check_renderer.py <render folder>` — compares a
   full nyan1308 render with the frozen reference images.
-- `pytest tests/test_planarsviz_checks.py` — runs all 21 checks above and
+- `pytest tests/test_planarsviz_checks.py` — runs all 23 checks above and
   compares each one's output against a snapshot, so a drifted chart fails
   instead of printing a number nobody reads. About six or seven minutes.
 - `pytest tests/test_planarsviz_bundle.py tests/test_planarsviz_shifted_bundle.py`
@@ -243,9 +243,14 @@ Two things worth knowing:
 
 - **The lockfile covers more than the package's own `DESCRIPTION`.** Three of
   the archived scripts in `OlderFiles/planarsviz_superseded/` load `pacman`,
-  `here` and `tidyverse`, and one loads `ggsci`; `render_supercatalan_rows.r`
-  loads `cowplot`. The checks run those scripts, so those versions matter as
-  much as the package's own and are pinned too.
+  `here` and `tidyverse`, and one loads `ggsci`. The checks run those
+  scripts, so those versions matter as much as the package's own and are
+  pinned too. (`cowplot`, used by `plot_tree_shapes()`, is pinned for the
+  ordinary reason -- it is a real `Suggests` of the package now, not a
+  check-only dependency; the archived `render_supercatalan_rows.r` that used
+  to be the only thing loading it is not run by any check, since its port is
+  checked against a frozen reference instead — see
+  `check_illustrations.R`'s header comment for why.)
 - **`.renvignore` lists the scripts renv does not read.** They are
   hand-written files nothing runs any more, and they load packages that are
   not installed here, which renv cannot record a version for. The file says

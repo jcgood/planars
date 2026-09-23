@@ -30,7 +30,7 @@ Honesty rule: nothing below says "matches" without naming the comparison file.
   `results/visualizations.md`) was folded into C4, which rewrote that file.
 - **Phase D (the R tooling, formerly R9) is done (2026-09-22).** roxygen2
   generates `NAMESPACE` and `man/`; a drift guard catches a stale regeneration;
-  `R CMD check` on a built tarball reports `Status: OK`; the 21 porting
+  `R CMD check` on a built tarball reports `Status: OK`; the porting
   checks now fail on their own instead of only printing their numbers;
   `renv` pins the package versions every one of those numbers was produced
   with; `lintr`/`styler` are installed, configured and clean, each with its
@@ -38,8 +38,11 @@ Honesty rule: nothing below says "matches" without naming the comparison file.
   CI now runs the R-independent slice of `NonCollaborative/tests/`, which had
   never run in CI at all before this phase. `vdiffr` was considered and
   deliberately dropped; see the entry at the end of this file.
-- **Not done, deliberately deferred:** Phase E (the `illustrations` bundle —
-  question 1 has its design).
+- **Phase E (the `illustrations` bundle) is done (2026-09-22).** No generated
+  script writes into `results/` any more — see "Phase E" near the end of
+  this file. 23 porting checks now (was 21). **Seen by Jeff: no** for the
+  one genuinely new thing, the random-tree overlay's fresh (differently)
+  seeded sample.
 - **Seen by Jeff: yes, 2026-09-20 — the charts are fine.** This was the one
   outstanding item no tooling could clear, and it is now cleared. Every
   "0.0000%" in this file had been read by Claude off a check's output; Jeff
@@ -2258,3 +2261,120 @@ the pass done.
 **Phase D is now fully closed.** Every item — roxygen2, the drift guard, `R CMD check`
 reaching OK, CI, renv, and now lintr/styler — is done. Next: phase E, the `illustrations`
 bundle.
+
+---
+
+## Phase E: the illustrations bundle, and no generated script writes into `results/` any more (2026-09-22)
+
+Question 1's design (see above) built as specified: a new `results/planarsviz/illustrations/`
+bundle (`scripts/analysis/export_planarsviz_illustrations.py`), read by
+`read_planars_illustrations()` rather than `read_planars_bundle()` since it has no
+spans/tests/families to validate — it is pure tree-shape combinatorics with no language behind
+it. Three charts: `plot_tree_shapes(ref, n)`, `plot_tree_count_growth(ref, bundle = NULL)` (new —
+the old scripts only ever showed this comparison as `tree_counting_equations.tex`'s static table),
+`plot_random_tree_overlay(ref, bundle)`. All three, plus `read_planars_illustrations()`, live in
+one new file, `R/illustrations.R`.
+
+**The design note said "n-ary A007052" for the third count column; that was a stale label, not a
+third sequence.** `tree_counting_equations.tex` (the already-verified, already-typeset reference)
+defines exactly two: Catalan numbers and little Schröder numbers / OEIS A001003, the sequence
+`catalan.py`'s own module docstring already calls "n-ary ordered trees." A007052 is a genuinely
+different sequence that diverges from A001003 at n=4 (10 vs. 11) — `catalan.py`'s own comments
+document this exact confusion and flag its one attempt at computing A007052 (`OCPSplus`) as
+verified wrong. Built two columns, matching the typeset table, not three; a `catalan_number()`
+function (the closed form `C_k = C(2k,k)/(k+1)`, reindexed by leaf count) was added next to
+`all_trees_new()` since nothing computed plain Catalan numbers before.
+
+**`render_planarsviz.R` needed one real extension, not a special case:** `--positions-bundle`,
+for the one chart (`random_tree_overlay`) that needs a real language's position labels while
+everything else in the bundle needs none. Which reader to use (`read_planars_bundle()` vs.
+`read_planars_illustrations()`) is decided by whether `data/tree_shapes.tsv` exists, not a flag —
+there is no language name to put in a flag for this bundle. `chart_table()` returns early with
+just the three illustrations charts when it does.
+
+**A real design wrinkle, caught by actually running the renderer rather than reasoning about it:**
+giving every illustrations chart `planarsviz_folder <- "illustrations"` (matching every other
+chart's "name your topic folder" convention) produced `results/illustrations/illustrations/...` —
+correct by the letter of the per-language-folder-layer rule, but redundant, since this bundle's
+`dataset` is *also* `"illustrations"` (it has exactly one topic: itself). Fixed by letting
+`planarsviz_folder` be `""`, and teaching `render_planarsviz.R` that `""` means "no second-level
+folder" — a general rule, not an illustrations-specific carve-out, so any future single-topic
+dataset gets the same flat treatment for free.
+
+**Absorbed, not just added: two standalone script pairs retired, one of them mid-refactor.**
+`generate_supercatalan_rows.py` + `render_supercatalan_rows.r` (wrote `supercatalan_trees_n2.pdf`
+.. `_n5_sample15.pdf`) are archived once `plot_tree_shapes()` matched them at 0.0000% differing
+pixels — checked against the *pre-`pdfcrop`* raw PDF `render_supercatalan_rows.r` itself produces,
+since the old pipeline's final step trimmed each row's whitespace with an external `pdfcrop` call
+this package doesn't replicate for any chart (the published files are consequently a few percent
+larger than the old ones, with identical tree drawings — see `check_illustrations.R`'s header for
+the full account). `scripts/analysis/random_tree_overlay.py` (wrote the 2200-line generated
+`nyan1308_random_tree_overlay.r`) is archived too, but its sampler
+(`sample_tree`/`sample_forest`/`sample_labeled_tree`/`to_newick`) moved into `catalan.py` *first*,
+since `export_planarsviz_illustrations.py` calls it directly — only the script's own job, hand-
+writing a full R file from a sample, was actually retired. **No generated `.r` script writes into
+`results/` any more**, closing the one case cutover step C2 had explicitly left open
+(`nyan1308_random_tree_overlay.r`, "never ported, being a random sample rather than a fixed chart").
+
+**The random sample itself changed for a real reason, not by accident: it now has a recorded
+seed.** The script it replaced sampled 200 trees and pasted their Newick strings straight into the
+generated `.r` file with no seed anywhere, so that exact sample could never be reproduced or
+re-checked — only ever looked at again. `--seed` (default `0`) fixes this;
+`metadata.json`'s `random_trees.seed` records it, and `verify_random_trees_export.py` confirms
+re-running the exporter with that seed reproduces `random_trees.tsv` exactly. This means the newly
+published `illustrations_random_tree_overlay.pdf` is a *different* 200 trees than the file it
+replaced — there was nothing to reproduce — drawn by the same, still-uniform sampler.
+
+**What proves the deterministic two-thirds of this correct:** `verify_tree_shapes_export.py`
+recomputes every `tree_shapes.tsv`/`tree_count_growth.tsv` value directly from `catalan.py` and
+compares row for row (all match). `check_illustrations.R` pixel-compares `plot_tree_shapes()` and
+`plot_tree_count_growth()` against frozen references at 0.0000%. `check_renderer.py`'s generic,
+dataset-derived logic — built for the per-language folder layer, not for this — worked on this
+brand-new dataset with no changes at all, which is exactly what building it generically was for.
+
+**What the random third can't be proven the same way, and isn't:** `verify_random_trees_export.py`
+checks the sample is well-formed (every tree has exactly the right leaves, once each) and
+reproduces from its seed; nothing can or should check that a fresh random sample "looks like" a
+specific frozen image, since looking different from the last sample is the entire content of the
+chart. `results/planarsviz/reference/illustrations/illustrations_random_tree_overlay.png` is
+frozen the same way every other chart's reference is (so a future code change to the *drawing*
+still gets caught), but a human still needs to look at it once — recorded here as **Seen by Jeff:
+no** — the same status every other absorbed chart in this project started from.
+
+**One filename decision, made and not reopened:** `nyan1308_random_tree_overlay.pdf` becomes
+`illustrations_random_tree_overlay.pdf`, and `supercatalan_trees_n2.pdf` etc. become
+`illustrations_tree_shapes_n2.pdf` etc. Old files are deleted rather than kept, matching how C1
+handled the `_wordhood` → `_orthographic_word` rename: the new names don't collide with anything,
+so there's no "old file this lands on top of" the way most of this project's absorptions had.
+Reasoning: these three charts have no language behind them (the overlay's *positions* are real,
+its *sample* is not), so a `nyan1308_` prefix on two of the three was already slightly misleading,
+and giving all three the same `illustrations_` prefix as the dataset that owns them is more
+honest, not less consistent, with the "prefix names the dataset" rule the per-language folder
+layer just finished establishing.
+
+**23 porting checks now, not 21** — `check_illustrations.R`, `verify_random_trees_export.py`,
+`verify_tree_shapes_export.py` are new; wired into `tests/test_planarsviz_checks.py`'s
+`R_CHECKS`/`PYTHON_CHECKS` lists (these are hand-maintained, not auto-discovered — check both
+when adding a check). A CI-safe (`not needs_r`) regression test,
+`test_planarsviz_illustrations_bundle.py`, pins the committed bundle's row counts, a few known
+Catalan/little-Schröder values, and the recorded seed/leaf-count — mirroring
+`test_planarsviz_bundle.py`'s existing nyan1308 coverage, so a bundle regeneration that silently
+changes a number fails even without R installed.
+
+**Docs touched, beyond the code:** `results/visualizations.md`'s two relevant sections rewritten
+(mechanism, absorption, the `pdfcrop` difference, the seed story) rather than left describing
+scripts that no longer run; `docs/planarsviz_charts.md` gained catalogue section 17 (three
+subsections) plus three new example images and a "Name changes" table entry;
+`r/planarsviz/inst/data-contract.md` gained an "Illustrations bundle" section describing the
+different (simpler) contract; `scripts/INDEX.md` and `CLAUDE.md` updated wherever they named the
+now-archived scripts or the now-stale "one generated script left" claim; `OlderFiles/
+planarsviz_superseded/README.md` gained a "Phase E" section for the three newly-archived files.
+
+- Looked at by Claude: yes — the Catalan/A007052 question resolved by reading the already-typeset,
+  already-verified `.tex` file rather than trusting the design note's label; `catalan_number()`
+  checked against the known sequence (1, 1, 2, 5, 14, 42, 132, ...) before use; the
+  double-`illustrations` folder bug caught by actually rendering rather than reasoning about the
+  path logic; all six charts' canvas sizes and pixel percentages read from real check output;
+  `random_trees.tsv`'s leaf-extraction regex in `verify_random_trees_export.py` initially wrong
+  (matched digits inside span labels, not just leaves) and caught by the check itself failing
+  before being trusted. Seen by Jeff: no.

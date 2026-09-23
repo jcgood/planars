@@ -30,6 +30,7 @@ Contents: [Pooled plots](#1-pooled-plots) ·
 [Fragmentation test](#14-fragmentation-test) ·
 [Span placement](#15-span-placement-test) ·
 [Arbitrary layers](#16-arbitrary-layers-test) ·
+[Illustrations](#17-illustrations) ·
 [Name changes](#name-changes-for-cutover)
 
 ---
@@ -568,6 +569,92 @@ and a bundle test that fails if the null was truncated.
 
 ---
 
+## 17. Illustrations
+
+The one bundle with no language behind it (phase E, 2026-09-22): pure
+tree-shape combinatorics, kept separate because the library's rule is
+"Python computes, R draws from a data folder," and these have data, just no
+language. Setup differs from every chart above:
+
+```r
+ref <- read_planars_illustrations("results/planarsviz/illustrations")
+bundle <- read_planars_bundle("results/planarsviz/nyan1308")  # for 17b/17c only
+```
+
+### 17a. Tree shapes
+
+One row of every (or a sample of) the n-ary tree shapes with a given leaf
+count.
+
+![Tree shapes, n=4](planarsviz_charts/tree_shapes_n4.png)
+
+```r
+plot_tree_shapes(ref, 4)
+```
+
+| Option | Meaning |
+|---|---|
+| `n` | Leaf count — one of `tree_shapes.tsv`'s `n` values (2–5 by default: 2, 3 and 4 exhaustive; 5 a 15-of-45 sample). |
+
+Canvas varies with `n` and the row's tree count (a fixed 0.9 in tall; width
+scales with leaf count and how many trees are in the row). Renderer names
+`tree_shapes_n2` .. `tree_shapes_n5`; old files
+`supercatalan_trees_n2.pdf` .. `_n5_sample15.pdf`.
+
+### 17b. Tree-shape count growth
+
+Catalan numbers (binary trees) and little Schröder numbers (n-ary trees,
+OEIS A001003) against leaf count, log scale — how fast the tree space grows.
+A new chart: the old scripts only ever showed this as
+`tree_counting_equations.tex`'s static table.
+
+![Tree-shape count growth](planarsviz_charts/tree_count_growth.png)
+
+```r
+plot_tree_count_growth(ref, bundle)
+```
+
+| Option | Meaning |
+|---|---|
+| `bundle` | A language bundle, for a dotted reference line at its `n_maximal_families` — omit (`NULL`, the default) for the two series with no reference line. |
+
+Canvas 7 × 5 in. Renderer name `tree_count_growth`; no old file (new chart).
+
+### 17c. Random tree overlay
+
+Many uniformly-random n-ary tree shapes over a language's real positions,
+stacked as faint ghost trees onto one panel — how vast the tree space is next
+to the handful of laminar families actually observed. Reuses chart 5's
+"stack N ghost trees on one patchwork cell" mechanism, minus the
+span/strength colouring: there is no target span to highlight in a purely
+combinatorial sample, so every edge is the same fixed alpha.
+
+![Random tree overlay](planarsviz_charts/random_tree_overlay.png)
+
+```r
+plot_random_tree_overlay(ref, bundle)
+```
+
+| Option | Meaning |
+|---|---|
+| `alpha` | Per-tree edge opacity. Default `0.02`. |
+
+Canvas 16 × 10 in. Renderer name `random_tree_overlay`; old file
+`nyan1308_random_tree_overlay.pdf` (see "Name changes" below — the new file
+drops the language prefix, since this chart's *sample* isn't nyan1308's
+data, only its positions).
+
+**No reference image proves this one draws correctly, and none can.** A
+fresh random sample is supposed to look different from the last — that is
+the entire content of the chart. What is checked instead: the sample is a
+well-formed tree over exactly the right leaves
+(`verify_random_trees_export.py`), and re-running the exporter with the same
+recorded seed reproduces it exactly. `metadata.json`'s `random_trees.seed`
+is what makes that possible at all — the script this replaced never
+recorded one.
+
+---
+
 ## Name changes for cutover
 
 Renderer output is `<dataset>_<renderer name>.pdf`, which equals the old
@@ -577,3 +664,5 @@ file name for every chart except:
 |---|---|---|
 | `nyan1308_all_families_labeled_wordhood.pdf` | `nyan1308_all_families_labeled_orthographic_word.pdf` | The name comes from the highlight id in the data. |
 | `nyan1308_all_families_labeled_wordhood_legend.pdf` | `nyan1308_all_families_labeled_orthographic_word_legend.pdf` | Same. |
+| `nyan1308_random_tree_overlay.pdf` | `illustrations_random_tree_overlay.pdf` | Belongs to the `illustrations` dataset now, not `nyan1308` — its sample isn't this language's data, only its positions. |
+| `supercatalan_trees_n2.pdf` .. `_n5_sample15.pdf` | `illustrations_tree_shapes_n2.pdf` .. `_n5.pdf` | Same reason; the `_sample15` suffix moved into `docs/PLANARSVIZ_LIBRARY_PROGRESS.md`'s own record rather than the filename. |

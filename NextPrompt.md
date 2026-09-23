@@ -27,24 +27,23 @@ matters for the exporter specifically: it records the domain file's path as
 given, so running it from the repo root writes a bundle that differs from the
 committed one in that field.
 
-### Next action: Phase E, the `illustrations` bundle
+### Next action: none planned — the planarsviz library rebuild (phases B–E) is done
 
-Phase D is fully closed (2026-09-22) — the per-language folder layer and
-`lintr`/`styler` (installed, configured, both with a pre-push drift guard)
-were its last two items; see the two entries at the end of the progress doc.
+Phase E (the `illustrations` bundle) closed 2026-09-22 — see "Phase E" near
+the end of the progress doc for what built and how it was verified. No
+generated `.r` script writes into `results/` any more; that was the last
+open item from cutover.
 
-Phase E's design was settled under question 1 in the progress doc (search
-for "Phase E" there): a new `results/planarsviz/illustrations/` bundle,
-written by a new `scripts/analysis/export_planarsviz_illustrations.py` that
-reuses the enumerator in `generate_supercatalan_rows.py`, holding
-`tree_shapes.tsv`, `tree_counts.tsv` (Catalan / little Schröder A001003 /
-n-ary A007052) and a `metadata.json`. Two new R chart functions,
-`plot_tree_shapes(ref, n)` and `plot_tree_count_growth(ref)`. Two existing
-files fold in: `tree_counting_equations.pdf` stays LaTeX (typeset maths, not
-a chart) but gets documented as part of this family, and
-`results/illustrations/nyan1308_random_tree_overlay.r` — the one generated R
-script still sitting unabsorbed in `results/` — gets ported, recording its
-random seed so it's reproducible rather than a one-off sample.
+**One real thing still wants Jeff's eyes, not just Claude's**: the new
+`illustrations_random_tree_overlay.pdf` is a *freshly seeded* random sample
+(the old file had no seed, so nothing to reproduce) — recorded as "Seen by
+Jeff: no" in the progress doc. Worth a look before calling this fully closed.
+
+No phase F is defined anywhere in `docs/PLAN_planarsviz_library.md` or the
+progress doc. If a fresh session lands here with nothing more specific in
+mind, the honest move is to ask Jeff what's next for `NonCollaborative/`
+rather than inventing a phase — this file's job is to say what's known, not
+to manufacture a next step where none exists yet.
 
 ### Things that will bite
 

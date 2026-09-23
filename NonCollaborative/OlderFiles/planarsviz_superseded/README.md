@@ -106,11 +106,42 @@ Until it was archived, it and the package both wrote
 anywhere recorded which. That is this project's own core diagnosis in
 miniature: one fact in two places with no owner.
 
-## Not here
+## Phase E: the illustrations bundle (2026-09-22)
 
-`results/nyan1308_random_tree_overlay.r` stays in `results/`: it was never
-ported, being a random sample rather than a fixed chart, and is scheduled for
-the `illustrations` bundle in Phase E.
+Three more archived, all under `scripts/` this time rather than `results/`,
+since none of them ever wrote a generated script *into* `results/` the way
+the C2 batch did -- they wrote finished PDFs (and, for the third, a
+generated `.r` file that drew one) straight there themselves:
+
+- `scripts/exploratory/generate_supercatalan_rows.py` and
+  `scripts/exploratory/render_supercatalan_rows.r` — wrote
+  `supercatalan_trees_n2.pdf` .. `_n5_sample15.pdf` (a Python enumerator
+  feeding an R renderer, not a single-language script like everything else
+  here). Superseded by `plot_tree_shapes()`, checked against these two at
+  0.0000% differing pixels before they were archived — see
+  `scripts/planarsviz_checks/check_illustrations.R`'s header comment for why
+  that check compares against a frozen reference rather than re-running
+  these live. `supercatalan_trees.json`, the intermediate file
+  `generate_supercatalan_rows.py` wrote for the R side to read, is archived
+  alongside it for the same reason the scripts themselves are: without it,
+  `render_supercatalan_rows.r` can no longer be evaluated at all.
+- `scripts/analysis/random_tree_overlay.py` — wrote
+  `nyan1308_random_tree_overlay.r`, a 2200-line generated R file (one
+  hand-templated block per sampled tree), and the PDF it drew. Superseded by
+  `plot_random_tree_overlay()`; its sampler (`sample_tree`, `sample_forest`,
+  `sample_labeled_tree`, `to_newick`) moved to `catalan.py` first, since that
+  logic is still live -- `scripts/analysis/export_planarsviz_illustrations.py`
+  calls it directly -- only this script's job of hand-writing a full R file
+  from the sample was retired.
+
+`results/illustrations/nyan1308_random_tree_overlay.r` and `.pdf`, and
+`supercatalan_trees_n2.pdf` .. `_n5_sample15.pdf`, are deleted rather than
+kept: their replacements (`illustrations_tree_shapes_n2.pdf` etc.,
+`illustrations_random_tree_overlay.pdf`) have different names, so there was
+no existing file for the new ones to land on top of the way most of this
+archive's charts did in C1.
+
+## Not here
 
 The older hand-written R in `../../scripts/` (`constituencyforest-all.r` and
 its siblings) predates the laminar-family pipeline entirely. It was not

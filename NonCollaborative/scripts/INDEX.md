@@ -194,15 +194,17 @@ with `groups` for the two-bundle variant — from a bundle exported with
   out). Imported by `laminar_analysis.py`, `laminar_tree_counts.py`,
   `class_fragmentation_test.py` and the exporter. Not runnable on its own.
 
-**`analysis/random_tree_overlay.py`**
-- **Purpose**: A ghost overlay of randomly sampled n-ary trees over 22
-  positions, showing how vast the tree space is next to the 69 families the
-  data actually allows. Illustration, not analysis.
-- **Output**: `results/illustrations/nyan1308_random_tree_overlay.r` and its PDF — the one
-  generated R script still in `results/`. Never ported to the package
-  (it samples rather than drawing a fixed chart); scheduled for phase E.
-- **Example**: `python scripts/analysis/random_tree_overlay.py` (`--n-trees`,
-  `--n-leaves`, `--alpha`, `--seed`, `--r-only`)
+**`analysis/export_planarsviz_illustrations.py`**
+- **Purpose**: Writes the `illustrations` bundle — the one `planarsviz`
+  bundle with no language behind it (phase E, 2026-09-22): every (or a
+  sample of) n-ary tree shape for small leaf counts, Catalan/little Schröder
+  count growth, and a uniformly-random tree sample for the ghost-overlay
+  chart. Reuses `catalan.py`'s enumeration and sampling directly rather than
+  re-deriving either.
+- **Output**: `results/planarsviz/illustrations/data/tree_shapes.tsv`,
+  `tree_count_growth.tsv`, `random_trees.tsv`, `metadata.json`.
+- **Example**: `python scripts/analysis/export_planarsviz_illustrations.py`
+  (`--seed`, `--n-random-trees`, `--n-leaves`, `--tree-counts-max-n`)
 
 **`analysis/arbitrary_layers_test.py`**
 - **Purpose**: the third and weakest of the project's three permutation
@@ -257,7 +259,7 @@ with `groups` for the two-bundle variant — from a bundle exported with
 
 ## Porting checks
 
-**`planarsviz_checks/`** — twenty-one checks (thirteen in R, eight in Python) that
+**`planarsviz_checks/`** — twenty-three checks (fourteen in R, nine in Python) that
 prove the `planarsviz` package draws what the old scripts drew, and that the
 bundle carries the same numbers the Python analysis produces. Each runs on its
 own and says what it checked:
@@ -341,26 +343,25 @@ against the chart that chart's own R script drew, frozen as a reference.
 - **Note**: Kept for historical reference; do not use for new work
 
 **`exploratory/catalan.py`**
-- **Purpose**: Enumerates all binary tree structures (Catalan number generator)
-- **Status**: Exploratory; used to understand theoretical maximum tree count
-- **Note**: Has bugs in enumeration logic (see project memory)
+- **Purpose**: Live, actively-used counting/enumeration/sampling for n-ary
+  ordered trees (each internal node ≥2 children): `all_trees_new()` (OEIS
+  A001003, little Schröder numbers — the correct sequence for this, verified
+  against `results/nyan1308/counts-and-chance/tree_counting_equations.tex`'s
+  closed form and recurrence), `catalan_number()` (binary trees, reindexed by
+  leaf count), `enumerate_trees()` (exhaustive, small n only), and the
+  uniform sampler `sample_tree()`/`sample_forest()`/`sample_labeled_tree()`
+  (moved here 2026-09-22 from the now-archived
+  `analysis/random_tree_overlay.py`, whose only remaining job — writing a
+  generated `.r` file — the `illustrations` bundle replaced). Imported
+  directly by `analysis/export_planarsviz_illustrations.py`.
+- **Note**: `all_trees_old()` and `OCPSplus()` are kept on purpose as
+  documented-broken comparisons (see their own docstrings for the exact
+  bugs), not live code — everything else in this file is correct and used.
 
 **`exploratory/catalan_old.py`**
 - **Purpose**: Earlier version of Catalan enumeration
 - **Status**: Archive
 - **Note**: Superseded by current catalan.py
-
-**`exploratory/generate_supercatalan_rows.py`** + **`render_supercatalan_rows.r`**
-- **Purpose**: Draw every distinct n-ary tree shape over 2, 3 and 4 leaves,
-  and 15 of the 45 over 5 leaves — one PDF per row, illustrations for the
-  counting discussion in `REFERENCES.md`
-- **Output**: `results/illustrations/supercatalan_trees_n2.pdf` … `_n5_sample15.pdf`, and
-  `exploratory/supercatalan_trees.json`, the shapes the renderer reads
-- **Example**: `python scripts/exploratory/generate_supercatalan_rows.py --pdf`
-  — it launches the R renderer and `pdfcrop` itself. Don't run the `.r` file
-  directly: it reads the JSON from the working directory, so it only works
-  from `scripts/exploratory/`, which is where the Python script puts it.
-- **Status**: scheduled to move into the `illustrations` bundle in phase E
 
 ## Where the charts went
 
@@ -374,9 +375,12 @@ sitting in `results/` beside the PDFs, written by generator functions in
 - The generators are gone from `laminar_analysis.py` (cutover step C3), as is
   the matplotlib plotting that was in `laminar_tree_counts.py` and
   `boundary_strength.py`.
-- `results/illustrations/nyan1308_random_tree_overlay.r` is the one generated R script
-  still in `results/`: it draws a random sample rather than a fixed chart, was
-  never ported, and is scheduled for phase E.
+- Phase E (2026-09-22) absorbed the last three generated-script cases:
+  `generate_supercatalan_rows.py` + `render_supercatalan_rows.r` (the
+  tree-shape rows) and `analysis/random_tree_overlay.py` (the random-sample
+  overlay, the one generated R script that had been sitting in `results/`
+  the whole time, since it was never a fixed chart to port until its sample
+  got a recorded seed). No generated script writes into `results/` any more.
 - `planarsviz_checks/` holds the porting checks — the R ones reach the archive
   through `superseded.R`, the Python ones through `superseded.py`.
 

@@ -42,9 +42,19 @@
 # File names differ from the old results/ files in one place: highlight
 # variants are named after the highlight id (all_families_labeled_orthographic_word),
 # not "wordhood", because the name has to come from the data.
+#
+# --bundle can also be the illustrations bundle (results/planarsviz/illustrations),
+# detected by the presence of data/tree_shapes.tsv rather than a flag, since
+# that bundle has no language behind it to name one. Its random-tree overlay
+# needs a real language's position labels, which is what --positions-bundle
+# is for (any ordinary --bundle path); the tree-shape and tree-count-growth
+# charts don't need it and are still listed without it.
+#   Rscript scripts/render_planarsviz.R --bundle results/planarsviz/illustrations \
+#     --positions-bundle results/planarsviz/nyan1308 --output results
 
 parse_args <- function(args) {
-  out <- list(bundle = NULL, output = NULL, plots = "all", formats = "pdf", list = FALSE)
+  out <- list(bundle = NULL, positions_bundle = NULL, output = NULL, plots = "all",
+              formats = "pdf", list = FALSE)
   i <- 1
   while (i <= length(args)) {
     key <- args[[i]]
@@ -53,6 +63,7 @@ parse_args <- function(args) {
     value <- args[[i + 1]]
     switch(key,
       "--bundle" = out$bundle <- value,
+      "--positions-bundle" = out$positions_bundle <- value,
       "--output" = out$output <- value,
       "--plots" = out$plots <- value,
       "--formats" = out$formats <- value,
@@ -78,8 +89,15 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 
-bundle <- read_planars_bundle(opts$bundle)
+# The illustrations bundle has no spans/tests/families -- read_planars_bundle()
+# would just fail its validation on it -- so which reader to use is decided by
+# what the bundle actually contains, not a flag naming a language that doesn't
+# exist for it.
+is_illustrations <- file.exists(file.path(opts$bundle, "data", "tree_shapes.tsv")) ||
+  file.exists(file.path(opts$bundle, "tree_shapes.tsv"))
+bundle <- if (is_illustrations) read_planars_illustrations(opts$bundle) else read_planars_bundle(opts$bundle)
 dataset <- bundle$metadata$dataset
+positions_bundle <- if (!is.null(opts$positions_bundle)) read_planars_bundle(opts$positions_bundle) else NULL
 data_dir <- file.path(bundle$bundle_dir, "data")
 read_json <- function(name) jsonlite::read_json(file.path(data_dir, name), simplifyVector = FALSE)
 read_tsv <- function(name) {
@@ -90,6 +108,20 @@ read_tsv <- function(name) {
 chart_table <- function() {
   charts <- list()
   add <- function(name, make) charts[[name]] <<- make
+
+  if (is_illustrations) {
+    for (n in sort(unique(bundle$tree_shapes$n))) {
+      local({
+        nn <- n
+        add(paste0("tree_shapes_n", nn), function() plot_tree_shapes(bundle, nn))
+      })
+    }
+    add("tree_count_growth", function() plot_tree_count_growth(bundle, positions_bundle))
+    if (!is.null(positions_bundle)) {
+      add("random_tree_overlay", function() plot_random_tree_overlay(bundle, positions_bundle))
+    }
+    return(charts)
+  }
 
   types <- sort(unique(trimws(bundle$tests$Domain_Type)))
   add("pooled_plot", function() plot_pooled(bundle))
@@ -278,9 +310,12 @@ for (name in wanted) {
     if (is.null(size) || is.null(units)) stop("chart function returned no canvas size")
     # Each chart says which topic folder it belongs in, the same way it says
     # how big its canvas is, so there is no second table here to drift.
+    # "" (the illustrations bundle's charts) means no second-level folder --
+    # that bundle has exactly one topic, itself, so nesting one more level
+    # would just repeat the dataset name.
     folder <- attr(p, "planarsviz_folder")
     if (is.null(folder)) stop("chart function returned no folder")
-    dest <- file.path(output, dataset, folder)
+    dest <- if (nzchar(folder)) file.path(output, dataset, folder) else file.path(output, dataset)
     dir.create(dest, recursive = TRUE, showWarnings = FALSE)
     pdf_path <- file.path(dest, paste0(base, ".pdf"))
     suppressMessages(suppressWarnings(ggplot2::ggsave(pdf_path, p, device = "pdf", width = size[["width"]],
@@ -292,7 +327,8 @@ for (name in wanted) {
       files <- c(files, paste0(stem, ".png"))
       if (!"pdf" %in% formats) unlink(pdf_path)
     }
-    data.frame(chart = name, file = file.path(dataset, folder, basename(files)), width = size[["width"]],
+    manifest_file <- if (nzchar(folder)) file.path(dataset, folder, basename(files)) else file.path(dataset, basename(files))
+    data.frame(chart = name, file = manifest_file, width = size[["width"]],
                height = size[["height"]], units = units)
   }, error = function(e) {
     failed <<- c(failed, name)

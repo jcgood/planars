@@ -45,6 +45,22 @@ def all_trees_new(n):
     return sum(all_trees_new(j) * _ordered_forests(n - j) for j in range(1, n))
 
 
+def catalan_number(n_leaves):
+    """Count rooted ordered *binary* trees with `n_leaves` leaves (every internal
+    node exactly 2 children) -- the standard Catalan numbers, reindexed by leaf
+    count rather than the usual C_k index so they line up on the same x axis as
+    all_trees_new(n)'s n-ary trees when both are plotted against n_leaves.
+
+    C_k = (1/(k+1)) * C(2k, k), with k = n_leaves - 1 (a tree with n_leaves
+    leaves has n_leaves - 1 internal nodes). Values (n_leaves = 1, 2, 3, ...):
+    1, 1, 2, 5, 14, 42, 132, ... Closed form and this indexing convention both
+    verified against results/nyan1308/counts-and-chance/tree_counting_equations.tex
+    before this function existed; see that file for the derivation.
+    """
+    k = n_leaves - 1
+    return math.comb(2 * k, k) // (k + 1)
+
+
 # ── Enumeration ───────────────────────────────────────────────────────────────
 
 def _build_forests(lo, hi):
@@ -80,6 +96,73 @@ def enumerate_trees(n):
     Example for n=3: [1, 2, 3], [[1, 2], 3], [1, [2, 3]]
     """
     return _build_trees(1, n)
+
+
+# ── Uniform random sampling ───────────────────────────────────────────────────
+#
+# Moved here from scripts/analysis/random_tree_overlay.py (2026-09-22, phase E
+# of docs/PLANARSVIZ_LIBRARY_PROGRESS.md) when that script's own job -- writing
+# a generated .r file -- was absorbed into the planarsviz package, leaving
+# these as the one thing still worth calling directly. Enumeration
+# (enumerate_trees above) is exhaustive and only feasible for small n; for
+# n=22 (a real language's position count) all_trees_new(22) is far too large
+# to enumerate, so a tree is drawn directly by weighted random choices at each
+# split -- the standard trick for turning a counting recurrence into an
+# exactly uniform sampler, not an approximation.
+
+def _weighted_choice(options, weights, rng):
+    return rng.choices(options, weights=weights, k=1)[0]
+
+
+def sample_forest(n, rng):
+    """A uniformly random ordered sequence of >=1 trees covering n leaves total."""
+    if n == 0:
+        return []
+    # Matches _ordered_forests(n)'s own recurrence term-for-term, so weighting a
+    # choice of j by all_trees_new(j) * _ordered_forests(n - j) samples exactly
+    # proportional to how many completions each choice contributes.
+    options = list(range(1, n + 1))
+    weights = [all_trees_new(j) * _ordered_forests(n - j) for j in options]
+    j = _weighted_choice(options, weights, rng)
+    return [sample_tree(j, rng)] + sample_forest(n - j, rng)
+
+
+def sample_tree(n, rng):
+    """A uniformly random rooted ordered tree with n leaves (each internal node >=2 children)."""
+    if n == 1:
+        return 1  # placeholder leaf value; real position numbers assigned after sampling
+    options = list(range(1, n))
+    weights = [all_trees_new(j) * _ordered_forests(n - j) for j in options]
+    j = _weighted_choice(options, weights, rng)
+    return [sample_tree(j, rng)] + sample_forest(n - j, rng)
+
+
+def _label_leaves(tree, counter):
+    """Replace placeholder leaf values with sequential position numbers 1..n, left to right."""
+    if isinstance(tree, int):
+        counter[0] += 1
+        return counter[0]
+    return [_label_leaves(c, counter) for c in tree]
+
+
+def sample_labeled_tree(n_leaves, rng):
+    """A uniformly random tree with leaves labeled 1..n_leaves, left to right."""
+    tree = sample_tree(n_leaves, rng)
+    return _label_leaves(tree, [0])
+
+
+def to_newick(tree, leaf_labels=None):
+    """Newick string with internal node label = "L-R" span (numeric -- not
+    displayed anywhere, just structural bookkeeping matching the convention
+    the archived laminar_conflict_groups.r used) and leaf = leaf_labels[position-1]
+    if given, else the bare position number. leftmost/rightmost are always
+    computed from the underlying position number regardless of what text a
+    leaf displays, so swapping in name labels doesn't disturb the span
+    bookkeeping."""
+    if isinstance(tree, int):
+        return leaf_labels[tree - 1] if leaf_labels else str(tree)
+    inner = ",".join(to_newick(c, leaf_labels) for c in tree)
+    return "(%s)%d-%d" % (inner, _leftmost(tree), _rightmost(tree))
 
 
 # ── Rendering helpers ─────────────────────────────────────────────────────────

@@ -85,6 +85,7 @@ R_CHECKS = [
     "check_forests.R",
     "check_forestspans.R",
     "check_fragmentation.R",
+    "check_illustrations.R",
     "check_overlays.R",
     "check_pooled.R",
     "check_skyline.R",
@@ -99,8 +100,10 @@ PYTHON_CHECKS = [
     "verify_forest_export.py",
     "verify_forestspans_export.py",
     "verify_overlay_export.py",
+    "verify_random_trees_export.py",
     "verify_selection_export.py",
     "verify_tree_counts_export.py",
+    "verify_tree_shapes_export.py",
 ]
 
 
