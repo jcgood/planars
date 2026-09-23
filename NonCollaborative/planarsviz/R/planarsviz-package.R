@@ -12,7 +12,7 @@
 #' @importFrom dplyr arrange cur_group_id desc filter group_by mutate n_distinct ungroup
 #' @importFrom grid unit
 #' @importFrom magrittr %>%
-#' @importFrom patchwork plot_annotation plot_layout
+#' @importFrom patchwork plot_annotation plot_layout plot_spacer
 #' @importFrom stats na.omit reorder
 #' @importFrom stringr str_to_title
 #' @importFrom tidyr pivot_longer

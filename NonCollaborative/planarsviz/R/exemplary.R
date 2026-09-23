@@ -20,7 +20,9 @@
 #   - canvas sizes computed with the generator's formulas: evidence height
 #     max(7, tests x 0.7) cm rounded to 2 places, print page 51 + 25 cm wide,
 #     slide tree 13.333 x 7.5 in -- every width then widened for structures
-#     with more than 22 positions (planarsviz_position_scale(), R/labels.R);
+#     with more than 22 positions (planarsviz_position_scale(), R/labels.R),
+#     and the print page given a minimum height of 0.28 x the tree's width
+#     (see plot_exemplary_tree());
 #   - library(), source() and ggsave() removed.
 
 # One family's tree, drawn solid with a boxed "N\nName" label at every tip.
@@ -148,9 +150,23 @@ plot_exemplary_tree <- function(bundle, rank = 1L, view = c("page", "slide_tree"
     return(ex_plot1)
   }
   ex_tp1 <- planarsviz_exemplary_tree(bundle, family_id)
-  ex_page1 <- (ex_tp1 | ex_plot1) +
+  # The page's height comes from the evidence panel (0.7 cm per test), which
+  # suits nyan1308, whose families each rest on 21-60 tests. A family resting
+  # on few tests would squash its tree into a strip, so the tree gets a
+  # minimum height of 0.28 x its width -- just under nyan1308's flattest page
+  # (14.7 cm on a 51 cm tree, 0.29), so none of its pages changes. When the
+  # minimum applies, the evidence panel keeps its own height, centred beside
+  # the taller tree, rather than stretching its rows.
+  page_height_cm <- max(pooled_height_cm, round(0.28 * tree_width_cm, 2))
+  evidence <- if (page_height_cm > pooled_height_cm) {
+    pad <- (page_height_cm - pooled_height_cm) / 2
+    plot_spacer() / ex_plot1 / plot_spacer() + plot_layout(heights = c(pad, pooled_height_cm, pad))
+  } else {
+    ex_plot1
+  }
+  ex_page1 <- (ex_tp1 | evidence) +
     plot_layout(widths = c(tree_width_cm, pooled_width_cm))
-  attr(ex_page1, "planarsviz_size") <- c(width = round(tree_width_cm + pooled_width_cm, 1), height = pooled_height_cm)
+  attr(ex_page1, "planarsviz_size") <- c(width = round(tree_width_cm + pooled_width_cm, 1), height = page_height_cm)
   attr(ex_page1, "planarsviz_units") <- "cm"
   attr(ex_page1, "planarsviz_folder") <- "laminar-families"
   attr(ex_page1, "planarsviz_parts") <- list(tree = ex_tp1, evidence = ex_plot1)

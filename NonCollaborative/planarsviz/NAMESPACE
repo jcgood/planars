@@ -64,7 +64,8 @@ importFrom(grid,unit)
 importFrom(magrittr,"%>%")
 importFrom(patchwork,
   plot_annotation,
-  plot_layout
+  plot_layout,
+  plot_spacer
 )
 importFrom(stats,
   na.omit,

@@ -13,9 +13,10 @@ plan says what and why. Update it at every step boundary, in the same commit.
 - **Steps 2.2–2.4: done** (this commit; a Sonnet agent from the brief below,
   then reviewed). Details under "Steps 2.2–2.4 as built".
 - **Step 3: in progress (2026-09-23).** `chac1251_verbal` exported and
-  rendered, 91 of 91 charts; five display problems found and fixed (see
-  "Step 3 findings"). Next: Jeff looks through its charts in
-  `results/chac1251_verbal/`, then step 3a (one command for one language).
+  rendered, 91 of 91 charts; six display problems found and fixed (see
+  "Step 3 findings"). Jeff looked through the charts: good apart from the
+  squashed exemplary trees, now fixed.
+- **Step 3a: next** — one command for one language.
 - Steps 4–5: not started.
 - Resolved: `results/planarsviz/` held data bundles and reference images, not
   code, and its name suggested otherwise (Jeff, 2026-09-23). Renamed/split
@@ -215,6 +216,13 @@ tutorial, so it records the real route, detours included.
 - **Fixed: `forestspans_plot` inset legend covered span 3.** New default
   `legend_position = "auto"`: inset when no span in the bottom quarter of
   rows starts in the leftmost fifth of the axis, beside the panel otherwise.
+- **Fixed: squashed exemplary trees** (Jeff, 2026-09-23, e.g.
+  `exemplary_trees_3`). The print page's height came only from the evidence
+  panel (0.7 cm per test), which suits nyan1308's families (21–60 tests) but
+  gave Chácobo's (about 15) a 10.5 cm page 97 cm wide. The tree now has a
+  minimum height of 0.28 × its width, just under nyan1308's flattest page
+  (0.29), and when that applies the evidence panel keeps its own height,
+  centred beside the tree (Jeff's choice over stretching its rows).
 - Each fix leaves nyan1308's 137 charts identical (renderer check, run after
   each).
 - Fine as drawn: spanchart, boundary_strength, the permutation-test grids,

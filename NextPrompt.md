@@ -30,11 +30,11 @@ matters for the exporter specifically: it records the domain file's path as
 given, so running it from the repo root writes a bundle that differs from the
 committed one in that field.
 
-### Next action: the CCDB plan's step 3
+### Next action: the CCDB plan's step 3a
 
-Export and render every CCDB structure, starting with `chac1251_verbal`
-(`--groupings ccdb --root-position 8`); the progress doc's "Likely trouble
-in step 3" lists what to expect.
+One command for one language (`scripts/planarsviz_language.py`, plan §3
+"Step 3a"). Step 3 (Chácobo verbal) is done; its command log in the progress
+doc shows which exporter and renderer options actually matter.
 
 ### Things that will bite
 
