@@ -17,30 +17,25 @@ this project is trying to remove.
 
 ## Now
 
-**Current work: `NonCollaborative/`, the planarsviz chart package.** State lives
-in `NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md` — read its last few
-entries before starting. How to use the result is `planarsviz_guide.md` and
-`planarsviz_charts.md`.
+**Current work: `NonCollaborative/`, putting the CCDB languages through the
+planarsviz charts.** State lives in
+`NonCollaborative/docs/CCDB_PLANARSVIZ_PROGRESS.md` — read it first; the plan
+it follows is `NonCollaborative/docs/PLAN_ccdb_planarsviz.md` (§6 holds Jeff's
+decisions, §7 which parts go to Sonnet subagents). The chart package itself
+is finished; its record is `PLANARSVIZ_LIBRARY_PROGRESS.md`, and how to use
+it is `planarsviz_guide.md` and `planarsviz_charts.md`.
 
 **Everything under `NonCollaborative/` runs from `NonCollaborative/`.** This
 matters for the exporter specifically: it records the domain file's path as
 given, so running it from the repo root writes a bundle that differs from the
 committed one in that field.
 
-### Next action: none planned — the planarsviz library rebuild (phases B–E) is done
+### Next action: the CCDB plan's steps 2.2–2.4
 
-Phase E (the `illustrations` bundle) closed 2026-09-22 — see "Phase E" near
-the end of the progress doc for what built and how it was verified. No
-generated `.r` script writes into `results/` any more; that was the last
-open item from cutover. Jeff has looked at the new (freshly seeded)
-`illustrations_random_tree_overlay.pdf` and confirmed it's fine — nothing
-left open on this phase.
-
-No phase F is defined anywhere in `docs/PLAN_planarsviz_library.md` or the
-progress doc. If a fresh session lands here with nothing more specific in
-mind, the honest move is to ask Jeff what's next for `NonCollaborative/`
-rather than inventing a phase — this file's job is to say what's known, not
-to manufacture a next step where none exists yet.
+The progress doc's "Brief for steps 2.2–2.4" is written to be handed to a
+Sonnet agent as it stands; review its work against the checks listed there
+before committing. One question for Jeff is open in the progress doc (where
+the permutation tests place random spans); it does not block step 2.
 
 ### Things that will bite
 
