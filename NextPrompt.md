@@ -30,12 +30,13 @@ matters for the exporter specifically: it records the domain file's path as
 given, so running it from the repo root writes a bundle that differs from the
 committed one in that field.
 
-### Next action: the CCDB plan's steps 2.2–2.4
+### Next action: the CCDB plan's step 3
 
-The progress doc's "Brief for steps 2.2–2.4" is written to be handed to a
-Sonnet agent as it stands; review its work against the checks listed there
-before committing. One question for Jeff is open in the progress doc (where
-the permutation tests place random spans); it does not block step 2.
+Export and render every CCDB structure, starting with `chac1251_verbal`
+(`--groupings ccdb --root-position 8`); the progress doc's "Likely trouble
+in step 3" lists what to expect. Two questions for Jeff are open in the
+progress doc (where the permutation tests place random spans; the ccdb
+bundle colour); neither blocks step 3.
 
 ### Things that will bite
 
