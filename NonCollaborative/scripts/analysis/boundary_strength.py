@@ -124,12 +124,18 @@ def compute_boundary_strength(
         domain_file: str,
         domains_dir: Path,
         subset: list[str] | None = None,
+        n_positions: int | None = None,
 ) -> tuple[list[dict], int]:
     """subset: Domain_Type values to include (e.g. ["morphosyntactic"]).
     None (the default) pools every domain type, matching the rest of this
     project's "all tests" analyses.
+
+    n_positions: the planar structure's position count, when known; passed to
+    load_spans(). None means one row per position up to the largest right
+    edge, as before.
     """
-    spans, n_positions = load_spans(domain_file, str(domains_dir), subset=subset)
+    spans, n_positions = load_spans(domain_file, str(domains_dir), subset=subset,
+                                    n_positions=n_positions)
     adjacency = find_conflicts(spans)
     families, truncated = enumerate_maximal_laminar_families(spans, adjacency, n_positions)
     if truncated:

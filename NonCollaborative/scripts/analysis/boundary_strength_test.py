@@ -160,13 +160,18 @@ def run_test(
         groups: list[tuple[str, list[str] | None]],
         n_permutations: int = 5000,
         seed: int = 0,
+        n_positions: int | None = None,
 ) -> list[dict]:
     """Returns one flat list of rows across every group, side, statistic and
     position. One shared rng advances across all groups in order, so a run
     is fully reproducible from `seed` alone but no two groups draw the same
     underlying random stream (matches span_placement_test.py's run_test()).
+
+    n_positions: the planar structure's position count, when known. Spans
+    are placed at random across that many positions, and a row is written for
+    each; None uses the largest right edge in the data, as before.
     """
-    _, n_positions = load_spans(domain_file, str(domains_dir))  # full-dataset n_positions
+    _, n_positions = load_spans(domain_file, str(domains_dir), n_positions=n_positions)  # full-dataset n_positions
     rng = np.random.default_rng(seed)
 
     all_rows: list[dict] = []

@@ -153,7 +153,8 @@ def tree_rows(families) -> list[dict]:
     return rows
 
 
-def export_overlay_groups(domain_file: Path, domains_dir: Path, data_dir: Path) -> None:
+def export_overlay_groups(domain_file: Path, domains_dir: Path, data_dir: Path,
+                          n_positions: int | None = None) -> None:
     """Write the trees of every group the overlay charts can stack.
 
     One group per laminar_analysis.OVERLAY_GROUPS
@@ -167,7 +168,7 @@ def export_overlay_groups(domain_file: Path, domains_dir: Path, data_dir: Path) 
     observed = set(
         pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")["Domain_Type"].dropna().str.strip()
     )
-    _, n_positions = load_spans(domain_file.name, str(domains_dir))
+    _, n_positions = load_spans(domain_file.name, str(domains_dir), n_positions=n_positions)
     groups = [(short, list(types), colour) for types, colour, short in OVERLAY_GROUPS]
     groups.append(("all", None, "black"))
     index = []
@@ -252,7 +253,8 @@ def export_tree_counts(domain_file: Path, domains_dir: Path, data_dir: Path) -> 
 
 
 def export_fragmentation_test(domain_file: Path, domains_dir: Path, data_dir: Path,
-                              n_permutations: int, seed: int) -> dict:
+                              n_permutations: int, seed: int,
+                              n_positions: int | None = None) -> dict:
     """Write fragmentation_test.tsv and fragmentation_null.tsv.
 
     Calls class_fragmentation_test.run_test() unchanged, so the numbers equal
@@ -283,7 +285,7 @@ def export_fragmentation_test(domain_file: Path, domains_dir: Path, data_dir: Pa
     groups = [(c, [c]) for c in classes] + [(name, list(types)) for name, types, _c, _d in bundles]
     summary, null_counts = run_fragmentation_test(
         domain_file.name, domains_dir, groups=groups,
-        n_permutations=n_permutations, seed=seed,
+        n_permutations=n_permutations, seed=seed, n_positions=n_positions,
     )
 
     bundle_style = {name: (display, colour) for name, _types, colour, display in bundles}
@@ -316,7 +318,8 @@ def export_fragmentation_test(domain_file: Path, domains_dir: Path, data_dir: Pa
 
 
 def export_span_placement_test(domain_file: Path, domains_dir: Path, data_dir: Path,
-                               n_permutations: int, seed: int) -> dict:
+                               n_permutations: int, seed: int,
+                               n_positions: int | None = None) -> dict:
     """Write span_placement_test.tsv and span_placement_null.tsv: does the
     real arrangement of a group's spans produce fewer laminar families than
     the same span *lengths* placed at random would?
@@ -352,7 +355,7 @@ def export_span_placement_test(domain_file: Path, domains_dir: Path, data_dir: P
     groups = [("all", None)] + [(c, [c]) for c in classes] + [(name, list(types)) for name, types, _c, _d in bundles]
     summary, null_tallies = run_span_placement_test(
         domain_file.name, domains_dir, groups=groups,
-        n_permutations=n_permutations, seed=seed,
+        n_permutations=n_permutations, seed=seed, n_positions=n_positions,
     )
 
     rows = []
@@ -384,7 +387,8 @@ def export_span_placement_test(domain_file: Path, domains_dir: Path, data_dir: P
 
 
 def export_arbitrary_layers_test(domain_file: Path, domains_dir: Path, data_dir: Path,
-                                 n_permutations: int, seed: int) -> dict:
+                                 n_permutations: int, seed: int,
+                                 n_positions: int | None = None) -> dict:
     """Write arbitrary_layers_test.tsv and arbitrary_layers_null.tsv: is a
     group's family count remarkable for that many spans of arbitrary size at
     arbitrary positions?
@@ -412,7 +416,7 @@ def export_arbitrary_layers_test(domain_file: Path, domains_dir: Path, data_dir:
     groups = [("all", None)] + [(c, [c]) for c in classes] + [(name, list(types)) for name, types, _c, _d in bundles]
     summary, null_tallies = run_arbitrary_layers_test(
         domain_file.name, domains_dir, groups=groups,
-        n_permutations=n_permutations, seed=seed,
+        n_permutations=n_permutations, seed=seed, n_positions=n_positions,
     )
 
     rows = []
@@ -444,7 +448,8 @@ def export_arbitrary_layers_test(domain_file: Path, domains_dir: Path, data_dir:
 
 
 def export_boundary_strength_test(domain_file: Path, domains_dir: Path, data_dir: Path,
-                                  n_permutations: int, seed: int) -> dict:
+                                  n_permutations: int, seed: int,
+                                  n_positions: int | None = None) -> dict:
     """Write boundary_strength_test.tsv: is the per-position boundary
     strength (and its jump from the previous position) higher than a
     same-length-profile random arrangement would produce?
@@ -471,7 +476,7 @@ def export_boundary_strength_test(domain_file: Path, domains_dir: Path, data_dir
     groups = [("all", None)] + [(c, [c]) for c in classes] + [(name, list(types)) for name, types, _c, _d in bundles]
     rows = run_boundary_strength_test(
         domain_file.name, domains_dir, groups=groups,
-        n_permutations=n_permutations, seed=seed,
+        n_permutations=n_permutations, seed=seed, n_positions=n_positions,
     )
     for row in rows:
         name = row["group"]
@@ -491,7 +496,8 @@ def export_boundary_strength_test(domain_file: Path, domains_dir: Path, data_dir
 
 
 def export_boundary_strength(domain_file: Path, domains_dir: Path, target_dir: Path,
-                             subset: list[str] | None = None) -> None:
+                             subset: list[str] | None = None,
+                             n_positions: int | None = None) -> None:
     """Write boundary_strength.tsv for the full data or one subset analysis.
 
     Calls boundary_strength.compute_boundary_strength() unchanged
@@ -499,9 +505,12 @@ def export_boundary_strength(domain_file: Path, domains_dir: Path, target_dir: P
     equal that script's nyan1308_boundary_strength.tsv -- and, for
     subsets/no_tono, the committed nyan1308_boundary_strength_no_tono.tsv,
     which is the same four domain types (checked 2026-09-15). One row per
-    position up to the analysis's largest right edge.
+    position up to the analysis's largest right edge, or up to n_positions
+    when given (the full analysis passes the planar structure's count; subset
+    analyses don't, which is what keeps no_tono equal to that file).
     """
-    rows, _n_families = compute_boundary_strength(domain_file.name, domains_dir, subset=subset)
+    rows, _n_families = compute_boundary_strength(domain_file.name, domains_dir, subset=subset,
+                                                  n_positions=n_positions)
     write_tsv(target_dir / "boundary_strength.tsv",
               ["position", "left_summed", "left_capped", "right_summed", "right_capped"], rows)
 
@@ -832,6 +841,18 @@ def with_synthetic_root(spans: list[Span], n_positions: int) -> tuple[list[Span]
     return spans + [root], True
 
 
+def planar_position_count(planar_file: Path | None) -> int | None:
+    """Number of positions in the planar table, or None without one.
+
+    The table's rows are its positions; load_position_labels() separately
+    checks they run 1..N with no gaps.
+    """
+    if planar_file is None or not planar_file.exists():
+        return None
+    with planar_file.open(encoding="utf-8", newline="") as handle:
+        return sum(1 for _ in csv.DictReader(handle, delimiter="\t"))
+
+
 def load_root_position(planar_file: Path | None, root_element: str) -> int | None:
     """Position whose planar-table Elements value is `root_element`, if any."""
     if planar_file is None or not planar_file.exists():
@@ -952,10 +973,18 @@ def export_bundle(
     tests.insert(0, "source_row", active_source_rows)
     tests.to_csv(data_dir / "tests.tsv", sep="\t", index=False)
 
+    if planar_file is None:
+        candidate = REPO_DIR / "planar_tables" / f"planar_{dataset}.tsv"
+        planar_file = candidate if candidate.exists() else None
+
     # Keep the full dataset's position count for every subset.  A subset may
     # stop before the final planar position but its trees still use the full
-    # observed root coordinate system.
-    full_spans, n_positions = load_spans(domain_file.name, str(domains_dir))
+    # root coordinate system. With a planar table, that count is the table's:
+    # the axis is the planar structure, not the data, and a structure's last
+    # positions may be reached by no test. Without one, the largest right edge.
+    planar_n = planar_position_count(planar_file)
+    full_spans, n_positions = load_spans(domain_file.name, str(domains_dir),
+                                         n_positions=planar_n)
     if not full_spans:
         raise ValueError(f"No usable spans found in {domain_file}.")
 
@@ -1045,9 +1074,6 @@ def export_bundle(
                                            conflict_groups_file, conflict_group_cap,
                                            exemplary_k, exemplary_include_sparsest)
 
-    if planar_file is None:
-        candidate = REPO_DIR / "planar_tables" / f"planar_{dataset}.tsv"
-        planar_file = candidate if candidate.exists() else None
     # Display labels come from an explicit labels file when given (nyan1308's
     # chart labels differ from its planar table's slot codes); never from a
     # dataset-name special case.
@@ -1071,28 +1097,28 @@ def export_bundle(
     if fragmentation_permutations:
         fragmentation_metadata = export_fragmentation_test(
             domain_file, domains_dir, data_dir,
-            fragmentation_permutations, fragmentation_seed,
+            fragmentation_permutations, fragmentation_seed, n_positions,
         )
 
     boundary_strength_test_metadata: dict = {}
     if boundary_strength_test_permutations:
         boundary_strength_test_metadata = export_boundary_strength_test(
             domain_file, domains_dir, data_dir,
-            boundary_strength_test_permutations, boundary_strength_test_seed,
+            boundary_strength_test_permutations, boundary_strength_test_seed, n_positions,
         )
 
     span_placement_metadata: dict = {}
     if span_placement_permutations:
         span_placement_metadata = export_span_placement_test(
             domain_file, domains_dir, data_dir,
-            span_placement_permutations, span_placement_seed,
+            span_placement_permutations, span_placement_seed, n_positions,
         )
 
     arbitrary_layers_metadata: dict = {}
     if arbitrary_layers_permutations:
         arbitrary_layers_metadata = export_arbitrary_layers_test(
             domain_file, domains_dir, data_dir,
-            arbitrary_layers_permutations, arbitrary_layers_seed,
+            arbitrary_layers_permutations, arbitrary_layers_seed, n_positions,
         )
 
     metadata = {
@@ -1216,10 +1242,10 @@ def export_bundle(
         json.dumps(subset_index, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     export_forests(domain_file, domains_dir, data_dir)
-    export_overlay_groups(domain_file, domains_dir, data_dir)
+    export_overlay_groups(domain_file, domains_dir, data_dir, n_positions)
     export_highlights(dataset, data_dir, highlights_file)
     export_tree_counts(domain_file, domains_dir, data_dir)
-    export_boundary_strength(domain_file, domains_dir, data_dir)
+    export_boundary_strength(domain_file, domains_dir, data_dir, n_positions=n_positions)
     return bundle_dir
 
 

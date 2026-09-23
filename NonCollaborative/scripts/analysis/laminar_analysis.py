@@ -265,7 +265,8 @@ def aggregate_spans(df: pd.DataFrame) -> list[Span]:
 
 def load_spans(domain_file: str, domains_dir: str | None = None,
                subset: list[str] | None = None,
-               skip_prefix: str = "#") -> tuple[list[Span], int]:
+               skip_prefix: str = "#",
+               n_positions: int | None = None) -> tuple[list[Span], int]:
     """Load domain spans from a TSV file and aggregate by unique position.
 
     Multiple rows with the same [Left_Edge, Right_Edge] are combined into one
@@ -281,10 +282,18 @@ def load_spans(domain_file: str, domains_dir: str | None = None,
         skip_prefix: Rows whose Test_Labels starts with this character are
                      excluded. Handles the '#DummyRoot' convention used in
                      the CCDB data to mark synthetic placeholders.
+        n_positions: The planar structure's number of positions, when the
+                     caller knows it (from the planar table). Returned as
+                     given, after checking no span ends beyond it. Needed
+                     because a structure's last positions may be reached by
+                     no test (CCDB's Mebengokre: 32 positions, spans end at
+                     22), and the largest Right_Edge would then understate
+                     the structure. None keeps the old behaviour.
 
     Returns:
         (spans, n_positions) where spans is the deduplicated list and
-        n_positions is the maximum Right_Edge observed (= total positions).
+        n_positions is the given count, or else the maximum Right_Edge
+        observed.
     """
     df = load_domain_dataframe(domain_file, domains_dir, skip_prefix=skip_prefix)
 
@@ -294,7 +303,14 @@ def load_spans(domain_file: str, domains_dir: str | None = None,
 
     spans = aggregate_spans(df)
 
-    n_positions = int(df["Right_Edge"].max())
+    observed_max = int(df["Right_Edge"].max())
+    if n_positions is None:
+        return spans, observed_max
+    if observed_max > n_positions:
+        raise ValueError(
+            f"{domain_file}: a span ends at position {observed_max}, beyond the "
+            f"planar structure's {n_positions} positions."
+        )
     return spans, n_positions
 
 

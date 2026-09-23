@@ -130,6 +130,7 @@ def run_test(
         groups: list[tuple[str, list[str]]],
         n_permutations: int = 2000,
         seed: int = 0,
+        n_positions: int | None = None,
 ) -> tuple[list[dict], dict[str, list[int]]]:
     """Returns (summary_rows, null_counts) -- null_counts maps each group
     name to its full list of per-permutation family counts (length
@@ -137,9 +138,12 @@ def run_test(
     separate rather than embedded in summary_rows so a caller that only
     wants the summary (e.g. a quick console check) isn't forced to also
     build/return the much larger raw arrays.
+
+    n_positions: the planar structure's position count, when known; None
+    uses the largest right edge in the data, as before.
     """
     df = load_domain_dataframe(domain_file, str(domains_dir))
-    _, n_positions = load_spans(domain_file, str(domains_dir))  # full-dataset n_positions
+    _, n_positions = load_spans(domain_file, str(domains_dir), n_positions=n_positions)  # full-dataset n_positions
 
     observed = {
         name: family_count_for_group(df, n_positions, types)

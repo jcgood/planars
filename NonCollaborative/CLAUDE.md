@@ -87,6 +87,8 @@ Early prototypes for domain derivation from linguistic parameter files. Represen
 - `planarsviz_guide.md` — user guide for the planarsviz chart library (`r/planarsviz/`): exporting a data bundle, drawing and rendering charts, adding a language, checking charts.
 - `planarsviz_charts.md` — chart catalogue: every planarsviz chart, its function call, options, canvas and an example image (`planarsviz_charts/`).
 - `PLAN_planarsviz_library.md` / `PLANARSVIZ_LIBRARY_PROGRESS.md` — why the library is built as it is, and the chart-by-chart record of how each port was checked, with open questions. **`PLANARSVIZ_LIBRARY_PROGRESS.md` is the current state of that work** — read it before resuming.
+- `PLAN_ccdb_planarsviz.md` / `CCDB_PLANARSVIZ_PROGRESS.md` — putting the 21 planar structures of the Constituency and Convergence Database (imported by `scripts/analysis/import_ccdb.py` into `domains/` and `planar_tables/` as `*_<Planar_ID>.*`) through the same analysis and charts as nyan1308. **`CCDB_PLANARSVIZ_PROGRESS.md` is the current state of that work** — read it before resuming.
+- `PLAN_planarsviz_doc_fixes.md` — the 2026-09-22 documentation gaps; carried out in `ae0f9cb`, kept as the record.
 - `CHART_MECHANICS_AND_UNCERTAINTY.md` — how the charts encode what they encode, and what they do and don't establish.
 
 ### `examples/`

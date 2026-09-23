@@ -210,6 +210,7 @@ def run_test(
         groups: list[tuple[str, list[str] | None]],
         n_permutations: int = 5000,
         seed: int = 0,
+        n_positions: int | None = None,
 ) -> tuple[list[dict], dict[str, dict[int, int]]]:
     """Returns (summary_rows, null_tallies), the same shape as
     span_placement_test.run_test().
@@ -217,8 +218,12 @@ def run_test(
     One shared rng advances across all groups in the order given, so a run is
     reproducible from `seed` alone but no two groups draw the same stream --
     which is why the group order is part of what the numbers mean.
+
+    n_positions: the planar structure's position count, when known. The
+    arbitrary intervals are drawn across that many positions; None uses the
+    largest right edge in the data, as before.
     """
-    _, n_positions = load_spans(domain_file, str(domains_dir))  # full-dataset n_positions
+    _, n_positions = load_spans(domain_file, str(domains_dir), n_positions=n_positions)  # full-dataset n_positions
     rng = np.random.default_rng(seed)
 
     summary_rows: list[dict] = []

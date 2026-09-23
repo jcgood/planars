@@ -189,13 +189,18 @@ def run_test(
         groups: list[tuple[str, list[str] | None]],
         n_permutations: int = 5000,
         seed: int = 0,
+        n_positions: int | None = None,
 ) -> tuple[list[dict], dict[str, dict[int, int]]]:
     """Returns (summary_rows, null_tallies) -- null_tallies maps each group
     name to its own (family_count -> n) tally. One shared rng advances
     across all groups in order, so a run is fully reproducible from `seed`
     alone but no two groups draw the same underlying random stream.
+
+    n_positions: the planar structure's position count, when known. Spans
+    are placed at random across that many positions; None uses the largest
+    right edge in the data, as before.
     """
-    _, n_positions = load_spans(domain_file, str(domains_dir))  # full-dataset n_positions
+    _, n_positions = load_spans(domain_file, str(domains_dir), n_positions=n_positions)  # full-dataset n_positions
     rng = np.random.default_rng(seed)
 
     summary_rows: list[dict] = []
