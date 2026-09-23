@@ -14,7 +14,11 @@
 #     without tonosegmental: #009E73/#CC79A7 from the no_tono TSV) become
 #     `subset` and `colours` arguments; the defaults reproduce the first;
 #   - library() and ggsave() removed; the script's canvas (13 x 7 in) is
-#     returned as an attribute.
+#     returned as an attribute;
+#   - y gridlines every 50 only when the axis reaches 50; below that, whole
+#     round-number steps (CCDB step 4, 2026-09-23), since 18 of the 21 CCDB
+#     structures would otherwise show only the 0 line. Every chart that
+#     reaches 50 -- all of nyan1308's -- is drawn as before.
 # The notes below are the script's own, unchanged.
 #
 # Notes on the non-obvious choices, all still apply to every variant:
@@ -101,6 +105,15 @@ plot_boundary_strength_overlay <- function(bundle, subset = NULL,
   y_upper <- max_strength * 1.08
   label_y <- -0.09 * max_strength
   y_lower <- label_y - 0.05 * max_strength # extra buffer below the label row itself
+  # A gridline every 50, as the working script drew it -- unless the axis
+  # stops short of 50 (most CCDB structures, whose strengths run 5-28), where
+  # that would leave only the 0 line; then round-numbered whole-count steps.
+  y_breaks <- if (y_upper >= 50) {
+    seq(0, ceiling(y_upper / 50) * 50, by = 50)
+  } else {
+    steps <- pretty(c(0, y_upper))
+    steps[steps == round(steps)]
+  }
 
   label_colors <- if (is.null(highlight)) {
     stats::setNames(rep("black", n_positions), as.character(seq_len(n_positions)))
@@ -131,7 +144,7 @@ plot_boundary_strength_overlay <- function(bundle, subset = NULL,
     scale_x_continuous(breaks = seq_len(n_positions), expand = expansion(add = 0.6)) +
     scale_y_continuous(
       limits = c(y_lower, y_upper), expand = c(0, 0),
-      breaks = seq(0, ceiling(y_upper / 50) * 50, by = 50)
+      breaks = y_breaks
     ) +
     labs(
       x = NULL,
