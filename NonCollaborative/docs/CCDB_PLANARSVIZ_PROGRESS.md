@@ -24,8 +24,8 @@ plan says what and why. Update it at every step boundary, in the same commit.
   yucu1253 — the duplicates look like CCDB errors). CCDB's label is kept as
   `CCDB_Test_Labels`.
 - **The permutation tests place spans across the whole planar structure**,
-  including positions no test reaches (Claude's call with step 2.1, flagged
-  to Jeff, not yet confirmed). It changes the p-values for the four
+  including positions no test reaches (Claude's call with step 2.1,
+  confirmed by Jeff 2026-09-23). It changes the p-values for the four
   structures with unreached positions: Araona 18 vs 17, Yupik 21 vs 20,
   Mocoví 20 vs 19, Mebengokre 32 vs 22. Reasoning: the positions exist
   whether or not a test reaches them — the same reason the chart axis is the
@@ -85,9 +85,9 @@ As the brief below, plus:
 - A planar table with no `Position_Label` column skips the "positions run
   1..N with no gaps" check that the labelled branch makes. All 21 CCDB tables
   are contiguous, so this matters only for a future import.
-- **The `ccdb` bundle colour, `#FFDC91`, is provisional — Jeff's call.** It
-  is the next unused colour of the palette the class colours come from, but
-  it is a pale yellow that may read poorly as thin lines on white.
+- **The `ccdb` bundle colour is `#EE4C97`** (Jeff, 2026-09-23), the eighth
+  colour of the palette the class colours come from. The seventh, `#FFDC91`,
+  was the first placeholder but is too pale for thin lines on white.
 
 Evidence: nyan1308 re-exported in place with all four permutation tests at
 5000 draws — only `metadata.json` changes, by the two new keys. The no-R
