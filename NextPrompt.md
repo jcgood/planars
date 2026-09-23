@@ -32,12 +32,9 @@ committed one in that field.
 Phase E (the `illustrations` bundle) closed 2026-09-22 — see "Phase E" near
 the end of the progress doc for what built and how it was verified. No
 generated `.r` script writes into `results/` any more; that was the last
-open item from cutover.
-
-**One real thing still wants Jeff's eyes, not just Claude's**: the new
-`illustrations_random_tree_overlay.pdf` is a *freshly seeded* random sample
-(the old file had no seed, so nothing to reproduce) — recorded as "Seen by
-Jeff: no" in the progress doc. Worth a look before calling this fully closed.
+open item from cutover. Jeff has looked at the new (freshly seeded)
+`illustrations_random_tree_overlay.pdf` and confirmed it's fine — nothing
+left open on this phase.
 
 No phase F is defined anywhere in `docs/PLAN_planarsviz_library.md` or the
 progress doc. If a fresh session lands here with nothing more specific in

@@ -40,9 +40,9 @@ Honesty rule: nothing below says "matches" without naming the comparison file.
   deliberately dropped; see the entry at the end of this file.
 - **Phase E (the `illustrations` bundle) is done (2026-09-22).** No generated
   script writes into `results/` any more — see "Phase E" near the end of
-  this file. 23 porting checks now (was 21). **Seen by Jeff: no** for the
-  one genuinely new thing, the random-tree overlay's fresh (differently)
-  seeded sample.
+  this file. 23 porting checks now (was 21). **Seen by Jeff: yes,
+  2026-09-22** — the one genuinely new thing, the random-tree overlay's
+  fresh (differently) seeded sample, is fine.
 - **Seen by Jeff: yes, 2026-09-20 — the charts are fine.** This was the one
   outstanding item no tooling could clear, and it is now cleared. Every
   "0.0000%" in this file had been read by Claude off a check's output; Jeff
@@ -2377,4 +2377,5 @@ planarsviz_superseded/README.md` gained a "Phase E" section for the three newly-
   path logic; all six charts' canvas sizes and pixel percentages read from real check output;
   `random_trees.tsv`'s leaf-extraction regex in `verify_random_trees_export.py` initially wrong
   (matched digits inside span labels, not just leaves) and caught by the check itself failing
-  before being trusted. Seen by Jeff: no.
+  before being trusted. **Seen by Jeff: yes, 2026-09-22 — the new
+  `illustrations_random_tree_overlay.pdf` (the freshly-seeded sample) is fine.**
