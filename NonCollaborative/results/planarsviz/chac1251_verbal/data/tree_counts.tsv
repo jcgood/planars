@@ -1,0 +1,10 @@
+condition	class	n_unique_spans	n_maximal_laminar_families	kind	label	colour
+all_tests	all	22	29	all		
+without_adjacent_spans	all	21	29	all		
+all_tests	morphosyntactic	12	8	class	Morphosyntactic	#BC3C29
+without_adjacent_spans	morphosyntactic	12	8	class	Morphosyntactic	#BC3C29
+all_tests	phonological	11	9	class	Phonological	#20845E
+without_adjacent_spans	phonological	10	9	class	Phonological	#20845E
+all_tests	indeterminate	9	4	class	Indeterminate	#6F99AD
+without_adjacent_spans	indeterminate	9	4	class	Indeterminate	#6F99AD
+all_tests	morsyn_indet	15	8	bundle	Morphosyntactic + indeterminate	#EE4C97

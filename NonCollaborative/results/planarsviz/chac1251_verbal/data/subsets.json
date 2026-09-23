@@ -1,0 +1,38 @@
+[
+  {
+    "domain_type": "indeterminate",
+    "domain_types": [
+      "indeterminate"
+    ],
+    "kind": "domain_type",
+    "n_active_tests": 9,
+    "n_maximal_families": 4,
+    "n_unique_spans": 9,
+    "path": "subsets/indeterminate",
+    "subset_id": "indeterminate"
+  },
+  {
+    "domain_type": "morphosyntactic",
+    "domain_types": [
+      "morphosyntactic"
+    ],
+    "kind": "domain_type",
+    "n_active_tests": 14,
+    "n_maximal_families": 8,
+    "n_unique_spans": 12,
+    "path": "subsets/morphosyntactic",
+    "subset_id": "morphosyntactic"
+  },
+  {
+    "domain_type": "phonological",
+    "domain_types": [
+      "phonological"
+    ],
+    "kind": "domain_type",
+    "n_active_tests": 15,
+    "n_maximal_families": 9,
+    "n_unique_spans": 11,
+    "path": "subsets/phonological",
+    "subset_id": "phonological"
+  }
+]

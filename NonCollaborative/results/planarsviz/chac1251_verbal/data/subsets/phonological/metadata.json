@@ -1,0 +1,20 @@
+{
+  "contract_version": "0.2.0",
+  "dataset": "chac1251_verbal",
+  "domain_type": "phonological",
+  "domain_types": [
+    "phonological"
+  ],
+  "enumeration_truncated": false,
+  "kind": "domain_type",
+  "n_active_tests": 15,
+  "n_conflict_pairs": 9,
+  "n_maximal_families": 9,
+  "n_positions": 28,
+  "n_unique_spans": 11,
+  "n_universal_spans": 1,
+  "source_domain_file": "domains/domains_chac1251_verbal.tsv",
+  "source_domain_sha256": "67a15448c3ff0c3836bc39629bfc2727e4d43df10bfeb497cfadea8968bfccfd",
+  "subset_id": "phonological",
+  "synthetic_root": true
+}

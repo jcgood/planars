@@ -1,0 +1,23 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-24	1	24	24	1	7	suprasegmental tone insertion maximal h insertion	phonological	False	2	#20845E
+1-27	1	27	27	1	18	suprasegmental tone deletion maximal h deletion	phonological	False	16	#20845E
+1-28	1	28	28	1	29	ciscategorial selection broad	morphosyntactic	False		#BC3C29
+6-17	6	17	12	2	9	recursion based asyndetic maximal asyndetic|recursion based same subject maximal same subject	morphosyntactic	False	9	#BC3C29
+6-24	6	24	19	3	21	recursion based nominalization maximal instrumental nominalization|recursion based nominalization minimal instrumental nominalization|recursion based syndetic maximal different subject	indeterminate|morphosyntactic	False	18	#966A6B
+6-27	6	27	22	1	22	suprasegmental tone deletion minimal h deletion	phonological	False	20	#20845E
+6-28	6	28	23	1	11	segmental consonant insertion maximal glottal insertion	phonological	False	10	#20845E
+7-8	7	8	2	3	8	segmental consonant assimilation alveolarization|segmental consonant insertion minimal glottal insertion|suprasegmental accent minimal intensity	phonological	False	8	#20845E
+7-9	7	9	3	1	8	deviations cumulative exponence optional	indeterminate	False	5	#6F99AD
+7-10	7	10	4	4	8	nonpermutability rigid minimal|recursion based reduplication minimal|segmental consonant insertion minimal glottal stop insertion|segmental vowel insertion minimal same vowel insertion	indeterminate|morphosyntactic|phonological	False	4	#6E7367
+7-11	7	11	5	2	8	noninterruption simplex|recursion based syndetic minimal same subject	indeterminate|morphosyntactic	False	7	#966A6B
+7-12	7	12	6	1	16	nonpermutability scopal	morphosyntactic	False	15	#BC3C29
+7-13	7	13	7	1	16	recursion based asyndetic minimal asyndetic	indeterminate	False	14	#6F99AD
+7-17	7	17	11	1	24	suprasegmental tone insertion minimal h insertion	phonological	False	21	#20845E
+7-20	7	20	14	1	15	noninterruption complex	morphosyntactic	False	12	#BC3C29
+7-22	7	22	16	2	15	recursion based reduplication maximal|recursion based syndetic minimal different subject	indeterminate|morphosyntactic	False	13	#966A6B
+7-24	7	24	18	4	20	recursion based nominalization maximal agentive nominalization|recursion based nominalization minimal agentive nominalization|segmental vowel insertion maximal|segmental vowel insertion maximal same vowel insertion	indeterminate|morphosyntactic|phonological	False	17	#6E7367
+7-25	7	25	19	2	8	free occurrence maximal|suprasegmental accent maximal intensity	indeterminate|phonological	False	6	#488E86
+7-26	7	26	20	1	8	nonpermutability rigid maximal	morphosyntactic	False	3	#BC3C29
+8-12	8	12	5	1	21	suprasegmental tone deletion long distance tone reduction h h>l h	phonological	False	19	#20845E
+8-16	8	16	9	1	13	ciscategorial selection narrow minimal	morphosyntactic	False	11	#BC3C29
+8-24	8	24	17	3	5	ciscategorial selection narrow maximal|free occurrence minimal|segmental consonant deletion latent stop deletion	indeterminate|morphosyntactic|phonological	False	1	#6E7367

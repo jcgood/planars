@@ -1,0 +1,11 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-28	1	28	28	0	4	(root)	(synthetic)	True		#000000
+6-24	6	24	19	1	2	recursion based nominalization minimal instrumental nominalization	indeterminate	False	3	#6F99AD
+7-9	7	9	3	1	2	deviations cumulative exponence optional	indeterminate	False	1	#6F99AD
+7-10	7	10	4	1	2	recursion based reduplication minimal	indeterminate	False	6	#6F99AD
+7-11	7	11	5	1	2	recursion based syndetic minimal same subject	indeterminate	False	4	#6F99AD
+7-13	7	13	7	1	2	recursion based asyndetic minimal asyndetic	indeterminate	False	5	#6F99AD
+7-22	7	22	16	1	2	recursion based syndetic minimal different subject	indeterminate	False	2	#6F99AD
+7-24	7	24	18	1	4	recursion based nominalization minimal agentive nominalization	indeterminate	False	9	#6F99AD
+7-25	7	25	19	1	2	free occurrence maximal	indeterminate	False	7	#6F99AD
+8-24	8	24	17	1	2	free occurrence minimal	indeterminate	False	8	#6F99AD

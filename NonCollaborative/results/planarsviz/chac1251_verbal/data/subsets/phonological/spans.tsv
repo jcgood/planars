@@ -1,0 +1,13 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-24	1	24	24	1	3	suprasegmental tone insertion maximal h insertion	phonological	False	4	#20845E
+1-27	1	27	27	1	6	suprasegmental tone deletion maximal h deletion	phonological	False	9	#20845E
+1-28	1	28	28	0	9	(root)	(synthetic)	True		#000000
+6-27	6	27	22	1	6	suprasegmental tone deletion minimal h deletion	phonological	False	8	#20845E
+6-28	6	28	23	1	3	segmental consonant insertion maximal glottal insertion	phonological	False	3	#20845E
+7-8	7	8	2	3	3	segmental consonant assimilation alveolarization|segmental consonant insertion minimal glottal insertion|suprasegmental accent minimal intensity	phonological	False	1	#20845E
+7-10	7	10	4	2	3	segmental consonant insertion minimal glottal stop insertion|segmental vowel insertion minimal same vowel insertion	phonological	False	2	#20845E
+7-17	7	17	11	1	6	suprasegmental tone insertion minimal h insertion	phonological	False	6	#20845E
+7-24	7	24	18	2	9	segmental vowel insertion maximal|segmental vowel insertion maximal same vowel insertion	phonological	False	11	#20845E
+7-25	7	25	19	1	6	suprasegmental accent maximal intensity	phonological	False	7	#20845E
+8-12	8	12	5	1	6	suprasegmental tone deletion long distance tone reduction h h>l h	phonological	False	10	#20845E
+8-24	8	24	17	1	3	segmental consonant deletion latent stop deletion	phonological	False	5	#20845E
