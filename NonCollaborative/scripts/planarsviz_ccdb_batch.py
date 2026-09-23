@@ -14,9 +14,9 @@ does not stop the others. Each structure's full output goes to
   renderer leaves a chart out when the bundle has nothing for it, e.g. no
   conflict groups -- normal, but worth knowing);
 - anything worth a look before trusting a chart: very few families, a family
-  with more spans than the 26 letters two charts name spans with, boundary
-  strengths too small for the overlay's every-50 gridlines, very long
-  structures, truncated permutation draws.
+  with more spans than the 26 letters two charts name spans with, very long
+  structures, characters in a title or label the PDF fonts can't draw, a
+  placeholder root span, truncated permutation draws.
 
 It holds no analysis or drawing code of its own. ``--summary-only`` rewrites
 the summary from the logs and bundles already there, without running
@@ -45,12 +45,24 @@ NC = Path(__file__).resolve().parents[1]
 BATCH_DIR = NC / "results" / "ccdb_batch"
 
 # What counts as worth a look. Each threshold is where a chart is known to
-# start misbehaving (see CCDB_PLANARSVIZ_PROGRESS.md "Likely trouble").
+# start misbehaving (see CCDB_PLANARSVIZ_PROGRESS.md "Likely trouble"); the
+# first run's two commonest notes -- boundary strengths under the overlay's
+# every-50 gridlines, and test labels too long for the pooled canvas -- were
+# fixed in the charts, so they are no longer reported.
 FEW_FAMILIES = 2           # exemplary and conflict-group charts have little to show
 SPAN_LETTER_LIMIT = 26     # ghost_trees.R / conflict_groups.R name spans a..z
-OVERLAY_GRID_STEP = 50     # boundary_strength_overlay.R draws a gridline every 50
 LONG_STRUCTURE = 40        # positions; widest canvases and longest label rows
-LONG_LABEL = 80            # characters in a test label
+
+
+def pdf_can_draw(char: str) -> bool:
+    """Whether R's default PDF device can draw this character. Its standard
+    fonts use the Windows Latin-1 encoding; anything outside it (IPA such as
+    ʔ or ɛ, a separate combining accent) comes out as a period."""
+    try:
+        char.encode("cp1252")
+        return True
+    except UnicodeEncodeError:
+        return False
 
 
 def ccdb_datasets() -> list[str]:
@@ -118,18 +130,16 @@ def bundle_notes(dataset: str) -> tuple[dict, list[str]]:
     if largest > SPAN_LETTER_LIMIT:
         notes.append(f"largest family has {largest} spans, more than the {SPAN_LETTER_LIMIT} "
                      "letters ghost_trees/conflict_groups name spans with")
-    strengths = [int(float(r[c])) for r in read_tsv(data / "boundary_strength.tsv")
-                 for c in ("left_summed", "right_summed")]
-    if strengths and max(strengths) < OVERLAY_GRID_STEP:
-        notes.append(f"largest boundary strength {max(strengths)}, below the overlay's "
-                     f"first gridline at {OVERLAY_GRID_STEP}")
     if meta.get("n_positions", 0) > LONG_STRUCTURE:
         notes.append(f"{meta['n_positions']} positions: check label crowding")
     labels = [r["Test_Labels"] for r in read_tsv(data / "tests.tsv")]
-    long_labels = [l for l in labels if len(l) > LONG_LABEL]
-    if long_labels:
-        notes.append(f"{len(long_labels)} test label(s) over {LONG_LABEL} characters "
-                     f"(longest {max(map(len, long_labels))})")
+    drawn = labels + [meta.get("language_name") or ""]
+    undrawable = sorted({c for text in drawn for c in text if not pdf_can_draw(c)})
+    if undrawable:
+        notes.append("characters R's PDF fonts draw as a period: " + " ".join(undrawable))
+    if meta.get("synthetic_root"):
+        notes.append("no test covers the whole structure, so the placeholder root span puts "
+                     "a capped mark with no bar at the first and/or last position of boundary_strength")
     for table in ("span_placement_test.tsv", "arbitrary_layers_test.tsv"):
         truncated = [r["group"] for r in read_tsv(data / table) if int(r.get("n_truncated") or 0)]
         if truncated:

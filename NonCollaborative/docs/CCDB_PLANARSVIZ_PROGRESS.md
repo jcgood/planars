@@ -3,7 +3,7 @@
 Plan: `docs/PLAN_ccdb_planarsviz.md`. This file is the current state; the
 plan says what and why. Update it at every step boundary, in the same commit.
 
-## Where things stand (2026-09-22)
+## Where things stand (2026-09-23)
 
 - **Step 1, import: done** (`0c483d7`). `scripts/analysis/import_ccdb.py`
   wrote all 21 structures from CCDB commit `e3d5386`. Checked by a separate
@@ -18,8 +18,11 @@ plan says what and why. Update it at every step boundary, in the same commit.
   squashed exemplary trees, now fixed.
 - **Step 3a, one command for one language: done (2026-09-23).**
   `scripts/planarsviz_language.py`; details under "Step 3a as built".
-- **Step 4, all 21: next.**
-- Steps 4–5: not started.
+- **Step 4, all 21: done apart from three questions for Jeff (2026-09-23).**
+  All 21 export and render with no chart failing; seven review agents
+  looked through 20 of them (Chácobo verbal had already been looked at);
+  six display problems fixed. Details under "Step 4 as built".
+- Step 5: not started.
 - Resolved: `results/planarsviz/` held data bundles and reference images, not
   code, and its name suggested otherwise (Jeff, 2026-09-23). Renamed/split
   2026-09-23 into `results/chart_data/` (bundles) and `results/chart_checks/`
@@ -267,6 +270,75 @@ python scripts/planarsviz_language.py nyan1308 --apply          # export 526 s, 
 
 The two `--apply` runs went in parallel, so their times are a little slower
 than either would be alone.
+
+## Step 4 as built
+
+`python scripts/planarsviz_ccdb_batch.py --apply` runs
+`planarsviz_language.py --apply` for every `planar_tables/ccdb_*.json`, four
+at a time, carrying on past a failure. Each structure's output goes to
+`results/ccdb_batch/<Planar_ID>.log`; `results/ccdb_batch/summary.md` lists
+what failed, chart kinds a structure lacks, and what to look at before
+trusting a chart. `--only a,b` runs some; `--summary-only` rewrites the
+summary from what is on disk. All 21 at 5000 draws: about 7 minutes.
+
+First run: nothing failed, nothing skipped. Chácobo verbal's bundle came
+back byte-identical and its PDFs differed only in date stamps.
+
+The review: seven Sonnet agents, three structures each, the step 3
+checklist, looking at every chart except the middle trees of each forest.
+They change nothing; each finding was checked here before acting on it.
+
+Fixed (each leaves nyan1308's 137 charts identical, by the renderer check):
+
+- **Overlay gridlines.** `boundary_strength_overlay` drew a line every 50;
+  18 of 21 structures peak below 50, leaving only the 0 line. Every 50 is
+  kept when the axis reaches 50; below that, whole round-number steps.
+- **Long test labels squeezed the position axis** in the pooled charts and
+  exemplary evidence panels (Central Alaskan Yupik, Cherokee, Siksiká: axis
+  numbers run together, axis title cut off). Labels built from `Domain_ID`
+  run to 97 characters; nyan1308's longest is 44. The canvas now grows
+  0.21 cm per character beyond 44 (`planarsviz_label_extra_cm()`,
+  `R/labels.R`). This changes 22 of Chácobo verbal's committed charts (its
+  labels run to 66): wider, nothing else.
+- **"Verbal planar structure" on nominal structures.** The axis title was
+  typed in. The exporter gains `--planar-type`, written to `metadata.json`
+  only when given (so nyan1308's bundle is unchanged); the one-language
+  command passes it from `ccdb_<Planar_ID>.json`. Charts say "verbal" when a
+  bundle has none.
+- **"Teotitla.n", "San Marti.n".** CCDB stores these names' accents as a
+  separate combining mark (U+0301), which R's PDF fonts can't draw. The
+  exporter joins accent to letter (Unicode NFC) in the language name. Test
+  labels already use the joined form.
+- **`forestspans_plot` axis starting at 2** (Kayabí: no test starts at 1,
+  and the placeholder root span is dropped from this chart). Position 1 is
+  now always in range.
+- (Step 3a's command also carries `planar_type` now; see its docstring.)
+
+Not changed, for Jeff (the three questions):
+
+1. **Per-type forests stop at that type's last position** (`indet_*`,
+   `phon_*`, `morsyn_*` in 11 structures), while the pooled forests and
+   every other chart run 1..n. Deliberate in step 2.1 — it is what the
+   archived forest scripts drew and what nyan1308's references show — but
+   side by side it reads as "these tests don't reach there".
+2. **IPA in labels draws as a period**: ʔ (Mocoví), ɛ (Ayautla). R's
+   standard PDF fonts cover only Windows Latin-1. Fixing it means drawing
+   PDFs with a different device (cairo), which would change every
+   nyan1308 PDF, or a device chosen per bundle.
+3. **A "capped" mark with no bar** at position 1 and/or n of
+   `boundary_strength`, in the 11 structures where no test covers the whole
+   structure. The capped count includes the placeholder root span; the
+   summed count leaves it out. `test_planarsviz_shifted_bundle.py` records
+   this as expected, so it was a choice, but the chart then shows a
+   boundary with no evidence behind it.
+
+Also seen, judged fine: dense crossing lines in Siksiká's overlay (31
+families on 14 positions) and a few crossing sibling branches in long
+sparse trees — both the data, not the drawing.
+
+The summary's notes were revised after the fixes: the gridline and
+long-label notes are gone, and it now flags undrawable characters and the
+placeholder root span (question 3).
 
 ## Likely trouble in step 3 (from a read-only survey of the code, 2026-09-22)
 

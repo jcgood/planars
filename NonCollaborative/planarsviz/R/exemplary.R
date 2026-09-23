@@ -21,7 +21,8 @@
 #     max(7, tests x 0.7) cm rounded to 2 places, print page 51 + 25 cm wide,
 #     slide tree 13.333 x 7.5 in -- every width then widened for structures
 #     with more than 22 positions (planarsviz_position_scale(), R/labels.R),
-#     and the print page given a minimum height of 0.28 x the tree's width
+#     the evidence panel also for test labels longer than nyan1308's
+#     (planarsviz_label_extra_cm()), and the print page given a minimum height of 0.28 x the tree's width
 #     (see plot_exemplary_tree());
 #   - library(), source() and ggsave() removed.
 
@@ -101,7 +102,8 @@ planarsviz_family_evidence <- function(bundle, family_id) {
   setup <- planarsviz_pooled_setup(bundle)
   tests_plot <- df.plot(setup$tests, setup$type_levels)
   ex_plot1_data <- filter(tests_plot, Test_Labels %in% test_labels)
-  ex_plot1 <- constituency.plot(ex_plot1_data, setup$b, setup$o, setup$group.colors, setup$legend_breaks)
+  ex_plot1 <- constituency.plot(ex_plot1_data, setup$b, setup$o, setup$group.colors, setup$legend_breaks,
+                                setup$axis_title)
   attr(ex_plot1, "planarsviz_n_tests") <- length(test_labels)
   ex_plot1
 }
@@ -141,7 +143,8 @@ plot_exemplary_tree <- function(bundle, rank = 1L, view = c("page", "slide_tree"
   }
   ex_plot1 <- planarsviz_family_evidence(bundle, family_id)
   tree_width_cm <- 51.0 * planarsviz_position_scale(bundle)
-  pooled_width_cm <- 25.0 * planarsviz_position_scale(bundle)
+  pooled_width_cm <- 25.0 * planarsviz_position_scale(bundle) +
+    planarsviz_label_extra_cm(ex_plot1$data$Test_Labels)
   pooled_height_cm <- round(max(7.0, attr(ex_plot1, "planarsviz_n_tests") * 0.7), 2)
   if (view == "slide_evidence") {
     attr(ex_plot1, "planarsviz_size") <- c(width = pooled_width_cm, height = pooled_height_cm)

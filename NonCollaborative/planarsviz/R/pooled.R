@@ -9,7 +9,11 @@
 #   - plot_height() renamed pooled_plot_height() (a "plot_" name would be
 #     exported by the NAMESPACE pattern);
 #   - plot_pooled() added as the public entry point, reproducing the four
-#     chart families that script builds.
+#     chart families that script builds;
+#   - the canvas widened for structures with more than 22 positions and for
+#     row labels longer than nyan1308's 44 characters (R/labels.R);
+#   - the axis title names the bundle's planar type ("verbal" when it has
+#     none), not always "verbal".
 
 # Ensures test rows become two edges (L/R) and layers are computed consistently
 df.plot <- function(d, type_levels) {
@@ -88,7 +92,8 @@ finish.constituency.plot <- function(p, c, n_legend_entries = 5L) {
   }
 }
 
-constituency.plot <- function(c, b, o, group.colors, legend_breaks) {
+constituency.plot <- function(c, b, o, group.colors, legend_breaks,
+                              axis_title = "Positions on the verbal planar structure") {
   p <- ggplot(c, aes(
     x = Edge,
     # Largest domain on top: ascending Size puts the highest value (largest
@@ -106,7 +111,7 @@ constituency.plot <- function(c, b, o, group.colors, legend_breaks) {
       size = 3, label.padding = unit(0.2, "lines"),
       show.legend = FALSE
     ) +
-    xlab("Positions on the verbal planar structure") +
+    xlab(axis_title) +
     scale_x_continuous(breaks = seq(1, b, 1), limits = c(1, b)) +
 
     # Custom legend order (only shown for multi-domain charts; see finish.constituency.plot())
@@ -125,7 +130,8 @@ constituency.plot <- function(c, b, o, group.colors, legend_breaks) {
 }
 
 
-constituency.domain.plot <- function(c, b, o, group.colors, legend_breaks) {
+constituency.domain.plot <- function(c, b, o, group.colors, legend_breaks,
+                                     axis_title = "Positions on the verbal planar structure") {
   p <- ggplot(c, aes(
     x = Edge,
     y = reorder(Test_Labels, Layer),
@@ -141,7 +147,7 @@ constituency.domain.plot <- function(c, b, o, group.colors, legend_breaks) {
       size = 3, label.padding = unit(0.2, "lines"),
       show.legend = FALSE
     ) +
-    xlab("Positions on the verbal planar structure") +
+    xlab(axis_title) +
     scale_x_continuous(breaks = seq(1, b, 1), limits = c(1, b)) +
 
     # Custom legend order (only shown for multi-domain charts; see finish.constituency.plot())
@@ -207,11 +213,11 @@ plot_pooled <- function(bundle, domain_types = NULL, layers = c("global", "local
 
   if (isTRUE(group_by_domain)) {
     d <- df.domain.plot(tests, type_levels)
-    p <- constituency.domain.plot(d, b, o, group.colors, legend_breaks)
+    p <- constituency.domain.plot(d, b, o, group.colors, legend_breaks, setup$axis_title)
     width <- 26
   } else if (is.null(domain_types)) {
     d <- df.plot(tests, type_levels)
-    p <- constituency.plot(d, b, o, group.colors, legend_breaks)
+    p <- constituency.plot(d, b, o, group.colors, legend_breaks, setup$axis_title)
     width <- 26
   } else {
     unknown <- setdiff(domain_types, unique(tests$Domain_Type))
@@ -223,10 +229,11 @@ plot_pooled <- function(bundle, domain_types = NULL, layers = c("global", "local
     } else {
       filter(df.plot(tests, type_levels), Domain_Type %in% domain_types)
     }
-    p <- constituency.plot(d, b, o, group.colors, legend_breaks)
+    p <- constituency.plot(d, b, o, group.colors, legend_breaks, setup$axis_title)
     width <- 25
   }
-  attr(p, "planarsviz_size") <- c(width = width * planarsviz_position_scale(bundle), height = pooled_plot_height(d))
+  width <- width * planarsviz_position_scale(bundle) + planarsviz_label_extra_cm(d$Test_Labels)
+  attr(p, "planarsviz_size") <- c(width = width, height = pooled_plot_height(d))
   attr(p, "planarsviz_units") <- "cm"
   attr(p, "planarsviz_folder") <- "pooled"
   p
@@ -249,7 +256,8 @@ planarsviz_pooled_setup <- function(bundle) {
     legend_breaks = style$domain_type[order(style$legend_order)],
     b = as.integer(bundle$metadata$n_positions),
     o = o,
-    tests = tests
+    tests = tests,
+    axis_title = planarsviz_axis_title(bundle)
   )
 }
 

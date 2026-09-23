@@ -16,7 +16,9 @@
 #     size rank inverted (sort by size, then left edge; largest span = 1),
 #     rows by family count descending then Layer; synthetic root dropped;
 #   - library loading (pacman) and ggsave() removed; the dotted root line is
-#     skipped when the bundle has no root position.
+#     skipped when the bundle has no root position;
+#   - the axis title names the bundle's planar type, and the axis always
+#     starts at position 1 (CCDB step 4, 2026-09-23).
 
 #' ForestSpans plot
 #'
@@ -169,7 +171,7 @@ plot_forestspans <- function(bundle, subset = NULL,
       breaks = style$domain_type[order(style$legend_order)]
     ) +
     guides(fill = guide_legend(override.aes = list(alpha = 1, size = 4, shape = 22))) +
-    xlab("Positions on the verbal planar structure") +
+    xlab(planarsviz_axis_title(bundle)) +
     # No manual limits -- the panel's x-range is left to derive from the actual
     # data (1..b for the spans, count_x for the tree-count text), then margined
     # by a flat, principled rule: margin_unit on each side, i.e. exactly one
@@ -178,6 +180,11 @@ plot_forestspans <- function(bundle, subset = NULL,
       breaks = seq(1, b, 1),
       expand = expansion(add = c(margin_unit, margin_unit))
     ) +
+    # ...except that position 1 is always in range. With the synthetic root
+    # dropped, a structure whose tests all start at 2 or later (Kayabí) would
+    # otherwise have an axis starting at 2. nyan1308 has an observed span
+    # from 1, so its range is unchanged.
+    expand_limits(x = 1) +
     coord_cartesian(clip = "off") +
     theme_bw() +
     theme(

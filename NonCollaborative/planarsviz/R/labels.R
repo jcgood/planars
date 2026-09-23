@@ -47,3 +47,28 @@ planarsviz_position_scale <- function(bundle, baseline = 22L) {
   }
   max(1, n_positions / baseline)
 }
+
+# The position axis title. Every chart said "verbal" when nyan1308 was the
+# only language; five CCDB structures are nominal. The exporter records a
+# planar_type only when given one (--planar-type), so a bundle without it --
+# nyan1308's -- keeps the title it always had.
+planarsviz_axis_title <- function(bundle) {
+  type <- bundle$metadata$planar_type
+  if (is.null(type) || !nzchar(type)) type <- "verbal"
+  paste0("Positions on the ", type, " planar structure")
+}
+
+# How many centimetres to add to a pooled-style chart (row labels down the
+# left, position axis along the bottom) whose row labels are longer than
+# nyan1308's. Its fixed widths were tuned on labels of at most 44 characters;
+# CCDB's labels, built from Domain_ID, run to 97, and on a fixed canvas the
+# label column takes the width away from the position axis until its numbers
+# run together (Central Alaskan Yupik, 2026-09-23). So the canvas grows by
+# the extra label length instead, at 0.21 cm a character (the axis text is
+# 12 pt, and an average character is about half that wide). Labels of 44
+# characters or fewer add nothing, which is what keeps nyan1308's charts
+# identical to the reference images.
+planarsviz_label_extra_cm <- function(labels, baseline = 44L, cm_per_char = 0.21) {
+  longest <- max(0L, nchar(as.character(labels)), na.rm = TRUE)
+  max(0, longest - baseline) * cm_per_char
+}

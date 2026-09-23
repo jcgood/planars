@@ -19,6 +19,7 @@ import csv
 import hashlib
 import json
 import sys
+import unicodedata
 from pathlib import Path
 
 import numpy as np
@@ -975,6 +976,7 @@ def export_bundle(
     root_position_override: int | None = None,
     groupings: str = "chichewa",
     language_name: str | None = None,
+    planar_type: str | None = None,
     highlights_file: Path | None = None,
     conflict_groups_file: Path | None = None,
     conflict_group_cap: int = 12,
@@ -1193,7 +1195,10 @@ def export_bundle(
     metadata = {
         "contract_version": "0.2.0",
         "dataset": dataset,
-        "language_name": language_name,
+        # Joined into one character per accented letter (Unicode NFC): CCDB
+        # stores some names' accents as separate combining marks ("Teotitlán",
+        # "San Martín"), which R's PDF device draws as a period.
+        "language_name": unicodedata.normalize("NFC", language_name) if language_name else language_name,
         "source_domain_file": str(domain_file),
         "source_domain_sha256": sha256_file(domain_file),
         "source_planar_file": (
@@ -1211,6 +1216,9 @@ def export_bundle(
         "root_position": root_position,
         "root_position_source": root_position_source,
         "groupings": groupings,
+        # Only when given, so a bundle exported without it (nyan1308's) is
+        # byte-for-byte what it was; the charts then say "verbal".
+        **({"planar_type": planar_type} if planar_type else {}),
         "n_positions": n_positions,
         "n_active_tests": len(tests),
         "n_unique_spans": len(spans),
@@ -1357,6 +1365,11 @@ def main() -> None:
         help="Human-readable language name for chart titles, e.g. Chichewa (titles fall back to the dataset id)",
     )
     parser.add_argument(
+        "--planar-type", default=None,
+        help="What the planar structure is of, for axis titles such as 'Positions on the "
+             "nominal planar structure' (default: the charts say 'verbal')",
+    )
+    parser.add_argument(
         "--highlights-file", type=Path, default=None,
         help="TSV of named position highlights; default planar_tables/highlights_<dataset>.tsv if present",
     )
@@ -1442,6 +1455,7 @@ def main() -> None:
                                root_position_override=args.root_position,
                                groupings=args.groupings,
                                language_name=args.language_name,
+                               planar_type=args.planar_type,
                                highlights_file=args.highlights_file,
                                conflict_groups_file=args.conflict_groups_file,
                                conflict_group_cap=args.conflict_group_cap,

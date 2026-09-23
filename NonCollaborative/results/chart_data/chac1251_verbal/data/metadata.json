@@ -20,6 +20,7 @@
   "n_positions": 28,
   "n_unique_spans": 22,
   "n_universal_spans": 1,
+  "planar_type": "verbal",
   "producer": "scripts/analysis/export_planarsviz_data.py",
   "root_element": "root",
   "root_position": 8,
