@@ -22,8 +22,8 @@
 #     slide tree 13.333 x 7.5 in -- every width then widened for structures
 #     with more than 22 positions (planarsviz_position_scale(), R/labels.R),
 #     the evidence panel also for test labels longer than nyan1308's
-#     (planarsviz_label_extra_cm()), and the print page given a minimum height of 0.28 x the tree's width
-#     (see plot_exemplary_tree());
+#     (planarsviz_label_extra_cm()), and the print page given a minimum
+#     height of 0.28 x the tree's width (see plot_exemplary_tree());
 #   - library(), source() and ggsave() removed.
 
 # One family's tree, drawn solid with a boxed "N\nName" label at every tip.
@@ -102,8 +102,10 @@ planarsviz_family_evidence <- function(bundle, family_id) {
   setup <- planarsviz_pooled_setup(bundle)
   tests_plot <- df.plot(setup$tests, setup$type_levels)
   ex_plot1_data <- filter(tests_plot, Test_Labels %in% test_labels)
-  ex_plot1 <- constituency.plot(ex_plot1_data, setup$b, setup$o, setup$group.colors, setup$legend_breaks,
-                                setup$axis_title)
+  ex_plot1 <- constituency.plot(
+    ex_plot1_data, setup$b, setup$o, setup$group.colors, setup$legend_breaks,
+    setup$axis_title
+  )
   attr(ex_plot1, "planarsviz_n_tests") <- length(test_labels)
   ex_plot1
 }
