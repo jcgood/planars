@@ -1,0 +1,5 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-27	1	27	27	0	1	(root)	(synthetic)	True		#000000
+17-20	17	20	4	1	1	free occurrence maximal	indeterminate	False	2	#6F99AD
+18-19	18	19	2	1	1	deviations suppletion recipient pronouns	indeterminate	False	1	#6F99AD
+18-20	18	20	3	1	1	deviations suppletion patient pronouns	indeterminate	False	3	#6F99AD

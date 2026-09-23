@@ -1,0 +1,20 @@
+{
+  "contract_version": "0.2.0",
+  "dataset": "ayau1235_verbal",
+  "domain_type": "indeterminate",
+  "domain_types": [
+    "indeterminate"
+  ],
+  "enumeration_truncated": false,
+  "kind": "domain_type",
+  "n_active_tests": 8,
+  "n_conflict_pairs": 2,
+  "n_maximal_families": 2,
+  "n_positions": 31,
+  "n_unique_spans": 4,
+  "n_universal_spans": 1,
+  "source_domain_file": "domains/domains_ayau1235_verbal.tsv",
+  "source_domain_sha256": "351288c7038b1b6a52f6f166cdb6acb86a38c00b262f0cabd18750a4e8747f8e",
+  "subset_id": "indeterminate",
+  "synthetic_root": true
+}

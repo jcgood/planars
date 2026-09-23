@@ -1,0 +1,401 @@
+group	kind	label	colour	side	statistic	position	observed	null_mean	null_p05	null_p95	p_value_ge_observed	n_permutations	seed
+all	all	All tests	#000000	left	level	1	11.0	10.699	5.0	20.0	0.422	5000	0
+all	all	All tests	#000000	left	level	2	0.0	2.783	0.0	10.0	1.0	5000	0
+all	all	All tests	#000000	left	level	3	3.0	2.813	0.0	10.0	0.3982	5000	0
+all	all	All tests	#000000	left	level	4	0.0	2.826	0.0	10.0	1.0	5000	0
+all	all	All tests	#000000	left	level	5	0.0	2.789	0.0	10.0	1.0	5000	0
+all	all	All tests	#000000	left	level	6	19.0	2.983	0.0	10.0	0.0026	5000	0
+all	all	All tests	#000000	left	level	7	3.0	2.535	0.0	9.0	0.3818	5000	0
+all	all	All tests	#000000	left	level	8	10.0	2.587	0.0	10.0	0.0502	5000	0
+all	all	All tests	#000000	left	level	9	0.0	1.909	0.0	8.0	1.0	5000	0
+all	all	All tests	#000000	left	level	10	0.0	1.819	0.0	8.0	1.0	5000	0
+all	all	All tests	#000000	left	level	11	0.0	1.789	0.0	8.0	1.0	5000	0
+all	all	All tests	#000000	left	level	12	0.0	1.711	0.0	8.0	1.0	5000	0
+all	all	All tests	#000000	left	level	13	0.0	1.37	0.0	7.0	1.0	5000	0
+all	all	All tests	#000000	left	level	14	0.0	1.412	0.0	7.0	1.0	5000	0
+all	all	All tests	#000000	left	level	15	0.0	1.274	0.0	7.0	1.0	5000	0
+all	all	All tests	#000000	left	level	16	0.0	1.229	0.0	7.0	1.0	5000	0
+all	all	All tests	#000000	left	level	17	0.0	1.277	0.0	7.0	1.0	5000	0
+all	all	All tests	#000000	left	level	18	0.0	0.862	0.0	6.0	1.0	5000	0
+all	all	All tests	#000000	left	level	19	0.0	0.61	0.0	6.0	1.0	5000	0
+all	all	All tests	#000000	left	level	20	0.0	0.0	0.0	0.0	1.0	5000	0
+all	all	All tests	#000000	right	level	1	0.0	0.0	0.0	0.0	1.0	5000	0
+all	all	All tests	#000000	right	level	2	0.0	0.608	0.0	6.0	1.0	5000	0
+all	all	All tests	#000000	right	level	3	0.0	0.863	0.0	6.0	1.0	5000	0
+all	all	All tests	#000000	right	level	4	0.0	1.317	0.0	7.0	1.0	5000	0
+all	all	All tests	#000000	right	level	5	0.0	1.251	0.0	6.05	1.0	5000	0
+all	all	All tests	#000000	right	level	6	0.0	1.228	0.0	7.0	1.0	5000	0
+all	all	All tests	#000000	right	level	7	0.0	1.438	0.0	7.0	1.0	5000	0
+all	all	All tests	#000000	right	level	8	6.0	1.437	0.0	7.0	0.0928	5000	0
+all	all	All tests	#000000	right	level	9	14.0	1.761	0.0	8.0	0.0056	5000	0
+all	all	All tests	#000000	right	level	10	0.0	1.771	0.0	8.0	1.0	5000	0
+all	all	All tests	#000000	right	level	11	3.0	1.773	0.0	8.0	0.294	5000	0
+all	all	All tests	#000000	right	level	12	6.0	1.862	0.0	8.0	0.1258	5000	0
+all	all	All tests	#000000	right	level	13	0.0	2.581	0.0	9.0	1.0	5000	0
+all	all	All tests	#000000	right	level	14	0.0	2.414	0.0	9.0	1.0	5000	0
+all	all	All tests	#000000	right	level	15	3.0	2.916	0.0	10.0	0.419	5000	0
+all	all	All tests	#000000	right	level	16	0.0	2.923	0.0	10.0	1.0	5000	0
+all	all	All tests	#000000	right	level	17	0.0	2.871	0.0	10.0	1.0	5000	0
+all	all	All tests	#000000	right	level	18	0.0	2.844	0.0	10.0	1.0	5000	0
+all	all	All tests	#000000	right	level	19	0.0	2.726	0.0	10.0	1.0	5000	0
+all	all	All tests	#000000	right	level	20	14.0	10.694	5.0	20.0	0.2362	5000	0
+all	all	All tests	#000000	left	jump	1	0.0	0.0	0.0	0.0	1.0	5000	0
+all	all	All tests	#000000	left	jump	2	-11.0	-7.917	-18.0	0.0	0.7682	5000	0
+all	all	All tests	#000000	left	jump	3	3.0	0.03	-9.0	8.0	0.2636	5000	0
+all	all	All tests	#000000	left	jump	4	-3.0	0.013	-8.0	8.0	0.7896	5000	0
+all	all	All tests	#000000	left	jump	5	0.0	-0.037	-8.0	8.0	0.5916	5000	0
+all	all	All tests	#000000	left	jump	6	19.0	0.194	-8.0	9.0	0.0014	5000	0
+all	all	All tests	#000000	left	jump	7	-16.0	-0.447	-9.0	8.0	0.9962	5000	0
+all	all	All tests	#000000	left	jump	8	7.0	0.052	-8.0	8.0	0.0874	5000	0
+all	all	All tests	#000000	left	jump	9	-10.0	-0.678	-9.0	7.0	0.9736	5000	0
+all	all	All tests	#000000	left	jump	10	0.0	-0.09	-7.0	7.0	0.6972	5000	0
+all	all	All tests	#000000	left	jump	11	0.0	-0.03	-8.0	7.0	0.7026	5000	0
+all	all	All tests	#000000	left	jump	12	0.0	-0.078	-8.0	7.0	0.7082	5000	0
+all	all	All tests	#000000	left	jump	13	0.0	-0.34	-7.0	6.0	0.7022	5000	0
+all	all	All tests	#000000	left	jump	14	0.0	0.042	-6.0	6.0	0.752	5000	0
+all	all	All tests	#000000	left	jump	15	0.0	-0.138	-7.0	6.0	0.7438	5000	0
+all	all	All tests	#000000	left	jump	16	0.0	-0.045	-6.0	6.0	0.7712	5000	0
+all	all	All tests	#000000	left	jump	17	0.0	0.048	-6.0	6.0	0.787	5000	0
+all	all	All tests	#000000	left	jump	18	0.0	-0.415	-7.0	6.0	0.7704	5000	0
+all	all	All tests	#000000	left	jump	19	0.0	-0.253	-6.0	5.0	0.8532	5000	0
+all	all	All tests	#000000	left	jump	20	0.0	-0.61	-6.0	0.0	0.8944	5000	0
+all	all	All tests	#000000	right	jump	1	0.0	0.0	0.0	0.0	1.0	5000	0
+all	all	All tests	#000000	right	jump	2	0.0	0.608	0.0	6.0	1.0	5000	0
+all	all	All tests	#000000	right	jump	3	0.0	0.255	-6.0	6.0	0.9008	5000	0
+all	all	All tests	#000000	right	jump	4	0.0	0.454	-6.0	7.0	0.8598	5000	0
+all	all	All tests	#000000	right	jump	5	0.0	-0.066	-6.0	6.0	0.7734	5000	0
+all	all	All tests	#000000	right	jump	6	0.0	-0.024	-6.0	6.0	0.7812	5000	0
+all	all	All tests	#000000	right	jump	7	0.0	0.211	-6.0	7.0	0.788	5000	0
+all	all	All tests	#000000	right	jump	8	6.0	-0.001	-6.0	7.0	0.0772	5000	0
+all	all	All tests	#000000	right	jump	9	8.0	0.324	-6.0	7.0	0.0462	5000	0
+all	all	All tests	#000000	right	jump	10	-14.0	0.01	-7.0	7.0	0.9976	5000	0
+all	all	All tests	#000000	right	jump	11	3.0	0.002	-7.0	7.0	0.2224	5000	0
+all	all	All tests	#000000	right	jump	12	3.0	0.089	-7.0	8.0	0.2364	5000	0
+all	all	All tests	#000000	right	jump	13	-6.0	0.718	-7.0	9.0	0.9432	5000	0
+all	all	All tests	#000000	right	jump	14	0.0	-0.167	-8.0	8.0	0.6128	5000	0
+all	all	All tests	#000000	right	jump	15	3.0	0.502	-7.0	9.0	0.282	5000	0
+all	all	All tests	#000000	right	jump	16	-3.0	0.008	-9.0	9.0	0.78	5000	0
+all	all	All tests	#000000	right	jump	17	0.0	-0.052	-9.0	8.0	0.5894	5000	0
+all	all	All tests	#000000	right	jump	18	0.0	-0.027	-8.0	9.0	0.5896	5000	0
+all	all	All tests	#000000	right	jump	19	0.0	-0.118	-8.0	8.0	0.5862	5000	0
+all	all	All tests	#000000	right	jump	20	14.0	7.968	0.0	18.0	0.1582	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	level	1	1.0	0.464	0.0	2.0	0.321	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	level	2	0.0	0.516	0.0	2.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	level	3	0.0	0.48	0.0	2.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	level	4	0.0	0.483	0.0	2.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	level	5	0.0	0.484	0.0	2.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	level	6	2.0	0.489	0.0	2.0	0.1248	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	level	7	2.0	0.253	0.0	2.0	0.0574	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	level	8	0.0	0.28	0.0	2.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	level	9	0.0	0.257	0.0	2.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	level	10	0.0	0.272	0.0	2.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	level	11	0.0	0.264	0.0	2.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	level	12	0.0	0.289	0.0	2.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	level	13	0.0	0.192	0.0	2.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	level	14	0.0	0.184	0.0	2.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	level	15	0.0	0.108	0.0	1.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	level	16	0.0	0.096	0.0	1.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	level	17	0.0	0.087	0.0	0.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	level	18	0.0	0.081	0.0	0.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	level	19	0.0	0.103	0.0	1.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	level	20	0.0	0.0	0.0	0.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	level	1	0.0	0.0	0.0	0.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	level	2	0.0	0.08	0.0	0.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	level	3	0.0	0.11	0.0	1.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	level	4	0.0	0.082	0.0	0.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	level	5	0.0	0.09	0.0	1.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	level	6	0.0	0.082	0.0	0.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	level	7	0.0	0.171	0.0	1.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	level	8	2.0	0.172	0.0	1.0	0.0486	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	level	9	1.0	0.269	0.0	2.0	0.1924	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	level	10	0.0	0.273	0.0	2.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	level	11	0.0	0.273	0.0	2.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	level	12	1.0	0.274	0.0	2.0	0.2008	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	level	13	0.0	0.284	0.0	2.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	level	14	0.0	0.274	0.0	2.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	level	15	0.0	0.478	0.0	2.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	level	16	0.0	0.513	0.0	2.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	level	17	0.0	0.497	0.0	2.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	level	18	0.0	0.493	0.0	2.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	level	19	0.0	0.468	0.0	2.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	level	20	1.0	0.496	0.0	2.0	0.34	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	jump	1	0.0	0.0	0.0	0.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	jump	2	-1.0	0.052	-2.0	2.0	0.9206	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	jump	3	0.0	-0.036	-2.0	2.0	0.7286	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	jump	4	0.0	0.003	-2.0	2.0	0.7366	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	jump	5	0.0	0.001	-2.0	2.0	0.74	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	jump	6	2.0	0.005	-2.0	2.0	0.1054	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	jump	7	0.0	-0.236	-2.0	1.0	0.7	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	jump	8	-2.0	0.027	-2.0	2.0	0.9922	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	jump	9	0.0	-0.022	-2.0	2.0	0.8192	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	jump	10	0.0	0.015	-2.0	2.0	0.8394	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	jump	11	0.0	-0.008	-2.0	2.0	0.8322	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	jump	12	0.0	0.025	-2.0	2.0	0.835	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	jump	13	0.0	-0.097	-2.0	1.0	0.8176	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	jump	14	0.0	-0.008	-2.0	1.0	0.8814	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	jump	15	0.0	-0.075	-2.0	1.0	0.8804	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	jump	16	0.0	-0.013	-1.0	1.0	0.9392	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	jump	17	0.0	-0.009	-1.0	0.0	0.946	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	jump	18	0.0	-0.006	0.0	0.0	0.9516	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	jump	19	0.0	0.022	0.0	1.0	0.9544	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	left	jump	20	0.0	-0.103	-1.0	0.0	0.9404	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	jump	1	0.0	0.0	0.0	0.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	jump	2	0.0	0.08	0.0	0.0	1.0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	jump	3	0.0	0.03	0.0	1.0	0.9524	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	jump	4	0.0	-0.028	-1.0	0.0	0.9384	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	jump	5	0.0	0.008	0.0	1.0	0.953	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	jump	6	0.0	-0.008	-1.0	0.0	0.9488	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	jump	7	0.0	0.089	0.0	1.0	0.9542	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	jump	8	2.0	0.001	-1.0	1.0	0.0476	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	jump	9	-1.0	0.097	-1.0	2.0	0.9582	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	jump	10	-1.0	0.004	-2.0	2.0	0.9426	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	jump	11	0.0	-0.0	-2.0	2.0	0.8276	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	jump	12	1.0	0.001	-2.0	2.0	0.1714	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	jump	13	-1.0	0.01	-2.0	2.0	0.9422	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	jump	14	0.0	-0.01	-2.0	2.0	0.823	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	jump	15	0.0	0.204	-2.0	2.0	0.8448	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	jump	16	0.0	0.035	-2.0	2.0	0.745	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	jump	17	0.0	-0.016	-2.0	2.0	0.7284	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	jump	18	0.0	-0.004	-2.0	2.0	0.733	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	jump	19	0.0	-0.025	-2.0	2.0	0.7288	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	right	jump	20	1.0	0.028	-2.0	2.0	0.279	5000	0
+phonological	class	Phonological	#20845E	left	level	1	3.0	3.271	2.0	6.0	0.6658	5000	0
+phonological	class	Phonological	#20845E	left	level	2	0.0	0.623	0.0	3.0	1.0	5000	0
+phonological	class	Phonological	#20845E	left	level	3	2.0	0.589	0.0	2.0	0.158	5000	0
+phonological	class	Phonological	#20845E	left	level	4	0.0	0.592	0.0	2.0	1.0	5000	0
+phonological	class	Phonological	#20845E	left	level	5	0.0	0.599	0.0	2.0	1.0	5000	0
+phonological	class	Phonological	#20845E	left	level	6	1.0	0.636	0.0	3.0	0.3736	5000	0
+phonological	class	Phonological	#20845E	left	level	7	0.0	0.625	0.0	3.0	1.0	5000	0
+phonological	class	Phonological	#20845E	left	level	8	5.0	0.691	0.0	3.0	0.0052	5000	0
+phonological	class	Phonological	#20845E	left	level	9	0.0	0.347	0.0	2.0	1.0	5000	0
+phonological	class	Phonological	#20845E	left	level	10	0.0	0.381	0.0	2.0	1.0	5000	0
+phonological	class	Phonological	#20845E	left	level	11	0.0	0.354	0.0	2.0	1.0	5000	0
+phonological	class	Phonological	#20845E	left	level	12	0.0	0.331	0.0	2.0	1.0	5000	0
+phonological	class	Phonological	#20845E	left	level	13	0.0	0.304	0.0	2.0	1.0	5000	0
+phonological	class	Phonological	#20845E	left	level	14	0.0	0.271	0.0	2.0	1.0	5000	0
+phonological	class	Phonological	#20845E	left	level	15	0.0	0.305	0.0	2.0	1.0	5000	0
+phonological	class	Phonological	#20845E	left	level	16	0.0	0.299	0.0	2.0	1.0	5000	0
+phonological	class	Phonological	#20845E	left	level	17	0.0	0.301	0.0	2.0	1.0	5000	0
+phonological	class	Phonological	#20845E	left	level	18	0.0	0.222	0.0	2.0	1.0	5000	0
+phonological	class	Phonological	#20845E	left	level	19	0.0	0.111	0.0	1.0	1.0	5000	0
+phonological	class	Phonological	#20845E	left	level	20	0.0	0.0	0.0	0.0	1.0	5000	0
+phonological	class	Phonological	#20845E	right	level	1	0.0	0.0	0.0	0.0	1.0	5000	0
+phonological	class	Phonological	#20845E	right	level	2	0.0	0.112	0.0	1.0	1.0	5000	0
+phonological	class	Phonological	#20845E	right	level	3	0.0	0.213	0.0	2.0	1.0	5000	0
+phonological	class	Phonological	#20845E	right	level	4	0.0	0.302	0.0	2.0	1.0	5000	0
+phonological	class	Phonological	#20845E	right	level	5	0.0	0.31	0.0	2.0	1.0	5000	0
+phonological	class	Phonological	#20845E	right	level	6	0.0	0.262	0.0	2.0	1.0	5000	0
+phonological	class	Phonological	#20845E	right	level	7	0.0	0.308	0.0	2.0	1.0	5000	0
+phonological	class	Phonological	#20845E	right	level	8	1.0	0.305	0.0	2.0	0.1604	5000	0
+phonological	class	Phonological	#20845E	right	level	9	2.0	0.323	0.0	2.0	0.128	5000	0
+phonological	class	Phonological	#20845E	right	level	10	0.0	0.356	0.0	2.0	1.0	5000	0
+phonological	class	Phonological	#20845E	right	level	11	2.0	0.379	0.0	2.0	0.1626	5000	0
+phonological	class	Phonological	#20845E	right	level	12	0.0	0.364	0.0	2.0	1.0	5000	0
+phonological	class	Phonological	#20845E	right	level	13	0.0	0.688	0.0	3.0	1.0	5000	0
+phonological	class	Phonological	#20845E	right	level	14	0.0	0.645	0.0	3.0	1.0	5000	0
+phonological	class	Phonological	#20845E	right	level	15	2.0	0.587	0.0	2.0	0.158	5000	0
+phonological	class	Phonological	#20845E	right	level	16	0.0	0.596	0.0	2.0	1.0	5000	0
+phonological	class	Phonological	#20845E	right	level	17	0.0	0.608	0.0	2.05	1.0	5000	0
+phonological	class	Phonological	#20845E	right	level	18	0.0	0.606	0.0	2.0	1.0	5000	0
+phonological	class	Phonological	#20845E	right	level	19	0.0	0.603	0.0	2.0	1.0	5000	0
+phonological	class	Phonological	#20845E	right	level	20	4.0	3.286	2.0	6.0	0.3486	5000	0
+phonological	class	Phonological	#20845E	left	jump	1	0.0	0.0	0.0	0.0	1.0	5000	0
+phonological	class	Phonological	#20845E	left	jump	2	-3.0	-2.648	-6.0	0.0	0.7258	5000	0
+phonological	class	Phonological	#20845E	left	jump	3	2.0	-0.034	-2.0	2.0	0.1202	5000	0
+phonological	class	Phonological	#20845E	left	jump	4	-2.0	0.003	-2.0	2.0	0.9568	5000	0
+phonological	class	Phonological	#20845E	left	jump	5	0.0	0.007	-2.0	2.0	0.7304	5000	0
+phonological	class	Phonological	#20845E	left	jump	6	1.0	0.037	-2.0	2.0	0.2964	5000	0
+phonological	class	Phonological	#20845E	left	jump	7	-1.0	-0.011	-2.0	2.0	0.8636	5000	0
+phonological	class	Phonological	#20845E	left	jump	8	5.0	0.066	-2.0	3.0	0.0042	5000	0
+phonological	class	Phonological	#20845E	left	jump	9	-5.0	-0.344	-3.0	2.0	0.9974	5000	0
+phonological	class	Phonological	#20845E	left	jump	10	0.0	0.034	-2.0	2.0	0.8672	5000	0
+phonological	class	Phonological	#20845E	left	jump	11	0.0	-0.027	-2.0	2.0	0.8542	5000	0
+phonological	class	Phonological	#20845E	left	jump	12	0.0	-0.024	-2.0	2.0	0.8564	5000	0
+phonological	class	Phonological	#20845E	left	jump	13	0.0	-0.027	-2.0	2.0	0.857	5000	0
+phonological	class	Phonological	#20845E	left	jump	14	0.0	-0.033	-2.0	2.0	0.8518	5000	0
+phonological	class	Phonological	#20845E	left	jump	15	0.0	0.034	-2.0	2.0	0.867	5000	0
+phonological	class	Phonological	#20845E	left	jump	16	0.0	-0.005	-2.0	2.0	0.8544	5000	0
+phonological	class	Phonological	#20845E	left	jump	17	0.0	0.002	-2.0	2.0	0.853	5000	0
+phonological	class	Phonological	#20845E	left	jump	18	0.0	-0.08	-2.0	2.0	0.8524	5000	0
+phonological	class	Phonological	#20845E	left	jump	19	0.0	-0.111	-2.0	1.0	0.893	5000	0
+phonological	class	Phonological	#20845E	left	jump	20	0.0	-0.111	-1.0	0.0	0.948	5000	0
+phonological	class	Phonological	#20845E	right	jump	1	0.0	0.0	0.0	0.0	1.0	5000	0
+phonological	class	Phonological	#20845E	right	jump	2	0.0	0.112	0.0	1.0	1.0	5000	0
+phonological	class	Phonological	#20845E	right	jump	3	0.0	0.101	-1.0	2.0	0.9494	5000	0
+phonological	class	Phonological	#20845E	right	jump	4	0.0	0.088	-2.0	2.0	0.9058	5000	0
+phonological	class	Phonological	#20845E	right	jump	5	0.0	0.009	-2.0	2.0	0.856	5000	0
+phonological	class	Phonological	#20845E	right	jump	6	0.0	-0.048	-2.0	2.0	0.849	5000	0
+phonological	class	Phonological	#20845E	right	jump	7	0.0	0.046	-2.0	2.0	0.8672	5000	0
+phonological	class	Phonological	#20845E	right	jump	8	1.0	-0.003	-2.0	2.0	0.1436	5000	0
+phonological	class	Phonological	#20845E	right	jump	9	1.0	0.018	-2.0	2.0	0.142	5000	0
+phonological	class	Phonological	#20845E	right	jump	10	-2.0	0.033	-2.0	2.0	0.9732	5000	0
+phonological	class	Phonological	#20845E	right	jump	11	2.0	0.023	-2.0	2.0	0.1456	5000	0
+phonological	class	Phonological	#20845E	right	jump	12	-2.0	-0.015	-2.0	2.0	0.965	5000	0
+phonological	class	Phonological	#20845E	right	jump	13	0.0	0.324	-2.0	3.0	0.8658	5000	0
+phonological	class	Phonological	#20845E	right	jump	14	0.0	-0.043	-3.0	3.0	0.7036	5000	0
+phonological	class	Phonological	#20845E	right	jump	15	2.0	-0.058	-2.0	2.0	0.1228	5000	0
+phonological	class	Phonological	#20845E	right	jump	16	-2.0	0.009	-2.0	2.0	0.965	5000	0
+phonological	class	Phonological	#20845E	right	jump	17	0.0	0.012	-2.0	2.0	0.7166	5000	0
+phonological	class	Phonological	#20845E	right	jump	18	0.0	-0.001	-2.0	2.0	0.7096	5000	0
+phonological	class	Phonological	#20845E	right	jump	19	0.0	-0.003	-2.0	2.0	0.7132	5000	0
+phonological	class	Phonological	#20845E	right	jump	20	4.0	2.683	0.0	6.0	0.2762	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	level	1	0.0	0.062	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	level	2	0.0	0.058	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	level	3	0.0	0.057	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	level	4	0.0	0.057	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	level	5	0.0	0.06	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	level	6	1.0	0.06	0.0	1.0	0.0604	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	level	7	0.0	0.056	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	level	8	0.0	0.063	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	level	9	0.0	0.06	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	level	10	0.0	0.055	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	level	11	0.0	0.059	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	level	12	0.0	0.061	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	level	13	0.0	0.059	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	level	14	0.0	0.057	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	level	15	0.0	0.052	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	level	16	0.0	0.062	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	level	17	0.0	0.063	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	level	18	0.0	0.0	0.0	0.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	level	19	0.0	0.0	0.0	0.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	level	20	0.0	0.0	0.0	0.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	level	1	0.0	0.0	0.0	0.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	level	2	0.0	0.0	0.0	0.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	level	3	0.0	0.0	0.0	0.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	level	4	0.0	0.062	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	level	5	0.0	0.058	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	level	6	0.0	0.057	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	level	7	0.0	0.057	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	level	8	0.0	0.06	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	level	9	1.0	0.06	0.0	1.0	0.0604	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	level	10	0.0	0.056	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	level	11	0.0	0.063	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	level	12	0.0	0.06	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	level	13	0.0	0.055	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	level	14	0.0	0.059	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	level	15	0.0	0.061	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	level	16	0.0	0.059	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	level	17	0.0	0.057	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	level	18	0.0	0.052	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	level	19	0.0	0.062	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	level	20	0.0	0.063	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	jump	1	0.0	0.0	0.0	0.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	jump	2	0.0	-0.003	-1.0	1.0	0.9384	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	jump	3	0.0	-0.002	-1.0	1.0	0.9416	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	jump	4	0.0	0.0	-1.0	1.0	0.9434	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	jump	5	0.0	0.003	-1.0	1.0	0.9432	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	jump	6	1.0	0.0	-1.0	1.0	0.0604	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	jump	7	-1.0	-0.005	-1.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	jump	8	0.0	0.007	-1.0	1.0	0.9444	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	jump	9	0.0	-0.003	-1.0	1.0	0.9374	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	jump	10	0.0	-0.005	-1.0	1.0	0.9402	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	jump	11	0.0	0.004	-1.0	1.0	0.9448	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	jump	12	0.0	0.001	-1.0	1.0	0.9408	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	jump	13	0.0	-0.002	-1.0	1.0	0.9394	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	jump	14	0.0	-0.002	-1.0	1.0	0.941	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	jump	15	0.0	-0.005	-1.0	1.0	0.9434	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	jump	16	0.0	0.01	-1.0	1.0	0.948	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	jump	17	0.0	0.001	-1.0	1.0	0.9376	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	jump	18	0.0	-0.063	-1.0	0.0	0.937	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	jump	19	0.0	0.0	0.0	0.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	left	jump	20	0.0	0.0	0.0	0.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	jump	1	0.0	0.0	0.0	0.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	jump	2	0.0	0.0	0.0	0.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	jump	3	0.0	0.0	0.0	0.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	jump	4	0.0	0.062	0.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	jump	5	0.0	-0.003	-1.0	1.0	0.9384	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	jump	6	0.0	-0.002	-1.0	1.0	0.9416	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	jump	7	0.0	0.0	-1.0	1.0	0.9434	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	jump	8	0.0	0.003	-1.0	1.0	0.9432	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	jump	9	1.0	0.0	-1.0	1.0	0.0604	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	jump	10	-1.0	-0.005	-1.0	1.0	1.0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	jump	11	0.0	0.007	-1.0	1.0	0.9444	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	jump	12	0.0	-0.003	-1.0	1.0	0.9374	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	jump	13	0.0	-0.005	-1.0	1.0	0.9402	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	jump	14	0.0	0.004	-1.0	1.0	0.9448	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	jump	15	0.0	0.001	-1.0	1.0	0.9408	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	jump	16	0.0	-0.002	-1.0	1.0	0.9394	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	jump	17	0.0	-0.002	-1.0	1.0	0.941	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	jump	18	0.0	-0.005	-1.0	1.0	0.9434	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	jump	19	0.0	0.01	-1.0	1.0	0.948	5000	0
+indeterminate	class	Indeterminate	#6F99AD	right	jump	20	0.0	0.001	-1.0	1.0	0.9376	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	level	1	1.0	0.672	0.0	3.0	0.3728	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	level	2	0.0	0.658	0.0	3.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	level	3	0.0	0.667	0.0	3.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	level	4	0.0	0.661	0.0	3.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	level	5	0.0	0.662	0.0	3.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	level	6	4.0	0.661	0.0	3.0	0.02	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	level	7	2.0	0.419	0.0	2.0	0.1272	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	level	8	0.0	0.406	0.0	2.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	level	9	0.0	0.406	0.0	2.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	level	10	0.0	0.424	0.0	2.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	level	11	0.0	0.415	0.0	2.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	level	12	0.0	0.423	0.0	2.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	level	13	0.0	0.303	0.0	2.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	level	14	0.0	0.311	0.0	2.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	level	15	0.0	0.192	0.0	2.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	level	16	0.0	0.213	0.0	2.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	level	17	0.0	0.202	0.0	2.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	level	18	0.0	0.112	0.0	1.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	level	19	0.0	0.105	0.0	0.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	level	20	0.0	0.0	0.0	0.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	level	1	0.0	0.0	0.0	0.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	level	2	0.0	0.108	0.0	1.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	level	3	0.0	0.111	0.0	1.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	level	4	0.0	0.201	0.0	2.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	level	5	0.0	0.202	0.0	2.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	level	6	0.0	0.2	0.0	2.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	level	7	0.0	0.302	0.0	2.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	level	8	2.0	0.305	0.0	2.0	0.101	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	level	9	3.0	0.412	0.0	2.0	0.0342	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	level	10	0.0	0.422	0.0	2.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	level	11	0.0	0.395	0.0	2.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	level	12	1.0	0.413	0.0	2.0	0.2454	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	level	13	0.0	0.413	0.0	2.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	level	14	0.0	0.409	0.0	2.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	level	15	0.0	0.706	0.0	3.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	level	16	0.0	0.666	0.0	3.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	level	17	0.0	0.686	0.0	3.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	level	18	0.0	0.649	0.0	3.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	level	19	0.0	0.672	0.0	3.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	level	20	1.0	0.639	0.0	3.0	0.362	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	jump	1	0.0	0.0	0.0	0.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	jump	2	-1.0	-0.014	-3.0	3.0	0.8524	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	jump	3	0.0	0.01	-3.0	3.0	0.7164	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	jump	4	0.0	-0.007	-3.0	3.0	0.7166	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	jump	5	0.0	0.001	-3.0	3.0	0.7182	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	jump	6	4.0	-0.001	-3.0	3.0	0.0168	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	jump	7	-2.0	-0.242	-3.0	2.0	0.946	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	jump	8	-2.0	-0.013	-2.0	2.0	0.9708	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	jump	9	0.0	-0.001	-2.0	2.0	0.7974	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	jump	10	0.0	0.018	-2.0	2.0	0.7938	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	jump	11	0.0	-0.009	-2.0	2.0	0.789	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	jump	12	0.0	0.007	-2.0	2.0	0.7928	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	jump	13	0.0	-0.12	-2.0	2.0	0.787	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	jump	14	0.0	0.008	-2.0	2.0	0.8502	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	jump	15	0.0	-0.118	-2.0	2.0	0.8328	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	jump	16	0.0	0.02	-2.0	2.0	0.8994	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	jump	17	0.0	-0.011	-2.0	2.0	0.8952	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	jump	18	0.0	-0.09	-2.0	1.0	0.898	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	jump	19	0.0	-0.007	-1.0	0.0	0.9466	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	left	jump	20	0.0	-0.105	0.0	0.0	0.9504	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	jump	1	0.0	0.0	0.0	0.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	jump	2	0.0	0.108	0.0	1.0	1.0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	jump	3	0.0	0.003	-1.0	1.0	0.9492	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	jump	4	0.0	0.09	-1.0	2.0	0.9484	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	jump	5	0.0	0.0	-2.0	2.0	0.8964	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	jump	6	0.0	-0.001	-2.0	2.0	0.8966	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	jump	7	0.0	0.101	-2.0	2.0	0.9024	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	jump	8	2.0	0.003	-2.0	2.0	0.0914	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	jump	9	1.0	0.107	-2.0	2.0	0.212	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	jump	10	-3.0	0.011	-2.0	2.0	0.9924	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	jump	11	0.0	-0.027	-2.0	2.0	0.7848	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	jump	12	1.0	0.018	-2.0	2.0	0.2064	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	jump	13	-1.0	-0.0	-2.0	2.0	0.8954	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	jump	14	0.0	-0.004	-2.0	2.0	0.7834	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	jump	15	0.0	0.297	-2.0	3.0	0.8166	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	jump	16	0.0	-0.04	-3.0	3.0	0.6998	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	jump	17	0.0	0.02	-2.0	3.0	0.7156	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	jump	18	0.0	-0.037	-3.0	3.0	0.702	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	jump	19	0.0	0.023	-2.0	3.0	0.7084	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	right	jump	20	1.0	-0.033	-3.0	2.0	0.2826	5000	0

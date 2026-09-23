@@ -1,0 +1,6 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-9	1	9	9	1	1	noninterruption simplex	morphosyntactic	False	3	#BC3C29
+1-20	1	20	20	0	2	(root)	(synthetic)	True		#000000
+6-12	6	12	7	1	1	noninterruption simplex permutable	morphosyntactic	False	1	#BC3C29
+6-20	6	20	15	1	1	nonpermutability	morphosyntactic	False	2	#BC3C29
+7-8	7	8	2	1	2	ciscategorial selection	morphosyntactic	False	4	#BC3C29

@@ -1,0 +1,10 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-12	1	12	12	1	2	proform	morphosyntactic	False		#BC3C29
+2-6	2	6	5	1	1	nonpermutability scopal minimal	morphosyntactic	False	1	#BC3C29
+2-8	2	8	7	1	1	recursion based maximal tihi conjunction	morphosyntactic	False	6	#BC3C29
+2-10	2	10	9	1	1	recursion based possession maximal genitive	morphosyntactic	False	4	#BC3C29
+2-12	2	12	11	1	2	nonpermutability maximal	morphosyntactic	False	8	#BC3C29
+3-4	3	4	2	2	1	recursion based compound|recursion based naxeni	morphosyntactic	False	2	#BC3C29
+3-5	3	5	3	1	1	noninterruption simplex	morphosyntactic	False	5	#BC3C29
+3-6	3	6	4	1	1	noninterruption complex	morphosyntactic	False	3	#BC3C29
+4-12	4	12	9	1	1	ciscategorial selection maximal	morphosyntactic	False	7	#BC3C29

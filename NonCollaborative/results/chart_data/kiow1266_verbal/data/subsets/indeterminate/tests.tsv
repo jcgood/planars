@@ -1,0 +1,5 @@
+source_row	Serial_Order	Language_Name	Language_ID	Domain_ID	Domain_Type	Abstract_Type	CrossL_Fracture	MinMax_Fracture	Lspecific_Fracture	Left_Edge	Right_Edge	Convergence	Relative_Convergence	Size	Relative_Size	Largest	Position_Total	Tests_Total	Planar_ID	PW_Pattern	Test_Labels	CCDB_Test_Labels
+3	275	Kiowa	kiow1266	kiow1266_v_deviations_suppletion	indeterminate	deviations	suppletion			29	34	1	0.06	6	0.15	39	39	17	kiow1266_verbal	indeterminate	deviations suppletion	
+4	276	Kiowa	kiow1266	kiow1266_v_free.occurrence_maximal	indeterminate	free.occurrence		maximal		25	36	2	0.12	12	0.31	39	39	17	kiow1266_verbal	indeterminate	free occurrence maximal	
+5	277	Kiowa	kiow1266	kiow1266_v_free.occurrence_minimal	indeterminate	free.occurrence		minimal		25	30	1	0.06	6	0.15	39	39	17	kiow1266_verbal	indeterminate	free occurrence minimal	
+8	280	Kiowa	kiow1266	kiow1266_v_pausing	indeterminate	pausing				1	39	2	0.12	39	1	39	39	17	kiow1266_verbal	indeterminate	pausing	

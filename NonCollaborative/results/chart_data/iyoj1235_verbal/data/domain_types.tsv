@@ -1,0 +1,4 @@
+domain_type	colour	sort_order	legend_order	facet_order	alt_colour	colour_priority	known
+morphosyntactic	#BC3C29	1	1	1	#EE6677	1	True
+phonological	#20845E	4	2	2	#4477AA	2	True
+indeterminate	#6F99AD	6	6	6	#66CCEE	6	True

@@ -1,0 +1,7 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-29	1	29	29	1	1	segmental vowel-consonant deletion suffix deletion	phonological	False	3	#20845E
+1-42	1	42	42	0	2	(root)	(synthetic)	True		#000000
+12-13	12	13	2	1	2	segmental minimal	phonological	False	5	#20845E
+12-29	12	29	18	1	2	suprasegmental accent minimal stress	phonological	False	4	#20845E
+12-38	12	38	27	1	1	segmental maximal	phonological	False	1	#20845E
+12-41	12	41	30	1	1	suprasegmental accent maximal stress	phonological	False	2	#20845E

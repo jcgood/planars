@@ -1,0 +1,4 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-12	1	12	12	0	1	(root)	(synthetic)	True		#000000
+3-6	3	6	4	1	1	recursion based minimal tihi conjunction	indeterminate	False	2	#6F99AD
+3-12	3	12	10	1	1	free occurrence maximal	indeterminate	False	1	#6F99AD

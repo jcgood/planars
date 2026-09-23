@@ -1,0 +1,3 @@
+source_row	Serial_Order	Language_Name	Language_ID	Domain_ID	Domain_Type	Abstract_Type	CrossL_Fracture	MinMax_Fracture	Lspecific_Fracture	Left_Edge	Right_Edge	Convergence	Relative_Convergence	Size	Relative_Size	Largest	Position_Total	Tests_Total	Planar_ID	PW_Pattern	Test_Labels	CCDB_Test_Labels
+5	360	South Bolivian Quechua	sout2991	sout2991_v_free.occurrence_maximal	indeterminate	free.occurrence		maximal		12	40	1	0.05	29	0.69	42	42	20	sout2991_verbal	indeterminate	free occurrence maximal	Min Free Form Max.
+6	361	South Bolivian Quechua	sout2991	sout2991_v_free.occurrence_minimal	indeterminate	free.occurrence		minimal		12	26	2	0.1	15	0.36	42	42	20	sout2991_verbal	indeterminate	free occurrence minimal	Min Free Form Min.

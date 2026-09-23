@@ -1,0 +1,20 @@
+{
+  "contract_version": "0.2.0",
+  "dataset": "sout2991_verbal",
+  "domain_type": "indeterminate",
+  "domain_types": [
+    "indeterminate"
+  ],
+  "enumeration_truncated": false,
+  "kind": "domain_type",
+  "n_active_tests": 2,
+  "n_conflict_pairs": 0,
+  "n_maximal_families": 1,
+  "n_positions": 42,
+  "n_unique_spans": 2,
+  "n_universal_spans": 2,
+  "source_domain_file": "domains/domains_sout2991_verbal.tsv",
+  "source_domain_sha256": "93d0f4903958564da16f4ea502a919559fcf7bd4bb09d70a7480595edc462c4c",
+  "subset_id": "indeterminate",
+  "synthetic_root": true
+}

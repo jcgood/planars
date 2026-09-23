@@ -1,0 +1,20 @@
+{
+  "contract_version": "0.2.0",
+  "dataset": "siks1238_verbal",
+  "domain_type": "phonological",
+  "domain_types": [
+    "phonological"
+  ],
+  "enumeration_truncated": false,
+  "kind": "domain_type",
+  "n_active_tests": 10,
+  "n_conflict_pairs": 1,
+  "n_maximal_families": 2,
+  "n_positions": 14,
+  "n_unique_spans": 6,
+  "n_universal_spans": 4,
+  "source_domain_file": "domains/domains_siks1238_verbal.tsv",
+  "source_domain_sha256": "615fb54e7c5ed00b9d0d0741be3b9f85beb1b0149193b8778edfbd018ef529e2",
+  "subset_id": "phonological",
+  "synthetic_root": true
+}

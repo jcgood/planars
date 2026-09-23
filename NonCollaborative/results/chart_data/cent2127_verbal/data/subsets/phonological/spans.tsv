@@ -1,0 +1,4 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-21	1	21	21	0	1	(root)	(synthetic)	True		#000000
+2-16	2	16	15	3	1	segmental consonant coalescence uvular-velar consonant coalescence|segmental consonant deletion vvv clusteravoidance|suprasegmental accent minimal	phonological	False	2	#20845E
+2-20	2	20	19	1	1	suprasegmental accent maximal	phonological	False	1	#20845E

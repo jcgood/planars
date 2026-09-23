@@ -1,0 +1,20 @@
+{
+  "contract_version": "0.2.0",
+  "dataset": "iyoj1235_verbal",
+  "domain_type": "phonological",
+  "domain_types": [
+    "phonological"
+  ],
+  "enumeration_truncated": false,
+  "kind": "domain_type",
+  "n_active_tests": 12,
+  "n_conflict_pairs": 12,
+  "n_maximal_families": 5,
+  "n_positions": 46,
+  "n_unique_spans": 9,
+  "n_universal_spans": 0,
+  "source_domain_file": "domains/domains_iyoj1235_verbal.tsv",
+  "source_domain_sha256": "ea6838eee4742bcbd1c6d28d14cbe6dd3f62d1cbc873b1137dd670e2cd9fe61a",
+  "subset_id": "phonological",
+  "synthetic_root": true
+}

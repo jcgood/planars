@@ -1,0 +1,20 @@
+{
+  "contract_version": "0.2.0",
+  "dataset": "ayau1235_verbal",
+  "domain_type": "morphosyntactic",
+  "domain_types": [
+    "morphosyntactic"
+  ],
+  "enumeration_truncated": false,
+  "kind": "domain_type",
+  "n_active_tests": 8,
+  "n_conflict_pairs": 1,
+  "n_maximal_families": 2,
+  "n_positions": 31,
+  "n_unique_spans": 7,
+  "n_universal_spans": 5,
+  "source_domain_file": "domains/domains_ayau1235_verbal.tsv",
+  "source_domain_sha256": "351288c7038b1b6a52f6f166cdb6acb86a38c00b262f0cabd18750a4e8747f8e",
+  "subset_id": "morphosyntactic",
+  "synthetic_root": true
+}

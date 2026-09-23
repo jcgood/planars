@@ -1,0 +1,32 @@
+[
+  {
+    "colour": "#BC3C29",
+    "domain_types": [
+      "morphosyntactic"
+    ],
+    "group_id": "morsyn",
+    "n_trees": 2
+  },
+  {
+    "colour": "#20845E",
+    "domain_types": [
+      "phonological"
+    ],
+    "group_id": "phon",
+    "n_trees": 6
+  },
+  {
+    "colour": "#6F99AD",
+    "domain_types": [
+      "indeterminate"
+    ],
+    "group_id": "indet",
+    "n_trees": 2
+  },
+  {
+    "colour": "black",
+    "domain_types": null,
+    "group_id": "all",
+    "n_trees": 8
+  }
+]

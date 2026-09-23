@@ -1,0 +1,74 @@
+$ /Users/jcgood/gitrepos/planars/NonCollaborative/../.venv/bin/python scripts/planarsviz_language.py hupd1244_nominal --apply
+Dataset hupd1244_nominal
+  language_name  Hup (nominal)                    from planar_tables/ccdb_hupd1244_nominal.json
+  groupings      ccdb                             from planar_tables/ccdb_hupd1244_nominal.json
+  root_position  5                                from planar_tables/ccdb_hupd1244_nominal.json
+  planar_type    nominal                          from planar_tables/ccdb_hupd1244_nominal.json
+  permutations   5000                             all four tests
+
+== Export ==
+/Users/jcgood/gitrepos/planars/.venv/bin/python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_hupd1244_nominal.tsv --groupings ccdb --root-position 5 --language-name 'Hup (nominal)' --planar-type nominal --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
+Exported planarsviz bundle: /Users/jcgood/gitrepos/planars/NonCollaborative/results/chart_data/hupd1244_nominal
+Export finished in 14 s.
+
+== Render ==
+Rscript scripts/render_planarsviz.R --bundle results/chart_data/hupd1244_nominal --output results
+wrote hupd1244_nominal/pooled/hupd1244_nominal_pooled_plot.pdf
+wrote hupd1244_nominal/pooled/hupd1244_nominal_pooled_domainplot.pdf
+wrote hupd1244_nominal/pooled/hupd1244_nominal_pooled_plot_indeterminate.pdf
+wrote hupd1244_nominal/pooled/hupd1244_nominal_pooled_plot_indeterminate_global_layers.pdf
+wrote hupd1244_nominal/pooled/hupd1244_nominal_pooled_plot_morphosyntactic.pdf
+wrote hupd1244_nominal/pooled/hupd1244_nominal_pooled_plot_morphosyntactic_global_layers.pdf
+wrote hupd1244_nominal/pooled/hupd1244_nominal_pooled_plot_phonological.pdf
+wrote hupd1244_nominal/pooled/hupd1244_nominal_pooled_plot_phonological_global_layers.pdf
+wrote hupd1244_nominal/boundaries/hupd1244_nominal_boundary_skyline.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_spanchart.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_morsyn_laminar_forest.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_morsyn_tree_01.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_morsyn_tree_02.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_phon_laminar_forest.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_phon_tree_01.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_indet_laminar_forest.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_indet_tree_01.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_morsyn_indet_laminar_forest.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_morsyn_indet_tree_01.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_morsyn_indet_tree_02.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_laminar_overlay.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_laminar_overlay_legend.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_all_families_labeled.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_all_families_labeled_legend.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_freqtree.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_most_binary_tree.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_exemplary_trees_1.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_exemplary_trees_slide_1_tree.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_exemplary_trees_slide_1_evidence.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_exemplary_trees_2.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_exemplary_trees_slide_2_tree.pdf
+wrote hupd1244_nominal/laminar-families/hupd1244_nominal_exemplary_trees_slide_2_evidence.pdf
+wrote hupd1244_nominal/pooled/hupd1244_nominal_forestspans_plot.pdf
+wrote hupd1244_nominal/counts-and-chance/hupd1244_nominal_tree_count_by_class.pdf
+wrote hupd1244_nominal/counts-and-chance/hupd1244_nominal_tree_count_bundles.pdf
+wrote hupd1244_nominal/counts-and-chance/hupd1244_nominal_tree_count_all.pdf
+wrote hupd1244_nominal/counts-and-chance/hupd1244_nominal_tree_count_without_adjacent.pdf
+wrote hupd1244_nominal/counts-and-chance/hupd1244_nominal_fragmentation_test_plot.pdf
+wrote hupd1244_nominal/counts-and-chance/hupd1244_nominal_span_placement_test_by_group_plot.pdf
+wrote hupd1244_nominal/counts-and-chance/hupd1244_nominal_arbitrary_layers_test_by_group_plot.pdf
+wrote hupd1244_nominal/boundaries/hupd1244_nominal_boundary_strength_test_jump_all.pdf
+wrote hupd1244_nominal/boundaries/hupd1244_nominal_boundary_strength_test_level_all.pdf
+wrote hupd1244_nominal/boundaries/hupd1244_nominal_boundary_strength_test_jump_morphosyntactic.pdf
+wrote hupd1244_nominal/boundaries/hupd1244_nominal_boundary_strength_test_level_morphosyntactic.pdf
+wrote hupd1244_nominal/boundaries/hupd1244_nominal_boundary_strength_test_jump_phonological.pdf
+wrote hupd1244_nominal/boundaries/hupd1244_nominal_boundary_strength_test_level_phonological.pdf
+wrote hupd1244_nominal/boundaries/hupd1244_nominal_boundary_strength_test_jump_indeterminate.pdf
+wrote hupd1244_nominal/boundaries/hupd1244_nominal_boundary_strength_test_level_indeterminate.pdf
+wrote hupd1244_nominal/boundaries/hupd1244_nominal_boundary_strength_test_jump_morsyn_indet.pdf
+wrote hupd1244_nominal/boundaries/hupd1244_nominal_boundary_strength_test_level_morsyn_indet.pdf
+wrote hupd1244_nominal/boundaries/hupd1244_nominal_boundary_strength.pdf
+wrote hupd1244_nominal/boundaries/hupd1244_nominal_boundary_strength_distributions.pdf
+wrote hupd1244_nominal/boundaries/hupd1244_nominal_boundary_strength_overlay.pdf
+53 files for 53 of 53 charts; manifest: results/hupd1244_nominal_planarsviz_manifest.tsv
+Render finished in 23 s.
+
+Bundle: results/chart_data/hupd1244_nominal/   Charts: results/hupd1244_nominal/
+
+[batch] exit code 0 after 37 s

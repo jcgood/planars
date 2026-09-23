@@ -1,0 +1,5 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-39	1	39	39	1	2	pausing	indeterminate	False		#6F99AD
+25-30	25	30	6	1	1	free occurrence minimal	indeterminate	False	1	#6F99AD
+25-36	25	36	12	1	2	free occurrence maximal	indeterminate	False	3	#6F99AD
+29-34	29	34	6	1	1	deviations suppletion	indeterminate	False	2	#6F99AD

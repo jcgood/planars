@@ -1,0 +1,8 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-14	1	14	14	0	2	(root)	(synthetic)	True		#000000
+3-8	3	8	6	1	1	deviations allomorphy k-assibilation	indeterminate	False	4	#6F99AD
+3-9	3	9	7	2	1	free occurrence minimal independent|recursion based asyndetic minimal coordination independent	indeterminate	False	5	#6F99AD
+3-13	3	13	11	1	2	free occurrence maximal independent	indeterminate	False	6	#6F99AD
+4-11	4	11	8	3	1	deviations allomorphy minimal seperable root nasal deletion vowel coalescence|free occurrence minimal conjunct|recursion based asyndetic minimal coordination conjunct	indeterminate	False	3	#6F99AD
+4-13	4	13	10	1	1	free occurrence maximal conjunct	indeterminate	False	1	#6F99AD
+6-11	6	11	6	1	1	deviations allomorphy maximal inseperable root nasal deletion vowel coalescence	indeterminate	False	2	#6F99AD

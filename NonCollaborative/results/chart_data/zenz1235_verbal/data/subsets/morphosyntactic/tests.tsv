@@ -1,0 +1,5 @@
+source_row	Serial_Order	Language_Name	Language_ID	Domain_ID	Domain_Type	Abstract_Type	CrossL_Fracture	MinMax_Fracture	Lspecific_Fracture	Left_Edge	Right_Edge	Convergence	Relative_Convergence	Size	Relative_Size	Largest	Position_Total	Tests_Total	Planar_ID	PW_Pattern	Test_Labels	CCDB_Test_Labels
+6	444	Zenzontepec Chatino	zenz1235	zenz1235_v_noninterruption	morphosyntactic	noninterruption				7	14	2	0.07	8	0.38	21	21	28	zenz1235_verbal	morphosyntactic	noninterruption	Non-interrupt.
+7	445	Zenzontepec Chatino	zenz1235	zenz1235_v_nonpermutability_rigid	morphosyntactic	nonpermutability	rigid			7	14	2	0.07	8	0.38	21	21	28	zenz1235_verbal	morphosyntactic	nonpermutability rigid	Non-permut. Rigid
+8	446	Zenzontepec Chatino	zenz1235	zenz1235_v_nonpermutability_scopal	morphosyntactic	nonpermutability	scopal			7	17	2	0.07	11	0.52	21	21	28	zenz1235_verbal	morphosyntactic	nonpermutability scopal	Non-permut. Scope
+10	448	Zenzontepec Chatino	zenz1235	zenz1235_v_recursion.based_maximal_coordination	morphosyntactic	recursion.based		maximal	coordination	2	20	1	0.04	19	0.9	21	21	28	zenz1235_verbal	morphosyntactic	recursion based maximal coordination	Rep. Subspan Max.

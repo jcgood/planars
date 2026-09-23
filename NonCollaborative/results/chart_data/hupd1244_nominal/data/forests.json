@@ -1,0 +1,43 @@
+[
+  {
+    "alpha": 0.9,
+    "colour": "#BC3C29",
+    "domain_types": [
+      "morphosyntactic"
+    ],
+    "forest_id": "morsyn",
+    "n_positions": 15,
+    "n_trees": 2
+  },
+  {
+    "alpha": 0.99,
+    "colour": "#20845E",
+    "domain_types": [
+      "phonological"
+    ],
+    "forest_id": "phon",
+    "n_positions": 15,
+    "n_trees": 1
+  },
+  {
+    "alpha": 0.99,
+    "colour": "#6F99AD",
+    "domain_types": [
+      "indeterminate"
+    ],
+    "forest_id": "indet",
+    "n_positions": 15,
+    "n_trees": 1
+  },
+  {
+    "alpha": 0.9,
+    "colour": "#EE4C97",
+    "domain_types": [
+      "morphosyntactic",
+      "indeterminate"
+    ],
+    "forest_id": "morsyn_indet",
+    "n_positions": 15,
+    "n_trees": 2
+  }
+]

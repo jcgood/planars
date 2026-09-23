@@ -1,0 +1,10 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-27	1	27	27	0	4	(root)	(synthetic)	True		#000000
+2-26	2	26	25	1	2	ciscategorial selection maximal	morphosyntactic	False	4	#BC3C29
+3-25	3	25	23	1	2	nonpermutability rigid interrogative	morphosyntactic	False	1	#BC3C29
+4-25	4	25	22	1	4	nonpermutability declarative and interrogative	morphosyntactic	False	8	#BC3C29
+4-27	4	27	24	1	2	recursion based complement clause	morphosyntactic	False	6	#BC3C29
+17-18	17	18	2	1	2	ciscategorial selection minimal	morphosyntactic	False	5	#BC3C29
+17-20	17	20	4	4	4	free occurrence maximal|noninterruption|nonpermutability rigid|suprasegmental accent	indeterminate|morphosyntactic|phonological	False	7	#6E7367
+18-19	18	19	2	1	2	deviations suppletion recipient pronouns	indeterminate	False	3	#6F99AD
+18-20	18	20	3	1	2	deviations suppletion patient pronouns	indeterminate	False	2	#6F99AD

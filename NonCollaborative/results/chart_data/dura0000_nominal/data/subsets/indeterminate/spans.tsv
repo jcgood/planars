@@ -1,0 +1,3 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-13	1	13	13	0	1	(root)	(synthetic)	True		#000000
+6-8	6	8	3	1	1	free occurrence maximal	indeterminate	False	1	#6F99AD

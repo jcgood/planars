@@ -1,0 +1,8 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-27	1	27	27	1	2	segmental minimality maximal monomoraic apart from verb base	phonological	False	3	#20845E
+1-28	1	28	28	1	2	segmental minimality maximal bimoraic	phonological	False	1	#20845E
+1-29	1	29	29	0	4	(root)	(synthetic)	True		#000000
+6-29	6	29	24	1	2	segmental vowel deletion maximal vowel overwriting after glottal stop	phonological	False	6	#20845E
+12-18	12	18	7	1	2	segmental minimality minimal monomoraic apart from verb base	phonological	False	5	#20845E
+17-26	17	26	10	1	2	segmental vowel deletion minimal vowel overwriting after glottal stop	phonological	False	2	#20845E
+17-27	17	27	11	1	2	suprasegmental tone sandhi dependent pronouns	phonological	False	4	#20845E

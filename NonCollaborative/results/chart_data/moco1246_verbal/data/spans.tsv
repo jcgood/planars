@@ -1,0 +1,13 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-20	1	20	20	0	7	(root)	(synthetic)	True		#000000
+3-18	3	18	16	1	5	recursion based asyndetic maximal first second person p	morphosyntactic	False	8	#BC3C29
+4-7	4	7	4	1	1	segmental consonant assimilation verb conditioned variability	phonological	False	1	#20845E
+4-15	4	15	12	1	3	nonpermutability rigid verb conditioned variability	morphosyntactic	False	3	#BC3C29
+4-18	4	18	15	4	5	free occurrence maximal|noninterruption simplex|nonpermutability rigid|suprasegmental accent maximal	indeterminate|morphosyntactic|phonological	False	7	#6E7367
+6-7	6	7	2	5	4	deviations allomorphy person marking|free occurrence minimal|recursion based asyndetic minimal|segmental vowel insertion minimal vocalic epenthesis|suprasegmental accent minimal	indeterminate|phonological	False	5	#488E86
+6-11	6	11	6	1	6	segmental consonant assimilation regressive	phonological	False	10	#20845E
+6-14	6	14	9	1	6	recursion based syndetic minimal nakoʔ linker	indeterminate	False	11	#6F99AD
+6-15	6	15	10	2	6	segmental consonant assimilation maximal palatalization|segmental vowel assimilation maximal vocalic epenthesis	phonological	False	9	#20845E
+6-18	6	18	13	1	4	deviations allomorphy progressive marking	indeterminate	False	6	#6F99AD
+6-19	6	19	14	2	2	recursion based asyndetic maximal third person p|recursion based syndetic maximal kan and then	morphosyntactic	False	2	#BC3C29
+7-11	7	11	5	3	3	ciscategorial selection|segmental consonant assimilation minimal palatalization|segmental consonant assimilation second person	morphosyntactic|phonological	False	4	#6E6044

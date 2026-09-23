@@ -1,0 +1,5 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-21	1	21	21	0	2	(root)	(synthetic)	True		#000000
+5-16	5	16	12	1	1	recursion based minimal coordination	indeterminate	False	1	#6F99AD
+7-17	7	17	11	1	1	free occurrence maximal	indeterminate	False	2	#6F99AD
+10-13	10	13	4	4	2	deviations allomorphy tam|deviations suppletion 2sg|free occurrence minimal|play language play language	indeterminate	False	3	#6F99AD

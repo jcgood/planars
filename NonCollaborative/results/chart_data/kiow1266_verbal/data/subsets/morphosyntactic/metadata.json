@@ -1,0 +1,20 @@
+{
+  "contract_version": "0.2.0",
+  "dataset": "kiow1266_verbal",
+  "domain_type": "morphosyntactic",
+  "domain_types": [
+    "morphosyntactic"
+  ],
+  "enumeration_truncated": false,
+  "kind": "domain_type",
+  "n_active_tests": 4,
+  "n_conflict_pairs": 0,
+  "n_maximal_families": 1,
+  "n_positions": 39,
+  "n_unique_spans": 4,
+  "n_universal_spans": 4,
+  "source_domain_file": "domains/domains_kiow1266_verbal.tsv",
+  "source_domain_sha256": "99c84a032b69a1ae86ffd1a50aa978b43e8e586236ce2e06c995b15c40d60522",
+  "subset_id": "morphosyntactic",
+  "synthetic_root": false
+}

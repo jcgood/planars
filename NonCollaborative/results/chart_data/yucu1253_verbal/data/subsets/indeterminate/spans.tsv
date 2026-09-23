@@ -1,0 +1,8 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-21	1	21	21	0	2	(root)	(synthetic)	True		#000000
+4-12	4	12	9	1	1	deviations extended exponence maximal negation	indeterminate	False	3	#6F99AD
+6-12	6	12	7	1	1	deviations extended exponence minimal negation	indeterminate	False	1	#6F99AD
+8-10	8	10	3	1	1	free occurrence maximal	indeterminate	False	4	#6F99AD
+9-10	9	10	2	1	1	free occurrence minimal	indeterminate	False	2	#6F99AD
+10-13	10	13	4	2	1	deviations allomorphy past tense|deviations allomorphy valency	indeterminate	False	5	#6F99AD
+10-17	10	17	8	1	1	deviations extended exponence middle	indeterminate	False	6	#6F99AD

@@ -1,0 +1,5 @@
+source_row	Serial_Order	Language_Name	Language_ID	Domain_ID	Domain_Type	Abstract_Type	CrossL_Fracture	MinMax_Fracture	Lspecific_Fracture	Left_Edge	Right_Edge	Convergence	Relative_Convergence	Size	Relative_Size	Largest	Position_Total	Tests_Total	Planar_ID	PW_Pattern	Test_Labels	CCDB_Test_Labels
+5	4	Araona	arao1248	arao1248_v_free.occurrence_maximal	indeterminate	free.occurrence		maximal		4	17	2	0.11	14	0.82	17	18	19	arao1248_verbal	indeterminate	free occurrence maximal	Free Ocurr. Max.
+6	5	Araona	arao1248	arao1248_v_free.occurrence_minimal	indeterminate	free.occurrence		minimal		6	6	5	0.26	1	0.06	17	18	19	arao1248_verbal	indeterminate	free occurrence minimal	Free Ocurr. Min.
+13	12	Araona	arao1248	arao1248_v_recursion.based_minimal	indeterminate	recursion.based		minimal		6	6	5	0.26	1	0.06	17	18	19	arao1248_verbal	indeterminate	recursion based minimal	Subspan Rep. Min.
+14	13	Araona	arao1248	arao1248_v_recursion.based_minimal_tso.marked	indeterminate	recursion.based		minimal	tso.marked	4	14	1	0.05	11	0.65	17	18	19	arao1248_verbal	morphosyntactic	recursion based minimal tso marked	Subspan Rep. Tso Min.

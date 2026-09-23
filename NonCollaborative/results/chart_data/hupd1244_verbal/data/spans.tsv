@@ -1,0 +1,11 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-32	1	32	32	1	3	recursion based sentence	morphosyntactic	False		#BC3C29
+2-10	2	10	9	1	1	nonpermutability rigid	morphosyntactic	False	2	#BC3C29
+2-18	2	18	17	1	1	ciscategorial selection maximal	morphosyntactic	False	1	#BC3C29
+2-26	2	26	25	1	3	suprasegmental accent minimal stress	phonological	False	8	#20845E
+2-30	2	30	29	2	3	free occurrence maximal|noninterruption multipositional 1	indeterminate|morphosyntactic	False	7	#966A6B
+2-32	2	32	31	1	3	segmental vowel assimilation maximal vowel copying	phonological	False	6	#20845E
+3-10	3	10	8	2	2	ciscategorial selection minimal|noninterruption multipositional 2	morphosyntactic	False	4	#BC3C29
+3-26	3	26	24	1	2	suprasegmental accent maximal stress	phonological	False	5	#20845E
+6-20	6	20	15	3	1	free occurrence minimal|segmental consonant deletion consonant deletion|segmental vowel assimilation minimal vowel copying	indeterminate|phonological	False	3	#488E86
+7-10	7	10	4	1	3	nonpermutability scopal	morphosyntactic	False	9	#BC3C29

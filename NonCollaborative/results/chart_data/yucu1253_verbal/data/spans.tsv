@@ -1,0 +1,16 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-21	1	21	21	1	7	suprasegmental tone sandhi maximal dissimilation	phonological	False		#20845E
+4-12	4	12	9	1	1	deviations extended exponence maximal negation	indeterminate	False	3	#6F99AD
+6-12	6	12	7	1	1	deviations extended exponence minimal negation	indeterminate	False	2	#6F99AD
+8-10	8	10	3	1	2	free occurrence maximal	indeterminate	False	7	#6F99AD
+8-21	8	21	14	2	6	recursion based complementation maximal|recursion based maximal adverbial clause	morphosyntactic	False	14	#BC3C29
+9-10	9	10	2	3	3	free occurrence minimal|segmental vowel assimilation vowel assimilation|segmental vowel coalescence minimal vowel coalescence ua>o	indeterminate|phonological	False	10	#488E86
+9-16	9	16	8	1	2	suprasegmental tone spreading maximal floating tone	phonological	False	6	#20845E
+9-17	9	17	9	1	3	segmental vowel assimilation maximal vowel coalescence ai>e	phonological	False	9	#20845E
+9-20	9	20	12	1	4	noninterruption	morphosyntactic	False	12	#BC3C29
+10-13	10	13	4	2	4	deviations allomorphy past tense|deviations allomorphy valency	indeterminate	False	13	#6F99AD
+10-16	10	16	7	4	4	ciscategorial selection minimal|segmental vowel deletion vowel elision|segmental vowel insertion vowel insertion|suprasegmental tone spreading minimal floating tone	morphosyntactic|phonological	False	11	#6E6044
+10-17	10	17	8	1	3	deviations extended exponence middle	indeterminate	False	8	#6F99AD
+10-18	10	18	9	1	2	suprasegmental tone spreading spreading	phonological	False	5	#20845E
+10-19	10	19	10	3	2	ciscategorial selection maximal|nonpermutability|suprasegmental tone sandhi minimal dissimilation	morphosyntactic|phonological	False	4	#6E6044
+10-21	10	21	12	1	1	recursion based same subject maximal	morphosyntactic	False	1	#BC3C29

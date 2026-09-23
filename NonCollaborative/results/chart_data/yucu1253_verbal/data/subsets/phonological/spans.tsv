@@ -1,0 +1,8 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-21	1	21	21	1	3	suprasegmental tone sandhi maximal dissimilation	phonological	False		#20845E
+9-10	9	10	2	2	1	segmental vowel assimilation vowel assimilation|segmental vowel coalescence minimal vowel coalescence ua>o	phonological	False	1	#20845E
+9-16	9	16	8	1	2	suprasegmental tone spreading maximal floating tone	phonological	False	4	#20845E
+9-17	9	17	9	1	2	segmental vowel assimilation maximal vowel coalescence ai>e	phonological	False	5	#20845E
+10-16	10	16	7	3	2	segmental vowel deletion vowel elision|segmental vowel insertion vowel insertion|suprasegmental tone spreading minimal floating tone	phonological	False	6	#20845E
+10-18	10	18	9	1	1	suprasegmental tone spreading spreading	phonological	False	3	#20845E
+10-19	10	19	10	1	1	suprasegmental tone sandhi minimal dissimilation	phonological	False	2	#20845E

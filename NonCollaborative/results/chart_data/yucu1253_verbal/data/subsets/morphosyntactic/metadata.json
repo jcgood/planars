@@ -1,0 +1,20 @@
+{
+  "contract_version": "0.2.0",
+  "dataset": "yucu1253_verbal",
+  "domain_type": "morphosyntactic",
+  "domain_types": [
+    "morphosyntactic"
+  ],
+  "enumeration_truncated": false,
+  "kind": "domain_type",
+  "n_active_tests": 7,
+  "n_conflict_pairs": 1,
+  "n_maximal_families": 2,
+  "n_positions": 21,
+  "n_unique_spans": 5,
+  "n_universal_spans": 3,
+  "source_domain_file": "domains/domains_yucu1253_verbal.tsv",
+  "source_domain_sha256": "fc7dbafba9a8b0d7b7fa4a199d115dac56a974c13a4b4198a1633b897b178626",
+  "subset_id": "morphosyntactic",
+  "synthetic_root": true
+}

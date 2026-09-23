@@ -1,0 +1,11 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-22	1	22	22	1	1	recursion based nominalization maximal clausal nominalization	morphosyntactic	False	5	#BC3C29
+1-42	1	42	42	1	2	recursion based asyndetic maximal clause juxtaposition	morphosyntactic	False		#BC3C29
+2-41	2	41	40	1	1	ciscategorial selection broad maximal	morphosyntactic	False	4	#BC3C29
+12-15	12	15	4	1	2	nonpermutability maximal chi (13) and chi (18) = one morpheme	morphosyntactic	False	6	#BC3C29
+12-18	12	18	7	2	2	recursion based asyndetic minimal clausal juxtaposition – lax|recursion based asyndetic minimal clause juxtaposition – strict	morphosyntactic	False	9	#BC3C29
+12-21	12	21	10	2	2	noninterruption complex|noninterruption limitative lla	morphosyntactic	False	8	#BC3C29
+12-22	12	22	11	1	2	recursion based nominalization minimal clausal nominalization	morphosyntactic	False	7	#BC3C29
+12-25	12	25	14	1	1	ciscategorial selection minimal	morphosyntactic	False	3	#BC3C29
+12-26	12	26	15	1	1	ciscategorial selection narrow maximal	morphosyntactic	False	1	#BC3C29
+12-41	12	41	30	1	1	noninterruption	morphosyntactic	False	2	#BC3C29

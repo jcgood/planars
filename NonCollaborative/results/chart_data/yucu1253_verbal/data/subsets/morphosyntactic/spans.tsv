@@ -1,0 +1,7 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-21	1	21	21	0	2	(root)	(synthetic)	True		#000000
+8-21	8	21	14	2	2	recursion based complementation maximal|recursion based maximal adverbial clause	morphosyntactic	False	5	#BC3C29
+9-20	9	20	12	1	1	noninterruption	morphosyntactic	False	1	#BC3C29
+10-16	10	16	7	1	2	ciscategorial selection minimal	morphosyntactic	False	3	#BC3C29
+10-19	10	19	10	2	2	ciscategorial selection maximal|nonpermutability	morphosyntactic	False	4	#BC3C29
+10-21	10	21	12	1	1	recursion based same subject maximal	morphosyntactic	False	2	#BC3C29

@@ -1,0 +1,8 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-21	1	21	21	0	2	(root)	(synthetic)	True		#000000
+2-3	2	3	2	1	2	recursion based complementation complement1	morphosyntactic	False	4	#BC3C29
+2-4	2	4	3	1	1	recursion based complementation complement2	morphosyntactic	False	1	#BC3C29
+2-7	2	7	6	1	1	recursion based complementation complement3	morphosyntactic	False	2	#BC3C29
+2-16	2	16	15	4	2	ciscategorial selection minimal|noninterruption|nonpermutability rigid|recursion based complementation complement say	morphosyntactic	False	6	#BC3C29
+2-20	2	20	19	1	2	nonpermutability scopal	morphosyntactic	False	5	#BC3C29
+4-16	4	16	13	1	1	ciscategorial selection maximal	morphosyntactic	False	3	#BC3C29

@@ -1,0 +1,20 @@
+{
+  "contract_version": "0.2.0",
+  "dataset": "zenz1235_verbal",
+  "domain_type": "morphosyntactic",
+  "domain_types": [
+    "morphosyntactic"
+  ],
+  "enumeration_truncated": false,
+  "kind": "domain_type",
+  "n_active_tests": 4,
+  "n_conflict_pairs": 0,
+  "n_maximal_families": 1,
+  "n_positions": 21,
+  "n_unique_spans": 3,
+  "n_universal_spans": 3,
+  "source_domain_file": "domains/domains_zenz1235_verbal.tsv",
+  "source_domain_sha256": "129b36370ce20239864236e5e516816496b12c7acfd41eee300bad43ca73a29b",
+  "subset_id": "morphosyntactic",
+  "synthetic_root": true
+}

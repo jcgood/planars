@@ -1,0 +1,10 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-39	1	39	39	0	4	(root)	(synthetic)	True		#000000
+25-33	25	33	9	1	2	suprasegmental tone spreading minimal tone lowering	phonological	False	5	#20845E
+25-36	25	36	12	1	4	suprasegmental tone spreading maximal tone lowering	phonological	False	8	#20845E
+26-36	26	36	11	2	2	segmental consonant change maximal dental-velar switch|segmental syllabification maximal syllabification sensitive processes	phonological	False	3	#20845E
+29-30	29	30	2	1	2	segmental vowel deletion vowel deletion	phonological	False	4	#20845E
+29-31	29	31	3	1	2	segmental consonant assimilation minimal cluster devoicing	phonological	False	2	#20845E
+29-33	29	33	5	1	4	segmental consonant assimilation maximal cluster devoicing	phonological	False	7	#20845E
+29-36	29	36	8	1	2	segmental syllabification minimal syllabification sensitive processes	phonological	False	1	#20845E
+30-33	30	33	4	1	2	segmental consonant change minimal dental-velar switch	phonological	False	6	#20845E

@@ -1,0 +1,7 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-17	1	17	17	2	2	ciscategorial selection maximal broad|recursion based maximal tso marked	morphosyntactic	False	3	#BC3C29
+1-18	1	18	18	0	2	(root)	(synthetic)	True		#000000
+4-6	4	6	3	1	1	nonpermutability scopal	morphosyntactic	False	1	#BC3C29
+4-15	4	15	12	2	2	ciscategorial selection maximal narrow|recursion based maximal	morphosyntactic	False	4	#BC3C29
+4-16	4	16	13	1	2	noninterruption complex	morphosyntactic	False	5	#BC3C29
+6-13	6	13	8	1	1	ciscategorial selection minimal	morphosyntactic	False	2	#BC3C29

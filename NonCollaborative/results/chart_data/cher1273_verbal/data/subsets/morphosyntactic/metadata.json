@@ -1,0 +1,20 @@
+{
+  "contract_version": "0.2.0",
+  "dataset": "cher1273_verbal",
+  "domain_type": "morphosyntactic",
+  "domain_types": [
+    "morphosyntactic"
+  ],
+  "enumeration_truncated": false,
+  "kind": "domain_type",
+  "n_active_tests": 7,
+  "n_conflict_pairs": 3,
+  "n_maximal_families": 3,
+  "n_positions": 24,
+  "n_unique_spans": 5,
+  "n_universal_spans": 1,
+  "source_domain_file": "domains/domains_cher1273_verbal.tsv",
+  "source_domain_sha256": "0b4f63ba770bafb093bc16bf1549549f548db8b0b8a8602be4b09bb6990a524e",
+  "subset_id": "morphosyntactic",
+  "synthetic_root": false
+}

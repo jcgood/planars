@@ -1,0 +1,20 @@
+{
+  "contract_version": "0.2.0",
+  "dataset": "hupd1244_nominal",
+  "domain_type": "morphosyntactic",
+  "domain_types": [
+    "morphosyntactic"
+  ],
+  "enumeration_truncated": false,
+  "kind": "domain_type",
+  "n_active_tests": 7,
+  "n_conflict_pairs": 2,
+  "n_maximal_families": 2,
+  "n_positions": 15,
+  "n_unique_spans": 6,
+  "n_universal_spans": 3,
+  "source_domain_file": "domains/domains_hupd1244_nominal.tsv",
+  "source_domain_sha256": "ffe49dd2c78aae5b46604d680d750065a2a58dd7d6f30eef99ff032f4f2ac1c0",
+  "subset_id": "morphosyntactic",
+  "synthetic_root": false
+}

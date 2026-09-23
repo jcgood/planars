@@ -1,0 +1,20 @@
+{
+  "contract_version": "0.2.0",
+  "dataset": "hupd1244_verbal",
+  "domain_type": "morphosyntactic",
+  "domain_types": [
+    "morphosyntactic"
+  ],
+  "enumeration_truncated": false,
+  "kind": "domain_type",
+  "n_active_tests": 8,
+  "n_conflict_pairs": 0,
+  "n_maximal_families": 1,
+  "n_positions": 32,
+  "n_unique_spans": 6,
+  "n_universal_spans": 6,
+  "source_domain_file": "domains/domains_hupd1244_verbal.tsv",
+  "source_domain_sha256": "6004929cca93b46c9d4a35b2e008a5cc5c7bdb6c933fe386f1b6516c4f926d51",
+  "subset_id": "morphosyntactic",
+  "synthetic_root": false
+}

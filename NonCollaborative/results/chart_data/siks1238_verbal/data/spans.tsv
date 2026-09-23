@@ -1,0 +1,19 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-11	1	11	11	2	7	segmental consonant insertion minimal glottal insertion vowel coalescence construction 1|suprasegmental accent maximal construction 1	phonological	False	4	#20845E
+1-13	1	13	13	2	18	segmental consonant insertion maximal glottal insertion vowel coalescence construction 1|suprasegmental accent maximal construction 2	phonological	False	13	#20845E
+1-14	1	14	14	0	31	(root)	(synthetic)	True		#000000
+3-8	3	8	6	1	6	deviations allomorphy k-assibilation	indeterminate	False	3	#6F99AD
+3-9	3	9	7	2	9	free occurrence minimal independent|recursion based asyndetic minimal coordination independent	indeterminate	False	8	#6F99AD
+3-11	3	11	9	3	21	noninterruption complex|segmental consonant insertion minimal glottal insertion vowel coalescence construction 2|suprasegmental accent minimal construction 1	morphosyntactic|phonological	False	15	#6E6044
+3-13	3	13	11	4	22	free occurrence maximal independent|recursion based asyndetic maximal coordination independent|segmental consonant insertion maximal glottal insertion vowel coalescence construction 2|suprasegmental accent minimal construction 2	indeterminate|morphosyntactic|phonological	False	16	#6E7367
+3-14	3	14	12	1	13	nonpermutability rigid	morphosyntactic	False	10	#BC3C29
+4-6	4	6	3	1	8	recursion based seperable roots complex preverbs	morphosyntactic	False	6	#BC3C29
+4-7	4	7	4	1	16	recursion based seperable roots	morphosyntactic	False	12	#BC3C29
+4-11	4	11	8	3	20	deviations allomorphy minimal seperable root nasal deletion vowel coalescence|free occurrence minimal conjunct|recursion based asyndetic minimal coordination conjunct	indeterminate	False	14	#6F99AD
+4-13	4	13	10	3	8	ciscategorial selection maximal|free occurrence maximal conjunct|recursion based asyndetic maximal coordination conjunct	indeterminate|morphosyntactic	False	5	#966A6B
+5-9	5	9	5	1	9	ciscategorial selection minimal	morphosyntactic	False	7	#BC3C29
+5-11	5	11	7	1	12	noninterruption multipositional noun stem	morphosyntactic	False	9	#BC3C29
+5-14	5	14	10	1	2	nonpermutability scopal	morphosyntactic	False	1	#BC3C29
+6-7	6	7	2	3	23	recursion based inseperable roots|recursion based secondary derivation|segmental minimality minimal size	morphosyntactic|phonological	False	17	#6E6044
+6-9	6	9	4	1	15	segmental minimality maximal size	phonological	False	11	#20845E
+6-11	6	11	6	1	6	deviations allomorphy maximal inseperable root nasal deletion vowel coalescence	indeterminate	False	2	#6F99AD

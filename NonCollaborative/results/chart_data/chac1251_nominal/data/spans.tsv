@@ -1,0 +1,12 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-12	1	12	12	2	4	proform|suprasegmental tone deletion maximal h deletion	morphosyntactic|phonological	False		#6E6044
+2-6	2	6	5	1	1	nonpermutability scopal minimal	morphosyntactic	False	1	#BC3C29
+2-8	2	8	7	1	1	recursion based maximal tihi conjunction	morphosyntactic	False	2	#BC3C29
+2-10	2	10	9	1	2	recursion based possession maximal genitive	morphosyntactic	False	6	#BC3C29
+2-12	2	12	11	1	4	nonpermutability maximal	morphosyntactic	False	10	#BC3C29
+3-4	3	4	2	6	2	recursion based compound|recursion based naxeni|segmental consonant assimilation alveolarization|segmental consonant insertion glottal stop insertion|suprasegmental accent minimal intensity|suprasegmental tone insertion minimal h tone insertion	morphosyntactic|phonological	False	4	#6E6044
+3-5	3	5	3	1	2	noninterruption simplex	morphosyntactic	False	7	#BC3C29
+3-6	3	6	4	3	2	noninterruption complex|recursion based minimal tihi conjunction|suprasegmental tone insertion maximal h tone insertion	indeterminate|morphosyntactic|phonological	False	5	#6E7367
+3-12	3	12	10	3	2	free occurrence maximal|suprasegmental accent maximal intensity|suprasegmental tone deletion minimal h deletion	indeterminate|phonological	False	8	#488E86
+4-10	4	10	7	1	2	suprasegmental tone deletion long distance tone reduction h h>l h	phonological	False	9	#20845E
+4-12	4	12	9	2	1	ciscategorial selection maximal|segmental vowel deletion apocope	morphosyntactic|phonological	False	3	#6E6044

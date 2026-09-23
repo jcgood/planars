@@ -1,0 +1,13 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-39	1	39	39	2	5	pausing|recursion based maximal	indeterminate|morphosyntactic	False		#966A6B
+23-36	23	36	14	1	5	noninterruption complex	morphosyntactic	False	10	#BC3C29
+25-30	25	30	6	1	1	free occurrence minimal	indeterminate	False	1	#6F99AD
+25-33	25	33	9	1	3	suprasegmental tone spreading minimal tone lowering	phonological	False	8	#20845E
+25-36	25	36	12	2	5	free occurrence maximal|suprasegmental tone spreading maximal tone lowering	indeterminate|phonological	False	11	#488E86
+26-36	26	36	11	2	2	segmental consonant change maximal dental-velar switch|segmental syllabification maximal syllabification sensitive processes	phonological	False	3	#20845E
+29-30	29	30	2	1	3	segmental vowel deletion vowel deletion	phonological	False	7	#20845E
+29-31	29	31	3	1	2	segmental consonant assimilation minimal cluster devoicing	phonological	False	4	#20845E
+29-33	29	33	5	2	4	ciscategorial selection|segmental consonant assimilation maximal cluster devoicing	morphosyntactic|phonological	False	9	#6E6044
+29-34	29	34	6	1	2	deviations suppletion	indeterminate	False	5	#6F99AD
+29-36	29	36	8	2	2	noninterruption simplex|segmental syllabification minimal syllabification sensitive processes	morphosyntactic|phonological	False	2	#6E6044
+30-33	30	33	4	1	2	segmental consonant change minimal dental-velar switch	phonological	False	6	#20845E

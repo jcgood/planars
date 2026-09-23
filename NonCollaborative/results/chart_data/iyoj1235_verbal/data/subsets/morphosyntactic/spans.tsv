@@ -1,0 +1,11 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-46	1	46	46	0	1	(root)	(synthetic)	True		#000000
+7-41	7	41	35	1	1	noninterruption complex	morphosyntactic	False	5	#BC3C29
+8-39	8	39	32	1	1	recursion based maximal	morphosyntactic	False	3	#BC3C29
+8-40	8	40	33	1	1	ciscategorial selection broad maximal	morphosyntactic	False	9	#BC3C29
+14-20	14	20	7	1	1	ciscategorial selection narrow minimal	morphosyntactic	False	2	#BC3C29
+14-22	14	22	9	2	1	ciscategorial selection broad minimal|noninterruption multipositional	morphosyntactic	False	7	#BC3C29
+14-23	14	23	10	1	1	nonpermutability	morphosyntactic	False	1	#BC3C29
+14-37	14	37	24	1	1	ciscategorial selection narrow maximal	morphosyntactic	False	8	#BC3C29
+14-38	14	38	25	1	1	noninterruption simplex rem past not free	morphosyntactic	False	6	#BC3C29
+14-39	14	39	26	1	1	noninterruption simplex rem past free	morphosyntactic	False	4	#BC3C29

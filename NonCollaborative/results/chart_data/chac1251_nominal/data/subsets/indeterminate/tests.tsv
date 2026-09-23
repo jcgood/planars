@@ -1,0 +1,5 @@
+source_row	Serial_Order	Language_Name	Language_ID	Domain_ID	Domain_Type	Abstract_Type	CrossL_Fracture	MinMax_Fracture	Lspecific_Fracture	Left_Edge	Right_Edge	Convergence	Relative_Convergence	Size	Relative_Size	Largest	Position_Total	Tests_Total	Planar_ID	PW_Pattern	Test_Labels	CCDB_Test_Labels
+4	71	Chácobo	chac1251	chac1251_n_free.occurrence_maximal	indeterminate	free.occurrence		maximal		3	12	3	0.12	10	0.83	12	12	26	chac1251_nominal	indeterminate	free occurrence maximal	
+5	72	Chácobo	chac1251	chac1251_n_free.occurrence_minimal	indeterminate	free.occurrence		minimal		4	4	3	0.12	1	0.08	12	12	26	chac1251_nominal	indeterminate	free occurrence minimal	
+14	81	Chácobo	chac1251	chac1251_n_recursion.based_minimal_tihi.conjunction	indeterminate	recursion.based		minimal	tihi.conjunction	3	6	3	0.12	4	0.33	12	12	26	chac1251_nominal	indeterminate	recursion based minimal tihi conjunction	
+17	84	Chácobo	chac1251	chac1251_n_recursion.based_possession_minimal_genitive	indeterminate	recursion.based	possession	minimal	genitive	4	4	3	0.12	1	0.08	12	12	26	chac1251_nominal	indeterminate	recursion based possession minimal genitive	

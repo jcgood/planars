@@ -1,0 +1,7 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-24	1	24	24	0	3	(root)	(synthetic)	True		#000000
+2-20	2	20	19	1	1	recursion based nominalization minimal	indeterminate	False	1	#6F99AD
+2-23	2	23	22	2	3	free occurrence maximal|recursion based asyndetic minimal	indeterminate	False	5	#6F99AD
+4-13	4	13	10	1	2	deviations allomorphy minimal	indeterminate	False	3	#6F99AD
+4-22	4	22	19	1	2	deviations allomorphy maximal	indeterminate	False	4	#6F99AD
+9-22	9	22	14	1	1	free occurrence minimal	indeterminate	False	2	#6F99AD

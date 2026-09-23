@@ -1,0 +1,4 @@
+source_row	Serial_Order	Language_Name	Language_ID	Domain_ID	Domain_Type	Abstract_Type	CrossL_Fracture	MinMax_Fracture	Lspecific_Fracture	Left_Edge	Right_Edge	Convergence	Relative_Convergence	Size	Relative_Size	Largest	Position_Total	Tests_Total	Planar_ID	PW_Pattern	Test_Labels	CCDB_Test_Labels
+3	378	Teotitlán del Valle Zapotec	teot1238	teot1238_n_deviations_suppletion	indeterminate	deviations	suppletion			8	8	2	0.11	1	0.05	20	20	18	teot1238_nominal	indeterminate	deviations suppletion	Dev. Biunique.
+4	379	Teotitlán del Valle Zapotec	teot1238	teot1238_n_free.occurrence_maximal	indeterminate	free.occurrence		maximal		6	9	1	0.06	4	0.2	20	20	18	teot1238_nominal	indeterminate	free occurrence maximal	Min Free Form Max.
+5	380	Teotitlán del Valle Zapotec	teot1238	teot1238_n_free.occurrence_minimal	indeterminate	free.occurrence		minimal		8	8	2	0.11	1	0.05	20	20	18	teot1238_nominal	indeterminate	free occurrence minimal	Min Free Form Min.

@@ -1,0 +1,7 @@
+source_row	Serial_Order	Language_Name	Language_ID	Domain_ID	Domain_Type	Abstract_Type	CrossL_Fracture	MinMax_Fracture	Lspecific_Fracture	Left_Edge	Right_Edge	Convergence	Relative_Convergence	Size	Relative_Size	Largest	Position_Total	Tests_Total	Planar_ID	PW_Pattern	Test_Labels	CCDB_Test_Labels
+6	235	Chorote	iyoj1235	iyoj1235_v_deviations_allomorphy_realis.irrealis	indeterminate	deviations	allomorphy		realis.irrealis	14	18	2	0.07	5	0.14	37	46	28	iyoj1235_verbal	indeterminate	deviations allomorphy realis irrealis	
+7	236	Chorote	iyoj1235	iyoj1235_v_deviations_extended.exponence	indeterminate	deviations	extended.exponence			14	29	1	0.04	16	0.43	37	46	28	iyoj1235_verbal	indeterminate	deviations extended exponence	
+8	237	Chorote	iyoj1235	iyoj1235_v_deviations_suppletion_inflectional.class	indeterminate	deviations	suppletion		inflectional.class	16	18	1	0.04	3	0.08	37	46	28	iyoj1235_verbal	indeterminate	deviations suppletion inflectional class	
+9	238	Chorote	iyoj1235	iyoj1235_v_free.occurrence_maximal	indeterminate	free.occurrence		maximal		4	40	2	0.07	37	1	37	46	28	iyoj1235_verbal	indeterminate	free occurrence maximal	
+10	239	Chorote	iyoj1235	iyoj1235_v_free.occurrence_minimal	indeterminate	free.occurrence		minimal		16	16	1	0.04	1	0.03	37	46	28	iyoj1235_verbal	indeterminate	free occurrence minimal	
+17	246	Chorote	iyoj1235	iyoj1235_v_recursion.based_minimal	indeterminate	recursion.based		minimal		8	38	1	0.04	31	0.84	37	46	28	iyoj1235_verbal	indeterminate	recursion based minimal	

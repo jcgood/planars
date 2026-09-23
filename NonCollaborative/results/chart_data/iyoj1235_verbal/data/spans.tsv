@@ -1,0 +1,23 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-46	1	46	46	0	22	(root)	(synthetic)	True		#000000
+4-40	4	40	37	2	9	free occurrence maximal|suprasegmental accent maximal	indeterminate|phonological	False	8	#488E86
+7-41	7	41	35	1	9	noninterruption complex	morphosyntactic	False	10	#BC3C29
+8-38	8	38	31	1	6	recursion based minimal	indeterminate	False	3	#6F99AD
+8-39	8	39	32	1	12	recursion based maximal	morphosyntactic	False	11	#BC3C29
+8-40	8	40	33	1	18	ciscategorial selection broad maximal	morphosyntactic	False	19	#BC3C29
+14-16	14	16	3	2	7	segmental consonant assimilation minimal palatalization coronals only|segmental consonant assimilation minimal palatalization with k(‘)y	phonological	False	4	#20845E
+14-18	14	18	5	2	14	deviations allomorphy realis irrealis|segmental consonant assimilation minimal palatalization without k(‘)y	indeterminate|phonological	False	16	#488E86
+14-20	14	20	7	1	14	ciscategorial selection narrow minimal	morphosyntactic	False	13	#BC3C29
+14-22	14	22	9	2	14	ciscategorial selection broad minimal|noninterruption multipositional	morphosyntactic	False	15	#BC3C29
+14-23	14	23	10	1	14	nonpermutability	morphosyntactic	False	12	#BC3C29
+14-29	14	29	16	1	14	deviations extended exponence	indeterminate	False	14	#6F99AD
+14-37	14	37	24	1	21	ciscategorial selection narrow maximal	morphosyntactic	False	21	#BC3C29
+14-38	14	38	25	1	21	noninterruption simplex rem past not free	morphosyntactic	False	20	#BC3C29
+14-39	14	39	26	1	15	noninterruption simplex rem past free	morphosyntactic	False	17	#BC3C29
+14-40	14	40	27	2	9	segmental consonant assimilation maximal palatalization with k(‘)y|segmental consonant assimilation maximal palatalization without k(‘)y	phonological	False	9	#20845E
+14-46	14	46	33	1	4	segmental consonant assimilation maximal palatalization coronals only	phonological	False	2	#20845E
+15-16	15	16	2	1	7	suprasegmental accent minimal construction 1	phonological	False	5	#20845E
+16-18	16	18	3	1	15	deviations suppletion inflectional class	indeterminate	False	18	#6F99AD
+16-32	16	32	17	1	8	segmental consonant insertion minimal insertion of /y/	phonological	False	6	#20845E
+16-34	16	34	19	2	8	segmental consonant insertion minimal insertion of /y/, fractured according to analysis “maximal”|suprasegmental accent minimal construction 2	phonological	False	7	#20845E
+16-44	16	44	29	1	1	segmental consonant insertion maximal insertion of /y/	phonological	False	1	#20845E

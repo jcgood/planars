@@ -1,0 +1,12 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-21	1	21	21	3	5	suprasegmental declination/downstep declination and pitch reset|suprasegmental declination/downstep downstep|suprasegmental tone spreading h tone spreading	phonological	False		#20845E
+2-20	2	20	19	1	5	recursion based maximal coordination	morphosyntactic	False	10	#BC3C29
+3-16	3	16	14	1	2	segmental vowel deletion maximal vowel elision	phonological	False	4	#20845E
+4-13	4	13	10	2	1	suprasegmental feature culminativity maximal vowel length|suprasegmental feature culminativity maximal vowel nasality	phonological	False	2	#20845E
+5-16	5	16	12	1	1	recursion based minimal coordination	indeterminate	False	1	#6F99AD
+7-13	7	13	7	5	3	segmental consonant assimilation maximal palatalization|segmental vowel deletion minimal vowel elision|suprasegmental feature culminativity maximal glottal stop|suprasegmental feature culminativity minimal vowel length|suprasegmental feature culminativity minimal vowel nasality	phonological	False	7	#20845E
+7-14	7	14	8	2	2	noninterruption|nonpermutability rigid	morphosyntactic	False	5	#BC3C29
+7-17	7	17	11	2	3	free occurrence maximal|nonpermutability scopal	indeterminate|morphosyntactic	False	8	#966A6B
+10-13	10	13	4	8	4	deviations allomorphy tam|deviations suppletion 2sg|free occurrence minimal|play language play language|segmental consonant assimilation minimal palatalization|suprasegmental feature culminativity h tone constraint|suprasegmental feature culminativity minimal glottal stop|suprasegmental tone template paradigmatic lexical tone melodies	indeterminate|phonological	False	9	#488E86
+10-17	10	17	8	1	2	suprasegmental tone sandhi mid tone replacement	phonological	False	6	#20845E
+13-17	13	17	5	2	1	segmental vowel coalescence vowel fusion|suprasegmental nasalization nasality spreading	phonological	False	3	#20845E

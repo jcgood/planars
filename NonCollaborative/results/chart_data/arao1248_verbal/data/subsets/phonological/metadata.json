@@ -1,0 +1,20 @@
+{
+  "contract_version": "0.2.0",
+  "dataset": "arao1248_verbal",
+  "domain_type": "phonological",
+  "domain_types": [
+    "phonological"
+  ],
+  "enumeration_truncated": false,
+  "kind": "domain_type",
+  "n_active_tests": 6,
+  "n_conflict_pairs": 2,
+  "n_maximal_families": 2,
+  "n_positions": 18,
+  "n_unique_spans": 5,
+  "n_universal_spans": 2,
+  "source_domain_file": "domains/domains_arao1248_verbal.tsv",
+  "source_domain_sha256": "a8434b44a2fbfd66d9847cbfe7c1104212aa66692e50eb6615100e843a004eee",
+  "subset_id": "phonological",
+  "synthetic_root": true
+}

@@ -1,0 +1,7 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-20	1	20	20	3	3	segmental syllabification maximal syllabification|suprasegmental tone sandhi maximal tone sandhi|suprasegmental tone spreading maximal mid tone spreading	phonological	False		#20845E
+3-15	3	15	13	1	2	segmental consonant dissimilation maximal glottal dissimilation	phonological	False	4	#20845E
+6-8	6	8	3	1	1	segmental syllabification minimal syllabification	phonological	False	2	#20845E
+8-9	8	9	2	3	2	segmental consonant dissimilation minimal glottal dissimilation|suprasegmental accent minimal|suprasegmental tone spreading minimal mid tone spreading	phonological	False	3	#20845E
+8-11	8	11	4	2	2	suprasegmental accent maximal|suprasegmental tone sandhi minimal tone sandhi	phonological	False	5	#20845E
+8-20	8	20	13	1	1	suprasegmental tone spreading rising tone levelling	phonological	False	1	#20845E

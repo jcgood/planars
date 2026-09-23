@@ -1,0 +1,10 @@
+source_row	Serial_Order	Language_Name	Language_ID	Domain_ID	Domain_Type	Abstract_Type	CrossL_Fracture	MinMax_Fracture	Lspecific_Fracture	Left_Edge	Right_Edge	Convergence	Relative_Convergence	Size	Relative_Size	Largest	Position_Total	Tests_Total	Planar_ID	PW_Pattern	Test_Labels	CCDB_Test_Labels
+2	259	Mebengokre	kaya1330	kaya1330_v_deviations_allomorphy_finiteness	indeterminate	deviations	allomorphy		finiteness	13	15	3	0.2	3	0.16	19	32	15	kaya1330_verbal	indeterminate	deviations allomorphy finiteness	
+3	260	Mebengokre	kaya1330	kaya1330_v_deviations_suppletion	indeterminate	deviations	suppletion			13	15	3	0.2	3	0.16	19	32	15	kaya1330_verbal	indeterminate	deviations suppletion	
+4	261	Mebengokre	kaya1330	kaya1330_v_deviations_suppletion_suppletion.for.number	indeterminate	deviations	suppletion		suppletion.for.number	13	15	3	0.2	3	0.16	19	32	15	kaya1330_verbal	allomorphy	deviations suppletion suppletion for number	
+5	262	Mebengokre	kaya1330	kaya1330_v_free.occurrence_maximal	indeterminate	free.occurrence		maximal		3	21	1	0.07	19	1	19	32	15	kaya1330_verbal	indeterminate	free occurrence maximal	
+6	263	Mebengokre	kaya1330	kaya1330_v_free.occurrence_minimal_declarative	indeterminate	free.occurrence		minimal	declarative	4	15	1	0.07	12	0.63	19	32	15	kaya1330_verbal	indeterminate	free occurrence minimal declarative	
+7	264	Mebengokre	kaya1330	kaya1330_v_free.occurrence_minimal_imperative	indeterminate	free.occurrence		minimal	imperative	10	15	2	0.13	6	0.32	19	32	15	kaya1330_verbal	indeterminate	free occurrence minimal imperative	
+8	265	Mebengokre	kaya1330	kaya1330_v_idiom	indeterminate	idiom				9	21	1	0.07	13	0.68	19	32	15	kaya1330_verbal	indeterminate	idiom	
+11	268	Mebengokre	kaya1330	kaya1330_v_pausing_pause	indeterminate	pausing	pause			11	16	1	0.07	6	0.32	19	32	15	kaya1330_verbal	indeterminate	pausing pause	
+14	271	Mebengokre	kaya1330	kaya1330_v_recursion.based_minimal_coordination	indeterminate	recursion.based		minimal	coordination	10	15	2	0.13	6	0.32	19	32	15	kaya1330_verbal	indeterminate	recursion based minimal coordination	

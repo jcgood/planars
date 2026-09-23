@@ -1,0 +1,20 @@
+{
+  "contract_version": "0.2.0",
+  "dataset": "kaya1330_verbal",
+  "domain_type": "morphosyntactic",
+  "domain_types": [
+    "morphosyntactic"
+  ],
+  "enumeration_truncated": false,
+  "kind": "domain_type",
+  "n_active_tests": 4,
+  "n_conflict_pairs": 1,
+  "n_maximal_families": 2,
+  "n_positions": 32,
+  "n_unique_spans": 4,
+  "n_universal_spans": 2,
+  "source_domain_file": "domains/domains_kaya1330_verbal.tsv",
+  "source_domain_sha256": "7a5a1fde980372a1d3580e52a215543d73587a015c8c5fe116b3501ad5cb399e",
+  "subset_id": "morphosyntactic",
+  "synthetic_root": true
+}

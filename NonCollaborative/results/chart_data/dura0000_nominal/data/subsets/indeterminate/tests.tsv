@@ -1,0 +1,5 @@
+source_row	Serial_Order	Language_Name	Language_ID	Domain_ID	Domain_Type	Abstract_Type	CrossL_Fracture	MinMax_Fracture	Lspecific_Fracture	Left_Edge	Right_Edge	Convergence	Relative_Convergence	Size	Relative_Size	Largest	Position_Total	Tests_Total	Planar_ID	PW_Pattern	Test_Labels	CCDB_Test_Labels
+4	158	San Martín Duraznos Mixtec	dura0000	dura0000_n_free.occurrence_maximal	indeterminate	free.occurrence		maximal		6	8	1	0.05	3	0.23	13	13	19	dura0000_nominal	indeterminate	free occurrence maximal	
+5	159	San Martín Duraznos Mixtec	dura0000	dura0000_n_free.occurrence_minimal	indeterminate	free.occurrence		minimal		8	8	4	0.21	1	0.08	13	13	19	dura0000_nominal	indeterminate	free occurrence minimal	
+12	166	San Martín Duraznos Mixtec	dura0000	dura0000_n_recursion.based_minimal_coordination	indeterminate	recursion.based		minimal	coordination	8	8	4	0.21	1	0.08	13	13	19	dura0000_nominal	indeterminate	recursion based minimal coordination	
+14	168	San Martín Duraznos Mixtec	dura0000	dura0000_n_recursion.based_possession_minimal	indeterminate	recursion.based	possession	minimal		8	8	4	0.21	1	0.08	13	13	19	dura0000_nominal	indeterminate	recursion based possession minimal	

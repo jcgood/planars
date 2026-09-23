@@ -1,0 +1,92 @@
+$ /Users/jcgood/gitrepos/planars/NonCollaborative/../.venv/bin/python scripts/planarsviz_language.py yucu1253_verbal --apply
+Dataset yucu1253_verbal
+  language_name  Yukuna (verbal)                  from planar_tables/ccdb_yucu1253_verbal.json
+  groupings      ccdb                             from planar_tables/ccdb_yucu1253_verbal.json
+  root_position  10                               from planar_tables/ccdb_yucu1253_verbal.json
+  planar_type    verbal                           from planar_tables/ccdb_yucu1253_verbal.json
+  permutations   5000                             all four tests
+
+== Export ==
+/Users/jcgood/gitrepos/planars/.venv/bin/python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_yucu1253_verbal.tsv --groupings ccdb --root-position 10 --language-name 'Yukuna (verbal)' --planar-type verbal --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
+Exported planarsviz bundle: /Users/jcgood/gitrepos/planars/NonCollaborative/results/chart_data/yucu1253_verbal
+Export finished in 29 s.
+
+== Render ==
+Rscript scripts/render_planarsviz.R --bundle results/chart_data/yucu1253_verbal --output results
+wrote yucu1253_verbal/pooled/yucu1253_verbal_pooled_plot.pdf
+wrote yucu1253_verbal/pooled/yucu1253_verbal_pooled_domainplot.pdf
+wrote yucu1253_verbal/pooled/yucu1253_verbal_pooled_plot_indeterminate.pdf
+wrote yucu1253_verbal/pooled/yucu1253_verbal_pooled_plot_indeterminate_global_layers.pdf
+wrote yucu1253_verbal/pooled/yucu1253_verbal_pooled_plot_morphosyntactic.pdf
+wrote yucu1253_verbal/pooled/yucu1253_verbal_pooled_plot_morphosyntactic_global_layers.pdf
+wrote yucu1253_verbal/pooled/yucu1253_verbal_pooled_plot_phonological.pdf
+wrote yucu1253_verbal/pooled/yucu1253_verbal_pooled_plot_phonological_global_layers.pdf
+wrote yucu1253_verbal/boundaries/yucu1253_verbal_boundary_skyline.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_spanchart.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_morsyn_laminar_forest.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_morsyn_tree_01.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_morsyn_tree_02.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_phon_laminar_forest.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_phon_tree_01.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_phon_tree_02.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_phon_tree_03.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_indet_laminar_forest.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_indet_tree_01.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_indet_tree_02.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_morsyn_indet_laminar_forest.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_morsyn_indet_tree_01.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_morsyn_indet_tree_02.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_morsyn_indet_tree_03.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_morsyn_indet_tree_04.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_morsyn_indet_tree_05.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_laminar_overlay.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_laminar_overlay_legend.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_all_families_labeled.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_all_families_labeled_legend.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_freqtree.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_most_binary_tree.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_exemplary_trees_1.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_exemplary_trees_slide_1_tree.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_exemplary_trees_slide_1_evidence.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_exemplary_trees_2.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_exemplary_trees_slide_2_tree.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_exemplary_trees_slide_2_evidence.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_exemplary_trees_3.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_exemplary_trees_slide_3_tree.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_exemplary_trees_slide_3_evidence.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_exemplary_trees_4.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_exemplary_trees_slide_4_tree.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_exemplary_trees_slide_4_evidence.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_exemplary_trees_5.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_exemplary_trees_slide_5_tree.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_exemplary_trees_slide_5_evidence.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_exemplary_trees_6.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_exemplary_trees_slide_6_tree.pdf
+wrote yucu1253_verbal/laminar-families/yucu1253_verbal_exemplary_trees_slide_6_evidence.pdf
+wrote yucu1253_verbal/pooled/yucu1253_verbal_forestspans_plot.pdf
+wrote yucu1253_verbal/counts-and-chance/yucu1253_verbal_tree_count_by_class.pdf
+wrote yucu1253_verbal/counts-and-chance/yucu1253_verbal_tree_count_bundles.pdf
+wrote yucu1253_verbal/counts-and-chance/yucu1253_verbal_tree_count_all.pdf
+wrote yucu1253_verbal/counts-and-chance/yucu1253_verbal_tree_count_without_adjacent.pdf
+wrote yucu1253_verbal/counts-and-chance/yucu1253_verbal_fragmentation_test_plot.pdf
+wrote yucu1253_verbal/counts-and-chance/yucu1253_verbal_span_placement_test_by_group_plot.pdf
+wrote yucu1253_verbal/counts-and-chance/yucu1253_verbal_arbitrary_layers_test_by_group_plot.pdf
+wrote yucu1253_verbal/boundaries/yucu1253_verbal_boundary_strength_test_jump_all.pdf
+wrote yucu1253_verbal/boundaries/yucu1253_verbal_boundary_strength_test_level_all.pdf
+wrote yucu1253_verbal/boundaries/yucu1253_verbal_boundary_strength_test_jump_morphosyntactic.pdf
+wrote yucu1253_verbal/boundaries/yucu1253_verbal_boundary_strength_test_level_morphosyntactic.pdf
+wrote yucu1253_verbal/boundaries/yucu1253_verbal_boundary_strength_test_jump_phonological.pdf
+wrote yucu1253_verbal/boundaries/yucu1253_verbal_boundary_strength_test_level_phonological.pdf
+wrote yucu1253_verbal/boundaries/yucu1253_verbal_boundary_strength_test_jump_indeterminate.pdf
+wrote yucu1253_verbal/boundaries/yucu1253_verbal_boundary_strength_test_level_indeterminate.pdf
+wrote yucu1253_verbal/boundaries/yucu1253_verbal_boundary_strength_test_jump_morsyn_indet.pdf
+wrote yucu1253_verbal/boundaries/yucu1253_verbal_boundary_strength_test_level_morsyn_indet.pdf
+wrote yucu1253_verbal/boundaries/yucu1253_verbal_boundary_strength.pdf
+wrote yucu1253_verbal/boundaries/yucu1253_verbal_boundary_strength_distributions.pdf
+wrote yucu1253_verbal/boundaries/yucu1253_verbal_boundary_strength_overlay.pdf
+71 files for 71 of 71 charts; manifest: results/yucu1253_verbal_planarsviz_manifest.tsv
+Render finished in 29 s.
+
+Bundle: results/chart_data/yucu1253_verbal/   Charts: results/yucu1253_verbal/
+
+[batch] exit code 0 after 58 s

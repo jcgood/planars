@@ -1,0 +1,20 @@
+{
+  "contract_version": "0.2.0",
+  "dataset": "dura0000_verbal",
+  "domain_type": "indeterminate",
+  "domain_types": [
+    "indeterminate"
+  ],
+  "enumeration_truncated": false,
+  "kind": "domain_type",
+  "n_active_tests": 9,
+  "n_conflict_pairs": 3,
+  "n_maximal_families": 2,
+  "n_positions": 29,
+  "n_unique_spans": 5,
+  "n_universal_spans": 1,
+  "source_domain_file": "domains/domains_dura0000_verbal.tsv",
+  "source_domain_sha256": "a36a5d31fe30f74238b41fcd6bf5e7435755a4b1fd1ac20b4166918132285633",
+  "subset_id": "indeterminate",
+  "synthetic_root": true
+}

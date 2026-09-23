@@ -1,0 +1,6 @@
+group	kind	label	colour	n_spans	n_positions	observed_families	null_mean	null_p05	null_p50	null_p95	p_value_le_observed	n_truncated	n_permutations	seed
+all	all	All (pooled)	#0072B2	12	39	5	9.133	4	8	16	0.132	0	5000	0
+morphosyntactic	class	Morphosyntactic	#BC3C29	4	39	1	1.624	1	2	2	0.392	0	5000	0
+phonological	class	Phonological	#20845E	8	39	4	4.529	2	4	8	0.5862	0	5000	0
+indeterminate	class	Indeterminate	#6F99AD	4	39	2	1.655	1	2	2	0.9708	0	5000	0
+morsyn_indet	bundle	Morphosyntactic + indeterminate	#EE4C97	7	39	2	3.679	2	4	6	0.1784	0	5000	0

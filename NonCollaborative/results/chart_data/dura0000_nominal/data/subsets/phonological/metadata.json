@@ -1,0 +1,20 @@
+{
+  "contract_version": "0.2.0",
+  "dataset": "dura0000_nominal",
+  "domain_type": "phonological",
+  "domain_types": [
+    "phonological"
+  ],
+  "enumeration_truncated": false,
+  "kind": "domain_type",
+  "n_active_tests": 6,
+  "n_conflict_pairs": 2,
+  "n_maximal_families": 2,
+  "n_positions": 13,
+  "n_unique_spans": 4,
+  "n_universal_spans": 1,
+  "source_domain_file": "domains/domains_dura0000_nominal.tsv",
+  "source_domain_sha256": "09cbba29a1da87697e6d34dbc2c7365a36857a289f0ac531edb22d310cdba69b",
+  "subset_id": "phonological",
+  "synthetic_root": false
+}

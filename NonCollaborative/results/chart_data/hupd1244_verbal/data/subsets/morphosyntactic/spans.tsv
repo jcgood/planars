@@ -1,0 +1,7 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-32	1	32	32	1	1	recursion based sentence	morphosyntactic	False		#BC3C29
+2-10	2	10	9	1	1	nonpermutability rigid	morphosyntactic	False	3	#BC3C29
+2-18	2	18	17	1	1	ciscategorial selection maximal	morphosyntactic	False	1	#BC3C29
+2-30	2	30	29	1	1	noninterruption multipositional 1	morphosyntactic	False	5	#BC3C29
+3-10	3	10	8	2	1	ciscategorial selection minimal|noninterruption multipositional 2	morphosyntactic	False	4	#BC3C29
+7-10	7	10	4	1	1	nonpermutability scopal	morphosyntactic	False	2	#BC3C29

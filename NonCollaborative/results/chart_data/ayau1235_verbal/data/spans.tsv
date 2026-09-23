@@ -1,0 +1,16 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-31	1	31	31	0	8	(root)	(synthetic)	True		#000000
+2-29	2	29	28	1	8	recursion based maximal coordination	morphosyntactic	False	12	#BC3C29
+2-31	2	31	30	1	8	suprasegmental tone sandhi maximal no prosodic restrictions	phonological	False	14	#20845E
+3-20	3	20	18	1	2	recursion based nominalization minimal	indeterminate	False	3	#6F99AD
+3-29	3	29	27	1	8	recursion based nominalization maximal	morphosyntactic	False	13	#BC3C29
+6-28	6	28	23	2	6	noninterruption complex|recursion based minimal coordination	indeterminate|morphosyntactic	False	10	#966A6B
+13-21	13	21	9	1	2	nonpermutability scopal	morphosyntactic	False	2	#BC3C29
+13-25	13	25	13	1	2	segmental vowel-consonant dissimilation maximal *ɛ j constraint negative evidence	phonological	False	1	#20845E
+15-19	15	19	5	5	3	ciscategorial selection minimal|deviations allomorphy minimal|recursion based asyndetic verbal parallelism|recursion based reduplication total reduplication|suprasegmental tone sandhi minimal sandhi blocking	indeterminate|morphosyntactic|phonological	False	5	#6E7367
+15-20	15	20	6	2	6	nonpermutability rigid|suprasegmental accent maximal	morphosyntactic|phonological	False	11	#6E6044
+15-21	15	21	7	2	4	suprasegmental neutralization maximal obligatory tone neutralization|suprasegmental tone sandhi maximal sandhi blocking	phonological	False	6	#20845E
+15-28	15	28	14	7	4	ciscategorial selection maximal|deviations allomorphy maximal|free occurrence maximal|noninterruption simplex|pausing pause|suprasegmental tone sandhi minimal optional tone sandhi|suprasegmental tone sandhi obligatory sandhi	indeterminate|morphosyntactic|phonological	False	9	#6E7367
+16-19	16	19	4	1	4	segmental syllabification positive evidence	phonological	False	7	#20845E
+16-28	16	28	13	1	2	segmental syllabification negative evidence	phonological	False	4	#20845E
+19-20	19	20	2	1	4	suprasegmental accent minimal positive evidence	phonological	False	8	#20845E

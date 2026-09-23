@@ -1,0 +1,12 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-9	1	9	9	1	2	noninterruption simplex	morphosyntactic	False	2	#BC3C29
+1-20	1	20	20	3	9	segmental syllabification maximal syllabification|suprasegmental tone sandhi maximal tone sandhi|suprasegmental tone spreading maximal mid tone spreading	phonological	False		#20845E
+3-15	3	15	13	1	3	segmental consonant dissimilation maximal glottal dissimilation	phonological	False	4	#20845E
+6-8	6	8	3	1	3	segmental syllabification minimal syllabification	phonological	False	3	#20845E
+6-9	6	9	4	1	6	free occurrence maximal	indeterminate	False	9	#6F99AD
+6-12	6	12	7	1	6	noninterruption simplex permutable	morphosyntactic	False	8	#BC3C29
+6-20	6	20	15	1	4	nonpermutability	morphosyntactic	False	7	#BC3C29
+7-8	7	8	2	1	3	ciscategorial selection	morphosyntactic	False	5	#BC3C29
+8-9	8	9	2	3	6	segmental consonant dissimilation minimal glottal dissimilation|suprasegmental accent minimal|suprasegmental tone spreading minimal mid tone spreading	phonological	False	10	#20845E
+8-11	8	11	4	2	3	suprasegmental accent maximal|suprasegmental tone sandhi minimal tone sandhi	phonological	False	6	#20845E
+8-20	8	20	13	1	1	suprasegmental tone spreading rising tone levelling	phonological	False	1	#20845E

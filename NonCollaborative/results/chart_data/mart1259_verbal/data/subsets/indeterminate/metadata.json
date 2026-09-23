@@ -1,0 +1,20 @@
+{
+  "contract_version": "0.2.0",
+  "dataset": "mart1259_verbal",
+  "domain_type": "indeterminate",
+  "domain_types": [
+    "indeterminate"
+  ],
+  "enumeration_truncated": false,
+  "kind": "domain_type",
+  "n_active_tests": 4,
+  "n_conflict_pairs": 0,
+  "n_maximal_families": 1,
+  "n_positions": 27,
+  "n_unique_spans": 3,
+  "n_universal_spans": 3,
+  "source_domain_file": "domains/domains_mart1259_verbal.tsv",
+  "source_domain_sha256": "733b0e4fa1d39f898153426f1fd0c5f42c2d33c6e818b05af88a942c94f2054e",
+  "subset_id": "indeterminate",
+  "synthetic_root": true
+}

@@ -1,0 +1,2 @@
+source_row	Serial_Order	Language_Name	Language_ID	Domain_ID	Domain_Type	Abstract_Type	CrossL_Fracture	MinMax_Fracture	Lspecific_Fracture	Left_Edge	Right_Edge	Convergence	Relative_Convergence	Size	Relative_Size	Largest	Position_Total	Tests_Total	Planar_ID	PW_Pattern	Test_Labels	CCDB_Test_Labels
+13	302	Martinican	mart1259	mart1259_v_suprasegmental_accent	phonological	suprasegmental	accent			17	20	4	0.33	4	0.16	25	27	12	mart1259_verbal	stress	suprasegmental accent	

@@ -1,0 +1,8 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-24	1	24	24	0	2	(root)	(synthetic)	True		#000000
+2-23	2	23	22	3	2	segmental syllabification syllabification|segmental vowel deletion final apocope|segmental vowel deletion h-metathesis vowel deletion, h-metathesis+vowel deletion	phonological	False	4	#20845E
+5-21	5	21	17	1	1	suprasegmental accent maximal domain of h3 assignment	phonological	False	1	#20845E
+5-22	5	22	18	1	2	suprasegmental accent maximal domain of superhigh assignment	phonological	False	6	#20845E
+7-21	7	21	15	1	2	suprasegmental accent minimal domain of h3 assignment	phonological	False	5	#20845E
+7-22	7	22	16	1	1	suprasegmental accent minimal domain of superhigh assignment	phonological	False	2	#20845E
+11-21	11	21	11	1	2	suprasegmental accent domain of h1 spreading	phonological	False	3	#20845E

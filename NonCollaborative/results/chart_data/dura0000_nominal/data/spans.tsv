@@ -1,0 +1,11 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-8	1	8	8	1	1	nonpermutability strict	morphosyntactic	False	2	#BC3C29
+1-10	1	10	10	1	3	noninterruption complex different type	morphosyntactic	False	8	#BC3C29
+1-13	1	13	13	3	5	nonpermutability scopal|recursion based maximal coordination|segmental minimality maximal bimoraic	morphosyntactic|phonological	False		#6E6044
+2-10	2	10	9	1	2	ciscategorial selection maximal	morphosyntactic	False	4	#BC3C29
+4-9	4	9	6	1	1	noninterruption complex same type	morphosyntactic	False	1	#BC3C29
+6-8	6	8	3	1	2	free occurrence maximal	indeterminate	False	5	#6F99AD
+7-8	7	8	2	3	3	ciscategorial selection minimal|noninterruption simplex simplex|segmental minimality monomoraic	morphosyntactic|phonological	False	9	#6E6044
+7-12	7	12	6	1	2	recursion based possession maximal	morphosyntactic	False	7	#BC3C29
+8-10	8	10	3	1	2	suprasegmental tone dissimilation low tone dissimilation	phonological	False	6	#20845E
+8-11	8	11	4	2	1	segmental vowel deletion vowel overwriting|suprasegmental tone sandhi tone sandhi dependent pronouns	phonological	False	3	#20845E

@@ -1,0 +1,8 @@
+span_id	left	right	size	convergence	family_frequency	labels	domain_types	synthetic	span_chart_rank	blend_colour
+1-11	1	11	11	2	1	segmental consonant insertion minimal glottal insertion vowel coalescence construction 1|suprasegmental accent maximal construction 1	phonological	False	1	#20845E
+1-13	1	13	13	2	2	segmental consonant insertion maximal glottal insertion vowel coalescence construction 1|suprasegmental accent maximal construction 2	phonological	False	4	#20845E
+1-14	1	14	14	0	2	(root)	(synthetic)	True		#000000
+3-11	3	11	9	2	2	segmental consonant insertion minimal glottal insertion vowel coalescence construction 2|suprasegmental accent minimal construction 1	phonological	False	6	#20845E
+3-13	3	13	11	2	1	segmental consonant insertion maximal glottal insertion vowel coalescence construction 2|suprasegmental accent minimal construction 2	phonological	False	2	#20845E
+6-7	6	7	2	1	2	segmental minimality minimal size	phonological	False	3	#20845E
+6-9	6	9	4	1	2	segmental minimality maximal size	phonological	False	5	#20845E

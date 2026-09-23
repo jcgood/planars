@@ -1,0 +1,20 @@
+{
+  "contract_version": "0.2.0",
+  "dataset": "teot1238_verbal",
+  "domain_type": "phonological",
+  "domain_types": [
+    "phonological"
+  ],
+  "enumeration_truncated": false,
+  "kind": "domain_type",
+  "n_active_tests": 11,
+  "n_conflict_pairs": 5,
+  "n_maximal_families": 5,
+  "n_positions": 28,
+  "n_unique_spans": 7,
+  "n_universal_spans": 1,
+  "source_domain_file": "domains/domains_teot1238_verbal.tsv",
+  "source_domain_sha256": "7ea72ad403206b6c4f2cd607a02154914b8ef01cea2ddb24aa5a942bcc833745",
+  "subset_id": "phonological",
+  "synthetic_root": false
+}
