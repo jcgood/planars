@@ -30,13 +30,17 @@ matters for the exporter specifically: it records the domain file's path as
 given, so running it from the repo root writes a bundle that differs from the
 committed one in that field.
 
-### Next action: ask Jeff
+### Next action: charts and summaries across languages
 
-Steps 1–5 are done (see "Step 5 as built" in the progress file); the
-walk-through for a new language is `NonCollaborative/docs/planarsviz_tutorial.md`.
-The plan's one remaining item, "charts across languages", is optional and
-out of scope until Jeff says otherwise, so ask what he wants next rather
-than starting it.
+The CCDB plan's steps 1–5 are done (see "Step 5 as built" in
+`CCDB_PLANARSVIZ_PROGRESS.md`). Jeff has asked for charts and summaries that
+set all 22 structures side by side (2026-09-23). The plan is
+`NonCollaborative/docs/PLAN_cross_language_charts.md` (six proposed charts
+and a summary table, each tied to one of the three hypotheses); state is
+`NonCollaborative/docs/CROSS_LANGUAGE_PROGRESS.md`. **Start by asking Jeff
+the four questions in the plan's §5, one at a time** (he prefers them that
+way), recording each answer in the progress file, then build per §4.
+A bug with one obviously right fix is not a question: fix it and report it.
 
 ### Things that will bite
 
