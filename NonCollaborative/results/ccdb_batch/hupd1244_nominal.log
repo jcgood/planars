@@ -4,10 +4,11 @@ Dataset hupd1244_nominal
   groupings      ccdb                             from planar_tables/ccdb_hupd1244_nominal.json
   root_position  5                                from planar_tables/ccdb_hupd1244_nominal.json
   planar_type    nominal                          from planar_tables/ccdb_hupd1244_nominal.json
+  forest_axis    planar                           from planar_tables/ccdb_hupd1244_nominal.json
   permutations   5000                             all four tests
 
 == Export ==
-/Users/jcgood/gitrepos/planars/.venv/bin/python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_hupd1244_nominal.tsv --groupings ccdb --root-position 5 --language-name 'Hup (nominal)' --planar-type nominal --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
+/Users/jcgood/gitrepos/planars/.venv/bin/python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_hupd1244_nominal.tsv --groupings ccdb --root-position 5 --language-name 'Hup (nominal)' --planar-type nominal --forest-axis planar --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
 Exported planarsviz bundle: /Users/jcgood/gitrepos/planars/NonCollaborative/results/chart_data/hupd1244_nominal
 Export finished in 14 s.
 

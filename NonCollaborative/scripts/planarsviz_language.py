@@ -13,18 +13,21 @@ adds no setting the two scripts don't already have (plan
 Where each setting comes from, first match wins:
 
 1. ``planar_tables/chart_settings_<dataset>.json``, if present: optional keys
-   ``language_name``, ``groupings``, ``root_position``, ``planar_type``.
+   ``language_name``, ``groupings``, ``root_position``, ``planar_type``,
+   ``forest_axis``.
    For a language set up by hand (nyan1308 has one, for its display name).
 2. ``planar_tables/ccdb_<dataset>.json``, written by
    ``scripts/analysis/import_ccdb.py`` for every CCDB structure: its root
    position, and its language name and planar type, shown as e.g.
    "Chácobo (verbal)"; the planar type also goes into axis titles
    ("Positions on the nominal planar structure"). A CCDB structure always
-   uses the ``ccdb`` groupings. These are CCDB's facts, so they are read
+   uses the ``ccdb`` groupings and draws its per-type forests over the whole
+   planar structure (``--forest-axis planar``). These are CCDB's facts, so they are read
    from the import's file rather than copied anywhere else.
 3. The exporter's own defaults: root from the planar table's ``root``
    element, ``chichewa`` groupings, titles showing the dataset id, axis
-   titles saying "verbal".
+   titles saying "verbal", per-type forests stopping at their own last
+   position.
 
 The domains file, planar table, display labels, highlights and conflict
 groups are found by the exporter itself from the dataset name
@@ -88,6 +91,7 @@ def dataset_settings(dataset: str) -> dict[str, tuple[object, str]]:
         "groupings": (None, "exporter default (chichewa)"),
         "root_position": (None, "exporter default (the planar table's root element)"),
         "planar_type": (None, "exporter default (axis titles say verbal)"),
+        "forest_axis": (None, "exporter default (subset)"),
     }
     if ccdb_file.exists():
         ccdb = read_json(ccdb_file)
@@ -95,6 +99,7 @@ def dataset_settings(dataset: str) -> dict[str, tuple[object, str]]:
         settings["language_name"] = (f"{ccdb['language_name']} ({ccdb['planar_type']})", source)
         settings["groupings"] = ("ccdb", source)
         settings["planar_type"] = (ccdb["planar_type"], source)
+        settings["forest_axis"] = ("planar", source)
         if ccdb.get("root_position") is not None:
             settings["root_position"] = (int(ccdb["root_position"]), source)
     if settings_file.exists():
@@ -113,7 +118,8 @@ def export_command(dataset: str, settings: dict, permutations: int) -> list[str]
     cmd = [sys.executable, "scripts/analysis/export_planarsviz_data.py",
            "--domain-file", f"domains/domains_{dataset}.tsv"]
     flags = {"groupings": "--groupings", "root_position": "--root-position",
-             "language_name": "--language-name", "planar_type": "--planar-type"}
+             "language_name": "--language-name", "planar_type": "--planar-type",
+             "forest_axis": "--forest-axis"}
     for key, flag in flags.items():
         value = settings[key][0]
         if value is not None:

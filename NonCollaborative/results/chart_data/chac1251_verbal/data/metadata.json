@@ -10,6 +10,7 @@
   "enumeration_truncated": false,
   "exemplary_include_sparsest": true,
   "exemplary_k": 6,
+  "forest_axis": "planar",
   "fragmentation_permutations": 5000,
   "fragmentation_seed": 0,
   "groupings": "ccdb",

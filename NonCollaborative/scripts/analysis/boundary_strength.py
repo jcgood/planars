@@ -94,6 +94,13 @@ def strength_from_families(
     of that family's own nested spans share the edge. Bounded by
     len(families). Kept only as a reference point -- see module docstring.
 
+    Both count only the spans in ``spans``. A family can also hold the
+    placeholder root [1..n] that enumerate_maximal_laminar_families() adds
+    when no test covers the whole structure; no test puts an edge there, so
+    it counts toward neither measure. (Until 2026-09-23 it counted toward
+    capped, which drew a "capped" mark with no evidence behind it at
+    positions 1 and n; Jeff's call to leave it out, as summed always has.)
+
     Returns dicts keyed by position; a position with no qualifying span is
     simply absent (callers fill in 0 for the positions they report over).
     """
@@ -111,10 +118,12 @@ def strength_from_families(
 
     left_capped: dict[int, int] = defaultdict(int)
     right_capped: dict[int, int] = defaultdict(int)
+    observed = set(spans)
     for fam in families:
-        for p in {s.left for s in fam}:
+        members = [s for s in fam if s in observed]
+        for p in {s.left for s in members}:
             left_capped[p] += 1
-        for p in {s.right for s in fam}:
+        for p in {s.right for s in members}:
             right_capped[p] += 1
 
     return left_summed, right_summed, left_capped, right_capped

@@ -32,11 +32,13 @@ the four topic folders a chart can land in — `laminar-families/`, `pooled/`,
 `boundaries/`, `counts-and-chance/` — sit under `results/nyan1308/`, so a
 second language's charts land beside nyan1308's rather than colliding with
 them. `planar-structure/` and `illustrations/` are unrelated to the
-`planarsviz` package and are not nested this way. Only this file and the
-render manifest sit at the top of `results/` itself. Each section below is
-headed by a bare file name, because file names are unique across the whole
-tree; for a chart the package draws, `nyan1308_planarsviz_manifest.tsv` gives
-its exact path. Which folder a chart belongs to is recorded once, as an
+`planarsviz` package and are not nested this way. Only this file (and
+`ccdb_batch/`, the CCDB batch's logs and summary) sit at the top of
+`results/` itself; each dataset's render manifest sits in its own folder.
+Each section below is headed by a bare file name, because file names are
+unique across the whole tree; for a chart the package draws,
+`nyan1308/nyan1308_planarsviz_manifest.tsv` gives its exact path within
+`results/nyan1308/`. Which folder a chart belongs to is recorded once, as an
 attribute on the chart function itself, and the renderer reads it — so a new
 chart lands in the right place without anything here having to be updated to
 match.
@@ -1152,8 +1154,10 @@ kept because a porting check compares the bundle against it.
   hypothesis discussion still hold; its position labels came from
   `treeTraversal.py`, the superseded enumerator, so treat the prose as the
   record of a moment rather than current output.
-- `nyan1308_planarsviz_manifest.tsv` — written by `render_planarsviz.R` on
-  every run: one row per chart file here, with that chart's canvas size, and
+- `nyan1308/nyan1308_planarsviz_manifest.tsv` (and the same in each other
+  dataset's folder) — written by `render_planarsviz.R` on every run: one row
+  per chart file in that folder, its path relative to the folder, with that
+  chart's canvas size, and
   what the renderer check reads to know which files to compare. A `--plots`
   run merges into it rather than replacing it, so a partial render does not
   shrink it to the few charts it drew; a row whose file has gone is dropped,

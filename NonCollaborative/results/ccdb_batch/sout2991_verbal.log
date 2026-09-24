@@ -4,12 +4,13 @@ Dataset sout2991_verbal
   groupings      ccdb                             from planar_tables/ccdb_sout2991_verbal.json
   root_position  12                               from planar_tables/ccdb_sout2991_verbal.json
   planar_type    verbal                           from planar_tables/ccdb_sout2991_verbal.json
+  forest_axis    planar                           from planar_tables/ccdb_sout2991_verbal.json
   permutations   5000                             all four tests
 
 == Export ==
-/Users/jcgood/gitrepos/planars/.venv/bin/python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_sout2991_verbal.tsv --groupings ccdb --root-position 12 --language-name 'South Bolivian Quechua (verbal)' --planar-type verbal --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
+/Users/jcgood/gitrepos/planars/.venv/bin/python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_sout2991_verbal.tsv --groupings ccdb --root-position 12 --language-name 'South Bolivian Quechua (verbal)' --planar-type verbal --forest-axis planar --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
 Exported planarsviz bundle: /Users/jcgood/gitrepos/planars/NonCollaborative/results/chart_data/sout2991_verbal
-Export finished in 43 s.
+Export finished in 45 s.
 
 == Render ==
 Rscript scripts/render_planarsviz.R --bundle results/chart_data/sout2991_verbal --output results
@@ -71,8 +72,8 @@ wrote sout2991_verbal/boundaries/sout2991_verbal_boundary_strength.pdf
 wrote sout2991_verbal/boundaries/sout2991_verbal_boundary_strength_distributions.pdf
 wrote sout2991_verbal/boundaries/sout2991_verbal_boundary_strength_overlay.pdf
 57 files for 57 of 57 charts; manifest: results/sout2991_verbal_planarsviz_manifest.tsv
-Render finished in 26 s.
+Render finished in 27 s.
 
 Bundle: results/chart_data/sout2991_verbal/   Charts: results/sout2991_verbal/
 
-[batch] exit code 0 after 70 s
+[batch] exit code 0 after 71 s

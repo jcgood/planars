@@ -21,9 +21,9 @@
 # laminar-families/, pooled/, boundaries/, counts-and-chance/ -- named by the
 # chart's own planarsviz_folder attribute, beside the attribute that gives its
 # canvas size. So a second dataset's charts land beside the first's rather
-# than colliding with it. <dataset>_planarsviz_manifest.tsv
-# lists every file in the output directory, folder and all, not just the ones
-# this run drew:
+# than colliding with it. <dataset>/<dataset>_planarsviz_manifest.tsv
+# lists every chart file in that dataset's folder, by its path within the
+# folder, not just the ones this run drew:
 # a --plots run merges into the manifest already there rather than replacing
 # it, and drops only rows whose file has gone. So it describes the directory,
 # which is what makes it useful after a partial render. It is bookkeeping, not
@@ -304,6 +304,16 @@ if (length(setdiff(formats, c("pdf", "png")))) stop("--formats takes pdf and/or 
 output <- if (is.null(opts$output)) file.path(bundle$bundle_dir, "plots") else opts$output
 dir.create(output, recursive = TRUE, showWarnings = FALSE)
 
+# The device for charts whose text the standard PDF fonts can't draw; see
+# save_pdf() below.
+if (identical(Sys.info()[["sysname"]], "Darwin") && isTRUE(capabilities("aqua"))) {
+  fallback_name <- "quartz"
+  fallback_device <- function(filename, ...) grDevices::quartz(file = filename, type = "pdf", ...)
+} else {
+  fallback_name <- "cairo"
+  fallback_device <- grDevices::cairo_pdf
+}
+
 manifest <- data.frame()
 failed <- character()
 for (name in wanted) {
@@ -323,8 +333,33 @@ for (name in wanted) {
     dest <- if (nzchar(folder)) file.path(output, dataset, folder) else file.path(output, dataset)
     dir.create(dest, recursive = TRUE, showWarnings = FALSE)
     pdf_path <- file.path(dest, paste0(base, ".pdf"))
-    suppressMessages(suppressWarnings(ggplot2::ggsave(pdf_path, p, device = "pdf", width = size[["width"]],
-                                                      height = size[["height"]], units = units, limitsize = FALSE)))
+    # R's standard PDF device, whose fonts cover only Windows Latin-1, draws
+    # any other character (IPA such as ʔ or ɛ) as a period, and says so with
+    # a "conversion failure" warning. Only a chart that raises one is redrawn
+    # with a device that can draw it (Jeff, 2026-09-23): every other chart,
+    # nyan1308's included, keeps the standard device and stays as it was.
+    # That device is macOS's own (Quartz, which embeds Arial) where there is
+    # one, else cairo. Not cairo on a Mac: R's cairo there needs XQuartz, and
+    # without it fails to load with only a warning, leaving the periods.
+    # So any warning from the second device stops the chart.
+    save_pdf <- function(device, fallback = FALSE) {
+      unencodable <- FALSE
+      withCallingHandlers(
+        suppressMessages(ggplot2::ggsave(pdf_path, p, device = device, width = size[["width"]],
+                                         height = size[["height"]], units = units, limitsize = FALSE)),
+        warning = function(w) {
+          if (fallback) stop(fallback_name, " could not draw this chart: ", conditionMessage(w), call. = FALSE)
+          if (grepl("conversion failure", conditionMessage(w), fixed = TRUE)) unencodable <<- TRUE
+          invokeRestart("muffleWarning")
+        })
+      unencodable
+    }
+    if (save_pdf("pdf")) {
+      unlink(pdf_path)
+      save_pdf(fallback_device, fallback = TRUE)
+      if (!file.exists(pdf_path)) stop(fallback_name, " wrote no file")
+      cat(fallback_name, " ", name, ": text the standard PDF fonts can't draw\n", sep = "")
+    }
     files <- if ("pdf" %in% formats) pdf_path else character()
     if ("png" %in% formats) {
       stem <- file.path(dest, base)
@@ -332,7 +367,8 @@ for (name in wanted) {
       files <- c(files, paste0(stem, ".png"))
       if (!"pdf" %in% formats) unlink(pdf_path)
     }
-    manifest_file <- if (nzchar(folder)) file.path(dataset, folder, basename(files)) else file.path(dataset, basename(files))
+    # Relative to the dataset's own folder, where the manifest sits.
+    manifest_file <- if (nzchar(folder)) file.path(folder, basename(files)) else basename(files)
     data.frame(chart = name, file = manifest_file, width = size[["width"]],
                height = size[["height"]], units = units)
   }, error = function(e) {
@@ -342,7 +378,7 @@ for (name in wanted) {
   })
   if (!is.null(result)) {
     manifest <- rbind(manifest, result)
-    cat("wrote ", paste(result$file, collapse = ", "), "\n", sep = "")
+    cat("wrote ", paste(file.path(dataset, result$file), collapse = ", "), "\n", sep = "")
   }
 }
 # Merge into any manifest already there, rather than replacing it: a --plots
@@ -352,13 +388,15 @@ for (name in wanted) {
 # still on disk, so a chart that has gone away (the fragmentation chart
 # disappears from a bundle exported without --fragmentation-permutations)
 # drops out instead of being claimed forever.
-manifest_path <- file.path(output, paste0(dataset, "_planarsviz_manifest.tsv"))
+manifest_dir <- file.path(output, dataset)
+dir.create(manifest_dir, recursive = TRUE, showWarnings = FALSE)
+manifest_path <- file.path(manifest_dir, paste0(dataset, "_planarsviz_manifest.tsv"))
 kept <- 0L
 if (file.exists(manifest_path)) {
   previous <- utils::read.delim(manifest_path, stringsAsFactors = FALSE)
   if (nrow(previous) && all(names(manifest) %in% names(previous))) {
     stale <- previous[!previous$chart %in% manifest$chart, names(manifest), drop = FALSE]
-    stale <- stale[file.exists(file.path(output, stale$file)), , drop = FALSE]
+    stale <- stale[file.exists(file.path(manifest_dir, stale$file)), , drop = FALSE]
     kept <- nrow(stale)
     manifest <- rbind(manifest, stale)
   }

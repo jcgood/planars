@@ -4,12 +4,13 @@ Dataset kaya1330_verbal
   groupings      ccdb                             from planar_tables/ccdb_kaya1330_verbal.json
   root_position  15                               from planar_tables/ccdb_kaya1330_verbal.json
   planar_type    verbal                           from planar_tables/ccdb_kaya1330_verbal.json
+  forest_axis    planar                           from planar_tables/ccdb_kaya1330_verbal.json
   permutations   5000                             all four tests
 
 == Export ==
-/Users/jcgood/gitrepos/planars/.venv/bin/python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_kaya1330_verbal.tsv --groupings ccdb --root-position 15 --language-name 'Mebengokre (verbal)' --planar-type verbal --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
+/Users/jcgood/gitrepos/planars/.venv/bin/python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_kaya1330_verbal.tsv --groupings ccdb --root-position 15 --language-name 'Mebengokre (verbal)' --planar-type verbal --forest-axis planar --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
 Exported planarsviz bundle: /Users/jcgood/gitrepos/planars/NonCollaborative/results/chart_data/kaya1330_verbal
-Export finished in 20 s.
+Export finished in 21 s.
 
 == Render ==
 Rscript scripts/render_planarsviz.R --bundle results/chart_data/kaya1330_verbal --output results
@@ -86,8 +87,8 @@ wrote kaya1330_verbal/boundaries/kaya1330_verbal_boundary_strength.pdf
 wrote kaya1330_verbal/boundaries/kaya1330_verbal_boundary_strength_distributions.pdf
 wrote kaya1330_verbal/boundaries/kaya1330_verbal_boundary_strength_overlay.pdf
 72 files for 72 of 72 charts; manifest: results/kaya1330_verbal_planarsviz_manifest.tsv
-Render finished in 31 s.
+Render finished in 33 s.
 
 Bundle: results/chart_data/kaya1330_verbal/   Charts: results/kaya1330_verbal/
 
-[batch] exit code 0 after 52 s
+[batch] exit code 0 after 54 s

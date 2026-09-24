@@ -16,7 +16,7 @@
       "phonological"
     ],
     "forest_id": "phon",
-    "n_positions": 20,
+    "n_positions": 27,
     "n_trees": 1
   },
   {
@@ -26,7 +26,7 @@
       "indeterminate"
     ],
     "forest_id": "indet",
-    "n_positions": 20,
+    "n_positions": 27,
     "n_trees": 1
   },
   {

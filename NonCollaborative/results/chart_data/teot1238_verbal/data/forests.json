@@ -6,7 +6,7 @@
       "morphosyntactic"
     ],
     "forest_id": "morsyn",
-    "n_positions": 23,
+    "n_positions": 28,
     "n_trees": 3
   },
   {
@@ -26,7 +26,7 @@
       "indeterminate"
     ],
     "forest_id": "indet",
-    "n_positions": 22,
+    "n_positions": 28,
     "n_trees": 1
   },
   {
@@ -37,7 +37,7 @@
       "indeterminate"
     ],
     "forest_id": "morsyn_indet",
-    "n_positions": 23,
+    "n_positions": 28,
     "n_trees": 3
   }
 ]

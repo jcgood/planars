@@ -4,10 +4,11 @@ Dataset mart1259_verbal
   groupings      ccdb                             from planar_tables/ccdb_mart1259_verbal.json
   root_position  18                               from planar_tables/ccdb_mart1259_verbal.json
   planar_type    verbal                           from planar_tables/ccdb_mart1259_verbal.json
+  forest_axis    planar                           from planar_tables/ccdb_mart1259_verbal.json
   permutations   5000                             all four tests
 
 == Export ==
-/Users/jcgood/gitrepos/planars/.venv/bin/python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_mart1259_verbal.tsv --groupings ccdb --root-position 18 --language-name 'Martinican (verbal)' --planar-type verbal --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
+/Users/jcgood/gitrepos/planars/.venv/bin/python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_mart1259_verbal.tsv --groupings ccdb --root-position 18 --language-name 'Martinican (verbal)' --planar-type verbal --forest-axis planar --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
 Exported planarsviz bundle: /Users/jcgood/gitrepos/planars/NonCollaborative/results/chart_data/mart1259_verbal
 Export finished in 18 s.
 
@@ -75,8 +76,8 @@ wrote mart1259_verbal/boundaries/mart1259_verbal_boundary_strength.pdf
 wrote mart1259_verbal/boundaries/mart1259_verbal_boundary_strength_distributions.pdf
 wrote mart1259_verbal/boundaries/mart1259_verbal_boundary_strength_overlay.pdf
 61 files for 61 of 61 charts; manifest: results/mart1259_verbal_planarsviz_manifest.tsv
-Render finished in 27 s.
+Render finished in 28 s.
 
 Bundle: results/chart_data/mart1259_verbal/   Charts: results/mart1259_verbal/
 
-[batch] exit code 0 after 45 s
+[batch] exit code 0 after 47 s

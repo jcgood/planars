@@ -6,7 +6,7 @@
       "morphosyntactic"
     ],
     "forest_id": "morsyn",
-    "n_positions": 17,
+    "n_positions": 18,
     "n_trees": 2
   },
   {
@@ -16,7 +16,7 @@
       "phonological"
     ],
     "forest_id": "phon",
-    "n_positions": 17,
+    "n_positions": 18,
     "n_trees": 2
   },
   {
@@ -26,7 +26,7 @@
       "indeterminate"
     ],
     "forest_id": "indet",
-    "n_positions": 17,
+    "n_positions": 18,
     "n_trees": 1
   },
   {
@@ -37,7 +37,7 @@
       "indeterminate"
     ],
     "forest_id": "morsyn_indet",
-    "n_positions": 17,
+    "n_positions": 18,
     "n_trees": 2
   }
 ]

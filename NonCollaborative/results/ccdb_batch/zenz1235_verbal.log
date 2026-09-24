@@ -4,10 +4,11 @@ Dataset zenz1235_verbal
   groupings      ccdb                             from planar_tables/ccdb_zenz1235_verbal.json
   root_position  13                               from planar_tables/ccdb_zenz1235_verbal.json
   planar_type    verbal                           from planar_tables/ccdb_zenz1235_verbal.json
+  forest_axis    planar                           from planar_tables/ccdb_zenz1235_verbal.json
   permutations   5000                             all four tests
 
 == Export ==
-/Users/jcgood/gitrepos/planars/.venv/bin/python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_zenz1235_verbal.tsv --groupings ccdb --root-position 13 --language-name 'Zenzontepec Chatino (verbal)' --planar-type verbal --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
+/Users/jcgood/gitrepos/planars/.venv/bin/python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_zenz1235_verbal.tsv --groupings ccdb --root-position 13 --language-name 'Zenzontepec Chatino (verbal)' --planar-type verbal --forest-axis planar --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
 Exported planarsviz bundle: /Users/jcgood/gitrepos/planars/NonCollaborative/results/chart_data/zenz1235_verbal
 Export finished in 19 s.
 
@@ -78,8 +79,8 @@ wrote zenz1235_verbal/boundaries/zenz1235_verbal_boundary_strength.pdf
 wrote zenz1235_verbal/boundaries/zenz1235_verbal_boundary_strength_distributions.pdf
 wrote zenz1235_verbal/boundaries/zenz1235_verbal_boundary_strength_overlay.pdf
 64 files for 64 of 64 charts; manifest: results/zenz1235_verbal_planarsviz_manifest.tsv
-Render finished in 27 s.
+Render finished in 29 s.
 
 Bundle: results/chart_data/zenz1235_verbal/   Charts: results/zenz1235_verbal/
 
-[batch] exit code 0 after 46 s
+[batch] exit code 0 after 48 s

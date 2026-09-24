@@ -4,10 +4,11 @@ Dataset teot1238_verbal
   groupings      ccdb                             from planar_tables/ccdb_teot1238_verbal.json
   root_position  12                               from planar_tables/ccdb_teot1238_verbal.json
   planar_type    verbal                           from planar_tables/ccdb_teot1238_verbal.json
+  forest_axis    planar                           from planar_tables/ccdb_teot1238_verbal.json
   permutations   5000                             all four tests
 
 == Export ==
-/Users/jcgood/gitrepos/planars/.venv/bin/python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_teot1238_verbal.tsv --groupings ccdb --root-position 12 --language-name 'Teotitlán del Valle Zapotec (verbal)' --planar-type verbal --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
+/Users/jcgood/gitrepos/planars/.venv/bin/python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_teot1238_verbal.tsv --groupings ccdb --root-position 12 --language-name 'Teotitlán del Valle Zapotec (verbal)' --planar-type verbal --forest-axis planar --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
 Exported planarsviz bundle: /Users/jcgood/gitrepos/planars/NonCollaborative/results/chart_data/teot1238_verbal
 Export finished in 19 s.
 
@@ -85,8 +86,8 @@ wrote teot1238_verbal/boundaries/teot1238_verbal_boundary_strength.pdf
 wrote teot1238_verbal/boundaries/teot1238_verbal_boundary_strength_distributions.pdf
 wrote teot1238_verbal/boundaries/teot1238_verbal_boundary_strength_overlay.pdf
 71 files for 71 of 71 charts; manifest: results/teot1238_verbal_planarsviz_manifest.tsv
-Render finished in 33 s.
+Render finished in 35 s.
 
 Bundle: results/chart_data/teot1238_verbal/   Charts: results/teot1238_verbal/
 
-[batch] exit code 0 after 53 s
+[batch] exit code 0 after 54 s

@@ -15,8 +15,8 @@ does not stop the others. Each structure's full output goes to
   conflict groups -- normal, but worth knowing);
 - anything worth a look before trusting a chart: very few families, a family
   with more spans than the 26 letters two charts name spans with, very long
-  structures, characters in a title or label the PDF fonts can't draw, a
-  placeholder root span, truncated permutation draws.
+  structures, characters in a title or label the standard PDF fonts can't
+  draw (those charts are drawn with Quartz, or cairo off a Mac), truncated permutation draws.
 
 It holds no analysis or drawing code of its own. ``--summary-only`` rewrites
 the summary from the logs and bundles already there, without running
@@ -57,7 +57,8 @@ LONG_STRUCTURE = 40        # positions; widest canvases and longest label rows
 def pdf_can_draw(char: str) -> bool:
     """Whether R's default PDF device can draw this character. Its standard
     fonts use the Windows Latin-1 encoding; anything outside it (IPA such as
-    ʔ or ɛ, a separate combining accent) comes out as a period."""
+    ʔ or ɛ, a separate combining accent) would come out as a period, so the
+    renderer draws a chart containing one with Quartz (cairo off a Mac)."""
     try:
         char.encode("cp1252")
         return True
@@ -136,10 +137,9 @@ def bundle_notes(dataset: str) -> tuple[dict, list[str]]:
     drawn = labels + [meta.get("language_name") or ""]
     undrawable = sorted({c for text in drawn for c in text if not pdf_can_draw(c)})
     if undrawable:
-        notes.append("characters R's PDF fonts draw as a period: " + " ".join(undrawable))
-    if meta.get("synthetic_root"):
-        notes.append("no test covers the whole structure, so the placeholder root span puts "
-                     "a capped mark with no bar at the first and/or last position of boundary_strength")
+        notes.append("text the standard PDF fonts can't draw (" + " ".join(undrawable) +
+                     "): the renderer draws the charts that show it with Quartz (cairo off a Mac); "
+                     "check their fonts look right")
     for table in ("span_placement_test.tsv", "arbitrary_layers_test.tsv"):
         truncated = [r["group"] for r in read_tsv(data / table) if int(r.get("n_truncated") or 0)]
         if truncated:
@@ -150,7 +150,7 @@ def bundle_notes(dataset: str) -> tuple[dict, list[str]]:
 
 
 def rendered_kinds(dataset: str) -> set[str]:
-    manifest = NC / "results" / f"{dataset}_planarsviz_manifest.tsv"
+    manifest = NC / "results" / dataset / f"{dataset}_planarsviz_manifest.tsv"
     return {chart_kind(r["chart"]) for r in read_tsv(manifest)}
 
 

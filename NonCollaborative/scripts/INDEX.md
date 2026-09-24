@@ -254,7 +254,7 @@ with `groups` for the two-bundle variant — from a bundle exported with
 - **Purpose**: Render the charts from a validated planarsviz bundle — the only
   planarsviz code that writes files
 - **Output**: one PDF per chart in `--output` (default `<bundle>/plots`), plus
-  `<dataset>_planarsviz_manifest.tsv` listing every file written and its canvas
+  `<dataset>/<dataset>_planarsviz_manifest.tsv` listing every file written and its canvas
   size. For nyan1308 the published copies live in `results/`.
 - **Plots**: not a fixed list — the charts come from what the bundle holds (a
   pooled pair per domain type, a forest per `forests.json` entry plus one chart

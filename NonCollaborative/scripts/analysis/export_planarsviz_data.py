@@ -67,7 +67,8 @@ def forest_variants(bundles: list) -> list[tuple[str, list[str], str]]:
     return variants
 
 
-def export_forests(domain_file: Path, domains_dir: Path, data_dir: Path, bundles: list) -> None:
+def export_forests(domain_file: Path, domains_dir: Path, data_dir: Path, bundles: list,
+                   n_positions_override: int | None = None) -> None:
     """Write the trees of every per-class forest chart, exactly as drawn.
 
     For each variant, the same inputs the archived per-class forest scripts
@@ -78,6 +79,12 @@ def export_forests(domain_file: Path, domains_dir: Path, data_dir: Path, bundles
     each family the Newick string, the spans in groupOTU order (by left edge,
     larger first on ties), and each span's thickness sqrt(family count)
     rounded to 4 places. R then draws these without building any topology.
+
+    ``n_positions_override`` (--forest-axis planar) gives every forest the
+    whole planar structure instead, so a type whose tests stop short of the
+    last position still draws 1..n, like every other chart. CCDB bundles use
+    it (Jeff, 2026-09-23); nyan1308's forests keep the subset's own count,
+    which is what its reference images show.
     """
     forest_dir = data_dir / "forests"
     forest_dir.mkdir(parents=True, exist_ok=True)
@@ -91,7 +98,8 @@ def export_forests(domain_file: Path, domains_dir: Path, data_dir: Path, bundles
         # Found by the shifted test dataset, where tonosegmental is renamed.
         if not set(types) & observed:
             continue
-        spans, n_positions = load_spans(domain_file.name, str(domains_dir), subset=types)
+        spans, n_positions = load_spans(domain_file.name, str(domains_dir), subset=types,
+                                        n_positions=n_positions_override)
         if not spans:
             continue
         families, truncated = enumerate_maximal_laminar_families(
@@ -977,6 +985,7 @@ def export_bundle(
     groupings: str = "chichewa",
     language_name: str | None = None,
     planar_type: str | None = None,
+    forest_axis: str = "subset",
     highlights_file: Path | None = None,
     conflict_groups_file: Path | None = None,
     conflict_group_cap: int = 12,
@@ -1005,11 +1014,16 @@ def export_bundle(
     ``Elements == root_element`` lookup with an explicit position number
     (validated against 1..n_positions), for planar tables -- like every CCDB
     one -- that don't mark a root position in ``Elements`` at all.
+    ``forest_axis`` is "subset" (default: each per-type forest stops at its
+    own last position, as nyan1308's always have) or "planar" (every forest
+    runs over the whole planar structure; see export_forests()).
     """
     if not domain_file.exists():
         raise FileNotFoundError(domain_file)
     if groupings not in GROUPINGS:
         raise ValueError(f"--groupings must be one of {sorted(GROUPINGS)}: {groupings!r}")
+    if forest_axis not in ("subset", "planar"):
+        raise ValueError(f"--forest-axis must be 'subset' or 'planar': {forest_axis!r}")
 
     dataset = domain_file.stem.removeprefix("domains_")
     domains_dir = domain_file.parent
@@ -1219,6 +1233,8 @@ def export_bundle(
         # Only when given, so a bundle exported without it (nyan1308's) is
         # byte-for-byte what it was; the charts then say "verbal".
         **({"planar_type": planar_type} if planar_type else {}),
+        # Likewise only when not the default, for the same reason.
+        **({"forest_axis": forest_axis} if forest_axis != "subset" else {}),
         "n_positions": n_positions,
         "n_active_tests": len(tests),
         "n_unique_spans": len(spans),
@@ -1322,7 +1338,8 @@ def export_bundle(
     (data_dir / "subsets.json").write_text(
         json.dumps(subset_index, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
-    export_forests(domain_file, domains_dir, data_dir, bundles)
+    export_forests(domain_file, domains_dir, data_dir, bundles,
+                   n_positions_override=n_positions if forest_axis == "planar" else None)
     export_overlay_groups(domain_file, domains_dir, data_dir, n_positions)
     export_highlights(dataset, data_dir, highlights_file)
     export_tree_counts(domain_file, domains_dir, data_dir, bundles)
@@ -1368,6 +1385,12 @@ def main() -> None:
         "--planar-type", default=None,
         help="What the planar structure is of, for axis titles such as 'Positions on the "
              "nominal planar structure' (default: the charts say 'verbal')",
+    )
+    parser.add_argument(
+        "--forest-axis", choices=["subset", "planar"], default="subset",
+        help="Where each per-domain-type forest's axis stops: 'subset' (default) at that "
+             "type's last position, as nyan1308's forests always have; 'planar' at the "
+             "planar structure's last position, like every other chart (CCDB bundles)",
     )
     parser.add_argument(
         "--highlights-file", type=Path, default=None,
@@ -1456,6 +1479,7 @@ def main() -> None:
                                groupings=args.groupings,
                                language_name=args.language_name,
                                planar_type=args.planar_type,
+                               forest_axis=args.forest_axis,
                                highlights_file=args.highlights_file,
                                conflict_groups_file=args.conflict_groups_file,
                                conflict_group_cap=args.conflict_group_cap,

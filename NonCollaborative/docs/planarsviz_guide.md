@@ -16,7 +16,7 @@ environment.
 |---|---|---|
 | Analyse and export | `scripts/analysis/export_planarsviz_data.py` (Python) | a bundle: `results/chart_data/<dataset>/data/` |
 | Draw | the `planarsviz` R package, `plot_*()` functions | ggplot / patchwork objects |
-| Save everything | `scripts/render_planarsviz.R` | PDFs and PNGs, plus `manifest.tsv` |
+| Save everything | `scripts/render_planarsviz.R` | PDFs and PNGs, plus `<dataset>/<dataset>_planarsviz_manifest.tsv` |
 | Check | `scripts/planarsviz_checks/` | comparison images and pass/fail messages |
 
 The exporter does all analysis by calling the existing, verified Python
@@ -52,6 +52,8 @@ gives `nyan1308`, and the bundle goes to `results/chart_data/nyan1308/`.
 | `--root-position` | none | Position number that is the root, overriding the `Elements == root_element` lookup (validated against 1..n_positions). Needed for planar tables -- every CCDB one -- that don't mark a root position in `Elements` at all. |
 | `--groupings` | `chichewa` | Named set of domain-type bundles/filters this dataset is analysed with (`scripts/analysis/planars_groupings.py`'s `GROUPINGS`): `chichewa` for nyan1308's phonology-like/syntax-like bundles and `no_tono` filter, or `ccdb` for the single morphosyntactic + indeterminate bundle CCDB structures use. |
 | `--language-name` | none (titles use the dataset id) | Name used in chart titles, e.g. "Chichewa (nyan1308)". |
+| `--planar-type` | none (axis titles say "verbal") | What the planar structure is of, for axis titles such as "Positions on the nominal planar structure". Written to `metadata.json` only when given. |
+| `--forest-axis` | `subset` | Where each per-domain-type forest's axis stops: `subset`, at that type's last position (what nyan1308's forests have always drawn); `planar`, at the planar structure's last position, like every other chart. CCDB bundles use `planar`. Written to `metadata.json` only when not the default. |
 | `--highlights-file` | `planar_tables/highlights_<dataset>.tsv` if present | Named position ranges, e.g. the orthographic word. |
 | `--conflict-groups-file` | `planar_tables/conflict_groups_<dataset>.tsv` if present | The spans that split families into conflict groups. |
 | `--conflict-group-cap` | 12 | Most trees the conflict-groups chart draws per group. |
@@ -141,7 +143,9 @@ in that forest, filtered variants only when there is something to filter,
 conflict-group charts only when groups are defined, and so on. Files are
 named `<dataset>_<chart>.pdf`. It installs the package into a temporary
 library itself, reports every chart that fails, exits with an error if any
-did, and writes `manifest.tsv` listing what it wrote.
+did, and writes `<dataset>_planarsviz_manifest.tsv` into the dataset's own
+folder (`results/nyan1308/`), listing every chart file there by its path
+within that folder.
 
 ---
 
@@ -246,7 +250,8 @@ package needs to know the mapping.
 
 The same attribute decides where a rendered chart itself is written. The
 renderer puts each chart in that subfolder of its output directory and
-records the folder in the manifest's `file` column, so `results/` is grouped
+records the folder in the manifest's `file` column (paths relative to the
+dataset's folder, where the manifest sits), so `results/` is grouped
 the same way its reference images are, and `check_renderer.py` looks a
 reference up at the address the manifest gives rather than by hunting for a
 file of the right name. `results/` adds two folders the check side has no use

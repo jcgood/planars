@@ -4,11 +4,11 @@ For docs/PLAN_planarsviz_library.md section 8.3: after
     Rscript scripts/render_planarsviz.R --bundle results/chart_data/nyan1308 --output DIR --formats pdf,png
 run
     python scripts/planarsviz_checks/check_renderer.py DIR
-Reads DIR's <dataset>_planarsviz_manifest.tsv, pairs each
+Reads DIR/<dataset>/<dataset>_planarsviz_manifest.tsv, pairs each
 <dataset>/<folder>/<dataset>_<chart>.png with
 results/chart_checks/reference/<dataset>/<folder>/<dataset>_<chart>.png (the
-dataset comes from the manifest row's own file path, not a fixed name, so
-this works for whichever dataset DIR was rendered from), and prints the
+dataset is the folder the manifest sits in, not a fixed name, so this works
+for whichever dataset DIR was rendered from), and prints the
 differing-pixel share per chart (side-by-side images go to DIR/compare/).
 Charts copied from working R code must show 0.0000%; the two matplotlib
 ports (tree_count_*, boundary_strength, _no_tono, _distributions) differ by
@@ -52,12 +52,17 @@ for path in REFERENCE.rglob("*.png"):
 out_dir = Path(sys.argv[1])
 compare_dir = out_dir / "compare"
 compare_dir.mkdir(exist_ok=True)
-manifests = sorted(out_dir.glob("*_planarsviz_manifest.tsv"))
+# Each dataset's manifest sits in that dataset's own folder, and its file
+# column is relative to that folder.
+manifests = sorted(out_dir.glob("*/*_planarsviz_manifest.tsv"))
 if len(manifests) != 1:
-    names = ", ".join(m.name for m in manifests) or "none"
-    sys.exit(f"{out_dir} should hold exactly one *_planarsviz_manifest.tsv; found: {names}")
+    names = ", ".join(m.relative_to(out_dir).as_posix() for m in manifests) or "none"
+    sys.exit(f"{out_dir} should hold exactly one <dataset>/*_planarsviz_manifest.tsv; found: {names}")
+dataset = manifests[0].parent.name
 with manifests[0].open(newline="") as handle:
     rows = [r for r in csv.DictReader(handle, delimiter="\t") if r["file"].endswith(".png")]
+for row in rows:
+    row["file"] = f"{dataset}/{row['file']}"
 
 seen = set()
 datasets = set()

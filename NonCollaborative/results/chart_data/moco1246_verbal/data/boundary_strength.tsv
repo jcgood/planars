@@ -1,5 +1,5 @@
 position	left_summed	left_capped	right_summed	right_capped
-1	0	7	0	0
+1	0	0	0	0
 2	0	0	0	0
 3	5	5	0	0
 4	9	5	0	0
@@ -18,4 +18,4 @@ position	left_summed	left_capped	right_summed	right_capped
 17	0	0	0	0
 18	0	0	14	7
 19	0	0	2	2
-20	0	0	0	7
+20	0	0	0	0

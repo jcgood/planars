@@ -18,8 +18,8 @@ plan says what and why. Update it at every step boundary, in the same commit.
   squashed exemplary trees, now fixed.
 - **Step 3a, one command for one language: done (2026-09-23).**
   `scripts/planarsviz_language.py`; details under "Step 3a as built".
-- **Step 4, all 21: done apart from three follow-ups Jeff has decided but
-  that aren't carried out yet (2026-09-23).**
+- **Step 4, all 21: done (2026-09-23)**, including Jeff's three follow-up
+  answers and moving each render manifest into its dataset's folder.
   All 21 export and render with no chart failing; seven review agents
   looked through 20 of them (Chácobo verbal had already been looked at);
   six display problems fixed. Details under "Step 4 as built".
@@ -177,7 +177,8 @@ tutorial, so it records the real route, detours included.
    `180 files for 90 of 91 charts` and
    `FAILED boundary_strength_overlay: No highlight 'orthographic_word' in this bundle.`
    Exit code 1. Charts land in `results/chac1251_verbal/<topic>/`, with
-   `results/chac1251_verbal_planarsviz_manifest.tsv` beside nyan1308's.
+   `results/chac1251_verbal_planarsviz_manifest.tsv` beside nyan1308's
+   (since moved into `results/chac1251_verbal/`; see "Step 4 as built").
 
 3. Fixed the failure in the renderer (see below), then redrew just that chart:
 
@@ -315,13 +316,44 @@ Fixed (each leaves nyan1308's 137 charts identical, by the renderer check):
   now always in range.
 - (Step 3a's command also carries `planar_type` now; see its docstring.)
 
-**Jeff's answers (2026-09-23), not yet carried out:**
+**Jeff's answers (2026-09-23), carried out the same day:**
 
 1. Per-type forests: **run 1..n for CCDB bundles; nyan1308's unchanged.**
-2. IPA: **draw with cairo PDF only for a chart whose text the standard fonts
-   can't draw;** every other chart, nyan1308's included, as now.
+   Exporter option `--forest-axis {subset,planar}` (default `subset`,
+   written to `metadata.json` only when `planar`); the one-language command
+   passes `planar` for every CCDB structure. 19 of 21 bundles' forests
+   changed (e.g. Chácobo verbal's `indet` forest now 1–28, was 1–25).
+2. IPA: **draw with a Unicode-capable PDF device only for a chart whose
+   text the standard fonts can't draw;** every other chart as now. The
+   renderer spots such a chart by the standard device's own "conversion
+   failure" warning and redraws just that chart. Cairo was Jeff's first
+   choice, but R's cairo on this Mac needs XQuartz and, without it, fails
+   with only a warning — the first batch run "used cairo" and still drew
+   periods. So on a Mac the second device is Quartz (embeds Arial), cairo
+   elsewhere (Jeff, 2026-09-23), and any warning from the second device now
+   fails the chart. Affects Mocoví (16 charts, ʔ) and Ayautla (8, ɛ).
 3. Capped count: **leave the placeholder root out**, as the summed count
-   does; update `test_planarsviz_shifted_bundle.py`'s expected value.
+   does. `boundary_strength.strength_from_families()` counts capped edges
+   only from observed spans. Beyond the CCDB bundles this changed position
+   1's `left_capped` in three nyan1308 per-type tables (length 3→0,
+   phonological 6→0, tonosegmental 9→0) and six shifted_nyan tables; no
+   chart draws those tables (the only per-subset boundary chart is
+   no_tono's, which is unchanged), and those files were updated in place.
+   `test_planarsviz_shifted_bundle.py` now expects 0.
+
+**Manifests moved (Jeff, 2026-09-23).** Each dataset's
+`<dataset>_planarsviz_manifest.tsv` now sits in `results/<dataset>/`
+rather than loose at the top of `results/`, with file paths relative to
+that folder. Renderer, `check_renderer.py`, the batch script and the docs
+follow; the 23 existing manifests were moved with `git mv` and their paths
+rewritten.
+
+Evidence: the renderer check reports nyan1308's 137 charts unchanged after
+all of the above (run twice: after the three answers, and after the
+manifest move). A no-permutation nyan1308 export differs from the committed
+bundle only in the three tables above. The no-R suite passes. The batch ran
+all 21 with nothing failing; Mocoví and Ayautla were re-run after the
+Quartz change, and their logs list each redrawn chart.
 
 The three questions as they were put:
 

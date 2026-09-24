@@ -4,10 +4,11 @@ Dataset chac1251_nominal
   groupings      ccdb                             from planar_tables/ccdb_chac1251_nominal.json
   root_position  4                                from planar_tables/ccdb_chac1251_nominal.json
   planar_type    nominal                          from planar_tables/ccdb_chac1251_nominal.json
+  forest_axis    planar                           from planar_tables/ccdb_chac1251_nominal.json
   permutations   5000                             all four tests
 
 == Export ==
-/Users/jcgood/gitrepos/planars/.venv/bin/python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_chac1251_nominal.tsv --groupings ccdb --root-position 4 --language-name 'Chácobo (nominal)' --planar-type nominal --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
+/Users/jcgood/gitrepos/planars/.venv/bin/python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_chac1251_nominal.tsv --groupings ccdb --root-position 4 --language-name 'Chácobo (nominal)' --planar-type nominal --forest-axis planar --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
 Exported planarsviz bundle: /Users/jcgood/gitrepos/planars/NonCollaborative/results/chart_data/chac1251_nominal
 Export finished in 22 s.
 
@@ -75,7 +76,7 @@ wrote chac1251_nominal/boundaries/chac1251_nominal_boundary_strength.pdf
 wrote chac1251_nominal/boundaries/chac1251_nominal_boundary_strength_distributions.pdf
 wrote chac1251_nominal/boundaries/chac1251_nominal_boundary_strength_overlay.pdf
 61 files for 61 of 61 charts; manifest: results/chac1251_nominal_planarsviz_manifest.tsv
-Render finished in 27 s.
+Render finished in 26 s.
 
 Bundle: results/chart_data/chac1251_nominal/   Charts: results/chac1251_nominal/
 

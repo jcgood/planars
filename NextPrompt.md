@@ -30,14 +30,11 @@ matters for the exporter specifically: it records the domain file's path as
 given, so running it from the repo root writes a bundle that differs from the
 committed one in that field.
 
-### Next action: carry out Jeff's three step-4 answers, then step 5
+### Next action: step 5, documentation and the tutorial
 
-Step 4 is done: all 21 CCDB structures drawn by
-`python scripts/planarsviz_ccdb_batch.py --apply`, reviewed, and six
-problems fixed. Jeff has answered the three questions it left (under "Step
-4 as built" in the progress file: "Jeff's answers"); carry those out, leaving
-nyan1308's charts identical, re-run the batch, then the plan's step 5
-(documentation and the tutorial).
+Step 4 is done, Jeff's three follow-ups included (see "Step 4 as built"
+in the progress file). Next is the plan's step 5: the documentation
+updates and `docs/planarsviz_tutorial.md`, built from step 3's command log.
 
 ### Things that will bite
 
@@ -59,6 +56,9 @@ nyan1308's charts identical, re-run the batch, then the plan's step 5
 - **An untracked or modified file under `planarsviz/` jams the roxygen
   pre-push guard.** Check the guard passes on its own rather than reaching for
   `--no-verify`, which has silently disarmed it before.
+- **R's cairo devices don't work on this Mac** (they need XQuartz, and fail
+  with only a warning). The renderer uses Quartz for charts with IPA; don't
+  reach for `cairo_pdf` here.
 - **R does not go into the CI image.** The porting checks pixel-compare against
   Mac-rendered references and Linux fonts differ, so they stay a local gate.
   Don't reopen this.
