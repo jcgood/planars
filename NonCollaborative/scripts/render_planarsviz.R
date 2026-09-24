@@ -385,9 +385,10 @@ for (name in wanted) {
 # run draws some of the charts, and a manifest that then listed only those
 # would stop describing what is in the directory. Rows this run produced win;
 # older rows for charts it did not draw are kept -- but only if their file is
-# still on disk, so a chart that has gone away (the fragmentation chart
-# disappears from a bundle exported without --fragmentation-permutations)
-# drops out instead of being claimed forever.
+# still on disk and the bundle can still draw that chart. A chart the bundle
+# no longer has (the fragmentation chart, after an export without
+# --fragmentation-permutations) was drawn from data that is gone, so its file
+# is removed and its row dropped rather than left to pass for current.
 manifest_dir <- file.path(output, dataset)
 dir.create(manifest_dir, recursive = TRUE, showWarnings = FALSE)
 manifest_path <- file.path(manifest_dir, paste0(dataset, "_planarsviz_manifest.tsv"))
@@ -395,6 +396,13 @@ kept <- 0L
 if (file.exists(manifest_path)) {
   previous <- utils::read.delim(manifest_path, stringsAsFactors = FALSE)
   if (nrow(previous) && all(names(manifest) %in% names(previous))) {
+    gone <- previous[!previous$chart %in% names(charts), , drop = FALSE]
+    if (nrow(gone)) {
+      unlink(file.path(manifest_dir, gone$file))
+      cat("removed ", paste(file.path(dataset, gone$file), collapse = ", "),
+          ": this bundle no longer has these charts\n", sep = "")
+    }
+    previous <- previous[previous$chart %in% names(charts), , drop = FALSE]
     stale <- previous[!previous$chart %in% manifest$chart, names(manifest), drop = FALSE]
     stale <- stale[file.exists(file.path(manifest_dir, stale$file)), , drop = FALSE]
     kept <- nrow(stale)

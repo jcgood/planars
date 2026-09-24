@@ -7,7 +7,7 @@ script serializes those results into a small, inspectable data bundle for R.
 
 Example:
     python scripts/analysis/export_planarsviz_data.py \
-        --domain-file domains_nyan1308.tsv \
+        --domain-file domains/domains_nyan1308.tsv \
         --output-dir results/chart_data
 """
 
@@ -1175,9 +1175,9 @@ def export_bundle(
               domain_type_rows(observed_types))
 
     # Off unless asked: the permutation test is minutes, the rest of the
-    # export is seconds. A bundle without it simply has no fragmentation
-    # tables, and plot_fragmentation_test() says so rather than failing
-    # obscurely.
+    # export is seconds. A bundle without it has no fragmentation tables
+    # (any from an earlier export are removed below), and
+    # plot_fragmentation_test() says so rather than failing obscurely.
     fragmentation_metadata: dict = {}
     if fragmentation_permutations:
         fragmentation_metadata = export_fragmentation_test(
@@ -1205,6 +1205,19 @@ def export_bundle(
             domain_file, domains_dir, data_dir,
             arbitrary_layers_permutations, arbitrary_layers_seed, bundles, n_positions,
         )
+
+    # A test not run this time must not leave its tables from an earlier
+    # export behind: the renderer draws a test's chart whenever its table is
+    # there, so a leftover table would be drawn as if it belonged to this data.
+    for ran, names in (
+        (fragmentation_permutations, ["fragmentation_test.tsv", "fragmentation_null.tsv"]),
+        (boundary_strength_test_permutations, ["boundary_strength_test.tsv"]),
+        (span_placement_permutations, ["span_placement_test.tsv", "span_placement_null.tsv"]),
+        (arbitrary_layers_permutations, ["arbitrary_layers_test.tsv", "arbitrary_layers_null.tsv"]),
+    ):
+        if not ran:
+            for name in names:
+                (data_dir / name).unlink(missing_ok=True)
 
     metadata = {
         "contract_version": "0.2.0",
