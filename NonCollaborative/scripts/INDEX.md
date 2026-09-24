@@ -229,6 +229,23 @@ with `groups` for the two-bundle variant — from a bundle exported with
 - **Example**: `python scripts/analysis/export_planarsviz_illustrations.py`
   (`--seed`, `--n-random-trees`, `--n-leaves`, `--tree-counts-max-n`)
 
+**`analysis/export_cross_language.py`**
+- **Purpose**: Writes the `cross_language` bundle, setting every
+  structure's own bundle side by side (nyan1308 and the 21 CCDB
+  structures, 2026-09-23; plan `docs/PLAN_cross_language_charts.md`). Reads
+  the per-language bundles and re-runs no analysis; the one computation of
+  its own is the label shuffle behind the conflicts-and-the-divide chart's
+  p-value. Refuses a bundle exported without all four permutation flags.
+- **Output**: `results/chart_data/cross_language/data/` (`structures.tsv`,
+  `family_count_tests.tsv`, `pooled_tests.tsv`, `conflict_divide.tsv`,
+  `boundary_profile.tsv`, `convergent_spans.tsv`, `summary.tsv`,
+  `metadata.json`), plus `results/cross_language/cross_language_summary.md`
+  and `.tex`.
+- **Example**: `python scripts/analysis/export_cross_language.py --apply`
+  (dry run without `--apply`; `--shuffles`, `--seed`,
+  `--convergence-ranks`). Then draw with `Rscript scripts/render_planarsviz.R
+  --bundle results/chart_data/cross_language --output results`.
+
 **`analysis/arbitrary_layers_test.py`**
 - **Purpose**: the third and weakest of the project's three permutation
   nulls. It holds nothing about the real data except how many spans a group

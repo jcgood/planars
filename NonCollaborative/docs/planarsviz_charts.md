@@ -722,6 +722,102 @@ fragmentation test's `check_fragmentation.R`: `boundary_strength_test.py`'s
 `run_test()` is the only place these numbers are computed, so there is
 nothing separate to check it against.
 
+## 19. Across languages
+
+Every structure side by side: nyan1308 and the 21 CCDB structures
+(2026-09-23; plan `docs/PLAN_cross_language_charts.md`). Its own bundle,
+built only by reading the per-language bundles (contract:
+`planarsviz/inst/data-contract.md`, "Cross-language bundle"):
+
+```r
+ref <- read_planars_cross_language("results/chart_data/cross_language")
+```
+
+Every chart marks the one structure not from CCDB (Chichewa) with `*`.
+Several split each structure's tests into a *syntax side* and a *phonology
+side*: in CCDB, morphosyntactic and indeterminate against phonological; in
+Chichewa, its own syntax-like (morphosyntactic, tonosegmental, length) against
+phonology-like (phonological, intonational). Canvas 9 × 8 in unless given. All
+land in `results/cross_language/`, named `cross_language_<renderer name>.pdf`.
+None has a reference image yet: they are new charts, not ports, and are
+still open to Jeff's cuts. `tests/test_planarsviz_cross_language_bundle.py`
+checks the bundle against its sources instead.
+
+### 19a. Tree-likeness
+
+Observed family count ÷ the span-placement null's median (filled) and the
+arbitrary-layers null's (open), log scale; the grey bar is the span-placement
+null's 5th–95th percentile on the same scale. Left of 1 = more tree-like than
+chance. The caption gives the count below the median, its sign-test p and
+Fisher's combined p, with the caveat that structures are not independent.
+
+![Tree-likeness](planarsviz_charts/cross_language_tree_likeness.png)
+
+```r
+plot_cross_language_tree_likeness(ref, role = "all")
+```
+
+| Option | Meaning |
+|---|---|
+| `role` | `"all"` (every test pooled), `"syntax_side"` or `"phonology_side"`. |
+
+Renderer names `tree_likeness`, `tree_likeness_syntax_side`,
+`tree_likeness_phonology_side`.
+
+### 19b. Families against size
+
+Distinct spans against families (log), shaped by planar type, with each
+structure's arbitrary-layers null (5th–95th) as a grey bar; structures
+outside it, and Chichewa, are labelled. Canvas 9 × 6 in. Renderer name
+`families_vs_size`.
+
+![Families against size](planarsviz_charts/cross_language_families_vs_size.png)
+
+### 19c. Conflicts and the divide
+
+Per structure, the share of conflicting span pairs that fall wholly across
+the divide (one span only syntax side, the other only phonology side), against
+the share of all span pairs that do. The divide hypothesis predicts the first
+above the second. p from shuffling spans' sides around the fixed conflict
+list. A span on both sides counts as within a side in any pair. Structures
+with no span purely on one side are listed without points. Renderer name
+`divide`.
+
+![Divide](planarsviz_charts/cross_language_divide.png)
+
+### 19d. Which side is more tree-like
+
+Span-placement p-value for each structure's syntax-side and phonology-side
+tests, joined. Canvas 8 × 7.5 in. Renderer name `side_p`.
+
+![Side p-values](planarsviz_charts/cross_language_side_p.png)
+
+### 19e. Edges around the root
+
+Heatmap: one row per structure, positions relative to the root, left and
+right edges as two panels, summed boundary strength scaled by the
+structure's own maximum; orange dots where the boundary-strength test's jump
+has p < 0.05 (uncorrected). Canvas 13 × 7 in. Renderer name `edges`.
+
+![Edges](planarsviz_charts/cross_language_edges.png)
+
+### 19f. Most convergent spans
+
+Each structure's spans picked out by the most tests (top three convergence
+levels, at least `min_tests` tests, default 2) as segments on the
+root-relative axis, thicker with more tests; grey is the structure's extent.
+Canvas 11 × 13 in. Renderer name `convergence`.
+
+![Convergence](planarsviz_charts/cross_language_convergence.png)
+
+```r
+plot_cross_language_convergence(ref, min_tests = 2L)
+```
+
+The summary table (plan item F) is not a chart: the exporter writes it as
+`results/cross_language/cross_language_summary.md` and `.tex`, and as the
+bundle's `summary.tsv`.
+
 ---
 
 ## Name changes for cutover

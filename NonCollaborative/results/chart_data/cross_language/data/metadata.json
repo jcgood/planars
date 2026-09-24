@@ -1,0 +1,135 @@
+{
+  "contract_version": 1,
+  "dataset": "cross_language",
+  "producer": "scripts/analysis/export_cross_language.py",
+  "n_structures": 22,
+  "inputs": [
+    {
+      "dataset": "arao1248_verbal",
+      "metadata_sha256": "b668b0cbe69ae438d5080cbf5297ec008fb1badb8742115746140f3d5fcf0378"
+    },
+    {
+      "dataset": "ayau1235_verbal",
+      "metadata_sha256": "7053b5661a4c01ef5fd0914c3f64b1152e2203916ae312ba56e28c8f956b0185"
+    },
+    {
+      "dataset": "cent2127_verbal",
+      "metadata_sha256": "aff9aad6db9e3d0fc9e6d7fbcb96b9ce655c50c831386dab227bf0ba27418dda"
+    },
+    {
+      "dataset": "chac1251_nominal",
+      "metadata_sha256": "5849f6024b2641bf5cde75ec699337480b7ec150498d042a65cd8bceaa717f1a"
+    },
+    {
+      "dataset": "chac1251_verbal",
+      "metadata_sha256": "caedcfce2088d4e4eed0af2042f854d3ab9e04771ab0c392861a3f1607d96a6d"
+    },
+    {
+      "dataset": "cher1273_verbal",
+      "metadata_sha256": "461a114fddda9d526a1305933e4be5d0e693d2ba0e06233293a13b1034a4dd86"
+    },
+    {
+      "dataset": "dura0000_nominal",
+      "metadata_sha256": "93c733ec875352773c57dc867cc37dd282fda40187fcba4ce31f20cd930f6325"
+    },
+    {
+      "dataset": "dura0000_verbal",
+      "metadata_sha256": "b70c1d633e685b15268ec42817ef6df8583f86f0ca61b7d3d1fe3bed25f3b043"
+    },
+    {
+      "dataset": "hupd1244_nominal",
+      "metadata_sha256": "05807f3e8f07977d9a41ecb0aa2376555ca87f6824d6a63947c13fc4143ff41e"
+    },
+    {
+      "dataset": "hupd1244_verbal",
+      "metadata_sha256": "44f855e0faf89e35449f4e11d373f643f4f2ea7c95726da3085355429dcb2214"
+    },
+    {
+      "dataset": "iyoj1235_verbal",
+      "metadata_sha256": "37797c0704932123160ca386b66dbe440f5c60824ce75e02d57c8ac8e39f6c6f"
+    },
+    {
+      "dataset": "kaya1330_verbal",
+      "metadata_sha256": "c484bde0abfc3168c50e6f44a4110f231aed2a0647f92c3977ebcb1f7027ceb3"
+    },
+    {
+      "dataset": "kiow1266_verbal",
+      "metadata_sha256": "b3a35af71c5afc02aae84f9358215c0b7d793caca6766174f5cd418ba20558e0"
+    },
+    {
+      "dataset": "mart1259_verbal",
+      "metadata_sha256": "76211fe91aa0be55bf61770b851976a36933b47bac45b334d2797feb2d792c45"
+    },
+    {
+      "dataset": "moco1246_verbal",
+      "metadata_sha256": "68b3c8b1b9141ea3475864f173c3d81e314ce465a141b86ad88a958067d75601"
+    },
+    {
+      "dataset": "nyan1308",
+      "metadata_sha256": "b19d7add2d6a00b4476ad1ae7e13f35057fef882c1d7f74f62c11a6874ed153f"
+    },
+    {
+      "dataset": "siks1238_verbal",
+      "metadata_sha256": "31c9d68a0e382335194eb121ffc4f954b5b95436efccdbae0578fe3ba2bb4c65"
+    },
+    {
+      "dataset": "sout2991_verbal",
+      "metadata_sha256": "0235756b288e88d585983df62ab92f2d0a3456e3042040983a250c6b1f366428"
+    },
+    {
+      "dataset": "teot1238_nominal",
+      "metadata_sha256": "647a70118d4510f8b007e11805a4526f6a9f87305a6e2bfd187e7dc8f37250e8"
+    },
+    {
+      "dataset": "teot1238_verbal",
+      "metadata_sha256": "4544c53decc08363eb8970eef5e869b543a473ec3ee9af067ad17d908768c597"
+    },
+    {
+      "dataset": "yucu1253_verbal",
+      "metadata_sha256": "66a5233d1c7d415e54bf1eb1e678518b219ce19c61935e84591f61fa4c306b1c"
+    },
+    {
+      "dataset": "zenz1235_verbal",
+      "metadata_sha256": "68b1439eb7dcea8b7c3d2e9a6284a055d4ff29bc2f6cfa615f4e1f3778bb9506"
+    }
+  ],
+  "sides": {
+    "ccdb": {
+      "syntax_side": {
+        "group": "morsyn_indet",
+        "domain_types": [
+          "morphosyntactic",
+          "indeterminate"
+        ]
+      },
+      "phonology_side": {
+        "group": "phonological",
+        "domain_types": [
+          "phonological"
+        ]
+      }
+    },
+    "chichewa": {
+      "syntax_side": {
+        "group": "syntaxlike",
+        "domain_types": [
+          "morphosyntactic",
+          "tonosegmental",
+          "length"
+        ]
+      },
+      "phonology_side": {
+        "group": "phonologylike",
+        "domain_types": [
+          "phonological",
+          "intonational"
+        ]
+      }
+    }
+  },
+  "conflict_divide": {
+    "n_shuffles": 5000,
+    "seed": 0
+  },
+  "convergence_ranks": 3
+}

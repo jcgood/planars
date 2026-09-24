@@ -1,0 +1,23 @@
+dataset	source	language	language_id	planar_type	label	groupings	n_positions	root_position	n_active_tests	n_unique_spans	n_maximal_families	n_conflict_pairs
+arao1248_verbal	ccdb	Araona	arao1248	verbal	Araona (verbal)	ccdb	18	6	19	9	2	3
+ayau1235_verbal	ccdb	Ayautla Mazatec	ayau1235	verbal	Ayautla Mazatec (verbal)	ccdb	31	19	30	14	8	15
+cent2127_verbal	ccdb	Central Alaskan Yupik	cent2127	verbal	Central Alaskan Yupik (verbal)	ccdb	21	2	19	8	3	5
+chac1251_nominal	ccdb	Chácobo	chac1251	nominal	Chácobo (nominal)	ccdb	12	4	26	11	4	14
+chac1251_verbal	ccdb	Chácobo	chac1251	verbal	Chácobo (verbal)	ccdb	28	8	38	22	29	32
+cher1273_verbal	ccdb	Oklahoma Cherokee	cher1273	verbal	Oklahoma Cherokee (verbal)	ccdb	24	12	21	15	8	36
+dura0000_nominal	ccdb	San Martín Duraznos Mixtec	dura0000	nominal	San Martín Duraznos Mixtec (nominal)	ccdb	13	8	19	10	5	17
+dura0000_verbal	ccdb	San Martín Duraznos Mixtec	dura0000	verbal	San Martín Duraznos Mixtec (verbal)	ccdb	29	17	27	21	40	56
+hupd1244_nominal	ccdb	Hup	hupd1244	nominal	Hup (nominal)	ccdb	15	5	12	7	2	2
+hupd1244_verbal	ccdb	Hup	hupd1244	verbal	Hup (verbal)	ccdb	32	6	15	10	3	5
+iyoj1235_verbal	ccdb	Chorote	iyoj1235	verbal	Chorote (verbal)	ccdb	46	16	28	21	22	41
+kaya1330_verbal	ccdb	Mebengokre	kaya1330	verbal	Mebengokre (verbal)	ccdb	32	15	15	10	7	12
+kiow1266_verbal	ccdb	Kiowa	kiow1266	verbal	Kiowa (verbal)	ccdb	39	29	17	12	5	11
+mart1259_verbal	ccdb	Martinican	mart1259	verbal	Martinican (verbal)	ccdb	27	18	12	8	4	4
+moco1246_verbal	ccdb	Mocoví	moco1246	verbal	Mocoví (verbal)	ccdb	20	7	22	11	7	11
+nyan1308	nyan1308	Chichewa	nyan1308	verbal	Chichewa (verbal)	chichewa	22	10	95	26	69	65
+siks1238_verbal	ccdb	Blackfoot	siks1238	verbal	Blackfoot (verbal)	ccdb	14	6	32	17	31	35
+sout2991_verbal	ccdb	South Bolivian Quechua	sout2991	verbal	South Bolivian Quechua (verbal)	ccdb	42	12	20	15	3	11
+teot1238_nominal	ccdb	Teotitlán del Valle Zapotec	teot1238	nominal	Teotitlán del Valle Zapotec (nominal)	ccdb	20	8	18	11	9	16
+teot1238_verbal	ccdb	Teotitlán del Valle Zapotec	teot1238	verbal	Teotitlán del Valle Zapotec (verbal)	ccdb	28	12	21	11	12	15
+yucu1253_verbal	ccdb	Yukuna	yucu1253	verbal	Yukuna (verbal)	ccdb	21	10	24	15	7	43
+zenz1235_verbal	ccdb	Zenzontepec Chatino	zenz1235	verbal	Zenzontepec Chatino (verbal)	ccdb	21	13	28	11	5	16

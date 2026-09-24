@@ -291,3 +291,98 @@ name: the bundle has exactly one topic, itself, so a second-level folder
 would just repeat the dataset name (`render_planarsviz.R` and
 `check_renderer.py` both treat `""` as "no subfolder" for exactly this
 reason).
+
+## Cross-language bundle
+
+`results/chart_data/cross_language/` (2026-09-23) sets every structure's own
+bundle side by side: nyan1308 and the 21 CCDB structures. Like the
+illustrations bundle it is its own contract, read with
+`read_planars_cross_language()`. Written by
+`scripts/analysis/export_cross_language.py`, which **re-runs no analysis**:
+every number is read from, or arithmetic on, the per-language bundles' tables.
+Every input bundle must have been exported with all four permutation flags.
+
+```text
+data/
+├── metadata.json
+├── structures.tsv
+├── family_count_tests.tsv
+├── pooled_tests.tsv
+├── conflict_divide.tsv
+├── boundary_profile.tsv
+├── convergent_spans.tsv
+└── summary.tsv
+```
+
+**Sides.** Several tables split a structure's tests into a *syntax side* and a
+*phonology side*, by the input bundle's `groupings`: CCDB puts morphosyntactic
+and indeterminate on the syntax side (the `morsyn_indet` bundle) against
+phonological; nyan1308 uses its own `syntaxlike` (morphosyntactic,
+tonosegmental, length) against `phonologylike` (phonological, intonational).
+Jeff's decisions, 2026-09-23 (`docs/CROSS_LANGUAGE_PROGRESS.md`).
+`metadata.json`'s `sides` records the mapping used.
+
+`structures.tsv`: `dataset`, `source` (`ccdb`, or the dataset name for the one
+structure not from CCDB), `language`, `language_id`, `planar_type`, `label`
+(`language (planar_type)`), `groupings`, `n_positions`, `root_position`,
+`n_active_tests`, `n_unique_spans`, `n_maximal_families`, `n_conflict_pairs`.
+CCDB names come from `planar_tables/ccdb_<dataset>.json`, composed to Unicode
+NFC (the import files hold accents as separate combining characters).
+
+`family_count_tests.tsv`: one row per (`dataset`, `null`, `role`); `null` is
+`span_placement` or `arbitrary_layers`, `role` is `all`, `syntax_side` or
+`phonology_side`, and `group` the input test table's row it copies.
+`observed_families`, `null_mean`, `null_p05`, `null_p50`, `null_p95`,
+`p_value_le_observed` and `n_permutations` are copied; `observed_ratio`,
+`null_p05_ratio`, `null_p95_ratio` are each divided by `null_p50`;
+`p_value_corrected` is `(k + 1) / (N + 1)` for the stored `k / N`, so it is
+never 0 (used for Fisher's method).
+
+`pooled_tests.tsv`: one row per (`null`, `role`) across all structures:
+`n_structures`, `n_below_median` / `n_above_median` / `n_at_median`
+(observed against `null_p50`), `sign_test_p` (one-sided binomial on below
+vs. above, ties left out), `n_p_below_05`, `fisher_chi2`, `fisher_df`,
+`fisher_p` (Fisher's combination of `p_value_corrected`). The structures
+share test batteries, authors and sometimes language families, so neither is
+a test on independent cases; every chart or document quoting them says so.
+
+`conflict_divide.tsv`: one row per structure. A span's sides are the sides of
+its domain types (one or both); synthetic spans are left out. A conflicting
+pair is `between` when the two spans' sides are disjoint, otherwise within
+(`within_syntax`, `within_phonology`, or `within_both` when both spans are on
+both sides). Columns: `n_spans`, `n_spans_syntax_only`,
+`n_spans_phonology_only`, `n_spans_both`, `n_conflict_pairs`, `n_between`,
+`n_within_syntax`, `n_within_phonology`, `n_within_both`, `share_between`,
+`n_span_pairs`, `expected_share_between` (share of *all* span pairs that are
+between — also the mean share when side sets are shuffled among the spans),
+`p_value_ge_observed` (share of `n_shuffles` such shuffles giving at least
+the observed `n_between`), `n_shuffles`, `seed`. The shuffle's random stream
+is seeded per structure from `seed` and the dataset name. Where a structure
+has no span purely on one side, `expected_share_between` is 0 and the
+structure cannot be tested.
+
+`boundary_profile.tsv`: one row per (`dataset`, `position`, `side`):
+`relative_position` (`position − root_position`), `summed` (the input's
+`left_summed` / `right_summed`), `scaled` (divided by that structure's
+largest `summed` on either side), `jump_p_value_ge_observed` (the input
+boundary-strength test's `all`-group `jump` row) and `jump_significant`
+(`y` when that is below 0.05, uncorrected for the number of positions).
+
+`convergent_spans.tsv`: each structure's non-synthetic spans whose
+convergence is among its top `convergence_ranks` distinct values (3), ties
+kept: `span_id`, `convergence_rank`, `left`, `right`, `relative_left`,
+`relative_right`, `size`, `relative_size`, `contains_root`, `convergence`,
+`share_of_tests`, `domain_types`.
+
+`summary.tsv`: one row per structure, gathering the above for table F. The
+exporter also writes it as `results/cross_language/cross_language_summary.md`
+and `.tex`.
+
+`metadata.json`: `contract_version`, `dataset` (always `"cross_language"`),
+`producer`, `n_structures`, `inputs` (each input's `dataset` and the SHA-256
+of its `metadata.json`, so a cross-language bundle left behind by a
+re-export is caught by `tests/test_planarsviz_cross_language_bundle.py`),
+`sides`, `conflict_divide` (`n_shuffles`, `seed`), `convergence_ranks`.
+
+As with the illustrations bundle, every chart sets `planarsviz_folder` to
+`""`, so the charts land in `results/cross_language/`.

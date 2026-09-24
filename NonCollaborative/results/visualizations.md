@@ -1222,6 +1222,40 @@ with very few families, where the exemplary-tree charts have little to show, or 
 letters the standard PDF fonts can't draw (Mocoví's ʔ, Ayautla's ɛ — drawn correctly, but worth
 checking the fonts look right since they need a different PDF device than every other chart).
 
+## Across languages
+
+`results/cross_language/` sets all 22 structures side by side (nyan1308 and the 21 CCDB
+structures; 2026-09-23, plan `../docs/PLAN_cross_language_charts.md`). Each chart is described,
+with an example image, in [`../docs/planarsviz_charts.md` §19](../docs/planarsviz_charts.md#19-across-languages);
+the bundle's tables in `planarsviz/inst/data-contract.md`, "Cross-language bundle". The
+`--plots` names are in brackets.
+
+- `cross_language_tree_likeness.pdf` [`tree_likeness`], `_syntax_side.pdf`, `_phonology_side.pdf`
+  — each structure's family count against the span-placement and arbitrary-layers nulls, as a
+  ratio to the null median, with the count across structures, a sign test and Fisher's combined
+  p in the caption.
+- `cross_language_families_vs_size.pdf` [`families_vs_size`] — families against distinct spans.
+- `cross_language_divide.pdf` [`divide`] — share of conflicts falling across the
+  morphosyntax/phonology divide against what ignoring the divide would give.
+- `cross_language_side_p.pdf` [`side_p`] — span-placement p-values, syntax side against
+  phonology side.
+- `cross_language_edges.pdf` [`edges`] — boundary strength by position relative to the root.
+- `cross_language_convergence.pdf` [`convergence`] — each structure's most convergent spans.
+- `cross_language_summary.md` / `.tex` — one row per structure (table F), plus the tests across
+  all structures. Written by the exporter, not the renderer.
+- `cross_language_planarsviz_manifest.tsv` — the renderer's list of the files above.
+
+Any number quoted across structures comes with a caveat: the structures share test batteries,
+authors and sometimes language families, so they are not independent cases.
+
+```
+python scripts/analysis/export_cross_language.py --apply
+Rscript scripts/render_planarsviz.R --bundle results/chart_data/cross_language --output results
+```
+
+Re-run both whenever any language's bundle is re-exported;
+`tests/test_planarsviz_cross_language_bundle.py` fails until you do.
+
 ## Other files in results/
 
 - `nyan1308_laminar_analysis.md` — a one-off written summary of the analysis

@@ -37,9 +37,12 @@ The CCDB plan's steps 1–5 are done (see "Step 5 as built" in
 set all 22 structures side by side (2026-09-23). The plan is
 `NonCollaborative/docs/PLAN_cross_language_charts.md` (six proposed charts
 and a summary table, each tied to one of the three hypotheses); state is
-`NonCollaborative/docs/CROSS_LANGUAGE_PROGRESS.md`. **Start by asking Jeff
-the four questions in the plan's §5, one at a time** (he prefers them that
-way), recording each answer in the progress file, then build per §4.
+`NonCollaborative/docs/CROSS_LANGUAGE_PROGRESS.md`. Jeff has answered the
+plan's four questions, and the bundle, charts and summary table are built
+(2026-09-23). **Next: Jeff's cuts to the charts in
+`results/cross_language/`**, then freeze reference images for the ones he
+keeps and write the "what they show" page. The progress file has the first
+reading of results and the decisions made while building.
 A bug with one obviously right fix is not a question: fix it and report it.
 
 ### Things that will bite

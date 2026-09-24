@@ -1,6 +1,6 @@
 # Plan: charts and summaries across languages
 
-Status: drafted 2026-09-23, not started. Current state is
+Status: drafted and built 2026-09-23; waiting on Jeff's cuts. Current state is
 `docs/CROSS_LANGUAGE_PROGRESS.md`; this file says what and why.
 
 ## 1. What we are doing

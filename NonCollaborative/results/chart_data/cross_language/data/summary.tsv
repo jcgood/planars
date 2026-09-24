@@ -1,0 +1,23 @@
+dataset	label	source	planar_type	n_positions	n_active_tests	n_unique_spans	families_all	families_syntax_side	families_phonology_side	span_placement_p	arbitrary_layers_p	fragmentation_p_syntax_side	fragmentation_p_phonology_side	conflicts_between	conflicts	strongest_edge_side	strongest_edge_relative_position	most_convergent_span	most_convergent_span_tests
+arao1248_verbal	Araona (verbal)	ccdb	verbal	18	19	9	2	2	2	0.0034	0.0036	1.0	1.0	0	3	left	-2	-2..9	3
+ayau1235_verbal	Ayautla Mazatec (verbal)	ccdb	verbal	31	30	14	8	3	6	0.0412	0.0446	0.349	0.9594	4	15	left	-4	-4..9	7
+cent2127_verbal	Central Alaskan Yupik (verbal)	ccdb	verbal	21	19	8	3	3	1	0.1618	0.141	1.0	0.8572	0	5	left	0	0..14	9
+chac1251_nominal	Chácobo (nominal)	ccdb	nominal	12	26	11	4	3	2	0.0524	0.036	0.7322	0.3736	3	14	right	8	-1..0	6
+chac1251_verbal	Chácobo (verbal)	ccdb	verbal	28	38	22	29	8	9	0.1272	0.0882	0.3162	0.8486	4	32	left	-1	-1..2	4
+cher1273_verbal	Oklahoma Cherokee (verbal)	ccdb	verbal	24	21	15	8	4	2	0.0708	0.0384	0.4158	0.3676	22	36	right	10	-10..11	5
+dura0000_nominal	San Martín Duraznos Mixtec (nominal)	ccdb	nominal	13	19	10	5	3	2	0.2704	0.3246	0.3496	0.719	8	17	left	-7	-1..0	3
+dura0000_verbal	San Martín Duraznos Mixtec (verbal)	ccdb	verbal	29	27	21	40	17	4	0.617	0.4858	0.5748	0.8864	28	56	left	-16	-1..0	1
+hupd1244_nominal	Hup (nominal)	ccdb	nominal	15	12	7	2	2	1	0.3884	0.1756	1.0	0.8676	0	2	left	0	0..10	3
+hupd1244_verbal	Hup (verbal)	ccdb	verbal	32	15	10	3	2	1	0.045	0.0484	0.5452	0.28	2	5	left	-4	0..14	3
+iyoj1235_verbal	Chorote (verbal)	ccdb	verbal	46	28	21	22	4	5	0.0852	0.0174	0.1238	0.5068	27	41	left	-2	-2..0	2
+kaya1330_verbal	Mebengokre (verbal)	ccdb	verbal	32	15	10	7	7	1	0.3852	0.4684	1.0	0.8654	0	12	right	0	-2..0	3
+kiow1266_verbal	Kiowa (verbal)	ccdb	verbal	39	17	12	5	2	4	0.132	0.0692	0.645	0.9312	4	11	right	7	0..4	2
+mart1259_verbal	Martinican (verbal)	ccdb	verbal	27	12	8	4	4	1	0.7598	0.3526	1.0	1.0	0	4	left	-14	-1..2	4
+moco1246_verbal	Mocoví (verbal)	ccdb	verbal	20	22	11	7	6	3	0.3272	0.275	0.871	0.475	3	11	left	-1	-1..0	5
+nyan1308	Chichewa (verbal)	nyan1308	verbal	22	95	26	69	16	6	0.335	0.2866	0.1122	0.1604	12	65	left	-5	-4..7	19
+siks1238_verbal	Blackfoot (verbal)	ccdb	verbal	14	32	17	31	13	2	0.927	0.7042	0.242	0.079	8	35	left	-3	-3..7	4
+sout2991_verbal	South Bolivian Quechua (verbal)	ccdb	verbal	42	20	15	3	2	2	0.0	0.0	0.4698	0.9798	4	11	left	0	0..6	2
+teot1238_nominal	Teotitlán del Valle Zapotec (nominal)	ccdb	nominal	20	18	11	9	2	3	0.756	0.7532	0.7666	0.1072	10	16	left	-2	0..1	3
+teot1238_verbal	Teotitlán del Valle Zapotec (verbal)	ccdb	verbal	28	21	11	12	3	5	0.9582	0.9486	0.3238	0.6048	7	15	left	-2	-2..0	4
+yucu1253_verbal	Yukuna (verbal)	ccdb	verbal	21	24	15	7	5	3	0.038	0.0174	0.87	0.4498	12	43	left	0	0..6	4
+zenz1235_verbal	Zenzontepec Chatino (verbal)	ccdb	verbal	21	28	11	5	2	3	0.1388	0.1714	0.374	0.189	8	16	left	-6	-3..0	8

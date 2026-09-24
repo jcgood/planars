@@ -1,0 +1,7 @@
+null	role	n_structures	n_below_median	n_above_median	n_at_median	sign_test_p	n_p_below_05	fisher_chi2	fisher_df	fisher_p
+span_placement	all	22	17	5	0	0.00845	5	92.384	44	2.738e-05
+span_placement	syntax_side	22	15	3	4	0.003769	4	93.063	44	2.262e-05
+span_placement	phonology_side	22	8	6	8	0.395264	0	33.034	44	0.8869611
+arbitrary_layers	all	22	19	3	0	0.000428	8	104.601	44	7.6e-07
+arbitrary_layers	syntax_side	22	19	2	1	0.000111	5	96.541	44	8.37e-06
+arbitrary_layers	phonology_side	22	9	2	11	0.032715	0	35.446	44	0.81761923

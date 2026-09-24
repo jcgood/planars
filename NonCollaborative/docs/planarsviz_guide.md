@@ -130,7 +130,7 @@ Rscript scripts/render_planarsviz.R --bundle results/chart_data/nyan1308 --forma
 
 | Option | Default | What it does |
 |---|---|---|
-| `--bundle` | (required) | The bundle folder. Can also be the `illustrations` bundle (detected by the presence of `data/tree_shapes.tsv`), which has no language behind it. |
+| `--bundle` | (required) | The bundle folder. Can also be the `illustrations` bundle (detected by the presence of `data/tree_shapes.tsv`), which has no language behind it, or the `cross_language` bundle (detected by `data/structures.tsv`), which sets all 22 structures side by side — see the chart catalogue's §19. |
 | `--positions-bundle` | none (off) | Only used with the `illustrations` bundle: an ordinary language bundle (any `--bundle` path). Gives `tree_count_growth` its dotted reference line at that language's observed family count, and supplies the real position labels `random_tree_overlay` needs. Without it, `tree_count_growth` is drawn with no reference line and `random_tree_overlay` is skipped entirely; the tree-shape charts don't use it either way. |
 | `--output` | `<bundle>/plots` | Where files go. |
 | `--plots` | `all` | Comma-separated chart names; `--list` prints the names a bundle supports. |
@@ -319,7 +319,8 @@ the same way its reference images are, and `check_renderer.py` looks a
 reference up at the address the manifest gives rather than by hunting for a
 file of the right name. `results/` adds two folders the check side has no use
 for — `planar-structure/` and `illustrations/` — because no package-drawn
-chart belongs to either.
+chart belongs to either. `cross_language/` is the same: its charts have no
+reference images yet (catalogue §19).
 
 ---
 

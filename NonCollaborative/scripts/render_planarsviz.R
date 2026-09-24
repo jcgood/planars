@@ -51,6 +51,11 @@
 # charts don't need it and are still listed without it.
 #   Rscript scripts/render_planarsviz.R --bundle results/chart_data/illustrations \
 #     --positions-bundle results/chart_data/nyan1308 --output results
+#
+# --bundle can also be the cross-language bundle (results/chart_data/cross_language),
+# detected by data/structures.tsv. Its charts, like the illustrations', land
+# with no topic subfolder, in <output>/cross_language/.
+#   Rscript scripts/render_planarsviz.R --bundle results/chart_data/cross_language --output results
 
 parse_args <- function(args) {
   out <- list(bundle = NULL, positions_bundle = NULL, output = NULL, plots = "all",
@@ -95,7 +100,17 @@ suppressPackageStartupMessages({
 # exist for it.
 is_illustrations <- file.exists(file.path(opts$bundle, "data", "tree_shapes.tsv")) ||
   file.exists(file.path(opts$bundle, "tree_shapes.tsv"))
-bundle <- if (is_illustrations) read_planars_illustrations(opts$bundle) else read_planars_bundle(opts$bundle)
+# Likewise the cross-language bundle, which has one row per structure rather
+# than one language's spans; recognised by its structures.tsv.
+is_cross_language <- file.exists(file.path(opts$bundle, "data", "structures.tsv")) ||
+  file.exists(file.path(opts$bundle, "structures.tsv"))
+bundle <- if (is_illustrations) {
+  read_planars_illustrations(opts$bundle)
+} else if (is_cross_language) {
+  read_planars_cross_language(opts$bundle)
+} else {
+  read_planars_bundle(opts$bundle)
+}
 dataset <- bundle$metadata$dataset
 positions_bundle <- if (!is.null(opts$positions_bundle)) read_planars_bundle(opts$positions_bundle) else NULL
 data_dir <- file.path(bundle$bundle_dir, "data")
@@ -123,7 +138,23 @@ chart_table <- function() {
     return(charts)
   }
 
-  types <- sort(unique(trimws(bundle$tests$Domain_Type)))
+  if (is_cross_language) {
+    for (role in c("all", "syntax_side", "phonology_side")) {
+      local({
+        r <- role
+        suffix <- if (r == "all") "" else paste0("_", r)
+        add(paste0("tree_likeness", suffix), function() plot_cross_language_tree_likeness(bundle, r))
+      })
+    }
+    add("families_vs_size", function() plot_cross_language_families_vs_size(bundle))
+    add("divide", function() plot_cross_language_divide(bundle))
+    add("side_p", function() plot_cross_language_side_p(bundle))
+    add("edges", function() plot_cross_language_edges(bundle))
+    add("convergence", function() plot_cross_language_convergence(bundle))
+    return(charts)
+  }
+
+  types <-sort(unique(trimws(bundle$tests$Domain_Type)))
   add("pooled_plot", function() plot_pooled(bundle))
   add("pooled_domainplot", function() plot_pooled(bundle, group_by_domain = TRUE))
   for (t in types) {
