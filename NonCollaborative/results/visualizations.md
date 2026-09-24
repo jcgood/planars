@@ -1147,6 +1147,81 @@ the copy in `results/nyan1308/boundaries/` carries the shorter name by hand:
 produces identical numbers but names its file after all four types. The copy is
 kept because a porting check compares the bundle against it.
 
+---
+
+## The other 21 CCDB structures
+
+Everything above is nyan1308 (Chichewa), the language the `planarsviz` package was built
+against. `results/` also holds one folder per structure imported from the Constituency and
+Convergence Database (CCDB) — `arao1248_verbal`, `ayau1235_verbal`, `cent2127_verbal`,
+`chac1251_nominal`, `chac1251_verbal`, `cher1273_verbal`, `dura0000_nominal`,
+`dura0000_verbal`, `hupd1244_nominal`, `hupd1244_verbal`, `iyoj1235_verbal`,
+`kaya1330_verbal`, `kiow1266_verbal`, `mart1259_verbal`, `moco1246_verbal`,
+`siks1238_verbal`, `sout2991_verbal`, `teot1238_nominal`, `teot1238_verbal`,
+`yucu1253_verbal`, `zenz1235_verbal` (`ls results` lists all 21, and `ls planar_tables/ccdb_*.json`
+lists them by their settings files). Each is laid out exactly like `results/nyan1308/` above:
+the same four topic folders (`laminar-families/`, `pooled/`, `boundaries/`,
+`counts-and-chance/`) and its own `<Planar_ID>_planarsviz_manifest.tsv` inside that folder —
+not loose at the top of `results/`.
+
+They are not documented chart by chart here — with 21 structures that would mean repeating this
+whole file 21 times over. **They draw from the same chart set as nyan1308**, from the same
+bundle mechanism described throughout this file, minus the pieces that only make sense for
+Chichewa specifically:
+
+- No `conflict_groups.pdf` or `four_trees.pdf` (see "Laminar family charts" above) — both need a
+  hand-picked pair of conflicting spans, `planar_tables/conflict_groups_nyan1308.tsv`, which only
+  nyan1308 has. A CCDB structure could get these too by adding its own
+  `conflict_groups_<dataset>.tsv`; none has needed it so far.
+- No `orthographic_word`-highlighted variants (`all_families_labeled_orthographic_word`, its
+  legend, `most_binary_tree_orthographic_word`) — same reason, for
+  `planar_tables/highlights_nyan1308.tsv`.
+- Where nyan1308 is analysed under the `chichewa` groupings (three bundles — `phonologylike`,
+  `syntaxlike`, `syntaxlike_notono` — plus a `no_tono` filter), every CCDB structure uses the
+  `ccdb` groupings: one bundle, `morsyn_indet` (morphosyntactic + indeterminate), no filters.
+  So charts drawn per bundle come out as `morsyn_indet_*`; there are no `*_no_tono` charts; and
+  the three charts that pick out Chichewa's bundles by name —
+  `fragmentation_test_syntax_phon_plot`, `span_placement_test_syntaxlike_plot`,
+  `span_placement_test_phonologylike_plot` — are not drawn.
+- Charts drawn per domain type (pooled plots, forests, boundary-strength tests) follow each
+  structure's own types: CCDB uses `morphosyntactic`, `phonological` and `indeterminate`, so
+  there are `indet_*`/`*_indeterminate` charts and no tonosegmental, intonational or length ones.
+- Every other chart draws the same way, over each structure's own tests, positions and root.
+
+**To draw one CCDB structure's charts:**
+```
+python scripts/planarsviz_language.py <dataset>            # dry run: prints what it would do
+python scripts/planarsviz_language.py <dataset> --apply    # exports the bundle, then renders every chart
+```
+`<dataset>` is a Planar_ID such as `chac1251_verbal`. This is the same command nyan1308 itself
+can be redrawn with (`python scripts/planarsviz_language.py nyan1308 --apply`) — nothing about
+which language it draws is hardcoded. For a CCDB structure it reads the root position, display
+name and planar type (verbal/nominal) from `planar_tables/ccdb_<dataset>.json`, written when the
+structure was imported (`scripts/analysis/import_ccdb.py`), and always uses the `ccdb` groupings;
+a `planar_tables/chart_settings_<dataset>.json` would override any of those if a structure needed
+hand-tuned settings, the same file nyan1308's own settings (just its display name, "Chichewa")
+live in.
+
+**To draw all 21 at once:**
+```
+python scripts/planarsviz_ccdb_batch.py             # dry run
+python scripts/planarsviz_ccdb_batch.py --apply     # about 7 minutes for all 21, 5000 permutation draws each
+```
+Runs the one-language command above for every `planar_tables/ccdb_*.json`, four structures at a
+time, carrying on past a failure rather than stopping at the first one. `--only
+chac1251_verbal,teot1238_verbal` restricts it to some structures; `--no-permutations` skips the
+four permutation tests for a much faster run (the bundle then lacks their tables and charts);
+`--summary-only` rewrites the summary below from what is already on disk, without re-running
+anything.
+
+Each structure's full console output is saved to `results/ccdb_batch/<Planar_ID>.log`, and
+`results/ccdb_batch/summary.md` is the one place to check all 21 at a glance: positions, tests,
+families and chart count per structure; what failed (nothing has, as of the last run); which
+chart kinds a structure has none of; and specific things worth a second look — e.g. a structure
+with very few families, where the exemplary-tree charts have little to show, or a structure using
+letters the standard PDF fonts can't draw (Mocoví's ʔ, Ayautla's ɛ — drawn correctly, but worth
+checking the fonts look right since they need a different PDF device than every other chart).
+
 ## Other files in results/
 
 - `nyan1308_laminar_analysis.md` — a one-off written summary of the analysis

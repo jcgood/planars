@@ -30,11 +30,13 @@ matters for the exporter specifically: it records the domain file's path as
 given, so running it from the repo root writes a bundle that differs from the
 committed one in that field.
 
-### Next action: step 5, documentation and the tutorial
+### Next action: ask Jeff
 
-Step 4 is done, Jeff's three follow-ups included (see "Step 4 as built"
-in the progress file). Next is the plan's step 5: the documentation
-updates and `docs/planarsviz_tutorial.md`, built from step 3's command log.
+Steps 1–5 are done (see "Step 5 as built" in the progress file); the
+walk-through for a new language is `NonCollaborative/docs/planarsviz_tutorial.md`.
+The plan's one remaining item, "charts across languages", is optional and
+out of scope until Jeff says otherwise, so ask what he wants next rather
+than starting it.
 
 ### Things that will bite
 

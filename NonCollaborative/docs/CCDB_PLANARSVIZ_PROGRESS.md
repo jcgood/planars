@@ -23,7 +23,10 @@ plan says what and why. Update it at every step boundary, in the same commit.
   All 21 export and render with no chart failing; seven review agents
   looked through 20 of them (Chácobo verbal had already been looked at);
   six display problems fixed. Details under "Step 4 as built".
-- Step 5: not started.
+- **Step 5, documentation: done (2026-09-23).** Tutorial written, four
+  reference docs updated, and a stale-results bug fixed on the way. Details
+  under "Step 5 as built". Steps 1–5 are finished; the plan's optional
+  "charts across languages" is what remains.
 - Resolved: `results/planarsviz/` held data bundles and reference images, not
   code, and its name suggested otherwise (Jeff, 2026-09-23). Renamed/split
   2026-09-23 into `results/chart_data/` (bundles) and `results/chart_checks/`
@@ -380,6 +383,49 @@ sparse trees — both the data, not the drawing.
 The summary's notes were revised after the fixes: the gridline and
 long-label notes are gone, and it now flags undrawable characters and the
 placeholder root span (question 3).
+
+## Step 5 as built
+
+- **`docs/planarsviz_tutorial.md`** (new): Chácobo verbal from nothing to
+  charts, in the plan's five parts, with its real numbers. Every command in
+  it was run again exactly as written; the bundle came back byte-identical
+  and the PDFs differed only in date stamps (reverted). The hand-written
+  route (§1b) was tried on a throwaway six-position language, since
+  deleted.
+- **Reference docs**, one Sonnet draft each, then corrected here:
+  `results/visualizations.md` (new section on the 21 CCDB folders and which
+  charts they lack), `docs/planarsviz_guide.md` §5 and §8,
+  `scripts/INDEX.md` (import, batch, exporter options, a warning against
+  running the analysis scripts standalone on CCDB files), and this folder's
+  `CLAUDE.md`. Corrections: the drafts claimed Chácobo lacks per-bundle
+  permutation charts (it has them), listed a refinement-counts chart
+  neither dataset draws, conflated `--root-position` with the position
+  count, and changed the porting-check count to 24 (it is 23:
+  `check_renderer.py` is run separately).
+- **Stale text fixed along the way:** `scripts/INDEX.md` has said since
+  `e32c1db` that tonosegmental is more laminar than chance at p=0.91; the
+  committed table says 0.143, and intonational (0.034) is the one class
+  below 0.05. The exporter's own usage example gave a `--domain-file` that
+  fails from `NonCollaborative/`.
+- **Not done, by Jeff's choice:** no link from the root `README.md`, which
+  covers only the main toolkit.
+
+**Fixed: out-of-date permutation results survived a re-export.** Found
+re-running the tutorial's `--no-permutations` command: the exporter wrote
+into the existing bundle and deleted nothing, so the four tests' tables
+from the earlier run stayed, and the renderer, which draws a test's chart
+whenever its table is present, drew all 91 charts from them. Every
+description said the tables drop out. Separately, the renderer kept any
+earlier chart file still on disk in the manifest, so even without the
+tables the old PDFs would have stayed in `results/` and been listed as
+current. Now the exporter deletes the tables of any test it did not run,
+and the renderer, on each run, removes the files of charts the bundle can
+no longer draw and says which. Evidence: on a copy of Chácobo verbal's
+bundle and charts in a scratch folder, an export with one test left out
+kept only that test's tables, and the render removed the other three
+tests' 12 charts; `tests/test_planarsviz_export_leftovers.py` covers the
+exporter half. nyan1308 always runs all four tests, so its bundle and
+charts are unaffected (renderer check run after the change).
 
 ## Likely trouble in step 3 (from a read-only survey of the code, 2026-09-22)
 

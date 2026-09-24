@@ -1,13 +1,29 @@
 # Scripts Index
 
 Every script under `analysis/`, `verification/`, `exploratory/` and
-`planarsviz_checks/`. The hand-written R and the LaTeX utilities that sit at
-the top of `scripts/` are described in `CLAUDE.md` instead.
+`planarsviz_checks/`, plus the handful of top-level pipeline commands that
+chain those together (`render_planarsviz.R`, `planarsviz_language.py`,
+`planarsviz_ccdb_batch.py`). The hand-written R and the LaTeX utilities that
+otherwise sit at the top of `scripts/` are described in `CLAUDE.md` instead.
 
 **Where to run them from:** `NonCollaborative/`. Every path below is relative
 to it, and that is where the porting checks run too.
 
 ## Core Analysis
+
+**On a CCDB structure, use the exporter (below), not these scripts
+directly.** Every script below except `planars_groupings.py` was built for
+nyan1308 and it shows: `span_placement_test.py`, `arbitrary_layers_test.py`
+and `boundary_strength_test.py` crash on a CCDB domain file (they reach for
+a Chichewa-only domain type their fixed group lists expect but CCDB's data
+doesn't have), and several of the rest run but write their output under a
+`nyan1308_*` filename whatever `--domain-file` was given.
+`export_planarsviz_data.py --groupings ccdb` (Data export, below) builds its
+groups from whichever domain types the file actually has, so it doesn't hit
+either problem — for a CCDB structure, run it (or, simplest, run
+`planarsviz_language.py <dataset> --apply`, which calls it) rather than
+these scripts standalone. See `docs/CCDB_PLANARSVIZ_PROGRESS.md`, "Findings
+worth keeping."
 
 **`analysis/laminar_analysis.py`**
 - **Purpose**: Main workhorse for laminar family enumeration
@@ -98,8 +114,10 @@ annotations, which actually happened with `scales = "free_x"` alone.)*
   bundle's test count does not change under a per-type shuffle.
 - **Finding**: tonosegmental's 9 families look like the worst fragmentation
   until you notice it carries 44 of the 95 tests, where chance alone gives
-  about 17 — so it is markedly *more* laminar than chance (p=0.91), as is
-  intonational. Morphosyntactic, phonological and length are unremarkable.
+  about 17 — so it leans *more* laminar than chance, though not below 0.05
+  (p=0.143). Intonational is the one class that is (1 family where chance
+  gives about 3, p=0.034). Morphosyntactic, phonological and length are
+  unremarkable. Small p here means fewer families than chance: more laminar.
 - **Output**: `results/nyan1308/counts-and-chance/nyan1308_class_fragmentation_test.tsv` (5 domain
   types), `_bundle_fragmentation_test.tsv` (3 bundles),
   `_fragmentation_null_draws.tsv` (every draw, long format, for the chart).
@@ -244,11 +262,58 @@ with `groups` for the two-bundle variant — from a bundle exported with
 
 ## Data export
 
+**`analysis/import_ccdb.py`**
+- **Purpose**: The one place that reads the Constituency and Convergence
+  Database (CCDB) clone (default `~/gitrepos/Constituency-Database`,
+  read-only — this script never writes to, commits to, fetches, or pulls
+  it). For every CCDB planar structure that has at least one constituency
+  test (21 of the 24 the clone lists; the other 3 have a planar table but no
+  tests, and are only reported), it writes the files this project's own
+  tools already read: `domains/domains_<Planar_ID>.tsv`,
+  `planar_tables/planar_<Planar_ID>.tsv`, and
+  `planar_tables/ccdb_<Planar_ID>.json` (root position, the CCDB commit read
+  from, a headline count). Step 1 of `docs/PLAN_ccdb_planarsviz.md`.
+- **Test labels**: CCDB's own short label is missing (its own "NA") for
+  every test in 8 of the 21 structures and duplicated across distinct tests
+  in 3 more, so `Test_Labels` is rebuilt from `Domain_ID` instead (unique by
+  construction); CCDB's original value is kept alongside it in a new
+  `CCDB_Test_Labels` column rather than dropped.
+- **Checks that stop one structure's import** (a named error, not a
+  traceback; every other structure still gets processed): two tests sharing
+  a rebuilt label, a `Size` that disagrees with its own edges, an edge
+  outside the planar structure, or planar-table positions that skip a
+  number. Refuses to run at all if the CCDB clone has uncommitted changes to
+  the files it reads, so the commit recorded in each JSON file always names
+  the exact content read.
+- **Dry run by default**; `--apply` writes. Re-running with no change to the
+  CCDB clone reproduces the same files byte-for-byte.
+- **Example**: `python scripts/analysis/import_ccdb.py` (dry run, all
+  structures), `python scripts/analysis/import_ccdb.py --apply`,
+  `python scripts/analysis/import_ccdb.py --planar-id chac1251_verbal --apply`
+
 **`analysis/export_planarsviz_data.py`**
 - **Purpose**: Export validated Python analysis results for the `planarsviz` R package
 - **Output**: `results/chart_data/<dataset>/data/` TSV/JSON bundle
 - **Source of truth**: Reuses `laminar_analysis.py`; does not re-enumerate families
-- **Example**: `python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_nyan1308.tsv`
+- **Position count**: reads the number of positions from the planar
+  table rather than inferring it from the largest span edge seen in the
+  domain file. This matters because a structure's last positions may be
+  reached by no test at all — Mebengokre has 32 positions but its spans
+  stop at 22.
+- **`--root-position N`**: the root position, for a planar table that
+  doesn't mark it with `Elements` = `root` (no CCDB table does).
+- **`--groupings {chichewa,ccdb}`**: which named domain-type bundle/filter
+  set to analyse with (`planars_groupings.py`) — `chichewa` (default,
+  nyan1308's phonology-like/syntax-like bundles and `no_tono` filter) or
+  `ccdb` (CCDB structures' single morphosyntactic+indeterminate bundle, no
+  filters)
+- **`--planar-type`, `--language-name`, `--forest-axis`**: chart-title
+  wording and where each per-domain-type forest's axis stops. A CCDB
+  structure sets all of these itself via `planarsviz_language.py` below,
+  rather than needing them typed by hand.
+- **Example**: `python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_nyan1308.tsv --output-dir results/chart_data`
+  (for a CCDB structure, use `planarsviz_language.py` instead of calling
+  this directly — see the Core Analysis note above)
 
 **`render_planarsviz.R`**
 - **Purpose**: Render the charts from a validated planarsviz bundle — the only
@@ -274,6 +339,29 @@ with `groups` for the two-bundle variant — from a bundle exported with
 - **Example**: `python scripts/planarsviz_language.py chac1251_verbal --apply`
   (dry run without `--apply`; `--no-permutations` to skip the four
   permutation tests)
+
+**`planarsviz_ccdb_batch.py`**
+- **Purpose**: Run `planarsviz_language.py` over every CCDB structure
+  `import_ccdb.py` wrote (found from its `planar_tables/ccdb_<Planar_ID>.json`
+  files) and write one summary of how it went, rather than calling the
+  one-language command by hand 21 times. A structure that fails does not
+  stop the others. Holds no analysis or drawing code of its own.
+  Plan step 4, `docs/PLAN_ccdb_planarsviz.md`.
+- **Output**: each structure's full output in
+  `results/ccdb_batch/<Planar_ID>.log`; a combined
+  `results/ccdb_batch/summary.md` reporting, per structure, whether the
+  export and render worked and which charts failed, which chart kinds it
+  has none of (not necessarily wrong — the renderer leaves a chart out when
+  the bundle has nothing for it), and anything worth a second look (very
+  few families, more spans than the 26 letters two charts label spans
+  with, very long structures, characters the standard PDF fonts can't
+  draw, truncated permutation draws).
+- **`--summary-only`** rewrites the summary from the logs and bundles
+  already on disk, without running anything.
+- **Example**: `python scripts/planarsviz_ccdb_batch.py` (dry run: lists what
+  would run), `python scripts/planarsviz_ccdb_batch.py --apply` (all 21,
+  four at a time), `python scripts/planarsviz_ccdb_batch.py --apply --only chac1251_nominal,mart1259_verbal`,
+  `python scripts/planarsviz_ccdb_batch.py --summary-only`
 
 ## Porting checks
 
@@ -406,10 +494,11 @@ sitting in `results/` beside the PDFs, written by generator functions in
 
 ## Organization Guide
 
-- **analysis/** — Core algorithms and the exporter
+- **analysis/** — Core algorithms, the CCDB import, and the exporter
 - **verification/** — Verification scripts (`verify_*.py`)
 - **exploratory/** — Prototype and archive work (`treeTraversal.py`, `catalan.py`)
 - **planarsviz_checks/** — Checks that the R package draws what the old scripts drew
+- **top-level pipeline commands** — `render_planarsviz.R`, `planarsviz_language.py`, `planarsviz_ccdb_batch.py` (the hand-written R and LaTeX utilities also at the top of `scripts/` are in `CLAUDE.md`, not here)
 
 See `docs/VERIFICATION.md` for methodology, results, and theoretical framework,
 `docs/planarsviz_charts.md` for every chart the package draws, and

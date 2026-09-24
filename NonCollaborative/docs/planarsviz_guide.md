@@ -151,23 +151,68 @@ within that folder.
 
 ## 5. Add a new language
 
-A language already in the CCDB needs none of steps 1–5:
-`python scripts/analysis/import_ccdb.py --planar-id <Planar_ID> --apply`
-writes its domains file, planar table and `ccdb_<Planar_ID>.json` (root
-position, language name), and step 6 does the rest.
+Which route depends on whether the language is one of the 21 structures
+already in the Constituency and Convergence Database (CCDB).
 
-1. **Domains file** — `domains/domains_<dataset>.tsv`, in the CCDB column
-   format.
+**Already in the CCDB:** no file is written by hand.
+
+```sh
+python scripts/analysis/import_ccdb.py --planar-id <Planar_ID> --apply
+python scripts/planarsviz_language.py <Planar_ID> --apply
+```
+
+`import_ccdb.py` reads the local CCDB clone and writes
+`domains/domains_<Planar_ID>.tsv`, `planar_tables/planar_<Planar_ID>.tsv`
+and `planar_tables/ccdb_<Planar_ID>.json` (root position, language name,
+planar type, and the CCDB commit read); dry run first — its `--help` says
+exactly what it checks and refuses. Left without `--planar-id` it imports
+every CCDB structure that has at least one test (21 of the 24 the clone
+lists). Dataset names are CCDB's own `Planar_ID` (`chac1251_verbal`,
+`chac1251_nominal` — a language with more than one structure gets one
+dataset per structure). `ccdb_<Planar_ID>.json` already supplies the root
+position, groupings (always `ccdb`) and planar type the one-language command
+needs, so of steps 1–5 below only 4 (a genuinely new domain type) and 5 (a
+grouping neither `chichewa` nor `ccdb` fits) can still apply — everything
+else is already there. To run every CCDB structure at once rather than one
+at a time, see `scripts/planarsviz_ccdb_batch.py` at the end of this
+section.
+
+**Not in the CCDB:** write the domains file and planar table by hand, then
+run the same one-language command.
+
+1. **Domains file** — `domains/domains_<dataset>.tsv`. The exporter reads
+   five columns: `Test_Labels` (must be unique in the file — the pooled
+   charts use it as a row name), `Domain_Type`, `Left_Edge`, `Right_Edge`
+   and `Size` (checked against `Right_Edge - Left_Edge + 1`; a mismatch
+   stops the export). A row whose `Test_Labels` starts with `#` is ignored
+   (the `#DummyRoot` convention for a synthetic placeholder), and a size-1
+   span is dropped as not a domain. Extra columns are kept in the file but
+   not read by the exporter — CCDB's own files carry several more,
+   including `CCDB_Test_Labels`, its own short label kept alongside the
+   built one (see `domains/domains_chac1251_verbal.tsv`).
 2. **Planar table** — `planar_tables/planar_<dataset>.tsv`, one row per
-   position, with the root position's `Elements` set to `root` (or pass
-   `--root-element`).
+   position, with a `Position` column running `1..N` with no gaps.
+   `Position_Label` is optional — if the column is missing entirely (true of
+   every CCDB table, e.g. `planar_tables/planar_chac1251_verbal.tsv`),
+   positions are labelled by their plain number instead. `Elements` is only
+   needed for the default root lookup (its `root` value marks the root
+   position, or pass `--root-element` for a different marker); a table with
+   no such marking needs `--root-position` (or `chart_settings`'s
+   `root_position`, next) instead.
+
+Steps 3–6 apply either way:
+
 3. **Optional settings files** in `planar_tables/`, each picked up
    automatically by name:
    - `chart_settings_<dataset>.json` — read by the one-language command in
-     step 6, not by the exporter: optional keys `language_name` (chart
-     titles), `groupings` and `root_position`, which it passes to the
-     exporter as the matching options. nyan1308's gives only its name,
-     `Chichewa`.
+     step 6, not by the exporter directly: optional keys `language_name`
+     (chart titles), `groupings`, `root_position`, `planar_type` (axis
+     titles, e.g. "Positions on the nominal planar structure") and
+     `forest_axis` (`"subset"` or `"planar"`), each passed to the exporter
+     as the matching option. nyan1308's gives only its name, `Chichewa`. A
+     CCDB structure gets all five from its own `ccdb_<dataset>.json`
+     instead (above); a `chart_settings` file for one would override
+     whichever keys it sets.
    - `display_labels_<dataset>.tsv` — columns `position`, `label`; every
      position from 1 to the last.
    - `highlights_<dataset>.tsv` — columns `highlight_id`, `name`, `left`,
@@ -184,7 +229,9 @@ position, language name), and step 6 does the rest.
 5. **Groupings** — class bundles (`BUNDLES`) and filters that leave out
    domain types (`FILTERS`, e.g. `no_tono`) are defined once in
    `scripts/analysis/planars_groupings.py`, as named sets in `GROUPINGS`
-   (`chichewa`, `ccdb`) that a dataset picks with `--groupings`.
+   (`chichewa`, `ccdb`) that a dataset picks with `--groupings` (or
+   `chart_settings`'s `groupings`). A dataset whose domain types fit neither
+   set needs a new named set added there.
 6. **Export, then render, with one command:**
 
    ```sh
@@ -192,14 +239,30 @@ position, language name), and step 6 does the rest.
    python scripts/planarsviz_language.py <dataset> --apply    # runs them
    ```
 
-   It works out the root position, groupings and display name from the
-   settings files above (a CCDB structure's from its `ccdb_<dataset>.json`),
-   shows where each came from, and runs the exporter and then the renderer
-   with all four permutation tests at 5000 draws. `--no-permutations` skips
-   them (seconds instead of minutes, but the bundle then lacks their tables
-   and charts); `--formats` and `--plots` pass through to the renderer.
-   Look at the charts: nothing about nyan1308 is assumed in the R code, but
-   a new language is the real test.
+   It works out the root position, groupings, display name, planar type and
+   forest axis from the settings files above (a CCDB structure's from its
+   `ccdb_<dataset>.json`), shows where each came from, and runs the exporter
+   and then the renderer with all four permutation tests at 5000 draws.
+   `--no-permutations` skips them (seconds instead of minutes, but the
+   bundle then lacks their tables and charts); `--formats` and `--plots`
+   pass through to the renderer. Look at the charts: nothing about nyan1308
+   is assumed in the R code, but a new language is the real test.
+
+For a full walk-through of this route on one real language, start to
+finish — including which charts to look at first and what the numbers
+mean — see [the tutorial](planarsviz_tutorial.md). This section only says
+what each piece does.
+
+**Every CCDB structure at once:** `scripts/planarsviz_ccdb_batch.py` runs
+the one-language command for every structure `import_ccdb.py` has written
+(one `planar_tables/ccdb_*.json` per structure), several at a time, and
+writes `results/ccdb_batch/summary.md`: which structures failed, which
+chart kinds a structure has none of, and what's worth a look before
+trusting a chart (very few families, very long structures, characters the
+standard PDF fonts can't draw, and so on). `--only <Planar_ID>,<Planar_ID>`
+limits it to some structures; `--summary-only` rewrites the summary from
+what's already on disk without running anything; dry run (no `--apply`)
+first.
 
 ---
 
@@ -315,11 +378,18 @@ bring the lockfile back in line, and commit it with the change.
 | `planarsviz/inst/data-contract.md` | Every bundle file and column. |
 | `scripts/analysis/export_planarsviz_data.py` | The exporter. |
 | `scripts/analysis/planars_groupings.py` | Class bundles and filters. |
+| `scripts/analysis/import_ccdb.py` | Imports one or all CCDB structures into `domains/`, `planar_tables/`. |
+| `scripts/planarsviz_language.py` | One dataset, export and render, in one command. |
+| `scripts/planarsviz_ccdb_batch.py` | Runs the one-language command for every CCDB structure and summarises. |
 | `scripts/render_planarsviz.R` | The renderer. |
 | `scripts/planarsviz_checks/` | Porting checks. |
 | `results/<dataset>/` | Published charts, grouped into `laminar-families/`, `pooled/`, `boundaries/` and `counts-and-chance/`. |
 | `results/chart_data/<dataset>/` | Bundles (`data/`) and rendered charts (`plots/`). |
 | `results/chart_checks/reference/<dataset>/` | Frozen images of the old charts, grouped into `laminar-families/`, `pooled/`, `boundaries/` and `counts-and-chance/`. |
 | `results/chart_checks/comparisons/<dataset>/` | Side-by-side and difference images (reference \| new \| difference) the porting checks write. |
+| `results/ccdb_batch/` | Per-structure logs and `summary.md` from the CCDB batch. |
 | `docs/PLAN_planarsviz_library.md` | Why the library is built this way. |
 | `docs/PLANARSVIZ_LIBRARY_PROGRESS.md` | What was checked, chart by chart, and open questions. |
+| `docs/PLAN_ccdb_planarsviz.md` | Why and how the 21 CCDB structures were put through the same pipeline. |
+| `docs/CCDB_PLANARSVIZ_PROGRESS.md` | Current state of that work. |
+| `docs/planarsviz_tutorial.md` | One language, start to finish, as a walk-through rather than a reference. |
