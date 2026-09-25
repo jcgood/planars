@@ -69,11 +69,23 @@ Row shape: one row per (Position_Name, Element) pair where Biuniqueness_Scope is
 "excluded". Two annotation columns cover both scope values, since which one applies is
 row-dependent (see banner written into the sheet):
     - Biuniqueness_Scope == "filled":        fill has_allomorphs (y/n); leave Members blank.
-    - Biuniqueness_Scope == "open_category":  fill Members (comma-separated candidate
-                                               forms); leave has_allomorphs blank. The
-                                               member-expansion tab (#254 Part 2e, not yet
-                                               built) turns each listed member into its
-                                               own row.
+    - Biuniqueness_Scope == "open_category":  an open_category row stands for an
+                                               unbounded word class (e.g. AD-S = any
+                                               sentential adverb) that cannot be
+                                               exhaustively sampled -- see the
+                                               methodology gap flagged on #254
+                                               2026-09-24. Fill Members ONLY with
+                                               specific forms already known or
+                                               suspected to have allomorphs; leave
+                                               blank if none are known (that means
+                                               "none known", not "none exist"). Leave
+                                               has_allomorphs blank. The
+                                               member-expansion tab (#254 Part 2e, not
+                                               yet built) turns each listed member
+                                               into its own row, and its output must
+                                               be worded as documented known cases,
+                                               never as a claim the category was
+                                               tested clean.
 
 Run from the repo root:
     python -m coding generate-biuniqueness-allomorphy-sheet --lang synth0001            # dry run
@@ -184,9 +196,11 @@ def _banner_rows() -> List[List[str]]:
          "For each row below, fill in ONE of the two annotation columns depending "
          "on that row's Biuniqueness_Scope:"],
         ["  Biuniqueness_Scope = 'filled':        fill has_allomorphs (y/n). Leave Members blank."],
-        ["  Biuniqueness_Scope = 'open_category':  fill Members with a comma-separated list of "
-         "specific candidate forms in this category worth checking (e.g. for AD-S: probably, "
-         "certainly, ...). Leave has_allomorphs blank."],
+        ["  Biuniqueness_Scope = 'open_category':  this row stands for an open, unbounded word "
+         "class (e.g. AD-S = any sentential adverb) -- it cannot be exhaustively tested. Fill "
+         "Members ONLY with specific words in this category you already know or suspect have "
+         "allomorphs (e.g. for AD-S: probably, certainly, ...). Leave Members blank if you don't "
+         "know of any -- that means 'none known', not 'none exist'. Leave has_allomorphs blank."],
         ["Use Notes for anything else worth flagging. Message the coordinator when this tab is done."],
         [""],
     ]
