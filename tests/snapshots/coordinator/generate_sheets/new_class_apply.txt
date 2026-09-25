@@ -26,11 +26,13 @@ New:         ['nonpermutability', 'free_occurrence', 'metrical']
     [WARNING] Elements not found in noninterruption TSV: ['ADVERBIALS', 'INTERROGATIVES', 'NP{NP,PP,S}', 'dipa', 'pa', 'po', 'pojo', 'sha', 'tokwe', 'tso', 'ADVERBIALS', 'NP{NP,PP,S}', '[e-]', '[ja-]', '[ke-]', '[noma-]', '[pa-]', '[pi-]', '[sho-]', '[shoma-]', '[tsi-]', 'haha', 'sha', 'shoa', 'watsi', '[-jaena]', '[-jajo]', '[-niapona]', '[-pasi]', '[-pe]', '[-sa]', '[-shana]', '[-shao]', '[-shawiya]', '[-sisa]', '[-titi]', '[-tseiye]', '[-wena]', '[-weya]', '[-wiki]', '[-yoa]', '[-limi]', '[-shodi]', '[-sawa]', '[-ti]', '[-eme]', '[-pe]', '[-me]', '[-ta]', '[-iba]', '[-ibo]', '[-ani]', '[-asha]', '[-bade]', '[-iki]', '[-isa]', '[-ja]', '[-ke]', '[-ma]', '[-neti]', '[-odi]', '[-tame]', '[-toa]', '[-tso]', '[-yoa]', '[-isha]', '[-we]', 'e-a', 'e-po', 'po', 'tsio', 'NP{NP,PP,Adv}']
               free column left blank for those elements.
     Tab: general (73 rows, 5 params)
+    Instructions tab created
     Status tab created (1 construction(s))
     URL: https://docs.google.com/spreadsheets/d/fake_ss_0004
 
   Creating: metrical_arao1248
     Tab: stress_domain (73 rows, 2 params)
+    Instructions tab created
     Status tab created (1 construction(s))
     URL: https://docs.google.com/spreadsheets/d/fake_ss_0006
 

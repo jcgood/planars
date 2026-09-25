@@ -279,23 +279,35 @@ def test_the_dry_run_changes_nothing_anywhere(env):
 # ---------------------------------------------------------------------------
 
 def test_apply_with_nothing_to_do_leaves_every_tab_byte_identical(env):
-    """It still writes notes and dropdowns, but not one cell value."""
+    """It still writes notes and dropdowns, but not one cell value.
+
+    Instructions is excluded: it is coordinator-owned content, cleared and
+    rewritten from diagnostic_classes.yaml on every apply regardless of row/
+    column drift elsewhere (#242) -- that's the point of it, not a miss.
+    """
     before = captured_tabs()
 
     env.run(["update-sheets", "--apply"])
 
     for (ss_id, title), values in before.items():
+        if title == "Instructions":
+            continue
         assert env.doorway.spreadsheet(ss_id).worksheet(title).get_all_values() == values
 
 
 def test_apply_never_rewrites_a_cell_that_already_had_a_value(env):
-    """Adam's annotations are irreplaceable; this command may only append."""
+    """Adam's annotations are irreplaceable; this command may only append.
+
+    Instructions is excluded -- see the docstring above.
+    """
     before = captured_tabs()
     env.add_element("stan1293")
 
     env.run(["update-sheets", "--apply"])
 
     for (ss_id, title), rows in before.items():
+        if title == "Instructions":
+            continue
         after = env.doorway.spreadsheet(ss_id).worksheet(title).get_all_values()
         assert after[:len(rows)] == rows, f"{title} was rewritten, not appended to"
 
@@ -305,8 +317,14 @@ def test_apply_never_removes_a_row_a_column_or_a_tab(env):
 
     env.run(["update-sheets", "--apply"])
 
-    ops = {m["op"] for m in env.doorway.mutations}
-    assert not ops & {"clear", "resize", "del_worksheet", "update_title"}
+    # The Instructions tab is coordinator-owned content, cleared and rewritten
+    # on every apply so it can't drift from diagnostic_classes.yaml (#242) --
+    # that's expected, not data loss. Every other tab (annotation tabs,
+    # Planar Structure, Status) must stay additive-only.
+    destructive = {"clear", "resize", "del_worksheet", "update_title"}
+    hit = {(m["op"], m.get("worksheet")) for m in env.doorway.mutations
+           if m["op"] in destructive}
+    assert not {t for _op, t in hit if t != "Instructions"}
     request_types = {m["request_type"] for m in env.doorway.mutations
                      if m["op"] == "batch_request"}
     assert "deleteDimension" not in request_types

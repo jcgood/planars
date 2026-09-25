@@ -134,23 +134,23 @@ _KNOWN_SITES: Dict[Tuple[str, int], str] = {
     ("sync_params.py", 440): "only reachable via --split, never passed by the "
         "automated workflow invocation (plain `sync-params --apply`)",
     ("sync_params.py", 461): "only reachable via --merge, same reasoning as 440",
-    ("generate_sheets.py", 326): "inside _prefill_free_occurrence_rows -- only "
+    ("generate_sheets.py", 328): "inside _prefill_free_occurrence_rows -- only "
         "reachable via the interactive --apply sheet-creation path, not "
         "--regen-dependents (the only generate-sheets invocation the workflow runs)",
-    ("generate_sheets.py", 329): "same function/reasoning as 326",
-    ("generate_sheets.py", 332): "same function/reasoning as 326",
-    ("generate_sheets.py", 335): "same function/reasoning as 326",
-    ("generate_sheets.py", 389): "same reasoning as 326 (Elements not found check, "
+    ("generate_sheets.py", 331): "same function/reasoning as 328",
+    ("generate_sheets.py", 334): "same function/reasoning as 328",
+    ("generate_sheets.py", 337): "same function/reasoning as 328",
+    ("generate_sheets.py", 391): "same reasoning as 328 (Elements not found check, "
         "same sheet-creation path)",
-    ("generate_sheets.py", 921): "inside _build_phrasal_accent_pairs, called by "
+    ("generate_sheets.py", 923): "inside _build_phrasal_accent_pairs, called by "
         "_regen_construction -- possibly reachable via --regen-dependents if a "
         "phrasal_accent construction is ever a depends_on target; not fully traced, "
         "treat conservatively rather than assumed safe",
-    ("generate_sheets.py", 2568): "inside the interactive language-onboarding path "
+    ("generate_sheets.py", 2610): "inside the interactive language-onboarding path "
         "(folder sharing) -- not --regen-dependents",
-    ("generate_sheets.py", 2581): "inside the interactive language-onboarding path "
+    ("generate_sheets.py", 2623): "inside the interactive language-onboarding path "
         "(notes doc creation) -- not --regen-dependents",
-    ("generate_sheets.py", 2657): "inside the interactive language-onboarding path "
+    ("generate_sheets.py", 2699): "inside the interactive language-onboarding path "
         "(Glottolog fetch) -- not --regen-dependents",
     ("integrity_check.py", 945): "deliberately silent by design -- see the code "
         "comment: defers to import-sheets' own import-error issue if Drive is "
@@ -160,7 +160,7 @@ _KNOWN_SITES: Dict[Tuple[str, int], str] = {
         "that advisory warnings are context only, never file/hold an issue",
     ("validate_coding.py", 745): "redundant with the pending-changes issue "
         "import-sheets already files for the same underlying fact",
-    ("update_sheets.py", 433): "correctly escalated: sets any_drift, which drives "
+    ("update_sheets.py", 434): "correctly escalated: sets any_drift, which drives "
         "exit 1, which the sheet-drift issue mechanism dumps in full -- not a gap",
     ("apply_pending.py", 193): "apply-pending is coordinator-only, never actually "
         "run unattended -- it's in _unattended_commands() only because the workflow "

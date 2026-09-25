@@ -49,7 +49,8 @@ from .generate_sheets import (
     _add_constructions_to_existing_sheet,
     _build_criterion_notes,
     _create_status_tab,
-    _move_status_tab_to_end,
+    _maybe_create_instructions_tab,
+    _reorder_system_tabs,
     _TRAILING_COLS,
 )
 
@@ -549,11 +550,17 @@ def main(args: argparse.Namespace | None = None) -> None:
                     sheet_info["constructions"].extend(new_construction_names)
                     sheet_info.setdefault("construction_params", {}).update(new_params)
 
-            # Ensure Status tab exists and is last (reflects any new tabs added above)
+            # Ensure Status/Instructions tabs exist and are in order (reflects any
+            # new tabs added above; also backfills Instructions on sheets created
+            # before every class got one — see #242).
             if apply:
                 all_constructions = list(constructions) + new_construction_names if new_construction_names else constructions
                 _create_status_tab(ss, all_constructions)
-                _move_status_tab_to_end(ss)
+                if not new_construction_names:
+                    # _add_constructions_to_existing_sheet() above already
+                    # refreshed Instructions when it ran; don't redo it.
+                    _maybe_create_instructions_tab(ss, class_name)
+                _reorder_system_tabs(ss)
 
     if manifest_modified:
         drive_config = _load_drive_config()

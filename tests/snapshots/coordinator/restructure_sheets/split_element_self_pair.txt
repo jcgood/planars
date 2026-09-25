@@ -8,6 +8,7 @@ Language: stan1293
     [general] split: her -> HERACC, HERDAT (2 new, breadcrumbed to archived sheet)
     Archived to _archived/ciscategorial_stan1293_v2
     [general] wrote: carried 140, new blank 3, dropped 2
+    Instructions tab created
     Status tab created (1 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0003
 
@@ -29,6 +30,7 @@ Language: stan1293
     [control] wrote: carried 140, new blank 3, dropped 2
     [thatCOMP] wrote: carried 140, new blank 3, dropped 2
     [asyndeticPart] wrote: carried 140, new blank 3, dropped 2
+    Instructions tab created
     Status tab created (4 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0006
 
@@ -38,6 +40,7 @@ Language: stan1293
     [general] split: her -> HERACC, HERDAT (2 new, breadcrumbed to archived sheet)
     Archived to _archived/noninterruption_stan1293_v2
     [general] wrote: carried 140, new blank 3, dropped 2
+    Instructions tab created
     Status tab created (1 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0009
 
@@ -47,6 +50,7 @@ Language: stan1293
     [stress_domain] split: her -> HERACC, HERDAT (2 new, breadcrumbed to archived sheet)
     Archived to _archived/metrical_stan1293_v2
     [stress_domain] wrote: carried 140, new blank 3, dropped 2
+    Instructions tab created
     Status tab created (1 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0012
 
@@ -59,6 +63,7 @@ Language: stan1293
     [element_prescreening] wrote: carried 140, new blank 3, dropped 2
     [general] (pair tab) copied 144 rows, 0 cell(s) renamed, 16 row(s) split (blank, old judgment quoted in Comments), 1 self-pair row(s) on a split element — NEEDS MANUAL REVIEW, not auto-handled
     Tab: Planar Structure (planar reference)
+    Instructions tab created
     Status tab created (2 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0015
 
@@ -72,6 +77,7 @@ Language: stan1293
     Archived to _archived/segmental_stan1293_v2
     [aspiration_prominence] wrote: carried 140, new blank 3, dropped 2
     [flapping] wrote: carried 140, new blank 3, dropped 2
+    Instructions tab created
     Status tab created (2 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0018
 
@@ -81,6 +87,7 @@ Language: stan1293
     [general] split: her -> HERACC, HERDAT (2 new, breadcrumbed to archived sheet)
     Archived to _archived/free_occurrence_stan1293_v2
     [general] wrote: carried 140, new blank 3, dropped 2
+    Instructions tab created
     Status tab created (1 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0021
 
@@ -97,6 +104,7 @@ Language: stan1293
     [pronominalization] (pair tab) copied 168 rows, 0 cell(s) renamed, 10 row(s) split (blank, old judgment quoted in Comments)
     [np_reference] (pair tab) copied 168 rows, 0 cell(s) renamed, 10 row(s) split (blank, old judgment quoted in Comments)
     Tab: Planar Structure (planar reference)
+    Instructions tab created
     Status tab created (4 construction(s))
     New sheet (v5): https://docs.google.com/spreadsheets/d/fake_ss_0024
 
@@ -110,6 +118,7 @@ Language: stan1293
     Archived to _archived/proform_stan1293_v2
     [do_so_substitution] wrote: carried 140, new blank 3, dropped 2
     [vp_ellipsis] wrote: carried 140, new blank 3, dropped 2
+    Instructions tab created
     Status tab created (2 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0027
 
@@ -121,6 +130,7 @@ Language: stan1293
     Archived to _archived/phrasal_accent_stan1293_v1
     [prescreening] wrote: carried 140, new blank 3, dropped 2
     [general] (pair tab) copied 142 rows, 0 cell(s) renamed
+    Instructions tab created
     Status tab created (2 construction(s))
     New sheet (v2): https://docs.google.com/spreadsheets/d/fake_ss_0030
 

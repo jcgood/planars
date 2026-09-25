@@ -785,7 +785,7 @@ def _mock_ws(title: str) -> MagicMock:
 
 class TestReorderSystemTabs:
     def test_system_tabs_sent_to_end(self):
-        """Status/Instructions/Planar Structure must end up after annotation tabs."""
+        """Instructions leads; Planar Structure/Status end up after annotation tabs."""
         ann1 = _mock_ws("reflexivization")
         ann2 = _mock_ws("pronominalization")
         status = _mock_ws("Status")
@@ -796,16 +796,16 @@ class TestReorderSystemTabs:
         _reorder_system_tabs(ss)
         final_order = ss.reorder_worksheets.call_args[0][0]
         titles = [ws.title for ws in final_order]
-        assert titles == ["reflexivization", "pronominalization", _PLANAR_REF_TAB, "Instructions", "Status"]
+        assert titles == ["Instructions", "reflexivization", "pronominalization", _PLANAR_REF_TAB, "Status"]
 
     def test_already_ordered_no_reorder_call(self):
         """If tabs already in correct order, reorder_worksheets is not called."""
+        instructions = _mock_ws("Instructions")
         ann = _mock_ws("general")
         planar = _mock_ws(_PLANAR_REF_TAB)
-        instructions = _mock_ws("Instructions")
         status = _mock_ws("Status")
         ss = MagicMock()
-        ss.worksheets.return_value = [ann, planar, instructions, status]
+        ss.worksheets.return_value = [instructions, ann, planar, status]
         _reorder_system_tabs(ss)
         ss.reorder_worksheets.assert_not_called()
 

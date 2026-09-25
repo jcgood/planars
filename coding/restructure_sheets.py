@@ -120,6 +120,7 @@ from .generate_sheets import (
     _build_rows,
     _create_status_tab,
     _format_and_validate,
+    _maybe_create_instructions_tab,
     _maybe_create_planar_reference_tab,
     _reorder_system_tabs,
     _TRAILING_COLS,
@@ -1022,6 +1023,7 @@ def _rename_class_for_language(
         created_ref = _maybe_create_planar_reference_tab(new_ss, new_class, planar_path, lang_id)
         if created_ref:
             print(f"    Tab: Planar Structure (planar reference)")
+        _maybe_create_instructions_tab(new_ss, new_class)
         _reorder_system_tabs(new_ss)
 
     # Checkpoint here, before the local dir rename / manifest update below --
@@ -1561,6 +1563,7 @@ def main(args: argparse.Namespace | None = None) -> None:
             created_ref = _maybe_create_planar_reference_tab(new_ss, class_name, planar_path, lang_id)
             if created_ref:
                 print(f"    Tab: Planar Structure (planar reference)")
+            _maybe_create_instructions_tab(new_ss, class_name)
             _create_status_tab(new_ss, tab_names)
             _reorder_system_tabs(new_ss)
 

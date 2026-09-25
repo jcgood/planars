@@ -1,16 +1,17 @@
 SUMMARY
-    14  add_worksheet
-    80  batch_request
+    18  add_worksheet
+   101  batch_request
      1  create_file
      9  create_permission
      7  create_spreadsheet
      5  del_worksheet
      7  move_file
-    16  update
+     5  reorder_worksheets
+    20  update
      2  update_file
-    40    └─ repeatCell
+    57    └─ repeatCell
     24    └─ setDataValidation
-     1    └─ updateDimensionProperties
+     5    └─ updateDimensionProperties
     15    └─ updateSheetProperties
 
 DRIVE OPERATIONS
@@ -66,6 +67,7 @@ SHEET OPERATIONS
 
   fake_ss_0008  tab=-
     create_spreadsheet: title='ciscategorial_arao1248'
+    reorder_worksheets: order=['Instructions', 'general', 'Status']
 
   fake_ss_0008  tab=general
     add_worksheet: rows=75, cols=9, index=None, sheet_id=1
@@ -90,19 +92,35 @@ SHEET OPERATIONS
   fake_ss_0008  tab=Sheet1
     del_worksheet: 
 
+  fake_ss_0008  tab=Instructions
+    add_worksheet: rows=12, cols=1, index=None, sheet_id=2
+    update: anchor A1 raw=True 10x1
+      | ['CISCATEGORIAL — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  fake_ss_0008  tab=sheetId=2
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
   fake_ss_0008  tab=Status
-    add_worksheet: rows=3, cols=2, index=None, sheet_id=2
+    add_worksheet: rows=3, cols=2, index=None, sheet_id=3
     update: anchor A1 raw=True 2x2
       | ['Construction', 'Status']
       | ['general', 'in-progress']
 
-  fake_ss_0008  tab=sheetId=2
+  fake_ss_0008  tab=sheetId=3
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
     setDataValidation: col 1 (BEYOND HEADER) rows 1-2 -> ['in-progress', 'ready-for-review'] (strict=True)
 
   fake_ss_0010  tab=-
     create_spreadsheet: title='noninterruption_arao1248'
+    reorder_worksheets: order=['Instructions', 'general', 'Status']
 
   fake_ss_0010  tab=general
     add_worksheet: rows=75, cols=7, index=None, sheet_id=1
@@ -123,19 +141,35 @@ SHEET OPERATIONS
   fake_ss_0010  tab=Sheet1
     del_worksheet: 
 
+  fake_ss_0010  tab=Instructions
+    add_worksheet: rows=11, cols=1, index=None, sheet_id=2
+    update: anchor A1 raw=True 9x1
+      | ['NONINTERRUPTION — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  fake_ss_0010  tab=sheetId=2
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
   fake_ss_0010  tab=Status
-    add_worksheet: rows=3, cols=2, index=None, sheet_id=2
+    add_worksheet: rows=3, cols=2, index=None, sheet_id=3
     update: anchor A1 raw=True 2x2
       | ['Construction', 'Status']
       | ['general', 'in-progress']
 
-  fake_ss_0010  tab=sheetId=2
+  fake_ss_0010  tab=sheetId=3
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
     setDataValidation: col 1 (BEYOND HEADER) rows 1-2 -> ['in-progress', 'ready-for-review'] (strict=True)
 
   fake_ss_0012  tab=-
     create_spreadsheet: title='nonpermutability_arao1248'
+    reorder_worksheets: order=['Instructions', 'element_prescreening', 'general', 'Planar Structure', 'Status']
 
   fake_ss_0012  tab=element_prescreening
     add_worksheet: rows=75, cols=6, index=None, sheet_id=1
@@ -180,20 +214,21 @@ SHEET OPERATIONS
     repeatCell: rows 0-1
 
   fake_ss_0012  tab=Instructions
-    add_worksheet: rows=26, cols=1, index=None, sheet_id=4
-    update: anchor A1 raw=True 24x1
+    add_worksheet: rows=29, cols=1, index=None, sheet_id=4
+    update: anchor A1 raw=True 27x1
       | ['NONPERMUTABILITY — ANNOTATION INSTRUCTIONS']
       | ['']
-      | ['STEP 1 — element_prescreening']
+      | ['WHAT THIS TESTS']
       | ...
 
   fake_ss_0012  tab=sheetId=4
     repeatCell: col 0 (BEYOND HEADER) rows 0-1
     repeatCell: col 0 (BEYOND HEADER) rows 2-3
-    repeatCell: col 0 (BEYOND HEADER) rows 7-8
-    repeatCell: col 0 (BEYOND HEADER) rows 11-12
-    repeatCell: col 0 (BEYOND HEADER) rows 13-14
-    repeatCell: col 0 (BEYOND HEADER) rows 19-20
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: col 0 (BEYOND HEADER) rows 10-11
+    repeatCell: col 0 (BEYOND HEADER) rows 14-15
+    repeatCell: col 0 (BEYOND HEADER) rows 16-17
+    repeatCell: col 0 (BEYOND HEADER) rows 22-23
     repeatCell: (whole sheet)
     updateDimensionProperties: (whole sheet)
 
@@ -211,6 +246,7 @@ SHEET OPERATIONS
 
   fake_ss_0014  tab=-
     create_spreadsheet: title='free_occurrence_arao1248'
+    reorder_worksheets: order=['Instructions', 'general', 'Status']
 
   fake_ss_0014  tab=general
     add_worksheet: rows=75, cols=10, index=None, sheet_id=1
@@ -237,19 +273,35 @@ SHEET OPERATIONS
   fake_ss_0014  tab=Sheet1
     del_worksheet: 
 
+  fake_ss_0014  tab=Instructions
+    add_worksheet: rows=11, cols=1, index=None, sheet_id=2
+    update: anchor A1 raw=True 9x1
+      | ['FREE OCCURRENCE — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  fake_ss_0014  tab=sheetId=2
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
   fake_ss_0014  tab=Status
-    add_worksheet: rows=3, cols=2, index=None, sheet_id=2
+    add_worksheet: rows=3, cols=2, index=None, sheet_id=3
     update: anchor A1 raw=True 2x2
       | ['Construction', 'Status']
       | ['general', 'in-progress']
 
-  fake_ss_0014  tab=sheetId=2
+  fake_ss_0014  tab=sheetId=3
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
     setDataValidation: col 1 (BEYOND HEADER) rows 1-2 -> ['in-progress', 'ready-for-review'] (strict=True)
 
   fake_ss_0016  tab=-
     create_spreadsheet: title='subspanrepetition_arao1248'
+    reorder_worksheets: order=['Instructions', 'auxiliary_construction', 'tso_clause_linkage', 'Status']
 
   fake_ss_0016  tab=auxiliary_construction
     add_worksheet: rows=75, cols=8, index=None, sheet_id=1
@@ -290,14 +342,29 @@ SHEET OPERATIONS
   fake_ss_0016  tab=Sheet1
     del_worksheet: 
 
+  fake_ss_0016  tab=Instructions
+    add_worksheet: rows=11, cols=1, index=None, sheet_id=3
+    update: anchor A1 raw=True 9x1
+      | ['SUBSPAN REPETITION — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  fake_ss_0016  tab=sheetId=3
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
   fake_ss_0016  tab=Status
-    add_worksheet: rows=4, cols=2, index=None, sheet_id=3
+    add_worksheet: rows=4, cols=2, index=None, sheet_id=4
     update: anchor A1 raw=True 3x2
       | ['Construction', 'Status']
       | ['auxiliary_construction', 'in-progress']
       | ['tso_clause_linkage', 'in-progress']
 
-  fake_ss_0016  tab=sheetId=3
+  fake_ss_0016  tab=sheetId=4
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
     setDataValidation: col 1 (BEYOND HEADER) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)

@@ -4,93 +4,116 @@ Languages: ['arao1248', 'stan1293', 'synth0001']
     [general] up to date
     [second_frame] Adding new tab (4 criterion/criteria)
     Tab: second_frame (73 rows, 4 params)
+    Instructions tab created
 
   noninterruption
     [general] up to date
+    Instructions tab created
 
   subspanrepetition
     [auxiliary_construction] up to date
     [tso_clause_linkage] up to date
+    Instructions tab created
 
   ciscategorial
     [general] up to date
+    Instructions tab created
 
   subspanrepetition
     [andCoordination] up to date
     [control] up to date
     [thatCOMP] up to date
     [asyndeticPart] up to date
+    Instructions tab created
 
   noninterruption
     [general] up to date
+    Instructions tab created
 
   segmental
     [aspiration_prominence] up to date
     [flapping] up to date
+    Instructions tab created
 
   metrical
     [stress_domain] up to date
+    Instructions tab created
 
   free_occurrence
     [general] up to date
+    Instructions tab created
 
   nonpermutability
     [element_prescreening] up to date
     [general] up to date (pair-row tab — row updates skipped)
+    Instructions tab created
 
   coreference
     [prescreening] up to date
     [reflexivization] up to date (pair-row tab — row updates skipped)
     [pronominalization] up to date (pair-row tab — row updates skipped)
     [np_reference] up to date (pair-row tab — row updates skipped)
+    Instructions tab created
 
   proform
     [do_so_substitution] up to date
     [vp_ellipsis] up to date
+    Instructions tab created
 
   phrasal_accent
     [prescreening] up to date
     [general] up to date
+    Instructions tab created
 
   ciscategorial
     [general] up to date
+    Instructions tab created
 
   subspanrepetition
     [andCoordination] up to date
     [control] up to date
     [thatCOMP] up to date
     [asyndeticPart] up to date
+    Instructions tab created
 
   noninterruption
     [general] up to date
+    Instructions tab created
 
   segmental
     [aspiration_prominence] up to date
     [flapping] up to date
+    Instructions tab created
 
   metrical
     [stress_domain] up to date
+    Instructions tab created
 
   nonpermutability
     [element_prescreening] up to date
     [general] up to date (pair-row tab — row updates skipped)
+    Instructions tab created
 
   free_occurrence
     [general] up to date
+    Instructions tab created
 
   coreference
     [prescreening] up to date
     [reflexivization] up to date (pair-row tab — row updates skipped)
     [pronominalization] up to date (pair-row tab — row updates skipped)
     [np_reference] up to date (pair-row tab — row updates skipped)
+    Instructions tab created
 
   proform
     [do_so_substitution] up to date
     [vp_ellipsis] up to date
+    Instructions tab created
 
   phrasal_accent
     [prescreening] up to date
     [general] up to date (pair-row tab — row updates skipped)
+    Instructions tab created
 
 Manifest updated on Drive.
 

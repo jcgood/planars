@@ -7,6 +7,7 @@ Language: stan1293
     [general] carry over 134; new blank 8; drop 8 (he@v:npsubj1, I@v:npsubj1, it@v:npsubj1, NP{S,A}@v:npsubj1, she@v:npsubj1, they@v:npsubj1, we@v:npsubj1, you@v:npsubj1)
     Archived to _archived/ciscategorial_stan1293_v2
     [general] wrote: carried 134, new blank 8, dropped 8
+    Instructions tab created
     Status tab created (1 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0003
 
@@ -24,6 +25,7 @@ Language: stan1293
     [control] wrote: carried 134, new blank 8, dropped 8
     [thatCOMP] wrote: carried 134, new blank 8, dropped 8
     [asyndeticPart] wrote: carried 134, new blank 8, dropped 8
+    Instructions tab created
     Status tab created (4 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0006
 
@@ -32,6 +34,7 @@ Language: stan1293
     [general] carry over 134; new blank 8; drop 8 (he@v:npsubj1, I@v:npsubj1, it@v:npsubj1, NP{S,A}@v:npsubj1, she@v:npsubj1, they@v:npsubj1, we@v:npsubj1, you@v:npsubj1)
     Archived to _archived/noninterruption_stan1293_v2
     [general] wrote: carried 134, new blank 8, dropped 8
+    Instructions tab created
     Status tab created (1 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0009
 
@@ -40,6 +43,7 @@ Language: stan1293
     [stress_domain] carry over 134; new blank 8; drop 8 (he@v:npsubj1, I@v:npsubj1, it@v:npsubj1, NP{S,A}@v:npsubj1, she@v:npsubj1, they@v:npsubj1, we@v:npsubj1, you@v:npsubj1)
     Archived to _archived/metrical_stan1293_v2
     [stress_domain] wrote: carried 134, new blank 8, dropped 8
+    Instructions tab created
     Status tab created (1 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0012
 
@@ -52,6 +56,7 @@ Language: stan1293
     [element_prescreening] wrote: carried 134, new blank 8, dropped 8
     [general] (pair tab) copied 135 rows, 0 cell(s) renamed
     Tab: Planar Structure (planar reference)
+    Instructions tab created
     Status tab created (2 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0015
 
@@ -63,6 +68,7 @@ Language: stan1293
     Archived to _archived/segmental_stan1293_v2
     [aspiration_prominence] wrote: carried 134, new blank 8, dropped 8
     [flapping] wrote: carried 134, new blank 8, dropped 8
+    Instructions tab created
     Status tab created (2 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0018
 
@@ -71,6 +77,7 @@ Language: stan1293
     [general] carry over 134; new blank 8; drop 8 (he@v:npsubj1, I@v:npsubj1, it@v:npsubj1, NP{S,A}@v:npsubj1, she@v:npsubj1, they@v:npsubj1, we@v:npsubj1, you@v:npsubj1)
     Archived to _archived/free_occurrence_stan1293_v2
     [general] wrote: carried 134, new blank 8, dropped 8
+    Instructions tab created
     Status tab created (1 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0021
 
@@ -89,6 +96,7 @@ Language: stan1293
     [pronominalization] (pair tab) copied 163 rows, 0 cell(s) renamed
     [np_reference] (pair tab) copied 163 rows, 0 cell(s) renamed
     Tab: Planar Structure (planar reference)
+    Instructions tab created
     Status tab created (4 construction(s))
     New sheet (v5): https://docs.google.com/spreadsheets/d/fake_ss_0024
 
@@ -100,6 +108,7 @@ Language: stan1293
     Archived to _archived/proform_stan1293_v2
     [do_so_substitution] wrote: carried 134, new blank 8, dropped 8
     [vp_ellipsis] wrote: carried 134, new blank 8, dropped 8
+    Instructions tab created
     Status tab created (2 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0027
 
@@ -111,6 +120,7 @@ Language: stan1293
     Archived to _archived/phrasal_accent_stan1293_v1
     [prescreening] wrote: carried 134, new blank 8, dropped 8
     [general] (pair tab) copied 142 rows, 0 cell(s) renamed
+    Instructions tab created
     Status tab created (2 construction(s))
     New sheet (v2): https://docs.google.com/spreadsheets/d/fake_ss_0030
 

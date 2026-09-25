@@ -1,8 +1,13 @@
 SUMMARY
+    20  add_worksheet
      4  append_rows
-   105  batch_request
-    89    └─ repeatCell
+   248  batch_request
+     3  clear
+    23  reorder_worksheets
+    23  update
+   209    └─ repeatCell
     12    └─ setDataValidation
+    23    └─ updateDimensionProperties
      4    └─ updateSheetProperties
 
 SHEET OPERATIONS
@@ -21,6 +26,24 @@ SHEET OPERATIONS
     setDataValidation: col 5 (A-combines) rows 1-75 -> ['y', 'n'] (strict=False)
     setDataValidation: col 6 (PRED-combines) rows 1-75 -> ['y', 'n'] (strict=False)
 
+  arao1248/class:ciscategorial  tab=Instructions
+    add_worksheet: rows=12, cols=1, index=None, sheet_id=814145269
+    update: anchor A1 raw=True 10x1
+      | ['CISCATEGORIAL — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  arao1248/class:ciscategorial  tab=sheetId=814145269
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  arao1248/class:ciscategorial  tab=-
+    reorder_worksheets: order=['Instructions', 'general', 'Status']
+
   arao1248/class:noninterruption  tab=general
     repeatCell: col 3 (free) rows 0-1
     repeatCell: col 4 (multiple) rows 0-1
@@ -30,6 +53,24 @@ SHEET OPERATIONS
     repeatCell: rows 0-1
     setDataValidation: col 3 (free) rows 1-75 -> ['y', 'n'] (strict=False)
     setDataValidation: col 4 (multiple) rows 1-75 -> ['y', 'n'] (strict=False)
+
+  arao1248/class:noninterruption  tab=Instructions
+    add_worksheet: rows=11, cols=1, index=None, sheet_id=1745544006
+    update: anchor A1 raw=True 9x1
+      | ['NONINTERRUPTION — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  arao1248/class:noninterruption  tab=sheetId=1745544006
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  arao1248/class:noninterruption  tab=-
+    reorder_worksheets: order=['Instructions', 'general', 'Status']
 
   arao1248/class:subspanrepetition  tab=auxiliary_construction
     repeatCell: col 3 (widescope_right) rows 0-1
@@ -55,10 +96,46 @@ SHEET OPERATIONS
     setDataValidation: col 4 (widescope_left) rows 1-75 -> ['y', 'n'] (strict=False)
     setDataValidation: col 5 (fillable_botheither_conjunct) rows 1-75 -> ['y', 'n'] (strict=False)
 
+  arao1248/class:subspanrepetition  tab=Instructions
+    add_worksheet: rows=11, cols=1, index=None, sheet_id=1178800862
+    update: anchor A1 raw=True 9x1
+      | ['SUBSPAN REPETITION — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  arao1248/class:subspanrepetition  tab=sheetId=1178800862
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  arao1248/class:subspanrepetition  tab=-
+    reorder_worksheets: order=['Instructions', 'auxiliary_construction', 'tso_clause_linkage', 'Status']
+
   stan1293/class:ciscategorial  tab=general
     repeatCell: col 3 (V-combines) rows 0-1
     repeatCell: col 4 (N-combines) rows 0-1
     repeatCell: col 5 (A-combines) rows 0-1
+
+  stan1293/class:ciscategorial  tab=Instructions
+    add_worksheet: rows=12, cols=1, index=None, sheet_id=1176263672
+    update: anchor A1 raw=True 10x1
+      | ['CISCATEGORIAL — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  stan1293/class:ciscategorial  tab=sheetId=1176263672
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  stan1293/class:ciscategorial  tab=-
+    reorder_worksheets: order=['Instructions', 'general', 'Status']
 
   stan1293/class:subspanrepetition  tab=andCoordination
     repeatCell: col 3 (widescope_right) rows 0-1
@@ -80,9 +157,45 @@ SHEET OPERATIONS
     repeatCell: col 4 (widescope_left) rows 0-1
     repeatCell: col 5 (fillable_botheither_conjunct) rows 0-1
 
+  stan1293/class:subspanrepetition  tab=Instructions
+    add_worksheet: rows=11, cols=1, index=None, sheet_id=2090612504
+    update: anchor A1 raw=True 9x1
+      | ['SUBSPAN REPETITION — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  stan1293/class:subspanrepetition  tab=sheetId=2090612504
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  stan1293/class:subspanrepetition  tab=-
+    reorder_worksheets: order=['Instructions', 'andCoordination', 'control', 'thatCOMP', 'asyndeticPart', 'Status']
+
   stan1293/class:noninterruption  tab=general
     repeatCell: col 3 (free) rows 0-1
     repeatCell: col 4 (multiple) rows 0-1
+
+  stan1293/class:noninterruption  tab=Instructions
+    add_worksheet: rows=11, cols=1, index=None, sheet_id=1920795321
+    update: anchor A1 raw=True 9x1
+      | ['NONINTERRUPTION — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  stan1293/class:noninterruption  tab=sheetId=1920795321
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  stan1293/class:noninterruption  tab=-
+    reorder_worksheets: order=['Instructions', 'general', 'Status']
 
   stan1293/class:segmental  tab=aspiration_prominence
     repeatCell: col 3 (aspirated) rows 0-1
@@ -92,12 +205,48 @@ SHEET OPERATIONS
     repeatCell: col 4 (flapping_internal) rows 0-1
     repeatCell: col 5 (flapping_right) rows 0-1
 
+  stan1293/class:segmental  tab=Instructions
+    add_worksheet: rows=12, cols=1, index=None, sheet_id=1708796554
+    update: anchor A1 raw=True 10x1
+      | ['SEGMENTAL — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  stan1293/class:segmental  tab=sheetId=1708796554
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  stan1293/class:segmental  tab=-
+    reorder_worksheets: order=['Instructions', 'aspiration_prominence', 'flapping', 'Status']
+
   stan1293/class:metrical  tab=stress_domain
     repeatCell: col 3 (accented) rows 0-1
     repeatCell: col 4 (obligatory) rows 0-1
     repeatCell: col 5 (independence) rows 0-1
     repeatCell: col 6 (left-interaction) rows 0-1
     repeatCell: col 7 (right-interaction) rows 0-1
+
+  stan1293/class:metrical  tab=Instructions
+    add_worksheet: rows=12, cols=1, index=None, sheet_id=1237814182
+    update: anchor A1 raw=True 10x1
+      | ['METRICAL — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  stan1293/class:metrical  tab=sheetId=1237814182
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  stan1293/class:metrical  tab=-
+    reorder_worksheets: order=['Instructions', 'stress_domain', 'Status']
 
   stan1293/class:free_occurrence  tab=general
     repeatCell: col 3 (free) rows 0-1
@@ -106,11 +255,75 @@ SHEET OPERATIONS
     repeatCell: col 6 (dependent-on-left) rows 0-1
     repeatCell: col 7 (dependent-on-right) rows 0-1
 
+  stan1293/class:free_occurrence  tab=Instructions
+    add_worksheet: rows=11, cols=1, index=None, sheet_id=1939400444
+    update: anchor A1 raw=True 9x1
+      | ['FREE OCCURRENCE — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  stan1293/class:free_occurrence  tab=sheetId=1939400444
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  stan1293/class:free_occurrence  tab=-
+    reorder_worksheets: order=['Instructions', 'general', 'Status']
+
   stan1293/class:nonpermutability  tab=element_prescreening
     repeatCell: col 3 (scopal) rows 0-1
 
+  stan1293/class:nonpermutability  tab=Instructions
+    add_worksheet: rows=29, cols=1, index=None, sheet_id=1847039685
+    update: anchor A1 raw=True 27x1
+      | ['NONPERMUTABILITY — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  stan1293/class:nonpermutability  tab=sheetId=1847039685
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: col 0 (BEYOND HEADER) rows 10-11
+    repeatCell: col 0 (BEYOND HEADER) rows 14-15
+    repeatCell: col 0 (BEYOND HEADER) rows 16-17
+    repeatCell: col 0 (BEYOND HEADER) rows 22-23
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  stan1293/class:nonpermutability  tab=-
+    reorder_worksheets: order=['Instructions', 'element_prescreening', 'general', 'Planar Structure', 'Status']
+
   stan1293/class:coreference  tab=prescreening
     repeatCell: col 3 (referential) rows 0-1
+
+  stan1293/class:coreference  tab=Instructions
+    add_worksheet: rows=38, cols=1, index=None, sheet_id=1756251764
+    update: anchor A1 raw=True 36x1
+      | ['COREFERENCE — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  stan1293/class:coreference  tab=sheetId=1756251764
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: col 0 (BEYOND HEADER) rows 10-11
+    repeatCell: col 0 (BEYOND HEADER) rows 14-15
+    repeatCell: col 0 (BEYOND HEADER) rows 18-19
+    repeatCell: col 0 (BEYOND HEADER) rows 22-23
+    repeatCell: col 0 (BEYOND HEADER) rows 24-25
+    repeatCell: col 0 (BEYOND HEADER) rows 28-29
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  stan1293/class:coreference  tab=-
+    reorder_worksheets: order=['Instructions', 'prescreening', 'reflexivization', 'pronominalization', 'np_reference', 'Planar Structure', 'Status']
 
   stan1293/class:proform  tab=do_so_substitution
     repeatCell: col 3 (shareable_proform_replace) rows 0-1
@@ -118,16 +331,72 @@ SHEET OPERATIONS
   stan1293/class:proform  tab=vp_ellipsis
     repeatCell: col 3 (shareable_proform_replace) rows 0-1
 
+  stan1293/class:proform  tab=Instructions
+    add_worksheet: rows=11, cols=1, index=None, sheet_id=1780400656
+    update: anchor A1 raw=True 9x1
+      | ['PROFORM — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  stan1293/class:proform  tab=sheetId=1780400656
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  stan1293/class:proform  tab=-
+    reorder_worksheets: order=['Instructions', 'do_so_substitution', 'vp_ellipsis', 'Status']
+
   stan1293/class:phrasal_accent  tab=prescreening
     repeatCell: col 3 (accented) rows 0-1
 
   stan1293/class:phrasal_accent  tab=general
     repeatCell: col 3 (joint_accent) rows 0-1
 
+  stan1293/class:phrasal_accent  tab=Instructions
+    clear: 
+    update: anchor A1 raw=True 27x1
+      | ['PHRASAL (PITCH) ACCENT GROUPING — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+    repeatCell: col 0 (PHRASAL (PITCH) ACCENT GROUPING — ANNOTATION INSTRUCTIONS) rows 0-1
+    repeatCell: col 0 (PHRASAL (PITCH) ACCENT GROUPING — ANNOTATION INSTRUCTIONS) rows 2-3
+    repeatCell: col 0 (PHRASAL (PITCH) ACCENT GROUPING — ANNOTATION INSTRUCTIONS) rows 5-6
+    repeatCell: col 0 (PHRASAL (PITCH) ACCENT GROUPING — ANNOTATION INSTRUCTIONS) rows 10-11
+    repeatCell: col 0 (PHRASAL (PITCH) ACCENT GROUPING — ANNOTATION INSTRUCTIONS) rows 14-15
+    repeatCell: col 0 (PHRASAL (PITCH) ACCENT GROUPING — ANNOTATION INSTRUCTIONS) rows 16-17
+    repeatCell: col 0 (PHRASAL (PITCH) ACCENT GROUPING — ANNOTATION INSTRUCTIONS) rows 22-23
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  stan1293/class:phrasal_accent  tab=-
+    reorder_worksheets: order=['Instructions', 'prescreening', 'general', 'Status']
+
   synth0001/class:ciscategorial  tab=general
     repeatCell: col 3 (V-combines) rows 0-1
     repeatCell: col 4 (N-combines) rows 0-1
     repeatCell: col 5 (A-combines) rows 0-1
+
+  synth0001/class:ciscategorial  tab=Instructions
+    add_worksheet: rows=12, cols=1, index=None, sheet_id=1365570084
+    update: anchor A1 raw=True 10x1
+      | ['CISCATEGORIAL — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  synth0001/class:ciscategorial  tab=sheetId=1365570084
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  synth0001/class:ciscategorial  tab=-
+    reorder_worksheets: order=['Instructions', 'general', 'Status']
 
   synth0001/class:subspanrepetition  tab=andCoordination
     repeatCell: col 3 (widescope_right) rows 0-1
@@ -149,9 +418,45 @@ SHEET OPERATIONS
     repeatCell: col 4 (widescope_left) rows 0-1
     repeatCell: col 5 (fillable_botheither_conjunct) rows 0-1
 
+  synth0001/class:subspanrepetition  tab=Instructions
+    add_worksheet: rows=11, cols=1, index=None, sheet_id=1434067783
+    update: anchor A1 raw=True 9x1
+      | ['SUBSPAN REPETITION — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  synth0001/class:subspanrepetition  tab=sheetId=1434067783
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  synth0001/class:subspanrepetition  tab=-
+    reorder_worksheets: order=['Instructions', 'andCoordination', 'control', 'thatCOMP', 'asyndeticPart', 'Status']
+
   synth0001/class:noninterruption  tab=general
     repeatCell: col 3 (free) rows 0-1
     repeatCell: col 4 (multiple) rows 0-1
+
+  synth0001/class:noninterruption  tab=Instructions
+    add_worksheet: rows=11, cols=1, index=None, sheet_id=1384515215
+    update: anchor A1 raw=True 9x1
+      | ['NONINTERRUPTION — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  synth0001/class:noninterruption  tab=sheetId=1384515215
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  synth0001/class:noninterruption  tab=-
+    reorder_worksheets: order=['Instructions', 'general', 'Status']
 
   synth0001/class:segmental  tab=aspiration_prominence
     repeatCell: col 3 (aspirated) rows 0-1
@@ -161,6 +466,24 @@ SHEET OPERATIONS
     repeatCell: col 4 (flapping_internal) rows 0-1
     repeatCell: col 5 (flapping_right) rows 0-1
 
+  synth0001/class:segmental  tab=Instructions
+    add_worksheet: rows=12, cols=1, index=None, sheet_id=1860405622
+    update: anchor A1 raw=True 10x1
+      | ['SEGMENTAL — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  synth0001/class:segmental  tab=sheetId=1860405622
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  synth0001/class:segmental  tab=-
+    reorder_worksheets: order=['Instructions', 'aspiration_prominence', 'flapping', 'Status']
+
   synth0001/class:metrical  tab=stress_domain
     repeatCell: col 3 (accented) rows 0-1
     repeatCell: col 4 (obligatory) rows 0-1
@@ -168,8 +491,46 @@ SHEET OPERATIONS
     repeatCell: col 6 (left-interaction) rows 0-1
     repeatCell: col 7 (right-interaction) rows 0-1
 
+  synth0001/class:metrical  tab=Instructions
+    add_worksheet: rows=12, cols=1, index=None, sheet_id=533870494
+    update: anchor A1 raw=True 10x1
+      | ['METRICAL — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  synth0001/class:metrical  tab=sheetId=533870494
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  synth0001/class:metrical  tab=-
+    reorder_worksheets: order=['Instructions', 'stress_domain', 'Status']
+
   synth0001/class:nonpermutability  tab=element_prescreening
     repeatCell: col 3 (scopal) rows 0-1
+
+  synth0001/class:nonpermutability  tab=Instructions
+    clear: 
+    update: anchor A1 raw=True 27x1
+      | ['NONPERMUTABILITY — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+    repeatCell: col 0 (NONPERMUTABILITY — ANNOTATION INSTRUCTIONS) rows 0-1
+    repeatCell: col 0 (NONPERMUTABILITY — ANNOTATION INSTRUCTIONS) rows 2-3
+    repeatCell: col 0 (NONPERMUTABILITY — ANNOTATION INSTRUCTIONS) rows 5-6
+    repeatCell: col 0 (NONPERMUTABILITY — ANNOTATION INSTRUCTIONS) rows 10-11
+    repeatCell: col 0 (NONPERMUTABILITY — ANNOTATION INSTRUCTIONS) rows 14-15
+    repeatCell: col 0 (NONPERMUTABILITY — ANNOTATION INSTRUCTIONS) rows 16-17
+    repeatCell: col 0 (NONPERMUTABILITY — ANNOTATION INSTRUCTIONS) rows 22-23
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  synth0001/class:nonpermutability  tab=-
+    reorder_worksheets: order=['Instructions', 'element_prescreening', 'general', 'Planar Structure', 'Status']
 
   synth0001/class:free_occurrence  tab=general
     repeatCell: col 3 (free) rows 0-1
@@ -178,8 +539,48 @@ SHEET OPERATIONS
     repeatCell: col 6 (dependent-on-left) rows 0-1
     repeatCell: col 7 (dependent-on-right) rows 0-1
 
+  synth0001/class:free_occurrence  tab=Instructions
+    add_worksheet: rows=11, cols=1, index=None, sheet_id=1215802599
+    update: anchor A1 raw=True 9x1
+      | ['FREE OCCURRENCE — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  synth0001/class:free_occurrence  tab=sheetId=1215802599
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  synth0001/class:free_occurrence  tab=-
+    reorder_worksheets: order=['Instructions', 'general', 'Status']
+
   synth0001/class:coreference  tab=prescreening
     repeatCell: col 3 (referential) rows 0-1
+
+  synth0001/class:coreference  tab=Instructions
+    clear: 
+    update: anchor A1 raw=True 36x1
+      | ['COREFERENCE — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 0-1
+    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 2-3
+    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 5-6
+    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 10-11
+    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 14-15
+    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 18-19
+    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 22-23
+    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 24-25
+    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 28-29
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  synth0001/class:coreference  tab=-
+    reorder_worksheets: order=['Instructions', 'prescreening', 'reflexivization', 'pronominalization', 'np_reference', 'Planar Structure', 'Status']
 
   synth0001/class:proform  tab=do_so_substitution
     repeatCell: col 3 (shareable_proform_replace) rows 0-1
@@ -187,5 +588,45 @@ SHEET OPERATIONS
   synth0001/class:proform  tab=vp_ellipsis
     repeatCell: col 3 (shareable_proform_replace) rows 0-1
 
+  synth0001/class:proform  tab=Instructions
+    add_worksheet: rows=11, cols=1, index=None, sheet_id=1667486704
+    update: anchor A1 raw=True 9x1
+      | ['PROFORM — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  synth0001/class:proform  tab=sheetId=1667486704
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  synth0001/class:proform  tab=-
+    reorder_worksheets: order=['Instructions', 'do_so_substitution', 'vp_ellipsis', 'Status']
+
   synth0001/class:phrasal_accent  tab=prescreening
     repeatCell: col 3 (accented) rows 0-1
+
+  synth0001/class:phrasal_accent  tab=Instructions
+    add_worksheet: rows=29, cols=1, index=None, sheet_id=1914288496
+    update: anchor A1 raw=True 27x1
+      | ['PHRASAL (PITCH) ACCENT GROUPING — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  synth0001/class:phrasal_accent  tab=sheetId=1914288496
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: col 0 (BEYOND HEADER) rows 10-11
+    repeatCell: col 0 (BEYOND HEADER) rows 14-15
+    repeatCell: col 0 (BEYOND HEADER) rows 16-17
+    repeatCell: col 0 (BEYOND HEADER) rows 22-23
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+
+  synth0001/class:phrasal_accent  tab=-
+    reorder_worksheets: order=['Instructions', 'prescreening', 'general', 'Status']
