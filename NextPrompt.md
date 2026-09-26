@@ -17,6 +17,35 @@ this project is trying to remove.
 
 ## Now
 
+Two live threads. Read whichever matches what you're picking up.
+
+### Thread: biuniqueness/allomorphy (`coding/`, issue #254)
+
+**State lives in issue #254** (the canonical tracker) — read it first, not
+here. Two commits made 2026-09-24, not yet pushed: `130df7d` (every
+diagnostic class gets an Instructions tab, opening first — coordinator sheet
+UX, issue #242) and `7da697c` (reworded the biuniqueness prescreening sheet's
+`open_category` instructions to ask only for known/suspected allomorphs,
+never claim category-wide coverage — a methodology gap posted as a #254
+comment on 2026-09-24, not yet resolved or replied to).
+
+**Next action:** #254 Part 2 (build/test the mechanism on `synth0001`) is
+stalled well before Stage 2 — only Stage 1 sheet generation exists
+(`coding/generate_biuniqueness_allomorphy_sheet.py`); no Stage 2 expansion,
+import step, or validator yet. Someone (Adam, going by the content) has
+started filling in Stage 1's `prescreening` tab for real — progress on
+`v:frontedauxiliary` worth reading before deciding what's next. The
+`CONJUNCT`/`QWORDS` open_category rows still carried "I don't know what to do
+with this" notes as of 2026-09-24, from before the rewording — check whether
+the new instructions actually resolved that confusion.
+Live sheet: https://docs.google.com/spreadsheets/d/1YEtSlw9t05OI6RKGgCtbez0u3oX1p5Xfe_6UH1dweGA
+
+**Don't re-litigate:** Araona (arao1248) is a trial only, not a priority —
+this thread stays scoped to English (stan1293) and its synth0001 proxy. Don't
+propose expanding arao1248's coverage as part of this work.
+
+### Thread: CCDB charts across languages (`NonCollaborative/`)
+
 **Current work: `NonCollaborative/`, putting the CCDB languages through the
 planarsviz charts.** State lives in
 `NonCollaborative/docs/CCDB_PLANARSVIZ_PROGRESS.md` — read it first; the plan
