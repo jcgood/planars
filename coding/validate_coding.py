@@ -356,6 +356,36 @@ def annotation_status(
     return {"total": total, "filled": total - blank, "blank": blank, "invalid": invalid}
 
 
+def pair_annotation_status(
+    rows: List[List[str]],
+    expected_params: List[str],
+    param_values: Dict[str, List[str]] = None,
+) -> dict:
+    """Return completeness/validity counts for one pair-row annotation sheet tab.
+
+    Same shape as annotation_status(), for pair-row sheets (nonpermutability's
+    `general`, coreference's `reflexivization`/`pronominalization`/
+    `np_reference`) instead of element rows. There is no keystone row to
+    exclude here -- pair rows are generated from element pairs, not from
+    positions, so every data row counts in full. Reads whatever rows the live
+    sheet has at call time, so a caller that re-reads the sheet after pairs
+    are added, removed, or regenerated gets a count that reflects the new
+    pairs automatically -- nothing here caches a prior row count.
+    Returns {'total': int, 'filled': int, 'blank': int, 'invalid': int}.
+    """
+    if not rows or len(rows) < 2:
+        return {"total": 0, "filled": 0, "blank": 0, "invalid": 0}
+
+    header = rows[0]
+    param_cols = [c for c in header if c not in _PAIR_STRUCTURAL_COLS and c not in _TRAILING_COLS]
+    total = len(param_cols) * len(rows[1:])
+
+    _, issues = validate_pair_rows(rows, expected_params, "", param_values)
+    blank = sum(1 for i in issues if "blank value" in i.message)
+    invalid = sum(1 for i in issues if "unexpected value" in i.message)
+    return {"total": total, "filled": total - blank, "blank": blank, "invalid": invalid}
+
+
 # ---------------------------------------------------------------------------
 # TSV reader
 # ---------------------------------------------------------------------------

@@ -155,10 +155,10 @@ _KNOWN_SITES: Dict[Tuple[str, int], str] = {
     ("integrity_check.py", 945): "deliberately silent by design -- see the code "
         "comment: defers to import-sheets' own import-error issue if Drive is "
         "genuinely down",
-    ("validate_coding.py", 664): "advisory warning under sheet-validation.yml, "
+    ("validate_coding.py", 694): "advisory warning under sheet-validation.yml, "
         "whose documented convention (CLAUDE.md's sheet-validation label entry) is "
         "that advisory warnings are context only, never file/hold an issue",
-    ("validate_coding.py", 745): "redundant with the pending-changes issue "
+    ("validate_coding.py", 775): "redundant with the pending-changes issue "
         "import-sheets already files for the same underlying fact",
     ("update_sheets.py", 434): "correctly escalated: sets any_drift, which drives "
         "exit 1, which the sheet-drift issue mechanism dumps in full -- not a gap",

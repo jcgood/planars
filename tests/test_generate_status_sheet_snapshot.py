@@ -319,14 +319,29 @@ def test_gray_for_a_missing_sheet(env):
     assert ws.get_all_values()[row][2] == "no sheet found"
 
 
-def test_gray_for_a_pair_row_construction(env):
+def test_a_pair_row_construction_gets_a_real_percentage(env):
+    """Pair-row tabs (nonpermutability's `general`, coreference's three) are
+    counted the same way element rows are, not given a placeholder note --
+    see pair_annotation_status() in validate_coding.py."""
     doorway, run, _ = env
     run(["gen", "--lang", "stan1293", "--apply"])
     ss = the_sheet(doorway, "status_stan1293")
     ws = ss.worksheet("Status")
     row = status_row_index(ss, "nonpermutability", "general")
-    assert ws._cell(row, 2).background == gen._GRAY
-    assert ws.get_all_values()[row][2] == "pair-row tab"
+    # The fixture's general tab is 23/135 filled -- not complete, so yellow.
+    assert ws._cell(row, 2).background == gen._YELLOW
+    assert ws.get_all_values()[row][2] == "23/135 filled (17%)"
+
+
+def test_green_for_a_fully_complete_pair_row_construction(env):
+    doorway, run, _ = env
+    run(["gen", "--lang", "stan1293", "--apply"])
+    ss = the_sheet(doorway, "status_stan1293")
+    ws = ss.worksheet("Status")
+    row = status_row_index(ss, "phrasal_accent", "general")
+    # The fixture's phrasal_accent/general tab is fully filled (568/568).
+    assert ws._cell(row, 2).background == gen._GREEN
+    assert ws.get_all_values()[row][2] == "568/568 filled (100%)"
 
 
 # ---------------------------------------------------------------------------

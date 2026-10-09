@@ -65,7 +65,7 @@ from .make_forms import (
     resolve_keystone_na_criteria,
 )
 from .restructure_sheets import _get_pair_row_constructions
-from .validate_coding import annotation_status, _COREFERENCE_CONSTRUCTION_PARAMS
+from .validate_coding import annotation_status, pair_annotation_status, _COREFERENCE_CONSTRUCTION_PARAMS
 from planars.languages import get_display_name
 
 _STATUS_FOLDER_NAME = "Annotation Status"
@@ -116,17 +116,18 @@ def _status_text(filled: int, total: int) -> str:
     return f"{filled}/{total} filled ({pct}%)"
 
 
-def _row_status(is_pair: bool, status: Dict[str, int]) -> Tuple[str, Dict[str, float]]:
+def _row_status(status: Dict[str, int]) -> Tuple[str, Dict[str, float]]:
     """Return (status_text, color) for one construction row.
 
     Pair-row constructions (nonpermutability's `general`, coreference's
     `reflexivization`/`pronominalization`/`np_reference`) are generated
-    combinatorially from element pairs rather than counted 1:1 against expected
-    criterion cells the way element-row constructions are, so a completeness
-    percentage isn't meaningful for them — they get a neutral note instead.
+    combinatorially from element pairs rather than from positions, but each
+    pair row still has the same criterion cells an element row has, so the
+    same filled/total percentage applies. The caller picks which counting
+    function built `status` -- annotation_status() for element rows,
+    pair_annotation_status() for pair rows -- this just formats the result
+    the same way for both.
     """
-    if is_pair:
-        return "pair-row tab", _GRAY
     text = _status_text(status.get("filled", 0), status.get("total", 0))
     color = _status_color(_completeness_pct(status.get("filled", 0), status.get("total", 0)))
     return text, color
@@ -150,8 +151,9 @@ def _build_row_skeletons(
     Pure transform of _read_diagnostics_for_language() output — no API calls —
     so it's directly unit-testable. Each skeleton carries what's needed to look
     up live sheet data next: class/construction names, expected param names/
-    values, and whether the construction is a pair-row tab (skipped from the
-    percentage computation; see _row_status).
+    values, and whether the construction is a pair-row tab (decides which
+    counting function _gather_status_rows() uses — annotation_status() or
+    pair_annotation_status() — both feed the same percentage formula).
     """
     skeletons = []
     for class_name, construction, param_names, param_values in specs:
@@ -243,21 +245,23 @@ def _gather_status_rows(
 
         link = f"{ss.url}#gid={ws.id}"
 
-        if skel["is_pair"]:
-            text, color = _row_status(True, {"total": 0, "filled": 0})
-            rows.append({**skel, "status_text": text, "color": color, "link": link})
-            continue
-
+        # Read the live sheet fresh every run, for both row shapes -- this is
+        # what makes the percentage track pair-row regeneration automatically:
+        # whatever pairs exist on the sheet right now are what gets counted,
+        # with no stored row count to go stale.
         live_rows = _with_retry(lambda w=ws: w.get_all_values())
         params, values, keystone_active, keystone_na_criteria = _construction_params(
             lang_id, class_name, construction, skel["param_names"], skel["param_values"], lang_setup_dir,
         )
-        status = annotation_status(
-            live_rows, params, values,
-            keystone_active=keystone_active,
-            keystone_na_criteria=keystone_na_criteria,
-        )
-        text, color = _row_status(False, status)
+        if skel["is_pair"]:
+            status = pair_annotation_status(live_rows, params, values)
+        else:
+            status = annotation_status(
+                live_rows, params, values,
+                keystone_active=keystone_active,
+                keystone_na_criteria=keystone_na_criteria,
+            )
+        text, color = _row_status(status)
         rows.append({**skel, "status_text": text, "color": color, "link": link})
 
     return rows

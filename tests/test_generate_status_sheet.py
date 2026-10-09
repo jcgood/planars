@@ -95,33 +95,35 @@ def test_status_text_fully_blank():
 # _row_status
 # ---------------------------------------------------------------------------
 
-def test_row_status_pair_ignores_status_dict():
-    text, color = _row_status(True, {"total": 100, "filled": 3, "blank": 97, "invalid": 0})
-    assert text == "pair-row tab"
-    assert color == _GRAY
+def test_row_status_pair_row_uses_status_dict():
+    # Pair rows get the same real percentage as element rows now -- the only
+    # difference is which counting function built the status dict upstream.
+    text, color = _row_status({"total": 100, "filled": 3, "blank": 97, "invalid": 0})
+    assert text == "3/100 filled (3%)"
+    assert color == _YELLOW
 
 
 def test_row_status_element_row_uses_status_dict():
     # 128/142 is 90.1% -- not fully complete, so yellow, not green.
-    text, color = _row_status(False, {"total": 142, "filled": 128, "blank": 14, "invalid": 0})
+    text, color = _row_status({"total": 142, "filled": 128, "blank": 14, "invalid": 0})
     assert text == "128/142 filled (90%)"
     assert color == _YELLOW
 
 
 def test_row_status_element_row_fully_complete_is_green():
-    text, color = _row_status(False, {"total": 100, "filled": 100, "blank": 0, "invalid": 0})
+    text, color = _row_status({"total": 100, "filled": 100, "blank": 0, "invalid": 0})
     assert text == "100/100 filled (100%)"
     assert color == _GREEN
 
 
 def test_row_status_element_row_low_completeness_is_yellow():
-    text, color = _row_status(False, {"total": 100, "filled": 10, "blank": 90, "invalid": 0})
+    text, color = _row_status({"total": 100, "filled": 10, "blank": 90, "invalid": 0})
     assert text == "10/100 filled (10%)"
     assert color == _YELLOW
 
 
 def test_row_status_element_row_missing_keys_defaults_to_zero():
-    text, color = _row_status(False, {})
+    text, color = _row_status({})
     assert text == "0/0 filled (n/a)"
     assert color == _GRAY
 

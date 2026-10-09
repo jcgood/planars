@@ -4,6 +4,7 @@ from __future__ import annotations
 from coding.schemas import criterion_values
 from coding.validate_coding import (
     _COREFERENCE_CONSTRUCTION_PARAMS,
+    pair_annotation_status,
     validate_annotation_rows,
     validate_pair_rows,
 )
@@ -232,3 +233,59 @@ def test_a_correctly_shaped_sheet_is_still_checked_cell_by_cell():
     _, issues = validate_pair_rows(_pair_rows("maybe"), info["params"],
                                    "reflexivization", info["values"])
     assert any("unexpected value" in i.message for i in issues)
+
+
+# ---------------------------------------------------------------------------
+# pair_annotation_status — the status-sheet percentage for pair-row tabs
+# ---------------------------------------------------------------------------
+
+_ONE_CRITERION_PAIR_HEADER = ["Element_A", "Position_A", "Element_B", "Position_B",
+                              "Direction", "reflexive_allowed", "Source", "Comments"]
+
+
+def _pair_sheet(*values: str) -> list[list[str]]:
+    """One pair-row sheet, one data row per value given for reflexive_allowed."""
+    return [_ONE_CRITERION_PAIR_HEADER] + [
+        ["a", "1", "b", "2", "A>B", v, "", ""] for v in values
+    ]
+
+
+def test_pair_annotation_status_counts_filled_and_total():
+    info = _COREFERENCE_CONSTRUCTION_PARAMS["reflexivization"]
+    status = pair_annotation_status(
+        _pair_sheet("y", "n", "", "y"), info["params"], info["values"],
+    )
+    assert status == {"total": 4, "filled": 3, "blank": 1, "invalid": 0}
+
+
+def test_pair_annotation_status_counts_invalid_separately_from_blank():
+    info = _COREFERENCE_CONSTRUCTION_PARAMS["reflexivization"]
+    status = pair_annotation_status(
+        _pair_sheet("y", "maybe"), info["params"], info["values"],
+    )
+    # "filled" only drops for a blank cell -- an invalid-but-present value still
+    # counts as filled (annotation_status() does the same for element rows).
+    assert status == {"total": 2, "filled": 2, "blank": 0, "invalid": 1}
+
+
+def test_pair_annotation_status_fully_complete():
+    info = _COREFERENCE_CONSTRUCTION_PARAMS["reflexivization"]
+    status = pair_annotation_status(
+        _pair_sheet("y", "n", "na"), info["params"], info["values"],
+    )
+    assert status == {"total": 3, "filled": 3, "blank": 0, "invalid": 0}
+
+
+def test_pair_annotation_status_no_data_rows_is_zero():
+    status = pair_annotation_status([_ONE_CRITERION_PAIR_HEADER], [], {})
+    assert status == {"total": 0, "filled": 0, "blank": 0, "invalid": 0}
+
+
+def test_pair_annotation_status_tracks_a_regenerated_row_count():
+    """Rows added or removed (e.g. by a sheet regeneration) change the total
+    on the next read -- nothing here caches a prior count."""
+    info = _COREFERENCE_CONSTRUCTION_PARAMS["reflexivization"]
+    before = pair_annotation_status(_pair_sheet("y", "n"), info["params"], info["values"])
+    after = pair_annotation_status(_pair_sheet("y", "n", "y"), info["params"], info["values"])
+    assert before["total"] == 2
+    assert after["total"] == 3
