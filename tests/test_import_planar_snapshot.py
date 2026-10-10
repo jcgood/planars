@@ -45,7 +45,7 @@ import pytest
 from coding import drive as drive_module
 from coding import drive_doorway
 from coding import import_planar as ip
-from fake_drive import FakeDriveDoorway
+from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "import_planar"
@@ -128,7 +128,7 @@ def env(monkeypatch, tmp_path):
     for lang in LANGS:
         dest = coded / lang / "lang_setup"
         dest.mkdir(parents=True)
-        src = ROOT / "coded_data" / lang / "lang_setup" / f"planar_{lang}.tsv"
+        src = FROZEN_CODED_DATA / lang / "lang_setup" / f"planar_{lang}.tsv"
         shutil.copy2(src, dest / src.name)
 
     config = {"_root_folder_id": "root", "_planars_config_file_id": "manifest"}

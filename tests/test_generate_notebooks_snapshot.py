@@ -38,7 +38,8 @@ import pytest
 
 from coding import drive_doorway, generate_notebooks
 from coding.make_forms import _read_diagnostics_for_language
-from fake_drive import MANIFEST_FILE_ID, ROOT_FOLDER_ID, FakeDriveDoorway
+from fake_drive import (FROZEN_CODED_DATA, MANIFEST_FILE_ID, ROOT_FOLDER_ID,
+                        FakeDriveDoorway, use_frozen_coded_data)
 from render_mutations import render
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -91,9 +92,10 @@ _STUB_TEMPLATES = {
 
 
 @pytest.fixture()
-def env(monkeypatch):
+def env(monkeypatch, tmp_path):
     """Fake doorway, stand-in templates, and a captured drive_config."""
     doorway = FakeDriveDoorway.from_fixtures()
+    use_frozen_coded_data(monkeypatch, tmp_path)
     manifest = json.loads(doorway.file(MANIFEST_FILE_ID).content.decode())
     config = dict(FakeDriveDoorway.drive_config())
     for lang, entry in manifest.items():
@@ -129,7 +131,7 @@ def use_config(monkeypatch, config: dict) -> None:
 def declared_classes(lang_id: str) -> set:
     """The classes this language's diagnostics YAML declares."""
     specs = _read_diagnostics_for_language(
-        lang_id, ROOT / "coded_data" / lang_id / "lang_setup")
+        lang_id, FROZEN_CODED_DATA / lang_id / "lang_setup")
     return {class_name for class_name, _, _, _ in specs}
 
 

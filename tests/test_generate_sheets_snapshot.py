@@ -64,7 +64,8 @@ from coding import drive as drive_module
 from coding import drive_doorway
 from coding import generate_notebooks as gn
 from coding import generate_sheets as gs
-from fake_drive import FakeDriveDoorway, MANIFEST_FILE_ID, ROOT_FOLDER_ID, api_error
+from fake_drive import (FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID,
+                        ROOT_FOLDER_ID, api_error)
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
 
@@ -134,7 +135,7 @@ def env(monkeypatch, tmp_path):
 
     coded = tmp_path / "coded_data"
     for lang in LANGS:
-        shutil.copytree(ROOT / "coded_data" / lang, coded / lang)
+        shutil.copytree(FROZEN_CODED_DATA / lang, coded / lang)
 
     # _sync_language_metadata reads ROOT/schemas/languages.yaml directly by
     # path, and gs.ROOT is redirected below so manifest_backup.json and

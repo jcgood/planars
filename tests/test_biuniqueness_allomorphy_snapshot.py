@@ -33,7 +33,8 @@ import pytest
 from coding import drive as drive_module
 from coding import drive_doorway
 from coding import generate_biuniqueness_allomorphy_sheet as gen
-from fake_drive import MANIFEST_FILE_ID, ROOT_FOLDER_ID, FakeDriveDoorway, api_error
+from fake_drive import (MANIFEST_FILE_ID, ROOT_FOLDER_ID, FakeDriveDoorway, api_error,
+                        use_frozen_coded_data)
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "biuniqueness_allomorphy"
@@ -53,6 +54,7 @@ def env(monkeypatch, tmp_path):
     each time.
     """
     doorway = FakeDriveDoorway.from_fixtures()
+    use_frozen_coded_data(monkeypatch, tmp_path)
     config = {"_planars_config_file_id": MANIFEST_FILE_ID,
               "_root_folder_id": ROOT_FOLDER_ID}
     saved: Dict = {}
@@ -287,12 +289,14 @@ def test_a_rerun_preserves_existing_annotations(env):
 
 def test_a_planar_without_the_scope_column_stops_with_the_fix(env, monkeypatch, tmp_path):
     doorway, run, _ = env
-    coded = tmp_path / "coded_data" / LANG / "lang_setup"
+    # Its own minimal tree, apart from the frozen copy env already made.
+    bare = tmp_path / "bare" / "coded_data"
+    coded = bare / LANG / "lang_setup"
     coded.mkdir(parents=True)
     (coded / f"planar_{LANG}.tsv").write_text(
         "Position_Number\tPosition_Name\tElements\n1\tv:leftedge\tand, also\n",
         encoding="utf-8")
-    monkeypatch.setattr(gen, "CODED_DATA", tmp_path / "coded_data")
+    monkeypatch.setattr(gen, "CODED_DATA", bare)
 
     out = run(["gen", "--lang", LANG, "--apply"])
     assert "no Biuniqueness_Scope column" in out

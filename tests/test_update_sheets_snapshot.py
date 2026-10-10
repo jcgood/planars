@@ -52,7 +52,7 @@ from coding import drive as drive_module
 from coding import drive_doorway
 from coding import generate_sheets as gs
 from coding import update_sheets as us
-from fake_drive import FakeDriveDoorway, MANIFEST_FILE_ID
+from fake_drive import FIXTURE_DIR, FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
 
@@ -136,7 +136,7 @@ def env(monkeypatch, tmp_path):
 
     coded = tmp_path / "coded_data"
     for lang in LANGS:
-        shutil.copytree(ROOT / "coded_data" / lang / "lang_setup",
+        shutil.copytree(FROZEN_CODED_DATA / lang / "lang_setup",
                         coded / lang / "lang_setup")
 
     monkeypatch.setattr(us, "CODED_DATA", coded)
@@ -179,11 +179,10 @@ def check_snapshot(name: str, actual: str) -> None:
 
 def captured_tabs() -> Dict:
     """Every tab as recorded by capture-drive-state, before any command ran."""
-    index = json.loads(
-        (ROOT / "tests" / "fixtures" / "drive_state" / "index.json").read_text())
+    index = json.loads((FIXTURE_DIR / "index.json").read_text())
     before = {}
     for entry in index["spreadsheets"]:
-        data = json.loads((ROOT / entry["path"]).read_text(encoding="utf-8"))
+        data = json.loads((FIXTURE_DIR / entry["path"]).read_text(encoding="utf-8"))
         for tab in data["worksheets"]:
             before[(data["spreadsheet_id"], tab["title"])] = tab["values"]
     return before

@@ -36,7 +36,8 @@ import pytest
 from coding import drive as drive_module
 from coding import drive_doorway
 from coding import generate_status_sheet as gen
-from fake_drive import MANIFEST_FILE_ID, ROOT_FOLDER_ID, FakeDriveDoorway, api_error
+from fake_drive import (MANIFEST_FILE_ID, ROOT_FOLDER_ID, FakeDriveDoorway, api_error,
+                        use_frozen_coded_data)
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "generate_status_sheet"
@@ -55,6 +56,7 @@ def env(monkeypatch, tmp_path):
     fresh every time.
     """
     doorway = FakeDriveDoorway.from_fixtures()
+    use_frozen_coded_data(monkeypatch, tmp_path)
     config = {"_planars_config_file_id": MANIFEST_FILE_ID,
               "_root_folder_id": ROOT_FOLDER_ID}
     saved: Dict = {}
@@ -402,7 +404,8 @@ def test_a_language_with_no_lang_setup_dir_is_skipped(env, monkeypatch, tmp_path
 
 def test_a_language_with_unreadable_diagnostics_is_skipped(env, monkeypatch, tmp_path):
     doorway, run, _ = env
-    coded = tmp_path / "coded_data"
+    # Its own empty tree, apart from the frozen copy env already made.
+    coded = tmp_path / "bare" / "coded_data"
     (coded / "synth0001" / "lang_setup").mkdir(parents=True)
     monkeypatch.setattr(gen, "CODED_DATA", coded)
 

@@ -40,7 +40,8 @@ from coding import drive as drive_module
 from coding import drive_doorway
 from coding import sync_diagnostics_yaml as sdy
 from coding.make_forms import _yaml_to_tsv_df
-from fake_drive import MANIFEST_FILE_ID, ROOT_FOLDER_ID, FakeDriveDoorway
+from fake_drive import (MANIFEST_FILE_ID, ROOT_FOLDER_ID, FakeDriveDoorway,
+                        use_frozen_coded_data)
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "sync_diagnostics_yaml"
@@ -55,12 +56,13 @@ DIAG_ID = {
 
 
 @pytest.fixture()
-def env(monkeypatch):
+def env(monkeypatch, tmp_path):
     """A stand-in Drive holding the three recorded diagnostics sheets.
 
     Yields (doorway, run). `run(argv)` plays one command and returns its output.
     """
     doorway = FakeDriveDoorway.from_fixtures()
+    use_frozen_coded_data(monkeypatch, tmp_path)
     config = {"_planars_config_file_id": MANIFEST_FILE_ID,
               "_root_folder_id": ROOT_FOLDER_ID}
     monkeypatch.setattr(drive_module, "_load_drive_config",

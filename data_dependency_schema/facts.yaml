@@ -424,7 +424,7 @@
   locations:
     - {entity: annotation_sheet, detail: "the live spreadsheets themselves -- the only real state"}
     - {entity: manifest, detail: "manifest.json on Drive (Drive-ID bookkeeping for every language/class)"}
-    - {entity: test_fixture, detail: "tests/fixtures/drive_state/{lang}/*.json and manifest.json, written by capture-drive-state --apply"}
+    - {entity: test_fixture, detail: "coded_data/.test_fixtures/drive_state/{lang}/*.json and manifest.json, written by capture-drive-state --apply, together with the frozen local folders in coded_data/.test_fixtures/coded_data/{lang}/. In planars-data (private), since it is real annotation content"}
   authoritative: annotation_sheet
   cascade:
     direction: automatic
@@ -448,12 +448,16 @@
       exists, and every golden built on them keeps passing regardless. The
       fixtures must not be hand-edited to "fix" such a divergence: re-run
       capture-drive-state, which is the only thing that keeps them a recording
-      rather than a fabrication.
+      rather than a fabrication. A third trap, hit 2026-10-10: until then only
+      the Sheets half was saved and the command tests read the live local
+      folders, so the two halves drifted apart whenever an annotator worked
+      and tests failed for reasons that had nothing to do with the tooling.
+      Both halves are now saved and only ever replaced together.
     caught_by: >-
-      nothing automatically. tests/test_drive_backend.py proves the fake is
+      nothing automatically. tests/test_drive_doorway.py proves the fake is
       faithful to the fixtures, not that the fixtures are faithful to Drive.
       Re-running capture-drive-state --apply and inspecting git diff on
-      tests/fixtures/drive_state/ is the only check, and it is manual.
+      coded_data/.test_fixtures/ is the only check, and it is manual.
 
 - id: pair_row_construction_set
   description: which constructions are annotated as pair rows (Element_A/Element_B) rather than element rows

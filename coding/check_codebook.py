@@ -34,6 +34,7 @@ import pandas as pd
 from .schemas import load_diagnostic_classes as _load_dc, load_diagnostic_criteria as _load_crit
 
 ROOT = Path(__file__).resolve().parent.parent
+CODED_DATA = ROOT / "coded_data"
 
 
 def _load_codebook() -> dict:
@@ -95,7 +96,7 @@ def _check_required_criteria(codebook: dict) -> List[str]:
 def _check_diagnostics(codebook: dict) -> List[str]:
     """Check that criterion names in all diagnostics_{lang_id}.tsv files are in diagnostic_criteria.yaml."""
     cb = _codebook_criteria(codebook)
-    diag_files = sorted((ROOT / "coded_data").glob("*/lang_setup/diagnostics_*.tsv"))
+    diag_files = sorted(CODED_DATA.glob("*/lang_setup/diagnostics_*.tsv"))
     if not diag_files:
         return ["No diagnostics_*.tsv files found under coded_data/"]
 
@@ -153,7 +154,7 @@ def _check_diagnostics_vs_classes(diag_classes: dict) -> List[str]:
     if not diag_classes:
         return ["diagnostic_classes.yaml not found — skipping class schema check"]
 
-    diag_files = sorted((ROOT / "coded_data").glob("*/lang_setup/diagnostics_*.tsv"))
+    diag_files = sorted(CODED_DATA.glob("*/lang_setup/diagnostics_*.tsv"))
     if not diag_files:
         return []
 
@@ -468,7 +469,7 @@ def _check_lang_yaml_criterion_values(codebook: dict) -> List[str]:
             schema_values[analysis["name"]] = crit_map
 
     errors = []
-    for yaml_path in sorted((ROOT / "coded_data").glob("*/lang_setup/diagnostics_*.yaml")):
+    for yaml_path in sorted(CODED_DATA.glob("*/lang_setup/diagnostics_*.yaml")):
         lang = yaml_path.parent.parent.name
         data = _yaml.safe_load(yaml_path.read_text(encoding="utf-8")) or {}
         for class_name, class_entry in (data.get("classes") or {}).items():

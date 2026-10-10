@@ -74,7 +74,7 @@ import pytest
 from coding import drive as drive_module
 from coding import drive_doorway
 from coding import integrity_check as ic
-from fake_drive import FakeDriveDoorway, MANIFEST_FILE_ID
+from fake_drive import FakeDriveDoorway, MANIFEST_FILE_ID, use_frozen_coded_data
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "integrity_check"
@@ -102,14 +102,13 @@ pytestmark = pytest.mark.skipif(
 
 
 @pytest.fixture()
-def env(monkeypatch):
-    """A stand-in Drive seeded from the three fixture languages.
-
-    No private copy of coded_data/ is needed here (unlike validate_coding's
-    fixture) -- this command never writes to coded_data/, only reads it, and
-    the checked-out copy already holds exactly the three fixture languages.
+def env(monkeypatch, tmp_path):
+    """A stand-in Drive seeded from the three fixture languages, with the
+    frozen copy of their local folders (never the live coded_data/, which
+    changes whenever an annotator works -- see fake_drive.FROZEN_CODED_DATA).
     """
     doorway = FakeDriveDoorway.from_fixtures()
+    use_frozen_coded_data(monkeypatch, tmp_path)
     monkeypatch.setattr(ic, "date", _FrozenDate)
     monkeypatch.setattr(drive_module, "_load_drive_config", FakeDriveDoorway.drive_config)
     drive_doorway.set_doorway(doorway)

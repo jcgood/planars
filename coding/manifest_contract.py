@@ -9,7 +9,7 @@ pydantic rather than the pandera used in `planars/contracts.py` and
 never blocks.** `load_manifest()` (`coding/drive.py`) is called near the
 start of nearly every `coding/` command — the single highest-blast-radius
 function in the project. A schema built from one static fixture
-(`tests/fixtures/drive_state/manifest.json`, three languages, captured
+(`coded_data/.test_fixtures/drive_state/manifest.json`, three languages, captured
 2026-08-01) and then allowed to raise would risk exactly the failure mode
 this whole data layer effort exists to prevent: a *loud, self-inflicted*
 outage on real data that was never actually wrong, just unmodeled — no live

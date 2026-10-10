@@ -27,7 +27,7 @@ import pytest
 
 from coding import drive as drive_module
 from coding import drive_doorway, setup_root_folder
-from fake_drive import MANIFEST_FILE_ID, FakeDriveDoorway, api_error
+from fake_drive import FIXTURE_DIR, MANIFEST_FILE_ID, FakeDriveDoorway, api_error
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "setup_root_folder"
@@ -46,7 +46,7 @@ def env(monkeypatch):
     """
     doorway = FakeDriveDoorway()
     manifest = json.loads(
-        (ROOT / "tests/fixtures/drive_state/manifest.json").read_text(encoding="utf-8"))
+        (FIXTURE_DIR / "manifest.json").read_text(encoding="utf-8"))
     config: dict = {}
     for lang, entry in sorted(manifest.items()):
         if not entry.get("folder_id"):

@@ -63,7 +63,7 @@ from coding import import_planar as ip
 from coding import restructure_journal as rj
 from coding import restructure_sheets as rs
 from coding import validate_coding as vc
-from fake_drive import FakeDriveDoorway, MANIFEST_FILE_ID, api_error
+from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID, api_error
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
 
@@ -194,7 +194,7 @@ def env(monkeypatch, tmp_path):
 
     coded = tmp_path / "coded_data"
     for lang in LANGS:
-        shutil.copytree(ROOT / "coded_data" / lang / "lang_setup",
+        shutil.copytree(FROZEN_CODED_DATA / lang / "lang_setup",
                         coded / lang / "lang_setup")
 
     saved_configs: List[dict] = []

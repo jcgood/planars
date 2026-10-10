@@ -24,17 +24,21 @@
   writes_to_drive: false
   description: >-
     Records live Drive/Sheets state (every annotation spreadsheet plus the
-    manifest) to tests/fixtures/drive_state/, for the offline fake Drive
-    backend used by every other command's tests.
+    manifest) to coded_data/.test_fixtures/drive_state/, and at the same
+    moment freezes a copy of each captured language's local folder to
+    coded_data/.test_fixtures/coded_data/ -- the two inputs every other
+    command's tests run against. Both live in planars-data (private).
   side_effects:
-    - "overwrites tests/fixtures/drive_state/{lang}/*.json, manifest.json, and index.json"
+    - "overwrites coded_data/.test_fixtures/drive_state/{lang}/*.json, manifest.json, and index.json (index entries for languages not captured this run are kept)"
+    - "replaces coded_data/.test_fixtures/coded_data/{lang}/ with a copy of coded_data/{lang}/ for each captured language"
+    - "leaves those changes uncommitted in planars-data; the coordinator regenerates the saved test outputs, reviews, and commits"
   idempotent: true
   idempotency_note: >-
     Always re-records current live state; running it twice with nothing
     changed on Drive in between produces byte-identical per-spreadsheet
     fixture files (not "byte-identical" for the whole output as originally
     claimed here: index.json stamps a fresh "captured_at" timestamp every
-    run, coding/capture_drive_state.py:175-184 -- cosmetic, not a
+    run, in main() of coding/capture_drive_state.py -- cosmetic, not a
     retry-safety concern, since nothing reads that field to decide what to
     do).
   apply_gate: "--apply"

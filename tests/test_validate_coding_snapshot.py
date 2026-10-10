@@ -30,9 +30,10 @@ throwaway per the plan's convention, not committed.
 they only call `ws.spreadsheet.batch_update(...)`, `ws.id`, `ws.row_count`,
 `ws.col_count`, all handle methods that mirror gspread by design.
 
-`CODED_DATA` is redirected into a private copy of the real `coded_data/` tree
-in every test, so a test can corrupt one TSV cell to exercise the pink-highlight
-path without ever touching the real annotation data.
+`CODED_DATA` is redirected into a private copy of the frozen language folders
+(`fake_drive.FROZEN_CODED_DATA`) in every test, so a test can corrupt one TSV
+cell to exercise the pink-highlight path without ever touching the real
+annotation data, and so annotators' ongoing work can't change these snapshots.
 
 Regenerate: PLANARS_UPDATE_SNAPSHOTS=1 pytest tests/test_validate_coding_snapshot.py
 """
@@ -52,7 +53,7 @@ import pytest
 from coding import drive as drive_module
 from coding import drive_doorway
 from coding import validate_coding as vc
-from fake_drive import FakeDriveDoorway, MANIFEST_FILE_ID
+from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID
 from render_mutations import render
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -77,7 +78,7 @@ def env(monkeypatch, tmp_path):
     doorway = FakeDriveDoorway.from_fixtures()
     coded = tmp_path / "coded_data"
     for lang in LANGS:
-        shutil.copytree(ROOT / "coded_data" / lang, coded / lang)
+        shutil.copytree(FROZEN_CODED_DATA / lang, coded / lang)
 
     monkeypatch.setattr(vc, "CODED_DATA", coded)
     monkeypatch.setattr(drive_module, "_load_drive_config", FakeDriveDoorway.drive_config)

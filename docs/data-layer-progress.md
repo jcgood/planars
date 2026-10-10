@@ -2210,6 +2210,35 @@ commit.
 
 ## Decisions log
 
+**2026-10-10 — The command tests' saved data moved into planars-data, and
+both of its halves are now frozen.** CI went red on an unrelated push
+because Adam's ordinary annotation work on stan1293 (45 blank cells in
+`ciscategorial/general` filled in) changed four saved command outputs. The
+cause was in the test setup: the saved Sheets (`drive_state/`, captured
+2026-08-18) were frozen, but the tests copied the *live* language folders
+each run, so the two halves drifted apart whenever anyone annotated, and
+the commands under test reported "changes" nobody had made. A test about the
+tooling must fail only when the tooling changes. Fix: a frozen copy of the
+language folders (taken from planars-data commit `380c39e`, the last state
+the tests were green against, so every saved output stayed byte-identical,
+which proved the move faithful) now sits beside the saved Sheets, and
+`capture-drive-state --apply` replaces both together. Every command test
+reads only that copy, through `fake_drive.FROZEN_CODED_DATA` or
+`use_frozen_coded_data()`. A full-suite run recording every file opened confirmed
+no command test still reads the live folders; the data checks that
+deliberately do (span snapshots, `check-codebook`, reports) were left live.
+Moving it surfaced a second problem: `tests/fixtures/drive_state/` had been
+committed to the **public** planars repo since 2026-08-01, with every
+annotation Sheet's contents, all spreadsheet IDs, and Adam's email. Jeff
+decided the data is private but not sensitive enough to purge from history,
+so both halves now live in planars-data at `coded_data/.test_fixtures/`
+(dot-prefixed so language-folder listings skip it) and were deleted from
+planars' current tree only. Side fixes made on the way: `check_codebook.py`
+got the `CODED_DATA` setting every other module has (three hand-built
+paths), `capture-drive-state --lang` no longer drops other languages from
+`index.json`, and one import-sheets test that picked "newest archive by
+modification time" now picks the archive the run added.
+
 **2026-08-18 — Jeff started Phase 9 in three explicit steps rather than
 one blanket go-ahead: asked what the phase was, approved the read-only
 refresh, then separately scoped and approved the read-only sweep, then

@@ -5,7 +5,7 @@ handle protocols) with no network, so every command can be exercised
 end-to-end in tests. Phase 0a of docs/data-layer-implementation-plan.md.
 
 **Built from recorded responses, not from the gspread documentation.** The
-fixtures under ``tests/fixtures/drive_state/`` are raw captures of what the
+fixtures under ``coded_data/.test_fixtures/drive_state/`` are raw captures of what the
 live API actually returned (``python -m coding capture-drive-state``). The
 behaviours below that look like guesses are not: each is stated in
 docs/drive-protocol-surface.md § "Subtleties most likely to be guessed wrong",
@@ -78,7 +78,19 @@ import gspread
 import requests
 
 ROOT = Path(__file__).resolve().parent.parent
-FIXTURE_DIR = ROOT / "tests" / "fixtures" / "drive_state"
+
+# The saved test data lives in planars-data (private), not in this public repo:
+# it is real annotation content. Two halves, captured together by
+# `python -m coding capture-drive-state --apply` and only ever replaced
+# together -- the saved Sheets (FIXTURE_DIR) and a frozen copy of the language
+# folders as they stood locally (FROZEN_CODED_DATA). Tests that run a command
+# must read local files from FROZEN_CODED_DATA, never the live coded_data/:
+# the live folders change whenever an annotator works, and a test about the
+# tooling must not go red because of that (2026-10-10, when Adam's ordinary
+# work on stan1293 broke four of them).
+FIXTURE_ROOT = ROOT / "coded_data" / ".test_fixtures"
+FIXTURE_DIR = FIXTURE_ROOT / "drive_state"
+FROZEN_CODED_DATA = FIXTURE_ROOT / "coded_data"
 
 _SPREADSHEET_MIME = "application/vnd.google-apps.spreadsheet"
 _FOLDER_MIME = "application/vnd.google-apps.folder"
@@ -89,6 +101,32 @@ _DOC_MIME = "application/vnd.google-apps.document"
 # return FakeDriveDoorway.drive_config(), which names these.
 MANIFEST_FILE_ID = "fake_manifest_file"
 ROOT_FOLDER_ID = "fake_root_folder"
+
+
+def use_frozen_coded_data(monkeypatch, tmp_path: Path) -> Path:
+    """Run the tooling against a private copy of the frozen language folders.
+
+    Copies FROZEN_CODED_DATA to ``tmp_path / "coded_data"`` and points the
+    ``CODED_DATA`` setting of every ``coding/`` module that has one at that
+    copy. A copy rather than the frozen folder itself, so a command that writes
+    can never alter the saved data. Every module is imported first, so one the
+    command only imports later is redirected too. Returns the copy's path.
+    """
+    import importlib
+    import pkgutil
+    import shutil
+
+    import coding
+
+    coded = tmp_path / "coded_data"
+    shutil.copytree(FROZEN_CODED_DATA, coded)
+    for info in pkgutil.iter_modules(coding.__path__):
+        if info.name.startswith("__"):
+            continue
+        module = importlib.import_module(f"coding.{info.name}")
+        if hasattr(module, "CODED_DATA"):
+            monkeypatch.setattr(module, "CODED_DATA", coded)
+    return coded
 
 
 # ---------------------------------------------------------------------------
@@ -677,18 +715,25 @@ class FakeDriveDoorway:
                       langs: Optional[Sequence[str]] = None) -> "FakeDriveDoorway":
         """Seed from ``capture-drive-state`` output, per its ``index.json``.
 
+        Skips the calling test when planars-data is not checked out, since the
+        saved data lives there.
+
         Loads the recorded spreadsheets, the recorded ``manifest.json`` (as a
         downloadable Drive file under a root folder), and a folder per language
         at the ``folder_id`` the manifest names — enough Drive shape for a
         command to bootstrap exactly as it does live.
         """
+        if not (fixture_dir / "index.json").exists():
+            import pytest
+            pytest.skip(f"{fixture_dir} not found -- the saved test data lives in "
+                        "planars-data, which is not checked out at coded_data/")
         doorway = cls()
         doorway.seed_folder("planars", file_id=ROOT_FOLDER_ID)
         index = json.loads((fixture_dir / "index.json").read_text(encoding="utf-8"))
         for entry in index["spreadsheets"]:
             if langs is not None and entry["lang_id"] not in langs:
                 continue
-            path = ROOT / entry["path"]
+            path = fixture_dir / entry["path"]
             doorway.seed_spreadsheet(json.loads(path.read_text(encoding="utf-8")))
 
         manifest_path = fixture_dir / "manifest.json"

@@ -8,14 +8,17 @@ against real manifest shape, not just synthetic examples.
 from __future__ import annotations
 
 import json
-from pathlib import Path
+
+import pytest
 
 from coding.manifest_contract import check
+from fake_drive import FIXTURE_DIR
 
-ROOT = Path(__file__).resolve().parent.parent
-FIXTURE = ROOT / "tests" / "fixtures" / "drive_state" / "manifest.json"
+FIXTURE = FIXTURE_DIR / "manifest.json"
 
 
+@pytest.mark.skipif(not FIXTURE.exists(),
+                    reason="saved test data lives in planars-data, not checked out")
 def test_real_fixture_validates_clean():
     manifest = json.loads(FIXTURE.read_text(encoding="utf-8"))
     assert check(manifest) == []

@@ -27,8 +27,9 @@ from collections import Counter, OrderedDict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from fake_drive import FIXTURE_DIR
+
 ROOT = Path(__file__).resolve().parent.parent
-FIXTURE_DIR = ROOT / "tests" / "fixtures" / "drive_state"
 
 # Sheets API request types that carry no per-cell detail worth rendering.
 _SUMMARY_ONLY = {"updateSheetProperties", "repeatCell", "mergeCells",
@@ -44,7 +45,7 @@ def _load_fixture_names(fixture_dir: Path = FIXTURE_DIR):
         return labels, tabs
     index = json.loads(index_path.read_text(encoding="utf-8"))
     for entry in index["spreadsheets"]:
-        path = ROOT / entry["path"]
+        path = fixture_dir / entry["path"]
         if not path.exists():
             continue
         data = json.loads(path.read_text(encoding="utf-8"))

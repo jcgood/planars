@@ -29,7 +29,7 @@ from coding.drive_doorway import (
     SpreadsheetHandle,
     WorksheetHandle,
 )
-from fake_drive import FIXTURE_DIR, ROOT, FakeDriveDoorway, _parse_query
+from fake_drive import FIXTURE_DIR, FakeDriveDoorway, _parse_query
 
 
 # ---------------------------------------------------------------------------
@@ -39,9 +39,11 @@ from fake_drive import FIXTURE_DIR, ROOT, FakeDriveDoorway, _parse_query
 @pytest.fixture(scope="module")
 def captured():
     """The raw capture index plus every recorded spreadsheet payload."""
+    if not (FIXTURE_DIR / "index.json").exists():
+        pytest.skip("saved test data lives in planars-data, not checked out")
     index = json.loads((FIXTURE_DIR / "index.json").read_text(encoding="utf-8"))
     return [
-        json.loads((ROOT / entry["path"]).read_text(encoding="utf-8"))
+        json.loads((FIXTURE_DIR / entry["path"]).read_text(encoding="utf-8"))
         for entry in index["spreadsheets"]
     ]
 

@@ -20,10 +20,11 @@ first construction's criterion values per class. See
 docs/data-layer-progress.md § "Findings awaiting triage". Do not quietly
 correct the snapshot — when the bug is fixed, its diff is the evidence.
 
-**Regenerating.** These snapshots depend on `diagnostics_{lang}.yaml` in
-`coded_data/`, which is a setup file that changes rarely — but when it does,
-this test is *supposed* to fail. Regenerate and review the diff, same workflow
-as tests/snapshots/:
+**Regenerating.** These snapshots read each language's setup files from the
+frozen copy (`fake_drive.FROZEN_CODED_DATA`), never the live `coded_data/`,
+so they change only when the code does or when the saved test data is
+refrozen with `python -m coding capture-drive-state --apply`. Either way,
+regenerate and review the diff, same workflow as tests/snapshots/:
 
     PLANARS_UPDATE_SNAPSHOTS=1 pytest tests/test_refresh_dropdowns_snapshot.py
     git diff tests/snapshots/coordinator/
@@ -39,7 +40,8 @@ from pathlib import Path
 import pytest
 
 from coding import drive, drive_doorway, refresh_dropdowns
-from fake_drive import FakeDriveDoorway, MANIFEST_FILE_ID, ROOT_FOLDER_ID
+from fake_drive import (FIXTURE_DIR, FakeDriveDoorway, MANIFEST_FILE_ID, ROOT_FOLDER_ID,
+                        use_frozen_coded_data)
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
 
@@ -56,9 +58,10 @@ pytestmark = pytest.mark.skipif(
 
 
 @pytest.fixture()
-def fake(monkeypatch):
+def fake(monkeypatch, tmp_path):
     """A fake doorway seeded from the recorded capture, wired into the command."""
     doorway = FakeDriveDoorway.from_fixtures()
+    use_frozen_coded_data(monkeypatch, tmp_path)
     monkeypatch.setattr(drive, "_load_drive_config", FakeDriveDoorway.drive_config)
     monkeypatch.setattr(refresh_dropdowns, "_load_drive_config",
                         FakeDriveDoorway.drive_config)
@@ -172,11 +175,10 @@ def test_apply_never_writes_a_cell_value(fake, monkeypatch):
 
 def test_apply_leaves_annotation_content_byte_identical(fake, monkeypatch):
     """Every captured tab still reads back exactly as recorded, after --apply."""
-    index = json.loads(
-        (ROOT / "tests" / "fixtures" / "drive_state" / "index.json").read_text())
+    index = json.loads((FIXTURE_DIR / "index.json").read_text())
     before = {}
     for entry in index["spreadsheets"]:
-        data = json.loads((ROOT / entry["path"]).read_text(encoding="utf-8"))
+        data = json.loads((FIXTURE_DIR / entry["path"]).read_text(encoding="utf-8"))
         for tab in data["worksheets"]:
             before[(data["spreadsheet_id"], tab["title"])] = tab["values"]
 

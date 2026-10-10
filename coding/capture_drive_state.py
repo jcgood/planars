@@ -13,6 +13,21 @@ tested end-to-end with no network.
 metadata, and writes only to the local fixture directory. It is the one live
 Drive call permitted before Phase 9, and it is read-only.
 
+Two halves, refrozen together
+-----------------------------
+The tests run each command against two saved inputs: the Sheets (recorded
+here into ``coded_data/.test_fixtures/drive_state/``) and the language
+folders as they stood locally (copied here into
+``coded_data/.test_fixtures/coded_data/``). They must come from the same
+moment, or a command under test sees "changes" between them that no one made.
+So ``--apply`` replaces both for every language it captures, and nothing else
+refreshes either. Until 2026-10-10 only the Sheets half was saved and the
+tests read the live folders, so Adam's ordinary annotation work turned CI red.
+
+Both halves live in planars-data, which is private, because they are real
+annotation content and planars is public. After ``--apply``, regenerate the
+saved test outputs, review the diff, and commit inside ``coded_data/``.
+
 Why raw responses
 -----------------
 The plan requires the fake to be built from *recorded real responses* rather
@@ -39,6 +54,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List
@@ -52,7 +68,13 @@ from .drive import (
 )
 
 ROOT = Path(__file__).resolve().parent.parent
-FIXTURE_DIR = ROOT / "tests" / "fixtures" / "drive_state"
+CODED_DATA = ROOT / "coded_data"
+# Inside planars-data (private), not tests/: this is real annotation content,
+# and planars is a public repo. Dot-prefixed so nothing that lists language
+# folders mistakes it for a language.
+FIXTURE_ROOT = CODED_DATA / ".test_fixtures"
+FIXTURE_DIR = FIXTURE_ROOT / "drive_state"
+FROZEN_CODED_DATA = FIXTURE_ROOT / "coded_data"
 
 # Spreadsheet roles recorded per language from the manifest/drive_config, beyond
 # the per-class annotation sheets.
@@ -153,6 +175,8 @@ def main(args: argparse.Namespace | None = None) -> None:
               f"across {len(langs)} language(s) into {FIXTURE_DIR.relative_to(ROOT)}:\n")
         for lang_id, role, sid in targets:
             print(f"  {lang_id:<12} {role:<34} {sid}")
+        print(f"\nand replace the frozen local folders in "
+              f"{FROZEN_CODED_DATA.relative_to(ROOT)} for: {', '.join(langs)}")
         print("\nNo Drive writes occur in either mode; --apply only writes local files.")
         print("Re-run with --apply to write fixtures.")
         return
@@ -184,21 +208,39 @@ def main(args: argparse.Namespace | None = None) -> None:
         out.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
         captured.append({
             "lang_id": lang_id, "role": role, "spreadsheet_id": sid,
-            "path": str(out.relative_to(ROOT)),
+            # Relative to FIXTURE_DIR, so the folder can move without edits.
+            "path": str(out.relative_to(FIXTURE_DIR)),
             "tabs": len(data["worksheets"]),
             "ragged_tabs": sum(1 for w in data["worksheets"] if w["_shape"]["ragged"]),
         })
 
+    # With --lang, keep the other languages' entries: rewriting the index from
+    # this run alone would silently drop them from every test.
+    index_path = FIXTURE_DIR / "index.json"
+    kept = []
+    if index_path.exists():
+        previous = json.loads(index_path.read_text(encoding="utf-8"))
+        kept = [e for e in previous.get("spreadsheets", []) if e["lang_id"] not in langs]
     index = {
         "captured_at": datetime.now(timezone.utc).isoformat(),
         "note": "Raw recorded API responses. Do not normalise, pad, or tidy — "
                 "see coding/capture_drive_state.py for why raggedness is load-bearing.",
-        "manifest": "tests/fixtures/drive_state/manifest.json",
-        "spreadsheets": captured,
+        "manifest": "manifest.json",
+        "spreadsheets": kept + captured,
         "failed": failed,
     }
-    (FIXTURE_DIR / "index.json").write_text(
-        json.dumps(index, indent=2, ensure_ascii=False), encoding="utf-8")
+    index_path.write_text(json.dumps(index, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    # The other half: the language folders as they stand locally right now.
+    for lang_id in langs:
+        src = CODED_DATA / lang_id
+        dest = FROZEN_CODED_DATA / lang_id
+        if dest.exists():
+            shutil.rmtree(dest)
+        if src.exists():
+            shutil.copytree(src, dest)
+        else:
+            print(f"  [WARNING] no local folder {src.relative_to(ROOT)} to freeze")
 
     total_tabs = sum(c["tabs"] for c in captured)
     total_ragged = sum(c["ragged_tabs"] for c in captured)
@@ -207,7 +249,14 @@ def main(args: argparse.Namespace | None = None) -> None:
     if failed:
         print(f"{len(failed)} failed: " + ", ".join(l for l, _ in failed))
     print(f"Fixtures written to {FIXTURE_DIR.relative_to(ROOT)}")
+    print(f"Local folders frozen to {FROZEN_CODED_DATA.relative_to(ROOT)}: {', '.join(langs)}")
     print("No Drive writes were performed.")
+    print("\nNext: regenerate the saved test outputs, review the diff, then commit")
+    print("the new fixtures inside coded_data/ (planars-data):")
+    print("  PLANARS_UPDATE_SNAPSHOTS=1 pytest tests/")
+    print("  git diff tests/snapshots/coordinator/")
+    print("  git -C coded_data add .test_fixtures")
+    print("  git -C coded_data commit -m 'Refreeze test fixtures'")
 
 
 if __name__ == "__main__":

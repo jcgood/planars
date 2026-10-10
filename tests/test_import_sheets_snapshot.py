@@ -117,7 +117,7 @@ from coding import drive as drive_module
 from coding import drive_doorway
 from coding import import_sheets as is_
 from coding import validate_coding as vc
-from fake_drive import FakeDriveDoorway, MANIFEST_FILE_ID
+from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -221,7 +221,7 @@ def env(monkeypatch, tmp_path):
 
     coded = tmp_path / "coded_data"
     for lang in LANGS:
-        shutil.copytree(ROOT / "coded_data" / lang, coded / lang,
+        shutil.copytree(FROZEN_CODED_DATA / lang, coded / lang,
                         ignore=shutil.ignore_patterns(".git"))
 
     schemas_dir = tmp_path / "schemas"
@@ -379,18 +379,18 @@ def test_overwrite_existing_forces_a_rewrite_despite_unchanged_content(env):
 def test_content_change_archives_before_overwriting(env):
     env.run(["import-sheets", "--lang", "arao1248", "--apply"])  # materialize
     before = env.output_tsv("arao1248", "ciscategorial", "general").read_text()
-    # coded_data/ carries pre-existing archives from real history; count the
-    # delta this run adds, not an absolute total.
-    n_archives_before = len(env.archives("arao1248", "ciscategorial"))
+    # coded_data/ carries pre-existing archives from real history; look at the
+    # one archive this run adds, by name rather than by modification time --
+    # the frozen copy's files all share one timestamp, so "newest" is a tie.
+    archives_before = set(env.archives("arao1248", "ciscategorial"))
     env.tab("arao1248", "ciscategorial", "general")._cell(1, 3).value = "y"
 
     out, _ = env.run(["import-sheets", "--lang", "arao1248", "--apply"])
 
     assert "Archived existing" in out
-    archives = env.archives("arao1248", "ciscategorial")
-    assert len(archives) == n_archives_before + 1
-    newest = max(archives, key=lambda p: p.stat().st_mtime)
-    assert newest.read_text() == before
+    added = set(env.archives("arao1248", "ciscategorial")) - archives_before
+    assert len(added) == 1
+    assert added.pop().read_text() == before
     assert env.output_tsv("arao1248", "ciscategorial", "general").read_text() != before
 
 

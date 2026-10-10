@@ -37,7 +37,8 @@ import pytest
 
 from coding import drive as drive_module
 from coding import drive_doorway, prune_manifest
-from fake_drive import MANIFEST_FILE_ID, ROOT_FOLDER_ID, FakeDriveDoorway, api_error
+from fake_drive import (FROZEN_CODED_DATA, MANIFEST_FILE_ID, ROOT_FOLDER_ID,
+                        FakeDriveDoorway, api_error)
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "prune_manifest"
@@ -90,7 +91,7 @@ def env(monkeypatch, tmp_path):
         setup = coded / lang / "lang_setup"
         setup.mkdir(parents=True, exist_ok=True)
         shutil.copy(
-            ROOT / "coded_data" / lang / "lang_setup" / f"diagnostics_{lang}.yaml",
+            FROZEN_CODED_DATA / lang / "lang_setup" / f"diagnostics_{lang}.yaml",
             setup / f"diagnostics_{lang}.yaml")
 
     monkeypatch.setattr(prune_manifest, "CODED_DATA", coded)
