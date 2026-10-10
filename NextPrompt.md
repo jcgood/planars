@@ -22,7 +22,7 @@ Two live threads. Read whichever matches what you're picking up.
 ### Thread: biuniqueness/allomorphy (`coding/`, issue #254)
 
 **State lives in issue #254** (the canonical tracker) — read it first, not
-here. Two commits made 2026-09-24, not yet pushed: `130df7d` (every
+here. Two commits made 2026-09-24, both pushed: `130df7d` (every
 diagnostic class gets an Instructions tab, opening first — coordinator sheet
 UX, issue #242) and `7da697c` (reworded the biuniqueness prescreening sheet's
 `open_category` instructions to ask only for known/suspected allomorphs,
