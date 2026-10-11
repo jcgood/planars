@@ -91,6 +91,11 @@ A bug with one obviously right fix is not a question: fix it and report it.
 - **Jeff runs parallel sessions.** Anything uncommitted you did not write may
   be another one's work in flight: do not commit it and do not revert it, stage
   your own files by name, and ask whose it is.
+- **The command tests' saved data lives in planars-data**, at
+  `coded_data/.test_fixtures/` (moved there 2026-10-10). If `coded_data/` is
+  behind, those tests *skip* rather than fail, so a green local run can be
+  hollow: pull `coded_data/` first. Change that data only with
+  `python -m coding capture-drive-state --apply`, never by hand.
 - **An untracked or modified file under `planarsviz/` jams the roxygen
   pre-push guard.** Check the guard passes on its own rather than reaching for
   `--no-verify`, which has silently disarmed it before.
