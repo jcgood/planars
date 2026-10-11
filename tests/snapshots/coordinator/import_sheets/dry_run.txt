@@ -154,7 +154,7 @@ Language: synth0001
     [prescreening] status: 'in-progress' — importing for backup
     [prescreening] [backup] No changes → coded_data/synth0001/phrasal_accent/prescreening.tsv
     [general] status: 'in-progress' — importing for backup
-    [general] [backup] Would overwrite (changed) → coded_data/synth0001/phrasal_accent/general.tsv
+    [general] [backup] No changes → coded_data/synth0001/phrasal_accent/general.tsv
 
 Done. 0 file(s) written, 0 warning(s).
 

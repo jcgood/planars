@@ -157,10 +157,9 @@ Language: synth0001
     [prescreening] status: 'in-progress' — importing for backup
     [prescreening] [backup] No changes → coded_data/synth0001/phrasal_accent/prescreening.tsv
     [general] status: 'in-progress' — importing for backup
-    [general] Archived existing → coded_data/synth0001/archive/phrasal_accent/general_20260804_120000.tsv
-    [general] [backup] 0 rows → coded_data/synth0001/phrasal_accent/general.tsv
+    [general] [backup] No changes → coded_data/synth0001/phrasal_accent/general.tsv
 
-Done. 0 file(s) written, 2 in-progress backup(s), 0 warning(s).
+Done. 0 file(s) written, 1 in-progress backup(s), 0 warning(s).
 
 Next: commit and push coded_data/ before pushing planars:
   git -C coded_data add -A
