@@ -155,7 +155,11 @@ def _tsv_content_changed(path: Path, header: List[str], records: List[Dict]) -> 
     existing = existing.reindex(columns=header).fillna("")
     if existing.shape != new_df.shape:
         return True
-    return not existing.reset_index(drop=True).equals(new_df.reset_index(drop=True))
+    # Compare cell text, not DataFrames: DataFrame.equals also compares column
+    # dtypes, and a tab with a header but no rows reads from disk as string
+    # columns but builds from an empty record list as float columns -- so an
+    # empty tab always looked "changed" and was re-archived on every import.
+    return existing.astype(str).values.tolist() != new_df.astype(str).values.tolist()
 
 
 def _write_tsv(path: Path, header: List[str], records: List[Dict]) -> None:

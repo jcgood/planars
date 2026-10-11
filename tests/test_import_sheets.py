@@ -273,6 +273,15 @@ class TestTsvContentChanged:
         _write_tsv_file(p, file_header, records)
         assert _tsv_content_changed(p, new_header, records) is False
 
+    def test_header_only_tab_is_not_changed(self, tmp_path):
+        # A tab with a header and no rows used to compare as changed every run
+        # (string columns from disk vs float columns from an empty record list),
+        # so synth0001's empty phrasal_accent tab was re-archived daily.
+        header = ["Element_A", "Element_B", "joint_accent", "Source", "Comments"]
+        p = tmp_path / "general.tsv"
+        _write_tsv_file(p, header, [])
+        assert _tsv_content_changed(p, header, []) is False
+
 
 # ---------------------------------------------------------------------------
 # _detect_planar_changes
