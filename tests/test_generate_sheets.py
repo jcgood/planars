@@ -6,7 +6,8 @@ Covers:
   - _build_nonperm_pairs: pair generation algorithm (exclusion rules, bracket-wrapping)
   - _filter_nonperm_pairs_by_prescreening: scopal=n excluded; na/blank kept
   - _prefill_free_occurrence_rows: keystone and non-keystone pre-fill logic
-  - _regen_dependents_simple: skips when dep TSV exists; regenerates when absent
+  - _regen_dependents_simple: skips when dep TSV has rows; regenerates when
+    absent, or when empty and its source tab is marked ready-for-review
   - _phrasal_accent_obligatory_core / _phrasal_accent_obligatory_positions /
     _build_phrasal_accent_pairs: issue #237's two-tier obligatory-core adjacency
     algorithm (free_occurrence-derived core near the keystone, coordinator-confirmed
@@ -546,15 +547,59 @@ class TestRegenDependentsSimple:
     def _manifest(self, lang_id: str) -> dict:
         return {lang_id: {"sheets": {"nonpermutability": {"spreadsheet_id": "fake_id"}}}}
 
-    def test_skips_when_dep_tsv_exists(self, tmp_path, monkeypatch):
+    def test_skips_when_dep_tsv_has_rows(self, tmp_path, monkeypatch):
         monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
         monkeypatch.setattr(_gs, "load_diagnostic_classes", lambda: _NONPERM_SCHEMA)
+        monkeypatch.setattr(_gs, "_source_tab_status", lambda *a: "ready-for-review")
+        source, dep = self._setup_lang(tmp_path, "lang0001")
+        source.write_text("Element\tscopal\na\ty\n", encoding="utf-8")
+        dep.write_text("Element_A\tElement_B\tscopal\na\tb\t\n", encoding="utf-8")
+
+        with patch.object(_gs, "_regen_construction") as mock_regen:
+            _regen_dependents_simple(MagicMock(), self._manifest("lang0001"))
+        mock_regen.assert_not_called()
+
+    def test_empty_dep_waits_while_source_in_progress(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        monkeypatch.setattr(_gs, "load_diagnostic_classes", lambda: _NONPERM_SCHEMA)
+        monkeypatch.setattr(_gs, "_source_tab_status", lambda *a: "in-progress")
         source, dep = self._setup_lang(tmp_path, "lang0001")
         source.write_text("Element\tscopal\na\ty\n", encoding="utf-8")
         dep.write_text("Element_A\tElement_B\tscopal\n", encoding="utf-8")
 
         with patch.object(_gs, "_regen_construction") as mock_regen:
             _regen_dependents_simple(MagicMock(), self._manifest("lang0001"))
+        mock_regen.assert_not_called()
+        assert "waiting for 'element_prescreening'" in capsys.readouterr().out
+
+    def test_empty_dep_filled_once_source_ready_for_review(self, tmp_path, monkeypatch):
+        """Issue #254: an empty dependent (biuniqueness morphemes after the
+        first import) was skipped forever because the TSV existed, so nothing
+        noticed when the annotator finished the source tab."""
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        monkeypatch.setattr(_gs, "load_diagnostic_classes", lambda: _NONPERM_SCHEMA)
+        monkeypatch.setattr(_gs, "_source_tab_status", lambda *a: "ready-for-review")
+        source, dep = self._setup_lang(tmp_path, "lang0001")
+        source.write_text("Element\tscopal\na\ty\n", encoding="utf-8")
+        dep.write_text("Element_A\tElement_B\tscopal\n", encoding="utf-8")
+
+        with patch.object(_gs, "_regen_construction") as mock_regen:
+            failures = _regen_dependents_simple(MagicMock(), self._manifest("lang0001"))
+        mock_regen.assert_called_once()
+        assert mock_regen.mock_calls[0][1][3] == "general"
+        assert failures == []
+
+    def test_unreadable_status_counts_as_not_ready(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        monkeypatch.setattr(_gs, "load_diagnostic_classes", lambda: _NONPERM_SCHEMA)
+        source, dep = self._setup_lang(tmp_path, "lang0001")
+        source.write_text("Element\tscopal\na\ty\n", encoding="utf-8")
+        dep.write_text("Element_A\tElement_B\tscopal\n", encoding="utf-8")
+        doorway = MagicMock()
+        doorway.open_spreadsheet.side_effect = RuntimeError("no access")
+
+        with patch.object(_gs, "_regen_construction") as mock_regen:
+            _regen_dependents_simple(doorway, self._manifest("lang0001"))
         mock_regen.assert_not_called()
 
     def test_skips_when_source_tsv_absent(self, tmp_path, monkeypatch):

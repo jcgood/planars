@@ -648,7 +648,10 @@ def _suggest_position_remap(
 def _keyed_staleness(lang_id: str, cls_name: str, con: dict):
     """(keys the source now calls for but the tab lacks, generated keys the
     source no longer calls for), or None if there is nothing to compare yet
-    (source or dependent not imported, or the dependent still empty)."""
+    (source or dependent not imported). An empty dependent whose source
+    already calls for rows returns ("empty", n): not stale, just not filled
+    yet — the daily refresh fills it once the source tab is marked
+    ready-for-review (generate_sheets._regen_dependents_simple)."""
     from . import biuniqueness_rows as _br
     if cls_name != _br.CLASS_NAME or con["name"] not in _br.KEYED:
         return None
@@ -661,14 +664,14 @@ def _keyed_staleness(lang_id: str, cls_name: str, con: dict):
         return None
     read = lambda p: pd.read_csv(p, sep="\t", dtype=str, keep_default_na=False)
     dep = read(dep_path)
-    if dep.empty:
-        return None
     planar = read(planar_path)
     if con["name"] == "morphemes":
         generated = _br.morpheme_rows(read(cls_dir / "prescreening.tsv"), planar, lang_id)
     else:
         generated = _br.morph_rows(read(cls_dir / "morphemes.tsv"),
                                    read(cls_dir / "prescreening.tsv"), planar, lang_id)
+    if dep.empty:
+        return ("empty", len(generated)) if generated else None
     _, key = _br.KEYED[con["name"]]
     want = {" / ".join(g[k] for k in key) for g in generated}
     have = {" / ".join(str(r[k]) for k in key) for _, r in dep.iterrows()
@@ -705,8 +708,13 @@ def _section_dependent_construction_staleness(
                 if result is None:
                     continue
                 any_checked = True
-                added, removed = result
                 label = f"{_lang_label(lang_id)}: {cls_name}/{con['depends_on']} → {con['name']}"
+                if result[0] == "empty":
+                    print(_ok(f"{label}: empty, {result[1]} row(s) waiting — filled by the "
+                              f"daily refresh once '{con['depends_on']}' is marked "
+                              f"ready-for-review"))
+                    continue
+                added, removed = result
                 if added or removed:
                     print(_fail(label))
                     if removed:

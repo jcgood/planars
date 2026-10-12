@@ -2322,12 +2322,40 @@ def _add_constructions_to_existing_sheet(
     return construction_params
 
 
-def _regen_dependents_simple(doorway, manifest: dict) -> List[str]:
-    """Regenerate dependent constructions where the dependent TSV has no annotation data.
+def _tsv_has_rows(path: Path) -> bool:
+    """True if the TSV has at least one row below its header."""
+    with path.open(encoding="utf-8") as f:
+        f.readline()
+        return any(line.strip() for line in f)
 
-    Safe to automate: only fires when the dependent TSV does not exist or contains
-    no annotated values. If the dependent TSV has data, skips and lets
-    integrity-check flag it for manual coordinator action.
+
+def _source_tab_status(doorway, cls_info: dict, source_name: str) -> str:
+    """The source tab's status in its sheet's Status tab ('' if unreadable)."""
+    from .import_sheets import _read_status_tab
+    try:
+        ss = _with_retry(lambda: doorway.open_spreadsheet(cls_info["spreadsheet_id"]))
+        status = _read_status_tab(ss).get(source_name, "")
+    except Exception as exc:
+        print(f"    (could not read the Status tab: {exc})")
+        return ""
+    return status if isinstance(status, str) else ""
+
+
+def _regen_dependents_simple(doorway, manifest: dict) -> List[str]:
+    """Generate dependent constructions that have nothing in them yet.
+
+    Safe to automate, because a tab with no rows has nothing to lose. Fires in
+    two cases:
+      - the dependent TSV does not exist (the tab was never generated);
+      - the dependent TSV has no rows AND its source tab is marked
+        'ready-for-review' in the Status tab. This is the hand-off point an
+        annotator is told about (finish prescreening, mark it, and the next
+        tab is filled in): before it, a partly-answered source would put rows
+        in front of the annotator too early; after it, nothing else would
+        notice that the empty tab is waiting (issue #254, 2026-10-12).
+    A dependent with rows is never touched here; integrity-check flags it as
+    stale for coordinator action instead. A source whose answers yield no rows
+    is regenerated (to the same empty tab) on each run, which is harmless.
 
     Returns a list of "{lang_id}/{cls_name}/{dep_name}: {error}" strings, one
     per (language, dependent construction) that failed to regenerate --
@@ -2365,17 +2393,22 @@ def _regen_dependents_simple(doorway, manifest: dict) -> List[str]:
                 if not source_path.exists():
                     continue  # source not yet imported; nothing to do
 
-                # Safe to auto-regenerate only when the dependent TSV does not
-                # yet exist. Once the TSV exists (even with blank annotation
-                # values), the row structure was deliberately generated; skip
-                # to avoid overwriting it on every data-refresh run. Staleness
-                # is detected separately by integrity-check → dependent-stale.
-                if dep_path.exists():
-                    print(f"  [{lang_id}/{cls_name}/{dep_name}] already exists — "
+                # A dependent with rows was deliberately generated (even if its
+                # answers are blank); never overwrite it here. Staleness is
+                # detected separately by integrity-check → dependent-stale.
+                if dep_path.exists() and _tsv_has_rows(dep_path):
+                    print(f"  [{lang_id}/{cls_name}/{dep_name}] already has rows — "
                           f"skipping auto-regeneration. Run:\n"
                           f"    python -m coding generate-sheets --lang {lang_id} "
                           f"--regen-construction {cls_name}:{dep_name}")
                     continue
+                if dep_path.exists():
+                    status = _source_tab_status(doorway, cls_info, source_name)
+                    if status != "ready-for-review":
+                        print(f"  [{lang_id}/{cls_name}/{dep_name}] empty — waiting for "
+                              f"'{source_name}' to be marked ready-for-review "
+                              f"(now: {status or 'unknown'})")
+                        continue
 
                 print(f"  [{lang_id}/{cls_name}/{dep_name}] regenerating from {source_name}…")
                 try:

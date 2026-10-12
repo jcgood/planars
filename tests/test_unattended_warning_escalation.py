@@ -146,13 +146,13 @@ _KNOWN_SITES: Dict[Tuple[str, int], str] = {
         "_regen_construction -- possibly reachable via --regen-dependents if a "
         "phrasal_accent construction is ever a depends_on target; not fully traced, "
         "treat conservatively rather than assumed safe",
-    ("generate_sheets.py", 2765): "inside the interactive language-onboarding path "
+    ("generate_sheets.py", 2798): "inside the interactive language-onboarding path "
         "(folder sharing) -- not --regen-dependents",
-    ("generate_sheets.py", 2778): "inside the interactive language-onboarding path "
+    ("generate_sheets.py", 2811): "inside the interactive language-onboarding path "
         "(notes doc creation) -- not --regen-dependents",
-    ("generate_sheets.py", 2854): "inside the interactive language-onboarding path "
+    ("generate_sheets.py", 2887): "inside the interactive language-onboarding path "
         "(Glottolog fetch) -- not --regen-dependents",
-    ("integrity_check.py", 1009): "deliberately silent by design -- see the code "
+    ("integrity_check.py", 1017): "deliberately silent by design -- see the code "
         "comment: defers to import-sheets' own import-error issue if Drive is "
         "genuinely down",
     ("validate_coding.py", 895): "advisory warning under sheet-validation.yml, "
@@ -195,10 +195,10 @@ _KNOWN_SITES: Dict[Tuple[str, int], str] = {
         "before sys.exit(1), so unlike 1092 above it's the thing that actually "
         "makes this run's outcome reach the import-error issue, not just a "
         "count for a human reading the log.",
-    ("integrity_check.py", 1075): "footer summary line; its leading ✗ is exactly "
+    ("integrity_check.py", 1083): "footer summary line; its leading ✗ is exactly "
         "what the integrity-error issue-filing step scans for -- part of the "
         "escalation mechanism, not a gap",
-    ("integrity_check.py", 1077): "footer summary line, the all-clear case (total_e "
+    ("integrity_check.py", 1085): "footer summary line, the all-clear case (total_e "
         "== 0) -- not a gap",
     ("validation_report.py", 319): "diagnostic key=value dump (this file's own "
         "--debug-style output), not a runtime warning alert -- 'warnings' here is "

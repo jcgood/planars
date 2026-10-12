@@ -34,9 +34,9 @@ retired.
 
 **Next action:** waiting on Adam — (1) review of the span definition and type
 rules (#254 design comment; the class stays `[AUTO-DERIVED]` until he does);
-(2) finishing prescreening and marking it ready-for-review; then run
-`python -m coding generate-sheets --lang synth0001 --regen-construction biuniqueness_deviations:morphemes`
-(after the daily import has it), and later `:morphs`; (3) #298 (what `-n` at
+(2) finishing prescreening and marking it ready-for-review; the daily
+refresh then fills the empty morphemes tab by itself (and morphs, once
+morphemes is marked) — check it did; (3) #298 (what `-n` at
 `v:frontedauxiliaryinflection` is — fronted *won't* waits on it). Check the
 first daily import picked up the class sheet without an `import-error`.
 

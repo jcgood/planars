@@ -146,18 +146,22 @@
         - {fact: biuniqueness_keyed_chain, role: writes}
     - name: "--regen-dependents"
       description: >-
-        Regenerates a dependent pair-row tab (e.g. nonpermutability's general
-        from element_prescreening) only when it doesn't exist yet -- never
-        overwrites one with existing content.
+        Fills a dependent tab (nonpermutability's general from
+        element_prescreening, biuniqueness_deviations' morphemes from
+        prescreening, ...) only when it has no rows: it doesn't exist yet,
+        or it is empty and its source tab is marked ready-for-review in the
+        Status tab -- never overwrites one with rows.
       side_effects:
         - >-
-          creates a missing dependent pair-row tab from its prescreening
-          source; does nothing if the tab already exists, with or without
-          content
+          creates a missing dependent tab from its source; fills an empty
+          one once its source tab is ready-for-review (reads the Status tab
+          to decide); does nothing to a tab that has rows
       idempotent: true
       idempotency_note: >-
-        Only ever creates a tab that doesn't exist yet -- once created, a
-        second run finds nothing left to do and makes no further writes.
+        Only ever writes a tab with no rows -- once filled, a second run
+        finds nothing left to do. The one exception: a ready-for-review
+        source whose answers call for no rows leaves the tab empty, so it is
+        rewritten (to the same empty tab) on each run; harmless.
       apply_gate: null
       preconditions: [coded_data_clean_tree]
       writes_to_drive: true

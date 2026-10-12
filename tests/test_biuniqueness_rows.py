@@ -322,6 +322,29 @@ def test_integrity_check_reports_a_keyed_tab_out_of_step_with_its_source(tmp_pat
     assert ic._keyed_staleness(LANG, br.CLASS_NAME, con) == ({"he"}, set())
 
 
+def test_integrity_check_says_an_empty_keyed_tab_is_waiting(tmp_path, monkeypatch):
+    """An empty morphemes tab used to be skipped silently, so nothing said it
+    was waiting once prescreening called for rows (2026-10-12)."""
+    from coding import integrity_check as ic
+    monkeypatch.setattr(ic, "CODED_DATA", tmp_path)
+    (tmp_path / LANG / "lang_setup").mkdir(parents=True)
+    PLANAR.to_csv(tmp_path / LANG / "lang_setup" / f"planar_{LANG}.tsv", sep="\t", index=False)
+    cls_dir = tmp_path / LANG / br.CLASS_NAME
+    cls_dir.mkdir()
+    prescreen(ANSWERS).to_csv(cls_dir / "prescreening.tsv", sep="\t", index=False)
+    as_df([], br.MORPHEMES_STRUCT + ["forms_relation"]).to_csv(
+        cls_dir / "morphemes.tsv", sep="\t", index=False)
+    con = {"name": "morphemes", "depends_on": "prescreening", "staleness_check": "keyed_source"}
+
+    n = len(br.morpheme_rows(prescreen(ANSWERS), PLANAR, LANG))
+    assert n > 0
+    assert ic._keyed_staleness(LANG, br.CLASS_NAME, con) == ("empty", n)
+
+    # Nothing answered yet: nothing to wait for.
+    prescreen({}).to_csv(cls_dir / "prescreening.tsv", sep="\t", index=False)
+    assert ic._keyed_staleness(LANG, br.CLASS_NAME, con) is None
+
+
 # ---------------------------------------------------------------------------
 # The schema and this module agree
 # ---------------------------------------------------------------------------

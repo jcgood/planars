@@ -580,7 +580,10 @@ def test_regen_dependents_stops_firing_once_the_dependent_tsv_is_imported(env):
     call with nothing else changed regenerates again, live, every time. The
     actual no-repeat promise is: once import-sheets has brought the tab down
     (dep_path exists, even with no annotated values), a later run leaves it
-    alone. Simulate that hand-off rather than re-calling with nothing changed.
+    alone -- here because the tab is empty and its source is still
+    in-progress (an empty tab is filled again only once the source is marked
+    ready-for-review, 2026-10-12). Simulate that hand-off rather than
+    re-calling with nothing changed.
     """
     dep_path = env.coded / "synth0001" / "nonpermutability" / "general.tsv"
     dep_path.unlink()
@@ -591,7 +594,8 @@ def test_regen_dependents_stops_firing_once_the_dependent_tsv_is_imported(env):
     out = env.run(["generate-sheets", "--regen-dependents"])
 
     assert env.doorway.mutations == []
-    assert "already exists — skipping auto-regeneration" in out
+    assert ("[synth0001/nonpermutability/general] empty — waiting for "
+            "'element_prescreening' to be marked ready-for-review") in out
 
 
 # ---------------------------------------------------------------------------

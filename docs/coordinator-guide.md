@@ -406,7 +406,7 @@ Each pair sheet uses its own criterion column: `reflexive_allowed` (Principle A)
 
 **For both classes:** if `integrity-check` or `data-refresh` files a **`dependent-stale`** issue, the pair sheet is out of sync with the current prescreening TSV (e.g. after a correction). Re-run the relevant `--regen-construction` command. The issue closes automatically when the element sets are back in sync.
 
-`data-refresh` will auto-regenerate a dependent construction if the dependent TSV does not yet exist locally. Once the TSV exists (even with blank values), auto-regeneration is skipped and the issue body will tell you which manual command to run.
+`data-refresh` fills a dependent construction by itself when it has no rows: when the dependent TSV does not yet exist locally, or when it exists but is empty and its source tab has been marked `ready-for-review` in the Status tab. So an annotator who finishes a prescreening tab and marks it gets the next tab the following day, with no command to remember. Once the dependent has rows (even with blank values), it is never regenerated automatically; the `dependent-stale` issue body tells you which manual command to run.
 
 **`--regen-construction` refuses to silently drop annotated pairs.** If regenerating would remove a pair-row that has a real (non-blank) criterion value, it aborts instead of writing, listing exactly what would be lost (element, value, Source, Comments) rather than letting it vanish from the Sheet with the only trace being a later `import-sheets` → `apply-pending` diff. Two ways this comes up:
 

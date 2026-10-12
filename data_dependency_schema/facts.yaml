@@ -177,8 +177,9 @@
     direction: manual
     mechanism: >-
       generate-sheets --regen-dependents auto-regenerates the dependent pair
-      table from the source, but ONLY when the dependent tsv doesn't exist yet
-      or has no annotation data -- otherwise it skips and defers to a
+      table from the source, but ONLY when the dependent tsv doesn't exist yet,
+      or has no rows and the source tab is marked ready-for-review in the
+      Status tab -- otherwise it skips and defers to a
       coordinator running generate-sheets --regen-construction CLASS:DEPENDENT
       by hand, since the dependent table may carry real judgments a mechanical
       regeneration would need to reconcile, not overwrite.
@@ -525,10 +526,11 @@
       from the earlier tab's imported TSV by generate-sheets
       --regen-construction biuniqueness_deviations:{morphemes|morphs}
       (coding/biuniqueness_rows.py builds the rows; carry_over keeps every
-      answer by key and every hand-added row). --regen-dependents creates a
-      missing dependent tab automatically; once one exists, regeneration is the
-      coordinator's step, because an answered row whose source is gone stops
-      it unless --confirm-drop is given.
+      answer by key and every hand-added row). --regen-dependents (daily)
+      creates a missing dependent tab, and fills an empty one once the tab
+      before it is marked ready-for-review; once a tab has rows, regeneration
+      is the coordinator's step, because an answered row whose source is gone
+      stops it unless --confirm-drop is given.
   drift_risk:
     possible: true
     note: >-
