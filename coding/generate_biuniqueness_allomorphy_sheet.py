@@ -279,6 +279,13 @@ def _write_prescreening_tab(ss, rows: List[Dict[str, str]]):
         _with_retry(lambda: ws.update_title("prescreening"))
     existing = _existing_annotations(ws)
     ws.clear()
+    # Merges survive ws.clear(), and Sheets drops any value written into the
+    # hidden part of a merged cell. So unmerge BEFORE writing: when the banner
+    # shrank at the 2026-10-11 freeze (4 merged rows -> 2), an old merge on
+    # what became the header row swallowed every column name but the first
+    # (unmerging after the write, as first tried, left them blank).
+    _with_retry(lambda: ss.batch_update(
+        {"requests": [{"unmergeCells": {"range": {"sheetId": ws.id}}}]}))
 
     banner = _banner_rows()
     header_row_idx = len(banner)
@@ -290,10 +297,6 @@ def _write_prescreening_tab(ss, rows: List[Dict[str, str]]):
     _with_retry(lambda: ws.update(values, "A1", raw=False))
 
     requests = [
-        # Merges survive ws.clear(). Without this, a banner that shrinks
-        # (the 2026-10-11 freeze: 4 merged rows -> 2) leaves an old merge
-        # across what is now the header row, hiding every header but the first.
-        {"unmergeCells": {"range": {"sheetId": ws.id}}},
         {"updateSheetProperties": {
             "properties": {"sheetId": ws.id, "gridProperties": {"frozenRowCount": header_row_idx + 1}},
             "fields": "gridProperties.frozenRowCount",

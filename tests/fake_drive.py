@@ -271,8 +271,22 @@ class FakeWorksheet:
                 moved[(r, c + delta)] = cell
         self._cells = moved
 
+    def _hidden_by_merge(self, r: int, c: int) -> bool:
+        """True if (r, c) is inside a merge but not its top-left cell."""
+        for m in self.merges:
+            if (m.get("startRowIndex", 0) <= r < m.get("endRowIndex", r + 1)
+                    and m.get("startColumnIndex", 0) <= c < m.get("endColumnIndex", c + 1)
+                    and (r, c) != (m.get("startRowIndex", 0), m.get("startColumnIndex", 0))):
+                return True
+        return False
+
     def _write(self, r: int, c: int, value: Any, raw: bool) -> None:
         text = "" if value is None else str(value)
+        if text and self._hidden_by_merge(r, c):
+            # Sheets keeps only the top-left value of a merged range; a value
+            # written into the rest of it is dropped (found 2026-10-11, when a
+            # stale merge over a header row swallowed five column names live).
+            return
         cell = self._cell(r, c)
         cell.value = text
         cell.formula = (not raw) and text.startswith("=")

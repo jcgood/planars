@@ -245,9 +245,12 @@ def test_a_shrunk_banner_leaves_no_old_merge_over_the_header(env):
 
     run(["gen", "--lang", LANG, "--apply"])
     ws = the_sheet(doorway).worksheet("prescreening")
-    header_row = next(i for i, row in enumerate(ws.get_all_values())
-                      if row[0] == "Position_Name")
+    values = ws.get_all_values()
+    header_row = next(i for i, row in enumerate(values) if row[0] == "Position_Name")
     assert not any(m["startRowIndex"] <= header_row < m["endRowIndex"] for m in ws.merges)
+    # What actually broke live: unmerging after the write left the header
+    # as ["Position_Name", "", "", "", "", ""].
+    assert values[header_row] == gen._HEADER
 
 
 def test_every_in_scope_element_gets_a_row_and_excluded_ones_do_not(env):
