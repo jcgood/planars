@@ -122,9 +122,11 @@ from .generate_sheets import (
     _format_and_validate,
     _maybe_create_instructions_tab,
     _maybe_create_planar_reference_tab,
+    _populate_tab_keyed,
     _reorder_system_tabs,
     _TRAILING_COLS,
 )
+from . import biuniqueness_rows as _br
 from .notify import (
     build_change_comment,
     changed_lang_ids,
@@ -546,6 +548,45 @@ def _get_pair_row_constructions() -> Dict[str, Set[str]]:
     return result
 
 
+_ROW_TYPES = {"element", "pair_rows", "keyed_rows"}
+
+
+def _get_keyed_row_constructions() -> Dict[str, Dict[str, Dict[str, List[str]]]]:
+    """Return {class_name: {construction: {"columns": [...], "key": [...]}}} for
+    every keyed_rows construction in diagnostic_classes.yaml.
+
+    Also the one place an unknown row_type is caught: every caller that
+    branches on row shape (generate_sheets, validate_coding, import_sheets,
+    update_sheets, restructure_sheets, generate_status_sheet, integrity_check)
+    goes through this or _get_pair_row_constructions, so a typo'd row_type or a
+    keyed_rows construction missing its columns stops here rather than being
+    read as element rows by default.
+    """
+    from .schemas import load_diagnostic_classes
+    result: Dict[str, Dict[str, Dict[str, List[str]]]] = {}
+    for cls in load_diagnostic_classes().get("classes", []):
+        for con in (cls.get("constructions") or []):
+            if not isinstance(con, dict):
+                continue
+            row_type = con.get("row_type", "element")
+            if row_type not in _ROW_TYPES:
+                raise ValueError(
+                    f"diagnostic_classes.yaml: {cls['name']}/{con.get('name')} has "
+                    f"row_type {row_type!r}; expected one of {sorted(_ROW_TYPES)}")
+            if row_type != "keyed_rows":
+                continue
+            columns, key = con.get("keyed_columns"), con.get("key")
+            if not columns or not key or not set(key) <= set(columns):
+                raise ValueError(
+                    f"diagnostic_classes.yaml: keyed_rows construction "
+                    f"{cls['name']}/{con['name']} must declare keyed_columns and a key "
+                    f"drawn from them (got keyed_columns={columns}, key={key})")
+            result.setdefault(cls["name"], {})[con["name"]] = {
+                "columns": list(columns), "key": list(key),
+                "blank_ok_when": [dict(r) for r in (con.get("blank_ok_when") or [])]}
+    return result
+
+
 def _pair_construction_criterion(class_name: str, construction: str) -> Optional[str]:
     """Return the single annotated criterion column name for a pair-row construction.
 
@@ -821,6 +862,147 @@ def _copy_pair_tab_with_rename(
 
 
 # ---------------------------------------------------------------------------
+# Keyed-row tabs (biuniqueness_deviations' morphemes/morphs, #254)
+# ---------------------------------------------------------------------------
+# Keyed tabs name positions and elements, never position numbers, so a plain
+# renumbering leaves them alone. They are copied from the archived sheet,
+# like pair tabs, with renames applied to every cell that names a position
+# (Position_Name, Found_At, any <position_names> criterion such as
+# conditioned_by) or an element (Morpheme, Form). A co-exponent label
+# ("be + v:verbinflection") names both. A split element cannot be resolved
+# automatically: its rows are kept unchanged, flagged in Comments, and counted
+# for manual review.
+
+_POSITION_LIST_COLS = ("Found_At",)
+
+
+def _rename_list_cell(cell: str, rename_map: Dict[str, str]) -> str:
+    parts = [p.strip() for p in str(cell).split(",") if p.strip()]
+    return ", ".join(rename_map.get(p, p) for p in parts)
+
+
+def _rename_co_label(label: str, rename_map: Dict[str, str],
+                     element_rename_map: Dict[str, str]) -> str:
+    """'be + v:verbinflection' with element and position renames applied."""
+    if " + " not in label:
+        return element_rename_map.get(label, label)
+    element, positions = label.split(" + ", 1)
+    return (f"{element_rename_map.get(element, element)} + "
+            f"{_rename_list_cell(positions, rename_map)}")
+
+
+def _transform_keyed_rows(
+    header: List[str],
+    data_rows: List[List[str]],
+    position_param_cols: Set[str],
+    rename_map: Dict[str, str],
+    element_rename_map: Dict[str, str],
+    split_element_map: Dict[str, List[str]],
+) -> Tuple[List[List[str]], int, int]:
+    """Apply renames to a keyed tab's rows. Returns (rows, cells_changed, rows_flagged)."""
+    idx = {c: i for i, c in enumerate(header)}
+    changed = flagged = 0
+    out = []
+    for raw in data_rows:
+        row = list(raw) + [""] * (len(header) - len(raw))
+        before = list(row)
+        if "Morpheme" in idx:
+            row[idx["Morpheme"]] = _rename_co_label(row[idx["Morpheme"]], rename_map,
+                                                    element_rename_map)
+        if "Form" in idx:
+            row[idx["Form"]] = element_rename_map.get(row[idx["Form"]], row[idx["Form"]])
+        if "Position_Name" in idx:
+            row[idx["Position_Name"]] = rename_map.get(row[idx["Position_Name"]],
+                                                       row[idx["Position_Name"]])
+        for col in list(_POSITION_LIST_COLS) + sorted(position_param_cols):
+            if col in idx and row[idx[col]]:
+                row[idx[col]] = _rename_list_cell(row[idx[col]], rename_map)
+        changed += sum(1 for a, b in zip(before, row) if a != b)
+
+        touched = {row[idx[c]] for c in ("Morpheme", "Form") if c in idx}
+        touched |= {row[idx["Morpheme"]].split(" + ", 1)[0]} if "Morpheme" in idx else set()
+        split_hits = [old for old in split_element_map if old in touched]
+        if split_hits and "Comments" in idx:
+            notes = "; ".join(f"split {old} -> {', '.join(split_element_map[old])}: review"
+                              for old in split_hits)
+            cur = row[idx["Comments"]]
+            if notes not in cur:
+                row[idx["Comments"]] = f"{notes} | {cur}" if cur else notes
+            flagged += 1
+        out.append(row)
+    return out, changed, flagged
+
+
+def _position_param_cols(param_values: Dict[str, List[str]]) -> Set[str]:
+    return {p for p, vals in (param_values or {}).items() if "<position_names>" in (vals or [])}
+
+
+def _element_rows_for(class_name: str, construction: str, element_index, lang_id: str,
+                      param_names: List[str], planar_file: Path) -> List[List[object]]:
+    """The element rows a rebuilt tab should have. Every class takes every
+    planar element, except biuniqueness_deviations' prescreening, which takes
+    only those its Biuniqueness_Scope column puts in scope (#254)."""
+    if class_name == _br.CLASS_NAME and construction == "prescreening":
+        planar_df = pd.read_csv(planar_file.parent / f"planar_{lang_id}.tsv", sep="\t",
+                                dtype=str, keep_default_na=False)
+        return _br.prescreening_rows(planar_df, lang_id, param_names)
+    return _build_rows(element_index, lang_id, param_names)
+
+
+def _rename_positions_in_annotations(
+    existing: Dict, param_values: Dict[str, List[str]], rename_map: Dict[str, str],
+) -> Dict:
+    """Apply position renames inside <position_names> answers (co_exponents)
+    before they are carried into a rebuilt element tab."""
+    cols = _position_param_cols(param_values)
+    if not cols or not rename_map:
+        return existing
+    return {k: {c: (_rename_list_cell(v, rename_map) if c in cols and v else v)
+                for c, v in vals.items()}
+            for k, vals in existing.items()}
+
+
+def _count_keyed_impacts(
+    tsv_path: Path, param_values: Dict[str, List[str]], rename_map: Dict[str, str],
+    element_rename_map: Dict[str, str], split_element_map: Dict[str, List[str]],
+) -> Tuple[int, int]:
+    """(cells that would change, rows that would be flagged) in a local keyed TSV."""
+    if not tsv_path.exists():
+        return 0, 0
+    df = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
+    _, changed, flagged = _transform_keyed_rows(
+        list(df.columns), df.values.tolist(), _position_param_cols(param_values),
+        rename_map, element_rename_map, split_element_map)
+    return changed, flagged
+
+
+def _copy_keyed_tab_with_rename(
+    old_ss: SpreadsheetHandle,
+    new_ss: SpreadsheetHandle,
+    tab_name: str,
+    keyed: Dict,
+    param_names: List[str],
+    param_values: Dict[str, List[str]],
+    rename_map: Dict[str, str],
+    element_rename_map: Dict[str, str],
+    split_element_map: Dict[str, List[str]],
+) -> Tuple[int, int, int]:
+    """Copy a keyed tab into the recreated sheet with renames applied.
+    Returns (rows_copied, cells_changed, rows_flagged)."""
+    try:
+        all_values = _with_retry(lambda: _with_retry(lambda: old_ss.worksheet(tab_name)).get_all_values())
+    except WorksheetNotFound:
+        all_values = []
+    header = all_values[0] if all_values else keyed["columns"] + param_names + list(_TRAILING_COLS)
+    rows, changed, flagged = _transform_keyed_rows(
+        header, all_values[1:], _position_param_cols(param_values),
+        rename_map, element_rename_map, split_element_map)
+    _populate_tab_keyed(new_ss, tab_name, keyed["columns"], param_names, param_values,
+                        [dict(zip(header, r)) for r in rows])
+    return len(rows), changed, flagged
+
+
+# ---------------------------------------------------------------------------
 # Class rename helpers
 # ---------------------------------------------------------------------------
 
@@ -923,6 +1105,20 @@ def _rename_class_for_language(
         return False
 
     print(f"\n  {lang_id}: {old_class} -> {new_class} (v{version}):")
+
+    # This path rebuilds every tab as element rows. A pair-row or keyed-row tab
+    # would be rebuilt in the wrong shape and lose its answers, so refuse
+    # rather than guess (found 2026-10-11 adding keyed_rows, #254; the pair
+    # case predates it).
+    odd = sorted(set(constructions) & (
+        _get_pair_row_constructions().get(old_class, set())
+        | set(_get_keyed_row_constructions().get(old_class, {}))))
+    if odd:
+        print(f"    REFUSED: {old_class} has pair-row or keyed-row tabs ({', '.join(odd)}), "
+              f"which --rename-class can only rebuild as element rows, losing their "
+              f"answers. Rename this class by hand (new class sheet via generate-sheets, "
+              f"then copy the tabs across) or extend --rename-class first.")
+        return False
 
     # Download annotations from old sheet
     ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
@@ -1322,6 +1518,7 @@ def main(args: argparse.Namespace | None = None) -> None:
     any_changes = False
     written_tsvs: List[Path] = []
     pair_row_constructions = _get_pair_row_constructions()
+    keyed_row_constructions = _get_keyed_row_constructions()
     restructured_classes: Set[Tuple[str, str]] = set()
     renamed_classes: Set[Tuple[str, str]] = set()  # (lang_id, old_class) journal keys
     # sheet_links/lang_folder_urls were initialized above, before the journal-
@@ -1438,6 +1635,21 @@ def main(args: argparse.Namespace | None = None) -> None:
             # restructure path and are reported separately.
             class_needs_restructure = False
             for construction, param_names, param_values in constructions_list:
+                keyed = keyed_row_constructions.get(class_name, {}).get(construction)
+                if keyed:
+                    tsv_path = CODED_DATA / lang_id / class_name / f"{construction}.tsv"
+                    n_cells, n_flagged = _count_keyed_impacts(
+                        tsv_path, param_values, rename_map, element_rename_map,
+                        split_element_map)
+                    if n_cells or n_flagged:
+                        msg = f"    [{construction}] (keyed tab) rename {n_cells} cell(s)"
+                        if n_flagged:
+                            msg += (f", {n_flagged} row(s) on a split element — "
+                                    f"NEEDS MANUAL REVIEW, flagged in Comments")
+                        print(msg)
+                        any_changes = True
+                        class_needs_restructure = True
+                    continue
                 if construction in pair_row_constructions.get(class_name, set()):
                     if rename_map:
                         tsv_path = CODED_DATA / lang_id / class_name / f"{construction}.tsv"
@@ -1462,7 +1674,8 @@ def main(args: argparse.Namespace | None = None) -> None:
                             any_changes = True
                             class_needs_restructure = True
                     continue
-                rows = _build_rows(element_index, lang_id, param_names)
+                rows = _element_rows_for(class_name, construction, element_index, lang_id,
+                                         param_names, planar_file)
                 existing = all_annotations.get(construction, {})
                 carried, renamed, new_count, dropped = _compute_stats(rows, existing, rename_map, element_rename_map)
                 parts = [f"carry over {carried}"]
@@ -1518,6 +1731,19 @@ def main(args: argparse.Namespace | None = None) -> None:
             new_construction_params = {}
 
             for construction, param_names, param_values in constructions_list:
+                keyed = keyed_row_constructions.get(class_name, {}).get(construction)
+                if keyed:
+                    copied, changed, flagged = _copy_keyed_tab_with_rename(
+                        ss, new_ss, construction, keyed, param_names, param_values,
+                        rename_map, element_rename_map, split_element_map)
+                    tab_names.append(construction)
+                    new_construction_params[construction] = {
+                        "param_names": param_names, "param_values": param_values}
+                    msg = f"    [{construction}] (keyed tab) copied {copied} rows, {changed} cell(s) renamed"
+                    if flagged:
+                        msg += f", {flagged} row(s) on a split element — NEEDS MANUAL REVIEW"
+                    print(msg)
+                    continue
                 if construction in pair_row_constructions.get(class_name, set()):
                     # Pair-row constructions are copied from the archived sheet with
                     # rename_map applied to Position_A/Position_B cells and
@@ -1540,8 +1766,11 @@ def main(args: argparse.Namespace | None = None) -> None:
                         msg += f", {rows_manual} self-pair row(s) on a split element — NEEDS MANUAL REVIEW, not auto-handled"
                     print(msg)
                     continue
-                rows = _build_rows(element_index, lang_id, param_names)
+                rows = _element_rows_for(class_name, construction, element_index, lang_id,
+                                         param_names, planar_file)
                 existing = all_annotations.get(construction, {})
+                if class_name == _br.CLASS_NAME:
+                    existing = _rename_positions_in_annotations(existing, param_values, rename_map)
                 tsv_path = CODED_DATA / lang_id / class_name / f"{construction}.tsv"
                 carried, new_count, dropped_count = _write_tab_with_carryover(
                     new_ss, construction, param_names, param_values, rows, existing,

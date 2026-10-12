@@ -29,7 +29,7 @@ CODED_DATA = ROOT / "coded_data"
 from .drive import _with_retry, load_manifest
 from .drive_doorway import get_doorway
 from .generate_sheets import _INSTRUCTIONS_TAB, _PLANAR_REF_TAB, _STATUS_TAB
-from .restructure_sheets import _get_pair_row_constructions
+from .restructure_sheets import _get_keyed_row_constructions, _get_pair_row_constructions
 from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
@@ -93,6 +93,55 @@ _COREFERENCE_CONSTRUCTION_PARAMS: Dict[str, dict] = _build_coreference_params()
 # Placeholder used in diagnostic_criteria.yaml for criteria that accept any
 # non-negative integer (e.g. dependent-on-left, dependent-on-right).
 _POSITION_NUMBER_PLACEHOLDER = "<position_number>"
+
+# Placeholders for criteria that take free entry rather than a fixed value
+# set (biuniqueness_deviations, #254). Such a value is kept exactly as typed
+# (never lowercased -- "'ll" and "tense=past" are data), and may be blank.
+#   <free_text>       anything
+#   <position_names>  comma-separated position names from the planar
+_FREE_TEXT = "<free_text>"
+_POSITION_NAMES = "<position_names>"
+
+
+def _free_entry_kind(values) -> Optional[str]:
+    """'free_text' / 'position_names' if a criterion's declared values make it
+    free entry, else None (an ordinary fixed value set)."""
+    vals = {str(v) for v in (values or [])}
+    if _POSITION_NAMES in vals:
+        return "position_names"
+    if _FREE_TEXT in vals:
+        return "free_text"
+    return None
+
+
+_POSITION_NAME_CACHE: Dict[str, set] = {}
+
+
+def _planar_position_names(lang_id: Optional[str]) -> Optional[set]:
+    """Position names in the language's planar, or None if unknown (no
+    lang_id, no planar) -- then position-name values are not checked."""
+    if not lang_id:
+        return None
+    if lang_id not in _POSITION_NAME_CACHE:
+        path = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
+        if not path.exists():
+            return None
+        df = pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False)
+        _POSITION_NAME_CACHE[lang_id] = {n.strip() for n in df["Position_Name"]}
+    return _POSITION_NAME_CACHE[lang_id]
+
+
+def _check_free_entry(kind: str, value: str, lang_id: Optional[str]) -> Optional[str]:
+    """None if a free-entry value is acceptable, else what is wrong with it."""
+    if kind != "position_names" or not value:
+        return None
+    known = _planar_position_names(lang_id)
+    if known is None:
+        return None
+    unknown = [p.strip() for p in value.split(",") if p.strip() and p.strip() not in known]
+    if unknown:
+        return f"not a position in the planar: {', '.join(unknown)}"
+    return None
 
 _PINK  = {"red": 1.0, "green": 0.8, "blue": 0.8}
 _WHITE = {"red": 1.0, "green": 1.0, "blue": 1.0}
@@ -241,6 +290,21 @@ def validate_annotation_rows(
         is_keystone = pos_name.lower() == _KEYSTONE_NAME
 
         for param in param_cols:
+            free_kind = _free_entry_kind((param_values or {}).get(param))
+            if free_kind:
+                # Free entry: kept as typed, may be blank; position names checked.
+                raw = record.get(param, "").strip()
+                record[param] = raw
+                problem = _check_free_entry(free_kind, raw, lang_id)
+                if problem:
+                    issues.append(ValidationIssue(
+                        "warning",
+                        f"{tab_name} row {row_num} '{record.get('Element', '?')}'",
+                        f"unexpected value '{raw}' in '{param}' ({problem})",
+                        cell=(row_num - 1, col_index[param]),
+                    ))
+                continue
+
             val = record.get(param, "").strip().lower()
             record[param] = val
 
@@ -333,7 +397,10 @@ def annotation_status(
         return {"total": 0, "filled": 0, "blank": 0, "invalid": 0}
 
     header = rows[0]
-    param_cols = [c for c in header if c not in _STRUCTURAL_COLS and c not in _TRAILING_COLS]
+    # Free-entry criteria (members, co_exponents: #254) may legitimately stay
+    # blank, so they never count toward completeness.
+    param_cols = [c for c in header if c not in _STRUCTURAL_COLS and c not in _TRAILING_COLS
+                  and not _free_entry_kind((param_values or {}).get(c))]
     n_params = len(param_cols)
     pos_idx = header.index("Position_Name") if "Position_Name" in header else -1
     na_criteria = set(keystone_na_criteria or [])
@@ -576,6 +643,133 @@ def revalidate_pair_sheet(
 
 
 # ---------------------------------------------------------------------------
+# Keyed-row sheet validation (row_type: keyed_rows -- biuniqueness_deviations)
+# ---------------------------------------------------------------------------
+
+def validate_keyed_rows(
+    rows: List[List[str]],
+    keyed_columns: List[str],
+    expected_params: List[str],
+    tab_name: str,
+    param_values: Dict[str, List[str]] = None,
+    blank_ok_when: List[Dict[str, str]] = None,
+    class_name: Optional[str] = None,
+    lang_id: Optional[str] = None,
+) -> Tuple[List[Dict], List[ValidationIssue]]:
+    """Validate a keyed-row tab (morphemes, morphs). Returns (records, issues).
+
+    The generator-written keyed_columns come first and are never checked as
+    criteria. Fixed-value criteria are lowercased and checked like everywhere
+    else; free-entry criteria (<free_text>, <position_names>) are kept as typed.
+    A row matching one of blank_ok_when (e.g. occurs_here=n) may leave its
+    other criteria blank without a warning.
+    """
+    issues: List[ValidationIssue] = []
+    if not rows:
+        return [], [ValidationIssue("error", tab_name, "sheet is empty")]
+    header, data_rows = rows[0], rows[1:]
+
+    if header[:len(keyed_columns)] != list(keyed_columns):
+        return (_plain_records(header, data_rows),
+                [_wrong_shape(tab_name, header, f"keyed rows ({', '.join(keyed_columns)})",
+                              class_name, lang_id)])
+
+    param_cols = [c for c in header[len(keyed_columns):] if c not in _TRAILING_COLS]
+    if param_cols != expected_params:
+        issues.append(ValidationIssue(
+            "warning", tab_name,
+            f"criterion columns differ from manifest — "
+            f"expected {expected_params}, got {param_cols}"))
+
+    col_index = {name: i for i, name in enumerate(header)}
+    rules = [{k: str(v).lower() for k, v in r.items()} for r in (blank_ok_when or [])]
+    records = []
+    for row_num, row in enumerate(data_rows, start=2):
+        row = list(row) + [""] * (len(header) - len(row))
+        record = {col: row[col_index[col]] for col in header}
+        label = " / ".join(record.get(k, "") for k in keyed_columns[:3])
+        lowered = {p: record.get(p, "").strip().lower() for p in param_cols}
+        blank_ok = any(all(lowered.get(k) == v for k, v in r.items()) for r in rules)
+
+        for param in param_cols:
+            values = (param_values or {}).get(param)
+            free_kind = _free_entry_kind(values)
+            if free_kind:
+                raw = record.get(param, "").strip()
+                record[param] = raw
+                problem = _check_free_entry(free_kind, raw, lang_id)
+                if problem:
+                    issues.append(ValidationIssue(
+                        "warning", f"{tab_name} row {row_num} '{label}'",
+                        f"unexpected value '{raw}' in '{param}' ({problem})",
+                        cell=(row_num - 1, col_index[param])))
+                continue
+            val = lowered[param]
+            record[param] = val
+            allowed = ({v.lower() for v in values} | {"na", "?"}) if values else _DEFAULT_EXPECTED
+            if val == "":
+                if not blank_ok:
+                    issues.append(ValidationIssue(
+                        "warning", f"{tab_name} row {row_num} '{label}'",
+                        f"blank value in '{param}'", cell=(row_num - 1, col_index[param])))
+            elif val not in allowed:
+                issues.append(ValidationIssue(
+                    "warning", f"{tab_name} row {row_num} '{label}'",
+                    f"unexpected value '{val}' in '{param}' (allowed: {sorted(allowed)})",
+                    cell=(row_num - 1, col_index[param])))
+        records.append(record)
+    return records, issues
+
+
+def keyed_annotation_status(
+    rows: List[List[str]],
+    keyed_columns: List[str],
+    expected_params: List[str],
+    param_values: Dict[str, List[str]] = None,
+    blank_ok_when: List[Dict[str, str]] = None,
+) -> dict:
+    """Completeness/validity counts for a keyed-row tab, same shape as
+    annotation_status(). Counts only fixed-value criteria, and none on a row
+    whose answers make the rest blank-ok (blank_ok_when) beyond the ones it set."""
+    if not rows or len(rows) < 2:
+        return {"total": 0, "filled": 0, "blank": 0, "invalid": 0}
+    header = rows[0]
+    counted = [c for c in header[len(keyed_columns):]
+               if c not in _TRAILING_COLS and not _free_entry_kind((param_values or {}).get(c))]
+    _, issues = validate_keyed_rows(rows, keyed_columns, expected_params, "", param_values,
+                                    blank_ok_when)
+    blank = sum(1 for i in issues if "blank value" in i.message)
+    invalid = sum(1 for i in issues if "unexpected value" in i.message)
+    # A blank-ok row counts only the cells actually filled in.
+    rules = [{k: str(v).lower() for k, v in r.items()} for r in (blank_ok_when or [])]
+    total = 0
+    for row in rows[1:]:
+        rec = dict(zip(header, list(row) + [""] * (len(header) - len(row))))
+        low = {c: str(rec.get(c, "")).strip().lower() for c in counted}
+        if any(all(low.get(k) == v for k, v in r.items()) for r in rules):
+            total += sum(1 for c in counted if low[c])
+        else:
+            total += len(counted)
+    return {"total": total, "filled": total - blank, "blank": blank, "invalid": invalid}
+
+
+def revalidate_keyed_sheet(
+    ws, lang_id: str, class_name: str, construction: str,
+    keyed: Dict, expected_params: List[str], param_values: Dict[str, List[str]] = None,
+) -> List[ValidationIssue]:
+    """Like revalidate_sheet() for a keyed-row tab: validate the local TSV,
+    repaint pink highlights, return issues."""
+    rows = _read_tsv_rows(lang_id, class_name, construction)
+    _, issues = validate_keyed_rows(rows, keyed["columns"], expected_params, construction,
+                                    param_values, keyed.get("blank_ok_when"),
+                                    class_name=class_name, lang_id=lang_id)
+    bad_cells = [issue.cell for issue in issues if issue.cell is not None]
+    clear_highlights(ws)
+    highlight_cells(ws, bad_cells)
+    return issues
+
+
+# ---------------------------------------------------------------------------
 # CLI helpers
 # ---------------------------------------------------------------------------
 
@@ -627,6 +821,7 @@ def revalidate_sheets(
     # failed with spurious "missing structural column" errors even though its
     # pair-row structure is correct and already registered in the schema.
     pair_row_constructions = _get_pair_row_constructions()
+    keyed_row_constructions = _get_keyed_row_constructions()
 
     for lang_id, lang_data in sorted(manifest.items()):
         if lang_ids and lang_id not in lang_ids:
@@ -678,7 +873,13 @@ def revalidate_sheets(
                     info = param_map.get(class_name, {}).get(construction, {})
                 try:
                     is_pair_sheet = construction in pair_row_constructions.get(class_name, set())
-                    if is_pair_sheet:
+                    keyed = keyed_row_constructions.get(class_name, {}).get(construction)
+                    if keyed:
+                        issues = revalidate_keyed_sheet(
+                            ws, lang_id, class_name, construction, keyed,
+                            info.get("params", []), info.get("values", {}),
+                        )
+                    elif is_pair_sheet:
                         issues = revalidate_pair_sheet(
                             ws,
                             lang_id,

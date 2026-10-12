@@ -505,3 +505,40 @@
       the set rather than restating it; tests/test_import_sheets.py asserts it
       for import_sheets.py specifically, by inspecting the source for the
       hardcoded class name.
+
+- id: biuniqueness_keyed_chain
+  description: >-
+    which morphemes and which (morpheme, position, form) rows the
+    biuniqueness_deviations class asks about (#254): the morphemes tab is
+    generated from the prescreening answers, and the morphs tab from the
+    morphemes tab crossed with the planar. Also which constructions are keyed
+    rows at all, and which columns key them.
+  locations:
+    - {entity: annotation_sheet, detail: "the class sheet's three tabs -- prescreening (element rows), morphemes and morphs (keyed rows). The annotator's answers live here; the Sheet owns them, as for every annotated class (decided 2026-10-11, replacing #249's 'coordinator-edited tables, no sheet' framing)"}
+    - {entity: construction_tsv, detail: "coded_data/{lang}/biuniqueness_deviations/{prescreening,morphemes,morphs}.tsv -- the imported copies; the SOURCE tab's TSV is what the next tab is generated from"}
+    - {entity: schema_yaml, detail: "schemas/diagnostic_classes.yaml -- row_type: keyed_rows, keyed_columns, key, blank_ok_when on the morphemes/morphs constructions; read only through restructure_sheets._get_keyed_row_constructions()"}
+  authoritative: annotation_sheet
+  cascade:
+    direction: manual
+    mechanism: >-
+      import-sheets copies each tab to its TSV daily. A later tab is rebuilt
+      from the earlier tab's imported TSV by generate-sheets
+      --regen-construction biuniqueness_deviations:{morphemes|morphs}
+      (coding/biuniqueness_rows.py builds the rows; carry_over keeps every
+      answer by key and every hand-added row). --regen-dependents creates a
+      missing dependent tab automatically; once one exists, regeneration is the
+      coordinator's step, because an answered row whose source is gone stops
+      it unless --confirm-drop is given.
+  drift_risk:
+    possible: true
+    note: >-
+      Adam changes prescreening (or morphemes) and it is imported, but the
+      dependent tab is not regenerated: the tab then asks about morphemes the
+      source no longer names, or misses ones it now does. Answers are never
+      lost silently -- regeneration refuses to drop an answered row -- but
+      the tab can go stale.
+    caught_by: >-
+      integrity-check --check-dependents (_keyed_staleness: rebuilds the tab
+      from its imported source and compares keys, ignoring hand-added rows),
+      run daily by data-refresh and filed as dependent-stale with the exact
+      --regen-construction command.

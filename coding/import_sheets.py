@@ -37,7 +37,7 @@ from .drive import (
 )
 from .drive_doorway import get_doorway, WorksheetNotFound
 from .generate_sheets import _STATUS_TAB, _STATUS_VALUES
-from .restructure_sheets import _get_pair_row_constructions
+from .restructure_sheets import _get_keyed_row_constructions, _get_pair_row_constructions
 from . import validate_coding as _val
 from .validate_planar import validate_planar_df as _validate_planar_df
 from .validate_diagnostics import validate_diagnostics_df as _validate_diagnostics_df
@@ -117,6 +117,26 @@ def _validate_pair_tab(
     """
     records, issues = _val.validate_pair_rows(rows, expected_params, tab_name, param_values,
                                               class_name=class_name, lang_id=lang_id)
+    warnings  = [str(i) for i in issues]
+    bad_cells = [i.cell for i in issues if i.cell is not None]
+    return records, warnings, bad_cells
+
+
+def _validate_keyed_tab(
+    rows: List[List[str]],
+    keyed: Dict,
+    tab_name: str,
+    param_values: Dict[str, List[str]] = None,
+    class_name: str = None,
+    lang_id: str = None,
+) -> Tuple[List[Dict], List[str], List[Tuple[int, int]]]:
+    """Delegate to validate.validate_keyed_rows for keyed-row tabs
+    (biuniqueness_deviations' morphemes/morphs). Same return format as _validate_tab."""
+    header = rows[0] if rows else []
+    expected_params = [c for c in header[len(keyed["columns"]):] if c not in _TRAILING_COLS]
+    records, issues = _val.validate_keyed_rows(
+        rows, keyed["columns"], expected_params, tab_name, param_values,
+        keyed.get("blank_ok_when"), class_name=class_name, lang_id=lang_id)
     warnings  = [str(i) for i in issues]
     bad_cells = [i.cell for i in issues if i.cell is not None]
     return records, warnings, bad_cells
@@ -911,6 +931,7 @@ def main(args: argparse.Namespace | None = None) -> None:
     all_drift: List[Dict] = []
     all_collaborator_check: List[Dict] = []
     pair_row_constructions = _get_pair_row_constructions()
+    keyed_row_constructions = _get_keyed_row_constructions()
 
     for lang_id, lang_data in manifest.items():
         if lang_filter and lang_id != lang_filter:
@@ -984,7 +1005,15 @@ def main(args: argparse.Namespace | None = None) -> None:
                 # the same thing and disagreeing is the defect this project
                 # keeps hitting; validate_coding.py:547 is the pattern copied.
                 is_pair_tab = construction in pair_row_constructions.get(class_name, set())
-                if is_pair_tab:
+                keyed = keyed_row_constructions.get(class_name, {}).get(construction)
+                if keyed:
+                    expected_params = [c for c in header[len(keyed["columns"]):]
+                                       if c not in _TRAILING_COLS]
+                    records, warnings, bad_cells = _validate_keyed_tab(
+                        rows, keyed, construction, param_values,
+                        class_name=class_name, lang_id=lang_id,
+                    )
+                elif is_pair_tab:
                     expected_params = (
                         [c for c in header if c not in _PAIR_STRUCTURAL_COLS and c not in _TRAILING_COLS]
                     )
@@ -1067,8 +1096,9 @@ def main(args: argparse.Namespace | None = None) -> None:
                 _write_tsv(out_path, header, records)
 
                 # Count rows with at least one blank param cell (for status line).
-                # Pair-row sheets have no keystone; element-row sheets exclude it.
-                if is_pair_tab:
+                # Pair-row and keyed-row sheets have no keystone; element-row
+                # sheets exclude it.
+                if is_pair_tab or keyed:
                     blank_count = sum(
                         1 for r in records
                         if any(r.get(p, "") == "" for p in expected_params)

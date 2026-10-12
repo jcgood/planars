@@ -492,6 +492,8 @@ jobs:
           python3 << 'PYEOF'
           text = open('/tmp/dependents_report.txt').read()
           errors = [l.strip()[1:].strip() for l in text.splitlines() if l.strip().startswith('✗')]
+          # The exact command for each stale tab, as integrity-check printed it.
+          runs = [l.split('→ Run:', 1)[1].strip() for l in text.splitlines() if '→ Run:' in l]
           with open('/tmp/dependents_stale_body.md', 'w') as f:
               f.write("## What's wrong\n\n")
               if errors:
@@ -499,21 +501,22 @@ jobs:
               else:
                   f.write("_(Details could not be extracted — see full log.)_\n")
               f.write("\n## What to do\n\n")
-              f.write("The `element_prescreening` annotation has changed since the `general` "
-                      "(pair-row) tab was last generated. The pair list needs to be regenerated "
-                      "to reflect the current element_prescreening decisions.\n\n")
-              f.write("**This requires coordinator action** because the general tab may already "
-                      "have annotation data that needs to be reviewed.\n\n")
-              f.write("Run the following command for each affected language "
-                      "(shown in the errors above):\n\n")
-              f.write("```bash\n")
-              f.write("python -m coding generate-sheets --lang LANG_ID "
-                      "--regen-construction nonpermutability:general\n")
+              f.write("A tab that is generated from an earlier tab (a pair list from its "
+                      "prescreening; for biuniqueness_deviations, morphemes from prescreening "
+                      "and morphs from morphemes) no longer matches the answers it was "
+                      "generated from, so it needs to be regenerated.\n\n")
+              f.write("**This requires coordinator action** because the generated tab may "
+                      "already hold answers that need to be reviewed. Regeneration keeps every "
+                      "answer whose row still exists, and refuses to drop an answered row "
+                      "unless you re-run it with `--confirm-drop`.\n\n")
+              f.write("Run:\n\n```bash\n")
+              f.write('\n'.join(dict.fromkeys(runs)) + '\n' if runs else
+                      "python -m coding integrity-check --check-dependents   # shows the command per tab\n")
               f.write("```\n\n")
               f.write("Then run `python -m coding import-sheets --apply` to import the "
-                      "updated sheet. Any removed pairs will appear in `apply-pending` "
+                      "updated sheet. Any removed rows will appear in `apply-pending` "
                       "for review before the TSV is updated.\n\n")
-              f.write("The issue closes automatically when the element sets are back in sync.\n")
+              f.write("The issue closes automatically when the generated tabs are back in sync.\n")
               f.write("\n## Full log\n\n")
               f.write("<details><summary>Show full check output</summary>\n\n```\n")
               f.write(text)

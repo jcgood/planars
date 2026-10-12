@@ -82,11 +82,23 @@
 #                            internal construction dependencies (e.g., an element_prescreening tab
 #                            that gates pair generation). Each entry may have:
 #                              name             machine name (matches diagnostics_{lang}.yaml)
-#                              row_type         element | pair_rows | morpheme_rows | morph_rows
-#                                               (the last two: biuniqueness_deviations only,
-#                                               one row per morpheme / per form at a position)
+#                              row_type         element | pair_rows | keyed_rows
+#                                               keyed_rows: rows identified by named columns
+#                                               rather than by element and position (so far
+#                                               only biuniqueness_deviations' morphemes and
+#                                               morphs tabs). Each keyed_rows construction
+#                                               must also declare:
+#                              keyed_columns    the generator-written columns, in order,
+#                                               before the criterion columns
+#                              key              the subset of keyed_columns that identifies a
+#                                               row (answers are carried over by it)
+#                              blank_ok_when    optional list of {criterion: value} rules: a
+#                                               keyed row matching any of them may leave its
+#                                               other criteria blank without a warning
 #                              depends_on       name of the construction this depends on
 #                              staleness_check  element_set (compare element sets to detect drift)
+#                                               | keyed_source (regenerate the tab from its
+#                                               source and compare keys)
 #                            Only needed for general-specificity classes with multi-stage
 #                            workflows. construction_specific classes define constructions
 #                            per-language in diagnostics_{lang}.yaml.
@@ -450,15 +462,30 @@ classes:
     #   morphs: one row per (morpheme, position, form), pre-filled from
     #     morphemes x the planar; the annotator fills occurs_here and the
     #     conditioning columns.
+    # Row building lives in coding/biuniqueness_rows.py. Origin records where a
+    # keyed row came from (filled / open_category / co_exponent); a row the
+    # annotator adds by hand has none, is marked hand-added, and is never dropped.
     constructions:
       - name: prescreening
         row_type: element
       - name: morphemes
-        row_type: morpheme_rows
+        row_type: keyed_rows
+        keyed_columns: [Morpheme, Origin, Found_At]
+        key: [Morpheme]
         depends_on: prescreening
+        staleness_check: keyed_source
       - name: morphs
-        row_type: morph_rows
+        row_type: keyed_rows
+        keyed_columns: [Morpheme, Position_Name, Form, Origin]
+        key: [Morpheme, Position_Name, Form]
         depends_on: morphemes
+        staleness_check: keyed_source
+        # A row the annotator has answered this way legitimately leaves its
+        # other criteria blank: a form that does not occur here has nothing to
+        # condition, and the elsewhere form has no trigger.
+        blank_ok_when:
+          - {occurs_here: n}
+          - {conditioning_features: elsewhere}
     # Tallman & Auderset (2023)'s six biuniqueness deviation types (#238).
     # `derived: true` types are computed by planars/biuniqueness_deviations.py
     # from the morphs tab and must match its DERIVED_TYPES; the others are

@@ -57,7 +57,7 @@ from .check_codebook import (
     _check_chart_keys,
 )
 from .schemas import load_planar_schema
-from .restructure_sheets import _get_pair_row_constructions
+from .restructure_sheets import _get_keyed_row_constructions, _get_pair_row_constructions
 import yaml as _yaml
 
 # ---------------------------------------------------------------------------
@@ -399,6 +399,7 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
     # data_dependency_schema/operations.yaml -- previously correct, but
     # duplicated rather than shared.
     _pair_row_constructions = _get_pair_row_constructions()
+    _keyed_row_constructions = _get_keyed_row_constructions()
 
     total_e = total_w = 0
 
@@ -483,7 +484,11 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
 
                 expected = construction_params.get(construction, {}).get("param_names", [])
                 is_pair_row = construction in _pair_row_constructions.get(class_name, set())
-                _skip = (_STRUCTURAL | _PAIR_STRUCTURAL) if is_pair_row else _STRUCTURAL
+                keyed = _keyed_row_constructions.get(class_name, {}).get(construction)
+                if keyed:
+                    _skip = set(keyed["columns"])
+                else:
+                    _skip = (_STRUCTURAL | _PAIR_STRUCTURAL) if is_pair_row else _STRUCTURAL
                 actual   = [c for c in header if c not in _skip and c not in _TRAILING]
 
                 # Warn on stale lifecycle columns left from --split or --merge operations.
@@ -640,6 +645,37 @@ def _suggest_position_remap(
     return remap, unresolvable
 
 
+def _keyed_staleness(lang_id: str, cls_name: str, con: dict):
+    """(keys the source now calls for but the tab lacks, generated keys the
+    source no longer calls for), or None if there is nothing to compare yet
+    (source or dependent not imported, or the dependent still empty)."""
+    from . import biuniqueness_rows as _br
+    if cls_name != _br.CLASS_NAME or con["name"] not in _br.KEYED:
+        return None
+    cls_dir = CODED_DATA / lang_id / cls_name
+    dep_path = cls_dir / f"{con['name']}.tsv"
+    planar_path = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
+    needed = ["prescreening"] + (["morphemes"] if con["name"] == "morphs" else [])
+    if not dep_path.exists() or not planar_path.exists() or not all(
+            (cls_dir / f"{n}.tsv").exists() for n in needed):
+        return None
+    read = lambda p: pd.read_csv(p, sep="\t", dtype=str, keep_default_na=False)
+    dep = read(dep_path)
+    if dep.empty:
+        return None
+    planar = read(planar_path)
+    if con["name"] == "morphemes":
+        generated = _br.morpheme_rows(read(cls_dir / "prescreening.tsv"), planar, lang_id)
+    else:
+        generated = _br.morph_rows(read(cls_dir / "morphemes.tsv"),
+                                   read(cls_dir / "prescreening.tsv"), planar, lang_id)
+    _, key = _br.KEYED[con["name"]]
+    want = {" / ".join(g[k] for k in key) for g in generated}
+    have = {" / ".join(str(r[k]) for k in key) for _, r in dep.iterrows()
+            if str(r.get("Origin", "")).strip() in _br.GENERATED_ORIGINS}
+    return want - have, have - want
+
+
 def _section_dependent_construction_staleness(
     lang_ids: List[str],
     diag_classes: dict,
@@ -656,6 +692,34 @@ def _section_dependent_construction_staleness(
 
     total_e = 0
     any_checked = False
+
+    # keyed_source dependents (biuniqueness_deviations' morphemes/morphs, #254):
+    # rebuild the tab from its imported source and compare row keys with the
+    # imported dependent. Hand-added rows are the annotator's own and never stale.
+    for cls_name, cls_entry in diag_classes.items():
+        for con in cls_entry.get("constructions", []) or []:
+            if not (con.get("depends_on") and con.get("staleness_check") == "keyed_source"):
+                continue
+            for lang_id in lang_ids:
+                result = _keyed_staleness(lang_id, cls_name, con)
+                if result is None:
+                    continue
+                any_checked = True
+                added, removed = result
+                label = f"{_lang_label(lang_id)}: {cls_name}/{con['depends_on']} → {con['name']}"
+                if added or removed:
+                    print(_fail(label))
+                    if removed:
+                        print(_sub(f"rows whose source is gone ({len(removed)}): "
+                                   f"{sorted(removed)[:5]}{' …' if len(removed) > 5 else ''}"))
+                    if added:
+                        print(_sub(f"rows the source now calls for ({len(added)}): "
+                                   f"{sorted(added)[:5]}{' …' if len(added) > 5 else ''}"))
+                    print(_sub(f"→ Run: python -m coding generate-sheets --lang {lang_id} "
+                               f"--regen-construction {cls_name}:{con['name']}"))
+                    total_e += 1
+                else:
+                    print(_ok(label))
 
     for cls_name, cls_entry in diag_classes.items():
         constructions_schema = cls_entry.get("constructions", [])

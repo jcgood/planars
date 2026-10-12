@@ -94,7 +94,7 @@ def _all_warning_sites() -> Set[Tuple[str, int]]:
 # Every warning-shaped print() known to exist, as of issue #283's sweep
 # (2026-08-17), in a module an unattended workflow command reaches.
 _KNOWN_SITES: Dict[Tuple[str, int], str] = {
-    ("import_sheets.py", 703): "advisory-only ([planar] validation issue -- e.g. "
+    ("import_sheets.py", 723): "advisory-only ([planar] validation issue -- e.g. "
         "'consider type open instead of list', a Class_Type style nudge); reaches "
         "$GITHUB_STEP_SUMMARY only, never affects exit code. Deliberately left "
         "this way (issue #283, decided 2026-08-19 after reading the actual "
@@ -103,23 +103,23 @@ _KNOWN_SITES: Dict[Tuple[str, int], str] = {
         "the exact warning-fatigue failure mode #260 already taught this "
         "project to avoid (a routine, non-actionable warning holding an issue "
         "open for days).",
-    ("import_sheets.py", 768): "advisory-only ([diagnostics] validation issue -- "
+    ("import_sheets.py", 788): "advisory-only ([diagnostics] validation issue -- "
         "e.g. a Glottolog-verification reminder); same reasoning and same "
         "2026-08-19 decision as 699 above.",
-    ("import_sheets.py", 941): "fixed 2026-08-19 (issue #283): a spreadsheet that "
+    ("import_sheets.py", 962): "fixed 2026-08-19 (issue #283): a spreadsheet that "
         "can't be opened at all now counts toward total_blocking_warnings, making "
         "the command exit non-zero and reach the existing import-error issue -- "
         "previously accumulated into lang_warning_lines/import_errors/*.txt (a "
         "gitignored file, never read in CI) with no effect on exit code",
-    ("import_sheets.py", 956): "fixed 2026-08-19 (issue #283), same mechanism as "
+    ("import_sheets.py", 977): "fixed 2026-08-19 (issue #283), same mechanism as "
         "937: a missing tab now counts toward total_blocking_warnings too",
-    ("import_sheets.py", 1015): "the one warning in this group NOT accumulated "
+    ("import_sheets.py", 1044): "the one warning in this group NOT accumulated "
         "into lang_warning_lines/total_warnings at all (a failed pink-highlight "
         "attempt after the underlying data write already succeeded) -- stays "
         "advisory-only and out of scope for issue #283's exit-code fix: purely "
         "cosmetic, no data loss if missed. (Corrected 2026-08-19: this entry "
         "previously and inaccurately claimed the same mechanism as 937 above.)",
-    ("import_sheets.py", 1023): "fixed 2026-08-19 (issue #283): this is "
+    ("import_sheets.py", 1052): "fixed 2026-08-19 (issue #283): this is "
         "blocking_warnings, an invalid-value/structural problem on a "
         "ready-for-review tab -- already named 'blocking' in the code, now "
         "actually gates the exit code and reaches the existing import-error issue",
@@ -131,36 +131,36 @@ _KNOWN_SITES: Dict[Tuple[str, int], str] = {
         "above), and a blocking error two lines down now makes the command exit "
         "non-zero, which files a diagnostics-yaml-error issue with the same "
         "captured output attached",
-    ("sync_params.py", 440): "only reachable via --split, never passed by the "
+    ("sync_params.py", 451): "only reachable via --split, never passed by the "
         "automated workflow invocation (plain `sync-params --apply`)",
-    ("sync_params.py", 461): "only reachable via --merge, same reasoning as 440",
-    ("generate_sheets.py", 328): "inside _prefill_free_occurrence_rows -- only "
+    ("sync_params.py", 472): "only reachable via --merge, same reasoning as 451",
+    ("generate_sheets.py", 329): "inside _prefill_free_occurrence_rows -- only "
         "reachable via the interactive --apply sheet-creation path, not "
         "--regen-dependents (the only generate-sheets invocation the workflow runs)",
-    ("generate_sheets.py", 331): "same function/reasoning as 328",
-    ("generate_sheets.py", 334): "same function/reasoning as 328",
-    ("generate_sheets.py", 337): "same function/reasoning as 328",
-    ("generate_sheets.py", 391): "same reasoning as 328 (Elements not found check, "
+    ("generate_sheets.py", 332): "same function/reasoning as 329",
+    ("generate_sheets.py", 335): "same function/reasoning as 329",
+    ("generate_sheets.py", 338): "same function/reasoning as 329",
+    ("generate_sheets.py", 392): "same reasoning as 329 (Elements not found check, "
         "same sheet-creation path)",
-    ("generate_sheets.py", 923): "inside _build_phrasal_accent_pairs, called by "
+    ("generate_sheets.py", 924): "inside _build_phrasal_accent_pairs, called by "
         "_regen_construction -- possibly reachable via --regen-dependents if a "
         "phrasal_accent construction is ever a depends_on target; not fully traced, "
         "treat conservatively rather than assumed safe",
-    ("generate_sheets.py", 2610): "inside the interactive language-onboarding path "
+    ("generate_sheets.py", 2765): "inside the interactive language-onboarding path "
         "(folder sharing) -- not --regen-dependents",
-    ("generate_sheets.py", 2623): "inside the interactive language-onboarding path "
+    ("generate_sheets.py", 2778): "inside the interactive language-onboarding path "
         "(notes doc creation) -- not --regen-dependents",
-    ("generate_sheets.py", 2699): "inside the interactive language-onboarding path "
+    ("generate_sheets.py", 2854): "inside the interactive language-onboarding path "
         "(Glottolog fetch) -- not --regen-dependents",
-    ("integrity_check.py", 945): "deliberately silent by design -- see the code "
+    ("integrity_check.py", 1009): "deliberately silent by design -- see the code "
         "comment: defers to import-sheets' own import-error issue if Drive is "
         "genuinely down",
-    ("validate_coding.py", 694): "advisory warning under sheet-validation.yml, "
+    ("validate_coding.py", 895): "advisory warning under sheet-validation.yml, "
         "whose documented convention (CLAUDE.md's sheet-validation label entry) is "
         "that advisory warnings are context only, never file/hold an issue",
-    ("validate_coding.py", 775): "redundant with the pending-changes issue "
+    ("validate_coding.py", 976): "redundant with the pending-changes issue "
         "import-sheets already files for the same underlying fact",
-    ("update_sheets.py", 434): "correctly escalated: sets any_drift, which drives "
+    ("update_sheets.py", 464): "correctly escalated: sets any_drift, which drives "
         "exit 1, which the sheet-drift issue mechanism dumps in full -- not a gap",
     ("apply_pending.py", 193): "apply-pending is coordinator-only, never actually "
         "run unattended -- it's in _unattended_commands() only because the workflow "
@@ -187,18 +187,18 @@ _KNOWN_SITES: Dict[Tuple[str, int], str] = {
     ("drive.py", 595): "deliberately non-raising by design -- see the code comment "
         "on _autocommit_data: the commit already succeeded locally, only the "
         "remote lags until a manual `git push` retry",
-    ("import_sheets.py", 1096): "summary count ('N warning(s)'), not an "
+    ("import_sheets.py", 1126): "summary count ('N warning(s)'), not an "
         "independent site -- reflects warnings already tracked at 937/952/1011/1019",
-    ("import_sheets.py", 1211): "the exit-non-zero summary line added by issue "
+    ("import_sheets.py", 1241): "the exit-non-zero summary line added by issue "
         "#283's own fix (2026-08-19) -- reflects total_blocking_warnings, itself "
         "reflecting warnings already tracked at 937/952/1019. Printed right "
         "before sys.exit(1), so unlike 1092 above it's the thing that actually "
         "makes this run's outcome reach the import-error issue, not just a "
         "count for a human reading the log.",
-    ("integrity_check.py", 1011): "footer summary line; its leading ✗ is exactly "
+    ("integrity_check.py", 1075): "footer summary line; its leading ✗ is exactly "
         "what the integrity-error issue-filing step scans for -- part of the "
         "escalation mechanism, not a gap",
-    ("integrity_check.py", 1013): "footer summary line, the all-clear case (total_e "
+    ("integrity_check.py", 1077): "footer summary line, the all-clear case (total_e "
         "== 0) -- not a gap",
     ("validation_report.py", 319): "diagnostic key=value dump (this file's own "
         "--debug-style output), not a runtime warning alert -- 'warnings' here is "

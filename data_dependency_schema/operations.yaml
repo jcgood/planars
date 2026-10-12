@@ -115,6 +115,11 @@
           aborts instead of writing if it would silently drop an annotated
           pair-row (issue #241), unless --confirm-drop is passed
         - >-
+          keyed_rows tabs (biuniqueness_deviations' morphemes/morphs, #254) are
+          rebuilt from the earlier tab's imported TSV, every answer carried
+          over by key and every hand-added row kept; the same --confirm-drop
+          guard applies to an answered row whose source is gone
+        - >-
           issue #271 (Phase 7 follow-up, 2026-08-17): snapshots the tab's
           current live content to regen_snapshots/{lang}_{class}_
           {construction}.json (coding/generate_sheets.py's
@@ -138,6 +143,7 @@
         - {fact: pair_row_construction_set, role: writes}
         - {fact: dependent_construction_element_scope, role: writes}
         - {fact: pair_row_position_numbers, role: writes}
+        - {fact: biuniqueness_keyed_chain, role: writes}
     - name: "--regen-dependents"
       description: >-
         Regenerates a dependent pair-row tab (e.g. nonpermutability's general

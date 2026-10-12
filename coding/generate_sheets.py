@@ -73,6 +73,7 @@ import pandas as pd
 
 from . import validate_planar as _val_planar
 from . import validate_diagnostics as _val_diag
+from . import biuniqueness_rows as _br
 from .drive import (
     _load_drive_config,
     _save_drive_config,
@@ -1039,6 +1040,121 @@ def _populate_tab_reflex_pairs(
     return ws
 
 
+def _populate_tab_keyed(
+    spreadsheet: SpreadsheetHandle,
+    tab_name: str,
+    keyed_columns: List[str],
+    param_names: List[str],
+    param_values: Dict[str, List[str]],
+    rows: List[Dict[str, str]],
+) -> WorksheetHandle:
+    """Create or clear a worksheet tab and populate it with keyed rows.
+
+    Like _populate_tab_pairs() but for row_type: keyed_rows (biuniqueness_deviations'
+    morphemes and morphs tabs): the generator-written keyed_columns, then
+    criterion columns, then trailing columns. Each row is a dict; any criterion
+    or trailing value it carries (an answer carried over, or a pre-fill) is
+    written, everything else is blank.
+    """
+    num_cols = len(keyed_columns) + len(param_names) + len(_TRAILING_COLS)
+    try:
+        ws = _with_retry(lambda: spreadsheet.worksheet(tab_name))
+        _reset_worksheet(ws, len(rows), num_cols)
+    except WorksheetNotFound:
+        ws = spreadsheet.add_worksheet(title=tab_name, rows=len(rows) + 2, cols=num_cols)
+
+    header = keyed_columns + param_names + _TRAILING_COLS
+    data_rows = [[str(r.get(c, "")) for c in header] for r in rows]
+    ws.update([header] + data_rows, "A1")
+    per_col_values = [param_values.get(p, ["y", "n"]) for p in param_names]
+    _format_and_validate(ws, len(rows), per_col_values, col_start=len(keyed_columns),
+                         param_notes=_build_criterion_notes(param_names))
+    return ws
+
+
+def _biuniq_generate(
+    lang_id: str, construction: str, param_names: List[str], planar_path: Path,
+):
+    """Build the rows for one biuniqueness_deviations tab from its sources.
+
+    prescreening comes from the planar; morphemes from the imported
+    prescreening.tsv; morphs from the imported morphemes.tsv (plus
+    prescreening.tsv). A missing source gives an empty tab and a note, as
+    phrasal_accent's pair tab does: it fills in once the source is imported
+    and the tab is regenerated.
+    """
+    planar_df = pd.read_csv(planar_path, sep="\t", dtype=str, keep_default_na=False)
+    if construction == "prescreening":
+        return _br.prescreening_rows(planar_df, lang_id, param_names)
+
+    cls_dir = CODED_DATA / lang_id / _br.CLASS_NAME
+    needed = ["prescreening"] + (["morphemes"] if construction == "morphs" else [])
+    missing = [n for n in needed if not (cls_dir / f"{n}.tsv").exists()]
+    if missing:
+        print(f"    [NOTE] {_br.CLASS_NAME}/{missing[0]}.tsv not found — {construction} tab "
+              f"left empty. Fill in {missing[0]}, import it, then run:\n"
+              f"      python -m coding generate-sheets --lang {lang_id} "
+              f"--regen-construction {_br.CLASS_NAME}:{construction}")
+        return []
+    read = lambda n: pd.read_csv(cls_dir / f"{n}.tsv", sep="\t", dtype=str, keep_default_na=False)
+    if construction == "morphemes":
+        return _br.morpheme_rows(read("prescreening"), planar_df, lang_id)
+    return _br.morph_rows(read("morphemes"), read("prescreening"), planar_df, lang_id)
+
+
+def _biuniq_populate(
+    spreadsheet: SpreadsheetHandle, lang_id: str, construction: str,
+    param_names: List[str], param_values: Dict[str, List[str]], planar_path: Path,
+) -> int:
+    """Create one biuniqueness_deviations tab on a new or extended sheet.
+    Returns the number of rows written."""
+    rows = _biuniq_generate(lang_id, construction, param_names, planar_path)
+    if construction == "prescreening":
+        _populate_tab(spreadsheet, construction, param_names, param_values, rows)
+    else:
+        columns, _ = _br.KEYED[construction]
+        _populate_tab_keyed(spreadsheet, construction, columns, param_names, param_values, rows)
+    return len(rows)
+
+
+def _regen_keyed_construction(
+    spreadsheet: SpreadsheetHandle, lang_id: str, class_name: str, construction_name: str,
+    param_names: List[str], param_values: Dict[str, List[str]], confirm_drop: bool,
+) -> None:
+    """--regen-construction for a keyed_rows tab: rebuild it from its source,
+    carrying every answer over by key, keeping hand-added rows, and refusing
+    to drop an answered row unless confirm_drop (as for pair tabs, #241)."""
+    # Imported here: restructure_sheets imports this module at load time.
+    from .restructure_sheets import _get_keyed_row_constructions
+    keyed = _get_keyed_row_constructions()[class_name][construction_name]
+    columns, key = keyed["columns"], keyed["key"]
+    try:
+        ws = _with_retry(lambda: spreadsheet.worksheet(construction_name))
+        existing_rows = _with_retry(ws.get_all_values)
+        _snapshot_before_regen(lang_id, class_name, construction_name, existing_rows)
+    except WorksheetNotFound:
+        existing_rows = []
+
+    planar_path = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
+    generated = _biuniq_generate(lang_id, construction_name, param_names, planar_path)
+    answer_cols = param_names + _TRAILING_COLS
+    rows, drops, counts = _br.carry_over(generated, existing_rows, key, answer_cols)
+    if drops and not confirm_drop:
+        lines = [_br.describe_drop(d, key, answer_cols) for d in drops]
+        raise SystemExit(
+            f"ABORTED: regenerating {lang_id}/{class_name}/{construction_name} would drop "
+            f"{len(drops)} answered row(s) whose source is no longer there — they would "
+            f"just be gone from the Sheet:\n" + "\n".join(lines)
+            + "\n\nIf the source change was a mistake, fix it in the earlier tab, import, "
+              "and regenerate again. If the drop is intended, re-run with --confirm-drop:\n"
+              f"  python -m coding generate-sheets --lang {lang_id} --regen-construction "
+              f"{class_name}:{construction_name} --confirm-drop")
+
+    _populate_tab_keyed(spreadsheet, construction_name, columns, param_names, param_values, rows)
+    print(f"    {construction_name}: {counts['retained']} retained, {counts['added']} added, "
+          f"{counts['removed']} removed, {counts['hand_added']} hand-added kept")
+
+
 # ---------------------------------------------------------------------------
 # Instructions tab (every class gets one; content varies by workflow shape)
 # ---------------------------------------------------------------------------
@@ -1110,14 +1226,16 @@ def _create_instructions_tab(
         row_type = c.get("row_type", "element")
 
         rows.append([f"STEP {step} — {name}"])
-        if row_type == "pair_rows" and depends_on:
+        if row_type in ("pair_rows", "keyed_rows") and depends_on:
             rows.append([f"  This tab is generated after {depends_on} is imported."])
             rows.append([f"  Do NOT annotate it until the coordinator confirms regeneration is complete."])
         else:
             rows.append([f"  Annotate each element row in this tab."])
-            if depends_on is None and any(cc.get("depends_on") == name for cc in constructions_schema):
-                rows.append([f"  When finished: mark '{name}' as 'ready-for-review' in the Status tab."])
-                rows.append([f"  The coordinator will then regenerate the dependent tab."])
+        # A tab another tab is generated from (the middle of a chain too, e.g.
+        # biuniqueness_deviations' morphemes) has to be marked finished.
+        if any(cc.get("depends_on") == name for cc in constructions_schema):
+            rows.append([f"  When finished: mark '{name}' as 'ready-for-review' in the Status tab."])
+            rows.append([f"  The coordinator will then regenerate the dependent tab."])
         rows.append([""])
         step += 1
 
@@ -1385,6 +1503,16 @@ def _build_criterion_notes(param_names: List[str]) -> List[Optional[str]]:
     return [index.get(p) for p in param_names]
 
 
+def is_free_entry(values) -> bool:
+    """True if a criterion's declared values are only placeholders
+    (<free_text>, <position_names>): it takes free entry, so it gets no
+    dropdown -- a dropdown would just offer the placeholder itself as a choice.
+    Every writer of dropdown validation (this module, sync_params,
+    refresh_dropdowns via _format_and_validate) asks this."""
+    return bool(values) and all(str(v).startswith("<") and str(v).endswith(">")
+                                for v in values)
+
+
 def _format_and_validate(
     worksheet: WorksheetHandle,
     num_data_rows: int,
@@ -1444,6 +1572,8 @@ def _format_and_validate(
     ]
     for col_offset, values in enumerate(param_values):
         col_idx = col_start + col_offset
+        if is_free_entry(values):
+            continue
         requests.append({
             "setDataValidation": {
                 "range": {
@@ -1701,6 +1831,12 @@ def _create_analysis_sheet(
             _populate_tab_pairs(spreadsheet, construction, param_names, param_values, pairs)
             tab_names.append(construction)
             print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
+        elif class_name == _br.CLASS_NAME:
+            # prescreening (in-scope elements) -> morphemes -> morphs (#254).
+            n = _biuniq_populate(spreadsheet, lang_id, construction, param_names,
+                                 param_values, planar_path)
+            tab_names.append(construction)
+            print(f"    Tab: {construction} ({n} rows, {len(param_names)} params)")
         else:
             ka = resolve_keystone_active(lang_id, class_name, construction,
                                          data_dir=planar_path.parent) or False
@@ -1946,6 +2082,20 @@ def _regen_construction(
         raise SystemExit(f"  No spreadsheet_id in manifest for {lang_id}/{class_name}")
     spreadsheet = doorway.open_spreadsheet(spreadsheet_id)
 
+    # keyed_rows tabs (biuniqueness_deviations' morphemes/morphs) are rebuilt
+    # from their own source and keyed by their own columns, not as pairs.
+    from .restructure_sheets import _get_keyed_row_constructions
+    if construction_name in _get_keyed_row_constructions().get(class_name, {}):
+        cp = manifest_class_info.get("construction_params", {}).get(construction_name, {})
+        if not cp.get("param_names"):
+            raise SystemExit(
+                f"  No criterion columns recorded in the manifest for "
+                f"{lang_id}/{class_name}/{construction_name}; run "
+                f"python -m coding update-sheets --apply first.")
+        _regen_keyed_construction(spreadsheet, lang_id, class_name, construction_name,
+                                  cp["param_names"], cp.get("param_values", {}), confirm_drop)
+        return
+
     # Read existing tab annotations from the live Sheet.
     existing: Dict = {}
     try:
@@ -2142,6 +2292,10 @@ def _add_constructions_to_existing_sheet(
                                                 keystone_active=ka)
             _populate_tab_pairs(ss, construction, param_names, param_values, pairs)
             print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
+        elif class_name == _br.CLASS_NAME:
+            n = _biuniq_populate(ss, lang_id, construction, param_names, param_values,
+                                 planar_path)
+            print(f"    Tab: {construction} ({n} rows, {len(param_names)} params)")
         else:
             rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
             if class_name == "free_occurrence":
@@ -2191,7 +2345,8 @@ def _regen_dependents_simple(doorway, manifest: dict) -> List[str]:
         deps = [
             (c["depends_on"], c["name"])
             for c in constructions_schema
-            if c.get("depends_on") and c.get("staleness_check") == "element_set"
+            if c.get("depends_on")
+            and c.get("staleness_check") in ("element_set", "keyed_source")
         ]
         if not deps:
             continue

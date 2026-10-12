@@ -53,6 +53,9 @@ from .generate_sheets import (
     _reorder_system_tabs,
     _TRAILING_COLS,
 )
+from . import biuniqueness_rows as _br
+
+import pandas as pd
 
 CODED_DATA = ROOT / "coded_data"
 _STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
@@ -290,6 +293,29 @@ def _compute_missing_rows(
     return missing_rows
 
 
+def _compute_missing_biuniq_prescreening_rows(
+    rows: List[List[str]],
+    header: List[str],
+    lang_id: str,
+    col_start: int,
+    num_criteria: int,
+) -> List[List[str]]:
+    """Missing rows for biuniqueness_deviations' prescreening tab (#254).
+
+    Unlike _compute_missing_rows, only elements the planar's Biuniqueness_Scope
+    column puts in scope, built by the same biuniqueness_rows.prescreening_rows
+    that first built the tab (so an open-category row gets NA in has_allomorphs).
+    """
+    planar_path = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
+    planar_df = pd.read_csv(planar_path, sep="\t", dtype=str, keep_default_na=False)
+    params = header[col_start:col_start + num_criteria]
+    existing_keys = _sheet_element_keys(rows, header)
+    num_trailing = max(0, len(header) - col_start - num_criteria)
+    return [[str(v) for v in r] + [""] * num_trailing
+            for r in _br.prescreening_rows(planar_df, lang_id, params)
+            if (r[0], str(r[2])) not in existing_keys]
+
+
 def _apply_missing_rows(
     ws: WorksheetHandle,
     missing_rows: List[List[str]],
@@ -364,6 +390,10 @@ def main(args: argparse.Namespace | None = None) -> None:
     doorway = get_doorway()
     manifest = load_manifest(doorway)
     coref_pair_map = _coreference_pair_criterion_map()
+    # Imported here: restructure_sheets imports generate_sheets at load time,
+    # as this module does.
+    from .restructure_sheets import _get_keyed_row_constructions
+    keyed_row_constructions = _get_keyed_row_constructions()
 
     # Build element index and planar position map for every language
     planar_files = sorted(CODED_DATA.glob("*/lang_setup/planar_*.tsv"))
@@ -473,6 +503,15 @@ def main(args: argparse.Namespace | None = None) -> None:
                         print(f"    [{construction}] up to date (pair-row tab — row updates skipped)")
                     continue
 
+                # Keyed-row tabs (biuniqueness_deviations' morphemes/morphs) are
+                # rebuilt from their source tab by --regen-construction, never
+                # extended row by row here.
+                if construction in keyed_row_constructions.get(class_name, {}):
+                    if not missing_trailing:
+                        print(f"    [{construction}] up to date (keyed-row tab — rows are "
+                              f"managed by --regen-construction)")
+                    continue
+
                 # Which columns hold criteria comes from the tab's own header;
                 # what each one allows comes from the diagnostics YAML. Neither
                 # answer is the manifest's to give — it is bookkeeping, and it
@@ -498,9 +537,15 @@ def main(args: argparse.Namespace | None = None) -> None:
                     _write_header_notes(
                         ws, col_start, header[col_start:col_start + len(per_col)])
 
-                missing_rows = _compute_missing_rows(
-                    ws, element_index, manifest_lang, col_start, len(per_col)
-                )
+                if class_name == _br.CLASS_NAME and construction == "prescreening":
+                    # Only elements the planar's Biuniqueness_Scope puts in
+                    # scope, built exactly as the tab was first built.
+                    missing_rows = _compute_missing_biuniq_prescreening_rows(
+                        rows, header, manifest_lang, col_start, len(per_col))
+                else:
+                    missing_rows = _compute_missing_rows(
+                        ws, element_index, manifest_lang, col_start, len(per_col)
+                    )
 
                 if not missing_rows and not missing_trailing:
                     print(f"    [{construction}] up to date")

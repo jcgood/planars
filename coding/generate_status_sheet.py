@@ -64,8 +64,11 @@ from .make_forms import (
     resolve_keystone_active,
     resolve_keystone_na_criteria,
 )
-from .restructure_sheets import _get_pair_row_constructions
-from .validate_coding import annotation_status, pair_annotation_status, _COREFERENCE_CONSTRUCTION_PARAMS
+from .restructure_sheets import _get_keyed_row_constructions, _get_pair_row_constructions
+from .validate_coding import (
+    annotation_status, keyed_annotation_status, pair_annotation_status,
+    _COREFERENCE_CONSTRUCTION_PARAMS,
+)
 from planars.languages import get_display_name
 
 _STATUS_FOLDER_NAME = "Annotation Status"
@@ -151,10 +154,12 @@ def _build_row_skeletons(
     Pure transform of _read_diagnostics_for_language() output — no API calls —
     so it's directly unit-testable. Each skeleton carries what's needed to look
     up live sheet data next: class/construction names, expected param names/
-    values, and whether the construction is a pair-row tab (decides which
-    counting function _gather_status_rows() uses — annotation_status() or
-    pair_annotation_status() — both feed the same percentage formula).
+    values, and whether the construction is a pair-row or keyed-row tab
+    (decides which counting function _gather_status_rows() uses —
+    annotation_status(), pair_annotation_status() or keyed_annotation_status()
+    — all three feed the same percentage formula).
     """
+    keyed_row_constructions = _get_keyed_row_constructions()
     skeletons = []
     for class_name, construction, param_names, param_values in specs:
         is_pair = construction in pair_row_constructions.get(class_name, set())
@@ -164,6 +169,9 @@ def _build_row_skeletons(
             "param_names": param_names,
             "param_values": param_values,
             "is_pair": is_pair,
+            # keyed_rows tabs (biuniqueness_deviations, #254) are counted by
+            # keyed_annotation_status(); None for every other shape.
+            "keyed": keyed_row_constructions.get(class_name, {}).get(construction),
         })
     return skeletons
 
@@ -253,7 +261,10 @@ def _gather_status_rows(
         params, values, keystone_active, keystone_na_criteria = _construction_params(
             lang_id, class_name, construction, skel["param_names"], skel["param_values"], lang_setup_dir,
         )
-        if skel["is_pair"]:
+        if skel.get("keyed"):
+            status = keyed_annotation_status(live_rows, skel["keyed"]["columns"], params, values,
+                                             skel["keyed"].get("blank_ok_when"))
+        elif skel["is_pair"]:
             status = pair_annotation_status(live_rows, params, values)
         else:
             status = annotation_status(

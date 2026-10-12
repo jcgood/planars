@@ -169,17 +169,32 @@ def _transform_planar_tsv(text: str, pos_map: dict[int, int], dst_lang: str) -> 
     return "".join(out)
 
 
+def _surviving_position_names(planar_src: Path, pos_map: dict[int, int]) -> set[str]:
+    """Names of the source planar's positions that survive the drop."""
+    lines = planar_src.read_text().splitlines()
+    header = lines[0].split("\t")
+    names = set()
+    for line in lines[1:]:
+        rec = dict(zip(header, line.split("\t")))
+        if rec.get("Position", "").isdigit() and int(rec["Position"]) in pos_map:
+            names.add(rec["Position_Name"].strip())
+    return names
+
+
 def _transform_filled_tsv(
     text: str,
     pos_map: dict[int, int],
     rng: random.Random,
     element_positions: dict[str, set[int]],
+    surviving_names: set[str] | None = None,
 ) -> tuple[str, int, int, int]:
     """Transform one filled/annotated TSV for the synthetic language.
 
     Returns (new_text, n_kept, n_dropped, n_flips). See module docstring for
-    how each of the three row shapes (Position_Number / Position_A+B /
-    Element_A+B only) decides whether a row survives the position drop.
+    how each row shape (Position_Number / Position_A+B / Element_A+B only /
+    keyed rows naming a Position_Name with no number) decides whether a row
+    survives the position drop. Keyed rows need surviving_names; without it
+    they are all kept.
     """
     lines = text.splitlines(keepends=True)
     if not lines:
@@ -218,6 +233,10 @@ def _transform_filled_tsv(
                 keep = False
             else:
                 parts[ia], parts[ib] = new_a, new_b
+
+        elif "Position_Name" in header and surviving_names is not None:
+            # Keyed rows (biuniqueness_deviations' morphs): a position by name only.
+            keep = parts[header.index("Position_Name")].strip() in surviving_names
 
         else:
             # Pure Element_A/Element_B pairs (e.g. nonpermutability/general.tsv):
@@ -305,7 +324,9 @@ def _transform_element_keyed_tsv(
     text: str, pos_map: dict[int, int], element_positions: dict[str, set[int]]
 ) -> tuple[str, int, int]:
     """Transform a lang_setup TSV keyed by a single Element column with no
-    position column of its own (e.g. a future allomorphs_{lang_id}.tsv).
+    position column of its own. (Built for the allomorphy tables #249 planned
+    as lang_setup files; since 2026-10-11 those are tabs of the
+    biuniqueness_deviations class instead, handled by _transform_filled_tsv.)
 
     Drops a row only if its Element no longer occurs at any surviving
     position; otherwise passes it through unchanged. No value-flipping here --
@@ -363,12 +384,15 @@ def build_plan(
 
     # Index element -> old positions, from the *source* planar TSV. Used both
     # for pure Element_A/Element_B pair rows below and for any other
-    # lang_setup file keyed by a single Element column (e.g. a future
-    # allomorphs_{lang_id}.tsv) with no position column of its own to check.
+    # lang_setup file keyed by a single Element column with no position
+    # column of its own to check.
     element_positions = _build_element_positions(planar_src)
+    # Position names that survive the drop, for keyed rows (e.g.
+    # biuniqueness_deviations' morphs), which name positions but carry no number.
+    surviving_names = _surviving_position_names(planar_src, pos_map)
 
     # Every other lang_setup/*.tsv — discovered generically rather than by
-    # hardcoded filename, so a new file type (like the allomorphy tables)
+    # hardcoded filename, so a new file type
     # doesn't require touching this script again. diagnostics_{lang_id}.tsv
     # falls through to plain lang-ID substitution, same as before.
     for tsv in sorted(src_pi.glob("*.tsv")):
@@ -403,7 +427,7 @@ def build_plan(
             continue
         for tsv in sorted(class_dir.glob("*.tsv")):
             content, n_kept, n_dropped, n_flips = _transform_filled_tsv(
-                tsv.read_text(), pos_map, rng, element_positions
+                tsv.read_text(), pos_map, rng, element_positions, surviving_names
             )
             content, notes = _resolve_scopal_divergence(content, rng)
             scopal_notes.extend(f"{class_dir.name}/{tsv.name}: {note}" for note in notes)
