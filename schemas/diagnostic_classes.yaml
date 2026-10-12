@@ -509,9 +509,15 @@ classes:
       - name: empty_morph
         group: a form, no meaning
         derived: false
-    required_criteria: [forms_relation, occurs_here, conditioning_type,
+    # required_criteria is empty because the criteria are split across the three
+    # tabs (construction_criteria in diagnostics_{lang_id}.yaml) and check-codebook
+    # checks required_criteria against every construction row -- the same reason
+    # phrasal_accent and segmental leave it empty. What the analysis itself needs
+    # is the module's _REQUIRED_CRITERIA (the six morphemes/morphs criteria).
+    required_criteria: []
+    optional_criteria: [has_allomorphs, members, co_exponents, morpheme_class,
+                        forms_relation, occurs_here, conditioning_type,
                         conditioning_features, conditioned_by, trigger_filled]
-    optional_criteria: [has_allomorphs, members, co_exponents, morpheme_class]
     qualification_rule: >
       Each form row of morphs.tsv with occurs_here=y gets a deviation type, derived
       in this order: if its morpheme's forms_relation is co-occur, the type is
