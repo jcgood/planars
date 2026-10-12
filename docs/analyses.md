@@ -114,7 +114,7 @@ Some analyses (stress, aspiration) use a **blocked span** instead: expand from t
 | `tonal` | `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
 | `tonosegmental` | `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
 | `intonational` | `applies` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
-| `biuniqueness_exponence` | `biunique` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
+| `biuniqueness_deviations` | `forms_relation` (morphemes tab); `occurs_here`, `conditioning_type`, `conditioning_features`, `conditioned_by`, `trigger_filled` (morphs tab) | 2 per domain (raw, keystone-anchored); one domain per deviating morpheme at a position | [AUTO-DERIVED] |
 | `repair` | `restart` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
 | `pausing` | `pause_domain` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
 | `idiom` | `idiomatic` | 4 (strict/loose × complete/partial) | [AUTO-DERIVED] |
@@ -220,9 +220,19 @@ A position **strictly qualifies** (complete) when ALL elements = `y`. A position
 
 **Known limitation:** the "do so" test cannot detect discontinuous constituencies (e.g. "John drank tea in Leipzig on Tuesday and Balthasar did so too in Zurich" — the discontinuous span in brackets is not captured). This is a recognized limitation of the test in the constituency literature and does not affect how planars records results.
 
-### Biuniqueness
+### Biuniqueness deviations
 
-The `biunique=n` qualification identifies elements that are pieces of a circumfix or extended exponent. The loose partial span — extending from the prefix piece to the suffix piece — is the primary result.
+One class for four of Tallman & Auderset's (2023) ways form and meaning can fail to match one-to-one (issue #254, designed 2026-10-11): **extended exponence** (one meaning, several pieces at once: *be … -ing*), **allomorphy** (one meaning, different forms by context: *do/does*, *will/'ll*), **cumulative exponence** (two meanings fused in one form: *went*, *won't*) and **zero morphs** (a meaning with no form: past-tense *cut*). Syncretism and empty morphs are registered in the schema but deferred.
+
+Three-stage annotation, each tab generated from the one before:
+
+1. **prescreening** (element rows): `has_allomorphs`, `members` (the variant forms, or known members of an open category), `co_exponents` (positions expressing the same meaning at once).
+2. **morphemes** (one row per morpheme): `morpheme_class`, `forms_relation` (`alternate` | `co-occur`).
+3. **morphs** (one row per form at a position, pre-filled): `occurs_here`, `conditioning_type`, `conditioning_features`, `conditioned_by` (position names), `trigger_filled`.
+
+The deviation type of each form is **derived, never annotated**: co-occurring forms → extended exponence; phonologically conditioned forms and the elsewhere form carry no deviation; `trigger_filled=y` → allomorphy; `trigger_filled=n` → zero morph if the form equals the elsewhere form, otherwise cumulative exponence. A row the rules can't place is an error.
+
+A **domain** is one morpheme at one position for one type (extended exponence: one morpheme across all its pieces). It covers that position plus every `conditioned_by` position of those forms. Two spans per domain: the **raw** span (contains the keystone only if the keystone falls inside — *does*, conditioned by the subject, spans `v:frontedauxiliary`–`v:npsubj1`) and the **keystone-anchored** span, for comparison with every other class.
 
 ---
 

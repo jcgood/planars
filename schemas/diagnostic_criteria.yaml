@@ -310,29 +310,81 @@ analyses:
   # aspiration is retired as of issue #100 — now handled by segmental
   # (construction aspiration_prominence). Criteria moved to segmental section below.
 
-  - name: biuniqueness_exponence
+  - name: biuniqueness_deviations
     description: >
-      [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design and qualification rules were
-      automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 13
-      (Araona) §Extended exponence. Verify before use.
+      [AUTO-DERIVED: NEEDS REVIEW] Designed with the coordinator on 2026-10-11
+      (issue #254); Adam's review required before promotion.
 
-      Tests for deviations from biuniqueness — spans defined by phenomena such as
-      circumfixation (a morpheme discontinuous across positions) and extended
-      exponence (the same morphosyntactic feature expressed by multiple morphs in
-      different positions). The biuniqueness domain is the span from the leftmost
-      piece of the extended exponent to the rightmost piece. Classified as an
-      indeterminate domain (Tallman et al. 2024). Each circumfix or extended
-      exponent group is annotated in its own TSV (one construction per file).
-      In Araona: the negation circumfix (pi-…-ma) identifies a vpref–tamesuf
-      domain; the interactional circumfix (ja-…-ti) identifies a vpref–ti domain.
+      Tests where form and meaning fail to match one-to-one: extended exponence
+      (one meaning, several pieces at once), allomorphy (one meaning, different
+      forms by context), cumulative exponence (two meanings fused in one form) and
+      zero morphs (a meaning with no form). The type of each form is derived from
+      the criteria below, never annotated directly. The domain runs from a
+      morpheme's position to the positions that condition its forms. Replaces the
+      earlier biuniqueness_exponence class and its single `biunique` criterion
+      (retired; no language had coded it). Araona's negation circumfix pi-...-ma
+      is now one morpheme whose two forms co-occur.
     diagnostic_criteria:
-      - name: biunique
+      - name: has_allomorphs
         values: [y, n]
         description: >
-          Whether the element participates in a biunique (one-form / one-meaning)
-          relationship. y = the element is biunique (not part of an extended
-          exponent). n = the element is one of the pieces of a circumfix or
-          extended exponent set and therefore deviates from strict biuniqueness.
+          Prescreening, filled elements only: does this element have more than one
+          form (other than predictable phonological alternation)? Contracted forms
+          count ('ll, 've).
+      - name: members
+        values: ["<free_text>"]
+        description: >
+          Prescreening. For a filled element marked has_allomorphs=y, its variant
+          forms, comma-separated (be: am, are, is). For an open category, only
+          members already known or suspected to have variant forms; blank means
+          "none known", not "none exist".
+      - name: co_exponents
+        values: ["<position_names>"]
+        description: >
+          Prescreening: other position(s) whose element expresses the same meaning
+          at the same time as this one (be at v:progressive with -ing at
+          v:verbinflection). Comma-separated position names; blank if none.
+      - name: morpheme_class
+        values: ["<free_text>"]
+        description: >
+          Morphemes tab, optional: a name for a pattern several morphemes share
+          (ablaut_i_a_u). A tag, not a registry of members.
+      - name: forms_relation
+        values: [alternate, co-occur]
+        description: >
+          Morphemes tab: alternate = the morpheme's forms replace one another
+          (do / does); co-occur = they appear together (be ... -ing), which makes
+          it extended exponence.
+      - name: occurs_here
+        values: [y, n]
+        description: >
+          Morphs tab: does this form occur at this position? n is a finding ('ll
+          never appears on a fronted will), not a deletion.
+      - name: conditioning_type
+        values: [phonological, morphosyntactic, lexico-constructional, prosodic]
+        description: >
+          Morphs tab: what kind of environment selects this form. phonological =
+          predictable alternation, which keeps the form out of every deviation
+          domain (issue #252).
+      - name: conditioning_features
+        values: ["<free_text>"]
+        description: >
+          Morphs tab: what selects this form, e.g. tense=past or
+          person=3, number=sg; 'elsewhere' marks the default form. Never assumed:
+          a morpheme may have no elsewhere form at all (good/better/best).
+      - name: conditioned_by
+        values: ["<position_names>"]
+        description: >
+          Morphs tab: the position(s) whose content selects this form,
+          comma-separated. May name a position left empty when this form appears
+          (went: v:verbinflection).
+      - name: trigger_filled
+        values: [y, n]
+        description: >
+          Morphs tab: is the conditioned_by position filled when this form appears?
+          y gives allomorphy (does: the subject is there); n gives cumulative
+          exponence (went carries PAST itself), or a zero morph when the form is
+          identical to the elsewhere form (past-tense cut).
 
   - name: repair
     description: >

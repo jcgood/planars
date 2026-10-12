@@ -46,7 +46,7 @@ from planars import metrical as _metrical
 from planars import nonpermutability as _nonperm
 from planars import coreference as _coreference
 from planars import free_occurrence as _freeoc
-from planars import biuniqueness_exponence as _biuniq
+from planars import biuniqueness_deviations as _biuniq
 from planars import repair as _repair
 from planars import segmental as _segmental
 from planars import tonal as _tonal
@@ -88,6 +88,10 @@ _SUBSPAN_VARIANTS = list(_subspan_map.get("variants", {}).items())
 
 # Short prefix overrides for simple analyses (e.g. "seg" instead of "segmental").
 _SIMPLE_PREFIXES = _span_map.get("simple_prefix_overrides", {})
+
+_BIUNIQ_MAP      = _span_map.get("biuniqueness_deviations", {})
+_BIUNIQ_PREFIX   = _BIUNIQ_MAP.get("prefix", "biuniq")
+_BIUNIQ_VARIANTS = list(_BIUNIQ_MAP.get("variants", {}).items())
 
 
 # ---------------------------------------------------------------------------
@@ -135,6 +139,25 @@ def _rows_from_metrical(result, lang_id):
     return rows
 
 
+def _rows_from_biuniq(result, lang_id):
+    """One pair of rows (raw, anchored) per biuniqueness deviation domain.
+
+    Not a fixed label set like the other classes: a language has as many
+    domains as it has deviating morphemes. Labels come from terms.yaml's
+    span_label_map.biuniqueness_deviations.
+    """
+    rows = []
+    for d in result["domains"]:
+        where = f"{d['morpheme']}@{d['position_name']}" if d["position_name"] else d["morpheme"]
+        for key, variant in _BIUNIQ_VARIANTS:
+            l, r = d[key]
+            rows.append({"Language": lang_id,
+                         "Test_Labels": f"{_BIUNIQ_PREFIX} {d['type']} {where} {variant}",
+                         "Analysis": "biuniqueness_deviations",
+                         "Left_Edge": l, "Right_Edge": r, "Size": r - l + 1})
+    return rows
+
+
 def _make_simple_rows(analysis_name, span_list=None, prefix=None):
     """Factory: returns a row function for modules with a standard span set."""
     if span_list is None:
@@ -171,7 +194,7 @@ _CLASS_HANDLERS = {
     "nonpermutability":  (_nonperm.derive_nonpermutability_domains,   _make_simple_rows("nonpermutability", _NONPERM_SPANS)),
     "coreference":       (_coreference.derive_coreference_domains,    _make_simple_rows("coreference", _COREFERENCE_SPANS)),
     "free_occurrence":   (_freeoc.derive_free_occurrence_spans,       _make_simple_rows("free_occurrence", _FREEOC_SPANS)),
-    "biuniqueness_exponence": (_biuniq.derive_biuniqueness_exponence_domains, _make_simple_rows("biuniqueness_exponence")),
+    "biuniqueness_deviations": (_biuniq.derive_biuniqueness_deviations_domains, _rows_from_biuniq),
     "repair":            (_repair.derive_repair_domains,              _make_simple_rows("repair")),
     "segmental":         (_segmental.derive_segmental_domains,        _make_simple_rows("segmental")),
     "tonal":             (_tonal.derive_tonal_domains,                _make_simple_rows("tonal")),
@@ -189,6 +212,9 @@ _CLASS_HANDLERS = {
 _REPORTABLE_CONSTRUCTIONS: Dict[str, frozenset] = {
     "nonpermutability": _nonperm._SNAPSHOT_CONSTRUCTIONS,
     "coreference":      _coreference._SNAPSHOT_CONSTRUCTIONS,
+    # prescreening and morphemes feed morphs; morphs.tsv is the one derive reads
+    # (it finds morphemes.tsv beside it).
+    "biuniqueness_deviations": frozenset({"morphs"}),
 }
 
 
@@ -389,6 +415,29 @@ def _collect_spans_sheets(gc, manifest, lang_id: Optional[str] = None):
                                     "keystone_pos": result["keystone_position"],
                                     "pos_to_name":  result["position_number_to_name"],
                                 }
+                    except Exception as e:
+                        print(f"  WARNING: could not derive {class_name}/{construction} for {lid}: {e}")
+                    continue  # skip standard load_filled_sheet path
+
+                # Biuniqueness deviations reads two tabs (morphs, plus morphemes
+                # beside it) and takes positions from the manifest planar entry.
+                if class_name == "biuniqueness_deviations" and "planar" in lang_data:
+                    try:
+                        def _tab_df(tab):
+                            raw = ss.worksheet(tab).get_all_values()
+                            return (pd.DataFrame(raw[1:], columns=raw[0]) if len(raw) > 1
+                                    else pd.DataFrame(columns=raw[0] if raw else []))
+                        planar = lang_data["planar"]
+                        pos_to_name = {p["pos"]: p["name"] for p in planar["positions"]}
+                        _data = (_tab_df("morphemes"), _tab_df(construction),
+                                 planar["keystone_pos"], pos_to_name)
+                        result = derive_fn(_data=_data, strict=False)
+                        rows.extend(row_fn(result, lid))
+                        if lid not in lang_meta:
+                            lang_meta[lid] = {
+                                "keystone_pos": result["keystone_position"],
+                                "pos_to_name":  result["position_number_to_name"],
+                            }
                     except Exception as e:
                         print(f"  WARNING: could not derive {class_name}/{construction} for {lid}: {e}")
                     continue  # skip standard load_filled_sheet path

@@ -161,17 +161,49 @@ classes:
     # design is sound but needs annotation data.
     collection_required: "n"
 
-  - name: biuniqueness_exponence
-    qualification_rule_hash: "bc5aee58"
-    criterion_set_status: stable  # Single binary criterion is appropriate for the
-      # circumfix/extended-exponent type. Non-automatic allomorphy (issue #58) is a
-      # distinct class, not an extension of this criterion set.
-    status: "[NEEDS REVIEW]"  # Formal abstract type in book's ch. 17 database schema.
-    # Ch. 17 line 554 explicitly acknowledges the class is "relatively superficially
-    # considered" and that "a great deal of complexity and variation is hidden behind such
-    # designations" — direct book-level support for issue #58 (non-automatic allomorphy
-    # as a distinct sub-type). Araona circumfix data is annotated; other types pending.
+  - name: biuniqueness_deviations
+    qualification_rule_hash: "cf30f7b6"
+    criterion_set_status: "[PROVISIONAL]"  # Designed 2026-10-11 (#254) and not yet
+      # run on real annotation; columns may change once Adam fills the morphs tab.
+    status: "[AUTO-DERIVED]"  # Span definition and deviation-type rules designed with
+    # the coordinator on 2026-10-11; awaiting Adam's review (#254). Replaces
+    # biuniqueness_exponence (no language had data for it) and the standalone
+    # allomorphy screening sheet. Book support: ch. 17 calls biuniqueness
+    # "relatively superficially considered", with "a great deal of complexity and
+    # variation hidden behind such designations".
     collection_required: "[NEEDS COORDINATOR INPUT]"
+    include_planar_reference_tab: true
+    sheet_instructions: >
+      Three tabs, filled in order. Each later tab is generated from your answers
+      in the one before, so finish a tab and mark it ready-for-review in the
+      Status tab before starting the next.
+
+      PRESCREENING. One row per element at each position.
+      If Biuniqueness_Scope is 'filled': set has_allomorphs to y or n. If y, list
+      the element's variant forms in members, separated by commas (be: am, are,
+      is). Contracted forms count ('ll, 'd, 've).
+      If Biuniqueness_Scope is 'open_category' (a whole word class, like AD-S): in
+      members, list only words in that class you already know or suspect have
+      variant forms. Leave it blank if you don't know of any: blank means "none
+      known", not "none exist". Leave has_allomorphs blank.
+      co_exponents: if this element expresses its meaning together with an
+      element at another position at the same time, name that position (be at
+      v:progressive goes with -ing at v:verbinflection). Otherwise leave blank.
+
+      MORPHEMES. One row per morpheme found in prescreening.
+      forms_relation: alternate if its forms replace one another (do / does),
+      co-occur if they appear together (be ... -ing). morpheme_class: optional
+      name for a shared pattern (ablaut_i_a_u).
+
+      MORPHS. One row per form at each position, already filled in for you.
+      occurs_here: y or n. n is a finding, not a mistake: 'll never appears on a
+      fronted will. For each y row: conditioning_type (phonological,
+      morphosyntactic, lexico-constructional or prosodic); conditioning_features
+      (what selects this form, e.g. tense=past, or 'elsewhere' for the default
+      form); conditioned_by (the position or positions whose content selects
+      it); trigger_filled (y if that position is filled when this form appears,
+      n if it is left empty because this form carries that meaning itself, as
+      went leaves the -ed slot empty).
 
   - name: repair
     qualification_rule_hash: "29dbc84b"

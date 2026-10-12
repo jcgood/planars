@@ -72,7 +72,7 @@ def _check_required_criteria(codebook: dict) -> List[str]:
     }
     for name in [
         "subspanrepetition", "noninterruption", "metrical",
-        "nonpermutability", "free_occurrence", "biuniqueness_exponence", "repair",
+        "nonpermutability", "free_occurrence", "biuniqueness_deviations", "repair",
         "segmental", "tonal", "tonosegmental", "intonational",
         "pausing", "proform", "play_language", "idiom",
     ]:
@@ -215,10 +215,11 @@ def _check_chart_keys() -> List[str]:
     """
     from planars import (
         ciscategorial, subspanrepetition, noninterruption,
-        metrical, nonpermutability, free_occurrence, biuniqueness_exponence, repair,
+        metrical, nonpermutability, free_occurrence, biuniqueness_deviations, repair,
         segmental, tonal, tonosegmental, intonational,
         pausing, proform, play_language, idiom,
     )
+    from planars.reports import _BIUNIQ_VARIANTS
     from planars.charts import (
         _CISC_SPANS, _NONINT_SPANS, _METRICAL_BLOCKED_SPANS,
         _SUBSPAN_CATS, _SUBSPAN_VARIANTS, _SIMPLE_SPANS, _NONPERM_SPANS, _FREEOC_SPANS,
@@ -325,10 +326,38 @@ def _check_chart_keys() -> List[str]:
     except Exception as e:
         errors.append(f"[free_occurrence] could not run derive function: {e}")
 
+    # biuniqueness_deviations: one domain per deviating morpheme, each carrying
+    # the span keys terms.yaml's label map names. Synthetic _data: does, at a
+    # fronted-auxiliary slot, conditioned by the subject.
+    _bd_pd = __import__("pandas")
+    _bd_data = (
+        _bd_pd.DataFrame([{"Morpheme": "do", "forms_relation": "alternate"}]),
+        _bd_pd.DataFrame([
+            {"Morpheme": "do", "Position_Name": "v:aux", "Form": "do", "occurs_here": "y",
+             "conditioning_type": "morphosyntactic", "conditioning_features": "elsewhere",
+             "conditioned_by": "", "trigger_filled": ""},
+            {"Morpheme": "do", "Position_Name": "v:aux", "Form": "does", "occurs_here": "y",
+             "conditioning_type": "morphosyntactic", "conditioning_features": "person=3",
+             "conditioned_by": "v:subj", "trigger_filled": "y"},
+        ]),
+        5,                                                    # keystone_pos
+        {3: "v:aux", 4: "v:subj", 5: "v:verbstem"},           # pos_to_name
+    )
+    try:
+        _bd_result = biuniqueness_deviations.derive_biuniqueness_deviations_domains(
+            _data=_bd_data, strict=True)
+        if not _bd_result["domains"]:
+            errors.append("[biuniqueness_deviations] synthetic case produced no domain")
+        for d in _bd_result["domains"]:
+            for key, _ in _BIUNIQ_VARIANTS:
+                if key not in d:
+                    errors.append(f"[biuniqueness_deviations] chart references key '{key}' "
+                                  f"not in a domain dict")
+    except Exception as e:
+        errors.append(f"[biuniqueness_deviations] could not run derive function: {e}")
+
     # simple 4-span modules (strict/loose × complete/partial)
     simple_cases = [
-        ("biuniqueness_exponence", biuniqueness_exponence.derive_biuniqueness_exponence_domains,
-         biuniqueness_exponence._REQUIRED_CRITERIA),
         ("repair",                repair.derive_repair_domains,                  repair._REQUIRED_CRITERIA),
         ("segmental",             segmental.derive_segmental_domains,        segmental._REQUIRED_CRITERIA),
         ("tonal",                 tonal.derive_tonal_domains,                tonal._REQUIRED_CRITERIA),

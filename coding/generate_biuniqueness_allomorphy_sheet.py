@@ -33,21 +33,14 @@ be a second tab in this spreadsheet, named when Part 2e builds it.
 
 Which biuniqueness deviation this is
 ------------------------------------
-Biuniqueness is a one-to-one match between form and meaning, and it fails in two
-directions. This screens one of them; the other is a class already:
+This file screened allomorphy (one meaning, different forms by context). Since
+2026-10-11 both it and the old biuniqueness_exponence class (one meaning,
+several pieces at once) are folded into one class, biuniqueness_deviations,
+whose prescreening tab replaces this sheet. The section below records why this
+sheet was built outside the class pipeline; reason (1) no longer holds.
 
-  biuniqueness_exponence   one meaning carried by several pieces at once, in
-                           different positions (circumfixes are the two-piece
-                           case). A class in diagnostic_classes.yaml, with a
-                           criterion, a qualification rule, and a span.
-  biuniqueness_allomorphy  one meaning carried by different forms depending on
-                           context. This file. Not a class — see below.
-
-Both were called "biuniqueness" until 2026-08-02, when the class took the
-narrower name it had always meant and this work took the other half.
-
-Why this isn't a class
-----------------------
+Why this wasn't a class
+-----------------------
 Three reasons, in order of how hard they are to work around:
 
 1. No span. Every class in diagnostic_classes.yaml earns its place by feeding a

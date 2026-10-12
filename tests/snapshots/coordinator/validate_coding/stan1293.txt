@@ -2,8 +2,8 @@ Connecting to Google APIs...
 
 stan1293
   Diagnostics validation (2 issue(s)):
-    [WARNING] row 12: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_exponence', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
-    [WARNING] row 13: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_exponence', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
+    [WARNING] row 12: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
+    [WARNING] row 13: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
   [ciscategorial/general] 45 blank cell(s) — annotation in progress
   [coreference/prescreening] 15 blank cell(s) — annotation in progress
   [coreference/reflexivization] 54 blank cell(s) — annotation in progress

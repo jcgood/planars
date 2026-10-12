@@ -64,7 +64,7 @@ _CLASS_DISPLAY_NAMES = {
     "free_occurrence":   "Free Occurrence",
     "proform":           "Proform",
     "idiom":             "Idiom",
-    "biuniqueness_exponence": "Biuniqueness — extended exponence",
+    "biuniqueness_deviations": "Biuniqueness deviations",
     "repair":            "Repair",
     "stress":            "Stress",
     "aspiration":        "Aspiration",
