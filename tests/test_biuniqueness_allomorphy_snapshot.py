@@ -230,6 +230,26 @@ def test_the_banner_sits_above_the_header_and_the_header_is_frozen(env):
     assert ws.frozen_rows == header_row + 1
 
 
+def test_a_shrunk_banner_leaves_no_old_merge_over_the_header(env):
+    """Merges survive ws.clear(). The live sheet had a 4-row merged banner
+    before the 2026-10-11 freeze shrank it; the old merge on what is now the
+    header row would hide every header cell but the first."""
+    doorway, run, _ = env
+    run(["gen", "--lang", LANG, "--apply"])
+    ws = the_sheet(doorway).worksheet("prescreening")
+    # The pre-freeze banner's merges: rows 0-3, every column.
+    for r in range(4):
+        ws.merges.append({"startRowIndex": r, "endRowIndex": r + 1,
+                          "startColumnIndex": 0, "endColumnIndex": len(gen._HEADER),
+                          "mergeType": "MERGE_ALL"})
+
+    run(["gen", "--lang", LANG, "--apply"])
+    ws = the_sheet(doorway).worksheet("prescreening")
+    header_row = next(i for i, row in enumerate(ws.get_all_values())
+                      if row[0] == "Position_Name")
+    assert not any(m["startRowIndex"] <= header_row < m["endRowIndex"] for m in ws.merges)
+
+
 def test_every_in_scope_element_gets_a_row_and_excluded_ones_do_not(env):
     doorway, run, _ = env
     out = run(["gen", "--lang", LANG, "--apply"])

@@ -290,6 +290,10 @@ def _write_prescreening_tab(ss, rows: List[Dict[str, str]]):
     _with_retry(lambda: ws.update(values, "A1", raw=False))
 
     requests = [
+        # Merges survive ws.clear(). Without this, a banner that shrinks
+        # (the 2026-10-11 freeze: 4 merged rows -> 2) leaves an old merge
+        # across what is now the header row, hiding every header but the first.
+        {"unmergeCells": {"range": {"sheetId": ws.id}}},
         {"updateSheetProperties": {
             "properties": {"sheetId": ws.id, "gridProperties": {"frozenRowCount": header_row_idx + 1}},
             "fields": "gridProperties.frozenRowCount",

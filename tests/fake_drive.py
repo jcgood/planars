@@ -636,6 +636,21 @@ class FakeSpreadsheet:
         merge["mergeType"] = payload.get("mergeType", "MERGE_ALL")
         ws.merges.append(merge)
 
+    def _req_unmergeCells(self, payload: Mapping[str, Any]) -> None:
+        """Remove every merge that overlaps the range, as the API does.
+        Omitted bounds are unbounded, so {"sheetId": n} unmerges the whole tab."""
+        rng = payload["range"]
+        ws = self._worksheet_by_sheet_id(rng["sheetId"])
+        inf = float("inf")
+
+        def overlaps(m: Mapping[str, Any]) -> bool:
+            return (m.get("startRowIndex", 0) < rng.get("endRowIndex", inf)
+                    and rng.get("startRowIndex", 0) < m.get("endRowIndex", inf)
+                    and m.get("startColumnIndex", 0) < rng.get("endColumnIndex", inf)
+                    and rng.get("startColumnIndex", 0) < m.get("endColumnIndex", inf))
+
+        ws.merges = [m for m in ws.merges if not overlaps(m)]
+
     def __repr__(self) -> str:  # pragma: no cover - debugging aid
         return f"<FakeSpreadsheet {self.id} {self.title!r} tabs={len(self._worksheets)}>"
 
