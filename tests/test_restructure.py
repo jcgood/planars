@@ -66,6 +66,29 @@ def test_parse_flag_map_missing_colon_raises():
         _parse_flag_map(["--rename-map", "nocolon"], FLAG)
 
 
+# --rename-map names positions, and position names contain a colon. The
+# general parser split "v:npsubj1:v:subj" at the first colon (old "v"), so
+# nothing was renamed and the position's elements were dropped (2026-10-11).
+
+def test_position_rename_map_splits_full_position_names_in_the_middle():
+    from coding.restructure_sheets import _parse_position_rename_map
+    assert _parse_position_rename_map(["--rename-map", "v:npsubj1:v:subj"]) == {
+        "v:npsubj1": "v:subj"}
+
+
+def test_position_rename_map_still_takes_plain_names_and_repeats():
+    from coding.restructure_sheets import _parse_position_rename_map
+    argv = ["--apply", "--rename-map", "a:b", "--rename-map", "v:x:v:y"]
+    assert _parse_position_rename_map(argv) == {"a": "b", "v:x": "v:y"}
+
+
+@pytest.mark.parametrize("bad", ["nocolon", "v:npsubj1:subj", "a:b:c:d:e"])
+def test_position_rename_map_refuses_an_ambiguous_value(bad):
+    from coding.restructure_sheets import _parse_position_rename_map
+    with pytest.raises(SystemExit):
+        _parse_position_rename_map(["--rename-map", bad])
+
+
 # ---------------------------------------------------------------------------
 # _parse_split_flag_map
 # ---------------------------------------------------------------------------

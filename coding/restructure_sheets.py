@@ -9,8 +9,8 @@ Run from the repo root:
     python -m coding restructure-sheets --apply   # archive old sheets and regenerate
 
     # Map renamed positions so their annotations are carried over instead of dropped:
-    python -m coding restructure-sheets --rename-map "old name:new name"
-    python -m coding restructure-sheets --rename-map old:new1 --rename-map old2:new2 --apply
+    python -m coding restructure-sheets --rename-map v:npsubj1:v:subj1
+    python -m coding restructure-sheets --rename-map v:old1:v:new1 --rename-map v:old2:v:new2 --apply
 
     # Map renamed elements (e.g. casing fixes) so their annotations are carried over:
     python -m coding restructure-sheets --rename-element Ad-VP:AD-VP --apply
@@ -25,7 +25,8 @@ Run from the repo root:
     python -m coding restructure-sheets --rename-class old_class:new_class --apply
     python -m coding restructure-sheets --rename-class old:new1 --rename-class old2:new2 --apply
 
-    --rename-map takes "old_pos_name:new_pos_name" and can be repeated.
+    --rename-map takes "old_pos_name:new_pos_name" and can be repeated. Position names
+      contain a colon themselves, so v:npsubj1:v:subj1 means v:npsubj1 -> v:subj1.
     --rename-element takes "old_element:new_element" and can be repeated.
     --split-element takes "old_element:new1,new2,..." (comma-separated, at least 2 targets)
       and can be repeated. There's no principled 1:1 value to carry over from one generic
@@ -1282,6 +1283,38 @@ def _parse_flag_map(argv: List[str], flag: str) -> Dict[str, str]:
     return result
 
 
+def _parse_position_rename_map(argv: List[str], flag: str = "--rename-map") -> Dict[str, str]:
+    """Parse --rename-map OLD:NEW where OLD and NEW are position names.
+
+    Position names themselves contain a colon ("v:npsubj1"), so the plain
+    first-colon split of _parse_flag_map read "v:npsubj1:v:subj" as renaming
+    "v" to "npsubj1:v:subj" -- nothing matched, and the run dropped every
+    element at the position instead of carrying it over (found 2026-10-11;
+    the saved restructure transcripts had recorded the drop as expected).
+    A value with three colons is split in the middle; one colon is a plain
+    pair; anything else is ambiguous and refused.
+    """
+    result: Dict[str, str] = {}
+    for i, arg in enumerate(argv):
+        if arg != flag or i + 1 >= len(argv):
+            continue
+        pair = argv[i + 1]
+        parts = pair.split(":")
+        if len(parts) == 4:
+            old, new = f"{parts[0]}:{parts[1]}", f"{parts[2]}:{parts[3]}"
+        elif len(parts) == 2:
+            old, new = parts
+        else:
+            raise SystemExit(
+                f"{flag} {pair!r}: can't tell where the old position name ends. "
+                f"Write it as OLD:NEW with both full names, e.g. "
+                f"{flag} v:npsubj1:v:npsubj1new")
+        if not old.strip() or not new.strip():
+            raise SystemExit(f"{flag} requires 'old:new' format, got: {pair!r}")
+        result[old.strip()] = new.strip()
+    return result
+
+
 def _parse_split_flag_map(argv: List[str], flag: str) -> Dict[str, List[str]]:
     """Parse all occurrences of --flag old:new1,new2,... into {old: [new1, new2, ...]}.
 
@@ -1427,7 +1460,7 @@ def main(args: argparse.Namespace | None = None) -> None:
     apply = "--apply" in sys.argv
     resume = "--resume" in sys.argv
     rollback = "--rollback" in sys.argv
-    rename_map         = _parse_flag_map(sys.argv[1:], "--rename-map")
+    rename_map         = _parse_position_rename_map(sys.argv[1:], "--rename-map")
     element_rename_map = _parse_flag_map(sys.argv[1:], "--rename-element")
     rename_class_map   = _parse_flag_map(sys.argv[1:], "--rename-class")
     split_element_map  = _parse_split_flag_map(sys.argv[1:], "--split-element")
