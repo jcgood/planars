@@ -212,9 +212,7 @@ _CLASS_HANDLERS = {
 _REPORTABLE_CONSTRUCTIONS: Dict[str, frozenset] = {
     "nonpermutability": _nonperm._SNAPSHOT_CONSTRUCTIONS,
     "coreference":      _coreference._SNAPSHOT_CONSTRUCTIONS,
-    # prescreening and morphemes feed morphs; morphs.tsv is the one derive reads
-    # (it finds morphemes.tsv beside it).
-    "biuniqueness_deviations": frozenset({"morphs"}),
+    "biuniqueness_deviations": _biuniq._SNAPSHOT_CONSTRUCTIONS,
 }
 
 

@@ -59,6 +59,11 @@ _REQUIRED_CRITERIA = {
     "conditioning_features", "conditioned_by", "trigger_filled",
 }
 
+# The one construction derive reads (it finds morphemes.tsv beside it);
+# prescreening and morphemes only feed it. generate_snapshots.py and
+# reports._REPORTABLE_CONSTRUCTIONS both read this.
+_SNAPSHOT_CONSTRUCTIONS = frozenset({"morphs"})
+
 # The derived deviation types, in the order they are reported. Must equal the
 # `derived: true` entries of the class's deviation_types registry in
 # schemas/diagnostic_classes.yaml (a test holds the two together).
