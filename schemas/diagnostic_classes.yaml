@@ -442,7 +442,7 @@ classes:
       inflection classes), Chatino (TAM tonal alternations), Chorote (causative/
       antipassive allomorphy), Mocoví (3rd-person prefix sets) — see issue #58.
       Allomorphy is not a class here: it is being screened first via
-      coding/generate_biuniqueness_allomorphy_stage1_sheet.py, and how it feeds a span
+      coding/generate_biuniqueness_allomorphy_sheet.py, and how it feeds a span
       is still open (issue #254 Part 2i). This class was named plain "biuniqueness"
       until 2026-08-02, which read as if it covered the family rather than one member.
     specificity: construction_specific

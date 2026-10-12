@@ -25,8 +25,10 @@ def derive_biuniqueness_exponence_domains(
       once, in different positions. Circumfixes are the two-piece case.
     - **allomorphy** — one meaning carried by different forms depending on
       context. Screened by
-      ``coding/generate_biuniqueness_allomorphy_stage1_sheet.py``; it has no
-      span computation yet (issue #254 Part 2i) and so is not a class here.
+      ``coding/generate_biuniqueness_allomorphy_sheet.py``; it has no span
+      computation yet (issue #254 Part 2i) and so is not a class here. Both
+      halves are being merged into one class, ``biuniqueness_deviations``
+      (planned 2026-10-11, #254).
 
     The class was called plain ``biuniqueness`` until 2026-08-02, which read as
     if it covered the family rather than one member of it.
