@@ -19,26 +19,32 @@ this project is trying to remove.
 
 Two live threads. Read whichever matches what you're picking up.
 
-### Thread: biuniqueness/allomorphy (`coding/`, issue #254)
+### Thread: biuniqueness deviations (`coding/`, `planars/`, issue #254)
 
-**State lives in issue #254** (the canonical tracker) — read it first, not
-here. Two commits made 2026-09-24, both pushed: `130df7d` (every
-diagnostic class gets an Instructions tab, opening first — coordinator sheet
-UX, issue #242) and `7da697c` (reworded the biuniqueness prescreening sheet's
-`open_category` instructions to ask only for known/suspected allomorphs,
-never claim category-wide coverage — a methodology gap posted as a #254
-comment on 2026-09-24, not yet resolved or replied to).
+**State lives in issue #254** — read its body checklist and the 2026-10-11
+design comment first. On 2026-10-11 allomorphy became part of one class,
+`biuniqueness_deviations` (extended exponence, allomorphy, cumulative
+exponence, zero morphs; type derived, never annotated), run through the
+ordinary pipeline. Built and live: `planars/biuniqueness_deviations.py`,
+`coding/biuniqueness_rows.py` (the three-tab chain and `keyed_rows`), the
+synth0001 class sheet
+https://docs.google.com/spreadsheets/d/1Z3CkzA4_QDLNDAp0hexL5To-reulXn5Or0th2UiYVio
+with Adam's 18 answers migrated. The standalone sheet and its command are
+retired.
 
-**Next action:** #254 Part 2 (build/test the mechanism on `synth0001`) is
-stalled well before Stage 2 — only Stage 1 sheet generation exists
-(`coding/generate_biuniqueness_allomorphy_sheet.py`); no Stage 2 expansion,
-import step, or validator yet. Someone (Adam, going by the content) has
-started filling in Stage 1's `prescreening` tab for real — progress on
-`v:frontedauxiliary` worth reading before deciding what's next. The
-`CONJUNCT`/`QWORDS` open_category rows still carried "I don't know what to do
-with this" notes as of 2026-09-24, from before the rewording — check whether
-the new instructions actually resolved that confusion.
-Live sheet: https://docs.google.com/spreadsheets/d/1YEtSlw9t05OI6RKGgCtbez0u3oX1p5Xfe_6UH1dweGA
+**Next action:** waiting on Adam — (1) review of the span definition and type
+rules (#254 design comment; the class stays `[AUTO-DERIVED]` until he does);
+(2) finishing prescreening and marking it ready-for-review; then run
+`python -m coding generate-sheets --lang synth0001 --regen-construction biuniqueness_deviations:morphemes`
+(after the daily import has it), and later `:morphs`; (3) #298 (what `-n` at
+`v:frontedauxiliaryinflection` is — fronted *won't* waits on it). Check the
+first daily import picked up the class sheet without an `import-error`.
+
+**Don't re-litigate (settled 2026-10-11, see #254):** contractions count as
+allomorphs; `members` on a filled `y` row lists its variant forms; open
+categories list known/suspected members only; the Sheet owns these facts
+(not coordinator-edited tables); no separate import command; `Morpheme` not
+`Element`; one row per (form, position).
 
 **Don't re-litigate:** Araona (arao1248) is a trial only, not a priority —
 this thread stays scoped to English (stan1293) and its synth0001 proxy. Don't
@@ -88,6 +94,9 @@ A bug with one obviously right fix is not a question: fix it and report it.
 - **`R CMD INSTALL` runs once per check**, so the full suite is ~9 minutes and
   the renderer test alone ~2.5. The renderer test compares all 137 charts in
   one pass, so it is usually the one worth running.
+- **`tests/test_unattended_warning_escalation.py` keys warning prints by
+  line number**, so any edit above a warning in `coding/` breaks it (twice on
+  2026-10-10/11). Run the *full* suite before pushing, not one test file.
 - **Jeff runs parallel sessions.** Anything uncommitted you did not write may
   be another one's work in flight: do not commit it and do not revert it, stage
   your own files by name, and ask whose it is.
