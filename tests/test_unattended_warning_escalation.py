@@ -167,7 +167,7 @@ _KNOWN_SITES: Dict[Tuple[str, int], str] = {
         "recommends it inside a `gh issue comment --body` string (data-refresh.yml "
         "line ~239), which the heredoc stripper doesn't catch since it isn't a "
         "Python heredoc. Harmless over-inclusion, kept classified for honesty.",
-    ("__main__.py", 54): "redundant with the pending-changes issue import-sheets "
+    ("__main__.py", 53): "redundant with the pending-changes issue import-sheets "
         "already files for the same underlying fact",
     ("drive.py", 199): "Phase 6 boundary 4 (issue #271) -- upload_manifest()'s "
         "own non-blocking manifest_contract.check() warning. Deliberately never "

@@ -10,7 +10,7 @@ Covers:
   - ensure_anyone_permission / create_or_update_shared_file /
     get_or_create_spreadsheet: the three shared Drive-sharing/creation
     helpers issue #276 collapsed generate_notebooks.py's, generate_reports.py's,
-    setup_root_folder.py's, generate_status_sheet.py's, and
+    setup_root_folder.py's, generate_status_sheet.py's, and the since-retired
     generate_biuniqueness_allomorphy_sheet.py's per-file duplicates into.
     Exercised here directly, against a bare FakeDriveDoorway, since they are
     pure Drive primitives with no per-language data dependency (unlike most

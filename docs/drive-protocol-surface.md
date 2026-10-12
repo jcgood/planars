@@ -416,6 +416,9 @@ dashboard).
 
 ### `coding/generate_biuniqueness_allomorphy_sheet.py` (291 lines)
 
+*Retired 2026-10-11 (#254): replaced by the `biuniqueness_deviations` class,
+which goes through `generate_sheets.py`. Kept below as a record of the audit.*
+
 Structurally a near-duplicate of `generate_status_sheet.py`'s Drive-writing
 code (same find-or-create-by-name pattern, same `update_title`/`resize`/
 `update(..., raw=False)`/`mergeCells`/banner-row shape) — the module docstring

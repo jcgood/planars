@@ -379,10 +379,10 @@ def create_or_update_shared_file(
 def get_or_create_spreadsheet(doorway, folder_id: str, name: str) -> Tuple[object, bool]:
     """Find a spreadsheet by name inside folder_id, or create one there.
 
-    Shared by generate_status_sheet.py and
-    generate_biuniqueness_allomorphy_sheet.py, whose per-file copies were
-    identical (issue #276). Returns (spreadsheet, created); reused on re-runs
-    so the URL stays stable across regenerations.
+    Used by generate_status_sheet.py (and, until its retirement on
+    2026-10-11, generate_biuniqueness_allomorphy_sheet.py, whose identical
+    copy issue #276 collapsed into this one). Returns (spreadsheet, created);
+    reused on re-runs so the URL stays stable across regenerations.
     """
     existing = doorway.list_files(
         q=(

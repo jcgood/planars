@@ -42,7 +42,6 @@ _COMMANDS = {
     "refresh-dropdowns":           "coding.refresh_dropdowns",
     "import-planar":               "coding.import_planar",
     "generate-status-sheet":       "coding.generate_status_sheet",
-    "generate-biuniqueness-allomorphy-sheet": "coding.generate_biuniqueness_allomorphy_sheet",
     "registry":                    "coding.registry",
 }
 

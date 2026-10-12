@@ -392,6 +392,9 @@ a magic string) and imported, not re-typed.
 ---
 
 ### D7. `_ADAM_EMAIL` hardcoded independently in two files, duplicating `languages.yaml`'s `annotator_email`
+*Partly resolved 2026-10-11: `generate_biuniqueness_allomorphy_sheet.py` was
+retired (#254), leaving `generate_status_sheet.py`'s copy. The address now
+also appears in two one-time scripts under `migrations/`, which ran once.*
 **What:** `generate_biuniqueness_allomorphy_sheet.py` and `generate_status_sheet.py`
 each declare their own `_ADAM_EMAIL = "adamjamesrosstallman@gmail.com"`
 constant to share/permission generated sheets. `schemas/languages.yaml`
@@ -714,6 +717,9 @@ fact as R3)
 schema field only if the threshold should ever vary by class/language).
 
 ### M3. Biuniqueness Stage 1 sheet column vocabulary and value semantics
+*Resolved 2026-10-11 (#254): the file was retired; the replacement
+`biuniqueness_deviations` class declares its columns and values in
+`schemas/diagnostic_classes.yaml` / `diagnostic_criteria.yaml`.*
 **What:** `_HEADER = ["Position_Name", "Element", "Biuniqueness_Scope",
 "has_allomorphs", "Members", "Notes"]` and the value semantics "scope ==
 'filled' → fill `has_allomorphs`; scope == 'open_category' → fill `Members`"

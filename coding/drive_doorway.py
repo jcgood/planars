@@ -143,8 +143,7 @@ class WorksheetHandle(Protocol):
         replace); ``sync_params.py:258`` uses a computed anchor to write just
         the columns it inserted.
 
-        ``raw=False`` (``generate_status_sheet.py``,
-        ``generate_biuniqueness_allomorphy_sheet.py``) makes Sheets *parse* the
+        ``raw=False`` (``generate_status_sheet.py``) makes Sheets *parse* the
         values, so an embedded ``=HYPERLINK(...)`` becomes a formula rather
         than literal text. That is a change in what the write means, not in
         how it displays.

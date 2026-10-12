@@ -76,7 +76,6 @@ python -m coding registry                 # full command inventory, derived fres
 python -m coding lookup-lang arao1248     # fetch + cache Glottolog metadata (--refresh, --all)
 python -m coding setup-root-folder        # one-time Drive folder setup
 python -m coding generate-status-sheet    # locked read-only per-language status sheets (--apply, --lang)
-python -m coding generate-biuniqueness-allomorphy-sheet --lang synth0001  # Stage 1 biuniqueness/allomorphy screening sheet (--apply); synth0001-only, see issue #254
 python -m planars <module> <tsv>          # run a single analysis
 
 # Testing
@@ -149,6 +148,8 @@ classes:
 ```
 
 Criteria default to `[y, n]`; non-default values are listed explicitly in the YAML and encoded as brace syntax in the TSV (`accented{y/n/both}`). `coding/make_forms.py` reads YAML first and falls back to TSV if no YAML exists (backward compatibility for languages not yet migrated).
+
+Most tabs have one row per element at a position, or per pair of elements. `biuniqueness_deviations` (issue #254) also has **keyed-row** tabs (`row_type: keyed_rows` in `diagnostic_classes.yaml`): rows identified by named columns the schema declares, generated from the tab before (prescreening → morphemes → morphs; `coding/biuniqueness_rows.py`). Its criteria include free-entry ones whose allowed values are placeholders — `<free_text>` (any text, kept exactly as typed) and `<position_names>` (names checked against the planar) — which get no dropdown and may be blank.
 
 When constructions within the same class have non-overlapping criteria (e.g. `segmental`'s `aspiration_prominence` vs. `flapping`), use `construction_criteria` — a per-construction dict — instead of `criteria`. Produces one TSV row per construction so each Sheet tab only shows its own columns. `update-sheets --apply` creates missing tabs and updates the manifest.
 
@@ -331,7 +332,7 @@ This is not about simplifying the content. The coordinator engages closely with 
 
 **Before proposing anything that touches `coding/`, `schemas/`, or `data_dependency_schema/` at a design level, read [`docs/data-layer-design.md`](docs/data-layer-design.md).** It records the diagnosis and constraints behind the in-progress data layer redesign (issue #271) — most importantly that every significant failure in project history has been *a fact recorded in more than one place with no single owner*, that this is a replication problem rather than a storage problem, and that design options are ranked by cost-to-comprehend rather than cost-to-build. The phased work queue is [`docs/data-layer-implementation-plan.md`](docs/data-layer-implementation-plan.md); no live Drive writes until its Phase 9. **Current state is [`docs/data-layer-progress.md`](docs/data-layer-progress.md)** — read it before resuming this work; it is the one file that says what is actually done.
 
-Drive/Sheets access goes through a doorway (`coding/drive_doorway.py`, offline fake in `tests/fake_drive.py`). New code that touches Drive must go through `get_doorway()` rather than `_get_clients()`; all eighteen commands that touch Drive have migrated (`tests/test_doorway_coverage.py` checks). The fake replays saved test data kept in planars-data at `coded_data/.test_fixtures/` (private, because it is real annotation content): a recording of the Sheets plus a frozen copy of the language folders, captured together and refrozen together by `python -m coding capture-drive-state --apply`. Command tests read only that frozen copy, never the live language folders, so annotators' work cannot turn them red.
+Drive/Sheets access goes through a doorway (`coding/drive_doorway.py`, offline fake in `tests/fake_drive.py`). New code that touches Drive must go through `get_doorway()` rather than `_get_clients()`; every command that touches Drive has migrated (`tests/test_doorway_coverage.py` checks). The fake replays saved test data kept in planars-data at `coded_data/.test_fixtures/` (private, because it is real annotation content): a recording of the Sheets plus a frozen copy of the language folders, captured together and refrozen together by `python -m coding capture-drive-state --apply`. Command tests read only that frozen copy, never the live language folders, so annotators' work cannot turn them red.
 
 **Before proposing or implementing any fix to a coordinator-facing workflow, apply the coordinator UX checklist in [`docs/tooling-design.md`](docs/tooling-design.md).** "Coordinator-facing" means error messages, GitHub issue bodies, `apply-pending` prompts, `integrity-check` output, generated Claude prompts, script dry-run output, and documentation steps.
 

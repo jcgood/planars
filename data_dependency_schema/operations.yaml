@@ -973,42 +973,6 @@
       facts.yaml).
   modes: []
 
-- id: generate_biuniqueness_allomorphy_sheet
-  cli_command: generate-biuniqueness-allomorphy-sheet
-  writes_to_drive: true
-  description: >-
-    Builds the Stage 1 biuniqueness/allomorphy screening sheet (issue #254
-    Part 2c); synth0001-only for now. Frozen 2026-10-11 pending its
-    replacement by the biuniqueness_deviations class: writes a "don't work
-    on this" notice and shares the sheet with Adam read-only.
-  side_effects:
-    - "creates or updates the biuniqueness_allomorphy_{lang_id} spreadsheet"
-    - "makes Adam's access read-only (removes any writer grant, adds reader if missing)"
-  idempotent: true
-  idempotency_note: >-
-    Rows (Position_Name/Element/Biuniqueness_Scope) are derived fresh from
-    planar_{lang_id}.tsv every run; has_allomorphs/Members/Notes are carried
-    over by (Position_Name, Element) from whatever the tab already had
-    (fixed 2026-08-11, found reviewing this record for operations.yaml:
-    ws.clear() previously wiped those three columns unconditionally on every
-    --apply, misdescribed here as a benign "recomputes fresh, same content"
-    operation -- low-stakes today since this command is synth0001-only, but
-    the sheet is shared as *writer* with Adam and #254 plans to expand it
-    beyond synth0001). A second run with nothing changed now produces
-    genuinely the same content, including any annotation already entered.
-  apply_gate: "--apply"
-  preconditions: []
-  facts_touched:
-    - {fact: planar_sheet_structure, role: reads}
-  cascades_triggered: []
-  ordering_constraints:
-    - >-
-      Depends on Biuniqueness_Scope already being filled in on
-      planar_{lang_id}.tsv (Part 2a/2b) -- runs outside the standard
-      diagnostics_{lang_id}.yaml/generate-sheets class/construction pipeline
-      entirely, so nothing else creates its input for it.
-  modes: []
-
 - id: registry
   cli_command: registry
   writes_to_drive: false

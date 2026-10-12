@@ -290,9 +290,8 @@ def test_a_transient_429_moving_a_new_sheet_is_retried_not_a_crash(env, monkeypa
     is a real "one 429, then the retry succeeds" case. time.sleep is mocked
     so the real ~15s backoff wait doesn't slow the suite down. move_file is
     idempotent on retry (setting the same parent twice converges), unlike
-    create_spreadsheet/create_permission -- see
-    test_biuniqueness_allomorphy_snapshot.py's version of this test for that
-    distinction.
+    create_spreadsheet/create_permission, where a retry after a lost
+    response can create a second copy.
     """
     env.remove_from_manifest("arao1248")
     monkeypatch.setattr(drive_module.time, "sleep", lambda *a, **kw: None)
