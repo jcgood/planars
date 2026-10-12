@@ -151,15 +151,39 @@ def test_the_sheet_lands_in_the_languages_folder(env):
 
 
 def test_it_is_shared_with_adam_by_name_not_by_link(env):
-    """Unpublished research data. A link is not access control."""
+    """Unpublished research data. A link is not access control. Read-only
+    since the 2026-10-11 freeze."""
     doorway, run, _ = env
     run(["gen", "--lang", LANG, "--apply"])
     perms = doorway.mutations_of("create_permission")
     assert len(perms) == 1
     assert perms[0]["type"] == "user"
-    assert perms[0]["role"] == "writer"
+    assert perms[0]["role"] == "reader"
     assert perms[0]["email"] == ADAM
     assert perms[0]["notify"] is False       # no surprise email
+
+
+def test_the_freeze_swaps_adams_writer_share_for_reader_once(env):
+    """The live sheet already shares Adam as writer (every pre-freeze run did).
+    The freeze removes that grant and adds a reader one; a second run finds
+    the reader grant and changes nothing."""
+    doorway, run, _ = env
+    run(["gen", "--lang", LANG, "--apply"])
+    ss = the_sheet(doorway)
+    # Recreate the pre-freeze state: Adam holds only a writer grant.
+    for p in doorway.list_permissions(ss.id):
+        doorway.delete_permission(ss.id, p["id"])
+    doorway.create_permission(ss.id, type="user", role="writer", email=ADAM)
+    doorway.clear_mutations()
+
+    run(["gen", "--lang", LANG, "--apply"])
+    adam = [p for p in doorway.list_permissions(ss.id) if p.get("emailAddress") == ADAM]
+    assert [p["role"] for p in adam] == ["reader"]
+    doorway.clear_mutations()
+
+    run(["gen", "--lang", LANG, "--apply"])
+    assert doorway.mutations_of("create_permission") == []
+    assert doorway.mutations_of("delete_permission") == []
 
 
 def test_a_second_run_reuses_the_same_spreadsheet(env):
@@ -201,6 +225,7 @@ def test_the_banner_sits_above_the_header_and_the_header_is_frozen(env):
     values = ws.get_all_values()
     header_row = next(i for i, row in enumerate(values) if row[0] == "Position_Name")
     assert header_row > 0, "the banner should come first"
+    assert values[0][0].startswith("ADAM: DON'T WORK ON THIS NOW")
     assert values[header_row] == gen._HEADER
     assert ws.frozen_rows == header_row + 1
 
@@ -352,7 +377,7 @@ def test_a_transient_429_sharing_the_sheet_is_retried_not_a_crash(env, monkeypat
     assert "[SystemExit:" not in out
     ss = the_sheet(doorway)
     perms = doorway.mutations_of("create_permission")
-    assert any(p["email"] == ADAM and p["role"] == "writer" for p in perms)
+    assert any(p["email"] == ADAM and p["role"] == "reader" for p in perms)
 
 
 def test_no_lang_flag_is_refused(env):

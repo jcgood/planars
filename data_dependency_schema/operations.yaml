@@ -972,9 +972,12 @@
   writes_to_drive: true
   description: >-
     Builds the Stage 1 biuniqueness/allomorphy screening sheet (issue #254
-    Part 2c); synth0001-only for now.
+    Part 2c); synth0001-only for now. Frozen 2026-10-11 pending its
+    replacement by the biuniqueness_deviations class: writes a "don't work
+    on this" notice and shares the sheet with Adam read-only.
   side_effects:
     - "creates or updates the biuniqueness_allomorphy_{lang_id} spreadsheet"
+    - "makes Adam's access read-only (removes any writer grant, adds reader if missing)"
   idempotent: true
   idempotency_note: >-
     Rows (Position_Name/Element/Biuniqueness_Scope) are derived fresh from

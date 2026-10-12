@@ -109,9 +109,9 @@ def test_rows_to_sheet_values_carries_over_existing_annotation_by_key():
 # _banner_rows
 # ---------------------------------------------------------------------------
 
-def test_banner_rows_mentions_both_scope_values():
+def test_banner_rows_tell_adam_to_stop_and_that_answers_are_kept():
+    """Frozen 2026-10-11 while the class sheet replaces this one (#254)."""
     banner_text = " ".join(cell for row in _banner_rows() for cell in row)
-    assert "filled" in banner_text
-    assert "open_category" in banner_text
-    assert "has_allomorphs" in banner_text
-    assert "Members" in banner_text
+    assert banner_text.startswith("ADAM: DON'T WORK ON THIS NOW. ASK JEFF OR CLAUDE")
+    assert "carried over" in banner_text
+    assert "#254" in banner_text

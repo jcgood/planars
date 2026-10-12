@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 """Generate the allomorphy prescreening sheet (issue #254 Part 2c).
 
+FROZEN 2026-10-11. This standalone sheet is being replaced by the
+biuniqueness_deviations class (prescreening -> morphemes -> morphs, run through
+the ordinary generate-sheets/import-sheets pipeline; see #254). Until the class
+sheet exists, an --apply run writes a "don't work on this" notice where the
+instructions used to be and shares the sheet with Adam read-only, keeping every
+answer already entered. A one-time migration will copy those answers into the
+class sheet, after which this file and its command are retired.
+
 Background: the biuniqueness/allomorphy mechanism (#249, #58, #254) is being built
 and tested entirely on `synth0001` before touching real data. The
 Biuniqueness_Scope column in planar_{lang_id}.tsv (filled / open_category /
@@ -67,7 +75,7 @@ precedent of a purpose-built generator using drive.py's primitives directly.
 
 Row shape: one row per (Position_Name, Element) pair where Biuniqueness_Scope is not
 "excluded". Two annotation columns cover both scope values, since which one applies is
-row-dependent (see banner written into the sheet):
+row-dependent (this guidance sat in the sheet's banner until the 2026-10-11 freeze):
     - Biuniqueness_Scope == "filled":        fill has_allomorphs (y/n); leave Members blank.
     - Biuniqueness_Scope == "open_category":  an open_category row stands for an
                                                unbounded word class (e.g. AD-S = any
@@ -97,8 +105,9 @@ minting a new URL, same convention as generate_status_sheet.py. has_allomorphs/
 Members/Notes are carried over by (Position_Name, Element) rather than wiped —
 only elements no longer in scope lose their annotation.
 
-Sharing: shared as writer with Adam's email (adamjamesrosstallman@gmail.com) — issue
-#254 Part 2d/2j explicitly names Adam as exercising this flow. synth0001 has no
+Sharing: shared read-only with Adam's email (adamjamesrosstallman@gmail.com) since
+the 2026-10-11 freeze; it was writer before, since #254 Part 2d/2j names Adam as
+exercising this flow. synth0001 has no
 per-language annotator_email in languages.yaml (it's a synthetic test language, not a
 real onboarded one), so the usual _annotator_email() lookup doesn't apply here.
 
@@ -189,19 +198,18 @@ def _rows_to_sheet_values(
 
 
 def _banner_rows() -> List[List[str]]:
-    """Instructions written above the header row (issue #254 Part 2c/2d)."""
+    """Notice written above the header row.
+
+    Frozen 2026-10-11: this sheet is being replaced by the
+    biuniqueness_deviations class sheet (issue #254), which carries the
+    answers below over. Until then nobody should work here; the sheet is
+    shared read-only (see _share_read_only_with_adam).
+    """
     return [
-        ["ALLOMORPHY PRESCREENING — a first pass over every in-scope element "
-         "(allomorphy is a biuniqueness deviation; issue #254 Part 2). "
-         "For each row below, fill in ONE of the two annotation columns depending "
-         "on that row's Biuniqueness_Scope:"],
-        ["  Biuniqueness_Scope = 'filled':        fill has_allomorphs (y/n). Leave Members blank."],
-        ["  Biuniqueness_Scope = 'open_category':  this row stands for an open, unbounded word "
-         "class (e.g. AD-S = any sentential adverb) -- it cannot be exhaustively tested. Fill "
-         "Members ONLY with specific words in this category you already know or suspect have "
-         "allomorphs (e.g. for AD-S: probably, certainly, ...). Leave Members blank if you don't "
-         "know of any -- that means 'none known', not 'none exist'. Leave has_allomorphs blank."],
-        ["Use Notes for anything else worth flagging. Message the coordinator when this tab is done."],
+        ["ADAM: DON'T WORK ON THIS NOW. ASK JEFF OR CLAUDE WHAT'S GOING ON."],
+        ["This sheet is frozen while it is replaced by a new biuniqueness sheet "
+         "(issue #254). Every answer already entered below is kept and will be "
+         "carried over to the new sheet."],
         [""],
     ]
 
@@ -232,6 +240,27 @@ def _existing_annotations(ws) -> Dict[Tuple[str, str], Dict[str, str]]:
             "Notes": row[5] if len(row) > 5 else "",
         }
     return annotations
+
+
+def _share_read_only_with_adam(doorway, file_id: str) -> None:
+    """Make Adam's access to the sheet read-only, idempotently.
+
+    Removes any non-reader grant he holds (the writer share every run made
+    before the 2026-10-11 freeze) and adds a reader grant if he has none. A
+    second run finds the reader grant and changes nothing. Inlined from the
+    doorway's permission primitives, same precedent as
+    restructure_sheets._lock_archived_sheet.
+    """
+    perms = _with_retry(lambda: doorway.list_permissions(
+        file_id, fields="permissions(id,type,role,emailAddress)"))
+    adam = [p for p in perms
+            if p.get("type") == "user" and p.get("emailAddress", "").lower() == _ADAM_EMAIL]
+    for p in adam:
+        if p.get("role") != "reader":
+            _with_retry(lambda: doorway.delete_permission(file_id, p["id"]))
+    if not any(p.get("role") == "reader" for p in adam):
+        _with_retry(lambda: doorway.create_permission(
+            file_id, type="user", role="reader", email=_ADAM_EMAIL, notify=False))
 
 
 def _write_prescreening_tab(ss, rows: List[Dict[str, str]]):
@@ -365,10 +394,9 @@ def main(args: argparse.Namespace | None = None) -> None:
     ss, created = get_or_create_spreadsheet(
         doorway, lang_data["folder_id"], sheet_name)
     _write_prescreening_tab(ss, rows)
-    # Named person, not "anyone with the link" — see drive._share_with_person
-    # for why unpublished research data is shared this way.
-    _with_retry(lambda: doorway.create_permission(ss.id, type="user", role="writer",
-                              email=_ADAM_EMAIL, notify=False))
+    # Named person, not "anyone with the link" -- unpublished research data.
+    # Read-only since the 2026-10-11 freeze (see _banner_rows).
+    _share_read_only_with_adam(doorway, ss.id)
     action = "Created" if created else "Updated"
     print(f"\n{action}: {ss.url}")
 
