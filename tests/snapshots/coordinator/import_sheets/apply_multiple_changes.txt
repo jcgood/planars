@@ -142,11 +142,17 @@ Language: synth0001
     [prescreening] status: 'in-progress' — importing for backup
     [prescreening] [backup] No changes → coded_data/synth0001/coreference/prescreening.tsv
     [reflexivization] status: 'in-progress' — importing for backup
-    [reflexivization] [backup] No changes → coded_data/synth0001/coreference/reflexivization.tsv
+    [reflexivization] ANOMALY: Missing columns: param column(s) in local TSV absent from sheet: ['pronoun_allowed', 'np_allowed']
+    [reflexivization] Archived existing → coded_data/synth0001/archive/coreference/reflexivization_20260804_120000.tsv
+    [reflexivization] [backup] 607 rows, 540 blank param cells → coded_data/synth0001/coreference/reflexivization.tsv
     [pronominalization] status: 'in-progress' — importing for backup
-    [pronominalization] [backup] No changes → coded_data/synth0001/coreference/pronominalization.tsv
+    [pronominalization] ANOMALY: Missing columns: param column(s) in local TSV absent from sheet: ['reflexive_allowed', 'np_allowed']
+    [pronominalization] Archived existing → coded_data/synth0001/archive/coreference/pronominalization_20260804_120000.tsv
+    [pronominalization] [backup] 607 rows, 540 blank param cells → coded_data/synth0001/coreference/pronominalization.tsv
     [np_reference] status: 'in-progress' — importing for backup
-    [np_reference] [backup] No changes → coded_data/synth0001/coreference/np_reference.tsv
+    [np_reference] ANOMALY: Missing columns: param column(s) in local TSV absent from sheet: ['reflexive_allowed', 'pronoun_allowed']
+    [np_reference] Archived existing → coded_data/synth0001/archive/coreference/np_reference_20260804_120000.tsv
+    [np_reference] [backup] 607 rows, 540 blank param cells → coded_data/synth0001/coreference/np_reference.tsv
 
   proform
     [do_so_substitution] status: 'in-progress' — importing for backup
@@ -168,7 +174,7 @@ Language: synth0001
     [morphs] status: 'in-progress' — importing for backup
     [morphs] [backup] No changes → coded_data/synth0001/biuniqueness_deviations/morphs.tsv
 
-Done. 0 file(s) written, 1 in-progress backup(s), 0 warning(s).
+Done. 0 file(s) written, 4 in-progress backup(s), 0 warning(s).
 
 Next: commit and push coded_data/ before pushing planars:
   git -C coded_data add -A
@@ -178,6 +184,8 @@ manifest.json updated on Drive with languages.yaml metadata.
 
 ⚠  1 destructive change(s) written to pending_changes.json
    Review and apply with: python -m coding apply-pending
+
+⚠  3 in-progress sheet(s) have anomalies — verify with collaborator
 
 Auto-applying 1 safe downstream command(s):
   python -m coding update-sheets --apply
@@ -229,24 +237,9 @@ synth0001
   [biuniqueness_deviations/morphs] no issues
   [ciscategorial/general] 422 blank cell(s) — annotation in progress
   [coreference/prescreening] 15 blank cell(s) — annotation in progress
-  [coreference/reflexivization] 4 issue(s):
-    [WARNING] reflexivization: live Sheet header differs from local TSV — Sheet: ['Element_A', 'Position_A', 'Position_B', 'Direction', 'reflexive_allowed', 'Source', 'Comments'], TSV: ['Element_A', 'Position_A', 'Position_B', 'Direction', 'reflexive_allowed', 'pronoun_allowed', 'np_allowed', 'Source', 'Comments']
-    [WARNING] reflexivization: criterion columns differ from manifest — expected ['reflexive_allowed'], got ['reflexive_allowed', 'pronoun_allowed', 'np_allowed']
-    [WARNING] reflexivization: column 'np_allowed' has no allowed values in the diagnostics YAML, so its cells were not checked — list its values there, or remove the column
-    [WARNING] reflexivization: column 'pronoun_allowed' has no allowed values in the diagnostics YAML, so its cells were not checked — list its values there, or remove the column
-    (540 blank cell(s) — annotation in progress; use --verbose to list)
-  [coreference/pronominalization] 4 issue(s):
-    [WARNING] pronominalization: live Sheet header differs from local TSV — Sheet: ['Element_A', 'Position_A', 'Position_B', 'Direction', 'pronoun_allowed', 'Source', 'Comments'], TSV: ['Element_A', 'Position_A', 'Position_B', 'Direction', 'reflexive_allowed', 'pronoun_allowed', 'np_allowed', 'Source', 'Comments']
-    [WARNING] pronominalization: criterion columns differ from manifest — expected ['pronoun_allowed'], got ['reflexive_allowed', 'pronoun_allowed', 'np_allowed']
-    [WARNING] pronominalization: column 'np_allowed' has no allowed values in the diagnostics YAML, so its cells were not checked — list its values there, or remove the column
-    [WARNING] pronominalization: column 'reflexive_allowed' has no allowed values in the diagnostics YAML, so its cells were not checked — list its values there, or remove the column
-    (540 blank cell(s) — annotation in progress; use --verbose to list)
-  [coreference/np_reference] 4 issue(s):
-    [WARNING] np_reference: live Sheet header differs from local TSV — Sheet: ['Element_A', 'Position_A', 'Position_B', 'Direction', 'np_allowed', 'Source', 'Comments'], TSV: ['Element_A', 'Position_A', 'Position_B', 'Direction', 'reflexive_allowed', 'pronoun_allowed', 'np_allowed', 'Source', 'Comments']
-    [WARNING] np_reference: criterion columns differ from manifest — expected ['np_allowed'], got ['reflexive_allowed', 'pronoun_allowed', 'np_allowed']
-    [WARNING] np_reference: column 'pronoun_allowed' has no allowed values in the diagnostics YAML, so its cells were not checked — list its values there, or remove the column
-    [WARNING] np_reference: column 'reflexive_allowed' has no allowed values in the diagnostics YAML, so its cells were not checked — list its values there, or remove the column
-    (540 blank cell(s) — annotation in progress; use --verbose to list)
+  [coreference/reflexivization] 540 blank cell(s) — annotation in progress
+  [coreference/pronominalization] 540 blank cell(s) — annotation in progress
+  [coreference/np_reference] 540 blank cell(s) — annotation in progress
   [free_occurrence/general] 75 blank cell(s) — annotation in progress
   [metrical/stress_domain] 705 blank cell(s) — annotation in progress
   [noninterruption/general] 282 blank cell(s) — annotation in progress
@@ -264,5 +257,5 @@ synth0001
   [subspanrepetition/asyndeticPart] 423 blank cell(s) — annotation in progress
 
 ──────────────────────────────────────────────────
-Validated 50 sheet(s).  Data coding issues: 12
-Cell highlighting updated in Google Sheets.
+Validated 50 sheet(s).  Data coding issues: 0
+All data coding issues cleared. (Pink highlighting for blank cells preserved.)

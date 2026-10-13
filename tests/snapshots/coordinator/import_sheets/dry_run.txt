@@ -140,11 +140,11 @@ Language: synth0001
     [prescreening] status: 'in-progress' — importing for backup
     [prescreening] [backup] No changes → coded_data/synth0001/coreference/prescreening.tsv
     [reflexivization] status: 'in-progress' — importing for backup
-    [reflexivization] [backup] No changes → coded_data/synth0001/coreference/reflexivization.tsv
+    [reflexivization] [backup] Would overwrite (changed) → coded_data/synth0001/coreference/reflexivization.tsv
     [pronominalization] status: 'in-progress' — importing for backup
-    [pronominalization] [backup] No changes → coded_data/synth0001/coreference/pronominalization.tsv
+    [pronominalization] [backup] Would overwrite (changed) → coded_data/synth0001/coreference/pronominalization.tsv
     [np_reference] status: 'in-progress' — importing for backup
-    [np_reference] [backup] No changes → coded_data/synth0001/coreference/np_reference.tsv
+    [np_reference] [backup] Would overwrite (changed) → coded_data/synth0001/coreference/np_reference.tsv
 
   proform
     [do_so_substitution] status: 'in-progress' — importing for backup

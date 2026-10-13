@@ -272,7 +272,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         print("Run with --apply to make these changes.")
         return
 
-    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
 
     # Archive manifest before any mutation
     snapshot_path = _archive_manifest(manifest, timestamp)

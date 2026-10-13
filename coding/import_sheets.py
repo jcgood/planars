@@ -163,13 +163,20 @@ def _archive_tsv(path: Path, timestamp: str) -> Path:
 def _tsv_content_changed(path: Path, header: List[str], records: List[Dict]) -> bool:
     """Return True if the new header+records differ from the existing file at path.
 
-    Reads the existing file into a DataFrame, aligns columns to the new header
-    (filling missing columns with ""), and compares element-wise after normalising
-    NaN → "".  Returns True when content differs or the file cannot be parsed.
+    A different header (a column added, removed or moved on the sheet) is a
+    change. Otherwise compares cell text element-wise after normalising
+    NaN → "". Returns True when content differs or the file cannot be parsed.
+
+    The header check came first only on 2026-10-13: before, the old file was
+    lined up to the new header before comparing, which threw away any column
+    the sheet no longer had — so a column deleted on the sheet never left the
+    local file (synth0001's coreference tabs kept two dead columns for months).
     """
     try:
         existing = pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False)
     except Exception:
+        return True
+    if list(existing.columns) != list(header):
         return True
     new_df = pd.DataFrame(records).reindex(columns=header).fillna("")
     existing = existing.reindex(columns=header).fillna("")

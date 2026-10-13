@@ -264,14 +264,24 @@ class TestTsvContentChanged:
         p = tmp_path / "nonexistent.tsv"
         assert _tsv_content_changed(p, header, records) is True
 
-    def test_handles_column_reorder(self, tmp_path):
-        # File written with columns in different order — both reindexed to header.
+    def test_column_reorder_is_a_change(self, tmp_path):
+        # The local file mirrors the sheet, column order included; one rewrite
+        # (archiving the old file) brings it back in line.
         file_header = ["criterion", "Element"]
         new_header = ["Element", "criterion"]
         records = [{"Element": "a", "criterion": "y"}]
         p = tmp_path / "data.tsv"
         _write_tsv_file(p, file_header, records)
-        assert _tsv_content_changed(p, new_header, records) is False
+        assert _tsv_content_changed(p, new_header, records) is True
+
+    def test_a_column_removed_on_the_sheet_is_a_change(self, tmp_path):
+        # Used to compare equal: the old file was lined up to the new header
+        # first, dropping the removed column before the comparison.
+        old_header = ["Element", "reflexive_allowed", "np_allowed"]
+        new_header = ["Element", "reflexive_allowed"]
+        p = tmp_path / "reflexivization.tsv"
+        _write_tsv_file(p, old_header, [{"Element": "a", "reflexive_allowed": "y", "np_allowed": ""}])
+        assert _tsv_content_changed(p, new_header, [{"Element": "a", "reflexive_allowed": "y"}]) is True
 
     def test_header_only_tab_is_not_changed(self, tmp_path):
         # A tab with a header and no rows used to compare as changed every run
