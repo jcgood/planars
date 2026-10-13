@@ -118,6 +118,10 @@ This is a linguistic typology analysis project for morphosyntactic domain deriva
 
 Late aggregation, autotypology (dynamic schema), definition files vs. data files, and language reports are documented in [docs/data-management.md](docs/data-management.md#design-principles). The key operational implication: never aggregate during data collection; never store derived values (spans, domain types) in annotation TSVs.
 
+**Reference works.** The framework extends Tallman, Auderset & Uchihara (eds.) 2024, *Constituency and convergence in the Americas* (Language Science Press, doi:10.5281/zenodo.10559861; source https://github.com/langsci/291), whose companion database (CCDB, https://github.com/Constituency-and-Convergence/Constituency-Database, CC-BY-SA 4.0) covers the same diagnostics. Use the book's definitions in docs and the codebook, but mark toolkit extensions (strict/loose spans, partial/complete positions, named `*-combines` criteria): this is research that goes beyond the book. For how the schemas change over time, draw on the schema- and ontology-evolution literature (versioning, change classification — add/remove/rename/split/merge — migration tooling, compatibility policy).
+
+**Releases.** When a proper release is tagged, archive it on Zenodo and put the DOI in `CITATION.cff`.
+
 **Checkers don't proliferate; commands do.** New validation logic belongs in `integrity-check` (summary) or `check-codebook` (detail) — not in new standalone scripts. New scripts are commands (they transform or generate data) and may validate as a side effect, but are not primarily checkers. When proposing a new validation, route it to an existing tool. When `integrity-check` grows too long, add `--section` flags rather than splitting into more scripts. This principle is enforced by documentation (here and in `docs/coordinator-guide.md`), not by code structure.
 
 ## Package structure
@@ -257,6 +261,8 @@ Separate `coded_data/` annotation changes from tooling/library changes into dist
 
 ### Araona (arao1248) — partially annotated
 
+A trial for now, not a priority (Jeff, 2026-09-24): the active focus is English (stan1293). Don't propose expanding or unblocking Araona (e.g. #279's missing `proform`) unless Jeff raises it.
+
 ciscategorial, noninterruption, subspanrepetition (2 constructions: auxiliary_construction, tso_clause_linkage) annotated and running. Source: Adam Tallman §4.5, langsci/291 ch. 13.
 
 ### Chichewa (nyan1308) — planned
@@ -267,7 +273,9 @@ Source: Jeff Good, "Domains of linearization, constituency, and wordhood in Chic
 
 Feature requests and bugs are tracked on GitHub Issues: https://github.com/jcgood/planars/issues
 
-When creating a new issue, apply at least one label from the set below. Use `gh issue create --label "..."` or apply labels immediately after creation with `gh issue edit <n> --add-label "..."`.
+When creating a new issue, apply at least one label from the set below. Use `gh issue create --label "..."` or apply labels immediately after creation with `gh issue edit <n> --add-label "..."`. A new label goes into the table below the same day (until Phase 10 unit 10 generates the table).
+
+**Sign every issue comment Claude posts** with a footer naming the instance — `---` then `*klᴐd*` for Jeff's Claude (not "klɑd", a mistranscription), `*klod*` for Adam's — so nobody mistakes a Claude-drafted comment for the person's own. When a commit resolves an issue, put `Closes #N` in its message (one line per issue); for a partial fix, comment and close by hand instead.
 
 ### Labels
 
@@ -306,7 +314,7 @@ Retiring vs. renaming a class, and the ordering rules for every other `coding/` 
 
 **Contributor tooling** — Changes to sheet structure need `update-sheets` or `restructure-sheets` to propagate.
 
-**Audit** — Start by triggering the data refresh workflow (`gh workflow run data-refresh.yml`), then wait for it to complete and review any newly filed issues. This catches problems that only surface during the live Sheet-reading steps (cascading validation errors, rate-limit failures, drift between Sheet state and local YAML) and is more complete than running `integrity-check` locally alone. Then run `integrity-check` (summary) and `check-codebook` (detail) locally. Verify inline comments and docstrings match current behavior. A good starting point after a gap. Claude can trigger the workflow and interpret the results.
+**Audit** — Start by triggering the data refresh workflow (`gh workflow run data-refresh.yml`), then wait for it to complete and review any newly filed issues. This catches problems that only surface during the live Sheet-reading steps (cascading validation errors, rate-limit failures, drift between Sheet state and local YAML) and is more complete than running `integrity-check` locally alone. Then run `integrity-check` (summary) and `check-codebook` (detail) locally. Verify inline comments and docstrings match current behavior. A good starting point after a gap, and due after any cross-cutting change (a mass rename, a schema split, a new command): the #77 rename left ~127 stale occurrences that only an audit caught. Claude can trigger the workflow and interpret the results.
 
 **Refactoring** — Track targets in a dedicated issue. Run a pass after major feature additions.
 
@@ -324,17 +332,62 @@ The coordinator is a scientist first, not a software engineer — one person doi
 
 This is not about simplifying the content. The coordinator engages closely with substance when it is stated plainly — it is register that gets in the way, not depth.
 
+**Planned scale: 30–40 languages and more than one coordinator.** Workflow code must loop over every language, and docs must be followable by a coordinator other than Jeff. A single-language assumption is a bug, not a simplification.
+
 **Low cognitive load is a first-class design requirement**, not an afterthought. Prefer self-documenting systems (errors explain what to do next), issue-driven workflows (the GitHub issue IS the instruction for that situation), and pre-assembled context (Claude prompts generated by scripts, not composed by the coordinator from memory). When a workflow requires the coordinator to remember a sequence of steps, that is a design flaw worth fixing.
 
 **Tooling complexity accumulates faster than one person can hold in their head.** Fight this actively: automate the deterministic parts, delegate the judgement-requiring parts to Claude with full context pre-assembled, and document the handoff points explicitly. Claude is part of the operational workflow — a collaborator handling the steps that require reading and reasoning about the analytical model.
 
-**The CLI tools are necessary and good — the design question is always who's actually consuming a given piece of their output.** Both the coordinator (Jeff) and collaborators (Adam) primarily work through their own Claude Code instance, which runs CLI commands on their behalf — or, for less technical collaborators, they're fully separated from the CLI and any technical detail entirely (see John in `collaborator_profiles`). Direct human use of the CLI, watching a terminal in real time, is the unusual case, not the default. This means **terminal/stdout output is not a channel that reaches a collaborator** — it's visible only to whichever Claude session happened to run the command at that moment, and it evaporates. It does not automatically reach Adam, and printing something "for the coordinator to relay" doesn't reduce any manual step — someone still has to notice the line and copy it somewhere durable. Anything meant to reach a collaborator has to be written into a channel both sides actually check: a GitHub issue/comment, a Sheet's `Comments` cell or an `Instructions` tab, the language's Notes Google Doc, documentation. When designing a fix for a coordinator- or collaborator-facing workflow, ask "who is actually going to read this output, and how would it get to them" before adding a print statement — CLI output aimed at Claude (dry-run stats, error diagnostics meant to inform the next command) is exactly the right design; CLI output that assumes a human is watching the terminal and will manually relay it to someone else is not.
+**The CLI tools are necessary and good — the design question is always who's actually consuming a given piece of their output.** Both the coordinator (Jeff) and collaborators (Adam) primarily work through their own Claude Code instance, which runs CLI commands on their behalf — or, for less technical collaborators, they're fully separated from the CLI and any technical detail entirely. Design for "John", the typical future collaborator: a language expert with no technical background who can open a browser, fill in a Google Sheet and follow a short written guide, and cannot use a terminal, install software or run code. The annotation Sheets must work for John; anything needing a terminal must at least work for a collaborator whose Claude runs it for them. Direct human use of the CLI, watching a terminal in real time, is the unusual case, not the default. This means **terminal/stdout output is not a channel that reaches a collaborator** — it's visible only to whichever Claude session happened to run the command at that moment, and it evaporates. It does not automatically reach Adam, and printing something "for the coordinator to relay" doesn't reduce any manual step — someone still has to notice the line and copy it somewhere durable. Anything meant to reach a collaborator has to be written into a channel both sides actually check: a GitHub issue/comment, a Sheet's `Comments` cell or an `Instructions` tab, the language's Notes Google Doc, documentation. When designing a fix for a coordinator- or collaborator-facing workflow, ask "who is actually going to read this output, and how would it get to them" before adding a print statement — CLI output aimed at Claude (dry-run stats, error diagnostics meant to inform the next command) is exactly the right design; CLI output that assumes a human is watching the terminal and will manually relay it to someone else is not.
 
 **Before proposing anything that touches `coding/`, `schemas/`, or `data_dependency_schema/` at a design level, read [`docs/data-layer-design.md`](docs/data-layer-design.md).** It records the diagnosis and constraints behind the in-progress data layer redesign (issue #271) — most importantly that every significant failure in project history has been *a fact recorded in more than one place with no single owner*, that this is a replication problem rather than a storage problem, and that design options are ranked by cost-to-comprehend rather than cost-to-build. The phased work queue is [`docs/data-layer-implementation-plan.md`](docs/data-layer-implementation-plan.md); no live Drive writes until its Phase 9. **Current state is [`docs/data-layer-progress.md`](docs/data-layer-progress.md)** — read it before resuming this work; it is the one file that says what is actually done.
 
 Drive/Sheets access goes through a doorway (`coding/drive_doorway.py`, offline fake in `tests/fake_drive.py`). New code that touches Drive must go through `get_doorway()` rather than `_get_clients()`; every command that touches Drive has migrated (`tests/test_doorway_coverage.py` checks). The fake replays saved test data kept in planars-data at `coded_data/.test_fixtures/` (private, because it is real annotation content): a recording of the Sheets plus a frozen copy of the language folders, captured together and refrozen together by `python -m coding capture-drive-state --apply`. Command tests read only that frozen copy, never the live language folders, so annotators' work cannot turn them red.
 
 **Before proposing or implementing any fix to a coordinator-facing workflow, apply the coordinator UX checklist in [`docs/tooling-design.md`](docs/tooling-design.md).** "Coordinator-facing" means error messages, GitHub issue bodies, `apply-pending` prompts, `integrity-check` output, generated Claude prompts, script dry-run output, and documentation steps.
+
+## Working rules for every Claude on this project
+
+Jeff's and Adam's Claude instances both work here, so project rules live in
+this file, not in either instance's private memory (moved here 2026-10-12;
+see `docs/data-layer-implementation-plan.md` Phase 10).
+
+- **Light maintenance beats speed and elegance.** Before adding any registry,
+  declaration, document or check, ask who updates it when the code changes
+  and what happens if they don't. If someone has to remember, choose a design
+  with nothing to remember: regenerate (compare, write what differs), read the
+  value from its one source, or delete the copy. A registry is right only if
+  it is the one source the code *runs from*; never one that only *describes*
+  the code. A list moved inside a function body is a hidden fact, not a fix.
+- **Belt and suspenders, not duct tape.** Fix small problems and robustness
+  gaps the moment you find them, completely, rather than tracking them or
+  writing "documented limitation" — a deferred item has nobody to remember
+  it. Defer only *features* with no current use. When a gap is structural,
+  recommend the structural fix, not the smallest piece that attaches to it.
+- **Before saying "that's everything", enumerate the kinds of place** a fact
+  can live or a write can happen (code, schemas, docs, tests, workflows,
+  Drive, GitHub, local state, memory, hand edits) and check each, rather than
+  listing what has come up.
+- **Trace a recommendation forward before labelling it "Recommended":** who
+  reads the result and what they do with it. Don't let "keep it simple" pick
+  the smaller option by default.
+- **Explicit, not implicit.** A classifier or typing rule never lets an
+  unrecognised input fall into a default category: register every case
+  explicitly, keep exceptions as an explicit list, and hard-fail (or return
+  "unknown") on anything it cannot place.
+- **Critical data paths go through the daily pipeline,** never a separate
+  command someone must remember to run (it would get no backup, no
+  `import-error` issue, no validation, no status percentage).
+- **Don't dismiss a recurring warning as old noise.** Check it against the
+  documented rule it enforces; persistence is not evidence the rule is met
+  (#270 hid that way for days).
+- **Verify an issue is still open** (`gh issue view`) before recommending it.
+- **validate-coding's blank counts come from the local TSVs.** If someone says
+  cells are filled, run `import-sheets` and look, rather than defending the
+  count.
+- **Criteria are opt-in per language.** A criterion missing from a language's
+  diagnostics file means "doesn't apply"; present but blank means "not yet
+  coded". Add a newly found criterion to the schema and to that language only.
 
 ## Analysis status convention
 

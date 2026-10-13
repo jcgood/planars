@@ -252,7 +252,7 @@ the same day — see the decisions log.
 | Phase 9, step 1 — shadow reads | **done**, 2026-08-18 — every coordinator-only command run live, read-only, against real Drive and reviewed; nothing unexpected anywhere (see Current state below for the reframing this step turned up and Next action for the per-command account) |
 | Phase 9, step 2 — write cutover | **done** (status corrected 2026-10-12) — the line said "in progress" from 2026-08-18 after two writes, but every command has written to live Drive only through the doorway since then, the daily refresh among them, and the old path no longer exists (`tests/test_doorway_coverage.py`) |
 | Phase 9 (the whole unit) | **done** — the plan's done-when holds: all commands run through the new path in production, the old path is removed, daily refresh cycles complete clean (2026-10-12) |
-| Phase 10 — ownership and chokepoints | **started 2026-10-12** — planned with Jeff; spec in the implementation plan's Phase 10 section. Done so far: the two feedback memories; this transcription. Next: unit 14 (sharing) |
+| Phase 10 — ownership and chokepoints | **started 2026-10-12** — planned with Jeff; spec in the implementation plan's Phase 10 section. Done so far: the plan transcribed here; unit 13's memory move (project rules from Claude's private memory into CLAUDE.md "Working rules for every Claude on this project", the segmental keystone decision into `diagnostic_classes.yaml`; 43 memory files removed, 13 Jeff-personal kept). Next: unit 14 (sharing) |
 
 ### In flight
 

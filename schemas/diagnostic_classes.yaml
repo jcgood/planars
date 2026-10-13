@@ -723,7 +723,10 @@ classes:
         Complete: ALL elements in the position qualify.
         Partial: at least one element qualifies.
         Returns four spans (strict/loose × complete/partial).
-    keystone_active_default: true
+    keystone_active_default: true  # Adam confirmed 2026-04-17: the verbstem's
+                                   # segmental properties are real data, and no
+                                   # segmental criterion is self-referential on
+                                   # the keystone, so no keystone_na_criteria.
 
   - name: tonal
     display_name: "Tonal"
