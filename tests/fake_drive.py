@@ -420,6 +420,7 @@ class FakeSpreadsheet:
         self.id = spreadsheet_id
         self.title = title
         self._worksheets: List[FakeWorksheet] = []
+        self._protected_ranges: List[Dict[str, Any]] = []
 
     @property
     def url(self) -> str:
@@ -463,6 +464,9 @@ class FakeSpreadsheet:
 
     def del_worksheet(self, worksheet: FakeWorksheet) -> None:
         self._worksheets = [ws for ws in self._worksheets if ws.id != worksheet.id]
+        # A tab's protections go with it, as they do live.
+        self._protected_ranges = [p for p in self._protected_ranges
+                                  if p["range"].get("sheetId") != worksheet.id]
         self._record("del_worksheet", worksheet=worksheet.title)
 
     def reorder_worksheets(self, worksheets_in_desired_order: Sequence[FakeWorksheet]) -> None:
@@ -472,6 +476,10 @@ class FakeSpreadsheet:
                 400, "reorder_worksheets requires every sheet of this spreadsheet exactly once.")
         self._worksheets = desired
         self._record("reorder_worksheets", order=[ws.title for ws in desired])
+
+    def list_protected_ranges(self, sheetid: int) -> List[Dict[str, Any]]:
+        self._worksheet_by_sheet_id(sheetid)
+        return [dict(p) for p in self._protected_ranges if p["range"].get("sheetId") == sheetid]
 
     def _worksheet_by_sheet_id(self, sheet_id: int) -> FakeWorksheet:
         for ws in self._worksheets:
@@ -642,6 +650,15 @@ class FakeSpreadsheet:
         for idx in range(rng["startIndex"], rng["endIndex"]):
             ws.dimension_pixel_sizes[(rng["dimension"], idx)] = size
 
+    def _req_addProtectedRange(self, payload: Mapping[str, Any]) -> None:
+        """The API assigns the id; protecting a tab twice makes two
+        protections (it does not merge), so callers must check first."""
+        protection = dict(payload["protectedRange"])
+        self._worksheet_by_sheet_id(protection["range"]["sheetId"])
+        protection["protectedRangeId"] = 1 + max(
+            (p.get("protectedRangeId", 0) for p in self._protected_ranges), default=0)
+        self._protected_ranges.append(protection)
+
     def _req_mergeCells(self, payload: Mapping[str, Any]) -> None:
         rng = payload["range"]
         ws = self._worksheet_by_sheet_id(rng["sheetId"])
@@ -795,6 +812,8 @@ class FakeDriveDoorway:
                     if value != "":
                         ws._cell(r, c).value = value
             ss._worksheets.append(ws)
+        # Recordings made before 2026-10-13 have no protections key.
+        ss._protected_ranges = [dict(p) for p in data.get("protected_ranges", [])]
         self._spreadsheets[ss.id] = ss
         self._files[ss.id] = _DriveFile(ss.id, ss.title, _SPREADSHEET_MIME)
         return ss

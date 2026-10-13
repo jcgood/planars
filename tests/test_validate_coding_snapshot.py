@@ -183,7 +183,7 @@ def test_status_instructions_planar_ref_tabs_are_skipped(env):
     since none of them has a coded_data/ TSV of its own."""
     _, _, run_main = env
     out, _ = run_main(["validate-coding"])
-    for tab_name in (vc._STATUS_TAB, vc._INSTRUCTIONS_TAB, vc._PLANAR_REF_TAB):
+    for tab_name in vc.system_tab_titles():
         assert f"/{tab_name}]" not in out
 
 

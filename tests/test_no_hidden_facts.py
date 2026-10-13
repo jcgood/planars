@@ -7,8 +7,8 @@ maintain by hand.
 
 1. Literal detector: no string in coding/, planars/, generate_snapshots.py or
    the notebook templates' code may equal a value schemas/planar.yaml owns —
-   the keystone's name, the Status tab's values. Read them from
-   planars/schema_values.py instead. Deliberately narrow to start (2026-10-12):
+   the keystone's name, the Status tab's values, the locked tabs' titles.
+   Read them from planars/schema_values.py or coding/locked_tabs.py instead. Deliberately narrow to start (2026-10-12):
    many schema values are ordinary words ("general", "free", "y"), and a noisy
    check breeds exceptions, which become a new hidden list. Widen it only
    where a hit has proven real.
@@ -38,6 +38,10 @@ OWNED_VALUES = {
     schema_values.STATUS_IN_PROGRESS: "planars.schema_values.STATUS_IN_PROGRESS",
     schema_values.STATUS_READY: "planars.schema_values.STATUS_READY",
 }
+# The locked tabs' titles (schemas/planar.yaml locked_tabs, Phase 10 unit 2).
+from coding.locked_tabs import locked_tab_titles  # noqa: E402
+OWNED_VALUES.update({t: "coding.locked_tabs.locked_tab_titles() / system_tab_titles()"
+                     for t in locked_tab_titles()})
 
 
 def _python_sources() -> Iterator[Tuple[str, str]]:

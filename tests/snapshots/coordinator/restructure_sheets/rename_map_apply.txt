@@ -7,7 +7,8 @@ Language: stan1293
     [general] carry over 134; rename 8; new blank 0
     Archived to _archived/ciscategorial_stan1293_v2
     [general] wrote: carried 142, new blank 0, dropped 0
-    Instructions tab created
+    Locked tab Instructions: create
+    Locked tab Instructions: protect
     Status tab created (1 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0003
 
@@ -25,7 +26,8 @@ Language: stan1293
     [control] wrote: carried 142, new blank 0, dropped 0
     [thatCOMP] wrote: carried 142, new blank 0, dropped 0
     [asyndeticPart] wrote: carried 142, new blank 0, dropped 0
-    Instructions tab created
+    Locked tab Instructions: create
+    Locked tab Instructions: protect
     Status tab created (4 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0006
 
@@ -34,7 +36,8 @@ Language: stan1293
     [general] carry over 134; rename 8; new blank 0
     Archived to _archived/noninterruption_stan1293_v2
     [general] wrote: carried 142, new blank 0, dropped 0
-    Instructions tab created
+    Locked tab Instructions: create
+    Locked tab Instructions: protect
     Status tab created (1 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0009
 
@@ -43,7 +46,8 @@ Language: stan1293
     [stress_domain] carry over 134; rename 8; new blank 0
     Archived to _archived/metrical_stan1293_v2
     [stress_domain] wrote: carried 142, new blank 0, dropped 0
-    Instructions tab created
+    Locked tab Instructions: create
+    Locked tab Instructions: protect
     Status tab created (1 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0012
 
@@ -55,8 +59,10 @@ Language: stan1293
     Archived to _archived/nonpermutability_stan1293_v2
     [element_prescreening] wrote: carried 142, new blank 0, dropped 0
     [general] (pair tab) copied 135 rows, 0 cell(s) renamed
-    Tab: Planar Structure (planar reference)
-    Instructions tab created
+    Locked tab Instructions: create
+    Locked tab Instructions: protect
+    Locked tab Planar Structure: create
+    Locked tab Planar Structure: protect
     Status tab created (2 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0015
 
@@ -68,7 +74,8 @@ Language: stan1293
     Archived to _archived/segmental_stan1293_v2
     [aspiration_prominence] wrote: carried 142, new blank 0, dropped 0
     [flapping] wrote: carried 142, new blank 0, dropped 0
-    Instructions tab created
+    Locked tab Instructions: create
+    Locked tab Instructions: protect
     Status tab created (2 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0018
 
@@ -77,7 +84,8 @@ Language: stan1293
     [general] carry over 134; rename 8; new blank 0
     Archived to _archived/free_occurrence_stan1293_v2
     [general] wrote: carried 142, new blank 0, dropped 0
-    Instructions tab created
+    Locked tab Instructions: create
+    Locked tab Instructions: protect
     Status tab created (1 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0021
 
@@ -95,8 +103,10 @@ Language: stan1293
     [reflexivization] (pair tab) copied 163 rows, 63 cell(s) renamed
     [pronominalization] (pair tab) copied 163 rows, 63 cell(s) renamed
     [np_reference] (pair tab) copied 163 rows, 63 cell(s) renamed
-    Tab: Planar Structure (planar reference)
-    Instructions tab created
+    Locked tab Instructions: create
+    Locked tab Instructions: protect
+    Locked tab Planar Structure: create
+    Locked tab Planar Structure: protect
     Status tab created (4 construction(s))
     New sheet (v5): https://docs.google.com/spreadsheets/d/fake_ss_0024
 
@@ -108,7 +118,8 @@ Language: stan1293
     Archived to _archived/proform_stan1293_v2
     [do_so_substitution] wrote: carried 142, new blank 0, dropped 0
     [vp_ellipsis] wrote: carried 142, new blank 0, dropped 0
-    Instructions tab created
+    Locked tab Instructions: create
+    Locked tab Instructions: protect
     Status tab created (2 construction(s))
     New sheet (v3): https://docs.google.com/spreadsheets/d/fake_ss_0027
 
@@ -120,7 +131,8 @@ Language: stan1293
     Archived to _archived/phrasal_accent_stan1293_v1
     [prescreening] wrote: carried 142, new blank 0, dropped 0
     [general] (pair tab) copied 0 rows, 0 cell(s) renamed
-    Instructions tab created
+    Locked tab Instructions: create
+    Locked tab Instructions: protect
     Status tab created (2 construction(s))
     New sheet (v2): https://docs.google.com/spreadsheets/d/fake_ss_0030
 
@@ -133,8 +145,10 @@ Language: stan1293
     [elements] wrote: carried 135, new blank 0, dropped 0
     [morphemes] (keyed tab) copied 0 rows, 0 cell(s) renamed
     [morphs] (keyed tab) copied 0 rows, 0 cell(s) renamed
-    Tab: Planar Structure (planar reference)
-    Instructions tab created
+    Locked tab Instructions: create
+    Locked tab Instructions: protect
+    Locked tab Planar Structure: create
+    Locked tab Planar Structure: protect
     Status tab created (3 construction(s))
     New sheet (v2): https://docs.google.com/spreadsheets/d/fake_ss_0033
 

@@ -66,6 +66,8 @@ def _column(header: List[str], index: Optional[int]) -> str:
 
 
 def _grid_range(payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    # addProtectedRange nests its range one level down, in protectedRange.
+    payload = payload.get("protectedRange", payload)
     for key in ("range", "properties"):
         value = payload.get(key)
         if isinstance(value, dict) and "sheetId" in value:

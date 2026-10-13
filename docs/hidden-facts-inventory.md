@@ -577,9 +577,11 @@ phrasal_accent).
 ### R3. Status tab values and "Status" tab/column naming
 *Partly closed 2026-10-12: the Status tab's title and its two values are
 declared in `planar.yaml` (`status_tab`) and read through
-`planars.schema_values`; the detector guards the values. The other system tab
-titles (Instructions, Planar Structure) move to Phase 10 unit 2's
-`locked_tabs` registry.*
+`planars.schema_values`; the detector guards the values. Closed 2026-10-13
+(Phase 10 unit 2): the other system tab titles (Instructions, Planar
+Structure) and their order are the `locked_tabs` registry in `planar.yaml`,
+read through `coding/locked_tabs.py`; `_INSTRUCTIONS_TAB`, `_PLANAR_REF_TAB`
+and `_SYSTEM_TAB_ORDER` are deleted, and the detector guards the titles.*
 **What:** The two valid values a construction's workflow status can take
 (`in-progress`, `ready-for-review`) are hardcoded as `_STATUS_VALUES` and as
 inline literal defaults (`"in-progress"` appears as a literal twice more at

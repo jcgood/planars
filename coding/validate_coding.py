@@ -28,7 +28,7 @@ CODED_DATA = ROOT / "coded_data"
 
 from .drive import _with_retry, load_manifest
 from .drive_doorway import get_doorway
-from .generate_sheets import _INSTRUCTIONS_TAB, _PLANAR_REF_TAB, _STATUS_TAB
+from .locked_tabs import system_tab_titles
 from .restructure_sheets import _get_keyed_row_constructions, _get_pair_row_constructions
 from .make_forms import (
     _infer_language_id_from_planar_filename,
@@ -859,9 +859,10 @@ def revalidate_sheets(
                 print(f"  [{class_name}] could not open spreadsheet: {e}")
                 continue
 
+            system_tabs = set(system_tab_titles())
             for ws in _with_retry(lambda: ss.worksheets()):
                 construction = ws.title
-                if construction in (_STATUS_TAB, _INSTRUCTIONS_TAB, _PLANAR_REF_TAB):
+                if construction in system_tabs:
                     continue
                 info = param_map.get(class_name, {}).get(construction, {})
                 try:

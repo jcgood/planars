@@ -10,6 +10,10 @@ Operations performed per tab:
   2. Add missing rows for elements present in the current planar structure
      but absent from the sheet tab
 
+And per sheet: add tabs for constructions new in the diagnostics YAML, and
+rebuild and protect the locked tabs (coding/locked_tabs.py) wherever they
+differ from their sources. The daily refresh runs this with --apply.
+
 Does NOT renumber positions or restructure existing content — use
 python -m coding restructure-sheets for that (archives old sheet, regenerates with carry-over).
 
@@ -48,10 +52,9 @@ from .generate_sheets import (
     _add_constructions_to_existing_sheet,
     _build_criterion_notes,
     _create_status_tab,
-    _maybe_create_instructions_tab,
-    _reorder_system_tabs,
     _TRAILING_COLS,
 )
+from .locked_tabs import rebuild_locked_tabs, reorder_tabs
 from . import biuniqueness_rows as _br
 from planars.schema_values import is_keystone as _is_keystone
 
@@ -594,17 +597,21 @@ def main(args: argparse.Namespace | None = None) -> None:
                     sheet_info["constructions"].extend(new_construction_names)
                     sheet_info.setdefault("construction_params", {}).update(new_params)
 
-            # Ensure Status/Instructions tabs exist and are in order (reflects any
-            # new tabs added above; also backfills Instructions on sheets created
-            # before every class got one — see #242).
+            # The locked tabs (Instructions, Planar Structure — schemas/planar.yaml
+            # locked_tabs) are rebuilt from their sources and protected on every
+            # sheet, every day; only what differs is written. This is the run
+            # that keeps them current whichever command changed their source.
+            for change in rebuild_locked_tabs(ss, class_name, manifest_lang,
+                                              planar_path, apply=apply):
+                any_changes = True
+                print(f"    [locked tab] {'' if apply else 'would '}{change}")
+
+            # Ensure the Status tab exists and every tab is in its place
+            # (reflects any new tabs added above).
             if apply:
                 all_constructions = list(constructions) + new_construction_names if new_construction_names else constructions
                 _create_status_tab(ss, all_constructions)
-                if not new_construction_names:
-                    # _add_constructions_to_existing_sheet() above already
-                    # refreshed Instructions when it ran; don't redo it.
-                    _maybe_create_instructions_tab(ss, class_name)
-                _reorder_system_tabs(ss)
+                reorder_tabs(ss)
 
     if manifest_modified:
         drive_config = _load_drive_config()

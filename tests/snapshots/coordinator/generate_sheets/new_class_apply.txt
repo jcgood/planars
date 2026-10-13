@@ -14,7 +14,8 @@ Existing:    ['ciscategorial', 'noninterruption', 'subspanrepetition', 'nonpermu
 New:         ['metrical']
   Creating: metrical_arao1248
     Tab: stress_domain (73 rows, 2 params)
-    Instructions tab created
+    Locked tab Instructions: create
+    Locked tab Instructions: protect
     Status tab created (1 construction(s))
     URL: https://docs.google.com/spreadsheets/d/fake_ss_0002
 

@@ -340,17 +340,21 @@
   writes_to_drive: true
   description: >-
     Adds missing rows/trailing columns to existing sheets and creates tabs
-    for constructions newly added to the diagnostics YAML; ensures the
-    Status tab exists and is last.
+    for constructions newly added to the diagnostics YAML; rebuilds and
+    protects every sheet's locked tabs (schemas/planar.yaml locked_tabs) where
+    they differ from their sources; ensures the Status tab exists and is last.
+    Run daily with --apply by the data refresh.
   side_effects:
     - "appends rows/columns to live annotation tabs"
     - "creates new construction tabs for constructions not yet in the manifest"
+    - "rewrites a locked tab (Instructions, Planar Structure) whose content differs from its source, and protects any not yet protected"
     - "updates sheets_manifest.json"
   idempotent: true
   idempotency_note: >-
     Which columns/rows are missing is derived from the tab's own header plus
     the current diagnostics YAML (never the manifest) every run -- a second
-    run with nothing changed adds nothing further. Before this design
+    run with nothing changed adds nothing further. Locked tabs are compared
+    before they are written, so a second run writes none of them. Before this design
     (Findings 9-11 in docs/data-layer-progress.md), appending one row could
     narrow a whole tab's dropdowns or write NA into Source/Comments; those
     were bugs in what got written, not in whether re-running was safe.

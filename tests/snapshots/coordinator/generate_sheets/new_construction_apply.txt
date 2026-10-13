@@ -12,7 +12,7 @@ Notes doc:   (existing) https://docs.google.com/document/d/1vfSS_YoRHDgpSG-vi1nX
   Diagnostics sheet exists — skipping (use --force to overwrite)
   [subspanrepetition] new construction(s): ['extra_construction_test']
     Tab: extra_construction_test (73 rows, 3 params)
-    Instructions tab created
+    Locked tab Instructions: protect
 
 Language:    stan1293
 Planar file: planar_stan1293.tsv

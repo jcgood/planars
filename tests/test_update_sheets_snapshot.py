@@ -52,6 +52,7 @@ from coding import drive as drive_module
 from coding import drive_doorway
 from coding import generate_sheets as gs
 from coding import update_sheets as us
+from coding.locked_tabs import locked_tab_titles
 from fake_drive import FIXTURE_DIR, FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
@@ -62,6 +63,7 @@ UPDATING = os.environ.get("PLANARS_UPDATE_SNAPSHOTS") == "1"
 
 LANGS = ["arao1248", "stan1293", "synth0001"]
 NEW_ELEMENT = "zzz-new-element"
+LOCKED = set(locked_tab_titles())
 
 # The command reads each language's planar TSV and diagnostics YAML from
 # coded_data/, a separate repo that a bare worktree may not have.
@@ -280,16 +282,17 @@ def test_the_dry_run_changes_nothing_anywhere(env):
 def test_apply_with_nothing_to_do_leaves_every_tab_byte_identical(env):
     """It still writes notes and dropdowns, but not one cell value.
 
-    Instructions is excluded: it is coordinator-owned content, cleared and
-    rewritten from diagnostic_classes.yaml on every apply regardless of row/
-    column drift elsewhere (#242) -- that's the point of it, not a miss.
+    The locked tabs (Instructions, Planar Structure) are excluded: they are
+    generated copies, rebuilt from their sources whenever they differ,
+    regardless of drift elsewhere (coding/locked_tabs.py) -- that's the point
+    of them, not a miss.
     """
     before = captured_tabs()
 
     env.run(["update-sheets", "--apply"])
 
     for (ss_id, title), values in before.items():
-        if title == "Instructions":
+        if title in LOCKED:
             continue
         assert env.doorway.spreadsheet(ss_id).worksheet(title).get_all_values() == values
 
@@ -297,7 +300,7 @@ def test_apply_with_nothing_to_do_leaves_every_tab_byte_identical(env):
 def test_apply_never_rewrites_a_cell_that_already_had_a_value(env):
     """Adam's annotations are irreplaceable; this command may only append.
 
-    Instructions is excluded -- see the docstring above.
+    The locked tabs are excluded -- see the docstring above.
     """
     before = captured_tabs()
     env.add_element("stan1293")
@@ -305,7 +308,7 @@ def test_apply_never_rewrites_a_cell_that_already_had_a_value(env):
     env.run(["update-sheets", "--apply"])
 
     for (ss_id, title), rows in before.items():
-        if title == "Instructions":
+        if title in LOCKED:
             continue
         after = env.doorway.spreadsheet(ss_id).worksheet(title).get_all_values()
         assert after[:len(rows)] == rows, f"{title} was rewritten, not appended to"
@@ -316,14 +319,14 @@ def test_apply_never_removes_a_row_a_column_or_a_tab(env):
 
     env.run(["update-sheets", "--apply"])
 
-    # The Instructions tab is coordinator-owned content, cleared and rewritten
-    # on every apply so it can't drift from diagnostic_classes.yaml (#242) --
-    # that's expected, not data loss. Every other tab (annotation tabs,
-    # Planar Structure, Status) must stay additive-only.
+    # The locked tabs are generated copies, cleared and rewritten whenever
+    # they differ from their sources (coding/locked_tabs.py) -- expected, not
+    # data loss. Every other tab (annotation tabs, Status) must stay
+    # additive-only.
     destructive = {"clear", "resize", "del_worksheet", "update_title"}
     hit = {(m["op"], m.get("worksheet")) for m in env.doorway.mutations
            if m["op"] in destructive}
-    assert not {t for _op, t in hit if t != "Instructions"}
+    assert not {t for _op, t in hit if t not in LOCKED}
     request_types = {m["request_type"] for m in env.doorway.mutations
                      if m["op"] == "batch_request"}
     assert "deleteDimension" not in request_types
@@ -372,7 +375,10 @@ def test_a_second_apply_appends_nothing(env):
 # ---------------------------------------------------------------------------
 
 def test_a_drifted_tab_is_left_alone_and_the_command_stops(env):
-    """Renumbering is restructure-sheets' job; guessing here would smear data."""
+    """Renumbering is restructure-sheets' job; guessing here would smear data.
+
+    The locked tabs still follow the planar: they are copies of it, not
+    annotations, and show annotators the numbering restructure will bring."""
     before = captured_tabs()
     env.renumber_first_position("arao1248")
 
@@ -381,6 +387,8 @@ def test_a_drifted_tab_is_left_alone_and_the_command_stops(env):
     assert "[SystemExit: 1]" in out
     assert "python -m coding restructure-sheets --apply" in out
     for (ss_id, title), rows in before.items():
+        if title in LOCKED:
+            continue
         if ss_id in {env.sheet_id("arao1248", c)
                      for c in env.manifest()["arao1248"]["sheets"]}:
             assert (env.doorway.spreadsheet(ss_id)
@@ -409,6 +417,9 @@ def test_pair_row_tabs_never_get_rows_appended(env):
 
 
 def test_a_dry_run_reporting_no_changes_exits_zero(env):
+    # The saved sheets predate the locked tabs' protection; one apply adds it,
+    # after which there is nothing left to do.
+    env.run(["update-sheets", "--apply"])
     out = env.run(["update-sheets"])
     assert "All sheets are up to date." in out
     assert "[SystemExit" not in out

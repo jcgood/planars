@@ -117,6 +117,10 @@ def _capture_spreadsheet(gc, spreadsheet_id: str, role: str) -> Dict:
         "title": ss.title,
         "tab_order": [ws.title for ws in worksheets],
         "worksheets": [_capture_worksheet(ws) for ws in worksheets],
+        # Which tabs are locked (coding/locked_tabs.py), so the fake starts
+        # from the same protections the live sheet has.
+        "protected_ranges": [p for ws in worksheets
+                             for p in _with_retry(lambda: ss.list_protected_ranges(ws.id))],
     }
 
 

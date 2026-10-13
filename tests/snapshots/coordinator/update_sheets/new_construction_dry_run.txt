@@ -5,105 +5,138 @@ DRY RUN — Languages: ['arao1248', 'stan1293', 'synth0001']
   ciscategorial
     [general] up to date
     [second_frame] Would add new tab (4 criterion/criteria)
+    [locked tab] would Instructions: protect
 
   noninterruption
     [general] up to date
+    [locked tab] would Instructions: protect
 
   subspanrepetition
     [auxiliary_construction] up to date
     [tso_clause_linkage] up to date
+    [locked tab] would Instructions: protect
 
   nonpermutability
     [element_prescreening] up to date
     [general] up to date (pair-row tab — row updates skipped)
+    [locked tab] would Instructions: protect
+    [locked tab] would Planar Structure: protect
 
   free_occurrence
     [general] up to date
+    [locked tab] would Instructions: protect
 
   ciscategorial
     [general] up to date
+    [locked tab] would Instructions: protect
 
   subspanrepetition
     [andCoordination] up to date
     [control] up to date
     [thatCOMP] up to date
     [asyndeticPart] up to date
+    [locked tab] would Instructions: protect
 
   noninterruption
     [general] up to date
+    [locked tab] would Instructions: protect
 
   segmental
     [aspiration_prominence] up to date
     [flapping] up to date
+    [locked tab] would Instructions: protect
 
   metrical
     [stress_domain] up to date
+    [locked tab] would Instructions: protect
 
   free_occurrence
     [general] up to date
+    [locked tab] would Instructions: protect
 
   nonpermutability
     [element_prescreening] up to date
     [general] up to date (pair-row tab — row updates skipped)
+    [locked tab] would Instructions: protect
+    [locked tab] would Planar Structure: protect
 
   coreference
     [prescreening] up to date
     [reflexivization] up to date (pair-row tab — row updates skipped)
     [pronominalization] up to date (pair-row tab — row updates skipped)
     [np_reference] up to date (pair-row tab — row updates skipped)
+    [locked tab] would Instructions: protect
+    [locked tab] would Planar Structure: protect
 
   proform
     [do_so_substitution] up to date
     [vp_ellipsis] up to date
+    [locked tab] would Instructions: protect
 
   phrasal_accent
     [prescreening] up to date
     [general] up to date (pair-row tab — row updates skipped)
+    [locked tab] would Instructions: protect
 
   biuniqueness_deviations
     [elements] up to date
     [morphemes] up to date (keyed-row tab — rows are managed by --regen-construction)
     [morphs] up to date (keyed-row tab — rows are managed by --regen-construction)
+    [locked tab] would Instructions: refresh (its source has changed)
+    [locked tab] would Instructions: protect
+    [locked tab] would Planar Structure: protect
 
   ciscategorial
     [general] up to date
+    [locked tab] would Instructions: protect
 
   subspanrepetition
     [andCoordination] up to date
     [control] up to date
     [thatCOMP] up to date
     [asyndeticPart] up to date
+    [locked tab] would Instructions: protect
 
   noninterruption
     [general] up to date
+    [locked tab] would Instructions: protect
 
   segmental
     [aspiration_prominence] up to date
     [flapping] up to date
+    [locked tab] would Instructions: protect
 
   metrical
     [stress_domain] up to date
+    [locked tab] would Instructions: protect
 
   nonpermutability
     [element_prescreening] up to date
     [general] up to date (pair-row tab — row updates skipped)
+    [locked tab] would Instructions: protect
+    [locked tab] would Planar Structure: protect
 
   free_occurrence
     [general] up to date
+    [locked tab] would Instructions: protect
 
   coreference
     [prescreening] up to date
     [reflexivization] up to date (pair-row tab — row updates skipped)
     [pronominalization] up to date (pair-row tab — row updates skipped)
     [np_reference] up to date (pair-row tab — row updates skipped)
+    [locked tab] would Instructions: protect
+    [locked tab] would Planar Structure: protect
 
   proform
     [do_so_substitution] up to date
     [vp_ellipsis] up to date
+    [locked tab] would Instructions: protect
 
   phrasal_accent
     [prescreening] up to date
     [general] up to date (pair-row tab — row updates skipped)
+    [locked tab] would Instructions: protect
 
 Would update manifest on Drive (new tabs detected).
 

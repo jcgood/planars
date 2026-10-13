@@ -69,6 +69,29 @@ status_tab:
     in_progress: in-progress
     ready: ready-for-review
 
+# Locked tabs: tabs on a class sheet that the tooling writes and nobody else
+# edits. coding/locked_tabs.py runs from this list: every create, restructure
+# and daily `update-sheets --apply` rebuilds each tab from its source (writing
+# only when the content differs) and protects it so only the sheet's owner can
+# edit it. Adding a locked tab is one entry here, plus a builder in
+# coding/locked_tabs.py if its content is new; anything it cannot place
+# (unknown builder, place or include) is an error, never a default.
+#   place:   first — before the construction tabs; last — after them (Status
+#            is always the very last tab and is not locked: annotators set it)
+#   include: always — on every class sheet; opt_in — only for classes that set
+#            opt_in_field to true in diagnostic_classes_status.yaml (a sheet
+#            whose class drops it has the tab removed)
+locked_tabs:
+  - title: Instructions
+    builder: instructions
+    place: first
+    include: always
+  - title: Planar Structure
+    builder: planar_reference
+    place: last
+    include: opt_in
+    opt_in_field: include_planar_reference_tab
+
 # ---------------------------------------------------------------------------
 # ELEMENT CONVENTIONS
 # ---------------------------------------------------------------------------

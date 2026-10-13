@@ -122,12 +122,11 @@ from .generate_sheets import (
     _build_rows,
     _create_status_tab,
     _format_and_validate,
-    _maybe_create_instructions_tab,
-    _maybe_create_planar_reference_tab,
     _populate_tab_keyed,
-    _reorder_system_tabs,
+    _refresh_locked_tabs,
     _TRAILING_COLS,
 )
+from .locked_tabs import reorder_tabs
 from . import biuniqueness_rows as _br
 from .notify import (
     build_change_comment,
@@ -1212,11 +1211,8 @@ def _rename_class_for_language(
         new_ss.del_worksheet(default_ws)
 
     if planar_path:
-        created_ref = _maybe_create_planar_reference_tab(new_ss, new_class, planar_path, lang_id)
-        if created_ref:
-            print(f"    Tab: Planar Structure (planar reference)")
-        _maybe_create_instructions_tab(new_ss, new_class)
-        _reorder_system_tabs(new_ss)
+        _refresh_locked_tabs(new_ss, new_class, lang_id, planar_path)
+        reorder_tabs(new_ss)
 
     # Checkpoint here, before the local dir rename / manifest update below --
     # a real replacement sheet with real carried-over data exists as of this
@@ -1798,12 +1794,9 @@ def main(args: argparse.Namespace | None = None) -> None:
                 new_ss.del_worksheet(default_ws)
 
             planar_path = planar_file.parent / f"planar_{lang_id}.tsv"
-            created_ref = _maybe_create_planar_reference_tab(new_ss, class_name, planar_path, lang_id)
-            if created_ref:
-                print(f"    Tab: Planar Structure (planar reference)")
-            _maybe_create_instructions_tab(new_ss, class_name)
+            _refresh_locked_tabs(new_ss, class_name, lang_id, planar_path)
             _create_status_tab(new_ss, tab_names)
-            _reorder_system_tabs(new_ss)
+            reorder_tabs(new_ss)
 
             restructured_classes.add((lang_id, class_name))
             restructure_journal.record_checkpoint(

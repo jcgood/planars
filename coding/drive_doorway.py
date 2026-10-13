@@ -194,7 +194,7 @@ class SpreadsheetHandle(Protocol):
     def worksheets(self) -> List[WorksheetHandle]:
         """All tabs in **live tab order** — the order they appear in the UI.
 
-        Order is load-bearing: ``generate_sheets._reorder_system_tabs`` and
+        Order is load-bearing: ``locked_tabs.reorder_tabs`` and
         ``_move_status_tab_to_end`` detect drift from it, and both failure
         modes (falsely reordering, falsely not reordering) are silent. Never
         sort this.
@@ -226,10 +226,15 @@ class SpreadsheetHandle(Protocol):
         the doorway routes them, it does not interpret them. Request types used
         across the eleven callers: ``updateSheetProperties``, ``repeatCell``,
         ``setDataValidation``, ``insertDimension``, ``deleteDimension``,
-        ``updateDimensionProperties``, ``updateCells``, ``mergeCells``.
+        ``updateDimensionProperties``, ``updateCells``, ``mergeCells``,
+        ``addProtectedRange`` (``coding/locked_tabs.py``).
 
         **Not** the same endpoint as ``values_batch_update``.
         """
+
+    def list_protected_ranges(self, sheetid: int) -> List[Dict[str, Any]]:
+        """The protections on one tab (``ProtectedRange`` dicts), by sheet id.
+        Read by ``coding/locked_tabs.py`` so a rebuild protects a tab once."""
 
     def values_batch_update(self, body: Mapping[str, Any]) -> Any:
         """``spreadsheets.values.batchUpdate`` — cell *values* by A1 range.

@@ -108,6 +108,7 @@ def _annotator_email(lang_id: str) -> Optional[str]:
 from .schemas import (
     apply_schema_criteria, load_planar_schema, load_diagnostic_classes, load_diagnostic_criteria,
 )
+from .locked_tabs import rebuild_locked_tabs, reorder_tabs, system_tab_titles
 from .make_forms import (
     build_element_index,
     _infer_language_id_from_planar_filename,
@@ -124,12 +125,6 @@ CODED_DATA = ROOT / "coded_data"
 _TRAILING_COLS = load_planar_schema().get("trailing_columns", ["Source", "Comments"])
 _STATUS_TAB = STATUS_TAB
 _STATUS_VALUES = STATUS_VALUES
-_INSTRUCTIONS_TAB = "Instructions"
-_PLANAR_REF_TAB = "Planar Structure"
-# System tab titles, excluded from the construction-tab bucket wherever the
-# code needs to tell the two apart. _reorder_system_tabs is what actually
-# decides their on-screen order (Instructions first, the rest last).
-_SYSTEM_TAB_ORDER = [_PLANAR_REF_TAB, _INSTRUCTIONS_TAB, _STATUS_TAB]
 
 
 def _create_or_update_tsv_sheet(
@@ -1163,218 +1158,14 @@ def _regen_keyed_construction(
 
 
 # ---------------------------------------------------------------------------
-# Instructions tab (every class gets one; content varies by workflow shape)
+# Locked tabs (Instructions, Planar Structure) are coding/locked_tabs.py's.
 # ---------------------------------------------------------------------------
 
-def _maybe_create_instructions_tab(
-    spreadsheet: SpreadsheetHandle,
-    class_name: str,
-) -> None:
-    """Create or refresh the Instructions tab for this class.
-
-    Every class gets one (issue #242/meatbrains-are-forgetful: annotators need
-    an unmissable place for "what does this tab want from me", not just a
-    per-column hover note). Classes with a multi-stage depends_on workflow get
-    the staged how-to; everything else gets a plain per-construction summary
-    plus whatever sheet_instructions the coordinator wrote for the class.
-    """
-    classes = {c["name"]: c for c in load_diagnostic_classes().get("classes", [])}
-    class_entry = classes.get(class_name, {})
-    constructions_schema = class_entry.get("constructions", [])
-    _create_instructions_tab(spreadsheet, class_entry, constructions_schema)
-
-
-def _create_instructions_tab(
-    spreadsheet: SpreadsheetHandle,
-    class_entry: dict,
-    constructions_schema: list,
-) -> None:
-    """Create a read-only Instructions tab explaining what this class tests
-    and how to annotate it.
-
-    Classes with a multi-stage depends_on workflow (nonpermutability,
-    coreference) get the staged how-to below. Most classes have just one
-    implicit construction and no entry in constructions_schema at all -- for
-    those, WHAT THIS TESTS / HOW TO ANNOTATE (built from
-    applicability_conditions/required_criteria/optional_criteria, already in
-    diagnostic_classes.yaml for every class) is the only content, so they
-    still get real guidance rather than a bare title.
-    """
-    display_name = class_entry.get("display_name", class_entry.get("name", "")).upper()
-    sheet_instructions = class_entry.get("sheet_instructions", "").strip()
-    applicability = class_entry.get("applicability_conditions", "").strip()
-    required_criteria = class_entry.get("required_criteria") or []
-    optional_criteria = class_entry.get("optional_criteria") or []
-
-    rows: List[List[str]] = []
-    rows.append([f"{display_name} — ANNOTATION INSTRUCTIONS"])
-    rows.append([""])
-
-    if applicability:
-        rows.append(["WHAT THIS TESTS"])
-        for line in applicability.splitlines():
-            if line.strip():
-                rows.append([f"  {line.strip()}"])
-        rows.append([""])
-
-    if not constructions_schema and (required_criteria or optional_criteria):
-        rows.append(["HOW TO ANNOTATE"])
-        rows.append([f"  Fill in each criterion column for every element row: {', '.join(required_criteria)}"])
-        if optional_criteria:
-            rows.append([f"  Optional, fill in only if relevant: {', '.join(optional_criteria)}"])
-        rows.append(["  Leave a cell blank if unsure — mark 'na' only when the criterion genuinely does not apply."])
-        rows.append([""])
-
-    # Per-construction dependency-order section (multi-stage workflows only)
-    step = 1
-    for c in constructions_schema:
-        name = c.get("name", "")
-        depends_on = c.get("depends_on")
-        row_type = c.get("row_type", "element")
-
-        rows.append([f"STEP {step} — {name}"])
-        if row_type in ("pair_rows", "keyed_rows") and depends_on:
-            rows.append([f"  This tab is generated after {depends_on} is imported."])
-            rows.append([f"  Do NOT annotate it until the coordinator confirms regeneration is complete."])
-        else:
-            rows.append([f"  Annotate each element row in this tab."])
-        # A tab another tab is generated from (the middle of a chain too, e.g.
-        # biuniqueness_deviations' morphemes) has to be marked finished.
-        if any(cc.get("depends_on") == name for cc in constructions_schema):
-            rows.append([f"  When finished: mark '{name}' as 'ready-for-review' in the Status tab."])
-            rows.append([f"  The coordinator will then regenerate the dependent tab."])
-        rows.append([""])
-        step += 1
-
-    # Class-specific guidance from sheet_instructions field
-    if sheet_instructions:
-        rows.append(["DETAILS"])
-        rows.append([""])
-        for line in sheet_instructions.splitlines():
-            rows.append([line])
-
-    existing = {ws.title: ws for ws in _with_retry(spreadsheet.worksheets)}
-    if _INSTRUCTIONS_TAB in existing:
-        ws = existing[_INSTRUCTIONS_TAB]
-        ws.clear()
-        ws.update(rows, "A1")
-    else:
-        ws = spreadsheet.add_worksheet(
-            title=_INSTRUCTIONS_TAB, rows=len(rows) + 2, cols=1
-        )
-        ws.update(rows, "A1")
-
-    sheet_id = ws.id
-    bold_rows = [0] + [
-        i for i, r in enumerate(rows)
-        if r and (r[0].startswith("STEP ") or r[0] in ("DETAILS", "WHAT THIS TESTS", "HOW TO ANNOTATE"))
-    ]
-    requests = [
-        {"repeatCell": {
-            "range": {"sheetId": sheet_id, "startRowIndex": r, "endRowIndex": r + 1,
-                      "startColumnIndex": 0, "endColumnIndex": 1},
-            "cell": {"userEnteredFormat": {"textFormat": {"bold": True}}},
-            "fields": "userEnteredFormat.textFormat.bold",
-        }}
-        for r in bold_rows
-    ] + [
-        {"repeatCell": {
-            "range": {"sheetId": sheet_id},
-            "cell": {"userEnteredFormat": {"wrapStrategy": "WRAP"}},
-            "fields": "userEnteredFormat.wrapStrategy",
-        }},
-        {"updateDimensionProperties": {
-            "range": {"sheetId": sheet_id, "dimension": "COLUMNS",
-                      "startIndex": 0, "endIndex": 1},
-            "properties": {"pixelSize": 620},
-            "fields": "pixelSize",
-        }},
-    ]
-    spreadsheet.batch_update({"requests": requests})
-    print(f"    Instructions tab created")
-
-
-# ---------------------------------------------------------------------------
-# Planar structure reference tab
-# ---------------------------------------------------------------------------
-
-def _create_planar_reference_tab(
-    spreadsheet: SpreadsheetHandle,
-    planar_path: Path,
-    lang_id: str,
-) -> None:
-    """Create or refresh a read-only Planar Structure reference tab.
-
-    Displays position number, name, type, and element inventory so annotators
-    can look up position information without leaving the spreadsheet.
-    """
-    df = pd.read_csv(planar_path, sep="\t", dtype=str, keep_default_na=False)
-    df = df[df["Language_ID"] == lang_id].copy()
-    df = df.sort_values("Position", key=lambda s: pd.to_numeric(s, errors="coerce"))
-
-    header = ["Position", "Position_Name", "Position_Type", "Elements"]
-    rows: List[List[str]] = [header]
-    for _, row in df.iterrows():
-        rows.append([
-            row.get("Position", ""),
-            row.get("Position_Name", ""),
-            row.get("Position_Type", ""),
-            row.get("Elements", ""),
-        ])
-
-    try:
-        ws = _with_retry(lambda: spreadsheet.worksheet(_PLANAR_REF_TAB))
-        ws.clear()
-    except WorksheetNotFound:
-        ws = spreadsheet.add_worksheet(
-            title=_PLANAR_REF_TAB, rows=len(rows) + 2, cols=len(header) + 1
-        )
-
-    ws.update(rows, "A1")
-    sheet_id = ws.id
-    _with_retry(lambda: spreadsheet.batch_update({"requests": [
-        {"updateSheetProperties": {
-            "properties": {"sheetId": sheet_id, "gridProperties": {"frozenRowCount": 1}},
-            "fields": "gridProperties.frozenRowCount",
-        }},
-        {"repeatCell": {
-            "range": {"sheetId": sheet_id, "startRowIndex": 0, "endRowIndex": 1},
-            "cell": {"userEnteredFormat": {"textFormat": {"bold": True}}},
-            "fields": "userEnteredFormat.textFormat.bold",
-        }},
-    ]}))
-
-
-def _maybe_create_planar_reference_tab(
-    spreadsheet: SpreadsheetHandle,
-    class_name: str,
-    planar_path: Path,
-    lang_id: str,
-) -> bool:
-    """Create a Planar Structure tab if the class opts in via diagnostic_classes.yaml.
-
-    Returns True if the tab was created.
-    """
-    classes = {c["name"]: c for c in load_diagnostic_classes().get("classes", [])}
-    if classes.get(class_name, {}).get("include_planar_reference_tab"):
-        _create_planar_reference_tab(spreadsheet, planar_path, lang_id)
-        return True
-    return False
-
-
-def _reorder_system_tabs(spreadsheet: SpreadsheetHandle) -> None:
-    """Reorder tabs: Instructions first (it's the annotator's landing tab, easy
-    to miss if it's buried at the end), then construction tabs, then
-    Planar Structure → Status last."""
-    all_ws = _with_retry(lambda: spreadsheet.worksheets())
-    ws_by_title = {ws.title: ws for ws in all_ws}
-    non_system = [ws for ws in all_ws if ws.title not in _SYSTEM_TAB_ORDER]
-    trailing_order = [t for t in _SYSTEM_TAB_ORDER if t != _INSTRUCTIONS_TAB]
-    leading = [ws_by_title[_INSTRUCTIONS_TAB]] if _INSTRUCTIONS_TAB in ws_by_title else []
-    trailing = [ws_by_title[t] for t in trailing_order if t in ws_by_title]
-    ordered = leading + non_system + trailing
-    if [ws.title for ws in all_ws] != [ws.title for ws in ordered]:
-        _with_retry(lambda: spreadsheet.reorder_worksheets(ordered))
+def _refresh_locked_tabs(spreadsheet: SpreadsheetHandle, class_name: str,
+                         lang_id: str, planar_path: Path) -> None:
+    """Rebuild and protect the locked tabs, printing what changed."""
+    for change in rebuild_locked_tabs(spreadsheet, class_name, lang_id, planar_path):
+        print(f"    Locked tab {change}")
 
 
 # ---------------------------------------------------------------------------
@@ -1801,13 +1592,10 @@ def _create_analysis_sheet(
     if default_ws.title not in tab_names:
         spreadsheet.del_worksheet(default_ws)
 
-    # Add system tabs (Planar Structure → Instructions → Status) and reorder.
-    created_ref = _maybe_create_planar_reference_tab(spreadsheet, class_name, planar_path, lang_id)
-    if created_ref:
-        print(f"    Tab: {_PLANAR_REF_TAB} (planar reference)")
-    _maybe_create_instructions_tab(spreadsheet, class_name)
+    # Add the locked tabs and Status, then put every tab in its place.
+    _refresh_locked_tabs(spreadsheet, class_name, lang_id, planar_path)
     _create_status_tab(spreadsheet, tab_names)
-    _reorder_system_tabs(spreadsheet)
+    reorder_tabs(spreadsheet)
 
     # Build per-construction param_values map for the manifest
     construction_params = {
@@ -2208,16 +1996,13 @@ def _add_constructions_to_existing_sheet(
             "param_values": param_values,
         }
 
-    # Refresh system tabs and reorder: Instructions → constructions → Planar Structure → Status.
+    # Refresh the locked tabs and Status, then put every tab in its place.
     planar_path = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
-    created_ref = _maybe_create_planar_reference_tab(ss, class_name, planar_path, lang_id)
-    if created_ref:
-        print(f"    Tab: {_PLANAR_REF_TAB} (planar reference)")
-    _maybe_create_instructions_tab(ss, class_name)
+    _refresh_locked_tabs(ss, class_name, lang_id, planar_path)
+    system = set(system_tab_titles())
     all_ws = _with_retry(lambda: ss.worksheets())
-    non_system = [t for t in [ws.title for ws in all_ws] if t not in _SYSTEM_TAB_ORDER]
-    _create_status_tab(ss, non_system)
-    _reorder_system_tabs(ss)
+    _create_status_tab(ss, [ws.title for ws in all_ws if ws.title not in system])
+    reorder_tabs(ss)
 
     return construction_params
 
