@@ -434,14 +434,20 @@
   cli_command: validation-report
   writes_to_drive: false
   description: >-
-    Turns validate-coding's output into a GitHub issue body for the
-    sheet-validation workflow; pure formatting, no live Sheet/gh calls of
-    its own.
+    Turns validate-coding's output into a GitHub issue for the
+    sheet-validation workflow; with --apply, files, updates, supersedes or
+    closes the sheet-validation issue through coding/issues.py.
   side_effects:
-    - "none directly (writes stdout only; the gh calls live in the calling workflow, not this command)"
-  idempotent: true
-  idempotency_note: "Pure function of validate-coding's log text -- same input always produces the same formatted output."
-  apply_gate: null
+    - "--out: writes the issue body to a local file"
+    - "--apply: creates, comments on, or closes sheet-validation GitHub issues"
+  idempotent: false
+  idempotency_note: >-
+    The body is a pure function of validate-coding's log text (same input,
+    same output). --apply is not idempotent: re-running with the same
+    still-failing report adds another comment to the open issue, which is
+    the intended daily signal that the problem persists. A clean report
+    closes the issue once; later clean runs find nothing open and do nothing.
+  apply_gate: "--apply"
   preconditions: []
   facts_touched: []
   cascades_triggered: []
@@ -830,6 +836,33 @@
     for anything importing this module more than once -- a test suite,
     say) silently returned stale data. Fixed by removing the cache; see
     coding/registry.py's own docstring for the full account.
+  apply_gate: null
+  preconditions: []
+  facts_touched: []
+  cascades_triggered: []
+  modes: []
+
+- id: issue
+  cli_command: issue
+  writes_to_drive: false
+  description: >-
+    The workflows' way to file, close or remind on a labelled GitHub issue
+    (--file, --close, --remind), keep GitHub's labels in line with
+    schemas/issue_labels.yaml (--sync-labels, dry run without --apply), and
+    rewrite CLAUDE.md's Labels table from it (--write-label-table). Every
+    label is checked against the registry first; an unknown one is refused.
+  side_effects:
+    - "--file / --close / --remind: creates, edits, comments on or closes GitHub issues"
+    - "--sync-labels --apply: creates, edits or deletes GitHub labels; files or closes the label-drift issue"
+    - "--write-label-table: rewrites the Labels table in CLAUDE.md"
+  idempotent: false
+  idempotency_note: >-
+    --file --replace, --close, --sync-labels --apply and --write-label-table
+    are idempotent: a second run with nothing changed finds the same open
+    issue and rewrites it identically, finds nothing open to close, finds
+    GitHub's labels already matching, or finds the table already current.
+    --file without --replace and --remind add a comment every run, by
+    design -- each comment is that day's notice.
   apply_gate: null
   preconditions: []
   facts_touched: []

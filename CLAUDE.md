@@ -76,6 +76,7 @@ python -m coding registry                 # full command inventory, derived fres
 python -m coding lookup-lang arao1248     # fetch + cache Glottolog metadata (--refresh, --all)
 python -m coding setup-root-folder        # one-time Drive folder setup
 python -m coding generate-status-sheet    # locked read-only per-language status sheets (--apply, --lang)
+python -m coding issue --sync-labels      # GitHub labels vs schemas/issue_labels.yaml (--apply; also --file/--close/--remind, used by workflows)
 python -m planars <module> <tsv>          # run a single analysis
 
 # Testing
@@ -232,6 +233,7 @@ Keep the following files up to date as the project evolves. Check each one at th
 | `schemas/diagnostic_classes_status.yaml` | A class's review status, collection requirement, or sheet instructions change |
 | `schemas/planar.yaml` | New standard element labels or structural column conventions |
 | `schemas/terms.yaml` | New analytical terms or chart label changes |
+| `schemas/issue_labels.yaml` | A GitHub label is added, retired, or its meaning changes — the Labels table below and GitHub's own labels are rebuilt from it |
 | `README.md` | Changes to the annotated TOC (audience routing, guide descriptions) |
 | `NextPrompt.md` | The standing resumption prompt — open a fresh session and say "Read NextPrompt.md and carry on." Update the *Now* line when the current work changes; it holds no state, so nothing else should need editing |
 | `docs/*.md` | User-facing workflow changes, setup instructions, new dependencies, new commands |
@@ -273,30 +275,44 @@ Source: Jeff Good, "Domains of linearization, constituency, and wordhood in Chic
 
 Feature requests and bugs are tracked on GitHub Issues: https://github.com/jcgood/planars/issues
 
-When creating a new issue, apply at least one label from the set below. Use `gh issue create --label "..."` or apply labels immediately after creation with `gh issue edit <n> --add-label "..."`. A new label goes into the table below the same day (until Phase 10 unit 10 generates the table).
+When creating a new issue, apply at least one label from the set below. Use `gh issue create --label "..."` or apply labels immediately after creation with `gh issue edit <n> --add-label "..."`. Labels are defined in one place, `schemas/issue_labels.yaml`: to add one, add an entry there and commit — the daily refresh creates it on GitHub, and the pre-commit hook regenerates the table below. Never create a label on GitHub by hand (the refresh files a `label-drift` issue when one is in use but unregistered). Code files issues only through `coding/issues.py`, which refuses an unregistered label.
 
 **Sign every issue comment Claude posts** with a footer naming the instance — `---` then `*klᴐd*` for Jeff's Claude (not "klɑd", a mistranscription), `*klod*` for Adam's — so nobody mistakes a Claude-drafted comment for the person's own. When a commit resolves an issue, put `Closes #N` in its message (one line per issue); for a partial fix, comment and close by hand instead.
 
 ### Labels
 
-| Label | Meaning |
-|-------|---------|
-| `diagnostics` | Requires linguistic validation from Adam before implementation. Filter: `gh issue list --label diagnostics` |
-| `sheet-validation` | Filed by `sheet-validation.yml` when `validate-coding` finds **errors** (or crashes). Advisory warnings never file or hold open an issue — they appear as context only. One open issue per *problem*, not per label: a later run reporting the same problem comments on it, a run reporting a different one closes it as superseded and files a new one. Auto-closed when no errors remain. |
-| `sheet-drift` | Filed by `data-refresh.yml` when sheets are out of sync with the data model. Resolve: `update-sheets --apply`. Auto-closed when clean. |
-| `pending-changes` | Filed by `import-sheets` when destructive changes land in `pending_changes.json`. Resolve: `apply-pending`. |
-| `diagnostics-drift` | Filed by `data-refresh.yml` when `import-sheets` finds ambiguous TSV→YAML differences. Resolve: edit YAML, run `sync-diagnostics-yaml --apply`. Auto-closed when clear. |
-| `diagnostics-yaml-error` | Filed by `data-refresh.yml` when `sync-diagnostics-yaml` (either direction) finds a blocking `diagnostics_{lang_id}.yaml` validation error — a malformed YAML, not ambiguous drift (that's `diagnostics-drift` above) or schema inconsistency (`codebook-error`). A non-blocking error (e.g. a required class not yet drafted) does not trigger this. Resolve: fix the YAML, run `sync-diagnostics-yaml --apply` (and `--to-sheet --apply` if the Sheet needs it too). Auto-closed when clean. |
-| `import-error` | Filed by `data-refresh.yml` when `import-sheets --apply` exits non-zero. Issue body contains the failure output. Auto-closed when import succeeds. |
-| `codebook-error` | Filed by `data-refresh.yml` (and CI on every push) when `check-codebook` finds schema inconsistencies. Auto-closed when check passes. |
-| `data-overwrite` | Filed by `data-refresh.yml` when human commits appear overwritten by today's Sheet import. Check `git log`/`git show` in planars-data to verify. Auto-closed when clean. |
-| `planar-changed` | Filed by `data-refresh.yml` when a language's planar spreadsheet differs from the local TSV. Resolve: run the command in the issue body (`update-sheets --apply` for additions, `restructure-sheets --pos-remap ... --apply` for renumbering). Close manually after verifying sheets are up to date. |
-| `stale-manifest` | Filed by `data-refresh.yml` when manifest entries have no matching class in `diagnostics_{lang}.yaml`. Resolve: `prune-manifest --apply`. Auto-closed when clean. |
-| `integrity-error` | Filed by `data-refresh.yml` when `integrity-check` detects errors. Run `integrity-check` locally for details. Auto-closed when clean. |
-| `dependent-stale` | Filed by `data-refresh.yml` when a dependent construction (e.g. nonpermutability `general`) is out of sync with its source (e.g. `element_prescreening`). Resolve: `generate-sheets --lang LANG --regen-construction CLASS:CONSTRUCTION`. Auto-closed when in sync. |
-| `regen-dependents-error` | Filed by `data-refresh.yml` when `generate-sheets --regen-dependents` fails to auto-regenerate a dependent tab (a real error, not the `dependent-stale` case above — that one requires no error, just a coordinator decision because annotation data already exists). Resolve: investigate the error, then re-run `generate-sheets --lang LANG_ID --regen-construction CLASS:CONSTRUCTION`. Auto-closed when clean. |
-| `collaborator-notes` | Filed by `data-refresh.yml` when a collaborator's notes doc has new content. Resolve: paste the Claude prompt from the issue body, review proposed issues, file warranted ones, then close this issue. |
-| `collaborator-check` | Filed by `import-sheets` when an in-progress sheet has structural anomalies (missing rows, missing columns, >10% annotated-cell decrease). Not a blocking error — coordinator should verify the change was intentional with the collaborator. |
+<!-- label-table:start — generated from schemas/issue_labels.yaml by `python -m coding issue --write-label-table`; edit that file, not this table -->
+| Label | Filed by | Meaning |
+|-------|----------|---------|
+| `diagnostics` | by hand; generate-sheets | Requires linguistic validation from Adam before implementation. Also filed by `generate-sheets` when an element's prescreening value differs by position. Filter: `gh issue list --label diagnostics` |
+| `linguistics` | by hand | Linguistically driven; needs domain expertise to settle. |
+| `needs-input` | by hand | Waiting on input from Adam or another domain expert. |
+| `Jeff` | by hand | Waiting on a decision from Jeff. |
+| `design` | by hand | Architectural or forward-looking design decisions. |
+| `infrastructure` | by hand | Tooling, scripts and workflows. |
+| `codebook` | by hand | Criterion definitions and the rendered codebook (`schemas/diagnostic_criteria.yaml`, `render_codebook.py`). |
+| `notebooks` | by hand | Colab notebooks and their templates. |
+| `bug` | by hand | Something isn't working. |
+| `enhancement` | by hand | New feature or request. |
+| `documentation` | by hand | Improvements or additions to documentation. |
+| `sheet-validation` | validation-report --apply (sheet-validation.yml) | Filed when `validate-coding` finds **errors** (or crashes). Advisory warnings never file or hold open an issue — they appear as context only. One open issue per *problem*, not per label: a later run reporting the same problem comments on it, a run reporting a different one closes it as superseded and files a new one. Auto-closed when no errors remain. |
+| `sheet-drift` | data-refresh.yml | Sheets are out of sync with the data model. Resolve: `update-sheets --apply`. Auto-closed when clean. |
+| `pending-changes` | import-sheets | Destructive changes landed in `pending_changes.json`. Resolve: `apply-pending`, which closes the issue once every change is handled. A reminder is added daily once the issue is a week old. |
+| `diagnostics-drift` | data-refresh.yml | `import-sheets` found ambiguous TSV→YAML differences. Resolve: edit the YAML, run `sync-diagnostics-yaml --apply`. Auto-closed when clear. |
+| `diagnostics-yaml-error` | data-refresh.yml | `sync-diagnostics-yaml` (either direction) found a blocking `diagnostics_{lang_id}.yaml` validation error — a malformed YAML, not ambiguous drift (that's `diagnostics-drift`) or schema inconsistency (`codebook-error`). A non-blocking error (e.g. a required class not yet drafted) does not trigger this. Resolve: fix the YAML, run `sync-diagnostics-yaml --apply` (and `--to-sheet --apply` if the Sheet needs it too). Auto-closed when clean. |
+| `import-error` | data-refresh.yml | `import-sheets --apply` exited non-zero. The issue body contains the failure output. Auto-closed when import succeeds. |
+| `codebook-error` | data-refresh.yml | `check-codebook` found schema inconsistencies in the daily refresh (CI also runs the check on every push, but files nothing). Auto-closed when the check passes. |
+| `data-overwrite` | data-refresh.yml | Human commits appear overwritten by today's Sheet import. Check `git log`/`git show` in planars-data to verify. Auto-closed when clean. |
+| `planar-changed` | data-refresh.yml | A language's planar spreadsheet differs from the local TSV. Resolve: run the command in the issue body (`update-sheets --apply` for additions, `restructure-sheets --pos-remap ... --apply` for renumbering). Auto-closed when a later run finds no planar changes. |
+| `stale-manifest` | data-refresh.yml | Manifest entries have no matching class in `diagnostics_{lang}.yaml`. Resolve: `prune-manifest --apply`. Auto-closed when clean. |
+| `integrity-error` | data-refresh.yml | `integrity-check` detected errors. Run `integrity-check` locally for details. Auto-closed when clean. |
+| `dependent-stale` | data-refresh.yml | A dependent construction (e.g. nonpermutability `general`) is out of sync with its source (e.g. `element_prescreening`). Resolve: `generate-sheets --lang LANG --regen-construction CLASS:CONSTRUCTION`. Auto-closed when in sync. |
+| `regen-dependents-error` | data-refresh.yml | `generate-sheets --regen-dependents` failed to regenerate a dependent tab (a real error, not `dependent-stale`, which needs a coordinator decision because annotation data already exists). Resolve: investigate the error, then re-run `generate-sheets --lang LANG_ID --regen-construction CLASS:CONSTRUCTION`. Auto-closed when clean. |
+| `collaborator-notes` | check-notes --apply (data-refresh.yml) | A collaborator's notes Doc has new content (one issue per annotator). Resolve: paste the Claude prompt from the issue body, review proposed issues, file warranted ones, then close this issue. |
+| `collaborator-check` | import-sheets | An in-progress sheet has structural anomalies (missing rows, missing columns, >10% annotated-cell decrease). Not a blocking error — verify the change was intentional with the collaborator. |
+| `label-drift` | issue --sync-labels --apply (data-refresh.yml) | A label someone created on GitHub by hand is on issues but not in `schemas/issue_labels.yaml`, so the tooling can't keep it in line. Resolve: add it to the registry (or take it off those issues). Auto-closed when every label in use is registered. |
+| `sheet-updates` | restructure-sheets --apply | One long-lived issue per language ("Sheet updates — {lang_id}"); `restructure-sheets --apply` comments on it whenever that language's sheets get new URLs. Annotators subscribe to it. Never closed. |
+<!-- label-table:end -->
 
 ## Work phases
 

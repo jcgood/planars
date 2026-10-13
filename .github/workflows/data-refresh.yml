@@ -106,6 +106,15 @@ jobs:
           echo "Human-committed files at risk of overwrite:"
           cat /tmp/human_committed_files.txt || echo "(none)"
 
+      - name: Bring GitHub's labels in line with schemas/issue_labels.yaml
+        # First, so any label added to the registry exists before a step
+        # below files an issue under it. Files/closes its own label-drift
+        # issue; a failure here must not stop the refresh.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python -m coding issue --sync-labels --apply
+        continue-on-error: true
+
       - name: Import planar from Google Sheets
         id: import_planar
         run: python -m coding import-planar --apply > /tmp/planar_report.txt 2>&1
@@ -155,12 +164,12 @@ jobs:
           PYEOF
 
           if [ -f /tmp/planar_changed_body.md ]; then
-            bash .github/scripts/manage_issue.sh file planar-changed \
-              "Planar structure changed — annotation sheets need updating ($(date -u +%Y-%m-%d))" \
-              /tmp/planar_changed_body.md
+            python -m coding issue --file planar-changed --replace \
+              --title "Planar structure changed — annotation sheets need updating ($(date -u +%Y-%m-%d))" \
+              --body-file /tmp/planar_changed_body.md
           elif [ "${{ steps.import_planar.outcome }}" = "success" ]; then
-            bash .github/scripts/manage_issue.sh close planar-changed \
-              "No planar changes detected on $(date -u +%Y-%m-%d) — closing."
+            python -m coding issue --close planar-changed \
+              --message "No planar changes detected on $(date -u +%Y-%m-%d) — closing."
           fi
 
       - name: Import annotation data from Google Sheets
@@ -224,13 +233,13 @@ jobs:
               f.write(text)
               f.write("\n```\n\n</details>\n")
           PYEOF
-          bash .github/scripts/manage_issue.sh file import-error "Import error in data refresh ($(date -u +%Y-%m-%d))" /tmp/import_error_body.md
+          python -m coding issue --file import-error --replace --title "Import error in data refresh ($(date -u +%Y-%m-%d))" --body-file /tmp/import_error_body.md
 
       - name: Close open import-error issue if import succeeded
         if: steps.import_sheets.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash .github/scripts/manage_issue.sh close import-error "Import succeeded on $(date -u +%Y-%m-%d) — closing."
+        run: python -m coding issue --close import-error --message "Import succeeded on $(date -u +%Y-%m-%d) — closing."
 
       - name: Remind if pending-changes issue is stale
         # If an open pending-changes issue has been open for more than 7 days,
@@ -240,13 +249,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          STALE=$(gh issue list --label pending-changes --state open \
-            --json number,createdAt \
-            --jq '[.[] | select((now - (.createdAt | fromdateiso8601)) > 604800)] | .[].number')
-          for ISSUE_NUM in $STALE; do
-            gh issue comment "$ISSUE_NUM" \
-              --body "Reminder: this pending-changes issue has been open for more than 7 days as of $(date -u +%Y-%m-%d). Run \`python -m coding apply-pending\` to review and apply each change."
-          done
+          python -m coding issue --remind pending-changes --older-than-days 7 \
+            --message "Reminder: this pending-changes issue has been open for more than 7 days as of $(date -u +%Y-%m-%d). Run \`python -m coding apply-pending\` to review and apply each change."
 
       - name: Check collaborator notes docs
         # Reads each language's Google Doc for new collaborator notes. If new
@@ -404,14 +408,14 @@ jobs:
             echo "" >> "$BODY_FILE"
             echo '</details>' >> "$BODY_FILE"
           fi
-          bash .github/scripts/manage_issue.sh file diagnostics-yaml-error "Diagnostics YAML validation errors ($(date -u +%Y-%m-%d))" "$BODY_FILE"
+          python -m coding issue --file diagnostics-yaml-error --replace --title "Diagnostics YAML validation errors ($(date -u +%Y-%m-%d))" --body-file "$BODY_FILE"
           rm -f "$BODY_FILE"
 
       - name: Close open diagnostics-yaml-error issue if all clear
         if: steps.sync_diag_tsv.outcome == 'success' && steps.sync_diag_sheet.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash .github/scripts/manage_issue.sh close diagnostics-yaml-error "Diagnostics YAML validation passed on $(date -u +%Y-%m-%d) — closing."
+        run: python -m coding issue --close diagnostics-yaml-error --message "Diagnostics YAML validation passed on $(date -u +%Y-%m-%d) — closing."
 
       - name: Sync criterion columns to annotation sheets
         # Issue #120: adds missing criterion columns and updates dropdown validation
@@ -470,14 +474,14 @@ jobs:
           echo '```' >> "$BODY_FILE"
           echo "" >> "$BODY_FILE"
           echo '</details>' >> "$BODY_FILE"
-          bash .github/scripts/manage_issue.sh file regen-dependents-error "Dependent construction regeneration failed ($(date -u +%Y-%m-%d))" "$BODY_FILE"
+          python -m coding issue --file regen-dependents-error --replace --title "Dependent construction regeneration failed ($(date -u +%Y-%m-%d))" --body-file "$BODY_FILE"
           rm -f "$BODY_FILE"
 
       - name: Close open regen-dependents-error issue if all clear
         if: steps.regen_dependents.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash .github/scripts/manage_issue.sh close regen-dependents-error "Dependent construction regeneration succeeded on $(date -u +%Y-%m-%d) — closing."
+        run: python -m coding issue --close regen-dependents-error --message "Dependent construction regeneration succeeded on $(date -u +%Y-%m-%d) — closing."
 
       - name: Check for stale dependent constructions
         id: check_dependents
@@ -522,13 +526,13 @@ jobs:
               f.write(text)
               f.write("\n```\n\n</details>\n")
           PYEOF
-          bash .github/scripts/manage_issue.sh file dependent-stale "Dependent construction stale — regeneration needed ($(date -u +%Y-%m-%d))" /tmp/dependents_stale_body.md
+          python -m coding issue --file dependent-stale --replace --title "Dependent construction stale — regeneration needed ($(date -u +%Y-%m-%d))" --body-file /tmp/dependents_stale_body.md
 
       - name: Close open dependent-stale issue if all clear
         if: steps.check_dependents.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash .github/scripts/manage_issue.sh close dependent-stale "Dependent constructions in sync on $(date -u +%Y-%m-%d) — closing."
+        run: python -m coding issue --close dependent-stale --message "Dependent constructions in sync on $(date -u +%Y-%m-%d) — closing."
 
       - name: Check for diagnostics YAML drift
         id: diag_drift
@@ -569,14 +573,14 @@ jobs:
           jq -r '.[] | .lang_id as $lang | .ambiguous[] |
             "| \($lang) | \(.class_name) | \(.kind) | \(if (.suggestions // []) | length > 0 then (.suggestions | join(", ")) else "—" end) |"' \
             diagnostics_drift.json >> "$BODY_FILE"
-          bash .github/scripts/manage_issue.sh file diagnostics-drift "Diagnostics YAML drift detected ($(date -u +%Y-%m-%d))" "$BODY_FILE"
+          python -m coding issue --file diagnostics-drift --replace --title "Diagnostics YAML drift detected ($(date -u +%Y-%m-%d))" --body-file "$BODY_FILE"
           rm -f "$BODY_FILE"
 
       - name: Close open diagnostics drift issue if all clear
         if: steps.diag_drift.outputs.drift == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash .github/scripts/manage_issue.sh close diagnostics-drift "Diagnostics YAML drift resolved on $(date -u +%Y-%m-%d) — closing."
+        run: python -m coding issue --close diagnostics-drift --message "Diagnostics YAML drift resolved on $(date -u +%Y-%m-%d) — closing."
 
       - name: Check codebook consistency
         # Gap 1 (#121): catches schema inconsistencies (criteria in modules but
@@ -624,13 +628,13 @@ jobs:
                   f.write("\n---\n\n## Ready-to-paste Claude prompts\n\n")
                   f.write(open(prompts_path).read())
           PYEOF
-          bash .github/scripts/manage_issue.sh file codebook-error "Codebook inconsistency detected ($(date -u +%Y-%m-%d))" /tmp/codebook_error_body.md
+          python -m coding issue --file codebook-error --replace --title "Codebook inconsistency detected ($(date -u +%Y-%m-%d))" --body-file /tmp/codebook_error_body.md
 
       - name: Close open codebook-error issue if all clear
         if: steps.codebook.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash .github/scripts/manage_issue.sh close codebook-error "Codebook check passed on $(date -u +%Y-%m-%d) — closing."
+        run: python -m coding issue --close codebook-error --message "Codebook check passed on $(date -u +%Y-%m-%d) — closing."
 
       - name: Check for stale manifest entries
         # Flags manifest classes that are no longer in diagnostics_{lang}.yaml.
@@ -645,13 +649,13 @@ jobs:
         if: steps.stale_manifest.outcome == 'failure'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash .github/scripts/manage_issue.sh file stale-manifest "Stale manifest entries detected ($(date -u +%Y-%m-%d))" /tmp/stale_manifest.txt
+        run: python -m coding issue --file stale-manifest --replace --title "Stale manifest entries detected ($(date -u +%Y-%m-%d))" --body-file /tmp/stale_manifest.txt
 
       - name: Close open stale-manifest issue if all clear
         if: steps.stale_manifest.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash .github/scripts/manage_issue.sh close stale-manifest "Stale manifest entries resolved on $(date -u +%Y-%m-%d) — closing."
+        run: python -m coding issue --close stale-manifest --message "Stale manifest entries resolved on $(date -u +%Y-%m-%d) — closing."
 
       - name: Run integrity check
         # Validates planar TSV structure and analysis module consistency —
@@ -687,13 +691,13 @@ jobs:
               f.write(text)
               f.write("\n```\n\n</details>\n")
           PYEOF
-          bash .github/scripts/manage_issue.sh file integrity-error "Integrity check failed ($(date -u +%Y-%m-%d))" /tmp/integrity_error_body.md
+          python -m coding issue --file integrity-error --replace --title "Integrity check failed ($(date -u +%Y-%m-%d))" --body-file /tmp/integrity_error_body.md
 
       - name: Close open integrity-error issue if all clear
         if: steps.integrity.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash .github/scripts/manage_issue.sh close integrity-error "Integrity check passed on $(date -u +%Y-%m-%d) — closing."
+        run: python -m coding issue --close integrity-error --message "Integrity check passed on $(date -u +%Y-%m-%d) — closing."
 
       - name: Regenerate snapshots
         # Gap 4 (#121): if: always() ensures snapshots are regenerated even when
@@ -762,14 +766,14 @@ jobs:
           echo '```' >> "$BODY_FILE"
           cat /tmp/overwritten_files.txt >> "$BODY_FILE"
           echo '```' >> "$BODY_FILE"
-          bash .github/scripts/manage_issue.sh file data-overwrite "Coordinator data may have been overwritten by data-refresh ($(date -u +%Y-%m-%d))" "$BODY_FILE"
+          python -m coding issue --file data-overwrite --replace --title "Coordinator data may have been overwritten by data-refresh ($(date -u +%Y-%m-%d))" --body-file "$BODY_FILE"
           rm -f "$BODY_FILE"
 
       - name: Close open data-overwrite issue if all clear
         if: steps.overwrite_check.outputs.overwrite == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash .github/scripts/manage_issue.sh close data-overwrite "No coordinator data overwritten on $(date -u +%Y-%m-%d) — closing."
+        run: python -m coding issue --close data-overwrite --message "No coordinator data overwritten on $(date -u +%Y-%m-%d) — closing."
 
       - name: Commit and push planars snapshot changes
         # Gap 4 (#121): if: always() ensures snapshots are committed even when
@@ -815,13 +819,13 @@ jobs:
         if: steps.update_sheets.outcome == 'failure'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash .github/scripts/manage_issue.sh file sheet-drift "Sheet drift detected — update-sheets --apply needs review ($(date -u +%Y-%m-%d))" /tmp/update_sheets_report.txt
+        run: python -m coding issue --file sheet-drift --replace --title "Sheet drift detected — update-sheets --apply needs review ($(date -u +%Y-%m-%d))" --body-file /tmp/update_sheets_report.txt
 
       - name: Close open drift issue if all clear
         if: steps.update_sheets.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash .github/scripts/manage_issue.sh close sheet-drift "Sheet drift resolved on $(date -u +%Y-%m-%d) — closing."
+        run: python -m coding issue --close sheet-drift --message "Sheet drift resolved on $(date -u +%Y-%m-%d) — closing."
 
       - name: Annotation scope summary
         # Informational: count languages, classes, and constructions from

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from coding.validation_report import (
     ValidationReport,
+    act_on_report,
     build_issue_body,
     issue_title,
     parse_report,
@@ -209,3 +210,44 @@ def test_build_issue_body_is_a_pure_function_of_its_input():
         first = build_issue_body(report, "2026-08-02")
         second = build_issue_body(parse_report(log), "2026-08-02")
         assert second == first
+
+
+# ---------------------------------------------------------------------------
+# Acting on the report (--apply), against the in-memory GitHub
+# ---------------------------------------------------------------------------
+
+def test_errors_with_nothing_open_file_a_new_issue(github):
+    assert act_on_report(parse_report(ERROR_LOG), "2026-10-13").startswith("filed #")
+    _, _, title, label, body = github.calls_of("create")[0]
+    assert label == "sheet-validation"
+    assert title == issue_title(parse_report(ERROR_LOG), "2026-10-13")
+    assert read_fingerprint(body) == parse_report(ERROR_LOG).fingerprint()
+
+
+def test_the_same_problem_again_is_a_comment_not_a_new_issue(github):
+    body = build_issue_body(parse_report(ERROR_LOG), "2026-10-12")
+    number = github.seed_issue("Sheet validation: 2 errors", "sheet-validation", body=body)
+    assert act_on_report(parse_report(ERROR_LOG), "2026-10-13") == f"commented on #{number}"
+    assert github.calls_of("create") == []
+    assert github.issue(number)["state"] == "OPEN"
+
+
+def test_a_different_problem_supersedes_the_open_issue(github):
+    body = build_issue_body(parse_report(CRASH_LOG), "2026-10-12")
+    old = github.seed_issue("Sheet validation crashed", "sheet-validation", body=body)
+    act_on_report(parse_report(ERROR_LOG), "2026-10-13")
+    assert github.issue(old)["state"] == "CLOSED"
+    assert "superseded" in github.comments[old][0]
+    assert len(github.calls_of("create")) == 1
+
+
+def test_warnings_alone_close_the_open_issue(github):
+    old = github.seed_issue("Sheet validation: 2 errors", "sheet-validation")
+    assert act_on_report(parse_report(WARNINGS_ONLY_LOG), "2026-10-13") == f"closed #{old}"
+    assert github.issue(old)["state"] == "CLOSED"
+    assert "1 advisory warning(s)" in github.comments[old][0]
+
+
+def test_warnings_alone_with_nothing_open_do_nothing(github):
+    assert act_on_report(parse_report(WARNINGS_ONLY_LOG), "2026-10-13") == "nothing to do"
+    assert [c for c in github.calls if c[0] != "list"] == []

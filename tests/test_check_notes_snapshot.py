@@ -26,7 +26,6 @@ import io
 import json
 import os
 import re
-import subprocess
 import sys
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -50,11 +49,14 @@ NOTES = ("Position 14 looks wrong to me — the stem boundary sits left of where
 
 
 @pytest.fixture()
-def env(monkeypatch, tmp_path):
+def env(monkeypatch, tmp_path, github):
     """A stand-in Drive with one language's notes Doc, and a scratch state file.
 
-    Yields (doorway, run, state_path). `run(argv, ...)` plays one command and
-    returns its output; `gh` is stubbed, since filing issues is not Drive.
+    `run(argv)` plays one command and returns its output. GitHub is the
+    in-memory stand-in from conftest, which remembers what it filed: the
+    command is supposed to comment on an annotator's open issue rather than
+    file a second one, and a stub that always answered "no open issues" would
+    let a regression to filing duplicates pass.
     """
     doorway = FakeDriveDoorway.from_fixtures()
     manifest = doorway.download_file_json(MANIFEST_FILE_ID)
@@ -83,57 +85,20 @@ def env(monkeypatch, tmp_path):
     monkeypatch.setattr(drive_module, "_save_drive_config", saved.update)
     drive_doorway.set_doorway(doorway)
 
-    gh_calls: List[List[str]] = []
-
-    # All issues ever filed, open or closed -- numbers are never reused, the
-    # same as real GitHub. `list --state open` below filters to open ones.
-    all_issues: List[Dict] = []
-
-    def fake_run(cmd, **kwargs):
-        """Stand-in gh that remembers what it filed.
-
-        It has to: the command is supposed to comment on an annotator's open
-        issue rather than file a second one, and a stub that always answers
-        "no open issues" would let a regression to filing duplicates pass.
-        `view` reports OPEN/CLOSED from the same registry `list` and `create`
-        maintain, so the stored-ID path (_issue_is_open) is exercised for
-        real rather than always falling through to the title search.
-        """
-        gh_calls.append([str(p) for p in cmd])
-        out = ""
-        if "list" in cmd:
-            out = json.dumps([i for i in all_issues if i["state"] == "OPEN"])
-        elif "view" in cmd:
-            number = int(cmd[cmd.index("view") + 1])
-            issue = next((i for i in all_issues if i["number"] == number), None)
-            out = json.dumps({"state": issue["state"] if issue else "CLOSED"})
-        elif "create" in cmd:
-            title = cmd[cmd.index("--title") + 1]
-            all_issues.append({"number": 900 + len(all_issues), "title": title, "state": "OPEN"})
-            out = f"https://github.com/jcgood/planars/issues/{all_issues[-1]['number']}"
-        return subprocess.CompletedProcess(cmd, 0, stdout=out, stderr="")
-
     def close_issue(number: int) -> None:
         """Simulate the coordinator closing an issue after triage."""
-        for i in all_issues:
-            if i["number"] == number:
-                i["state"] = "CLOSED"
+        github.issue(number)["state"] = "CLOSED"
 
     def rename_issue(number: int, new_title: str) -> None:
         """Simulate a manual rename that would break a title-substring lookup."""
-        for i in all_issues:
-            if i["number"] == number:
-                i["title"] = new_title
-
-    monkeypatch.setattr(check_notes.subprocess, "run", fake_run)
+        github.issue(number)["title"] = new_title
 
     def run(argv: List[str]) -> str:
         monkeypatch.setattr(sys, "argv", argv)
         buf = io.StringIO()
         with redirect_stdout(buf):
             check_notes.main()
-        text = re.sub(r"\d{4}-\d{2}-\d{2}", "DATE", buf.getvalue())
-        return re.sub(r"\S*/tmp\w+\.md", "BODY_FILE", text)
+        return re.sub(r"\d{4}-\d{2}-\d{2}", "DATE", buf.getvalue())
 
     def state() -> Dict:
         return json.loads(state_path.read_text(encoding="utf-8"))
@@ -145,7 +110,7 @@ def env(monkeypatch, tmp_path):
         "doorway": doorway, "run": staticmethod(run), "state": staticmethod(state),
         "set_state": staticmethod(set_state),
         "seed_doc": staticmethod(seed_doc), "seed_no_doc": staticmethod(seed_no_doc),
-        "gh_calls": gh_calls, "saved": saved,
+        "github": github, "saved": saved,
         "close_issue": staticmethod(close_issue), "rename_issue": staticmethod(rename_issue),
     })
     drive_doorway.reset_doorway()
@@ -187,7 +152,7 @@ def test_dry_run_files_nothing_and_writes_nothing(env):
     env.seed_doc()
     env.run(["check-notes", "--lang", LANG])
     assert env.doorway.mutations == []
-    assert env.gh_calls == []
+    assert env.github.calls == []
     assert env.state() == {}
     assert env.doorway.get_doc_text(DOC_ID) == NOTES
 
@@ -199,10 +164,11 @@ def test_dry_run_files_nothing_and_writes_nothing(env):
 def test_new_notes_reach_a_github_issue(env):
     env.seed_doc()
     env.run(["check-notes", "--lang", LANG, "--apply"])
-    created = [c for c in env.gh_calls if "create" in c]
+    created = env.github.calls_of("create")
     assert len(created) == 1
-    assert "collaborator-notes" in created[0]
-    assert "Collaborator notes — Adam Tallman" in " ".join(created[0])
+    _, _, title, label, _ = created[0]
+    assert label == "collaborator-notes"
+    assert "Collaborator notes — Adam Tallman" in title
 
 
 def test_the_collaborator_is_told_their_notes_arrived(env):
@@ -219,12 +185,12 @@ def test_the_acknowledgment_does_not_look_like_new_notes_next_time(env):
     """Otherwise every run would file an issue about its own last line."""
     env.seed_doc()
     env.run(["check-notes", "--lang", LANG, "--apply"])
-    env.gh_calls.clear()
+    env.github.calls.clear()
     env.doorway.clear_mutations()
 
     out = env.run(["check-notes", "--lang", LANG, "--apply"])
     assert "No new notes." in out
-    assert env.gh_calls == []
+    assert env.github.calls == []
     assert env.doorway.mutations_of("append_doc_text") == []
 
 
@@ -232,16 +198,16 @@ def test_unchanged_notes_file_nothing(env):
     env.seed_doc()
     env.run(["check-notes", "--lang", LANG, "--apply"])
     first = env.state()[LANG]["notes_hash"]
-    env.gh_calls.clear()
+    env.github.calls.clear()
     env.run(["check-notes", "--lang", LANG, "--apply"])
     assert env.state()[LANG]["notes_hash"] == first
-    assert [c for c in env.gh_calls if "create" in c] == []
+    assert env.github.calls_of("create") == []
 
 
 def test_notes_added_later_are_picked_up(env):
     env.seed_doc()
     env.run(["check-notes", "--lang", LANG, "--apply"])
-    env.gh_calls.clear()
+    env.github.calls.clear()
     env.doorway.append_doc_text(DOC_ID, "One more thing: v:obj-R feels doubtful.")
 
     out = env.run(["check-notes", "--lang", LANG, "--apply"])
@@ -249,15 +215,15 @@ def test_notes_added_later_are_picked_up(env):
     # An issue is already open for this annotator, so it comments rather than
     # filing a second one — the find-or-edit convention, not a fresh issue
     # every day.
-    assert [c for c in env.gh_calls if "create" in c] == []
-    assert [c for c in env.gh_calls if "comment" in c]
+    assert env.github.calls_of("create") == []
+    assert env.github.calls_of("comment")
 
 
 def test_an_empty_doc_files_nothing_but_is_remembered(env):
     env.seed_doc(text="\n   \n")
     out = env.run(["check-notes", "--lang", LANG, "--apply"])
     assert "Notes doc is empty" in out
-    assert env.gh_calls == []
+    assert env.github.calls == []
     assert env.state()[LANG]["notes_hash"]
 
 
@@ -336,14 +302,14 @@ def test_a_renamed_but_still_open_issue_is_still_found(env):
     env.run(["check-notes", "--lang", LANG, "--apply"])
     issue_number = env.state()["_annotator_issues"]["Adam Tallman"]
     env.rename_issue(issue_number, "Renamed by someone, no longer mentions the annotator")
-    env.gh_calls.clear()
+    env.github.calls.clear()
     env.doorway.append_doc_text(DOC_ID, "One more thing: v:obj-R feels doubtful.")
 
     out = env.run(["check-notes", "--lang", LANG, "--apply"])
     assert "New notes detected" in out
-    assert [c for c in env.gh_calls if "create" in c] == []
-    commented = [c for c in env.gh_calls if "comment" in c]
-    assert commented and str(issue_number) in commented[0]
+    assert env.github.calls_of("create") == []
+    commented = env.github.calls_of("comment")
+    assert commented and commented[0][1] == issue_number
 
 
 def test_a_closed_issue_is_not_reused(env):
@@ -353,12 +319,12 @@ def test_a_closed_issue_is_not_reused(env):
     env.run(["check-notes", "--lang", LANG, "--apply"])
     first_issue = env.state()["_annotator_issues"]["Adam Tallman"]
     env.close_issue(first_issue)
-    env.gh_calls.clear()
+    env.github.calls.clear()
     env.doorway.append_doc_text(DOC_ID, "One more thing: v:obj-R feels doubtful.")
 
     out = env.run(["check-notes", "--lang", LANG, "--apply"])
     assert "New notes detected" in out
-    created = [c for c in env.gh_calls if "create" in c]
+    created = env.github.calls_of("create")
     assert len(created) == 1
     second_issue = env.state()["_annotator_issues"]["Adam Tallman"]
     assert second_issue != first_issue
@@ -376,11 +342,11 @@ def test_an_open_issue_predating_id_tracking_is_found_by_title_and_backfilled(en
     del state["_annotator_issues"]["Adam Tallman"]
     env.set_state(state)
 
-    env.gh_calls.clear()
+    env.github.calls.clear()
     env.doorway.append_doc_text(DOC_ID, "One more thing: v:obj-R feels doubtful.")
     env.run(["check-notes", "--lang", LANG, "--apply"])
-    assert [c for c in env.gh_calls if "create" in c] == []
-    assert [c for c in env.gh_calls if "comment" in c]
+    assert env.github.calls_of("create") == []
+    assert env.github.calls_of("comment")
     # Backfilled for next time.
     assert env.state()["_annotator_issues"]["Adam Tallman"]
 
@@ -394,6 +360,6 @@ def test_an_unreadable_doc_is_reported_and_the_language_is_skipped(env, monkeypa
     monkeypatch.setattr(env.doorway, "get_doc_text", refuse)
     out = env.run(["check-notes", "--lang", LANG, "--apply"])
     assert "Could not read notes doc" in out
-    assert env.gh_calls == []
+    assert env.github.calls == []
     # Not recorded as checked, so tomorrow's run tries again.
     assert LANG not in env.state()

@@ -197,37 +197,6 @@ def test_every_coding_command_has_an_operation_record():
     assert record_ids == expected_ids
 
 
-def test_operations_have_expected_ids():
-    records = _load_yaml(OPERATIONS_PATH)
-    ids = {record["id"] for record in records}
-    assert ids == {
-        "capture_drive_state",
-        "generate_sheets",
-        "generate_notebooks",
-        "generate_reports",
-        "sync_params",
-        "sync_diagnostics_yaml",
-        "sync_qualification_hashes",
-        "update_sheets",
-        "import_sheets",
-        "validate_coding",
-        "validation_report",
-        "restructure_sheets",
-        "check_codebook",
-        "generate_rule_update_prompt",
-        "integrity_check",
-        "setup_root_folder",
-        "lookup_lang",
-        "apply_pending",
-        "prune_manifest",
-        "check_notes",
-        "refresh_dropdowns",
-        "import_planar",
-        "generate_status_sheet",
-        "registry",
-    }
-
-
 def test_operation_cli_command_matches_its_id():
     # id is cli_command with hyphens -> underscores; catches a copy-paste
     # mismatch between the two fields within one record.

@@ -23,6 +23,13 @@ diagnostic_criteria.yaml
     Source of truth for diagnostic criterion definitions, valid values,
     and linguistic descriptions.
 
+issue_labels.yaml
+    The one definition of the project's GitHub issue labels (name, colour,
+    short description, meaning, who files it). Read by ``coding/issues.py``,
+    which refuses any label not listed; GitHub's labels and CLAUDE.md's
+    Labels table are both rebuilt from it (see the file's header). Not used
+    in Colab.
+
 languages.yaml
     Source of truth for per-language metadata.  Glottolog fields
     (name, iso639_3, family, coordinates) are written and refreshed by

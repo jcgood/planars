@@ -29,20 +29,16 @@ Not wired into any GitHub Actions workflow yet -- only into the manually
 triggered, already-reviewed `restructure-sheets --apply` path.
 
 The "decide what to do" logic (issue lookup/fallback, comment formatting) is
-kept separate from "actually do it" (gh subprocess calls), following the
+kept separate from "actually do it" (the GitHub calls, which go through
+coding/issues.py like every other issue the tooling files), following the
 same split used elsewhere in this package (see _compute_stats vs
-_write_tab_with_carryover in restructure_sheets.py) so the former can be
-unit-tested without live gh/API calls.
+_write_tab_with_carryover in restructure_sheets.py).
 """
 from __future__ import annotations
 
-import json
-import subprocess
-import tempfile
-from pathlib import Path
 from typing import List, Optional, Tuple
 
-REPO = "jcgood/planars"
+from . import issues
 
 
 # ---------------------------------------------------------------------------
@@ -146,53 +142,15 @@ def build_change_comment(
 
 
 # ---------------------------------------------------------------------------
-# Live gh calls (not unit-tested directly -- see tests/test_notify.py for
-# the pure-logic functions above, which this orchestrates)
+# Live GitHub calls, through coding/issues.py
 # ---------------------------------------------------------------------------
-
-def _issue_is_open(issue_number: int) -> Optional[bool]:
-    """Return True/False if the issue's state could be determined, else None.
-
-    Purely informational -- GitHub allows commenting on a closed issue, so
-    callers don't need to gate on this or reopen anything.
-    """
-    result = subprocess.run(
-        ["gh", "issue", "view", str(issue_number), "--repo", REPO, "--json", "state"],
-        capture_output=True, text=True,
-    )
-    if result.returncode != 0:
-        return None
-    try:
-        return json.loads(result.stdout).get("state") == "OPEN"
-    except (json.JSONDecodeError, AttributeError):
-        return None
-
-
-def _create_notification_issue(lang_id: str) -> int:
-    """Create this language's notification issue and return its number."""
-    body = build_first_issue_body(lang_id)
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
-        f.write(body)
-        body_path = f.name
-    try:
-        result = subprocess.run(
-            ["gh", "issue", "create", "--repo", REPO,
-             "--title", f"Sheet updates — {lang_id}",
-             "--body-file", body_path],
-            capture_output=True, text=True, check=True,
-        )
-    finally:
-        Path(body_path).unlink(missing_ok=True)
-    url = result.stdout.strip()
-    return int(url.rstrip("/").rsplit("/", 1)[-1])
-
 
 def ensure_notification_issue(lang_id: str, manifest: dict) -> Tuple[int, bool]:
     """Find or create this language's notification issue.
 
     Looks up manifest[lang_id]["notification_issue"] first; if present, uses
     it as-is (a closed issue can still be commented on -- no need to
-    reopen). Otherwise creates a new issue via `gh issue create`, stores the
+    reopen). Otherwise creates a new `sheet-updates` issue, stores the
     number into manifest[lang_id]["notification_issue"] (mutates manifest in
     place -- caller is responsible for persisting/uploading it, the same way
     other manifest mutations in restructure_sheets.py are persisted by
@@ -204,12 +162,12 @@ def ensure_notification_issue(lang_id: str, manifest: dict) -> Tuple[int, bool]:
     """
     existing = get_notification_issue(lang_id, manifest)
     if existing is not None:
-        is_open = _issue_is_open(existing)
-        if is_open is False:
+        if issues.is_open(existing) is False:
             print(f"    (issue #{existing} is closed -- commenting anyway, no reopen needed)")
         return existing, False
 
-    issue_number = _create_notification_issue(lang_id)
+    issue_number = issues.create("sheet-updates", f"Sheet updates — {lang_id}",
+                                 build_first_issue_body(lang_id))
     manifest.setdefault(lang_id, {})["notification_issue"] = issue_number
     print(f"    Created notification issue #{issue_number} for {lang_id}")
     return issue_number, True
@@ -217,14 +175,4 @@ def ensure_notification_issue(lang_id: str, manifest: dict) -> Tuple[int, bool]:
 
 def post_notification_comment(issue_number: int, body: str) -> None:
     """Post a comment to the language's notification issue."""
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
-        f.write(body)
-        body_path = f.name
-    try:
-        subprocess.run(
-            ["gh", "issue", "comment", str(issue_number), "--repo", REPO,
-             "--body-file", body_path],
-            check=True,
-        )
-    finally:
-        Path(body_path).unlink(missing_ok=True)
+    issues.comment(issue_number, body)

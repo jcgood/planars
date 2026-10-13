@@ -2,7 +2,8 @@ name: Sheet validation
 
 # Runs daily to detect unauthorized or accidental edits to annotation sheets.
 #
-# Issue handling (see coding/validation_report.py, and issue #260 for why):
+# Issue handling (done by `validation-report --apply`; see
+# coding/validation_report.py, and issue #260 for why):
 #   - Errors and crashes get an issue; advisory warnings do not, since a known
 #     recurring warning would otherwise hold an issue open indefinitely.
 #   - Each report carries a fingerprint of what is wrong. Same fingerprint on a
@@ -76,58 +77,10 @@ jobs:
           cat /tmp/report.txt >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
-      # The open issue's body is fetched first so its fingerprint can be
-      # compared against this run's: same problem recurring, or a different one?
-      - name: Fetch the open validation issue, if any
-        id: existing
+      # Classifying, fingerprinting and filing/superseding/closing the issue
+      # all live in a tested module — see coding/validation_report.py for why
+      # (issue #260) and act_on_report for the four cases.
+      - name: File, update, supersede or close the validation issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          NUM=$(gh issue list --label sheet-validation --state open --json number --jq '.[0].number // empty')
-          echo "number=$NUM" >> $GITHUB_OUTPUT
-          if [ -n "$NUM" ]; then
-            gh issue view "$NUM" --json body --jq .body > /tmp/previous_body.md
-          else
-            : > /tmp/previous_body.md
-          fi
-
-      # Parsing, classification, and fingerprinting live in a tested module —
-      # see coding/validation_report.py for why (issue #260).
-      - name: Classify the validation report
-        id: report
-        run: |
-          python -m coding validation-report /tmp/report.txt \
-            --out /tmp/issue_body.md \
-            --previous-body /tmp/previous_body.md \
-            --date "$(date -u +%Y-%m-%d)" >> $GITHUB_OUTPUT
-
-      # Errors and crashes warrant an issue. Advisory warnings do not: a
-      # recurring known-and-tracked warning would hold an issue open forever,
-      # which is exactly what happened to #260.
-      - name: File, update, or supersede the validation issue
-        if: steps.report.outputs.should_file == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NUM: ${{ steps.existing.outputs.number }}
-          TITLE: ${{ steps.report.outputs.title }}
-        run: |
-          if [ -z "$NUM" ]; then
-            gh issue create --title "$TITLE" --label sheet-validation --body-file /tmp/issue_body.md
-          elif [ "${{ steps.report.outputs.same_problem }}" = "true" ]; then
-            gh issue comment "$NUM" --body-file /tmp/issue_body.md
-          else
-            gh issue comment "$NUM" --body \
-              "The problem this issue reports is no longer what validation finds. Closing as superseded; a new issue has been filed for the current one."
-            gh issue close "$NUM"
-            gh issue create --title "$TITLE" --label sheet-validation --body-file /tmp/issue_body.md
-          fi
-
-      - name: Close the validation issue if there are no errors
-        if: steps.report.outputs.should_file == 'false' && steps.existing.outputs.number != ''
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NUM: ${{ steps.existing.outputs.number }}
-        run: |
-          gh issue comment "$NUM" --body \
-            "Sheet validation found no errors on $(date -u +%Y-%m-%d) (${{ steps.report.outputs.warnings }} advisory warning(s), which do not block) — closing."
-          gh issue close "$NUM"
+        run: python -m coding validation-report /tmp/report.txt --date "$(date -u +%Y-%m-%d)" --apply

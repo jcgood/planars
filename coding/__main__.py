@@ -43,6 +43,7 @@ _COMMANDS = {
     "import-planar":               "coding.import_planar",
     "generate-status-sheet":       "coding.generate_status_sheet",
     "registry":                    "coding.registry",
+    "issue":                       "coding.issues",
 }
 
 

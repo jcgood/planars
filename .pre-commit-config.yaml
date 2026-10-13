@@ -9,6 +9,14 @@ repos:
         files: ^planars/.*\.py$
         stages: [pre-commit]
 
+      - id: regenerate-label-table
+        name: Regenerate CLAUDE.md's label table from schemas/issue_labels.yaml
+        entry: .venv/bin/python regenerate_label_table_hook.py
+        language: system
+        pass_filenames: false
+        files: ^schemas/issue_labels\.yaml$
+        stages: [pre-commit]
+
       - id: check-snapshots
         name: Check snapshots are up to date
         entry: .venv/bin/python check_snapshots.py

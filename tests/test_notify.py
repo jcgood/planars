@@ -1,12 +1,8 @@
-"""Tests for the pure-logic parts of coding/notify.py.
+"""Tests for coding/notify.py.
 
-Only the "decide what to do" / formatting functions are covered here --
-issue lookup/fallback and comment-content formatting. Anything that shells
-out to `gh` (_create_notification_issue, _issue_is_open,
-post_notification_comment, and the live-call branch of
-ensure_notification_issue) is deliberately not exercised by unit tests; see
-restructure_sheets.py's _compute_stats / _write_tab_with_carryover split for
-the existing precedent this follows.
+Mostly the "decide what to do" / formatting functions. The GitHub calls go
+through coding/issues.py, so the last section runs them against the
+in-memory GitHub from conftest.
 """
 from __future__ import annotations
 
@@ -14,8 +10,32 @@ from coding.notify import (
     build_change_comment,
     build_first_issue_body,
     changed_lang_ids,
+    ensure_notification_issue,
     get_notification_issue,
+    post_notification_comment,
 )
+
+
+# ---------------------------------------------------------------------------
+# The live path, against the stand-in GitHub
+# ---------------------------------------------------------------------------
+
+def test_first_change_creates_a_labelled_issue_and_records_it(github):
+    manifest = {"stan1293": {}}
+    number, created = ensure_notification_issue("stan1293", manifest)
+    assert created
+    assert manifest["stan1293"]["notification_issue"] == number
+    _, _, title, label, _ = github.calls_of("create")[0]
+    assert (title, label) == ("Sheet updates — stan1293", "sheet-updates")
+
+
+def test_later_changes_reuse_the_recorded_issue_even_when_closed(github):
+    number = github.seed_issue("Sheet updates — stan1293", "sheet-updates", state="CLOSED")
+    manifest = {"stan1293": {"notification_issue": number}}
+    assert ensure_notification_issue("stan1293", manifest) == (number, False)
+    post_notification_comment(number, "hello")
+    assert github.comments[number] == ["hello"]
+    assert github.calls_of("create") == []
 
 
 # ---------------------------------------------------------------------------

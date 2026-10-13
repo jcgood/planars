@@ -20,19 +20,7 @@ Once set up, the following run without coordinator action:
 
 The hooks require a one-time install per machine — see [Regression testing and hooks](#regression-testing-and-hooks). The GitHub Actions require secrets configured in the repo — see [Automated workflows](#automated-workflows).
 
-**When something goes wrong automatically:** the daily workflows open labeled GitHub issues so nothing is silently dropped. Check the Issues tab if something looks out of sync. Labels and what they mean:
-
-| Label | Meaning | Resolution |
-|-------|---------|------------|
-| `import-error` | `import-sheets` crashed or failed | Check issue body for error; fix root cause; next run closes it |
-| `sheet-drift` | Sheets are out of sync with data model | Run `update-sheets --apply` |
-| `pending-changes` | Destructive annotation changes need review | Run `apply-pending` |
-| `diagnostics-drift` | Ambiguous TSV→YAML differences found | Review drift, edit YAML, run `sync-diagnostics-yaml --apply` |
-| `codebook-error` | Schema inconsistency detected | Run `check-codebook` locally for details |
-| `stale-manifest` | Manifest has classes no longer in diagnostics | Run `prune-manifest --apply` |
-| `data-overwrite` | Coordinator commits may have been overwritten by refresh | Check `git log`/`git show` in planars-data to verify |
-| `integrity-error` | Planar TSV structure or analysis module consistency error | Run `integrity-check` locally for details |
-| `sheet-validation` | Invalid cell values in annotation sheets | Run `validate-coding` locally for details |
+**When something goes wrong automatically:** the daily workflows open labeled GitHub issues so nothing is silently dropped. Check the Issues tab if something looks out of sync. Every label, what it means and how to resolve it is in the [Labels table in CLAUDE.md](../CLAUDE.md#labels), which is generated from `schemas/issue_labels.yaml` — the one place labels are defined. To add a label, add it there and commit; the daily refresh creates it on GitHub.
 
 ---
 

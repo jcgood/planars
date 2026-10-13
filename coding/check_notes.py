@@ -18,11 +18,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import subprocess
-import tempfile
 from datetime import date
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+
+from . import issues
 
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
@@ -41,25 +41,6 @@ def _save_notes_state(state: Dict) -> None:
 
 def _hash_text(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()[:12]
-
-
-def _issue_is_open(issue_number: int) -> bool:
-    """True only if the issue's state could be confirmed OPEN.
-
-    False covers both "confirmed closed" and "couldn't tell" (gh failure,
-    unparseable output, issue deleted) -- in every one of those cases the
-    caller should stop trusting the stored ID and fall back, not raise.
-    """
-    result = subprocess.run(
-        ["gh", "issue", "view", str(issue_number), "--json", "state"],
-        capture_output=True, text=True,
-    )
-    if result.returncode != 0:
-        return False
-    try:
-        return json.loads(result.stdout).get("state") == "OPEN"
-    except (json.JSONDecodeError, AttributeError):
-        return False
 
 
 def _get_open_notes_issue(annotator: str, state: Dict) -> Optional[int]:
@@ -85,46 +66,29 @@ def _get_open_notes_issue(annotator: str, state: Dict) -> Optional[int]:
     annotator_issues = state.setdefault("_annotator_issues", {})
     stored = annotator_issues.get(annotator)
     if stored is not None:
-        if _issue_is_open(stored):
+        # Anything but a confirmed OPEN (closed, deleted, unreadable) means
+        # stop trusting the stored ID and fall back.
+        if issues.is_open(stored):
             return stored
         annotator_issues.pop(annotator, None)
 
-    result = subprocess.run(
-        ["gh", "issue", "list", "--label", "collaborator-notes",
-         "--state", "open", "--json", "number,title"],
-        capture_output=True, text=True,
-    )
-    if result.returncode != 0:
-        return None
-    issues = json.loads(result.stdout or "[]")
-    for issue in issues:
-        if annotator in issue.get("title", ""):
-            annotator_issues[annotator] = issue["number"]
-            return issue["number"]
-    return None
+    number = issues.find_open("collaborator-notes", title_contains=annotator)
+    if number is not None:
+        annotator_issues[annotator] = number
+    return number
 
 
-def _file_or_update_issue(annotator: str, body_path: str, state: Dict) -> None:
+def _file_or_update_issue(annotator: str, body: str, state: Dict) -> None:
     today = date.today().isoformat()
     open_issue = _get_open_notes_issue(annotator, state)
     if open_issue:
-        subprocess.run(
-            ["gh", "issue", "comment", str(open_issue), "--body-file", body_path],
-            check=True,
-        )
+        issues.comment(open_issue, body)
         print(f"  → Commented on issue #{open_issue}")
     else:
-        result = subprocess.run(
-            ["gh", "issue", "create",
-             "--label", "collaborator-notes",
-             "--title", f"Collaborator notes — {annotator} ({today})",
-             "--body-file", body_path],
-            capture_output=True, text=True, check=True,
-        )
-        url = result.stdout.strip()
-        issue_number = int(url.rstrip("/").rsplit("/", 1)[-1])
+        issue_number = issues.create("collaborator-notes",
+                                     f"Collaborator notes — {annotator} ({today})", body)
         state.setdefault("_annotator_issues", {})[annotator] = issue_number
-        print(f"  → Created issue: {url}")
+        print(f"  → Created issue #{issue_number}")
 
 
 def _build_issue_body(
@@ -301,13 +265,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         body = _build_issue_body(annotator, lang_notes_list)
 
         if apply:
-            with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
-                f.write(body)
-                body_path = f.name
-            try:
-                _file_or_update_issue(annotator, body_path, state)
-            finally:
-                Path(body_path).unlink(missing_ok=True)
+            _file_or_update_issue(annotator, body, state)
             # Persist the issue-ID tracking right away, same incremental-save
             # reasoning as the #280 fix below -- don't lose a just-created
             # issue's ID to a later crash in this loop or the next one.

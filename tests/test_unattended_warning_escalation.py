@@ -232,10 +232,10 @@ _KNOWN_SITES: Dict[Site, str] = {
         "issue-filing step scans for -- part of the escalation mechanism, not a gap",
     ("integrity_check.py", 'print(f"  ✓  All checks passed  ·  {total_w} warning(s)")', 1):
         "footer summary line, the all-clear case (total_e == 0) -- not a gap",
-    ("validation_report.py", 'print(f"warnings={len(report.warnings)}")', 1):
-        "diagnostic key=value dump (this file's own --debug-style output), not "
-        "a runtime warning alert -- 'warnings' here is a variable name/count "
-        "being printed",
+    ("validation_report.py", 'print(f"Errors: {len(report.errors)}; warnings: {len(report.warnings)}; "', 1):
+        "summary count only; the same run's --apply files or updates the "
+        "sheet-validation issue for any error, and lists the warnings in it as "
+        "advisory context (warnings alone deliberately file nothing, #260)",
 }
 
 

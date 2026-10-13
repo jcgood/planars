@@ -733,8 +733,9 @@ schema fact for the first time.
 ### M4. `import-sheets`' 10%-decrease `collaborator-check` threshold
 **What:** `decrease > 0.10` is the hardcoded threshold at which an
 in-progress tab's annotated-cell decrease triggers a `collaborator-check`
-GitHub issue rather than being silently accepted. Documented in `CLAUDE.md`
-prose (the `collaborator-check` label table entry) and matches the code, but
+GitHub issue rather than being silently accepted. Documented in prose (the
+`collaborator-check` entry's `meaning` in `schemas/issue_labels.yaml`, shown
+in CLAUDE.md's generated label table) and matches the code, but
 is a bare literal with no named constant, let alone a schema source — a
 policy threshold, not a linguistic fact, so there is no plausible schema
 file for it; recorded here as the "policy constant with no home at all"
@@ -742,7 +743,7 @@ case.
 **Where:** `coding/import_sheets.py:592` (`_STATUS_VALUES`-adjacent status
 default fallback `"in-progress"` also appears here at line 894, the same
 fact as R3)
-**Authoritative source:** none — prose only (`CLAUDE.md`'s label table).
+**Authoritative source:** none — prose only (`schemas/issue_labels.yaml`'s `meaning` text).
 **Classification:** must-declare (as a named constant at minimum; a genuine
 schema field only if the threshold should ever vary by class/language).
 

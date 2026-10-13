@@ -21,6 +21,8 @@ import subprocess
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+from . import issues
+
 ROOT = Path(__file__).resolve().parent.parent
 PENDING_PATH = ROOT / "pending_changes.json"
 
@@ -235,24 +237,13 @@ def _handle_new_construction(entry: Dict, all_flag: bool) -> Tuple[bool, Dict]:
 
 
 def _close_pending_issue() -> None:
-    """Close the open pending-changes GitHub issue, if any. Silently skips if gh unavailable."""
-    import subprocess as _sp
+    """Close the open pending-changes GitHub issue, if any. Skips quietly if GitHub can't be reached."""
     try:
-        _sp.run(["gh", "auth", "status"], capture_output=True, check=True)
-        result = _sp.run(
-            ["gh", "issue", "list", "--label", "pending-changes",
-             "--state", "open", "--json", "number", "--jq", ".[0].number"],
-            capture_output=True, text=True,
-        )
-        issue_num = result.stdout.strip()
-        if issue_num and issue_num != "null":
-            _sp.run(
-                ["gh", "issue", "comment", issue_num,
-                 "--body", "All pending changes applied — closing."],
-                check=True,
-            )
-            _sp.run(["gh", "issue", "close", issue_num], check=True)
-            print(f"GitHub issue #{issue_num} closed.")
+        if not issues.available():
+            return
+        for number in issues.close_open("pending-changes",
+                                        "All pending changes applied — closing."):
+            print(f"GitHub issue #{number} closed.")
     except Exception:
         pass
 

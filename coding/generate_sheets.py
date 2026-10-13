@@ -75,6 +75,7 @@ from . import validate_planar as _val_planar
 from . import validate_diagnostics as _val_diag
 from . import biuniqueness_rows as _br
 from . import people as _people
+from . import issues as _issues
 from .drive import (
     _load_drive_config,
     _save_drive_config,
@@ -486,7 +487,6 @@ def _abort_if_criterion_diverges_by_position(
     title_label: str,
     regen_command: str,
     context_note: str,
-    body_stub: str,
 ) -> None:
     """Abort and file/update a `diagnostics` GitHub issue if any element has
     divergent `criterion` values across positions in `df` — e.g. `n` at one
@@ -515,7 +515,6 @@ def _abort_if_criterion_diverges_by_position(
     if not divergent:
         return
 
-    import subprocess as _sp
     lines = [
         f"[{lang_id}] `{source_label}` has element(s) with divergent `{criterion}` values "
         f"across positions (e.g. `{criterion}=n` at one position, `{criterion}=y` or `both` at "
@@ -533,45 +532,21 @@ def _abort_if_criterion_diverges_by_position(
     ]
     body = "\n".join(lines)
     title = f"[{lang_id}] {title_label}: element has divergent {criterion} values by position"
-    body_file = ROOT / f"{body_stub}.tmp"
-    body_file.write_text(body, encoding="utf-8")
     try:
-        _sp.run(["gh", "auth", "status"], capture_output=True, check=True)
+        if not _issues.available():
+            raise RuntimeError("GitHub can't be reached (is gh signed in?)")
         # This guard can fire from more than one call site for the same
         # language before the underlying data is fixed. Find-or-edit by
         # exact title (not just the "diagnostics" label, which is shared with
         # unrelated issues) so repeated trips update one issue in place instead
         # of piling up duplicates -- see issue #269, filed after #266/#267 were
         # both created for the same synth0001 divergence three minutes apart.
-        existing = _sp.run(
-            ["gh", "issue", "list", "--label", "diagnostics", "--state", "open",
-             "--json", "number,title"],
-            capture_output=True, text=True, check=True,
-        )
-        import json as _json
-        match = next(
-            (i["number"] for i in _json.loads(existing.stdout) if i["title"] == title),
-            None,
-        )
-        if match is not None:
-            _sp.run(
-                ["gh", "issue", "edit", str(match), "--body-file", str(body_file)],
-                capture_output=True, text=True, check=True,
-            )
-            print(f"   GitHub issue #{match} updated (already open for this language)")
-        else:
-            r = _sp.run(
-                ["gh", "issue", "create",
-                 "--title", title,
-                 "--label", "diagnostics",
-                 "--body-file", str(body_file)],
-                capture_output=True, text=True, check=True,
-            )
-            print(f"   GitHub issue created: {r.stdout.strip()}")
+        number, created = _issues.file_issue("diagnostics", title, body,
+                                             replace=True, match_title=True)
+        print(f"   GitHub issue #{number} "
+              f"{'created' if created else 'updated (already open for this language)'}")
     except Exception as exc:
         print(f"   (Could not create/update GitHub issue: {exc})")
-    finally:
-        body_file.unlink(missing_ok=True)
     raise SystemExit(
         f"  Aborting: {source_label} for {lang_id} has elements with divergent {criterion}\n"
         f"  values across positions. See the GitHub issue above. {context_note}"
@@ -607,7 +582,6 @@ def _filter_nonperm_pairs_by_prescreening(
         regen_command=f"python -m coding generate-sheets --lang {lang_id} "
                        "--regen-construction nonpermutability:general",
         context_note="See issue #228 for context.",
-        body_stub="nonperm_scopal_conflict",
     )
 
     excluded = {
@@ -721,7 +695,6 @@ def _filter_reflex_pairs_by_prescreening(
                        f"--regen-construction coreference:{construction_name}",
         context_note="See issue #228 (the original nonpermutability case) and issue "
                       "#285 for context.",
-        body_stub="coref_referential_conflict",
     )
 
     excluded_elements: set = {

@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Turn `validate-coding` output into a GitHub issue a person can act on.
 
-    python -m coding validation-report /tmp/report.txt --out /tmp/issue_body.md
+    python -m coding validation-report /tmp/report.txt --date 2026-10-13 --apply
 
-Used by `.github/workflows/sheet-validation.yml`. Pure parsing and formatting;
-the `gh` calls stay in the workflow, mirroring `notify.py`'s split so the
-judgment-carrying part is testable.
+Used by `.github/workflows/sheet-validation.yml`. Parsing and formatting are
+pure functions; `act_on_report` then files, updates, supersedes or closes the
+issue through `coding/issues.py` (until 2026-10-13 those steps were shell in
+the workflow, and the fingerprint comparison went through a temp file).
 
 Why this exists
 ---------------
@@ -30,8 +31,8 @@ that, and this module implements the parts that are not shell:
    report carries a fingerprint of *what is wrong*, ignoring counts, row
    numbers, and quoted values. Same fingerprint means the same problem
    recurring, and a comment is right. A different fingerprint means the old
-   issue is about something else, and the workflow closes it as superseded and
-   opens a new one.
+   issue is about something else, so it is closed as superseded and a new one
+   opened.
 
 3. **The exception line is actually the exception.** The old extractor walked
    backwards from the end of the log for the first line that was not
@@ -51,6 +52,8 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+
+from . import issues
 
 _LANG_RE = re.compile(r"^[a-z]+\d{4}$")
 _PLANAR_RE = re.compile(r"^\s{2}Planar validation \(\d+ issue")
@@ -277,19 +280,51 @@ def read_fingerprint(body: str) -> Optional[str]:
     return m.group(1) if m else None
 
 
+LABEL = "sheet-validation"
+
+
+def act_on_report(report: ValidationReport, date: str) -> str:
+    """File, update, supersede or close the `sheet-validation` issue.
+
+    Errors or a crash: no open issue → file one; open issue with the same
+    fingerprint → comment; a different fingerprint → close it as superseded
+    and file a new one. No errors: close any open issue. Returns what it did.
+    """
+    open_number = issues.find_open(LABEL)
+    if not report.should_file():
+        if open_number is None:
+            return "nothing to do"
+        issues.close(open_number,
+                     f"Sheet validation found no errors on {date} "
+                     f"({len(report.warnings)} advisory warning(s), which do not "
+                     "block) — closing.")
+        return f"closed #{open_number}"
+    title, body = issue_title(report, date), build_issue_body(report, date)
+    if open_number is None:
+        return f"filed #{issues.create(LABEL, title, body)}"
+    if read_fingerprint(issues.body_of(open_number)) == report.fingerprint():
+        issues.comment(open_number, body)
+        return f"commented on #{open_number}"
+    issues.close(open_number,
+                 "The problem this issue reports is no longer what validation "
+                 "finds. Closing as superseded; a new issue has been filed for "
+                 "the current one.")
+    return f"superseded #{open_number} with #{issues.create(LABEL, title, body)}"
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the argument parser for `python -m coding validation-report`."""
     ap = argparse.ArgumentParser(
-        description="Turn validate-coding output into a GitHub issue body."
+        description="Turn validate-coding output into a GitHub issue, or say what it would be."
     )
     ap.add_argument("report", metavar="REPORT.txt", type=Path,
                      help="path to the raw validate-coding output")
     ap.add_argument("--out", metavar="BODY.md", type=Path,
-                     help="write the generated issue body here")
-    ap.add_argument("--previous-body", metavar="PREV.md", type=Path,
-                     help="path to the previous issue body, to compare fingerprints")
+                     help="also write the generated issue body here")
     ap.add_argument("--date", default="",
                      help="date to stamp into the issue title/body (YYYY-MM-DD)")
+    ap.add_argument("--apply", action="store_true",
+                     help="file, update, supersede or close the sheet-validation issue")
     return ap
 
 
@@ -297,28 +332,20 @@ def main(args: argparse.Namespace | None = None) -> None:
     if args is None:
         args = build_parser().parse_args()
 
-    report_path = args.report
-    out_path = args.out
-    prev_path = args.previous_body
     date = args.date
+    report = parse_report(args.report.read_text(encoding="utf-8"))
+    if args.out:
+        args.out.write_text(build_issue_body(report, date), encoding="utf-8")
 
-    report = parse_report(report_path.read_text(encoding="utf-8"))
-    body = build_issue_body(report, date)
-    if out_path:
-        out_path.write_text(body, encoding="utf-8")
-
-    previous = read_fingerprint(prev_path.read_text(encoding="utf-8")) if (
-        prev_path and prev_path.exists()) else None
-
-    # Machine-readable, for the workflow to branch on. Printed as key=value so
-    # it can be appended straight to $GITHUB_OUTPUT.
-    print(f"should_file={'true' if report.should_file() else 'false'}")
-    print(f"fingerprint={report.fingerprint()}")
-    print(f"same_problem={'true' if previous == report.fingerprint() else 'false'}")
-    print(f"errors={len(report.errors)}")
-    print(f"warnings={len(report.warnings)}")
-    print(f"crashed={'true' if report.crash else 'false'}")
-    print(f"title={issue_title(report, date)}")
+    print(f"Errors: {len(report.errors)}; warnings: {len(report.warnings)}; "
+          f"crashed: {'yes' if report.crash else 'no'}")
+    print(f"Title: {issue_title(report, date)}")
+    if args.apply:
+        print(f"Issue: {act_on_report(report, date)}")
+    else:
+        print("Dry run — with --apply this would "
+              f"{'file or update' if report.should_file() else 'close any open'} "
+              f"the {LABEL} issue.")
 
 
 if __name__ == "__main__":

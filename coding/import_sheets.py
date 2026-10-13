@@ -39,6 +39,7 @@ from .drive_doorway import get_doorway, WorksheetNotFound
 from .generate_sheets import _STATUS_TAB, _STATUS_VALUES
 from planars.schema_values import STATUS_IN_PROGRESS, STATUS_READY, is_keystone
 from .restructure_sheets import _get_keyed_row_constructions, _get_pair_row_constructions
+from . import issues
 from . import validate_coding as _val
 from .validate_planar import validate_planar_df as _validate_planar_df
 from .validate_diagnostics import validate_diagnostics_df as _validate_diagnostics_df
@@ -473,15 +474,10 @@ def _append_pending_changes(new_entries: List[Dict]) -> None:
 def _notify_pending_changes(entries: List[Dict]) -> None:
     """Create or update a GitHub issue when pending_changes.json has new entries.
 
-    Requires `gh` CLI to be installed and authenticated. Silently skips if not
-    available — the warning printed to stdout is always the primary notification.
+    Skips quietly if GitHub can't be reached — the warning printed to stdout
+    is always the primary notification.
     """
-    import subprocess as _sp
-
-    # Check gh is available
-    try:
-        _sp.run(["gh", "auth", "status"], capture_output=True, check=True)
-    except Exception:
+    if not issues.available():
         return
 
     # Build issue body
@@ -500,37 +496,15 @@ def _notify_pending_changes(entries: List[Dict]) -> None:
             lines.append(f"Command: `{cmd}`")
         lines.append("")
 
-    body = "\n".join(lines)
-    body_file = ROOT / "pending_changes_issue.tmp"
-    body_file.write_text(body, encoding="utf-8")
-
     try:
-        # Check for an existing open pending-changes issue
-        result = _sp.run(
-            ["gh", "issue", "list", "--label", "pending-changes",
-             "--state", "open", "--json", "number", "--jq", ".[0].number"],
-            capture_output=True, text=True,
-        )
-        existing_num = result.stdout.strip()
-        if existing_num and existing_num != "null":
-            _sp.run(
-                ["gh", "issue", "comment", existing_num, "--body-file", str(body_file)],
-                check=True,
-            )
-            print(f"   GitHub issue #{existing_num} updated with new pending changes.")
-        else:
-            r = _sp.run(
-                ["gh", "issue", "create",
-                 "--title", f"Pending destructive changes require coordinator approval",
-                 "--label", "pending-changes",
-                 "--body-file", str(body_file)],
-                capture_output=True, text=True, check=True,
-            )
-            print(f"   GitHub issue created: {r.stdout.strip()}")
+        number, created = issues.file_issue(
+            "pending-changes",
+            "Pending destructive changes require coordinator approval",
+            "\n".join(lines))
+        print(f"   GitHub issue #{number} "
+              f"{'created' if created else 'updated with new pending changes'}.")
     except Exception as exc:
         print(f"   (Could not create GitHub issue: {exc})")
-    finally:
-        body_file.unlink(missing_ok=True)
 
 
 def _detect_collaborator_anomalies(
@@ -643,10 +617,7 @@ def _notify_collaborator_check(entries: List[Dict]) -> None:
     sheets are coordinator-facing signals, not blocking errors. The coordinator
     should verify with the collaborator whether the change was intentional.
     """
-    import subprocess as _sp
-    try:
-        _sp.run(["gh", "auth", "status"], capture_output=True, check=True)
-    except Exception:
+    if not issues.available():
         return
 
     lines = [
@@ -661,36 +632,15 @@ def _notify_collaborator_check(entries: List[Dict]) -> None:
             lines.append(f"- {a}")
         lines.append("")
 
-    body = "\n".join(lines)
-    body_file = ROOT / "collaborator_check_issue.tmp"
-    body_file.write_text(body, encoding="utf-8")
-
     try:
-        result = _sp.run(
-            ["gh", "issue", "list", "--label", "collaborator-check",
-             "--state", "open", "--json", "number", "--jq", ".[0].number"],
-            capture_output=True, text=True,
-        )
-        existing_num = result.stdout.strip()
-        if existing_num and existing_num != "null":
-            _sp.run(
-                ["gh", "issue", "comment", existing_num, "--body-file", str(body_file)],
-                check=True,
-            )
-            print(f"   GitHub issue #{existing_num} updated (collaborator-check).")
-        else:
-            r = _sp.run(
-                ["gh", "issue", "create",
-                 "--title", "In-progress sheet anomalies — verify with collaborator",
-                 "--label", "collaborator-check",
-                 "--body-file", str(body_file)],
-                capture_output=True, text=True, check=True,
-            )
-            print(f"   GitHub issue created: {r.stdout.strip()}")
+        number, created = issues.file_issue(
+            "collaborator-check",
+            "In-progress sheet anomalies — verify with collaborator",
+            "\n".join(lines))
+        print(f"   GitHub issue #{number} {'created' if created else 'updated'} "
+              "(collaborator-check).")
     except Exception as exc:
         print(f"   (Could not create GitHub issue: {exc})")
-    finally:
-        body_file.unlink(missing_ok=True)
 
 
 def _download_lang_setup_sheets(
