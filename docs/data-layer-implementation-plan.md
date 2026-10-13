@@ -328,6 +328,73 @@ path is removed, and a full daily refresh cycle completes clean.
 
 ---
 
+## Phase 10 — Ownership and chokepoints *(coordinator decides at three pauses)*
+
+**Why.** Planned 2026-10-12, after small requests about the synth0001
+biuniqueness sheet kept uncovering the same disease one level down. The
+Planar Structure tab claimed to be "read-only" and was never locked, and only
+some commands refreshed it. A `[y, n]` default hid missing criterion values.
+Hidden facts kept accumulating, three of them added by Claude in two days.
+And the doorway turned out to check nothing it writes: `open_spreadsheet`
+returns the raw gspread object, so every content write bypasses it. The
+design doc asked for a chokepoint *that knows the topology*; Phases 0–9 built
+the chokepoint's plumbing but never scoped what it should know (Phase 6
+covered four *read* boundaries; the write side was never picked up). This
+phase finishes that, and applies the same rule everywhere a fact can live.
+
+**Ground rules (in addition to the plan-wide ones above):**
+- **Light maintenance beats speed and elegance.** Before adding any registry,
+  declaration, document or check, ask who updates it when the code changes
+  and what happens if they don't. A registry is right only if it is the one
+  source the code *runs from* (a wrong entry gives visibly wrong output);
+  never one that *describes* the code (it needs a test to stay true, and
+  drifts). A list moved into a function body is a hidden fact, not a fix.
+- **One editable home per fact;** every other copy is locked and
+  regenerated (compare daily, write only what differs).
+- **Every write passes a door that runs from the schemas:** Drive, local
+  files, GitHub issues, and hand edits to sources.
+- **The record outlives its tools.** Versions and decisions live in plain
+  files; git, GitHub and Google are transport, notification and editing
+  surfaces. The project may outlive any of them.
+- **No half-finished transitions.** Each unit removes what it replaces in the
+  same commit; every step leaves a complete, working system.
+- **Before saying "done", ask what kinds of thing could exist,** not only
+  what has been seen.
+
+**Units** (numbering is the planning session's; state lives in
+[data-layer-progress.md](data-layer-progress.md)):
+
+| # | Unit | Done when |
+|---|---|---|
+| 1 | biuniqueness `prescreening` tab renamed `elements`; the class's tab names read from the schema, never typed | rename is a schema edit only; synth0001 sheet, Status row, manifest and TSV migrated; 18 answers intact |
+| 2 | `locked_tabs` registry in `schemas/planar.yaml` (Planar Structure, Instructions); one `rebuild_locked_tabs` applied by create/restructure and daily by `update-sheets --apply` | every sheet's locked tabs current and protected after one daily run; adding a locked tab = one registry entry |
+| 3 | Close every open entry of `docs/hidden-facts-inventory.md` (fix the code to read its one source, delete copies); first group D1+D2+R1 with `criteria_for` and **removal of the `[y, n]` default** | inventory marked finished, every entry "Closed by <commit>" or declared |
+| 4 | Which tabs produce spans: `produces_spans: false` on feeder constructions; one reader in `planars/reports.py`; module `_SNAPSHOT_CONSTRUCTIONS` deleted; check-codebook checks the field | snapshots unchanged; no module lists span tabs |
+| 5 | **The Drive door knows the topology.** `coding/sheet_spec.py` built only from schemas; doorway wraps handles and checks every write; safeguards move into the door (retry, dry-run, refuse to drop annotations, snapshot before destroy, per-write provenance, read-only door for non-writing commands, concurrent-edit check); sheets carry their own identity (developer metadata); every kind of Drive write specified (class sheets → sharing → planar → diagnostics → status → notes Docs → files) | fake in enforce mode from the start; ≥1 week live watch mode with every violation resolved; then enforce; no kind left unchecked |
+| 6 | **The local-file door**: every write to `coded_data/` and state files through one door, same specs, archive-before-overwrite and change log enforced; `drive_config.json` reduced to bootstrap IDs | as unit 5 |
+| 7 | Detectors the code runs: string literals matching schema-owned values (start narrow); `python -m coding …` strings parse with the real parser; `_KNOWN_SITES` keyed by message; `operations.yaml` fields nothing executes either enforced or deleted; version bump automated | detectors in the suite; first hits fed into unit 3 |
+| 8 | The daily refresh becomes `python -m coding daily-refresh`; the workflow only sets up and calls it | steps moved group by group; tested end to end against the fake |
+| 9 | `coding/CLAUDE.md` (and planars/, root behaviour paragraphs) cut to pointers; history to the decisions log | each moved fact confirmed in its module docstring |
+| 10 | One GitHub issue path (`coding/issues.py`) and a label registry; CLAUDE.md label table generated | five find-or-create copies gone; unknown label hard-fails |
+| 11 | One editable home per fact. **Planar and diagnostics:** source in planars-data, locked copies, one editable *proposal sheet* per language with a "What changed?" column; daily diff → notification issue; `accept-proposal` applies accepted parts, rebuilds copies, resets the sheet, writes a "Last review" note; automatic intakes (`import-planar --apply`, diagnostics `--from-tsv` merge) retired. Manifest shrunk to IDs; Colab reads real Sheets through one package function; notebook logic moved into the package; notebooks and status sheets rebuilt daily; Instructions rules generated | no fact has two editable copies |
+| 12 | Durable state (`pending_changes.json`, provenance log, regen snapshots) kept in planars-data, not on the machine that ran the command | a daily-refresh import's pending changes are visible to local `apply-pending` |
+| 13 | One home per kind of knowledge: project rules move from Claude's private memory into the repo; decisions into schema comments / decisions log, issues for discussion only; plans transcribed into the repo when work starts | no project rule exists only in memory |
+| 14 | Sharing: named access only (no "anyone" on folders; notes Docs editable by the language's annotator by name); `drive_config.json` and emails out of the public repo | live sharing matches the sharing spec; door enforces it |
+| 15 | One version history in plain files: dated archive of every previous version (one date format) + a per-language change log; git/GitHub only transport, backup, notification; `data-overwrite` reads the log | no alarm or command depends on git history |
+| 16 | Nothing only in Google or GitHub: Status values, notes Doc text and last-edited-by imported into plain files; a `diagnostics` issue closes only by recording its decision in a file | — |
+| 17 | The hand-edit door: a change log for `schemas/` and per-language sources; pre-commit hook (and CI) refuses a source change without a change-log line | — |
+| 18 | Every exported result carries the package version and each language's change-log position | results reproducible from their record |
+| — | Optional, Jeff decides: a second Drive owner or shared drive; narrow the refresh token to project files | — |
+
+**Order:** memories and this transcription → 14 (sharing, live) → 4 → 7 →
+3's first group → 1 → 2 → 10 → **pause: unit 5 design** → 5 for class
+sheets (watch ≥1 week; meanwhile rest of 3 and 8) → 5's other kinds →
+**pause: units 6 + 15 + 11's proposal sheets, designed together** → 12 →
+6 B–D → proposal sheets → rest of 11 → 16–18 → 9 last. A third pause: the
+transcript diff from removing `[y, n]` is shown to Jeff before it lands.
+
+---
+
 ## Working with agents
 
 **Phases are not work units.** Phase 0b/1 is eleven files; Phase 2 is the whole

@@ -30,7 +30,12 @@ of this state would be exactly the defect this project is trying to remove.
 
 ## Current state
 
-**Phase:** 9 — **in progress, started 2026-08-18, same session as Phase
+**Phase:** 10 — **started 2026-10-12** (ownership and chokepoints; spec in
+[data-layer-implementation-plan.md](data-layer-implementation-plan.md)'s
+Phase 10). Phase 9 is done (see Status by unit; its "in progress" line had
+gone stale). Position within Phase 10 is the Status by unit row.
+
+**Phase (historical):** 9 — **in progress, started 2026-08-18, same session as Phase
 8's completion.** The constraint every phase before this one operated
 under — no live Drive writes — is lifted from here on; this is the first
 phase permitted to touch it. Step 1 (shadow reads) is done: every
@@ -245,8 +250,9 @@ the same day — see the decisions log.
 | Phase 8, first pass — fault injection on `restructure-sheets`' recovery | **done**, both units — `tests/fake_drive.py`'s `fail_after(op, count)` makes a real doorway call raise after its in-memory effect lands, simulating a crash mid-sequence rather than a hand-set journal entry. Five tests prove recovery survives a real crash: both checkpoints for the main per-class loop and for `--rename-class`'s separate sequence (four), plus a transient 429 during archiving (one, a different fault shape — the call itself fails, not "succeeded then the process died"). All confirmed to have teeth (deliberately broke the code each targets, watched every one fail, reverted). Two real bugs found and fixed this way: `_rollback_unit` used to delete every `'user'`-type permission on rollback, silently dropping a co-annotator's pre-existing access (shared by both units); and none of the archive/create steps' structural Drive calls retried on 429/500/503 the way every worksheet-content read already did, so a single rate-limit blip crashed the whole run instead of retrying transparently — now wrapped in `_with_retry` throughout. The same retry gap exists in 5 other doorway-migrated files (18 call sites), filed as issue #284 rather than fixed here (separate, mechanical sweep). A sixth test checks the plan's third named fault shape, concurrent human edits: an edit landing in the window between this command reading a tab and archiving it is not carried onto the new sheet (expected — no lock, no second read) but is never destroyed either, still readable on the archived copy. Not a bug fixable by retry/resume, so documented as a structural property rather than "fixed". | Phase 8, idempotency audit — every `operations.yaml` claim | **done**, 2026-08-18 — all 29 claims (25 records + 4 modes) checked; 19 already had a real test proving them, 10 got a new one (`prune-manifest`, `apply-pending`, `sync-qualification-hashes`, `generate-rule-update-prompt`, `validation-report`, `registry`, `check-codebook`, `lookup-lang`, `capture-drive-state` — the last two had no test file at all before this). Found and fixed one real bug: `registry.py` cached `operations.yaml`'s parsed content in a module-level global, directly contradicting its own "never cached" claim, stated three times in the file — harmless for the ordinary CLI (a fresh process every call) but a real gap for anything calling it twice in one process, which the test suite itself does. See Next action for the full per-command account |
 | Phase 8 (the whole unit) | **done** — both named items (fault injection on `restructure-sheets`, the idempotency audit) complete |
 | Phase 9, step 1 — shadow reads | **done**, 2026-08-18 — every coordinator-only command run live, read-only, against real Drive and reviewed; nothing unexpected anywhere (see Current state below for the reframing this step turned up and Next action for the per-command account) |
-| Phase 9, step 2 — write cutover | **in progress**, 2026-08-18 — two real writes done (`synth0001` coreference column cleanup, `arao1248`'s two new class sheets), both lowest-risk; `restructure-sheets`/`prune-manifest` (the plan's own "last" tier) reported nothing to do so there was nothing to cut over yet |
-| Phase 9 (the whole unit) | in progress |
+| Phase 9, step 2 — write cutover | **done** (status corrected 2026-10-12) — the line said "in progress" from 2026-08-18 after two writes, but every command has written to live Drive only through the doorway since then, the daily refresh among them, and the old path no longer exists (`tests/test_doorway_coverage.py`) |
+| Phase 9 (the whole unit) | **done** — the plan's done-when holds: all commands run through the new path in production, the old path is removed, daily refresh cycles complete clean (2026-10-12) |
+| Phase 10 — ownership and chokepoints | **started 2026-10-12** — planned with Jeff; spec in the implementation plan's Phase 10 section. Done so far: the two feedback memories; this transcription. Next: unit 14 (sharing) |
 
 ### In flight
 
@@ -2209,6 +2215,35 @@ commit.
 ---
 
 ## Decisions log
+
+**2026-10-12 — Phase 10: the write side of the chokepoint was never scoped,
+and the fixes so far kept adding copies.** Small requests about the synth0001
+biuniqueness sheet uncovered: a Planar Structure tab described as
+"read-only" since 2026-05-01 that was never locked and that `update-sheets`
+never refreshed; a `[y, n]` criterion default that silently hid missing
+values (it is why coreference dropdowns lost `untestable`); hidden facts
+still accumulating, three of them added by Claude in two days; and a doorway
+that checks nothing it writes — `open_spreadsheet` returns the raw gspread
+object, so every content write bypasses it. Why Phases 0–9 missed it: the
+design doc asked for a chokepoint *that knows the topology*, but the plan
+scoped the doorway as a pure substitution for testing (Phase 0), Phase 6's
+contracts covered four *read* boundaries and the write side was never picked
+up, and Phase 4 records *whether* a command writes, not *what*. Each phase
+was finished as scoped; "the plan is finished" was read as "the design is
+finished". Separately, Claude's first fixes repeated the disease: a
+`sheet_parts` table plus a test to keep it honest, and a hand sweep of the
+inventory. Jeff's rules, now Phase 10's ground rules: light maintenance beats
+speed; a registry only if the code runs from it; belt and suspenders, not
+duct tape; the record outlives git, GitHub and Google (plain-file versions
+and decisions); no half-finished transitions. Decided with Jeff the same
+day: span tabs declared in the schema; the `[y, n]` default removed; the
+whole inventory closed rather than tracked; sharing by name only (the live
+check found folders link-viewable and the notes Docs view-only for Adam,
+contrary to the code); planar and diagnostics each get a reviewed source,
+locked copies and one editable proposal sheet per language (review by
+issue + `accept-proposal`, not git pull requests, because versioning must
+not depend on git); the daily refresh becomes one command; `coding/CLAUDE.md`
+cut to pointers; one issue path with a label registry.
 
 **2026-10-10 — The command tests' saved data moved into planars-data, and
 both of its halves are now frozen.** CI went red on an unrelated push
