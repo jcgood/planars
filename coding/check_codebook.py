@@ -702,6 +702,28 @@ def _report_coverage_matrix(
         print(f"  {name.ljust(row_w)}  {cells}")
 
 
+def _check_feeder_constructions(diag_classes: dict) -> List[str]:
+    """Every construction another one is built from must say `produces_spans: false`.
+
+    planars.reports.span_constructions() reads that field to decide which tabs
+    are analysed for spans; a feeder left unmarked would be passed to the
+    class's derive function and crash it (a feeder tab has a different shape —
+    the 2026-10-12 data refresh failed exactly this way). Checks the schema
+    against itself, so it cannot drift from the code.
+    """
+    errors = []
+    for name, cls in sorted(diag_classes.items()):
+        cons = [c for c in (cls.get("constructions") or []) if isinstance(c, dict)]
+        by_name = {c.get("name"): c for c in cons}
+        for c in cons:
+            source = c.get("depends_on")
+            if source and by_name.get(source, {}).get("produces_spans") is not False:
+                errors.append(
+                    f"[{name}] construction '{source}' feeds '{c['name']}' (depends_on) but "
+                    f"does not say produces_spans: false in schemas/diagnostic_classes.yaml")
+    return errors
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the argument parser for `python -m coding check-codebook` (no flags)."""
     return argparse.ArgumentParser(
@@ -712,7 +734,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(args: argparse.Namespace | None = None) -> None:
     """Entry point for `python -m coding check-codebook`.
 
-    Runs seven consistency checks (exit 1 if any fail) then three informational reports:
+    Runs eight consistency checks (exit 1 if any fail) then three informational reports:
     1. Every _REQUIRED_CRITERIA criterion in each analysis module is in diagnostic_criteria.yaml.
     2. Every criterion name in diagnostics_{lang_id}.tsv files is in diagnostic_criteria.yaml.
     3. Every span key referenced in charts.py exists in the corresponding derive result.
@@ -723,6 +745,7 @@ def main(args: argparse.Namespace | None = None) -> None:
        warning: schema has values not declared in language YAML).
     7. Every diagnostics_{lang_id}.tsv has a matching diagnostics_{lang_id}.yaml (the source
        of truth it's derived from) — hard error if the YAML is missing entirely.
+    7b. Every construction another one depends_on says produces_spans: false.
     8. keystone_active_default "[NEEDS REVIEW]" for active classes with no language override.
     9. Schema stubs: classes with no language coverage (ready-to-paste TSV rows).
     10. Coverage matrix: language × class grid.
@@ -753,6 +776,9 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     print("7. Checking every diagnostics_{lang_id}.tsv has a matching .yaml ...")
     all_errors.extend(_check_diagnostics_yaml_exists())
+
+    print("7b. Checking feeder constructions are marked produces_spans: false ...")
+    all_errors.extend(_check_feeder_constructions(diag_classes))
 
     coverage = _collect_coverage()
     lang_ids = sorted({l for langs in coverage.values() for l in langs})

@@ -206,13 +206,31 @@ _CLASS_HANDLERS = {
     "idiom":             (_idiom.derive_idiom_domains,                _make_simple_rows("idiom")),
 }
 
+def span_constructions(class_name: str) -> Optional[frozenset]:
+    """The class's constructions that produce spans, or None if every one does.
+
+    Read from schemas/diagnostic_classes.yaml: a feeder construction (one that
+    only decides what goes into a later tab, e.g. element_prescreening) says
+    `produces_spans: false` there. This is the one reader of that field; until
+    2026-10-12 three analysis modules each hand-listed their span tabs instead
+    (Phase 10 unit 4, hidden-facts entry D-1b).
+    """
+    text = _res_files("schemas").joinpath("diagnostic_classes.yaml").read_text(encoding="utf-8")
+    classes = {c["name"]: c for c in (yaml.safe_load(text) or {}).get("classes", [])}
+    constructions = [c for c in (classes.get(class_name, {}).get("constructions") or [])
+                     if isinstance(c, dict)]
+    if not any(c.get("produces_spans") is False for c in constructions):
+        return None
+    return frozenset(c["name"] for c in constructions if c.get("produces_spans") is not False)
+
+
 # For classes with multi-construction workflows, only these constructions
 # produce span rows. Others (e.g. element_prescreening) are upstream inputs
-# and must not be passed to the class's derive function.
+# and must not be passed to the class's derive function. A class absent here
+# has no feeder tabs.
 _REPORTABLE_CONSTRUCTIONS: Dict[str, frozenset] = {
-    "nonpermutability": _nonperm._SNAPSHOT_CONSTRUCTIONS,
-    "coreference":      _coreference._SNAPSHOT_CONSTRUCTIONS,
-    "biuniqueness_deviations": _biuniq._SNAPSHOT_CONSTRUCTIONS,
+    name: spans for name in _CLASS_HANDLERS
+    if (spans := span_constructions(name)) is not None
 }
 
 

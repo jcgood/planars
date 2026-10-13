@@ -385,3 +385,32 @@ def test_a_second_run_produces_byte_identical_output_and_no_writes():
     assert second_code == first_code
     after = {p: p.stat().st_mtime_ns for p in (ROOT / "schemas").rglob("*.yaml")}
     assert after == before
+
+
+# ---------------------------------------------------------------------------
+# 7b: feeder constructions are marked (Phase 10 unit 4)
+# ---------------------------------------------------------------------------
+
+def test_feeder_check_passes_on_the_real_schema():
+    assert check_codebook._check_feeder_constructions(
+        check_codebook._load_diagnostic_classes()) == []
+
+
+def test_an_unmarked_feeder_is_an_error():
+    classes = {"demo": {"constructions": [
+        {"name": "prescreening", "row_type": "element"},
+        {"name": "general", "row_type": "pair_rows", "depends_on": "prescreening"},
+    ]}}
+    errors = check_codebook._check_feeder_constructions(classes)
+    assert len(errors) == 1
+    assert "'prescreening' feeds 'general'" in errors[0]
+    assert "produces_spans: false" in errors[0]
+
+
+def test_span_constructions_reads_the_schema():
+    from planars.reports import span_constructions
+    assert span_constructions("nonpermutability") == frozenset({"general"})
+    assert span_constructions("coreference") == frozenset(
+        {"reflexivization", "pronominalization", "np_reference"})
+    assert span_constructions("biuniqueness_deviations") == frozenset({"morphs"})
+    assert span_constructions("ciscategorial") is None   # no feeder tabs

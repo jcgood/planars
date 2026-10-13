@@ -99,6 +99,13 @@
 #                              staleness_check  element_set (compare element sets to detect drift)
 #                                               | keyed_source (regenerate the tab from its
 #                                               source and compare keys)
+#                              produces_spans   false on a feeder tab: one that only decides
+#                                               what goes into a later tab and is never
+#                                               itself analysed for spans. Absent = true.
+#                                               Every construction another one depends_on
+#                                               must say false (check-codebook checks).
+#                                               planars/reports.py's span_constructions()
+#                                               is the one reader.
 #                            Only needed for general-specificity classes with multi-stage
 #                            workflows. construction_specific classes define constructions
 #                            per-language in diagnostics_{lang}.yaml.
@@ -243,6 +250,7 @@ classes:
     constructions:
       - name: element_prescreening
         row_type: element
+        produces_spans: false
       - name: general
         row_type: pair_rows
         depends_on: element_prescreening
@@ -310,6 +318,7 @@ classes:
     constructions:
       - name: prescreening
         row_type: element
+        produces_spans: false
       - name: reflexivization
         row_type: pair_rows
         depends_on: prescreening
@@ -468,12 +477,14 @@ classes:
     constructions:
       - name: prescreening
         row_type: element
+        produces_spans: false
       - name: morphemes
         row_type: keyed_rows
         keyed_columns: [Morpheme, Origin, Found_At]
         key: [Morpheme]
         depends_on: prescreening
         staleness_check: keyed_source
+        produces_spans: false
       - name: morphs
         row_type: keyed_rows
         keyed_columns: [Morpheme, Position_Name, Form, Origin]
@@ -630,6 +641,7 @@ classes:
     constructions:
       - name: prescreening
         row_type: element
+        produces_spans: false
       - name: general
         row_type: pair_rows
         depends_on: prescreening

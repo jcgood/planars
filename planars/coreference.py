@@ -19,8 +19,6 @@ _KEYSTONE_NAME = "v:verbstem"
 _TRAILING_COLS = {"Source", "Comments"}
 _REQUIRED_CRITERIA: Set[str] = {"reflexive_allowed"}
 
-_SNAPSHOT_CONSTRUCTIONS = frozenset({"reflexivization", "pronominalization", "np_reference"})
-
 _PAIR_CRITERIA = {"reflexive_allowed", "pronoun_allowed", "np_allowed"}
 
 # Which criterion each pair construction is about. Source of truth is

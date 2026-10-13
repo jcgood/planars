@@ -59,10 +59,9 @@ _REQUIRED_CRITERIA = {
     "conditioning_features", "conditioned_by", "trigger_filled",
 }
 
-# The one construction derive reads (it finds morphemes.tsv beside it);
-# prescreening and morphemes only feed it. generate_snapshots.py and
-# reports._REPORTABLE_CONSTRUCTIONS both read this.
-_SNAPSHOT_CONSTRUCTIONS = frozenset({"morphs"})
+# derive reads only the morphs tab (it finds morphemes.tsv beside it);
+# prescreening and morphemes are feeder tabs (`produces_spans: false` in
+# schemas/diagnostic_classes.yaml, read by planars.reports.span_constructions).
 
 # The derived deviation types, in the order they are reported. Must equal the
 # `derived: true` entries of the class's deviation_types registry in

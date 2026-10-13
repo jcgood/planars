@@ -149,6 +149,11 @@ apparently to scope which constructions `tests/test_snapshots.py` exercises.
 list per class (criterion fields for D-1b's first fact; construction names
 for the snapshot-scoping fact)
 **Classification:** derivable.
+*Half closed 2026-10-12 (Phase 10 unit 4): the snapshot-scoping lists are
+gone. Feeder tabs say `produces_spans: false` in `diagnostic_classes.yaml`
+and `planars.reports.span_constructions()` is the one reader (a third copy,
+biuniqueness's, had been added the same morning). `_PAIR_CRITERIA` remains,
+for item 3's D-1 work.*
 
 ### D-1c. `_STRUCTURAL_COLS`/`_TRAILING_COLS`/`_STATUS_TAB`/`_KEYSTONE_NAME` re-declared again in `planars/reports.py` and `planars/coreference.py`/`nonpermutability.py` — no schema read at all, unlike the `coding/` copies
 **What:** Unlike the `coding/` copies catalogued in D0/D3/D5 (which at least

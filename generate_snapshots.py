@@ -18,6 +18,8 @@ import importlib
 import re
 from pathlib import Path
 
+from planars.reports import span_constructions
+
 ROOT = Path(__file__).resolve().parent
 SNAPSHOTS_DIR = ROOT / "tests" / "snapshots"
 
@@ -40,7 +42,7 @@ def _build_handlers() -> list[tuple[str, object, object, frozenset | None]]:
         try:
             mod = importlib.import_module(f"planars.{path.stem}")
             if hasattr(mod, "derive") and hasattr(mod, "format_result"):
-                snap = getattr(mod, "_SNAPSHOT_CONSTRUCTIONS", None)
+                snap = span_constructions(path.stem)
                 handlers.append((path.stem, mod.derive, mod.format_result, snap))
         except Exception:
             pass
@@ -50,9 +52,9 @@ def _build_handlers() -> list[tuple[str, object, object, frozenset | None]]:
 _CLASS_HANDLERS = _build_handlers()
 
 # Build the task list: one entry per (tsv_path, derive_fn, fmt_fn).
-# If a module defines _SNAPSHOT_CONSTRUCTIONS, only TSVs whose stem matches
-# one of those names are included (guards against multi-format class dirs like
-# nonpermutability, where element_prescreening.tsv uses a different schema).
+# A class with feeder tabs (`produces_spans: false` in diagnostic_classes.yaml)
+# only has its span-producing tabs included (feeders like nonpermutability's
+# element_prescreening.tsv use a different schema and would crash derive).
 TASKS = [
     (tsv_path, derive_fn, fmt_fn)
     for class_name, derive_fn, fmt_fn, snap_constructions in _CLASS_HANDLERS
