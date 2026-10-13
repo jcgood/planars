@@ -4,8 +4,8 @@ Joins two things that used to only exist separately, each already
 authoritative for its own half: `coding/__main__.py`'s `_COMMANDS` table plus
 every command module's `build_parser()` (Phase 5 unit A/B -- what flags a
 command takes) with `data_dependency_schema/operations.yaml` (Phase 4 --
-what a command does, its side effects, idempotency, preconditions, and
-ordering relative to other commands). Neither of those has ever been
+what a command does, its side effects, idempotency and preconditions).
+Neither of those has ever been
 duplicated into this file: build_registry() calls build_parser() and reads
 operations.yaml fresh on every invocation, so there is nothing here to go
 stale. This is the "must be derived, never hand-authored" registry the plan
@@ -134,10 +134,6 @@ def _format_detail(entry: Dict) -> str:
         lines.append("Cascades triggered:")
         for cascade in record["cascades_triggered"]:
             lines.append(f"  - {cascade}")
-    if record["ordering_constraints"]:
-        lines.append("Ordering constraints:")
-        for constraint in record["ordering_constraints"]:
-            lines.append(f"  - {constraint}")
     if record["modes"]:
         lines.append(f"Modes: {', '.join(m['name'] for m in record['modes'])}")
         lines.append("  (run with a mode-specific command to see its own overrides;")

@@ -292,7 +292,6 @@ def test_operation_missing_idempotency_note_fails_validation():
             "preconditions": [],
             "facts_touched": [],
             "cascades_triggered": [],
-            "ordering_constraints": [],
         }
     ]
     with pytest.raises(jsonschema.ValidationError):
@@ -313,7 +312,6 @@ def test_operation_unknown_fact_role_fails_validation():
             "preconditions": [],
             "facts_touched": [{"fact": "planar_sheet_structure", "role": "deletes"}],
             "cascades_triggered": [],
-            "ordering_constraints": [],
         }
     ]
     with pytest.raises(jsonschema.ValidationError):

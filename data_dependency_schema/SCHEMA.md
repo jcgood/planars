@@ -205,8 +205,6 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
     - {fact: planar_sheet_structure, role: writes}
   cascades_triggered:
     - "push_planars_to_sheets() (import-planar --to-sheet) runs automatically after --apply"
-  ordering_constraints:
-    - "Never use prune-manifest for a rename -- use restructure-sheets --rename-class instead."
 ```
 
 - **`id`** — snake_case form of the CLI command name (`cli_command` with
@@ -253,14 +251,14 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
   all.
 - **`cascades_triggered`** — what this command's own run sets off
   automatically as a side effect (another command's regeneration step, a
-  notification) — as opposed to `ordering_constraints`, which is about what
-  a *human* needs to do in what order.
-- **`ordering_constraints`** — plain-language "run X before/after Y, because
-  Z" statements naming other commands by `cli_command`. This is the field
-  that absorbs the sequencing knowledge that used to live only as scattered
-  prose in `CLAUDE.md`/`coding/CLAUDE.md` — `--regen-construction` bypassing
-  `--apply`, `--split-element` before `--regen-construction`,
-  `prune-manifest` for retirement but never rename.
+  notification).
+- *(There was an `ordering_constraints` field — plain-language "run X before
+  Y" statements. Removed 2026-10-12, Phase 10 unit 7: nothing executed it, so
+  nothing kept it true, and most entries had become history notes. A
+  sequencing rule now lives where it is enforced: `--regen-construction`
+  refuses to drop annotated rows (run `--split-element` first, or pass
+  `--confirm-drop`); `prune-manifest` warns that a rename needs
+  `restructure-sheets --rename-class`.)*
 - **`modes`** — some commands genuinely behave differently by flag:
   `generate-sheets`' `--regen-construction` has no `--apply` gate at all and
   touches different facts than the base command; `sync-diagnostics-yaml`'s

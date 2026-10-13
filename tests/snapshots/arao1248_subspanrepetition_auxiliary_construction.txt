@@ -1,5 +1,5 @@
-Arao1248 Subspanrepetition Auxiliary Construction
-=================================================
+Araona Subspanrepetition Auxiliary Construction
+===============================================
 
 Keystone position: 6 (v:verbstem)
 

@@ -1,5 +1,5 @@
-Arao1248 Free Occurrence General
-================================
+Araona Free Occurrence General
+==============================
 
 NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
   free: ['ADVERBIALS', 'INTERROGATIVES', 'NP{NP,PP,S}', 'dipa', 'pa'] … (72 total)

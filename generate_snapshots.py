@@ -18,6 +18,7 @@ import importlib
 import re
 from pathlib import Path
 
+from planars.languages import get_entry
 from planars.reports import span_constructions
 
 ROOT = Path(__file__).resolve().parent
@@ -76,12 +77,16 @@ def snapshot_stem(tsv_path: Path) -> str:
 
 
 def tsv_to_title(tsv_path: Path) -> str:
-    stem = snapshot_stem(tsv_path)
+    """Snapshot heading: the language's Glottolog name (from languages.yaml; the
+    bare code for a language not in it, e.g. synth0001), then class and
+    construction. Until 2026-10-12 only English got a name, typed in here."""
+    lang_id = tsv_path.parent.parent.name
+    name = ((get_entry(lang_id) or {}).get("glottolog") or {}).get("name") or lang_id
+    stem = snapshot_stem(tsv_path)[len(lang_id):]
     stem = _SUFFIX_RE.sub("", stem)
-    stem = stem.replace("stan1293", "English")
     stem = _CAMEL_RE.sub("-", stem)
     stem = stem.replace("_", " ").lower()
-    return stem.title()
+    return (name.lower() + stem).title()
 
 
 def main() -> None:

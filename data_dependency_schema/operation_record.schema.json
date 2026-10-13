@@ -84,7 +84,6 @@
         "preconditions",
         "facts_touched",
         "cascades_triggered",
-        "ordering_constraints",
         "modes",
         "writes_to_drive"
       ],
@@ -137,11 +136,6 @@
           "type": "array",
           "items": { "type": "string", "minLength": 1 },
           "description": "What this command's own run sets off downstream, automatically, as a side effect -- e.g. another command's regeneration step, a notification. Empty array if nothing is triggered."
-        },
-        "ordering_constraints": {
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "description": "Plain-language 'run X before/after Y, because Z' statements naming other commands by cli_command. This is the field that absorbs CLAUDE.md's scattered sequencing prose (--regen-construction bypassing --apply; --split-element before --regen-construction; prune-manifest for retirement but never rename). Empty array if this command has no ordering dependency on any other. Modes are named inline here rather than getting their own ordering_constraints field -- ordering is about sequencing relative to other commands, which stays a whole-command concern even when the command itself has multiple modes."
         },
         "modes": {
           "type": "array",

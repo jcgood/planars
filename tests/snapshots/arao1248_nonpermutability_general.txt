@@ -1,5 +1,5 @@
-Arao1248 Nonpermutability General
-=================================
+Araona Nonpermutability General
+===============================
 
 NOTE: Some pairs have unannotated scopal values.
   scopal: ['ADVERBIALS × INTERROGATIVES', 'ADVERBIALS × NP{NP,PP,S}', 'ADVERBIALS × dipa', 'ADVERBIALS × pa', 'ADVERBIALS × po'] … (253 total)

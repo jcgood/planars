@@ -1,9 +1,14 @@
 # planars' command operation registry -- Phase 4 of the data layer plan
 # (issue #271, "Topology declaration"). One record per entry in
 # coding/__main__.py's _COMMANDS table: side effects, idempotency,
-# preconditions, which facts.yaml facts the command touches and how, what it
-# triggers downstream, and required ordering relative to other commands. See
-# SCHEMA.md.
+# preconditions, which facts.yaml facts the command touches and how, and what
+# it triggers downstream. See SCHEMA.md.
+#
+# There is no ordering_constraints field any more (removed 2026-10-12, Phase
+# 10 unit 7): it only described the code, so nothing kept it true. The rules
+# that matter are enforced where they apply (--regen-construction's drop
+# guard, prune-manifest's rename warning, generate-sheets' lookup-lang
+# warning) or made moot by the daily refresh.
 #
 # Drafted 2026-08-10; every record traced against actual coding/*.py source
 # 2026-08-11 (facts_touched/preconditions authority assignments and every
@@ -15,9 +20,8 @@
 # the content as accurate but not yet coordinator-confirmed until that
 # read-through happens. Grounded in CLAUDE.md, coding/CLAUDE.md, and
 # facts.yaml/preconditions.yaml's own cascade/drift_risk/required_by text
-# rather than fresh guesses -- see each record's ordering_constraints and
-# facts_touched for what's already independently documented elsewhere vs.
-# new synthesis.
+# rather than fresh guesses -- see each record's facts_touched for what's
+# already independently documented elsewhere vs. new synthesis.
 
 - id: capture_drive_state
   cli_command: capture-drive-state
@@ -46,12 +50,6 @@
   facts_touched:
     - {fact: drive_state_test_fixtures, role: writes}
   cascades_triggered: []
-  ordering_constraints:
-    - >-
-      Read-only against Drive -- the only live Drive call permitted before
-      Phase 9 of the data layer plan (issue #271). That constraint is scoped
-      to the migration's own throwaway test harness, not to normal
-      coordinator use of every other command.
   modes: []
 
 - id: generate_sheets
@@ -87,23 +85,6 @@
     - {fact: languages_metadata, role: writes}
   cascades_triggered:
     - "regenerate_notebooks() runs automatically after a successful --apply"
-  ordering_constraints:
-    - >-
-      Run restructure-sheets --split-element or --rename-element before
-      --regen-construction if the element was renamed or split, so the old
-      annotated rows are already gone from the live sheet by the time
-      --regen-construction runs; otherwise pass --confirm-drop to proceed
-      anyway (issue #241).
-    - >-
-      For nonpermutability and coreference (two-stage pair constructions):
-      annotate element_prescreening / prescreening and mark it
-      ready-for-review before running --regen-construction CLASS:general (or
-      a pair construction) -- running it earlier produces an unfiltered pair
-      list.
-    - >-
-      Run lookup-lang before generate-sheets when onboarding a brand-new
-      language, so schemas/languages.yaml already has Glottolog metadata
-      cached.
   modes:
     - name: "--regen-construction"
       description: >-
@@ -194,11 +175,6 @@
     - {fact: diagnostics_scope, role: reads}
     - {fact: languages_metadata, role: reads}
   cascades_triggered: []
-  ordering_constraints:
-    - >-
-      Runs automatically after generate-sheets --apply, sync-params --apply,
-      and restructure-sheets --apply -- not normally invoked directly by a
-      coordinator.
   modes: []
 
 - id: generate_reports
@@ -227,7 +203,6 @@
     - {fact: diagnostics_scope, role: reads}
     - {fact: languages_metadata, role: reads}
   cascades_triggered: []
-  ordering_constraints: []
   modes: []
 
 - id: sync_params
@@ -264,11 +239,6 @@
   cascades_triggered:
     - "regenerate_notebooks() runs automatically after --apply"
     - "regenerates diagnostics_{lang_id}.yaml to match the change"
-  ordering_constraints:
-    - >-
-      Run after editing diagnostics_{lang_id}.yaml's criteria for a class
-      whose sheets already exist -- this is the propagation step, not the
-      edit itself.
   modes:
     - name: "--refresh-dropdowns"
       description: >-
@@ -309,28 +279,6 @@
   facts_touched:
     - {fact: diagnostics_scope, role: both}
   cascades_triggered: []
-  ordering_constraints:
-    - >-
-      A required class (collection_required: "y" in
-      diagnostic_classes_status.yaml) missing from a language's YAML no
-      longer blocks this default direction from regenerating the TSV for the
-      classes that ARE present (Finding 20 in docs/data-layer-progress.md)
-      -- it still blocks --to-sheet, since pushing an incomplete language's
-      diagnostics to the live Sheet is a more consequential action than a
-      local file regeneration.
-    - >-
-      Run --to-sheet after renaming a class or criterion in the YAML, so the
-      Sheet stays in sync and import-sheets stops reporting false drift.
-    - >-
-      coded_data_clean_tree guard added 2026-08-11 to all three directions
-      (base, --to-sheet, --from-tsv) -- found missing while filling in
-      preconditions for this registry (issue #271 Phase 4). Unlike
-      prune-manifest's version of this gap, the risk here isn't reading a
-      stale target file, it's propagating a stale/reverted SOURCE (the
-      YAML) forward -- --to-sheet would push it live, the default direction
-      would regenerate the TSV from it. Passes extensions=(".yaml", ".tsv")
-      since this command reads/writes both, unlike every other guarded
-      command's TSV-only default.
   modes:
     - name: "--to-sheet"
       description: >-
@@ -382,15 +330,6 @@
   facts_touched:
     - {fact: qualification_rule_semantics, role: writes}
   cascades_triggered: []
-  ordering_constraints:
-    - >-
-      The last step of the qualification-rule update workflow: edit
-      diagnostic_classes.yaml -> CI detects the hash mismatch ->
-      generate-rule-update-prompt produces a Claude prompt -> the module's
-      docstring/comments are updated and reviewed -> sync-qualification-hashes
-      --apply re-stamps the hash. Running this before the docstring update
-      makes check-codebook stop flagging a change that hasn't actually been
-      reviewed yet.
   modes: []
 
 - id: update_sheets
@@ -416,24 +355,6 @@
   preconditions: [coded_data_clean_tree]
   facts_touched: []
   cascades_triggered: []
-  ordering_constraints:
-    - >-
-      Does not read pair_row_construction_set (schema_yaml's row_type) the
-      way validate_coding.py/generate_status_sheet.py/import_sheets.py do --
-      it decides pair-row shape from the tab's own header ("Element_A" in
-      header, coding/update_sheets.py:431), a third, independent detection
-      strategy found while reviewing this record for operations.yaml
-      (2026-08-11), reviewed with Jeff and confirmed deliberate 2026-08-16:
-      this command is about to WRITE to the tab, and the header is what's
-      actually there right now, while the schema is what a construction is
-      eventually supposed to look like -- the two can disagree (#275's
-      phrasal_accent/general is a live example), and trusting the header is
-      the more conservative choice for a command whose job is not corrupting
-      an already-existing tab. Now documented in a code comment at the same
-      location. Also does not write manifest_class_registration -- it only
-      ever extends an already-registered class's construction list, never
-      adds a new class to the manifest, which facts.yaml attributes
-      exclusively to generate-sheets.
   modes: []
 
 - id: import_sheets
@@ -478,15 +399,6 @@
   cascades_triggered:
     - "auto-applies safe downstream commands after a successful run"
     - "revalidates sheets after auto-apply"
-  ordering_constraints:
-    - >-
-      A required class missing from a language's diagnostics YAML
-      (collection_required: "y") makes this command skip that language's
-      diagnostics validation entirely until resolved (Finding 19 in
-      docs/data-layer-progress.md).
-    - >-
-      apply-pending reviews what this command writes to pending_changes.json
-      -- run import-sheets before apply-pending has anything to review.
   modes: []
 
 - id: validate_coding
@@ -509,12 +421,6 @@
     - {fact: pair_row_construction_set, role: reads}
     - {fact: diagnostics_scope, role: reads}
   cascades_triggered: []
-  ordering_constraints:
-    - >-
-      If a tab's header doesn't match its construction's declared row_type,
-      this command checks nothing else in that tab and names both the
-      --regen-construction fix and the schema field to change instead -- see
-      pair_row_construction_set in facts.yaml.
   modes: []
 
 - id: validation_report
@@ -532,8 +438,6 @@
   preconditions: []
   facts_touched: []
   cascades_triggered: []
-  ordering_constraints:
-    - "Run after validate-coding, on its output -- this command has no Drive access of its own."
   modes: []
 
 - id: restructure_sheets
@@ -601,19 +505,6 @@
       --apply for every processed language -- missing from this record until
       2026-08-11's review; it repaints pink highlighting to match the
       regenerated sheets, a real live Drive write alongside the three above.
-  ordering_constraints:
-    - >-
-      --split-element cascades into every pair-row construction referencing
-      the retired element, fanning old pairs into blank new rows per
-      replacement -- but does NOT cascade a position NUMBER shift into
-      pair-row Position_A/Position_B cells from an insertion/deletion
-      elsewhere in the planar; that needs generate-sheets --regen-construction
-      --pos-remap by hand (issue #241).
-    - >-
-      Never use prune-manifest for a rename -- it archives and discards
-      rather than carrying annotations forward. Update
-      diagnostics_{lang_id}.tsv to the new name first, then run
-      restructure-sheets --rename-class OLD:NEW --apply.
   modes: []
 
 - id: check_codebook
@@ -632,11 +523,6 @@
     - {fact: qualification_rule_semantics, role: reads}
     - {fact: diagnostics_scope, role: reads}
   cascades_triggered: []
-  ordering_constraints:
-    - >-
-      Runs in CI on every push and daily via data-refresh.yml; a
-      codebook-error issue is what tells a coordinator
-      generate-rule-update-prompt has something to say.
   modes: []
 
 - id: generate_rule_update_prompt
@@ -654,11 +540,6 @@
   facts_touched:
     - {fact: qualification_rule_semantics, role: reads}
   cascades_triggered: []
-  ordering_constraints:
-    - >-
-      Sits between check-codebook detecting a stale hash and
-      sync-qualification-hashes re-stamping it -- see
-      sync_qualification_hashes' ordering_constraints for the full workflow.
   modes: []
 
 - id: integrity_check
@@ -681,29 +562,6 @@
     - {fact: dependent_construction_element_scope, role: reads}
     - {fact: diagnostics_scope, role: reads}
   cascades_triggered: []
-  ordering_constraints:
-    - >-
-      _section_sheets now calls restructure_sheets._get_pair_row_constructions()
-      directly, the same shared helper validate_coding.py/import_sheets.py/
-      generate_status_sheet.py use -- found duplicating that logic locally
-      while reviewing this record for operations.yaml (2026-08-11), fixed
-      2026-08-16. Unlike update_sheets.py's header-based check (see that
-      record), this was two code paths reading the same source
-      (diagnostic_classes.yaml's row_type) rather than two different
-      sources, so consolidating had no live-data risk to weigh -- it's a
-      read-only report either way.
-    - >-
-      Run daily via data-refresh.yml; a missing required class
-      (collection_required: "y") is reported here as an ERROR (Finding 19 in
-      docs/data-layer-progress.md) and folds into the standing
-      integrity-error issue rather than a dedicated label.
-    - >-
-      The construction_criterion_columns check (--sheets only) compares the
-      live tab's header against the MANIFEST's cached param_names, not
-      against diagnostics_{lang_id}.yaml directly -- it cannot detect a
-      criterion column change in the YAML that sync-params was never run for
-      at all (see construction_criterion_columns's drift_risk in
-      facts.yaml).
   modes: []
 
 - id: setup_root_folder
@@ -723,10 +581,6 @@
   preconditions: []
   facts_touched: []
   cascades_triggered: []
-  ordering_constraints:
-    - >-
-      Run once, after the first generate-sheets --apply creates the first
-      language folder to nest under it.
   modes: []
 
 - id: lookup_lang
@@ -750,11 +604,6 @@
   facts_touched:
     - {fact: languages_metadata, role: writes}
   cascades_triggered: []
-  ordering_constraints:
-    - >-
-      Run before generate-sheets when onboarding a new language, so
-      schemas/languages.yaml already has Glottolog metadata cached rather
-      than generate-sheets warning about it.
   modes: []
 
 - id: apply_pending
@@ -785,8 +634,6 @@
   preconditions: []
   facts_touched: []
   cascades_triggered: []
-  ordering_constraints:
-    - "Only has something to review after import-sheets --apply has written pending_changes.json."
   modes: []
 
 - id: prune_manifest
@@ -823,12 +670,6 @@
   facts_touched:
     - {fact: manifest_class_registration, role: writes}
   cascades_triggered: []
-  ordering_constraints:
-    - "For retiring a class: remove it from diagnostics_{lang_id}.tsv first, then run prune-manifest --apply."
-    - >-
-      Never use for a rename -- it discards rather than carries annotations
-      forward. Use restructure-sheets --rename-class instead (see that
-      record's ordering_constraints).
   modes: []
 
 - id: check_notes
@@ -876,8 +717,6 @@
   facts_touched:
     - {fact: collaborator_notes_surfaced_state, role: writes}
   cascades_triggered: []
-  ordering_constraints:
-    - "Same batched-write-at-end-of-loop shape as issue #280 (import-sheets, apply-pending, prune-manifest); fixed the same way."
   modes: []
 
 - id: refresh_dropdowns
@@ -899,7 +738,6 @@
   facts_touched:
     - {fact: manifest_dropdown_values, role: writes}
   cascades_triggered: []
-  ordering_constraints: []
   modes: []
 
 - id: import_planar
@@ -925,15 +763,6 @@
   facts_touched:
     - {fact: planar_sheet_structure, role: both}
   cascades_triggered: []
-  ordering_constraints:
-    - >-
-      --to-sheet runs automatically at the end of restructure-sheets --apply
-      (via push_planars_to_sheets()) so a local structural edit never goes
-      un-pushed -- the fix for the 2026-07-29 incident (#244/#245/#248). Any
-      other script that edits planar_{lang_id}.tsv directly needs to call
-      the same push, or the next scheduled default-direction import-planar
-      --apply will silently revert it (see planar_sheet_structure's
-      drift_risk in facts.yaml).
   modes:
     - name: "--to-sheet"
       description: "Reverse direction: pushes local planar_{lang_id}.tsv content up to the live planar Sheet."
@@ -968,12 +797,6 @@
   facts_touched:
     - {fact: status_sheet_completeness, role: writes}
   cascades_triggered: []
-  ordering_constraints:
-    - >-
-      Not run automatically by any workflow -- coordinator-triggered only,
-      so the status sheet goes stale after annotation changes until someone
-      re-runs it by hand (status_sheet_completeness's drift_risk in
-      facts.yaml).
   modes: []
 
 - id: registry
@@ -1003,6 +826,5 @@
   preconditions: []
   facts_touched: []
   cascades_triggered: []
-  ordering_constraints: []
   modes: []
 

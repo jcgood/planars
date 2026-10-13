@@ -240,7 +240,7 @@ Keep the following files up to date as the project evolves. Check each one at th
 | `docs/data-layer-implementation-plan.md` | A data layer phase completes, or its scope/sequencing changes |
 | `docs/data-layer-progress.md` | **At every unit boundary of data layer work, in the same commit.** The authoritative record of what is done, in flight, and next — plus the decisions log. Never let it describe intent |
 | `notebooks/templates/*.ipynb` | Any notebook template boilerplate changes — then run `generate-notebooks --apply` |
-| `pyproject.toml` version | Any change to `planars/` library code (Colab installs from GitHub, not PyPI) |
+| `pyproject.toml` version | Bumped automatically by the pre-commit hook (`regenerate_snapshots_hook.py`) whenever a commit changes `planars/` library code (Colab installs from GitHub, not PyPI); bump by hand only for a change the hook can't see, e.g. to `schemas/` that Colab reads |
 | `data_dependency_schema/facts.yaml` / `preconditions.yaml` | A bug traces back to an undocumented authority/cascade relationship or shared command precondition — write the record as part of the fix, not as follow-up. See `data_dependency_schema/SCHEMA.md`. |
 
 When in doubt, update. These files are the primary onboarding resource for collaborators and future contributors.
@@ -308,7 +308,7 @@ Sessions tend to fall into a few natural patterns. Naming the primary focus at t
 
 Snapshot lifecycle: the pre-commit hook (`regenerate_snapshots_hook.py`) regenerates affected snapshots automatically when any `planars/*.py` file is staged — qualification rule changes are covered here. The daily `data-refresh.yml` GitHub Action imports fresh annotations from Google Sheets and regenerates snapshots — data changes are covered there. A snapshot diff in a commit is the expected record of how a change altered span output. A snapshot failure on a PR means a code change altered output without going through the hook.
 
-Retiring vs. renaming a class, and the ordering rules for every other `coding/` command relative to the others, are declared in `data_dependency_schema/operations.yaml` (see the `prune_manifest`/`restructure_sheets` records' `ordering_constraints`) rather than narrated here — that file is the source of truth for command topology (issue #271 Phase 4); read it directly rather than a paraphrase.
+Retiring vs. renaming a class: `prune-manifest` retires (and warns when the class looks renamed), `restructure-sheets --rename-class` renames and carries annotations over. Sequencing rules between commands are enforced by the commands themselves where they matter (e.g. `--regen-construction` refuses to drop annotated rows), not declared separately; `data_dependency_schema/operations.yaml` records each command's side effects, preconditions and idempotency.
 
 **Language onboarding** — Draft `diagnostics_{lang_id}.tsv`, run `generate-sheets`, annotate, import, verify spans. Expert review always required.
 
