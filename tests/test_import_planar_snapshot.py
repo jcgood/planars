@@ -502,12 +502,12 @@ def test_to_sheet_apply_writes_nothing_locally(env):
 def test_to_sheet_names_the_columns_it_is_about_to_add_and_remove(env):
     """The push rewrites the Sheet from the TSV, so its columns win."""
     env.write_sheet_rows(add_column(env.sheet_rows()))
-    env.write_tsv_rows([row + ["Element_Types" if i == 0 else "formative"]
+    env.write_tsv_rows([row + ["Test_Local_Column" if i == 0 else "x"]
                         for i, row in enumerate(env.tsv_rows())])
 
     out = env.run(["import-planar", "--to-sheet", "--lang", LANG, "--apply"])
 
-    assert f"[{LANG}]   + column Element_Types" in out
+    assert f"[{LANG}]   + column Test_Local_Column" in out
     assert f"[{LANG}]   - column {NEW_COLUMN}" in out
     assert env.sheet_rows() == env.tsv_rows()
 

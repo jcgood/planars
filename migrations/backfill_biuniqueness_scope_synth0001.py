@@ -11,6 +11,9 @@ untouched until the mechanism is validated end-to-end on the synthetic language
 (see #254's Part 2 sequencing decision).
 Run: 2026-07-30, after commit 4e815c7.
 
+Superseded 2026-10-13: the Biuniqueness_Scope column was deleted from every
+planar (the scope is computed from Elements). Do not re-run.
+
 Usage:
     python migrations/backfill_biuniqueness_scope_synth0001.py           # dry run
     python migrations/backfill_biuniqueness_scope_synth0001.py --apply   # write the file

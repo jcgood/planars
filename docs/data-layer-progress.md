@@ -2216,8 +2216,8 @@ commit.
 
 ## Decisions log
 
-**2026-10-13 — Biuniqueness scope is computed, not read; whether to keep the
-stored column is Jeff's call.** Moving the class to English exposed that
+**2026-10-13 — Biuniqueness scope is computed, not read; the stored columns
+are deleted.** Moving the class to English exposed that
 `Biuniqueness_Scope` in the planar is a pure copy: `validate_planar` rejects
 any value that differs from `classify_biuniqueness_scope(Elements)`, so it
 holds nothing of its own, yet the row builder read it, and a planar edit
@@ -2227,7 +2227,11 @@ the scope from `Elements` (and refuses an unregistered ALL CAPS label, as
 planar validation already does). The stored column stays, still checked for
 drift, because the plan put it on English's Planar Sheet that morning and it
 is what the sheet instructions point Adam at; deleting it (with
-`Element_Types`, the same pattern) is a decision for Jeff. Separately, the
+`Element_Types`, the same pattern) was put to Jeff. **Jeff decided the same
+day: delete both.** Removed from both planars and their Sheets, from
+`planar.yaml`, and with their drift checks; the sheet instructions now
+describe what Adam sees (a specific form vs. a capitalised word class with
+`NA` already filled) instead of naming the column. Separately, the
 archive lock: Google keeps the higher role when a lower grant is added, and
 refuses to delete a person's grant on a file that also inherits one from its
 folder, so roles are now changed in place (`update_permission`). The fake

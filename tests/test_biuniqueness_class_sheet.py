@@ -254,8 +254,6 @@ def test_update_sheets_adds_only_in_scope_elements_and_leaves_keyed_tabs_alone(
     planar_path = env.coded / LANG / "lang_setup" / f"planar_{LANG}.tsv"
     planar = pd.read_csv(planar_path, sep="\t", dtype=str, keep_default_na=False)
     i = planar.index[planar["Position_Name"] == "v:modal1"][0]
-    # Biuniqueness_Scope deliberately not extended: the scope is computed from
-    # Elements, so a stale stored column must not matter.
     planar.loc[i, "Elements"] += ", dare, NP{O}"
     planar.to_csv(planar_path, sep="\t", index=False)
 

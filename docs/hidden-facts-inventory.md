@@ -312,13 +312,11 @@ tying them together.
 
 ### D3. `_STRUCTURAL_COLS` re-lists a subset of `planar.yaml`'s structural columns
 **What:** `_STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}`
-is a hardcoded set duplicating three of the five entries in
-`structural_columns` (the other two, `Element_Types` and `Biuniqueness_Scope`,
-are newer and not yet part of every filled TSV — see planar.yaml's own
-"NOT YET BACKFILLED" notes). Because this is a hand-picked subset rather than
-a derived one, a newly-backfilled structural column added to real TSVs would
-need this set edited by hand to avoid being misclassified as a criterion
-column.
+is a hardcoded set duplicating the entries in `structural_columns` (three
+since 2026-10-13, when the stored `Element_Types` and `Biuniqueness_Scope`
+columns were deleted as copies of computed values). Because it is typed
+rather than derived, a new structural column would need this set edited by
+hand to avoid being misclassified as a criterion column.
 **Where:** `coding/validate_coding.py:46`; independently re-declared,
 byte-identical, at `coding/restructure_sheets.py:115`; folded into a combined
 structural+pair-structural set at `coding/sync_params.py:64-65`
@@ -330,7 +328,7 @@ calls (`load_filled_tsv`/`load_filled_sheet`), and it sits **one line above**
 16), which *does* read the schema it already loaded into `_planar_schema` at
 line 14 — i.e. the correct pattern and the hardcoded copy are adjacent
 lines in the same file, one of them just wasn't updated to match.
-**Authoritative source:** `schemas/planar.yaml` `structural_columns` (lines 23-72)
+**Authoritative source:** `schemas/planar.yaml` `structural_columns`
 **Classification:** derivable.
 
 ### D4. Pair-row structural columns declared independently in two files, two different shapes
@@ -712,9 +710,8 @@ annotation-required) span ("A position qualifies iff: (1) It is a Slot
 `_build_phrasal_accent_pairs` both branch on `pos_type.get(p) == "Zone"`).
 Yet `schemas/planar.yaml`'s `structural_columns` section — which documents
 itself as covering every column "present in every filled TSV" and
-explicitly lists `Element`, `Position_Name`, `Position_Number`,
-`Element_Types`, `Biuniqueness_Scope` — has no entry for `Position_Type` at
-all. This is the one finding in this inventory where the gap is in the
+explicitly lists `Element`, `Position_Name`, `Position_Number` — has no entry
+for `Position_Type` at all. This is the one finding in this inventory where the gap is in the
 *authoritative source itself*, not just in code that fails to read it: even
 a maximally schema-driven rewrite of every caller would still have nowhere
 to point, because `planar.yaml` doesn't yet claim this fact.

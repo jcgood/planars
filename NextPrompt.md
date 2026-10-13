@@ -26,9 +26,7 @@ row); the spec, ground rules, units and order are the Phase 10 section of
 `docs/data-layer-implementation-plan.md`. Planned with Jeff 2026-10-12 and
 approved to run unattended **except at the pauses the spec names** (unit 5
 design; units 6+15+11 design). Units 14 (but one by-hand step), 4, 7, 3's
-first group and 1 are done; next is unit 2 (`locked_tabs`). Open question for
-Jeff from unit 1: keep or delete the planar's stored `Biuniqueness_Scope`
-column (decisions log, 2026-10-13).
+first group and 1 are done; next is unit 2 (`locked_tabs`).
 
 **Don't re-litigate (decided 2026-10-12):** light maintenance beats speed; a
 registry only if the code runs from it; no `[y, n]` default; close the

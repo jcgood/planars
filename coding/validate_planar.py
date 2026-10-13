@@ -11,7 +11,7 @@ from typing import Dict, List
 
 from .validate import ValidationIssue
 from .schemas import load_planar_schema
-from .make_forms import classify_element, classify_biuniqueness_scope
+from .make_forms import classify_element
 from planars.schema_values import KEYSTONE_NAME
 
 # ---------------------------------------------------------------------------
@@ -32,79 +32,6 @@ def _is_all_caps_token(token: str) -> bool:
     """
     stripped = _BRACE_SUFFIX_RE.sub("", token.strip())
     return bool(stripped) and stripped.isupper()
-
-
-def _validate_element_types_drift(row, row_idx: int, pos_name: str, tokens: List[str]) -> List[ValidationIssue]:
-    """Check the optional Element_Types column against a freshly recomputed
-    classification of Elements. Element_Types is not yet backfilled into
-    existing planar_{lang_id}.tsv files (see issue #249), so this is a no-op
-    wherever the column is absent — it only fires once a language has adopted it.
-    """
-    issues: List[ValidationIssue] = []
-    raw = row.get("Element_Types")
-    if raw is None:
-        return issues
-    raw = str(raw).strip()
-    if not raw:
-        return issues
-
-    stored = _tokenize_elements(raw)
-    if len(stored) != len(tokens):
-        issues.append(ValidationIssue(
-            "error", f"row {row_idx + 2} '{pos_name}'",
-            f"Element_Types has {len(stored)} token(s) but Elements has {len(tokens)} — "
-            f"they must stay aligned one-for-one"
-        ))
-        return issues
-
-    for element, stored_type in zip(tokens, stored):
-        recomputed = classify_element(element)
-        if stored_type != recomputed:
-            issues.append(ValidationIssue(
-                "error", f"row {row_idx + 2} '{pos_name}'",
-                f"Element_Types says '{element}' is '{stored_type}' but recomputing from "
-                f"typography/registry gives '{recomputed}' — Elements may have changed "
-                f"without Element_Types being regenerated, or the label's registry entry "
-                f"changed underneath it"
-            ))
-    return issues
-
-
-def _validate_biuniqueness_scope_drift(row, row_idx: int, pos_name: str, tokens: List[str]) -> List[ValidationIssue]:
-    """Check the optional Biuniqueness_Scope column against a freshly recomputed
-    classification of Elements. Biuniqueness_Scope is not yet backfilled into
-    existing planar_{lang_id}.tsv files (see issue #254 Part 2a), so this is a
-    no-op wherever the column is absent — it only fires once a language has
-    adopted it. Mirrors _validate_element_types_drift.
-    """
-    issues: List[ValidationIssue] = []
-    raw = row.get("Biuniqueness_Scope")
-    if raw is None:
-        return issues
-    raw = str(raw).strip()
-    if not raw:
-        return issues
-
-    stored = _tokenize_elements(raw)
-    if len(stored) != len(tokens):
-        issues.append(ValidationIssue(
-            "error", f"row {row_idx + 2} '{pos_name}'",
-            f"Biuniqueness_Scope has {len(stored)} token(s) but Elements has {len(tokens)} — "
-            f"they must stay aligned one-for-one"
-        ))
-        return issues
-
-    for element, stored_scope in zip(tokens, stored):
-        recomputed = classify_biuniqueness_scope(element)
-        if stored_scope != recomputed:
-            issues.append(ValidationIssue(
-                "error", f"row {row_idx + 2} '{pos_name}'",
-                f"Biuniqueness_Scope says '{element}' is '{stored_scope}' but recomputing "
-                f"from Element_Types/typography gives '{recomputed}' — Elements may have "
-                f"changed without Biuniqueness_Scope being regenerated, or the label's "
-                f"registry entry changed underneath it"
-            ))
-    return issues
 
 
 def _tokenize_elements(s: str) -> List[str]:
@@ -261,9 +188,6 @@ def validate_planar_df(df) -> List[ValidationIssue]:
                     f"add it there (or, if it's an ordinary capitalized formative, add it "
                     f"to formative_capitalization_exceptions) before using it"
                 ))
-
-        issues.extend(_validate_element_types_drift(row, i, pos_name, tokens))
-        issues.extend(_validate_biuniqueness_scope_drift(row, i, pos_name, tokens))
 
         if ct == "list":
             caps = [t for t in tokens if _is_all_caps_token(t)]

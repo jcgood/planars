@@ -470,7 +470,7 @@ classes:
     specificity: general
     # Three-stage annotation (issue #254), each tab generated from the one before:
     #   elements: one row per in-scope element and position (scope computed
-    #     from Elements, as the planar's Biuniqueness_Scope column records it).
+    #     from Elements by coding.make_forms.classify_biuniqueness_scope).
     #     has_allomorphs, members
     #     (variant forms of a filled element, or known members of an open
     #     category) and co_exponents (other positions expressing the same

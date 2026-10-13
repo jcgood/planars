@@ -41,41 +41,13 @@ structural_columns:
       further left; higher numbers are further right. The keystone (v:verbstem)
       anchors all span computations.
 
-  - name: Element_Types
-    description: >
-      Per-element classification, aligned token-for-token with Elements
-      (same comma/brace tokenization, same order): "formative", "embedded_structure",
-      or "reserved" (KEYSTONE only). Computed by coding.make_forms.classify_element()
-      from the typography + registry rules below, then written into the TSV as an
-      explicit, visible fact rather than left as something only derivable by running
-      code. validate_planar.py recomputes and flags drift if this column disagrees
-      with the Elements column. NOT YET BACKFILLED into existing planar_{lang_id}.tsv
-      files as of issue #249 — validation of the underlying typography/registry rules
-      does not require this column to be present; only the drift check does.
-
-  - name: Biuniqueness_Scope
-    description: >
-      Per-element flag for biuniqueness/allomorphy relevance (issue #254 Part 2a).
-      Records which elements appear on the biuniqueness_deviations class sheet's
-      elements tab. The code computes the same classification from Elements and
-      never reads this column (since 2026-10-13), so a stale column cannot
-      break the sheet; validate_planar still reports it as drift (built by `python -m coding generate-sheets`; see
-      coding/biuniqueness_rows.py). Aligned token-for-token
-      with Elements (same comma/brace tokenization, same order). Built entirely on top
-      of Element_Types + the same ALL-CAPS typography rule used there — no independent
-      registry data. Values: "filled" (a concrete listed form, e.g. "do", "-ed" — a
-      direct candidate for the has_allomorphs question), "open_category" (an
-      ALL CAPS category placeholder standing for an open/closed class of formatives,
-      e.g. PRON, VERBPART — not itself annotable: has_allomorphs is pre-set NA and
-      the annotator lists known members instead, each of which becomes a morpheme
-      on the morphemes tab), or
-      "excluded" (embedded_structure or reserved elements — allomorphy is a morph-level
-      phenomenon and does not apply to an embedded planar structure like NP{S,A} or to
-      the KEYSTONE placeholder). Computed by coding.make_forms.classify_biuniqueness_scope().
-      validate_planar.py recomputes and flags drift, same pattern as Element_Types.
-      Present only in planars of languages that annotate biuniqueness_deviations
-      (stan1293, backfilled 2026-10-13 by migrations/move_biuniqueness_to_stan1293.py);
-      a language adding the class needs it backfilled first.
+# Each element's type (formative / embedded_structure / reserved) and its
+# biuniqueness scope (filled / open_category / excluded) are computed from
+# Elements by coding.make_forms.classify_element and
+# classify_biuniqueness_scope, using the label conventions below. They used to
+# be stored as Element_Types and Biuniqueness_Scope planar columns; both were
+# copies validation forced to match the computation, so they were deleted
+# 2026-10-13 (a stale copy crashed update-sheets).
 
 # The Position_Name value that identifies the keystone row. Code reads it
 # through coding.schemas.keystone_name() / planars.io.KEYSTONE_NAME and never

@@ -81,26 +81,27 @@ def classify_element(token: str, planar_schema: Dict | None = None) -> str:
 
 
 def classify_biuniqueness_scope(token: str, planar_schema: Dict | None = None) -> str:
-    """Classify a single Elements-cell token for the Biuniqueness_Scope column
-    (issue #254 Part 2a — Stage 0 of the biuniqueness/allomorphy Sheet pipeline).
+    """Classify a single Elements-cell token for the biuniqueness_deviations
+    class (issue #254): which elements its elements tab asks about. Read by
+    biuniqueness_rows.scoped_elements; never stored (a planar column copying it
+    was deleted 2026-10-13).
 
     Returns one of:
         "filled"          — a concrete listed form (formative, not an ALL CAPS
-                             category placeholder) — a direct candidate for Stage 1's
-                             has_allomorphs annotation.
+                             category placeholder) — asked has_allomorphs directly.
         "open_category"   — a formative ALL CAPS category placeholder (e.g. PRON,
                              VERBPART) standing for an open/closed class of forms —
-                             not itself annotable; needs Stage 2 to expand it into
-                             specific member forms first.
+                             has_allomorphs is pre-set NA and the annotator lists
+                             known members instead.
         "excluded"         — embedded_structure (stands for a whole embedded planar
                              structure, not a morph) or reserved (KEYSTONE) — biuniqueness/
                              allomorphy is a morph-level phenomenon and applies to neither.
-        "unknown"          — the token's Element_Types classification is itself
-                             "unknown" (unregistered ALL CAPS label) — never silently
-                             defaulted; register the label in planar.yaml first.
+        "unknown"          — classify_element() itself says "unknown" (unregistered
+                             ALL CAPS label) — never silently defaulted; register the
+                             label in planar.yaml first.
 
-    Built entirely on top of classify_element() and the same typography rule it uses —
-    no independent registry data (see planar.yaml's Biuniqueness_Scope description).
+    Built entirely on top of classify_element() and the same typography rule it
+    uses — no independent registry data.
     """
     if planar_schema is None:
         planar_schema = load_planar_schema()

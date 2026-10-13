@@ -10,7 +10,9 @@ can be created with the new name, so no live tab is ever renamed.
 
 Two steps, run with the ordinary commands between them:
 
-  backfill  Write the Biuniqueness_Scope column into
+  backfill  (Undone later the same day: the Biuniqueness_Scope column was
+            deleted from every planar, the scope being computed from
+            Elements. Do not re-run this step.) Write the column into
             coded_data/stan1293/lang_setup/planar_stan1293.tsv, computed by
             coding.make_forms.classify_biuniqueness_scope (the same classifier
             as migrations/backfill_biuniqueness_scope_synth0001.py). The two

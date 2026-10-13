@@ -2,8 +2,9 @@
 
 Covers the element-type classification checks added alongside
 coding.make_forms.classify_element() (issue #249): unregistered ALL CAPS
-labels must raise an error rather than silently defaulting, and the optional
-Element_Types column must be checked for drift against a fresh recomputation.
+labels must raise an error rather than silently defaulting. (The stored
+Element_Types and Biuniqueness_Scope columns and their drift checks were
+deleted 2026-10-13; the classifications are computed, never stored.)
 """
 from __future__ import annotations
 
@@ -68,98 +69,6 @@ def test_registered_label_is_not_an_error():
     df = _base_rows(row)
     errors = _errors(df)
     assert not any("element_type registered" in e.message for e in errors)
-
-
-# ---------------------------------------------------------------------------
-# Element_Types drift
-# ---------------------------------------------------------------------------
-
-def test_element_types_absent_is_not_flagged():
-    """No Element_Types column at all -> no drift errors (not yet backfilled, issue #249)."""
-    row = {
-        "Position": "2", "Position_Name": "v:test", "Position_Type": "Slot",
-        "Elements": "he, NP{S,A}", "Class_Type": "open",
-    }
-    df = _base_rows(row)
-    assert not any("Element_Types" in e.message for e in _errors(df))
-
-
-def test_element_types_matching_is_clean():
-    row = {
-        "Position": "2", "Position_Name": "v:test", "Position_Type": "Slot",
-        "Elements": "he, NP{S,A}", "Class_Type": "open",
-        "Element_Types": "formative, embedded_structure",
-    }
-    df = _base_rows(row)
-    assert not any("Element_Types" in e.message for e in _errors(df))
-
-
-def test_element_types_mismatch_is_an_error():
-    row = {
-        "Position": "2", "Position_Name": "v:test", "Position_Type": "Slot",
-        "Elements": "he, NP{S,A}", "Class_Type": "open",
-        "Element_Types": "embedded_structure, formative",  # swapped, wrong
-    }
-    df = _base_rows(row)
-    errors = _errors(df)
-    assert any("Element_Types" in e.message and "recomputing" in e.message for e in errors)
-
-
-def test_element_types_count_mismatch_is_an_error():
-    row = {
-        "Position": "2", "Position_Name": "v:test", "Position_Type": "Slot",
-        "Elements": "he, NP{S,A}", "Class_Type": "open",
-        "Element_Types": "formative",  # only one, Elements has two
-    }
-    df = _base_rows(row)
-    errors = _errors(df)
-    assert any("stay aligned" in e.message for e in errors)
-
-
-# ---------------------------------------------------------------------------
-# Biuniqueness_Scope drift (issue #254 Part 2a)
-# ---------------------------------------------------------------------------
-
-def test_biuniqueness_scope_absent_is_not_flagged():
-    """No Biuniqueness_Scope column at all -> no drift errors (not yet backfilled)."""
-    row = {
-        "Position": "2", "Position_Name": "v:test", "Position_Type": "Slot",
-        "Elements": "he, PRON, NP{S,A}", "Class_Type": "open",
-    }
-    df = _base_rows(row)
-    assert not any("Biuniqueness_Scope" in e.message for e in _errors(df))
-
-
-def test_biuniqueness_scope_matching_is_clean():
-    row = {
-        "Position": "2", "Position_Name": "v:test", "Position_Type": "Slot",
-        "Elements": "he, PRON, NP{S,A}", "Class_Type": "open",
-        "Biuniqueness_Scope": "filled, open_category, excluded",
-    }
-    df = _base_rows(row)
-    assert not any("Biuniqueness_Scope" in e.message for e in _errors(df))
-
-
-def test_biuniqueness_scope_mismatch_is_an_error():
-    row = {
-        "Position": "2", "Position_Name": "v:test", "Position_Type": "Slot",
-        "Elements": "he, PRON, NP{S,A}", "Class_Type": "open",
-        "Biuniqueness_Scope": "open_category, filled, excluded",  # first two swapped
-    }
-    df = _base_rows(row)
-    errors = _errors(df)
-    assert any("Biuniqueness_Scope" in e.message and "recomputing" in e.message for e in errors)
-
-
-def test_biuniqueness_scope_count_mismatch_is_an_error():
-    row = {
-        "Position": "2", "Position_Name": "v:test", "Position_Type": "Slot",
-        "Elements": "he, PRON, NP{S,A}", "Class_Type": "open",
-        "Biuniqueness_Scope": "filled, open_category",  # only two, Elements has three
-    }
-    df = _base_rows(row)
-    errors = _errors(df)
-    assert any("stay aligned" in e.message for e in errors)
 
 
 # ---------------------------------------------------------------------------

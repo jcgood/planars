@@ -16,18 +16,18 @@ from coding.restructure_sheets import _get_keyed_row_constructions
 LANG = "test0001"
 
 PLANAR = pd.DataFrame([
-    # Position, Position_Name, Elements, Biuniqueness_Scope
-    (1, "v:leftedge", "and, CONJUNCT", "filled, open_category"),
-    (3, "v:frontedauxiliary", "be, do, will", "filled, filled, filled"),
-    (5, "v:npsubj1", "NP{S,A}, I, he", "excluded, filled, filled"),
-    (6, "v:ad-S1", "AD-S", "open_category"),
-    (8, "v:modal1", "can, will", "filled, filled"),
-    (9, "v:sd-S2", "AD-S", "open_category"),
-    (22, "v:progressive", "be", "filled"),
-    (30, "v:verbstem", "KEYSTONE", "excluded"),
-    (31, "v:verbinflection", "-ed, -s, -ing", "filled, filled, filled"),
-], columns=["Position", "Position_Name", "Elements", "Biuniqueness_Scope"]).assign(
-    Language_ID=LANG)
+    # Position, Position_Name, Elements (scope is computed from Elements:
+    # CONJUNCT/AD-S open categories, NP{S,A}/KEYSTONE excluded, the rest filled)
+    (1, "v:leftedge", "and, CONJUNCT"),
+    (3, "v:frontedauxiliary", "be, do, will"),
+    (5, "v:npsubj1", "NP{S,A}, I, he"),
+    (6, "v:ad-S1", "AD-S"),
+    (8, "v:modal1", "can, will"),
+    (9, "v:sd-S2", "AD-S"),
+    (22, "v:progressive", "be"),
+    (30, "v:verbstem", "KEYSTONE"),
+    (31, "v:verbinflection", "-ed, -s, -ing"),
+], columns=["Position", "Position_Name", "Elements"]).assign(Language_ID=LANG)
 
 ELEMENT_PARAMS = ["has_allomorphs", "members", "co_exponents"]
 MORPHEME_ANSWERS = ["morpheme_class", "forms_relation", "Source", "Comments"]
@@ -106,15 +106,13 @@ def test_elements_open_category_rows_answer_through_members_not_yes_no():
     assert rows[("and", "v:leftedge")][3] == ""
 
 
-def test_scope_is_computed_from_elements_not_read_from_the_stored_column():
-    """An element added without extending Biuniqueness_Scope used to crash
-    every command that builds this tab (2026-10-13)."""
-    stale = PLANAR.copy()
-    stale.loc[stale["Position_Name"] == "v:modal1", "Elements"] += ", dare"
-    keys = {(r[0], r[1]) for r in br.element_rows(stale, LANG, ELEMENT_PARAMS)}
+def test_an_element_added_to_the_planar_is_in_scope_with_nothing_else_to_edit():
+    """When scope was a stored planar column, an element added without
+    extending it crashed every command that builds this tab (2026-10-13)."""
+    more = PLANAR.copy()
+    more.loc[more["Position_Name"] == "v:modal1", "Elements"] += ", dare"
+    keys = {(r[0], r[1]) for r in br.element_rows(more, LANG, ELEMENT_PARAMS)}
     assert ("dare", "v:modal1") in keys
-    assert br.element_rows(PLANAR.drop(columns=["Biuniqueness_Scope"]), LANG,
-                           ELEMENT_PARAMS) == br.element_rows(PLANAR, LANG, ELEMENT_PARAMS)
 
 
 def test_an_unregistered_all_caps_label_is_refused():

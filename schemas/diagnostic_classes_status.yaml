@@ -179,13 +179,13 @@ classes:
       Status tab before starting the next.
 
       ELEMENTS. One row per element at each position.
-      If Biuniqueness_Scope is 'filled': set has_allomorphs to y or n. If y, list
+      For a specific form (be, do, -ed): set has_allomorphs to y or n. If y, list
       the element's variant forms in members, separated by commas (be: am, are,
       is). Contracted forms count ('ll, 'd, 've).
-      If Biuniqueness_Scope is 'open_category' (a whole word class, like AD-S): in
-      members, list only words in that class you already know or suspect have
-      variant forms. Leave it blank if you don't know of any: blank means "none
-      known", not "none exist". Leave has_allomorphs blank.
+      For a whole word class written in capitals (like AD-S), has_allomorphs is
+      already NA; leave it. In members, list only words in that class you
+      already know or suspect have variant forms. Leave it blank if you don't
+      know of any: blank means "none known", not "none exist".
       co_exponents: if this element expresses its meaning together with an
       element at another position at the same time, name that position (be at
       v:progressive goes with -ing at v:verbinflection). Otherwise leave blank.

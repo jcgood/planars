@@ -84,13 +84,12 @@ def scoped_elements(planar_df: pd.DataFrame, lang_id: str) -> List[Tuple[int, st
     """(position_number, position_name, element, scope) for every element in
     scope (anything but excluded), in planar order.
 
-    The scope is computed from Elements by make_forms.classify_biuniqueness_scope,
-    never read from the planar's Biuniqueness_Scope column: that column is a
-    copy of the same computation (validate_planar rejects any difference), so
-    reading it meant an element added to the planar without the column being
-    extended crashed every command that builds this tab (found 2026-10-13,
-    when the class moved to English). Raises ValueError for an unregistered
-    ALL CAPS label rather than guessing its scope."""
+    The scope is computed from Elements by make_forms.classify_biuniqueness_scope.
+    It used to be read from a Biuniqueness_Scope planar column, a copy of the
+    same computation; an element added without the column being extended
+    crashed every command that builds this tab, and the column was deleted
+    (2026-10-13). Raises ValueError for an unregistered ALL CAPS label rather
+    than guessing its scope."""
     from .make_forms import classify_biuniqueness_scope
     out = []
     df = planar_df[planar_df["Language_ID"] == lang_id] if "Language_ID" in planar_df else planar_df
