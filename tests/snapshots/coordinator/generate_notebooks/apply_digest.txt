@@ -7,7 +7,7 @@ DRIVE OPERATIONS
   create_permission: file_id='fake_file_0001', type='anyone', role='reader', notify=False
   create_file: file_id='fake_file_0003', name='domains_stan1293.ipynb', parents=['1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'], mimetype='application/json', bytes=4656
   create_permission: file_id='fake_file_0003', type='anyone', role='reader', notify=False
-  create_file: file_id='fake_file_0005', name='domains_synth0001.ipynb', parents=['1F9y3SyErwY7ieexHGUmv3k17TNFd2hOH'], mimetype='application/json', bytes=4648
+  create_file: file_id='fake_file_0005', name='domains_synth0001.ipynb', parents=['1F9y3SyErwY7ieexHGUmv3k17TNFd2hOH'], mimetype='application/json', bytes=5146
   create_permission: file_id='fake_file_0005', type='anyone', role='reader', notify=False
   create_file: file_id='fake_file_0007', name='validation_arao1248.ipynb', parents=['1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'], mimetype='application/json', bytes=314
   create_permission: file_id='fake_file_0007', type='anyone', role='reader', notify=False
@@ -21,5 +21,5 @@ DRIVE OPERATIONS
   create_permission: file_id='fake_file_0015', type='anyone', role='reader', notify=False
   create_file: file_id='fake_file_0017', name='report_synth0001.ipynb', parents=['1F9y3SyErwY7ieexHGUmv3k17TNFd2hOH'], mimetype='application/json', bytes=357
   create_permission: file_id='fake_file_0017', type='anyone', role='reader', notify=False
-  create_file: file_id='fake_file_0019', name='all_languages.ipynb', parents=['fake_root_folder'], mimetype='application/json', bytes=4621
+  create_file: file_id='fake_file_0019', name='all_languages.ipynb', parents=['fake_root_folder'], mimetype='application/json', bytes=5119
   create_permission: file_id='fake_file_0019', type='anyone', role='reader', notify=False

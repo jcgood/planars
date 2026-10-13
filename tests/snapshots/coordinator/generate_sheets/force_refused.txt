@@ -2,7 +2,7 @@ Connecting to Google APIs...
 Manifest backed up to manifest_backup.json (3 language(s))
 
 ERROR: --force refused for arao1248.
-  Existing annotation sheets: ['ciscategorial', 'noninterruption', 'subspanrepetition']
+  Existing annotation sheets: ['ciscategorial', 'noninterruption', 'subspanrepetition', 'nonpermutability', 'free_occurrence']
   Destroying annotation sheets is not allowed. Annotated data is
   irreplaceable. If you need to restructure sheets, use:
     python -m coding restructure-sheets --apply

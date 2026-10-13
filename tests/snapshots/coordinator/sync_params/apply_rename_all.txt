@@ -11,6 +11,10 @@ Renames:  ['free:free_form']
     Renamed.
   [subspanrepetition/auxiliary_construction] Rename: free not found — skipping
   [subspanrepetition/tso_clause_linkage] Rename: free not found — skipping
+  [nonpermutability/element_prescreening] Rename: free not found — skipping
+  [nonpermutability/general] Rename: free not found — skipping
+  [free_occurrence/general] Rename: free → free_form
+    Renamed.
   [noninterruption] diagnostics Criteria: 'free, multiple' -> 'free_form, multiple'
   [free_occurrence] diagnostics Criteria: 'free, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}' -> 'free_form, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}'
   [stan1293] YAML updated → diagnostics_stan1293.yaml
@@ -63,18 +67,15 @@ Renames:  ['free:free_form']
     Renamed.
   [coreference/prescreening] Rename: free not found — skipping
   [coreference/reflexivization] Rename: free not found — skipping
-  [coreference/reflexivization] WARNING: columns in sheet but not in diagnostics: ['pronoun_allowed', 'np_allowed']
-    (pass --apply --remove to delete)
   [coreference/pronominalization] Rename: free not found — skipping
-  [coreference/pronominalization] WARNING: columns in sheet but not in diagnostics: ['reflexive_allowed', 'np_allowed']
-    (pass --apply --remove to delete)
   [coreference/np_reference] Rename: free not found — skipping
-  [coreference/np_reference] WARNING: columns in sheet but not in diagnostics: ['reflexive_allowed', 'pronoun_allowed']
-    (pass --apply --remove to delete)
   [proform/do_so_substitution] Rename: free not found — skipping
   [proform/vp_ellipsis] Rename: free not found — skipping
   [phrasal_accent/prescreening] Rename: free not found — skipping
   [phrasal_accent/general] Rename: free not found — skipping
+  [biuniqueness_deviations/prescreening] Rename: free not found — skipping
+  [biuniqueness_deviations/morphemes] Rename: free not found — skipping
+  [biuniqueness_deviations/morphs] Rename: free not found — skipping
 
 Manifest updated on Drive.
 

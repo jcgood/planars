@@ -80,7 +80,7 @@ Language: stan1293
 
   phrasal_accent (current v1)
     [prescreening] downloaded 142 rows
-    [general] downloaded 142 rows
+    [general] downloaded 0 rows
     [prescreening] carry over 142; new blank 0
     (no changes — skipping)
 

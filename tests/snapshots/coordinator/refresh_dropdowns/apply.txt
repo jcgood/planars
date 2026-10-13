@@ -10,6 +10,13 @@ Refreshing sheet dropdowns
     auxiliary_construction: {'widescope_right': ['y', 'n'], 'widescope_left': ['y', 'n'], 'fillable_botheither_conjunct': ['y', 'n']} up to date
     tso_clause_linkage: {'widescope_right': ['y', 'n'], 'widescope_left': ['y', 'n'], 'fillable_botheither_conjunct': ['y', 'n']} up to date
 
+  [arao1248] nonpermutability
+    element_prescreening: {'scopal': ['y', 'n', 'both']} up to date
+    general: {'scopal': ['y', 'n', 'both']} up to date
+
+  [arao1248] free_occurrence
+    general: {'free': ['y', 'n'], 'left-edge-of-free-form': ['y', 'n', 'na'], 'right-edge-of-free-form': ['y', 'n', 'na'], 'dependent-on-left': ['na', '<position_number>'], 'dependent-on-right': ['na', '<position_number>']} up to date
+
   [stan1293] ciscategorial
     general: {'V-combines': ['y', 'n'], 'N-combines': ['y', 'n'], 'A-combines': ['y', 'n']} up to date
 
@@ -79,12 +86,9 @@ Refreshing sheet dropdowns
   [synth0001] coreference
     prescreening: {'reflexive_allowed': ['y', 'n', 'untestable'], 'pronoun_allowed': ['y', 'n', 'untestable'], 'np_allowed': ['y', 'n', 'untestable']} → {'referential': ['y', 'n']}
     prescreening: refreshed ['referential']
-    reflexivization: {'reflexive_allowed': ['y', 'n', 'untestable'], 'pronoun_allowed': ['y', 'n', 'untestable'], 'np_allowed': ['y', 'n', 'untestable']} → {'reflexive_allowed': ['y', 'n', 'untestable']}
-    reflexivization: refreshed ['reflexive_allowed', 'pronoun_allowed', 'np_allowed']
-    pronominalization: {'reflexive_allowed': ['y', 'n', 'untestable'], 'pronoun_allowed': ['y', 'n', 'untestable'], 'np_allowed': ['y', 'n', 'untestable']} → {'pronoun_allowed': ['y', 'n', 'untestable']}
-    pronominalization: refreshed ['reflexive_allowed', 'pronoun_allowed', 'np_allowed']
-    np_reference: {'reflexive_allowed': ['y', 'n', 'untestable'], 'pronoun_allowed': ['y', 'n', 'untestable'], 'np_allowed': ['y', 'n', 'untestable']} → {'np_allowed': ['y', 'n', 'untestable']}
-    np_reference: refreshed ['reflexive_allowed', 'pronoun_allowed', 'np_allowed']
+    reflexivization: {'reflexive_allowed': ['y', 'n', 'untestable']} up to date
+    pronominalization: {'pronoun_allowed': ['y', 'n', 'untestable']} up to date
+    np_reference: {'np_allowed': ['y', 'n', 'untestable']} up to date
 
   [synth0001] proform
     do_so_substitution: {'shareable_proform_replace': ['y', 'n', 'both', 'unclear']} up to date
@@ -93,6 +97,11 @@ Refreshing sheet dropdowns
   [synth0001] phrasal_accent
     prescreening: {'accented': ['y', 'n', 'both']} up to date
     general: {'joint_accent': ['always', 'sometimes', 'never']} up to date
+
+  [synth0001] biuniqueness_deviations
+    prescreening: {'has_allomorphs': ['y', 'n'], 'members': ['<free_text>'], 'co_exponents': ['<position_names>']} up to date
+    morphemes: {'morpheme_class': ['<free_text>'], 'forms_relation': ['alternate', 'co-occur']} up to date
+    morphs: {'occurs_here': ['y', 'n'], 'conditioning_type': ['phonological', 'morphosyntactic', 'lexico-constructional', 'prosodic'], 'conditioning_features': ['<free_text>'], 'conditioned_by': ['<position_names>'], 'trigger_filled': ['y', 'n']} up to date
 
 Manifest updated on Drive.
 

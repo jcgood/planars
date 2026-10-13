@@ -6,9 +6,8 @@ Planar file: planar_arao1248.tsv
   Diagnostics validation (1 issue(s)):
     [ERROR] diagnostics_arao1248.tsv: Required class 'proform' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
 Classes:     ['ciscategorial', 'noninterruption', 'nonpermutability', 'free_occurrence', 'subspanrepetition']
-  DRY RUN — would create/update:
-    New class sheet(s): ['free_occurrence', 'nonpermutability']
-  Run with --apply to make these changes.
+  All classes already have sheets. Skipping arao1248.
+  (use --force to regenerate)
 
 Language:    stan1293
 Planar file: planar_stan1293.tsv
@@ -24,7 +23,7 @@ Planar file: planar_synth0001.tsv
   Diagnostics validation (2 issue(s)):
     [WARNING] row 12: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
     [WARNING] row 13: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
-Classes:     ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent']
+Classes:     ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent', 'biuniqueness_deviations']
   All classes already have sheets. Skipping synth0001.
   (use --force to regenerate)
 

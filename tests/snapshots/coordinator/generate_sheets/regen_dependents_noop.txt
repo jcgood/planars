@@ -1,4 +1,6 @@
 Connecting to Google APIs...
+  [arao1248/nonpermutability/general] already has rows — skipping auto-regeneration. Run:
+    python -m coding generate-sheets --lang arao1248 --regen-construction nonpermutability:general
   [stan1293/nonpermutability/general] already has rows — skipping auto-regeneration. Run:
     python -m coding generate-sheets --lang stan1293 --regen-construction nonpermutability:general
   [synth0001/nonpermutability/general] already has rows — skipping auto-regeneration. Run:
@@ -15,6 +17,7 @@ Connecting to Google APIs...
     python -m coding generate-sheets --lang synth0001 --regen-construction coreference:pronominalization
   [synth0001/coreference/np_reference] already has rows — skipping auto-regeneration. Run:
     python -m coding generate-sheets --lang synth0001 --regen-construction coreference:np_reference
-  [stan1293/phrasal_accent/general] already has rows — skipping auto-regeneration. Run:
-    python -m coding generate-sheets --lang stan1293 --regen-construction phrasal_accent:general
+  [synth0001/biuniqueness_deviations/morphemes] empty — waiting for 'prescreening' to be marked ready-for-review (now: in-progress)
+  [synth0001/biuniqueness_deviations/morphs] empty — waiting for 'morphemes' to be marked ready-for-review (now: in-progress)
+  [stan1293/phrasal_accent/general] empty — waiting for 'prescreening' to be marked ready-for-review (now: in-progress)
   [synth0001/phrasal_accent/general] empty — waiting for 'prescreening' to be marked ready-for-review (now: in-progress)

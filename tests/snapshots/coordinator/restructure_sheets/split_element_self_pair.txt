@@ -124,12 +124,12 @@ Language: stan1293
 
   phrasal_accent (current v1)
     [prescreening] downloaded 142 rows
-    [general] downloaded 142 rows
+    [general] downloaded 0 rows
     [prescreening] carry over 140; new blank 3; drop 2 (her@v:obj-part, NP{P,T}@v:obj-part)
     [prescreening] split: her -> HERACC, HERDAT (2 new, breadcrumbed to archived sheet)
     Archived to _archived/phrasal_accent_stan1293_v1
     [prescreening] wrote: carried 140, new blank 3, dropped 2
-    [general] (pair tab) copied 142 rows, 0 cell(s) renamed
+    [general] (pair tab) copied 0 rows, 0 cell(s) renamed
     Instructions tab created
     Status tab created (2 construction(s))
     New sheet (v2): https://docs.google.com/spreadsheets/d/fake_ss_0030

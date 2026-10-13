@@ -390,10 +390,18 @@ def test_the_dry_run_changes_nothing_anywhere(env):
 # against the real operations.yaml record.
 
 
+def _drop_from_yaml(env, lang, class_name, criterion):
+    """Make a sheet column surplus by dropping its criterion from the YAML.
+    (Tests used to lean on drift that happened to be in the frozen data;
+    the live sheets have since been fixed, so they set up their own.)"""
+    env.edit_yaml(lang, lambda d: d["classes"][class_name]["criteria"].pop(criterion))
+
+
 def test_apply_with_a_real_change_saves_drive_config(env):
+    _drop_from_yaml(env, "synth0001", "noninterruption", "multiple")
     env.run(["sync-params", "--apply", "--remove"])
     # drive_config.json is only ever saved when the manifest was uploaded.
-    assert env.saved_configs, "expected the baseline drift's --remove to change the manifest"
+    assert env.saved_configs, "expected --remove of the surplus column to change the manifest"
     for cfg in env.saved_configs:
         assert cfg.get("_planars_config_file_id") == MANIFEST_FILE_ID
 
@@ -565,11 +573,12 @@ def test_nothing_criterion_shaped_is_written_onto_trailing_columns_on_split_and_
 # ---------------------------------------------------------------------------
 
 def test_notebooks_regenerate_when_something_changed(env):
-    """The real synth0001 coreference drift counts as "something changed" —
-    surplus columns are reported (`any_changes = True`) as soon as they are
-    seen, even without --remove, because a WARNING is itself something the
-    coordinator needs to know about. Notebooks regenerate accordingly.
+    """A surplus column counts as "something changed" — it is reported
+    (`any_changes = True`) as soon as it is seen, even without --remove,
+    because a WARNING is itself something the coordinator needs to know
+    about. Notebooks regenerate accordingly.
     """
+    _drop_from_yaml(env, "synth0001", "noninterruption", "multiple")
     env.run(["sync-params", "--apply"])
     assert env.notebook_calls == [True]
 

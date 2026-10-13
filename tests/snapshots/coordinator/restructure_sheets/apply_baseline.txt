@@ -11,9 +11,16 @@ Language: arao1248
     [general] carry over 73; new blank 0
     (no changes — skipping)
 
-  nonpermutability: not in manifest, skipping (run python -m coding generate-sheets --apply first)
+  nonpermutability (current v1)
+    [element_prescreening] downloaded 73 rows
+    [general] downloaded 0 rows
+    [element_prescreening] carry over 73; new blank 0
+    (no changes — skipping)
 
-  free_occurrence: not in manifest, skipping (run python -m coding generate-sheets --apply first)
+  free_occurrence (current v1)
+    [general] downloaded 73 rows
+    [general] carry over 73; new blank 0
+    (no changes — skipping)
 
   subspanrepetition (current v2)
     [auxiliary_construction] downloaded 73 rows
@@ -85,7 +92,7 @@ Language: stan1293
 
   phrasal_accent (current v1)
     [prescreening] downloaded 142 rows
-    [general] downloaded 142 rows
+    [general] downloaded 0 rows
     [prescreening] carry over 142; new blank 0
     (no changes — skipping)
 
@@ -154,6 +161,13 @@ Language: synth0001
     [prescreening] downloaded 142 rows
     [general] downloaded 0 rows
     [prescreening] carry over 142; new blank 0
+    (no changes — skipping)
+
+  biuniqueness_deviations (current v1)
+    [prescreening] downloaded 135 rows
+    [morphemes] downloaded 0 rows
+    [morphs] downloaded 0 rows
+    [prescreening] carry over 135; new blank 0
     (no changes — skipping)
 
 Manifest updated on Drive.

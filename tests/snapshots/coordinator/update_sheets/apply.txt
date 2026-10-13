@@ -17,6 +17,17 @@ Languages: ['arao1248', 'stan1293', 'synth0001']
     [tso_clause_linkage] done
     Instructions tab created
 
+  nonpermutability
+    [element_prescreening] add 1 row(s): ['zzz-new-element']
+    [element_prescreening] done
+    [general] up to date (pair-row tab — row updates skipped)
+    Instructions tab created
+
+  free_occurrence
+    [general] add 1 row(s): ['zzz-new-element']
+    [general] done
+    Instructions tab created
+
   ciscategorial
     [general] up to date
     Instructions tab created
@@ -64,7 +75,7 @@ Languages: ['arao1248', 'stan1293', 'synth0001']
 
   phrasal_accent
     [prescreening] up to date
-    [general] up to date
+    [general] up to date (pair-row tab — row updates skipped)
     Instructions tab created
 
   ciscategorial
@@ -115,6 +126,12 @@ Languages: ['arao1248', 'stan1293', 'synth0001']
   phrasal_accent
     [prescreening] up to date
     [general] up to date (pair-row tab — row updates skipped)
+    Instructions tab created
+
+  biuniqueness_deviations
+    [prescreening] up to date
+    [morphemes] up to date (keyed-row tab — rows are managed by --regen-construction)
+    [morphs] up to date (keyed-row tab — rows are managed by --regen-construction)
     Instructions tab created
 
 Done.

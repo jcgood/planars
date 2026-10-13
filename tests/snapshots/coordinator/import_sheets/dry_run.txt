@@ -4,11 +4,8 @@ Connecting to Google...
 
 Language: arao1248
   [planar] No changes → planar_arao1248.tsv
-  [diagnostics] ERROR (non-blocking): [ERROR] diagnostics_arao1248.tsv: Required class 'free_occurrence' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
-  [diagnostics] ERROR (non-blocking): [ERROR] diagnostics_arao1248.tsv: Required class 'nonpermutability' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
   [diagnostics] ERROR (non-blocking): [ERROR] diagnostics_arao1248.tsv: Required class 'proform' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
-  [diagnostics] Would overwrite (changed) → diagnostics_arao1248.tsv
-  [diagnostics] 2 ambiguous YAML drift item(s) — see diagnostics_drift.json
+  [diagnostics] No changes → diagnostics_arao1248.tsv
 
   ciscategorial
     [general] status: 'in-progress' — importing for backup
@@ -24,6 +21,16 @@ Language: arao1248
     [tso_clause_linkage] status: 'in-progress' — importing for backup
     [tso_clause_linkage] [backup] No changes → coded_data/arao1248/subspanrepetition/tso_clause_linkage.tsv
 
+  nonpermutability
+    [element_prescreening] status: 'in-progress' — importing for backup
+    [element_prescreening] [backup] No changes → coded_data/arao1248/nonpermutability/element_prescreening.tsv
+    [general] status: 'in-progress' — importing for backup
+    [general] [backup] No changes → coded_data/arao1248/nonpermutability/general.tsv
+
+  free_occurrence
+    [general] status: 'in-progress' — importing for backup
+    [general] [backup] No changes → coded_data/arao1248/free_occurrence/general.tsv
+
 Language: stan1293
   [planar] No changes → planar_stan1293.tsv
   [diagnostics] WARNING: [WARNING] row 12: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
@@ -35,14 +42,10 @@ Language: stan1293
     [general] [backup] No changes → coded_data/stan1293/ciscategorial/general.tsv
 
   subspanrepetition
-    [andCoordination] status: 'in-progress' — importing for backup
-    [andCoordination] [backup] No changes → coded_data/stan1293/subspanrepetition/andCoordination.tsv
-    [control] status: 'in-progress' — importing for backup
-    [control] [backup] No changes → coded_data/stan1293/subspanrepetition/control.tsv
-    [thatCOMP] status: 'in-progress' — importing for backup
-    [thatCOMP] [backup] No changes → coded_data/stan1293/subspanrepetition/thatCOMP.tsv
-    [asyndeticPart] status: 'in-progress' — importing for backup
-    [asyndeticPart] [backup] No changes → coded_data/stan1293/subspanrepetition/asyndeticPart.tsv
+    [andCoordination] No changes → coded_data/stan1293/subspanrepetition/andCoordination.tsv
+    [control] No changes → coded_data/stan1293/subspanrepetition/control.tsv
+    [thatCOMP] No changes → coded_data/stan1293/subspanrepetition/thatCOMP.tsv
+    [asyndeticPart] No changes → coded_data/stan1293/subspanrepetition/asyndeticPart.tsv
 
   noninterruption
     [general] status: 'in-progress' — importing for backup
@@ -55,8 +58,7 @@ Language: stan1293
     [flapping] [backup] No changes → coded_data/stan1293/segmental/flapping.tsv
 
   metrical
-    [stress_domain] status: 'in-progress' — importing for backup
-    [stress_domain] [backup] No changes → coded_data/stan1293/metrical/stress_domain.tsv
+    [stress_domain] No changes → coded_data/stan1293/metrical/stress_domain.tsv
 
   free_occurrence
     [general] status: 'in-progress' — importing for backup
@@ -156,12 +158,12 @@ Language: synth0001
     [general] status: 'in-progress' — importing for backup
     [general] [backup] No changes → coded_data/synth0001/phrasal_accent/general.tsv
 
+  biuniqueness_deviations
+    [prescreening] status: 'in-progress' — importing for backup
+    [prescreening] [backup] No changes → coded_data/synth0001/biuniqueness_deviations/prescreening.tsv
+    [morphemes] status: 'in-progress' — importing for backup
+    [morphemes] [backup] No changes → coded_data/synth0001/biuniqueness_deviations/morphemes.tsv
+    [morphs] status: 'in-progress' — importing for backup
+    [morphs] [backup] No changes → coded_data/synth0001/biuniqueness_deviations/morphs.tsv
+
 Done. 0 file(s) written, 0 warning(s).
-
-⚠  2 destructive change(s) detected (dry run — pass --apply to write pending_changes.json):
-   arao1248: Analysis class 'free_occurrence' removed from diagnostics_arao1248.tsv — requires YAML update and manifest cleanup
-   arao1248: Analysis class 'nonpermutability' removed from diagnostics_arao1248.tsv — requires YAML update and manifest cleanup
-
-⚠  1 language(s) have ambiguous YAML drift — see diagnostics_drift.json
-   Resolve with: python -m coding sync-diagnostics-yaml --from-tsv --apply
-   (dry run — pass --apply to write diagnostics_drift.json)

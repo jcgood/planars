@@ -128,6 +128,19 @@ class Env:
         f = self.doorway.file(MANIFEST_FILE_ID)
         f.content = json.dumps(manifest).encode("utf-8")
 
+    def remove_class(self, lang: str, class_name: str) -> None:
+        """Simulate a class that has never been set up for this language: no
+        manifest entry, no sheet in Drive (trashed), no local TSVs, not in the
+        diagnostics YAML. Lets a test create it fresh even though the frozen
+        data (captured from live Drive) already has it."""
+        manifest = self.manifest()
+        info = manifest.get(lang, {}).get("sheets", {}).pop(class_name, None)
+        self.doorway.file(MANIFEST_FILE_ID).content = json.dumps(manifest).encode("utf-8")
+        if info and info.get("spreadsheet_id"):
+            self.doorway.file(info["spreadsheet_id"]).trashed = True
+        shutil.rmtree(self.coded / lang / class_name, ignore_errors=True)
+        self.edit_yaml(lang, lambda d: (d.get("classes") or {}).pop(class_name, None))
+
 
 @pytest.fixture()
 def env(monkeypatch, tmp_path):
@@ -228,29 +241,24 @@ def resolve_referential_divergence_for_test(env: Env, lang: str) -> None:
 # ---------------------------------------------------------------------------
 
 def test_dry_run_baseline_transcript(env):
-    """Real fixture data as committed: stan1293 and synth0001 already have every
-    class; arao1248 is still missing sheets for two required classes it gained
-    after onboarding (nonpermutability, free_occurrence -- #271 Finding 19).
+    """Real fixture data as committed: every language already has a sheet for
+    every class it lists (since the 2026-10-13 refreeze; arao1248's
+    nonpermutability and free_occurrence sheets, #271 Finding 19, exist now).
     """
     check_snapshot("dry_run_baseline.txt", env.run(["generate-sheets"]))
 
 
 def test_apply_noop_baseline_transcript(env):
-    """stan1293 and synth0001 are a true no-op; arao1248 creates sheets for its
-    two still-missing required classes (see test_dry_run_baseline_transcript).
-    The apply still re-uploads the merged manifest once at the end regardless
+    """Every language is a true no-op: no spreadsheet is created or moved. The
+    apply still re-uploads the merged manifest once at the end regardless
     (unlike sync-params, generate-sheets has no "anything changed" gate on that
     final upload) -- so one update_file mutation here is real, existing
     behaviour, not a sign anything else was recreated.
     """
     out = env.run(["generate-sheets", "--apply"])
     check_snapshot("apply_noop_baseline.txt", out)
-    created = env.doorway.mutations_of("create_spreadsheet")
-    assert sorted(m["title"] for m in created) == [
-        "free_occurrence_arao1248", "nonpermutability_arao1248",
-    ]
-    moved = env.doorway.mutations_of("move_file")
-    assert {m["file_id"] for m in moved} == {m["spreadsheet"] for m in created}
+    assert env.doorway.mutations_of("create_spreadsheet") == []
+    assert env.doorway.mutations_of("move_file") == []
 
 
 def test_brand_new_language_dry_run_transcript(env):

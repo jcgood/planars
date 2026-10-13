@@ -59,7 +59,7 @@ DRY RUN — Language: stan1293
 
   phrasal_accent (current v1)
     [prescreening] downloaded 142 rows
-    [general] downloaded 142 rows
+    [general] downloaded 0 rows
     [prescreening] carry over 134; rename 8; new blank 0
     [general] (pair tab) no position renames needed
 

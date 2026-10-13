@@ -6,7 +6,7 @@ SUMMARY
      1    └─ setDataValidation
 
 DRIVE OPERATIONS
-  update_file: file_id='fake_manifest_file', bytes=51372
+  update_file: file_id='fake_manifest_file', bytes=54620
 
 SHEET OPERATIONS
 

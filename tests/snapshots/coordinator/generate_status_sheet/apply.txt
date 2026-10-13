@@ -5,9 +5,9 @@ Annotation Status folder: https://drive.google.com/drive/folders/NEW_FOLDER_ID
 [arao1248] 7 construction(s) across 5 class(es)
     ciscategorial/general: 0/288 filled (0%)
     noninterruption/general: 0/144 filled (0%)
-    nonpermutability/element_prescreening: no sheet found
-    nonpermutability/general (pair-row tab): no sheet found
-    free_occurrence/general: no sheet found
+    nonpermutability/element_prescreening: 0/73 filled (0%)
+    nonpermutability/general (pair-row tab): 0/253 filled (0%)
+    free_occurrence/general: 0/361 filled (0%)
     subspanrepetition/auxiliary_construction: 216/216 filled (100%)
     subspanrepetition/tso_clause_linkage: 216/216 filled (100%)
     Created: https://docs.google.com/spreadsheets/d/NEW_SHEET_ID

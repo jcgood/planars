@@ -98,7 +98,9 @@ def test_replay_preserves_declared_grid_and_sheet_ids(captured, seeded):
 
 
 def test_used_range_can_be_narrower_than_declared_grid(captured, seeded):
-    """The real hazard the capture found — 10 of 80 tabs are narrower than col_count.
+    """The real hazard the capture found — some tabs are narrower than col_count
+    (10 of 80 at the 2026-08 capture; the count moves with every refreeze, so
+    it is not pinned here).
 
     The falsified hypothesis was raggedness; this is what actually bites. If
     the fake ever starts padding to col_count, this test fails and the
@@ -113,7 +115,7 @@ def test_used_range_can_be_narrower_than_declared_grid(captured, seeded):
             width = max(len(r) for r in values)
             assert width <= ws.col_count
             narrower += width < ws.col_count
-    assert narrower == 10
+    assert narrower > 0
 
 
 def test_replayed_rows_are_rectangular(seeded, captured):

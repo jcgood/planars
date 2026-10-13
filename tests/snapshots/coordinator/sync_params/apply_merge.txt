@@ -13,6 +13,9 @@ Merges:   ['widescope_right:widescope_left:widescope_either']
   [subspanrepetition/tso_clause_linkage] Merge: widescope_right, widescope_left -> widescope_either
     Merge applied.
   [subspanrepetition/tso_clause_linkage] Manifest param_names updated
+  [nonpermutability/element_prescreening] Merge: neither widescope_right nor widescope_left found — skipping
+  [nonpermutability/general] Merge: neither widescope_right nor widescope_left found — skipping
+  [free_occurrence/general] Merge: neither widescope_right nor widescope_left found — skipping
   [subspanrepetition] diagnostics Criteria: 'widescope_right, widescope_left, fillable_botheither_conjunct' -> 'widescope_either, fillable_botheither_conjunct'
   [stan1293] YAML updated → diagnostics_stan1293.yaml
 
@@ -75,18 +78,15 @@ Merges:   ['widescope_right:widescope_left:widescope_either']
   [free_occurrence/general] Merge: neither widescope_right nor widescope_left found — skipping
   [coreference/prescreening] Merge: neither widescope_right nor widescope_left found — skipping
   [coreference/reflexivization] Merge: neither widescope_right nor widescope_left found — skipping
-  [coreference/reflexivization] WARNING: columns in sheet but not in diagnostics: ['pronoun_allowed', 'np_allowed']
-    (pass --apply --remove to delete)
   [coreference/pronominalization] Merge: neither widescope_right nor widescope_left found — skipping
-  [coreference/pronominalization] WARNING: columns in sheet but not in diagnostics: ['reflexive_allowed', 'np_allowed']
-    (pass --apply --remove to delete)
   [coreference/np_reference] Merge: neither widescope_right nor widescope_left found — skipping
-  [coreference/np_reference] WARNING: columns in sheet but not in diagnostics: ['reflexive_allowed', 'pronoun_allowed']
-    (pass --apply --remove to delete)
   [proform/do_so_substitution] Merge: neither widescope_right nor widescope_left found — skipping
   [proform/vp_ellipsis] Merge: neither widescope_right nor widescope_left found — skipping
   [phrasal_accent/prescreening] Merge: neither widescope_right nor widescope_left found — skipping
   [phrasal_accent/general] Merge: neither widescope_right nor widescope_left found — skipping
+  [biuniqueness_deviations/prescreening] Merge: neither widescope_right nor widescope_left found — skipping
+  [biuniqueness_deviations/morphemes] Merge: neither widescope_right nor widescope_left found — skipping
+  [biuniqueness_deviations/morphs] Merge: neither widescope_right nor widescope_left found — skipping
 
 Manifest updated on Drive.
 

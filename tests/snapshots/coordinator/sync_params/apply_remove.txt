@@ -6,6 +6,9 @@ Mode:     apply
   [noninterruption/general] OK — no changes
   [subspanrepetition/auxiliary_construction] OK — no changes
   [subspanrepetition/tso_clause_linkage] OK — no changes
+  [nonpermutability/element_prescreening] OK — no changes
+  [nonpermutability/general] OK — no changes
+  [free_occurrence/general] OK — no changes
 
 Language: stan1293
 Mode:     apply
@@ -45,16 +48,15 @@ Mode:     apply
   [nonpermutability/general] OK — no changes
   [free_occurrence/general] OK — no changes
   [coreference/prescreening] OK — no changes
-  [coreference/reflexivization] Removing params: ['pronoun_allowed', 'np_allowed']
-    Removed: ['pronoun_allowed', 'np_allowed']
-  [coreference/pronominalization] Removing params: ['reflexive_allowed', 'np_allowed']
-    Removed: ['reflexive_allowed', 'np_allowed']
-  [coreference/np_reference] Removing params: ['reflexive_allowed', 'pronoun_allowed']
-    Removed: ['reflexive_allowed', 'pronoun_allowed']
+  [coreference/reflexivization] OK — no changes
+  [coreference/pronominalization] OK — no changes
+  [coreference/np_reference] OK — no changes
   [proform/do_so_substitution] OK — no changes
   [proform/vp_ellipsis] OK — no changes
   [phrasal_accent/prescreening] OK — no changes
   [phrasal_accent/general] OK — no changes
+  [biuniqueness_deviations/prescreening] OK — no changes
+  [biuniqueness_deviations/morphemes] OK — no changes
+  [biuniqueness_deviations/morphs] OK — no changes
 
-Manifest updated on Drive.
-
+All sheets are up to date.

@@ -365,16 +365,16 @@ def test_a_language_with_no_sheet_recorded_is_skipped_not_created(env):
 def test_one_unreachable_sheet_does_not_stop_the_others(env):
     doorway, run = env
     make_stale(doorway, "synth0001")
+    make_stale(doorway, "arao1248")
     del doorway._spreadsheets[DIAG_ID[LANG]]
 
     out = run(["sdy", "--to-sheet", "--apply"])
     assert f"[{LANG}] Could not read Sheet" in out
     assert sheet(doorway, "synth0001").get_all_values() == yaml_rows("synth0001")
-    # arao1248 also updates here (its Sheet is genuinely stale in the fixture
-    # data — see the _sync_to_sheet blocking-filter fix, issue #283): before
-    # that fix its own unrelated non-blocking error (missing proform class,
-    # issue #279) silently withheld this update too, on top of the intended
-    # skip for LANG's unreachable sheet.
+    # arao1248 also updates: its own non-blocking error (missing proform
+    # class, issue #279) must not withhold the update (the _sync_to_sheet
+    # blocking-filter fix, issue #283), on top of the intended skip for
+    # LANG's unreachable sheet.
     assert "Done: 2 Sheet(s) updated." in out
 
 

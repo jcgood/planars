@@ -565,6 +565,10 @@ def test_a_keystone_row_writes_na_only_into_criterion_columns(env):
     def edit(df):
         keystone = df.index[df["Position_Name"] == "v:verbstem"][0]
         df.at[keystone, "Elements"] = df.at[keystone, "Elements"] + f", {NEW_ELEMENT}"
+        # synth0001 has the biuniqueness class, which needs every element's
+        # scope listed beside it; the keystone's elements are out of scope.
+        if "Biuniqueness_Scope" in df.columns:
+            df.at[keystone, "Biuniqueness_Scope"] = df.at[keystone, "Biuniqueness_Scope"] + ", excluded"
     env.edit_planar("synth0001", edit)
 
     env.run(["update-sheets", "--apply"])

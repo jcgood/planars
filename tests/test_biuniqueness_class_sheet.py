@@ -73,6 +73,8 @@ def regen(env, construction, *extra):
 
 @pytest.fixture
 def created(env):
+    # The frozen data already has synth0001's live class sheet; start from none.
+    env.remove_class(LANG, CLASS)
     add_class(env)
     out = env.run(["generate-sheets", "--apply"])
     assert "[SystemExit:" not in out, out

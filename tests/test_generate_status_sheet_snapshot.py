@@ -336,14 +336,24 @@ def test_a_pair_row_construction_gets_a_real_percentage(env):
 
 
 def test_green_for_a_fully_complete_pair_row_construction(env):
+    """Fills every criterion cell of stan1293's nonpermutability/general first,
+    rather than relying on a captured tab that happens to be complete (the one
+    this used to rely on, phrasal_accent/general, was rebuilt empty)."""
     doorway, run, _ = env
+    manifest = doorway.download_file_json(MANIFEST_FILE_ID)
+    sid = manifest["stan1293"]["sheets"]["nonpermutability"]["spreadsheet_id"]
+    tab = doorway.spreadsheet(sid).worksheet("general")
+    values = tab.get_all_values()
+    col = values[0].index("scopal")
+    for r in range(1, len(values)):
+        tab._cell(r, col).value = "y"
     run(["gen", "--lang", "stan1293", "--apply"])
     ss = the_sheet(doorway, "status_stan1293")
     ws = ss.worksheet("Status")
-    row = status_row_index(ss, "phrasal_accent", "general")
-    # The fixture's phrasal_accent/general tab is fully filled (568/568).
+    row = status_row_index(ss, "nonpermutability", "general")
+    n = len(values) - 1
     assert ws._cell(row, 2).background == gen._GREEN
-    assert ws.get_all_values()[row][2] == "568/568 filled (100%)"
+    assert ws.get_all_values()[row][2] == f"{n}/{n} filled (100%)"
 
 
 # ---------------------------------------------------------------------------

@@ -27,7 +27,10 @@
 
 ── ANNOTATION SHEETS ───────────────────────────────────────────────────
   ✓  Araona [arao1248] · ciscategorial · general
+  ✓  Araona [arao1248] · free_occurrence · general
   ✓  Araona [arao1248] · noninterruption · general
+  ✓  Araona [arao1248] · nonpermutability · element_prescreening
+  ✓  Araona [arao1248] · nonpermutability · general
   ✓  Araona [arao1248] · subspanrepetition · auxiliary_construction
   ✓  Araona [arao1248] · subspanrepetition · tso_clause_linkage
 

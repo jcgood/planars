@@ -12,6 +12,13 @@ DRY RUN — Languages: ['arao1248', 'stan1293', 'synth0001']
     [auxiliary_construction] up to date
     [tso_clause_linkage] up to date
 
+  nonpermutability
+    [element_prescreening] up to date
+    [general] up to date (pair-row tab — row updates skipped)
+
+  free_occurrence
+    [general] up to date
+
   ciscategorial
     [general] up to date
 
@@ -50,7 +57,7 @@ DRY RUN — Languages: ['arao1248', 'stan1293', 'synth0001']
 
   phrasal_accent
     [prescreening] up to date
-    [general] up to date
+    [general] up to date (pair-row tab — row updates skipped)
 
   ciscategorial
     [general] up to date
@@ -91,5 +98,10 @@ DRY RUN — Languages: ['arao1248', 'stan1293', 'synth0001']
   phrasal_accent
     [prescreening] up to date
     [general] up to date (pair-row tab — row updates skipped)
+
+  biuniqueness_deviations
+    [prescreening] up to date
+    [morphemes] up to date (keyed-row tab — rows are managed by --regen-construction)
+    [morphs] up to date (keyed-row tab — rows are managed by --regen-construction)
 
 All sheets are up to date.

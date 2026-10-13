@@ -4,12 +4,8 @@ Language: arao1248
   [planar] New positions: ['x:newpos-test'] — queuing update-sheets
   [planar] Archived existing → archive/planar_arao1248_20260804_120000.tsv
   [planar] Downloaded → planar_arao1248.tsv
-  [diagnostics] ERROR (non-blocking): [ERROR] diagnostics_arao1248.tsv: Required class 'free_occurrence' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
-  [diagnostics] ERROR (non-blocking): [ERROR] diagnostics_arao1248.tsv: Required class 'nonpermutability' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
   [diagnostics] ERROR (non-blocking): [ERROR] diagnostics_arao1248.tsv: Required class 'proform' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
-  [diagnostics] Archived existing → archive/diagnostics_arao1248_20260804_120000.tsv
-  [diagnostics] Downloaded → diagnostics_arao1248.tsv
-  [diagnostics] 2 ambiguous YAML drift item(s) — see diagnostics_drift.json
+  [diagnostics] No changes → diagnostics_arao1248.tsv
 
   ciscategorial
     [general] status: 'in-progress' — importing for backup
@@ -25,6 +21,16 @@ Language: arao1248
     [tso_clause_linkage] status: 'in-progress' — importing for backup
     [tso_clause_linkage] [backup] No changes → coded_data/arao1248/subspanrepetition/tso_clause_linkage.tsv
 
+  nonpermutability
+    [element_prescreening] status: 'in-progress' — importing for backup
+    [element_prescreening] [backup] No changes → coded_data/arao1248/nonpermutability/element_prescreening.tsv
+    [general] status: 'in-progress' — importing for backup
+    [general] [backup] No changes → coded_data/arao1248/nonpermutability/general.tsv
+
+  free_occurrence
+    [general] status: 'in-progress' — importing for backup
+    [general] [backup] No changes → coded_data/arao1248/free_occurrence/general.tsv
+
 Language: stan1293
   [planar] Archived existing → archive/planar_stan1293_20260804_120000.tsv
   [planar] Downloaded → planar_stan1293.tsv
@@ -37,14 +43,10 @@ Language: stan1293
     [general] [backup] No changes → coded_data/stan1293/ciscategorial/general.tsv
 
   subspanrepetition
-    [andCoordination] status: 'in-progress' — importing for backup
-    [andCoordination] [backup] No changes → coded_data/stan1293/subspanrepetition/andCoordination.tsv
-    [control] status: 'in-progress' — importing for backup
-    [control] [backup] No changes → coded_data/stan1293/subspanrepetition/control.tsv
-    [thatCOMP] status: 'in-progress' — importing for backup
-    [thatCOMP] [backup] No changes → coded_data/stan1293/subspanrepetition/thatCOMP.tsv
-    [asyndeticPart] status: 'in-progress' — importing for backup
-    [asyndeticPart] [backup] No changes → coded_data/stan1293/subspanrepetition/asyndeticPart.tsv
+    [andCoordination] No changes → coded_data/stan1293/subspanrepetition/andCoordination.tsv
+    [control] No changes → coded_data/stan1293/subspanrepetition/control.tsv
+    [thatCOMP] No changes → coded_data/stan1293/subspanrepetition/thatCOMP.tsv
+    [asyndeticPart] No changes → coded_data/stan1293/subspanrepetition/asyndeticPart.tsv
 
   noninterruption
     [general] status: 'in-progress' — importing for backup
@@ -57,8 +59,7 @@ Language: stan1293
     [flapping] [backup] No changes → coded_data/stan1293/segmental/flapping.tsv
 
   metrical
-    [stress_domain] status: 'in-progress' — importing for backup
-    [stress_domain] [backup] No changes → coded_data/stan1293/metrical/stress_domain.tsv
+    [stress_domain] No changes → coded_data/stan1293/metrical/stress_domain.tsv
 
   free_occurrence
     [general] status: 'in-progress' — importing for backup
@@ -159,6 +160,14 @@ Language: synth0001
     [general] status: 'in-progress' — importing for backup
     [general] [backup] No changes → coded_data/synth0001/phrasal_accent/general.tsv
 
+  biuniqueness_deviations
+    [prescreening] status: 'in-progress' — importing for backup
+    [prescreening] [backup] No changes → coded_data/synth0001/biuniqueness_deviations/prescreening.tsv
+    [morphemes] status: 'in-progress' — importing for backup
+    [morphemes] [backup] No changes → coded_data/synth0001/biuniqueness_deviations/morphemes.tsv
+    [morphs] status: 'in-progress' — importing for backup
+    [morphs] [backup] No changes → coded_data/synth0001/biuniqueness_deviations/morphs.tsv
+
 Done. 0 file(s) written, 1 in-progress backup(s), 0 warning(s).
 
 Next: commit and push coded_data/ before pushing planars:
@@ -167,11 +176,8 @@ Next: commit and push coded_data/ before pushing planars:
   git -C coded_data push
 manifest.json updated on Drive with languages.yaml metadata.
 
-⚠  3 destructive change(s) written to pending_changes.json
+⚠  1 destructive change(s) written to pending_changes.json
    Review and apply with: python -m coding apply-pending
-
-⚠  1 language(s) have ambiguous YAML drift — see diagnostics_drift.json
-   Resolve with: python -m coding sync-diagnostics-yaml --from-tsv --apply
 
 Auto-applying 1 safe downstream command(s):
   python -m coding update-sheets --apply
@@ -179,12 +185,13 @@ Auto-applying 1 safe downstream command(s):
 --- Revalidating sheets ---
 
 arao1248
-  Diagnostics validation (3 issue(s)):
-    [ERROR] diagnostics_arao1248.tsv: Required class 'free_occurrence' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
-    [ERROR] diagnostics_arao1248.tsv: Required class 'nonpermutability' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
+  Diagnostics validation (1 issue(s)):
     [ERROR] diagnostics_arao1248.tsv: Required class 'proform' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
   [ciscategorial/general] 288 blank cell(s) — annotation in progress
+  [free_occurrence/general] 361 blank cell(s) — annotation in progress
   [noninterruption/general] 144 blank cell(s) — annotation in progress
+  [nonpermutability/element_prescreening] 73 blank cell(s) — annotation in progress
+  [nonpermutability/general] 253 blank cell(s) — annotation in progress
   [subspanrepetition/auxiliary_construction] no issues
   [subspanrepetition/tso_clause_linkage] no issues
 
@@ -192,43 +199,46 @@ stan1293
   Diagnostics validation (2 issue(s)):
     [WARNING] row 12: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
     [WARNING] row 13: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
-  [ciscategorial/general] 45 blank cell(s) — annotation in progress
+  [ciscategorial/general] no issues
   [coreference/prescreening] 15 blank cell(s) — annotation in progress
   [coreference/reflexivization] 54 blank cell(s) — annotation in progress
   [coreference/pronominalization] 54 blank cell(s) — annotation in progress
   [coreference/np_reference] 54 blank cell(s) — annotation in progress
   [free_occurrence/general] 75 blank cell(s) — annotation in progress
-  [metrical/stress_domain] 75 blank cell(s) — annotation in progress
-  [noninterruption/general] 30 blank cell(s) — annotation in progress
+  [metrical/stress_domain] no issues
+  [noninterruption/general] no issues
   [nonpermutability/element_prescreening] 15 blank cell(s) — annotation in progress
   [nonpermutability/general] 112 blank cell(s) — annotation in progress
   [phrasal_accent/prescreening] 142 blank cell(s) — annotation in progress
-  [phrasal_accent/general] 1 issue(s):
-    [ERROR] general: the sheet's rows are not the shape this construction is supposed to have. Expected pair rows (Element_A, Element_B); the sheet's columns are ['Element', 'Position_Name', 'Position_Number', 'joint_accent', 'Source', 'Comments']. Nothing else was checked, because every value would have been read from the wrong column.
-    → Either rebuild the sheet:  python -m coding generate-sheets --lang stan1293 --regen-construction phrasal_accent:general
-      or correct row_type for this construction in schemas/diagnostic_classes.yaml, if the sheet is the one that is right.
+  [phrasal_accent/general] no issues
   [proform/do_so_substitution] 15 blank cell(s) — annotation in progress
   [proform/vp_ellipsis] 136 blank cell(s) — annotation in progress
   [segmental/aspiration_prominence] 15 blank cell(s) — annotation in progress
   [segmental/flapping] 42 blank cell(s) — annotation in progress
-  [subspanrepetition/andCoordination] 45 blank cell(s) — annotation in progress
-  [subspanrepetition/control] 45 blank cell(s) — annotation in progress
-  [subspanrepetition/thatCOMP] 45 blank cell(s) — annotation in progress
-  [subspanrepetition/asyndeticPart] 45 blank cell(s) — annotation in progress
+  [subspanrepetition/andCoordination] no issues
+  [subspanrepetition/control] no issues
+  [subspanrepetition/thatCOMP] no issues
+  [subspanrepetition/asyndeticPart] no issues
 
 synth0001
   Diagnostics validation (2 issue(s)):
     [WARNING] row 12: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
     [WARNING] row 13: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
+  [biuniqueness_deviations/prescreening] 101 blank cell(s) — annotation in progress
+  [biuniqueness_deviations/morphemes] no issues
+  [biuniqueness_deviations/morphs] no issues
   [ciscategorial/general] 422 blank cell(s) — annotation in progress
   [coreference/prescreening] 15 blank cell(s) — annotation in progress
-  [coreference/reflexivization] 1 issue(s):
+  [coreference/reflexivization] 2 issue(s):
+    [WARNING] reflexivization: live Sheet header differs from local TSV — Sheet: ['Element_A', 'Position_A', 'Position_B', 'Direction', 'reflexive_allowed', 'Source', 'Comments'], TSV: ['Element_A', 'Position_A', 'Position_B', 'Direction', 'reflexive_allowed', 'pronoun_allowed', 'np_allowed', 'Source', 'Comments']
     [WARNING] reflexivization: criterion columns differ from manifest — expected ['reflexive_allowed'], got ['reflexive_allowed', 'pronoun_allowed', 'np_allowed']
     (1754 blank cell(s) — annotation in progress; use --verbose to list)
-  [coreference/pronominalization] 1 issue(s):
+  [coreference/pronominalization] 2 issue(s):
+    [WARNING] pronominalization: live Sheet header differs from local TSV — Sheet: ['Element_A', 'Position_A', 'Position_B', 'Direction', 'pronoun_allowed', 'Source', 'Comments'], TSV: ['Element_A', 'Position_A', 'Position_B', 'Direction', 'reflexive_allowed', 'pronoun_allowed', 'np_allowed', 'Source', 'Comments']
     [WARNING] pronominalization: criterion columns differ from manifest — expected ['pronoun_allowed'], got ['reflexive_allowed', 'pronoun_allowed', 'np_allowed']
     (1754 blank cell(s) — annotation in progress; use --verbose to list)
-  [coreference/np_reference] 1 issue(s):
+  [coreference/np_reference] 2 issue(s):
+    [WARNING] np_reference: live Sheet header differs from local TSV — Sheet: ['Element_A', 'Position_A', 'Position_B', 'Direction', 'np_allowed', 'Source', 'Comments'], TSV: ['Element_A', 'Position_A', 'Position_B', 'Direction', 'reflexive_allowed', 'pronoun_allowed', 'np_allowed', 'Source', 'Comments']
     [WARNING] np_reference: criterion columns differ from manifest — expected ['np_allowed'], got ['reflexive_allowed', 'pronoun_allowed', 'np_allowed']
     (1754 blank cell(s) — annotation in progress; use --verbose to list)
   [free_occurrence/general] 75 blank cell(s) — annotation in progress
@@ -248,5 +258,5 @@ synth0001
   [subspanrepetition/asyndeticPart] 423 blank cell(s) — annotation in progress
 
 ──────────────────────────────────────────────────
-Validated 44 sheet(s).  Data coding issues: 4
+Validated 50 sheet(s).  Data coding issues: 6
 Cell highlighting updated in Google Sheets.
