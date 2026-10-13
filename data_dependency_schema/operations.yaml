@@ -34,6 +34,7 @@
     command's tests run against. Both live in planars-data (private).
   side_effects:
     - "overwrites coded_data/.test_fixtures/drive_state/{lang}/*.json, manifest.json, and index.json (index entries for languages not captured this run are kept)"
+    - "deletes a captured language's recording of any spreadsheet the manifest no longer lists (kept if its capture failed this run)"
     - "replaces coded_data/.test_fixtures/coded_data/{lang}/ with a copy of coded_data/{lang}/ for each captured language"
     - "leaves those changes uncommitted in planars-data; the coordinator regenerates the saved test outputs, reviews, and commits"
   idempotent: true
@@ -60,7 +61,9 @@
     diagnostics classes. This record's top-level fields describe the base
     command (dry-run by default); --regen-construction and --regen-dependents
     are separate, always-live code paths with their own preconditions and
-    facts, described under modes below.
+    facts, described under modes below. A language whose planar or
+    diagnostics file has a blocking validation error is skipped, with the
+    error printed (since 2026-10-13; before, it was built anyway).
   side_effects:
     - >-
       creates/updates the language's Drive folder, notes doc,
@@ -129,7 +132,7 @@
       description: >-
         Fills a dependent tab (nonpermutability's general from
         element_prescreening, biuniqueness_deviations' morphemes from
-        prescreening, ...) only when it has no rows: it doesn't exist yet,
+        elements, ...) only when it has no rows: it doesn't exist yet,
         or it is empty and its source tab is marked ready-for-review in the
         Status tab -- never overwrites one with rows.
       side_effects:
@@ -646,6 +649,7 @@
   side_effects:
     - "moves coded_data/{lang}/{class}/ TSVs to coded_data/{lang}/archive/{class}/"
     - "moves the class's Drive spreadsheet to the _archived/ subfolder"
+    - "makes that spreadsheet read-only for everyone but its owner (drive.make_read_only, since 2026-10-13)"
     - "removes the class's entry from sheets_manifest.json"
   idempotent: true
   idempotency_note: >-

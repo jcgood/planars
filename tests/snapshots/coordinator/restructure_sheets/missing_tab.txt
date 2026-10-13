@@ -124,6 +124,20 @@ Language: stan1293
     Status tab created (2 construction(s))
     New sheet (v2): https://docs.google.com/spreadsheets/d/fake_ss_0030
 
+  biuniqueness_deviations (current v1)
+    [elements] downloaded 135 rows
+    [morphemes] downloaded 0 rows
+    [morphs] downloaded 0 rows
+    [elements] carry over 128; rename 7; new blank 0
+    Archived to _archived/biuniqueness_deviations_stan1293_v1
+    [elements] wrote: carried 135, new blank 0, dropped 0
+    [morphemes] (keyed tab) copied 0 rows, 0 cell(s) renamed
+    [morphs] (keyed tab) copied 0 rows, 0 cell(s) renamed
+    Tab: Planar Structure (planar reference)
+    Instructions tab created
+    Status tab created (3 construction(s))
+    New sheet (v2): https://docs.google.com/spreadsheets/d/fake_ss_0033
+
 Manifest updated on Drive.
 
 Done.
@@ -150,6 +164,7 @@ Done.
   [stan1293] coreference: https://docs.google.com/spreadsheets/d/fake_ss_0024
   [stan1293] proform: https://docs.google.com/spreadsheets/d/fake_ss_0027
   [stan1293] phrasal_accent: https://docs.google.com/spreadsheets/d/fake_ss_0030
+  [stan1293] biuniqueness_deviations: https://docs.google.com/spreadsheets/d/fake_ss_0033
 
 --- Notifying language tracking issues ---
   [stan1293] commented on issue #999

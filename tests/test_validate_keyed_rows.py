@@ -100,7 +100,7 @@ def test_element_rows_keep_free_text_members_as_typed():
     values = {"has_allomorphs": ["y", "n"], "members": ["<free_text>"],
               "co_exponents": ["<position_names>"]}
     records, issues = vc.validate_annotation_rows(
-        rows, ["has_allomorphs", "members", "co_exponents"], "prescreening", values, lang_id="x")
+        rows, ["has_allomorphs", "members", "co_exponents"], "elements", values, lang_id="x")
     assert issues == []
     assert records[0]["members"] == "Am, Are, Is" and records[0]["has_allomorphs"] == "y"
 
@@ -111,5 +111,5 @@ def test_element_rows_check_co_exponent_positions():
     rows = [header, ["be", "v:progressive", "22", "n", "v:verbinflexion", "", ""]]
     values = {"has_allomorphs": ["y", "n"], "co_exponents": ["<position_names>"]}
     _, issues = vc.validate_annotation_rows(rows, ["has_allomorphs", "co_exponents"],
-                                            "prescreening", values, lang_id="x")
+                                            "elements", values, lang_id="x")
     assert any("v:verbinflexion" in i.message for i in issues)

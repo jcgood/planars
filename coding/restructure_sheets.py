@@ -113,7 +113,7 @@ from .schemas import apply_schema_criteria, load_diagnostic_classes
 from planars.schema_values import is_keystone as _is_keystone
 from .drive import (
     _autocommit_data, _load_drive_config, _save_drive_config, _with_retry,
-    load_manifest, remove_anyone_permission, upload_manifest,
+    load_manifest, remove_anyone_permission, set_user_role, upload_manifest,
 )
 from .drive_doorway import SpreadsheetHandle, WorksheetHandle, WorksheetNotFound, get_doorway
 from .generate_sheets import (
@@ -234,11 +234,17 @@ def _lock_archived_sheet(doorway, file_id: str, lang_id: str) -> None:
     retries every call (Phase 8, issue #271, found by fault injection: a
     single rate-limit blip during archiving used to crash the whole run and
     manufacture a false interrupted-run recovery event).
+
+    The annotator's grant is *set* to reader (`drive.set_user_role`), not
+    added: until 2026-10-13 this created a reader grant beside the writer one
+    every class sheet gives its annotator, and Google kept the writer, so no
+    archived sheet was ever actually read-only. Also used by prune-manifest
+    for a retired class's sheet.
     """
     remove_anyone_permission(doorway, file_id)
     email = _annotator_email(lang_id)
     if email:
-        _with_retry(lambda: doorway.create_permission(file_id, type="user", role="reader", email=email))
+        set_user_role(doorway, file_id, email, "reader")
 
 
 # ---------------------------------------------------------------------------
@@ -256,9 +262,10 @@ def _rollback_unit(doorway, manifest, entry: dict) -> None:
     for this unit, so it already still points at the sheet being restored
     here.
 
-    Removes only the ONE permission `_lock_archived_sheet` itself would have
-    added (the annotator's reader grant, matched by email) rather than every
-    'user'-type permission on the sheet. An earlier version swept all
+    Changes only the ONE permission `_lock_archived_sheet` itself changed
+    (the annotator's grant, matched by email, set back to writer by
+    `drive.set_user_role`) rather than every 'user'-type permission on the
+    sheet. An earlier version swept all
     'user'-type grants, which silently dropped a co-annotator's pre-existing
     access if the sheet had one before archiving even started -- found by
     Phase 8's fault-injection tests (issue #271), which is exactly the class
@@ -280,12 +287,7 @@ def _rollback_unit(doorway, manifest, entry: dict) -> None:
     _with_retry(lambda: doorway.update_file(archived_id, name=f"{class_name}_{lang_id}"))
     email = _annotator_email(lang_id)
     if email:
-        for p in _with_retry(lambda: doorway.list_permissions(
-            archived_id, fields="permissions(id,type,emailAddress)"
-        )):
-            if p.get("type") == "user" and p.get("emailAddress") == email:
-                _with_retry(lambda: doorway.delete_permission(archived_id, p["id"]))
-        _with_retry(lambda: doorway.create_permission(archived_id, type="user", role="writer", email=email))
+        set_user_role(doorway, archived_id, email, "writer")
     print(f"    [{lang_id}] {class_name}: rolled back — sheet restored, un-archived.")
 
 
@@ -934,12 +936,12 @@ def _position_param_cols(param_values: Dict[str, List[str]]) -> Set[str]:
 def _element_rows_for(class_name: str, construction: str, element_index, lang_id: str,
                       param_names: List[str], planar_file: Path) -> List[List[object]]:
     """The element rows a rebuilt tab should have. Every class takes every
-    planar element, except biuniqueness_deviations' prescreening, which takes
-    only those its Biuniqueness_Scope column puts in scope (#254)."""
-    if class_name == _br.CLASS_NAME and construction == "prescreening":
+    planar element, except biuniqueness_deviations' elements tab, which takes
+    only those in biuniqueness scope (biuniqueness_rows.scoped_elements, #254)."""
+    if class_name == _br.CLASS_NAME and construction == _br.ELEMENTS:
         planar_df = pd.read_csv(planar_file.parent / f"planar_{lang_id}.tsv", sep="\t",
                                 dtype=str, keep_default_na=False)
-        return _br.prescreening_rows(planar_df, lang_id, param_names)
+        return _br.element_rows(planar_df, lang_id, param_names)
     return _build_rows(element_index, lang_id, param_names)
 
 

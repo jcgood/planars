@@ -502,7 +502,7 @@ jobs:
                   f.write("_(Details could not be extracted — see full log.)_\n")
               f.write("\n## What to do\n\n")
               f.write("A tab that is generated from an earlier tab (a pair list from its "
-                      "prescreening; for biuniqueness_deviations, morphemes from prescreening "
+                      "prescreening; for biuniqueness_deviations, morphemes from elements "
                       "and morphs from morphemes) no longer matches the answers it was "
                       "generated from, so it needs to be regenerated.\n\n")
               f.write("**This requires coordinator action** because the generated tab may "

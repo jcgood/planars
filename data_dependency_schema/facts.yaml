@@ -511,13 +511,13 @@
   description: >-
     which morphemes and which (morpheme, position, form) rows the
     biuniqueness_deviations class asks about (#254): the morphemes tab is
-    generated from the prescreening answers, and the morphs tab from the
+    generated from the elements tab's answers, and the morphs tab from the
     morphemes tab crossed with the planar. Also which constructions are keyed
     rows at all, and which columns key them.
   locations:
-    - {entity: annotation_sheet, detail: "the class sheet's three tabs -- prescreening (element rows), morphemes and morphs (keyed rows). The annotator's answers live here; the Sheet owns them, as for every annotated class (decided 2026-10-11, replacing #249's 'coordinator-edited tables, no sheet' framing)"}
-    - {entity: construction_tsv, detail: "coded_data/{lang}/biuniqueness_deviations/{prescreening,morphemes,morphs}.tsv -- the imported copies; the SOURCE tab's TSV is what the next tab is generated from"}
-    - {entity: schema_yaml, detail: "schemas/diagnostic_classes.yaml -- row_type: keyed_rows, keyed_columns, key, blank_ok_when on the morphemes/morphs constructions; read only through restructure_sheets._get_keyed_row_constructions()"}
+    - {entity: annotation_sheet, detail: "the class sheet's three tabs -- elements (element rows), morphemes and morphs (keyed rows). The annotator's answers live here; the Sheet owns them, as for every annotated class (decided 2026-10-11, replacing #249's 'coordinator-edited tables, no sheet' framing)"}
+    - {entity: construction_tsv, detail: "coded_data/{lang}/biuniqueness_deviations/{elements,morphemes,morphs}.tsv -- the imported copies; the SOURCE tab's TSV is what the next tab is generated from"}
+    - {entity: schema_yaml, detail: "schemas/diagnostic_classes.yaml -- the tab names and their order (the depends_on chain, read only by planars.biuniqueness_deviations._tab_chain), and row_type: keyed_rows, keyed_columns, key, blank_ok_when on the morphemes/morphs constructions (read only through restructure_sheets._get_keyed_row_constructions())"}
   authoritative: annotation_sheet
   cascade:
     direction: manual
@@ -534,7 +534,7 @@
   drift_risk:
     possible: true
     note: >-
-      Adam changes prescreening (or morphemes) and it is imported, but the
+      Adam changes the elements tab (or morphemes) and it is imported, but the
       dependent tab is not regenerated: the tab then asks about morphemes the
       source no longer names, or misses ones it now does. Answers are never
       lost silently -- regeneration refuses to drop an answered row -- but

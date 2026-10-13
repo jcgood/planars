@@ -1,11 +1,11 @@
 
 Language: stan1293
-  split element:   'her' -> HERACC, HERDAT
+  split element:   'her' -> heracc, herdat
 
   ciscategorial (current v2)
     [general] downloaded 142 rows
     [general] carry over 140; new blank 3; drop 2 (her@v:obj-part, NP{P,T}@v:obj-part)
-    [general] split: her -> HERACC, HERDAT (2 new, breadcrumbed to archived sheet)
+    [general] split: her -> heracc, herdat (2 new, breadcrumbed to archived sheet)
     Archived to _archived/ciscategorial_stan1293_v2
     [general] wrote: carried 140, new blank 3, dropped 2
     Instructions tab created
@@ -18,13 +18,13 @@ Language: stan1293
     [thatCOMP] downloaded 142 rows
     [asyndeticPart] downloaded 142 rows
     [andCoordination] carry over 140; new blank 3; drop 2 (her@v:obj-part, NP{P,T}@v:obj-part)
-    [andCoordination] split: her -> HERACC, HERDAT (2 new, breadcrumbed to archived sheet)
+    [andCoordination] split: her -> heracc, herdat (2 new, breadcrumbed to archived sheet)
     [control] carry over 140; new blank 3; drop 2 (her@v:obj-part, NP{P,T}@v:obj-part)
-    [control] split: her -> HERACC, HERDAT (2 new, breadcrumbed to archived sheet)
+    [control] split: her -> heracc, herdat (2 new, breadcrumbed to archived sheet)
     [thatCOMP] carry over 140; new blank 3; drop 2 (her@v:obj-part, NP{P,T}@v:obj-part)
-    [thatCOMP] split: her -> HERACC, HERDAT (2 new, breadcrumbed to archived sheet)
+    [thatCOMP] split: her -> heracc, herdat (2 new, breadcrumbed to archived sheet)
     [asyndeticPart] carry over 140; new blank 3; drop 2 (her@v:obj-part, NP{P,T}@v:obj-part)
-    [asyndeticPart] split: her -> HERACC, HERDAT (2 new, breadcrumbed to archived sheet)
+    [asyndeticPart] split: her -> heracc, herdat (2 new, breadcrumbed to archived sheet)
     Archived to _archived/subspanrepetition_stan1293_v2
     [andCoordination] wrote: carried 140, new blank 3, dropped 2
     [control] wrote: carried 140, new blank 3, dropped 2
@@ -37,7 +37,7 @@ Language: stan1293
   noninterruption (current v2)
     [general] downloaded 142 rows
     [general] carry over 140; new blank 3; drop 2 (her@v:obj-part, NP{P,T}@v:obj-part)
-    [general] split: her -> HERACC, HERDAT (2 new, breadcrumbed to archived sheet)
+    [general] split: her -> heracc, herdat (2 new, breadcrumbed to archived sheet)
     Archived to _archived/noninterruption_stan1293_v2
     [general] wrote: carried 140, new blank 3, dropped 2
     Instructions tab created
@@ -47,7 +47,7 @@ Language: stan1293
   metrical (current v2)
     [stress_domain] downloaded 142 rows
     [stress_domain] carry over 140; new blank 3; drop 2 (her@v:obj-part, NP{P,T}@v:obj-part)
-    [stress_domain] split: her -> HERACC, HERDAT (2 new, breadcrumbed to archived sheet)
+    [stress_domain] split: her -> heracc, herdat (2 new, breadcrumbed to archived sheet)
     Archived to _archived/metrical_stan1293_v2
     [stress_domain] wrote: carried 140, new blank 3, dropped 2
     Instructions tab created
@@ -58,7 +58,7 @@ Language: stan1293
     [element_prescreening] downloaded 142 rows
     [general] downloaded 0 rows
     [element_prescreening] carry over 140; new blank 3; drop 2 (her@v:obj-part, NP{P,T}@v:obj-part)
-    [element_prescreening] split: her -> HERACC, HERDAT (2 new, breadcrumbed to archived sheet)
+    [element_prescreening] split: her -> heracc, herdat (2 new, breadcrumbed to archived sheet)
     Archived to _archived/nonpermutability_stan1293_v2
     [element_prescreening] wrote: carried 140, new blank 3, dropped 2
     [general] (pair tab) copied 144 rows, 0 cell(s) renamed, 16 row(s) split (blank, old judgment quoted in Comments), 1 self-pair row(s) on a split element — NEEDS MANUAL REVIEW, not auto-handled
@@ -71,9 +71,9 @@ Language: stan1293
     [aspiration_prominence] downloaded 142 rows
     [flapping] downloaded 142 rows
     [aspiration_prominence] carry over 140; new blank 3; drop 2 (her@v:obj-part, NP{P,T}@v:obj-part)
-    [aspiration_prominence] split: her -> HERACC, HERDAT (2 new, breadcrumbed to archived sheet)
+    [aspiration_prominence] split: her -> heracc, herdat (2 new, breadcrumbed to archived sheet)
     [flapping] carry over 140; new blank 3; drop 2 (her@v:obj-part, NP{P,T}@v:obj-part)
-    [flapping] split: her -> HERACC, HERDAT (2 new, breadcrumbed to archived sheet)
+    [flapping] split: her -> heracc, herdat (2 new, breadcrumbed to archived sheet)
     Archived to _archived/segmental_stan1293_v2
     [aspiration_prominence] wrote: carried 140, new blank 3, dropped 2
     [flapping] wrote: carried 140, new blank 3, dropped 2
@@ -84,7 +84,7 @@ Language: stan1293
   free_occurrence (current v2)
     [general] downloaded 142 rows
     [general] carry over 140; new blank 3; drop 2 (her@v:obj-part, NP{P,T}@v:obj-part)
-    [general] split: her -> HERACC, HERDAT (2 new, breadcrumbed to archived sheet)
+    [general] split: her -> heracc, herdat (2 new, breadcrumbed to archived sheet)
     Archived to _archived/free_occurrence_stan1293_v2
     [general] wrote: carried 140, new blank 3, dropped 2
     Instructions tab created
@@ -97,7 +97,7 @@ Language: stan1293
     [pronominalization] downloaded 0 rows
     [np_reference] downloaded 0 rows
     [prescreening] carry over 140; new blank 3; drop 2 (her@v:obj-part, NP{P,T}@v:obj-part)
-    [prescreening] split: her -> HERACC, HERDAT (2 new, breadcrumbed to archived sheet)
+    [prescreening] split: her -> heracc, herdat (2 new, breadcrumbed to archived sheet)
     Archived to _archived/coreference_stan1293_v4
     [prescreening] wrote: carried 140, new blank 3, dropped 2
     [reflexivization] (pair tab) copied 168 rows, 0 cell(s) renamed, 10 row(s) split (blank, old judgment quoted in Comments)
@@ -112,9 +112,9 @@ Language: stan1293
     [do_so_substitution] downloaded 142 rows
     [vp_ellipsis] downloaded 142 rows
     [do_so_substitution] carry over 140; new blank 3; drop 2 (her@v:obj-part, NP{P,T}@v:obj-part)
-    [do_so_substitution] split: her -> HERACC, HERDAT (2 new, breadcrumbed to archived sheet)
+    [do_so_substitution] split: her -> heracc, herdat (2 new, breadcrumbed to archived sheet)
     [vp_ellipsis] carry over 140; new blank 3; drop 2 (her@v:obj-part, NP{P,T}@v:obj-part)
-    [vp_ellipsis] split: her -> HERACC, HERDAT (2 new, breadcrumbed to archived sheet)
+    [vp_ellipsis] split: her -> heracc, herdat (2 new, breadcrumbed to archived sheet)
     Archived to _archived/proform_stan1293_v2
     [do_so_substitution] wrote: carried 140, new blank 3, dropped 2
     [vp_ellipsis] wrote: carried 140, new blank 3, dropped 2
@@ -126,13 +126,28 @@ Language: stan1293
     [prescreening] downloaded 142 rows
     [general] downloaded 0 rows
     [prescreening] carry over 140; new blank 3; drop 2 (her@v:obj-part, NP{P,T}@v:obj-part)
-    [prescreening] split: her -> HERACC, HERDAT (2 new, breadcrumbed to archived sheet)
+    [prescreening] split: her -> heracc, herdat (2 new, breadcrumbed to archived sheet)
     Archived to _archived/phrasal_accent_stan1293_v1
     [prescreening] wrote: carried 140, new blank 3, dropped 2
     [general] (pair tab) copied 0 rows, 0 cell(s) renamed
     Instructions tab created
     Status tab created (2 construction(s))
     New sheet (v2): https://docs.google.com/spreadsheets/d/fake_ss_0030
+
+  biuniqueness_deviations (current v1)
+    [elements] downloaded 135 rows
+    [morphemes] downloaded 0 rows
+    [morphs] downloaded 0 rows
+    [elements] carry over 134; new blank 2; drop 1 (her@v:obj-part)
+    [elements] split: her -> heracc, herdat (2 new, breadcrumbed to archived sheet)
+    Archived to _archived/biuniqueness_deviations_stan1293_v1
+    [elements] wrote: carried 134, new blank 2, dropped 1
+    [morphemes] (keyed tab) copied 0 rows, 0 cell(s) renamed
+    [morphs] (keyed tab) copied 0 rows, 0 cell(s) renamed
+    Tab: Planar Structure (planar reference)
+    Instructions tab created
+    Status tab created (3 construction(s))
+    New sheet (v2): https://docs.google.com/spreadsheets/d/fake_ss_0033
 
 Manifest updated on Drive.
 
@@ -160,6 +175,7 @@ Done.
   [stan1293] coreference: https://docs.google.com/spreadsheets/d/fake_ss_0024
   [stan1293] proform: https://docs.google.com/spreadsheets/d/fake_ss_0027
   [stan1293] phrasal_accent: https://docs.google.com/spreadsheets/d/fake_ss_0030
+  [stan1293] biuniqueness_deviations: https://docs.google.com/spreadsheets/d/fake_ss_0033
 
 --- Notifying language tracking issues ---
   [stan1293] commented on issue #999

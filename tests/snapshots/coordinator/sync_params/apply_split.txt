@@ -48,6 +48,9 @@ Splits:   ['free:free_left:free_right']
   [proform/vp_ellipsis] Split: free not found — skipping
   [phrasal_accent/prescreening] Split: free not found — skipping
   [phrasal_accent/general] Split: free not found — skipping
+  [biuniqueness_deviations/elements] Split: free not found — skipping
+  [biuniqueness_deviations/morphemes] Split: free not found — skipping
+  [biuniqueness_deviations/morphs] Split: free not found — skipping
   [noninterruption] diagnostics Criteria: 'free{y/n}, multiple{y/n}' -> 'free_left{y/n}, free_right{y/n}, multiple{y/n}'
   [free_occurrence] diagnostics Criteria: 'free{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}' -> 'free_left{y/n}, free_right{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}'
   [synth0001] YAML updated → diagnostics_synth0001.yaml
@@ -79,9 +82,6 @@ Splits:   ['free:free_left:free_right']
   [proform/vp_ellipsis] Split: free not found — skipping
   [phrasal_accent/prescreening] Split: free not found — skipping
   [phrasal_accent/general] Split: free not found — skipping
-  [biuniqueness_deviations/prescreening] Split: free not found — skipping
-  [biuniqueness_deviations/morphemes] Split: free not found — skipping
-  [biuniqueness_deviations/morphs] Split: free not found — skipping
 
 Manifest updated on Drive.
 

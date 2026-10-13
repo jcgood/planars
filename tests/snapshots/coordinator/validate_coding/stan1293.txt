@@ -4,6 +4,9 @@ stan1293
   Diagnostics validation (2 issue(s)):
     [WARNING] row 12: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
     [WARNING] row 13: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
+  [biuniqueness_deviations/elements] 101 blank cell(s) — annotation in progress
+  [biuniqueness_deviations/morphemes] no issues
+  [biuniqueness_deviations/morphs] no issues
   [ciscategorial/general] no issues
   [coreference/prescreening] 15 blank cell(s) — annotation in progress
   [coreference/reflexivization] 54 blank cell(s) — annotation in progress
@@ -26,5 +29,5 @@ stan1293
   [subspanrepetition/asyndeticPart] no issues
 
 ──────────────────────────────────────────────────
-Validated 20 sheet(s).  Data coding issues: 0
+Validated 23 sheet(s).  Data coding issues: 0
 All data coding issues cleared. (Pink highlighting for blank cells preserved.)

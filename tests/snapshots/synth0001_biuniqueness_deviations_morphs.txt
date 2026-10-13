@@ -1,6 +1,0 @@
-Synth0001 Biuniqueness Deviations Morphs
-========================================
-
-Keystone position: 30 (v:verbstem)
-
-No biuniqueness deviations found.

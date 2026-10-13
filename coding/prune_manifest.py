@@ -15,7 +15,8 @@ For each stale class (in manifest but not in diagnostics.tsv), --apply will:
   1. Write a timestamped manifest snapshot to manifest_archives/ (gitignored)
   2. Archive each active *.tsv in coded_data/{lang}/{class}/ to its archive/ subdirectory
   3. Remove the now-archived active TSV files
-  4. Move the Drive spreadsheet into an _archived/ subfolder in the language's Drive folder
+  4. Move the Drive spreadsheet into an _archived/ subfolder in the language's Drive folder,
+     and make it read-only for everyone but its owner (drive.make_read_only)
   5. Remove the class entry from the Drive manifest and re-upload it
 
 The Drive sheet is moved to _archived/, not deleted — annotation data is irreplaceable.
@@ -42,6 +43,7 @@ MANIFEST_ARCHIVES = ROOT / "manifest_archives"
 
 from .drive import (
     load_manifest,
+    make_read_only,
     upload_manifest,
     _load_drive_config,
     _save_drive_config,
@@ -141,6 +143,9 @@ def _archive_drive_sheet(
         archived_folder_id = _with_retry(lambda: doorway.get_or_create_folder("_archived", folder_id))
         _with_retry(lambda: doorway.move_file(spreadsheet_id, archived_folder_id))
         print(f"    archived Drive sheet: '{sheet_name}' → _archived/")
+        lowered = make_read_only(doorway, spreadsheet_id)
+        if lowered:
+            print(f"    made read-only for: {', '.join(lowered)}")
         return True
     except Exception as exc:
         print(f"    WARNING: could not move Drive sheet for {class_name}: {exc}")

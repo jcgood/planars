@@ -203,9 +203,14 @@ def rename_position(rows: List[List[str]]) -> List[List[str]]:
     return rows
 
 
+NEW_COLUMN = "Test_New_Column"
+
+
 def add_column(rows: List[List[str]]) -> List[List[str]]:
-    """A column the local TSV has never heard of."""
-    return [row + ["Biuniqueness_Scope" if i == 0 else "filled"]
+    """A column the local TSV has never heard of (made up, so no real planar
+    already has it)."""
+    assert NEW_COLUMN not in rows[0]
+    return [row + [NEW_COLUMN if i == 0 else "filled"]
             for i, row in enumerate(rows)]
 
 
@@ -400,11 +405,11 @@ def test_a_column_added_in_the_sheet_reaches_the_tsv(env):
 
     out = env.run(["import-planar", "--lang", LANG, "--apply"])
 
-    assert "+ column Biuniqueness_Scope" in out
-    assert env.tsv_rows()[0][-1] == "Biuniqueness_Scope"
+    assert f"+ column {NEW_COLUMN}" in out
+    assert env.tsv_rows()[0][-1] == NEW_COLUMN
     assert env.tsv_rows() == env.sheet_rows()
     assert (json.loads(env.changes_path.read_text())[LANG]["diff"]
-            ["columns_added"] == ["Biuniqueness_Scope"])
+            ["columns_added"] == [NEW_COLUMN])
 
 
 def test_a_column_missing_from_the_sheet_never_erases_it_locally(env):
@@ -503,7 +508,7 @@ def test_to_sheet_names_the_columns_it_is_about_to_add_and_remove(env):
     out = env.run(["import-planar", "--to-sheet", "--lang", LANG, "--apply"])
 
     assert f"[{LANG}]   + column Element_Types" in out
-    assert f"[{LANG}]   - column Biuniqueness_Scope" in out
+    assert f"[{LANG}]   - column {NEW_COLUMN}" in out
     assert env.sheet_rows() == env.tsv_rows()
 
 

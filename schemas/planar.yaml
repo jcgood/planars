@@ -56,8 +56,10 @@ structural_columns:
   - name: Biuniqueness_Scope
     description: >
       Per-element flag for biuniqueness/allomorphy relevance (issue #254 Part 2a).
-      Decides which elements appear on the biuniqueness_deviations class sheet's
-      prescreening tab (built by `python -m coding generate-sheets`; see
+      Records which elements appear on the biuniqueness_deviations class sheet's
+      elements tab. The code computes the same classification from Elements and
+      never reads this column (since 2026-10-13), so a stale column cannot
+      break the sheet; validate_planar still reports it as drift (built by `python -m coding generate-sheets`; see
       coding/biuniqueness_rows.py). Aligned token-for-token
       with Elements (same comma/brace tokenization, same order). Built entirely on top
       of Element_Types + the same ALL-CAPS typography rule used there — no independent
@@ -71,8 +73,9 @@ structural_columns:
       phenomenon and does not apply to an embedded planar structure like NP{S,A} or to
       the KEYSTONE placeholder). Computed by coding.make_forms.classify_biuniqueness_scope().
       validate_planar.py recomputes and flags drift, same pattern as Element_Types.
-      NOT YET BACKFILLED into existing planar_{lang_id}.tsv files — mirrors
-      Element_Types' rollout; synth0001 backfill is issue #254 Part 2b.
+      Present only in planars of languages that annotate biuniqueness_deviations
+      (stan1293, backfilled 2026-10-13 by migrations/move_biuniqueness_to_stan1293.py);
+      a language adding the class needs it backfilled first.
 
 # The Position_Name value that identifies the keystone row. Code reads it
 # through coding.schemas.keystone_name() / planars.io.KEYSTONE_NAME and never

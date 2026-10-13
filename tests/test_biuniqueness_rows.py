@@ -29,18 +29,18 @@ PLANAR = pd.DataFrame([
 ], columns=["Position", "Position_Name", "Elements", "Biuniqueness_Scope"]).assign(
     Language_ID=LANG)
 
-PRESCREEN_PARAMS = ["has_allomorphs", "members", "co_exponents"]
+ELEMENT_PARAMS = ["has_allomorphs", "members", "co_exponents"]
 MORPHEME_ANSWERS = ["morpheme_class", "forms_relation", "Source", "Comments"]
 MORPH_ANSWERS = ["occurs_here", "conditioning_type", "conditioning_features",
                  "conditioned_by", "trigger_filled", "Source", "Comments"]
 
 
-def prescreen(answers):
-    """A filled prescreening tab: every in-scope row, with `answers` applied
+def elements_tab(answers):
+    """A filled elements tab: every in-scope row, with `answers` applied
     by (Element, Position_Name)."""
-    rows = br.prescreening_rows(PLANAR, LANG, PRESCREEN_PARAMS)
+    rows = br.element_rows(PLANAR, LANG, ELEMENT_PARAMS)
     df = pd.DataFrame(rows, columns=["Element", "Position_Name", "Position_Number"]
-                      + PRESCREEN_PARAMS)
+                      + ELEMENT_PARAMS)
     for (element, pos), vals in answers.items():
         mask = (df["Element"] == element) & (df["Position_Name"] == pos)
         assert mask.any(), (element, pos)
@@ -70,11 +70,29 @@ def tab(rows, columns):
 
 
 # ---------------------------------------------------------------------------
-# prescreening
+# elements
 # ---------------------------------------------------------------------------
 
-def test_prescreening_keeps_only_in_scope_elements_in_planar_order():
-    rows = br.prescreening_rows(PLANAR, LANG, PRESCREEN_PARAMS)
+def test_the_tab_names_come_from_the_schemas_depends_on_chain():
+    assert (br.ELEMENTS, br.MORPHEMES, br.MORPHS) == ("elements", "morphemes", "morphs")
+    assert br.sources_of(br.MORPHEMES) == [br.ELEMENTS]
+    assert br.sources_of(br.MORPHS) == [br.ELEMENTS, br.MORPHEMES]
+
+
+def test_a_broken_chain_in_the_schema_is_refused(monkeypatch):
+    import planars.biuniqueness_deviations as bd
+    broken = ("classes:\n  - name: biuniqueness_deviations\n    constructions:\n"
+              "      - {name: elements}\n      - {name: morphemes}\n"
+              "      - {name: morphs, depends_on: morphemes}\n")
+    monkeypatch.setattr(bd, "_res_files", lambda pkg: type("R", (), {
+        "joinpath": lambda self, name: type("F", (), {
+            "read_text": lambda self, encoding=None: broken})()})())
+    with pytest.raises(ValueError, match="one depends_on chain of three tabs"):
+        bd._tab_chain()
+
+
+def test_elements_keeps_only_in_scope_elements_in_planar_order():
+    rows = br.element_rows(PLANAR, LANG, ELEMENT_PARAMS)
     keys = [(r[0], r[1]) for r in rows]
     assert ("NP{S,A}", "v:npsubj1") not in keys       # excluded
     assert ("KEYSTONE", "v:verbstem") not in keys     # excluded
@@ -82,15 +100,28 @@ def test_prescreening_keeps_only_in_scope_elements_in_planar_order():
     assert ("[-ing]", "v:verbinflection") in keys      # hyphen elements bracketed
 
 
-def test_prescreening_open_category_rows_answer_through_members_not_yes_no():
-    rows = {(r[0], r[1]): r for r in br.prescreening_rows(PLANAR, LANG, PRESCREEN_PARAMS)}
+def test_elements_open_category_rows_answer_through_members_not_yes_no():
+    rows = {(r[0], r[1]): r for r in br.element_rows(PLANAR, LANG, ELEMENT_PARAMS)}
     assert rows[("AD-S", "v:ad-S1")][3] == "NA"        # has_allomorphs
     assert rows[("and", "v:leftedge")][3] == ""
 
 
-def test_a_planar_without_the_scope_column_is_refused_with_the_fix():
-    with pytest.raises(ValueError, match="no Biuniqueness_Scope column"):
-        br.prescreening_rows(PLANAR.drop(columns=["Biuniqueness_Scope"]), LANG, PRESCREEN_PARAMS)
+def test_scope_is_computed_from_elements_not_read_from_the_stored_column():
+    """An element added without extending Biuniqueness_Scope used to crash
+    every command that builds this tab (2026-10-13)."""
+    stale = PLANAR.copy()
+    stale.loc[stale["Position_Name"] == "v:modal1", "Elements"] += ", dare"
+    keys = {(r[0], r[1]) for r in br.element_rows(stale, LANG, ELEMENT_PARAMS)}
+    assert ("dare", "v:modal1") in keys
+    assert br.element_rows(PLANAR.drop(columns=["Biuniqueness_Scope"]), LANG,
+                           ELEMENT_PARAMS) == br.element_rows(PLANAR, LANG, ELEMENT_PARAMS)
+
+
+def test_an_unregistered_all_caps_label_is_refused():
+    odd = PLANAR.copy()
+    odd.loc[odd["Position_Name"] == "v:modal1", "Elements"] += ", ZZTOP"
+    with pytest.raises(ValueError, match="ZZTOP"):
+        br.element_rows(odd, LANG, ELEMENT_PARAMS)
 
 
 # ---------------------------------------------------------------------------
@@ -98,7 +129,7 @@ def test_a_planar_without_the_scope_column_is_refused_with_the_fix():
 # ---------------------------------------------------------------------------
 
 def test_morphemes_come_from_yes_rows_open_category_members_and_co_exponents():
-    m = {r["Morpheme"]: r for r in br.morpheme_rows(prescreen(ANSWERS), PLANAR, LANG)}
+    m = {r["Morpheme"]: r for r in br.morpheme_rows(elements_tab(ANSWERS), PLANAR, LANG)}
     assert m["be"]["Origin"] == "filled"
     assert m["will"]["Found_At"] == "v:frontedauxiliary, v:modal1"   # one row, both positions
     assert m["probably"]["Origin"] == "open_category"
@@ -112,7 +143,7 @@ def test_morphemes_come_from_yes_rows_open_category_members_and_co_exponents():
 # ---------------------------------------------------------------------------
 
 def morphs_for(answers=ANSWERS):
-    ps = prescreen(answers)
+    ps = elements_tab(answers)
     morphemes = as_df(br.morpheme_rows(ps, PLANAR, LANG), br.MORPHEMES_STRUCT)
     return br.morph_rows(morphemes, ps, PLANAR, LANG)
 
@@ -169,7 +200,7 @@ def test_forward_a_new_member_form_reaches_every_position_of_the_morpheme():
 def test_forward_an_existing_answer_beats_a_generated_prefill():
     """forms_relation is pre-filled co-occur for a co-exponent; if the
     annotator changed it, regeneration must not change it back."""
-    ps = prescreen(ANSWERS)
+    ps = elements_tab(ANSWERS)
     gen = br.morpheme_rows(ps, PLANAR, LANG)
     existing = [dict(r) for r in gen]
     for r in existing:
@@ -261,15 +292,15 @@ def test_restructure_flags_rows_on_a_split_element_rather_than_guessing():
     assert out[0][-1] == "split will -> will.FUT, will.VOL: review | seen in corpus"
 
 
-def test_restructure_rebuilds_prescreening_from_in_scope_elements_only(tmp_path):
+def test_restructure_rebuilds_elements_from_in_scope_elements_only(tmp_path):
     from coding.restructure_sheets import _element_rows_for
     lang_setup = tmp_path / LANG / "lang_setup"
     lang_setup.mkdir(parents=True)
     PLANAR.to_csv(lang_setup / f"planar_{LANG}.tsv", sep="\t", index=False)
-    rows = _element_rows_for(br.CLASS_NAME, "prescreening", None, LANG,
-                             PRESCREEN_PARAMS, lang_setup / f"planar_{LANG}.tsv")
+    rows = _element_rows_for(br.CLASS_NAME, br.ELEMENTS, None, LANG,
+                             ELEMENT_PARAMS, lang_setup / f"planar_{LANG}.tsv")
     assert ("KEYSTONE", "v:verbstem") not in {(r[0], r[1]) for r in rows}
-    assert rows == br.prescreening_rows(PLANAR, LANG, PRESCREEN_PARAMS)
+    assert rows == br.element_rows(PLANAR, LANG, ELEMENT_PARAMS)
 
 
 def test_restructure_renames_positions_inside_co_exponent_answers():
@@ -308,40 +339,40 @@ def test_integrity_check_reports_a_keyed_tab_out_of_step_with_its_source(tmp_pat
     PLANAR.to_csv(tmp_path / LANG / "lang_setup" / f"planar_{LANG}.tsv", sep="\t", index=False)
     cls_dir = tmp_path / LANG / br.CLASS_NAME
     cls_dir.mkdir()
-    prescreen(ANSWERS).to_csv(cls_dir / "prescreening.tsv", sep="\t", index=False)
-    morphemes = br.morpheme_rows(prescreen(ANSWERS), PLANAR, LANG)
+    elements_tab(ANSWERS).to_csv(cls_dir / f"{br.ELEMENTS}.tsv", sep="\t", index=False)
+    morphemes = br.morpheme_rows(elements_tab(ANSWERS), PLANAR, LANG)
     as_df(morphemes, br.MORPHEMES_STRUCT + ["forms_relation"]).to_csv(
         cls_dir / "morphemes.tsv", sep="\t", index=False)
-    con = {"name": "morphemes", "depends_on": "prescreening", "staleness_check": "keyed_source"}
+    con = {"name": "morphemes", "depends_on": br.ELEMENTS, "staleness_check": "keyed_source"}
 
     assert ic._keyed_staleness(LANG, br.CLASS_NAME, con) == (set(), set())
 
-    # Adam answers one more row in prescreening, and it is imported.
+    # Adam answers one more row in the elements tab, and it is imported.
     more = {**ANSWERS, ("he", "v:npsubj1"): {"has_allomorphs": "y"}}
-    prescreen(more).to_csv(cls_dir / "prescreening.tsv", sep="\t", index=False)
+    elements_tab(more).to_csv(cls_dir / f"{br.ELEMENTS}.tsv", sep="\t", index=False)
     assert ic._keyed_staleness(LANG, br.CLASS_NAME, con) == ({"he"}, set())
 
 
 def test_integrity_check_says_an_empty_keyed_tab_is_waiting(tmp_path, monkeypatch):
     """An empty morphemes tab used to be skipped silently, so nothing said it
-    was waiting once prescreening called for rows (2026-10-12)."""
+    was waiting once the elements tab called for rows (2026-10-12)."""
     from coding import integrity_check as ic
     monkeypatch.setattr(ic, "CODED_DATA", tmp_path)
     (tmp_path / LANG / "lang_setup").mkdir(parents=True)
     PLANAR.to_csv(tmp_path / LANG / "lang_setup" / f"planar_{LANG}.tsv", sep="\t", index=False)
     cls_dir = tmp_path / LANG / br.CLASS_NAME
     cls_dir.mkdir()
-    prescreen(ANSWERS).to_csv(cls_dir / "prescreening.tsv", sep="\t", index=False)
+    elements_tab(ANSWERS).to_csv(cls_dir / f"{br.ELEMENTS}.tsv", sep="\t", index=False)
     as_df([], br.MORPHEMES_STRUCT + ["forms_relation"]).to_csv(
         cls_dir / "morphemes.tsv", sep="\t", index=False)
-    con = {"name": "morphemes", "depends_on": "prescreening", "staleness_check": "keyed_source"}
+    con = {"name": "morphemes", "depends_on": br.ELEMENTS, "staleness_check": "keyed_source"}
 
-    n = len(br.morpheme_rows(prescreen(ANSWERS), PLANAR, LANG))
+    n = len(br.morpheme_rows(elements_tab(ANSWERS), PLANAR, LANG))
     assert n > 0
     assert ic._keyed_staleness(LANG, br.CLASS_NAME, con) == ("empty", n)
 
     # Nothing answered yet: nothing to wait for.
-    prescreen({}).to_csv(cls_dir / "prescreening.tsv", sep="\t", index=False)
+    elements_tab({}).to_csv(cls_dir / f"{br.ELEMENTS}.tsv", sep="\t", index=False)
     assert ic._keyed_staleness(LANG, br.CLASS_NAME, con) is None
 
 

@@ -78,6 +78,12 @@ Languages: ['arao1248', 'stan1293', 'synth0001']
     [general] up to date (pair-row tab — row updates skipped)
     Instructions tab created
 
+  biuniqueness_deviations
+    [elements] up to date
+    [morphemes] up to date (keyed-row tab — rows are managed by --regen-construction)
+    [morphs] up to date (keyed-row tab — rows are managed by --regen-construction)
+    Instructions tab created
+
   ciscategorial
     [general] up to date
     Instructions tab created
@@ -126,12 +132,6 @@ Languages: ['arao1248', 'stan1293', 'synth0001']
   phrasal_accent
     [prescreening] up to date
     [general] up to date (pair-row tab — row updates skipped)
-    Instructions tab created
-
-  biuniqueness_deviations
-    [prescreening] up to date
-    [morphemes] up to date (keyed-row tab — rows are managed by --regen-construction)
-    [morphs] up to date (keyed-row tab — rows are managed by --regen-construction)
     Instructions tab created
 
 Done.

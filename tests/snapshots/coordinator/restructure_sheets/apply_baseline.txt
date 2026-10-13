@@ -96,6 +96,13 @@ Language: stan1293
     [prescreening] carry over 142; new blank 0
     (no changes — skipping)
 
+  biuniqueness_deviations (current v1)
+    [elements] downloaded 135 rows
+    [morphemes] downloaded 0 rows
+    [morphs] downloaded 0 rows
+    [elements] carry over 135; new blank 0
+    (no changes — skipping)
+
 Language: synth0001
 
   ciscategorial (current v3)
@@ -161,13 +168,6 @@ Language: synth0001
     [prescreening] downloaded 142 rows
     [general] downloaded 0 rows
     [prescreening] carry over 142; new blank 0
-    (no changes — skipping)
-
-  biuniqueness_deviations (current v1)
-    [prescreening] downloaded 135 rows
-    [morphemes] downloaded 0 rows
-    [morphs] downloaded 0 rows
-    [prescreening] carry over 135; new blank 0
     (no changes — skipping)
 
 Manifest updated on Drive.

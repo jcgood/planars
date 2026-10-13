@@ -404,6 +404,50 @@ def ensure_user_permission(doorway, file_id: str, email: str, role: str) -> bool
     return True
 
 
+def set_user_role(doorway, file_id: str, email: str, role: str) -> bool:
+    """Make the named person's own grant on file_id exactly `role`, up or
+    down. True if anything changed.
+
+    Unlike ensure_user_permission, this can lower access, which archiving
+    needs: creating a reader grant for someone who already holds writer
+    leaves them a writer (Google keeps the higher role; checked live
+    2026-10-13), so an archived sheet "locked" that way was never read-only
+    for its annotator. The role is changed in place: Google refuses to
+    delete a grant on a file that also inherits one for the same person from
+    its folder, which is every language sheet. An owner is never changed.
+    """
+    perms = _with_retry(lambda: doorway.list_permissions(
+        file_id, fields="permissions(id,type,role,emailAddress)"))
+    own = [p for p in perms if p.get("type") == "user"
+           and (p.get("emailAddress") or "").lower() == email.lower()]
+    if not own:
+        _with_retry(lambda: doorway.create_permission(file_id, type="user", role=role,
+                                                      email=email, notify=False))
+        return True
+    p = own[0]
+    if p.get("role") in (role, "owner"):
+        return False
+    _with_retry(lambda: doorway.update_permission(file_id, p["id"], role))
+    return True
+
+
+def make_read_only(doorway, file_id: str) -> List[str]:
+    """Leave file_id readable but editable by nobody except its owner: remove
+    any link share, and lower every named person's own grant to reader.
+    Returns the addresses lowered. For a retired sheet (prune-manifest),
+    which no one should keep answering in by habit."""
+    remove_anyone_permission(doorway, file_id)
+    perms = _with_retry(lambda: doorway.list_permissions(
+        file_id, fields="permissions(type,role,emailAddress)"))
+    lowered = []
+    for p in perms:
+        email = p.get("emailAddress") or ""
+        if (p.get("type") == "user" and email and p.get("role") in ("writer", "commenter")
+                and set_user_role(doorway, file_id, email, "reader")):
+            lowered.append(email)
+    return lowered
+
+
 def create_or_update_shared_file(
     doorway,
     content: bytes,

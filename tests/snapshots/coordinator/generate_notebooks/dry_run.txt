@@ -4,8 +4,8 @@ Classes (all langs):    ['ciscategorial', 'noninterruption', 'nonpermutability',
 
 Contributor notebooks (one per language, includes per-class report sections):
   domains_arao1248.ipynb — ['ciscategorial', 'noninterruption', 'nonpermutability', 'free_occurrence', 'subspanrepetition']
-  domains_stan1293.ipynb — ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent']
-  domains_synth0001.ipynb — ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent', 'biuniqueness_deviations']
+  domains_stan1293.ipynb — ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent', 'biuniqueness_deviations']
+  domains_synth0001.ipynb — ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent']
 
 Validation notebooks (one per language):
   validation_arao1248.ipynb

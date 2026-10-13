@@ -32,6 +32,9 @@ Mode:     dry run
   [proform/vp_ellipsis] OK — no changes
   [phrasal_accent/prescreening] OK — no changes
   [phrasal_accent/general] OK — no changes
+  [biuniqueness_deviations/elements] OK — no changes
+  [biuniqueness_deviations/morphemes] OK — no changes
+  [biuniqueness_deviations/morphs] OK — no changes
 
 Language: synth0001
 Mode:     dry run
@@ -55,8 +58,5 @@ Mode:     dry run
   [proform/vp_ellipsis] OK — no changes
   [phrasal_accent/prescreening] OK — no changes
   [phrasal_accent/general] OK — no changes
-  [biuniqueness_deviations/prescreening] OK — no changes
-  [biuniqueness_deviations/morphemes] OK — no changes
-  [biuniqueness_deviations/morphs] OK — no changes
 
 All sheets are up to date.

@@ -57,6 +57,11 @@ Refreshing sheet dropdowns
     prescreening: {'accented': ['y', 'n', 'both']} up to date
     general: {'joint_accent': ['always', 'sometimes', 'never']} up to date
 
+  [stan1293] biuniqueness_deviations
+    elements: {'has_allomorphs': ['y', 'n'], 'members': ['<free_text>'], 'co_exponents': ['<position_names>']} up to date
+    morphemes: {'morpheme_class': ['<free_text>'], 'forms_relation': ['alternate', 'co-occur']} up to date
+    morphs: {'occurs_here': ['y', 'n'], 'conditioning_type': ['phonological', 'morphosyntactic', 'lexico-constructional', 'prosodic'], 'conditioning_features': ['<free_text>'], 'conditioned_by': ['<position_names>'], 'trigger_filled': ['y', 'n']} up to date
+
   [synth0001] ciscategorial
     general: {'V-combines': ['y', 'n'], 'N-combines': ['y', 'n'], 'A-combines': ['y', 'n']} up to date
 
@@ -97,11 +102,6 @@ Refreshing sheet dropdowns
   [synth0001] phrasal_accent
     prescreening: {'accented': ['y', 'n', 'both']} up to date
     general: {'joint_accent': ['always', 'sometimes', 'never']} up to date
-
-  [synth0001] biuniqueness_deviations
-    prescreening: {'has_allomorphs': ['y', 'n'], 'members': ['<free_text>'], 'co_exponents': ['<position_names>']} up to date
-    morphemes: {'morpheme_class': ['<free_text>'], 'forms_relation': ['alternate', 'co-occur']} up to date
-    morphs: {'occurs_here': ['y', 'n'], 'conditioning_type': ['phonological', 'morphosyntactic', 'lexico-constructional', 'prosodic'], 'conditioning_features': ['<free_text>'], 'conditioned_by': ['<position_names>'], 'trigger_filled': ['y', 'n']} up to date
 
 Manifest updated on Drive.
 

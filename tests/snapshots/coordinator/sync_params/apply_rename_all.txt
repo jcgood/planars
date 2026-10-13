@@ -44,6 +44,9 @@ Renames:  ['free:free_form']
   [proform/vp_ellipsis] Rename: free not found — skipping
   [phrasal_accent/prescreening] Rename: free not found — skipping
   [phrasal_accent/general] Rename: free not found — skipping
+  [biuniqueness_deviations/elements] Rename: free not found — skipping
+  [biuniqueness_deviations/morphemes] Rename: free not found — skipping
+  [biuniqueness_deviations/morphs] Rename: free not found — skipping
   [noninterruption] diagnostics Criteria: 'free{y/n}, multiple{y/n}' -> 'free_form{y/n}, multiple{y/n}'
   [free_occurrence] diagnostics Criteria: 'free{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}' -> 'free_form{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}'
   [synth0001] YAML updated → diagnostics_synth0001.yaml
@@ -73,9 +76,6 @@ Renames:  ['free:free_form']
   [proform/vp_ellipsis] Rename: free not found — skipping
   [phrasal_accent/prescreening] Rename: free not found — skipping
   [phrasal_accent/general] Rename: free not found — skipping
-  [biuniqueness_deviations/prescreening] Rename: free not found — skipping
-  [biuniqueness_deviations/morphemes] Rename: free not found — skipping
-  [biuniqueness_deviations/morphs] Rename: free not found — skipping
 
 Manifest updated on Drive.
 

@@ -469,28 +469,32 @@ classes:
       allomorphy screening sheet (issue #254, designed 2026-10-11); answers #58.
     specificity: general
     # Three-stage annotation (issue #254), each tab generated from the one before:
-    #   prescreening: one row per in-scope element and position (the planar's
-    #     Biuniqueness_Scope column decides scope). has_allomorphs, members
+    #   elements: one row per in-scope element and position (scope computed
+    #     from Elements, as the planar's Biuniqueness_Scope column records it).
+    #     has_allomorphs, members
     #     (variant forms of a filled element, or known members of an open
     #     category) and co_exponents (other positions expressing the same
     #     meaning at the same time).
-    #   morphemes: one row per morpheme found in prescreening; the annotator
+    #   morphemes: one row per morpheme found in elements; the annotator
     #     fills morpheme_class and forms_relation.
     #   morphs: one row per (morpheme, position, form), pre-filled from
     #     morphemes x the planar; the annotator fills occurs_here and the
     #     conditioning columns.
-    # Row building lives in coding/biuniqueness_rows.py. Origin records where a
-    # keyed row came from (filled / open_category / co_exponent); a row the
-    # annotator adds by hand has none, is marked hand-added, and is never dropped.
+    # Row building lives in coding/biuniqueness_rows.py, which reads the three
+    # tab names from the depends_on chain below (renaming one is an edit here
+    # only; renamed from prescreening to elements 2026-10-13). Origin records
+    # where a keyed row came from (filled / open_category / co_exponent); a row
+    # the annotator adds by hand has none, is marked hand-added, and is never
+    # dropped.
     constructions:
-      - name: prescreening
+      - name: elements
         row_type: element
         produces_spans: false
       - name: morphemes
         row_type: keyed_rows
         keyed_columns: [Morpheme, Origin, Found_At]
         key: [Morpheme]
-        depends_on: prescreening
+        depends_on: elements
         staleness_check: keyed_source
         produces_spans: false
       - name: morphs

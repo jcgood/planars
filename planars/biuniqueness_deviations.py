@@ -44,13 +44,17 @@ partial/complete variants.
 """
 from __future__ import annotations
 
+from importlib.resources import files as _res_files
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
 import pandas as pd
+import yaml
 
 from planars.coreference import _load_planar_for_coreference
 from planars.spans import fmt_span, loose_span
+
+CLASS_NAME = "biuniqueness_deviations"
 
 # Criteria this module reads (check-codebook check 1: each must be defined in
 # diagnostic_criteria.yaml).
@@ -59,9 +63,36 @@ _REQUIRED_CRITERIA = {
     "conditioning_features", "conditioned_by", "trigger_filled",
 }
 
-# derive reads only the morphs tab (it finds morphemes.tsv beside it);
-# prescreening and morphemes are feeder tabs (`produces_spans: false` in
-# schemas/diagnostic_classes.yaml, read by planars.reports.span_constructions).
+
+def _tab_chain() -> Tuple[str, str, str]:
+    """The class's three tabs in generation order, read from its depends_on
+    chain in schemas/diagnostic_classes.yaml: the one with no depends_on, the
+    one depending on it, the one depending on that. Raises ValueError unless
+    that chain is exactly the class's constructions."""
+    text = _res_files("schemas").joinpath("diagnostic_classes.yaml").read_text(encoding="utf-8")
+    cls = next((c for c in (yaml.safe_load(text) or {}).get("classes", [])
+                if c.get("name") == CLASS_NAME), None)
+    if cls is None:
+        raise ValueError(f"{CLASS_NAME} is not in schemas/diagnostic_classes.yaml")
+    cons = cls.get("constructions", [])
+    step = [c["name"] for c in cons if not c.get("depends_on")]
+    chain = list(step)
+    while len(step) == 1:
+        step = [c["name"] for c in cons if c.get("depends_on") == chain[-1]]
+        chain += step
+    if len(chain) != 3 or len(chain) != len(cons):
+        raise ValueError(
+            f"{CLASS_NAME}'s constructions in schemas/diagnostic_classes.yaml must form "
+            f"one depends_on chain of three tabs (elements -> morphemes -> morphs); "
+            f"found {[c['name'] for c in cons]} chained as {chain}.")
+    return chain[0], chain[1], chain[2]
+
+
+# The tab names, never typed elsewhere: renaming a tab is a schema edit only.
+# derive reads only the morphs tab (it finds the morphemes tab's TSV beside
+# it); elements and morphemes are feeder tabs (`produces_spans: false`, read
+# by planars.reports.span_constructions).
+ELEMENTS_TAB, MORPHEMES_TAB, MORPHS_TAB = _tab_chain()
 
 # The derived deviation types, in the order they are reported. Must equal the
 # `derived: true` entries of the class's deviation_types registry in
@@ -103,7 +134,7 @@ def classify_form(row: Dict[str, str], forms_relation: str,
 
 
 def _load_tables(morphs_path: Path) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    morphemes_path = morphs_path.parent / "morphemes.tsv"
+    morphemes_path = morphs_path.parent / f"{MORPHEMES_TAB}.tsv"
     morphemes = pd.read_csv(morphemes_path, sep="\t", dtype=str, keep_default_na=False)
     morphs = pd.read_csv(morphs_path, sep="\t", dtype=str, keep_default_na=False)
     return morphemes, morphs

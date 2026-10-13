@@ -180,21 +180,13 @@ def _section_planar(lang_ids: List[str]) -> Tuple[int, int]:
         total_e += e
         total_w += w
 
-        # Nonpermutability staleness: candidate pairs are derived from the planar
-        # at generate-sheets time. If the planar has been modified since the last
-        # import, the pairs in the sheet (and local TSVs) may no longer match the
-        # current planar structure.
-        nonperm_dir = CODED_DATA / lang_id / "nonpermutability"
-        if nonperm_dir.exists():
-            nonperm_tsvs = sorted(nonperm_dir.glob("*.tsv"))
-            planar_mtime = planar_path.stat().st_mtime
-            stale = [t for t in nonperm_tsvs if t.stat().st_mtime < planar_mtime]
-            if stale:
-                for tsv in stale:
-                    print(_warn(f"{lang}  —  nonpermutability/{tsv.name} predates current planar"))
-                print(_sub("→ Candidate pairs may be stale. Regenerate with: python -m coding generate-sheets --apply"))
-                print(_sub("  (nonpermutability pairs are derived from the planar structure, not annotated directly)"))
-                total_w += len(stale)
+        # (A file-date comparison of nonpermutability TSVs against the planar
+        # stood here until 2026-10-13. It compared when git last wrote each
+        # file, not what they hold, so it warned on languages nobody had
+        # touched, and its advice -- generate-sheets --apply -- skips classes
+        # that already have sheets. Staleness is checked by content instead:
+        # the DEPENDENT CONSTRUCTION STALENESS section below, and update-sheets'
+        # daily sheet-drift check for elements added to the planar.)
 
     return total_e, total_w
 
@@ -654,18 +646,13 @@ def _keyed_staleness(lang_id: str, cls_name: str, con: dict):
     cls_dir = CODED_DATA / lang_id / cls_name
     dep_path = cls_dir / f"{con['name']}.tsv"
     planar_path = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
-    needed = ["prescreening"] + (["morphemes"] if con["name"] == "morphs" else [])
     if not dep_path.exists() or not planar_path.exists() or not all(
-            (cls_dir / f"{n}.tsv").exists() for n in needed):
+            (cls_dir / f"{n}.tsv").exists() for n in _br.sources_of(con["name"])):
         return None
     read = lambda p: pd.read_csv(p, sep="\t", dtype=str, keep_default_na=False)
     dep = read(dep_path)
-    planar = read(planar_path)
-    if con["name"] == "morphemes":
-        generated = _br.morpheme_rows(read(cls_dir / "prescreening.tsv"), planar, lang_id)
-    else:
-        generated = _br.morph_rows(read(cls_dir / "morphemes.tsv"),
-                                   read(cls_dir / "prescreening.tsv"), planar, lang_id)
+    generated = _br.keyed_rows(con["name"], lambda tab: read(cls_dir / f"{tab}.tsv"),
+                               read(planar_path), lang_id)
     if dep.empty:
         return ("empty", len(generated)) if generated else None
     _, key = _br.KEYED[con["name"]]

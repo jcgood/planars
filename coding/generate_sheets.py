@@ -82,6 +82,7 @@ from .drive import (
     load_manifest,
     upload_manifest,
     create_notes_doc,
+    ensure_user_permission,
 )
 from .drive_doorway import SpreadsheetHandle, WorksheetHandle, WorksheetNotFound, get_doorway
 from .glottolog import cached_entry as _cached_glottolog, get_metadata as _fetch_glottolog
@@ -1082,19 +1083,19 @@ def _biuniq_generate(
 ):
     """Build the rows for one biuniqueness_deviations tab from its sources.
 
-    prescreening comes from the planar; morphemes from the imported
-    prescreening.tsv; morphs from the imported morphemes.tsv (plus
-    prescreening.tsv). A missing source gives an empty tab and a note, as
-    phrasal_accent's pair tab does: it fills in once the source is imported
-    and the tab is regenerated.
+    The elements tab comes from the planar; morphemes from the imported
+    elements tab; morphs from the imported morphemes tab (plus the elements
+    tab). Tab names are _br.ELEMENTS/MORPHEMES/MORPHS, read from the schema.
+    A missing source gives an empty tab and a note, as phrasal_accent's pair
+    tab does: it fills in once the source is imported and the tab is
+    regenerated.
     """
     planar_df = pd.read_csv(planar_path, sep="\t", dtype=str, keep_default_na=False)
-    if construction == "prescreening":
-        return _br.prescreening_rows(planar_df, lang_id, param_names)
+    if construction == _br.ELEMENTS:
+        return _br.element_rows(planar_df, lang_id, param_names)
 
     cls_dir = CODED_DATA / lang_id / _br.CLASS_NAME
-    needed = ["prescreening"] + (["morphemes"] if construction == "morphs" else [])
-    missing = [n for n in needed if not (cls_dir / f"{n}.tsv").exists()]
+    missing = [n for n in _br.sources_of(construction) if not (cls_dir / f"{n}.tsv").exists()]
     if missing:
         print(f"    [NOTE] {_br.CLASS_NAME}/{missing[0]}.tsv not found — {construction} tab "
               f"left empty. Fill in {missing[0]}, import it, then run:\n"
@@ -1102,9 +1103,7 @@ def _biuniq_generate(
               f"--regen-construction {_br.CLASS_NAME}:{construction}")
         return []
     read = lambda n: pd.read_csv(cls_dir / f"{n}.tsv", sep="\t", dtype=str, keep_default_na=False)
-    if construction == "morphemes":
-        return _br.morpheme_rows(read("prescreening"), planar_df, lang_id)
-    return _br.morph_rows(read("morphemes"), read("prescreening"), planar_df, lang_id)
+    return _br.keyed_rows(construction, read, planar_df, lang_id)
 
 
 def _biuniq_populate(
@@ -1113,8 +1112,11 @@ def _biuniq_populate(
 ) -> int:
     """Create one biuniqueness_deviations tab on a new or extended sheet.
     Returns the number of rows written."""
+    if construction != _br.ELEMENTS and construction not in _br.KEYED:
+        raise ValueError(f"{_br.CLASS_NAME} has no tab named {construction!r} "
+                         f"(schema: {_br.ELEMENTS}, {', '.join(_br.KEYED)})")
     rows = _biuniq_generate(lang_id, construction, param_names, planar_path)
-    if construction == "prescreening":
+    if construction == _br.ELEMENTS:
         _populate_tab(spreadsheet, construction, param_names, param_values, rows)
     else:
         columns, _ = _br.KEYED[construction]
@@ -1780,7 +1782,7 @@ def _create_analysis_sheet(
             tab_names.append(construction)
             print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
         elif class_name == _br.CLASS_NAME:
-            # prescreening (in-scope elements) -> morphemes -> morphs (#254).
+            # elements (in-scope elements) -> morphemes -> morphs (#254).
             n = _biuniq_populate(spreadsheet, lang_id, construction, param_names,
                                  param_values, planar_path)
             tab_names.append(construction)
@@ -2619,7 +2621,12 @@ def main(args: argparse.Namespace | None = None) -> None:
 
         element_index = build_element_index(planar_file.name, planar_dir)
 
-        # Validate planar structure; warn but do not block sheet generation.
+        # Validate the planar and diagnostics_{lang_id}.tsv. Warnings and
+        # non-blocking errors (a required class not drafted yet) are printed
+        # and generation goes on; a blocking error skips the language, since
+        # a sheet built from a file the schema rejects (a construction the
+        # class doesn't define, say) is wrong from its first row. Until
+        # 2026-10-13 nothing here blocked.
         planar_df = pd.read_csv(planar_file, sep="\t")
         planar_issues = _val_planar.validate_planar_df(planar_df)
         if planar_issues:
@@ -2627,7 +2634,7 @@ def main(args: argparse.Namespace | None = None) -> None:
             for issue in planar_issues:
                 print(f"    {issue}")
 
-        # Validate diagnostics_{lang_id}.tsv; warn but do not block sheet generation.
+        diag_issues = []
         diag_path = planar_dir / f"diagnostics_{lang_id}.tsv"
         if diag_path.exists():
             diag_df = pd.read_csv(diag_path, sep="\t", dtype=str, keep_default_na=False)
@@ -2636,6 +2643,11 @@ def main(args: argparse.Namespace | None = None) -> None:
                 print(f"  Diagnostics validation ({len(diag_issues)} issue(s)):")
                 for issue in diag_issues:
                     print(f"    {issue}")
+
+        if any(i.level == "error" and i.blocking for i in planar_issues + diag_issues):
+            print(f"  Skipping {lang_id}: fix the [ERROR] line(s) above in "
+                  f"planar_{lang_id}.tsv / diagnostics_{lang_id}.yaml, then re-run.")
+            continue
 
         specs = _read_diagnostics_for_language(lang_id, planar_dir)
 
@@ -2691,7 +2703,10 @@ def main(args: argparse.Namespace | None = None) -> None:
         email = _annotator_email(lang_id)
         if email:
             try:
-                _with_retry(lambda: doorway.create_permission(folder_id, type="user", role="reader", email=email))
+                # Checks first: re-granting access the annotator already has
+                # fails under the drive.file scope once the folder holds files
+                # the tooling didn't create, and printed a false warning.
+                ensure_user_permission(doorway, folder_id, email, "reader")
             except Exception as _share_err:
                 print(f"  [WARNING] Could not share folder for {lang_id}: {_share_err}")
         folder_url = f"https://drive.google.com/drive/folders/{folder_id}"

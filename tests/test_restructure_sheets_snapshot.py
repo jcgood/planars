@@ -312,36 +312,36 @@ def test_apply_rename_map_digest(env):
 
 
 def test_apply_rename_element_transcript(env):
-    env.rename_element("stan1293", "her", "HER")
+    env.rename_element("stan1293", "her", "herself")
     check_snapshot(
         "rename_element_apply.txt",
-        env.run(["--apply", "--lang", "stan1293", "--rename-element", "her:HER"]))
+        env.run(["--apply", "--lang", "stan1293", "--rename-element", "her:herself"]))
 
 
 def test_apply_split_element_transcript(env):
     """Cascades into nonpermutability/general, the pair-row tab referencing 'her'."""
-    env.split_element("stan1293", "her", ["HERACC", "HERDAT"])
+    env.split_element("stan1293", "her", ["heracc", "herdat"])
     check_snapshot(
         "split_element_apply.txt",
         env.run(["--apply", "--lang", "stan1293",
-                "--split-element", "her:HERACC,HERDAT"]))
+                "--split-element", "her:heracc,herdat"]))
 
 
 def test_apply_split_element_digest(env):
-    env.split_element("stan1293", "her", ["HERACC", "HERDAT"])
-    env.run(["--apply", "--lang", "stan1293", "--split-element", "her:HERACC,HERDAT"])
+    env.split_element("stan1293", "her", ["heracc", "herdat"])
+    env.run(["--apply", "--lang", "stan1293", "--split-element", "her:heracc,herdat"])
     check_snapshot("split_element_apply_digest.txt", render(env.doorway.mutations))
 
 
 def test_apply_split_element_self_pair_transcript(env):
     """A row where BOTH sides are the retired element is flagged, not fanned out."""
-    env.split_element("stan1293", "her", ["HERACC", "HERDAT"])
+    env.split_element("stan1293", "her", ["heracc", "herdat"])
     env.inject_pair_row("stan1293", "nonpermutability", "general",
                         "her", "her", "scopal", "y")
     check_snapshot(
         "split_element_self_pair.txt",
         env.run(["--apply", "--lang", "stan1293",
-                "--split-element", "her:HERACC,HERDAT"]))
+                "--split-element", "her:heracc,herdat"]))
 
 
 def test_rename_class_preflight_abort_transcript(env):
@@ -453,11 +453,11 @@ def test_rename_class_preflight_abort_writes_nothing(env):
 # ---------------------------------------------------------------------------
 
 def test_self_pair_row_survives_a_split_untouched(env):
-    env.split_element("stan1293", "her", ["HERACC", "HERDAT"])
+    env.split_element("stan1293", "her", ["heracc", "herdat"])
     env.inject_pair_row("stan1293", "nonpermutability", "general",
                         "her", "her", "scopal", "y")
     out = env.run(["--apply", "--lang", "stan1293",
-                  "--split-element", "her:HERACC,HERDAT"])
+                  "--split-element", "her:heracc,herdat"])
 
     assert "NEEDS MANUAL REVIEW" in out
     header = env.tab("stan1293", "nonpermutability", "general").get_all_values()[0]
@@ -466,9 +466,9 @@ def test_self_pair_row_survives_a_split_untouched(env):
     self_pairs = [r for r in rows if r[a_idx] == "her" and r[b_idx] == "her"]
     assert len(self_pairs) == 1, (
         "the self-pair row must survive exactly once -- not dropped, not "
-        "duplicated, not fanned out into HERACC/HERDAT combinations")
-    fanned = [r for r in rows if r[a_idx] in ("HERACC", "HERDAT")
-             and r[b_idx] in ("HERACC", "HERDAT")]
+        "duplicated, not fanned out into heracc/herdat combinations")
+    fanned = [r for r in rows if r[a_idx] in ("heracc", "herdat")
+             and r[b_idx] in ("heracc", "herdat")]
     assert not fanned, "a self-pair must never be guessed at as a same-side pair"
 
 
@@ -518,8 +518,8 @@ def test_nothing_criterion_shaped_is_written_onto_trailing_columns_on_rename_cla
 # ---------------------------------------------------------------------------
 
 def test_finding_16_pair_tab_dropdown_lands_on_the_criterion_column_not_comments(env):
-    env.split_element("stan1293", "her", ["HERACC", "HERDAT"])
-    env.run(["--apply", "--lang", "stan1293", "--split-element", "her:HERACC,HERDAT"])
+    env.split_element("stan1293", "her", ["heracc", "herdat"])
+    env.run(["--apply", "--lang", "stan1293", "--split-element", "her:heracc,herdat"])
 
     ss_id = env.sheet_id("stan1293", "nonpermutability")
     ws = env.tab("stan1293", "nonpermutability", "general")

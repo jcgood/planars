@@ -63,4 +63,10 @@ DRY RUN — Language: stan1293
     [prescreening] carry over 134; rename 8; new blank 0
     [general] (pair tab) no position renames needed
 
+  biuniqueness_deviations (current v1)
+    [elements] downloaded 135 rows
+    [morphemes] downloaded 0 rows
+    [morphs] downloaded 0 rows
+    [elements] carry over 128; rename 7; new blank 0
+
 Run with --apply to make these changes.

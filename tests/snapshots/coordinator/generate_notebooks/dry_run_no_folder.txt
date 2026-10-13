@@ -6,8 +6,8 @@ No Drive folder recorded, so no notebooks: ['arao1248']
   Run python -m coding generate-sheets --apply to create their folders first.
 
 Contributor notebooks (one per language, includes per-class report sections):
-  domains_stan1293.ipynb — ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent']
-  domains_synth0001.ipynb — ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent', 'biuniqueness_deviations']
+  domains_stan1293.ipynb — ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent', 'biuniqueness_deviations']
+  domains_synth0001.ipynb — ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent']
 
 Validation notebooks (one per language):
   validation_stan1293.ipynb

@@ -1,6 +1,6 @@
 
 arao1248
-  + column Biuniqueness_Scope
+  + column Test_New_Column
   → (new planar column — no sheet structural updates needed)
   archived → archive/lang_setup/planar_arao1248_20260802_112233.tsv
   wrote planar_arao1248.tsv

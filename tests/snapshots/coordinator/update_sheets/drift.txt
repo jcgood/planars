@@ -71,6 +71,11 @@ DRY RUN — Languages: ['arao1248', 'stan1293', 'synth0001']
     [prescreening] up to date
     [general] up to date (pair-row tab — row updates skipped)
 
+  biuniqueness_deviations
+    [elements] up to date
+    [morphemes] up to date (keyed-row tab — rows are managed by --regen-construction)
+    [morphs] up to date (keyed-row tab — rows are managed by --regen-construction)
+
   ciscategorial
     [general] up to date
 
@@ -110,11 +115,6 @@ DRY RUN — Languages: ['arao1248', 'stan1293', 'synth0001']
   phrasal_accent
     [prescreening] up to date
     [general] up to date (pair-row tab — row updates skipped)
-
-  biuniqueness_deviations
-    [prescreening] up to date
-    [morphemes] up to date (keyed-row tab — rows are managed by --regen-construction)
-    [morphs] up to date (keyed-row tab — rows are managed by --regen-construction)
 
 Some sheets are out of sync with the planar structure.
 Run: python -m coding restructure-sheets --apply

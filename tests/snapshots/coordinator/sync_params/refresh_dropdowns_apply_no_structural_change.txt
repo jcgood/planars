@@ -34,6 +34,9 @@ Mode:     apply
     accented: ['y', 'n', 'both'] → ['y', 'n', 'both', 'maybe']
     Done.
   [phrasal_accent/general] OK — dropdowns up to date
+  [biuniqueness_deviations/elements] OK — dropdowns up to date
+  [biuniqueness_deviations/morphemes] OK — dropdowns up to date
+  [biuniqueness_deviations/morphs] OK — dropdowns up to date
 
 Language: synth0001
 Mode:     apply
@@ -59,9 +62,6 @@ Mode:     apply
   [proform/vp_ellipsis] OK — dropdowns up to date
   [phrasal_accent/prescreening] OK — dropdowns up to date
   [phrasal_accent/general] OK — dropdowns up to date
-  [biuniqueness_deviations/prescreening] OK — dropdowns up to date
-  [biuniqueness_deviations/morphemes] OK — dropdowns up to date
-  [biuniqueness_deviations/morphs] OK — dropdowns up to date
 
 Manifest updated on Drive.
 

@@ -329,6 +329,8 @@ class DriveDoorway(Protocol):
 
     def delete_permission(self, file_id: str, permission_id: str) -> None: ...
 
+    def update_permission(self, file_id: str, permission_id: str, role: str) -> None: ...
+
     # -- Google Docs (collaborator notes) -----------------------------------
     def create_doc(self, name: str, parent_id: str) -> str: ...
 
@@ -456,6 +458,13 @@ class GspreadDoorway:
     def delete_permission(self, file_id: str, permission_id: str) -> None:
         self.drive.permissions().delete(
             fileId=file_id, permissionId=permission_id).execute()
+
+    def update_permission(self, file_id: str, permission_id: str, role: str) -> None:
+        # Changing the role in place, rather than delete-and-recreate: Google
+        # refuses to delete a person's grant on a file that also inherits one
+        # for them from its folder (checked live 2026-10-13).
+        self.drive.permissions().update(
+            fileId=file_id, permissionId=permission_id, body={"role": role}).execute()
 
     # -- docs ---------------------------------------------------------------
     def create_doc(self, name: str, parent_id: str) -> str:

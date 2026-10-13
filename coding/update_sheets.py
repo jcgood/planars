@@ -293,17 +293,17 @@ def _compute_missing_rows(
     return missing_rows
 
 
-def _compute_missing_biuniq_prescreening_rows(
+def _compute_missing_biuniq_element_rows(
     rows: List[List[str]],
     header: List[str],
     lang_id: str,
     col_start: int,
     num_criteria: int,
 ) -> List[List[str]]:
-    """Missing rows for biuniqueness_deviations' prescreening tab (#254).
+    """Missing rows for biuniqueness_deviations' elements tab (#254).
 
-    Unlike _compute_missing_rows, only elements the planar's Biuniqueness_Scope
-    column puts in scope, built by the same biuniqueness_rows.prescreening_rows
+    Unlike _compute_missing_rows, only elements in biuniqueness scope
+    (biuniqueness_rows.scoped_elements), built by the same element_rows
     that first built the tab (so an open-category row gets NA in has_allomorphs).
     """
     planar_path = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
@@ -312,7 +312,7 @@ def _compute_missing_biuniq_prescreening_rows(
     existing_keys = _sheet_element_keys(rows, header)
     num_trailing = max(0, len(header) - col_start - num_criteria)
     return [[str(v) for v in r] + [""] * num_trailing
-            for r in _br.prescreening_rows(planar_df, lang_id, params)
+            for r in _br.element_rows(planar_df, lang_id, params)
             if (r[0], str(r[2])) not in existing_keys]
 
 
@@ -536,10 +536,10 @@ def main(args: argparse.Namespace | None = None) -> None:
                     _write_header_notes(
                         ws, col_start, header[col_start:col_start + len(per_col)])
 
-                if class_name == _br.CLASS_NAME and construction == "prescreening":
-                    # Only elements the planar's Biuniqueness_Scope puts in
-                    # scope, built exactly as the tab was first built.
-                    missing_rows = _compute_missing_biuniq_prescreening_rows(
+                if class_name == _br.CLASS_NAME and construction == _br.ELEMENTS:
+                    # Only elements in biuniqueness scope, built exactly as
+                    # the tab was first built.
+                    missing_rows = _compute_missing_biuniq_element_rows(
                         rows, header, manifest_lang, col_start, len(per_col))
                 else:
                     missing_rows = _compute_missing_rows(

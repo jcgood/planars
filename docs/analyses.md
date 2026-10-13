@@ -226,7 +226,7 @@ One class for four of Tallman & Auderset's (2023) ways form and meaning can fail
 
 Three-stage annotation, each tab generated from the one before:
 
-1. **prescreening** (element rows): `has_allomorphs`, `members` (the variant forms, or known members of an open category), `co_exponents` (positions expressing the same meaning at once).
+1. **elements** (element rows): `has_allomorphs`, `members` (the variant forms, or known members of an open category), `co_exponents` (positions expressing the same meaning at once).
 2. **morphemes** (one row per morpheme): `morpheme_class`, `forms_relation` (`alternate` | `co-occur`).
 3. **morphs** (one row per form at a position, pre-filled): `occurs_here`, `conditioning_type`, `conditioning_features`, `conditioned_by` (position names), `trigger_filled`.
 

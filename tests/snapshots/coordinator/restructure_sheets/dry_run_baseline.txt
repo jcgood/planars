@@ -98,6 +98,13 @@ DRY RUN — Language: stan1293
     [prescreening] carry over 142; new blank 0
     (no changes — skipping)
 
+  biuniqueness_deviations (current v1)
+    [elements] downloaded 135 rows
+    [morphemes] downloaded 0 rows
+    [morphs] downloaded 0 rows
+    [elements] carry over 135; new blank 0
+    (no changes — skipping)
+
 DRY RUN — Language: synth0001
 (run with --apply to archive old sheets and regenerate)
 
@@ -164,13 +171,6 @@ DRY RUN — Language: synth0001
     [prescreening] downloaded 142 rows
     [general] downloaded 0 rows
     [prescreening] carry over 142; new blank 0
-    (no changes — skipping)
-
-  biuniqueness_deviations (current v1)
-    [prescreening] downloaded 135 rows
-    [morphemes] downloaded 0 rows
-    [morphs] downloaded 0 rows
-    [prescreening] carry over 135; new blank 0
     (no changes — skipping)
 
 Run with --apply to make these changes.

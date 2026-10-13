@@ -231,6 +231,19 @@ def main(args: argparse.Namespace | None = None) -> None:
     }
     index_path.write_text(json.dumps(index, indent=2, ensure_ascii=False), encoding="utf-8")
 
+    # A recording of a sheet the manifest no longer lists (a retired class)
+    # would otherwise sit here forever with nothing pointing at it. One whose
+    # capture just failed is kept, as the last good copy.
+    written = {e["path"] for e in captured}
+    failed_labels = {label for label, _ in failed}
+    for lang_id in langs:
+        for old in sorted((FIXTURE_DIR / lang_id).glob("*.json")):
+            rel = str(old.relative_to(FIXTURE_DIR))
+            role = old.stem.replace("class_", "class:", 1)
+            if rel not in written and f"{lang_id}/{role}" not in failed_labels:
+                old.unlink()
+                print(f"  removed {rel} (no longer in the manifest)")
+
     # The other half: the language folders as they stand locally right now.
     for lang_id in langs:
         src = CODED_DATA / lang_id

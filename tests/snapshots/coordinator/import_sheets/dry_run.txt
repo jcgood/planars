@@ -92,6 +92,14 @@ Language: stan1293
     [general] status: 'in-progress' — importing for backup
     [general] [backup] No changes → coded_data/stan1293/phrasal_accent/general.tsv
 
+  biuniqueness_deviations
+    [elements] status: 'in-progress' — importing for backup
+    [elements] [backup] No changes → coded_data/stan1293/biuniqueness_deviations/elements.tsv
+    [morphemes] status: 'in-progress' — importing for backup
+    [morphemes] [backup] No changes → coded_data/stan1293/biuniqueness_deviations/morphemes.tsv
+    [morphs] status: 'in-progress' — importing for backup
+    [morphs] [backup] No changes → coded_data/stan1293/biuniqueness_deviations/morphs.tsv
+
 Language: synth0001
   [planar] No changes → planar_synth0001.tsv
   [diagnostics] WARNING: [WARNING] row 12: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
@@ -140,11 +148,11 @@ Language: synth0001
     [prescreening] status: 'in-progress' — importing for backup
     [prescreening] [backup] No changes → coded_data/synth0001/coreference/prescreening.tsv
     [reflexivization] status: 'in-progress' — importing for backup
-    [reflexivization] [backup] Would overwrite (changed) → coded_data/synth0001/coreference/reflexivization.tsv
+    [reflexivization] [backup] No changes → coded_data/synth0001/coreference/reflexivization.tsv
     [pronominalization] status: 'in-progress' — importing for backup
-    [pronominalization] [backup] Would overwrite (changed) → coded_data/synth0001/coreference/pronominalization.tsv
+    [pronominalization] [backup] No changes → coded_data/synth0001/coreference/pronominalization.tsv
     [np_reference] status: 'in-progress' — importing for backup
-    [np_reference] [backup] Would overwrite (changed) → coded_data/synth0001/coreference/np_reference.tsv
+    [np_reference] [backup] No changes → coded_data/synth0001/coreference/np_reference.tsv
 
   proform
     [do_so_substitution] status: 'in-progress' — importing for backup
@@ -157,13 +165,5 @@ Language: synth0001
     [prescreening] [backup] No changes → coded_data/synth0001/phrasal_accent/prescreening.tsv
     [general] status: 'in-progress' — importing for backup
     [general] [backup] No changes → coded_data/synth0001/phrasal_accent/general.tsv
-
-  biuniqueness_deviations
-    [prescreening] status: 'in-progress' — importing for backup
-    [prescreening] [backup] No changes → coded_data/synth0001/biuniqueness_deviations/prescreening.tsv
-    [morphemes] status: 'in-progress' — importing for backup
-    [morphemes] [backup] No changes → coded_data/synth0001/biuniqueness_deviations/morphemes.tsv
-    [morphs] status: 'in-progress' — importing for backup
-    [morphs] [backup] No changes → coded_data/synth0001/biuniqueness_deviations/morphs.tsv
 
 Done. 0 file(s) written, 0 warning(s).

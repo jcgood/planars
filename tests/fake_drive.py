@@ -1000,19 +1000,35 @@ class FakeDriveDoorway:
                           email: Optional[str] = None,
                           notify: bool = False) -> str:
         self._require_file(file_id)
+        self._record("create_permission", file_id=file_id, type=type, role=role,
+                     email=email, notify=notify)
+        # As Drive does (checked live 2026-10-13): a grant for someone who
+        # already has one keeps the higher of the two roles, so creating a
+        # reader grant can never lower a writer.
+        rank = {"reader": 1, "commenter": 2, "writer": 3, "owner": 4}
+        for p in self._permissions.get(file_id, []):
+            if email and p.get("type") == type and p.get("emailAddress") == email:
+                if rank.get(role, 0) > rank.get(p.get("role"), 0):
+                    p["role"] = role
+                return p["id"]
         perm_id = self._new_id("perm")
         perm = {"id": perm_id, "type": type, "role": role}
         if email:
             perm["emailAddress"] = email
         self._permissions.setdefault(file_id, []).append(perm)
-        self._record("create_permission", file_id=file_id, type=type, role=role,
-                     email=email, notify=notify)
         return perm_id
 
     def delete_permission(self, file_id: str, permission_id: str) -> None:
         self._permissions[file_id] = [
             p for p in self._permissions.get(file_id, []) if p["id"] != permission_id]
         self._record("delete_permission", file_id=file_id, permission_id=permission_id)
+
+    def update_permission(self, file_id: str, permission_id: str, role: str) -> None:
+        for p in self._permissions.get(file_id, []):
+            if p["id"] == permission_id:
+                p["role"] = role
+        self._record("update_permission", file_id=file_id, permission_id=permission_id,
+                     role=role)
 
     # -- docs ---------------------------------------------------------------
     def create_doc(self, name: str, parent_id: str) -> str:

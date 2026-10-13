@@ -93,6 +93,14 @@ Language: stan1293
     [general] status: 'in-progress' — importing for backup
     [general] [backup] No changes → coded_data/stan1293/phrasal_accent/general.tsv
 
+  biuniqueness_deviations
+    [elements] status: 'in-progress' — importing for backup
+    [elements] [backup] No changes → coded_data/stan1293/biuniqueness_deviations/elements.tsv
+    [morphemes] status: 'in-progress' — importing for backup
+    [morphemes] [backup] No changes → coded_data/stan1293/biuniqueness_deviations/morphemes.tsv
+    [morphs] status: 'in-progress' — importing for backup
+    [morphs] [backup] No changes → coded_data/stan1293/biuniqueness_deviations/morphs.tsv
+
 Language: synth0001
   [planar] No changes → planar_synth0001.tsv
   [diagnostics] WARNING: [WARNING] row 12: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
@@ -142,17 +150,11 @@ Language: synth0001
     [prescreening] status: 'in-progress' — importing for backup
     [prescreening] [backup] No changes → coded_data/synth0001/coreference/prescreening.tsv
     [reflexivization] status: 'in-progress' — importing for backup
-    [reflexivization] ANOMALY: Missing columns: param column(s) in local TSV absent from sheet: ['pronoun_allowed', 'np_allowed']
-    [reflexivization] Archived existing → coded_data/synth0001/archive/coreference/reflexivization_20260804_120000.tsv
-    [reflexivization] [backup] 607 rows, 540 blank param cells → coded_data/synth0001/coreference/reflexivization.tsv
+    [reflexivization] [backup] No changes → coded_data/synth0001/coreference/reflexivization.tsv
     [pronominalization] status: 'in-progress' — importing for backup
-    [pronominalization] ANOMALY: Missing columns: param column(s) in local TSV absent from sheet: ['reflexive_allowed', 'np_allowed']
-    [pronominalization] Archived existing → coded_data/synth0001/archive/coreference/pronominalization_20260804_120000.tsv
-    [pronominalization] [backup] 607 rows, 540 blank param cells → coded_data/synth0001/coreference/pronominalization.tsv
+    [pronominalization] [backup] No changes → coded_data/synth0001/coreference/pronominalization.tsv
     [np_reference] status: 'in-progress' — importing for backup
-    [np_reference] ANOMALY: Missing columns: param column(s) in local TSV absent from sheet: ['reflexive_allowed', 'pronoun_allowed']
-    [np_reference] Archived existing → coded_data/synth0001/archive/coreference/np_reference_20260804_120000.tsv
-    [np_reference] [backup] 607 rows, 540 blank param cells → coded_data/synth0001/coreference/np_reference.tsv
+    [np_reference] [backup] No changes → coded_data/synth0001/coreference/np_reference.tsv
 
   proform
     [do_so_substitution] status: 'in-progress' — importing for backup
@@ -166,15 +168,7 @@ Language: synth0001
     [general] status: 'in-progress' — importing for backup
     [general] [backup] No changes → coded_data/synth0001/phrasal_accent/general.tsv
 
-  biuniqueness_deviations
-    [prescreening] status: 'in-progress' — importing for backup
-    [prescreening] [backup] No changes → coded_data/synth0001/biuniqueness_deviations/prescreening.tsv
-    [morphemes] status: 'in-progress' — importing for backup
-    [morphemes] [backup] No changes → coded_data/synth0001/biuniqueness_deviations/morphemes.tsv
-    [morphs] status: 'in-progress' — importing for backup
-    [morphs] [backup] No changes → coded_data/synth0001/biuniqueness_deviations/morphs.tsv
-
-Done. 0 file(s) written, 4 in-progress backup(s), 0 warning(s).
+Done. 0 file(s) written, 1 in-progress backup(s), 0 warning(s).
 
 Next: commit and push coded_data/ before pushing planars:
   git -C coded_data add -A
@@ -184,8 +178,6 @@ manifest.json updated on Drive with languages.yaml metadata.
 
 ⚠  1 destructive change(s) written to pending_changes.json
    Review and apply with: python -m coding apply-pending
-
-⚠  3 in-progress sheet(s) have anomalies — verify with collaborator
 
 Auto-applying 1 safe downstream command(s):
   python -m coding update-sheets --apply
@@ -207,6 +199,9 @@ stan1293
   Diagnostics validation (2 issue(s)):
     [WARNING] row 12: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
     [WARNING] row 13: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
+  [biuniqueness_deviations/elements] 101 blank cell(s) — annotation in progress
+  [biuniqueness_deviations/morphemes] no issues
+  [biuniqueness_deviations/morphs] no issues
   [ciscategorial/general] no issues
   [coreference/prescreening] 15 blank cell(s) — annotation in progress
   [coreference/reflexivization] 54 blank cell(s) — annotation in progress
@@ -232,9 +227,6 @@ synth0001
   Diagnostics validation (2 issue(s)):
     [WARNING] row 12: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
     [WARNING] row 13: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
-  [biuniqueness_deviations/prescreening] 101 blank cell(s) — annotation in progress
-  [biuniqueness_deviations/morphemes] no issues
-  [biuniqueness_deviations/morphs] no issues
   [ciscategorial/general] 422 blank cell(s) — annotation in progress
   [coreference/prescreening] 15 blank cell(s) — annotation in progress
   [coreference/reflexivization] 540 blank cell(s) — annotation in progress

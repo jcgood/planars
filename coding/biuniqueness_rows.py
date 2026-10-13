@@ -1,14 +1,17 @@
 """Row building for the biuniqueness_deviations class sheet (issue #254).
 
 Logic only, no Drive calls: generate_sheets.py dispatches here for this class
-and does the writing. Three tabs, each generated from the one before:
+and does the writing. Three tabs, each generated from the one before. Their
+names are read from the class's `depends_on` chain in diagnostic_classes.yaml
+(ELEMENTS, MORPHEMES, MORPHS, imported from planars.biuniqueness_deviations),
+never typed, so renaming a tab is a schema edit only:
 
-  prescreening  element rows (Element, Position_Name, Position_Number), the
-                standard shape, restricted to elements the planar's
-                Biuniqueness_Scope column puts in scope. has_allomorphs is
+  elements      element rows (Element, Position_Name, Position_Number), the
+                standard shape, restricted to elements in scope (computed from
+                Elements; see scoped_elements). has_allomorphs is
                 pre-set to NA on open-category rows: those rows want members
                 (known members of the category), not a y/n.
-  morphemes     keyed rows, one per morpheme found in prescreening:
+  morphemes     keyed rows, one per morpheme found in the elements tab:
                 a filled element marked has_allomorphs=y, a listed member of
                 an open category, or an element with co_exponents (a label
                 "{element} + {positions}" whose forms co-occur).
@@ -28,9 +31,12 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 import pandas as pd
 
-from .validate_planar import _tokenize_elements
+from planars.biuniqueness_deviations import CLASS_NAME  # noqa: F401  (re-exported)
+from planars.biuniqueness_deviations import ELEMENTS_TAB as ELEMENTS
+from planars.biuniqueness_deviations import MORPHEMES_TAB as MORPHEMES
+from planars.biuniqueness_deviations import MORPHS_TAB as MORPHS
 
-CLASS_NAME = "biuniqueness_deviations"
+from .validate_planar import _tokenize_elements
 
 MORPHEMES_STRUCT = ["Morpheme", "Origin", "Found_At"]
 MORPHEMES_KEY = ["Morpheme"]
@@ -45,8 +51,8 @@ _ORIGIN_RANK = {FILLED: 0, OPEN_CATEGORY: 1, CO_EXPONENT: 2}
 # Key and structural columns per keyed construction. The schema's
 # keyed_columns for each construction must match (a test holds them together).
 KEYED = {
-    "morphemes": (MORPHEMES_STRUCT, MORPHEMES_KEY),
-    "morphs": (MORPHS_STRUCT, MORPHS_KEY),
+    MORPHEMES: (MORPHEMES_STRUCT, MORPHEMES_KEY),
+    MORPHS: (MORPHS_STRUCT, MORPHS_KEY),
 }
 
 
@@ -75,28 +81,30 @@ def _dedupe(items: Iterable[str]) -> List[str]:
 # ---------------------------------------------------------------------------
 
 def scoped_elements(planar_df: pd.DataFrame, lang_id: str) -> List[Tuple[int, str, str, str]]:
-    """(position_number, position_name, element, scope) for every element the
-    planar's Biuniqueness_Scope column puts in scope (anything but excluded),
-    in planar order. Raises ValueError if the column is missing or out of
-    step with Elements."""
-    if "Biuniqueness_Scope" not in planar_df.columns:
-        raise ValueError(
-            f"planar_{lang_id}.tsv has no Biuniqueness_Scope column, which decides "
-            f"which elements this class screens. Backfill it first (see #254 Part 2b "
-            f"and migrations/backfill_biuniqueness_scope_synth0001.py).")
+    """(position_number, position_name, element, scope) for every element in
+    scope (anything but excluded), in planar order.
+
+    The scope is computed from Elements by make_forms.classify_biuniqueness_scope,
+    never read from the planar's Biuniqueness_Scope column: that column is a
+    copy of the same computation (validate_planar rejects any difference), so
+    reading it meant an element added to the planar without the column being
+    extended crashed every command that builds this tab (found 2026-10-13,
+    when the class moved to English). Raises ValueError for an unregistered
+    ALL CAPS label rather than guessing its scope."""
+    from .make_forms import classify_biuniqueness_scope
     out = []
     df = planar_df[planar_df["Language_ID"] == lang_id] if "Language_ID" in planar_df else planar_df
     for _, row in df.iterrows():
         pos_name = str(row["Position_Name"]).strip()
-        elements = _tokenize_elements(str(row["Elements"]).strip())
-        scopes = _tokenize_elements(str(row["Biuniqueness_Scope"]).strip())
-        if len(elements) != len(scopes):
-            raise ValueError(
-                f"{pos_name}: Elements has {len(elements)} item(s) but Biuniqueness_Scope "
-                f"has {len(scopes)}; they must line up one to one.")
-        for element, scope in zip(elements, scopes):
+        for element in _tokenize_elements(str(row["Elements"]).strip()):
+            element = element.strip()
+            scope = classify_biuniqueness_scope(element)
+            if scope == "unknown":
+                raise ValueError(
+                    f"{pos_name}: '{element}' is an ALL CAPS label not registered in "
+                    f"schemas/planar.yaml, so its biuniqueness scope is unknown; register it.")
             if scope != "excluded":
-                out.append((int(row["Position"]), pos_name, element.strip(), scope))
+                out.append((int(row["Position"]), pos_name, element, scope))
     return out
 
 
@@ -124,10 +132,10 @@ def position_order(planar_df: pd.DataFrame, lang_id: str) -> Dict[str, int]:
 
 
 # ---------------------------------------------------------------------------
-# Tab 1: prescreening
+# Tab 1: elements
 # ---------------------------------------------------------------------------
 
-def prescreening_rows(planar_df: pd.DataFrame, lang_id: str,
+def element_rows(planar_df: pd.DataFrame, lang_id: str,
                       param_names: Sequence[str]) -> List[List[object]]:
     """Standard element rows ([Element, Position_Name, Position_Number,
     *criteria]) for in-scope elements only. Open-category rows get NA in
@@ -148,9 +156,9 @@ def _co_label(element: str, co_positions: Sequence[str]) -> str:
     return f"{element} + {', '.join(co_positions)}"
 
 
-def morpheme_rows(prescreening: pd.DataFrame, planar_df: pd.DataFrame,
+def morpheme_rows(elements: pd.DataFrame, planar_df: pd.DataFrame,
                   lang_id: str) -> List[Dict[str, str]]:
-    """One row per morpheme found in the prescreening answers.
+    """One row per morpheme found in the elements tab's answers.
 
     A filled element marked has_allomorphs=y is a morpheme; so is each member
     listed on an open-category row; so is each element with co_exponents
@@ -168,7 +176,7 @@ def morpheme_rows(prescreening: pd.DataFrame, planar_df: pd.DataFrame,
         if pos not in entry["at"]:
             entry["at"].append(pos)
 
-    for _, r in prescreening.iterrows():
+    for _, r in elements.iterrows():
         element, pos = str(r["Element"]).strip(), str(r["Position_Name"]).strip()
         has = str(r.get("has_allomorphs", "")).strip().lower()
         if has == "y":
@@ -195,12 +203,12 @@ def morpheme_rows(prescreening: pd.DataFrame, planar_df: pd.DataFrame,
 # Tab 3: morphs
 # ---------------------------------------------------------------------------
 
-def morph_rows(morphemes: pd.DataFrame, prescreening: pd.DataFrame,
+def morph_rows(morphemes: pd.DataFrame, elements: pd.DataFrame,
                planar_df: pd.DataFrame, lang_id: str) -> List[Dict[str, str]]:
     """One row per (morpheme, position, form) to be judged.
 
     filled morphemes: every planar position listing the element, crossed with
-    its forms (the element plus the variant forms its prescreening rows
+    its forms (the element plus the variant forms its elements-tab rows
     listed in members). open_category members: the positions where they were
     listed, with the member itself as the one form (other forms are added by
     hand). co_exponent morphemes: the element at its own position plus every
@@ -213,7 +221,7 @@ def morph_rows(morphemes: pd.DataFrame, prescreening: pd.DataFrame,
 
     variants: Dict[str, List[str]] = {}
     co_source: Dict[str, Tuple[str, str, List[str]]] = {}
-    for _, r in prescreening.iterrows():
+    for _, r in elements.iterrows():
         element, pos = str(r["Element"]).strip(), str(r["Position_Name"]).strip()
         if str(r.get("has_allomorphs", "")).strip().lower() == "y":
             variants.setdefault(element, []).extend(wrap(m) for m in _split_list(r.get("members", "")))
@@ -250,6 +258,23 @@ def morph_rows(morphemes: pd.DataFrame, prescreening: pd.DataFrame,
             seen.add(k)
             unique.append(r)
     return unique
+
+
+def sources_of(construction: str) -> List[str]:
+    """The tabs a keyed tab is generated from: morphemes from elements,
+    morphs from morphemes plus elements."""
+    return [ELEMENTS] + ([MORPHEMES] if construction == MORPHS else [])
+
+
+def keyed_rows(construction: str, read, planar_df: pd.DataFrame,
+               lang_id: str) -> List[Dict[str, str]]:
+    """The generated rows for keyed tab `construction`; read(tab) returns the
+    imported DataFrame of each tab sources_of(construction) names."""
+    if construction == MORPHEMES:
+        return morpheme_rows(read(ELEMENTS), planar_df, lang_id)
+    if construction == MORPHS:
+        return morph_rows(read(MORPHEMES), read(ELEMENTS), planar_df, lang_id)
+    raise ValueError(f"{CLASS_NAME} has no keyed tab named {construction!r}")
 
 
 # ---------------------------------------------------------------------------

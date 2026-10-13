@@ -229,6 +229,13 @@ def test_a_second_apply_is_a_no_op(env):
     assert doorway.mutations == []
 
 
+def _row_index(rows, class_name, construction):
+    """Where a (class, construction) row sits, found by content: rows are in
+    the YAML's order, which changes as classes are added."""
+    return next(i for i, r in enumerate(rows)
+                if r[:3] == [class_name, LANG, construction])
+
+
 def test_a_change_to_a_second_row_of_a_class_names_the_construction(env):
     """`segmental` and `phrasal_accent` have one row per construction here.
 
@@ -239,9 +246,9 @@ def test_a_change_to_a_second_row_of_a_class_names_the_construction(env):
     doorway, run = env
     ws = sheet(doorway)
     rows = ws.get_all_values()
-    assert rows[-1][:3] == ["phrasal_accent", LANG, "general"]
-    assert rows[-2][:3] == ["phrasal_accent", LANG, "prescreening"]
-    rows[-1][-1] = "joint_accent{never}"
+    general = _row_index(rows, "phrasal_accent", "general")
+    assert rows[general - 1][:3] == ["phrasal_accent", LANG, "prescreening"]
+    rows[general][-1] = "joint_accent{never}"
     ws.clear()
     ws.update(rows, "A1")
 
@@ -256,8 +263,9 @@ def test_a_whole_row_removed_from_a_two_row_class_is_named(env):
     doorway, run = env
     ws = sheet(doorway)
     rows = ws.get_all_values()
+    general = _row_index(rows, "phrasal_accent", "general")
     ws.clear()
-    ws.update(rows[:-1], "A1")                        # drop phrasal_accent / general
+    ws.update(rows[:general] + rows[general + 1:], "A1")   # drop phrasal_accent / general
 
     out = run(["sdy", "--to-sheet", "--lang", LANG])
     assert "+ added:   phrasal_accent / general" in out

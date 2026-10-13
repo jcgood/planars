@@ -30,6 +30,8 @@ from coding.drive import (
     create_or_update_shared_file,
     ensure_anyone_permission,
     get_or_create_spreadsheet,
+    make_read_only,
+    set_user_role,
     upload_manifest,
 )
 from fake_drive import FakeDriveDoorway
@@ -198,6 +200,59 @@ class TestEnsureAnyonePermission:
         ensure_anyone_permission(doorway, file_id)
         types = {p["type"] for p in doorway.list_permissions(file_id)}
         assert types == {"user", "anyone"}
+
+
+# ---------------------------------------------------------------------------
+# set_user_role / make_read_only (2026-10-13)
+# ---------------------------------------------------------------------------
+
+def _roles(doorway, file_id):
+    return {p.get("emailAddress") or p["type"]: p["role"]
+            for p in doorway.list_permissions(file_id)}
+
+
+class TestSetUserRole:
+    def test_a_reader_grant_cannot_lower_a_writer_so_the_role_is_changed_in_place(self):
+        """What archiving got wrong: adding a reader grant beside a writer one
+        leaves a writer (Drive keeps the higher role, and so does the fake)."""
+        doorway = FakeDriveDoorway()
+        f = doorway.seed_file("sheet", "application/vnd.google-apps.spreadsheet")
+        doorway.create_permission(f, type="user", role="writer", email="a@example.org")
+        doorway.create_permission(f, type="user", role="reader", email="a@example.org")
+        assert _roles(doorway, f) == {"a@example.org": "writer"}
+
+        doorway.clear_mutations()
+        assert set_user_role(doorway, f, "a@example.org", "reader") is True
+        assert _roles(doorway, f) == {"a@example.org": "reader"}
+        assert doorway.mutations_of("delete_permission") == []    # Drive refuses that
+        assert len(doorway.mutations_of("update_permission")) == 1
+
+    def test_raises_and_creates_as_needed_and_is_quiet_when_already_right(self):
+        doorway = FakeDriveDoorway()
+        f = doorway.seed_file("sheet", "application/vnd.google-apps.spreadsheet")
+        assert set_user_role(doorway, f, "a@example.org", "writer") is True   # none yet
+        assert set_user_role(doorway, f, "A@example.org", "writer") is False  # same person
+        assert _roles(doorway, f) == {"a@example.org": "writer"}
+
+    def test_never_changes_an_owner(self):
+        doorway = FakeDriveDoorway()
+        f = doorway.seed_file("sheet", "application/vnd.google-apps.spreadsheet")
+        doorway.create_permission(f, type="user", role="owner", email="o@example.org")
+        assert set_user_role(doorway, f, "o@example.org", "reader") is False
+        assert _roles(doorway, f) == {"o@example.org": "owner"}
+
+
+class TestMakeReadOnly:
+    def test_every_editor_becomes_a_reader_and_the_link_share_goes(self):
+        doorway = FakeDriveDoorway()
+        f = doorway.seed_file("sheet", "application/vnd.google-apps.spreadsheet")
+        doorway.create_permission(f, type="user", role="owner", email="o@example.org")
+        doorway.create_permission(f, type="user", role="writer", email="a@example.org")
+        doorway.create_permission(f, type="user", role="reader", email="b@example.org")
+        doorway.create_permission(f, type="anyone", role="reader")
+        assert make_read_only(doorway, f) == ["a@example.org"]
+        assert _roles(doorway, f) == {"o@example.org": "owner", "a@example.org": "reader",
+                                      "b@example.org": "reader"}
 
 
 # ---------------------------------------------------------------------------

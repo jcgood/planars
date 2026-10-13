@@ -2,8 +2,8 @@
 on the offline Drive stand-in (issue #254).
 
 Walks the three-tab chain the way Adam will: the sheet is created with
-prescreening filled from the planar and the two later tabs empty; once
-prescreening is answered and imported, morphemes is regenerated from it;
+the elements tab filled from the planar and the two later tabs empty; once
+that is answered and imported, morphemes is regenerated from it;
 once morphemes is imported, morphs is regenerated from that. Then the
 backward guarantees: an answered row is never silently dropped, and a row
 added by hand survives.
@@ -16,11 +16,12 @@ import pytest
 from coding import biuniqueness_rows as br
 from test_generate_sheets_snapshot import env  # noqa: F401  (pytest fixture)
 
-LANG = "synth0001"
+LANG = "stan1293"
 CLASS = br.CLASS_NAME
+ELEMENTS = br.ELEMENTS
 
 CRITERIA = {
-    "prescreening": {"has_allomorphs": ["y", "n"], "members": ["<free_text>"],
+    ELEMENTS: {"has_allomorphs": ["y", "n"], "members": ["<free_text>"],
                      "co_exponents": ["<position_names>"]},
     "morphemes": {"morpheme_class": ["<free_text>"], "forms_relation": ["alternate", "co-occur"]},
     "morphs": {"occurs_here": ["y", "n"],
@@ -54,7 +55,7 @@ def import_tab(env, construction, edit=None):
     return df
 
 
-def answer_prescreening(df):
+def answer_elements(df):
     def put(element, pos, **vals):
         mask = (df["Element"] == element) & (df["Position_Name"] == pos)
         assert mask.any(), (element, pos)
@@ -73,7 +74,7 @@ def regen(env, construction, *extra):
 
 @pytest.fixture
 def created(env):
-    # The frozen data already has synth0001's live class sheet; start from none.
+    # The frozen data already has English's live class sheet; start from none.
     env.remove_class(LANG, CLASS)
     add_class(env)
     out = env.run(["generate-sheets", "--apply"])
@@ -81,29 +82,29 @@ def created(env):
     return env, out
 
 
-def test_creating_the_sheet_fills_prescreening_and_leaves_the_later_tabs_waiting(created):
+def test_creating_the_sheet_fills_elements_and_leaves_the_later_tabs_waiting(created):
     env, out = created
-    ps = tab_df(env, "prescreening")
+    ps = tab_df(env, ELEMENTS)
     assert list(ps.columns[:3]) == ["Element", "Position_Name", "Position_Number"]
     assert "KEYSTONE" not in set(ps["Element"])                  # out of scope
     assert (ps.loc[ps["Element"] == "AD-S", "has_allomorphs"] == "NA").all()
     assert tab_df(env, "morphemes").empty
     assert list(tab_df(env, "morphemes").columns[:3]) == br.MORPHEMES_STRUCT
-    assert "prescreening.tsv not found" in out
+    assert f"{ELEMENTS}.tsv not found" in out
 
 
 def test_free_text_columns_get_no_dropdown_and_choice_columns_do(created):
     env, _ = created
-    ws = env.tab(LANG, CLASS, "prescreening")
+    ws = env.tab(LANG, CLASS, ELEMENTS)
     header = ws.get_all_values()[0]
     assert ws._cell(1, header.index("has_allomorphs")).validation is not None
     assert ws._cell(1, header.index("members")).validation is None
     assert ws._cell(1, header.index("co_exponents")).validation is None
 
 
-def test_the_chain_prescreening_to_morphemes_to_morphs(created):
+def test_the_chain_elements_to_morphemes_to_morphs(created):
     env, _ = created
-    import_tab(env, "prescreening", answer_prescreening)
+    import_tab(env, ELEMENTS, answer_elements)
 
     out = regen(env, "morphemes")
     assert "[SystemExit:" not in out, out
@@ -123,7 +124,7 @@ def test_the_chain_prescreening_to_morphemes_to_morphs(created):
 
 
 def _through_morphs(env):
-    import_tab(env, "prescreening", answer_prescreening)
+    import_tab(env, ELEMENTS, answer_elements)
     regen(env, "morphemes")
     import_tab(env, "morphemes")
     regen(env, "morphs")
@@ -158,7 +159,7 @@ def test_an_answered_row_whose_source_disappears_stops_the_regeneration(created)
     _set_cell(env, "morphs", {"Morpheme": "do", "Form": "does"}, "occurs_here", "y")
     before = env.tab(LANG, CLASS, "morphs").get_all_values()
 
-    # do drops out of morphemes (Adam changed prescreening and it was re-imported).
+    # do drops out of morphemes (Adam changed the elements tab and it was re-imported).
     import_tab(env, "morphemes", lambda df: df[df["Morpheme"] != "do"])
     out = regen(env, "morphs")
     assert "ABORTED" in out and "do / v:frontedauxiliary / does" in out
@@ -253,8 +254,9 @@ def test_update_sheets_adds_only_in_scope_elements_and_leaves_keyed_tabs_alone(
     planar_path = env.coded / LANG / "lang_setup" / f"planar_{LANG}.tsv"
     planar = pd.read_csv(planar_path, sep="\t", dtype=str, keep_default_na=False)
     i = planar.index[planar["Position_Name"] == "v:modal1"][0]
-    planar.loc[i, "Elements"] += ", dare, NEED"
-    planar.loc[i, "Biuniqueness_Scope"] += ", filled, excluded"
+    # Biuniqueness_Scope deliberately not extended: the scope is computed from
+    # Elements, so a stale stored column must not matter.
+    planar.loc[i, "Elements"] += ", dare, NP{O}"
     planar.to_csv(planar_path, sep="\t", index=False)
 
     monkeypatch.setattr(us, "CODED_DATA", env.coded)
@@ -270,10 +272,10 @@ def test_update_sheets_adds_only_in_scope_elements_and_leaves_keyed_tabs_alone(
     assert "[morphemes] up to date (keyed-row tab" in out, out
     assert "[morphs] up to date (keyed-row tab" in out, out
 
-    ps = tab_df(env, "prescreening")
+    ps = tab_df(env, ELEMENTS)
     modal = ps[ps["Position_Name"] == "v:modal1"]
     assert "dare" in set(modal["Element"])
-    assert "NEED" not in set(modal["Element"])          # out of scope
+    assert "NP{O}" not in set(modal["Element"])         # out of scope
 
 
 def test_restructure_carries_keyed_answers_across_an_element_rename(created, monkeypatch):
@@ -293,8 +295,8 @@ def test_restructure_carries_keyed_answers_across_an_element_rename(created, mon
     _through_morphs(env)
     _set_cell(env, "morphs", {"Morpheme": "do", "Form": "does"}, "occurs_here", "y")
     # restructure carries answers from the live Sheet; _through_morphs only
-    # put the prescreening answers in the local TSV.
-    _set_cell(env, "prescreening", {"Element": "do", "Position_Name": "v:frontedauxiliary"},
+    # put the elements-tab answers in the local TSV.
+    _set_cell(env, ELEMENTS, {"Element": "do", "Position_Name": "v:frontedauxiliary"},
               "has_allomorphs", "y")
 
     planar_path = env.coded / LANG / "lang_setup" / f"planar_{LANG}.tsv"
@@ -331,14 +333,14 @@ def test_restructure_carries_keyed_answers_across_an_element_rename(created, mon
     doo = morphs[(morphs["Morpheme"] == "doo") & (morphs["Form"] == "does")]
     assert doo["occurs_here"].tolist() == ["y"]               # answer carried, name renamed
     assert "do" not in set(morphs["Morpheme"])
-    ps = tab_df(env, "prescreening")
+    ps = tab_df(env, ELEMENTS)
     assert ps.loc[ps["Element"] == "doo", "has_allomorphs"].tolist() == ["y"]
 
 
 def test_the_instructions_tab_walks_through_the_three_steps(created):
     env, _ = created
     text = "\n".join(r[0] for r in env.tab(LANG, CLASS, "Instructions").get_all_values() if r)
-    assert "STEP 1 — prescreening" in text and "STEP 3 — morphs" in text
+    assert f"STEP 1 — {ELEMENTS}" in text and "STEP 3 — morphs" in text
     assert "This tab is generated after morphemes is imported." in text
-    assert text.count("ready-for-review") >= 2       # prescreening and morphemes
+    assert text.count("ready-for-review") >= 2       # elements and morphemes
     assert "Contracted forms count" in text          # sheet_instructions (decision A)

@@ -445,7 +445,8 @@ def _collect_spans_sheets(gc, manifest, lang_id: Optional[str] = None):
                                     else pd.DataFrame(columns=raw[0] if raw else []))
                         planar = lang_data["planar"]
                         pos_to_name = {p["pos"]: p["name"] for p in planar["positions"]}
-                        _data = (_tab_df("morphemes"), _tab_df(construction),
+                        from planars.biuniqueness_deviations import MORPHEMES_TAB
+                        _data = (_tab_df(MORPHEMES_TAB), _tab_df(construction),
                                  planar["keystone_pos"], pos_to_name)
                         result = derive_fn(_data=_data, strict=False)
                         rows.extend(row_fn(result, lid))
