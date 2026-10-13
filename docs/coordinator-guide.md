@@ -538,7 +538,7 @@ python -m coding generate-status-sheet --lang stan1293        # dry run — one 
 python -m coding generate-status-sheet --lang stan1293 --apply
 ```
 
-The spreadsheets live in a freestanding top-level "Annotation Status" Drive folder — deliberately **not** nested inside the project's root folder, whose inherited "anyone with the link = editor" permission can't be removed at the child level (a separate, unresolved problem). The freestanding folder starts with a clean permission slate, so it and every status spreadsheet can actually be locked read-only for Adam (`adamjamesrosstallman@gmail.com`) with no "anyone" grant. Re-running `--apply` overwrites the existing `status_{lang_id}` spreadsheet in place rather than minting a new URL, since there's no annotation history to preserve. As of this writing it is coordinator-triggered only — not yet wired into `data-refresh.yml` or any other automation.
+The spreadsheets live in a freestanding top-level "Annotation Status" Drive folder, outside the project's root folder, so they can be read-only for annotators while the annotation sheets are editable. Each status spreadsheet is shared read-only with its language's annotator by name (addresses come from private planars-data via `coding/people.py`); nothing in the project is shared "anyone with the link" except generated notebooks and PDF reports (policy since 2026-10-12, Phase 10 unit 14). Re-running `--apply` overwrites the existing `status_{lang_id}` spreadsheet in place rather than minting a new URL, since there's no annotation history to preserve. As of this writing it is coordinator-triggered only — not yet wired into `data-refresh.yml` or any other automation.
 
 ### Health checks
 

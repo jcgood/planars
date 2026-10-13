@@ -43,7 +43,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "generate_status_sheet"
 UPDATING = os.environ.get("PLANARS_UPDATE_SNAPSHOTS") == "1"
 
-ADAM = "adamjamesrosstallman@gmail.com"
+ADAM = "annotator@example.org"  # tests/conftest.py's placeholder address
 FOLDER_NAME = "Annotation Status"
 
 

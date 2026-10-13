@@ -10,24 +10,24 @@ status cell, and a direct link to that construction's live tab.
 
 The spreadsheets live in a dedicated top-level Drive folder named
 "Annotation Status" — a *freestanding* folder (parent = Drive root), not a
-child of the project's existing root folder. This is required, not
-incidental: the existing root folder (from `setup-root-folder`) has an
-"anyone with the link = editor" permission that cascades to every file
-inside it, and Google's API refuses to remove an *inherited* permission at
-a child level. Creating this folder outside that hierarchy gives it a clean
-permission slate so the normal remove/add-permission calls actually work.
-Do not nest this folder inside the existing root folder, and do not attempt
-to fix the existing root folder's inherited permission here — that is a
-separate, unresolved problem being handled independently.
+child of the project's root folder. This is required, not incidental:
+permissions on the root folder cascade to every file inside it, Google's API
+refuses to remove an *inherited* permission at a child level, and annotators
+hold edit access on the root (they edit the annotation sheets in it). Inside
+it, a status sheet could not be made read-only. Outside it, the normal
+remove/add-permission calls work. (The root folder's former "anyone with the
+link" grant was removed 2026-10-12, Phase 10 unit 14; that does not change
+this reasoning.)
 
 Run from the repo root:
     python -m coding generate-status-sheet                      # dry run, all languages
     python -m coding generate-status-sheet --lang stan1293      # dry run, one language
     python -m coding generate-status-sheet --lang stan1293 --apply
 
-Locking: the "Annotation Status" folder and each spreadsheet are shared
-read-only with adamjamesrosstallman@gmail.com and have any "anyone with the
-link" permission removed (defensive — freestanding files shouldn't have one,
+Locking: each spreadsheet is shared read-only with its language's
+annotator, by name, and the "Annotation Status" folder with every
+language's annotator (addresses from private planars-data, via
+`coding/people.py`); any "anyone with the link" permission is removed (defensive — freestanding files shouldn't have one,
 but Drive occasionally adds one by default on creation). The coordinator's
 OAuth identity owns every file as creator and needs no explicit permission.
 
@@ -54,11 +54,14 @@ from .drive import (
     load_manifest,
     upload_manifest,
     get_or_create_spreadsheet,
+    ensure_user_permission,
+    remove_anyone_permission,
     _with_retry,
     _load_drive_config,
     _save_drive_config,
 )
 from .drive_doorway import WorksheetNotFound, get_doorway
+from .people import annotator_email
 from .make_forms import (
     _read_diagnostics_for_language,
     resolve_keystone_active,
@@ -72,7 +75,6 @@ from .validate_coding import (
 from planars.languages import get_display_name
 
 _STATUS_FOLDER_NAME = "Annotation Status"
-_ADAM_EMAIL = "adamjamesrosstallman@gmail.com"
 
 # Pastel palette matching the pink/white highlighting convention already used
 # by validate_coding.py's pink-cell error highlighting.
@@ -282,28 +284,17 @@ def _gather_status_rows(
 # Drive helpers
 # ---------------------------------------------------------------------------
 
-def _already_shared(doorway, file_id: str, email: str) -> bool:
-    """Return True if email already holds any permission on file_id.
+def _lock_read_only(doorway, file_id: str, lang_ids: List[str]) -> None:
+    """Remove any 'anyone' permission and give each of these languages'
+    annotators read-only access, by name (`coding/people.py`).
 
-    Avoids piling up duplicate permission entries on repeated --apply runs.
+    Uses `drive.remove_anyone_permission` / `drive.ensure_user_permission`,
+    the one copy of each (this function used to inline them, with Adam's
+    address typed into the code).
     """
-    perms = doorway.list_permissions(file_id, fields="permissions(emailAddress)")
-    return any((p.get("emailAddress") or "").lower() == email.lower() for p in perms)
-
-
-def _lock_read_only(doorway, file_id: str) -> None:
-    """Remove any 'anyone' permission and ensure Adam has read-only access.
-
-    No doorway-level convenience for removing the 'anyone' grant -- inlined
-    here from the same two doorway primitives, same precedent as
-    `restructure_sheets._lock_archived_sheet`.
-    """
-    for p in doorway.list_permissions(file_id, fields="permissions(id,type)"):
-        if p.get("type") == "anyone":
-            _with_retry(lambda pid=p["id"]: doorway.delete_permission(file_id, pid))
-    if not _already_shared(doorway, file_id, _ADAM_EMAIL):
-        _with_retry(lambda: doorway.create_permission(file_id, type="user", role="reader",
-                                  email=_ADAM_EMAIL, notify=False))
+    remove_anyone_permission(doorway, file_id)
+    for email in sorted({e for e in (annotator_email(l) for l in lang_ids) if e}):
+        ensure_user_permission(doorway, file_id, email, "reader")
 
 
 # ---------------------------------------------------------------------------
@@ -469,7 +460,8 @@ def main(args: argparse.Namespace | None = None) -> None:
     if apply:
         folder_id = _with_retry(lambda: doorway.get_or_create_folder(_STATUS_FOLDER_NAME))
         folder_url = f"https://drive.google.com/drive/folders/{folder_id}"
-        _lock_read_only(doorway, folder_id)
+        _lock_read_only(doorway, folder_id,
+                        [l for l in manifest if not l.startswith("_")])
         print(f"\nAnnotation Status folder: {folder_url}")
 
     for lang_id in lang_ids:
@@ -505,7 +497,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         sheet_name = f"status_{lang_id}"
         ss, created = get_or_create_spreadsheet(doorway, folder_id, sheet_name)
         _write_status_sheet(ss, lang_id, lang_folder_url, rows)
-        _lock_read_only(doorway, ss.id)
+        _lock_read_only(doorway, ss.id, [lang_id])
         action = "Created" if created else "Updated"
         print(f"    {action}: {ss.url}")
 

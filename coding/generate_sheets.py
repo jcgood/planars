@@ -74,6 +74,7 @@ import pandas as pd
 from . import validate_planar as _val_planar
 from . import validate_diagnostics as _val_diag
 from . import biuniqueness_rows as _br
+from . import people as _people
 from .drive import (
     _load_drive_config,
     _save_drive_config,
@@ -84,23 +85,21 @@ from .drive import (
 )
 from .drive_doorway import SpreadsheetHandle, WorksheetHandle, WorksheetNotFound, get_doorway
 from .glottolog import cached_entry as _cached_glottolog, get_metadata as _fetch_glottolog
-from planars.languages import get_display_name as _get_display_name, get_entry as _get_language_entry
+from planars.languages import get_display_name as _get_display_name
 from planars.free_occurrence import _parse_pos_ref
 
 
 def _annotator_email(lang_id: str) -> Optional[str]:
-    """Return the annotator's email for lang_id from languages.yaml, or None if unset.
+    """Return the annotator's email for lang_id, or None if no annotator is named.
 
     Used to share annotation sheets/folders with a named person instead of
     "anyone with the link" — these carry unpublished research data, so access
     is restricted to named individuals rather than a link (a link is not
     access control: it can leak via a forwarded message, a public comment,
-    a screenshot).
+    a screenshot). The address itself lives in private planars-data; see
+    `coding/people.py`.
     """
-    entry = _get_language_entry(lang_id)
-    if not entry:
-        return None
-    return entry.get("meta", {}).get("annotator_email") or None
+    return _people.annotator_email(lang_id)
 from .schemas import load_planar_schema, load_diagnostic_classes, load_diagnostic_criteria
 from .make_forms import (
     build_element_index,

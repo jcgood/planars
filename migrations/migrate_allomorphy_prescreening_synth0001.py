@@ -43,7 +43,6 @@ from coding.drive_doorway import get_doorway  # noqa: E402
 
 LANG = "synth0001"
 OLD_SHEET_ID = "1YEtSlw9t05OI6RKGgCtbez0u3oX1p5Xfe_6UH1dweGA"
-ADAM = "adamjamesrosstallman@gmail.com"
 COLUMN_MAP = {"has_allomorphs": "has_allomorphs", "Members": "members", "Notes": "Comments"}
 
 
@@ -96,9 +95,11 @@ def main() -> None:
     if missing:
         raise SystemExit(f"ABORTED: no row in the class sheet for {missing}; nothing written.")
 
+    from coding.people import email_for
+    adam = email_for("Adam Tallman")
     perms = _with_retry(lambda: doorway.list_permissions(
         new_id, fields="permissions(id,type,role,emailAddress)"))
-    adam_shared = any(p.get("emailAddress", "").lower() == ADAM and p.get("role") == "writer"
+    adam_shared = any(p.get("emailAddress", "").lower() == adam and p.get("role") == "writer"
                       for p in perms)
     print(f"  Adam {'already has' if adam_shared else 'will be given'} writer access")
 
@@ -109,7 +110,7 @@ def main() -> None:
         _with_retry(lambda r=row, c=col, v=value: new_ws.update_cell(r, c, v))
     if not adam_shared:
         _with_retry(lambda: doorway.create_permission(new_id, type="user", role="writer",
-                                                      email=ADAM, notify=False))
+                                                      email=adam, notify=False))
     print(f"\nCopied {len(writes)} cell(s).")
 
 

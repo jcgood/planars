@@ -29,7 +29,10 @@ languages.yaml
     ``python -m coding lookup-lang <glottocode>``.  Project metadata
     (source, author, annotator, annotation_status, notes) is hand-edited
     by coordinators.  Valid annotation_status values: planned | in-progress
-    | complete.
+    | complete.  No email addresses here (this repo is public): the
+    annotator's address lives in private planars-data,
+    ``coded_data/people.yaml``, keyed by the ``annotator`` name, and is read
+    only through ``coding/people.py``.
 
     Note: running ``lookup-lang`` uses PyYAML to rewrite this file, which
     strips YAML comments.  Keep essential documentation here rather than

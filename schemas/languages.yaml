@@ -13,6 +13,10 @@
 #
 # annotation_status values: planned | in-progress | complete
 #
+# Email addresses are NOT kept here: this repo is public. They live in the
+# private planars-data repo, coded_data/people.yaml, keyed by the annotator's
+# name as written below; coding/people.py is the only reader.
+#
 # Note: lookup-lang rewrites this file using PyYAML, which strips comments.
 # Essential documentation lives in schemas/__init__.py.
 
@@ -34,7 +38,6 @@ arao1248:
       ch. 13 in Constituency and convergence in the Americas (langsci/291)"
     author: Adam Tallman
     annotator: Adam Tallman
-    annotator_email: adamjamesrosstallman@gmail.com
     annotation_status: in-progress
     notes: ""
 
@@ -51,6 +54,5 @@ stan1293:
     source: ""
     author: Adam Tallman
     annotator: Adam Tallman
-    annotator_email: adamjamesrosstallman@gmail.com
     annotation_status: in-progress
     notes: ""

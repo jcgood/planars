@@ -395,6 +395,12 @@ a magic string) and imported, not re-typed.
 *Partly resolved 2026-10-11: `generate_biuniqueness_allomorphy_sheet.py` was
 retired (#254), leaving `generate_status_sheet.py`'s copy. The address now
 also appears in two one-time scripts under `migrations/`, which ran once.*
+*Closed 2026-10-12 (Phase 10 unit 14): every address now comes from one
+place, private `coded_data/people.yaml` in planars-data (keyed by the
+annotator's name in `languages.yaml`), read only by `coding/people.py`. The
+status sheet shares with each language's annotator; the typed constant, the
+migration's copy and `languages.yaml`'s `annotator_email` field are gone, so
+no address is left in the public repo's current files.*
 **What:** `generate_biuniqueness_allomorphy_sheet.py` and `generate_status_sheet.py`
 each declare their own `_ADAM_EMAIL = "adamjamesrosstallman@gmail.com"`
 constant to share/permission generated sheets. `schemas/languages.yaml`

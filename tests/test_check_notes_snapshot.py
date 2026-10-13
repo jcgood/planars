@@ -278,13 +278,11 @@ def test_dry_run_only_says_it_would_create_the_doc(env):
     assert env.doorway.mutations == []
 
 
-def test_apply_creates_the_doc_shared_with_anyone_holding_the_link(env):
-    """Deliberately the loosest sharing in the project — see drive.create_notes_doc.
-
-    Everything else is shared with named people, because a link is not access
-    control. The notes Doc is the exception: collaborators must be able to
-    reach it without an invite.
-    """
+def test_apply_creates_the_doc_editable_by_the_annotator_by_name(env):
+    """The annotator writes notes in this doc, so they get edit access — by
+    name, like every other project file, never by link (Phase 10 unit 14,
+    2026-10-12). It used to be "anyone with the link can edit"; the live docs
+    had lost that grant and left the annotator view-only."""
     env.seed_no_doc()
     env.run(["check-notes", "--lang", LANG, "--apply"])
     created = env.doorway.mutations_of("create_file")
@@ -293,7 +291,8 @@ def test_apply_creates_the_doc_shared_with_anyone_holding_the_link(env):
     assert len(doc) == 1
     assert doc[0]["name"] == "Araona [arao1248] — Annotation Notes"
     perms = env.doorway.mutations_of("create_permission")
-    assert [(p["type"], p["role"]) for p in perms] == [("anyone", "writer")]
+    assert [(p["type"], p["role"], p["email"]) for p in perms] == [
+        ("user", "writer", "annotator@example.org")]
 
 
 def test_a_newly_created_doc_is_readable_and_empty(env):

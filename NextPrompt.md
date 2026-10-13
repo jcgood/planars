@@ -109,9 +109,11 @@ A bug with one obviously right fix is not a question: fix it and report it.
 - **`R CMD INSTALL` runs once per check**, so the full suite is ~9 minutes and
   the renderer test alone ~2.5. The renderer test compares all 137 charts in
   one pass, so it is usually the one worth running.
-- **`tests/test_unattended_warning_escalation.py` keys warning prints by
-  line number**, so any edit above a warning in `coding/` breaks it (twice on
-  2026-10-10/11). Run the *full* suite before pushing, not one test file.
+- **Run the *full* suite before pushing, not one test file.** Saved command
+  outputs and the warning-print check catch changes far from the file you
+  edited.
+- **Tests use a placeholder annotator email** (`tests/conftest.py`); real
+  addresses live only in planars-data's `people.yaml`.
 - **Jeff runs parallel sessions.** Anything uncommitted you did not write may
   be another one's work in flight: do not commit it and do not revert it, stage
   your own files by name, and ask whose it is.

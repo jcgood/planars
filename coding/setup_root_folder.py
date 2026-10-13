@@ -9,7 +9,7 @@ languages and do not belong in any single language folder.
 
 What this does:
   1. Creates (or finds) a Drive folder named 'ConstituencyTypology' at the Drive root
-  2. Sets Viewer permissions on it (anyone with the link can view)
+  2. Removes any "anyone with the link" access (data is shared by name only)
   3. Moves all existing language folders into the root folder
   4. Renames language folders from 'planars — {lang_id}' to plain '{lang_id}'
   5. Moves manifest.json to the root folder (if it exists on Drive)
@@ -32,7 +32,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-from .drive import _load_drive_config, _save_drive_config, _with_retry, ensure_anyone_permission
+from .drive import _load_drive_config, _save_drive_config, _with_retry, remove_anyone_permission
 from .drive_doorway import get_doorway
 
 _ROOT_FOLDER_NAME = "ConstituencyTypology"
@@ -109,12 +109,14 @@ def main(args: argparse.Namespace | None = None) -> None:
     root_id = _get_or_create_root_folder(doorway)
     folder_url = f"https://drive.google.com/drive/folders/{root_id}"
 
-    # Step 2: Set Viewer permissions so coordinators can share the link.
-    # ensure_anyone_permission checks first, so a re-run doesn't pile up a
-    # second "anyone" grant (issue #276) — the fix that motivated collapsing
-    # this project's sharing helpers into one shared, idempotent mechanism.
-    ensure_anyone_permission(doorway, root_id)
-    print(f"Viewer permissions set on root folder.")
+    # Step 2: No link sharing. Project data is shared with named people only
+    # (Phase 10 unit 14, 2026-10-12): every language folder inside inherits
+    # the root's sharing, so a link grant here made every sheet viewable by
+    # anyone holding the link. Removes one if present, so a re-run converges.
+    if remove_anyone_permission(doorway, root_id):
+        print("Removed 'anyone with the link' access from the root folder.")
+    else:
+        print("Root folder has no link sharing — nothing to remove.")
 
     # Step 3: Move any language folders not yet inside the root folder.
     # Handles the initial migration and any folders added outside the normal
@@ -185,7 +187,8 @@ def main(args: argparse.Namespace | None = None) -> None:
         "\n  - All language folders are now inside ConstituencyTypology."
         "\n  - Existing contributor shares are unaffected (folder IDs did not change)."
         "\n  - New language folders will be created inside this root folder automatically."
-        "\n  - Share the root folder URL with coordinators who need access to all_languages.ipynb."
+        "\n  - Share the root folder by name with coordinators who need all_languages.ipynb"
+        "\n    (link sharing is off by policy)."
         "\n  - Run python -m coding generate-notebooks --apply to regenerate notebooks"
         "\n    (confirms manifest.json points to the correct location)."
     )

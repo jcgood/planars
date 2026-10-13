@@ -332,9 +332,13 @@ def _get_or_create_folder(drive, name: str, parent_id: str = None) -> str:
 def ensure_anyone_permission(doorway, file_id: str, role: str = "reader") -> None:
     """Grant 'anyone with the link' access to file_id, unless it already has one.
 
+    Used only for generated notebooks and PDF reports — outputs meant to be
+    passed around; project data is shared by name (`ensure_user_permission`).
     The single mechanism behind both of issue #276's decisions: called
-    unconditionally on every run from all three sharing call sites
-    (generate_notebooks.py, generate_reports.py, setup_root_folder.py), it
+    unconditionally on every run from both sharing call sites
+    (generate_notebooks.py and generate_reports.py, via
+    `create_or_update_shared_file`; setup_root_folder.py used it too until
+    2026-10-12, when the root folder stopped being link-shared), it
     both restores a manually-revoked share (a run always checks, so a missing
     grant gets recreated) and never piles up duplicates (an existing grant is
     left alone rather than re-created). Doing this unconditionally without the
@@ -346,6 +350,43 @@ def ensure_anyone_permission(doorway, file_id: str, role: str = "reader") -> Non
     if any(p.get("type") == "anyone" for p in existing):
         return
     doorway.create_permission(file_id, type="anyone", role=role)
+
+
+def remove_anyone_permission(doorway, file_id: str) -> bool:
+    """Remove every 'anyone with the link' grant from file_id. True if any was removed.
+
+    Project data is shared with named people only (decided 2026-10-12, Phase
+    10 unit 14); only generated notebooks and PDF reports keep a link share
+    (`ensure_anyone_permission`). The one copy of a sequence that used to be
+    inlined separately in restructure_sheets, generate_status_sheet and
+    setup_root_folder.
+    """
+    removed = False
+    for p in _with_retry(lambda: doorway.list_permissions(file_id, fields="permissions(id,type)")):
+        if p.get("type") == "anyone":
+            _with_retry(lambda pid=p["id"]: doorway.delete_permission(file_id, pid))
+            removed = True
+    return removed
+
+
+_ROLE_RANK = {"reader": 1, "commenter": 2, "writer": 3, "owner": 4}
+
+
+def ensure_user_permission(doorway, file_id: str, email: str, role: str) -> bool:
+    """Give the named person at least `role` on file_id. True if a grant was made.
+
+    Checks first, so re-running never piles up duplicate grants, and a person
+    who already holds this role or a higher one is left alone.
+    """
+    perms = _with_retry(lambda: doorway.list_permissions(
+        file_id, fields="permissions(emailAddress,role)"))
+    held = [_ROLE_RANK.get(p.get("role"), 0) for p in perms
+            if (p.get("emailAddress") or "").lower() == email.lower()]
+    if held and max(held) >= _ROLE_RANK[role]:
+        return False
+    _with_retry(lambda: doorway.create_permission(file_id, type="user", role=role,
+                                                  email=email, notify=False))
+    return True
 
 
 def create_or_update_shared_file(
@@ -429,19 +470,23 @@ def create_notes_doc(doorway, lang_id: str, folder_id: str,
 
     The doc is named "{display_name} — Annotation Notes" (e.g. "Araona
     [arao1248] — Annotation Notes"), falling back to "notes_{lang_id}" if
-    display_name is not provided. Shared "anyone with the link" as **editor**
-    — deliberate and unusual: every other shared file in this project uses
-    either a named-person grant (see generate_sheets.py's `_annotator_email`)
-    or a reader-only "anyone" link (`ensure_anyone_permission`), but a
-    collaborator writing freeform notes may not have a Google account to be
-    named on, so this is the one place an anonymous *editor* grant is
-    intentional. That grant stays beside the creation call rather than being
-    left to the caller to remember.
+    display_name is not provided. The language's annotator (from
+    `languages.yaml`) gets **edit** access by name, since the doc is where
+    they write notes to the coordinator; nobody gets link access. Until
+    2026-10-12 this granted "anyone with the link" edit access instead, in
+    case a collaborator had no Google account — but the live docs had lost
+    that grant and left the annotator view-only, unable to write notes at
+    all (Phase 10 unit 14: data is shared with named people only). The grant
+    stays beside the creation call rather than being left to the caller to
+    remember.
 
     Returns the new document's file ID.
     """
+    from .people import annotator_email
     doc_id = doorway.create_doc(_notes_doc_name(lang_id, display_name), folder_id)
-    doorway.create_permission(doc_id, type="anyone", role="writer")
+    email = annotator_email(lang_id)
+    if email:
+        ensure_user_permission(doorway, doc_id, email, "writer")
     return doc_id
 
 

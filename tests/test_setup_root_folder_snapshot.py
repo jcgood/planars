@@ -99,15 +99,18 @@ def test_first_run_output(env, monkeypatch):
     check_snapshot("first_run.txt", run(monkeypatch))
 
 
-def test_first_run_creates_the_root_folder_and_shares_it(env, monkeypatch):
+def test_first_run_creates_the_root_folder_without_link_sharing(env, monkeypatch):
+    """Every language folder inherits the root's sharing, so the root is never
+    shared by link: project data goes to named people only (Phase 10 unit 14,
+    2026-10-12). Until then this command granted "anyone with the link can
+    view", which made every sheet inside viewable by anyone holding a link."""
     doorway, _, _ = env
     run(monkeypatch)
     created = doorway.mutations_of("create_file")
     assert [c["name"] for c in created] == ["ConstituencyTypology"]
     assert created[0]["mimetype"] == FOLDER_MIME
     assert created[0]["parents"] == []          # deliberately at the Drive root
-    perms = doorway.mutations_of("create_permission")
-    assert [(p["type"], p["role"]) for p in perms] == [("anyone", "reader")]
+    assert doorway.mutations_of("create_permission") == []
 
 
 def test_first_run_moves_every_language_folder_into_the_root(env, monkeypatch):
@@ -145,11 +148,9 @@ def test_second_run_changes_nothing_at_all(env, monkeypatch):
     """Its docstring promises idempotence, and now it actually is.
 
     Before issue #276, the sharing call ran unconditionally, so every repeat
-    added another "anyone with the link" grant on the root folder instead of
-    checking for one first. `ensure_anyone_permission` (coding/drive.py) fixes
-    this: it lists existing permissions first and only creates one if no
-    "anyone" grant is already there, so a second run makes zero Drive calls of
-    any kind.
+    added another "anyone with the link" grant on the root folder. Since
+    2026-10-12 the command only ever *removes* such a grant, and only if one
+    is there, so a second run makes zero Drive writes of any kind.
     """
     doorway, config, saved = env
     run(monkeypatch)
@@ -163,30 +164,24 @@ def test_second_run_changes_nothing_at_all(env, monkeypatch):
     assert "already has correct name" in out
 
 
-def test_a_manually_revoked_share_is_restored_on_the_next_run(env, monkeypatch):
-    """ensure_anyone_permission's other half: not just no duplicates, also self-heals.
-
-    Before issue #276, only generate_notebooks.py's grant repaired itself after
-    a manual revoke; setup_root_folder.py's did not because it never checked
-    at all (it just always fired, which is a different bug — see the test
-    above). The same shared helper now gives every sharing call site both
-    properties from one mechanism.
-    """
+def test_a_link_share_added_by_hand_is_removed_on_the_next_run(env, monkeypatch):
+    """The command converges on the policy: if someone turns on "anyone with
+    the link" for the root folder in the Drive window, the next run takes it
+    off again (and touches nothing else)."""
     doorway, config, saved = env
     run(monkeypatch)
     root_id = doorway.mutations_of("create_file")[0]["file_id"]
-    perm = next(p for p in doorway.list_permissions(root_id) if p["type"] == "anyone")
-    doorway.delete_permission(root_id, perm["id"])
-    assert not any(p["type"] == "anyone" for p in doorway.list_permissions(root_id))
+    doorway.create_permission(root_id, type="anyone", role="reader")
 
     monkeypatch.setattr(setup_root_folder, "_load_drive_config",
                         lambda: json.loads(json.dumps({**config, **saved})))
     doorway.clear_mutations()
-    run(monkeypatch)
+    out = run(monkeypatch)
 
-    assert any(p["type"] == "anyone" and p["role"] == "reader"
-               for p in doorway.list_permissions(root_id))
-    assert len(doorway.mutations_of("create_permission")) == 1
+    assert not any(p["type"] == "anyone" for p in doorway.list_permissions(root_id))
+    assert len(doorway.mutations_of("delete_permission")) == 1
+    assert doorway.mutations_of("create_permission") == []
+    assert "Removed 'anyone with the link' access" in out
 
 
 def test_second_run_output(env, monkeypatch):

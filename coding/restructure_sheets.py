@@ -112,7 +112,7 @@ from .make_forms import (
 from .schemas import load_diagnostic_classes
 from .drive import (
     _autocommit_data, _load_drive_config, _save_drive_config, _with_retry,
-    load_manifest, upload_manifest,
+    load_manifest, remove_anyone_permission, upload_manifest,
 )
 from .drive_doorway import SpreadsheetHandle, WorksheetHandle, WorksheetNotFound, get_doorway
 from .generate_sheets import (
@@ -228,21 +228,13 @@ def _lock_archived_sheet(doorway, file_id: str, lang_id: str) -> None:
     notes point back to them) so the annotator still needs to be able to open
     and read them — just not edit them, since they're no longer the live copy.
 
-    No doorway-level convenience for removing the 'anyone' grant -- inlined
-    here from the same two doorway primitives, same precedent as
-    `generate_status_sheet._lock_read_only`.
-
-    Wrapped in `_with_retry` throughout (Phase 8, issue #271, found by fault
-    injection) -- unlike every worksheet-content read in this file, none of
-    the doorway's own structural calls (this function's included) retried on
-    a transient 429/500/503 before this fix, so a single rate-limit blip
-    during archiving used to crash the whole run and manufacture a false
-    interrupted-run recovery event out of something that should have been
-    transparent.
+    Uses `drive.remove_anyone_permission`, the one copy of that sequence
+    (it was inlined here and in two other files until 2026-10-12), which
+    retries every call (Phase 8, issue #271, found by fault injection: a
+    single rate-limit blip during archiving used to crash the whole run and
+    manufacture a false interrupted-run recovery event).
     """
-    for p in _with_retry(lambda: doorway.list_permissions(file_id, fields="permissions(id,type)")):
-        if p.get("type") == "anyone":
-            _with_retry(lambda: doorway.delete_permission(file_id, p["id"]))
+    remove_anyone_permission(doorway, file_id)
     email = _annotator_email(lang_id)
     if email:
         _with_retry(lambda: doorway.create_permission(file_id, type="user", role="reader", email=email))

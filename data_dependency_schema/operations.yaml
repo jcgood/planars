@@ -711,15 +711,14 @@
   writes_to_drive: true
   description: "One-time creation of the ConstituencyTypology root Drive folder."
   side_effects:
-    - "creates the root folder if it doesn't already exist; asserts the 'anyone with the link, reader' permission"
+    - "creates the root folder if it doesn't already exist; removes any 'anyone with the link' permission from it (data is shared by name only, since 2026-10-12)"
   idempotent: true
   idempotency_note: >-
-    ensure_anyone_permission-based, same mechanism as generate-notebooks/
-    generate-reports (issue #276) -- a second run with the folder already
-    present and shared makes zero Drive *write* calls (corrected 2026-08-11:
-    the read calls -- list_files, list_permissions, get_file -- still fire
-    unconditionally every run; only the create_permission/move_file/
-    update_file writes are skipped when state already matches).
+    remove_anyone_permission deletes a link grant only if one is present, so
+    a second run with the folder already in place makes zero Drive *write*
+    calls (the read calls -- list_files, list_permissions, get_file -- still
+    fire every run; only delete_permission/move_file/update_file writes are
+    skipped when state already matches).
   apply_gate: null
   preconditions: []
   facts_touched: []
