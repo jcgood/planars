@@ -395,6 +395,38 @@ transcript diff from removing `[y, n]` is shown to Jeff before it lands.
 
 ---
 
+## Phase 11 — The research logic as a spec *(deferred; not before Phase 10's doors and version history)*
+
+Raised by Jeff 2026-10-13. **The worry:** key project logic exists only
+inside Python scripts. If Python, or these scripts, stop being maintained,
+the logic has to be dug back out of the code. Same principle as Phase 10's
+"the record outlives its tools", applied to the logic instead of the data.
+
+**Direction (agreed, not designed):**
+- **The spec owns the research logic:** the data model, criteria and their
+  values, how rows and tabs are built, what makes a position qualify, how
+  spans are computed, and the daily refresh's step order and preconditions.
+  The code *runs from* the spec (Phase 10's registry rule) — a spec that only
+  describes the code would drift like every description before it.
+- **The plumbing stays ordinary code:** talking to Google and GitHub,
+  retrying, writing files. It has no linguistic content and is easy to
+  rewrite in any language. Do not try to compile all behaviour from a spec —
+  a spec able to do that is a programming language with worse tools.
+- **Worked examples in plain files** (filled TSV + rules → expected spans,
+  and the like) go with the spec. Any implementation, in any language, is
+  correct if it reproduces them. The saved span outputs in
+  `tests/snapshots/` are most of the way there.
+
+**First candidate:** qualification rules and span computation — the core of
+the three hypotheses, and the logic most buried in code today (each
+`planars/` module implements its rule; the schema holds a prose
+description and a hash check). Unit 8's single daily-refresh command is
+the step that makes the refresh order movable into the spec later.
+
+Done when: designed with Jeff (a pause, like Phase 10's); out of scope until then.
+
+---
+
 ## Working with agents
 
 **Phases are not work units.** Phase 0b/1 is eleven files; Phase 2 is the whole
