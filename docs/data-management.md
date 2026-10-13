@@ -115,10 +115,10 @@ Controls which analyses and constructions are run for a language. Required colum
 | `Constructions` | Tab name(s) in Google Sheets; comma-separated list for construction-specific classes |
 | `Criteria` | Comma-separated list of diagnostic criteria for this analysis |
 
-Criteria default to `y/n` dropdowns. To specify custom allowed values, use brace syntax:
+Every criterion lists its allowed values in brace syntax; there is no `y/n` default, and a bare name is an error:
 
 ```
-accented{y/n/both}, independence, left-interaction, right-interaction
+accented{y/n/both}, independence{y/n/na}, left-interaction{y/n}, right-interaction{y/n}
 ```
 
 `coding/generate_sheets.py` applies per-column dropdown validation using these values. `coding/import-sheets` validates each cell against its allowed set (always also accepts `na` and `?`).

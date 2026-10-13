@@ -1,5 +1,5 @@
 Connecting to Google APIs...
-  [noninterruption] diagnostics Criteria: 'free, multiple' -> 'free_form, multiple'
+  [noninterruption] diagnostics Criteria: 'free{y/n}, multiple{y/n}' -> 'free_form{y/n}, multiple{y/n}'
   [arao1248] YAML updated → diagnostics_arao1248.yaml
 
 Language: arao1248
@@ -7,7 +7,7 @@ Mode:     apply
 Renames:  ['noninterruption:free:free_form']
   [noninterruption/general] Rename: free → free_form
     Renamed.
-  [noninterruption] diagnostics Criteria: 'free, multiple' -> 'free_form, multiple'
+  [noninterruption] diagnostics Criteria: 'free{y/n}, multiple{y/n}' -> 'free_form{y/n}, multiple{y/n}'
   [stan1293] YAML updated → diagnostics_stan1293.yaml
 
 Language: stan1293
@@ -15,7 +15,7 @@ Mode:     apply
 Renames:  ['noninterruption:free:free_form']
   [noninterruption/general] Rename: free → free_form
     Renamed.
-  [noninterruption] diagnostics Criteria: 'free, multiple' -> 'free_form, multiple'
+  [noninterruption] diagnostics Criteria: 'free{y/n}, multiple{y/n}' -> 'free_form{y/n}, multiple{y/n}'
   [synth0001] YAML updated → diagnostics_synth0001.yaml
 
 Language: synth0001

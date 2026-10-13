@@ -249,6 +249,9 @@ duplication of logic, not just of a value, and the fix path differs from
 the rest of this document's items accordingly.
 
 ### D1. The same coreference/nonpermutability criterion-override logic is independently re-implemented in THREE files, one copy already stale
+*Closed 2026-10-13 (Phase 10 unit 3): every copy replaced by one function,
+`coding.schemas.criteria_for`, which reads the construction's `criterion:`
+and the values from the language YAML or the schema, else raises.*
 **What:** The override "prescreening construction X uses hardcoded criterion Y
 with hardcoded values Z" logic exists as three separate, independently
 maintained implementations:
@@ -292,6 +295,8 @@ look up each criterion's `values` list once, in one place, instead of being
 hand-copied into four files.
 
 ### D2. Coreference/phrasal_accent/element_prescreening default value-list overrides re-encode schema values as literals
+*Closed 2026-10-13 (Phase 10 unit 3): the typed lists are deleted; values
+come from `criteria_for`. The `[y, n]` default is removed everywhere.*
 **What:** Multiple call sites build `param_values` dicts with inline literal
 value lists instead of reading them: `{"scopal": ["y","n"]}` (nonpermutability
 pairs), `{"accented": ["y","n","both"]}` (three call sites), `{"joint_accent":
@@ -362,7 +367,9 @@ duplication across two files should be resolved as part of that.
 
 ### D5. `_TRAILING_COLS` / `_DEFAULT_EXPECTED` / `_KEYSTONE_NAME` fallback defaults re-embed the schema value they fall back from
 *Partly closed 2026-10-12: the `_KEYSTONE_NAME` fallbacks are gone (see D0).
-`_TRAILING_COLS` / `_DEFAULT_EXPECTED` fallbacks remain.*
+2026-10-13: `_DEFAULT_EXPECTED` is gone with the `[y, n]` default
+(`always_allowed_values: [na, "?"]` is read with no fallback).
+`_TRAILING_COLS` fallbacks remain.*
 **What:** Three separate constants read a schema value via
 `load_planar_schema()`/`load_diagnostic_criteria()` but supply a **hardcoded
 literal fallback** that duplicates the current schema value: `_TRAILING_COLS
@@ -508,6 +515,8 @@ which already owns the sibling fact `trailing_columns` for annotation TSVs;
 **Classification:** derivable (once written).
 
 ### R1. "prescreening"-stage constructions never carry a structured `criterion` field
+*Closed 2026-10-13 (Phase 10 unit 3): each prescreening construction in
+`diagnostic_classes.yaml` now names its `criterion:`.*
 **What:** Every two-stage class (`nonpermutability`, `coreference`,
 `phrasal_accent`) has a `constructions:` list where the *downstream* pair
 construction has a structured `criterion:` field (e.g. `criterion: scopal`),

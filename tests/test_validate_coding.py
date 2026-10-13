@@ -1,13 +1,24 @@
 """Tests for coding/validate_coding.py — validate_annotation_rows."""
 from __future__ import annotations
 
-from coding.schemas import criterion_values
+from coding.schemas import criteria_for, criterion_values
 from coding.validate_coding import (
-    _COREFERENCE_CONSTRUCTION_PARAMS,
     pair_annotation_status,
     validate_annotation_rows,
     validate_pair_rows,
 )
+
+
+class _CorefParams(dict):
+    """{construction: {"params", "values"}} for coreference, from the one rule
+    (coding.schemas.criteria_for) — replaces the deleted
+    validate_coding._COREFERENCE_CONSTRUCTION_PARAMS copy."""
+    def __missing__(self, construction):
+        names, values = criteria_for("coreference", construction, [], {})
+        return {"params": names, "values": values}
+
+
+_COREFERENCE_CONSTRUCTION_PARAMS = _CorefParams()
 
 
 # ---------------------------------------------------------------------------
@@ -69,10 +80,24 @@ def test_keystone_active_na_on_na_criterion_is_valid():
         _rows("na"),
         expected_params=["aspirated"],
         tab_name="aspiration_prominence",
+        param_values={"aspirated": ["y", "n", "both"]},
         keystone_active=True,
         keystone_na_criteria=["aspirated"],
     )
     assert issues == []
+
+
+def test_a_column_with_no_known_values_is_reported_once_not_checked_as_y_n():
+    """No [y, n] default (removed 2026-10-12): a column whose values are unknown
+    gets one warning for the tab, and its cells are not judged against a guess."""
+    _, issues = validate_annotation_rows(
+        _rows("both", other_val="maybe"),
+        expected_params=["aspirated"],
+        tab_name="aspiration_prominence",
+        keystone_active=True,
+    )
+    assert len(issues) == 1
+    assert "has no allowed values" in issues[0].message
 
 
 # ---------------------------------------------------------------------------
@@ -136,10 +161,9 @@ def test_coreference_pair_params_carry_untestable():
 
 
 def test_coreference_prescreening_still_resolves():
-    """prescreening is row_type: element and declares no `criterion` in
-    diagnostic_classes.yaml, so the constructions loop does not pick it up.
-    Without an explicit entry it falls through to the per-language param map
-    and wrongly inherits all three pair criteria as its columns."""
+    """prescreening declares `criterion: referential` in diagnostic_classes.yaml
+    (since 2026-10-12); without it, it would inherit all three pair criteria
+    from the per-language YAML as its columns."""
     entry = _COREFERENCE_CONSTRUCTION_PARAMS["prescreening"]
     assert entry["params"] == ["referential"]
     assert entry["values"]["referential"] == ["y", "n"]

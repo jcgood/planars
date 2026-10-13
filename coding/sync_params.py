@@ -50,7 +50,7 @@ from .make_forms import (
     _dump_diagnostics_yaml,
     _resolve_diagnostics_yaml_path,
 )
-from .schemas import load_diagnostic_classes as _load_dc
+from .schemas import criteria_for, criterion_values, load_diagnostic_classes as _load_dc
 from planars.schema_values import is_keystone
 from .drive import (
     _load_drive_config, _save_drive_config, _with_retry,
@@ -142,13 +142,34 @@ def _rename_criterion_in_cell(cell: str, old: str, new: str) -> str:
     return ", ".join(result)
 
 
+def _schema_values(name: str) -> List[str]:
+    """A new criterion's allowed values, from diagnostic_criteria.yaml.
+
+    A criterion created by --split or --merge must already be defined in the
+    schema: there is no `[y, n]` default any more (removed 2026-10-12, Phase
+    10), so a criterion with no values stops the command instead of quietly
+    getting values nobody chose.
+    """
+    vals = criterion_values(name)
+    if not vals:
+        raise SystemExit(
+            f"ERROR: criterion '{name}' is not defined (with values) in "
+            f"schemas/diagnostic_criteria.yaml. Add it there first, then re-run.")
+    return vals
+
+
+def _new_spec(name: str) -> str:
+    """`name{v1/v2/...}` for a criterion a split or merge creates."""
+    return f"{name}{{{'/'.join(_schema_values(name))}}}"
+
+
 def _split_criterion_in_cell(cell: str, old: str, new1: str, new2: str) -> str:
-    """Replace criterion 'old' with 'new1, new2' in a Criteria cell."""
+    """Replace criterion 'old' with 'new1, new2' (with their schema values) in a Criteria cell."""
     specs = [s.strip() for s in cell.split(",") if s.strip()]
     result = []
     for spec in specs:
         if _criterion_name_from_spec(spec) == old:
-            result.extend([new1, new2])
+            result.extend([_new_spec(new1), _new_spec(new2)])
         else:
             result.append(spec)
     return ", ".join(result)
@@ -166,7 +187,7 @@ def _merge_criteria_in_cell(cell: str, old1: str, old2: str, new: str) -> str:
         name = _criterion_name_from_spec(spec)
         if name in (old1, old2):
             if not inserted:
-                result.append(new)
+                result.append(_new_spec(new))
                 inserted = True
         else:
             result.append(spec)
@@ -272,7 +293,7 @@ def _insert_param_columns(
     validation_requests = []
     for i, param_name in enumerate(new_params):
         col_idx = insert_at + i
-        values = param_values_map.get(param_name, ["y", "n"])
+        values = param_values_map[param_name]  # criteria_for guarantees every column has values
         if is_free_entry(values):
             continue
         validation_requests.append({
@@ -376,7 +397,7 @@ def _build_dropdown_refresh_requests(
         if param not in header:
             continue
         col_idx = header.index(param)  # 0-based
-        values = exp_values.get(param, ["y", "n"])
+        values = exp_values[param]  # criteria_for guarantees every column has values
         if is_free_entry(values):
             continue
         requests.append({
@@ -582,24 +603,12 @@ def main(args: argparse.Namespace | None = None) -> None:
         for class_name, construction, param_names, param_values in specs:
             expected.setdefault(class_name, {})[construction] = (param_names, param_values)
 
-        # Coreference override: prescreening uses referential=[y,n]; each pair
-        # construction uses only its own criterion (not all class-level criteria).
-        if "coreference" in expected:
-            _dc = {c["name"]: c for c in _load_dc().get("classes", [])}
-            _pair_crit = {
-                con["name"]: con["criterion"]
-                for con in (_dc.get("coreference", {}).get("constructions") or [])
-                if isinstance(con, dict) and "criterion" in con
-            }
-            for con_name, crit in _pair_crit.items():
-                if con_name in expected["coreference"]:
-                    orig_values = expected["coreference"][con_name][1]
-                    crit_values = orig_values.get(crit, ["y", "n"])
-                    expected["coreference"][con_name] = ([crit], {crit: crit_values})
-            if "prescreening" in expected["coreference"]:
-                expected["coreference"]["prescreening"] = (
-                    ["referential"], {"referential": ["y", "n"]}
-                )
+        # Each tab's own criteria (a construction with a schema `criterion:` gets
+        # just that column): the one rule, coding.schemas.criteria_for. Until
+        # 2026-10-12 this was a coreference-only copy of it.
+        for class_name, by_con in expected.items():
+            for con_name, (names, values) in list(by_con.items()):
+                by_con[con_name] = criteria_for(class_name, con_name, names, values, lang_id)
 
         print(f"\nLanguage: {lang_id}")
         print(f"Mode:     {'apply' if apply else 'dry run'}")
@@ -653,7 +662,7 @@ def main(args: argparse.Namespace | None = None) -> None:
 
                 # Apply splits to this sheet tab
                 for old, new1, new2 in splits:
-                    default_vals = {new1: ["y", "n"], new2: ["y", "n"]}
+                    default_vals = {n: _schema_values(n) for n in (new1, new2)}
                     if old in ws.row_values(1):
                         print(f"  [{class_name}/{construction}] Split: {old} -> {new1}, {new2}")
                         if apply:
@@ -673,7 +682,7 @@ def main(args: argparse.Namespace | None = None) -> None:
 
                 # Apply merges to this sheet tab
                 for old1, old2, new in merges:
-                    default_vals = {new: ["y", "n"]}
+                    default_vals = {new: _schema_values(new)}
                     header_now = ws.row_values(1)
                     o1_found = old1 in header_now
                     o2_found = old2 in header_now

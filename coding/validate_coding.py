@@ -40,6 +40,7 @@ from .validate import ValidationIssue
 from .validate_planar import validate_planar_df
 from .validate_diagnostics import validate_diagnostics_df
 from .schemas import (
+    criteria_for,
     criterion_values,
     load_diagnostic_criteria,
     load_planar_schema,
@@ -53,43 +54,17 @@ from .schemas import (
 _STRUCTURAL_COLS      = {"Element", "Position_Name", "Position_Number"}
 _PAIR_STRUCTURAL_COLS = {"Element_A", "Element_B", "Position_A", "Position_B", "Direction"}
 _TRAILING_COLS        = load_planar_schema().get("trailing_columns", ["Source", "Comments"])
-_DEFAULT_EXPECTED = set(load_diagnostic_criteria().get("default_allowed_values", ["y", "n", "na", "?"]))
+# Values every criterion accepts in addition to its own list (unknown, not
+# applicable) — diagnostic_criteria.yaml's shared values. There is no default
+# list for a criterion whose own values are unknown: the [y, n] default was
+# removed 2026-10-12 (Phase 10); such a column is reported, not guessed.
+_ALWAYS_ALLOWED = set(load_diagnostic_criteria()["always_allowed_values"])
 
-# Per-construction criterion for coreference pair sheets, derived from schema.
-# Each coreference construction annotates exactly one criterion, but the
-# per-language diagnostics YAML lists all of them together under the class, so
-# param_map alone would put every criterion column on every construction's tab.
-# This narrows each construction to its own criterion.
-#
-# Both the criterion NAME and its allowed VALUES come from the schema. The
-# values were previously hardcoded as ["y", "n"], which silently overrode
-# diagnostic_criteria.yaml's [y, n, untestable] for reflexive_allowed /
-# pronoun_allowed / np_allowed -- so the generated dropdowns offered
-# "untestable" (they are built from the per-language YAML) while validation
-# rejected it and highlighted the cell pink. Never restate a criterion's values
-# here; ask the schema.
-def _entry_for(crit: str) -> dict:
-    """Build a {params, values} entry for a single criterion, values from schema."""
-    vals = criterion_values(crit)
-    # No declared values -> omit the key so validation falls back to defaults,
-    # rather than asserting an empty allowed-set that rejects everything.
-    return {"params": [crit], "values": {crit: vals}} if vals else {"params": [crit]}
+# Each tab's criterion columns come from coding.schemas.criteria_for, applied in
+# _load_param_map — the one copy of the rule that narrows, e.g., a coreference
+# pair tab to its own criterion. (A coreference-only copy,
+# _COREFERENCE_CONSTRUCTION_PARAMS, lived here until 2026-10-12.)
 
-
-def _build_coreference_params() -> Dict[str, dict]:
-    _dc = {c["name"]: c for c in load_diagnostic_classes().get("classes", [])}
-    # prescreening is row_type: element and declares no `criterion` in
-    # diagnostic_classes.yaml, so its criterion NAME still has to be named here.
-    # That remaining hardcode is catalogued in docs/hidden-facts-inventory.md and
-    # belongs to Phase 3; resolving it means adding `criterion: referential` to
-    # the schema, which changes sheet generation and wants snapshots first.
-    result: Dict[str, dict] = {"prescreening": _entry_for("referential")}
-    for con in (_dc.get("coreference", {}).get("constructions") or []):
-        if isinstance(con, dict) and "criterion" in con:
-            result[con["name"]] = _entry_for(con["criterion"])
-    return result
-
-_COREFERENCE_CONSTRUCTION_PARAMS: Dict[str, dict] = _build_coreference_params()
 # Placeholder used in diagnostic_criteria.yaml for criteria that accept any
 # non-negative integer (e.g. dependent-on-left, dependent-on-right).
 _POSITION_NUMBER_PLACEHOLDER = "<position_number>"
@@ -101,6 +76,23 @@ _POSITION_NUMBER_PLACEHOLDER = "<position_number>"
 #   <position_names>  comma-separated position names from the planar
 _FREE_TEXT = "<free_text>"
 _POSITION_NAMES = "<position_names>"
+
+
+def _columns_without_values(param_cols, param_values, tab_name: str,
+                            issues: List[ValidationIssue]) -> set:
+    """Criterion columns on this tab with no allowed values known, reported once each.
+
+    Their cells are not checked: there is no [y, n] default to check them
+    against (removed 2026-10-12, Phase 10). A warning, not an error — it is
+    usually a column the diagnostics YAML no longer lists.
+    """
+    unknown = {p for p in param_cols if not (param_values and param_values.get(p))}
+    for p in sorted(unknown):
+        issues.append(ValidationIssue(
+            "warning", tab_name,
+            f"column '{p}' has no allowed values in the diagnostics YAML, so its cells "
+            f"were not checked — list its values there, or remove the column"))
+    return unknown
 
 
 def _free_entry_kind(values) -> Optional[str]:
@@ -280,6 +272,8 @@ def validate_annotation_rows(
     col_index  = {name: i for i, name in enumerate(header)}
     param_cols = [c for c in header if c not in _STRUCTURAL_COLS and c not in _TRAILING_COLS]
 
+    unknown = _columns_without_values(param_cols, param_values, tab_name, issues)
+
     records = []
     for row_num, row in enumerate(data_rows, start=2):
         while len(row) < len(header):
@@ -290,6 +284,9 @@ def validate_annotation_rows(
         is_keystone = pos_name.lower() == _KEYSTONE_NAME
 
         for param in param_cols:
+            if param in unknown:
+                record[param] = record.get(param, "").strip().lower()
+                continue
             free_kind = _free_entry_kind((param_values or {}).get(param))
             if free_kind:
                 # Free entry: kept as typed, may be blank; position names checked.
@@ -308,11 +305,7 @@ def validate_annotation_rows(
             val = record.get(param, "").strip().lower()
             record[param] = val
 
-            allowed = (
-                {v.lower() for v in (param_values or {}).get(param, [])} | {"na", "?"}
-                if param_values and param in param_values
-                else _DEFAULT_EXPECTED
-            )
+            allowed = {v.lower() for v in param_values[param]} | _ALWAYS_ALLOWED
             accepts_pos_num = _POSITION_NUMBER_PLACEHOLDER in allowed
 
             if is_keystone:
@@ -576,6 +569,7 @@ def validate_pair_rows(
 
     col_index  = {name: i for i, name in enumerate(header)}
     param_cols = [c for c in header if c not in _PAIR_STRUCTURAL_COLS and c not in _TRAILING_COLS]
+    unknown = _columns_without_values(param_cols, param_values, tab_name, issues)
 
     records = []
     for row_num, row in enumerate(data_rows, start=2):
@@ -591,12 +585,10 @@ def validate_pair_rows(
         for param in param_cols:
             val = record.get(param, "").strip().lower()
             record[param] = val
+            if param in unknown:
+                continue
 
-            allowed = (
-                {v.lower() for v in (param_values or {}).get(param, [])} | {"na", "?"}
-                if param_values and param in param_values
-                else _DEFAULT_EXPECTED
-            )
+            allowed = {v.lower() for v in param_values[param]} | _ALWAYS_ALLOWED
 
             if val == "":
                 issues.append(ValidationIssue(
@@ -683,6 +675,7 @@ def validate_keyed_rows(
 
     col_index = {name: i for i, name in enumerate(header)}
     rules = [{k: str(v).lower() for k, v in r.items()} for r in (blank_ok_when or [])]
+    unknown = _columns_without_values(param_cols, param_values, tab_name, issues)
     records = []
     for row_num, row in enumerate(data_rows, start=2):
         row = list(row) + [""] * (len(header) - len(row))
@@ -692,6 +685,9 @@ def validate_keyed_rows(
         blank_ok = any(all(lowered.get(k) == v for k, v in r.items()) for r in rules)
 
         for param in param_cols:
+            if param in unknown:
+                record[param] = lowered[param]
+                continue
             values = (param_values or {}).get(param)
             free_kind = _free_entry_kind(values)
             if free_kind:
@@ -706,7 +702,7 @@ def validate_keyed_rows(
                 continue
             val = lowered[param]
             record[param] = val
-            allowed = ({v.lower() for v in values} | {"na", "?"}) if values else _DEFAULT_EXPECTED
+            allowed = {v.lower() for v in values} | _ALWAYS_ALLOWED
             if val == "":
                 if not blank_ok:
                     issues.append(ValidationIssue(
@@ -782,10 +778,10 @@ def _load_param_map(lang_id: str) -> Dict[str, Dict[str, dict]]:
     inferred = _infer_language_id_from_planar_filename(planar_files[0].name)
     param_map: Dict[str, Dict[str, dict]] = {}
     for class_name, construction, param_names, param_values in _read_diagnostics_for_language(inferred, data_dir):
-        param_map.setdefault(class_name, {})[construction] = {
-            "params": param_names,
-            "values": param_values,
-        }
+        # Each tab's own criteria (one schema `criterion:` where declared) —
+        # the same rule generate-sheets builds the tab with.
+        names, values = criteria_for(class_name, construction, param_names, param_values, inferred)
+        param_map.setdefault(class_name, {})[construction] = {"params": names, "values": values}
     return param_map
 
 
@@ -867,10 +863,7 @@ def revalidate_sheets(
                 construction = ws.title
                 if construction in (_STATUS_TAB, _INSTRUCTIONS_TAB, _PLANAR_REF_TAB):
                     continue
-                if class_name == "coreference" and construction in _COREFERENCE_CONSTRUCTION_PARAMS:
-                    info = _COREFERENCE_CONSTRUCTION_PARAMS[construction]
-                else:
-                    info = param_map.get(class_name, {}).get(construction, {})
+                info = param_map.get(class_name, {}).get(construction, {})
                 try:
                     is_pair_sheet = construction in pair_row_constructions.get(class_name, set())
                     keyed = keyed_row_constructions.get(class_name, {}).get(construction)

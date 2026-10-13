@@ -41,7 +41,6 @@ from .drive_doorway import WorksheetHandle, WorksheetNotFound, get_doorway
 # commands answering the same question separately is how they came to disagree
 # in the first place, so this imports the answer rather than restating it.
 from .refresh_dropdowns import (
-    _coreference_pair_criterion_map,
     _fresh_param_values,
     _resolve_criterion_columns,
 )
@@ -390,7 +389,6 @@ def main(args: argparse.Namespace | None = None) -> None:
     # sheets from a stale planar file).
     doorway = get_doorway()
     manifest = load_manifest(doorway)
-    coref_pair_map = _coreference_pair_criterion_map()
     # Imported here: restructure_sheets imports generate_sheets at load time,
     # as this module does.
     from .restructure_sheets import _get_keyed_row_constructions
@@ -525,7 +523,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                     _fresh_param_values(
                         class_name, construction,
                         criteria_by_construction.get((class_name, construction), {}),
-                        coref_pair_map),
+                        manifest_lang),
                     class_criteria_union.get(class_name, {}))
                 if error:
                     print(f"    [{construction}] SKIPPED — {error}")

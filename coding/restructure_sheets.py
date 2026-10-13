@@ -109,7 +109,7 @@ from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
 )
-from .schemas import load_diagnostic_classes
+from .schemas import apply_schema_criteria, load_diagnostic_classes
 from planars.schema_values import is_keystone as _is_keystone
 from .drive import (
     _autocommit_data, _load_drive_config, _save_drive_config, _with_retry,
@@ -445,7 +445,7 @@ def _write_tab_with_carryover(
         )
 
     ws.update(all_rows, "A1")
-    per_col_values = [param_values.get(p, ["y", "n"]) for p in param_names]
+    per_col_values = [param_values[p] for p in param_names]  # values come from criteria_for
     per_col_notes = _build_criterion_notes(param_names)
     _format_and_validate(ws, len(rows), per_col_values, param_notes=per_col_notes)
 
@@ -835,7 +835,7 @@ def _copy_pair_tab_with_rename(
         )
 
     ws.update(new_data, "A1")
-    per_col = [param_values.get(p, ["y", "n"]) for p in param_names]
+    per_col = [param_values[p] for p in param_names]  # values come from criteria_for
     # Column position is derived from the tab's own header, never hardcoded --
     # see docs/data-layer-progress.md's Finding 16. A literal col_start=4 used
     # to sit here; it is right for coreference's four-structural-column pair
@@ -1589,31 +1589,12 @@ def main(args: argparse.Namespace | None = None) -> None:
         for class_name, construction, param_names, param_values in specs:
             classes.setdefault(class_name, []).append((construction, param_names, param_values))
 
-        # Mirror the special-case criterion overrides from generate_sheets.py so that
-        # restructure produces the same param_names/param_values as initial generation.
-        _dc_classes_map = {c["name"]: c for c in load_diagnostic_classes().get("classes", [])}
-        _coreference_pair_criterion = {
-            con["name"]: con["criterion"]
-            for con in (_dc_classes_map.get("coreference", {}).get("constructions") or [])
-            if isinstance(con, dict) and "criterion" in con
-        }
+        # The same per-tab criteria rule generate_sheets uses (coding.schemas.criteria_for),
+        # so restructure produces the same param_names/param_values as initial generation.
+        # (Until 2026-10-12 this was a hand-copied mirror that had already drifted: it
+        # never handled phrasal_accent.)
         for _cls, _cons in list(classes.items()):
-            if _cls == "nonpermutability":
-                classes[_cls] = [
-                    (c, pn, {"scopal": ["y", "n", "both"]} if c == "element_prescreening" else pv)
-                    for c, pn, pv in _cons
-                ]
-            elif _cls == "coreference":
-                _new: List[Tuple[str, List[str], Dict[str, List[str]]]] = []
-                for c, pn, pv in _cons:
-                    if c == "prescreening":
-                        _new.append((c, ["referential"], {"referential": ["y", "n"]}))
-                    elif c in _coreference_pair_criterion:
-                        crit = _coreference_pair_criterion[c]
-                        _new.append((c, [crit], {crit: pv.get(crit, ["y", "n"])}))
-                    else:
-                        _new.append((c, pn, pv))
-                classes[_cls] = _new
+            classes[_cls] = apply_schema_criteria(_cls, _cons, lang_id)
 
         print(f"\n{'DRY RUN — ' if not apply else ''}Language: {lang_id}")
         if rename_map:

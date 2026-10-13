@@ -113,3 +113,44 @@ def criterion_values(criterion_name: str) -> List[str] | None:
                 vals = crit.get("values")
                 return list(vals) if vals else None
     return None
+
+
+def criteria_for(class_name: str, construction: str, names: List[str],
+                 values: Dict[str, List[str]], lang_id: str = "") -> tuple:
+    """The criterion columns, and each one's allowed values, for one tab.
+
+    `names`/`values` are what the language's diagnostics file lists for the
+    class (or, with construction_criteria, for this construction). If the
+    schema gives this construction a single `criterion:` in
+    diagnostic_classes.yaml, that is the tab's one column; otherwise the
+    language's list is. Each column's values come from the language's file
+    if it lists the criterion, else from diagnostic_criteria.yaml. There is
+    no `[y, n]` default (removed 2026-10-12, Phase 10): a criterion with no
+    values anywhere raises, naming what to fix, instead of being given values
+    nobody chose.
+
+    The one place this rule lives. Until 2026-10-12 it was typed into five
+    places (generate_sheets twice, restructure_sheets, refresh_dropdowns,
+    sync_params), each a per-class block (hidden-facts entries D1, D2, R1).
+
+    Returns (criterion_names, {name: allowed_values}).
+    """
+    classes = {c["name"]: c for c in load_diagnostic_classes().get("classes", [])}
+    con = next((c for c in (classes.get(class_name, {}).get("constructions") or [])
+                if isinstance(c, dict) and c.get("name") == construction), {})
+    out_names = [con["criterion"]] if con.get("criterion") else list(names)
+    out_values: Dict[str, List[str]] = {}
+    for name in out_names:
+        vals = values.get(name) or criterion_values(name)
+        if not vals:
+            where = f"diagnostics_{lang_id}.yaml" if lang_id else "the language's diagnostics YAML"
+            raise ValueError(
+                f"Criterion '{name}' ({class_name}/{construction}) has no allowed values: "
+                f"list them in {where} or in schemas/diagnostic_criteria.yaml.")
+        out_values[name] = list(vals)
+    return out_names, out_values
+
+
+def apply_schema_criteria(class_name: str, constructions: list, lang_id: str = "") -> list:
+    """criteria_for() over a list of (construction, names, values) tuples."""
+    return [(c, *criteria_for(class_name, c, pn, pv, lang_id)) for c, pn, pv in constructions]

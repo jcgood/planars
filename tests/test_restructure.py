@@ -288,7 +288,7 @@ def _make_diagnostics(tmp_path, lang_id: str, classes: list[str]) -> None:
     """Write a minimal diagnostics_{lang_id}.tsv with the given class names."""
     lines = ["Class\tLanguage\tConstructions\tCriteria"]
     for cls in classes:
-        lines.append(f"{cls}\t{lang_id}\tgeneral\tfree")
+        lines.append(f"{cls}\t{lang_id}\tgeneral\tfree{{y/n}}")
     (tmp_path / f"diagnostics_{lang_id}.tsv").write_text("\n".join(lines) + "\n")
 
 

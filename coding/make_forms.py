@@ -433,17 +433,17 @@ def resolve_keystone_na_criteria(
 # ---------------------------------------------------------------------------
 
 def _encode_criteria_dict(criteria_dict: Dict[str, List[str]]) -> List[str]:
-    """Encode a {name: values} criteria dict to brace-syntax strings.
+    """Encode a {name: values} criteria dict to ``name{v1/v2/...}`` strings.
 
-    Criteria with the default [y, n] values are emitted as plain names;
-    all others use the ``name{v1/v2/...}`` brace syntax.
+    Every criterion is written with its values. Until 2026-10-12 a criterion
+    whose values were exactly [y, n] was written as a bare name and read back
+    as [y, n] — a default built into the file format, removed in Phase 10.
     """
     parts = []
     for crit_name, crit_values in criteria_dict.items():
-        if list(crit_values) == ["y", "n"]:
-            parts.append(crit_name)
-        else:
-            parts.append(f"{crit_name}{{{'/'.join(crit_values)}}}")
+        if not crit_values:
+            raise ValueError(f"Criterion '{crit_name}' has no allowed values to write.")
+        parts.append(f"{crit_name}{{{'/'.join(crit_values)}}}")
     return parts
 
 
@@ -451,8 +451,8 @@ def _yaml_to_tsv_df(yaml_data: dict, lang_id: str) -> pd.DataFrame:
     """Convert a diagnostics YAML dict to a TSV-format DataFrame.
 
     The returned DataFrame has columns: Class, Language, Constructions, Criteria.
-    Criteria with non-default values are encoded with brace syntax (e.g.
-    ``accented{y/n/both}``); default [y, n] criteria use plain names.
+    Every criterion is encoded with its values in brace syntax (e.g.
+    ``accented{y/n/both}``, ``free{y/n}``).
 
     For classes that use ``construction_criteria`` (per-construction criteria),
     one row is emitted per construction so that each row's Criteria column
@@ -542,15 +542,14 @@ def _parse_csv_list(value: str) -> List[str]:
     return [v.strip() for v in (value or "").split(",") if v.strip()]
 
 
-_DEFAULT_CRITERION_VALUES = ["y", "n"]
-
-
 def _parse_criterion_spec(spec: str) -> Tuple[str, List[str]]:
     """Parse a diagnostic criterion specification into (name, allowed_values).
 
-    Examples:
-        'free'              -> ('free', ['y', 'n'])
+    Example:
         'stressable{y/n/both}' -> ('stressable', ['y', 'n', 'both'])
+
+    A bare name (no braces) is an error: it used to mean [y, n], a default
+    removed 2026-10-12 (Phase 10) — every criterion states its values.
     """
     spec = spec.strip()
     if "{" in spec:
@@ -561,7 +560,10 @@ def _parse_criterion_spec(spec: str) -> Tuple[str, List[str]]:
         if not values:
             raise ValueError(f"Criterion spec has empty value list: '{spec}'")
         return name.strip(), values
-    return spec, list(_DEFAULT_CRITERION_VALUES)
+    raise ValueError(
+        f"Criterion '{spec}' lists no values. Write it as {spec}{{v1/v2/...}} — "
+        f"there is no [y, n] default. (A diagnostics TSV is generated from the "
+        f"YAML: run python -m coding sync-diagnostics-yaml --apply to rewrite it.)")
 
 
 def _parse_criterion_specs(value: str) -> Tuple[List[str], Dict[str, List[str]]]:

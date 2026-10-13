@@ -132,6 +132,19 @@ class Env:
         }
 
 
+# Criteria a --split/--merge creates must be defined in the schema with values
+# (no [y, n] default since 2026-10-12). These tests invent names, so they
+# declare those names' values here instead of in diagnostic_criteria.yaml.
+_TEST_CRITERIA = {"free_left": ["y", "n"], "free_right": ["y", "n"],
+                  "widescope_either": ["y", "n"]}
+
+
+@pytest.fixture(autouse=True)
+def _test_criteria(monkeypatch):
+    real = sp.criterion_values
+    monkeypatch.setattr(sp, "criterion_values", lambda n: _TEST_CRITERIA.get(n) or real(n))
+
+
 @pytest.fixture()
 def env(monkeypatch, tmp_path):
     doorway = FakeDriveDoorway.from_fixtures()

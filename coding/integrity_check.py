@@ -288,13 +288,8 @@ def _stale_manifest_param_values(
     Compares the allowed-value lists stored in the Drive manifest against what
     the current diagnostics YAML would produce.  No Sheet API calls.
     """
-    from .refresh_dropdowns import _fresh_param_values, _coreference_pair_criterion_map
+    from .refresh_dropdowns import _fresh_param_values
     from .make_forms import _read_diagnostics_for_language
-
-    try:
-        coref_pair_map = _coreference_pair_criterion_map()
-    except Exception:
-        return []
 
     results = []
     for lang_id in lang_ids:
@@ -336,7 +331,7 @@ def _stale_manifest_param_values(
                     continue
 
                 fresh = _fresh_param_values(
-                    class_name, construction, construction_criteria, coref_pair_map,
+                    class_name, construction, construction_criteria, lang_id,
                 )
                 stored = cp.get("param_values", {})
                 if fresh != stored:

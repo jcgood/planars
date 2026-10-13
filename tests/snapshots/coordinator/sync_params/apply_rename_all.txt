@@ -1,6 +1,6 @@
 Connecting to Google APIs...
-  [noninterruption] diagnostics Criteria: 'free, multiple' -> 'free_form, multiple'
-  [free_occurrence] diagnostics Criteria: 'free, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}' -> 'free_form, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}'
+  [noninterruption] diagnostics Criteria: 'free{y/n}, multiple{y/n}' -> 'free_form{y/n}, multiple{y/n}'
+  [free_occurrence] diagnostics Criteria: 'free{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}' -> 'free_form{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}'
   [arao1248] YAML updated → diagnostics_arao1248.yaml
 
 Language: arao1248
@@ -15,8 +15,8 @@ Renames:  ['free:free_form']
   [nonpermutability/general] Rename: free not found — skipping
   [free_occurrence/general] Rename: free → free_form
     Renamed.
-  [noninterruption] diagnostics Criteria: 'free, multiple' -> 'free_form, multiple'
-  [free_occurrence] diagnostics Criteria: 'free, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}' -> 'free_form, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}'
+  [noninterruption] diagnostics Criteria: 'free{y/n}, multiple{y/n}' -> 'free_form{y/n}, multiple{y/n}'
+  [free_occurrence] diagnostics Criteria: 'free{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}' -> 'free_form{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}'
   [stan1293] YAML updated → diagnostics_stan1293.yaml
 
 Language: stan1293
@@ -44,8 +44,8 @@ Renames:  ['free:free_form']
   [proform/vp_ellipsis] Rename: free not found — skipping
   [phrasal_accent/prescreening] Rename: free not found — skipping
   [phrasal_accent/general] Rename: free not found — skipping
-  [noninterruption] diagnostics Criteria: 'free, multiple' -> 'free_form, multiple'
-  [free_occurrence] diagnostics Criteria: 'free, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}' -> 'free_form, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}'
+  [noninterruption] diagnostics Criteria: 'free{y/n}, multiple{y/n}' -> 'free_form{y/n}, multiple{y/n}'
+  [free_occurrence] diagnostics Criteria: 'free{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}' -> 'free_form{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}'
   [synth0001] YAML updated → diagnostics_synth0001.yaml
 
 Language: synth0001

@@ -48,8 +48,10 @@ planar.yaml
 diagnostic_criteria.yaml
     Source of truth for diagnostic criterion definitions, valid values, and
     linguistic descriptions.  Key machine-readable entries:
-      default_allowed_values: values always accepted by validate_coding.py
-        regardless of per-criterion allowed values (currently [y, n, na, ?]).
+      always_allowed_values: values every criterion accepts on top of its
+        own list (currently [na, ?]). There is no default list for a
+        criterion with no values (the old [y, n] default was removed
+        2026-10-12).
 
 languages.yaml
     (see entry above)

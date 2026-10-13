@@ -229,18 +229,24 @@ synth0001
   [biuniqueness_deviations/morphs] no issues
   [ciscategorial/general] 422 blank cell(s) — annotation in progress
   [coreference/prescreening] 15 blank cell(s) — annotation in progress
-  [coreference/reflexivization] 2 issue(s):
+  [coreference/reflexivization] 4 issue(s):
     [WARNING] reflexivization: live Sheet header differs from local TSV — Sheet: ['Element_A', 'Position_A', 'Position_B', 'Direction', 'reflexive_allowed', 'Source', 'Comments'], TSV: ['Element_A', 'Position_A', 'Position_B', 'Direction', 'reflexive_allowed', 'pronoun_allowed', 'np_allowed', 'Source', 'Comments']
     [WARNING] reflexivization: criterion columns differ from manifest — expected ['reflexive_allowed'], got ['reflexive_allowed', 'pronoun_allowed', 'np_allowed']
-    (1754 blank cell(s) — annotation in progress; use --verbose to list)
-  [coreference/pronominalization] 2 issue(s):
+    [WARNING] reflexivization: column 'np_allowed' has no allowed values in the diagnostics YAML, so its cells were not checked — list its values there, or remove the column
+    [WARNING] reflexivization: column 'pronoun_allowed' has no allowed values in the diagnostics YAML, so its cells were not checked — list its values there, or remove the column
+    (540 blank cell(s) — annotation in progress; use --verbose to list)
+  [coreference/pronominalization] 4 issue(s):
     [WARNING] pronominalization: live Sheet header differs from local TSV — Sheet: ['Element_A', 'Position_A', 'Position_B', 'Direction', 'pronoun_allowed', 'Source', 'Comments'], TSV: ['Element_A', 'Position_A', 'Position_B', 'Direction', 'reflexive_allowed', 'pronoun_allowed', 'np_allowed', 'Source', 'Comments']
     [WARNING] pronominalization: criterion columns differ from manifest — expected ['pronoun_allowed'], got ['reflexive_allowed', 'pronoun_allowed', 'np_allowed']
-    (1754 blank cell(s) — annotation in progress; use --verbose to list)
-  [coreference/np_reference] 2 issue(s):
+    [WARNING] pronominalization: column 'np_allowed' has no allowed values in the diagnostics YAML, so its cells were not checked — list its values there, or remove the column
+    [WARNING] pronominalization: column 'reflexive_allowed' has no allowed values in the diagnostics YAML, so its cells were not checked — list its values there, or remove the column
+    (540 blank cell(s) — annotation in progress; use --verbose to list)
+  [coreference/np_reference] 4 issue(s):
     [WARNING] np_reference: live Sheet header differs from local TSV — Sheet: ['Element_A', 'Position_A', 'Position_B', 'Direction', 'np_allowed', 'Source', 'Comments'], TSV: ['Element_A', 'Position_A', 'Position_B', 'Direction', 'reflexive_allowed', 'pronoun_allowed', 'np_allowed', 'Source', 'Comments']
     [WARNING] np_reference: criterion columns differ from manifest — expected ['np_allowed'], got ['reflexive_allowed', 'pronoun_allowed', 'np_allowed']
-    (1754 blank cell(s) — annotation in progress; use --verbose to list)
+    [WARNING] np_reference: column 'pronoun_allowed' has no allowed values in the diagnostics YAML, so its cells were not checked — list its values there, or remove the column
+    [WARNING] np_reference: column 'reflexive_allowed' has no allowed values in the diagnostics YAML, so its cells were not checked — list its values there, or remove the column
+    (540 blank cell(s) — annotation in progress; use --verbose to list)
   [free_occurrence/general] 75 blank cell(s) — annotation in progress
   [metrical/stress_domain] 705 blank cell(s) — annotation in progress
   [noninterruption/general] 282 blank cell(s) — annotation in progress
@@ -258,5 +264,5 @@ synth0001
   [subspanrepetition/asyndeticPart] 423 blank cell(s) — annotation in progress
 
 ──────────────────────────────────────────────────
-Validated 50 sheet(s).  Data coding issues: 6
+Validated 50 sheet(s).  Data coding issues: 12
 Cell highlighting updated in Google Sheets.

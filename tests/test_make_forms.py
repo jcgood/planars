@@ -43,8 +43,8 @@ YAML_CONTENT = textwrap.dedent("""\
 
 TSV_CONTENT = textwrap.dedent("""\
     Class\tLanguage\tConstructions\tCriteria
-    ciscategorial\tlang0001\tgeneral\tV-combines, N-combines
-    metrical\tlang0001\tstress_domain\taccented{y/n/both}, obligatory
+    ciscategorial\tlang0001\tgeneral\tV-combines{y/n}, N-combines{y/n}
+    metrical\tlang0001\tstress_domain\taccented{y/n/both}, obligatory{y/n}
 """)
 
 
@@ -97,13 +97,22 @@ def test_read_diagnostics_falls_back_to_tsv(planar_dir):
 # _yaml_to_tsv_df
 # ---------------------------------------------------------------------------
 
-def test_yaml_to_tsv_df_default_values():
-    """Criteria with [y, n] values are serialized without brace syntax."""
+def test_yaml_to_tsv_df_writes_every_criterions_values():
+    """Even [y, n] criteria are written with their values: there is no bare-name
+    default any more (removed 2026-10-12, Phase 10)."""
     data = yaml.safe_load(YAML_CONTENT)
     df = _yaml_to_tsv_df(data, "lang0001")
     cisc_row = df[df["Class"] == "ciscategorial"].iloc[0]
-    assert "V-combines" in cisc_row["Criteria"]
-    assert "{" not in cisc_row["Criteria"]
+    assert "V-combines{y/n}" in cisc_row["Criteria"]
+
+
+def test_a_bare_criterion_name_is_an_error_not_y_n(planar_dir):
+    """A criterion written without values is refused, naming the fix."""
+    (planar_dir / "diagnostics_lang0001.tsv").write_text(
+        "Class\tLanguage\tConstructions\tCriteria\n"
+        "ciscategorial\tlang0001\tgeneral\tV-combines\n")
+    with pytest.raises(ValueError, match="lists no values"):
+        _read_diagnostics_for_language("lang0001", planar_dir)
 
 
 def test_yaml_to_tsv_df_non_default_values():
@@ -173,8 +182,8 @@ def test_diff_no_changes():
     """Identical TSV and YAML produce empty diff lists."""
     yaml_data = yaml.safe_load(YAML_CONTENT)
     tsv_df = _make_tsv_df([
-        ("ciscategorial", "general", "V-combines, N-combines"),
-        ("metrical",      "stress_domain", "accented{y/n/both}, obligatory"),
+        ("ciscategorial", "general", "V-combines{y/n}, N-combines{y/n}"),
+        ("metrical",      "stress_domain", "accented{y/n/both}, obligatory{y/n}"),
     ])
     det, amb = _diff_diagnostics_tsv_yaml(tsv_df, yaml_data, "lang0001")
     assert det == []
@@ -185,8 +194,8 @@ def test_diff_criterion_added():
     """A new criterion in the TSV (matching the schema) is deterministic."""
     yaml_data = yaml.safe_load(YAML_CONTENT)
     tsv_df = _make_tsv_df([
-        ("ciscategorial", "general", "V-combines, N-combines, A-combines"),
-        ("metrical",      "stress_domain", "accented{y/n/both}, obligatory"),
+        ("ciscategorial", "general", "V-combines{y/n}, N-combines{y/n}, A-combines{y/n}"),
+        ("metrical",      "stress_domain", "accented{y/n/both}, obligatory{y/n}"),
     ])
     det, amb = _diff_diagnostics_tsv_yaml(tsv_df, yaml_data, "lang0001")
     kinds = [c["kind"] for c in det]
@@ -201,8 +210,8 @@ def test_diff_construction_removed():
     yaml_data = yaml.safe_load(YAML_CONTENT)
     # metrical in YAML has stress_domain; TSV has metrical with a different construction
     tsv_df = _make_tsv_df([
-        ("ciscategorial", "general", "V-combines, N-combines"),
-        ("metrical",      "other_construction", "accented{y/n/both}, obligatory"),
+        ("ciscategorial", "general", "V-combines{y/n}, N-combines{y/n}"),
+        ("metrical",      "other_construction", "accented{y/n/both}, obligatory{y/n}"),
     ])
     det, amb = _diff_diagnostics_tsv_yaml(tsv_df, yaml_data, "lang0001")
     kinds = [c["kind"] for c in det]
@@ -216,7 +225,7 @@ def test_diff_class_removed_is_ambiguous():
     yaml_data = yaml.safe_load(YAML_CONTENT)
     # metrical class absent entirely from TSV
     tsv_df = _make_tsv_df([
-        ("ciscategorial", "general", "V-combines, N-combines"),
+        ("ciscategorial", "general", "V-combines{y/n}, N-combines{y/n}"),
     ])
     _det, amb = _diff_diagnostics_tsv_yaml(tsv_df, yaml_data, "lang0001")
     assert any(c["kind"] == "class_removed" for c in amb)
@@ -226,8 +235,8 @@ def test_diff_unknown_criterion_flagged():
     """A criterion not in diagnostic_criteria.yaml is flagged as ambiguous."""
     yaml_data = yaml.safe_load(YAML_CONTENT)
     tsv_df = _make_tsv_df([
-        ("ciscategorial", "general", "V-combines, N-combines, totally_made_up_criterion_xyz"),
-        ("metrical",      "stress_domain", "accented{y/n/both}, obligatory"),
+        ("ciscategorial", "general", "V-combines{y/n}, N-combines{y/n}, totally_made_up_criterion_xyz{y/n}"),
+        ("metrical",      "stress_domain", "accented{y/n/both}, obligatory{y/n}"),
     ])
     det, amb = _diff_diagnostics_tsv_yaml(tsv_df, yaml_data, "lang0001")
     assert any(c["kind"] == "unknown_criterion" for c in amb)
@@ -238,8 +247,8 @@ def test_diff_criterion_values_changed():
     yaml_data = yaml.safe_load(YAML_CONTENT)
     # Change accented from [y,n,both] to [y,n]
     tsv_df = _make_tsv_df([
-        ("ciscategorial", "general", "V-combines, N-combines"),
-        ("metrical",      "stress_domain", "accented, obligatory"),
+        ("ciscategorial", "general", "V-combines{y/n}, N-combines{y/n}"),
+        ("metrical",      "stress_domain", "accented{y/n}, obligatory{y/n}"),
     ])
     det, amb = _diff_diagnostics_tsv_yaml(tsv_df, yaml_data, "lang0001")
     kinds = [c["kind"] for c in det]

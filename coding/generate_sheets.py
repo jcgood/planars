@@ -104,7 +104,9 @@ def _annotator_email(lang_id: str) -> Optional[str]:
     `coding/people.py`.
     """
     return _people.annotator_email(lang_id)
-from .schemas import load_planar_schema, load_diagnostic_classes, load_diagnostic_criteria
+from .schemas import (
+    apply_schema_criteria, load_planar_schema, load_diagnostic_classes, load_diagnostic_criteria,
+)
 from .make_forms import (
     build_element_index,
     _infer_language_id_from_planar_filename,
@@ -993,7 +995,7 @@ def _populate_tab_pairs(
         pre = (prefill or {}).get((a, b), {})
         data_rows.append([a, b] + [pre.get(c, "") for c in all_cols])
     ws.update([header] + data_rows, "A1")
-    per_col_values = [param_values.get(p, ["y", "n"]) for p in param_names]
+    per_col_values = [param_values[p] for p in param_names]  # values come from criteria_for
     # Param columns start at index 2 (after Element_A, Element_B)
     _format_and_validate(ws, len(pairs), per_col_values, col_start=2)
     return ws
@@ -1037,7 +1039,7 @@ def _populate_tab_reflex_pairs(
         data_rows.append([elem_a, pos_a, pos_b, direction]
                          + [pre.get(c, "") for c in all_cols])
     ws.update([header] + data_rows, "A1")
-    per_col_values = [param_values.get(p, ["y", "n"]) for p in param_names]
+    per_col_values = [param_values[p] for p in param_names]  # values come from criteria_for
     # Param columns start at index 4 (after the 4 structural columns).
     _format_and_validate(ws, len(pairs), per_col_values, col_start=4)
     return ws
@@ -1069,7 +1071,7 @@ def _populate_tab_keyed(
     header = keyed_columns + param_names + _TRAILING_COLS
     data_rows = [[str(r.get(c, "")) for c in header] for r in rows]
     ws.update([header] + data_rows, "A1")
-    per_col_values = [param_values.get(p, ["y", "n"]) for p in param_names]
+    per_col_values = [param_values[p] for p in param_names]  # values come from criteria_for
     _format_and_validate(ws, len(rows), per_col_values, col_start=len(keyed_columns),
                          param_notes=_build_criterion_notes(param_names))
     return ws
@@ -1657,7 +1659,7 @@ def _populate_tab(
     # Pad data rows with empty trailing columns (e.g. Comments).
     all_rows = [header] + [[str(v) for v in row] + [""] * len(_TRAILING_COLS) for row in rows]
     ws.update(all_rows, "A1")
-    per_col_values = [param_values.get(p, ["y", "n"]) for p in param_names]
+    per_col_values = [param_values[p] for p in param_names]  # values come from criteria_for
     per_col_notes = _build_criterion_notes(param_names)
     _format_and_validate(ws, len(rows), per_col_values, param_notes=per_col_notes)
     return ws
@@ -1715,66 +1717,9 @@ def _create_analysis_sheet(
     default_ws = spreadsheet.sheet1
     tab_names = []
 
-    # For nonpermutability, override element_prescreening param_values to {y, n, both}.
-    # The diagnostics YAML records [y, n] for scopal (used by the pairs tab);
-    # element_prescreening needs the third value so the manifest stores the right dropdown.
-    if class_name == "nonpermutability":
-        constructions = [
-            (c, pn, {"scopal": ["y", "n", "both"]} if c == "element_prescreening" else pv)
-            for c, pn, pv in constructions
-        ]
-
-    # For coreference, each construction uses a specific criterion derived from the schema
-    # (diagnostic_classes.yaml constructions[].criterion). The diagnostics YAML records
-    # all pair-level criteria at the class level, so we remap here per construction.
-    # prescreening always uses referential=[y, n] regardless of the class criteria.
-    _dc_classes = {c["name"]: c for c in load_diagnostic_classes().get("classes", [])}
-    _COREFERENCE_PAIR_CRITERION = {
-        con["name"]: con["criterion"]
-        for con in (_dc_classes.get("coreference", {}).get("constructions") or [])
-        if isinstance(con, dict) and "criterion" in con
-    }
-    if class_name == "coreference":
-        new_constructions = []
-        for c, pn, pv in constructions:
-            if c == "prescreening":
-                new_constructions.append((c, ["referential"], {"referential": ["y", "n"]}))
-            elif c in _COREFERENCE_PAIR_CRITERION:
-                crit = _COREFERENCE_PAIR_CRITERION[c]
-                new_constructions.append((c, [crit], {crit: pv.get(crit, ["y", "n"])}))
-            else:
-                new_constructions.append((c, pn, pv))
-        constructions = new_constructions
-
-    # For phrasal_accent, apply the same defensive remap as coreference above: the
-    # schema declares a `criterion` per construction (prescreening reuses metrical's
-    # `accented`; general uses the new `joint_accent`, per diagnostic_classes.yaml
-    # issue #237). If the language's diagnostics YAML already uses construction_criteria
-    # (the recommended pattern for classes whose constructions have non-overlapping
-    # criteria — see CLAUDE.md), this remap is a no-op; it only does real work if a
-    # coordinator instead declared both criteria under the class-level shared `criteria`
-    # key, in which case it splits them back apart per construction the same way the
-    # coreference block does above.
-    _PHRASAL_ACCENT_PAIR_CRITERION = {
-        con["name"]: con["criterion"]
-        for con in (_dc_classes.get("phrasal_accent", {}).get("constructions") or [])
-        if isinstance(con, dict) and "criterion" in con
-    }
-    if class_name == "phrasal_accent":
-        new_constructions = []
-        for c, pn, pv in constructions:
-            if c == "prescreening":
-                new_constructions.append(
-                    (c, ["accented"], {"accented": pv.get("accented", ["y", "n", "both"])})
-                )
-            elif c in _PHRASAL_ACCENT_PAIR_CRITERION:
-                crit = _PHRASAL_ACCENT_PAIR_CRITERION[c]
-                new_constructions.append(
-                    (c, [crit], {crit: pv.get(crit, ["always", "sometimes", "never"])})
-                )
-            else:
-                new_constructions.append((c, pn, pv))
-        constructions = new_constructions
+    # Each tab's criterion columns and their values: the schema's per-construction
+    # `criterion:` where declared, values from the language YAML or the schema.
+    constructions = apply_schema_criteria(class_name, constructions, lang_id)
 
     for construction, param_names, param_values in constructions:
         if class_name == "nonpermutability" and construction == "element_prescreening":
@@ -2030,6 +1975,22 @@ def _snapshot_before_regen(
     }, indent=2), encoding="utf-8")
 
 
+def _tab_criteria(lang_id: str, class_name: str, construction: str):
+    """A tab's criterion columns and allowed values, from the language's
+    diagnostics YAML through coding.schemas.criteria_for.
+
+    --regen-construction used to read these from the manifest's cached copy,
+    with typed fallbacks per class ({"scopal": ["y", "n"]}, ...): a stale copy
+    plus a hidden default (Phase 10, 2026-10-12).
+    """
+    specs = _read_diagnostics_for_language(lang_id, CODED_DATA / lang_id / "lang_setup")
+    for cls, con, names, values in specs:
+        if cls == class_name and con == construction:
+            return apply_schema_criteria(cls, [(con, names, values)], lang_id)[0][1:]
+    raise SystemExit(f"  {class_name}:{construction} is not in diagnostics_{lang_id}.yaml; "
+                     f"add it there (and run python -m coding sync-diagnostics-yaml --apply) first.")
+
+
 def _regen_construction(
     doorway,
     lang_id: str,
@@ -2088,15 +2049,10 @@ def _regen_construction(
     # keyed_rows tabs (biuniqueness_deviations' morphemes/morphs) are rebuilt
     # from their own source and keyed by their own columns, not as pairs.
     from .restructure_sheets import _get_keyed_row_constructions
+    param_names, param_values = _tab_criteria(lang_id, class_name, construction_name)
     if construction_name in _get_keyed_row_constructions().get(class_name, {}):
-        cp = manifest_class_info.get("construction_params", {}).get(construction_name, {})
-        if not cp.get("param_names"):
-            raise SystemExit(
-                f"  No criterion columns recorded in the manifest for "
-                f"{lang_id}/{class_name}/{construction_name}; run "
-                f"python -m coding update-sheets --apply first.")
         _regen_keyed_construction(spreadsheet, lang_id, class_name, construction_name,
-                                  cp["param_names"], cp.get("param_values", {}), confirm_drop)
+                                  param_names, param_values, confirm_drop)
         return
 
     # Read existing tab annotations from the live Sheet.
@@ -2118,25 +2074,6 @@ def _regen_construction(
                         existing[(row[0], row[1])] = dict(zip(hdr[2:], row[2:]))
     except WorksheetNotFound:
         pass
-
-    # Get param_names and param_values from the manifest.
-    cp = manifest_class_info.get("construction_params", {}).get(construction_name, {})
-    if class_name == "coreference":
-        _dc = {c["name"]: c for c in load_diagnostic_classes().get("classes", [])}
-        _pair_crit = {
-            con["name"]: con["criterion"]
-            for con in (_dc.get("coreference", {}).get("constructions") or [])
-            if isinstance(con, dict) and "criterion" in con
-        }
-        _default_crit = _pair_crit.get(construction_name, "reflexive_allowed")
-        param_names  = cp.get("param_names",  [_default_crit])
-        param_values = cp.get("param_values", {_default_crit: ["y", "n"]})
-    elif class_name == "phrasal_accent":
-        param_names  = cp.get("param_names",  ["joint_accent"])
-        param_values = cp.get("param_values", {"joint_accent": ["always", "sometimes", "never"]})
-    else:
-        param_names  = cp.get("param_names",  ["scopal"])
-        param_values = cp.get("param_values", {"scopal": ["y", "n"]})
 
     # Generate new filtered pair list.
     planar_path   = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
@@ -2217,50 +2154,8 @@ def _add_constructions_to_existing_sheet(
 
     Returns construction_params dict for the newly added tabs only.
     """
-    # Apply class-specific overrides to new constructions.
-    if class_name == "nonpermutability":
-        new_constructions = [
-            (c, pn, {"scopal": ["y", "n", "both"]} if c == "element_prescreening" else pv)
-            for c, pn, pv in new_constructions
-        ]
-    if class_name == "coreference":
-        _dc = {c["name"]: c for c in load_diagnostic_classes().get("classes", [])}
-        _pair_crit = {
-            con["name"]: con["criterion"]
-            for con in (_dc.get("coreference", {}).get("constructions") or [])
-            if isinstance(con, dict) and "criterion" in con
-        }
-        updated = []
-        for c, pn, pv in new_constructions:
-            if c == "prescreening":
-                updated.append((c, ["referential"], {"referential": ["y", "n"]}))
-            elif c in _pair_crit:
-                crit = _pair_crit[c]
-                updated.append((c, [crit], {crit: pv.get(crit, ["y", "n"])}))
-            else:
-                updated.append((c, pn, pv))
-        new_constructions = updated
-
-    # Defensive remap mirroring the coreference block above — see the matching
-    # comment in _create_analysis_sheet for why this is a no-op when the language
-    # YAML already uses construction_criteria (issue #237).
-    if class_name == "phrasal_accent":
-        _dc = {c["name"]: c for c in load_diagnostic_classes().get("classes", [])}
-        _pair_crit = {
-            con["name"]: con["criterion"]
-            for con in (_dc.get("phrasal_accent", {}).get("constructions") or [])
-            if isinstance(con, dict) and "criterion" in con
-        }
-        updated = []
-        for c, pn, pv in new_constructions:
-            if c == "prescreening":
-                updated.append((c, ["accented"], {"accented": pv.get("accented", ["y", "n", "both"])}))
-            elif c in _pair_crit:
-                crit = _pair_crit[c]
-                updated.append((c, [crit], {crit: pv.get(crit, ["always", "sometimes", "never"])}))
-            else:
-                updated.append((c, pn, pv))
-        new_constructions = updated
+    # Same per-tab criteria rule as _create_analysis_sheet (coding.schemas.criteria_for).
+    new_constructions = apply_schema_criteria(class_name, new_constructions, lang_id)
 
     pos_type = _read_position_types(planar_path, lang_id)
     construction_params: Dict = {}

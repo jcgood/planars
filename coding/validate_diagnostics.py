@@ -158,7 +158,9 @@ def _parse_criterion_specs(value: str) -> List[tuple]:
                 values = [v.strip() for v in values_str.split("/") if v.strip()]
                 results.append((name, values if values else None, spec))
         else:
-            results.append((spec, ["y", "n"], spec))
+            # A bare name used to mean [y, n]; that default was removed
+            # (2026-10-12, Phase 10): every criterion states its values.
+            results.append((spec, None, spec))
     return results
 
 
@@ -414,7 +416,13 @@ def validate_diagnostics_df(df, lang_id: str) -> List[ValidationIssue]:
         for name, values, raw_spec in _parse_criterion_specs(params_raw):
             # Brace syntax
             if values is None:
-                if "}" not in raw_spec:
+                if "{" not in raw_spec:
+                    issues.append(ValidationIssue(
+                        "error", location,
+                        f"Criterion '{raw_spec}' lists no values — write it as "
+                        f"{raw_spec}{{v1/v2/...}} (there is no [y, n] default)"
+                    ))
+                elif "}" not in raw_spec:
                     issues.append(ValidationIssue(
                         "error", location,
                         f"Malformed param spec '{raw_spec}' — missing closing brace"

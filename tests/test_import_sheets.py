@@ -186,7 +186,7 @@ _YAML_CONTENT = textwrap.dedent("""\
 
 
 class TestCheckYamlDrift:
-    def _tsv_df(self, criteria="V-combines, N-combines"):
+    def _tsv_df(self, criteria="V-combines{y/n}, N-combines{y/n}"):
         return pd.DataFrame(
             [{"Class": "ciscategorial", "Language": "lang0001",
               "Constructions": "general", "Criteria": criteria}],
@@ -215,7 +215,7 @@ class TestCheckYamlDrift:
         yaml_dir = tmp_path / "coded_data" / "lang0001" / "lang_setup"
         yaml_dir.mkdir(parents=True)
         (yaml_dir / "diagnostics_lang0001.yaml").write_text(_YAML_CONTENT)
-        tsv_df = self._tsv_df("V-combines, N-combines, totally_made_up_zyx")
+        tsv_df = self._tsv_df("V-combines{y/n}, N-combines{y/n}, totally_made_up_zyx{y/n}")
         result = _check_yaml_drift("lang0001", tsv_df)
         assert len(result) == 1
         assert result[0]["kind"] == "unknown_criterion"

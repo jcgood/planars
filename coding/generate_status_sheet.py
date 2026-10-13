@@ -70,8 +70,8 @@ from .make_forms import (
 from .restructure_sheets import _get_keyed_row_constructions, _get_pair_row_constructions
 from .validate_coding import (
     annotation_status, keyed_annotation_status, pair_annotation_status,
-    _COREFERENCE_CONSTRUCTION_PARAMS,
 )
+from .schemas import criteria_for
 from planars.languages import get_display_name
 
 _STATUS_FOLDER_NAME = "Annotation Status"
@@ -192,14 +192,14 @@ def _construction_params(
 ) -> Tuple[List[str], Dict[str, List[str]], bool, List[str]]:
     """Resolve (params, values, keystone_active, keystone_na_criteria) for annotation_status().
 
-    Mirrors the special-cased lookups in validate_coding.py's revalidate_sheets()
-    (coreference constructions each use their own single criterion, not the
-    class-level criteria dict) so status counts agree with the sheet-validation
-    pink highlighting that annotators already see.
+    Each tab's criteria come from coding.schemas.criteria_for, the same rule
+    validate-coding uses, so status counts agree with the pink highlighting
+    annotators see. Coreference tabs don't consult the keystone settings.
     """
-    if class_name == "coreference" and construction in _COREFERENCE_CONSTRUCTION_PARAMS:
-        info = _COREFERENCE_CONSTRUCTION_PARAMS[construction]
-        return info["params"], info["values"], False, []
+    param_names, param_values = criteria_for(class_name, construction, param_names,
+                                             param_values, lang_id)
+    if class_name == "coreference":
+        return param_names, param_values, False, []
     keystone_active = resolve_keystone_active(lang_id, class_name, construction, data_dir=lang_setup_dir)
     if keystone_active is None:
         keystone_active = False

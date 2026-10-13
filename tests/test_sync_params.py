@@ -78,17 +78,35 @@ class TestRenameCriterionInCell:
 # _split_criterion_in_cell
 # ---------------------------------------------------------------------------
 
+# Criteria a split or merge creates must be defined in the schema with values
+# (no [y, n] default since 2026-10-12). These tests invent names, so they
+# declare those names' values here instead of in diagnostic_criteria.yaml.
+_TEST_CRITERIA = {"free_left": ["y", "n"], "free_right": ["y", "n", "both"],
+                  "x": ["y", "n"], "y": ["a", "b"], "combined": ["y", "n"]}
+
+
+@pytest.fixture(autouse=True)
+def _test_criteria(monkeypatch):
+    import coding.sync_params as sp
+    real = sp.criterion_values
+    monkeypatch.setattr(sp, "criterion_values", lambda n: _TEST_CRITERIA.get(n) or real(n))
+
+
 class TestSplitCriterionInCell:
     def test_splits_matching_token_into_two(self):
         result = _split_criterion_in_cell("free, obligatory", "free", "free_left", "free_right")
-        assert result == "free_left, free_right, obligatory"
+        assert result == "free_left{y/n}, free_right{y/n/both}, obligatory"
 
     def test_no_match_leaves_cell_unchanged(self):
         assert _split_criterion_in_cell("free, obligatory", "missing", "a", "b") == "free, obligatory"
 
     def test_preserves_position_of_split(self):
         result = _split_criterion_in_cell("a, free, b", "free", "x", "y")
-        assert result == "a, x, y, b"
+        assert result == "a, x{y/n}, y{a/b}, b"
+
+    def test_a_new_criterion_with_no_schema_values_stops_the_command(self):
+        with pytest.raises(SystemExit, match="not defined"):
+            _split_criterion_in_cell("free", "free", "undefined_one", "undefined_two")
 
 
 # ---------------------------------------------------------------------------
@@ -98,15 +116,15 @@ class TestSplitCriterionInCell:
 class TestMergeCriteriaInCell:
     def test_merges_both_present(self):
         result = _merge_criteria_in_cell("left, right, other", "left", "right", "combined")
-        assert result == "combined, other"
+        assert result == "combined{y/n}, other"
 
     def test_merges_only_one_present(self):
         result = _merge_criteria_in_cell("left, other", "left", "right", "combined")
-        assert result == "combined, other"
+        assert result == "combined{y/n}, other"
 
     def test_new_token_inserted_at_first_match_position(self):
         result = _merge_criteria_in_cell("a, left, b, right, c", "left", "right", "combined")
-        assert result == "a, combined, b, c"
+        assert result == "a, combined{y/n}, b, c"
 
     def test_neither_present_leaves_cell_unchanged(self):
         assert _merge_criteria_in_cell("free, obligatory", "left", "right", "combined") == "free, obligatory"
@@ -296,11 +314,12 @@ class TestBuildDropdownRefreshRequests:
         values = [v["userEnteredValue"] for v in rule["rule"]["condition"]["values"]]
         assert values == ["y", "n", "both"]
 
-    def test_defaults_to_y_n_when_no_explicit_values(self):
+    def test_no_y_n_default_when_values_are_missing(self):
+        """A column with no values is an error, not a [y, n] dropdown (the
+        default was removed 2026-10-12; criteria_for always supplies values)."""
         ws = _FakeWorksheet(["Element", "free"], row_count=5)
-        requests = _build_dropdown_refresh_requests(ws, ["free"], {})
-        values = [v["userEnteredValue"] for v in requests[0]["setDataValidation"]["rule"]["condition"]["values"]]
-        assert values == ["y", "n"]
+        with pytest.raises(KeyError):
+            _build_dropdown_refresh_requests(ws, ["free"], {})
 
     def test_skips_param_not_in_header(self):
         ws = _FakeWorksheet(["Element", "free"], row_count=5)

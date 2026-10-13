@@ -25,7 +25,8 @@ Three live threads. Read whichever matches what you're picking up.
 row); the spec, ground rules, units and order are the Phase 10 section of
 `docs/data-layer-implementation-plan.md`. Planned with Jeff 2026-10-12 and
 approved to run unattended **except at the pauses the spec names** (unit 5
-design; units 6+15+11 design; the transcript diff from removing `[y, n]`).
+design; units 6+15+11 design). The `[y, n]` removal was reviewed and landed
+2026-10-13.
 
 **Don't re-litigate (decided 2026-10-12):** light maintenance beats speed; a
 registry only if the code runs from it; no `[y, n]` default; close the

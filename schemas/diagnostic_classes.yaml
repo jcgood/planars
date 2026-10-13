@@ -106,6 +106,12 @@
 #                                               must say false (check-codebook checks).
 #                                               planars/reports.py's span_constructions()
 #                                               is the one reader.
+#                              criterion        the single criterion column this tab has,
+#                                               when it has exactly one (every prescreening
+#                                               and pair tab). Its values come from the
+#                                               language's diagnostics YAML, else
+#                                               diagnostic_criteria.yaml. Read only through
+#                                               coding.schemas.criteria_for().
 #                            Only needed for general-specificity classes with multi-stage
 #                            workflows. construction_specific classes define constructions
 #                            per-language in diagnostics_{lang}.yaml.
@@ -251,6 +257,7 @@ classes:
       - name: element_prescreening
         row_type: element
         produces_spans: false
+        criterion: scopal
       - name: general
         row_type: pair_rows
         depends_on: element_prescreening
@@ -319,6 +326,7 @@ classes:
       - name: prescreening
         row_type: element
         produces_spans: false
+        criterion: referential
       - name: reflexivization
         row_type: pair_rows
         depends_on: prescreening
@@ -642,6 +650,7 @@ classes:
       - name: prescreening
         row_type: element
         produces_spans: false
+        criterion: accented
       - name: general
         row_type: pair_rows
         depends_on: prescreening

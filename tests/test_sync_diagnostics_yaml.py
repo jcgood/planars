@@ -30,8 +30,8 @@ YAML_CONTENT = textwrap.dedent("""\
 
 TSV_CONTENT = (
     "Class\tLanguage\tConstructions\tCriteria\n"
-    "ciscategorial\tlang0001\tgeneral\tV-combines, N-combines\n"
-    "metrical\tlang0001\tstress_domain\taccented{y/n/both}, obligatory\n"
+    "ciscategorial\tlang0001\tgeneral\tV-combines{y/n}, N-combines{y/n}\n"
+    "metrical\tlang0001\tstress_domain\taccented{y/n/both}, obligatory{y/n}\n"
 )
 
 # _sync_to_tsv gates on validate_diagnostics_yaml's errors, including check 9
@@ -160,7 +160,7 @@ def test_sync_from_tsv_detects_criterion_added(lang_dir):
     """Detects and applies a new (known) criterion in the TSV."""
     (lang_dir / "diagnostics_lang0001.yaml").write_text(YAML_CONTENT)
     tsv_with_extra = TSV_CONTENT.replace(
-        "V-combines, N-combines", "V-combines, N-combines, A-combines"
+        "V-combines{y/n}, N-combines{y/n}", "V-combines{y/n}, N-combines{y/n}, A-combines{y/n}"
     )
     (lang_dir / "diagnostics_lang0001.tsv").write_text(tsv_with_extra)
     drift: list = []
@@ -174,7 +174,7 @@ def test_sync_from_tsv_preserves_notes(lang_dir):
     """Applying deterministic changes does not strip notes from the YAML."""
     (lang_dir / "diagnostics_lang0001.yaml").write_text(YAML_CONTENT)
     tsv_with_extra = TSV_CONTENT.replace(
-        "V-combines, N-combines", "V-combines, N-combines, A-combines"
+        "V-combines{y/n}, N-combines{y/n}", "V-combines{y/n}, N-combines{y/n}, A-combines{y/n}"
     )
     (lang_dir / "diagnostics_lang0001.tsv").write_text(tsv_with_extra)
     _sdy._sync_from_tsv("lang0001", apply=True, drift_entries=[])
@@ -186,7 +186,7 @@ def test_sync_from_tsv_ambiguous_goes_to_drift(lang_dir):
     """An unknown criterion is flagged as ambiguous and appended to drift_entries."""
     (lang_dir / "diagnostics_lang0001.yaml").write_text(YAML_CONTENT)
     tsv_with_unknown = TSV_CONTENT.replace(
-        "V-combines, N-combines", "V-combines, N-combines, totally_made_up_zyx"
+        "V-combines{y/n}, N-combines{y/n}", "V-combines{y/n}, N-combines{y/n}, totally_made_up_zyx{y/n}"
     )
     (lang_dir / "diagnostics_lang0001.tsv").write_text(tsv_with_unknown)
     drift: list = []

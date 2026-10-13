@@ -476,7 +476,7 @@ def test_an_unrecognised_criterion_is_ambiguous_drift_not_a_crash(env):
         out = [list(r) for r in rows]
         for r in out[1:]:
             if len(r) > class_idx and r[class_idx] == "ciscategorial":
-                r[crit_idx] += ", totally_made_up_zyx"
+                r[crit_idx] += ", totally_made_up_zyx{y/n}"
                 break
         return out
     env.edit_sheet_rows(env.diagnostics_sheet("stan1293"), add_unknown)

@@ -151,7 +151,7 @@ classes:
     notes: "left/right-interaction still under review"
 ```
 
-Criteria default to `[y, n]`; non-default values are listed explicitly in the YAML and encoded as brace syntax in the TSV (`accented{y/n/both}`). `coding/make_forms.py` reads YAML first and falls back to TSV if no YAML exists (backward compatibility for languages not yet migrated).
+Every criterion lists its values, in the YAML and as brace syntax in the TSV (`free{y/n}`, `accented{y/n/both}`). There is no `[y, n]` default (removed 2026-10-13): a criterion written without values is an error naming the fix, and one tab's criterion comes from `coding.schemas.criteria_for`. `coding/make_forms.py` reads YAML first and falls back to TSV if no YAML exists (backward compatibility for languages not yet migrated).
 
 Most tabs have one row per element at a position, or per pair of elements. `biuniqueness_deviations` (issue #254) also has **keyed-row** tabs (`row_type: keyed_rows` in `diagnostic_classes.yaml`): rows identified by named columns the schema declares, generated from the tab before (prescreening → morphemes → morphs; `coding/biuniqueness_rows.py`). Its criteria include free-entry ones whose allowed values are placeholders — `<free_text>` (any text, kept exactly as typed) and `<position_names>` (names checked against the planar) — which get no dropdown and may be blank.
 

@@ -21,26 +21,16 @@ CODED_DATA = ROOT / "coded_data"
 from .drive import load_manifest, upload_manifest, _load_drive_config, _save_drive_config
 from .drive_doorway import get_doorway
 from .make_forms import _read_diagnostics_for_language
-from .schemas import load_diagnostic_classes
+from .schemas import criteria_for, load_diagnostic_classes
 from planars.schema_values import STATUS_TAB
 from .generate_sheets import _format_and_validate, _TRAILING_COLS
-
-
-def _coreference_pair_criterion_map() -> Dict[str, str]:
-    """Return {construction_name: criterion_name} for coreference pair constructions."""
-    classes = {c["name"]: c for c in load_diagnostic_classes().get("classes", [])}
-    return {
-        con["name"]: con["criterion"]
-        for con in (classes.get("coreference", {}).get("constructions") or [])
-        if isinstance(con, dict) and "criterion" in con
-    }
 
 
 def _fresh_param_values(
     class_name: str,
     construction: str,
     construction_criteria: Dict[str, List[str]],
-    coref_pair_map: Dict[str, str],
+    lang_id: str = "",
 ) -> Dict[str, List[str]]:
     """Derive fresh param_values for ONE construction from the diagnostics YAML.
 
@@ -53,24 +43,13 @@ def _fresh_param_values(
     That would have narrowed ``flapping`` from ``[y, n, both, na]`` and
     ``joint_accent`` from ``[always, sometimes, never]`` — the latter offering
     an annotator nothing but wrong answers.
+
+    Which criterion a construction owns, and its values, come from
+    ``coding.schemas.criteria_for`` — the one copy of that rule (until
+    2026-10-12 this function carried its own per-class blocks).
     """
-    # nonpermutability element_prescreening always uses [y, n, both]
-    if class_name == "nonpermutability" and construction == "element_prescreening":
-        return {"scopal": ["y", "n", "both"]}
-
-    # coreference pair constructions each own a single criterion. The language
-    # YAML lists all three for the whole class; diagnostic_classes.yaml is what
-    # says which one belongs to this construction.
-    if class_name == "coreference" and construction in coref_pair_map:
-        crit = coref_pair_map[construction]
-        return {crit: construction_criteria.get(crit, ["y", "n"])}
-
-    # coreference prescreening is always referential=[y, n]
-    if class_name == "coreference" and construction == "prescreening":
-        return {"referential": ["y", "n"]}
-
-    # Standard case: exactly what the YAML declares for this construction.
-    return dict(construction_criteria)
+    return criteria_for(class_name, construction, list(construction_criteria),
+                        construction_criteria, lang_id)[1]
 
 
 def _detect_col_start(header: List[str], param_names: List[str]) -> int:
@@ -157,7 +136,6 @@ def main(args: argparse.Namespace | None = None) -> None:
     doorway = get_doorway()
     manifest = load_manifest(doorway)
     drive_config = _load_drive_config()
-    coref_pair_map = _coreference_pair_criterion_map()
 
     print(f"{'DRY RUN — ' if not apply else ''}Refreshing sheet dropdowns")
     if not apply:
@@ -228,7 +206,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                     continue
 
                 fresh = _fresh_param_values(
-                    class_name, construction, construction_criteria, coref_pair_map,
+                    class_name, construction, construction_criteria, lang_id,
                 )
                 stored = cp.get("param_values", {})
 

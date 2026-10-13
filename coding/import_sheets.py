@@ -56,7 +56,6 @@ PENDING_PATH = ROOT / "pending_changes.json"
 _STRUCTURAL_COLS      = _val._STRUCTURAL_COLS
 _PAIR_STRUCTURAL_COLS = _val._PAIR_STRUCTURAL_COLS
 _TRAILING_COLS        = _val._TRAILING_COLS
-_DEFAULT_EXPECTED     = _val._DEFAULT_EXPECTED
 
 
 # ---------------------------------------------------------------------------
@@ -939,6 +938,7 @@ def main(args: argparse.Namespace | None = None) -> None:
             continue
         print(f"\nLanguage: {lang_id}")
         lang_warning_lines: List[str] = []
+        lang_param_map = _val._load_param_map(lang_id)
 
         # Download planar and diagnostics Sheets to local TSVs; detect changes.
         s, p, d = _download_lang_setup_sheets(doorway, lang_id, lang_data, timestamp, apply)
@@ -994,9 +994,10 @@ def main(args: argparse.Namespace | None = None) -> None:
 
                 header = rows[0] if rows else []
 
-                # Per-param allowed values from manifest (if present)
-                construction_params = sheet_info.get("construction_params", {})
-                param_values = construction_params.get(construction, {}).get("param_values")
+                # Per-param allowed values: the language's diagnostics YAML through
+                # coding.schemas.criteria_for — the same source validate-coding
+                # uses — not the manifest's cached copy (Phase 10, 2026-10-12).
+                param_values = lang_param_map.get(class_name, {}).get(construction, {}).get("values")
 
                 # Which constructions have pair rows comes from the schema, not
                 # from a list written out here. This used to name only

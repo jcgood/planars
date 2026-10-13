@@ -57,8 +57,8 @@ SHEET OPERATIONS
   fake_ss_0006  tab=Sheet1
     update: anchor A1 raw=True 6x4
       | ['Class', 'Language', 'Constructions', 'Criteria']
-      | ['ciscategorial', 'arao1248', 'general', 'V-combines, N-combines, A-combines, PRED-combines']
-      | ['noninterruption', 'arao1248', 'general', 'free, multiple']
+      | ['ciscategorial', 'arao1248', 'general', 'V-combines{y/n}, N-combines{y/n}, A-combines{y/n}, PRED-combines{y/n}']
+      | ['noninterruption', 'arao1248', 'general', 'free{y/n}, multiple{y/n}']
       | ...
 
   fake_ss_0006  tab=sheetId=0
