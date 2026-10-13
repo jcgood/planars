@@ -17,8 +17,8 @@ name: Sheet validation
 #   PLANARS_OAUTH_CREDENTIALS — contents of ~/.config/planars/oauth_credentials.json
 #   GOOGLE_OAUTH_TOKEN       — contents of ~/.config/gspread/authorized_user.json
 #
-# drive_config.json is committed to the repo (no credentials, only Drive IDs)
-# and is used directly — no secret needed.
+# drive_config.json (only Drive IDs, no credentials) lives in planars-data at
+# coded_data/drive_config.json, checked out below — no secret needed.
 
 on:
   schedule:

@@ -384,7 +384,7 @@ phase finishes that, and applies the same rule everywhere a fact can live.
 | 16 | Nothing only in Google or GitHub: Status values, notes Doc text and last-edited-by imported into plain files; a `diagnostics` issue closes only by recording its decision in a file | — |
 | 17 | The hand-edit door: a change log for `schemas/` and per-language sources; pre-commit hook (and CI) refuses a source change without a change-log line | — |
 | 18 | Every exported result carries the package version and each language's change-log position | results reproducible from their record |
-| — | Optional, Jeff decides: a second Drive owner or shared drive; narrow the refresh token to project files | — |
+| — | Optional, Jeff decides: a second Drive owner or shared drive; narrow the refresh token's Sheets and Docs scopes (Drive is already `drive.file` — only files the tooling created — found 2026-10-12 when Google refused a sharing change; `spreadsheets` and `documents` still reach all of Jeff's files) | — |
 
 **Order:** memories and this transcription → 14 (sharing, live) → 4 → 7 →
 3's first group → 1 → 2 → 10 → **pause: unit 5 design** → 5 for class

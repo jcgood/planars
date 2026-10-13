@@ -113,10 +113,21 @@ def main(args: argparse.Namespace | None = None) -> None:
     # (Phase 10 unit 14, 2026-10-12): every language folder inside inherits
     # the root's sharing, so a link grant here made every sheet viewable by
     # anyone holding the link. Removes one if present, so a re-run converges.
-    if remove_anyone_permission(doorway, root_id):
-        print("Removed 'anyone with the link' access from the root folder.")
-    else:
-        print("Root folder has no link sharing — nothing to remove.")
+    try:
+        if remove_anyone_permission(doorway, root_id):
+            print("Removed 'anyone with the link' access from the root folder.")
+        else:
+            print("Root folder has no link sharing — nothing to remove.")
+    except Exception as exc:
+        if "appNotAuthorizedToChild" not in str(exc):
+            raise
+        # The tooling's OAuth scope (drive.file) reaches only files it
+        # created; Google refuses a sharing change on a folder holding any
+        # file made some other way. Only a person can change it.
+        print("[ACTION NEEDED] The root folder is shared 'anyone with the link', and this "
+              "command cannot change it:\n  the folder holds files the tooling didn't create. "
+              f"Open {folder_url} → Share →\n  General access → Restricted. "
+              "Everyone who needs access is already shared by name.")
 
     # Step 3: Move any language folders not yet inside the root folder.
     # Handles the initial migration and any folders added outside the normal

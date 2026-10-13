@@ -145,14 +145,14 @@ Filled TSV filenames use the pattern `{construction}.tsv`. The language ID and a
 
 ### Google Drive manifest
 
-The Drive manifest (`manifest.json`) is stored on Drive and contains all languages' sheet metadata and folder IDs. A local `drive_config.json` (gitignored, in the repo root) bootstraps the Drive lookup. It holds:
+The Drive manifest (`manifest.json`) is stored on Drive and contains all languages' sheet metadata and folder IDs. `coded_data/drive_config.json`, in private planars-data, bootstraps the Drive lookup. It holds:
 
 - `_root_folder_id` — the `ConstituencyTypology` top-level Drive folder
 - `_planars_config_file_id` — the manifest file
 - `_all_languages_notebook_file_id` — the coordinator notebook
 - Per-language: `folder_id`, `domains_notebook_file_id`, `validation_notebook_file_id`, `planar_spreadsheet_id`, `diagnostics_spreadsheet_id`
 
-Do not commit `drive_config.json` — it is gitignored.
+It contains no credentials, but its IDs point at unpublished data, so it belongs to planars-data, not the public planars repo (moved there 2026-10-12; earlier it was committed to planars, and this page wrongly called it gitignored). The daily refresh commits its changes along with the other planars-data files.
 
 ---
 

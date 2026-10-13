@@ -25,7 +25,10 @@ from googleapiclient.discovery import build as google_build
 from googleapiclient.http import MediaIoBaseDownload, MediaIoBaseUpload
 
 ROOT = Path(__file__).resolve().parent.parent
-DRIVE_CONFIG_PATH = ROOT / "drive_config.json"
+# In private planars-data, not the public planars repo (moved 2026-10-12,
+# Phase 10 unit 14): it lists every folder and sheet ID. Living in coded_data/
+# also means the daily refresh's commit there keeps IDs that CI runs record.
+DRIVE_CONFIG_PATH = ROOT / "coded_data" / "drive_config.json"
 _DEFAULT_OAUTH_PATH = Path.home() / ".config" / "planars" / "oauth_credentials.json"
 
 _T = TypeVar("_T")
@@ -360,12 +363,24 @@ def remove_anyone_permission(doorway, file_id: str) -> bool:
     (`ensure_anyone_permission`). The one copy of a sequence that used to be
     inlined separately in restructure_sheets, generate_status_sheet and
     setup_root_folder.
+
+    A grant *inherited* from a parent folder cannot be removed here (Google
+    answers "Permission not found"); it goes when the parent's goes, so it is
+    skipped. Note the tooling's OAuth scope reaches only files it created:
+    Google also refuses the change on a folder that holds any file made some
+    other way (`appNotAuthorizedToChild`), which only a person can then fix.
     """
     removed = False
-    for p in _with_retry(lambda: doorway.list_permissions(file_id, fields="permissions(id,type)")):
-        if p.get("type") == "anyone":
-            _with_retry(lambda pid=p["id"]: doorway.delete_permission(file_id, pid))
-            removed = True
+    perms = _with_retry(lambda: doorway.list_permissions(
+        file_id, fields="permissions(id,type,permissionDetails)"))
+    for p in perms:
+        if p.get("type") != "anyone":
+            continue
+        details = p.get("permissionDetails") or []
+        if details and all(d.get("inherited") for d in details):
+            continue
+        _with_retry(lambda pid=p["id"]: doorway.delete_permission(file_id, pid))
+        removed = True
     return removed
 
 

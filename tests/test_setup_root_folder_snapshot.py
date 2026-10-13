@@ -184,6 +184,21 @@ def test_a_link_share_added_by_hand_is_removed_on_the_next_run(env, monkeypatch)
     assert "Removed 'anyone with the link' access" in out
 
 
+def test_a_refused_sharing_change_asks_for_the_by_hand_fix(env, monkeypatch):
+    """Live, 2026-10-12: the tooling's OAuth scope (drive.file) reaches only
+    files it created, and Google refuses a sharing change on a folder that
+    holds any other file ('appNotAuthorizedToChild'). The command must say
+    what to do by hand and carry on with the rest, not crash."""
+    def refuse(doorway, file_id):
+        raise RuntimeError("HttpError 403 ... 'reason': 'appNotAuthorizedToChild'")
+    monkeypatch.setattr(setup_root_folder, "remove_anyone_permission", refuse)
+    doorway, _, saved = env
+    out = run(monkeypatch)
+    assert "[ACTION NEEDED]" in out
+    assert "General access → Restricted" in out
+    assert saved.get("_root_folder_id")          # the rest of the run still happened
+
+
 def test_second_run_output(env, monkeypatch):
     doorway, config, saved = env
     run(monkeypatch)

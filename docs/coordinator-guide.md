@@ -188,7 +188,7 @@ python -m coding generate-sheets --apply             # creates sheets for new cl
 python -m coding generate-sheets --force --apply     # blocked with a hard error if annotation sheets already exist
 ```
 
-**If `generate-sheets --apply` aborts with "already exists in the Drive folder but is not registered in the manifest":** a spreadsheet with that name is in Drive but not in `drive_config.json`. This usually means a previous run created an orphaned sheet (e.g. after clearing the manifest during debugging). Resolve by either (a) locating the sheet in Drive, opening `drive_config.json`, and adding its ID under the correct class, or (b) moving the sheet to `_archived/` in the language's Drive folder and re-running `generate-sheets --apply`.
+**If `generate-sheets --apply` aborts with "already exists in the Drive folder but is not registered in the manifest":** a spreadsheet with that name is in Drive but not in the manifest. This usually means a previous run created an orphaned sheet (e.g. after clearing the manifest during debugging). Resolve by either (a) registering the existing sheet — add its spreadsheet ID to that class's manifest entry (ask Claude; the manifest is on Drive), as the error message says — or (b) moving the sheet to `_archived/` in the language's Drive folder and re-running `generate-sheets --apply`.
 
 Creates one Google Sheets file per analysis class with one tab per construction. Each tab has per-criterion dropdown validation, an optional **Source** column (page or section reference justifying each annotation, e.g. `§4.3`, `p. 217`, `Table 6.2`), and a free-text **Comments** column. Source comes before Comments; both are free-text and not validated. Each spreadsheet also gets a **Status tab** (always the last tab) with one row per construction and a dropdown (`in-progress` / `ready-for-review`). Also runs `generate-notebooks` automatically at the end.
 
@@ -701,7 +701,7 @@ Add the following secrets under **Settings → Secrets and variables → Actions
 | `PLANARS_OAUTH_CREDENTIALS` | Contents of `~/.config/planars/oauth_credentials.json` on your laptop — the OAuth client secret downloaded from Google Cloud Console during initial setup. |
 | `GOOGLE_OAUTH_TOKEN` | Contents of `~/.config/gspread/authorized_user.json` on your laptop — written by gspread after your first interactive login. Contains a refresh token so the workflow can renew its Google access silently. Stays valid as long as the workflow runs at least once every few months. |
 
-Note: `drive_config.json` is **committed to the repo** (it contains only Drive folder and sheet IDs, no credentials) and is read directly by the workflows — no secret is needed for it.
+Note: `drive_config.json` lives in **planars-data** (`coded_data/drive_config.json`) — it holds only Drive folder and sheet IDs, no credentials, but those IDs point at unpublished data, so it stays out of the public `planars` repo (moved 2026-10-12). The workflows already check out planars-data, so no secret is needed for it.
 
 #### What each workflow does
 
@@ -730,7 +730,7 @@ All issue types are auto-closed on the next clean run. You can trigger the workf
 
 ### Drive folder structure
 
-The Drive manifest (`manifest.json`) is stored on Drive and contains all languages' sheet metadata and folder IDs. `drive_config.json` (committed to the repo) bootstraps the Drive lookup — it holds `_root_folder_id`, `_planars_config_file_id`, and per-language `folder_id`, `planar_spreadsheet_id`, and `diagnostics_spreadsheet_id`. It contains no credentials, only IDs, so it is safe to commit.
+The Drive manifest (`manifest.json`) is stored on Drive and contains all languages' sheet metadata and folder IDs. `coded_data/drive_config.json` (in planars-data) bootstraps the Drive lookup — it holds `_root_folder_id`, `_planars_config_file_id`, and per-language `folder_id`, `planar_spreadsheet_id`, and `diagnostics_spreadsheet_id`. It contains no credentials, only IDs; they point at unpublished data, so it lives in the private repo.
 
 `drive_config.json` is created and updated automatically — you never need to edit it by hand. `generate-sheets` writes per-language IDs as it creates Drive folders and files; `setup-root-folder` adds the top-level `_root_folder_id`.
 
@@ -748,4 +748,4 @@ This is idempotent — safe to re-run, but only needs to happen once per project
 
 #### Joining an existing project
 
-`drive_config.json` is committed to the `planars` repo and will be present in your clone automatically — no file sharing needed. It contains only Drive folder and sheet IDs (no credentials), so it is safe to commit. Once you have cloned the repo and set up the three GitHub Actions secrets above, the workflows can locate the existing Drive manifest and language folders without any additional configuration.
+`drive_config.json` is in planars-data, so it arrives when you clone `planars-data` as `coded_data/` — no file sharing needed. Once you have cloned both repos and set up the three GitHub Actions secrets above, the workflows can locate the existing Drive manifest and language folders without any additional configuration.

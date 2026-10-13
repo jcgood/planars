@@ -17,6 +17,9 @@ notebooks/.virtual_documents/
 # coded_data/ is maintained in the separate private planars-data repo.
 # Clone it here: git clone <planars-data-url> coded_data
 coded_data/
+# Lives in planars-data (coded_data/drive_config.json) since 2026-10-12: it
+# lists every Drive folder and sheet ID, so it stays out of this public repo.
+/drive_config.json
 dist/
 glottolog_cache.json
 pending_changes.json
