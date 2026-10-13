@@ -146,7 +146,7 @@ def _check_free_entry(kind: str, value: str, lang_id: Optional[str]) -> Optional
 _PINK  = {"red": 1.0, "green": 0.8, "blue": 0.8}
 _WHITE = {"red": 1.0, "green": 1.0, "blue": 1.0}
 
-_KEYSTONE_NAME = load_planar_schema().get("keystone_position_name", "v:verbstem")
+from planars.schema_values import KEYSTONE_NAME as _KEYSTONE_NAME  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Cell highlighting

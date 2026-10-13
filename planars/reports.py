@@ -536,7 +536,7 @@ def _read_expected_constructions(lang_dir: Path) -> Dict[str, list]:
 _TRAILING_COLS = {"Source", "Comments"}
 
 # Name of the per-spreadsheet tab that records construction review status.
-_STATUS_TAB = "Status"
+from planars.schema_values import STATUS_TAB as _STATUS_TAB  # noqa: E402
 
 
 def _criterion_cols_only(criterion_cols: list) -> list:

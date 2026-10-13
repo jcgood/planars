@@ -22,6 +22,7 @@ from .drive import load_manifest, upload_manifest, _load_drive_config, _save_dri
 from .drive_doorway import get_doorway
 from .make_forms import _read_diagnostics_for_language
 from .schemas import load_diagnostic_classes
+from planars.schema_values import STATUS_TAB
 from .generate_sheets import _format_and_validate, _TRAILING_COLS
 
 
@@ -216,7 +217,7 @@ def main(args: argparse.Namespace | None = None) -> None:
             manifest_updated = False
 
             for construction in constructions:
-                if construction in ("Status",):
+                if construction == STATUS_TAB:
                     continue
 
                 cp = construction_params.get(construction, {})

@@ -12,6 +12,7 @@ from pandera.errors import SchemaError
 
 from .contracts import VALID_CLASS_TYPES, class_type_schema, position_integer_schema, position_is_integer
 from .schemas import load_planar_schema
+from planars.schema_values import KEYSTONE_NAME
 
 _BRACE_SUFFIX_RE = re.compile(r'\{[^}]*\}$')
 
@@ -286,7 +287,7 @@ def planar_to_manifest_dict(planar_path: Path, lang_id: str) -> dict:
     """
     df = pd.read_csv(planar_path, sep="\t", dtype=str, keep_default_na=False)
     df = df[df["Language_ID"] == lang_id]
-    keystone_name = "v:verbstem"
+    keystone_name = KEYSTONE_NAME
     keystone_pos: int | None = None
     positions = []
     for _, row in df.iterrows():

@@ -12,6 +12,7 @@ from typing import Dict, List
 from .validate import ValidationIssue
 from .schemas import load_planar_schema
 from .make_forms import classify_element, classify_biuniqueness_scope
+from planars.schema_values import KEYSTONE_NAME
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -19,7 +20,7 @@ from .make_forms import classify_element, classify_biuniqueness_scope
 
 _VALID_POSITION_TYPES = {"Zone", "Slot"}
 _VALID_CLASS_TYPES    = {"open", "list", "mixed"}
-_KEYSTONE_NAME        = load_planar_schema().get("keystone_position_name", "v:verbstem")
+_KEYSTONE_NAME        = KEYSTONE_NAME
 
 _BRACE_SUFFIX_RE = re.compile(r'\{[^}]*\}$')
 

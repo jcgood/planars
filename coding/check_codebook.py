@@ -32,6 +32,7 @@ from typing import List
 import pandas as pd
 
 from .schemas import load_diagnostic_classes as _load_dc, load_diagnostic_criteria as _load_crit
+from planars.schema_values import KEYSTONE_NAME
 
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
@@ -137,7 +138,7 @@ def _make_minimal_tsv(params: list[str], extra_params: list[str] = None) -> io.S
     all_params = list(params) + (extra_params or [])
     cols = ["Element", "Position_Name", "Position_Number"] + all_params + ["Source", "Comments"]
     header = "\t".join(cols)
-    keystone = "\t".join(["ROOT", "v:verbstem", "1"] + ["na"] * len(all_params) + ["", ""])
+    keystone = "\t".join(["ROOT", KEYSTONE_NAME, "1"] + ["na"] * len(all_params) + ["", ""])
     data    = "\t".join(["x",    "v:test",    "2"] + ["y"]  * len(all_params) + ["", ""])
     return io.StringIO("\n".join([header, keystone, data]) + "\n")
 
@@ -278,7 +279,7 @@ def _check_chart_keys() -> List[str]:
     _nonperm_data = (
         _nonperm_pair_df,
         5,                          # keystone_pos
-        {4: "v:left1", 5: "v:verbstem", 6: "v:right1"},  # pos_to_name
+        {4: "v:left1", 5: KEYSTONE_NAME, 6: "v:right1"},  # pos_to_name
         {4: "Slot", 6: "Slot"},     # pos_type
         {4: ["a"], 6: ["b"]},       # pos_to_elements
         {"a": {4}, "b": {6}},       # elem_to_positions
@@ -305,14 +306,14 @@ def _check_chart_keys() -> List[str]:
          "dependent-on-left": "na", "dependent-on-right": "na"},
     ])
     _freeoc_keystone_df = _freeoc_pd.DataFrame([
-        {"Position_Number": 5, "Element": "v:verbstem",
+        {"Position_Number": 5, "Element": KEYSTONE_NAME,
          "free": "y", "left-edge-of-free-form": "na", "right-edge-of-free-form": "na",
          "dependent-on-left": "na", "dependent-on-right": "na"},
     ])
     _freeoc_data = (
         _freeoc_data_df,
         5,                                        # keystone_pos
-        {4: "v:left1", 5: "v:verbstem", 6: "v:right1"},  # pos_to_name
+        {4: "v:left1", 5: KEYSTONE_NAME, 6: "v:right1"},  # pos_to_name
         list(free_occurrence._REQUIRED_CRITERIA),  # criterion_cols
         _freeoc_keystone_df,
     )
@@ -341,7 +342,7 @@ def _check_chart_keys() -> List[str]:
              "conditioned_by": "v:subj", "trigger_filled": "y"},
         ]),
         5,                                                    # keystone_pos
-        {3: "v:aux", 4: "v:subj", 5: "v:verbstem"},           # pos_to_name
+        {3: "v:aux", 4: "v:subj", 5: KEYSTONE_NAME},          # pos_to_name
     )
     try:
         _bd_result = biuniqueness_deviations.derive_biuniqueness_deviations_domains(

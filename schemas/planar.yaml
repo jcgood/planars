@@ -74,14 +74,25 @@ structural_columns:
       NOT YET BACKFILLED into existing planar_{lang_id}.tsv files — mirrors
       Element_Types' rollout; synth0001 backfill is issue #254 Part 2b.
 
-# The Position_Name value that identifies the keystone row.
-# Used by validate_planar.py, validate_coding.py, and planars/io.py.
+# The Position_Name value that identifies the keystone row. Code reads it
+# through coding.schemas.keystone_name() / planars.io.KEYSTONE_NAME and never
+# types it (tests/test_no_hidden_facts.py checks).
 keystone_position_name: "v:verbstem"
 
 # Columns appended after criterion columns on every annotation tab.
 # Ordered: Source before Comments. Used by generate_sheets.py, validate_coding.py,
 # integrity_check.py, and planars/io.py.
 trailing_columns: [Source, Comments]
+
+# The Status tab every annotation sheet carries, and the two values an
+# annotator sets on each construction's row there. Code reads these through
+# coding.schemas.status_tab() / planars.io.STATUS_TAB and never types the
+# values (tests/test_no_hidden_facts.py checks).
+status_tab:
+  title: Status
+  values:
+    in_progress: in-progress
+    ready: ready-for-review
 
 # ---------------------------------------------------------------------------
 # ELEMENT CONVENTIONS

@@ -57,6 +57,7 @@ from .check_codebook import (
     _check_chart_keys,
 )
 from .schemas import load_planar_schema
+from planars.schema_values import STATUS_READY, STATUS_TAB
 from .restructure_sheets import _get_keyed_row_constructions, _get_pair_row_constructions
 import yaml as _yaml
 
@@ -322,7 +323,7 @@ def _stale_manifest_param_values(
             cp_map = sheet_info.get("construction_params", {})
 
             for construction in sheet_info.get("constructions", []):
-                if construction == "Status":
+                if construction == STATUS_TAB:
                     continue
                 cp = cp_map.get(construction, {})
                 param_names = cp.get("param_names", [])
@@ -712,7 +713,7 @@ def _section_dependent_construction_staleness(
                 if result[0] == "empty":
                     print(_ok(f"{label}: empty, {result[1]} row(s) waiting — filled by the "
                               f"daily refresh once '{con['depends_on']}' is marked "
-                              f"ready-for-review"))
+                              f"{STATUS_READY}"))
                     continue
                 added, removed = result
                 if added or removed:

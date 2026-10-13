@@ -15,7 +15,7 @@ from planars.contracts import (
 )
 from planars.spans import fmt_span, loose_span, strict_span
 
-_KEYSTONE_NAME = "v:verbstem"
+from planars.schema_values import KEYSTONE_NAME as _KEYSTONE_NAME
 _TRAILING_COLS = {"Source", "Comments"}
 _REQUIRED_CRITERIA: Set[str] = {"reflexive_allowed"}
 

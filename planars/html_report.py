@@ -31,6 +31,8 @@ import base64
 import html as _html
 from typing import Optional
 
+from planars.schema_values import STATUS_IN_PROGRESS, STATUS_READY
+
 _CSS = """
 @page { size: A4; margin: 2cm 2.5cm; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -117,9 +119,9 @@ tbody tr:hover { background: #fafafa; }
 
 
 def _badge(status: str) -> str:
-    if status == "ready-for-review":
+    if status == STATUS_READY:
         return '<span class="badge badge-ready">ready for review</span>'
-    if status == "in-progress":
+    if status == STATUS_IN_PROGRESS:
         return '<span class="badge badge-progress">in progress</span>'
     if status:
         return f'<span class="badge badge-none">{_html.escape(status)}</span>'

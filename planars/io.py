@@ -15,6 +15,7 @@ from planars.contracts import (
     raw_shape_schema,
     strict_criteria_schema,
 )
+from planars.schema_values import KEYSTONE_NAME
 
 def _load_planar_schema() -> dict:
     text = _res_files("schemas").joinpath("planar.yaml").read_text(encoding="utf-8")
@@ -86,13 +87,13 @@ def _parse_filled_df(
             detail = ":\n  " + "\n  ".join(msgs)
         elif e.check.name == CHECK_ONE_KEYSTONE:
             keystone_positions = sorted(
-                df.loc[df["Position_Name"].str.lower() == "v:verbstem", "Position_Number"]
+                df.loc[df["Position_Name"].str.lower() == KEYSTONE_NAME.lower(), "Position_Number"]
                   .unique().tolist()
             )
             detail = f" Found: {keystone_positions}"
         raise ValueError(e.check.error + detail) from e
 
-    keystone_mask = df["Position_Name"].str.lower() == "v:verbstem"
+    keystone_mask = df["Position_Name"].str.lower() == KEYSTONE_NAME.lower()
     keystone_pos = int(df.loc[keystone_mask, "Position_Number"].iloc[0])
     keystone_df = df.loc[keystone_mask].copy()
     data_df = df.loc[~keystone_mask].copy()

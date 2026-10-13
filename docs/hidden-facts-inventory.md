@@ -175,6 +175,10 @@ schema source at all (see R3).
 it yet.
 
 ### D0. The keystone position name `"v:verbstem"` is hardcoded as a raw literal in at least 15 places across 9 files — including two `planars/` analysis modules
+*Closed 2026-10-12 (Phase 10 unit 7): 28 typed copies in 13 files now read
+`planars.schema_values.KEYSTONE_NAME` / `is_keystone()`, built from
+`planar.yaml` with no fallback; `tests/test_no_hidden_facts.py` fails if the
+name is typed into code again.*
 **What:** `schemas/planar.yaml` declares `keystone_position_name: "v:verbstem"`
 as authoritative and states in its own comment that it is "Used by
 `validate_planar.py`, `validate_coding.py`, and `planars/io.py`" — implying
@@ -357,6 +361,8 @@ than *point at* an authoritative source.
 duplication across two files should be resolved as part of that.
 
 ### D5. `_TRAILING_COLS` / `_DEFAULT_EXPECTED` / `_KEYSTONE_NAME` fallback defaults re-embed the schema value they fall back from
+*Partly closed 2026-10-12: the `_KEYSTONE_NAME` fallbacks are gone (see D0).
+`_TRAILING_COLS` / `_DEFAULT_EXPECTED` fallbacks remain.*
 **What:** Three separate constants read a schema value via
 `load_planar_schema()`/`load_diagnostic_criteria()` but supply a **hardcoded
 literal fallback** that duplicates the current schema value: `_TRAILING_COLS
@@ -562,6 +568,11 @@ TSV at generation time" cases: nonpermutability, coreference, free_occurrence,
 phrasal_accent).
 
 ### R3. Status tab values and "Status" tab/column naming
+*Partly closed 2026-10-12: the Status tab's title and its two values are
+declared in `planar.yaml` (`status_tab`) and read through
+`planars.schema_values`; the detector guards the values. The other system tab
+titles (Instructions, Planar Structure) move to Phase 10 unit 2's
+`locked_tabs` registry.*
 **What:** The two valid values a construction's workflow status can take
 (`in-progress`, `ready-for-review`) are hardcoded as `_STATUS_VALUES` and as
 inline literal defaults (`"in-progress"` appears as a literal twice more at

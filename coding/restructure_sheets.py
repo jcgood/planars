@@ -110,6 +110,7 @@ from .make_forms import (
     _read_diagnostics_for_language,
 )
 from .schemas import load_diagnostic_classes
+from planars.schema_values import is_keystone as _is_keystone
 from .drive import (
     _autocommit_data, _load_drive_config, _save_drive_config, _with_retry,
     load_manifest, remove_anyone_permission, upload_manifest,
@@ -404,7 +405,7 @@ def _write_tab_with_carryover(
         element = str(row[0])
         pos_name = str(row[1])
         pos_num = str(row[2])
-        is_keystone = pos_name.strip().lower() == "v:verbstem"
+        is_keystone = _is_keystone(pos_name)
 
         old_values = _lookup_existing(element, pos_name, existing, old_for_new, old_el_for_new)
         if old_values is not None:

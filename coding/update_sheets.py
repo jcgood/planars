@@ -54,6 +54,7 @@ from .generate_sheets import (
     _TRAILING_COLS,
 )
 from . import biuniqueness_rows as _br
+from planars.schema_values import is_keystone as _is_keystone
 
 import pandas as pd
 
@@ -139,7 +140,7 @@ def _check_structural_drift(
 
     warnings = []
     for pos_name, sheet_num in sheet_pos_map.items():
-        if pos_name.lower() == "v:verbstem":
+        if _is_keystone(pos_name):
             continue
         if pos_name not in planar_pos_map:
             warnings.append(
@@ -285,7 +286,7 @@ def _compute_missing_rows(
             element = f"[{element}]"
         key = (element, str(pos))
         if key not in existing_keys:
-            is_keystone = pos_name.strip().lower() == "v:verbstem"
+            is_keystone = _is_keystone(pos_name)
             param_vals = ["NA" if is_keystone else ""] * num_criteria
             row = [element, pos_name, str(pos)] + param_vals + [""] * num_trailing
             missing_rows.append(row)

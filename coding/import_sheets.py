@@ -37,6 +37,7 @@ from .drive import (
 )
 from .drive_doorway import get_doorway, WorksheetNotFound
 from .generate_sheets import _STATUS_TAB, _STATUS_VALUES
+from planars.schema_values import STATUS_IN_PROGRESS, STATUS_READY, is_keystone
 from .restructure_sheets import _get_keyed_row_constructions, _get_pair_row_constructions
 from . import validate_coding as _val
 from .validate_planar import validate_planar_df as _validate_planar_df
@@ -593,14 +594,14 @@ def _detect_collaborator_anomalies(
     if expected_params and "Element" in old_df.columns and "Position_Number" in old_df.columns:
         old_key_to_row: Dict[tuple, object] = {}
         for _, row in old_df.iterrows():
-            if str(row.get("Position_Name", "")).lower() == "v:verbstem":
+            if is_keystone(row.get("Position_Name", "")):
                 continue
             key = (str(row.get("Element", "")).strip(), str(row.get("Position_Number", "")).strip())
             old_key_to_row[key] = row
 
         new_key_to_row: Dict[tuple, Dict] = {}
         for r in records:
-            if r.get("Position_Name", "").lower() == "v:verbstem":
+            if is_keystone(r.get("Position_Name", "")):
                 continue
             key = (r.get("Element", "").strip(), r.get("Position_Number", "").strip())
             new_key_to_row[key] = r
@@ -984,10 +985,10 @@ def main(args: argparse.Namespace | None = None) -> None:
                 # and validation (pink highlighting), but pipeline warnings are
                 # suppressed and anomalies are raised as collaborator-check rather
                 # than pending-changes. --ignore-status treats all tabs as ready.
-                tab_status = "ready-for-review"
+                tab_status = STATUS_READY
                 if not ignore_status and status_map:
-                    tab_status = status_map.get(construction, "in-progress")
-                in_progress = (tab_status != "ready-for-review")
+                    tab_status = status_map.get(construction, STATUS_IN_PROGRESS)
+                in_progress = (tab_status != STATUS_READY)
 
                 rows = _with_retry(ws.get_all_values)
 
@@ -1106,7 +1107,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                 else:
                     blank_count = sum(
                         1 for r in records
-                        if r.get("Position_Name", "").lower() != "v:verbstem"
+                        if not is_keystone(r.get("Position_Name", ""))
                         and any(r.get(p, "") == "" for p in expected_params)
                     )
                 status = f"{len(records)} rows"

@@ -86,6 +86,10 @@ from .drive import (
 from .drive_doorway import SpreadsheetHandle, WorksheetHandle, WorksheetNotFound, get_doorway
 from .glottolog import cached_entry as _cached_glottolog, get_metadata as _fetch_glottolog
 from planars.languages import get_display_name as _get_display_name
+from planars.schema_values import (
+    KEYSTONE_NAME, STATUS_IN_PROGRESS, STATUS_READY, STATUS_TAB, STATUS_VALUES,
+    is_keystone as _is_keystone,
+)
 from planars.free_occurrence import _parse_pos_ref
 
 
@@ -115,8 +119,8 @@ CODED_DATA = ROOT / "coded_data"
 # Columns appended after param columns on every tab; no dropdown validation.
 # Source of truth: schemas/planar.yaml trailing_columns.
 _TRAILING_COLS = load_planar_schema().get("trailing_columns", ["Source", "Comments"])
-_STATUS_TAB = "Status"
-_STATUS_VALUES = ["in-progress", "ready-for-review"]
+_STATUS_TAB = STATUS_TAB
+_STATUS_VALUES = STATUS_VALUES
 _INSTRUCTIONS_TAB = "Instructions"
 _PLANAR_REF_TAB = "Planar Structure"
 # System tab titles, excluded from the construction-tab bucket wherever the
@@ -284,7 +288,7 @@ def _build_rows(
         # Wrap hyphen-prefixed/suffixed elements to prevent Sheets formula parsing.
         if element.startswith("-") or element.endswith("-"):
             element = f"[{element}]"
-        if pos_name.strip().lower() == "v:verbstem" and not keystone_active:
+        if _is_keystone(pos_name) and not keystone_active:
             rows.append([element, pos_name, pos] + ["NA"] * len(param_names))
         else:
             rows.append([element, pos_name, pos] + [""] * len(param_names))
@@ -356,7 +360,7 @@ def _prefill_free_occurrence_rows(
         row = list(row)
         element  = str(row[0])
         pos_name = str(row[1]) if len(row) > 1 else ""
-        is_keystone = pos_name.strip().lower() == "v:verbstem"
+        is_keystone = _is_keystone(pos_name)
 
         if is_keystone:
             # Keystone: pull free from noninterruption ONLY if it's a real value (y/n).
@@ -433,7 +437,7 @@ def _build_nonperm_pairs(  # noqa: too-many-branches
 
     Returns sorted [[Element_A, Element_B], ...] rows (no scopal — annotators fill that in).
     """
-    _keystone = load_planar_schema().get("keystone_position_name", "v:verbstem")
+    _keystone = KEYSTONE_NAME
 
     # Build element → set of positions. Skip keystone unless keystone_active.
     # Apply the same bracket-wrapping used when writing element_prescreening rows
@@ -634,7 +638,7 @@ def _build_reflex_pairs(
 
     When keystone_active is False (default), the keystone is excluded from pairs.
     """
-    _keystone = load_planar_schema().get("keystone_position_name", "v:verbstem")
+    _keystone = KEYSTONE_NAME
 
     def _wrap(e: str) -> str:
         return f"[{e}]" if (e.startswith("-") or e.endswith("-")) else e
@@ -767,7 +771,7 @@ def _filter_reflex_pairs_by_prescreening(
 # understand the rest of the algorithm. v:verbstem is included trivially (the
 # keystone is always present by definition); v:npsubj1 (subject) is the other
 # member of the original tentative list.
-_OBLIGATORY_POSITIONS_DEFAULT = {"v:verbstem", "v:npsubj1"}
+_OBLIGATORY_POSITIONS_DEFAULT = {KEYSTONE_NAME, "v:npsubj1"}
 _OBLIGATORY_POSITIONS_DEFAULT_NORM = {p.strip().lower() for p in _OBLIGATORY_POSITIONS_DEFAULT}
 
 
@@ -801,7 +805,7 @@ def _phrasal_accent_obligatory_core(lang_id: str, keystone_pos: int) -> Tuple[in
     if "Position_Name" not in df.columns:
         return (keystone_pos, keystone_pos)
 
-    _keystone = load_planar_schema().get("keystone_position_name", "v:verbstem")
+    _keystone = KEYSTONE_NAME
     ks_rows = df[df["Position_Name"].str.strip().str.lower() == _keystone]
     if ks_rows.empty:
         return (keystone_pos, keystone_pos)
@@ -879,7 +883,7 @@ def _build_phrasal_accent_pairs(
     Returns sorted [[Element_A, Element_B], ...] rows (no joint_accent —
     annotators fill that in).
     """
-    _keystone = load_planar_schema().get("keystone_position_name", "v:verbstem")
+    _keystone = KEYSTONE_NAME
 
     prescreening_path = CODED_DATA / lang_id / "phrasal_accent" / "prescreening.tsv"
     if not prescreening_path.exists():
@@ -1404,13 +1408,13 @@ def _create_status_tab(
         current_constructions = {r[0] for r in rows[1:] if r} if len(rows) > 1 else set()
         missing = [c for c in construction_names if c not in current_constructions]
         if missing:
-            ws.append_rows([[c, "in-progress"] for c in missing], value_input_option="RAW")
+            ws.append_rows([[c, STATUS_IN_PROGRESS] for c in missing], value_input_option="RAW")
         _move_status_tab_to_end(spreadsheet)
         return
 
     ws = spreadsheet.add_worksheet(title=_STATUS_TAB, rows=len(construction_names) + 2, cols=2)
     header = [["Construction", "Status"]]
-    data = [[c, "in-progress"] for c in construction_names]
+    data = [[c, STATUS_IN_PROGRESS] for c in construction_names]
     ws.update(header + data, "A1")
 
     sheet_id = ws.id
@@ -2403,7 +2407,7 @@ def _regen_dependents_simple(doorway, manifest: dict) -> List[str]:
                     continue
                 if dep_path.exists():
                     status = _source_tab_status(doorway, cls_info, source_name)
-                    if status != "ready-for-review":
+                    if status != STATUS_READY:
                         print(f"  [{lang_id}/{cls_name}/{dep_name}] empty — waiting for "
                               f"'{source_name}' to be marked ready-for-review "
                               f"(now: {status or 'unknown'})")

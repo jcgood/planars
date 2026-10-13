@@ -51,6 +51,7 @@ from .make_forms import (
     _resolve_diagnostics_yaml_path,
 )
 from .schemas import load_diagnostic_classes as _load_dc
+from planars.schema_values import is_keystone
 from .drive import (
     _load_drive_config, _save_drive_config, _with_retry,
     load_manifest, upload_manifest,
@@ -252,7 +253,7 @@ def _insert_param_columns(
     for i, row in enumerate(all_values):
         if i == 0 or not is_element_tab:
             continue
-        if len(row) > 1 and row[1].strip().lower() == "v:verbstem":
+        if len(row) > 1 and is_keystone(row[1]):
             keystone_row = i + 1  # 1-based
             break
 

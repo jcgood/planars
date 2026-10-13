@@ -69,6 +69,8 @@ from typing import Set
 import pandas as pd
 import pandera.pandas as pa
 
+from planars.schema_values import KEYSTONE_NAME
+
 # Names for the raw_shape_schema checks, so callers that need to build a
 # richer message than the generic `error=` text (e.g. _parse_filled_df
 # listing which specific Position_Names collided) can identify which check
@@ -88,7 +90,7 @@ def _number_to_name_consistent(df: pd.DataFrame) -> bool:
 
 
 def _keystone_mask(df: pd.DataFrame) -> pd.Series:
-    return df["Position_Name"].str.lower() == "v:verbstem"
+    return df["Position_Name"].str.lower() == KEYSTONE_NAME.lower()
 
 
 def _has_keystone(df: pd.DataFrame) -> bool:
@@ -137,7 +139,7 @@ def raw_shape_schema(required_criteria: Set[str]) -> pa.DataFrameSchema:
             pa.Check(
                 _has_keystone,
                 name=CHECK_HAS_KEYSTONE,
-                error="No keystone row found (Position_Name == 'v:verbstem').",
+                error=f"No keystone row found (Position_Name == '{KEYSTONE_NAME}').",
             ),
             pa.Check(
                 _exactly_one_keystone_position,
@@ -184,7 +186,7 @@ def coreference_position_is_integer(s: pd.Series) -> pd.Series:
 
 
 def _coreference_has_keystone(df: pd.DataFrame) -> bool:
-    return bool((df["Position_Name"].str.strip().str.lower() == "v:verbstem").any())
+    return bool((df["Position_Name"].str.strip().str.lower() == KEYSTONE_NAME.lower()).any())
 
 
 def coreference_planar_rows_schema() -> pa.DataFrameSchema:
@@ -207,7 +209,7 @@ def coreference_planar_rows_schema() -> pa.DataFrameSchema:
             pa.Check(
                 _coreference_has_keystone,
                 name=CHECK_COREFERENCE_HAS_KEYSTONE,
-                error="No keystone row (Position_Name == 'v:verbstem') in planar.",
+                error=f"No keystone row (Position_Name == '{KEYSTONE_NAME}') in planar.",
             ),
         ],
         strict=False,

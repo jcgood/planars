@@ -8,7 +8,7 @@ import pandas as pd
 from planars.spans import fmt_span, strict_span
 
 _REQUIRED_CRITERIA = {"scopal"}
-_KEYSTONE_NAME = "v:verbstem"
+from planars.schema_values import KEYSTONE_NAME as _KEYSTONE_NAME
 _TRAILING_COLS = {"Source", "Comments"}
 
 # Only the pair-row (general) construction can be derived by this module;

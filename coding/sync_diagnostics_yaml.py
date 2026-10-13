@@ -372,7 +372,7 @@ def main(args: argparse.Namespace | None = None) -> None:
     lang_filter: Optional[str] = args.lang
 
     # coded_data_clean_tree (all three directions) is enforced centrally at
-    # the python -m coding dispatch chokepoint now -- see
+    # the command dispatch chokepoint (coding/__main__.py) now -- see
     # coding/preconditions.py -- not here. It still guards against exactly
     # what it always has: a prior step's failed auto-commit leaving a
     # stale/reverted YAML or TSV on disk for this command to read as ground
