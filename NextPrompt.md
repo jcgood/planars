@@ -26,8 +26,9 @@ row); the spec, ground rules, units and order are the Phase 10 section of
 `docs/data-layer-implementation-plan.md`. Planned with Jeff 2026-10-12 and
 approved to run unattended **except at the pauses the spec names** (unit 5
 design; units 6+15+11 design). Units 14 (but one by-hand step), 4, 7, 3's
-first group, 1, 2 and 10 are done; **next is the unit 5 design pause** (the
-Drive door knows the topology) — draft the design for Jeff, don't build it.
+first group, 1, 2 and 10 are done. **Unit 5 (the Drive door knows the
+topology) is at its design pause:** the draft is `docs/drive-door-design.md`;
+wait for Jeff's answers to its § 7 before building anything.
 
 **Don't re-litigate (decided 2026-10-12):** light maintenance beats speed; a
 registry only if the code runs from it; no `[y, n]` default; close the
