@@ -58,6 +58,9 @@ from planars import play_language as _play
 from planars import idiom as _idiom
 from planars.io import load_filled_tsv, load_filled_sheet
 from planars.languages import get_display_name
+from planars.schema_values import (
+    ELEMENT_ROWS, TRAILING_COLUMNS, header_shape, is_keystone, row_columns, row_type,
+)
 
 # ---------------------------------------------------------------------------
 # Span label constants
@@ -376,7 +379,7 @@ def _collect_spans_sheets(gc, manifest, lang_id: Optional[str] = None):
                     try:
                         raw_rows = ws.get_all_values()
                         header = raw_rows[0] if raw_rows else []
-                        if header and header[0] == "Element_A":
+                        if header_shape(header) == "element_pairs":
                             pair_df = (pd.DataFrame(raw_rows[1:], columns=header)
                                        if len(raw_rows) > 1
                                        else pd.DataFrame(columns=header))
@@ -408,7 +411,7 @@ def _collect_spans_sheets(gc, manifest, lang_id: Optional[str] = None):
                     try:
                         raw_rows = ws.get_all_values()
                         header = raw_rows[0] if raw_rows else []
-                        if header and "Element_A" in header and "Position_B" in header:
+                        if header_shape(header) == "position_pairs":
                             pair_df = (pd.DataFrame(raw_rows[1:], columns=header)
                                        if len(raw_rows) > 1
                                        else pd.DataFrame(columns=header))
@@ -502,10 +505,6 @@ def collect_all_spans_from_sheets(gc, manifest) -> Tuple[pd.DataFrame, dict]:
 # Completeness helpers
 # ---------------------------------------------------------------------------
 
-# Columns that are structural (position metadata), not criterion values.
-_STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
-
-
 def _read_expected_constructions(lang_dir: Path) -> Dict[str, list]:
     """Read diagnostics_{lang_id}.tsv and return {class_name: [constructions]}.
 
@@ -532,9 +531,9 @@ def _read_expected_constructions(lang_dir: Path) -> Dict[str, list]:
     except Exception:
         return {}
 
-# Trailing sheet columns that are not annotation criteria (e.g. free-text notes).
-# Matches the definition in coding/generate_sheets.py.
-_TRAILING_COLS = {"Source", "Comments"}
+# Trailing sheet columns that are not annotation criteria (e.g. free-text notes),
+# from schemas/planar.yaml.
+_TRAILING_COLS = set(TRAILING_COLUMNS)
 
 # Name of the per-spreadsheet tab that records construction review status.
 from planars.schema_values import STATUS_TAB as _STATUS_TAB  # noqa: E402
@@ -548,9 +547,9 @@ def _criterion_cols_only(criterion_cols: list) -> list:
 def _tab_completeness(data_df: pd.DataFrame, criterion_cols: list) -> dict:
     """Completeness stats for one annotation tab.
 
-    data_df must already exclude keystone rows (as returned by load_filled_tsv
-    or load_filled_sheet). criterion_cols is the full non-structural column list
-    from the same loader — trailing cols (Comments) are excluded automatically.
+    data_df must already exclude keystone rows (``_rows_completeness`` does).
+    criterion_cols is the non-structural column list — trailing cols
+    (Comments) are excluded automatically.
 
     Returns {"total": int, "filled": int, "blank": int}.
 
@@ -565,6 +564,29 @@ def _tab_completeness(data_df: pd.DataFrame, criterion_cols: list) -> dict:
     total = len(data_df) * len(cols)
     blank = int(sum((data_df[c] == "").sum() for c in cols))
     return {"total": total, "filled": total - blank, "blank": blank}
+
+
+def _rows_completeness(class_name: str, construction: str,
+                       header: list, data_rows: list) -> dict:
+    """Completeness of one tab from its header and rows, whatever its row
+    shape. Criterion columns are the header minus the columns the schema says
+    identify its rows (``row_columns``) and the trailing columns; on an
+    element-row tab the keystone row is left out, as load_filled_tsv does.
+
+    One rule for every tab since 2026-10-13. Before, a pair tab was recognised
+    by ``header[0] == "Element_A"`` and only Element_A/Element_B were
+    excluded, so a coreference tab counted its always-filled Position_A,
+    Position_B and Direction as criteria; local pair and keyed TSVs, and the
+    biuniqueness elements tab (no keystone row by design), went through the
+    element-row loader and were reported as errors."""
+    key_cols = row_columns(class_name, construction)
+    width = len(header)
+    rows = [(list(r) + [""] * width)[:width] for r in data_rows]
+    df = pd.DataFrame(rows, columns=header) if rows else pd.DataFrame(columns=header)
+    if row_type(class_name, construction) == ELEMENT_ROWS and "Position_Name" in df.columns:
+        df = df[~df["Position_Name"].map(is_keystone)]
+    crit_cols = [c for c in header if c and c not in key_cols and c not in _TRAILING_COLS]
+    return _tab_completeness(df, crit_cols)
 
 
 # ---------------------------------------------------------------------------
@@ -635,10 +657,10 @@ def language_completeness(
             for construction in ordered:
                 if construction in actual:
                     try:
-                        data_df, _, _, crit_cols, _ = load_filled_tsv(
-                            actual[construction], required_criteria=set(), strict=False
-                        )
-                        constructions[construction] = _tab_completeness(data_df, crit_cols)
+                        tsv = pd.read_csv(actual[construction], sep="\t", dtype=str,
+                                          keep_default_na=False)
+                        constructions[construction] = _rows_completeness(
+                            class_name, construction, list(tsv.columns), tsv.values.tolist())
                     except Exception as e:
                         constructions[construction] = {
                             "total": 0, "filled": 0, "blank": 0, "error": str(e)
@@ -662,34 +684,17 @@ def language_completeness(
             except Exception as e:
                 result[class_name] = {"_error": str(e)}
                 continue
-            construction_params = sheet_info.get("construction_params", {})
             constructions = {}
             for construction in sheet_info.get("constructions", []):
                 try:
                     ws = ss.worksheet(construction)
                 except Exception:
                     continue
-                required = set(
-                    construction_params.get(construction, {}).get("param_names", [])
-                )
                 try:
-                    # Peek at header to detect pairs-format tabs (Element_A, Element_B)
-                    # before calling load_filled_sheet, which requires the standard
-                    # element-by-position schema and would error on pairs tabs.
                     raw_rows = ws.get_all_values()
                     header = raw_rows[0] if raw_rows else []
-                    if header and header[0] == "Element_A":
-                        df = (pd.DataFrame(raw_rows[1:], columns=header)
-                              if len(raw_rows) > 1 else pd.DataFrame(columns=header))
-                        crit_cols = [c for c in df.columns
-                                     if c not in {"Element_A", "Element_B"}
-                                     and c not in _TRAILING_COLS and c]
-                        constructions[construction] = _tab_completeness(df, crit_cols)
-                    else:
-                        data_df, _, _, crit_cols, _ = load_filled_sheet(
-                            ws, required_criteria=required, strict=False
-                        )
-                        constructions[construction] = _tab_completeness(data_df, crit_cols)
+                    constructions[construction] = _rows_completeness(
+                        class_name, construction, header, raw_rows[1:])
                 except Exception as e:
                     constructions[construction] = {
                         "total": 0, "filled": 0, "blank": 0, "error": str(e)

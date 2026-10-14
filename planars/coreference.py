@@ -16,7 +16,8 @@ from planars.contracts import (
 from planars.spans import fmt_span, loose_span, strict_span
 
 from planars.schema_values import KEYSTONE_NAME as _KEYSTONE_NAME
-_TRAILING_COLS = {"Source", "Comments"}
+from planars.schema_values import PAIR_ROW_SHAPES, TRAILING_COLUMNS
+_TRAILING_COLS = set(TRAILING_COLUMNS)
 _REQUIRED_CRITERIA: Set[str] = {"reflexive_allowed"}
 
 _PAIR_CRITERIA = {"reflexive_allowed", "pronoun_allowed", "np_allowed"}
@@ -230,8 +231,9 @@ def derive_coreference_domains(
     # it, a missing column doesn't crash, it silently makes every row look
     # unknown via row.get()'s "" fallback, producing a wrong-but-plausible
     # empty result instead of an error. See contracts.py's module docstring,
-    # section 2.
-    required_pair_cols = {"Element_A", "Position_B", criterion_col}
+    # section 2. A pair tab must have its whole declared shape (planar.yaml
+    # pair_row_shapes.position_pairs), not just the two columns read below.
+    required_pair_cols = set(PAIR_ROW_SHAPES["position_pairs"]) | {criterion_col}
     missing_pair_cols = required_pair_cols - pair_cols
     if missing_pair_cols:
         raise ValueError(f"Missing required column(s): {sorted(missing_pair_cols)}")

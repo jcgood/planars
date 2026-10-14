@@ -206,7 +206,13 @@ Each step leaves a complete, working system.
 
 1. **5a** `sheet_spec.py` for class sheets, plus a test that every recorded
    class sheet in the frozen test data matches its spec. Whatever doesn't
-   match is real drift: fix it or explain it.
+   match is real drift: fix it or explain it. Building it first required the
+   row shapes to have one source: pair-row shapes were declared in no
+   schema (hidden-facts D3, D4), so `planar.yaml` gained `pair_row_shapes`,
+   and each pair construction a `pair_shape`. The test compares tab order,
+   headers and row keys. It does not compare locked-tab wording with the
+   recording, because every change of wording would fail it until the next
+   refreeze; rule 2 checks locked tabs at write time instead.
 2. **5b** `CheckedDoorway` with rules 1–5, the closed request list, the
    read-only door, and retry moved in. The fake runs in enforce mode. Call-site
    `_with_retry`s are deleted in the same commit.
@@ -216,7 +222,11 @@ Each step leaves a complete, working system.
 4. **5d** Identity labels: doorway methods, the fake's model, and a
    migration that labels the live files (**a live write, named for your
    approval when it's ready**). Rule 6 (end-of-command shape check) lands
-   here, because it needs identity to find the spec.
+   here, because it needs identity to find the spec. Rule 6 also needs the
+   rows of pair and keyed tabs, which 5a's spec leaves to the tab they are
+   generated from. They come from the generators' own row builders, the
+   functions integrity-check's dependent-staleness section already calls,
+   not from a second copy.
 5. **5e** Live in watch mode for class sheets, until the § 4 rule is met
    (at least a week). Meanwhile: the rest of unit 3, and unit 8.
 6. **5f** Enforce for class sheets. Then the other kinds, in the plan's

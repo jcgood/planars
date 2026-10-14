@@ -247,6 +247,16 @@ def _is_ours(protection: Dict, sheet_id: int) -> bool:
         and protection.get("description") == PROTECTION_DESCRIPTION
 
 
+def locked_tab_contents(class_name: str, lang_id: str,
+                        planar_path: Path) -> List[Tuple[Dict, List[List[str]]]]:
+    """(registry entry, rows) for each locked tab this class carries, in
+    registry order: what each tab should hold right now. The sheet spec reads
+    this; rebuild_locked_tabs writes it."""
+    class_entry = _class_entry(class_name)
+    return [(spec, _BUILDERS[spec["builder"]][0](class_entry, lang_id, planar_path))
+            for spec in locked_tab_specs() if _included(spec, class_entry)]
+
+
 def rebuild_locked_tabs(
     spreadsheet: SpreadsheetHandle,
     class_name: str,
@@ -262,21 +272,22 @@ def rebuild_locked_tabs(
     (made, or that would be made when ``apply`` is False); an empty list means
     the sheet was already current. Tab order is ``reorder_tabs``' job.
     """
-    class_entry = _class_entry(class_name)
+    contents = {spec["title"]: rows
+                for spec, rows in locked_tab_contents(class_name, lang_id, planar_path)}
     existing = {ws.title: ws for ws in _with_retry(spreadsheet.worksheets)}
     changes: List[str] = []
     for spec in locked_tab_specs():
         title = spec["title"]
         ws = existing.get(title)
-        if not _included(spec, class_entry):
+        if title not in contents:
             if ws is not None:
                 changes.append(f"{title}: remove (this class no longer carries it)")
                 if apply:
                     _with_retry(lambda: spreadsheet.del_worksheet(ws))
             continue
 
-        build_rows, build_format = _BUILDERS[spec["builder"]]
-        rows = build_rows(class_entry, lang_id, planar_path)
+        rows = contents[title]
+        build_format = _BUILDERS[spec["builder"]][1]
         if ws is None:
             changes.append(f"{title}: create")
             if apply:

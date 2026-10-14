@@ -35,32 +35,27 @@ from planars.biuniqueness_deviations import CLASS_NAME  # noqa: F401  (re-export
 from planars.biuniqueness_deviations import ELEMENTS_TAB as ELEMENTS
 from planars.biuniqueness_deviations import MORPHEMES_TAB as MORPHEMES
 from planars.biuniqueness_deviations import MORPHS_TAB as MORPHS
+from planars.schema_values import row_columns, row_key
 
+from .make_forms import wrap_element as wrap  # bracket a hyphenated element, as every sheet does
 from .validate_planar import _tokenize_elements
 
-MORPHEMES_STRUCT = ["Morpheme", "Origin", "Found_At"]
-MORPHEMES_KEY = ["Morpheme"]
-MORPHS_STRUCT = ["Morpheme", "Position_Name", "Form", "Origin"]
-MORPHS_KEY = ["Morpheme", "Position_Name", "Form"]
+MORPHEMES_STRUCT = row_columns(CLASS_NAME, MORPHEMES)
+MORPHEMES_KEY = row_key(CLASS_NAME, MORPHEMES)
+MORPHS_STRUCT = row_columns(CLASS_NAME, MORPHS)
+MORPHS_KEY = row_key(CLASS_NAME, MORPHS)
 
 FILLED, OPEN_CATEGORY, CO_EXPONENT, HAND_ADDED = (
     "filled", "open_category", "co_exponent", "hand-added")
 GENERATED_ORIGINS = (FILLED, OPEN_CATEGORY, CO_EXPONENT)
 _ORIGIN_RANK = {FILLED: 0, OPEN_CATEGORY: 1, CO_EXPONENT: 2}
 
-# Key and structural columns per keyed construction. The schema's
-# keyed_columns for each construction must match (a test holds them together).
+# Structural columns and key per keyed construction: the schema's
+# keyed_columns and key, read, not copied.
 KEYED = {
     MORPHEMES: (MORPHEMES_STRUCT, MORPHEMES_KEY),
     MORPHS: (MORPHS_STRUCT, MORPHS_KEY),
 }
-
-
-def wrap(element: str) -> str:
-    """Bracket a hyphen-initial/final element, as every sheet does (Sheets
-    would otherwise read '-ing' as a formula)."""
-    element = element.strip()
-    return f"[{element}]" if (element.startswith("-") or element.endswith("-")) else element
 
 
 def _split_list(cell) -> List[str]:

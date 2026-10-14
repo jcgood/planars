@@ -17,6 +17,25 @@ from planars.schema_values import KEYSTONE_NAME
 _BRACE_SUFFIX_RE = re.compile(r'\{[^}]*\}$')
 
 
+def wrap_element(element: str) -> str:
+    """An element as every sheet shows it: stripped, and bracketed if it
+    starts or ends with a hyphen (planar.yaml's Element convention; Sheets
+    would otherwise read '-ing' as a formula). The one copy of this rule."""
+    element = str(element).strip()
+    return f"[{element}]" if (element.startswith("-") or element.endswith("-")) else element
+
+
+def element_rows(element_index, lang_id: str) -> List[Tuple[str, str, int]]:
+    """(Element, Position_Name, Position_Number) for every row an element-row
+    tab has, in sheet order: by position, then element (case-insensitive).
+    The one statement of which rows such a tab has and in what order;
+    generate_sheets' _build_rows and the sheet spec both read it."""
+    items = [(pos, element, pos_name)
+             for pos, pos_name, lang, element in element_index.values() if lang == lang_id]
+    items.sort(key=lambda t: (t[0], t[1].lower(), t[1]))
+    return [(wrap_element(element), pos_name, pos) for pos, element, pos_name in items]
+
+
 def _registry_element_types(planar_schema: Dict) -> Dict[str, str]:
     """Flatten element_conventions.standard_labels.* into {label: element_type}."""
     standard_labels = (planar_schema.get("element_conventions") or {}).get("standard_labels") or {}

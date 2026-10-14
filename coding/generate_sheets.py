@@ -64,7 +64,7 @@ import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 REGEN_SNAPSHOT_DIR = ROOT / "regen_snapshots"
@@ -89,8 +89,11 @@ from .drive_doorway import SpreadsheetHandle, WorksheetHandle, WorksheetNotFound
 from .glottolog import cached_entry as _cached_glottolog, get_metadata as _fetch_glottolog
 from planars.languages import get_display_name as _get_display_name
 from planars.schema_values import (
-    KEYSTONE_NAME, STATUS_IN_PROGRESS, STATUS_READY, STATUS_TAB, STATUS_VALUES,
+    ELEMENT_ROW_COLUMNS, KEYSTONE_NAME, PAIR_ROW_KEYS, PAIR_ROW_SHAPES, STATUS_COLUMNS,
+    STATUS_IN_PROGRESS, STATUS_READY, STATUS_TAB, STATUS_VALUES,
+    TRAILING_COLUMNS as _TRAILING_COLS,
     is_keystone as _is_keystone,
+    row_columns, row_key,
 )
 from planars.free_occurrence import _parse_pos_ref
 
@@ -107,11 +110,13 @@ def _annotator_email(lang_id: str) -> Optional[str]:
     """
     return _people.annotator_email(lang_id)
 from .schemas import (
-    apply_schema_criteria, load_planar_schema, load_diagnostic_classes, load_diagnostic_criteria,
+    apply_schema_criteria, is_free_entry, load_diagnostic_classes, load_diagnostic_criteria,
 )
 from .locked_tabs import rebuild_locked_tabs, reorder_tabs, system_tab_titles
 from .make_forms import (
     build_element_index,
+    element_rows,
+    wrap_element as _wrap,
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
     resolve_keystone_active,
@@ -121,9 +126,8 @@ from .make_forms import (
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
 CODED_DATA = ROOT / "coded_data"
 
-# Columns appended after param columns on every tab; no dropdown validation.
-# Source of truth: schemas/planar.yaml trailing_columns.
-_TRAILING_COLS = load_planar_schema().get("trailing_columns", ["Source", "Comments"])
+# Columns appended after param columns on every tab; no dropdown validation:
+# planar.yaml's trailing_columns, imported above as _TRAILING_COLS.
 _STATUS_TAB = STATUS_TAB
 _STATUS_VALUES = STATUS_VALUES
 
@@ -258,9 +262,8 @@ def _build_rows(
 ) -> List[List[object]]:
     """Build sorted data rows for a sheet tab.
 
-    Rows are sorted by (position_number, element_name) so annotators see the
-    planar structure in order. Elements with leading/trailing hyphens are wrapped
-    in brackets to prevent Excel/Sheets from interpreting them as formulas.
+    Which rows, their order and the bracket-wrapping of hyphenated elements
+    come from make_forms.element_rows (shared with the sheet spec).
     Keystone (v:verbstem) rows get 'NA' in all param columns when keystone_active
     is False (default); when True they get '' so annotators fill in real values.
 
@@ -274,19 +277,8 @@ def _build_rows(
         List of rows (without the header), each a list:
         [element, position_name, position_number, *criterion_values].
     """
-    items = [
-        (pos, element, pos_name)
-        for _, (pos, pos_name, lang, element) in element_index.items()
-        if lang == lang_id
-    ]
-    items_sorted = sorted(items, key=lambda t: (t[0], t[1].lower(), t[1]))
-
     rows = []
-    for pos, element, pos_name in items_sorted:
-        element = element.strip()
-        # Wrap hyphen-prefixed/suffixed elements to prevent Sheets formula parsing.
-        if element.startswith("-") or element.endswith("-"):
-            element = f"[{element}]"
+    for element, pos_name, pos in element_rows(element_index, lang_id):
         if _is_keystone(pos_name) and not keystone_active:
             rows.append([element, pos_name, pos] + ["NA"] * len(param_names))
         else:
@@ -440,10 +432,8 @@ def _build_nonperm_pairs(  # noqa: too-many-branches
 
     # Build element → set of positions. Skip keystone unless keystone_active.
     # Apply the same bracket-wrapping used when writing element_prescreening rows
-    # so that pair element names are consistent with those in element_prescreening.tsv.
-    def _wrap(e: str) -> str:
-        return f"[{e}]" if (e.startswith("-") or e.endswith("-")) else e
-
+    # (make_forms.wrap_element, imported as _wrap) so that pair element names are
+    # consistent with those in element_prescreening.tsv.
     elem_positions: Dict[str, set] = {}
     for _, (pos, pos_name, lang, element) in element_index.items():
         if lang != lang_id:
@@ -611,9 +601,6 @@ def _build_reflex_pairs(
     When keystone_active is False (default), the keystone is excluded from pairs.
     """
     _keystone = KEYSTONE_NAME
-
-    def _wrap(e: str) -> str:
-        return f"[{e}]" if (e.startswith("-") or e.endswith("-")) else e
 
     def _pos_str(num: int, name: str) -> str:
         return f"{num} ({name})"
@@ -871,9 +858,6 @@ def _build_phrasal_accent_pairs(
         if row.get("accented", "").strip() in ("y", "both")
     }
 
-    def _wrap(e: str) -> str:
-        return f"[{e}]" if (e.startswith("-") or e.endswith("-")) else e
-
     # element -> set of positions, accent-eligible elements only. all_positions
     # covers every position in the language's planar structure regardless of
     # eligibility — needed to compute the obligatory-position set, since a
@@ -947,7 +931,8 @@ def _populate_tab_pairs(
     Returns:
         The populated worksheet handle.
     """
-    num_cols = 2 + len(param_names) + len(_TRAILING_COLS)  # Element_A, Element_B, params, trailing
+    pair_struct = PAIR_ROW_SHAPES["element_pairs"]
+    num_cols = len(pair_struct) + len(param_names) + len(_TRAILING_COLS)  # structure, params, trailing
     try:
         ws = _with_retry(lambda: spreadsheet.worksheet(tab_name))
         _reset_worksheet(ws, len(pairs), num_cols)
@@ -957,17 +942,23 @@ def _populate_tab_pairs(
         )
 
     all_cols = param_names + _TRAILING_COLS
-    header = ["Element_A", "Element_B"] + all_cols
+    header = pair_struct + all_cols
     data_rows = []
     for pair in pairs:
-        a, b = pair[0], pair[1]
-        pre = (prefill or {}).get((a, b), {})
-        data_rows.append([a, b] + [pre.get(c, "") for c in all_cols])
+        pre = (prefill or {}).get(_pair_key("element_pairs", pair), {})
+        data_rows.append(list(pair[:len(pair_struct)]) + [pre.get(c, "") for c in all_cols])
     ws.update([header] + data_rows, "A1")
     per_col_values = [param_values[p] for p in param_names]  # values come from criteria_for
-    # Param columns start at index 2 (after Element_A, Element_B)
-    _format_and_validate(ws, len(pairs), per_col_values, col_start=2)
+    # Param columns start right after the pair-structure columns
+    _format_and_validate(ws, len(pairs), per_col_values, col_start=len(pair_struct))
     return ws
+
+
+def _pair_key(shape: str, row: Sequence) -> Tuple:
+    """The key of one pair row (planar.yaml pair_row_shapes[shape].key), from a
+    generated pair or a sheet row; both start with the shape's columns in order."""
+    cols = PAIR_ROW_SHAPES[shape]
+    return tuple(row[cols.index(k)] for k in PAIR_ROW_KEYS[shape])
 
 
 def _populate_tab_reflex_pairs(
@@ -989,7 +980,7 @@ def _populate_tab_reflex_pairs(
                  keyed by (Element_A, Position_B, Direction) to carry over when
                  regenerating an existing tab.
     """
-    _REFLEX_STRUCT = ["Element_A", "Position_A", "Position_B", "Direction"]
+    _REFLEX_STRUCT = PAIR_ROW_SHAPES["position_pairs"]
     num_cols = len(_REFLEX_STRUCT) + len(param_names) + len(_TRAILING_COLS)
     try:
         ws = _with_retry(lambda: spreadsheet.worksheet(tab_name))
@@ -1003,14 +994,13 @@ def _populate_tab_reflex_pairs(
     header = _REFLEX_STRUCT + all_cols
     data_rows = []
     for pair in pairs:
-        elem_a, pos_a, pos_b, direction = pair
-        pre = (prefill or {}).get((elem_a, pos_b, direction), {})
-        data_rows.append([elem_a, pos_a, pos_b, direction]
+        pre = (prefill or {}).get(_pair_key("position_pairs", pair), {})
+        data_rows.append(list(pair[:len(_REFLEX_STRUCT)])
                          + [pre.get(c, "") for c in all_cols])
     ws.update([header] + data_rows, "A1")
     per_col_values = [param_values[p] for p in param_names]  # values come from criteria_for
-    # Param columns start at index 4 (after the 4 structural columns).
-    _format_and_validate(ws, len(pairs), per_col_values, col_start=4)
+    # Param columns start right after the structural columns.
+    _format_and_validate(ws, len(pairs), per_col_values, col_start=len(_REFLEX_STRUCT))
     return ws
 
 
@@ -1181,7 +1171,7 @@ def _create_status_tab(
         return
 
     ws = spreadsheet.add_worksheet(title=_STATUS_TAB, rows=len(construction_names) + 2, cols=2)
-    header = [["Construction", "Status"]]
+    header = [STATUS_COLUMNS]
     data = [[c, STATUS_IN_PROGRESS] for c in construction_names]
     ws.update(header + data, "A1")
 
@@ -1274,21 +1264,12 @@ def _build_criterion_notes(param_names: List[str]) -> List[Optional[str]]:
     return [index.get(p) for p in param_names]
 
 
-def is_free_entry(values) -> bool:
-    """True if a criterion's declared values are only placeholders
-    (<free_text>, <position_names>): it takes free entry, so it gets no
-    dropdown -- a dropdown would just offer the placeholder itself as a choice.
-    Every writer of dropdown validation (this module, sync_params,
-    refresh_dropdowns via _format_and_validate) asks this."""
-    return bool(values) and all(str(v).startswith("<") and str(v).endswith(">")
-                                for v in values)
-
 
 def _format_and_validate(
     worksheet: WorksheetHandle,
     num_data_rows: int,
     param_values: List[List[str]],
-    col_start: int = 3,
+    col_start: int = len(ELEMENT_ROW_COLUMNS),
     param_notes: Optional[List[Optional[str]]] = None,
 ) -> None:
     """Freeze and bold the header row; apply per-column dropdown validation and notes.
@@ -1307,8 +1288,9 @@ def _format_and_validate(
         num_data_rows: number of data rows (excluding header) to validate.
         param_values: list of allowed-value lists, one entry per param column,
             in the same order as the columns.
-        col_start: 0-based column index where param columns begin (default 3
-            for standard element-row sheets; 2 for pair-row sheets).
+        col_start: 0-based column index where param columns begin (default
+            len(ELEMENT_ROW_COLUMNS) for standard element-row sheets; pair-row
+            and keyed-row callers pass their own shape's width).
         param_notes: optional list of note strings (one per param column, None
             to skip a column). When provided, each note is written to the
             corresponding header cell so annotators can hover to read the
@@ -1411,7 +1393,7 @@ def _populate_tab(
     Returns:
         The populated worksheet handle.
     """
-    num_cols = 3 + len(param_names) + len(_TRAILING_COLS)  # Element, Position_Name, Position_Number, params, trailing
+    num_cols = len(ELEMENT_ROW_COLUMNS) + len(param_names) + len(_TRAILING_COLS)  # structure, params, trailing
     try:
         ws = _with_retry(lambda: spreadsheet.worksheet(tab_name))
         _reset_worksheet(ws, len(rows), num_cols)
@@ -1421,7 +1403,7 @@ def _populate_tab(
         )
 
     all_cols = param_names + _TRAILING_COLS
-    header = ["Element", "Position_Name", "Position_Number"] + all_cols
+    header = ELEMENT_ROW_COLUMNS + all_cols
     # Pad data rows with empty trailing columns (e.g. Comments).
     all_rows = [header] + [[str(v) for v in row] + [""] * len(_TRAILING_COLS) for row in rows]
     ws.update(all_rows, "A1")
@@ -1679,14 +1661,11 @@ def _find_annotated_drops(
     return drops
 
 
-def _format_annotated_drop(class_name: str, key: Tuple, crit_val: str, source: str, comments: str) -> str:
-    """Human-readable one-line description of a dropped annotated pair, for the abort message."""
-    if class_name == "coreference":
-        elem_a, pos_b, direction = key
-        identity = f"{elem_a!r} -> pos_b={pos_b} ({direction})"
-    else:
-        elem_a, elem_b = key
-        identity = f"{elem_a!r} x {elem_b!r}"
+def _format_annotated_drop(key_cols: Sequence[str], key: Tuple, crit_val: str,
+                           source: str, comments: str) -> str:
+    """Human-readable one-line description of a dropped annotated pair, for the
+    abort message: each key column named with its value."""
+    identity = ", ".join(f"{col} {val!r}" for col, val in zip(key_cols, key))
     line = f"  {identity}: {crit_val!r}"
     if source:
         line += f"; Source: {source}"
@@ -1818,7 +1797,10 @@ def _regen_construction(
                                   param_names, param_values, confirm_drop)
         return
 
-    # Read existing tab annotations from the live Sheet.
+    # Read existing tab annotations from the live Sheet, keyed by the columns
+    # the schema says identify a row (planar.yaml pair_row_shapes).
+    shape_cols = row_columns(class_name, construction_name)
+    key_cols = row_key(class_name, construction_name)
     existing: Dict = {}
     try:
         ws = _with_retry(lambda: spreadsheet.worksheet(construction_name))
@@ -1826,15 +1808,20 @@ def _regen_construction(
         _snapshot_before_regen(lang_id, class_name, construction_name, rows)
         if rows and len(rows) > 1:
             hdr = rows[0]
-            is_reflex_fmt = class_name == "coreference" and "Position_A" in hdr and "Element_B" not in hdr
+            if hdr[:len(shape_cols)] != shape_cols and not confirm_drop:
+                # A tab of another shape can't be keyed; rebuilding it would
+                # replace every row without the annotated-drop check below.
+                raise SystemExit(
+                    f"ABORTED: {lang_id}/{class_name}/{construction_name}'s columns are "
+                    f"{hdr}, not the {shape_cols} the schema gives this tab, so its "
+                    f"answers can't be matched to the rebuilt rows. The snapshot taken "
+                    f"just now is in regen_snapshots/. If the old rows can go, re-run "
+                    f"with --confirm-drop.")
             for row in rows[1:]:
-                if is_reflex_fmt:
-                    # Format: Element_A, Position_A, Position_B, Direction, ...
-                    if len(row) >= 4 and row[0] and row[2]:
-                        existing[(row[0], row[2], row[3])] = dict(zip(hdr[4:], row[4:]))
-                else:
-                    if len(row) >= 2 and row[0] and row[1]:
-                        existing[(row[0], row[1])] = dict(zip(hdr[2:], row[2:]))
+                record = dict(zip(hdr, row))
+                key = tuple(record.get(k, "") for k in key_cols)
+                if any(key):
+                    existing[key] = {c: v for c, v in record.items() if c not in shape_cols}
     except WorksheetNotFound:
         pass
 
@@ -1858,11 +1845,7 @@ def _regen_construction(
     if class_name == "coreference" and pos_num_remap:
         existing = _remap_coreference_prefill(existing, pos_num_remap, pairs)
 
-    if class_name == "coreference":
-        # Key: (elem_a, pos_b_str, direction)
-        new_pair_set = {(p[0], p[2], p[3]) for p in pairs}
-    else:
-        new_pair_set = {(p[0], p[1]) for p in pairs}
+    new_pair_set = {tuple(p[shape_cols.index(k)] for k in key_cols) for p in pairs}
     old_pair_set = set(existing.keys())
     retained = old_pair_set & new_pair_set
     removed  = old_pair_set - new_pair_set
@@ -1870,7 +1853,7 @@ def _regen_construction(
 
     annotated_drops = _find_annotated_drops(removed, existing, param_names[0])
     if annotated_drops and not confirm_drop:
-        lines = [_format_annotated_drop(class_name, *drop) for drop in annotated_drops]
+        lines = [_format_annotated_drop(key_cols, *drop) for drop in annotated_drops]
         raise SystemExit(
             f"ABORTED: regenerating {lang_id}/{class_name}/{construction_name} would "
             f"silently drop {len(annotated_drops)} annotated pair-row(s) — no confirmation "

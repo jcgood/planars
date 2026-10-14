@@ -57,18 +57,23 @@ from .drive import (
     load_manifest, upload_manifest,
 )
 from .drive_doorway import WorksheetHandle, WorksheetNotFound, get_doorway
-from .generate_sheets import CODED_DATA, _TRAILING_COLS, is_free_entry
+from .generate_sheets import CODED_DATA
+from .schemas import is_free_entry
 from . import biuniqueness_rows as _br
+from planars.schema_values import (
+    ELEMENT_ROWS,
+    ROW_IDENTITY_COLUMNS,
+    TRAILING_COLUMNS,
+    header_shape,
+)
 
-_TRAILING_SET = set(_TRAILING_COLS)
+_TRAILING_SET = set(TRAILING_COLUMNS)
 
-# Structural columns that are never param columns, across all sheet types.
-# Element-by-position: Element, Position_Name, Position_Number.
-# Nonpermutability pairs: Element_A, Element_B.
-# Coreference pairs: Element_A, Position_A, Position_B, Direction.
-# Keyed rows (biuniqueness_deviations, #254): Morpheme, Origin, Found_At, Form.
-_STRUCTURAL_SET = ({"Element", "Position_Name", "Position_Number",
-                    "Element_A", "Element_B", "Position_A", "Position_B", "Direction"}
+# Structural columns that are never param columns, across all sheet types:
+# the element-row and pair-row columns declared in planar.yaml, plus the
+# keyed-row columns (biuniqueness_deviations, #254) declared in
+# diagnostic_classes.yaml.
+_STRUCTURAL_SET = (ROW_IDENTITY_COLUMNS
                    | {c for cols, _ in _br.KEYED.values() for c in cols})
 
 
@@ -270,7 +275,7 @@ def _insert_param_columns(
     # Position_Name second, and its stems sit at v:verbstem, but those rows
     # are ordinary rows to annotate, not a keystone to NA out.
     keystone_row: Optional[int] = None
-    is_element_tab = bool(all_values) and all_values[0][:2] == ["Element", "Position_Name"]
+    is_element_tab = bool(all_values) and header_shape(all_values[0]) == ELEMENT_ROWS
     for i, row in enumerate(all_values):
         if i == 0 or not is_element_tab:
             continue

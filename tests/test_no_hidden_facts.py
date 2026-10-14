@@ -18,8 +18,12 @@ maintain by hand.
    that command's own parser accepts. Catches the drift where sync_params
    told readers to run `import-sheets --force` for months.
 
-Neither can see behaviour facts (who keeps what current); the doorway work
-in Phase 10 handles those.
+3. Row-shape detector: no list, set or tuple literal may restate two or more
+   columns the schemas declare together (a tab's row columns, the trailing
+   columns, the Status tab's columns). See test_no_row_shape_is_restated_in_code.
+
+None of them can see behaviour facts (who keeps what current); the doorway
+work in Phase 10 handles those.
 """
 from __future__ import annotations
 
@@ -85,6 +89,50 @@ def test_no_schema_owned_value_is_typed_into_code():
     assert not hits, (
         "These strings repeat a value schemas/planar.yaml owns. Read it instead "
         "(the schema is the one place it may change):\n  " + "\n  ".join(hits))
+
+
+def _declared_column_groups() -> List[Tuple[str, frozenset]]:
+    """Each group of columns the schemas declare together, with where to read it."""
+    from coding.schemas import load_diagnostic_classes
+    groups = [
+        ("planars.schema_values.ELEMENT_ROW_COLUMNS (or row_columns)",
+         frozenset(schema_values.ELEMENT_ROW_COLUMNS)),
+        ("planars.schema_values.TRAILING_COLUMNS", frozenset(schema_values.TRAILING_COLUMNS)),
+        ("planars.schema_values.STATUS_COLUMNS", frozenset(schema_values.STATUS_COLUMNS)),
+    ]
+    groups += [(f"planars.schema_values.PAIR_ROW_SHAPES[{name!r}] (or row_columns/row_key)",
+                frozenset(cols)) for name, cols in schema_values.PAIR_ROW_SHAPES.items()]
+    for cls in load_diagnostic_classes().get("classes", []):
+        for con in cls.get("constructions") or []:
+            if isinstance(con, dict) and con.get("keyed_columns"):
+                groups.append((f"planars.schema_values.row_columns({cls['name']!r}, "
+                               f"{con['name']!r}) / row_key", frozenset(con["keyed_columns"])))
+    return groups
+
+
+def test_no_row_shape_is_restated_in_code():
+    """3. Row-shape detector: a list, set or tuple literal holding two or more
+    columns of one declared shape (element rows, a pair shape, a keyed tab's
+    columns, the trailing columns, the Status tab's columns) is a copy of that
+    shape (hidden-facts D3, D4). Reading one column by name
+    (row["Position_B"]) is not, and is not flagged."""
+    groups = _declared_column_groups()
+    hits: List[str] = []
+    for where, src in _python_sources():
+        if where == "planars/schema_values.py":
+            continue
+        for node in ast.walk(ast.parse(src)):
+            if not isinstance(node, (ast.List, ast.Set, ast.Tuple)):
+                continue
+            strings = {e.value for e in node.elts
+                       if isinstance(e, ast.Constant) and isinstance(e.value, str)}
+            for read_from, cols in groups:
+                if len(strings & cols) >= 2:
+                    hits.append(f"{where}:{node.lineno}: {sorted(strings & cols)} → use {read_from}")
+                    break
+    assert not hits, (
+        "These literals restate columns the schemas declare together. Read them "
+        "instead:\n  " + "\n  ".join(hits))
 
 
 _COMMAND_STRING = re.compile(r"python -m coding ([a-z][a-z0-9-]*)((?:[ \t]+[^\s`'\"|;)]+)*)")

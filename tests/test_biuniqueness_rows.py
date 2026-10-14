@@ -378,18 +378,19 @@ def test_integrity_check_says_an_empty_keyed_tab_is_waiting(tmp_path, monkeypatc
 # The schema and this module agree
 # ---------------------------------------------------------------------------
 
-def test_the_schema_declares_the_same_keyed_columns_as_this_module():
-    keyed = _get_keyed_row_constructions()[br.CLASS_NAME]
-    for construction, (columns, key) in br.KEYED.items():
-        assert keyed[construction]["columns"] == columns
-        assert keyed[construction]["key"] == key
-
-
 def test_an_unknown_row_type_is_refused(monkeypatch):
     import coding.schemas as schemas
     monkeypatch.setattr(schemas, "load_diagnostic_classes", lambda: {"classes": [
         {"name": "x", "constructions": [{"name": "y", "row_type": "pairs_rows"}]}]})
     with pytest.raises(ValueError, match="row_type 'pairs_rows'"):
+        _get_keyed_row_constructions()
+
+
+def test_a_pair_construction_without_its_shape_is_refused(monkeypatch):
+    import coding.schemas as schemas
+    monkeypatch.setattr(schemas, "load_diagnostic_classes", lambda: {"classes": [
+        {"name": "x", "constructions": [{"name": "y", "row_type": "pair_rows"}]}]})
+    with pytest.raises(ValueError, match="pair_shape"):
         _get_keyed_row_constructions()
 
 

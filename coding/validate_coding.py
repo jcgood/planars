@@ -43,7 +43,6 @@ from .schemas import (
     criteria_for,
     criterion_values,
     load_diagnostic_criteria,
-    load_planar_schema,
     load_diagnostic_classes,
 )
 
@@ -51,9 +50,14 @@ from .schemas import (
 # Constants
 # ---------------------------------------------------------------------------
 
-_STRUCTURAL_COLS      = {"Element", "Position_Name", "Position_Number"}
-_PAIR_STRUCTURAL_COLS = {"Element_A", "Element_B", "Position_A", "Position_B", "Direction"}
-_TRAILING_COLS        = load_planar_schema().get("trailing_columns", ["Source", "Comments"])
+from planars.schema_values import (  # noqa: E402
+    ELEMENT_ROW_COLUMNS, PAIR_ROW_SHAPES, TRAILING_COLUMNS,
+)
+
+# Row-identifying and trailing columns, read from schemas/planar.yaml.
+_STRUCTURAL_COLS      = set(ELEMENT_ROW_COLUMNS)
+_PAIR_STRUCTURAL_COLS = set().union(*PAIR_ROW_SHAPES.values())
+_TRAILING_COLS        = TRAILING_COLUMNS
 # Values every criterion accepts in addition to its own list (unknown, not
 # applicable) — diagnostic_criteria.yaml's shared values. There is no default
 # list for a criterion whose own values are unknown: the [y, n] default was
@@ -254,10 +258,10 @@ def validate_annotation_rows(
     if not set(header) & _STRUCTURAL_COLS:
         return (_plain_records(header, data_rows),
                 [_wrong_shape(tab_name, header,
-                              "element rows (Element, Position_Name, Position_Number)",
+                              f"element rows ({', '.join(ELEMENT_ROW_COLUMNS)})",
                               class_name, lang_id)])
 
-    for col in ("Element", "Position_Name", "Position_Number"):
+    for col in ELEMENT_ROW_COLUMNS:
         if col not in header:
             issues.append(ValidationIssue("error", tab_name, f"missing structural column '{col}'"))
 

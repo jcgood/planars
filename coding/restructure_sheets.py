@@ -110,7 +110,13 @@ from .make_forms import (
     _read_diagnostics_for_language,
 )
 from .schemas import apply_schema_criteria, load_diagnostic_classes
-from planars.schema_values import is_keystone as _is_keystone
+from planars.schema_values import (
+    ELEMENT_ROW_COLUMNS,
+    PAIR_ROW_SHAPES,
+    TRAILING_COLUMNS as _TRAILING_COLS,
+    is_keystone as _is_keystone,
+    row_columns_of, row_key_of, row_type_of,
+)
 from .drive import (
     _autocommit_data, _load_drive_config, _save_drive_config, _with_retry,
     load_manifest, remove_anyone_permission, set_user_role, upload_manifest,
@@ -124,7 +130,6 @@ from .generate_sheets import (
     _format_and_validate,
     _populate_tab_keyed,
     _refresh_locked_tabs,
-    _TRAILING_COLS,
 )
 from .locked_tabs import reorder_tabs
 from . import biuniqueness_rows as _br
@@ -138,7 +143,7 @@ from . import restructure_journal
 
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
 CODED_DATA = ROOT / "coded_data"
-_STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
+_STRUCTURAL_COLS = set(ELEMENT_ROW_COLUMNS)
 
 
 # ---------------------------------------------------------------------------
@@ -395,7 +400,7 @@ def _write_tab_with_carryover(
         n: old for old, news in split_element_map.items() for n in news
     }
     all_cols = param_names + _TRAILING_COLS
-    header = ["Element", "Position_Name", "Position_Number"] + all_cols
+    header = ELEMENT_ROW_COLUMNS + all_cols
 
     carried = 0
     new = 0
@@ -502,7 +507,9 @@ def _compute_stats(
 # Pair-row cascade rename helpers (for coreference and similar classes)
 # ---------------------------------------------------------------------------
 
-_PAIR_POS_COLS = ("Position_A", "Position_B")
+# The Position_A/Position_B columns of the position_pairs row shape (planar.yaml).
+_PAIR_POS_COLS = tuple(c for c in PAIR_ROW_SHAPES["position_pairs"]
+                       if c.startswith("Position_"))
 
 
 def _parse_position_cell(cell: str) -> Optional[Tuple[int, str]]:
@@ -543,17 +550,16 @@ def _get_pair_row_constructions() -> Dict[str, Set[str]]:
     return result
 
 
-_ROW_TYPES = {"element", "pair_rows", "keyed_rows"}
-
-
 def _get_keyed_row_constructions() -> Dict[str, Dict[str, Dict[str, List[str]]]]:
     """Return {class_name: {construction: {"columns": [...], "key": [...]}}} for
     every keyed_rows construction in diagnostic_classes.yaml.
 
-    Also the one place an unknown row_type is caught: every caller that
-    branches on row shape (generate_sheets, validate_coding, import_sheets,
-    update_sheets, restructure_sheets, generate_status_sheet, integrity_check)
-    goes through this or _get_pair_row_constructions, so a typo'd row_type or a
+    Checks every construction's row shape on the way (planars.schema_values'
+    row_type_of/row_columns_of/row_key_of, the one copy of those rules): every
+    caller that branches on row shape (generate_sheets, validate_coding,
+    import_sheets, update_sheets, restructure_sheets, generate_status_sheet,
+    integrity_check) goes through this or _get_pair_row_constructions, so a
+    typo'd row_type, a pair construction without its pair_shape, or a
     keyed_rows construction missing its columns stops here rather than being
     read as element rows by default.
     """
@@ -563,21 +569,12 @@ def _get_keyed_row_constructions() -> Dict[str, Dict[str, Dict[str, List[str]]]]
         for con in (cls.get("constructions") or []):
             if not isinstance(con, dict):
                 continue
-            row_type = con.get("row_type", "element")
-            if row_type not in _ROW_TYPES:
-                raise ValueError(
-                    f"diagnostic_classes.yaml: {cls['name']}/{con.get('name')} has "
-                    f"row_type {row_type!r}; expected one of {sorted(_ROW_TYPES)}")
-            if row_type != "keyed_rows":
+            where = f"{cls['name']}/{con.get('name')}"
+            columns, key = row_columns_of(con, where), row_key_of(con, where)
+            if row_type_of(con, where) != "keyed_rows":
                 continue
-            columns, key = con.get("keyed_columns"), con.get("key")
-            if not columns or not key or not set(key) <= set(columns):
-                raise ValueError(
-                    f"diagnostic_classes.yaml: keyed_rows construction "
-                    f"{cls['name']}/{con['name']} must declare keyed_columns and a key "
-                    f"drawn from them (got keyed_columns={columns}, key={key})")
             result.setdefault(cls["name"], {})[con["name"]] = {
-                "columns": list(columns), "key": list(key),
+                "columns": columns, "key": key,
                 "blank_ok_when": [dict(r) for r in (con.get("blank_ok_when") or [])]}
     return result
 
@@ -604,8 +601,9 @@ def _pair_construction_criterion(class_name: str, construction: str) -> Optional
 # Element_A + Element_B (nonpermutability/general, phrasal_accent/general -- two
 # named elements, no position columns) or Element_A alone (coreference's three
 # pair constructions -- one named element, Position_A/Position_B/Direction locate
-# it and its counterpart structurally, not by element identity).
-_PAIR_ELEMENT_COLS = ("Element_A", "Element_B")
+# it and its counterpart structurally, not by element identity). The shapes
+# are declared in planar.yaml's pair_row_shapes; this code reads the columns
+# it needs by name from each header.
 
 
 def _apply_split_to_pair_rows(
@@ -914,7 +912,8 @@ def _transform_keyed_rows(
                 row[idx[col]] = _rename_list_cell(row[idx[col]], rename_map)
         changed += sum(1 for a, b in zip(before, row) if a != b)
 
-        touched = {row[idx[c]] for c in ("Morpheme", "Form") if c in idx}
+        touched = {row[idx["Morpheme"]]} if "Morpheme" in idx else set()
+        touched |= {row[idx["Form"]]} if "Form" in idx else set()
         touched |= {row[idx["Morpheme"]].split(" + ", 1)[0]} if "Morpheme" in idx else set()
         split_hits = [old for old in split_element_map if old in touched]
         if split_hits and "Comments" in idx:

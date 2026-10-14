@@ -88,6 +88,9 @@
 #                                               only biuniqueness_deviations' morphemes and
 #                                               morphs tabs). Each keyed_rows construction
 #                                               must also declare:
+#                              pair_shape       (pair_rows only, required) which of
+#                                               planar.yaml's pair_row_shapes the tab's
+#                                               rows have: element_pairs | position_pairs
 #                              keyed_columns    the generator-written columns, in order,
 #                                               before the criterion columns
 #                              key              the subset of keyed_columns that identifies a
@@ -260,6 +263,7 @@ classes:
         criterion: scopal
       - name: general
         row_type: pair_rows
+        pair_shape: element_pairs
         depends_on: element_prescreening
         staleness_check: element_set
         criterion: scopal
@@ -329,16 +333,19 @@ classes:
         criterion: referential
       - name: reflexivization
         row_type: pair_rows
+        pair_shape: position_pairs
         depends_on: prescreening
         staleness_check: element_set
         criterion: reflexive_allowed
       - name: pronominalization
         row_type: pair_rows
+        pair_shape: position_pairs
         depends_on: prescreening
         staleness_check: element_set
         criterion: pronoun_allowed
       - name: np_reference
         row_type: pair_rows
+        pair_shape: position_pairs
         depends_on: prescreening
         staleness_check: element_set
         criterion: np_allowed
@@ -657,6 +664,7 @@ classes:
         criterion: accented
       - name: general
         row_type: pair_rows
+        pair_shape: element_pairs
         depends_on: prescreening
         staleness_check: element_set
         criterion: joint_accent

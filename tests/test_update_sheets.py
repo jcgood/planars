@@ -25,10 +25,10 @@ from coding.update_sheets import (
     _build_planar_pos_map,
     _check_structural_drift,
     _compute_missing_rows,
-    _planar_rows_for_lang,
     _sheet_element_keys,
     _TRAILING_COLS,
 )
+from coding.make_forms import element_rows
 
 
 class _FakeWorksheet:
@@ -85,17 +85,17 @@ class TestSheetElementKeys:
 
 
 # ---------------------------------------------------------------------------
-# _planar_rows_for_lang
+# make_forms.element_rows (the one rule update-sheets, generate-sheets and the
+# sheet spec use for which element rows a tab has, in what order)
 # ---------------------------------------------------------------------------
 
-class TestPlanarRowsForLang:
+class TestElementRows:
     def test_filters_by_language(self):
         element_index = {
             "he@5": (5, "v:npsubj1", "stan1293", "he"),
             "foo@3": (3, "v:foo", "arao1248", "foo"),
         }
-        result = _planar_rows_for_lang(element_index, "stan1293")
-        assert result == [(5, "he", "v:npsubj1")]
+        assert element_rows(element_index, "stan1293") == [("he", "v:npsubj1", 5)]
 
     def test_sorts_by_position_then_element(self):
         element_index = {
@@ -103,15 +103,18 @@ class TestPlanarRowsForLang:
             "he@5": (5, "v:npsubj1", "stan1293", "he"),
             "not@1": (1, "v:neg1", "stan1293", "not"),
         }
-        result = _planar_rows_for_lang(element_index, "stan1293")
-        assert result == [
-            (1, "not", "v:neg1"),
-            (5, "he", "v:npsubj1"),
-            (5, "they", "v:npsubj1"),
+        assert element_rows(element_index, "stan1293") == [
+            ("not", "v:neg1", 1),
+            ("he", "v:npsubj1", 5),
+            ("they", "v:npsubj1", 5),
         ]
 
+    def test_brackets_hyphenated_elements(self):
+        element_index = {"-ing@7": (7, "v:suffix", "stan1293", "-ing")}
+        assert element_rows(element_index, "stan1293") == [("[-ing]", "v:suffix", 7)]
+
     def test_empty_index(self):
-        assert _planar_rows_for_lang({}, "stan1293") == []
+        assert element_rows({}, "stan1293") == []
 
 
 # ---------------------------------------------------------------------------

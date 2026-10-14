@@ -40,6 +40,7 @@ from coding.generate_sheets import (
     _regen_dependents_simple,
     _remap_coreference_prefill,
 )
+from planars.schema_values import row_key
 
 
 class TestCheckForceAgainstExistingSheets:
@@ -1050,20 +1051,22 @@ class TestFindAnnotatedDrops:
 class TestFormatAnnotatedDrop:
     def test_coreference_shape_includes_direction(self):
         line = _format_annotated_drop(
-            "coreference", ("PRON{P,T}", "34 (v:rec)", "forward"), "y", "Lasnik", ""
+            row_key("coreference", "reflexivization"),
+            ("PRON{P,T}", "34 (v:rec)", "forward"), "y", "Lasnik", ""
         )
-        assert "PRON{P,T}" in line
-        assert "34 (v:rec)" in line
-        assert "forward" in line
+        assert "Element_A 'PRON{P,T}'" in line
+        assert "Position_B '34 (v:rec)'" in line
+        assert "Direction 'forward'" in line
         assert "Lasnik" in line
 
     def test_nonpermutability_shape_shows_both_elements(self):
-        line = _format_annotated_drop("nonpermutability", ("PRON{P,T}", "not"), "n", "", "")
-        assert "PRON{P,T}" in line
-        assert "not" in line
+        line = _format_annotated_drop(row_key("nonpermutability", "general"),
+                                      ("PRON{P,T}", "not"), "n", "", "")
+        assert "Element_A 'PRON{P,T}'" in line
+        assert "Element_B 'not'" in line
 
     def test_omits_empty_source_and_comments(self):
-        line = _format_annotated_drop("nonpermutability", ("a", "b"), "y", "", "")
+        line = _format_annotated_drop(row_key("nonpermutability", "general"), ("a", "b"), "y", "", "")
         assert "Source" not in line
         assert "Comments" not in line
 

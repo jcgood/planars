@@ -23,7 +23,8 @@ from .drive_doorway import get_doorway
 from .make_forms import _read_diagnostics_for_language
 from .schemas import criteria_for, load_diagnostic_classes
 from planars.schema_values import STATUS_TAB
-from .generate_sheets import _format_and_validate, _TRAILING_COLS
+from .generate_sheets import _format_and_validate
+from planars.schema_values import TRAILING_COLUMNS as _TRAILING_COLS
 
 
 def _fresh_param_values(

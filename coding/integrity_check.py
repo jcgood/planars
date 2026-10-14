@@ -56,9 +56,12 @@ from .check_codebook import (
     _check_diagnostics_vs_classes,
     _check_chart_keys,
 )
-from .schemas import load_planar_schema
-from planars.schema_values import STATUS_READY, STATUS_TAB
-from .restructure_sheets import _get_keyed_row_constructions, _get_pair_row_constructions
+from planars.schema_values import (
+    ELEMENT_ROW_COLUMNS, PAIR_ROW_SHAPES, STATUS_READY, STATUS_TAB, TRAILING_COLUMNS,
+)
+from .restructure_sheets import (
+    _PAIR_POS_COLS, _get_keyed_row_constructions, _get_pair_row_constructions,
+)
 import yaml as _yaml
 
 # ---------------------------------------------------------------------------
@@ -375,9 +378,9 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
         print(_fail(f"Could not connect to Google Sheets: {exc}"))
         return 1, 0
 
-    _STRUCTURAL       = {"Element", "Position_Name", "Position_Number"}
-    _PAIR_STRUCTURAL  = {"Element_A", "Element_B", "Position_A", "Position_B", "Direction"}
-    _TRAILING         = set(load_planar_schema().get("trailing_columns", ["Source", "Comments"]))
+    _STRUCTURAL       = set(ELEMENT_ROW_COLUMNS)
+    _PAIR_STRUCTURAL  = set().union(*PAIR_ROW_SHAPES.values())
+    _TRAILING         = set(TRAILING_COLUMNS)
 
     # Which constructions use pair_rows layout -- read via the shared helper
     # (same one validate_coding.py/import_sheets.py/generate_status_sheet.py
@@ -574,7 +577,7 @@ def _planar_position_names(lang_id: str) -> dict:
 
 
 def _find_stale_position_cells(
-    df: pd.DataFrame, position_names: dict, cols: Tuple[str, ...] = ("Position_A", "Position_B")
+    df: pd.DataFrame, position_names: dict, cols: Tuple[str, ...] = _PAIR_POS_COLS
 ) -> List[Tuple[int, str]]:
     """Return sorted, deduplicated (old_num, old_name) pairs for every
     Position_A/Position_B cell (format "N (name)") whose embedded number no
@@ -806,7 +809,7 @@ def _section_dependent_construction_staleness(
 
                 # Dependent set: all elements appearing in pair columns.
                 dep_set: set = set()
-                for col in ("Element_A", "Element_B"):
+                for col in PAIR_ROW_SHAPES["element_pairs"]:
                     if col in dep_df.columns:
                         dep_set.update(dep_df[col].str.strip())
                 dep_set.discard("")

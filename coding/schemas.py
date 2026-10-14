@@ -115,6 +115,15 @@ def criterion_values(criterion_name: str) -> List[str] | None:
     return None
 
 
+def is_free_entry(values) -> bool:
+    """True if a criterion's declared values are only placeholders
+    (<free_text>, <position_names>): it takes free entry, so it gets no
+    dropdown -- a dropdown would just offer the placeholder itself as a choice.
+    Every writer of dropdown validation, and the sheet spec, asks this."""
+    return bool(values) and all(str(v).startswith("<") and str(v).endswith(">")
+                                for v in values)
+
+
 def criteria_for(class_name: str, construction: str, names: List[str],
                  values: Dict[str, List[str]], lang_id: str = "") -> tuple:
     """The criterion columns, and each one's allowed values, for one tab.

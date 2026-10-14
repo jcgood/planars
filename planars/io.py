@@ -3,9 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
-import yaml
 import pandas as pd
-from importlib.resources import files as _res_files
 from pandera.errors import SchemaError
 
 from planars.contracts import (
@@ -15,15 +13,11 @@ from planars.contracts import (
     raw_shape_schema,
     strict_criteria_schema,
 )
-from planars.schema_values import KEYSTONE_NAME
+from planars.schema_values import ELEMENT_ROW_COLUMNS, KEYSTONE_NAME, TRAILING_COLUMNS
 
-def _load_planar_schema() -> dict:
-    text = _res_files("schemas").joinpath("planar.yaml").read_text(encoding="utf-8")
-    return yaml.safe_load(text) or {}
-
-_planar_schema     = _load_planar_schema()
-_STRUCTURAL_COLS   = {"Element", "Position_Name", "Position_Number"}
-_TRAILING_COLS     = set(_planar_schema.get("trailing_columns", ["Source", "Comments"]))
+# Read from schemas/planar.yaml (via planars.schema_values).
+_STRUCTURAL_COLS   = set(ELEMENT_ROW_COLUMNS)
+_TRAILING_COLS     = set(TRAILING_COLUMNS)
 
 
 def _parse_filled_df(

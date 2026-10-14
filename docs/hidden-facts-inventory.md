@@ -311,6 +311,9 @@ tying them together.
 **Classification:** derivable.
 
 ### D3. `_STRUCTURAL_COLS` re-lists a subset of `planar.yaml`'s structural columns
+*Closed 2026-10-13 (Phase 10 unit 5a): every copy reads
+`planars.schema_values.ELEMENT_ROW_COLUMNS` / `row_columns()`;
+tests/test_no_hidden_facts.py's row-shape detector fails on a new copy.*
 **What:** `_STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}`
 is a hardcoded set duplicating the entries in `structural_columns` (three
 since 2026-10-13, when the stored `Element_Types` and `Biuniqueness_Scope`
@@ -332,6 +335,13 @@ lines in the same file, one of them just wasn't updated to match.
 **Classification:** derivable.
 
 ### D4. Pair-row structural columns declared independently in two files, two different shapes
+*Closed 2026-10-13 (Phase 10 unit 5a): `planar.yaml` declares
+`pair_row_shapes` (columns and key per shape) and `element_row_key`; each
+pair construction names its `pair_shape`; every copy reads
+`planars.schema_values` (`row_columns`, `row_key`, `header_shape`).
+`check-codebook` 7c checks every construction's shape; the row-shape detector
+fails on a new copy. The per-class generator dispatch (R5) is separate and
+still open.*
 **What:** `validate_coding.py` declares `_PAIR_STRUCTURAL_COLS = {"Element_A",
 "Element_B", "Position_A", "Position_B", "Direction"}` (a single set covering
 both nonpermutability-style and coreference-style pair rows). `generate_sheets.py`
@@ -364,10 +374,12 @@ than *point at* an authoritative source.
 duplication across two files should be resolved as part of that.
 
 ### D5. `_TRAILING_COLS` / `_DEFAULT_EXPECTED` / `_KEYSTONE_NAME` fallback defaults re-embed the schema value they fall back from
-*Partly closed 2026-10-12: the `_KEYSTONE_NAME` fallbacks are gone (see D0).
+*Closed (in three steps). 2026-10-12: the `_KEYSTONE_NAME` fallbacks are gone (see D0).
 2026-10-13: `_DEFAULT_EXPECTED` is gone with the `[y, n]` default
 (`always_allowed_values: [na, "?"]` is read with no fallback).
-`_TRAILING_COLS` fallbacks remain.*
+Closed 2026-10-13: the `_TRAILING_COLS` fallbacks are gone; every reader
+uses `planars.schema_values.TRAILING_COLUMNS`, which fails loudly if the key
+is missing.*
 **What:** Three separate constants read a schema value via
 `load_planar_schema()`/`load_diagnostic_criteria()` but supply a **hardcoded
 literal fallback** that duplicates the current schema value: `_TRAILING_COLS

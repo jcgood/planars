@@ -28,7 +28,8 @@ approved to run unattended **except at the pauses the spec names** (unit 5
 design; units 6+15+11 design). Units 14 (but one by-hand step), 4, 7, 3's
 first group, 1, 2 and 10 are done. **Unit 5 (the Drive door knows the
 topology) is designed and accepted** — `docs/drive-door-design.md`, Jeff's
-answers in its § 7. Next: build it in the doc's § 5 order, starting with 5a.
+answers in its § 7. 5a (the sheet spec) is done; next is 5b, the checking
+layer, in the doc's § 5 order.
 Live steps to name to Jeff for approval first: 5d's labelling migration
 and 5f's one-notebook sharing test.
 

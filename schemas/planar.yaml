@@ -41,6 +41,29 @@ structural_columns:
       further left; higher numbers are further right. The keystone (v:verbstem)
       anchors all span computations.
 
+# Which of structural_columns identify an element row (answers are carried
+# over by these when a tab is rebuilt).
+element_row_key: [Element, Position_Number]
+
+# The columns before the criteria on a pair-row tab (`columns`, in order) and
+# the ones among them that identify a row (`key`). Each `row_type: pair_rows`
+# construction in diagnostic_classes.yaml names a shape with `pair_shape`.
+# Element-row tabs use structural_columns and element_row_key above; keyed-row
+# tabs declare their own `keyed_columns` and `key`. Code reads all of these
+# through planars.schema_values (row_columns, row_key) and never types them.
+#   element_pairs:  one row per pair of elements (nonpermutability,
+#                   phrasal_accent)
+#   position_pairs: one row per element and the position it is tested against
+#                   (coreference); Position_A is where Element_A sits, so it
+#                   is not part of the key
+pair_row_shapes:
+  element_pairs:
+    columns: [Element_A, Element_B]
+    key: [Element_A, Element_B]
+  position_pairs:
+    columns: [Element_A, Position_A, Position_B, Direction]
+    key: [Element_A, Position_B, Direction]
+
 # Each element's type (formative / embedded_structure / reserved) and its
 # biuniqueness scope (filled / open_category / excluded) are computed from
 # Elements by coding.make_forms.classify_element and
@@ -59,12 +82,13 @@ keystone_position_name: "v:verbstem"
 # integrity_check.py, and planars/io.py.
 trailing_columns: [Source, Comments]
 
-# The Status tab every annotation sheet carries, and the two values an
-# annotator sets on each construction's row there. Code reads these through
-# coding.schemas.status_tab() / planars.io.STATUS_TAB and never types the
-# values (tests/test_no_hidden_facts.py checks).
+# The Status tab every annotation sheet carries, its two columns, and the two
+# values an annotator sets on each construction's row there. Code reads these
+# through planars.schema_values and never types the values
+# (tests/test_no_hidden_facts.py checks).
 status_tab:
   title: Status
+  columns: [Construction, Status]   # one row per construction tab
   values:
     in_progress: in-progress
     ready: ready-for-review

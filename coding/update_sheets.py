@@ -30,6 +30,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 from .make_forms import (
     build_element_index,
+    element_rows,
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
 )
@@ -52,16 +53,20 @@ from .generate_sheets import (
     _add_constructions_to_existing_sheet,
     _build_criterion_notes,
     _create_status_tab,
-    _TRAILING_COLS,
 )
 from .locked_tabs import rebuild_locked_tabs, reorder_tabs
 from . import biuniqueness_rows as _br
-from planars.schema_values import is_keystone as _is_keystone
+from planars.schema_values import (
+    ELEMENT_ROW_COLUMNS,
+    PAIR_ROW_SHAPES,
+    TRAILING_COLUMNS as _TRAILING_COLS,
+    is_keystone as _is_keystone,
+)
 
 import pandas as pd
 
 CODED_DATA = ROOT / "coded_data"
-_STRUCTURAL_COLS = {"Element", "Position_Name", "Position_Number"}
+_STRUCTURAL_COLS = set(ELEMENT_ROW_COLUMNS)
 
 
 # ---------------------------------------------------------------------------
@@ -84,16 +89,6 @@ def _sheet_element_keys(rows: List[List[str]], header: List[str]) -> Set[Tuple[s
         for row in rows[1:]
         if len(row) > max(el_idx, pos_idx)
     }
-
-
-def _planar_rows_for_lang(element_index, lang_id: str) -> List[Tuple[int, str, str]]:
-    """Return sorted (pos, element, pos_name) tuples for a language."""
-    items = [
-        (pos, element, pos_name)
-        for _, (pos, pos_name, lang, element) in element_index.items()
-        if lang == lang_id
-    ]
-    return sorted(items, key=lambda t: (t[0], t[1].lower(), t[1]))
 
 
 # ---------------------------------------------------------------------------
@@ -276,16 +271,12 @@ def _compute_missing_rows(
     header = rows[0] if rows else []
 
     existing_keys = _sheet_element_keys(rows, header)
-    planar_rows = _planar_rows_for_lang(element_index, lang_id)
 
     # Everything after the criterion block: Source, Comments, and any others.
     num_trailing = max(0, len(header) - col_start - num_criteria)
 
     missing_rows = []
-    for pos, element, pos_name in planar_rows:
-        element = element.strip()
-        if element.startswith("-") or element.endswith("-"):
-            element = f"[{element}]"
+    for element, pos_name, pos in element_rows(element_index, lang_id):
         key = (element, str(pos))
         if key not in existing_keys:
             is_keystone = _is_keystone(pos_name)
@@ -486,7 +477,11 @@ def main(args: argparse.Namespace | None = None) -> None:
                 # element-row-shaped on the live Sheet, per facts.yaml's
                 # pair_row_construction_set drift_risk). Trusting the header keeps
                 # this command from corrupting a tab that hasn't been rebuilt yet.
-                is_pair_row = "Element_A" in header or "Element_B" in header
+                #
+                # "Any of element_pairs' columns anywhere in the header" (not
+                # header_shape()'s starts-with test): a half-edited pair header must
+                # still count as pair-row here, so the tab is skipped, not written to.
+                is_pair_row = any(c in header for c in PAIR_ROW_SHAPES["element_pairs"])
 
                 missing_trailing = [col for col in _TRAILING_COLS if col not in header]
                 if missing_trailing:

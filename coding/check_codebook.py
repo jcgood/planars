@@ -32,7 +32,7 @@ from typing import List
 import pandas as pd
 
 from .schemas import load_diagnostic_classes as _load_dc, load_diagnostic_criteria as _load_crit
-from planars.schema_values import KEYSTONE_NAME
+from planars.schema_values import ELEMENT_ROW_COLUMNS, KEYSTONE_NAME, TRAILING_COLUMNS, row_key_of
 
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
@@ -136,10 +136,10 @@ def _make_minimal_tsv(params: list[str], extra_params: list[str] = None) -> io.S
         An io.StringIO object ready to pass to load_filled_tsv.
     """
     all_params = list(params) + (extra_params or [])
-    cols = ["Element", "Position_Name", "Position_Number"] + all_params + ["Source", "Comments"]
+    cols = ELEMENT_ROW_COLUMNS + all_params + TRAILING_COLUMNS
     header = "\t".join(cols)
-    keystone = "\t".join(["ROOT", KEYSTONE_NAME, "1"] + ["na"] * len(all_params) + ["", ""])
-    data    = "\t".join(["x",    "v:test",    "2"] + ["y"]  * len(all_params) + ["", ""])
+    keystone = "\t".join(["ROOT", KEYSTONE_NAME, "1"] + ["na"] * len(all_params) + [""] * len(TRAILING_COLUMNS))
+    data    = "\t".join(["x",    "v:test",    "2"] + ["y"]  * len(all_params) + [""] * len(TRAILING_COLUMNS))
     return io.StringIO("\n".join([header, keystone, data]) + "\n")
 
 
@@ -725,6 +725,23 @@ def _check_feeder_constructions(diag_classes: dict) -> List[str]:
     return errors
 
 
+def _check_row_shapes(diag_classes: dict) -> List[str]:
+    """Every construction declares its row shape fully: a known row_type, a
+    pair_shape planar.yaml defines for pair rows, keyed_columns and a key for
+    keyed rows. Uses planars.schema_values' own rules, the ones every command
+    runs from, so a gap is reported here before a command trips over it."""
+    errors = []
+    for name, cls in sorted(diag_classes.items()):
+        for con in cls.get("constructions") or []:
+            if not isinstance(con, dict):
+                continue
+            try:
+                row_key_of(con, f"{name}/{con.get('name')}")
+            except ValueError as exc:
+                errors.append(f"[{name}] {exc}")
+    return errors
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the argument parser for `python -m coding check-codebook` (no flags)."""
     return argparse.ArgumentParser(
@@ -747,6 +764,7 @@ def main(args: argparse.Namespace | None = None) -> None:
     7. Every diagnostics_{lang_id}.tsv has a matching diagnostics_{lang_id}.yaml (the source
        of truth it's derived from) — hard error if the YAML is missing entirely.
     7b. Every construction another one depends_on says produces_spans: false.
+    7c. Every construction declares its row shape (row_type, pair_shape, keyed_columns/key).
     8. keystone_active_default "[NEEDS REVIEW]" for active classes with no language override.
     9. Schema stubs: classes with no language coverage (ready-to-paste TSV rows).
     10. Coverage matrix: language × class grid.
@@ -780,6 +798,9 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     print("7b. Checking feeder constructions are marked produces_spans: false ...")
     all_errors.extend(_check_feeder_constructions(diag_classes))
+
+    print("7c. Checking every construction declares its row shape ...")
+    all_errors.extend(_check_row_shapes(diag_classes))
 
     coverage = _collect_coverage()
     lang_ids = sorted({l for langs in coverage.values() for l in langs})

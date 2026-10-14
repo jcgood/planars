@@ -9,7 +9,8 @@ from planars.spans import fmt_span, strict_span
 
 _REQUIRED_CRITERIA = {"scopal"}
 from planars.schema_values import KEYSTONE_NAME as _KEYSTONE_NAME
-_TRAILING_COLS = {"Source", "Comments"}
+from planars.schema_values import PAIR_ROW_SHAPES, TRAILING_COLUMNS
+_TRAILING_COLS = set(TRAILING_COLUMNS)
 
 # Only the pair-row (general) construction can be derived by this module;
 # element_prescreening is a feeder tab (`produces_spans: false` in
@@ -270,7 +271,7 @@ def derive_nonpermutability_domains(
                             structurally_expected.add(eb)
 
                 dep_set = set()
-                for col in ("Element_A", "Element_B"):
+                for col in PAIR_ROW_SHAPES["element_pairs"]:
                     if col in pair_df.columns:
                         dep_set.update(pair_df[col].str.strip())
                 dep_set.discard("")
@@ -295,7 +296,7 @@ def derive_nonpermutability_domains(
     all_positions = set(pos_to_name.keys())
 
     trailing = _TRAILING_COLS
-    param_cols = [c for c in pair_df.columns if c not in {"Element_A", "Element_B"} and c not in trailing]
+    param_cols = [c for c in pair_df.columns if c not in set(PAIR_ROW_SHAPES["element_pairs"]) and c not in trailing]
 
     missing_data: Dict[str, list] = {}
     if not strict:
