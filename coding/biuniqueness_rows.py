@@ -21,9 +21,10 @@ never typed, so renaming a tab is a schema edit only:
 Keyed rows carry an Origin column saying where each row came from
 (filled / open_category / co_exponent), written by the generator. A row with
 no Origin was added by hand; it is marked hand-added and survives every
-regeneration. A generated row whose source has disappeared is dropped if
-empty; if it holds answers, carry_over() reports it so regeneration can refuse
-(the same guard --regen-construction applies to pair tabs, issue #241).
+regeneration. A generated row whose source has disappeared is left out of
+carry_over()'s rows; if it holds answers, the Drive door refuses the rewrite
+(drive_door.replacing's ``kept``, the same guard --regen-construction applies
+to pair tabs, issue #241).
 """
 from __future__ import annotations
 
@@ -280,17 +281,16 @@ def carry_over(
     existing_rows: List[List[str]],
     key_cols: Sequence[str],
     answer_cols: Sequence[str],
-) -> Tuple[List[Dict[str, str]], List[Dict[str, str]], Dict[str, int]]:
+) -> Tuple[List[Dict[str, str]], Dict[str, int]]:
     """Merge freshly generated rows with what the tab already holds.
 
-    Returns (rows, annotated_drops, counts):
-      rows             generated rows with their existing answers carried over
-                       by key, then hand-added rows (no Origin, or
-                       hand-added), which are always kept;
-      annotated_drops  previously generated rows whose source is gone and
-                       that hold an answer -- the caller refuses to write
-                       unless the coordinator confirms;
-      counts           retained / added / removed / hand_added.
+    Returns (rows, counts):
+      rows    generated rows with their existing answers carried over by key,
+              then hand-added rows (no Origin, or hand-added), which are
+              always kept. A previously generated row whose source is gone is
+              not among them; if it holds an answer, the Drive door refuses
+              the rewrite (the caller passes these rows' keys as ``kept``);
+      counts  retained / added / removed / hand_added.
     existing_rows is the tab as read (header first), or [] for a new tab.
     """
     existing: Dict[Tuple, Dict[str, str]] = {}
@@ -318,16 +318,12 @@ def carry_over(
                 merged[col] = prior[col]
         out.append(merged)
 
-    drops, hand = [], []
+    hand = []
     for key in order:
         if key in new_keys:
             continue
         rec = existing[key]
-        origin = str(rec.get("Origin", "")).strip()
-        if origin in GENERATED_ORIGINS:
-            if any(str(rec.get(c, "")).strip() for c in answer_cols):
-                drops.append(rec)
-        else:
+        if str(rec.get("Origin", "")).strip() not in GENERATED_ORIGINS:
             hand.append({**rec, "Origin": HAND_ADDED})
 
     counts = {"retained": len(new_keys & set(order)),
@@ -335,12 +331,5 @@ def carry_over(
               "removed": sum(1 for k in order if k not in new_keys
                              and str(existing[k].get("Origin", "")).strip() in GENERATED_ORIGINS),
               "hand_added": len(hand)}
-    return out + hand, drops, counts
+    return out + hand, counts
 
-
-def describe_drop(rec: Dict[str, str], key_cols: Sequence[str],
-                  answer_cols: Sequence[str]) -> str:
-    """One line naming a dropped row and the answers it holds, for the abort message."""
-    who = " / ".join(rec.get(k, "") for k in key_cols)
-    answers = ", ".join(f"{c}={rec[c]!r}" for c in answer_cols if str(rec.get(c, "")).strip())
-    return f"  {who}: {answers}"

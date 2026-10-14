@@ -28,9 +28,10 @@ approved to run unattended **except at the pauses the spec names** (unit 5
 design; units 6+15+11 design). Units 14 (but one by-hand step), 4, 7, 3's
 first group, 1, 2 and 10 are done. **Unit 5 (the Drive door knows the
 topology) is designed and accepted** — `docs/drive-door-design.md`, Jeff's
-answers in its § 7, what was built in its § 8. 5a (the sheet spec) and 5b
-(the checking layer, `coding/drive_door.py`, live in watch mode) are done;
-next is 5c, in the doc's § 5 order. Check for an open `door-violation`
+answers in its § 7, what was built in its § 8. 5a (the sheet spec), 5b
+(the checking layer, `coding/drive_door.py`, live in watch mode) and 5c
+(snapshots, per-write provenance, mid-run-edit check) are done; next is 5d,
+in the doc's § 5 order. Check for an open `door-violation`
 issue first: each line is a command bug or a spec gap to fix.
 Live steps to name to Jeff for approval first: 5d's labelling migration
 and 5f's one-notebook sharing test.

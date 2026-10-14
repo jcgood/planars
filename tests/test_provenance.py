@@ -1,18 +1,19 @@
-"""Tests for coding/provenance.py (Phase 5 unit E, issue #271).
+"""Tests for coding/provenance.py (issue #271).
 
-Provenance capture: log a run only when it actually reaches a Drive-writing
-path, derived from each command's own operations.yaml writes_to_drive field
-(base + modes), gated per real invocation the same way
-coding/preconditions.py gates preconditions -- not per command. These tests
-exercise it against the real, live operations.yaml, same reasoning as
-tests/test_preconditions.py.
+writes_to_drive(): whether an invocation may write to Drive at all (the
+Drive door refuses every write when it says no), derived from each
+command's own operations.yaml writes_to_drive field (base + modes), gated
+per real invocation the same way coding/preconditions.py gates
+preconditions -- not per command. These tests exercise it against the real,
+live operations.yaml, same reasoning as tests/test_preconditions.py.
+
+append_writes(): the log itself. What goes into it -- one line per tab or
+file a command wrote -- is the Drive door's, tested in tests/test_drive_door.py.
 """
 from __future__ import annotations
 
 import json
 from argparse import Namespace
-
-import pytest
 
 from coding import provenance
 
@@ -72,10 +73,9 @@ def test_read_only_commands_never_write_to_drive():
         assert provenance.writes_to_drive(op_id, _ns(apply=True)) is False
 
 
-def test_apply_pending_never_logs_its_own_writes():
+def test_apply_pending_never_writes_to_drive_itself():
     """Its Drive-writing work is delegated to a subprocess call to another
-    python -m coding ... --apply, which logs itself independently -- logging
-    apply-pending too would double-count the same change."""
+    python -m coding ... --apply, whose door logs its own writes."""
     assert provenance.writes_to_drive("apply_pending", _ns(apply=True)) is False
 
 
@@ -84,30 +84,20 @@ def test_unknown_op_id_does_not_write_to_drive():
 
 
 # ---------------------------------------------------------------------------
-# record(): actually appends (or doesn't)
+# append_writes(): actually appends
 # ---------------------------------------------------------------------------
 
-def test_record_appends_one_line_when_it_writes_to_drive(tmp_path):
+def test_append_writes_adds_one_line_per_entry_across_calls(tmp_path):
     log_path = tmp_path / "provenance_log.jsonl"
-    provenance.record("update-sheets", "update_sheets", _ns(apply=True), log_path=log_path)
-    lines = log_path.read_text(encoding="utf-8").splitlines()
-    assert len(lines) == 1
-    entry = json.loads(lines[0])
-    assert entry["command"] == "update-sheets"
-    assert entry["args"] == {"apply": True}
-    assert entry["timestamp"].endswith("Z")
+    provenance.append_writes([{"command": "update-sheets", "tab": "general"},
+                              {"command": "update-sheets", "tab": "Status"}], log_path=log_path)
+    provenance.append_writes([{"command": "prune-manifest", "tab": None}], log_path=log_path)
+    lines = [json.loads(l) for l in log_path.read_text(encoding="utf-8").splitlines()]
+    assert [(l["command"], l["tab"]) for l in lines] == [
+        ("update-sheets", "general"), ("update-sheets", "Status"), ("prune-manifest", None)]
 
 
-def test_record_appends_nothing_on_a_dry_run(tmp_path):
+def test_append_writes_with_nothing_writes_nothing(tmp_path):
     log_path = tmp_path / "provenance_log.jsonl"
-    provenance.record("update-sheets", "update_sheets", _ns(apply=False), log_path=log_path)
+    provenance.append_writes([], log_path=log_path)
     assert not log_path.exists()
-
-
-def test_record_appends_across_multiple_calls(tmp_path):
-    log_path = tmp_path / "provenance_log.jsonl"
-    provenance.record("update-sheets", "update_sheets", _ns(apply=True), log_path=log_path)
-    provenance.record("prune-manifest", "prune_manifest", _ns(apply=True), log_path=log_path)
-    lines = log_path.read_text(encoding="utf-8").splitlines()
-    assert len(lines) == 2
-    assert [json.loads(l)["command"] for l in lines] == ["update-sheets", "prune-manifest"]

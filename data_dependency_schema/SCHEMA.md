@@ -232,10 +232,11 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
 - **`writes_to_drive`** — whether this command's default invocation, when its
   `apply_gate` is satisfied, actually writes to Drive/Sheets/Docs (create,
   update, share, delete — not merely read). Added for Phase 5 unit E (issue
-  #271): `coding/provenance.py` logs a run only when this is `true` for the
-  gate that was actually satisfied, so the provenance log records "which run
-  produced this Drive change" precisely instead of every `--apply` run
-  regardless of what it touched. Several commands' Drive-write status
+  #271) for provenance logging; since Phase 10 unit 5 the Drive door
+  (`coding/drive_door.py`) reads it (through `coding/provenance.py`'s
+  `writes_to_drive`) to refuse every write on a run where it is `false` for
+  the gate that was actually satisfied, and the provenance log records the
+  writes themselves. Several commands' Drive-write status
   genuinely diverges by mode the same way `apply_gate`/`preconditions` can —
   `sync-diagnostics-yaml`'s default/`--from-tsv` directions touch only the
   local YAML/TSV, `import-planar`'s default direction only the local TSV;
@@ -277,7 +278,7 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
   (`highlighting`: pink on invalid cells). The Drive door
   (`coding/drive_door.py`) refuses every write on a run whose `apply_gate`
   isn't met, except those made inside `with drive_door.always_on(name)` for a
-  name listed here; `provenance.py` logs such a command's runs. Code runs
+  name listed here, and logs them like any other write. Code runs
   from this field: a name missing here makes the write fail, not drift.
 
 ## Known limitations

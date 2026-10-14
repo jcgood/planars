@@ -163,7 +163,9 @@ def test_an_answered_row_whose_source_disappears_stops_the_regeneration(created)
     # do drops out of morphemes (Adam changed the elements tab and it was re-imported).
     import_tab(env, "morphemes", lambda df: df[df["Morpheme"] != "do"])
     out = regen(env, "morphs")
-    assert "ABORTED" in out and "do / v:frontedauxiliary / does" in out
+    assert "ABORTED" in out
+    assert "Morpheme 'do', Position_Name 'v:frontedauxiliary', Form 'does'" in out
+    assert "occurs_here: 'y'" in out
     assert "--confirm-drop" in out
     assert env.tab(LANG, CLASS, "morphs").get_all_values() == before   # nothing written
 

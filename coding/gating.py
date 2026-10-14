@@ -1,7 +1,8 @@
 """Shared gate-matching logic for coding/preconditions.py and
-coding/provenance.py (Phase 5 units D and E, issue #271).
+coding/provenance.py's writes_to_drive (Phase 5 units D and E, issue #271),
+which the Drive door asks whether an invocation may write at all.
 
-Both modules answer the same underlying question against the same
+Both answer the same underlying question against the same
 operations.yaml shape -- "is this record's (or mode's) apply_gate satisfied
 by the actual args of a real invocation" -- so the matching logic lives
 here once rather than twice.
@@ -36,9 +37,9 @@ def gate_satisfied(apply_gate: Optional[str], mode_name: Optional[str],
     runtime input() prompts, not by anything present in args. That can't be
     derived from args alone, so such a gate is treated as always active
     rather than silently parsed into nonsense dests that never match --
-    the safer failure mode for a caller like provenance.py, where "always
-    active" over-logs a run that touched nothing rather than silently
-    missing one that did.
+    the safer failure mode for writes_to_drive, where "always active" lets
+    the Drive door's other rules judge a real write rather than refusing
+    every write the command makes.
     """
     if apply_gate is None:
         if mode_name is None:

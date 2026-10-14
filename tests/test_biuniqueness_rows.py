@@ -174,9 +174,7 @@ def test_forward_a_new_yes_row_adds_rows_and_keeps_every_existing_answer():
     existing = tab(answered, br.MORPHS_STRUCT + MORPH_ANSWERS)
 
     more = {**ANSWERS, ("he", "v:npsubj1"): {"has_allomorphs": "y", "members": "him"}}
-    rows, drops, counts = br.carry_over(morphs_for(more), existing,
-                                        br.MORPHS_KEY, MORPH_ANSWERS)
-    assert drops == []
+    rows, counts = br.carry_over(morphs_for(more), existing, br.MORPHS_KEY, MORPH_ANSWERS)
     assert counts["added"] == 2 and counts["removed"] == 0         # he, him at v:npsubj1
     by_key = {(r["Morpheme"], r["Position_Name"], r["Form"]): r for r in rows}
     for r in first:
@@ -188,8 +186,8 @@ def test_forward_a_new_yes_row_adds_rows_and_keeps_every_existing_answer():
 def test_forward_a_new_member_form_reaches_every_position_of_the_morpheme():
     more = dict(ANSWERS)
     more[("do", "v:frontedauxiliary")] = {"has_allomorphs": "y", "members": "do, does, did"}
-    rows, _, counts = br.carry_over(morphs_for(more), tab(morphs_for(), br.MORPHS_STRUCT),
-                                    br.MORPHS_KEY, MORPH_ANSWERS)
+    rows, counts = br.carry_over(morphs_for(more), tab(morphs_for(), br.MORPHS_STRUCT),
+                                 br.MORPHS_KEY, MORPH_ANSWERS)
     assert ("do", "v:frontedauxiliary", "did") in {
         (r["Morpheme"], r["Position_Name"], r["Form"]) for r in rows}
     assert counts["added"] == 1
@@ -204,8 +202,8 @@ def test_forward_an_existing_answer_beats_a_generated_prefill():
     for r in existing:
         if r["Morpheme"] == "be + v:verbinflection":
             r["forms_relation"] = "alternate"
-    rows, _, _ = br.carry_over(gen, tab(existing, br.MORPHEMES_STRUCT + MORPHEME_ANSWERS),
-                               br.MORPHEMES_KEY, MORPHEME_ANSWERS)
+    rows, _ = br.carry_over(gen, tab(existing, br.MORPHEMES_STRUCT + MORPHEME_ANSWERS),
+                            br.MORPHEMES_KEY, MORPHEME_ANSWERS)
     co = next(r for r in rows if r["Morpheme"] == "be + v:verbinflection")
     assert co["forms_relation"] == "alternate"
 
@@ -214,46 +212,39 @@ def test_forward_an_existing_answer_beats_a_generated_prefill():
 # carry_over: backward (a dependent row is never silently lost)
 # ---------------------------------------------------------------------------
 
-def test_backward_an_answered_row_whose_source_is_gone_is_reported_not_dropped():
+def test_backward_a_row_whose_source_is_gone_is_left_out():
+    """Answered or not: refusing to lose an answered one is the Drive door's
+    job (tests/test_drive_door.py), given these rows' keys as ``kept``."""
     answered = [dict(r, occurs_here="y") if r["Morpheme"] == "do" else dict(r)
                 for r in morphs_for()]
     existing = tab(answered, br.MORPHS_STRUCT + MORPH_ANSWERS)
     fewer = {k: v for k, v in ANSWERS.items() if k != ("do", "v:frontedauxiliary")}
-    rows, drops, counts = br.carry_over(morphs_for(fewer), existing, br.MORPHS_KEY, MORPH_ANSWERS)
-    assert sorted(d["Form"] for d in drops) == ["do", "does"]
-    assert counts["removed"] == 2
-    assert "occurs_here='y'" in br.describe_drop(drops[0], br.MORPHS_KEY, MORPH_ANSWERS)
-
-
-def test_backward_an_unanswered_row_whose_source_is_gone_drops_quietly():
-    existing = tab(morphs_for(), br.MORPHS_STRUCT + MORPH_ANSWERS)
-    fewer = {k: v for k, v in ANSWERS.items() if k != ("do", "v:frontedauxiliary")}
-    rows, drops, _ = br.carry_over(morphs_for(fewer), existing, br.MORPHS_KEY, MORPH_ANSWERS)
-    assert drops == []
+    rows, counts = br.carry_over(morphs_for(fewer), existing, br.MORPHS_KEY, MORPH_ANSWERS)
     assert not any(r["Morpheme"] == "do" for r in rows)
+    assert counts["removed"] == 2
 
 
 def test_backward_a_hand_added_row_survives_every_regeneration():
     hand = {"Morpheme": "probably", "Position_Name": "v:ad-S1", "Form": "prob'ly",
             "Origin": "", "occurs_here": "y"}
     existing = tab(morphs_for() + [hand], br.MORPHS_STRUCT + MORPH_ANSWERS)
-    rows, drops, counts = br.carry_over(morphs_for(), existing, br.MORPHS_KEY, MORPH_ANSWERS)
+    rows, counts = br.carry_over(morphs_for(), existing, br.MORPHS_KEY, MORPH_ANSWERS)
     kept = [r for r in rows if r["Form"] == "prob'ly"]
     assert len(kept) == 1 and kept[0]["Origin"] == "hand-added" and kept[0]["occurs_here"] == "y"
-    assert drops == [] and counts["hand_added"] == 1
+    assert counts["hand_added"] == 1
 
     # ...and again, now that it is marked hand-added.
-    rows2, _, _ = br.carry_over(morphs_for(), tab(rows, br.MORPHS_STRUCT + MORPH_ANSWERS),
-                                br.MORPHS_KEY, MORPH_ANSWERS)
+    rows2, _ = br.carry_over(morphs_for(), tab(rows, br.MORPHS_STRUCT + MORPH_ANSWERS),
+                             br.MORPHS_KEY, MORPH_ANSWERS)
     assert [r["Origin"] for r in rows2 if r["Form"] == "prob'ly"] == ["hand-added"]
 
 
 def test_round_trip_regenerating_unchanged_sources_changes_nothing():
-    first, _, _ = br.carry_over(morphs_for(), [], br.MORPHS_KEY, MORPH_ANSWERS)
+    first, _ = br.carry_over(morphs_for(), [], br.MORPHS_KEY, MORPH_ANSWERS)
     answered = [dict(r, occurs_here="n") for r in first]
-    again, drops, counts = br.carry_over(
+    again, counts = br.carry_over(
         morphs_for(), tab(answered, br.MORPHS_STRUCT + MORPH_ANSWERS), br.MORPHS_KEY, MORPH_ANSWERS)
-    assert drops == [] and counts["added"] == 0 and counts["removed"] == 0
+    assert counts["added"] == 0 and counts["removed"] == 0
     assert [(r["Morpheme"], r["Position_Name"], r["Form"], r["occurs_here"]) for r in again] == \
            [(r["Morpheme"], r["Position_Name"], r["Form"], "n") for r in first]
 

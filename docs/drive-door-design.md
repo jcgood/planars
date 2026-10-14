@@ -1,7 +1,7 @@
 # The Drive door: design (Phase 10 unit 5)
 
-**Status: accepted by Jeff 2026-10-13 (§ 7 records his answers). 5a and 5b
-built (§ 8); next is 5c.** Unit 5 of Phase 10 ([implementation plan](data-layer-implementation-plan.md),
+**Status: accepted by Jeff 2026-10-13 (§ 7 records his answers). 5a, 5b
+and 5c built (§ 8); next is 5d.** Unit 5 of Phase 10 ([implementation plan](data-layer-implementation-plan.md),
 Phase 10 table) was a design pause; this file is the design record. Progress
 is tracked in [data-layer-progress.md](data-layer-progress.md), and the
 decisions are logged there too.
@@ -75,8 +75,8 @@ only way to write:
    on any reach past a wrapper to the object inside.
 
 **How the door knows which command is running.** The dispatch chokepoint in
-`__main__.py`, where `preconditions.enforce` and `provenance.record` already
-run, hands the door the command name and its parsed arguments before
+`__main__.py`, where `preconditions.enforce` already runs (and, until 5c,
+`provenance.record` did), hands the door the command name and its parsed arguments before
 `main()` starts. That tells the door whether this invocation may write at
 all (the read-only door, § 3) and what to put on each logged write. Code that
 runs outside the dispatcher (tests, migrations) has to set this context
@@ -311,8 +311,8 @@ describe, with these choices where the design left a gap:
   two highlighting writes in `validate_coding.py`.
 - **Rule 1 in 5b** permits writes inside `replacing()` and records the
   reason; the snapshot moves in with 5c. Two commands use it:
-  `--regen-construction` (`generate_sheets._rebuilding`) and `sync-params
-  --remove`.
+  `--regen-construction` (`generate_sheets._rebuild_tab`, `_rebuilding` in
+  5b) and `sync-params --remove`.
 - **Tests** run commands through `tests/command_runner.run_command`, which
   tells the door the command; `tests/test_drive_door.py` holds each rule.
 
@@ -324,3 +324,43 @@ sheet had no spec (the tests now register the new name, as a real rename
 does); and the hand-placed retries never retried Drive file or permission
 calls at all, since those raise the Google client's own error, not gspread's
 (the door retries both).
+
+**5c (2026-10-13), the same file.** Snapshots, per-write provenance and the
+concurrent-edit check moved into the door, as § 3 describes, with these
+choices:
+
+- **The refusal to drop answered rows is part of `replacing()`.** Rule 1
+  lets anything through inside `replacing()`, so `_find_annotated_drops`
+  could only move into the door if the block learns which rows survive.
+  `replacing(tab, reason, kept=..., allow_drop=...)` takes the row keys
+  (the schema's `row_key`, as the tab holds them now) whose answers the
+  rebuild carries over. Before the block runs, any row holding an answer
+  whose key is not in `kept` raises `AnswersWouldBeDropped`, **in every
+  mode**: it replaces a refusal that was always live, and watch mode must
+  not weaken it. `--confirm-drop` is `allow_drop`. "Holding an answer" is
+  now any criterion, Source or Comments cell; the old check looked only at
+  the first criterion column, so a row with only a comment could go
+  silently. Rows with a blank key used to be skipped; now an answered one
+  counts as dropped. One check now serves pair and keyed tabs alike:
+  `biuniqueness_rows.carry_over` no longer returns drops, and its
+  `describe_drop` is deleted. A coreference `--pos-remap` passes the old
+  keys of the rows it carries over (`_coreference_key_map`).
+- **The concurrent-edit check runs when `replacing()` starts**, the only
+  place a rule-1 write is allowed: the door re-reads the tab and compares
+  the annotator-owned cells (and the header) with what the command read
+  earlier in the run. A difference is a violation by mode (new, so watch
+  first). This re-read is also the snapshot, so it costs one read per
+  replaced tab, as § 3 and Q6 allow.
+- **The snapshot is the re-read**, saved to `regen_snapshots/` (one file per
+  tab, overwritten, as before) with the command and reason. Since every
+  answer read earlier is then on the sheet or in the snapshot, Q3's
+  end-of-command confirmation adds nothing until rule 6 (5d) re-reads the
+  tabs anyway; the check that carried-over answers actually landed comes
+  with rule 6.
+- **Provenance is written when the command ends** (in `running()`'s
+  `finally`, so a failed run still logs what it wrote): one line per tab or
+  Drive file, with the command's arguments, the actions, calls, cells,
+  identity and any `replacing` reasons. `provenance.record` and its call in
+  `__main__.py` are deleted; an `--apply` run that wrote nothing no longer
+  leaves a line. Tests' log and snapshots go to each test's `tmp_path`
+  (`tests/conftest.py`).

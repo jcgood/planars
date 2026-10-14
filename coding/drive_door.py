@@ -18,7 +18,11 @@ tests). Reads pass straight through. Every write is checked first:
 - **The rules for class sheets** (design § 2.4), from ``sheet_spec``:
   1. an annotator's filled cell is never blanked or changed, and a tab holding
      annotations is never cleared, deleted or shrunk, except inside
-     ``with replacing(tab, reason)``;
+     ``with replacing(tab, reason)``. That block first re-reads the tab: if it
+     differs from what the command read earlier in the run, an annotator
+     edited it mid-run. It then saves the tab to ``SNAPSHOT_DIR``, and, given
+     the row keys the rebuilt tab keeps (``kept``), refuses to drop any
+     answered row unless told the drop is meant (``allow_drop``);
   2. a locked tab only ever receives its builder's content;
   3. dropdowns only on criterion columns (and Status), with exactly the
      spec's values;
@@ -28,6 +32,12 @@ tests). Reads pass straight through. Every write is checked first:
 Every call is retried on Google's "try again" answers (429, 500, 503), here
 and nowhere else. A call that creates something is retried only after
 checking the first attempt didn't land, so a retry never makes a duplicate.
+
+**Provenance.** At the end of the command the door appends one line per tab
+or Drive file it wrote to ``provenance.LOG_PATH``: the command and its
+arguments, what was written, which sheet it is, how many calls and cells,
+and the ``replacing`` reason if there was one. A command that wrote nothing
+leaves no line.
 
 **Which sheet is which.** Until sheets carry their own identity labels (unit
 5d), the door places a spreadsheet from the manifest (each language's class
@@ -44,15 +54,22 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import json
+import re
 import time
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, FrozenSet, Iterator, List, Mapping, Optional, Sequence, Tuple
+from typing import (Any, Callable, Dict, FrozenSet, Iterable, Iterator, List, Mapping,
+                    Optional, Sequence, Tuple)
 
 import gspread
 
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
+# Where replacing() saves a tab before its answers are replaced (gitignored;
+# one file per tab, the latest only). Moves into planars-data with unit 12.
+SNAPSHOT_DIR = ROOT / "regen_snapshots"
 
 ENFORCE = "enforce"
 WATCH = "watch"
@@ -80,6 +97,17 @@ _DOC_MIME = "application/vnd.google-apps.document"
 
 class DoorViolation(RuntimeError):
     """A write broke one of the door's rules (enforce mode)."""
+
+
+class AnswersWouldBeDropped(DoorViolation):
+    """``replacing(kept=...)`` found answered rows the rebuilt tab would not
+    keep. Raised in every mode: nothing has been written. ``lines`` names each
+    row and its answers, for the command's own message."""
+
+    def __init__(self, tab: str, lines: List[str]) -> None:
+        super().__init__(f"rebuilding {tab!r} would drop {len(lines)} answered row(s):\n"
+                         + "\n".join(lines))
+        self.lines = lines
 
 
 @dataclass(frozen=True)
@@ -148,7 +176,7 @@ def running(command: str, args: Optional[argparse.Namespace] = None, *,
     finally:
         _context = previous
         if isinstance(door, CheckedDoorway):
-            door.finish_command(command)
+            door.finish_command(command, args)
 
 
 @contextlib.contextmanager
@@ -163,14 +191,28 @@ def always_on(name: str) -> Iterator[None]:
 
 
 @contextlib.contextmanager
-def replacing(tab: "CheckedWorksheet", reason: str) -> Iterator[None]:
+def replacing(tab: "CheckedWorksheet", reason: str, *,
+              kept: Optional[Iterable[Sequence[str]]] = None,
+              allow_drop: bool = False) -> Iterator[None]:
     """Declare that the writes in this block replace annotations on ``tab``
-    on purpose (rule 1). ``reason`` says why, in words a coordinator can read."""
+    on purpose (rule 1). ``reason`` says why, in words a coordinator can read.
+
+    Before the block runs, the door re-reads the tab. If it differs from what
+    the command read earlier in this run, an annotator edited it mid-run, and
+    the door says so (by mode). It saves what it read to ``SNAPSHOT_DIR``.
+
+    ``kept``: for a tab being rebuilt row by row, the row keys (the schema's
+    ``row_key`` columns, as the tab holds them now) whose answers the rebuilt
+    tab carries over. Any other row holding an answer would be lost, so the
+    door raises ``AnswersWouldBeDropped`` before anything is written, in
+    every mode, unless ``allow_drop`` says the coordinator confirmed it.
+    """
     if not isinstance(tab, CheckedWorksheet):
         raise TypeError("replacing() takes a tab handle from the Drive door")
     if not reason.strip():
         raise ValueError("replacing() needs a reason")
     door, key = tab._door, tab._key
+    door._before_replacing(tab, reason, kept, allow_drop)
     door._replacing[key] = reason
     try:
         yield
@@ -249,6 +291,51 @@ def _text(value: Any) -> str:
     return "" if value is None else str(value)
 
 
+def _row(grid: List[List[str]], r: int) -> List[str]:
+    return grid[r] if r < len(grid) else []
+
+
+def _trimmed(grid: List[List[str]]) -> List[List[str]]:
+    """The grid without trailing empty cells and rows, as Sheets returns it."""
+    rows = [list(r) for r in grid]
+    for r in rows:
+        while r and r[-1] == "":
+            r.pop()
+    while rows and not rows[-1]:
+        rows.pop()
+    return rows
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _save_snapshot(tab: "CheckedWorksheet", rows: List[List[str]], reason: str) -> Path:
+    """Save a tab's content before replacing() lets its answers be replaced,
+    so whatever is lost can be checked and put back by hand. One file per
+    tab, overwritten each time: once a rebuild has succeeded, the sheet holds
+    what is worth having."""
+    identity = tab._ss.identity
+    if identity is not None and identity.class_name:
+        stem = f"{identity.lang_id}_{identity.class_name}_{tab.title}"
+    else:
+        stem = f"{tab._ss.id}_{tab.title}"
+    path = SNAPSHOT_DIR / (re.sub(r"[^\w.-]", "_", stem) + ".json")
+    SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({
+        "spreadsheet_id": tab._ss.id,
+        "spreadsheet": tab._ss.title,
+        "lang_id": identity.lang_id if identity else None,
+        "class_name": identity.class_name if identity else None,
+        "tab": tab.title,
+        "command": _context.command if _context else None,
+        "reason": reason,
+        "saved_at": _now(),
+        "rows": rows,
+    }, indent=2, ensure_ascii=False), encoding="utf-8")
+    return path
+
+
 # ---------------------------------------------------------------------------
 # The door
 # ---------------------------------------------------------------------------
@@ -268,6 +355,8 @@ class CheckedDoorway:
         self._specs: Dict[Tuple[str, str], Any] = {}
         self._grids: Dict[Tuple[str, int], List[List[str]]] = {}
         self._replacing: Dict[Tuple[str, int], str] = {}
+        self._written: Dict[Tuple[str, Optional[str]], Dict[str, Any]] = {}
+        self._started = ""
 
     @property
     def inner(self):
@@ -284,11 +373,65 @@ class CheckedDoorway:
         self._grids.clear()
         self._manifest_read = False
         self._identities = {}
+        self._written = {}
+        self._started = _now()
 
-    def finish_command(self, command: str) -> None:
+    def finish_command(self, command: str, args: Optional[argparse.Namespace] = None) -> None:
+        """Log what the command wrote, and in watch mode report what broke a rule."""
+        if self._written:
+            from . import provenance
+            arguments = vars(args) if args is not None else {}
+            provenance.append_writes([
+                {"timestamp": self._started, "command": command, "args": arguments, **entry}
+                for entry in self._written.values()])
+            self._written = {}
         if self.mode != WATCH or not self.violations:
             return
         _report_violations(command, self.violations)
+
+    # -- provenance ---------------------------------------------------------
+    def _wrote(self, file_id: str, title: str, tab: Optional[str], action: str,
+               cells: int = 0, identity: Optional[Identity] = None,
+               reason: Optional[str] = None) -> None:
+        """Count one write toward its tab's (or file's) provenance line."""
+        entry = self._written.setdefault((file_id, tab), {
+            "file_id": file_id, "title": title, "tab": tab,
+            "identity": identity.describe() if identity else None,
+            "actions": [], "writes": 0, "cells": 0, "replacing": []})
+        entry["writes"] += 1
+        entry["cells"] += cells
+        if title and not entry["title"]:
+            entry["title"] = title
+        if identity and not entry["identity"]:
+            entry["identity"] = identity.describe()
+        if action not in entry["actions"]:
+            entry["actions"].append(action)
+        if reason and reason not in entry["replacing"]:
+            entry["replacing"].append(reason)
+
+    def _wrote_file(self, file_id: str, title: str, action: str) -> None:
+        identity = self._created.get(file_id) or self._identities.get(file_id)
+        self._wrote(file_id, title, None, action, identity=identity)
+
+    # -- replacing (rule 1) -------------------------------------------------
+    def _before_replacing(self, tab: "CheckedWorksheet", reason: str,
+                          kept: Optional[Iterable[Sequence[str]]], allow_drop: bool) -> None:
+        """What ``replacing()`` does before its block runs: look for an
+        annotator's mid-run edit, save the tab, refuse to drop answered rows."""
+        key = tab._key
+        fresh = [list(r) for r in _retry(tab._inner.get_all_values)]
+        earlier = self._grids.get(key)
+        if earlier is not None:
+            edited = tab._edits_since(earlier, fresh)
+            if edited:
+                self._check(f"replace {tab.title!r} of {tab._ss.title!r}", [edited])
+        self._grids[key] = fresh
+        _save_snapshot(tab, fresh, reason)
+        if kept is None:
+            return
+        lines = tab._answered_rows_not_kept(fresh, kept)
+        if lines and not allow_drop:
+            raise AnswersWouldBeDropped(tab.title, lines)
 
     # -- checking -----------------------------------------------------------
     def _check(self, what: str, problems: Sequence[str] = ()) -> None:
@@ -415,16 +558,19 @@ class CheckedDoorway:
                              _SPREADSHEET_MIME, None, self._inner.open_spreadsheet)
         if identity is not None:
             self._created[inner.id] = identity
+        self._wrote_file(inner.id, title, "create_spreadsheet")
         return CheckedSpreadsheet(self, inner)
 
     def create_file(self, name: str, parents: Optional[Sequence[str]] = None,
                     content: Optional[bytes] = None,
                     mimetype: Optional[str] = None) -> str:
         self._check(f"create file {name!r}")
-        return self._create(
+        file_id = self._create(
             lambda: self._inner.create_file(name, parents=parents, content=content,
                                             mimetype=mimetype),
             name, mimetype if content is None else None, parents, lambda fid: fid)
+        self._wrote_file(file_id, name, "create_file")
+        return file_id
 
     def get_or_create_folder(self, name: str, parent_id: Optional[str] = None) -> str:
         parent_clause = f" and '{parent_id}' in parents" if parent_id else ""
@@ -436,8 +582,10 @@ class CheckedDoorway:
 
     def create_doc(self, name: str, parent_id: str) -> str:
         self._check(f"create doc {name!r}")
-        return self._create(lambda: self._inner.create_doc(name, parent_id), name,
-                            _DOC_MIME, [parent_id], lambda fid: fid)
+        doc_id = self._create(lambda: self._inner.create_doc(name, parent_id), name,
+                              _DOC_MIME, [parent_id], lambda fid: fid)
+        self._wrote_file(doc_id, name, "create_doc")
+        return doc_id
 
     # -- other file writes --------------------------------------------------
     def update_file(self, file_id: str, name: Optional[str] = None,
@@ -446,14 +594,17 @@ class CheckedDoorway:
         self._check(f"update file {file_id}")
         _retry(lambda: self._inner.update_file(file_id, name=name, content=content,
                                                mimetype=mimetype))
+        self._wrote_file(file_id, name or "", "update_file")
 
     def move_file(self, file_id: str, new_parent_id: str) -> None:
         self._check(f"move file {file_id}")
         _retry(lambda: self._inner.move_file(file_id, new_parent_id))
+        self._wrote_file(file_id, "", "move_file")
 
     def append_doc_text(self, doc_id: str, text: str) -> None:
         self._check(f"append to doc {doc_id}")
         _retry(lambda: self._inner.append_doc_text(doc_id, text))
+        self._wrote_file(doc_id, "", "append_doc_text")
 
     # -- sharing (rule 5) ----------------------------------------------------
     def _sharing_problems(self, file_id: str, type: str, email: Optional[str]) -> List[str]:
@@ -481,16 +632,20 @@ class CheckedDoorway:
                     return p["id"]
             return None
 
-        return _retry(lambda: self._inner.create_permission(
+        permission_id = _retry(lambda: self._inner.create_permission(
             file_id, type=type, role=role, email=email, notify=notify), landed=landed)
+        self._wrote_file(file_id, "", "create_permission")
+        return permission_id
 
     def delete_permission(self, file_id: str, permission_id: str) -> None:
         self._check(f"remove a grant on {file_id}")
         _retry(lambda: self._inner.delete_permission(file_id, permission_id))
+        self._wrote_file(file_id, "", "delete_permission")
 
     def update_permission(self, file_id: str, permission_id: str, role: str) -> None:
         self._check(f"change a grant on {file_id} to {role}")
         _retry(lambda: self._inner.update_permission(file_id, permission_id, role))
+        self._wrote_file(file_id, "", "update_permission")
 
 
 def _quote(text: str) -> str:
@@ -556,9 +711,10 @@ class CheckedSpreadsheet:
     def add_worksheet(self, title: str, rows: int, cols: int,
                       index: Optional[int] = None) -> "CheckedWorksheet":
         self._door._check(f"add tab {title!r} to {self.title!r}")
-        ws = _create_tab(self, title, rows, cols, index)
-        self._door._forget((self.id, ws.id))
-        return self._wrap(ws)
+        ws = self._wrap(_create_tab(self, title, rows, cols, index))
+        self._door._forget(ws._key)
+        ws._note("add_worksheet")
+        return ws
 
     def del_worksheet(self, worksheet: "CheckedWorksheet") -> Any:
         tab = _unwrap_tab(worksheet)
@@ -566,23 +722,34 @@ class CheckedSpreadsheet:
         self._door._check(f"delete tab {worksheet.title!r} of {self.title!r}", problems)
         result = _retry(lambda: self._inner.del_worksheet(tab))
         self._door._forget(worksheet._key)
+        worksheet._note("del_worksheet")
         return result
 
     def reorder_worksheets(self, worksheets_in_desired_order: Sequence["CheckedWorksheet"]) -> Any:
         self._door._check(f"reorder the tabs of {self.title!r}")
         tabs = [_unwrap_tab(w) for w in worksheets_in_desired_order]
-        return _retry(lambda: self._inner.reorder_worksheets(tabs))
+        result = _retry(lambda: self._inner.reorder_worksheets(tabs))
+        self._door._wrote(self.id, self.title, None, "reorder_worksheets",
+                          identity=self.identity)
+        return result
 
     # -- batch endpoints ----------------------------------------------------
     def batch_update(self, body: Mapping[str, Any]) -> Any:
         problems: List[str] = []
         touched: List[Tuple[str, int]] = []
+        hit: Dict[Optional[int], Tuple[Optional["CheckedWorksheet"], int]] = {}
         for request in body.get("requests", []):
-            problems.extend(self._request_problems(request, touched))
+            problems.extend(self._request_problems(request, touched, hit))
         self._door._check(f"batch update of {self.title!r}", problems)
         result = _retry(lambda: self._inner.batch_update(body))
         for key in touched:
             self._door._forget(key)
+        for ws, cells in hit.values():
+            if ws is None:
+                self._door._wrote(self.id, self.title, None, "batch_update",
+                                  identity=self.identity)
+            else:
+                ws._note("batch_update", cells)
         return result
 
     def values_batch_update(self, body: Mapping[str, Any]) -> Any:
@@ -601,10 +768,12 @@ class CheckedSpreadsheet:
         result = _retry(lambda: self._inner.values_batch_update(body))
         for ws, changes in writes:
             ws._apply(changes)
+            ws._note("values_batch_update", len(changes))
         return result
 
-    def _request_problems(self, request: Mapping[str, Any],
-                          touched: List[Tuple[str, int]]) -> List[str]:
+    def _request_problems(self, request: Mapping[str, Any], touched: List[Tuple[str, int]],
+                          hit: Dict[Optional[int], Tuple[Optional["CheckedWorksheet"], int]],
+                          ) -> List[str]:
         if len(request) != 1:
             return [f"a request must name exactly one operation: {sorted(request)}"]
         (kind, payload), = request.items()
@@ -613,6 +782,11 @@ class CheckedSpreadsheet:
                     "check, to drive_door.REQUEST_TYPES"]
         sheet_id = _request_sheet_id(kind, payload)
         ws = self._tab_by_sheet_id(sheet_id) if sheet_id is not None else None
+        cells = 0
+        if kind == "updateCells":
+            cells = sum(len(row.get("values", [])) for row in payload.get("rows", []))
+        prior_ws, prior_cells = hit.get(sheet_id if ws is not None else None, (ws, 0))
+        hit[sheet_id if ws is not None else None] = (prior_ws, prior_cells + cells)
         if ws is None:
             return []
         if kind == "setDataValidation":
@@ -740,6 +914,65 @@ class CheckedWorksheet:
     # -- rule 1: annotations are never lost silently ---------------------------
     def _replacing_reason(self) -> Optional[str]:
         return self._door._replacing.get(self._key)
+
+    def _note(self, action: str, cells: int = 0) -> None:
+        """Count a write to this tab toward its provenance line."""
+        self._door._wrote(self._ss.id, self._ss.title, self.title, action, cells,
+                          self._ss.identity, self._replacing_reason())
+
+    # -- rule 1 inside replacing(): mid-run edits, answered rows dropped ------
+    def _protected_cells(self, grid: List[List[str]]) -> Optional[set]:
+        """Header names of this tab's tooling columns, or None if the tab is
+        not one whose annotations the door looks after."""
+        kind, _ = self._kind()
+        if kind not in (CONSTRUCTION_TAB, STATUS_TAB_KIND):
+            return None
+        return self._tooling_columns()
+
+    def _edits_since(self, earlier: List[List[str]], now: List[List[str]]) -> Optional[str]:
+        """A message if an annotator changed this tab between the command's
+        earlier read (``earlier``) and ``now``; None if not."""
+        tooling = self._protected_cells(now)
+        if tooling is None:
+            return None
+        if _trimmed(earlier[:1]) != _trimmed(now[:1]):
+            return (f"the columns of {self.title!r} changed while the command ran "
+                    "(someone edited the sheet mid-run); its answers may be read wrong")
+        changed = [(r, c) for r in range(1, max(len(earlier), len(now)))
+                   for c in range(max(len(_row(earlier, r)), len(_row(now, r))))
+                   if self._annotator_cell(now, tooling, r, c)
+                   and _cell(earlier, r, c) != _cell(now, r, c)]
+        if not changed:
+            return None
+        r, c = changed[0]
+        return (f"an annotator changed {len(changed)} answer cell(s) in {self.title!r} while "
+                f"the command ran (first: row {r + 1}, {_cell(earlier, r, c)!r} -> "
+                f"{_cell(now, r, c)!r}); the command worked from what it read before")
+
+    def _answered_rows_not_kept(self, grid: List[List[str]],
+                                kept: Iterable[Sequence[str]]) -> List[str]:
+        """One line for each row holding an answer whose key is not in ``kept``."""
+        identity = self._ss.identity
+        kind, _ = self._kind()
+        if kind != CONSTRUCTION_TAB:
+            raise ValueError(f"replacing(kept=...) needs a construction tab of a sheet the "
+                             f"door can place; {self.title!r} is not one")
+        from planars.schema_values import row_key
+        key_cols = row_key(identity.class_name, self.title)
+        tooling = self._tooling_columns()
+        keep = {tuple(str(v).strip() for v in k) for k in kept}
+        header = grid[0] if grid else []
+        lines = []
+        for r in range(1, len(grid)):
+            rec = dict(zip(header, grid[r]))
+            answers = [(name, value) for name, value in rec.items()
+                       if name not in tooling and str(value).strip()]
+            key = tuple(str(rec.get(k, "")).strip() for k in key_cols)
+            if not answers or key in keep:
+                continue
+            who = ", ".join(f"{k} {v!r}" for k, v in zip(key_cols, key))
+            lines.append(f"  {who}: " + "; ".join(f"{n}: {v!r}" for n, v in answers))
+        return lines
 
     def _annotation_loss_problems(self, action: str, *, all_cells: bool = False,
                                   rows_from: Optional[int] = None,
@@ -897,6 +1130,7 @@ class CheckedWorksheet:
                           self._value_problems(changes))
         result = _retry(lambda: self._inner.update(values, range_name, raw=raw))
         self._apply(changes)
+        self._note("update", len(changes))
         return result
 
     def update_cell(self, row: int, col: int, value: Any) -> Any:
@@ -905,12 +1139,14 @@ class CheckedWorksheet:
                           self._value_problems(changes))
         result = _retry(lambda: self._inner.update_cell(row, col, value))
         self._apply(changes)
+        self._note("update_cell", 1)
         return result
 
     def insert_cols(self, values: Sequence[Sequence[Any]], col: int = 1) -> Any:
         self._door._check(f"insert columns into {self.title!r} of {self._ss.title!r}")
         result = _retry(lambda: self._inner.insert_cols(values, col))
         self._door._forget(self._key)
+        self._note("insert_cols", sum(len(c) for c in values))
         return result
 
     def append_rows(self, values: Sequence[Sequence[Any]],
@@ -925,6 +1161,7 @@ class CheckedWorksheet:
         self._door._check(f"add rows to {self.title!r} of {self._ss.title!r}", problems)
         result = _retry(lambda: self._inner.append_rows(values, value_input_option=value_input_option))
         self._door._forget(self._key)
+        self._note("append_rows", sum(len(r) for r in values))
         return result
 
     def clear(self) -> Any:
@@ -932,6 +1169,7 @@ class CheckedWorksheet:
                           self._annotation_loss_problems("clear", all_cells=True))
         result = _retry(self._inner.clear)
         self._door._grids[self._key] = []
+        self._note("clear")
         return result
 
     def resize(self, rows: Optional[int] = None, cols: Optional[int] = None) -> Any:
@@ -940,11 +1178,14 @@ class CheckedWorksheet:
                                                          cols_from=cols))
         result = _retry(lambda: self._inner.resize(rows=rows, cols=cols))
         self._door._forget(self._key)
+        self._note("resize")
         return result
 
     def update_title(self, title: str) -> Any:
         self._door._check(f"rename tab {self.title!r} of {self._ss.title!r} to {title!r}")
-        return _retry(lambda: self._inner.update_title(title))
+        result = _retry(lambda: self._inner.update_title(title))
+        self._note("update_title")
+        return result
 
 
 def _create_tab(ss: CheckedSpreadsheet, title: str, rows: int, cols: int,

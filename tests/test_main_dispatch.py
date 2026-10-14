@@ -1,13 +1,10 @@
-"""Tests for coding/__main__.py's dispatch chokepoint (Phase 5 units B/D/E,
-issue #271): it parses once and calls preconditions.enforce(cmd, args) and
-provenance.record(cmd, op_id, args) before mod.main(args) runs -- not inside
-mod.main() itself. coding/preconditions.py and coding/provenance.py carry
-the actual logic and are tested on their own in tests/test_preconditions.py
-and tests/test_provenance.py; these tests only check that the dispatch
-wires them together correctly.
-
-Every test here redirects provenance.LOG_PATH to a tmp_path -- the real one
-(at the repo root) must never be touched by a test run.
+"""Tests for coding/__main__.py's dispatch chokepoint (issue #271): it parses
+once, calls preconditions.enforce(cmd, args), and runs mod.main(args) inside
+drive_door.running(cmd, args) -- not inside mod.main() itself.
+coding/preconditions.py and coding/drive_door.py carry the actual logic and
+are tested on their own (tests/test_preconditions.py, tests/test_drive_door.py,
+where the door's per-write provenance log is tested); these tests only check
+that the dispatch wires them together correctly.
 """
 from __future__ import annotations
 
@@ -16,12 +13,7 @@ import sys
 import pytest
 
 from coding import __main__ as coding_main
-from coding import preconditions, provenance, update_sheets
-
-
-@pytest.fixture(autouse=True)
-def _redirect_provenance_log(monkeypatch, tmp_path):
-    monkeypatch.setattr(provenance, "LOG_PATH", tmp_path / "provenance_log.jsonl")
+from coding import drive_door, preconditions, provenance, update_sheets
 
 
 def test_precondition_failure_aborts_before_the_command_runs(monkeypatch):
@@ -65,21 +57,23 @@ def test_a_dry_run_needs_no_precondition_check_and_still_runs(monkeypatch):
     assert calls[0].apply is False
 
 
-def test_an_apply_run_that_writes_to_drive_is_logged(monkeypatch):
+def test_the_command_runs_with_the_door_told_which_command_it_is(monkeypatch):
+    seen = []
+    monkeypatch.setattr(update_sheets, "main",
+                        lambda args: seen.append((drive_door._context.command,
+                                                  drive_door._context.may_write)))
+    monkeypatch.setattr(preconditions, "_check_coded_data_clean", lambda **kw: None)
+    monkeypatch.setattr(sys, "argv", ["coding", "update-sheets", "--apply"])
+    coding_main.main()
+    assert seen == [("update-sheets", True)]
+    assert drive_door._context is None
+
+
+def test_a_run_that_writes_nothing_is_not_logged(monkeypatch):
+    """The log records writes, not invocations: an --apply run that found
+    nothing to do leaves no line."""
     monkeypatch.setattr(update_sheets, "main", lambda args: None)
     monkeypatch.setattr(preconditions, "_check_coded_data_clean", lambda **kw: None)
     monkeypatch.setattr(sys, "argv", ["coding", "update-sheets", "--apply"])
-
     coding_main.main()
-
-    assert provenance.LOG_PATH.exists()
-    assert '"command": "update-sheets"' in provenance.LOG_PATH.read_text(encoding="utf-8")
-
-
-def test_a_dry_run_is_not_logged(monkeypatch):
-    monkeypatch.setattr(update_sheets, "main", lambda args: None)
-    monkeypatch.setattr(sys, "argv", ["coding", "update-sheets"])
-
-    coding_main.main()
-
     assert not provenance.LOG_PATH.exists()

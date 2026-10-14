@@ -37,8 +37,8 @@ intentional (e.g. a prescreening scope change, not a rename/split), add --confir
     python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:reflexivization \
         --confirm-drop
 
---regen-construction also saves the tab's current content to regen_snapshots/ (gitignored)
-immediately before overwriting it -- a safety net in case anything not yet downloaded via
+Before --regen-construction overwrites a tab, the Drive door saves its current content to
+regen_snapshots/ (gitignored) -- a safety net in case anything not yet downloaded via
 import-sheets was lost to an interrupted run (issue #271); not something you need to act on
 unless a run is actually interrupted.
 
@@ -62,12 +62,10 @@ import argparse
 import json
 import re
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Set, Tuple
+from typing import Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
-REGEN_SNAPSHOT_DIR = ROOT / "regen_snapshots"
 
 import pandas as pd
 
@@ -1082,17 +1080,31 @@ def _biuniq_populate(
     return len(rows)
 
 
-def _rebuilding(spreadsheet: SpreadsheetHandle, construction_name: str):
-    """Tell the Drive door that rewriting this tab replaces its annotations on
-    purpose: --regen-construction has carried every answer over by key, and
-    refused (unless --confirm-drop) to drop any it couldn't."""
-    import contextlib
+def _rebuild_tab(spreadsheet: SpreadsheetHandle, lang_id: str, class_name: str,
+                 construction_name: str, kept, confirm_drop: bool, if_dropped: str,
+                 populate: Callable[[], None]) -> None:
+    """Run ``populate`` (the rewrite of one tab) inside the Drive door's
+    replacing(): the door saves the tab to regen_snapshots/ first, and refuses
+    (unless --confirm-drop) if an answered row's key is not in ``kept``, the
+    rows whose answers the rebuild carries over (#241). ``if_dropped`` is the
+    advice that ends the refusal message."""
     try:
         ws = spreadsheet.worksheet(construction_name)
     except WorksheetNotFound:
-        return contextlib.nullcontext()
-    return drive_door.replacing(
-        ws, "--regen-construction rebuilds the tab with every answer carried over by key")
+        populate()
+        return
+    reason = "--regen-construction rebuilds the tab with every answer carried over by key"
+    try:
+        with drive_door.replacing(ws, reason, kept=kept, allow_drop=confirm_drop):
+            populate()
+    except drive_door.AnswersWouldBeDropped as exc:
+        raise SystemExit(
+            f"ABORTED: regenerating {lang_id}/{class_name}/{construction_name} would drop "
+            f"{len(exc.lines)} answered row(s) — no confirmation step exists after this "
+            f"point, they would just be gone from the Sheet:\n" + "\n".join(exc.lines)
+            + "\n\n" + if_dropped
+            + f"\n  python -m coding generate-sheets --lang {lang_id} --regen-construction "
+              f"{class_name}:{construction_name} --confirm-drop")
 
 
 def _regen_keyed_construction(
@@ -1100,37 +1112,29 @@ def _regen_keyed_construction(
     param_names: List[str], param_values: Dict[str, List[str]], confirm_drop: bool,
 ) -> None:
     """--regen-construction for a keyed_rows tab: rebuild it from its source,
-    carrying every answer over by key, keeping hand-added rows, and refusing
-    to drop an answered row unless confirm_drop (as for pair tabs, #241)."""
+    carrying every answer over by key, keeping hand-added rows; the Drive door
+    refuses to drop an answered row unless confirm_drop (as for pair tabs, #241)."""
     # Imported here: restructure_sheets imports this module at load time.
     from .restructure_sheets import _get_keyed_row_constructions
     keyed = _get_keyed_row_constructions()[class_name][construction_name]
     columns, key = keyed["columns"], keyed["key"]
     try:
-        ws = spreadsheet.worksheet(construction_name)
-        existing_rows = ws.get_all_values()
-        _snapshot_before_regen(lang_id, class_name, construction_name, existing_rows)
+        existing_rows = spreadsheet.worksheet(construction_name).get_all_values()
     except WorksheetNotFound:
         existing_rows = []
 
     planar_path = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
     generated = _biuniq_generate(lang_id, construction_name, param_names, planar_path)
     answer_cols = param_names + _TRAILING_COLS
-    rows, drops, counts = _br.carry_over(generated, existing_rows, key, answer_cols)
-    if drops and not confirm_drop:
-        lines = [_br.describe_drop(d, key, answer_cols) for d in drops]
-        raise SystemExit(
-            f"ABORTED: regenerating {lang_id}/{class_name}/{construction_name} would drop "
-            f"{len(drops)} answered row(s) whose source is no longer there — they would "
-            f"just be gone from the Sheet:\n" + "\n".join(lines)
-            + "\n\nIf the source change was a mistake, fix it in the earlier tab, import, "
-              "and regenerate again. If the drop is intended, re-run with --confirm-drop:\n"
-              f"  python -m coding generate-sheets --lang {lang_id} --regen-construction "
-              f"{class_name}:{construction_name} --confirm-drop")
-
-    with _rebuilding(spreadsheet, construction_name):
-        _populate_tab_keyed(spreadsheet, construction_name, columns, param_names,
-                            param_values, rows)
+    rows, counts = _br.carry_over(generated, existing_rows, key, answer_cols)
+    _rebuild_tab(
+        spreadsheet, lang_id, class_name, construction_name,
+        kept=[[r.get(k, "") for k in key] for r in rows], confirm_drop=confirm_drop,
+        if_dropped=("Their source is no longer in the earlier tab. If that change was a "
+                    "mistake, fix it there, import, and regenerate again. If the drop is "
+                    "intended, re-run with --confirm-drop:"),
+        populate=lambda: _populate_tab_keyed(spreadsheet, construction_name, columns,
+                                             param_names, param_values, rows))
     print(f"    {construction_name}: {counts['retained']} retained, {counts['added']} added, "
           f"{counts['removed']} removed, {counts['hand_added']} hand-added kept")
 
@@ -1603,7 +1607,18 @@ def _remap_coreference_prefill(
     pos_num_remap: Dict[int, int],
     new_pairs: List[List[str]],
 ) -> Dict[Tuple[str, str, str], Dict[str, str]]:
-    """Remap old coreference annotation keys to new keys after position renumbering.
+    """Remap old coreference annotation keys to new keys after position
+    renumbering: ``existing`` re-keyed by ``_coreference_key_map``."""
+    key_map = _coreference_key_map(existing, pos_num_remap, new_pairs)
+    return {key_map[k]: v for k, v in existing.items()}
+
+
+def _coreference_key_map(
+    old_keys: Iterable[Tuple[str, str, str]],
+    pos_num_remap: Dict[int, int],
+    new_pairs: List[List[str]],
+) -> Dict[Tuple[str, str, str], Tuple[str, str, str]]:
+    """Map old coreference annotation keys to new keys after position renumbering.
 
     When the planar structure is renumbered (positions inserted/deleted), the
     combined Position_B cells in the stored annotations carry old position numbers.
@@ -1615,16 +1630,17 @@ def _remap_coreference_prefill(
     updated even when both pos_a and pos_b shift.
 
     Args:
-        existing:      annotation dict keyed by (Element_A, Position_B, Direction).
+        old_keys:      keys (Element_A, Position_B, Direction) as the tab holds them.
         pos_num_remap: {old_pos_num: new_pos_num} — typically derived from a planar diff.
         new_pairs:     freshly generated pair rows [[elem_a, pos_a_str, pos_b_str, dir], ...].
 
     Returns:
-        New annotation dict with remapped keys.  Entries whose Position_B number is not
-        in pos_num_remap are kept with their original key (safe fallback).
+        {old key: new key} for every old key.  A key whose Position_B number is not
+        in pos_num_remap maps to itself (safe fallback).
     """
+    old_keys = list(old_keys)
     if not pos_num_remap:
-        return existing
+        return {k: k for k in old_keys}
 
     # Build lookup: (elem_a, new_pos_b_num) → new_direction from generated pairs.
     pair_direction: Dict[Tuple[str, int], str] = {}
@@ -1634,103 +1650,20 @@ def _remap_coreference_prefill(
         if parsed:
             pair_direction[(elem_a, parsed[0])] = direction
 
-    remapped: Dict[Tuple[str, str, str], Dict[str, str]] = {}
-    for (elem_a, pos_b_str, old_direction), vals in existing.items():
+    key_map: Dict[Tuple[str, str, str], Tuple[str, str, str]] = {}
+    for key in old_keys:
+        elem_a, pos_b_str, old_direction = key
         parsed = _parse_pos_cell(pos_b_str)
         if parsed is None or parsed[0] not in pos_num_remap:
-            remapped[(elem_a, pos_b_str, old_direction)] = vals
+            key_map[key] = key
             continue
         old_pos_b_num, pos_b_name = parsed
         new_pos_b_num = pos_num_remap[old_pos_b_num]
         new_pos_b_str = f"{new_pos_b_num} ({pos_b_name})"
         new_direction = pair_direction.get((elem_a, new_pos_b_num), old_direction)
-        remapped[(elem_a, new_pos_b_str, new_direction)] = vals
+        key_map[key] = (elem_a, new_pos_b_str, new_direction)
 
-    return remapped
-
-
-def _find_annotated_drops(
-    removed: Set[Tuple],
-    existing: Dict[Tuple, Dict[str, str]],
-    criterion_col: str,
-) -> List[Tuple[Tuple, str, str, str]]:
-    """Return the subset of `removed` pair-keys that carry real annotation.
-
-    _regen_construction overwrites the live Sheet with only the newly computed
-    candidate pair set -- anything in `removed` is gone from the Sheet the
-    instant it runs, with no confirmation step (the later import-sheets ->
-    apply-pending flow only syncs the *local TSV* to match the already-
-    overwritten Sheet; it is not a gate on the original write). This is the
-    check that makes that write refuse to happen when it would silently
-    destroy a real judgment -- see issue #241's design discussion.
-
-    Returns a list of (key, criterion_value, source, comments) for every
-    dropped pair whose criterion column is non-blank, i.e. actually annotated
-    (not just an unfilled placeholder row).
-    """
-    drops = []
-    for key in removed:
-        vals = existing.get(key, {})
-        crit_val = (vals.get(criterion_col) or "").strip()
-        if crit_val:
-            drops.append((key, crit_val, vals.get("Source", ""), vals.get("Comments", "")))
-    return drops
-
-
-def _format_annotated_drop(key_cols: Sequence[str], key: Tuple, crit_val: str,
-                           source: str, comments: str) -> str:
-    """Human-readable one-line description of a dropped annotated pair, for the
-    abort message: each key column named with its value."""
-    identity = ", ".join(f"{col} {val!r}" for col, val in zip(key_cols, key))
-    line = f"  {identity}: {crit_val!r}"
-    if source:
-        line += f"; Source: {source}"
-    if comments:
-        line += f"; Comments: {comments}"
-    return line
-
-
-def _snapshot_before_regen(
-    lang_id: str, class_name: str, construction_name: str, rows: List[List[str]],
-) -> None:
-    """Save the live tab's current raw values to a local file, immediately
-    before --regen-construction clears and rewrites it (issue #271, the
-    Phase 7 investigation that also produced restructure_journal.py).
-
-    _regen_construction reads existing annotations from the live Sheet
-    specifically because they may include real edits an annotator made that
-    have not been downloaded via import-sheets yet (see this function's own
-    caller docstring). What follows this call -- clear the tab, then
-    rewrite it -- is two separate Drive API calls, not one atomic write (the
-    Sheets API has no transactional way to resize/reformat and populate a
-    tab in a single call), so a crash between them would otherwise destroy
-    those not-yet-imported values with nothing left to recover them from.
-
-    This is a pure safety net, not a resume mechanism, and deliberately
-    smaller than restructure_journal.py's: re-running --regen-construction
-    after any kind of interruption already recovers cleanly on its own,
-    since it recomputes the pair list fresh from source data (the planar,
-    diagnostics YAML, and prescreening tab) every time rather than trusting
-    the tab's own prior content -- there is no multi-step Drive sequence to
-    resume or roll back the way restructure-sheets' archive-then-recreate
-    has. The only thing that can go wrong here is losing values that were
-    never anywhere but the live Sheet at the moment of a crash; this file is
-    what a coordinator (or Claude) checks by hand in that case.
-
-    Overwritten on every run for the same (lang_id, class_name,
-    construction_name) -- only the most recent pre-write state is ever
-    useful, since a successful run makes the live Sheet's new content the
-    thing worth having, not this snapshot.
-    """
-    REGEN_SNAPSHOT_DIR.mkdir(exist_ok=True)
-    path = REGEN_SNAPSHOT_DIR / f"{lang_id}_{class_name}_{construction_name}.json"
-    path.write_text(json.dumps({
-        "lang_id": lang_id,
-        "class_name": class_name,
-        "construction_name": construction_name,
-        "saved_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "rows": rows,
-    }, indent=2), encoding="utf-8")
+    return key_map
 
 
 def _tab_criteria(lang_id: str, class_name: str, construction: str):
@@ -1764,8 +1697,9 @@ def _regen_construction(
     annotations are preserved. Retained pairs keep their existing values;
     added pairs get blank rows. Removed pairs are dropped from the Sheet by
     this call, immediately, with no further confirmation step downstream --
-    if any dropped pair carries a real (non-blank) annotation, this function
-    raises SystemExit instead of writing, unless confirm_drop=True (see
+    if any dropped pair holds an answer (a criterion, Source or Comments),
+    the Drive door refuses the rewrite (drive_door.replacing's ``kept``) and
+    this function raises SystemExit instead of writing, unless confirm_drop=True (see
     issue #241: an earlier version of this function let --regen-construction
     silently destroy annotated judgments whenever an element was retired
     without --split-element having been run first; call order should never
@@ -1819,20 +1753,18 @@ def _regen_construction(
     key_cols = row_key(class_name, construction_name)
     existing: Dict = {}
     try:
-        ws = spreadsheet.worksheet(construction_name)
-        rows = ws.get_all_values()
-        _snapshot_before_regen(lang_id, class_name, construction_name, rows)
+        rows = spreadsheet.worksheet(construction_name).get_all_values()
         if rows and len(rows) > 1:
             hdr = rows[0]
             if hdr[:len(shape_cols)] != shape_cols and not confirm_drop:
-                # A tab of another shape can't be keyed; rebuilding it would
-                # replace every row without the annotated-drop check below.
+                # A tab of another shape can't be keyed, so its answers can't
+                # be carried over.
                 raise SystemExit(
                     f"ABORTED: {lang_id}/{class_name}/{construction_name}'s columns are "
                     f"{hdr}, not the {shape_cols} the schema gives this tab, so its "
-                    f"answers can't be matched to the rebuilt rows. The snapshot taken "
-                    f"just now is in regen_snapshots/. If the old rows can go, re-run "
-                    f"with --confirm-drop.")
+                    f"answers can't be matched to the rebuilt rows. Nothing was written. "
+                    f"If the old rows can go, re-run with --confirm-drop (the tab is "
+                    f"saved to regen_snapshots/ before it is rewritten).")
             for row in rows[1:]:
                 record = dict(zip(hdr, row))
                 key = tuple(record.get(k, "") for k in key_cols)
@@ -1857,9 +1789,12 @@ def _regen_construction(
         pairs = _filter_nonperm_pairs_by_prescreening(pairs, lang_id)
 
     # For coreference pair tabs, remap old annotation keys when position numbers
-    # have shifted (e.g. after a planar insertion/deletion).
+    # have shifted (e.g. after a planar insertion/deletion). key_map takes each
+    # row's key as the tab holds it now to the key its answers move to.
+    key_map = {k: k for k in existing}
     if class_name == "coreference" and pos_num_remap:
-        existing = _remap_coreference_prefill(existing, pos_num_remap, pairs)
+        key_map = _coreference_key_map(existing, pos_num_remap, pairs)
+        existing = {key_map[k]: v for k, v in existing.items()}
 
     new_pair_set = {tuple(p[shape_cols.index(k)] for k in key_cols) for p in pairs}
     old_pair_set = set(existing.keys())
@@ -1867,29 +1802,25 @@ def _regen_construction(
     removed  = old_pair_set - new_pair_set
     added    = new_pair_set - old_pair_set
 
-    annotated_drops = _find_annotated_drops(removed, existing, param_names[0])
-    if annotated_drops and not confirm_drop:
-        lines = [_format_annotated_drop(key_cols, *drop) for drop in annotated_drops]
-        raise SystemExit(
-            f"ABORTED: regenerating {lang_id}/{class_name}/{construction_name} would "
-            f"silently drop {len(annotated_drops)} annotated pair-row(s) — no confirmation "
-            f"step exists after this point, they would just be gone from the Sheet:\n"
-            + "\n".join(lines)
-            + "\n\nIf the retired element was renamed or split, run "
-              "restructure-sheets --rename-element/--split-element first — that carries "
-              "the judgment forward (as a breadcrumb for splits, verbatim for renames) and "
-              "this check will then pass cleanly, since the old rows will already be gone. "
-              "If this drop is intentional (e.g. a real prescreening scope change, not a "
-              "rename/split), re-run with --confirm-drop to proceed."
-        )
-
-    with _rebuilding(spreadsheet, construction_name):
+    def populate() -> None:
         if class_name == "coreference":
             _populate_tab_reflex_pairs(spreadsheet, construction_name, param_names,
                                        param_values, pairs, prefill=existing)
         else:
             _populate_tab_pairs(spreadsheet, construction_name, param_names, param_values,
                                 pairs, prefill=existing)
+
+    _rebuild_tab(
+        spreadsheet, lang_id, class_name, construction_name,
+        kept=[old for old, new in key_map.items() if new in new_pair_set],
+        confirm_drop=confirm_drop,
+        if_dropped=("If the retired element was renamed or split, run restructure-sheets "
+                    "--rename-element/--split-element first — that carries the judgment "
+                    "forward (as a breadcrumb for splits, verbatim for renames) and this "
+                    "check will then pass cleanly, since the old rows will already be gone. "
+                    "If this drop is intentional (e.g. a real prescreening scope change, not "
+                    "a rename/split), re-run with --confirm-drop:"),
+        populate=populate)
 
     print(f"    {construction_name}: {len(retained)} retained, {len(added)} added, "
           f"{len(removed)} removed")
