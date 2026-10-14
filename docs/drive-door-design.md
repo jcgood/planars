@@ -56,6 +56,43 @@ nobody tests) no longer holds: the checking layer sits *above* both
 implementations, so every command test runs exactly the checking code that
 runs live. The live-only code stays as thin as it is today.
 
+**How every write gets checked.** Three things together make the door the
+only way to write:
+
+1. **Commands only ever hold wrapped objects.** `open_spreadsheet` returns a
+   wrapper, and so does every route from it to a tab (`worksheet()`,
+   `worksheets()`, `sheet1`, `ws.spreadsheet`). No command holds the raw
+   gspread object.
+2. **The wrapper has only the methods it can check.** It defines exactly the
+   protocol's write methods (`update`, `update_cell`, `insert_cols`,
+   `append_rows`, `clear`, `resize`, `update_title`, `add_worksheet`,
+   `del_worksheet`, `reorder_worksheets`, `batch_update`,
+   `values_batch_update`, and the file and permission methods). It does not
+   forward unknown names to gspread (no `__getattr__` passthrough), so a
+   method nobody has checked fails at once. A new kind of write has to be
+   added to the door, with its check, before any command can use it.
+3. **Nothing reaches Drive another way.** `tests/test_doorway_coverage.py`
+   already fails if a command builds its own clients. It is extended to fail
+   on any reach past a wrapper to the object inside.
+
+Every write method then runs the same four steps:
+
+1. **Target:** read the identity labels (§ 2.3) on the sheet and tab, and
+   build the spec with `spec_for`.
+2. **Effect:** turn the call into the cells, columns or permissions it
+   would change. For `update(values, "A1")`, that means reading the tab's
+   current contents (once per command, then cached) and lining the new
+   values up against the header, which shows which columns are written and
+   who owns them.
+3. **Rules:** run the rules in § 2.4 that apply to that effect.
+4. **Act:** with no violation, delegate to the inner doorway and log the
+   write (§ 3). With a violation, enforce mode raises and writes nothing,
+   and watch mode writes, records the violation and reports it (§ 4).
+
+The door checks what a write *sends*. When Sheets computes the shown value
+itself (a formula written with `raw=False`), the end-of-command check (rule 6)
+covers the result.
+
 The `batch_update` requests the door has to understand are a closed list
 (nine types are used today: `updateSheetProperties`, `repeatCell`,
 `setDataValidation`, `insertDimension`, `deleteDimension`,
