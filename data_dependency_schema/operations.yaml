@@ -822,9 +822,10 @@
     - "creates or updates the status_{lang_id} spreadsheet; shares it read-only with the specialist"
   idempotent: true
   idempotency_note: >-
-    Recomputes every construction's completeness fresh from current
-    construction_tsv/annotation_sheet state on each run and overwrites the
-    sheet -- a second run with nothing changed produces the same content.
+    Recomputes every construction's completeness fresh from the live
+    construction tabs on each run and overwrites the sheet -- a second run
+    with nothing changed produces the same content. data-refresh.yml runs it
+    daily.
   apply_gate: "--apply"
   preconditions: []
   facts_touched:

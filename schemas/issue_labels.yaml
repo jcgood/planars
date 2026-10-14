@@ -216,6 +216,17 @@ labels:
       --regen-construction CLASS:CONSTRUCTION`. Auto-closed when clean.
     filed_by: data-refresh.yml
 
+  - name: status-sheet-error
+    color: "d73a4a"
+    description: "The daily rebuild of the Annotation Status sheets failed; annotators see stale percentages."
+    meaning: >-
+      `generate-status-sheet --apply` failed during the daily refresh, so
+      each language's status sheet still shows the previous run's
+      percentages. The issue body has the failure output. Resolve: fix the
+      cause, then run `python -m coding generate-status-sheet --apply`.
+      Auto-closed when a later run succeeds.
+    filed_by: data-refresh.yml
+
   - name: collaborator-notes
     color: "0075ca"
     description: "Collaborator notes need coordinator triage. Review, file warranted issues, close."

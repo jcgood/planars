@@ -261,24 +261,22 @@
 - id: status_sheet_completeness
   description: a language's per-construction annotation completeness percentage, as shown on its locked status spreadsheet
   locations:
-    - {entity: construction_tsv, detail: "the actual annotated cell values counted by validate_coding.annotation_status()"}
+    - {entity: annotation_sheet, detail: "the actual annotated cell values on each live construction tab, counted by validate_coding.annotation_status() (and its pair/keyed-row versions)"}
     - {entity: status_sheet, detail: "the completeness percentage and color-coded status cell generate_status_sheet.py writes per construction"}
-  authoritative: construction_tsv
+  authoritative: annotation_sheet
   cascade:
-    direction: manual
+    direction: automatic
     mechanism: >-
       python -m coding generate-status-sheet --apply recomputes and rewrites
-      the status sheet from current construction_tsv/annotation_sheet state.
-      Not run automatically by data-refresh.yml or any other workflow --
-      coordinator-triggered only (see coding/CLAUDE.md's generate_status_sheet.py entry).
+      the status sheet from the live construction tabs. data-refresh.yml runs
+      it daily, after update-sheets so newly added rows are counted (wired in
+      2026-10-14, when Adam saw 89% on a status sheet last rebuilt by hand).
   drift_risk:
     possible: true
     note: >-
-      Every annotation change (import-sheets pulling in new judgments, a
-      construction being added/removed) leaves the status sheet showing a
-      stale percentage until someone remembers to re-run generate-status-sheet
-      by hand. There's no trigger tying the two together.
-    caught_by: "nothing yet -- not checked by integrity-check, not wired into data-refresh.yml."
+      Between daily runs the status sheet lags the annotators' edits by up
+      to a day. A failed run leaves the previous day's numbers in place.
+    caught_by: "the data-refresh.yml step log only; a failed rebuild files no issue."
 
 - id: manifest_class_registration
   description: which analysis classes have a registered annotation spreadsheet for a language

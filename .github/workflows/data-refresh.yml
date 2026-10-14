@@ -827,6 +827,73 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python -m coding issue --close sheet-drift --message "Sheet drift resolved on $(date -u +%Y-%m-%d) — closing."
 
+      - name: Rebuild Annotation Status sheets
+        # Annotators read their completeness percentages from status_{lang_id};
+        # before 2026-10-14 nothing rebuilt it but a hand-run, so Adam saw 89%
+        # on tabs he had finished days earlier. Runs after update-sheets so rows
+        # added today are counted. Reads the live tabs, not the TSVs. Writes
+        # coded_data/drive_config.json only when it creates a language's first
+        # status sheet; that change is committed here because the last
+        # planars-data commit step has already run.
+        id: status_sheets
+        run: python -m coding generate-status-sheet --apply > /tmp/status_sheet_report.txt 2>&1
+        continue-on-error: true
+
+      - name: Commit and push planars-data changes from status sheets
+        if: always()
+        working-directory: coded_data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No planars-data changes from status sheets."
+          else
+            git commit -m "data: status sheet IDs $(date -u +%Y-%m-%d)"
+            git push
+          fi
+
+      - name: File or update GitHub issue if status sheets failed
+        if: steps.status_sheets.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BODY_FILE=$(mktemp)
+          echo "## Annotation Status sheets not rebuilt — $(date -u +%Y-%m-%d)" >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo "\`generate-status-sheet --apply\` failed during the daily refresh, so each" >> "$BODY_FILE"
+          echo "language's status sheet still shows the previous run's percentages." >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo "## What to do" >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo "Fix the cause shown in the log below, then run:" >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo '```bash' >> "$BODY_FILE"
+          echo "python -m coding generate-status-sheet --apply" >> "$BODY_FILE"
+          echo '```' >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo "The issue closes automatically once a daily run succeeds." >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo "## Full log" >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo '<details><summary>Show full output</summary>' >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo '```' >> "$BODY_FILE"
+          if [ -f /tmp/status_sheet_report.txt ]; then
+            cat /tmp/status_sheet_report.txt >> "$BODY_FILE"
+          fi
+          echo '```' >> "$BODY_FILE"
+          echo "" >> "$BODY_FILE"
+          echo '</details>' >> "$BODY_FILE"
+          python -m coding issue --file status-sheet-error --replace --title "Annotation Status sheets not rebuilt ($(date -u +%Y-%m-%d))" --body-file "$BODY_FILE"
+          rm -f "$BODY_FILE"
+
+      - name: Close open status-sheet-error issue if all clear
+        if: steps.status_sheets.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python -m coding issue --close status-sheet-error --message "Annotation Status sheets rebuilt on $(date -u +%Y-%m-%d) — closing."
+
       - name: Annotation scope summary
         # Informational: count languages, classes, and constructions from
         # diagnostics YAMLs so the step summary gives a quick project-wide picture.
