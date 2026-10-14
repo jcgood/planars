@@ -2278,6 +2278,25 @@ only, no passthrough of unknown methods, a test against bypassing the
 wrapper, the door told which command is running). Jeff caught that, and
 it was added before the decisions were taken.
 
+**2026-10-14 — Unit 5d: rule 6 reports only what the command made
+wrong.** Design § 2.4 says rule 6 re-reads each tab a command wrote and
+compares it with the spec. Taken literally, it would also report drift that
+was there before the command ran: element rows missing until
+`update-sheets` adds them after a planar change, criterion columns behind
+the YAML until `sync-params`, pair tabs behind their prescreening tab.
+Each of those already has its own issue (`sheet-drift`, `planar-changed`,
+`dependent-stale`), and the `door-violation` issue says every line is "a
+real bug in the command or a gap in the sheet spec", which pre-existing
+drift is neither. So rule 6 compares each written tab's mismatches with the
+spec *before* the command's first write to it and *after* the command, and
+reports only the new ones. The door keeps the tab as it first saw it (it
+already reads most tabs before writing; otherwise one read at the first
+write, within Q6's one read per tab). Mismatches are compared as sets
+(missing and extra row keys, header, tab order, protection), so one rebuild
+that fixes old drift is not blamed for it. Rows of pair tabs come from the
+generator's own builder: lines 1781–1793 of `generate_sheets._regen_construction`
+move into one function that both call; keyed tabs use `biuniqueness_rows.keyed_rows`.
+
 **2026-10-14 — Unit 5d: how identity labels work** (decisions 1–7 built
 and recorded as built in `docs/drive-door-design.md` § 8; decision 8, the
 migration, still to come). Decisions:

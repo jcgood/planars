@@ -32,8 +32,10 @@ answers in its § 7, what was built in its § 8. 5a (the sheet spec), 5b
 (the checking layer, `coding/drive_door.py`, live in watch mode) and 5c
 (snapshots, per-write provenance, mid-run-edit check) are done; **5d is in
 flight**: its labels are built (design doc § 8, "5d, labels"); next is
-rule 6, the end-of-command shape check (design § 2.4 and § 5 step 4), then
-the labelling migration (decision 8 of the 2026-10-14 decisions-log entry).
+rule 6, the end-of-command shape check (design § 2.4 and § 5 step 4; how it
+treats drift that was already there is the 2026-10-14 "rule 6 reports only
+what the command made wrong" decisions-log entry), then the labelling
+migration (decision 8 of the 2026-10-14 identity-labels entry).
 Check for an open `door-violation` issue first: each line is a command bug
 or a spec gap to fix.
 Live steps to name to Jeff for approval first: 5d's labelling migration
