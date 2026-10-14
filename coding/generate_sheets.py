@@ -136,11 +136,13 @@ def _create_or_update_tsv_sheet(
     name: str,
     tsv_path: Path,
     lang_id: str,
+    kind: str,
     existing_id: str = None,
 ) -> Tuple[str, str]:
     """Create or overwrite a Google Sheet with the contents of a TSV file.
 
-    If existing_id is given, clears and rewrites that sheet; otherwise creates a new one,
+    If existing_id is given, clears and rewrites that sheet; otherwise creates a new one
+    (labelled ``kind``: ``planar_sheet`` or ``diagnostics_sheet``),
     moves it to folder_id, and shares it with the language's annotator (if one is on
     file in languages.yaml) as a named editor.
 
@@ -154,7 +156,7 @@ def _create_or_update_tsv_sheet(
         ws = ss.sheet1
         ws.clear()
     else:
-        ss = doorway.create_spreadsheet(name)
+        ss = doorway.create_spreadsheet(name, identity=drive_door.lang_file(kind, lang_id))
         doorway.move_file(ss.id, folder_id)
         email = _annotator_email(lang_id)
         if email:
@@ -221,6 +223,7 @@ def _upload_lang_setup_as_sheets(
                 name=f"planar_{lang_id}",
                 tsv_path=planar_path,
                 lang_id=lang_id,
+                kind="planar_sheet",
                 existing_id=existing_id,
             )
             result["planar_spreadsheet_id"]  = sheet_id
@@ -241,6 +244,7 @@ def _upload_lang_setup_as_sheets(
                 name=f"diagnostics_{lang_id}",
                 tsv_path=diag_path,
                 lang_id=lang_id,
+                kind="diagnostics_sheet",
                 existing_id=existing_id,
             )
             result["diagnostics_spreadsheet_id"]  = sheet_id
@@ -2388,7 +2392,8 @@ def main(args: argparse.Namespace | None = None) -> None:
         # Resolve/create Drive folder.
         folder_id = (
             existing_lang_data.get("folder_id")
-            or doorway.get_or_create_folder(lang_id, parent_id=root_folder_id)
+            or doorway.get_or_create_folder(lang_id, parent_id=root_folder_id,
+                                            identity=drive_door.folder("language", lang_id))
         )
         email = _annotator_email(lang_id)
         if email:

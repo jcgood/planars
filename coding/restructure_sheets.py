@@ -241,9 +241,13 @@ def _lock_archived_sheet(doorway, file_id: str, lang_id: str) -> None:
     The annotator's grant is *set* to reader (`drive.set_user_role`), not
     added: until 2026-10-13 this created a reader grant beside the writer one
     every class sheet gives its annotator, and Google kept the writer, so no
-    archived sheet was ever actually read-only. Also used by prune-manifest
-    for a retired class's sheet.
+    archived sheet was ever actually read-only.
+
+    The sheet is labelled archived first (`doorway.mark_archived`), because
+    the Drive door expects an archived class sheet's annotator to be a reader
+    and a live one's a writer.
     """
+    doorway.mark_archived(file_id)
     remove_anyone_permission(doorway, file_id)
     email = _annotator_email(lang_id)
     if email:
@@ -288,6 +292,8 @@ def _rollback_unit(doorway, manifest, entry: dict) -> None:
     if folder_id:
         doorway.move_file(archived_id, folder_id)
     doorway.update_file(archived_id, name=f"{class_name}_{lang_id}")
+    # Live again before the annotator goes back to writer (see _lock_archived_sheet).
+    doorway.mark_archived(archived_id, archived=False)
     email = _annotator_email(lang_id)
     if email:
         set_user_role(doorway, archived_id, email, "writer")
@@ -1162,7 +1168,8 @@ def _rename_class_for_language(
     # Archive old sheet. (Retry on a transient 429/500/503 happens in the
     # Drive door, coding/drive_door.py.)
     if folder_id:
-        archive_id = doorway.get_or_create_folder("_archived", parent_id=folder_id)
+        archive_id = doorway.get_or_create_folder(
+            "_archived", parent_id=folder_id, identity=drive_door.folder("archive", lang_id))
         doorway.update_file(ss.id, name=f"{old_class}_{lang_id}_v{version}")
         doorway.move_file(ss.id, archive_id)
         _lock_archived_sheet(doorway, ss.id, lang_id)
@@ -1704,7 +1711,9 @@ def main(args: argparse.Namespace | None = None) -> None:
             # 429/500/503 happens in the Drive door, coding/drive_door.py.)
             new_version = version + 1
             if folder_id:
-                archive_id = doorway.get_or_create_folder("_archived", parent_id=folder_id)
+                archive_id = doorway.get_or_create_folder(
+                    "_archived", parent_id=folder_id,
+                    identity=drive_door.folder("archive", lang_id))
                 doorway.update_file(ss.id, name=f"{class_name}_{lang_id}_v{version}")
                 doorway.move_file(ss.id, archive_id)
                 _lock_archived_sheet(doorway, ss.id, lang_id)

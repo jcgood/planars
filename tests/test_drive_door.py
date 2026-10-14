@@ -235,10 +235,11 @@ def test_a_create_that_landed_before_the_error_is_not_made_twice(env):
     fake, door, sheet_id, _ = env
     fake.fail_after("create_file", 1, exc=api_error(503, "unavailable"))
     with drive_door.running("update-sheets", APPLY):
-        file_id = door.create_file("notes.txt", parents=["fake_root_folder"],
-                                   content=b"x", mimetype="text/plain")
+        file_id = door.create_file("manifest.json", parents=["fake_root_folder"],
+                                   content=b"{}", mimetype="application/json",
+                                   identity=drive_door.manifest())
     assert len(fake.mutations_of("create_file")) == 1
-    assert fake.file(file_id).name == "notes.txt"
+    assert fake.file(file_id).name == "manifest.json"
 
 
 # -- watch mode --------------------------------------------------------------------
@@ -259,8 +260,9 @@ def test_watch_mode_lets_the_write_through_and_files_one_issue(env, github):
 
 def test_a_sheet_the_door_cannot_place_is_not_held_to_class_sheet_rules(env):
     fake, door, _, _ = env
+    scratch = fake.create_spreadsheet("scratch")      # made by hand: no label
     with drive_door.running("update-sheets", APPLY):
-        ss = door.create_spreadsheet("scratch")
+        ss = door.open_spreadsheet(scratch.id)
         ws = ss.sheet1
         ws.update([["a", "b"], ["1", "2"]], "A1")
         ws.clear()
@@ -362,7 +364,9 @@ def test_each_tab_written_gets_one_provenance_line(env):
         with drive_door.replacing(_tab(door, sheet_id, "Status"), "a test that means it"):
             _tab(door, sheet_id, "Status").clear()
     lines = {l["tab"]: l for l in _log()}
-    assert set(lines) == {"general", "Status"}
+    # None: the sheet itself, whose tabs the door labelled at the end.
+    assert set(lines) == {"general", "Status", None}
+    assert lines[None]["actions"] == ["label_tabs"]
     general = lines["general"]
     assert general["command"] == "update-sheets" and general["args"] == {"apply": True}
     assert general["identity"] == f"{CLASS}_{LANG}"
@@ -376,3 +380,169 @@ def test_a_command_that_writes_nothing_logs_nothing(env):
     with drive_door.running("update-sheets", APPLY):
         _tab(door, sheet_id, "general").get_all_values()
     assert _log() == []
+
+
+# -- identity labels (unit 5d) ----------------------------------------------------
+
+@pytest.mark.parametrize("make, message", [
+    (lambda: drive_door.Identity("spreadsheet", "stan1293"), "unknown kind"),
+    (lambda: drive_door.Identity(drive_door.CLASS_SHEET, "stan1293"), "needs its class"),
+    (lambda: drive_door.Identity("manifest", "stan1293"), "has no language"),
+    (lambda: drive_door.notebook("domains"), "needs its language"),
+    (lambda: drive_door.notebook("all_languages", "stan1293"), "has no language"),
+    (lambda: drive_door.folder("language"), "needs its language"),
+    (lambda: drive_door.folder("scratch"), "name is one of"),
+])
+def test_an_identity_the_door_cannot_place_cannot_be_made(make, message):
+    with pytest.raises(ValueError, match=message):
+        make()
+
+
+def test_labels_round_trip():
+    for identity in (drive_door.class_sheet(LANG, CLASS), drive_door.manifest(),
+                     drive_door.notebook("all_languages"), drive_door.folder("archive", LANG)):
+        assert drive_door.Identity.from_labels(identity.labels()) == identity
+    assert drive_door.Identity.from_labels({}) is None
+    assert drive_door.Identity.from_labels({"planars_kind": "spreadsheet"}) is None
+
+
+def test_every_create_writes_its_label_and_the_label_places_the_file(env):
+    fake, door, _, _ = env
+    identity = drive_door.class_sheet(LANG, "noninterruption")
+    with drive_door.running("update-sheets", APPLY):
+        ss = door.create_spreadsheet("noninterruption_stan1293", identity=identity)
+        folder_id = door.get_or_create_folder("_archived", "fake_root_folder",
+                                              identity=drive_door.folder("archive", LANG))
+    assert fake.file(ss.id).properties == identity.labels()
+    assert fake.file(folder_id).properties == drive_door.folder("archive", LANG).labels()
+    with drive_door.running("update-sheets", APPLY):    # a new command: from the label
+        assert door.open_spreadsheet(ss.id).identity == identity
+
+
+def test_a_found_folder_labelled_as_something_else_is_reported(env):
+    fake, door, _, _ = env
+    with drive_door.running("update-sheets", APPLY):
+        door.get_or_create_folder("_archived", "fake_root_folder",
+                                  identity=drive_door.folder("archive", LANG))
+    with drive_door.running("update-sheets", APPLY), \
+            pytest.raises(DoorViolation, match="was expected"):
+        door.get_or_create_folder("_archived", "fake_root_folder",
+                                  identity=drive_door.folder("archive", "arao1248"))
+
+
+def test_set_identity_labels_once_and_never_relabels(env):
+    fake, door, sheet_id, _ = env
+    identity = drive_door.class_sheet(LANG, CLASS)
+    with drive_door.running("update-sheets", APPLY):
+        assert door.set_identity(sheet_id, identity) is True
+        assert door.set_identity(sheet_id, identity) is False
+        with pytest.raises(DoorViolation, match="will not relabel"):
+            door.set_identity(sheet_id, drive_door.class_sheet(LANG, "metrical"))
+    assert fake.file(sheet_id).properties == identity.labels()
+
+
+def test_a_dry_run_cannot_label(env):
+    _, door, sheet_id, _ = env
+    with drive_door.running("update-sheets", DRY), pytest.raises(DoorViolation, match="dry run"):
+        door.set_identity(sheet_id, drive_door.class_sheet(LANG, CLASS))
+
+
+# -- rule 5 and the archived label: writer while live, reader once archived -----------
+
+ANNOTATOR = "annotator@example.org"
+
+
+def _grant(fake, sheet_id):
+    return next(p for p in fake.list_permissions(sheet_id, fields="permissions(id,emailAddress)")
+                if p.get("emailAddress") == ANNOTATOR)["id"]
+
+
+def test_the_annotators_role_follows_the_archived_label(env):
+    fake, door, sheet_id, _ = env
+    with drive_door.running("update-sheets", APPLY):
+        door.create_permission(sheet_id, type="user", role="writer", email=ANNOTATOR)
+        grant = _grant(fake, sheet_id)
+        with pytest.raises(DoorViolation, match=r"\(live\) is a writer"):
+            door.update_permission(sheet_id, grant, "reader")
+        door.mark_archived(sheet_id)
+        assert fake.file(sheet_id).properties[drive_door.STATE_LABEL] == drive_door.ARCHIVED
+        door.update_permission(sheet_id, grant, "reader")
+        with pytest.raises(DoorViolation, match=r"\(archived\) is a reader"):
+            door.update_permission(sheet_id, grant, "writer")
+        door.mark_archived(sheet_id, archived=False)            # rolled back
+        assert drive_door.STATE_LABEL not in fake.file(sheet_id).properties
+        door.update_permission(sheet_id, grant, "writer")
+
+
+def test_marking_archived_labels_a_sheet_only_the_manifest_placed(env):
+    fake, door, sheet_id, _ = env
+    assert fake.file(sheet_id).properties == {}
+    with drive_door.running("prune-manifest", APPLY):
+        door.mark_archived(sheet_id)
+    assert drive_door.Identity.from_labels(fake.file(sheet_id).properties) == \
+        drive_door.class_sheet(LANG, CLASS)
+
+
+# -- tab labels --------------------------------------------------------------------
+
+def _tab_labels(fake, sheet_id):
+    meta = fake.spreadsheet(sheet_id).fetch_sheet_metadata()
+    return {s["properties"]["title"]: {m["metadataKey"]: m["metadataValue"]
+                                       for m in s["developerMetadata"]}
+            for s in meta["sheets"]}
+
+
+def _touch(door, sheet_id):
+    ws = _tab(door, sheet_id, "general")
+    ws.update_cell(2, _col(ws, "Element") + 1, ws.get_all_values()[1][_col(ws, "Element")])
+
+
+def test_a_command_that_writes_a_class_sheet_labels_its_tabs(env):
+    fake, door, sheet_id, _ = env
+    with drive_door.running("update-sheets", APPLY):
+        _touch(door, sheet_id)
+    labels = _tab_labels(fake, sheet_id)
+    assert labels["general"] == {"planars_tab_kind": "construction", "planars_tab": "general"}
+    assert labels["Instructions"]["planars_tab_kind"] == "locked"
+    assert labels["Status"]["planars_tab_kind"] == "status"
+    fake.clear_mutations()
+    with drive_door.running("update-sheets", APPLY):    # already labelled: nothing to do
+        _touch(door, sheet_id)
+    assert fake.mutations_of("batch_update") == []
+
+
+def test_tabs_are_not_labelled_after_a_dry_run_or_a_failed_command(env):
+    fake, door, sheet_id, _ = env
+    with drive_door.running("import-sheets", DRY):
+        ss = door.open_spreadsheet(sheet_id)
+        with drive_door.always_on("highlighting"):
+            ss.batch_update({"requests": [{"repeatCell": {
+                "range": {"sheetId": ss.worksheet("general").id}, "cell": {},
+                "fields": "userEnteredFormat.backgroundColor"}}]})
+    with pytest.raises(RuntimeError):
+        with drive_door.running("update-sheets", APPLY):
+            _touch(door, sheet_id)
+            raise RuntimeError("the command failed")
+    assert all(not v for v in _tab_labels(fake, sheet_id).values())
+
+
+def test_a_tab_renamed_by_hand_is_still_recognised_by_its_label(env):
+    fake, door, sheet_id, coded = env
+    with drive_door.running("update-sheets", APPLY):
+        _touch(door, sheet_id)
+    fake.spreadsheet(sheet_id).worksheet("general").update_title("general (done)")
+    allowed = class_sheet_spec(LANG, CLASS, coded).tab("general").column("V-combines").allowed
+    with drive_door.running("update-sheets", APPLY):
+        ss = door.open_spreadsheet(sheet_id)
+        ws = ss.worksheet("general (done)")
+        ss.batch_update(_dropdown(ws, _col(ws, "V-combines"), allowed))   # the spec's general
+
+
+def test_renaming_a_tab_through_the_door_drops_its_labels(env):
+    fake, door, sheet_id, _ = env
+    with drive_door.running("update-sheets", APPLY):
+        _touch(door, sheet_id)
+    with drive_door.running("update-sheets", APPLY):
+        _tab(door, sheet_id, "general").update_title("renamed")
+    # Not a tab the spec lists, so it is left unlabelled for rule 6 to report.
+    assert _tab_labels(fake, sheet_id)["renamed"] == {}

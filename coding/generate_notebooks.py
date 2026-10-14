@@ -52,6 +52,7 @@ from .make_forms import (
 )
 from .drive import _load_drive_config, _save_drive_config, create_or_update_shared_file
 from .drive_doorway import get_doorway
+from . import drive_door
 
 # Human-readable display names for notebook section headers.
 # Covers all classes in diagnostic_classes.yaml; unknown classes fall back to
@@ -347,6 +348,7 @@ def _run_generation(apply: bool) -> None:
         file_id = create_or_update_shared_file(
             doorway, nb_bytes, filename, "application/json", folder_id,
             drive_config.get(lang_id, {}).get("domains_notebook_file_id"),
+            identity=drive_door.notebook("domains", lang_id),
         )
         drive_config.setdefault(lang_id, {})["domains_notebook_file_id"] = file_id
         # Save after every upload, not once at the end -- a crash partway
@@ -370,6 +372,7 @@ def _run_generation(apply: bool) -> None:
         file_id = create_or_update_shared_file(
             doorway, nb_bytes, filename, "application/json", folder_id,
             drive_config.get(lang_id, {}).get("validation_notebook_file_id"),
+            identity=drive_door.notebook("validation", lang_id),
         )
         drive_config.setdefault(lang_id, {})["validation_notebook_file_id"] = file_id
         _save_drive_config(drive_config)
@@ -390,6 +393,7 @@ def _run_generation(apply: bool) -> None:
         file_id = create_or_update_shared_file(
             doorway, nb_bytes, filename, "application/json", folder_id,
             drive_config.get(lang_id, {}).get("report_notebook_file_id"),
+            identity=drive_door.notebook("report", lang_id),
         )
         drive_config.setdefault(lang_id, {})["report_notebook_file_id"] = file_id
         _save_drive_config(drive_config)
@@ -403,6 +407,7 @@ def _run_generation(apply: bool) -> None:
     coord_file_id = create_or_update_shared_file(
         doorway, nb_bytes, "all_languages.ipynb", "application/json", global_folder_id,
         drive_config.get("_all_languages_notebook_file_id"),
+        identity=drive_door.notebook("all_languages"),
     )
     drive_config["_all_languages_notebook_file_id"] = coord_file_id
     print(f"\nUploaded all_languages.ipynb (viewer)")

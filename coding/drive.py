@@ -23,7 +23,9 @@ import gspread
 from googleapiclient.discovery import build as google_build
 from googleapiclient.http import MediaIoBaseDownload, MediaIoBaseUpload
 
-ROOT = Path(__file__).resolve().parent.parent
+from . import drive_door
+
+ROOT =Path(__file__).resolve().parent.parent
 # In private planars-data, not the public planars repo (moved 2026-10-12,
 # Phase 10 unit 14): it lists every folder and sheet ID. Living in coded_data/
 # also means the daily refresh's commit there keeps IDs that CI runs record.
@@ -189,7 +191,8 @@ def upload_manifest(doorway, full_config: Dict, root_folder_id: str,
         lambda file_id: doorway.update_file(file_id, content=content,
                                             mimetype="application/json"),
         lambda: doorway.create_file("manifest.json", [root_folder_id],
-                                    content=content, mimetype="application/json"),
+                                    content=content, mimetype="application/json",
+                                    identity=drive_door.manifest()),
         existing_file_id,
     )
 
@@ -438,9 +441,12 @@ def create_or_update_shared_file(
     folder_id: str,
     existing_file_id: Optional[str] = None,
     role: str = "reader",
+    *,
+    identity,
 ) -> str:
     """Create-or-update a Drive file, renaming on update, reasserting an
     'anyone' share every run via ensure_anyone_permission. Returns the file ID.
+    ``identity`` (a ``drive_door.Identity``) labels the file when it is created.
 
     Shared by generate_notebooks.py's notebook uploads and generate_reports.py's
     PDF uploads — both are rename-on-update, create-if-missing, and (per issue
@@ -453,13 +459,15 @@ def create_or_update_shared_file(
         file_id = existing_file_id
     else:
         file_id = doorway.create_file(filename, parents=[folder_id],
-                                      content=content, mimetype=mimetype)
+                                      content=content, mimetype=mimetype, identity=identity)
     ensure_anyone_permission(doorway, file_id, role=role)
     return file_id
 
 
-def get_or_create_spreadsheet(doorway, folder_id: str, name: str) -> Tuple[object, bool]:
-    """Find a spreadsheet by name inside folder_id, or create one there.
+def get_or_create_spreadsheet(doorway, folder_id: str, name: str, *,
+                              identity) -> Tuple[object, bool]:
+    """Find a spreadsheet by name inside folder_id, or create one there,
+    labelled ``identity`` (a ``drive_door.Identity``).
 
     Used by generate_status_sheet.py (and, until its retirement on
     2026-10-11, generate_biuniqueness_allomorphy_sheet.py, whose identical
@@ -476,7 +484,7 @@ def get_or_create_spreadsheet(doorway, folder_id: str, name: str) -> Tuple[objec
     )
     if existing:
         return doorway.open_spreadsheet(existing[0]["id"]), False
-    ss = doorway.create_spreadsheet(name)
+    ss = doorway.create_spreadsheet(name, identity=identity)
     doorway.move_file(ss.id, folder_id)
     return ss, True
 
@@ -524,7 +532,8 @@ def create_notes_doc(doorway, lang_id: str, folder_id: str,
     Returns the new document's file ID.
     """
     from .people import annotator_email
-    doc_id = doorway.create_doc(_notes_doc_name(lang_id, display_name), folder_id)
+    doc_id = doorway.create_doc(_notes_doc_name(lang_id, display_name), folder_id,
+                                identity=drive_door.lang_file("notes_doc", lang_id))
     email = annotator_email(lang_id)
     if email:
         ensure_user_permission(doorway, doc_id, email, "writer")

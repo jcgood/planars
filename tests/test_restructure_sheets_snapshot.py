@@ -57,7 +57,7 @@ import pandas as pd
 import pytest
 
 from coding import drive as drive_module
-from coding import drive_doorway
+from coding import drive_door, drive_doorway
 from coding import generate_notebooks as gn
 from coding import import_planar as ip
 from coding import restructure_journal as rj
@@ -667,16 +667,7 @@ def _archive_ciscategorial(env) -> tuple:
     for stan1293/ciscategorial, and return (spreadsheet_id, folder_id) --
     the exact detail OLD_SHEET_ARCHIVED's checkpoint stores.
     """
-    lang_id, class_name = "stan1293", "ciscategorial"
-    manifest = env.manifest()
-    sheet_info = manifest[lang_id]["sheets"][class_name]
-    folder_id = manifest[lang_id]["folder_url"].rstrip("/").rsplit("/", 1)[-1]
-    ss_id = sheet_info["spreadsheet_id"]
-    archive_id = env.doorway.get_or_create_folder("_archived", parent_id=folder_id)
-    env.doorway.update_file(ss_id, name=f"{class_name}_{lang_id}_v{sheet_info['version']}")
-    env.doorway.move_file(ss_id, archive_id)
-    rs._lock_archived_sheet(env.doorway, ss_id, lang_id)
-    return ss_id, folder_id
+    return _archive_for_rename(env)
 
 
 def test_plain_run_refuses_to_start_while_a_unit_is_mid_flight(env):
@@ -702,6 +693,8 @@ def test_resume_or_rollback_require_apply(env):
 
 def test_rollback_restores_the_archived_sheet_and_stops(env):
     ss_id, folder_id = _archive_ciscategorial(env)
+    labels = env.doorway.file(ss_id).properties
+    assert labels[drive_door.STATE_LABEL] == drive_door.ARCHIVED
     rj.record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED,
                           archived_spreadsheet_id=ss_id, folder_id=folder_id)
     before_manifest = env.manifest()
@@ -709,9 +702,10 @@ def test_rollback_restores_the_archived_sheet_and_stops(env):
 
     assert "rolled back" in out
     assert rj.load_journal() == {}
-    # Sheet moved back out of _archived/ and renamed back.
+    # Sheet moved back out of _archived/, renamed back, and live again.
     ss = env.doorway.spreadsheet(ss_id)
     assert ss.title == "ciscategorial_stan1293"
+    assert drive_door.STATE_LABEL not in env.doorway.file(ss_id).properties
     move_calls = [m for m in env.doorway.mutations_of("move_file") if m["file_id"] == ss_id]
     assert move_calls[-1]["to_parent"] == folder_id
     # Nothing else happened: no replacement created, manifest untouched,
@@ -812,15 +806,20 @@ def test_resume_finishes_a_new_sheet_created_unit_then_continues(env):
 # ---------------------------------------------------------------------------
 
 def _archive_for_rename(env, lang_id="stan1293", old_class="ciscategorial") -> tuple:
-    """Replicate _rename_class_for_language's own archive step by hand."""
+    """Replicate _rename_class_for_language's own archive step by hand (the
+    same as the main loop's), through the Drive door as the command does it,
+    so the archived label is written too."""
     manifest = env.manifest()
     sheet_info = manifest[lang_id]["sheets"][old_class]
     folder_id = manifest[lang_id]["folder_url"].rstrip("/").rsplit("/", 1)[-1]
     ss_id = sheet_info["spreadsheet_id"]
-    archive_id = env.doorway.get_or_create_folder("_archived", parent_id=folder_id)
-    env.doorway.update_file(ss_id, name=f"{old_class}_{lang_id}_v{sheet_info['version']}")
-    env.doorway.move_file(ss_id, archive_id)
-    rs._lock_archived_sheet(env.doorway, ss_id, lang_id)
+    with drive_door.running("restructure-sheets", may_write=True):
+        door = drive_doorway.get_doorway()
+        archive_id = door.get_or_create_folder(
+            "_archived", parent_id=folder_id, identity=drive_door.folder("archive", lang_id))
+        door.update_file(ss_id, name=f"{old_class}_{lang_id}_v{sheet_info['version']}")
+        door.move_file(ss_id, archive_id)
+        rs._lock_archived_sheet(door, ss_id, lang_id)
     return ss_id, folder_id
 
 

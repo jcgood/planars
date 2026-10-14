@@ -57,7 +57,9 @@ def main() -> None:
         print("\nRun with --apply to write.")
         return
 
-    archive_id = doorway.get_or_create_folder("_archived", parent_id=folder_id)
+    from coding import drive_door
+    archive_id = doorway.get_or_create_folder("_archived", parent_id=folder_id,
+                                              identity=drive_door.folder("archive", LANG))
     if archive_id not in parents:
         doorway.move_file(OLD_SHEET_ID, archive_id)
     if present:

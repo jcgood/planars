@@ -49,6 +49,7 @@ from .drive import (
     _save_drive_config,
 )
 from .drive_doorway import get_doorway
+from . import drive_door
 from .import_sheets import _archive_tsv
 
 
@@ -139,9 +140,13 @@ def _archive_drive_sheet(
     _warn_if_recently_edited(meta, spreadsheet_id)
 
     try:
-        archived_folder_id = doorway.get_or_create_folder("_archived", folder_id)
+        archived_folder_id = doorway.get_or_create_folder(
+            "_archived", folder_id, identity=drive_door.folder("archive", lang_id))
         doorway.move_file(spreadsheet_id, archived_folder_id)
         print(f"    archived Drive sheet: '{sheet_name}' → _archived/")
+        # Labelled archived before the annotator is lowered to reader, which
+        # is the role the door expects on an archived sheet.
+        doorway.mark_archived(spreadsheet_id)
         lowered = make_read_only(doorway, spreadsheet_id)
         if lowered:
             print(f"    made read-only for: {', '.join(lowered)}")

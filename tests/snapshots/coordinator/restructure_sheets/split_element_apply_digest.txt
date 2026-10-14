@@ -1,6 +1,6 @@
 SUMMARY
     48  add_worksheet
-   263  batch_request
+   359  batch_request
      1  create_file
     22  create_permission
     11  create_spreadsheet
@@ -8,68 +8,91 @@ SUMMARY
     22  move_file
     11  reorder_worksheets
     48  update
-    12  update_file
+    34  update_file
     14    └─ addProtectedRange
+    96    └─ createDeveloperMetadata
    144    └─ repeatCell
     57    └─ setDataValidation
     11    └─ updateDimensionProperties
     37    └─ updateSheetProperties
 
 DRIVE OPERATIONS
-  create_file: file_id='fake_file_0001', name='_archived', parents=['1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'], mimetype='application/vnd.google-apps.folder'
+  create_file: file_id='fake_file_0001', name='_archived', parents=['1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'], mimetype='application/vnd.google-apps.folder', properties={'planars_kind': 'folder', 'planars_lang': 'stan1293', 'planars_name': 'archive'}
   update_file: file_id='1O3d4Bj4n28hkWWBQOl7RX95Bb4SkR27-RF6mSQ6-9rc', name='ciscategorial_stan1293_v2'
   move_file: file_id='1O3d4Bj4n28hkWWBQOl7RX95Bb4SkR27-RF6mSQ6-9rc', from_parents=[], to_parent='fake_file_0001'
+  update_file: file_id='1O3d4Bj4n28hkWWBQOl7RX95Bb4SkR27-RF6mSQ6-9rc', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'ciscategorial', 'planars_state': 'archived'}
   create_permission: file_id='1O3d4Bj4n28hkWWBQOl7RX95Bb4SkR27-RF6mSQ6-9rc', type='user', role='reader', email='annotator@example.org', notify=False
+  update_file: file_id='fake_ss_0003', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'ciscategorial'}
   move_file: file_id='fake_ss_0003', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
   create_permission: file_id='fake_ss_0003', type='user', role='writer', email='annotator@example.org', notify=False
   update_file: file_id='1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4', name='subspanrepetition_stan1293_v2'
   move_file: file_id='1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4', from_parents=[], to_parent='fake_file_0001'
+  update_file: file_id='1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'subspanrepetition', 'planars_state': 'archived'}
   create_permission: file_id='1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4', type='user', role='reader', email='annotator@example.org', notify=False
+  update_file: file_id='fake_ss_0006', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'subspanrepetition'}
   move_file: file_id='fake_ss_0006', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
   create_permission: file_id='fake_ss_0006', type='user', role='writer', email='annotator@example.org', notify=False
   update_file: file_id='1-rqDe52YRJsTrQjNe7HxPncDHky9FLm6CaJ9cBLZaX0', name='noninterruption_stan1293_v2'
   move_file: file_id='1-rqDe52YRJsTrQjNe7HxPncDHky9FLm6CaJ9cBLZaX0', from_parents=[], to_parent='fake_file_0001'
+  update_file: file_id='1-rqDe52YRJsTrQjNe7HxPncDHky9FLm6CaJ9cBLZaX0', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'noninterruption', 'planars_state': 'archived'}
   create_permission: file_id='1-rqDe52YRJsTrQjNe7HxPncDHky9FLm6CaJ9cBLZaX0', type='user', role='reader', email='annotator@example.org', notify=False
+  update_file: file_id='fake_ss_0009', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'noninterruption'}
   move_file: file_id='fake_ss_0009', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
   create_permission: file_id='fake_ss_0009', type='user', role='writer', email='annotator@example.org', notify=False
   update_file: file_id='1yVggyBZ9whjWwihiQbc98aTMx9CRn9JQKfLEM8JZfTg', name='metrical_stan1293_v2'
   move_file: file_id='1yVggyBZ9whjWwihiQbc98aTMx9CRn9JQKfLEM8JZfTg', from_parents=[], to_parent='fake_file_0001'
+  update_file: file_id='1yVggyBZ9whjWwihiQbc98aTMx9CRn9JQKfLEM8JZfTg', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'metrical', 'planars_state': 'archived'}
   create_permission: file_id='1yVggyBZ9whjWwihiQbc98aTMx9CRn9JQKfLEM8JZfTg', type='user', role='reader', email='annotator@example.org', notify=False
+  update_file: file_id='fake_ss_0012', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'metrical'}
   move_file: file_id='fake_ss_0012', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
   create_permission: file_id='fake_ss_0012', type='user', role='writer', email='annotator@example.org', notify=False
   update_file: file_id='1sb0DJzFKY-j7sA1kjLqGUqtdsG2JJX0vW-rRALWV7Ic', name='nonpermutability_stan1293_v2'
   move_file: file_id='1sb0DJzFKY-j7sA1kjLqGUqtdsG2JJX0vW-rRALWV7Ic', from_parents=[], to_parent='fake_file_0001'
+  update_file: file_id='1sb0DJzFKY-j7sA1kjLqGUqtdsG2JJX0vW-rRALWV7Ic', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'nonpermutability', 'planars_state': 'archived'}
   create_permission: file_id='1sb0DJzFKY-j7sA1kjLqGUqtdsG2JJX0vW-rRALWV7Ic', type='user', role='reader', email='annotator@example.org', notify=False
+  update_file: file_id='fake_ss_0015', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'nonpermutability'}
   move_file: file_id='fake_ss_0015', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
   create_permission: file_id='fake_ss_0015', type='user', role='writer', email='annotator@example.org', notify=False
   update_file: file_id='19uDRX9flfQFk-MSCsvFy_SG3zubz0Kxowo4y7pyJUOM', name='segmental_stan1293_v2'
   move_file: file_id='19uDRX9flfQFk-MSCsvFy_SG3zubz0Kxowo4y7pyJUOM', from_parents=[], to_parent='fake_file_0001'
+  update_file: file_id='19uDRX9flfQFk-MSCsvFy_SG3zubz0Kxowo4y7pyJUOM', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'segmental', 'planars_state': 'archived'}
   create_permission: file_id='19uDRX9flfQFk-MSCsvFy_SG3zubz0Kxowo4y7pyJUOM', type='user', role='reader', email='annotator@example.org', notify=False
+  update_file: file_id='fake_ss_0018', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'segmental'}
   move_file: file_id='fake_ss_0018', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
   create_permission: file_id='fake_ss_0018', type='user', role='writer', email='annotator@example.org', notify=False
   update_file: file_id='1L3kfV-g278NMxbdqfu2sN343nmKp1r-29jq60fr9YsQ', name='free_occurrence_stan1293_v2'
   move_file: file_id='1L3kfV-g278NMxbdqfu2sN343nmKp1r-29jq60fr9YsQ', from_parents=[], to_parent='fake_file_0001'
+  update_file: file_id='1L3kfV-g278NMxbdqfu2sN343nmKp1r-29jq60fr9YsQ', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'free_occurrence', 'planars_state': 'archived'}
   create_permission: file_id='1L3kfV-g278NMxbdqfu2sN343nmKp1r-29jq60fr9YsQ', type='user', role='reader', email='annotator@example.org', notify=False
+  update_file: file_id='fake_ss_0021', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'free_occurrence'}
   move_file: file_id='fake_ss_0021', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
   create_permission: file_id='fake_ss_0021', type='user', role='writer', email='annotator@example.org', notify=False
   update_file: file_id='131F4ZVngUR2Sgu3Zmtfb_1ff-JT4L8dT1mNOk12M0zA', name='coreference_stan1293_v4'
   move_file: file_id='131F4ZVngUR2Sgu3Zmtfb_1ff-JT4L8dT1mNOk12M0zA', from_parents=[], to_parent='fake_file_0001'
+  update_file: file_id='131F4ZVngUR2Sgu3Zmtfb_1ff-JT4L8dT1mNOk12M0zA', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'coreference', 'planars_state': 'archived'}
   create_permission: file_id='131F4ZVngUR2Sgu3Zmtfb_1ff-JT4L8dT1mNOk12M0zA', type='user', role='reader', email='annotator@example.org', notify=False
+  update_file: file_id='fake_ss_0024', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'coreference'}
   move_file: file_id='fake_ss_0024', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
   create_permission: file_id='fake_ss_0024', type='user', role='writer', email='annotator@example.org', notify=False
   update_file: file_id='1LJjSOkoblAre6v257wW1ENUMM7SDC_JbfhlN3HMwQJY', name='proform_stan1293_v2'
   move_file: file_id='1LJjSOkoblAre6v257wW1ENUMM7SDC_JbfhlN3HMwQJY', from_parents=[], to_parent='fake_file_0001'
+  update_file: file_id='1LJjSOkoblAre6v257wW1ENUMM7SDC_JbfhlN3HMwQJY', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'proform', 'planars_state': 'archived'}
   create_permission: file_id='1LJjSOkoblAre6v257wW1ENUMM7SDC_JbfhlN3HMwQJY', type='user', role='reader', email='annotator@example.org', notify=False
+  update_file: file_id='fake_ss_0027', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'proform'}
   move_file: file_id='fake_ss_0027', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
   create_permission: file_id='fake_ss_0027', type='user', role='writer', email='annotator@example.org', notify=False
   update_file: file_id='12f_cgmKuKNEnHWUJGQX5QiaHeAVCIxMyYMS3mFe-mVs', name='phrasal_accent_stan1293_v1'
   move_file: file_id='12f_cgmKuKNEnHWUJGQX5QiaHeAVCIxMyYMS3mFe-mVs', from_parents=[], to_parent='fake_file_0001'
+  update_file: file_id='12f_cgmKuKNEnHWUJGQX5QiaHeAVCIxMyYMS3mFe-mVs', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'phrasal_accent', 'planars_state': 'archived'}
   create_permission: file_id='12f_cgmKuKNEnHWUJGQX5QiaHeAVCIxMyYMS3mFe-mVs', type='user', role='reader', email='annotator@example.org', notify=False
+  update_file: file_id='fake_ss_0030', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'phrasal_accent'}
   move_file: file_id='fake_ss_0030', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
   create_permission: file_id='fake_ss_0030', type='user', role='writer', email='annotator@example.org', notify=False
   update_file: file_id='1Xz8_4aMFr4xfkNrlomiURODtbUuFFEmkMTr9WO6_5aI', name='biuniqueness_deviations_stan1293_v1'
   move_file: file_id='1Xz8_4aMFr4xfkNrlomiURODtbUuFFEmkMTr9WO6_5aI', from_parents=[], to_parent='fake_file_0001'
+  update_file: file_id='1Xz8_4aMFr4xfkNrlomiURODtbUuFFEmkMTr9WO6_5aI', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'biuniqueness_deviations', 'planars_state': 'archived'}
   create_permission: file_id='1Xz8_4aMFr4xfkNrlomiURODtbUuFFEmkMTr9WO6_5aI', type='user', role='reader', email='annotator@example.org', notify=False
+  update_file: file_id='fake_ss_0033', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'biuniqueness_deviations'}
   move_file: file_id='fake_ss_0033', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
   create_permission: file_id='fake_ss_0033', type='user', role='writer', email='annotator@example.org', notify=False
   update_file: file_id='fake_manifest_file', bytes=53828
@@ -79,6 +102,12 @@ SHEET OPERATIONS
   fake_ss_0003  tab=-
     create_spreadsheet: title='ciscategorial_stan1293'
     reorder_worksheets: order=['Instructions', 'general', 'Status']
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "general", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
 
   fake_ss_0003  tab=general
     add_worksheet: rows=145, cols=8, index=None, sheet_id=1
@@ -131,6 +160,18 @@ SHEET OPERATIONS
   fake_ss_0006  tab=-
     create_spreadsheet: title='subspanrepetition_stan1293'
     reorder_worksheets: order=['Instructions', 'andCoordination', 'control', 'thatCOMP', 'asyndeticPart', 'Status']
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 5}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 5}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "andCoordination", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "control", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "thatCOMP", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "asyndeticPart", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 6}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 6}, "visibility": "DOCUMENT"}}
 
   fake_ss_0006  tab=andCoordination
     add_worksheet: rows=145, cols=8, index=None, sheet_id=1
@@ -239,6 +280,12 @@ SHEET OPERATIONS
   fake_ss_0009  tab=-
     create_spreadsheet: title='noninterruption_stan1293'
     reorder_worksheets: order=['Instructions', 'general', 'Status']
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "general", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
 
   fake_ss_0009  tab=general
     add_worksheet: rows=145, cols=7, index=None, sheet_id=1
@@ -289,6 +336,12 @@ SHEET OPERATIONS
   fake_ss_0012  tab=-
     create_spreadsheet: title='metrical_stan1293'
     reorder_worksheets: order=['Instructions', 'stress_domain', 'Status']
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "stress_domain", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
 
   fake_ss_0012  tab=stress_domain
     add_worksheet: rows=145, cols=10, index=None, sheet_id=1
@@ -345,6 +398,16 @@ SHEET OPERATIONS
   fake_ss_0015  tab=-
     create_spreadsheet: title='nonpermutability_stan1293'
     reorder_worksheets: order=['Instructions', 'element_prescreening', 'general', 'Planar Structure', 'Status']
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "element_prescreening", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "general", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Planar Structure", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 5}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 5}, "visibility": "DOCUMENT"}}
 
   fake_ss_0015  tab=element_prescreening
     add_worksheet: rows=145, cols=6, index=None, sheet_id=1
@@ -424,6 +487,14 @@ SHEET OPERATIONS
   fake_ss_0018  tab=-
     create_spreadsheet: title='segmental_stan1293'
     reorder_worksheets: order=['Instructions', 'aspiration_prominence', 'flapping', 'Status']
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "aspiration_prominence", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "flapping", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
 
   fake_ss_0018  tab=aspiration_prominence
     add_worksheet: rows=145, cols=6, index=None, sheet_id=1
@@ -491,6 +562,12 @@ SHEET OPERATIONS
   fake_ss_0021  tab=-
     create_spreadsheet: title='free_occurrence_stan1293'
     reorder_worksheets: order=['Instructions', 'general', 'Status']
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "general", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
 
   fake_ss_0021  tab=general
     add_worksheet: rows=145, cols=10, index=None, sheet_id=1
@@ -547,6 +624,20 @@ SHEET OPERATIONS
   fake_ss_0024  tab=-
     create_spreadsheet: title='coreference_stan1293'
     reorder_worksheets: order=['Instructions', 'prescreening', 'reflexivization', 'pronominalization', 'np_reference', 'Planar Structure', 'Status']
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 5}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 5}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "prescreening", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "reflexivization", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "pronominalization", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "np_reference", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 6}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Planar Structure", "location": {"sheetId": 6}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 7}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 7}, "visibility": "DOCUMENT"}}
 
   fake_ss_0024  tab=prescreening
     add_worksheet: rows=145, cols=6, index=None, sheet_id=1
@@ -655,6 +746,14 @@ SHEET OPERATIONS
   fake_ss_0027  tab=-
     create_spreadsheet: title='proform_stan1293'
     reorder_worksheets: order=['Instructions', 'do_so_substitution', 'vp_ellipsis', 'Status']
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "do_so_substitution", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "vp_ellipsis", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
 
   fake_ss_0027  tab=do_so_substitution
     add_worksheet: rows=145, cols=6, index=None, sheet_id=1
@@ -718,6 +817,14 @@ SHEET OPERATIONS
   fake_ss_0030  tab=-
     create_spreadsheet: title='phrasal_accent_stan1293'
     reorder_worksheets: order=['Instructions', 'prescreening', 'general', 'Status']
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "prescreening", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "general", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
 
   fake_ss_0030  tab=prescreening
     add_worksheet: rows=145, cols=6, index=None, sheet_id=1
@@ -781,6 +888,18 @@ SHEET OPERATIONS
   fake_ss_0033  tab=-
     create_spreadsheet: title='biuniqueness_deviations_stan1293'
     reorder_worksheets: order=['Instructions', 'elements', 'morphemes', 'morphs', 'Planar Structure', 'Status']
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "elements", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "morphemes", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "morphs", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 5}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Planar Structure", "location": {"sheetId": 5}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 6}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 6}, "visibility": "DOCUMENT"}}
 
   fake_ss_0033  tab=elements
     add_worksheet: rows=138, cols=8, index=None, sheet_id=1

@@ -422,6 +422,9 @@ class FakeSpreadsheet:
         self.title = title
         self._worksheets: List[FakeWorksheet] = []
         self._protected_ranges: List[Dict[str, Any]] = []
+        # Developer metadata, as the API stores it: each entry has its own
+        # id, a key, a value and a location ({"sheetId": n} for a tab).
+        self._developer_metadata: List[Dict[str, Any]] = []
 
     @property
     def url(self) -> str:
@@ -465,9 +468,11 @@ class FakeSpreadsheet:
 
     def del_worksheet(self, worksheet: FakeWorksheet) -> None:
         self._worksheets = [ws for ws in self._worksheets if ws.id != worksheet.id]
-        # A tab's protections go with it, as they do live.
+        # A tab's protections and labels go with it, as they do live.
         self._protected_ranges = [p for p in self._protected_ranges
                                   if p["range"].get("sheetId") != worksheet.id]
+        self._developer_metadata = [m for m in self._developer_metadata
+                                    if m["location"].get("sheetId") != worksheet.id]
         self._record("del_worksheet", worksheet=worksheet.title)
 
     def reorder_worksheets(self, worksheets_in_desired_order: Sequence[FakeWorksheet]) -> None:
@@ -481,6 +486,15 @@ class FakeSpreadsheet:
     def list_protected_ranges(self, sheetid: int) -> List[Dict[str, Any]]:
         self._worksheet_by_sheet_id(sheetid)
         return [dict(p) for p in self._protected_ranges if p["range"].get("sheetId") == sheetid]
+
+    def fetch_sheet_metadata(self, params: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
+        """Each tab's properties and developer metadata. The field mask is not
+        interpreted: the only caller (the Drive door) asks for exactly this."""
+        return {"spreadsheetId": self.id, "sheets": [
+            {"properties": {"sheetId": ws.id, "title": ws.title, "index": i},
+             "developerMetadata": [dict(m) for m in self._developer_metadata
+                                   if m["location"].get("sheetId") == ws.id]}
+            for i, ws in enumerate(self._worksheets)]}
 
     def _worksheet_by_sheet_id(self, sheet_id: int) -> FakeWorksheet:
         for ws in self._worksheets:
@@ -660,6 +674,33 @@ class FakeSpreadsheet:
             (p.get("protectedRangeId", 0) for p in self._protected_ranges), default=0)
         self._protected_ranges.append(protection)
 
+    def _req_createDeveloperMetadata(self, payload: Mapping[str, Any]) -> None:
+        """Only tab locations are modelled: the tooling labels files through
+        Drive properties and tabs through developer metadata."""
+        meta = dict(payload["developerMetadata"])
+        location = meta.get("location", {})
+        if set(location) != {"sheetId"}:
+            raise NotImplementedError(f"developer metadata location {location!r} is not modelled")
+        self._worksheet_by_sheet_id(location["sheetId"])
+        meta["metadataId"] = 1 + max(
+            (m["metadataId"] for m in self._developer_metadata), default=0)
+        meta["location"] = {"sheetId": location["sheetId"], "locationType": "SHEET"}
+        self._developer_metadata.append(meta)
+
+    def _req_deleteDeveloperMetadata(self, payload: Mapping[str, Any]) -> None:
+        """By lookup on key and tab, the one filter the tooling sends."""
+        lookup = payload["dataFilter"]["developerMetadataLookup"]
+        if set(lookup) - {"metadataKey", "metadataLocation"}:
+            raise NotImplementedError(f"developer metadata lookup {lookup!r} is not modelled")
+        key = lookup.get("metadataKey")
+        sheet_id = lookup.get("metadataLocation", {}).get("sheetId")
+
+        def matches(m: Mapping[str, Any]) -> bool:
+            return ((key is None or m["metadataKey"] == key)
+                    and (sheet_id is None or m["location"].get("sheetId") == sheet_id))
+
+        self._developer_metadata = [m for m in self._developer_metadata if not matches(m)]
+
     def _req_mergeCells(self, payload: Mapping[str, Any]) -> None:
         rng = payload["range"]
         ws = self._worksheet_by_sheet_id(rng["sheetId"])
@@ -741,6 +782,8 @@ class _DriveFile:
     # prune_manifest reads it to warn before archiving a recently-edited sheet;
     # without it here that warning could not be exercised at all.
     modified_time: Optional[str] = None
+    # Drive properties: the Drive door's identity labels.
+    properties: Dict[str, str] = field(default_factory=dict)
 
 
 class FakeDriveDoorway:
@@ -813,10 +856,14 @@ class FakeDriveDoorway:
                     if value != "":
                         ws._cell(r, c).value = value
             ss._worksheets.append(ws)
-        # Recordings made before 2026-10-13 have no protections key.
+            for meta in tab.get("developer_metadata", []):
+                ss._developer_metadata.append(dict(meta))
+        # Recordings made before 2026-10-13 have no protections key, and
+        # before 2026-10-14 no labels (properties, developer_metadata).
         ss._protected_ranges = [dict(p) for p in data.get("protected_ranges", [])]
         self._spreadsheets[ss.id] = ss
-        self._files[ss.id] = _DriveFile(ss.id, ss.title, _SPREADSHEET_MIME)
+        self._files[ss.id] = _DriveFile(ss.id, ss.title, _SPREADSHEET_MIME,
+                                        properties=dict(data.get("properties", {})))
         return ss
 
     def seed_file(self, name: str, mimetype: str, parents: Sequence[str] = (),
@@ -948,30 +995,44 @@ class FakeDriveDoorway:
                 "trashed": f.trashed, "mimeType": f.mimetype}
         if f.modified_time is not None:
             meta["modifiedTime"] = f.modified_time
+        if f.properties:
+            # Drive leaves the field out of a response for a file with none.
+            meta["properties"] = dict(f.properties)
         return meta
 
     def create_file(self, name: str, parents: Optional[Sequence[str]] = None,
                     content: Optional[bytes] = None,
-                    mimetype: Optional[str] = None) -> str:
+                    mimetype: Optional[str] = None,
+                    properties: Optional[Mapping[str, str]] = None) -> str:
         file_id = self._new_id("file")
         self._files[file_id] = _DriveFile(
             file_id, name, mimetype or "application/octet-stream",
-            list(parents or []), content)
+            list(parents or []), content, properties=dict(properties or {}))
         if mimetype == _DOC_MIME:
             # Creating a file with the Docs mimetype creates a real, empty,
             # readable document — there is no separate "make it a Doc" step.
             # Without this, a Doc created through create_file rather than
             # create_doc would exist in Drive but 404 on the next read.
             self._docs.setdefault(file_id, "")
+        # Labels are logged only when given, so a create without them reads
+        # as it always has.
+        labels = {"properties": dict(properties)} if properties else {}
         self._record("create_file", file_id=file_id, name=name,
                      parents=list(parents or []), mimetype=mimetype,
-                     bytes=len(content) if content is not None else None)
+                     bytes=len(content) if content is not None else None, **labels)
         return file_id
 
     def update_file(self, file_id: str, name: Optional[str] = None,
                     content: Optional[bytes] = None,
-                    mimetype: Optional[str] = None) -> None:
+                    mimetype: Optional[str] = None,
+                    properties: Optional[Mapping[str, Optional[str]]] = None) -> None:
         f = self._require_file(file_id)
+        for key, value in (properties or {}).items():
+            # Merged, as Drive does; a key set to None is removed.
+            if value is None:
+                f.properties.pop(key, None)
+            else:
+                f.properties[key] = value
         if name is not None:
             f.name = name
             if file_id in self._spreadsheets:
@@ -980,8 +1041,9 @@ class FakeDriveDoorway:
             f.content = content
             if mimetype:
                 f.mimetype = mimetype
+        labels = {"properties": dict(properties)} if properties else {}
         self._record("update_file", file_id=file_id, name=name,
-                     bytes=len(content) if content is not None else None)
+                     bytes=len(content) if content is not None else None, **labels)
 
     def move_file(self, file_id: str, new_parent_id: str) -> None:
         f = self._require_file(file_id)
@@ -1051,10 +1113,12 @@ class FakeDriveDoorway:
                      role=role)
 
     # -- docs ---------------------------------------------------------------
-    def create_doc(self, name: str, parent_id: str) -> str:
+    def create_doc(self, name: str, parent_id: str,
+                   properties: Optional[Mapping[str, str]] = None) -> str:
         # One Drive call, one entry in the log — create_file has already
         # recorded it. Same reasoning as get_or_create_folder above.
-        doc_id = self.create_file(name, [parent_id], mimetype=_DOC_MIME)
+        doc_id = self.create_file(name, [parent_id], mimetype=_DOC_MIME,
+                                  properties=properties)
         return doc_id
 
     def get_doc_text(self, doc_id: str) -> str:

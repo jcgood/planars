@@ -43,6 +43,10 @@ from planars.schema_values import (
 )
 
 from .biuniqueness_rows import CLASS_NAME as BIUNIQUENESS_CLASS
+# A tab's kind is also its identity label on Drive, so the door owns the names.
+from .drive_door import CONSTRUCTION_TAB as CONSTRUCTION
+from .drive_door import LOCKED_TAB as LOCKED
+from .drive_door import STATUS_TAB_KIND as STATUS
 from .biuniqueness_rows import ELEMENTS as BIUNIQUENESS_ELEMENTS_TAB
 from .biuniqueness_rows import element_rows as biuniqueness_element_rows
 from .locked_tabs import locked_tab_contents, locked_tab_specs
@@ -51,10 +55,6 @@ from .schemas import apply_schema_criteria, is_free_entry
 
 TOOLING = "tooling"
 ANNOTATOR = "annotator"
-
-LOCKED = "locked"
-CONSTRUCTION = "construction"
-STATUS = "status"
 
 
 @dataclass(frozen=True)

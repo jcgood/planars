@@ -34,6 +34,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 from .drive import _load_drive_config, _save_drive_config, remove_anyone_permission
 from .drive_doorway import get_doorway
+from . import drive_door
 
 _ROOT_FOLDER_NAME = "ConstituencyTypology"
 _FOLDER_MIME = "application/vnd.google-apps.folder"
@@ -70,7 +71,8 @@ def _get_or_create_root_folder(doorway) -> str:
         folder_id = files[0]["id"]
         print(f"Found existing folder '{_ROOT_FOLDER_NAME}' (id: {folder_id})")
         return folder_id
-    folder_id = doorway.create_file(_ROOT_FOLDER_NAME, mimetype=_FOLDER_MIME)
+    folder_id = doorway.create_file(_ROOT_FOLDER_NAME, mimetype=_FOLDER_MIME,
+                                    identity=drive_door.folder("root"))
     print(f"Created folder '{_ROOT_FOLDER_NAME}' (id: {folder_id})")
     return folder_id
 

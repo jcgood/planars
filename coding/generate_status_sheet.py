@@ -66,6 +66,7 @@ from .drive import (
     _save_drive_config,
 )
 from .drive_doorway import WorksheetNotFound, get_doorway
+from . import drive_door
 from .people import annotator_email
 from .make_forms import (
     _read_diagnostics_for_language,
@@ -472,7 +473,8 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     folder_id = None
     if apply:
-        folder_id = doorway.get_or_create_folder(_STATUS_FOLDER_NAME)
+        folder_id = doorway.get_or_create_folder(_STATUS_FOLDER_NAME,
+                                                 identity=drive_door.folder("status"))
         folder_url = f"https://drive.google.com/drive/folders/{folder_id}"
         _lock_read_only(doorway, folder_id,
                         [l for l in manifest if not l.startswith("_")])
@@ -511,7 +513,9 @@ def main(args: argparse.Namespace | None = None) -> None:
 
         lang_folder_url = lang_data.get("folder_url", "")
         sheet_name = f"status_{lang_id}"
-        ss, created = get_or_create_spreadsheet(doorway, folder_id, sheet_name)
+        ss, created = get_or_create_spreadsheet(
+            doorway, folder_id, sheet_name,
+            identity=drive_door.lang_file("status_sheet", lang_id))
         _write_status_sheet(ss, lang_id, lang_folder_url, rows)
         _lock_read_only(doorway, ss.id, [lang_id])
         action = "Created" if created else "Updated"

@@ -1,7 +1,8 @@
 # The Drive door: design (Phase 10 unit 5)
 
 **Status: accepted by Jeff 2026-10-13 (§ 7 records his answers). 5a, 5b
-and 5c built (§ 8); next is 5d.** Unit 5 of Phase 10 ([implementation plan](data-layer-implementation-plan.md),
+and 5c built, and 5d's labels (§ 8); next, rule 6 and the labelling
+migration.** Unit 5 of Phase 10 ([implementation plan](data-layer-implementation-plan.md),
 Phase 10 table) was a design pause; this file is the design record. Progress
 is tracked in [data-layer-progress.md](data-layer-progress.md), and the
 decisions are logged there too.
@@ -109,6 +110,10 @@ The `batch_update` requests the door has to understand are a closed list
 through: a new kind of write gets a check before it gets used.
 
 ### 2.3 Sheets carry their own identity
+
+*As built (5d), files are labelled with Drive public properties, not Sheets
+developer metadata or `appProperties`; only tabs use developer metadata.
+See § 8. The paragraphs below are the design as accepted.*
 
 To check a write, the door has to know what it is writing to. Today the
 only way to know is the manifest, which is bookkeeping and goes stale.
@@ -364,3 +369,56 @@ choices:
   `__main__.py` are deleted; an `--apply` run that wrote nothing no longer
   leaves a line. Tests' log and snapshots go to each test's `tmp_path`
   (`tests/conftest.py`).
+
+**5d, labels (2026-10-14), the same file.** Every Drive file the tooling
+makes now says what it is, and the door reads that instead of guessing from
+the manifest. Choices where § 2.3 left a gap or turned out wrong:
+
+- **Files are labelled with Drive public `properties`**, for spreadsheets
+  too, not Sheets developer metadata (§ 2.3) and not `appProperties`, which
+  only the OAuth client that wrote them can read; a second coordinator has
+  their own client. One mechanism identifies any file id, which the sharing
+  rule needs as well. Keys: `planars_kind`, `planars_lang`, `planars_class`,
+  `planars_name`, and `planars_state` (`archived`).
+- **Tabs are labelled with Sheets developer metadata** (document
+  visibility): `planars_tab_kind` (locked, construction or status, the names
+  `sheet_spec` now imports from the door) and `planars_tab` (its name). The
+  door goes by a tab's label where it has one, so a tab renamed by hand is
+  still checked against the right part of the spec.
+- **Kinds are one table, `KINDS`, and validated:** class_sheet (language,
+  class); planar_sheet, diagnostics_sheet, status_sheet, notes_doc, report
+  (language); manifest; notebook (domains, validation or report, each with a
+  language, or all_languages); folder (root, language, archive or status;
+  language and archive folders with a language). An identity that doesn't
+  fit can't be made, and a label that doesn't fit places nothing.
+- **Every create on the door requires `identity=`** and writes the label
+  (a spreadsheet in a second call straight after, since Sheets can't take
+  Drive properties when it makes one). `get_or_create_folder` checks that a
+  folder it finds isn't labelled as something else. `set_identity` labels an
+  existing file and refuses, in every mode, to relabel one.
+- **The door places a file** from what this command made, then its label
+  (read once per command), then, for a class sheet not yet labelled, the
+  manifest. The manifest step goes once the migration has labelled every
+  live file.
+- **Rule 5 checks the role:** a class sheet's annotator is a writer while it
+  is live and a reader once it is labelled archived, on `create_permission`
+  and `update_permission` alike. So `mark_archived` comes first where a
+  sheet is archived (`restructure_sheets._lock_archived_sheet`,
+  `prune_manifest._archive_drive_sheet`), and `_rollback_unit` marks it live
+  before raising the annotator back to writer. `mark_archived` writes the
+  whole identity, so a sheet only the manifest placed ends up labelled.
+- **Tab labels are written when a command that was allowed to write
+  succeeds,** for each class sheet it wrote: one `batch_update` per sheet,
+  only for tabs with no label yet, only tabs the spec lists (another tab is
+  left for rule 6 to report). A dry run that only painted highlights labels
+  nothing. Renaming a tab through the door drops its labels, and the end of
+  the command labels it afresh under its new name if the spec has it. The
+  door's own label requests are not in `REQUEST_TYPES`: commands cannot
+  send them.
+- **Provenance** shows the labelling as its own line per sheet
+  (`label_tabs`), and a file's label writes as `label`.
+
+What changed in the saved test outputs: every create now shows its label,
+and every command that writes a class sheet labels its tabs once, because
+the recorded sheets have none yet. That goes away when the migration has run
+and the test data is refrozen.

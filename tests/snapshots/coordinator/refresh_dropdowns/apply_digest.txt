@@ -1,6 +1,7 @@
 SUMMARY
-     3  batch_request
+    17  batch_request
      1  update_file
+    14    └─ createDeveloperMetadata
      1    └─ repeatCell
      1    └─ setDataValidation
      1    └─ updateSheetProperties
@@ -14,3 +15,19 @@ SHEET OPERATIONS
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
     setDataValidation: col 3 (referential) rows 1-144 -> ['y', 'n'] (strict=False)
+
+  synth0001/class:coreference  tab=-
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 905166144}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 905166144}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 269706862}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "prescreening", "location": {"sheetId": 269706862}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1789839085}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "reflexivization", "location": {"sheetId": 1789839085}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 581689344}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "pronominalization", "location": {"sheetId": 581689344}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 597212094}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "np_reference", "location": {"sheetId": 597212094}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 1045465172}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Planar Structure", "location": {"sheetId": 1045465172}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 392077751}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 392077751}, "visibility": "DOCUMENT"}}

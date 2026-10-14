@@ -231,6 +231,11 @@ class SpreadsheetHandle(Protocol):
         """The protections on one tab (``ProtectedRange`` dicts), by sheet id.
         Read by ``coding/locked_tabs.py`` so a rebuild protects a tab once."""
 
+    def fetch_sheet_metadata(self, params: Optional[Mapping[str, Any]] = None) -> Mapping[str, Any]:
+        """``spreadsheets.get`` without cell data. The Drive door asks for
+        ``sheets(properties(sheetId,title),developerMetadata)`` to read each
+        tab's identity labels (written with ``createDeveloperMetadata``)."""
+
     def values_batch_update(self, body: Mapping[str, Any]) -> Any:
         """``spreadsheets.values.batchUpdate`` — cell *values* by A1 range.
 
@@ -279,18 +284,24 @@ class DriveDoorway(Protocol):
 
     def create_file(self, name: str, parents: Optional[Sequence[str]] = None,
                     content: Optional[bytes] = None,
-                    mimetype: Optional[str] = None) -> str:
+                    mimetype: Optional[str] = None,
+                    properties: Optional[Mapping[str, str]] = None) -> str:
         """Create a Drive file; returns its ID.
 
         Covers both the metadata-only form (folders, Docs — pass a Google
         mimetype and no content) and the media-upload form (manifest.json,
-        notebooks, PDFs).
+        notebooks, PDFs). ``properties`` are the file's Drive properties: the
+        Drive door's identity labels (``planars_kind`` and so on). Public
+        properties, not ``appProperties``, which only the OAuth client that
+        wrote them can read; a second coordinator's client must see them too.
         """
 
     def update_file(self, file_id: str, name: Optional[str] = None,
                     content: Optional[bytes] = None,
-                    mimetype: Optional[str] = None) -> None:
-        """Update content and/or rename.
+                    mimetype: Optional[str] = None,
+                    properties: Optional[Mapping[str, Optional[str]]] = None) -> None:
+        """Update content and/or rename and/or set Drive properties
+        (merged into the file's own; a key set to None is removed).
 
         ``name`` is deliberately independent of ``content``: the four existing
         "create-or-update a Drive file" implementations disagree on whether an
@@ -328,7 +339,8 @@ class DriveDoorway(Protocol):
     def update_permission(self, file_id: str, permission_id: str, role: str) -> None: ...
 
     # -- Google Docs (collaborator notes) -----------------------------------
-    def create_doc(self, name: str, parent_id: str) -> str: ...
+    def create_doc(self, name: str, parent_id: str,
+                   properties: Optional[Mapping[str, str]] = None) -> str: ...
 
     def get_doc_text(self, doc_id: str) -> str: ...
 
@@ -401,10 +413,13 @@ class GspreadDoorway:
 
     def create_file(self, name: str, parents: Optional[Sequence[str]] = None,
                     content: Optional[bytes] = None,
-                    mimetype: Optional[str] = None) -> str:
+                    mimetype: Optional[str] = None,
+                    properties: Optional[Mapping[str, str]] = None) -> str:
         body: Dict[str, Any] = {"name": name}
         if parents:
             body["parents"] = list(parents)
+        if properties:
+            body["properties"] = dict(properties)
         if mimetype and content is None:
             # Metadata-only create (folder, Doc): the mimetype *is* the file type.
             body["mimeType"] = mimetype
@@ -415,10 +430,16 @@ class GspreadDoorway:
 
     def update_file(self, file_id: str, name: Optional[str] = None,
                     content: Optional[bytes] = None,
-                    mimetype: Optional[str] = None) -> None:
+                    mimetype: Optional[str] = None,
+                    properties: Optional[Mapping[str, Optional[str]]] = None) -> None:
         kwargs: Dict[str, Any] = {"fileId": file_id}
+        body: Dict[str, Any] = {}
         if name is not None:
-            kwargs["body"] = {"name": name}
+            body["name"] = name
+        if properties:
+            body["properties"] = dict(properties)
+        if body:
+            kwargs["body"] = body
         if content is not None:
             kwargs["media_body"] = self._media(content, mimetype)
         self.drive.files().update(**kwargs).execute()
@@ -464,15 +485,16 @@ class GspreadDoorway:
             fileId=file_id, permissionId=permission_id, body={"role": role}).execute()
 
     # -- docs ---------------------------------------------------------------
-    def create_doc(self, name: str, parent_id: str) -> str:
-        return self.drive.files().create(
-            body={
-                "name": name,
-                "mimeType": "application/vnd.google-apps.document",
-                "parents": [parent_id],
-            },
-            fields="id",
-        ).execute()["id"]
+    def create_doc(self, name: str, parent_id: str,
+                   properties: Optional[Mapping[str, str]] = None) -> str:
+        body: Dict[str, Any] = {
+            "name": name,
+            "mimeType": "application/vnd.google-apps.document",
+            "parents": [parent_id],
+        }
+        if properties:
+            body["properties"] = dict(properties)
+        return self.drive.files().create(body=body, fields="id").execute()["id"]
 
     def get_doc_text(self, doc_id: str) -> str:
         return _read_notes_doc_text(self.docs, doc_id)

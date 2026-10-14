@@ -12,18 +12,22 @@ Covers:
     helpers issue #276 collapsed generate_notebooks.py's, generate_reports.py's,
     setup_root_folder.py's, generate_status_sheet.py's, and the since-retired
     generate_biuniqueness_allomorphy_sheet.py's per-file duplicates into.
-    Exercised here directly, against a bare FakeDriveDoorway, since they are
+    Exercised here directly, against a bare FakeDriveDoorway (through the
+    Drive door where a helper creates a file, since it must say what the
+    file is: `_through_door`), since they are
     pure Drive primitives with no per-language data dependency (unlike most
     of this project's other Drive-facing tests, which are command-level
     snapshot tests under a seeded fixture).
 """
 from __future__ import annotations
 
+import contextlib
 import subprocess
 from pathlib import Path
 
 import pytest
 
+from coding import drive_door
 from coding.drive import (
     _autocommit_data,
     _check_coded_data_clean,
@@ -35,6 +39,14 @@ from coding.drive import (
     upload_manifest,
 )
 from fake_drive import FakeDriveDoorway
+
+
+@contextlib.contextmanager
+def _through_door(fake: FakeDriveDoorway):
+    """The helpers that create files take an identity, which only the Drive
+    door understands, so they are called through it, as commands call them."""
+    with drive_door.running("test_drive", may_write=True):
+        yield drive_door.CheckedDoorway(fake, mode=drive_door.ENFORCE)
 
 
 def _make_git_repo(path: Path) -> None:
@@ -260,14 +272,19 @@ class TestMakeReadOnly:
 # ---------------------------------------------------------------------------
 
 class TestCreateOrUpdateSharedFile:
-    def test_creates_and_shares_when_no_existing_id(self):
+    NOTEBOOK = drive_door.notebook("domains", "stan1293")
+
+    def test_creates_labels_and_shares_when_no_existing_id(self):
         doorway = FakeDriveDoorway()
         folder_id = doorway.seed_folder("lang")
-        file_id = create_or_update_shared_file(
-            doorway, b"content", "notebook.ipynb", "application/json", folder_id)
+        with _through_door(doorway) as door:
+            file_id = create_or_update_shared_file(
+                door, b"content", "notebook.ipynb", "application/json", folder_id,
+                identity=self.NOTEBOOK)
         creates = doorway.mutations_of("create_file")
         assert [c["name"] for c in creates] == ["notebook.ipynb"]
         assert creates[0]["parents"] == [folder_id]
+        assert doorway.file(file_id).properties == self.NOTEBOOK.labels()
         assert doorway.mutations_of("update_file") == []
         perms = doorway.list_permissions(file_id)
         assert [(p["type"], p["role"]) for p in perms] == [("anyone", "reader")]
@@ -276,9 +293,10 @@ class TestCreateOrUpdateSharedFile:
         doorway = FakeDriveDoorway()
         folder_id = doorway.seed_folder("lang")
         existing = doorway.seed_file("old_name.ipynb", "application/json", [folder_id])
-        file_id = create_or_update_shared_file(
-            doorway, b"new content", "new_name.ipynb", "application/json",
-            folder_id, existing_file_id=existing)
+        with _through_door(doorway) as door:
+            file_id = create_or_update_shared_file(
+                door, b"new content", "new_name.ipynb", "application/json",
+                folder_id, existing_file_id=existing, identity=self.NOTEBOOK)
         assert file_id == existing
         assert doorway.mutations_of("create_file") == []
         updates = doorway.mutations_of("update_file")
@@ -289,12 +307,15 @@ class TestCreateOrUpdateSharedFile:
         but ensure_anyone_permission means a second run adds no duplicate."""
         doorway = FakeDriveDoorway()
         folder_id = doorway.seed_folder("lang")
-        file_id = create_or_update_shared_file(
-            doorway, b"v1", "report.pdf", "application/pdf", folder_id)
+        report = drive_door.lang_file("report", "stan1293")
+        with _through_door(doorway) as door:
+            file_id = create_or_update_shared_file(
+                door, b"v1", "report.pdf", "application/pdf", folder_id, identity=report)
         doorway.clear_mutations()
-        create_or_update_shared_file(
-            doorway, b"v2", "report.pdf", "application/pdf", folder_id,
-            existing_file_id=file_id)
+        with _through_door(doorway) as door:
+            create_or_update_shared_file(
+                door, b"v2", "report.pdf", "application/pdf", folder_id,
+                existing_file_id=file_id, identity=report)
         assert doorway.mutations_of("update_file")
         assert doorway.mutations_of("create_permission") == []  # already shared
 
@@ -311,14 +332,17 @@ class TestUploadManifestShapeCheck:
     def test_well_shaped_manifest_writes_with_no_warning(self, capsys):
         doorway = FakeDriveDoorway()
         folder_id = doorway.seed_folder("root")
-        upload_manifest(doorway, {"lang0001": {"folder_id": "abc"}}, folder_id)
-        assert doorway.mutations_of("create_file")
+        with _through_door(doorway) as door:
+            upload_manifest(door, {"lang0001": {"folder_id": "abc"}}, folder_id)
+        created, = doorway.mutations_of("create_file")
+        assert created["properties"] == drive_door.manifest().labels()
         assert "WARNING" not in capsys.readouterr().out
 
     def test_malformed_manifest_still_writes_but_warns(self, capsys):
         doorway = FakeDriveDoorway()
         folder_id = doorway.seed_folder("root")
-        upload_manifest(doorway, {"lang0001": "not-a-dict"}, folder_id)
+        with _through_door(doorway) as door:
+            upload_manifest(door, {"lang0001": "not-a-dict"}, folder_id)
         assert doorway.mutations_of("create_file")  # write happened regardless
         assert "WARNING" in capsys.readouterr().out
 
@@ -328,21 +352,30 @@ class TestUploadManifestShapeCheck:
 # ---------------------------------------------------------------------------
 
 class TestGetOrCreateSpreadsheet:
-    def test_creates_and_moves_when_none_exists(self):
+    STATUS = drive_door.lang_file("status_sheet", "stan1293")
+
+    def test_creates_labels_and_moves_when_none_exists(self):
         doorway = FakeDriveDoorway()
         folder_id = doorway.seed_folder("Annotation Status")
-        ss, created = get_or_create_spreadsheet(doorway, folder_id, "status_stan1293")
+        with _through_door(doorway) as door:
+            ss, created = get_or_create_spreadsheet(door, folder_id, "status_stan1293",
+                                                    identity=self.STATUS)
         assert created is True
         assert doorway.file(ss.id).name == "status_stan1293"
+        assert doorway.file(ss.id).properties == self.STATUS.labels()
         moves = doorway.mutations_of("move_file")
         assert [(m["file_id"], m["to_parent"]) for m in moves] == [(ss.id, folder_id)]
 
     def test_finds_the_existing_spreadsheet_by_name_instead_of_creating(self):
         doorway = FakeDriveDoorway()
         folder_id = doorway.seed_folder("Annotation Status")
-        first, created_first = get_or_create_spreadsheet(doorway, folder_id, "status_stan1293")
+        with _through_door(doorway) as door:
+            first, created_first = get_or_create_spreadsheet(
+                door, folder_id, "status_stan1293", identity=self.STATUS)
         doorway.clear_mutations()
-        second, created_second = get_or_create_spreadsheet(doorway, folder_id, "status_stan1293")
+        with _through_door(doorway) as door:
+            second, created_second = get_or_create_spreadsheet(
+                door, folder_id, "status_stan1293", identity=self.STATUS)
         assert created_first is True
         assert created_second is False
         assert second.id == first.id

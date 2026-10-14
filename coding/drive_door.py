@@ -27,7 +27,9 @@ tests). Reads pass straight through. Every write is checked first:
   3. dropdowns only on criterion columns (and Status), with exactly the
      spec's values;
   4. protection only on locked tabs;
-  5. sharing only with the language's annotator, by name; never "anyone".
+  5. sharing only with the language's annotator, by name, as a writer while
+     the sheet is live and a reader once it is labelled archived; never
+     "anyone".
 
 Every call is retried on Google's "try again" answers (429, 500, 503), here
 and nowhere else. A call that creates something is retried only after
@@ -39,11 +41,26 @@ arguments, what was written, which sheet it is, how many calls and cells,
 and the ``replacing`` reason if there was one. A command that wrote nothing
 leaves no line.
 
-**Which sheet is which.** Until sheets carry their own identity labels (unit
-5d), the door places a spreadsheet from the manifest (each language's class
-sheets) or from the identity a command gives ``create_spreadsheet``. A write
-to a spreadsheet it cannot place passes unchecked by rules 1-5 for now; once
-every kind of Drive file has its spec, such a write is refused (design § 5).
+**Which file is which (identity labels).** Every Drive file the tooling makes
+carries its identity as Drive properties (``planars_kind``, ``planars_lang``,
+``planars_class``, ``planars_name``; ``planars_state=archived`` once
+archived): public properties, which any coordinator's client can read. The
+kinds are ``KINDS``, and an ``Identity`` that doesn't fit one can't be made.
+Every create on the door takes ``identity=`` and writes the label;
+``set_identity`` labels an existing file and refuses to relabel one;
+``mark_archived`` is called where a class sheet is archived (and undone on
+rollback). The door places a file from what this command made, else its
+label (read once per command), else, for a class sheet not yet labelled, the
+manifest. A write to a file it cannot place passes unchecked by rules 1-5 for
+now; once every kind of Drive file has its spec, such a write is refused
+(design § 5).
+
+Each tab of a class sheet is labelled too, with Sheets developer metadata:
+its kind (locked, construction, status) and its name. When a command that
+was allowed to write succeeds, the door labels every unlabelled tab of each
+class sheet it wrote, from the spec, in one ``batch_update`` per sheet. A
+tab's label is what the door goes by, so a tab renamed by hand keeps its
+identity; renaming a tab through the door drops its labels.
 
 **Watch and enforce.** Enforce: a broken rule raises ``DoorViolation`` and
 nothing is written. Watch: the write goes ahead, and at the end of the
@@ -110,19 +127,126 @@ class AnswersWouldBeDropped(DoorViolation):
         self.lines = lines
 
 
+# ---------------------------------------------------------------------------
+# Identity: what a Drive file is
+# ---------------------------------------------------------------------------
+
+# Every kind of Drive file the tooling makes, and which parts of its identity
+# it carries: _LANG means required, None means absent, and a set of names
+# means one of them is required. Anything else cannot be placed.
+_LANG, _BY_NAME = "required", "by name"
+KINDS: Dict[str, Dict[str, Any]] = {
+    CLASS_SHEET:         {"lang": _LANG, "class": _LANG, "name": None},
+    "planar_sheet":      {"lang": _LANG, "class": None, "name": None},
+    "diagnostics_sheet": {"lang": _LANG, "class": None, "name": None},
+    "status_sheet":      {"lang": _LANG, "class": None, "name": None},
+    "notes_doc":         {"lang": _LANG, "class": None, "name": None},
+    "report":            {"lang": _LANG, "class": None, "name": None},
+    "manifest":          {"lang": None, "class": None, "name": None},
+    # These two depend on the name: see Identity.__post_init__.
+    "notebook":          {"lang": _BY_NAME, "class": None,
+                          "name": {"domains", "validation", "report", "all_languages"}},
+    "folder":            {"lang": _BY_NAME, "class": None,
+                          "name": {"root", "language", "archive", "status"}},
+}
+# Folders that belong to one language; the others belong to none. Every
+# notebook belongs to one language except all_languages.
+_LANGUAGE_FOLDERS = {"language", "archive"}
+
+# The Drive properties a file's identity is written to. Public properties,
+# not appProperties, which only the OAuth client that wrote them can read.
+_LABEL = {"kind": "planars_kind", "lang_id": "planars_lang",
+          "class_name": "planars_class", "name": "planars_name"}
+STATE_LABEL = "planars_state"
+ARCHIVED = "archived"
+# A tab's labels, as Sheets developer metadata on the tab (document
+# visibility, so any coordinator's client reads them): its kind, one of the
+# three below (sheet_spec uses the same names), and its name — the locked
+# tab's title, the construction, or Status — which stays put if someone
+# renames the tab by hand.
+TAB_KIND_LABEL = "planars_tab_kind"
+TAB_NAME_LABEL = "planars_tab"
+LOCKED_TAB = "locked"
+STATUS_TAB_KIND = "status"
+CONSTRUCTION_TAB = "construction"
+TAB_KINDS = (LOCKED_TAB, CONSTRUCTION_TAB, STATUS_TAB_KIND)
+
+
 @dataclass(frozen=True)
 class Identity:
-    """What a spreadsheet is. Only class sheets have rules so far."""
+    """What a Drive file is: its kind, and the language, class or name that
+    say which one. Checked against ``KINDS`` when made."""
     kind: str
-    lang_id: str
+    lang_id: Optional[str] = None
     class_name: Optional[str] = None
+    name: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        rule = KINDS.get(self.kind)
+        if rule is None:
+            raise ValueError(f"unknown kind of Drive file {self.kind!r}; "
+                             f"known: {sorted(KINDS)}")
+        lang_rule = rule["lang"]
+        if self.kind == "folder":
+            lang_rule = _LANG if self.name in _LANGUAGE_FOLDERS else None
+        elif self.kind == "notebook":
+            lang_rule = None if self.name == "all_languages" else _LANG
+        for part, value, needed in (("language", self.lang_id, lang_rule),
+                                    ("class", self.class_name, rule["class"])):
+            if needed == _LANG and not value:
+                raise ValueError(f"a {self.kind} needs its {part}")
+            if needed is None and value:
+                raise ValueError(f"a {self.kind} has no {part} (given {value!r})")
+        names = rule["name"]
+        if names is None and self.name:
+            raise ValueError(f"a {self.kind} has no name (given {self.name!r})")
+        if names is not None and self.name not in names:
+            raise ValueError(f"a {self.kind}'s name is one of {sorted(names)}, "
+                             f"not {self.name!r}")
 
     def describe(self) -> str:
-        return f"{self.class_name}_{self.lang_id}" if self.class_name else f"{self.kind} {self.lang_id}"
+        if self.kind == CLASS_SHEET:
+            return f"{self.class_name}_{self.lang_id}"
+        parts = [self.kind] + [p for p in (self.name, self.lang_id) if p]
+        return " ".join(parts)
+
+    def labels(self) -> Dict[str, str]:
+        """The Drive properties that record this identity."""
+        return {label: getattr(self, field) for field, label in _LABEL.items()
+                if getattr(self, field)}
+
+    @classmethod
+    def from_labels(cls, properties: Mapping[str, str]) -> Optional["Identity"]:
+        """The identity a file's properties record; None if they record none
+        or one that cannot be placed."""
+        if _LABEL["kind"] not in properties:
+            return None
+        try:
+            return cls(**{field: properties.get(label) or None
+                          for field, label in _LABEL.items()})
+        except ValueError:
+            return None
 
 
 def class_sheet(lang_id: str, class_name: str) -> Identity:
     return Identity(CLASS_SHEET, lang_id, class_name)
+
+
+def lang_file(kind: str, lang_id: str) -> Identity:
+    """A planar, diagnostics or status sheet, notes Doc or report."""
+    return Identity(kind, lang_id)
+
+
+def manifest() -> Identity:
+    return Identity("manifest")
+
+
+def notebook(name: str, lang_id: Optional[str] = None) -> Identity:
+    return Identity("notebook", lang_id, name=name)
+
+
+def folder(name: str, lang_id: Optional[str] = None) -> Identity:
+    return Identity("folder", lang_id, name=name)
 
 
 # ---------------------------------------------------------------------------
@@ -153,8 +277,10 @@ def running(command: str, args: Optional[argparse.Namespace] = None, *,
     ``command`` is the hyphenated command (``update-sheets``). Whether it may
     write comes from its ``operations.yaml`` record and ``args``, the same
     match provenance uses; pass ``may_write`` instead for code that runs
-    outside the dispatcher and has no record (a migration). At the end, in
-    watch mode, any violations are reported in one GitHub issue.
+    outside the dispatcher and has no record (a migration). At the end, if
+    the command succeeded, the door labels the tabs it wrote; then, however
+    it ended, it logs what it wrote and, in watch mode, reports any
+    violations in one GitHub issue.
     """
     global _context
     from .provenance import writes_to_drive
@@ -171,12 +297,19 @@ def running(command: str, args: Optional[argparse.Namespace] = None, *,
     door = current_doorway()
     if isinstance(door, CheckedDoorway):
         door.begin_command()
+    succeeded = False
     try:
         yield
+        succeeded = True
+    except SystemExit as exc:
+        succeeded = exc.code in (0, None)
+        raise
     finally:
-        _context = previous
-        if isinstance(door, CheckedDoorway):
-            door.finish_command(command, args)
+        try:
+            if isinstance(door, CheckedDoorway):
+                door.finish_command(command, args, succeeded=succeeded)
+        finally:
+            _context = previous
 
 
 @contextlib.contextmanager
@@ -350,7 +483,13 @@ class CheckedDoorway:
         self.mode = mode
         self.violations: List[str] = []
         self._identities: Dict[str, Identity] = {}   # from the manifest
-        self._created: Dict[str, Identity] = {}      # given at create_spreadsheet
+        self._created: Dict[str, Identity] = {}      # made by this command
+        # Each file's Drive properties, read once per command.
+        self._labels: Dict[str, Dict[str, str]] = {}
+        # Each spreadsheet's tab labels: {sheet id: {key: value}}.
+        self._tab_labels: Dict[str, Dict[int, Dict[str, str]]] = {}
+        # Spreadsheets this command wrote to, for the end-of-command labels.
+        self._sheets_written: Dict[str, "CheckedSpreadsheet"] = {}
         self._manifest_read = False
         self._specs: Dict[Tuple[str, str], Any] = {}
         self._grids: Dict[Tuple[str, int], List[List[str]]] = {}
@@ -367,17 +506,29 @@ class CheckedDoorway:
     # -- command lifetime ---------------------------------------------------
     def begin_command(self) -> None:
         """Start a command with nothing remembered from the last one: its
-        language files, the manifest and the sheets may all have changed."""
+        language files, the manifest, the sheets and their labels may all
+        have changed."""
         self.violations = []
         self._specs.clear()
         self._grids.clear()
         self._manifest_read = False
         self._identities = {}
+        self._created = {}
+        self._labels = {}
+        self._tab_labels = {}
+        self._sheets_written = {}
         self._written = {}
         self._started = _now()
 
-    def finish_command(self, command: str, args: Optional[argparse.Namespace] = None) -> None:
-        """Log what the command wrote, and in watch mode report what broke a rule."""
+    def finish_command(self, command: str, args: Optional[argparse.Namespace] = None,
+                       succeeded: bool = True) -> None:
+        """After a command that succeeded, and was allowed to write (not a dry
+        run that only painted highlights), label the tabs of every class
+        sheet it wrote. Then, however it ended, log what it wrote, and in
+        watch mode report what broke a rule."""
+        if succeeded and _context is not None and _context.may_write:
+            for ss in list(self._sheets_written.values()):
+                self._label_tabs(ss)
         if self._written:
             from . import provenance
             arguments = vars(args) if args is not None else {}
@@ -410,8 +561,152 @@ class CheckedDoorway:
             entry["replacing"].append(reason)
 
     def _wrote_file(self, file_id: str, title: str, action: str) -> None:
-        identity = self._created.get(file_id) or self._identities.get(file_id)
-        self._wrote(file_id, title, None, action, identity=identity)
+        self._wrote(file_id, title, None, action, identity=self._known_identity(file_id))
+
+    def _wrote_sheet(self, ss: "CheckedSpreadsheet") -> None:
+        """Remember a spreadsheet this command wrote, to label its tabs at the end."""
+        self._sheets_written.setdefault(ss.id, ss)
+
+    # -- identity -------------------------------------------------------------
+    def _known_identity(self, file_id: str) -> Optional[Identity]:
+        """What the door already knows a file to be, without reading Drive."""
+        if file_id in self._created:
+            return self._created[file_id]
+        found = Identity.from_labels(self._labels.get(file_id, {}))
+        return found or self._identities.get(file_id)
+
+    def _read_labels(self, file_id: str) -> Dict[str, str]:
+        """A file's Drive properties, read once per command."""
+        if file_id not in self._labels:
+            try:
+                meta = self.get_file(file_id, fields="properties")
+            except Exception:  # noqa: BLE001 - no such file, or not ours to read
+                meta = {}
+            self._labels[file_id] = dict(meta.get("properties") or {})
+        return self._labels[file_id]
+
+    def _identify(self, file_id: str) -> Optional[Identity]:
+        """What a file is: made by this command, else its label, else (class
+        sheets only, until every file is labelled) the manifest."""
+        if file_id in self._created:
+            return self._created[file_id]
+        labelled = Identity.from_labels(self._read_labels(file_id))
+        if labelled is not None:
+            return labelled
+        if file_id in self._identities:
+            return self._identities[file_id]
+        if not self._manifest_read:
+            self._manifest_read = True
+            self._read_manifest_identities()
+        return self._identities.get(file_id)
+
+    def is_archived(self, file_id: str) -> bool:
+        return self._read_labels(file_id).get(STATE_LABEL) == ARCHIVED
+
+    def _write_labels(self, file_id: str, properties: Mapping[str, Optional[str]],
+                      what: str) -> None:
+        """Set a file's labels (a None value removes one). A write like any
+        other: the command must be allowed to write."""
+        self._check(what)
+        _retry(lambda: self._inner.update_file(file_id, properties=dict(properties)))
+        labels = self._labels.setdefault(file_id, {})
+        for key, value in properties.items():
+            if value is None:
+                labels.pop(key, None)
+            else:
+                labels[key] = value
+        self._wrote_file(file_id, "", "label")
+
+    def set_identity(self, file_id: str, identity: Identity) -> bool:
+        """Label an existing file. Refuses, in every mode, to change a label
+        that says the file is something else. True if a label was written."""
+        current = self._read_labels(file_id)
+        existing = Identity.from_labels(current)
+        if existing == identity:
+            return False
+        if existing is not None or _LABEL["kind"] in current:
+            raise DoorViolation(
+                f"{file_id} is labelled {existing.describe() if existing else current!r}; "
+                f"the door will not relabel it as {identity.describe()}")
+        self._write_labels(file_id, identity.labels(), f"label {file_id} as {identity.describe()}")
+        return True
+
+    def mark_archived(self, file_id: str, archived: bool = True) -> None:
+        """Label a file archived (or, undoing that, live). Called where a
+        class sheet is archived, before its annotator's grant is lowered, so
+        the sharing rule expects reader; and the reverse when undone. Writes
+        the identity too, for a file only the manifest could place."""
+        identity = self._identify(file_id)
+        if identity is None:
+            self._check(f"mark {file_id} {'archived' if archived else 'live'}",
+                        [f"{file_id} has no label and is not in the manifest, so the "
+                         "door cannot say what it is"])
+            return
+        labels: Dict[str, Optional[str]] = dict(identity.labels())
+        labels[STATE_LABEL] = ARCHIVED if archived else None
+        self._write_labels(file_id, labels,
+                           f"mark {identity.describe()} {'archived' if archived else 'live'}")
+
+    def _check_found(self, file_id: str, identity: Identity, what: str) -> None:
+        """A file found rather than made must not be labelled as something else."""
+        existing = Identity.from_labels(self._read_labels(file_id))
+        if existing is not None and existing != identity:
+            self._act(what, [f"found {existing.describe()} where {identity.describe()} "
+                             "was expected"])
+
+    # -- tab labels -----------------------------------------------------------
+    def _tab_labels_of(self, ss: "CheckedSpreadsheet") -> Dict[int, Dict[str, str]]:
+        """Each tab's labels, by sheet id; read once per spreadsheet per command."""
+        if ss.id not in self._tab_labels:
+            meta = _retry(lambda: ss._inner.fetch_sheet_metadata(params={
+                "fields": "sheets(properties(sheetId,title),developerMetadata)"}))
+            self._tab_labels[ss.id] = {
+                sheet["properties"]["sheetId"]: {
+                    m["metadataKey"]: m.get("metadataValue", "")
+                    for m in sheet.get("developerMetadata", [])
+                    if m.get("metadataKey") in (TAB_KIND_LABEL, TAB_NAME_LABEL)}
+                for sheet in meta.get("sheets", [])}
+        return self._tab_labels[ss.id]
+
+    def _label_tabs(self, ss: "CheckedSpreadsheet") -> None:
+        """Label each tab of a class sheet that has no label yet with what its
+        spec says it is, in one batch_update. A tab the spec doesn't list is
+        left unlabelled (rule 6 reports it). Labels already there are kept:
+        they are what lets a tab renamed by hand still be recognised."""
+        identity = ss.identity
+        if identity is None or identity.kind != CLASS_SHEET:
+            return
+        spec = self._spec(identity)
+        if isinstance(spec, Exception):
+            return
+        self._tab_labels.pop(ss.id, None)
+        labels = self._tab_labels_of(ss)
+        kinds = {t.title: t.kind for t in spec.tabs}
+        requests = []
+        for ws in _retry(ss._inner.worksheets):
+            if labels.get(ws.id) or ws.title not in kinds:
+                continue
+            for key, value in ((TAB_KIND_LABEL, kinds[ws.title]), (TAB_NAME_LABEL, ws.title)):
+                requests.append({"createDeveloperMetadata": {"developerMetadata": {
+                    "metadataKey": key, "metadataValue": value,
+                    "location": {"sheetId": ws.id}, "visibility": "DOCUMENT"}}})
+        if not requests:
+            return
+        self._check(f"label the tabs of {ss.title!r}")
+        _retry(lambda: ss._inner.batch_update({"requests": requests}))
+        self._tab_labels.pop(ss.id, None)
+        self._wrote(ss.id, ss.title, None, "label_tabs", identity=identity)
+
+    def _drop_tab_labels(self, ws: "CheckedWorksheet") -> None:
+        """Remove a tab's labels (it is being renamed by the tooling, so its
+        name label would be wrong; the end of the command labels it afresh)."""
+        if not self._tab_labels_of(ws._ss).get(ws.id):
+            return
+        _retry(lambda: ws._ss._inner.batch_update({"requests": [
+            {"deleteDeveloperMetadata": {"dataFilter": {"developerMetadataLookup": {
+                "metadataKey": key, "metadataLocation": {"sheetId": ws.id}}}}}
+            for key in (TAB_KIND_LABEL, TAB_NAME_LABEL)]}))
+        self._tab_labels[ws._ss.id].pop(ws.id, None)
 
     # -- replacing (rule 1) -------------------------------------------------
     def _before_replacing(self, tab: "CheckedWorksheet", reason: str,
@@ -447,23 +742,17 @@ class CheckedDoorway:
             if not allowed:
                 found.insert(0, f"`{ctx.command}` was run without the flag that lets "
                                 "it write to Drive (a dry run), but tried to write")
-        if not found:
+        self._act(what, found)
+
+    def _act(self, what: str, problems: Sequence[str]) -> None:
+        """Act on broken rules by mode: raise (enforce) or remember (watch)."""
+        if not problems:
             return
-        command = ctx.command if ctx else "(no command)"
-        messages = [f"{command}: {what}: {p}" for p in found]
+        command = _context.command if _context else "(no command)"
+        messages = [f"{command}: {what}: {p}" for p in problems]
         if self.mode == ENFORCE:
             raise DoorViolation("The Drive door refused a write.\n  " + "\n  ".join(messages))
         self.violations.extend(messages)
-
-    def _identify(self, spreadsheet_id: str) -> Optional[Identity]:
-        if spreadsheet_id in self._created:
-            return self._created[spreadsheet_id]
-        if spreadsheet_id in self._identities:
-            return self._identities[spreadsheet_id]
-        if not self._manifest_read:
-            self._manifest_read = True
-            self._read_manifest_identities()
-        return self._identities.get(spreadsheet_id)
 
     def _read_manifest_identities(self) -> None:
         import io
@@ -552,38 +841,55 @@ class CheckedDoorway:
 
         return _retry(make, landed=landed)
 
-    def create_spreadsheet(self, title: str, identity: Optional[Identity] = None):
+    # Every create says what it is making (``identity``), and the door writes
+    # that as the new file's label: a file the tooling made is never unplaced.
+    def _made(self, file_id: str, identity: Identity) -> None:
+        self._created[file_id] = identity
+        self._labels[file_id] = dict(identity.labels())
+
+    def create_spreadsheet(self, title: str, *, identity: Identity):
         self._check(f"create spreadsheet {title!r}")
         inner = self._create(lambda: self._inner.create_spreadsheet(title), title,
                              _SPREADSHEET_MIME, None, self._inner.open_spreadsheet)
-        if identity is not None:
-            self._created[inner.id] = identity
+        # Sheets can't be given Drive properties when made; label straight after.
+        _retry(lambda: self._inner.update_file(inner.id, properties=identity.labels()))
+        self._made(inner.id, identity)
         self._wrote_file(inner.id, title, "create_spreadsheet")
-        return CheckedSpreadsheet(self, inner)
+        ss = CheckedSpreadsheet(self, inner)
+        self._wrote_sheet(ss)
+        return ss
 
     def create_file(self, name: str, parents: Optional[Sequence[str]] = None,
                     content: Optional[bytes] = None,
-                    mimetype: Optional[str] = None) -> str:
+                    mimetype: Optional[str] = None, *, identity: Identity) -> str:
         self._check(f"create file {name!r}")
         file_id = self._create(
             lambda: self._inner.create_file(name, parents=parents, content=content,
-                                            mimetype=mimetype),
+                                            mimetype=mimetype, properties=identity.labels()),
             name, mimetype if content is None else None, parents, lambda fid: fid)
+        self._made(file_id, identity)
         self._wrote_file(file_id, name, "create_file")
         return file_id
 
-    def get_or_create_folder(self, name: str, parent_id: Optional[str] = None) -> str:
+    def get_or_create_folder(self, name: str, parent_id: Optional[str] = None, *,
+                             identity: Identity) -> str:
+        if identity.kind != "folder":
+            raise ValueError(f"get_or_create_folder makes folders, not a {identity.kind}")
         parent_clause = f" and '{parent_id}' in parents" if parent_id else ""
         found = self.list_files(f"name='{_quote(name)}' and mimeType='{_FOLDER_MIME}' "
                                 f"and trashed=false{parent_clause}")
         if found:
+            self._check_found(found[0]["id"], identity, f"find folder {name!r}")
             return found[0]["id"]
-        return self.create_file(name, [parent_id] if parent_id else [], mimetype=_FOLDER_MIME)
+        return self.create_file(name, [parent_id] if parent_id else [], mimetype=_FOLDER_MIME,
+                                identity=identity)
 
-    def create_doc(self, name: str, parent_id: str) -> str:
+    def create_doc(self, name: str, parent_id: str, *, identity: Identity) -> str:
         self._check(f"create doc {name!r}")
-        doc_id = self._create(lambda: self._inner.create_doc(name, parent_id), name,
-                              _DOC_MIME, [parent_id], lambda fid: fid)
+        doc_id = self._create(
+            lambda: self._inner.create_doc(name, parent_id, properties=identity.labels()),
+            name, _DOC_MIME, [parent_id], lambda fid: fid)
+        self._made(doc_id, identity)
         self._wrote_file(doc_id, name, "create_doc")
         return doc_id
 
@@ -607,7 +913,8 @@ class CheckedDoorway:
         self._wrote_file(doc_id, "", "append_doc_text")
 
     # -- sharing (rule 5) ----------------------------------------------------
-    def _sharing_problems(self, file_id: str, type: str, email: Optional[str]) -> List[str]:
+    def _sharing_problems(self, file_id: str, type: str, email: Optional[str],
+                          role: str) -> List[str]:
         identity = self._identify(file_id)
         if identity is None or identity.kind != CLASS_SHEET:
             return []
@@ -619,12 +926,18 @@ class CheckedDoorway:
         if email != expected:
             return [f"{identity.describe()} is shared only with {identity.lang_id}'s "
                     "annotator (languages.yaml), not with this address"]
+        archived = self.is_archived(file_id)
+        wanted = "reader" if archived else "writer"
+        if role != wanted:
+            state = "archived" if archived else "live"
+            return [f"the annotator of {identity.describe()} ({state}) is a {wanted}, "
+                    f"not a {role}"]
         return []
 
     def create_permission(self, file_id: str, type: str, role: str,
                           email: Optional[str] = None, notify: bool = False) -> str:
         self._check(f"share {file_id} ({type}, {role})",
-                    self._sharing_problems(file_id, type, email))
+                    self._sharing_problems(file_id, type, email, role))
 
         def landed():
             for p in self.list_permissions(file_id, fields="permissions(id,type,emailAddress)"):
@@ -643,7 +956,16 @@ class CheckedDoorway:
         self._wrote_file(file_id, "", "delete_permission")
 
     def update_permission(self, file_id: str, permission_id: str, role: str) -> None:
-        self._check(f"change a grant on {file_id} to {role}")
+        problems: List[str] = []
+        identity = self._identify(file_id)
+        if identity is not None and identity.kind == CLASS_SHEET:
+            grant = next((p for p in self.list_permissions(
+                file_id, fields="permissions(id,type,emailAddress)")
+                if p.get("id") == permission_id), None)
+            if grant is not None:
+                problems = self._sharing_problems(file_id, grant.get("type", ""),
+                                                  grant.get("emailAddress"), role)
+        self._check(f"change a grant on {file_id} to {role}", problems)
         _retry(lambda: self._inner.update_permission(file_id, permission_id, role))
         self._wrote_file(file_id, "", "update_permission")
 
@@ -655,11 +977,6 @@ def _quote(text: str) -> str:
 # ---------------------------------------------------------------------------
 # Spreadsheet and tab handles
 # ---------------------------------------------------------------------------
-
-LOCKED_TAB = "locked"
-STATUS_TAB_KIND = "status"
-CONSTRUCTION_TAB = "construction"
-
 
 class CheckedSpreadsheet:
     """One spreadsheet, as a command holds it."""
@@ -722,6 +1039,7 @@ class CheckedSpreadsheet:
         self._door._check(f"delete tab {worksheet.title!r} of {self.title!r}", problems)
         result = _retry(lambda: self._inner.del_worksheet(tab))
         self._door._forget(worksheet._key)
+        self._door._tab_labels.get(self.id, {}).pop(worksheet.id, None)
         worksheet._note("del_worksheet")
         return result
 
@@ -731,6 +1049,7 @@ class CheckedSpreadsheet:
         result = _retry(lambda: self._inner.reorder_worksheets(tabs))
         self._door._wrote(self.id, self.title, None, "reorder_worksheets",
                           identity=self.identity)
+        self._door._wrote_sheet(self)
         return result
 
     # -- batch endpoints ----------------------------------------------------
@@ -748,6 +1067,7 @@ class CheckedSpreadsheet:
             if ws is None:
                 self._door._wrote(self.id, self.title, None, "batch_update",
                                   identity=self.identity)
+                self._door._wrote_sheet(self)
             else:
                 ws._note("batch_update", cells)
         return result
@@ -878,20 +1198,37 @@ class CheckedWorksheet:
         return _retry(lambda: self._inner.row_values(row))
 
     # -- what this tab is -----------------------------------------------------
+    def _label(self) -> Dict[str, str]:
+        """This tab's labels ({} if it has none, or its sheet isn't a class sheet)."""
+        identity = self._ss.identity
+        if identity is None or identity.kind != CLASS_SHEET:
+            return {}
+        return self._door._tab_labels_of(self._ss).get(self.id, {})
+
+    def _name(self) -> str:
+        """What the tab is called in the spec: its name label, which survives
+        a rename by hand, or else its title."""
+        return self._label().get(TAB_NAME_LABEL) or self.title
+
     def _kind(self) -> Tuple[Optional[str], Any]:
         """(tab kind, spec-or-error) for a tab of a class sheet; (None, None)
-        for a tab of a spreadsheet the door cannot place."""
+        for a tab of a spreadsheet the door cannot place. From the tab's
+        label, else its title."""
         identity = self._ss.identity
         if identity is None or identity.kind != CLASS_SHEET:
             return None, None
-        from planars.schema_values import STATUS_TAB
-        from .locked_tabs import system_tab_titles
-        title = self.title
-        if title == STATUS_TAB:
-            return STATUS_TAB_KIND, None
-        if title in system_tab_titles() and title != STATUS_TAB:
-            return LOCKED_TAB, self._door._spec(identity)
-        return CONSTRUCTION_TAB, None
+        kind = self._label().get(TAB_KIND_LABEL)
+        if kind not in TAB_KINDS:
+            from planars.schema_values import STATUS_TAB
+            from .locked_tabs import system_tab_titles
+            title = self.title
+            if title == STATUS_TAB:
+                kind = STATUS_TAB_KIND
+            elif title in system_tab_titles():
+                kind = LOCKED_TAB
+            else:
+                kind = CONSTRUCTION_TAB
+        return kind, (self._door._spec(identity) if kind == LOCKED_TAB else None)
 
     def _tooling_columns(self) -> set:
         """Columns of this tab that the tooling owns (by header name)."""
@@ -902,7 +1239,7 @@ class CheckedWorksheet:
             return {STATUS_COLUMNS[0]}
         from planars.schema_values import row_columns
         try:
-            return set(row_columns(identity.class_name, self.title))
+            return set(row_columns(identity.class_name, self._name()))
         except Exception:  # noqa: BLE001 - unknown shape: protect every column
             return set()
 
@@ -919,6 +1256,7 @@ class CheckedWorksheet:
         """Count a write to this tab toward its provenance line."""
         self._door._wrote(self._ss.id, self._ss.title, self.title, action, cells,
                           self._ss.identity, self._replacing_reason())
+        self._door._wrote_sheet(self._ss)
 
     # -- rule 1 inside replacing(): mid-run edits, answered rows dropped ------
     def _protected_cells(self, grid: List[List[str]]) -> Optional[set]:
@@ -958,7 +1296,7 @@ class CheckedWorksheet:
             raise ValueError(f"replacing(kept=...) needs a construction tab of a sheet the "
                              f"door can place; {self.title!r} is not one")
         from planars.schema_values import row_key
-        key_cols = row_key(identity.class_name, self.title)
+        key_cols = row_key(identity.class_name, self._name())
         tooling = self._tooling_columns()
         keep = {tuple(str(v).strip() for v in k) for k in kept}
         header = grid[0] if grid else []
@@ -1038,7 +1376,7 @@ class CheckedWorksheet:
             return [f"cannot check locked tab {self.title!r}: the sheet's spec could "
                     f"not be built ({spec})"]
         try:
-            rows = spec.tab(self.title).rows or ()
+            rows = spec.tab(self._name()).rows or ()
         except KeyError:
             return [f"{self.title!r} is not a locked tab this class carries"]
         wrong = [(r, c) for (r, c), new in changes.items()
@@ -1092,7 +1430,7 @@ class CheckedWorksheet:
             return (f"cannot check the dropdown on {name!r} in {self.title!r}: the "
                     f"sheet's spec could not be built ({spec})")
         try:
-            tab = spec.tab(self.title)
+            tab = spec.tab(self._name())
         except KeyError:
             return (f"cannot check the dropdown on {name!r}: {self.title!r} is not a "
                     f"construction of {identity.describe()} in the diagnostics file")
@@ -1183,6 +1521,7 @@ class CheckedWorksheet:
 
     def update_title(self, title: str) -> Any:
         self._door._check(f"rename tab {self.title!r} of {self._ss.title!r} to {title!r}")
+        self._door._drop_tab_labels(self)
         result = _retry(lambda: self._inner.update_title(title))
         self._note("update_title")
         return result

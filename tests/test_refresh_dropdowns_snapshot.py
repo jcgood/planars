@@ -171,7 +171,10 @@ def test_apply_never_writes_a_cell_value(fake, monkeypatch):
     assert value_writes == []
     request_types = {m["request_type"] for m in fake.mutations
                      if m["op"] == "batch_request"}
-    assert request_types <= {"setDataValidation", "updateSheetProperties", "repeatCell"}
+    # createDeveloperMetadata: the Drive door labelling each tab it wrote,
+    # which annotators never see and which touches no cell.
+    assert request_types <= {"setDataValidation", "updateSheetProperties", "repeatCell",
+                             "createDeveloperMetadata"}
 
 
 def test_apply_leaves_annotation_content_byte_identical(fake, monkeypatch):

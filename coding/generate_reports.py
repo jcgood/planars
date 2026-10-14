@@ -34,6 +34,7 @@ from planars.reports import language_report_data
 from planars.html_report import render_language_report_pdf
 from .drive import _load_drive_config, _save_drive_config, create_or_update_shared_file
 from .drive_doorway import get_doorway
+from . import drive_door
 
 # PDF upload (create-or-update, renamed on update, shared "anyone with the
 # link, reader" on every run) is drive.create_or_update_shared_file, shared
@@ -93,7 +94,8 @@ def _run(apply: bool) -> None:
 
         try:
             file_id = create_or_update_shared_file(
-                doorway, pdf_bytes, filename, "application/pdf", folder_id, existing)
+                doorway, pdf_bytes, filename, "application/pdf", folder_id, existing,
+                identity=drive_door.lang_file("report", lang_id))
         except Exception as e:
             print(f"upload ERROR: {e}")
             continue
