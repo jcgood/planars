@@ -425,6 +425,24 @@ def test_a_language_with_unreadable_diagnostics_is_skipped(env, monkeypatch, tmp
     assert "skipping" in out
     assert doorway.mutations_of("create_spreadsheet") == []
     assert doorway.mutations_of("move_file") == []
+    # The status sheet is now stale, so the daily refresh must hear about it.
+    assert out.endswith("[SystemExit: 1]\n")
+
+
+def test_an_unopenable_class_sheet_is_shown_and_fails_the_run(env):
+    """It used to be a printed warning the daily refresh never saw, and the
+    status sheet called the construction 'no sheet found'."""
+    doorway, run, _ = env
+    manifest = doorway.download_file_json(MANIFEST_FILE_ID)
+    manifest["arao1248"]["sheets"]["noninterruption"]["spreadsheet_id"] = "no_such_sheet"
+    doorway.file(MANIFEST_FILE_ID).content = json.dumps(manifest).encode("utf-8")
+
+    out = run(["gen", "--lang", "arao1248", "--apply"])
+    ss = the_sheet(doorway, "status_arao1248")
+    row = status_row_index(ss, "noninterruption", "general")
+    assert ss.worksheet("Status").get_all_values()[row][2] == "could not open sheet"
+    assert "[arao1248] could not open the noninterruption spreadsheet" in out
+    assert out.endswith("[SystemExit: 1]\n")
 
 
 def test_no_lang_flag_runs_every_manifest_language(env):

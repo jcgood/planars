@@ -36,12 +36,18 @@ in place (found by name within the folder) rather than minting a new URL —
 unlike restructure-sheets, there is no annotation history to preserve here,
 so a stable bookmarkable link is preferable.
 
+A class spreadsheet that cannot be opened, or a diagnostics file that cannot
+be read, leaves that language's status sheet wrong. The run finishes the
+other languages, then exits non-zero naming each problem; the daily refresh
+turns that into a `status-sheet-error` issue.
+
 Authentication: same OAuth2 setup as generate_sheets.py.
 """
 from __future__ import annotations
 
 import argparse
 import json
+import sys
 from datetime import date
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
@@ -213,12 +219,15 @@ def _gather_status_rows(
     lang_id: str,
     lang_data: Dict,
     row_skeletons: List[Dict],
+    problems: List[str],
 ) -> List[Dict]:
     """Fill in live status/link data for each row skeleton by reading the live Sheet.
 
     Opens each class spreadsheet once (constructions share one spreadsheet, keyed
     by class_name in the manifest) and reads each construction's tab.
     Returns row dicts with class_name, construction, is_pair, status_text, color, link.
+    A spreadsheet that cannot be opened is added to ``problems``, which make
+    the command exit non-zero once every language is done.
     """
     lang_setup_dir = CODED_DATA / lang_id / "lang_setup"
     sheets = lang_data.get("sheets", {})
@@ -239,12 +248,12 @@ def _gather_status_rows(
             try:
                 open_spreadsheets[class_name] = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
             except Exception as exc:
-                print(f"    WARNING: could not open {class_name} spreadsheet for {lang_id}: {exc}")
+                problems.append(f"[{lang_id}] could not open the {class_name} spreadsheet: {exc}")
                 open_spreadsheets[class_name] = None
         ss = open_spreadsheets[class_name]
         if ss is None:
-            text, color = _missing_sheet_status()
-            rows.append({**skel, "status_text": text, "color": color, "link": None})
+            rows.append({**skel, "status_text": "could not open sheet", "color": _GRAY,
+                         "link": None})
             continue
 
         try:
@@ -452,6 +461,10 @@ def main(args: argparse.Namespace | None = None) -> None:
     manifest_dirty = False
 
     lang_ids = [lang_filter] if lang_filter else sorted(manifest.keys())
+    # Anything that leaves a language's status sheet wrong or unbuilt. The run
+    # carries on for the other languages, then exits non-zero naming them, so
+    # the daily refresh files a status-sheet-error issue.
+    problems: List[str] = []
 
     print(f"{'DRY RUN — ' if not apply else ''}Generating Annotation Status sheet(s)")
     if not apply:
@@ -479,6 +492,8 @@ def main(args: argparse.Namespace | None = None) -> None:
         try:
             specs = _read_diagnostics_for_language(lang_id, lang_setup_dir)
         except Exception as exc:
+            problems.append(f"[{lang_id}] could not read diagnostics_{lang_id}.yaml, so its "
+                            f"status sheet was not rebuilt: {exc}")
             print(f"\n[{lang_id}] could not read diagnostics_{lang_id}.yaml: {exc} — skipping")
             continue
 
@@ -486,7 +501,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         n_classes = len({s["class_name"] for s in skeletons})
         print(f"\n[{lang_id}] {len(skeletons)} construction(s) across {n_classes} class(es)")
 
-        rows = _gather_status_rows(doorway, lang_id, lang_data, skeletons)
+        rows = _gather_status_rows(doorway, lang_id, lang_data, skeletons, problems)
         for r in rows:
             marker = " (pair-row tab)" if r["is_pair"] else ""
             print(f"    {r['class_name']}/{r['construction']}{marker}: {r['status_text']}")
@@ -521,6 +536,12 @@ def main(args: argparse.Namespace | None = None) -> None:
             config["_planars_config_file_id"] = file_id
             _save_drive_config(config)
             print("Manifest updated on Drive (status_sheet_url).")
+
+    if problems:
+        print("\nERROR: some status sheets are wrong or were not rebuilt:")
+        for p in problems:
+            print(f"  {p}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
