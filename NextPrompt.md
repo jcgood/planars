@@ -30,8 +30,11 @@ first group, 1, 2 and 10 are done. **Unit 5 (the Drive door knows the
 topology) is designed and accepted** — `docs/drive-door-design.md`, Jeff's
 answers in its § 7, what was built in its § 8. 5a (the sheet spec), 5b
 (the checking layer, `coding/drive_door.py`, live in watch mode) and 5c
-(snapshots, per-write provenance, mid-run-edit check) are done; next is 5d,
-in the doc's § 5 order. Check for an open `door-violation`
+(snapshots, per-write provenance, mid-run-edit check) are done; **5d is in
+flight**: its decisions are the 2026-10-14 entry in the progress doc's
+decisions log, and the doorway/fake edits it names are uncommitted in
+`coding/drive_doorway.py` and `tests/fake_drive.py` — review the diff, then
+continue with `drive_door.py`. Check for an open `door-violation`
 issue first: each line is a command bug or a spec gap to fix.
 Live steps to name to Jeff for approval first: 5d's labelling migration
 and 5f's one-notebook sharing test.

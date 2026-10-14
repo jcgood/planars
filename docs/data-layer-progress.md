@@ -2278,6 +2278,45 @@ only, no passthrough of unknown methods, a test against bypassing the
 wrapper, the door told which command is running). Jeff caught that, and
 it was added before the decisions were taken.
 
+**2026-10-14 — Unit 5d in flight: how identity labels work** (to move into
+`docs/drive-door-design.md` § 8 when 5d lands). Uncommitted so far: the
+doorway (`create_file`/`update_file`/`create_doc` take `properties`;
+`SpreadsheetHandle.fetch_sheet_metadata`) and the fake (Drive `properties`,
+Sheets developer metadata via `createDeveloperMetadata`/
+`deleteDeveloperMetadata`, both seeded from test data); untested. Decisions:
+(1) Every Drive file's identity, spreadsheets included, is a Drive public
+`properties` label, not `appProperties` (only the OAuth client that wrote
+those can read them, and a second coordinator has their own client) and not
+spreadsheet developer metadata as § 2.3 said: one mechanism identifies any
+file id, which the sharing rule needs too. Keys `planars_kind`,
+`planars_lang`, `planars_class`, `planars_name`, `planars_state`
+(`archived`). (2) Tabs are labelled with Sheets developer metadata
+(document visibility): `planars_tab_kind` (locked/construction/status, from
+`sheet_spec`'s constants) and `planars_tab`. (3) Kinds, defined in one
+place in `drive_door.py`, validated, anything else can't be placed:
+class_sheet (lang, class), planar_sheet, diagnostics_sheet, status_sheet,
+notes_doc, report (lang each), manifest, notebook (name: domains /
+validation / report / all_languages; lang optional), folder (name: root /
+language / archive / status; lang for language and archive). (4) The door
+identifies a file from what this command created, then its label (read once
+per command), then the manifest — the last only until the labelling
+migration has run. (5) Every create on the door requires an identity and
+writes the label; `set_identity` refuses to change an existing different
+identity; `mark_archived` is called where sheets are archived
+(`restructure_sheets._lock_archived_sheet`, `prune_manifest._archive_drive_sheet`)
+and undone by `_rollback_unit`. (6) Rule 5 gains the role: a class sheet's
+annotator is writer while live, reader once archived, checked on
+`update_permission` too. (7) Tab labels are written at the end of a
+successful command, one `batch_update` per class sheet written; renaming a
+tab drops its labels; the end-of-command checks (labels, rule 6) run only on
+success, provenance always. (8) Migration `migrations/label_drive_files.py`:
+targets from `drive_config.json`, the manifest, `_archived/` folders
+(archived) and the Annotation Status folder; dry run, then `--apply` through
+the door — **needs Jeff's approval before the live run**. Then
+`capture-drive-state` records labels, test data is refrozen, and the
+manifest fallback is deleted. Three commits: labels; rule 6; migration +
+refreeze + fallback removal.
+
 **2026-10-13 — Unit 5c: the drop refusal lives in `replacing()`, and stays
 on in watch mode** (recorded in `docs/drive-door-design.md` § 8). Rule 1
 permits everything inside `replacing()`, so the old annotated-drop check
