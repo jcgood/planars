@@ -32,6 +32,7 @@ _DIRECT_ACCESS = re.compile(
 _EXEMPT = {
     "drive.py",           # the low-level helpers the doorway itself calls
     "drive_doorway.py",   # the doorway
+    "drive_door.py",      # the checks wrapped around it
     "__main__.py",        # dispatch only
     # Read-only recorder that deliberately uses the low-level helpers: it
     # exists to capture raw API responses, so going through an abstraction
@@ -83,6 +84,22 @@ def test_migrated_files_do_not_reach_google_directly():
         "A half-migrated command is worse than an unmigrated one: its writes "
         "are no longer all visible in one place."
     )
+
+
+_PAST_THE_DOOR = re.compile(r"\._inner\b|\.inner\b")
+
+
+def test_nothing_reaches_past_the_door():
+    """The Drive door checks every write only if no command holds what it wraps
+    (docs/drive-door-design.md § 2.2, point 3). A command that took the raw
+    gspread object out of a door handle could write anything, unchecked."""
+    reaching = sorted(
+        path.name for path in CODING.glob("*.py")
+        if path.name != "drive_door.py" and _PAST_THE_DOOR.search(
+            path.read_text(encoding="utf-8")))
+    assert not reaching, (
+        f"{reaching} reach inside a Drive door handle (`._inner`/`.inner`). Add "
+        "the method the command needs to coding/drive_door.py, with its check.")
 
 
 def test_progress_is_recorded_where_it_is_claimed():

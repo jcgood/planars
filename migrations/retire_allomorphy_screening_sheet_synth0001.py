@@ -29,7 +29,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from coding.drive import (  # noqa: E402
-    _load_drive_config, _save_drive_config, _with_retry, load_manifest, upload_manifest,
+    _load_drive_config, _save_drive_config, load_manifest, upload_manifest,
 )
 from coding.drive_doorway import get_doorway  # noqa: E402
 
@@ -48,7 +48,7 @@ def main() -> None:
     entry = manifest[LANG]
     folder_id = entry["folder_id"]
     present = [k for k in KEYS if k in entry]
-    parents = _with_retry(lambda: doorway.get_file(OLD_SHEET_ID, fields="id,name,parents")).get("parents", [])
+    parents = doorway.get_file(OLD_SHEET_ID, fields="id,name,parents").get("parents", [])
 
     print(f"{'DRY RUN — ' if not apply else ''}retire {OLD_SHEET_ID}")
     print(f"  move to {LANG}/_archived/ (now in parents {parents})")
@@ -57,9 +57,9 @@ def main() -> None:
         print("\nRun with --apply to write.")
         return
 
-    archive_id = _with_retry(lambda: doorway.get_or_create_folder("_archived", parent_id=folder_id))
+    archive_id = doorway.get_or_create_folder("_archived", parent_id=folder_id)
     if archive_id not in parents:
-        _with_retry(lambda: doorway.move_file(OLD_SHEET_ID, archive_id))
+        doorway.move_file(OLD_SHEET_ID, archive_id)
     if present:
         for k in present:
             entry.pop(k)
@@ -72,4 +72,10 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    from coding import drive_door
+    # Runs outside `python -m coding`, so it tells the Drive door itself.
+    with drive_door.running("migration retire_allomorphy_screening_sheet_synth0001",
+                            may_write="--apply" in sys.argv):
+        main()

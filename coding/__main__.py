@@ -86,7 +86,11 @@ def main() -> None:
     # through can still have written something to Drive, and "this run may
     # have changed something" is the signal provenance.py exists to capture.
     provenance.record(cmd, op_id, args)
-    mod.main(args)
+    # The Drive door learns which command is running here, so it knows
+    # whether this invocation may write (docs/drive-door-design.md § 2.2).
+    from . import drive_door
+    with drive_door.running(cmd, args):
+        mod.main(args)
 
 
 if __name__ == "__main__":

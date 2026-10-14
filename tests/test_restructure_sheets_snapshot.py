@@ -63,6 +63,7 @@ from coding import import_planar as ip
 from coding import restructure_journal as rj
 from coding import restructure_sheets as rs
 from coding import validate_coding as vc
+from command_runner import run_command
 from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID, api_error
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
@@ -155,6 +156,25 @@ class Env:
         yaml_path.write_text(
             yaml_path.read_text(encoding="utf-8").replace(f"{old}:", f"{new}:"),
             encoding="utf-8")
+        self._register_class_as(old, new)
+
+    def _register_class_as(self, old: str, new: str) -> None:
+        """A real rename renames the class in the schema too; here the schema
+        gains a copy of ``old`` under ``new`` for the length of the test, so
+        the Drive door can build the renamed sheet's spec."""
+        import copy
+
+        import coding.schemas as schemas
+        import planars.schema_values as sv
+        classes = copy.deepcopy(schemas.load_diagnostic_classes())
+        entry = copy.deepcopy(next(c for c in classes["classes"] if c["name"] == old))
+        entry["name"] = new
+        classes["classes"].append(entry)
+        self.monkeypatch.setattr(schemas, "_diagnostic_classes_cache", classes)
+        original = sv._construction_entry
+        self.monkeypatch.setattr(
+            sv, "_construction_entry",
+            lambda cls, con: original(old if cls == new else cls, con))
 
     def inject_pair_row(self, lang: str, class_name: str, construction: str,
                         a: str, b: str, criterion_col: str, value: str) -> None:
@@ -239,15 +259,17 @@ def env(monkeypatch, tmp_path):
         buf = io.StringIO()
         try:
             with redirect_stdout(buf):
-                rs.main()
+                run_command(rs, "restructure-sheets")
         except SystemExit as exc:
             if exc.code:
                 buf.write(f"[SystemExit: {exc.code}]\n")
         return buf.getvalue()
 
+    env_ = Env(doorway, coded, saved_configs, autocommit_calls,
+               notebook_calls, revalidate_calls, push_planar_calls, run)
+    env_.monkeypatch = monkeypatch
     try:
-        yield Env(doorway, coded, saved_configs, autocommit_calls,
-                  notebook_calls, revalidate_calls, push_planar_calls, run)
+        yield env_
     finally:
         drive_doorway.reset_doorway()
 
@@ -1059,8 +1081,7 @@ def test_a_transient_429_during_archiving_is_retried_not_a_crash(env, monkeypatc
     failure -- time.sleep is mocked so the real ~15s backoff wait doesn't
     slow the suite down (same convention as test_apply_pending_snapshot.py).
     """
-    import coding.drive as drive_module
-    monkeypatch.setattr(drive_module.time, "sleep", lambda *a, **kw: None)
+    monkeypatch.setattr("coding.drive_door.time.sleep", lambda *a, **kw: None)
 
     env.rename_position("stan1293", "v:npsubj1", "v:npsubj1new")
     env.doorway.fail_after("update_file", 1, exc=api_error(429, "rate limited"))

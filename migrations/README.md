@@ -30,3 +30,13 @@ Post-run checks:
 ```
 
 Dry-run mode (default) should always be supported and should print what would change without modifying anything.
+
+A migration that writes to Drive runs outside `python -m coding`, so it tells the Drive door (`coding/drive_door.py`) what is running itself; without that, every write it makes breaks the door's rules (refused once the door enforces):
+
+```python
+if __name__ == "__main__":
+    import sys
+    from coding import drive_door
+    with drive_door.running("migration <script>", may_write="--apply" in sys.argv):
+        main()
+```

@@ -244,6 +244,16 @@ labels:
       Auto-closed when every label in use is registered.
     filed_by: issue --sync-labels --apply (data-refresh.yml)
 
+  - name: door-violation
+    color: "d93f0b"
+    description: "A command's Drive write broke one of the Drive door's rules while the door was only watching"
+    meaning: >-
+      While the Drive door (`coding/drive_door.py`) is in watch mode, a write
+      that breaks one of its rules still goes ahead, and the command files or
+      updates this issue listing what broke. Each line is a bug in the command
+      or a gap in the sheet spec. Resolve: fix whichever it is, then close.
+    filed_by: the Drive door, at the end of any watched command
+
   - name: sheet-updates
     color: "c5def5"
     description: "One per language: annotators subscribe to hear when that language's sheets change"

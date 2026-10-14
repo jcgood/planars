@@ -27,6 +27,7 @@ import pytest
 
 from coding import drive as drive_module
 from coding import drive_doorway, setup_root_folder
+from command_runner import run_command
 from fake_drive import FIXTURE_DIR, MANIFEST_FILE_ID, FakeDriveDoorway, api_error
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -73,7 +74,7 @@ def run(monkeypatch) -> str:
     monkeypatch.setattr("sys.argv", ["setup-root-folder"])
     buf = io.StringIO()
     with redirect_stdout(buf):
-        setup_root_folder.main()
+        run_command(setup_root_folder, "setup-root-folder")
     return buf.getvalue()
 
 
@@ -221,7 +222,7 @@ def test_a_transient_429_during_the_move_step_is_retried_not_a_crash(env, monkey
     so the real ~15s backoff wait doesn't slow the suite down.
     """
     doorway, config, _ = env
-    monkeypatch.setattr(drive_module.time, "sleep", lambda *a, **kw: None)
+    monkeypatch.setattr("coding.drive_door.time.sleep", lambda *a, **kw: None)
     doorway.fail_after("move_file", 1, exc=api_error(429, "rate limited"))
     out = run(monkeypatch)
     assert "[SystemExit:" not in out

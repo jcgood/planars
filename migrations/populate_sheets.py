@@ -29,8 +29,9 @@ Post-run checks:
 Notes:
 - Uses its own OAuth client (pre-dates the coding.drive module); credentials
   are read from PLANARS_OAUTH_CREDENTIALS or ~/.config/planars/oauth_credentials.json.
-- The .worksheet() call is not wrapped with _with_retry; this is acceptable for
-  a one-time historical script.
+- The .worksheet() call does not retry on transient API errors (retry lives in
+  the Drive door, coding/drive_door.py, which this script predates); this is
+  acceptable for a one-time historical script.
 """
 from __future__ import annotations
 

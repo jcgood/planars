@@ -28,6 +28,7 @@ from typing import Dict, List
 import pytest
 
 from coding import apply_pending, drive_doorway
+from command_runner import run_command
 from fake_drive import FakeDriveDoorway
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -118,7 +119,7 @@ def env(monkeypatch, tmp_path):
 
         buf = io.StringIO()
         with redirect_stdout(buf):
-            apply_pending.main()
+            run_command(apply_pending, "apply-pending")
 
         left = json.loads(pending_path.read_text(encoding="utf-8"))
         return Session(buf.getvalue(), commands, left, bool(closed))
@@ -391,12 +392,11 @@ def test_a_failure_while_reading_tab_names_is_told_apart_by_its_status(
 
 def test_a_busy_drive_is_retried_first_and_only_then_reported(env, monkeypatch):
     """429 and friends are Drive asking to wait, not an answer about the entry."""
-    import coding.drive as drive_module
     from fake_drive import api_error
 
     doorway, run = env
     waits: List[int] = []
-    monkeypatch.setattr(drive_module.time, "sleep", waits.append)
+    monkeypatch.setattr("coding.drive_door.time.sleep", waits.append)
     fail_reading_tab_names(doorway, monkeypatch, api_error(429, "rate limited"))
 
     entry = construction_entry(True, SUBSPAN, ["auxiliary_construction"])
@@ -471,7 +471,7 @@ def test_a_crash_after_one_entry_succeeds_does_not_leave_it_listed(monkeypatch, 
     monkeypatch.setattr(sys, "argv", ["apply-pending"])
 
     with pytest.raises(RuntimeError, match="simulated crash"):
-        apply_pending.main()
+        run_command(apply_pending, "apply-pending")
 
     left = json.loads(pending_path.read_text(encoding="utf-8"))
     # entry_a's success was saved immediately -- not still listed, so a

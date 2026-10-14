@@ -26,7 +26,8 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
-from .drive import _with_retry, load_manifest
+from . import drive_door
+from .drive import load_manifest
 from .drive_doorway import get_doorway
 from .locked_tabs import system_tab_titles
 from .restructure_sheets import _get_keyed_row_constructions, _get_pair_row_constructions
@@ -168,7 +169,9 @@ def highlight_cells(ws, bad_cells: List[Tuple[int, int]]) -> None:
         }
         for r, c in bad_cells
     ]
-    _with_retry(lambda: ws.spreadsheet.batch_update({"requests": requests}))
+    # Painted on a dry run too (operations.yaml always_on_writes).
+    with drive_door.always_on("highlighting"):
+        ws.spreadsheet.batch_update({"requests": requests})
 
 
 def clear_highlights(ws) -> None:
@@ -186,7 +189,8 @@ def clear_highlights(ws) -> None:
             "fields": "userEnteredFormat.backgroundColor",
         }
     }]}
-    _with_retry(lambda: ws.spreadsheet.batch_update(body))
+    with drive_door.always_on("highlighting"):
+        ws.spreadsheet.batch_update(body)
 
 
 # ---------------------------------------------------------------------------
@@ -488,7 +492,7 @@ def _check_header_sync(
         return None
     with tsv_path.open() as f:
         tsv_header = f.readline().rstrip("\n").split("\t")
-    sheet_header = _with_retry(lambda: ws.row_values(1))
+    sheet_header = ws.row_values(1)
     # gspread may pad with trailing empty strings for empty cells; trim to TSV width.
     sheet_header = sheet_header[:len(tsv_header)]
     if sheet_header != tsv_header:
@@ -864,7 +868,7 @@ def revalidate_sheets(
                 continue
 
             system_tabs = set(system_tab_titles())
-            for ws in _with_retry(lambda: ss.worksheets()):
+            for ws in ss.worksheets():
                 construction = ws.title
                 if construction in system_tabs:
                     continue

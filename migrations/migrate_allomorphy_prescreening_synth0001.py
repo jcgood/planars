@@ -38,7 +38,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from coding.biuniqueness_rows import wrap  # noqa: E402
-from coding.drive import _with_retry, load_manifest  # noqa: E402
+from coding.drive import load_manifest  # noqa: E402
 from coding.drive_doorway import get_doorway  # noqa: E402
 
 LANG = "synth0001"
@@ -59,11 +59,11 @@ def main() -> None:
     doorway = get_doorway()
     new_id = load_manifest(doorway)[LANG]["sheets"]["biuniqueness_deviations"]["spreadsheet_id"]
 
-    old_vals = _with_retry(doorway.open_spreadsheet(OLD_SHEET_ID).worksheet("prescreening").get_all_values)
+    old_vals = doorway.open_spreadsheet(OLD_SHEET_ID).worksheet("prescreening").get_all_values()
     old_header, _, old_rows = _table(old_vals, "Position_Name")
     new_ss = doorway.open_spreadsheet(new_id)
     new_ws = new_ss.worksheet("prescreening")
-    new_vals = _with_retry(new_ws.get_all_values)
+    new_vals = new_ws.get_all_values()
     new_header, header_idx, new_rows = _table(new_vals, "Element")
     where = {(r[new_header.index("Position_Name")], r[new_header.index("Element")]): i
              for i, r in enumerate(new_rows)}
@@ -97,8 +97,8 @@ def main() -> None:
 
     from coding.people import email_for
     adam = email_for("Adam Tallman")
-    perms = _with_retry(lambda: doorway.list_permissions(
-        new_id, fields="permissions(id,type,role,emailAddress)"))
+    perms = doorway.list_permissions(
+        new_id, fields="permissions(id,type,role,emailAddress)")
     adam_shared = any(p.get("emailAddress", "").lower() == adam and p.get("role") == "writer"
                       for p in perms)
     print(f"  Adam {'already has' if adam_shared else 'will be given'} writer access")
@@ -107,12 +107,18 @@ def main() -> None:
         print("\nRun with --apply to write.")
         return
     for row, col, value, _, _ in writes:
-        _with_retry(lambda r=row, c=col, v=value: new_ws.update_cell(r, c, v))
+        new_ws.update_cell(row, col, value)
     if not adam_shared:
-        _with_retry(lambda: doorway.create_permission(new_id, type="user", role="writer",
-                                                      email=adam, notify=False))
+        doorway.create_permission(new_id, type="user", role="writer",
+                                  email=adam, notify=False)
     print(f"\nCopied {len(writes)} cell(s).")
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    from coding import drive_door
+    # Runs outside `python -m coding`, so it tells the Drive door itself.
+    with drive_door.running("migration migrate_allomorphy_prescreening_synth0001",
+                            may_write="--apply" in sys.argv):
+        main()

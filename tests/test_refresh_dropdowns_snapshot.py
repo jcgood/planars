@@ -40,6 +40,7 @@ from pathlib import Path
 import pytest
 
 from coding import drive, drive_doorway, refresh_dropdowns
+from command_runner import run_command
 from fake_drive import (FIXTURE_DIR, FakeDriveDoorway, MANIFEST_FILE_ID, ROOT_FOLDER_ID,
                         use_frozen_coded_data)
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
@@ -85,7 +86,7 @@ def run(argv, monkeypatch) -> str:
     monkeypatch.setattr("sys.argv", argv)
     buf = io.StringIO()
     with redirect_stdout(buf):
-        refresh_dropdowns.main()
+        run_command(refresh_dropdowns, "refresh-dropdowns")
     return buf.getvalue()
 
 

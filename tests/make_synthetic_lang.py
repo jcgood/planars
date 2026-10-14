@@ -540,8 +540,11 @@ def main() -> None:
     # happened on 2026-07-31 (see planars#256/#258/#259/#257 and the fix in
     # planars-data commit 94fea13). Mirrors restructure_sheets.py's call.
     print("\n--- Syncing planar Sheet ---")
+    from coding import drive_door
     from coding.import_planar import push_planars_to_sheets
-    push_planars_to_sheets(lang_ids=[DST_LANG], apply=True)
+    # Runs outside `python -m coding`, so it tells the Drive door itself.
+    with drive_door.running("make-synthetic-lang", may_write=True):
+        push_planars_to_sheets(lang_ids=[DST_LANG], apply=True)
 
 
 if __name__ == "__main__":

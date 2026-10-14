@@ -47,7 +47,6 @@ from .drive import (
     upload_manifest,
     _load_drive_config,
     _save_drive_config,
-    _with_retry,
 )
 from .drive_doorway import get_doorway
 from .import_sheets import _archive_tsv
@@ -77,11 +76,11 @@ def _sheet_metadata(doorway, spreadsheet_id: str, class_name: str) -> Optional[D
     if spreadsheet_id in _SHEET_META:
         return _SHEET_META[spreadsheet_id]
     try:
-        meta = _with_retry(lambda: doorway.get_file(
+        meta = doorway.get_file(
             spreadsheet_id,
             fields="name,modifiedTime",
             supports_all_drives=True,
-        ))
+        )
     except Exception as exc:
         print(f"    WARNING: could not read sheet metadata for {class_name}: {exc}")
         meta = None
@@ -140,8 +139,8 @@ def _archive_drive_sheet(
     _warn_if_recently_edited(meta, spreadsheet_id)
 
     try:
-        archived_folder_id = _with_retry(lambda: doorway.get_or_create_folder("_archived", folder_id))
-        _with_retry(lambda: doorway.move_file(spreadsheet_id, archived_folder_id))
+        archived_folder_id = doorway.get_or_create_folder("_archived", folder_id)
+        doorway.move_file(spreadsheet_id, archived_folder_id)
         print(f"    archived Drive sheet: '{sheet_name}' → _archived/")
         lowered = make_read_only(doorway, spreadsheet_id)
         if lowered:

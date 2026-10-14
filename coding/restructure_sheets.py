@@ -118,7 +118,7 @@ from planars.schema_values import (
     row_columns_of, row_key_of, row_type_of,
 )
 from .drive import (
-    _autocommit_data, _load_drive_config, _save_drive_config, _with_retry,
+    _autocommit_data, _load_drive_config, _save_drive_config,
     load_manifest, remove_anyone_permission, set_user_role, upload_manifest,
 )
 from .drive_doorway import SpreadsheetHandle, WorksheetHandle, WorksheetNotFound, get_doorway
@@ -140,6 +140,7 @@ from .notify import (
     post_notification_comment,
 )
 from . import restructure_journal
+from . import drive_door
 
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
 CODED_DATA = ROOT / "coded_data"
@@ -234,10 +235,8 @@ def _lock_archived_sheet(doorway, file_id: str, lang_id: str) -> None:
     and read them — just not edit them, since they're no longer the live copy.
 
     Uses `drive.remove_anyone_permission`, the one copy of that sequence
-    (it was inlined here and in two other files until 2026-10-12), which
-    retries every call (Phase 8, issue #271, found by fault injection: a
-    single rate-limit blip during archiving used to crash the whole run and
-    manufacture a false interrupted-run recovery event).
+    (it was inlined here and in two other files until 2026-10-12). Retry on a
+    rate-limit blip happens in the Drive door (`coding/drive_door.py`).
 
     The annotator's grant is *set* to reader (`drive.set_user_role`), not
     added: until 2026-10-13 this created a reader grant beside the writer one
@@ -278,8 +277,8 @@ def _rollback_unit(doorway, manifest, entry: dict) -> None:
     real Drive API honors that field mask and omits the address otherwise,
     unlike the fake, which returns every field regardless of what's asked.
 
-    Wrapped in `_with_retry` throughout, same reasoning and same fault-
-    injection pass as `_lock_archived_sheet` above.
+    Retry on a rate-limit blip happens in the Drive door
+    (`coding/drive_door.py`).
     """
     lang_id = entry["lang_id"]
     class_name = entry["class_name"]
@@ -287,8 +286,8 @@ def _rollback_unit(doorway, manifest, entry: dict) -> None:
     archived_id = detail["archived_spreadsheet_id"]
     folder_id = detail.get("folder_id")
     if folder_id:
-        _with_retry(lambda: doorway.move_file(archived_id, folder_id))
-    _with_retry(lambda: doorway.update_file(archived_id, name=f"{class_name}_{lang_id}"))
+        doorway.move_file(archived_id, folder_id)
+    doorway.update_file(archived_id, name=f"{class_name}_{lang_id}")
     email = _annotator_email(lang_id)
     if email:
         set_user_role(doorway, archived_id, email, "writer")
@@ -443,7 +442,7 @@ def _write_tab_with_carryover(
         pd.DataFrame(all_rows[1:], columns=header).to_csv(tsv_path, sep="\t", index=False)
 
     try:
-        ws = _with_retry(lambda: spreadsheet.worksheet(tab_name))
+        ws = spreadsheet.worksheet(tab_name)
         ws.clear()
     except WorksheetNotFound:
         ws = spreadsheet.add_worksheet(
@@ -754,7 +753,7 @@ def _cascade_rename_pair_tab(
 
     Updates cells in-place via batch_update.  Returns the count of cell values changed.
     """
-    all_values = _with_retry(lambda: ws.get_all_values())
+    all_values = ws.get_all_values()
     if not all_values:
         return 0
     header = all_values[0]
@@ -772,10 +771,10 @@ def _cascade_rename_pair_tab(
                 updates.append({"range": f"{col_letter}{row_idx}", "values": [[new_val]]})
 
     if updates:
-        _with_retry(lambda: ws.spreadsheet.values_batch_update({
+        ws.spreadsheet.values_batch_update({
             "valueInputOption": "RAW",
             "data": updates,
-        }))
+        })
     return len(updates)
 
 
@@ -798,8 +797,8 @@ def _copy_pair_tab_with_rename(
     Returns (rows_copied, cells_renamed, rows_split, rows_needing_manual_review).
     """
     try:
-        old_ws = _with_retry(lambda: old_ss.worksheet(tab_name))
-        all_values = _with_retry(lambda: old_ws.get_all_values())
+        old_ws = old_ss.worksheet(tab_name)
+        all_values = old_ws.get_all_values()
     except WorksheetNotFound:
         all_values = []
 
@@ -826,7 +825,7 @@ def _copy_pair_tab_with_rename(
     )
 
     try:
-        ws = _with_retry(lambda: new_ss.worksheet(tab_name))
+        ws = new_ss.worksheet(tab_name)
         ws.clear()
     except WorksheetNotFound:
         ws = new_ss.add_worksheet(
@@ -984,7 +983,7 @@ def _copy_keyed_tab_with_rename(
     """Copy a keyed tab into the recreated sheet with renames applied.
     Returns (rows_copied, cells_changed, rows_flagged)."""
     try:
-        all_values = _with_retry(lambda: _with_retry(lambda: old_ss.worksheet(tab_name)).get_all_values())
+        all_values = old_ss.worksheet(tab_name).get_all_values()
     except WorksheetNotFound:
         all_values = []
     header = all_values[0] if all_values else keyed["columns"] + param_names + list(_TRAILING_COLS)
@@ -1119,7 +1118,7 @@ def _rename_class_for_language(
     all_annotations: Dict[str, Dict[Tuple[str, str], Dict[str, str]]] = {}
     for construction in constructions:
         try:
-            ws = _with_retry(lambda: ss.worksheet(construction))
+            ws = ss.worksheet(construction)
             all_annotations[construction] = _download_tab_annotations(ws)
             print(f"    [{construction}] downloaded {len(all_annotations[construction])} rows")
         except WorksheetNotFound:
@@ -1160,15 +1159,12 @@ def _rename_class_for_language(
 
     # --- apply ---
 
-    # Archive old sheet. Structural doorway calls wrapped in _with_retry
-    # throughout this block and the create block below (Phase 8, issue #271,
-    # found by fault injection) -- previously unretried, unlike every
-    # worksheet-content read in this file, so a single transient 429/500/503
-    # here used to crash the whole run instead of retrying transparently.
+    # Archive old sheet. (Retry on a transient 429/500/503 happens in the
+    # Drive door, coding/drive_door.py.)
     if folder_id:
-        archive_id = _with_retry(lambda: doorway.get_or_create_folder("_archived", parent_id=folder_id))
-        _with_retry(lambda: doorway.update_file(ss.id, name=f"{old_class}_{lang_id}_v{version}"))
-        _with_retry(lambda: doorway.move_file(ss.id, archive_id))
+        archive_id = doorway.get_or_create_folder("_archived", parent_id=folder_id)
+        doorway.update_file(ss.id, name=f"{old_class}_{lang_id}_v{version}")
+        doorway.move_file(ss.id, archive_id)
         _lock_archived_sheet(doorway, ss.id, lang_id)
         restructure_journal.record_checkpoint(
             lang_id, old_class, restructure_journal.OLD_SHEET_ARCHIVED,
@@ -1178,14 +1174,15 @@ def _rename_class_for_language(
 
     # Create new sheet
     sheet_title = f"{new_class}_{lang_id}"
-    new_ss = _with_retry(lambda: doorway.create_spreadsheet(sheet_title))
+    new_ss = doorway.create_spreadsheet(
+        sheet_title, identity=drive_door.class_sheet(lang_id, new_class))
     if folder_id:
-        _with_retry(lambda: doorway.move_file(new_ss.id, folder_id))
+        doorway.move_file(new_ss.id, folder_id)
         email = _annotator_email(lang_id)
         if email:
-            _with_retry(lambda: doorway.create_permission(new_ss.id, type="user", role="writer", email=email))
+            doorway.create_permission(new_ss.id, type="user", role="writer", email=email)
 
-    default_ws = _with_retry(lambda: new_ss.sheet1)
+    default_ws = new_ss.sheet1
     tab_names = []
     new_construction_params = {}
 
@@ -1627,7 +1624,7 @@ def main(args: argparse.Namespace | None = None) -> None:
             all_annotations: Dict[str, Dict[Tuple[str, str], Dict[str, str]]] = {}
             for construction in sheet_info["constructions"]:
                 try:
-                    ws = _with_retry(lambda: ss.worksheet(construction))
+                    ws = ss.worksheet(construction)
                     all_annotations[construction] = _download_tab_annotations(ws)
                     print(f"    [{construction}] downloaded {len(all_annotations[construction])} rows")
                 except WorksheetNotFound:
@@ -1703,17 +1700,13 @@ def main(args: argparse.Namespace | None = None) -> None:
             if not apply:
                 continue
 
-            # Step 3: Archive existing sheet. Structural doorway calls
-            # wrapped in _with_retry throughout this step and Step 4 below
-            # (Phase 8, issue #271, found by fault injection) -- previously
-            # unretried, unlike every worksheet-content read in this file,
-            # so a single transient 429/500/503 here used to crash the
-            # whole run instead of retrying transparently.
+            # Step 3: Archive existing sheet. (Retry on a transient
+            # 429/500/503 happens in the Drive door, coding/drive_door.py.)
             new_version = version + 1
             if folder_id:
-                archive_id = _with_retry(lambda: doorway.get_or_create_folder("_archived", parent_id=folder_id))
-                _with_retry(lambda: doorway.update_file(ss.id, name=f"{class_name}_{lang_id}_v{version}"))
-                _with_retry(lambda: doorway.move_file(ss.id, archive_id))
+                archive_id = doorway.get_or_create_folder("_archived", parent_id=folder_id)
+                doorway.update_file(ss.id, name=f"{class_name}_{lang_id}_v{version}")
+                doorway.move_file(ss.id, archive_id)
                 _lock_archived_sheet(doorway, ss.id, lang_id)
                 restructure_journal.record_checkpoint(
                     lang_id, class_name, restructure_journal.OLD_SHEET_ARCHIVED,
@@ -1723,14 +1716,15 @@ def main(args: argparse.Namespace | None = None) -> None:
 
             # Step 4: Create new sheet and populate with carry-over
             sheet_title = f"{class_name}_{lang_id}"
-            new_ss = _with_retry(lambda: doorway.create_spreadsheet(sheet_title))
+            new_ss = doorway.create_spreadsheet(
+                sheet_title, identity=drive_door.class_sheet(lang_id, class_name))
             if folder_id:
-                _with_retry(lambda: doorway.move_file(new_ss.id, folder_id))
+                doorway.move_file(new_ss.id, folder_id)
                 email = _annotator_email(lang_id)
                 if email:
-                    _with_retry(lambda: doorway.create_permission(new_ss.id, type="user", role="writer", email=email))
+                    doorway.create_permission(new_ss.id, type="user", role="writer", email=email)
 
-            default_ws = _with_retry(lambda: new_ss.sheet1)
+            default_ws = new_ss.sheet1
             tab_names = []
             new_construction_params = {}
 
@@ -1843,7 +1837,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                             continue
                         ss_pair = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
                         try:
-                            ws = _with_retry(lambda: ss_pair.worksheet(construction))
+                            ws = ss_pair.worksheet(construction)
                             sheet_changed = _cascade_rename_pair_tab(ws, rename_map)
                             if sheet_changed:
                                 print(

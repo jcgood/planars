@@ -106,7 +106,7 @@ class _DoorwayStub:
     def list_files(self, q, fields="files(id, name)", page_size=None):
         return self._existing_files
 
-    def create_spreadsheet(self, title):
+    def create_spreadsheet(self, title, identity=None):
         self.create_spreadsheet_calls.append(title)
         ss = MagicMock()
         ss.sheet1 = MagicMock()

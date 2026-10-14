@@ -74,14 +74,13 @@ def _verify_construction_tabs(spreadsheet_id: str,
 
     # Imported here, not at the top of the file, so that a run with nothing
     # to verify — the common case — never signs in to Google at all.
-    from .drive import _with_retry
     from .drive_doorway import APIError, NoAccess, SpreadsheetNotFound, get_doorway
 
     try:
         # open_spreadsheet retries by itself; opening used not to. Reading tab
         # names is idempotent, so the extra attempts can only help.
         ss = get_doorway().open_spreadsheet(spreadsheet_id)
-        existing_titles = {ws.title for ws in _with_retry(ss.worksheets)}
+        existing_titles = {ws.title for ws in ss.worksheets()}
     except SpreadsheetNotFound:
         return SHEET_NOT_FOUND, {}
     except NoAccess:

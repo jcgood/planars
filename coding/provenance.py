@@ -23,17 +23,12 @@ default direction, local TSV only) is not logged, but sync-diagnostics-yaml
 See coding/gating.py's gate_satisfied() for exactly how a record's or
 mode's gate is matched against real args.
 
-Known gap, deliberately accepted rather than solved here: import-sheets
-paints pink highlighting on invalid cells (a real Sheet write) on every
-run, including a dry run -- that write isn't gated by --apply at all, only
-import-sheets' *other* side effects are. Its operations.yaml apply_gate
-("--apply") describes those other effects correctly, so gating this
-module's logging on that same apply_gate means a dry run of import-sheets
-that paints cells is not logged. Fixing this precisely would need a second,
-independent gate on one record, which the schema does not model today (see
-operation_record.schema.json's writes_to_drive field description) --
-flagged as a Finding in docs/data-layer-progress.md rather than worked
-around with a special case here.
+A write a command makes on every run, a dry run included, is declared in
+its record's `always_on_writes` (import-sheets' pink highlighting), and a
+run of such a command is always logged (Phase 10 unit 5, design Q5). The
+Drive door (coding/drive_door.py) uses the same two answers: it refuses
+every write on a run `writes_to_drive` says doesn't write, except the
+declared always-made ones.
 
 Retention: append-forever (Jeff's decision on the unit E open question) --
 no rotation logic. At this project's scale (one coordinator, well under a
@@ -82,7 +77,8 @@ def record(cli_command: str, op_id: str, args: argparse.Namespace,
     No-op otherwise -- most invocations (dry runs, read-only commands) are
     never logged, by design (see module docstring).
     """
-    if not writes_to_drive(op_id, args):
+    always = (_load_operations().get(op_id) or {}).get("always_on_writes")
+    if not writes_to_drive(op_id, args) and not always:
         return
     path = log_path or LOG_PATH
     entry = {

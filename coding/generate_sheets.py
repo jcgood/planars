@@ -76,10 +76,10 @@ from . import validate_diagnostics as _val_diag
 from . import biuniqueness_rows as _br
 from . import people as _people
 from . import issues as _issues
+from . import drive_door
 from .drive import (
     _load_drive_config,
     _save_drive_config,
-    _with_retry,
     load_manifest,
     upload_manifest,
     create_notes_doc,
@@ -153,17 +153,17 @@ def _create_or_update_tsv_sheet(
 
     if existing_id:
         ss = doorway.open_spreadsheet(existing_id)
-        ws = _with_retry(lambda: ss.sheet1)
-        _with_retry(ws.clear)
+        ws = ss.sheet1
+        ws.clear()
     else:
-        ss = _with_retry(lambda: doorway.create_spreadsheet(name))
-        _with_retry(lambda: doorway.move_file(ss.id, folder_id))
+        ss = doorway.create_spreadsheet(name)
+        doorway.move_file(ss.id, folder_id)
         email = _annotator_email(lang_id)
         if email:
-            _with_retry(lambda: doorway.create_permission(ss.id, type="user", role="writer", email=email))
-        ws = _with_retry(lambda: ss.sheet1)
+            doorway.create_permission(ss.id, type="user", role="writer", email=email)
+        ws = ss.sheet1
 
-    _with_retry(lambda: ws.update(all_rows, "A1"))
+    ws.update(all_rows, "A1")
 
     # Bold and freeze the header row.
     ss.batch_update({"requests": [
@@ -934,7 +934,7 @@ def _populate_tab_pairs(
     pair_struct = PAIR_ROW_SHAPES["element_pairs"]
     num_cols = len(pair_struct) + len(param_names) + len(_TRAILING_COLS)  # structure, params, trailing
     try:
-        ws = _with_retry(lambda: spreadsheet.worksheet(tab_name))
+        ws = spreadsheet.worksheet(tab_name)
         _reset_worksheet(ws, len(pairs), num_cols)
     except WorksheetNotFound:
         ws = spreadsheet.add_worksheet(
@@ -983,7 +983,7 @@ def _populate_tab_reflex_pairs(
     _REFLEX_STRUCT = PAIR_ROW_SHAPES["position_pairs"]
     num_cols = len(_REFLEX_STRUCT) + len(param_names) + len(_TRAILING_COLS)
     try:
-        ws = _with_retry(lambda: spreadsheet.worksheet(tab_name))
+        ws = spreadsheet.worksheet(tab_name)
         _reset_worksheet(ws, len(pairs), num_cols)
     except WorksheetNotFound:
         ws = spreadsheet.add_worksheet(
@@ -1022,7 +1022,7 @@ def _populate_tab_keyed(
     """
     num_cols = len(keyed_columns) + len(param_names) + len(_TRAILING_COLS)
     try:
-        ws = _with_retry(lambda: spreadsheet.worksheet(tab_name))
+        ws = spreadsheet.worksheet(tab_name)
         _reset_worksheet(ws, len(rows), num_cols)
     except WorksheetNotFound:
         ws = spreadsheet.add_worksheet(title=tab_name, rows=len(rows) + 2, cols=num_cols)
@@ -1082,6 +1082,19 @@ def _biuniq_populate(
     return len(rows)
 
 
+def _rebuilding(spreadsheet: SpreadsheetHandle, construction_name: str):
+    """Tell the Drive door that rewriting this tab replaces its annotations on
+    purpose: --regen-construction has carried every answer over by key, and
+    refused (unless --confirm-drop) to drop any it couldn't."""
+    import contextlib
+    try:
+        ws = spreadsheet.worksheet(construction_name)
+    except WorksheetNotFound:
+        return contextlib.nullcontext()
+    return drive_door.replacing(
+        ws, "--regen-construction rebuilds the tab with every answer carried over by key")
+
+
 def _regen_keyed_construction(
     spreadsheet: SpreadsheetHandle, lang_id: str, class_name: str, construction_name: str,
     param_names: List[str], param_values: Dict[str, List[str]], confirm_drop: bool,
@@ -1094,8 +1107,8 @@ def _regen_keyed_construction(
     keyed = _get_keyed_row_constructions()[class_name][construction_name]
     columns, key = keyed["columns"], keyed["key"]
     try:
-        ws = _with_retry(lambda: spreadsheet.worksheet(construction_name))
-        existing_rows = _with_retry(ws.get_all_values)
+        ws = spreadsheet.worksheet(construction_name)
+        existing_rows = ws.get_all_values()
         _snapshot_before_regen(lang_id, class_name, construction_name, existing_rows)
     except WorksheetNotFound:
         existing_rows = []
@@ -1115,7 +1128,9 @@ def _regen_keyed_construction(
               f"  python -m coding generate-sheets --lang {lang_id} --regen-construction "
               f"{class_name}:{construction_name} --confirm-drop")
 
-    _populate_tab_keyed(spreadsheet, construction_name, columns, param_names, param_values, rows)
+    with _rebuilding(spreadsheet, construction_name):
+        _populate_tab_keyed(spreadsheet, construction_name, columns, param_names,
+                            param_values, rows)
     print(f"    {construction_name}: {counts['retained']} retained, {counts['added']} added, "
           f"{counts['removed']} removed, {counts['hand_added']} hand-added kept")
 
@@ -1137,7 +1152,7 @@ def _refresh_locked_tabs(spreadsheet: SpreadsheetHandle, class_name: str,
 
 def _move_status_tab_to_end(spreadsheet: SpreadsheetHandle) -> None:
     """Ensure the Status tab is the last worksheet in the spreadsheet."""
-    worksheets = _with_retry(spreadsheet.worksheets)
+    worksheets = spreadsheet.worksheets()
     if not worksheets or worksheets[-1].title == _STATUS_TAB:
         return
     status_ws = next((w for w in worksheets if w.title == _STATUS_TAB), None)
@@ -1158,11 +1173,11 @@ def _create_status_tab(
     If the tab already exists, adds any missing construction rows and moves
     the tab to the last position.
     """
-    existing = {ws.title: ws for ws in _with_retry(spreadsheet.worksheets)}
+    existing = {ws.title: ws for ws in spreadsheet.worksheets()}
 
     if _STATUS_TAB in existing:
         ws = existing[_STATUS_TAB]
-        rows = _with_retry(ws.get_all_values)
+        rows = ws.get_all_values()
         current_constructions = {r[0] for r in rows[1:] if r} if len(rows) > 1 else set()
         missing = [c for c in construction_names if c not in current_constructions]
         if missing:
@@ -1395,7 +1410,7 @@ def _populate_tab(
     """
     num_cols = len(ELEMENT_ROW_COLUMNS) + len(param_names) + len(_TRAILING_COLS)  # structure, params, trailing
     try:
-        ws = _with_retry(lambda: spreadsheet.worksheet(tab_name))
+        ws = spreadsheet.worksheet(tab_name)
         _reset_worksheet(ws, len(rows), num_cols)
     except WorksheetNotFound:
         ws = spreadsheet.add_worksheet(
@@ -1456,11 +1471,12 @@ def _create_analysis_sheet(
             f"      python -m coding generate-sheets --apply\n"
         )
 
-    spreadsheet = _with_retry(lambda: doorway.create_spreadsheet(sheet_title))
-    _with_retry(lambda: doorway.move_file(spreadsheet.id, folder_id))
+    spreadsheet = doorway.create_spreadsheet(
+        sheet_title, identity=drive_door.class_sheet(lang_id, class_name))
+    doorway.move_file(spreadsheet.id, folder_id)
     email = _annotator_email(lang_id)
     if email:
-        _with_retry(lambda: doorway.create_permission(spreadsheet.id, type="user", role="writer", email=email))
+        doorway.create_permission(spreadsheet.id, type="user", role="writer", email=email)
 
     default_ws = spreadsheet.sheet1
     tab_names = []
@@ -1803,8 +1819,8 @@ def _regen_construction(
     key_cols = row_key(class_name, construction_name)
     existing: Dict = {}
     try:
-        ws = _with_retry(lambda: spreadsheet.worksheet(construction_name))
-        rows = _with_retry(ws.get_all_values)
+        ws = spreadsheet.worksheet(construction_name)
+        rows = ws.get_all_values()
         _snapshot_before_regen(lang_id, class_name, construction_name, rows)
         if rows and len(rows) > 1:
             hdr = rows[0]
@@ -1867,12 +1883,13 @@ def _regen_construction(
               "rename/split), re-run with --confirm-drop to proceed."
         )
 
-    if class_name == "coreference":
-        _populate_tab_reflex_pairs(spreadsheet, construction_name, param_names,
-                                   param_values, pairs, prefill=existing)
-    else:
-        _populate_tab_pairs(spreadsheet, construction_name, param_names, param_values,
-                            pairs, prefill=existing)
+    with _rebuilding(spreadsheet, construction_name):
+        if class_name == "coreference":
+            _populate_tab_reflex_pairs(spreadsheet, construction_name, param_names,
+                                       param_values, pairs, prefill=existing)
+        else:
+            _populate_tab_pairs(spreadsheet, construction_name, param_names, param_values,
+                                pairs, prefill=existing)
 
     print(f"    {construction_name}: {len(retained)} retained, {len(added)} added, "
           f"{len(removed)} removed")
@@ -1956,7 +1973,7 @@ def _add_constructions_to_existing_sheet(
     planar_path = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
     _refresh_locked_tabs(ss, class_name, lang_id, planar_path)
     system = set(system_tab_titles())
-    all_ws = _with_retry(lambda: ss.worksheets())
+    all_ws = ss.worksheets()
     _create_status_tab(ss, [ws.title for ws in all_ws if ws.title not in system])
     reorder_tabs(ss)
 
@@ -1974,7 +1991,7 @@ def _source_tab_status(doorway, cls_info: dict, source_name: str) -> str:
     """The source tab's status in its sheet's Status tab ('' if unreadable)."""
     from .import_sheets import _read_status_tab
     try:
-        ss = _with_retry(lambda: doorway.open_spreadsheet(cls_info["spreadsheet_id"]))
+        ss = doorway.open_spreadsheet(cls_info["spreadsheet_id"])
         status = _read_status_tab(ss).get(source_name, "")
     except Exception as exc:
         print(f"    (could not read the Status tab: {exc})")
@@ -2438,8 +2455,9 @@ def main(args: argparse.Namespace | None = None) -> None:
             continue
 
         # Resolve/create Drive folder.
-        folder_id = existing_lang_data.get("folder_id") or _with_retry(
-            lambda: doorway.get_or_create_folder(lang_id, parent_id=root_folder_id)
+        folder_id = (
+            existing_lang_data.get("folder_id")
+            or doorway.get_or_create_folder(lang_id, parent_id=root_folder_id)
         )
         email = _annotator_email(lang_id)
         if email:

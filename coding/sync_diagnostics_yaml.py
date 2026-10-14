@@ -251,7 +251,6 @@ def _sync_to_sheet(lang_id: str, manifest: dict, apply: bool, error_langs: List[
     _sync_to_tsv above (issue #283): this direction had the identical gap,
     found and fixed alongside it rather than left for a second pass.
     """
-    from .drive import _with_retry
     from .drive_doorway import get_doorway
 
     lang_data = manifest.get(lang_id, {})
@@ -293,7 +292,7 @@ def _sync_to_sheet(lang_id: str, manifest: dict, apply: bool, error_langs: List[
 
     try:
         ss = get_doorway().open_spreadsheet(diag_id)
-        current_rows = _with_retry(ss.sheet1.get_all_values)
+        current_rows = ss.sheet1.get_all_values()
     except Exception as e:
         print(f"  [{lang_id}] Could not read Sheet: {e}")
         return False
@@ -312,9 +311,9 @@ def _sync_to_sheet(lang_id: str, manifest: dict, apply: bool, error_langs: List[
 
     if apply:
         new_rows = [list(new_df.columns)] + [list(row) for _, row in new_df.iterrows()]
-        ws = _with_retry(lambda: ss.sheet1)
-        _with_retry(ws.clear)
-        _with_retry(lambda: ws.update(new_rows, "A1"))
+        ws = ss.sheet1
+        ws.clear()
+        ws.update(new_rows, "A1")
         print(f"  [{lang_id}] Updated → diagnostics Sheet")
     else:
         print(f"  [{lang_id}] Would update → diagnostics Sheet")

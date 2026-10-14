@@ -117,6 +117,7 @@ from coding import drive as drive_module
 from coding import drive_doorway
 from coding import import_sheets as is_
 from coding import validate_coding as vc
+from command_runner import run_command
 from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 
@@ -266,7 +267,7 @@ def env(monkeypatch, tmp_path):
         exit_code = None
         try:
             with redirect_stdout(buf):
-                is_.main()
+                run_command(is_, "import-sheets")
         except SystemExit as exc:
             exit_code = exc.code
         return buf.getvalue(), exit_code

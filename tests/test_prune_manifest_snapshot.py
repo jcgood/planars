@@ -37,6 +37,7 @@ import pytest
 
 from coding import drive as drive_module
 from coding import drive_doorway, prune_manifest
+from command_runner import run_command
 from fake_drive import (FROZEN_CODED_DATA, MANIFEST_FILE_ID, ROOT_FOLDER_ID,
                         FakeDriveDoorway, api_error)
 
@@ -121,7 +122,7 @@ def env(monkeypatch, tmp_path):
         monkeypatch.setattr(sys, "argv", argv)
         buf = io.StringIO()
         with redirect_stdout(buf):
-            prune_manifest.main()
+            run_command(prune_manifest, "prune-manifest")
         # Archive filenames carry a wall-clock stamp.
         return re.sub(r"\d{8}_\d{6}", "TIMESTAMP", buf.getvalue())
 
@@ -367,7 +368,7 @@ def test_a_transient_429_during_archiving_is_retried_not_a_crash(env, monkeypatc
     so the real ~15s backoff wait doesn't slow the suite down.
     """
     doorway, run, coded, _ = env
-    monkeypatch.setattr(drive_module.time, "sleep", lambda *a, **kw: None)
+    monkeypatch.setattr("coding.drive_door.time.sleep", lambda *a, **kw: None)
     doorway.fail_after("move_file", 1, exc=api_error(429, "rate limited"))
     out = run(["prune-manifest", "--apply"], ["y"])
     assert "[SystemExit:" not in out

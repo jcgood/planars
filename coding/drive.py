@@ -16,9 +16,8 @@ import json
 import os
 import re
 import subprocess
-import time
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple, TypeVar
+from typing import Callable, Dict, List, Optional, Tuple
 
 import gspread
 from googleapiclient.discovery import build as google_build
@@ -31,26 +30,8 @@ ROOT = Path(__file__).resolve().parent.parent
 DRIVE_CONFIG_PATH = ROOT / "coded_data" / "drive_config.json"
 _DEFAULT_OAUTH_PATH = Path.home() / ".config" / "planars" / "oauth_credentials.json"
 
-_T = TypeVar("_T")
-
-
-# ---------------------------------------------------------------------------
-# Rate-limit retry helper
-# ---------------------------------------------------------------------------
-
-def _with_retry(fn: Callable[[], _T], retries: int = 5) -> _T:
-    """Call fn() with exponential backoff on retryable API errors (429, 500, 503)."""
-    for attempt in range(retries):
-        try:
-            return fn()
-        except gspread.exceptions.APIError as e:
-            if e.response.status_code in (429, 500, 503) and attempt < retries - 1:
-                wait = 15 * (attempt + 1)
-                print(f"    (API error {e.response.status_code} — waiting {wait}s before retry {attempt + 2}/{retries})")
-                time.sleep(wait)
-            else:
-                raise
-    return fn()  # final attempt — let it raise
+# Retry on 429/500/503 happens in the Drive door (coding/drive_door.py), which
+# wraps every doorway call.
 
 
 # ---------------------------------------------------------------------------
@@ -299,7 +280,8 @@ def _load_manifest_with(download_json: Callable[[str], Dict]) -> Dict:
 
 def _open_spreadsheet(gc: gspread.Client, spreadsheet_id: str) -> gspread.Spreadsheet:
     """Open a spreadsheet by ID, retrying on 429 quota errors with backoff."""
-    return _with_retry(lambda: gc.open_by_key(spreadsheet_id))
+    from .drive_door import _retry  # lazy: drive_door imports from this package
+    return _retry(lambda: gc.open_by_key(spreadsheet_id))
 
 
 # ---------------------------------------------------------------------------
@@ -371,15 +353,15 @@ def remove_anyone_permission(doorway, file_id: str) -> bool:
     other way (`appNotAuthorizedToChild`), which only a person can then fix.
     """
     removed = False
-    perms = _with_retry(lambda: doorway.list_permissions(
-        file_id, fields="permissions(id,type,permissionDetails)"))
+    perms = doorway.list_permissions(
+        file_id, fields="permissions(id,type,permissionDetails)")
     for p in perms:
         if p.get("type") != "anyone":
             continue
         details = p.get("permissionDetails") or []
         if details and all(d.get("inherited") for d in details):
             continue
-        _with_retry(lambda pid=p["id"]: doorway.delete_permission(file_id, pid))
+        doorway.delete_permission(file_id, p["id"])
         removed = True
     return removed
 
@@ -393,14 +375,14 @@ def ensure_user_permission(doorway, file_id: str, email: str, role: str) -> bool
     Checks first, so re-running never piles up duplicate grants, and a person
     who already holds this role or a higher one is left alone.
     """
-    perms = _with_retry(lambda: doorway.list_permissions(
-        file_id, fields="permissions(emailAddress,role)"))
+    perms = doorway.list_permissions(
+        file_id, fields="permissions(emailAddress,role)")
     held = [_ROLE_RANK.get(p.get("role"), 0) for p in perms
             if (p.get("emailAddress") or "").lower() == email.lower()]
     if held and max(held) >= _ROLE_RANK[role]:
         return False
-    _with_retry(lambda: doorway.create_permission(file_id, type="user", role=role,
-                                                  email=email, notify=False))
+    doorway.create_permission(file_id, type="user", role=role,
+                              email=email, notify=False)
     return True
 
 
@@ -416,18 +398,18 @@ def set_user_role(doorway, file_id: str, email: str, role: str) -> bool:
     delete a grant on a file that also inherits one for the same person from
     its folder, which is every language sheet. An owner is never changed.
     """
-    perms = _with_retry(lambda: doorway.list_permissions(
-        file_id, fields="permissions(id,type,role,emailAddress)"))
+    perms = doorway.list_permissions(
+        file_id, fields="permissions(id,type,role,emailAddress)")
     own = [p for p in perms if p.get("type") == "user"
            and (p.get("emailAddress") or "").lower() == email.lower()]
     if not own:
-        _with_retry(lambda: doorway.create_permission(file_id, type="user", role=role,
-                                                      email=email, notify=False))
+        doorway.create_permission(file_id, type="user", role=role,
+                                  email=email, notify=False)
         return True
     p = own[0]
     if p.get("role") in (role, "owner"):
         return False
-    _with_retry(lambda: doorway.update_permission(file_id, p["id"], role))
+    doorway.update_permission(file_id, p["id"], role)
     return True
 
 
@@ -437,8 +419,8 @@ def make_read_only(doorway, file_id: str) -> List[str]:
     Returns the addresses lowered. For a retired sheet (prune-manifest),
     which no one should keep answering in by habit."""
     remove_anyone_permission(doorway, file_id)
-    perms = _with_retry(lambda: doorway.list_permissions(
-        file_id, fields="permissions(type,role,emailAddress)"))
+    perms = doorway.list_permissions(
+        file_id, fields="permissions(type,role,emailAddress)")
     lowered = []
     for p in perms:
         email = p.get("emailAddress") or ""

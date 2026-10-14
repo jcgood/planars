@@ -365,7 +365,7 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
     print(_section("ANNOTATION SHEETS"))
 
     try:
-        from .drive import load_manifest, _with_retry
+        from .drive import load_manifest
         from .drive_doorway import get_doorway
     except ImportError as exc:
         print(_warn(f"Could not import sheet utilities: {exc}"))
@@ -450,7 +450,7 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
                 continue
 
             try:
-                tab_titles = {ws.title for ws in _with_retry(lambda: ss.worksheets())}
+                tab_titles = {ws.title for ws in ss.worksheets()}
             except Exception as exc:
                 print(_fail(f"{lang} · {class_name}  —  could not list worksheets: {exc}"))
                 total_e += 1
@@ -466,8 +466,8 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
                     continue
 
                 try:
-                    ws     = _with_retry(lambda: ss.worksheet(construction))
-                    header = _with_retry(lambda: ws.row_values(1))
+                    ws     = ss.worksheet(construction)
+                    header = ws.row_values(1)
                 except Exception as exc:
                     print(_fail(f"{label}  —  could not read header: {exc}"))
                     total_e += 1

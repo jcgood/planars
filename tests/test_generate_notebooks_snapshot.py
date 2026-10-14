@@ -27,6 +27,7 @@ Regenerate: `PLANARS_UPDATE_SNAPSHOTS=1 pytest tests/test_generate_notebooks_sna
 """
 from __future__ import annotations
 
+import argparse
 import io
 import json
 import os
@@ -36,8 +37,9 @@ from pathlib import Path
 
 import pytest
 
-from coding import drive_doorway, generate_notebooks
+from coding import drive_door, drive_doorway, generate_notebooks
 from coding.make_forms import _read_diagnostics_for_language
+from command_runner import run_command
 from fake_drive import (FROZEN_CODED_DATA, MANIFEST_FILE_ID, ROOT_FOLDER_ID,
                         FakeDriveDoorway, use_frozen_coded_data)
 from render_mutations import render
@@ -119,7 +121,7 @@ def run(argv, monkeypatch) -> str:
     monkeypatch.setattr("sys.argv", argv)
     buf = io.StringIO()
     with redirect_stdout(buf):
-        generate_notebooks.main()
+        run_command(generate_notebooks, "generate-notebooks")
     return buf.getvalue()
 
 
@@ -386,7 +388,9 @@ def test_regenerate_notebooks_always_applies(env, monkeypatch):
     doorway, _, saved = env
     monkeypatch.setattr("sys.argv", ["generate-sheets", "--apply"])
     buf = io.StringIO()
-    with redirect_stdout(buf):
+    # Called from inside another command's run; here, a generate-sheets --apply.
+    with redirect_stdout(buf), drive_door.running("generate-sheets",
+                                                  argparse.Namespace(apply=True)):
         generate_notebooks.regenerate_notebooks()
     assert doorway.mutations_of("create_file")
     assert saved

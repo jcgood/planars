@@ -28,7 +28,6 @@ import pandas as pd
 
 from planars.schema_values import STATUS_TAB
 
-from .drive import _with_retry
 from .drive_doorway import SpreadsheetHandle, WorksheetNotFound
 from .schemas import load_diagnostic_classes, load_planar_schema
 
@@ -274,7 +273,7 @@ def rebuild_locked_tabs(
     """
     contents = {spec["title"]: rows
                 for spec, rows in locked_tab_contents(class_name, lang_id, planar_path)}
-    existing = {ws.title: ws for ws in _with_retry(spreadsheet.worksheets)}
+    existing = {ws.title: ws for ws in spreadsheet.worksheets()}
     changes: List[str] = []
     for spec in locked_tab_specs():
         title = spec["title"]
@@ -283,7 +282,7 @@ def rebuild_locked_tabs(
             if ws is not None:
                 changes.append(f"{title}: remove (this class no longer carries it)")
                 if apply:
-                    _with_retry(lambda: spreadsheet.del_worksheet(ws))
+                    spreadsheet.del_worksheet(ws)
             continue
 
         rows = contents[title]
@@ -292,43 +291,43 @@ def rebuild_locked_tabs(
             changes.append(f"{title}: create")
             if apply:
                 width = max(len(r) for r in rows)
-                ws = _with_retry(lambda: spreadsheet.add_worksheet(
-                    title=title, rows=len(rows) + 2, cols=width + 1))
+                ws = spreadsheet.add_worksheet(
+                    title=title, rows=len(rows) + 2, cols=width + 1)
                 _write(spreadsheet, ws, rows, build_format)
-        elif _normalise(_with_retry(ws.get_all_values)) != _normalise(rows):
+        elif _normalise(ws.get_all_values()) != _normalise(rows):
             changes.append(f"{title}: refresh (its source has changed)")
             if apply:
-                _with_retry(ws.clear)
+                ws.clear()
                 _write(spreadsheet, ws, rows, build_format)
 
         if ws is None:
             changes.append(f"{title}: protect")  # dry run of a tab not yet created
             continue
-        protections = _with_retry(lambda: spreadsheet.list_protected_ranges(ws.id))
+        protections = spreadsheet.list_protected_ranges(ws.id)
         if not any(_is_ours(p, ws.id) for p in protections):
             changes.append(f"{title}: protect")
             if apply:
-                _with_retry(lambda: spreadsheet.batch_update({"requests": [
+                spreadsheet.batch_update({"requests": [
                     {"addProtectedRange": {"protectedRange": {
                         "range": {"sheetId": ws.id},
                         "description": PROTECTION_DESCRIPTION,
                         "warningOnly": False,
-                    }}}]}))
+                    }}}]})
     return changes
 
 
 def _write(spreadsheet: SpreadsheetHandle, ws, rows: List[List[str]], build_format) -> None:
     width = max(len(r) for r in rows)
     padded = [list(r) + [""] * (width - len(r)) for r in rows]
-    _with_retry(lambda: ws.update(padded, "A1"))
-    _with_retry(lambda: spreadsheet.batch_update({"requests": build_format(ws.id, rows)}))
+    ws.update(padded, "A1")
+    spreadsheet.batch_update({"requests": build_format(ws.id, rows)})
 
 
 def reorder_tabs(spreadsheet: SpreadsheetHandle) -> None:
     """Locked tabs placed `first` lead (Instructions is the annotator's landing
     tab, easy to miss if buried at the end); then the construction tabs; then
     the locked tabs placed `last`; then Status. Each group in registry order."""
-    all_ws = _with_retry(spreadsheet.worksheets)
+    all_ws = spreadsheet.worksheets()
     by_title = {ws.title: ws for ws in all_ws}
     specs = locked_tab_specs()
     first = [s["title"] for s in specs if s["place"] == "first"]
@@ -338,4 +337,4 @@ def reorder_tabs(spreadsheet: SpreadsheetHandle) -> None:
                + [ws for ws in all_ws if ws.title not in system]
                + [by_title[t] for t in last if t in by_title])
     if [ws.title for ws in all_ws] != [ws.title for ws in ordered]:
-        _with_retry(lambda: spreadsheet.reorder_worksheets(ordered))
+        spreadsheet.reorder_worksheets(ordered)

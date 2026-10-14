@@ -1,7 +1,7 @@
 # The Drive door: design (Phase 10 unit 5)
 
-**Status: accepted by Jeff 2026-10-13 (§ 7 records his answers). Nothing
-built yet.** Unit 5 of Phase 10 ([implementation plan](data-layer-implementation-plan.md),
+**Status: accepted by Jeff 2026-10-13 (§ 7 records his answers). 5a and 5b
+built (§ 8); next is 5c.** Unit 5 of Phase 10 ([implementation plan](data-layer-implementation-plan.md),
 Phase 10 table) was a design pause; this file is the design record. Progress
 is tracked in [data-layer-progress.md](data-layer-progress.md), and the
 decisions are logged there too.
@@ -227,8 +227,8 @@ Each step leaves a complete, working system.
    generated from. They come from the generators' own row builders, the
    functions integrity-check's dependent-staleness section already calls,
    not from a second copy.
-5. **5e** Live in watch mode for class sheets, until the § 4 rule is met
-   (at least a week). Meanwhile: the rest of unit 3, and unit 8.
+5. **5e** Live in watch mode for class sheets (on since 5b, § 8), until the
+   § 4 rule is met (at least a week). Meanwhile: the rest of unit 3, and unit 8.
 6. **5f** Enforce for class sheets. Then the other kinds, in the plan's
    order for building their spec sections: sharing → planar → diagnostics
    → status sheets → notes Docs → files (`manifest.json`, notebooks, PDFs,
@@ -284,3 +284,43 @@ roughly 60-reads-a-minute limit; the door's retry absorbs that.
 cleanly,** not after a fixed number of weeks (§ 4). Claude kept the plan's
 one-week minimum for class sheets, for the reason given in § 4; Jeff may
 drop it.
+
+## 8. As built
+
+**5b (2026-10-13), `coding/drive_door.py`.** Built as § 2.2–2.4 and § 3
+describe, with these choices where the design left a gap:
+
+- **Which sheet is which, before 5d's labels.** The rules need a sheet's
+  identity, but labels come in 5d (they need a live migration). Until then
+  the door places a class sheet from the manifest (read once per command,
+  quietly) or from the identity a command passes to
+  `create_spreadsheet(title, identity=class_sheet(lang, class))` (the four
+  places a class sheet is made). In 5d that argument becomes the labels
+  written at creation, and the manifest lookup is deleted. A write to a
+  spreadsheet the door can't place passes the class-sheet rules, as § 5
+  allows until the last kind is enforced.
+- **Live mode is watch for every check** (dry run, request list, rules 1–5):
+  `LIVE_MODE` in `drive_door.py`, the one place. Watch began with 5b rather
+  than 5e, so the § 4 clock for class sheets starts with the first daily
+  refresh after 5b; 5e is now just the wait.
+- **Rule 5 checks who and how, not the role**, until 5d: an archived class
+  sheet is still in the manifest when it is lowered to reader, so the door
+  can't yet tell an archived sheet from a live one. Labels will carry that.
+- **Q5** is `always_on_writes` in `operations.yaml` (import-sheets:
+  `highlighting`) plus `with drive_door.always_on("highlighting")` around the
+  two highlighting writes in `validate_coding.py`.
+- **Rule 1 in 5b** permits writes inside `replacing()` and records the
+  reason; the snapshot moves in with 5c. Two commands use it:
+  `--regen-construction` (`generate_sheets._rebuilding`) and `sync-params
+  --remove`.
+- **Tests** run commands through `tests/command_runner.run_command`, which
+  tells the door the command; `tests/test_drive_door.py` holds each rule.
+
+What the door found on its first run of the test suite: `generate-sheets
+--push-manifest` writes the manifest but no `operations.yaml` record said so
+(added as a mode; provenance had never logged it); the rename-class tests
+renamed a class in the language's file but not in the schema, so the new
+sheet had no spec (the tests now register the new name, as a real rename
+does); and the hand-placed retries never retried Drive file or permission
+calls at all, since those raise the Google client's own error, not gspread's
+(the door retries both).

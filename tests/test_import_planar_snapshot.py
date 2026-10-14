@@ -45,6 +45,7 @@ import pytest
 from coding import drive as drive_module
 from coding import drive_doorway
 from coding import import_planar as ip
+from command_runner import run_command
 from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -155,7 +156,7 @@ def env(monkeypatch, tmp_path):
         buf = io.StringIO()
         try:
             with redirect_stdout(buf):
-                ip.main()
+                run_command(ip, "import-planar")
         except SystemExit as exc:
             if exc.code:
                 buf.write(f"[SystemExit: {exc.code}]\n")

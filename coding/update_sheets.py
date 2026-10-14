@@ -36,7 +36,6 @@ from .make_forms import (
 )
 from .drive import (
     _load_drive_config,
-    _with_retry,
     load_manifest,
     upload_manifest,
 )
@@ -243,7 +242,7 @@ def _write_header_notes(ws: WorksheetHandle, col_start: int,
                 }
             })
     if requests:
-        _with_retry(lambda: ws.spreadsheet.batch_update({"requests": requests}))
+        ws.spreadsheet.batch_update({"requests": requests})
         return True
     return False
 
@@ -267,7 +266,7 @@ def _compute_missing_rows(
     new row the wrong width, and on a keystone row it wrote ``NA`` into
     ``Source`` and ``Comments``.
     """
-    rows = _with_retry(ws.get_all_values)
+    rows = ws.get_all_values()
     header = rows[0] if rows else []
 
     existing_keys = _sheet_element_keys(rows, header)
@@ -442,12 +441,12 @@ def main(args: argparse.Namespace | None = None) -> None:
 
             for construction in constructions:
                 try:
-                    ws = _with_retry(lambda: ss.worksheet(construction))
+                    ws = ss.worksheet(construction)
                 except WorksheetNotFound:
                     print(f"    [{construction}] tab not found, skipping")
                     continue
 
-                rows = _with_retry(ws.get_all_values)
+                rows = ws.get_all_values()
                 num_data_rows = max(0, len(rows) - 1)
 
                 # Check for structural drift before anything else
@@ -491,7 +490,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                         _add_trailing_columns(ws, header, rows)
                         # Re-read so the header and row count below describe the
                         # tab as it now is, not as it was before the insert.
-                        rows = _with_retry(ws.get_all_values)
+                        rows = ws.get_all_values()
                         header = rows[0] if rows else []
                         num_data_rows = max(0, len(rows) - 1)
 

@@ -136,7 +136,8 @@ def use_frozen_coded_data(monkeypatch, tmp_path: Path) -> Path:
 def api_error(code: int, message: str, status: str = "INVALID_ARGUMENT") -> gspread.exceptions.APIError:
     """Build a real ``gspread.APIError`` so callers' except clauses still match.
 
-    ``drive._with_retry`` inspects ``e.response.status_code``, so the fake must
+    The Drive door's retry (``drive_door._retry``) inspects
+    ``e.response.status_code``, so the fake must
     raise something that carries one — a bespoke exception class would slip
     past every retry and error-handling path the commands already have.
     """

@@ -33,6 +33,7 @@ from pathlib import Path
 import pytest
 
 from coding import drive_doorway, generate_reports
+from command_runner import run_command
 from fake_drive import MANIFEST_FILE_ID, FakeDriveDoorway
 from render_mutations import render
 
@@ -73,7 +74,7 @@ def run(argv, monkeypatch) -> str:
     monkeypatch.setattr("sys.argv", argv)
     buf = io.StringIO()
     with redirect_stdout(buf):
-        generate_reports.main()
+        run_command(generate_reports, "generate-reports")
     return buf.getvalue()
 
 

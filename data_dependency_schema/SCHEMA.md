@@ -272,6 +272,13 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
   happens to match. Most commands have no divergent modes and get
   `modes: []`; the parent's own top-level fields always describe the
   command's default invocation, never a merge across modes.
+- **`always_on_writes`** (optional) — Drive writes the command makes on every
+  run, a dry run included, by name. Only `import-sheets` has one
+  (`highlighting`: pink on invalid cells). The Drive door
+  (`coding/drive_door.py`) refuses every write on a run whose `apply_gate`
+  isn't met, except those made inside `with drive_door.always_on(name)` for a
+  name listed here; `provenance.py` logs such a command's runs. Code runs
+  from this field: a name missing here makes the write fail, not drift.
 
 ## Known limitations
 

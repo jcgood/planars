@@ -32,7 +32,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-from .drive import _load_drive_config, _save_drive_config, _with_retry, remove_anyone_permission
+from .drive import _load_drive_config, _save_drive_config, remove_anyone_permission
 from .drive_doorway import get_doorway
 
 _ROOT_FOLDER_NAME = "ConstituencyTypology"
@@ -70,7 +70,7 @@ def _get_or_create_root_folder(doorway) -> str:
         folder_id = files[0]["id"]
         print(f"Found existing folder '{_ROOT_FOLDER_NAME}' (id: {folder_id})")
         return folder_id
-    folder_id = _with_retry(lambda: doorway.create_file(_ROOT_FOLDER_NAME, mimetype=_FOLDER_MIME))
+    folder_id = doorway.create_file(_ROOT_FOLDER_NAME, mimetype=_FOLDER_MIME)
     print(f"Created folder '{_ROOT_FOLDER_NAME}' (id: {folder_id})")
     return folder_id
 
@@ -143,7 +143,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         if root_id in file_info.get("parents", []):
             print(f"Language folder '{lang_id}' already inside root folder — skipping.")
         else:
-            _with_retry(lambda: doorway.move_file(lang_folder_id, root_id))
+            doorway.move_file(lang_folder_id, root_id)
             print(f"Moved language folder '{lang_id}' (id: {lang_folder_id}) into root folder.")
 
     # Step 4: Rename any language folder that still has the old 'planars — {lang_id}'
@@ -158,7 +158,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         if current_name == lang_id:
             print(f"Language folder '{lang_id}' already has correct name — skipping.")
         else:
-            _with_retry(lambda: doorway.update_file(lang_folder_id, name=lang_id))
+            doorway.update_file(lang_folder_id, name=lang_id)
             print(f"Renamed '{current_name}' → '{lang_id}'.")
 
     # Step 5a: Move manifest.json to root folder (if it exists)
@@ -168,7 +168,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         if root_id in fi.get("parents", []):
             print("manifest.json already in root folder — skipping.")
         else:
-            _with_retry(lambda: doorway.move_file(planars_config_id, root_id))
+            doorway.move_file(planars_config_id, root_id)
             print(f"Moved manifest.json (id: {planars_config_id}) to root folder.")
     else:
         print("No manifest.json found in drive_config.json — skipping.")
@@ -181,7 +181,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         if root_id in fi.get("parents", []):
             print("all_languages.ipynb already in root folder — skipping.")
         else:
-            _with_retry(lambda: doorway.move_file(all_langs_id, root_id))
+            doorway.move_file(all_langs_id, root_id)
             print(f"Moved all_languages.ipynb (id: {all_langs_id}) to root folder.")
     else:
         print("No all_languages.ipynb found in drive_config.json — skipping.")

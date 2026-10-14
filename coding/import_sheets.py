@@ -33,7 +33,7 @@ import pandas as pd
 
 from .drive import (
     load_manifest, upload_manifest,
-    _load_drive_config, _save_drive_config, _with_retry,
+    _load_drive_config, _save_drive_config,
 )
 from .drive_doorway import get_doorway, WorksheetNotFound
 from .generate_sheets import _STATUS_TAB, _STATUS_VALUES
@@ -224,7 +224,7 @@ def _write_error_report(lang_id: str, lines: List[str], timestamp: str) -> Path:
 def _read_sheet_as_df(doorway, spreadsheet_id: str) -> Optional[pd.DataFrame]:
     """Download sheet1 of a Google Sheet and return as a DataFrame, or None if empty."""
     ss = doorway.open_spreadsheet(spreadsheet_id)
-    rows = _with_retry(ss.sheet1.get_all_values)
+    rows = ss.sheet1.get_all_values()
     if not rows:
         return None
     return pd.DataFrame(rows[1:], columns=rows[0], dtype=str).fillna("")
@@ -447,10 +447,10 @@ def _check_yaml_drift(lang_id: str, tsv_df: pd.DataFrame) -> List[Dict]:
 def _read_status_tab(ss) -> Dict[str, str]:
     """Return {construction: status} from the Status tab, or {} if absent."""
     try:
-        ws = _with_retry(lambda: ss.worksheet(_STATUS_TAB))
+        ws = ss.worksheet(_STATUS_TAB)
     except WorksheetNotFound:
         return {}
-    rows = _with_retry(ws.get_all_values)
+    rows = ws.get_all_values()
     if len(rows) < 2:
         return {}
     return {row[0].strip(): row[1].strip() for row in rows[1:] if len(row) >= 2 and row[0].strip()}
@@ -929,7 +929,7 @@ def main(args: argparse.Namespace | None = None) -> None:
 
             for construction in sheet_info["constructions"]:
                 try:
-                    ws = _with_retry(lambda: ss.worksheet(construction))
+                    ws = ss.worksheet(construction)
                 except WorksheetNotFound:
                     msg = f"[{class_name}/{construction}] tab not found in sheet, skipping"
                     print(f"    WARNING: {msg}")
@@ -947,7 +947,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                     tab_status = status_map.get(construction, STATUS_IN_PROGRESS)
                 in_progress = (tab_status != STATUS_READY)
 
-                rows = _with_retry(ws.get_all_values)
+                rows = ws.get_all_values()
 
                 header = rows[0] if rows else []
 

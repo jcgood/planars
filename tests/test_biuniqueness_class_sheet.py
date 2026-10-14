@@ -13,6 +13,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
+from command_runner import run_command
 from coding import biuniqueness_rows as br
 from test_generate_sheets_snapshot import env  # noqa: F401  (pytest fixture)
 
@@ -225,7 +226,7 @@ def test_the_daily_import_brings_the_keyed_tabs_down_intact(created, monkeypatch
     buf = io.StringIO()
     try:
         with redirect_stdout(buf):
-            is_.main()
+            run_command(is_, "import-sheets")
     except SystemExit as exc:
         assert not exc.code or "biuniqueness" not in buf.getvalue(), buf.getvalue()
 
@@ -263,7 +264,7 @@ def test_update_sheets_adds_only_in_scope_elements_and_leaves_keyed_tabs_alone(
     buf = io.StringIO()
     with redirect_stdout(buf):
         try:
-            us.main()
+            run_command(us, "update-sheets")
         except SystemExit:
             pass
     out = buf.getvalue()
@@ -321,7 +322,7 @@ def test_restructure_carries_keyed_answers_across_an_element_rename(created, mon
     buf = io.StringIO()
     with redirect_stdout(buf):
         try:
-            rs.main()
+            run_command(rs, "restructure-sheets")
         except SystemExit as exc:
             assert not exc.code, buf.getvalue()
     out = buf.getvalue()

@@ -219,14 +219,13 @@ def main(args: argparse.Namespace | None = None) -> None:
                     any_changes = True
 
                 if apply and changed:
-                    from .drive import _with_retry
                     try:
-                        ws = _with_retry(lambda c=construction: ss.worksheet(c))
+                        ws = ss.worksheet(construction)
                     except Exception:
                         print(f"    [{construction}] tab not found — skipping")
                         continue
 
-                    header = _with_retry(lambda w=ws: w.row_values(1))
+                    header = ws.row_values(1)
                     col_start, per_col, error = _resolve_criterion_columns(
                         header, fresh, class_criteria)
                     if error:

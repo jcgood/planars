@@ -55,6 +55,7 @@ from coding import drive_doorway
 from coding import generate_notebooks as gn
 from coding import generate_sheets as gs
 from coding import sync_params as sp
+from command_runner import run_command
 from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
@@ -173,7 +174,7 @@ def env(monkeypatch, tmp_path):
         buf = io.StringIO()
         try:
             with redirect_stdout(buf):
-                sp.main()
+                run_command(sp, "sync-params")
         except SystemExit as exc:
             if exc.code:
                 buf.write(f"[SystemExit: {exc.code}]\n")

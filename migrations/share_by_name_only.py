@@ -38,7 +38,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from googleapiclient.errors import HttpError  # noqa: E402
 
 from coding.drive import (  # noqa: E402
-    _load_drive_config, _with_retry, ensure_user_permission, load_manifest,
+    _load_drive_config, ensure_user_permission, load_manifest,
     remove_anyone_permission,
 )
 from coding.drive_doorway import get_doorway  # noqa: E402
@@ -47,8 +47,8 @@ from coding.people import annotator_email  # noqa: E402
 
 def _anyone(doorway, file_id) -> str:
     """'' if no link sharing, else 'direct' or 'inherited' (from a parent folder)."""
-    perms = _with_retry(lambda: doorway.list_permissions(
-        file_id, fields="permissions(id,type,permissionDetails)"))
+    perms = doorway.list_permissions(
+        file_id, fields="permissions(id,type,permissionDetails)")
     kinds = set()
     for p in perms:
         if p.get("type") == "anyone":
@@ -59,8 +59,8 @@ def _anyone(doorway, file_id) -> str:
 
 
 def _role_of(doorway, file_id, email) -> str:
-    perms = _with_retry(lambda: doorway.list_permissions(
-        file_id, fields="permissions(emailAddress,role)"))
+    perms = doorway.list_permissions(
+        file_id, fields="permissions(emailAddress,role)")
     roles = [p.get("role") for p in perms
              if (p.get("emailAddress") or "").lower() == email.lower()]
     return ",".join(roles) or "none"
@@ -129,4 +129,10 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    from coding import drive_door
+    # Runs outside `python -m coding`, so it tells the Drive door itself.
+    with drive_door.running("migration share_by_name_only",
+                            may_write="--apply" in sys.argv):
+        main()

@@ -64,8 +64,8 @@ from .drive import (
     _get_clients,
     _load_drive_config,
     _open_spreadsheet,
-    _with_retry,
 )
+from .drive_door import _retry
 
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
@@ -86,7 +86,7 @@ def _capture_worksheet(ws) -> Dict:
 
     Deliberately does not pad, trim, or otherwise regularise ``values``.
     """
-    values = _with_retry(ws.get_all_values)
+    values = _retry(ws.get_all_values)
     return {
         "title": ws.title,
         "sheet_id": ws.id,
@@ -110,7 +110,7 @@ def _capture_spreadsheet(gc, spreadsheet_id: str, role: str) -> Dict:
     ss = _open_spreadsheet(gc, spreadsheet_id)
     # Order matters: worksheets() returns live tab order and several code paths
     # detect ordering drift from it. Do not sort.
-    worksheets = _with_retry(ss.worksheets)
+    worksheets = _retry(ss.worksheets)
     return {
         "role": role,
         "spreadsheet_id": spreadsheet_id,
@@ -120,7 +120,7 @@ def _capture_spreadsheet(gc, spreadsheet_id: str, role: str) -> Dict:
         # Which tabs are locked (coding/locked_tabs.py), so the fake starts
         # from the same protections the live sheet has.
         "protected_ranges": [p for ws in worksheets
-                             for p in _with_retry(lambda: ss.list_protected_ranges(ws.id))],
+                             for p in _retry(lambda: ss.list_protected_ranges(ws.id))],
     }
 
 

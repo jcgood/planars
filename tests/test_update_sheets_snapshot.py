@@ -53,6 +53,7 @@ from coding import drive_doorway
 from coding import generate_sheets as gs
 from coding import update_sheets as us
 from coding.locked_tabs import locked_tab_titles
+from command_runner import run_command
 from fake_drive import FIXTURE_DIR, FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
@@ -153,7 +154,7 @@ def env(monkeypatch, tmp_path):
         buf = io.StringIO()
         try:
             with redirect_stdout(buf):
-                us.main()
+                run_command(us, "update-sheets")
         except SystemExit as exc:
             if exc.code:
                 buf.write(f"[SystemExit: {exc.code}]\n")

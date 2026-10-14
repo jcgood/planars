@@ -74,6 +74,7 @@ import pytest
 from coding import drive as drive_module
 from coding import drive_doorway
 from coding import integrity_check as ic
+from command_runner import run_command
 from fake_drive import FakeDriveDoorway, MANIFEST_FILE_ID, use_frozen_coded_data
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -119,7 +120,7 @@ def env(monkeypatch, tmp_path):
         exit_code = None
         try:
             with redirect_stdout(buf):
-                ic.main()
+                run_command(ic, "integrity-check")
         except SystemExit as exc:
             exit_code = exc.code
         return buf.getvalue(), exit_code

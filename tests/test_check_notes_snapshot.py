@@ -36,6 +36,7 @@ import pytest
 from coding import check_notes, drive_doorway
 from coding import drive as drive_module
 from coding.drive import _ACK_PREFIX, _strip_acknowledgment_lines
+from command_runner import run_command
 from fake_drive import MANIFEST_FILE_ID, ROOT_FOLDER_ID, FakeDriveDoorway
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -97,7 +98,7 @@ def env(monkeypatch, tmp_path, github):
         monkeypatch.setattr(sys, "argv", argv)
         buf = io.StringIO()
         with redirect_stdout(buf):
-            check_notes.main()
+            run_command(check_notes, "check-notes")
         return re.sub(r"\d{4}-\d{2}-\d{2}", "DATE", buf.getvalue())
 
     def state() -> Dict:

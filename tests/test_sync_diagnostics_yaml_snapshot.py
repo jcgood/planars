@@ -40,6 +40,7 @@ from coding import drive as drive_module
 from coding import drive_doorway
 from coding import sync_diagnostics_yaml as sdy
 from coding.make_forms import _yaml_to_tsv_df
+from command_runner import run_command
 from fake_drive import (MANIFEST_FILE_ID, ROOT_FOLDER_ID, FakeDriveDoorway,
                         use_frozen_coded_data)
 
@@ -74,7 +75,7 @@ def env(monkeypatch, tmp_path):
         buf = io.StringIO()
         try:
             with redirect_stdout(buf):
-                sdy.main()
+                run_command(sdy, "sync-diagnostics-yaml")
         except SystemExit as exc:
             buf.write(f"[SystemExit: {exc.code}]\n")
         return buf.getvalue()

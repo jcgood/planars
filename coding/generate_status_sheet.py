@@ -56,7 +56,6 @@ from .drive import (
     get_or_create_spreadsheet,
     ensure_user_permission,
     remove_anyone_permission,
-    _with_retry,
     _load_drive_config,
     _save_drive_config,
 )
@@ -249,7 +248,7 @@ def _gather_status_rows(
             continue
 
         try:
-            ws = _with_retry(lambda c=construction: ss.worksheet(c))
+            ws = ss.worksheet(construction)
         except WorksheetNotFound:
             text, color = _missing_sheet_status()
             rows.append({**skel, "status_text": text, "color": color, "link": None})
@@ -261,7 +260,7 @@ def _gather_status_rows(
         # what makes the percentage track pair-row regeneration automatically:
         # whatever pairs exist on the sheet right now are what gets counted,
         # with no stored row count to go stale.
-        live_rows = _with_retry(lambda w=ws: w.get_all_values())
+        live_rows = ws.get_all_values()
         params, values, keystone_active, keystone_na_criteria = _construction_params(
             lang_id, class_name, construction, skel["param_names"], skel["param_values"], lang_setup_dir,
         )
@@ -329,9 +328,9 @@ def _write_status_sheet(
     ss, lang_id: str, folder_url: str, rows: List[Dict]
 ):
     """Write banner + header + data rows to ss's single worksheet, with formatting."""
-    ws = _with_retry(lambda: ss.sheet1)
+    ws = ss.sheet1
     if ws.title != "Status":
-        _with_retry(lambda: ws.update_title("Status"))
+        ws.update_title("Status")
 
     banner = _banner_rows(lang_id, folder_url)
     header_row_idx = len(banner)  # 0-based index of the header row, after banner+blank spacer
@@ -350,8 +349,8 @@ def _write_status_sheet(
 
     all_rows = banner + [_HEADER] + data_rows
     n_cols = len(_HEADER)
-    _with_retry(lambda: ws.resize(rows=max(len(all_rows) + 2, 10), cols=n_cols))
-    _with_retry(lambda: ws.update(all_rows, "A1", raw=False))
+    ws.resize(rows=max(len(all_rows) + 2, 10), cols=n_cols)
+    ws.update(all_rows, "A1", raw=False)
 
     requests = [
         # Freeze banner + header rows.
@@ -416,7 +415,7 @@ def _write_status_sheet(
             }
         })
 
-    _with_retry(lambda: ss.batch_update({"requests": requests}))
+    ss.batch_update({"requests": requests})
     return ws
 
 
@@ -460,7 +459,7 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     folder_id = None
     if apply:
-        folder_id = _with_retry(lambda: doorway.get_or_create_folder(_STATUS_FOLDER_NAME))
+        folder_id = doorway.get_or_create_folder(_STATUS_FOLDER_NAME)
         folder_url = f"https://drive.google.com/drive/folders/{folder_id}"
         _lock_read_only(doorway, folder_id,
                         [l for l in manifest if not l.startswith("_")])

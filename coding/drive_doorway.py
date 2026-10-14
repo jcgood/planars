@@ -36,9 +36,9 @@ unmigrated files — ``generate_sheets._format_and_validate`` is called by four
 of the eleven. Mirroring gspread's names means such a helper works unchanged
 whether it is handed a real ``gspread.Worksheet`` or a fake handle, so
 migration stays the mechanical call-site substitution the plan requires rather
-than a cross-file rewrite. It also means ``GspreadDoorway`` can return raw
-gspread objects as handles, adding no wrapper code — and so no wrapper bugs —
-on the path that touches live data.
+than a cross-file rewrite. ``GspreadDoorway`` returns raw gspread objects as
+handles; commands never hold them, because the Drive door wraps them
+(design: docs/drive-door-design.md § 2.2, reversing the 2026-08-01 choice).
 
 The disambiguation the proposal was protecting is preserved by other means:
 
@@ -52,14 +52,10 @@ merging them is the single most likely way a fake silently diverges from
 reality. ``FakeDriveDoorway`` therefore rejects a body of the wrong shape on
 either method, turning the hazard into a loud failure instead of a silent one.
 
-**Retry.** Only ``open_spreadsheet`` retries internally, matching
-``drive._open_spreadsheet``, which is what most call sites already use. Every
-other method passes through, so call sites that wrap themselves in
-``_with_retry`` keep exactly the semantics they have today — the migration's
-non-goal is "no behaviour changes", and this is where that bites. The
-inconsistent retry coverage catalogued in docs/drive-protocol-surface.md
-(``_verify_manifest_sheet_ids`` misreporting a 429 as a stale sheet ID, for
-instance) is a real finding, but fixing it is Phase 3 work, not the doorway's.
+**Retry, and every check on a write, live in the Drive door**
+(``coding/drive_door.py``), which ``get_doorway()`` wraps around whichever
+implementation is installed. Nothing here retries: the door retries every
+call, once, for both implementations.
 
 **Indexing has no single rule.** gspread's convenience methods are 1-based
 (``row_values``, ``update_cell``, ``insert_cols``); raw Sheets API request
@@ -80,7 +76,6 @@ from .drive import (
     _get_docs_client,
     _get_or_create_folder,
     _move_to_folder,
-    _open_spreadsheet,
     _read_notes_doc_text,
     _append_to_notes_doc,
 )
@@ -250,17 +245,13 @@ class DriveDoorway(Protocol):
     """Session-level operations: spreadsheet lifecycle, Drive files, Docs."""
 
     # -- Spreadsheets -------------------------------------------------------
-    def create_spreadsheet(self, title: str) -> SpreadsheetHandle: ...
+    def create_spreadsheet(self, title: str) -> SpreadsheetHandle:
+        """A new spreadsheet. Through the Drive door, a command also says what
+        it is (``identity=drive_door.class_sheet(lang, class)``), so the door
+        can check what is written to it."""
 
     def open_spreadsheet(self, spreadsheet_id: str) -> SpreadsheetHandle:
-        """Open by ID. **Always retried** (the one method that retries itself).
-
-        This collapses the three inconsistently-retried open idioms found in
-        the inventory (``_open_spreadsheet``, bare ``gc.open_by_key``, and
-        ``refresh_dropdowns``'s bare-open-inside-``except Exception``) onto one
-        always-retried path. Safe to unify because opening is an idempotent
-        read.
-        """
+        """Open by ID. Raises ``SpreadsheetNotFound`` or ``NoAccess``."""
 
     # -- Drive files --------------------------------------------------------
     def list_files(self, q: str, fields: str = "files(id, name)",
@@ -353,8 +344,9 @@ class GspreadDoorway:
 
     Returns raw ``gspread.Spreadsheet`` and ``gspread.Worksheet`` objects as
     handles — they already satisfy ``SpreadsheetHandle``/``WorksheetHandle``,
-    since the protocols were written to mirror gspread. No wrapper classes on
-    the live path means no wrapper bugs on the live path.
+    since the protocols were written to mirror gspread. Commands never hold
+    them: ``get_doorway()`` wraps this in the Drive door, which checks and
+    retries every call.
 
     Clients are built lazily so that constructing a doorway (e.g. at import
     time, or in a dry run that turns out to need nothing) performs no OAuth.
@@ -390,7 +382,7 @@ class GspreadDoorway:
         return self.gc.create(title)
 
     def open_spreadsheet(self, spreadsheet_id: str):
-        return _open_spreadsheet(self.gc, spreadsheet_id)
+        return self.gc.open_by_key(spreadsheet_id)
 
     # -- Drive files --------------------------------------------------------
     def list_files(self, q: str, fields: str = "files(id, name)",
@@ -508,6 +500,10 @@ class GspreadDoorway:
 # doorway argument through eleven command mains would be exactly the
 # call-site rewrite the migration is meant to avoid.
 
+#
+# Either way the command gets the Drive door (coding/drive_door.py) wrapped
+# around it, so the tests run exactly the checks that run live.
+
 _doorway: Optional[DriveDoorway] = None
 
 
@@ -515,13 +511,25 @@ def get_doorway() -> DriveDoorway:
     """Return the active doorway, creating the real one on first use."""
     global _doorway
     if _doorway is None:
-        _doorway = GspreadDoorway()
+        from .drive_door import CheckedDoorway
+        _doorway = CheckedDoorway(GspreadDoorway())
+    return _doorway
+
+
+def current_doorway() -> Optional[DriveDoorway]:
+    """The installed doorway, or None if none has been made yet (never builds one)."""
     return _doorway
 
 
 def set_doorway(doorway: Optional[DriveDoorway]) -> None:
-    """Install a doorway (or ``None`` to reset to the real one). Tests only."""
+    """Install a doorway (or ``None`` to reset to the real one). Tests only.
+
+    A plain doorway (the fake) is wrapped in the Drive door in enforce mode:
+    a test that breaks a rule fails."""
     global _doorway
+    from .drive_door import ENFORCE, CheckedDoorway
+    if doorway is not None and not isinstance(doorway, CheckedDoorway):
+        doorway = CheckedDoorway(doorway, mode=ENFORCE)
     _doorway = doorway
 
 

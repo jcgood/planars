@@ -61,7 +61,7 @@ sys.path.insert(0, str(ROOT))
 import pandas as pd  # noqa: E402
 
 from coding.biuniqueness_rows import CLASS_NAME, ELEMENTS  # noqa: E402
-from coding.drive import _with_retry, load_manifest, make_read_only  # noqa: E402
+from coding.drive import load_manifest, make_read_only  # noqa: E402
 from coding.drive_doorway import get_doorway  # noqa: E402
 from coding.make_forms import classify_biuniqueness_scope  # noqa: E402
 from coding.validate_planar import _tokenize_elements, validate_planar_df  # noqa: E402
@@ -121,9 +121,9 @@ def copy(apply: bool) -> None:
     old_ss = doorway.open_spreadsheet(OLD_SHEET_ID)
     new_ss = doorway.open_spreadsheet(new_id)
 
-    old_header, old_rows = _table(_with_retry(old_ss.worksheet(OLD_TAB).get_all_values))
+    old_header, old_rows = _table(old_ss.worksheet(OLD_TAB).get_all_values())
     new_ws = new_ss.worksheet(ELEMENTS)
-    new_vals = _with_retry(new_ws.get_all_values)
+    new_vals = new_ws.get_all_values()
     new_header, new_rows = _table(new_vals)
     if [c for c in old_header if c not in STRUCTURAL] != [c for c in new_header if c not in STRUCTURAL]:
         raise SystemExit(f"Columns differ: {old_header} vs {new_header}; nothing written.")
@@ -149,9 +149,9 @@ def copy(apply: bool) -> None:
             # 1-based sheet coordinates: header is row 1.
             writes.append((i + 2, new_header.index(col) + 1, value, key, col))
 
-    old_status = dict(r[:2] for r in _with_retry(old_ss.worksheet(STATUS_TAB).get_all_values)[1:])
+    old_status = dict(r[:2] for r in old_ss.worksheet(STATUS_TAB).get_all_values()[1:])
     status_ws = new_ss.worksheet(STATUS_TAB)
-    status_rows = _with_retry(status_ws.get_all_values)
+    status_rows = status_ws.get_all_values()
     status_row = next(n for n, r in enumerate(status_rows, 1) if r and r[0] == ELEMENTS)
     status_change = old_status.get(OLD_TAB) != status_rows[status_row - 1][1]
 
@@ -168,16 +168,16 @@ def copy(apply: bool) -> None:
         print("\nRun with --apply to write.")
         return
     for row, col, value, _, _ in writes:
-        _with_retry(lambda r=row, c=col, v=value: new_ws.update_cell(r, c, v))
+        new_ws.update_cell(row, col, value)
     if status_change:
-        _with_retry(lambda: status_ws.update_cell(status_row, 2, old_status[OLD_TAB]))
+        status_ws.update_cell(status_row, 2, old_status[OLD_TAB])
     print(f"\nCopied {len(writes)} cell(s).")
 
 
 def lock(apply: bool) -> None:
     doorway = get_doorway()
-    perms = _with_retry(lambda: doorway.list_permissions(
-        OLD_SHEET_ID, fields="permissions(type,role,emailAddress)"))
+    perms = doorway.list_permissions(
+        OLD_SHEET_ID, fields="permissions(type,role,emailAddress)")
     print("Now:", [(p.get("emailAddress") or p.get("type"), p.get("role")) for p in perms])
     if not apply:
         print("Dry run: run with --apply to make it read-only.")
@@ -194,4 +194,10 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    from coding import drive_door
+    # Runs outside `python -m coding`, so it tells the Drive door itself.
+    with drive_door.running("migration move_biuniqueness_to_stan1293",
+                            may_write="--apply" in sys.argv):
+        main()

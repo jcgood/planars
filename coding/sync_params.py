@@ -53,13 +53,14 @@ from .make_forms import (
 from .schemas import criteria_for, criterion_values, load_diagnostic_classes as _load_dc
 from planars.schema_values import is_keystone
 from .drive import (
-    _load_drive_config, _save_drive_config, _with_retry,
+    _load_drive_config, _save_drive_config,
     load_manifest, upload_manifest,
 )
 from .drive_doorway import WorksheetHandle, WorksheetNotFound, get_doorway
 from .generate_sheets import CODED_DATA
 from .schemas import is_free_entry
 from . import biuniqueness_rows as _br
+from . import drive_door
 from planars.schema_values import (
     ELEMENT_ROWS,
     ROW_IDENTITY_COLUMNS,
@@ -90,7 +91,7 @@ def _get_current_params(ws: WorksheetHandle) -> Tuple[List[str], int]:
     coreference pair sheets (Element_A, Position_A, Position_B, Direction — 4
     fixed cols) without needing to distinguish between them.
     """
-    header = _with_retry(lambda: ws.row_values(1))
+    header = ws.row_values(1)
     params = []
     comments_col = len(header)  # default: insert at end if Comments not found
     for i, col in enumerate(header):
@@ -108,7 +109,7 @@ def _get_current_params(ws: WorksheetHandle) -> Tuple[List[str], int]:
 
 def _rename_column(ws: WorksheetHandle, old_name: str, new_name: str) -> bool:
     """Rename a column header in-place. Returns True if found and renamed."""
-    header = _with_retry(lambda: ws.row_values(1))
+    header = ws.row_values(1)
     try:
         col_1based = header.index(old_name) + 1
     except ValueError:
@@ -344,7 +345,7 @@ def _apply_split_to_sheet(
     _split_{old_name} so annotators can remap values before cleanup.
     Returns True if old_name was found.
     """
-    header = _with_retry(lambda: ws.row_values(1))
+    header = ws.row_values(1)
     if old_name not in header:
         return False
     _, comments_col = _get_current_params(ws)
@@ -366,7 +367,7 @@ def _apply_merge_to_sheet(
     _merged_{old1}/_merged_{old2} so annotators can remap values.
     Returns (old1_found, old2_found).
     """
-    header = _with_retry(lambda: ws.row_values(1))
+    header = ws.row_values(1)
     old1_found = old1 in header
     old2_found = old2 in header
     if not old1_found and not old2_found:
@@ -395,7 +396,7 @@ def _build_dropdown_refresh_requests(
     """
     if not stale_params:
         return []
-    header = _with_retry(lambda: ws.row_values(1))
+    header = ws.row_values(1)
     num_rows = ws.row_count
     requests = []
     for param in stale_params:
@@ -637,7 +638,7 @@ def main(args: argparse.Namespace | None = None) -> None:
 
             for construction, (exp_params, exp_values) in expected[class_name].items():
                 try:
-                    ws = _with_retry(lambda: ss.worksheet(construction))
+                    ws = ss.worksheet(construction)
                 except WorksheetNotFound:
                     print(f"  [{class_name}/{construction}] Tab not found — skipping")
                     continue
@@ -798,21 +799,26 @@ def main(args: argparse.Namespace | None = None) -> None:
                     if remove and apply:
                         print(f"  [{class_name}/{construction}] Removing params: {removed_params}")
                         # Re-read header after any insertions above so indices are current.
-                        header = _with_retry(lambda: ws.row_values(1))
+                        header = ws.row_values(1)
                         # Delete columns right-to-left to preserve indices during deletion.
-                        for param in sorted(removed_params, key=lambda p: header.index(p), reverse=True):
-                            col_idx = header.index(param)  # 0-based
-                            ws.spreadsheet.batch_update({"requests": [{
-                                "deleteDimension": {
-                                    "range": {
-                                        "sheetId": ws.id,
-                                        "dimension": "COLUMNS",
-                                        "startIndex": col_idx,
-                                        "endIndex": col_idx + 1,
+                        # --remove is the coordinator saying these answers go.
+                        reason = (f"sync-params --remove: {', '.join(removed_params)} "
+                                  "removed from the diagnostics file")
+                        with drive_door.replacing(ws, reason):
+                            for param in sorted(removed_params, key=lambda p: header.index(p),
+                                                reverse=True):
+                                col_idx = header.index(param)  # 0-based
+                                ws.spreadsheet.batch_update({"requests": [{
+                                    "deleteDimension": {
+                                        "range": {
+                                            "sheetId": ws.id,
+                                            "dimension": "COLUMNS",
+                                            "startIndex": col_idx,
+                                            "endIndex": col_idx + 1,
+                                        }
                                     }
-                                }
-                            }]})
-                            header.pop(col_idx)
+                                }]})
+                                header.pop(col_idx)
                         # Update manifest construction_params. Deleting a column says
                         # nothing about whether a DIFFERENT column's dropdown is
                         # current, so drop only the removed keys rather than

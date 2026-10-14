@@ -86,8 +86,7 @@ def _read_sheet_df(ws) -> pd.DataFrame:
     A column with a blank header is dropped: the used range can run past the
     last named column, and an unnamed column is not a column.
     """
-    from .drive import _with_retry
-    rows = _with_retry(lambda: ws.get_all_values())
+    rows = ws.get_all_values()
     if not rows:
         return pd.DataFrame()
     headers = rows[0]
@@ -173,7 +172,7 @@ def import_planar(lang_ids: list[str] | None = None, apply: bool = False) -> lis
 
     Returns list of language IDs whose planars changed.
     """
-    from .drive import _load_drive_config, _with_retry
+    from .drive import _load_drive_config
     from .drive_doorway import get_doorway
 
     cfg = _load_drive_config()
@@ -206,7 +205,7 @@ def import_planar(lang_ids: list[str] | None = None, apply: bool = False) -> lis
 
         try:
             ss = get_doorway().open_spreadsheet(sheet_id)
-            ws = _with_retry(lambda: ss.sheet1)
+            ws = ss.sheet1
             old_df = pd.read_csv(tsv_path, sep="\t", dtype=str).fillna("")
             new_df = _read_sheet_df(ws)
         except Exception as exc:
@@ -293,7 +292,6 @@ def push_planar_to_sheet(lang_id: str, cfg: dict, apply: bool) -> bool:
     diffs it against the live Sheet, and on apply clears+rewrites the Sheet to
     match. Returns True if a change was made (or would be, in dry-run).
     """
-    from .drive import _with_retry
     from .drive_doorway import get_doorway
 
     lang_cfg = cfg.get(lang_id, {})
@@ -311,7 +309,7 @@ def push_planar_to_sheet(lang_id: str, cfg: dict, apply: bool) -> bool:
 
     try:
         ss = get_doorway().open_spreadsheet(sheet_id)
-        ws = _with_retry(lambda: ss.sheet1)
+        ws = ss.sheet1
         sheet_df = _read_sheet_df(ws)
     except Exception as exc:
         print(f"  [{lang_id}] ERROR reading planar sheet: {exc}")
@@ -341,8 +339,8 @@ def push_planar_to_sheet(lang_id: str, cfg: dict, apply: bool) -> bool:
 
     if apply:
         new_rows = [list(local_df.columns)] + [list(row) for _, row in local_df.iterrows()]
-        _with_retry(ws.clear)
-        _with_retry(lambda: ws.update(new_rows, "A1"))
+        ws.clear()
+        ws.update(new_rows, "A1")
         print(f"  [{lang_id}] Updated -> planar Sheet")
     else:
         print(f"  [{lang_id}] Would update -> planar Sheet (use --apply to write)")

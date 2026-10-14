@@ -64,6 +64,7 @@ from coding import drive as drive_module
 from coding import drive_doorway
 from coding import generate_notebooks as gn
 from coding import generate_sheets as gs
+from command_runner import run_command
 from fake_drive import (FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID,
                         ROOT_FOLDER_ID, api_error)
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
@@ -181,7 +182,7 @@ def env(monkeypatch, tmp_path):
         buf = io.StringIO()
         try:
             with redirect_stdout(buf):
-                gs.main()
+                run_command(gs, "generate-sheets")
         except SystemExit as exc:
             if exc.code:
                 buf.write(f"[SystemExit: {exc.code}]\n")
@@ -302,7 +303,7 @@ def test_a_transient_429_moving_a_new_sheet_is_retried_not_a_crash(env, monkeypa
     response can create a second copy.
     """
     env.remove_from_manifest("arao1248")
-    monkeypatch.setattr(drive_module.time, "sleep", lambda *a, **kw: None)
+    monkeypatch.setattr("coding.drive_door.time.sleep", lambda *a, **kw: None)
     env.doorway.fail_after("move_file", 1, exc=api_error(429, "rate limited"))
     out = env.run(["generate-sheets", "--apply"])
     assert "[SystemExit:" not in out

@@ -151,6 +151,24 @@
       writes_to_drive: true
       facts_touched:
         - {fact: dependent_construction_element_scope, role: writes}
+    - name: "--push-manifest"
+      description: >-
+        One-time migration utility: uploads the local sheets_manifest.json to
+        Drive as the merged manifest.json and records its ID in
+        drive_config.json. Writes at once, with no --apply gate (found
+        2026-10-13 by the Drive door, which refused the write because no
+        record said this mode writes).
+      side_effects:
+        - "creates or replaces manifest.json on Drive; writes drive_config.json"
+      idempotent: true
+      idempotency_note: >-
+        Uploads the same local file to the same Drive file each time; a second
+        run replaces it with identical content.
+      apply_gate: null
+      preconditions: []
+      writes_to_drive: true
+      facts_touched:
+        - {fact: manifest_class_registration, role: writes}
 
 - id: generate_notebooks
   cli_command: generate-notebooks
@@ -407,6 +425,7 @@
     - "auto-applies safe downstream commands after a successful run"
     - "revalidates sheets after auto-apply"
   modes: []
+  always_on_writes: [highlighting]
 
 - id: validate_coding
   cli_command: validate-coding

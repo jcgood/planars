@@ -311,6 +311,7 @@ When creating a new issue, apply at least one label from the set below. Use `gh 
 | `collaborator-notes` | check-notes --apply (data-refresh.yml) | A collaborator's notes Doc has new content (one issue per annotator). Resolve: paste the Claude prompt from the issue body, review proposed issues, file warranted ones, then close this issue. |
 | `collaborator-check` | import-sheets | An in-progress sheet has structural anomalies (missing rows, missing columns, >10% annotated-cell decrease). Not a blocking error — verify the change was intentional with the collaborator. |
 | `label-drift` | issue --sync-labels --apply (data-refresh.yml) | A label someone created on GitHub by hand is on issues but not in `schemas/issue_labels.yaml`, so the tooling can't keep it in line. Resolve: add it to the registry (or take it off those issues). Auto-closed when every label in use is registered. |
+| `door-violation` | the Drive door, at the end of any watched command | While the Drive door (`coding/drive_door.py`) is in watch mode, a write that breaks one of its rules still goes ahead, and the command files or updates this issue listing what broke. Each line is a bug in the command or a gap in the sheet spec. Resolve: fix whichever it is, then close. |
 | `sheet-updates` | restructure-sheets --apply | One long-lived issue per language ("Sheet updates — {lang_id}"); `restructure-sheets --apply` comments on it whenever that language's sheets get new URLs. Annotators subscribe to it. Never closed. |
 <!-- label-table:end -->
 

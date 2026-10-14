@@ -605,12 +605,19 @@ def test_real_gspread_objects_satisfy_the_handle_protocols():
 
 
 def test_get_doorway_defaults_to_the_real_one_and_can_be_overridden():
+    """Either way, behind the Drive door: watching live, enforcing in tests."""
+    from coding import drive_door
     drive_doorway.reset_doorway()
-    assert isinstance(drive_doorway.get_doorway(), GspreadDoorway)
+    live = drive_doorway.get_doorway()
+    assert isinstance(live, drive_door.CheckedDoorway)
+    assert isinstance(live.inner, GspreadDoorway)
+    assert live.mode == drive_door.LIVE_MODE
     fake = FakeDriveDoorway()
     drive_doorway.set_doorway(fake)
     try:
-        assert drive_doorway.get_doorway() is fake
+        door = drive_doorway.get_doorway()
+        assert door.inner is fake
+        assert door.mode == drive_door.ENFORCE
     finally:
         drive_doorway.reset_doorway()
 

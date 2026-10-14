@@ -36,6 +36,7 @@ import pytest
 from coding import drive as drive_module
 from coding import drive_doorway
 from coding import generate_status_sheet as gen
+from command_runner import run_command
 from fake_drive import (MANIFEST_FILE_ID, ROOT_FOLDER_ID, FakeDriveDoorway, api_error,
                         use_frozen_coded_data)
 
@@ -74,7 +75,7 @@ def env(monkeypatch, tmp_path):
         buf = io.StringIO()
         try:
             with redirect_stdout(buf):
-                gen.main()
+                run_command(gen, "generate-status-sheet")
         except SystemExit as exc:
             buf.write(f"[SystemExit: {exc.code}]\n")
         out = buf.getvalue()
@@ -447,7 +448,7 @@ def test_a_transient_429_creating_the_status_folder_is_retried_not_a_crash(env, 
     so the real ~15s backoff wait doesn't slow the suite down.
     """
     doorway, run, _ = env
-    monkeypatch.setattr(drive_module.time, "sleep", lambda *a, **kw: None)
+    monkeypatch.setattr("coding.drive_door.time.sleep", lambda *a, **kw: None)
     doorway.fail_after("create_file", 1, exc=api_error(429, "rate limited"))
     out = run(["gen", "--lang", "arao1248", "--apply"])
     assert "[SystemExit:" not in out
