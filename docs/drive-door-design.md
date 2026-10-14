@@ -1,11 +1,10 @@
 # The Drive door: design (Phase 10 unit 5)
 
-**Status: draft for Jeff's review, 2026-10-13. Nothing here is built yet.**
-Unit 5 of Phase 10 ([implementation plan](data-layer-implementation-plan.md),
-Phase 10 table) is a design pause: this file is the design, and § 7 lists the
-decisions that are Jeff's. Once it is accepted, decisions move to the
-decisions log in [data-layer-progress.md](data-layer-progress.md) and this
-file stays as the design record.
+**Status: accepted by Jeff 2026-10-13 (§ 7 records his answers). Nothing
+built yet.** Unit 5 of Phase 10 ([implementation plan](data-layer-implementation-plan.md),
+Phase 10 table) was a design pause; this file is the design record. Progress
+is tracked in [data-layer-progress.md](data-layer-progress.md), and the
+decisions are logged there too.
 
 ## 1. The problem in one paragraph
 
@@ -150,8 +149,8 @@ Each rule is derived from the spec; none names a command.
    separately (#272, Finding 10).
 4. **Protection only on locked tabs.** `addProtectedRange` anywhere else is refused.
 5. **Sharing matches the sharing spec.** A grant must be to a named person
-   the spec lists for that file, at the spec's role. No "anyone" grant
-   except where the spec lists one (see question Q4).
+   the spec lists for that file, at the spec's role. No "anyone" grant on
+   anything, notebooks and PDF reports included (Q4).
 6. **Shape is checked at the end of the command.** Individual writes pass
    through shapes in between (insert a column, then write its header), so
    whole-tab shape is checked once, after the command finishes: the door
@@ -168,7 +167,7 @@ it ("no half-finished transitions").
 | Safeguard | Today | In the door |
 |---|---|---|
 | retry on 429/500/503 | ~140 hand-placed `_with_retry` calls; any new call can miss it | every call. A create (file, permission) retries only after checking the first attempt didn't land, which removes the duplicate-grant edge case recorded for #284 |
-| dry run | each command's own `if args.apply` | **read-only door**: if `operations.yaml` says this invocation doesn't write to Drive (the `gating.py` match provenance already uses), the door refuses every write. This catches a dry run that writes, e.g. `import-sheets` painting pink highlights without `--apply` (a known, accepted gap; Q5) |
+| dry run | each command's own `if args.apply` | **read-only door**: if `operations.yaml` says this invocation doesn't write to Drive (the `gating.py` match provenance already uses), the door refuses every write. `import-sheets`' pink highlighting, which runs on a dry run too, gets its own always-on mode in `operations.yaml` so the door allows it and provenance logs it (Q5) |
 | refuse to drop annotations | `--regen-construction` only | rule 1 |
 | snapshot before destroying | `--regen-construction` only, `regen_snapshots/` | every `door.replacing` block; same folder until unit 12 moves durable state into planars-data |
 | provenance | one line per command invocation | one line per tab (or Drive file) written per command: what, which identity labels, how many cells, under which `replacing` reason |
@@ -193,6 +192,14 @@ refresh) and doesn't need unit 12. The fake runs in enforce mode from the
 first commit. Every violation the existing command tests hit is either a
 real bug, fixed then, or a gap in the spec, fixed in the spec.
 
+**When a kind moves from watch to enforce (Q7):** once the door has seen
+at least one real write to that kind go through with no violation, and
+every violation reported in watch has been resolved. A kind nothing has
+written stays in watch, however long that takes; a quiet period proves
+nothing. Class sheets also keep the plan's minimum of a week, because the
+daily refresh writes them on day one and the less frequent commands that
+write them need a chance to run.
+
 ## 5. Order of work
 
 Each step leaves a complete, working system.
@@ -210,14 +217,17 @@ Each step leaves a complete, working system.
    migration that labels the live files (**a live write, named for your
    approval when it's ready**). Rule 6 (end-of-command shape check) lands
    here, because it needs identity to find the spec.
-5. **5e** Live in watch mode for class sheets, at least a week. Meanwhile:
-   the rest of unit 3, and unit 8.
-6. **5f** Enforce for class sheets. Then the other kinds in the plan's
-   order: sharing → planar → diagnostics → status sheets → notes Docs →
-   files (`manifest.json`, notebooks, PDFs, folders). Each kind gets its
-   spec section and its own watch → enforce. Before enforce for the last
-   kind, a write to an unlabelled target is refused outright, so no kind is
-   left unchecked.
+5. **5e** Live in watch mode for class sheets, until the § 4 rule is met
+   (at least a week). Meanwhile: the rest of unit 3, and unit 8.
+6. **5f** Enforce for class sheets. Then the other kinds, in the plan's
+   order for building their spec sections: sharing → planar → diagnostics
+   → status sheets → notes Docs → files (`manifest.json`, notebooks, PDFs,
+   folders). They can be in watch together, and each moves to enforce on
+   its own by the § 4 rule. The sharing step starts with Q4's test: share
+   one notebook by name and confirm an annotator can open it in Colab
+   before link sharing is removed from notebooks and reports. Before the
+   last kind is enforced, a write to an unlabelled target is refused
+   outright, so no kind is left unchecked.
 
 ## 6. What this does not cover
 
@@ -228,49 +238,39 @@ Each step leaves a complete, working system.
   pause with units 15 and 11.
 - Reads stay unchecked ("reads may stay promiscuous").
 
-## 7. Decisions for Jeff
+## 7. Decisions (Jeff, 2026-10-13)
 
-**Q1. Check each write, or only the result?** Recommended: both, as in
-§ 2.4. Each write is checked against rules that hold at every moment
-(annotations, locked tabs, dropdowns, protection, sharing), and whole-tab
-shape is checked once at the end. Checking only the end result would let an
-annotation be destroyed mid-run and then "match the spec". Checking only
-each write would make in-between states fail.
+**Q1. Check each write, the result, or both? Both.** Each write is checked
+against the rules that hold at every moment (annotations, locked tabs,
+dropdowns, protection, sharing), and whole-tab shape is checked once at the
+end (§ 2.4). Checking only the end result would let an annotation be wiped
+mid-run and still "match the spec". Checking only each write would refuse
+the in-between shapes ordinary commands pass through.
 
-**Q2. Wrap the live handles** (reversing the 2026-08-01 "raw gspread
-objects" choice)? Recommended: yes, for the reason in § 2.2. The checking
-code is shared with the fake and so is under test.
+**Q2. Wrap the live handles? Yes.** This reverses the 2026-08-01 choice to
+return raw gspread objects. The checking layer sits above both the live and
+the fake doorway, so the tests run the same checks that run live (§ 2.2).
 
-**Q3. How a command says "I mean to replace these annotations".**
-Recommended: the `door.replacing(tab, reason)` block, which always takes
-a snapshot and logs the reason, with no list of which commands may use it.
-A list would be one more registry to keep true. The risk is that callers
-reach for the block too easily. The per-write provenance makes each use
-visible, and the end-of-command check can confirm every annotation read
-earlier is still somewhere on the sheet or in the snapshot.
+**Q3. How a command declares an intended replacement of annotations: the
+`door.replacing(tab, reason)` block,** which always snapshots and logs the
+reason. There is no list of which commands may use it. Per-write provenance
+makes every use visible, and the end-of-command check confirms every answer
+read earlier is still on the sheet or in the snapshot.
 
-**Q4. Notebooks and PDF reports are shared "anyone with the link"** (every
-regeneration re-grants it). Unit 14 removed link sharing from folders and
-sheets but didn't decide these. Options: (a) keep link sharing for these
-two as a listed exception in the sharing spec; (b) named people only.
-Recommended: (b), for consistency with "sharing by name only", **if**
-Colab opens a notebook shared by name for an annotator who is signed in.
-I would test that with one notebook before choosing. Your call either way.
+**Q4. Notebooks and PDF reports: named people only,** after a test that a
+notebook shared by name opens in Colab for a signed-in annotator (§ 5,
+step 5f). Until that test passes they keep link sharing.
 
-**Q5. A dry run that writes.** The read-only door would break
-`import-sheets`' dry run, which today paints pink highlights on invalid
-cells. Options: (a) only `--apply` paints; (b) declare highlighting a
-write in its `operations.yaml` record, so a dry run is allowed to do it.
-Recommended: (b). Highlighting is feedback to the annotator, and they
-should get it whoever ran the command. (a) would silently leave pink stale
-after a dry run.
+**Q5. `import-sheets`' dry run keeps painting highlights.** The painting is
+declared as its own always-on write in `operations.yaml`, so the read-only
+door allows it and provenance logs it (§ 3).
 
-**Q6. Extra Drive reads.** Rule 1 and the concurrent-edit check read a tab
-before writing it: at most one extra read per tab per command, cached.
-The daily `update-sheets` touches about 25 sheets, within the read quota.
-Nothing to decide unless you object.
+**Q6. Extra Drive reads: accepted.** At most one read per tab written,
+reusing the command's own read of the tab where there is one. Heavy runs
+(`restructure-sheets`, a wide `sync-params`) may slow down under Google's
+roughly 60-reads-a-minute limit; the door's retry absorbs that.
 
-**Q7. The watch week.** The plan says at least a week of watch mode for
-class sheets. For the later kinds (sharing, planar, …) I suggest a shorter
-watch: one week for all of them together, run at once after class sheets
-are enforced, rather than a week each.
+**Q7. When the trial ends: once the door has seen a real write go through
+cleanly,** not after a fixed number of weeks (§ 4). Claude kept the plan's
+one-week minimum for class sheets, for the reason given in § 4; Jeff may
+drop it.
