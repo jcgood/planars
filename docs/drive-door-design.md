@@ -75,6 +75,15 @@ only way to write:
    already fails if a command builds its own clients. It is extended to fail
    on any reach past a wrapper to the object inside.
 
+**How the door knows which command is running.** The dispatch chokepoint in
+`__main__.py`, where `preconditions.enforce` and `provenance.record` already
+run, hands the door the command name and its parsed arguments before
+`main()` starts. That tells the door whether this invocation may write at
+all (the read-only door, § 3) and what to put on each logged write. Code that
+runs outside the dispatcher (tests, migrations) has to set this context
+explicitly. A door with no command context refuses writes rather than
+guessing.
+
 Every write method then runs the same four steps:
 
 1. **Target:** read the identity labels (§ 2.3) on the sheet and tab, and
