@@ -227,10 +227,13 @@ def test_the_daily_import_brings_the_keyed_tabs_down_intact(created, monkeypatch
     try:
         with redirect_stdout(buf):
             run_command(is_, "import-sheets")
-    except SystemExit as exc:
-        assert not exc.code or "biuniqueness" not in buf.getvalue(), buf.getvalue()
+    except SystemExit:
+        pass   # other classes' real annotation may fail the run; only this class's tabs matter
 
     out = buf.getvalue()
+    own_problems = [line for line in out.splitlines()
+                    if f"[{CLASS}/" in line and "issue(s)" in line]
+    assert not own_problems, out
     assert f"{CLASS}/morphs.tsv" in out, out
     morphs = pd.read_csv(env.coded / LANG / CLASS / "morphs.tsv", sep="\t", dtype=str,
                          keep_default_na=False)

@@ -236,6 +236,12 @@ def env(monkeypatch, tmp_path):
             auto_apply_calls.append((name, list(sys.argv)))
         return SimpleNamespace(main=_main)
 
+    # revalidate_sheets() reads local TSVs from validate_coding's own
+    # CODED_DATA constant, not this file's ROOT; the Drive door reads its
+    # own too. Every module's is pointed at the private tree -- before the
+    # stand-ins below go in, since pointing imports every coding module and
+    # some import from the modules the stand-ins replace.
+    point_coded_data_at(monkeypatch, coded)
     for name in AUTO_APPLY_MODULES:
         monkeypatch.setitem(sys.modules, name, make_stub(name))
 
@@ -256,10 +262,6 @@ def env(monkeypatch, tmp_path):
     # THAT module's own _load_drive_config() -- patching import_sheets.py's
     # imported copy alone leaves them looking at the real drive_config.json.
     monkeypatch.setattr(drive_module, "_load_drive_config", FakeDriveDoorway.drive_config)
-    # revalidate_sheets() reads local TSVs from validate_coding's own
-    # CODED_DATA constant, not this file's ROOT; the Drive door reads its
-    # own too. Every module's is pointed at the private tree.
-    point_coded_data_at(monkeypatch, coded)
     drive_doorway.set_doorway(doorway)
 
     def run(argv: List[str]) -> Tuple[str, Optional[int]]:
@@ -309,6 +311,15 @@ def drop_last_planar_position(rows: List[List[str]]) -> List[List[str]]:
     return rows[:-1]
 
 
+def assert_finished(out: str, exit_code: Optional[int]) -> None:
+    """The run finished: cleanly, or stopping only on a problem in the recorded
+    annotation that it reported. The recording is real annotators' work, and a
+    refreeze can bring in a coding error on a ready-for-review tab; that is the
+    command doing its job, not a failure of the change under test (whose
+    output the snapshot pins)."""
+    assert exit_code is None or (exit_code == 1 and "blocking warning(s) found" in out), out
+
+
 # ---------------------------------------------------------------------------
 # What the coordinator sees
 # ---------------------------------------------------------------------------
@@ -316,7 +327,7 @@ def drop_last_planar_position(rows: List[List[str]]) -> List[List[str]]:
 def test_dry_run_transcript(env):
     """Nothing changed anywhere -- the ordinary daily "nothing to do" run."""
     out, exit_code = env.run(["import-sheets"])
-    assert exit_code is None
+    assert_finished(out, exit_code)
     check_snapshot("dry_run.txt", out)
 
 
@@ -336,7 +347,7 @@ def test_apply_multiple_kinds_of_change_transcript(env):
     env.edit_sheet_rows(env.planar_sheet("stan1293"), drop_last_planar_position)
     env.tab("synth0001", "ciscategorial", "general")._cell(1, 3).value = "y"
     out, exit_code = env.run(["import-sheets", "--apply"])
-    assert exit_code is None
+    assert_finished(out, exit_code)
     check_snapshot("apply_multiple_changes.txt", out)
 
 
@@ -709,7 +720,7 @@ def test_lang_filter_leaves_other_languages_local_trees_untouched(env):
 
 def test_pair_row_and_standard_constructions_both_import_cleanly(env):
     out, exit_code = env.run(["import-sheets", "--lang", "stan1293", "--apply"])
-    assert exit_code is None
+    assert_finished(out, exit_code)
     assert env.output_tsv("stan1293", "ciscategorial", "general").exists()       # element rows
     assert env.output_tsv("stan1293", "coreference", "reflexivization").exists()  # pair rows
     assert env.output_tsv("stan1293", "nonpermutability", "general").exists()     # pair rows

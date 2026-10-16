@@ -28,17 +28,44 @@ from coding.capture_drive_state import _capture_spreadsheet, _capture_worksheet
 from fake_drive import FIXTURE_DIR, MANIFEST_FILE_ID, FakeDriveDoorway
 
 
+_TAB_LABELS = [
+    {"metadataId": 1, "metadataKey": "planars_tab_kind", "metadataValue": "construction",
+     "location": {"sheetId": 0, "locationType": "SHEET"}, "visibility": "DOCUMENT"},
+    {"metadataId": 2, "metadataKey": "planars_tab", "metadataValue": "general",
+     "location": {"sheetId": 0, "locationType": "SHEET"}, "visibility": "DOCUMENT"},
+]
+_SHEET_LABELS = {"planars_kind": "class_sheet", "planars_lang": "stan1293",
+                 "planars_class": "metrical"}
+
+
 def _seeded_doorway() -> FakeDriveDoorway:
     doorway = FakeDriveDoorway.from_fixtures()
     doorway.seed_spreadsheet({
         "spreadsheet_id": "probe_sheet",
         "title": "probe_stan1293",
+        "properties": _SHEET_LABELS,
         "worksheets": [{
             "sheet_id": 0, "title": "general", "row_count": 5, "col_count": 3,
             "values": [["Element", "accented", "Comments"], ["and", "y", ""]],
+            "developer_metadata": _TAB_LABELS,
         }],
     })
     return doorway
+
+
+class _DriveV3:
+    """The one Drive v3 call capture makes (``files().get(...).execute()``),
+    answered from the stand-in Drive."""
+
+    def __init__(self, doorway: FakeDriveDoorway) -> None:
+        self._doorway = doorway
+
+    def files(self):
+        return self
+
+    def get(self, fileId, fields):
+        meta = self._doorway.get_file(fileId, fields=fields)
+        return type("_Request", (), {"execute": lambda _self: meta})()
 
 
 # ---------------------------------------------------------------------------
@@ -51,23 +78,45 @@ def test_capturing_the_same_worksheet_twice_is_byte_identical():
     doorway = _seeded_doorway()
     ws = doorway.spreadsheet("probe_sheet").worksheet("general")
 
-    first = _capture_worksheet(ws)
-    second = _capture_worksheet(ws)
+    first = _capture_worksheet(ws, _TAB_LABELS)
+    second = _capture_worksheet(ws, _TAB_LABELS)
 
     assert second == first
+
+
+class _GCFor:
+    def __init__(self, doorway):
+        self._doorway = doorway
+
+    def open_by_key(self, spreadsheet_id):
+        return self._doorway.spreadsheet(spreadsheet_id)
 
 
 def test_capturing_the_same_spreadsheet_twice_is_byte_identical():
     doorway = _seeded_doorway()
+    gc, drive = _GCFor(doorway), _DriveV3(doorway)
 
-    class _GC:
-        def open_by_key(self, spreadsheet_id):
-            return doorway.spreadsheet(spreadsheet_id)
-
-    first = _capture_spreadsheet(_GC(), "probe_sheet", role="stan1293:ciscategorial")
-    second = _capture_spreadsheet(_GC(), "probe_sheet", role="stan1293:ciscategorial")
+    first = _capture_spreadsheet(gc, drive, "probe_sheet", role="stan1293:ciscategorial")
+    second = _capture_spreadsheet(gc, drive, "probe_sheet", role="stan1293:ciscategorial")
 
     assert second == first
+
+
+def test_capture_records_the_labels_and_the_fake_replays_them():
+    """The sheet's identity label and its tabs' labels are recorded, and a
+    recording seeded into the stand-in Drive is captured back unchanged, so
+    the door in tests places recorded sheets by label as it does live."""
+    doorway = _seeded_doorway()
+    data = _capture_spreadsheet(_GCFor(doorway), _DriveV3(doorway), "probe_sheet",
+                                role="stan1293:class:metrical")
+    assert data["properties"] == _SHEET_LABELS
+    assert data["worksheets"][0]["developer_metadata"] == _TAB_LABELS
+
+    replayed = FakeDriveDoorway.from_fixtures()
+    replayed.seed_spreadsheet(data)
+    again = _capture_spreadsheet(_GCFor(replayed), _DriveV3(replayed), "probe_sheet",
+                                 role="stan1293:class:metrical")
+    assert again == data
 
 
 # ---------------------------------------------------------------------------
@@ -91,15 +140,11 @@ def test_apply_refreezes_sheets_and_local_folders_together(tmp_path, monkeypatch
     (live / "stan1293" / "lang_setup").mkdir(parents=True)
     (live / "stan1293" / "lang_setup" / "marker.tsv").write_text("new\n", encoding="utf-8")
 
-    class _GC:
-        def open_by_key(self, spreadsheet_id):
-            return doorway.spreadsheet(spreadsheet_id)
-
     monkeypatch.setattr(cds, "FIXTURE_DIR", fixture_dir)
     monkeypatch.setattr(cds, "FROZEN_CODED_DATA", frozen)
     monkeypatch.setattr(cds, "CODED_DATA", live)
     monkeypatch.setattr(cds, "ROOT", tmp_path)
-    monkeypatch.setattr(cds, "_get_clients", lambda: (_GC(), None))
+    monkeypatch.setattr(cds, "_get_clients", lambda: (_GCFor(doorway), _DriveV3(doorway)))
     monkeypatch.setattr(cds, "_load_drive_config",
                         lambda: {"_planars_config_file_id": MANIFEST_FILE_ID})
     monkeypatch.setattr(cds, "_download_file_json", lambda drive, file_id: manifest)

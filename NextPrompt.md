@@ -30,15 +30,15 @@ first group, 1, 2 and 10 are done. **Unit 5 (the Drive door knows the
 topology) is designed and accepted** — `docs/drive-door-design.md`, Jeff's
 answers in its § 7, what was built in its § 8. 5a (the sheet spec), 5b
 (the checking layer, `coding/drive_door.py`, live in watch mode) and 5c
-(snapshots, per-write provenance, mid-run-edit check) are done; **5d is in
-flight**: its labels and rule 6, the end-of-command shape check, are built
-(design doc § 8, "5d, labels" and "5d, rule 6"); next is the labelling
-migration (decision 8 of the 2026-10-14 identity-labels entry), then
-refreeze and delete the manifest fallback.
+(snapshots, per-write provenance, mid-run-edit check) and 5d (labels, rule
+6, the labelling migration, manifest fallback deleted) are done. **Now 5e:**
+class sheets stay in watch mode until the design doc's § 4 rule is met (at
+least a week of clean daily refreshes); meanwhile the rest of unit 3 and
+unit 8 (design doc § 5, item 5). Then 5f (enforce for class sheets, then
+the other kinds).
 Check for an open `door-violation` issue first: each line is a command bug
 or a spec gap to fix.
-Live steps to name to Jeff for approval first: 5d's labelling migration
-and 5f's one-notebook sharing test.
+Live step to name to Jeff for approval first: 5f's one-notebook sharing test.
 
 **Don't re-litigate (decided 2026-10-12):** light maintenance beats speed; a
 registry only if the code runs from it; no `[y, n]` default; close the

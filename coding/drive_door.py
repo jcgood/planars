@@ -58,10 +58,10 @@ Every create on the door takes ``identity=`` and writes the label;
 ``set_identity`` labels an existing file and refuses to relabel one;
 ``mark_archived`` is called where a class sheet is archived (and undone on
 rollback). The door places a file from what this command made, else its
-label (read once per command), else, for a class sheet not yet labelled, the
-manifest. A write to a file it cannot place passes unchecked by rules 1-5 for
-now; once every kind of Drive file has its spec, such a write is refused
-(design § 5).
+label (read once per command); the files made before labels existed were
+labelled by ``migrations/label_drive_files.py``. A write to a file it cannot
+place passes unchecked by rules 1-5 for now; once every kind of Drive file
+has its spec, such a write is refused (design § 5).
 
 Each tab of a class sheet is labelled too, with Sheets developer metadata:
 its kind (locked, construction, status) and its name. When a command that
@@ -490,7 +490,6 @@ class CheckedDoorway:
         self._inner = inner
         self.mode = mode
         self.violations: List[str] = []
-        self._identities: Dict[str, Identity] = {}   # from the manifest
         self._created: Dict[str, Identity] = {}      # made by this command
         # Each file's Drive properties, read once per command.
         self._labels: Dict[str, Dict[str, str]] = {}
@@ -498,7 +497,6 @@ class CheckedDoorway:
         self._tab_labels: Dict[str, Dict[int, Dict[str, str]]] = {}
         # Spreadsheets this command wrote to, for the end-of-command labels.
         self._sheets_written: Dict[str, "CheckedSpreadsheet"] = {}
-        self._manifest_read = False
         self._specs: Dict[Tuple[str, str], Any] = {}
         self._grids: Dict[Tuple[str, int], List[List[str]]] = {}
         self._replacing: Dict[Tuple[str, int], str] = {}
@@ -523,13 +521,10 @@ class CheckedDoorway:
     # -- command lifetime ---------------------------------------------------
     def begin_command(self) -> None:
         """Start a command with nothing remembered from the last one: its
-        language files, the manifest, the sheets and their labels may all
-        have changed."""
+        language files, the sheets and their labels may all have changed."""
         self.violations = []
         self._specs.clear()
         self._grids.clear()
-        self._manifest_read = False
-        self._identities = {}
         self._created = {}
         self._labels = {}
         self._tab_labels = {}
@@ -600,8 +595,7 @@ class CheckedDoorway:
         """What the door already knows a file to be, without reading Drive."""
         if file_id in self._created:
             return self._created[file_id]
-        found = Identity.from_labels(self._labels.get(file_id, {}))
-        return found or self._identities.get(file_id)
+        return Identity.from_labels(self._labels.get(file_id, {}))
 
     def _read_labels(self, file_id: str) -> Dict[str, str]:
         """A file's Drive properties, read once per command."""
@@ -614,19 +608,10 @@ class CheckedDoorway:
         return self._labels[file_id]
 
     def _identify(self, file_id: str) -> Optional[Identity]:
-        """What a file is: made by this command, else its label, else (class
-        sheets only, until every file is labelled) the manifest."""
+        """What a file is: made by this command, else its label."""
         if file_id in self._created:
             return self._created[file_id]
-        labelled = Identity.from_labels(self._read_labels(file_id))
-        if labelled is not None:
-            return labelled
-        if file_id in self._identities:
-            return self._identities[file_id]
-        if not self._manifest_read:
-            self._manifest_read = True
-            self._read_manifest_identities()
-        return self._identities.get(file_id)
+        return Identity.from_labels(self._read_labels(file_id))
 
     def is_archived(self, file_id: str) -> bool:
         return self._read_labels(file_id).get(STATE_LABEL) == ARCHIVED
@@ -662,16 +647,13 @@ class CheckedDoorway:
     def mark_archived(self, file_id: str, archived: bool = True) -> None:
         """Label a file archived (or, undoing that, live). Called where a
         class sheet is archived, before its annotator's grant is lowered, so
-        the sharing rule expects reader; and the reverse when undone. Writes
-        the identity too, for a file only the manifest could place."""
+        the sharing rule expects reader; and the reverse when undone."""
         identity = self._identify(file_id)
         if identity is None:
             self._check(f"mark {file_id} {'archived' if archived else 'live'}",
-                        [f"{file_id} has no label and is not in the manifest, so the "
-                         "door cannot say what it is"])
+                        [f"{file_id} has no label, so the door cannot say what it is"])
             return
-        labels: Dict[str, Optional[str]] = dict(identity.labels())
-        labels[STATE_LABEL] = ARCHIVED if archived else None
+        labels: Dict[str, Optional[str]] = {STATE_LABEL: ARCHIVED if archived else None}
         self._write_labels(file_id, labels,
                            f"mark {identity.describe()} {'archived' if archived else 'live'}")
 
@@ -891,24 +873,6 @@ class CheckedDoorway:
         if self.mode == ENFORCE:
             raise DoorViolation("The Drive door refused a write.\n  " + "\n  ".join(messages))
         self.violations.extend(messages)
-
-    def _read_manifest_identities(self) -> None:
-        import io
-        from .drive import load_manifest
-        try:
-            # Quietly: the loader's fallback notes are for the command's own
-            # read, and would appear twice in its output.
-            with contextlib.redirect_stdout(io.StringIO()):
-                manifest = load_manifest(self)
-        except (Exception, SystemExit):  # noqa: BLE001 - no manifest, nothing to place
-            return
-        for lang_id, entry in manifest.items():
-            if not isinstance(entry, dict):
-                continue
-            for class_name, info in (entry.get("sheets") or {}).items():
-                sid = isinstance(info, dict) and info.get("spreadsheet_id")
-                if sid:
-                    self._identities.setdefault(sid, class_sheet(lang_id, class_name))
 
     def _spec(self, identity: Identity):
         """The class sheet's spec, or the error that stopped it being built."""

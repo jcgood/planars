@@ -38,6 +38,12 @@ def env(monkeypatch, tmp_path):
         drive_doorway.reset_doorway()
 
 
+def _unlabel_tabs(fake, sheet_id):
+    """The recorded sheets are labelled (since the 2026-10-15 migration); this
+    makes one whose tabs are not, as a tab added by hand would be."""
+    fake.spreadsheet(sheet_id)._developer_metadata = []
+
+
 def _tab(door, sheet_id, title):
     return door.open_spreadsheet(sheet_id).worksheet(title)
 
@@ -369,7 +375,8 @@ def _log():
 
 
 def test_each_tab_written_gets_one_provenance_line(env):
-    _, door, sheet_id, _ = env
+    fake, door, sheet_id, _ = env
+    _unlabel_tabs(fake, sheet_id)
     with _running_out_of_shape():
         ws = _tab(door, sheet_id, "general")
         c = _col(ws, "Element")
@@ -446,6 +453,7 @@ def test_a_found_folder_labelled_as_something_else_is_reported(env):
 
 def test_set_identity_labels_once_and_never_relabels(env):
     fake, door, sheet_id, _ = env
+    fake.file(sheet_id).properties.clear()              # a file made before labels
     identity = drive_door.class_sheet(LANG, CLASS)
     with drive_door.running("update-sheets", APPLY):
         assert door.set_identity(sheet_id, identity) is True
@@ -456,7 +464,8 @@ def test_set_identity_labels_once_and_never_relabels(env):
 
 
 def test_a_dry_run_cannot_label(env):
-    _, door, sheet_id, _ = env
+    fake, door, sheet_id, _ = env
+    fake.file(sheet_id).properties.clear()
     with drive_door.running("update-sheets", DRY), pytest.raises(DoorViolation, match="dry run"):
         door.set_identity(sheet_id, drive_door.class_sheet(LANG, CLASS))
 
@@ -488,13 +497,15 @@ def test_the_annotators_role_follows_the_archived_label(env):
         door.update_permission(sheet_id, grant, "writer")
 
 
-def test_marking_archived_labels_a_sheet_only_the_manifest_placed(env):
+def test_an_unlabelled_sheet_cannot_be_marked_archived(env):
+    """The manifest no longer places a sheet (deleted 2026-10-16, once every
+    file was labelled): a sheet with no label is one the door can't name."""
     fake, door, sheet_id, _ = env
-    assert fake.file(sheet_id).properties == {}
-    with drive_door.running("prune-manifest", APPLY):
+    fake.file(sheet_id).properties.clear()
+    with drive_door.running("prune-manifest", APPLY), \
+            pytest.raises(DoorViolation, match="has no label"):
         door.mark_archived(sheet_id)
-    assert drive_door.Identity.from_labels(fake.file(sheet_id).properties) == \
-        drive_door.class_sheet(LANG, CLASS)
+    assert fake.file(sheet_id).properties == {}
 
 
 # -- tab labels --------------------------------------------------------------------
@@ -513,6 +524,7 @@ def _touch(door, sheet_id):
 
 def test_a_command_that_writes_a_class_sheet_labels_its_tabs(env):
     fake, door, sheet_id, _ = env
+    _unlabel_tabs(fake, sheet_id)
     with drive_door.running("update-sheets", APPLY):
         _touch(door, sheet_id)
     labels = _tab_labels(fake, sheet_id)
@@ -527,6 +539,7 @@ def test_a_command_that_writes_a_class_sheet_labels_its_tabs(env):
 
 def test_tabs_are_not_labelled_after_a_dry_run_or_a_failed_command(env):
     fake, door, sheet_id, _ = env
+    _unlabel_tabs(fake, sheet_id)
     with drive_door.running("import-sheets", DRY):
         ss = door.open_spreadsheet(sheet_id)
         with drive_door.always_on("highlighting"):

@@ -48,16 +48,14 @@ Language: stan1293
     [asyndeticPart] No changes → coded_data/stan1293/subspanrepetition/asyndeticPart.tsv
 
   noninterruption
-    [general] status: 'in-progress' — importing for backup
-    [general] [backup] No changes → coded_data/stan1293/noninterruption/general.tsv
+    [general] No changes → coded_data/stan1293/noninterruption/general.tsv
 
   segmental
-    [aspiration_prominence] status: 'in-progress' — importing for backup
-    [aspiration_prominence] [backup] No changes → coded_data/stan1293/segmental/aspiration_prominence.tsv
-    [flapping] status: 'in-progress' — importing for backup
-    [flapping] [backup] No changes → coded_data/stan1293/segmental/flapping.tsv
+    [aspiration_prominence] No changes → coded_data/stan1293/segmental/aspiration_prominence.tsv
+    [flapping] No changes → coded_data/stan1293/segmental/flapping.tsv
 
   metrical
+    WARNING: [WARNING] stress_domain row 125 'KEYSTONE': unexpected value 'n' in 'independence' for keystone row (expected 'na')
     [stress_domain] No changes → coded_data/stan1293/metrical/stress_domain.tsv
 
   free_occurrence
@@ -65,8 +63,7 @@ Language: stan1293
     [general] [backup] No changes → coded_data/stan1293/free_occurrence/general.tsv
 
   nonpermutability
-    [element_prescreening] status: 'in-progress' — importing for backup
-    [element_prescreening] [backup] No changes → coded_data/stan1293/nonpermutability/element_prescreening.tsv
+    [element_prescreening] No changes → coded_data/stan1293/nonpermutability/element_prescreening.tsv
     [general] status: 'in-progress' — importing for backup
     [general] [backup] No changes → coded_data/stan1293/nonpermutability/general.tsv
 
@@ -99,6 +96,8 @@ Language: stan1293
     [morphemes] [backup] No changes → coded_data/stan1293/biuniqueness_deviations/morphemes.tsv
     [morphs] status: 'in-progress' — importing for backup
     [morphs] [backup] No changes → coded_data/stan1293/biuniqueness_deviations/morphs.tsv
+
+  Error report: import_errors/stan1293_20260804_120000.txt
 
 Language: synth0001
   [planar] No changes → planar_synth0001.tsv
@@ -166,4 +165,6 @@ Language: synth0001
     [general] status: 'in-progress' — importing for backup
     [general] [backup] No changes → coded_data/synth0001/phrasal_accent/general.tsv
 
-Done. 0 file(s) written, 0 warning(s).
+Done. 0 file(s) written, 1 warning(s).
+
+1 blocking warning(s) found — see WARNING lines above.

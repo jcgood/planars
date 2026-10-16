@@ -212,8 +212,10 @@ def main() -> None:
 
         tabs = 0
         if t.identity.kind == drive_door.CLASS_SHEET and not t.archived:
-            # Unlabelled, the door places it from the manifest, which is enough
-            # to read its spec.
+            # When this ran, the door still placed an unlabelled class sheet
+            # from the manifest, which was enough to read its spec on a dry run.
+            # Since that fallback was deleted (2026-10-16), --apply still works:
+            # the identity label is written before the tabs are labelled.
             tabs = len(doorway.unlabelled_tabs(doorway.open_spreadsheet(t.file_id)))
 
         if not (needs_identity or needs_state or tabs):

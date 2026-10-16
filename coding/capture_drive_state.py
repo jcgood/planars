@@ -81,13 +81,15 @@ FROZEN_CODED_DATA = FIXTURE_ROOT / "coded_data"
 _SINGLETON_SHEET_KEYS = ("planar_spreadsheet_id", "diagnostics_spreadsheet_id")
 
 
-def _capture_worksheet(ws) -> Dict:
+def _capture_worksheet(ws, developer_metadata: List[Dict]) -> Dict:
     """Record one worksheet exactly as the API returned it.
 
     Deliberately does not pad, trim, or otherwise regularise ``values``.
     """
     values = _retry(ws.get_all_values)
     return {
+        # The tab's labels (the Drive door's planars_tab_kind/planars_tab).
+        "developer_metadata": developer_metadata,
         "title": ws.title,
         "sheet_id": ws.id,
         # Declared grid size, which is NOT the same as the used range and not
@@ -106,17 +108,26 @@ def _capture_worksheet(ws) -> Dict:
     }
 
 
-def _capture_spreadsheet(gc, spreadsheet_id: str, role: str) -> Dict:
+def _capture_spreadsheet(gc, drive, spreadsheet_id: str, role: str) -> Dict:
     ss = _open_spreadsheet(gc, spreadsheet_id)
     # Order matters: worksheets() returns live tab order and several code paths
     # detect ordering drift from it. Do not sort.
     worksheets = _retry(ss.worksheets)
+    meta = _retry(lambda: ss.fetch_sheet_metadata(params={
+        "fields": "sheets(properties(sheetId),developerMetadata)"}))
+    tab_metadata = {s["properties"]["sheetId"]: s.get("developerMetadata", [])
+                    for s in meta.get("sheets", [])}
+    properties = _retry(lambda: drive.files().get(
+        fileId=spreadsheet_id, fields="properties").execute()).get("properties", {})
     return {
         "role": role,
         "spreadsheet_id": spreadsheet_id,
         "title": ss.title,
+        # The sheet's identity label (Drive properties; coding/drive_door.py).
+        "properties": properties,
         "tab_order": [ws.title for ws in worksheets],
-        "worksheets": [_capture_worksheet(ws) for ws in worksheets],
+        "worksheets": [_capture_worksheet(ws, tab_metadata.get(ws.id, []))
+                       for ws in worksheets],
         # Which tabs are locked (coding/locked_tabs.py), so the fake starts
         # from the same protections the live sheet has.
         "protected_ranges": [p for ws in worksheets
@@ -199,7 +210,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         label = f"{lang_id}/{role}"
         try:
             print(f"  capturing {label} ...")
-            data = _capture_spreadsheet(gc, sid, role)
+            data = _capture_spreadsheet(gc, drive, sid, role)
         except Exception as exc:
             # Keep going: a partial fixture set is far more useful than none,
             # and a single unreadable sheet should not lose the whole run.

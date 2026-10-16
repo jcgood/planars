@@ -1,8 +1,7 @@
 SUMMARY
-     8  batch_request
+     2  batch_request
      1  update
      1  update_file
-     6    └─ createDeveloperMetadata
      1    └─ insertDimension
      1    └─ setDataValidation
 
@@ -19,11 +18,3 @@ SHEET OPERATIONS
       | ['']
       | ...
     setDataValidation: col 7 (Source) rows 1-74 -> ['y', 'n'] (strict=False)
-
-  arao1248/class:ciscategorial  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 743848534}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 743848534}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 327005340}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "general", "location": {"sheetId": 327005340}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 814145268}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 814145268}, "visibility": "DOCUMENT"}}

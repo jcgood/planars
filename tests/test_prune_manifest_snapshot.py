@@ -36,7 +36,7 @@ from typing import Dict, List
 import pytest
 
 from coding import drive as drive_module
-from coding import drive_doorway, prune_manifest
+from coding import drive_door, drive_doorway, prune_manifest
 from command_runner import run_command
 from fake_drive import (FROZEN_CODED_DATA, MANIFEST_FILE_ID, ROOT_FOLDER_ID, point_coded_data_at,
                         FakeDriveDoorway, api_error)
@@ -68,6 +68,7 @@ def env(monkeypatch, tmp_path):
     doorway.seed_spreadsheet({
         "spreadsheet_id": SHEET_ID,
         "title": f"{RETIRED}_{LANG}",
+        "properties": drive_door.class_sheet(LANG, RETIRED).labels(),  # as every sheet is
         "worksheets": [{"sheet_id": 0, "title": "general", "row_count": 3,
                         "col_count": 2,
                         "values": [["Element", "accented"], ["also", "y"]]}],

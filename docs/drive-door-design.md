@@ -397,16 +397,16 @@ the manifest. Choices where § 2.3 left a gap or turned out wrong:
   folder it finds isn't labelled as something else. `set_identity` labels an
   existing file and refuses, in every mode, to relabel one.
 - **The door places a file** from what this command made, then its label
-  (read once per command), then, for a class sheet not yet labelled, the
-  manifest. The manifest step goes once the migration has labelled every
-  live file.
+  (read once per command). Until the migration below, a class sheet not yet
+  labelled was placed from the manifest; that step was deleted on
+  2026-10-16, so an unlabelled file is one the door can't place.
 - **Rule 5 checks the role:** a class sheet's annotator is a writer while it
   is live and a reader once it is labelled archived, on `create_permission`
   and `update_permission` alike. So `mark_archived` comes first where a
   sheet is archived (`restructure_sheets._lock_archived_sheet`,
   `prune_manifest._archive_drive_sheet`), and `_rollback_unit` marks it live
-  before raising the annotator back to writer. `mark_archived` writes the
-  whole identity, so a sheet only the manifest placed ends up labelled.
+  before raising the annotator back to writer. `mark_archived` refuses a
+  file with no label.
 - **Tab labels are written when a command that was allowed to write
   succeeds,** for each class sheet it wrote: one `batch_update` per sheet,
   only for tabs with no label yet, only tabs the spec lists (another tab is
@@ -419,9 +419,23 @@ the manifest. Choices where § 2.3 left a gap or turned out wrong:
   (`label_tabs`), and a file's label writes as `label`.
 
 What changed in the saved test outputs: every create now shows its label,
-and every command that writes a class sheet labels its tabs once, because
-the recorded sheets have none yet. That goes away when the migration has run
-and the test data is refrozen.
+and every command that writes a class sheet labelled its tabs once, because
+the recorded sheets had none yet. That went away with the migration and
+refreeze below.
+
+**5d, labelling the existing files (2026-10-15/16).**
+`migrations/label_drive_files.py` found every file from the records that
+name it (`drive_config.json`, the manifest's class sheets, each language's
+`_archived/` folder, the Annotation Status folder) and, run live on
+2026-10-15 with Jeff's approval, labelled 127 files and the 108 tabs of the
+24 live class sheets. Two things the plan didn't foresee: the older
+`_archived/v{N}/` folders restructure-sheets used before it put `_v{N}` on
+the sheet's name are archive folders too, and the sheets in them archived
+class sheets (16 of the 51); and synth0001's retired allomorphy screening
+sheet, in its `_archived/` folder, fits no kind and is left unlabelled.
+`capture-drive-state` now records the labels (file properties, tab
+developer metadata), the test data was refrozen, and the manifest step was
+deleted from the door.
 
 **5d, rule 6 (2026-10-14), the same file.** The end-of-command shape check,
 as § 2.4 describes, with the 2026-10-14 decision that it reports only what

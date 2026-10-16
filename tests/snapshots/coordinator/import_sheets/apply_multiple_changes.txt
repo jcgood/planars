@@ -49,16 +49,14 @@ Language: stan1293
     [asyndeticPart] No changes → coded_data/stan1293/subspanrepetition/asyndeticPart.tsv
 
   noninterruption
-    [general] status: 'in-progress' — importing for backup
-    [general] [backup] No changes → coded_data/stan1293/noninterruption/general.tsv
+    [general] No changes → coded_data/stan1293/noninterruption/general.tsv
 
   segmental
-    [aspiration_prominence] status: 'in-progress' — importing for backup
-    [aspiration_prominence] [backup] No changes → coded_data/stan1293/segmental/aspiration_prominence.tsv
-    [flapping] status: 'in-progress' — importing for backup
-    [flapping] [backup] No changes → coded_data/stan1293/segmental/flapping.tsv
+    [aspiration_prominence] No changes → coded_data/stan1293/segmental/aspiration_prominence.tsv
+    [flapping] No changes → coded_data/stan1293/segmental/flapping.tsv
 
   metrical
+    WARNING: [WARNING] stress_domain row 125 'KEYSTONE': unexpected value 'n' in 'independence' for keystone row (expected 'na')
     [stress_domain] No changes → coded_data/stan1293/metrical/stress_domain.tsv
 
   free_occurrence
@@ -66,8 +64,7 @@ Language: stan1293
     [general] [backup] No changes → coded_data/stan1293/free_occurrence/general.tsv
 
   nonpermutability
-    [element_prescreening] status: 'in-progress' — importing for backup
-    [element_prescreening] [backup] No changes → coded_data/stan1293/nonpermutability/element_prescreening.tsv
+    [element_prescreening] No changes → coded_data/stan1293/nonpermutability/element_prescreening.tsv
     [general] status: 'in-progress' — importing for backup
     [general] [backup] No changes → coded_data/stan1293/nonpermutability/general.tsv
 
@@ -100,6 +97,8 @@ Language: stan1293
     [morphemes] [backup] No changes → coded_data/stan1293/biuniqueness_deviations/morphemes.tsv
     [morphs] status: 'in-progress' — importing for backup
     [morphs] [backup] No changes → coded_data/stan1293/biuniqueness_deviations/morphs.tsv
+
+  Error report: import_errors/stan1293_20260804_120000.txt
 
 Language: synth0001
   [planar] No changes → planar_synth0001.tsv
@@ -168,7 +167,7 @@ Language: synth0001
     [general] status: 'in-progress' — importing for backup
     [general] [backup] No changes → coded_data/synth0001/phrasal_accent/general.tsv
 
-Done. 0 file(s) written, 1 in-progress backup(s), 0 warning(s).
+Done. 0 file(s) written, 1 in-progress backup(s), 1 warning(s).
 
 Next: commit and push coded_data/ before pushing planars:
   git -C coded_data add -A
@@ -207,17 +206,20 @@ stan1293
   [coreference/reflexivization] 54 blank cell(s) — annotation in progress
   [coreference/pronominalization] 54 blank cell(s) — annotation in progress
   [coreference/np_reference] 54 blank cell(s) — annotation in progress
-  [free_occurrence/general] 75 blank cell(s) — annotation in progress
-  [metrical/stress_domain] no issues
+  [free_occurrence/general] 1 issue(s):
+    [WARNING] general row 131 'her': unexpected value '\y' in 'free' (allowed: ['?', 'n', 'na', 'y'])
+    (60 blank cell(s) — annotation in progress; use --verbose to list)
+  [metrical/stress_domain] 1 issue(s):
+    [WARNING] stress_domain row 125 'KEYSTONE': unexpected value 'n' in 'independence' for keystone row (expected 'na')
   [noninterruption/general] no issues
-  [nonpermutability/element_prescreening] 15 blank cell(s) — annotation in progress
+  [nonpermutability/element_prescreening] no issues
   [nonpermutability/general] 112 blank cell(s) — annotation in progress
   [phrasal_accent/prescreening] 142 blank cell(s) — annotation in progress
   [phrasal_accent/general] no issues
   [proform/do_so_substitution] 15 blank cell(s) — annotation in progress
   [proform/vp_ellipsis] 136 blank cell(s) — annotation in progress
-  [segmental/aspiration_prominence] 15 blank cell(s) — annotation in progress
-  [segmental/flapping] 42 blank cell(s) — annotation in progress
+  [segmental/aspiration_prominence] no issues
+  [segmental/flapping] no issues
   [subspanrepetition/andCoordination] no issues
   [subspanrepetition/control] no issues
   [subspanrepetition/thatCOMP] no issues
@@ -249,5 +251,7 @@ synth0001
   [subspanrepetition/asyndeticPart] 423 blank cell(s) — annotation in progress
 
 ──────────────────────────────────────────────────
-Validated 50 sheet(s).  Data coding issues: 0
-All data coding issues cleared. (Pink highlighting for blank cells preserved.)
+Validated 50 sheet(s).  Data coding issues: 2
+Cell highlighting updated in Google Sheets.
+
+1 blocking warning(s) found — see WARNING lines above.

@@ -1,13 +1,10 @@
 SUMMARY
      6  append_rows
-   381  batch_request
-     2  clear
-     2  update
-    32    └─ addProtectedRange
-   216    └─ createDeveloperMetadata
-   107    └─ repeatCell
+   125  batch_request
+     1  clear
+     1  update
+   100    └─ repeatCell
     18    └─ setDataValidation
-     1    └─ updateDimensionProperties
      7    └─ updateSheetProperties
 
 SHEET OPERATIONS
@@ -26,9 +23,6 @@ SHEET OPERATIONS
     setDataValidation: col 5 (A-combines) rows 1-75 -> ['y', 'n'] (strict=False)
     setDataValidation: col 6 (PRED-combines) rows 1-75 -> ['y', 'n'] (strict=False)
 
-  arao1248/class:ciscategorial  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 743848534}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "w
-
   arao1248/class:noninterruption  tab=general
     repeatCell: col 3 (free) rows 0-1
     repeatCell: col 4 (multiple) rows 0-1
@@ -38,9 +32,6 @@ SHEET OPERATIONS
     repeatCell: rows 0-1
     setDataValidation: col 3 (free) rows 1-75 -> ['y', 'n'] (strict=False)
     setDataValidation: col 4 (multiple) rows 1-75 -> ['y', 'n'] (strict=False)
-
-  arao1248/class:noninterruption  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 1478561676}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "
 
   arao1248/class:subspanrepetition  tab=auxiliary_construction
     repeatCell: col 3 (widescope_right) rows 0-1
@@ -66,9 +57,6 @@ SHEET OPERATIONS
     setDataValidation: col 4 (widescope_left) rows 1-75 -> ['y', 'n'] (strict=False)
     setDataValidation: col 5 (fillable_botheither_conjunct) rows 1-75 -> ['y', 'n'] (strict=False)
 
-  arao1248/class:subspanrepetition  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 2139378723}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "
-
   arao1248/class:nonpermutability  tab=element_prescreening
     repeatCell: col 3 (scopal) rows 0-1
     append_rows: {"start_row": 75, "n_rows": 1, "value_input_option": "RAW", "exceeded_grid": false}
@@ -76,9 +64,6 @@ SHEET OPERATIONS
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
     setDataValidation: col 3 (scopal) rows 1-75 -> ['y', 'n', 'both'] (strict=False)
-
-  arao1248/class:nonpermutability  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 1065692108}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "
 
   arao1248/class:nonpermutability  tab=Planar Structure
     clear: 
@@ -89,7 +74,6 @@ SHEET OPERATIONS
       | ...
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 1000835595}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "
 
   arao1248/class:free_occurrence  tab=general
     repeatCell: col 3 (free) rows 0-1
@@ -107,16 +91,10 @@ SHEET OPERATIONS
     setDataValidation: col 6 (dependent-on-left) rows 1-75 -> ['na', '<position_number>'] (strict=False)
     setDataValidation: col 7 (dependent-on-right) rows 1-75 -> ['na', '<position_number>'] (strict=False)
 
-  arao1248/class:free_occurrence  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 1755070996}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "
-
   stan1293/class:ciscategorial  tab=general
     repeatCell: col 3 (V-combines) rows 0-1
     repeatCell: col 4 (N-combines) rows 0-1
     repeatCell: col 5 (A-combines) rows 0-1
-
-  stan1293/class:ciscategorial  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 918164290}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "w
 
   stan1293/class:subspanrepetition  tab=andCoordination
     repeatCell: col 3 (widescope_right) rows 0-1
@@ -138,15 +116,9 @@ SHEET OPERATIONS
     repeatCell: col 4 (widescope_left) rows 0-1
     repeatCell: col 5 (fillable_botheither_conjunct) rows 0-1
 
-  stan1293/class:subspanrepetition  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 1209709510}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "
-
   stan1293/class:noninterruption  tab=general
     repeatCell: col 3 (free) rows 0-1
     repeatCell: col 4 (multiple) rows 0-1
-
-  stan1293/class:noninterruption  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 724885772}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "w
 
   stan1293/class:segmental  tab=aspiration_prominence
     repeatCell: col 3 (aspirated) rows 0-1
@@ -156,18 +128,12 @@ SHEET OPERATIONS
     repeatCell: col 4 (flapping_internal) rows 0-1
     repeatCell: col 5 (flapping_right) rows 0-1
 
-  stan1293/class:segmental  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 874986959}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "w
-
   stan1293/class:metrical  tab=stress_domain
     repeatCell: col 3 (accented) rows 0-1
     repeatCell: col 4 (obligatory) rows 0-1
     repeatCell: col 5 (independence) rows 0-1
     repeatCell: col 6 (left-interaction) rows 0-1
     repeatCell: col 7 (right-interaction) rows 0-1
-
-  stan1293/class:metrical  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 2013277054}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "
 
   stan1293/class:free_occurrence  tab=general
     repeatCell: col 3 (free) rows 0-1
@@ -176,26 +142,11 @@ SHEET OPERATIONS
     repeatCell: col 6 (dependent-on-left) rows 0-1
     repeatCell: col 7 (dependent-on-right) rows 0-1
 
-  stan1293/class:free_occurrence  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 2062245609}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "
-
   stan1293/class:nonpermutability  tab=element_prescreening
     repeatCell: col 3 (scopal) rows 0-1
 
-  stan1293/class:nonpermutability  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 893736883}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "w
-
-  stan1293/class:nonpermutability  tab=Planar Structure
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 1636111170}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "
-
   stan1293/class:coreference  tab=prescreening
     repeatCell: col 3 (referential) rows 0-1
-
-  stan1293/class:coreference  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 1628315489}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "
-
-  stan1293/class:coreference  tab=Planar Structure
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 531688209}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "w
 
   stan1293/class:proform  tab=do_so_substitution
     repeatCell: col 3 (shareable_proform_replace) rows 0-1
@@ -203,47 +154,18 @@ SHEET OPERATIONS
   stan1293/class:proform  tab=vp_ellipsis
     repeatCell: col 3 (shareable_proform_replace) rows 0-1
 
-  stan1293/class:proform  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 1462520571}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "
-
   stan1293/class:phrasal_accent  tab=prescreening
     repeatCell: col 3 (accented) rows 0-1
-
-  stan1293/class:phrasal_accent  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 1268846150}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "
 
   stan1293/class:biuniqueness_deviations  tab=elements
     repeatCell: col 3 (has_allomorphs) rows 0-1
     repeatCell: col 4 (members) rows 0-1
     repeatCell: col 5 (co_exponents) rows 0-1
 
-  stan1293/class:biuniqueness_deviations  tab=Instructions
-    clear: 
-    update: anchor A1 raw=True 26x1
-      | ['BIUNIQUENESS DEVIATIONS — ANNOTATION INSTRUCTIONS']
-      | ['']
-      | ['WHAT THIS TESTS']
-      | ...
-    repeatCell: col 0 (BIUNIQUENESS DEVIATIONS — ANNOTATION INSTRUCTIONS) rows 0-1
-    repeatCell: col 0 (BIUNIQUENESS DEVIATIONS — ANNOTATION INSTRUCTIONS) rows 2-3
-    repeatCell: col 0 (BIUNIQUENESS DEVIATIONS — ANNOTATION INSTRUCTIONS) rows 5-6
-    repeatCell: col 0 (BIUNIQUENESS DEVIATIONS — ANNOTATION INSTRUCTIONS) rows 10-11
-    repeatCell: col 0 (BIUNIQUENESS DEVIATIONS — ANNOTATION INSTRUCTIONS) rows 16-17
-    repeatCell: col 0 (BIUNIQUENESS DEVIATIONS — ANNOTATION INSTRUCTIONS) rows 20-21
-    repeatCell: (whole sheet)
-    updateDimensionProperties: (whole sheet)
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 63671153}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "wa
-
-  stan1293/class:biuniqueness_deviations  tab=Planar Structure
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 928315816}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "w
-
   synth0001/class:ciscategorial  tab=general
     repeatCell: col 3 (V-combines) rows 0-1
     repeatCell: col 4 (N-combines) rows 0-1
     repeatCell: col 5 (A-combines) rows 0-1
-
-  synth0001/class:ciscategorial  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 620568845}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "w
 
   synth0001/class:subspanrepetition  tab=andCoordination
     repeatCell: col 3 (widescope_right) rows 0-1
@@ -265,15 +187,9 @@ SHEET OPERATIONS
     repeatCell: col 4 (widescope_left) rows 0-1
     repeatCell: col 5 (fillable_botheither_conjunct) rows 0-1
 
-  synth0001/class:subspanrepetition  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 299707878}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "w
-
   synth0001/class:noninterruption  tab=general
     repeatCell: col 3 (free) rows 0-1
     repeatCell: col 4 (multiple) rows 0-1
-
-  synth0001/class:noninterruption  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 1545703955}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "
 
   synth0001/class:segmental  tab=aspiration_prominence
     repeatCell: col 3 (aspirated) rows 0-1
@@ -283,9 +199,6 @@ SHEET OPERATIONS
     repeatCell: col 4 (flapping_internal) rows 0-1
     repeatCell: col 5 (flapping_right) rows 0-1
 
-  synth0001/class:segmental  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 1191739262}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "
-
   synth0001/class:metrical  tab=stress_domain
     repeatCell: col 3 (accented) rows 0-1
     repeatCell: col 4 (obligatory) rows 0-1
@@ -293,17 +206,8 @@ SHEET OPERATIONS
     repeatCell: col 6 (left-interaction) rows 0-1
     repeatCell: col 7 (right-interaction) rows 0-1
 
-  synth0001/class:metrical  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 1250854804}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "
-
   synth0001/class:nonpermutability  tab=element_prescreening
     repeatCell: col 3 (scopal) rows 0-1
-
-  synth0001/class:nonpermutability  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 144051311}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "w
-
-  synth0001/class:nonpermutability  tab=Planar Structure
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 413672586}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "w
 
   synth0001/class:free_occurrence  tab=general
     repeatCell: col 3 (free) rows 0-1
@@ -312,17 +216,8 @@ SHEET OPERATIONS
     repeatCell: col 6 (dependent-on-left) rows 0-1
     repeatCell: col 7 (dependent-on-right) rows 0-1
 
-  synth0001/class:free_occurrence  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 1446145726}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "
-
   synth0001/class:coreference  tab=prescreening
     repeatCell: col 3 (referential) rows 0-1
-
-  synth0001/class:coreference  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 905166144}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "w
-
-  synth0001/class:coreference  tab=Planar Structure
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 1045465172}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "
 
   synth0001/class:proform  tab=do_so_substitution
     repeatCell: col 3 (shareable_proform_replace) rows 0-1
@@ -330,279 +225,5 @@ SHEET OPERATIONS
   synth0001/class:proform  tab=vp_ellipsis
     repeatCell: col 3 (shareable_proform_replace) rows 0-1
 
-  synth0001/class:proform  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 203103177}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "w
-
   synth0001/class:phrasal_accent  tab=prescreening
     repeatCell: col 3 (accented) rows 0-1
-
-  synth0001/class:phrasal_accent  tab=Instructions
-    addProtectedRange: {"protectedRange": {"range": {"sheetId": 1545779969}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "
-
-  arao1248/class:ciscategorial  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 743848534}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 743848534}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 327005340}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "general", "location": {"sheetId": 327005340}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 814145268}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 814145268}, "visibility": "DOCUMENT"}}
-
-  arao1248/class:noninterruption  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 1478561676}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 1478561676}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 885419493}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "general", "location": {"sheetId": 885419493}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 1745544005}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 1745544005}, "visibility": "DOCUMENT"}}
-
-  arao1248/class:subspanrepetition  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 2139378723}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 2139378723}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1178800861}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "auxiliary_construction", "location": {"sheetId": 1178800861}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1118920694}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "tso_clause_linkage", "location": {"sheetId": 1118920694}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 132102013}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 132102013}, "visibility": "DOCUMENT"}}
-
-  arao1248/class:nonpermutability  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 1065692108}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 1065692108}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 423938602}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "element_prescreening", "location": {"sheetId": 423938602}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 242077357}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "general", "location": {"sheetId": 242077357}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 1000835595}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Planar Structure", "location": {"sheetId": 1000835595}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 1417443112}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 1417443112}, "visibility": "DOCUMENT"}}
-
-  arao1248/class:free_occurrence  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 1755070996}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 1755070996}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 174489109}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "general", "location": {"sheetId": 174489109}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 1789022607}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 1789022607}, "visibility": "DOCUMENT"}}
-
-  stan1293/class:ciscategorial  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 918164290}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 918164290}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 149484479}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "general", "location": {"sheetId": 149484479}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 1176263671}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 1176263671}, "visibility": "DOCUMENT"}}
-
-  stan1293/class:subspanrepetition  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 1209709510}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 1209709510}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 708174683}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "andCoordination", "location": {"sheetId": 708174683}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1577150660}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "control", "location": {"sheetId": 1577150660}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1940920804}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "thatCOMP", "location": {"sheetId": 1940920804}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 2090612503}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "asyndeticPart", "location": {"sheetId": 2090612503}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 1569629021}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 1569629021}, "visibility": "DOCUMENT"}}
-
-  stan1293/class:noninterruption  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 724885772}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 724885772}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1920795320}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "general", "location": {"sheetId": 1920795320}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 537420465}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 537420465}, "visibility": "DOCUMENT"}}
-
-  stan1293/class:segmental  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 874986959}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 874986959}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 183423172}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "aspiration_prominence", "location": {"sheetId": 183423172}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 517086933}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "flapping", "location": {"sheetId": 517086933}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 1708796553}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 1708796553}, "visibility": "DOCUMENT"}}
-
-  stan1293/class:metrical  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 2013277054}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 2013277054}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1237814181}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "stress_domain", "location": {"sheetId": 1237814181}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 464072340}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 464072340}, "visibility": "DOCUMENT"}}
-
-  stan1293/class:free_occurrence  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 2062245609}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 2062245609}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1939400443}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "general", "location": {"sheetId": 1939400443}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 334450626}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 334450626}, "visibility": "DOCUMENT"}}
-
-  stan1293/class:nonpermutability  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 893736883}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 893736883}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1100881133}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "element_prescreening", "location": {"sheetId": 1100881133}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1492506467}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "general", "location": {"sheetId": 1492506467}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 1636111170}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Planar Structure", "location": {"sheetId": 1636111170}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 1847039684}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 1847039684}, "visibility": "DOCUMENT"}}
-
-  stan1293/class:coreference  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 1628315489}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 1628315489}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1109636608}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "prescreening", "location": {"sheetId": 1109636608}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1231223567}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "reflexivization", "location": {"sheetId": 1231223567}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1756251763}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "pronominalization", "location": {"sheetId": 1756251763}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1749267875}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "np_reference", "location": {"sheetId": 1749267875}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 531688209}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Planar Structure", "location": {"sheetId": 531688209}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 419439021}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 419439021}, "visibility": "DOCUMENT"}}
-
-  stan1293/class:proform  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 1462520571}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 1462520571}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1573075479}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "do_so_substitution", "location": {"sheetId": 1573075479}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 739024462}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "vp_ellipsis", "location": {"sheetId": 739024462}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 1780400655}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 1780400655}, "visibility": "DOCUMENT"}}
-
-  stan1293/class:phrasal_accent  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 1268846150}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 1268846150}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 892700523}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "prescreening", "location": {"sheetId": 892700523}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 2121472220}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "general", "location": {"sheetId": 2121472220}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 601657411}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 601657411}, "visibility": "DOCUMENT"}}
-
-  stan1293/class:biuniqueness_deviations  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 63671153}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 63671153}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 572273114}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "elements", "location": {"sheetId": 572273114}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1995868384}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "morphemes", "location": {"sheetId": 1995868384}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1239789786}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "morphs", "location": {"sheetId": 1239789786}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 928315816}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Planar Structure", "location": {"sheetId": 928315816}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 1430889300}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 1430889300}, "visibility": "DOCUMENT"}}
-
-  synth0001/class:ciscategorial  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 620568845}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 620568845}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1095451425}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "general", "location": {"sheetId": 1095451425}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 1365570083}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 1365570083}, "visibility": "DOCUMENT"}}
-
-  synth0001/class:subspanrepetition  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 299707878}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 299707878}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1304177242}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "andCoordination", "location": {"sheetId": 1304177242}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 622452855}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "control", "location": {"sheetId": 622452855}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1434067782}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "thatCOMP", "location": {"sheetId": 1434067782}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 468775082}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "asyndeticPart", "location": {"sheetId": 468775082}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 1416015439}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 1416015439}, "visibility": "DOCUMENT"}}
-
-  synth0001/class:noninterruption  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 1545703955}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 1545703955}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1384515214}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "general", "location": {"sheetId": 1384515214}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 736924920}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 736924920}, "visibility": "DOCUMENT"}}
-
-  synth0001/class:segmental  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 1191739262}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 1191739262}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1860405621}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "aspiration_prominence", "location": {"sheetId": 1860405621}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1056708297}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "flapping", "location": {"sheetId": 1056708297}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 1001917944}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 1001917944}, "visibility": "DOCUMENT"}}
-
-  synth0001/class:metrical  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 1250854804}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 1250854804}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 268965391}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "stress_domain", "location": {"sheetId": 268965391}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 533870493}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 533870493}, "visibility": "DOCUMENT"}}
-
-  synth0001/class:nonpermutability  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 144051311}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 144051311}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 283738130}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "element_prescreening", "location": {"sheetId": 283738130}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 39613447}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "general", "location": {"sheetId": 39613447}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 413672586}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Planar Structure", "location": {"sheetId": 413672586}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 726002716}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 726002716}, "visibility": "DOCUMENT"}}
-
-  synth0001/class:free_occurrence  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 1446145726}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 1446145726}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1008294780}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "general", "location": {"sheetId": 1008294780}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 1215802598}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 1215802598}, "visibility": "DOCUMENT"}}
-
-  synth0001/class:coreference  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 905166144}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 905166144}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 269706862}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "prescreening", "location": {"sheetId": 269706862}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1789839085}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "reflexivization", "location": {"sheetId": 1789839085}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 581689344}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "pronominalization", "location": {"sheetId": 581689344}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 597212094}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "np_reference", "location": {"sheetId": 597212094}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 1045465172}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Planar Structure", "location": {"sheetId": 1045465172}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 392077751}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 392077751}, "visibility": "DOCUMENT"}}
-
-  synth0001/class:proform  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 203103177}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 203103177}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1155486928}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "do_so_substitution", "location": {"sheetId": 1155486928}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1660507681}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "vp_ellipsis", "location": {"sheetId": 1660507681}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 1667486703}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 1667486703}, "visibility": "DOCUMENT"}}
-
-  synth0001/class:phrasal_accent  tab=-
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 1545779969}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 1545779969}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1323073627}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "prescreening", "location": {"sheetId": 1323073627}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1460134323}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "general", "location": {"sheetId": 1460134323}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 1914288495}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 1914288495}, "visibility": "DOCUMENT"}}
