@@ -696,34 +696,47 @@ class CheckedDoorway:
                 for sheet in meta.get("sheets", [])}
         return self._tab_labels[ss.id]
 
-    def _label_tabs(self, ss: "CheckedSpreadsheet") -> None:
-        """Label each tab of a class sheet that has no label yet with what its
-        spec says it is, in one batch_update. A tab the spec doesn't list is
-        left unlabelled (rule 6 reports it). Labels already there are kept:
-        they are what lets a tab renamed by hand still be recognised."""
+    def unlabelled_tabs(self, ss: "CheckedSpreadsheet") -> List[Tuple[Any, str]]:
+        """Each tab of a class sheet that has no label yet and that its spec
+        lists, with the kind the spec gives it. A tab the spec doesn't list is
+        left out (rule 6 reports it); so is every tab of a sheet that isn't a
+        live-placeable class sheet or whose spec can't be built."""
         identity = ss.identity
         if identity is None or identity.kind != CLASS_SHEET:
-            return
+            return []
         spec = self._spec(identity)
         if isinstance(spec, Exception):
-            return
+            return []
         self._tab_labels.pop(ss.id, None)
         labels = self._tab_labels_of(ss)
         kinds = {t.title: t.kind for t in spec.tabs}
+        return [(ws, kinds[ws.title]) for ws in _retry(ss._inner.worksheets)
+                if not labels.get(ws.id) and ws.title in kinds]
+
+    def label_tabs(self, ss: "CheckedSpreadsheet") -> int:
+        """Label a class sheet's unlabelled tabs now (``_label_tabs``), for a
+        migration labelling sheets no command is writing. How many it labelled."""
+        return self._label_tabs(ss)
+
+    def _label_tabs(self, ss: "CheckedSpreadsheet") -> int:
+        """Label each tab of a class sheet that has no label yet with what its
+        spec says it is (``unlabelled_tabs``), in one batch_update. Labels
+        already there are kept: they are what lets a tab renamed by hand still
+        be recognised. How many tabs it labelled."""
+        tabs = self.unlabelled_tabs(ss)
         requests = []
-        for ws in _retry(ss._inner.worksheets):
-            if labels.get(ws.id) or ws.title not in kinds:
-                continue
-            for key, value in ((TAB_KIND_LABEL, kinds[ws.title]), (TAB_NAME_LABEL, ws.title)):
+        for ws, kind in tabs:
+            for key, value in ((TAB_KIND_LABEL, kind), (TAB_NAME_LABEL, ws.title)):
                 requests.append({"createDeveloperMetadata": {"developerMetadata": {
                     "metadataKey": key, "metadataValue": value,
                     "location": {"sheetId": ws.id}, "visibility": "DOCUMENT"}}})
         if not requests:
-            return
+            return 0
         self._check(f"label the tabs of {ss.title!r}")
         _retry(lambda: ss._inner.batch_update({"requests": requests}))
         self._tab_labels.pop(ss.id, None)
-        self._wrote(ss.id, ss.title, None, "label_tabs", identity=identity)
+        self._wrote(ss.id, ss.title, None, "label_tabs", identity=ss.identity)
+        return len(tabs)
 
     def _drop_tab_labels(self, ws: "CheckedWorksheet") -> None:
         """Remove a tab's labels (it is being renamed by the tooling, so its
