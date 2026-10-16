@@ -22,17 +22,22 @@ them. Each column has an owner:
 
 Which rows an element-row tab has is computed here from the planar. The rows
 of a pair-row or keyed-row tab are generated from the tab before it, from what
-annotators entered there, so their spec gives only the row key; the rows
-themselves are compared by integrity-check's dependent-staleness section.
+annotators entered there, so their spec gives only the row key;
+``expected_row_keys`` gets the keys from the generators' own builders, for
+the Drive door's end-of-command check (rule 6).
 """
 from __future__ import annotations
 
+import contextlib
+import io
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, FrozenSet, List, Optional, Tuple
 
 from planars.schema_values import (
     ELEMENT_ROWS,
+    KEYED_ROWS,
+    PAIR_ROWS,
     STATUS_COLUMNS,
     STATUS_TAB,
     STATUS_VALUES,
@@ -55,6 +60,23 @@ from .schemas import apply_schema_criteria, is_free_entry
 
 TOOLING = "tooling"
 ANNOTATOR = "annotator"
+
+# Columns `sync-params --split/--merge` parks an old criterion in, renamed
+# with one of these prefixes, so annotators can move its answers into the new
+# columns before the coordinator deletes it by hand (`--remove` leaves it). A
+# declared holding state, not drift: the spec allows them, and
+# integrity-check --sheets reminds the coordinator they are there.
+# Prefix -> the operation that made it.
+SPLIT_PREFIX, MERGED_PREFIX = "_split_", "_merged_"
+PARKED_COLUMN_PREFIXES = {SPLIT_PREFIX: "split", MERGED_PREFIX: "merge"}
+
+
+def parked_operation(column: str) -> Optional[str]:
+    """``split`` or ``merge`` if ``column`` is a parked old criterion, else None."""
+    for prefix, operation in PARKED_COLUMN_PREFIXES.items():
+        if column.startswith(prefix):
+            return operation
+    return None
 
 
 @dataclass(frozen=True)
@@ -141,6 +163,59 @@ def _construction_tab(lang_id: str, class_name: str, construction: str,
         rows = _element_rows(lang_id, class_name, construction, planar_path)
     return TabSpec(construction, CONSTRUCTION, tuple(columns), tuple(key_cols),
                    tuple(row_key(class_name, construction)), rows)
+
+
+def expected_row_keys(lang_id: str, class_name: str, tab: TabSpec,
+                      data_dir: Path) -> Optional[FrozenSet[Tuple[str, ...]]]:
+    """The row keys a construction or Status tab should hold, or None when
+    they can't be worked out (a source tab not imported yet, a prescreening
+    question the builder refuses to guess at).
+
+    Element-row and Status tabs: from the spec's own rows. Pair tabs:
+    ``generate_sheets.pair_rows``, which reads the prescreening TSV under the
+    module's ``CODED_DATA`` (the same folder as ``data_dir`` wherever the door
+    runs: live, or a test's redirected copy). Keyed tabs: ``keyed_rows`` from
+    the source tabs' TSVs under ``data_dir``; rows added by hand are not
+    generated, so ``counts_as_generated`` leaves them out of the comparison."""
+    if tab.kind == STATUS or (tab.kind == CONSTRUCTION
+                              and row_type(class_name, tab.title) == ELEMENT_ROWS):
+        index = [tab.row_columns.index(k) for k in tab.row_key]
+        return frozenset(tuple(r[i] for i in index) for r in tab.rows or ())
+    if tab.kind != CONSTRUCTION:
+        return None
+    kind = row_type(class_name, tab.title)
+    # The builders print progress notes for a command's own output; quiet here.
+    with contextlib.redirect_stdout(io.StringIO()):
+        if kind == PAIR_ROWS:
+            from .generate_sheets import pair_rows
+            try:
+                pairs = pair_rows(lang_id, class_name, tab.title, file_issue=False)
+            except SystemExit:
+                return None
+            index = [tab.row_columns.index(k) for k in tab.row_key]
+            return frozenset(tuple(str(p[i]) for i in index) for p in pairs)
+        if kind == KEYED_ROWS:
+            import pandas as pd
+            from .biuniqueness_rows import keyed_rows, sources_of
+            cls_dir = data_dir / lang_id / class_name
+            if not all((cls_dir / f"{s}.tsv").exists() for s in sources_of(tab.title)):
+                return None
+            read = lambda n: pd.read_csv(cls_dir / f"{n}.tsv", sep="\t", dtype=str,
+                                         keep_default_na=False)
+            planar_path = data_dir / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
+            planar_df = pd.read_csv(planar_path, sep="\t", dtype=str, keep_default_na=False)
+            rows = keyed_rows(tab.title, read, planar_df, lang_id)
+            return frozenset(tuple(str(r.get(k, "")).strip() for k in tab.row_key) for r in rows)
+    raise ValueError(f"{class_name}/{tab.title}: unknown row type {kind!r}")
+
+
+def counts_as_generated(class_name: str, construction: str, record: Dict[str, str]) -> bool:
+    """Whether a sheet row is one the generators make (and so is compared
+    with ``expected_row_keys``). Only a keyed tab's hand-added rows are not."""
+    if row_type(class_name, construction) != KEYED_ROWS:
+        return True
+    from .biuniqueness_rows import is_generated
+    return is_generated(record)
 
 
 def class_sheet_spec(lang_id: str, class_name: str, data_dir: Path) -> ClassSheetSpec:

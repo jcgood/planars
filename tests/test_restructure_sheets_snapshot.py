@@ -64,7 +64,8 @@ from coding import restructure_journal as rj
 from coding import restructure_sheets as rs
 from coding import validate_coding as vc
 from command_runner import run_command
-from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID, api_error
+from fake_drive import (FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID, api_error,
+                        point_coded_data_at)
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
 
@@ -223,7 +224,7 @@ def env(monkeypatch, tmp_path):
     revalidate_calls: List[dict] = []
     push_planar_calls: List[dict] = []
 
-    monkeypatch.setattr(rs, "CODED_DATA", coded)
+    point_coded_data_at(monkeypatch, coded)
     monkeypatch.setattr(rs, "MANIFEST_PATH", tmp_path / "sheets_manifest.json")
     # restructure_journal's JOURNAL_PATH default is resolved fresh per call
     # (never bound into a default parameter -- see that module's docstring),

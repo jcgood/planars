@@ -26,8 +26,11 @@ to bring them in sync.
 --split adds new1/new2 columns and renames old to _split_old; coordinator remaps values then
   removes the stale column manually.
 --merge adds a new column and renames old1/old2 to _merged_old1/_merged_old2; same cleanup.
+Every added column goes where the diagnostics file lists it among the tab's criteria
+(_insert_at), so the sheet's criteria stay in the file's order.
 
-integrity-check --sheets warns on any _split_ or _merged_ prefixed column headers.
+integrity-check --sheets warns on any _split_ or _merged_ prefixed column headers
+(sheet_spec.PARKED_COLUMN_PREFIXES).
 """
 from __future__ import annotations
 
@@ -59,6 +62,7 @@ from .drive import (
 from .drive_doorway import WorksheetHandle, WorksheetNotFound, get_doorway
 from .generate_sheets import CODED_DATA
 from .schemas import is_free_entry
+from .sheet_spec import MERGED_PREFIX, SPLIT_PREFIX, parked_operation
 from . import biuniqueness_rows as _br
 from . import drive_door
 from planars.schema_values import (
@@ -240,22 +244,45 @@ def _update_diagnostics_tsv(
 # Column insertion
 # ---------------------------------------------------------------------------
 
+def _insert_at(header: List[str], param: str, order: List[str], trailing_at: int) -> int:
+    """Where a new criterion column goes (0-based): before the first column
+    that comes after it in ``order`` (the tab's criteria in the language's
+    diagnostics file), else before the trailing columns. So the sheet's
+    criteria keep the file's order, as the Drive door's spec expects."""
+    later = set(order[order.index(param) + 1:]) if param in order else set()
+    for i, col in enumerate(header[:trailing_at]):
+        if col in later:
+            return i
+    return trailing_at
+
+
 def _insert_param_columns(
     ws: WorksheetHandle,
     new_params: List[str],
     param_values_map: Dict[str, List[str]],
-    comments_col_0based: int,
+    order: List[str],
 ) -> None:
-    """Insert new param columns before the trailing (Comments) column."""
-    if not new_params:
-        return
+    """Insert new criterion columns, each where ``order`` puts it (_insert_at)."""
+    for param in new_params:
+        _, trailing_at = _get_current_params(ws)
+        _insert_param_column(ws, param, param_values_map,
+                             _insert_at(ws.row_values(1), param, order, trailing_at))
 
+
+def _insert_param_column(
+    ws: WorksheetHandle,
+    param: str,
+    param_values_map: Dict[str, List[str]],
+    insert_at: int,
+) -> None:
+    """Insert one criterion column at 0-based ``insert_at``, header and keystone
+    NA filled, with its dropdown."""
+    new_params = [param]
     spreadsheet = ws.spreadsheet
     sheet_id = ws.id
-    n = len(new_params)
-    insert_at = comments_col_0based  # 0-based column index to insert before
+    n = 1
 
-    # 1. Insert n blank columns at insert_at
+    # 1. Insert a blank column at insert_at
     spreadsheet.batch_update({"requests": [{
         "insertDimension": {
             "range": {
@@ -329,28 +356,26 @@ def _insert_param_columns(
 # Split / merge sheet operations
 # ---------------------------------------------------------------------------
 
-_STALE_PREFIXES = ("_split_", "_merged_")
-
-
 def _apply_split_to_sheet(
     ws: WorksheetHandle,
     old_name: str,
     new1: str,
     new2: str,
     param_values_map: Dict[str, List[str]],
+    order: List[str],
 ) -> bool:
     """Split old_name into new1 + new2 in a sheet tab.
 
-    Inserts new1 and new2 columns before Comments, then renames old_name to
-    _split_{old_name} so annotators can remap values before cleanup.
+    Inserts new1 and new2 columns where ``order`` (the tab's criteria in the
+    diagnostics file) puts them, then renames old_name to _split_{old_name}
+    so annotators can remap values before cleanup.
     Returns True if old_name was found.
     """
     header = ws.row_values(1)
     if old_name not in header:
         return False
-    _, comments_col = _get_current_params(ws)
-    _insert_param_columns(ws, [new1, new2], param_values_map, comments_col)
-    _rename_column(ws, old_name, f"_split_{old_name}")
+    _insert_param_columns(ws, [new1, new2], param_values_map, order)
+    _rename_column(ws, old_name, f"{SPLIT_PREFIX}{old_name}")
     return True
 
 
@@ -360,10 +385,11 @@ def _apply_merge_to_sheet(
     old2: str,
     new: str,
     param_values_map: Dict[str, List[str]],
+    order: List[str],
 ) -> Tuple[bool, bool]:
     """Merge old1 and old2 into new in a sheet tab.
 
-    Inserts a new column before Comments, then renames old1/old2 to
+    Inserts a new column where ``order`` puts it, then renames old1/old2 to
     _merged_{old1}/_merged_{old2} so annotators can remap values.
     Returns (old1_found, old2_found).
     """
@@ -372,12 +398,11 @@ def _apply_merge_to_sheet(
     old2_found = old2 in header
     if not old1_found and not old2_found:
         return False, False
-    _, comments_col = _get_current_params(ws)
-    _insert_param_columns(ws, [new], param_values_map, comments_col)
+    _insert_param_columns(ws, [new], param_values_map, order)
     if old1_found:
-        _rename_column(ws, old1, f"_merged_{old1}")
+        _rename_column(ws, old1, f"{MERGED_PREFIX}{old1}")
     if old2_found:
-        _rename_column(ws, old2, f"_merged_{old2}")
+        _rename_column(ws, old2, f"{MERGED_PREFIX}{old2}")
     return old1_found, old2_found
 
 
@@ -672,7 +697,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                     if old in ws.row_values(1):
                         print(f"  [{class_name}/{construction}] Split: {old} -> {new1}, {new2}")
                         if apply:
-                            _apply_split_to_sheet(ws, old, new1, new2, default_vals)
+                            _apply_split_to_sheet(ws, old, new1, new2, default_vals, exp_params)
                             cp = sheet_info.setdefault("construction_params", {})
                             cp.setdefault(construction, {})
                             pnames = [p for p in cp[construction].get("param_names", []) if p != old]
@@ -695,7 +720,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                     if o1_found or o2_found:
                         print(f"  [{class_name}/{construction}] Merge: {old1}, {old2} -> {new}")
                         if apply:
-                            _apply_merge_to_sheet(ws, old1, old2, new, default_vals)
+                            _apply_merge_to_sheet(ws, old1, old2, new, default_vals, exp_params)
                             cp = sheet_info.setdefault("construction_params", {})
                             cp.setdefault(construction, {})
                             pnames = [p for p in cp[construction].get("param_names", [])
@@ -709,7 +734,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                     else:
                         print(f"  [{class_name}/{construction}] Merge: neither {old1} nor {old2} found — skipping")
 
-                current_params, comments_col = _get_current_params(ws)
+                current_params, _ = _get_current_params(ws)
                 current_set = set(current_params)
                 expected_set = set(exp_params)
 
@@ -720,7 +745,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                 removed_params = [
                     p for p in current_params
                     if p not in expected_set
-                    and not any(p.startswith(pfx) for pfx in _STALE_PREFIXES)
+                    and not parked_operation(p)
                 ]
                 # Snapshot before either branch below overwrites it. Only the
                 # columns a branch actually inserts or deletes get their sheet
@@ -779,7 +804,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                 if new_params:
                     print(f"  [{class_name}/{construction}] New params: {new_params}")
                     if apply:
-                        _insert_param_columns(ws, new_params, exp_values, comments_col)
+                        _insert_param_columns(ws, new_params, exp_values, exp_params)
                         # Update manifest construction_params so Colab reads the right params.
                         # Only the columns just inserted got a dropdown written — a
                         # pre-existing criterion's values are untouched by this call,

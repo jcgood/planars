@@ -207,9 +207,27 @@ jobs:
           # without this the summary below would fall through to an
           # arbitrary 25-line tail that may not even contain the warning.
           warnings = [l.strip() for l in lines if 'WARNING:' in l]
+          # A crash comes first: its exception line, and the last place in
+          # our code it passed through. Without this a crash was summarised
+          # by whatever warnings happened to print before it (#306).
+          crash = []
+          if 'Traceback (most recent call last)' in text:
+              start = max(i for i, l in enumerate(lines) if 'Traceback (most recent call last)' in l)
+              ours = [l.strip() for l in lines[start:] if l.strip().startswith('File ') and '/coding/' in l]
+              exc = next((l.strip() for l in lines[start + 1:]
+                          if l and not l[0].isspace() and ':' in l), None)
+              if exc:
+                  crash.append(f"The import crashed: `{exc[:400]}`")
+              if ours:
+                  crash.append(f"Last step in our code: `{ours[-1]}`")
           with open('/tmp/import_error_body.md', 'w') as f:
               f.write("## What's wrong\n\n")
-              if errors:
+              if crash:
+                  f.write('\n'.join(f"- {c}" for c in crash) + '\n')
+                  if errors or warnings:
+                      f.write("\nAlso printed before the crash (not its cause):\n\n")
+                      f.write('\n'.join(f"- {e}" for e in (errors or warnings)) + '\n')
+              elif errors:
                   f.write('\n'.join(f"- {e}" for e in errors) + '\n')
               elif warnings:
                   f.write('\n'.join(f"- {w}" for w in warnings) + '\n')

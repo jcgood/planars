@@ -29,7 +29,15 @@ tests). Reads pass straight through. Every write is checked first:
   4. protection only on locked tabs;
   5. sharing only with the language's annotator, by name, as a writer while
      the sheet is live and a reader once it is labelled archived; never
-     "anyone".
+     "anyone";
+  6. at the end of a command that succeeded and was allowed to write, each
+     class sheet whose shape it changed is re-read and compared with its spec:
+     tab names, order and protection, and for each tab it wrote, the columns
+     and the row keys (pair and keyed rows from the generators' own builders,
+     ``sheet_spec.expected_row_keys``). Only mismatches the sheet did not have
+     before the command first wrote to it are reported: older drift has its
+     own issues. Formatting, dropdowns and highlights change no shape and
+     cost no extra read.
 
 Every call is retried on Google's "try again" answers (429, 500, 503), here
 and nowhere else. A call that creates something is retried only after
@@ -495,6 +503,15 @@ class CheckedDoorway:
         self._grids: Dict[Tuple[str, int], List[List[str]]] = {}
         self._replacing: Dict[Tuple[str, int], str] = {}
         self._written: Dict[Tuple[str, Optional[str]], Dict[str, Any]] = {}
+        # Rule 6: each class sheet's tabs (order, names, protection) and each
+        # tab's content as they were before this command first changed them.
+        # None: the command made it.
+        self._before_sheets: Dict[str, Optional[List[Dict[str, Any]]]] = {}
+        self._before_tabs: Dict[Tuple[str, int], Optional[List[List[str]]]] = {}
+        self._replacements: Dict[str, str] = {}   # new sheet id -> the sheet it replaces
+        # Each spreadsheet's tabs by sheet id, for finding the tab a request
+        # names (CheckedSpreadsheet._tab_by_sheet_id).
+        self._tabs: Dict[str, Dict[int, Any]] = {}
         self._started = ""
 
     @property
@@ -518,17 +535,26 @@ class CheckedDoorway:
         self._tab_labels = {}
         self._sheets_written = {}
         self._written = {}
+        self._before_sheets = {}
+        self._before_tabs = {}
+        self._replacements = {}
+        self._tabs = {}
         self._started = _now()
 
     def finish_command(self, command: str, args: Optional[argparse.Namespace] = None,
                        succeeded: bool = True) -> None:
         """After a command that succeeded, and was allowed to write (not a dry
         run that only painted highlights), label the tabs of every class
-        sheet it wrote. Then, however it ended, log what it wrote, and in
-        watch mode report what broke a rule."""
+        sheet it wrote and check each one's shape (rule 6). Then, however it
+        ended, log what it wrote, and act on what broke a rule: raise
+        (enforce) or report it in one issue (watch)."""
+        shape_problems: List[str] = []
         if succeeded and _context is not None and _context.may_write:
             for ss in list(self._sheets_written.values()):
                 self._label_tabs(ss)
+            for ss in list(self._sheets_written.values()):
+                shape_problems += self._shape_problems(ss)
+            self._before_sheets, self._before_tabs, self._replacements = {}, {}, {}
         if self._written:
             from . import provenance
             arguments = vars(args) if args is not None else {}
@@ -536,9 +562,11 @@ class CheckedDoorway:
                 {"timestamp": self._started, "command": command, "args": arguments, **entry}
                 for entry in self._written.values()])
             self._written = {}
-        if self.mode != WATCH or not self.violations:
-            return
-        _report_violations(command, self.violations)
+        try:
+            self._act("shape at the end of the command", shape_problems)
+        finally:
+            if self.mode == WATCH and self.violations:
+                _report_violations(command, self.violations)
 
     # -- provenance ---------------------------------------------------------
     def _wrote(self, file_id: str, title: str, tab: Optional[str], action: str,
@@ -708,6 +736,103 @@ class CheckedDoorway:
             for key in (TAB_KIND_LABEL, TAB_NAME_LABEL)]}))
         self._tab_labels[ws._ss.id].pop(ws.id, None)
 
+    # -- rule 6: shape at the end of the command -------------------------------
+    def _checks_shape(self, ss: "CheckedSpreadsheet") -> bool:
+        """Whether rule 6 looks after this spreadsheet in this command: a class
+        sheet, written by a command allowed to write (a dry run's highlights
+        change no shape)."""
+        return self._checks_shape_of(ss.identity)
+
+    @staticmethod
+    def _checks_shape_of(identity: Optional[Identity]) -> bool:
+        if _context is None or not _context.may_write:
+            return False
+        return identity is not None and identity.kind == CLASS_SHEET
+
+    def _before_shape_write(self, ss: "CheckedSpreadsheet",
+                            ws: Optional["CheckedWorksheet"] = None) -> None:
+        """Before a write that can change a class sheet's shape, remember the
+        sheet's tabs (and this tab's content) as they are, the first time
+        only, so rule 6 blames the command only for what it changed. The tab
+        read reuses the command's own where there is one (Q6)."""
+        if not self._checks_shape(ss):
+            return
+        made = ss.id in self._created
+        if ss.id not in self._before_sheets:
+            self._before_sheets[ss.id] = None if made else self._sheet_layout(ss)
+        if ws is not None and ws._key not in self._before_tabs:
+            self._before_tabs[ws._key] = None if made else [list(r) for r in self._grid(ws)]
+
+    def _sheet_layout(self, ss: "CheckedSpreadsheet") -> List[Dict[str, Any]]:
+        """The spreadsheet's tabs in order: id, title, name (its label, which
+        survives a rename by hand, else its title) and whether it is protected."""
+        meta = _retry(lambda: ss._inner.fetch_sheet_metadata(params={
+            "fields": "sheets(properties(sheetId,title,index),developerMetadata,"
+                      "protectedRanges(range))"}))
+        sheets = sorted(meta.get("sheets", []), key=lambda s: s["properties"].get("index", 0))
+        layout = []
+        for sheet in sheets:
+            props = sheet["properties"]
+            name = next((m.get("metadataValue") for m in sheet.get("developerMetadata", [])
+                         if m.get("metadataKey") == TAB_NAME_LABEL), None)
+            layout.append({"id": props["sheetId"], "title": props["title"],
+                           "name": name or props["title"],
+                           "protected": bool(sheet.get("protectedRanges"))})
+        return layout
+
+    def _shape_problems(self, ss: "CheckedSpreadsheet") -> List[str]:
+        """Rule 6: re-read a class sheet the command changed the shape of and
+        compare it with its spec — tab names, order and protection, and for
+        each tab it wrote, the header and row keys. Only what does not match
+        now and did match before the command first wrote is reported: drift
+        that was already there has its own issues (sheet-drift,
+        planar-changed, dependent-stale), and a rebuild that fixes some of it
+        is not blamed for the rest."""
+        if ss.id not in self._before_sheets or self.is_archived(ss.id):
+            return []
+        identity = ss.identity
+        where = identity.describe()
+        spec = self._spec(identity)
+        if isinstance(spec, Exception):
+            return [f"cannot check the shape of {where}: its spec could not be built ({spec})"]
+        after = self._sheet_layout(ss)
+        before = self._before_sheets[ss.id]
+        new = _layout_mismatches(spec, after) - (
+            _layout_mismatches(spec, before) if before is not None else set())
+        by_id = {t["id"]: t for t in after}
+        for (sheet_id, tab_id), earlier in self._before_tabs.items():
+            if sheet_id != ss.id or tab_id not in by_id:
+                continue
+            entry = by_id[tab_id]
+            try:
+                tab = spec.tab(entry["name"])
+            except KeyError:
+                continue  # not a tab the class has: the layout reports it
+            if ss.id in self._replacements and tab.rows is None:
+                # A replacement sheet carries a pair or keyed tab's rows over
+                # from the sheet it replaces (renames applied); they are not
+                # generated, so their staleness against the generator is the
+                # dependent-stale check's, as it was before.
+                expected = None
+            else:
+                expected = self._expected_row_keys(identity, tab)
+            now =_retry(lambda: ss._inner.worksheet(entry["title"]).get_all_values())
+            new |= _tab_mismatches(identity.class_name, tab, now, expected) - (
+                _tab_mismatches(identity.class_name, tab, earlier, expected)
+                if earlier is not None else set())
+        return _describe_mismatches(where, new)
+
+    def _expected_row_keys(self, identity: Identity, tab) -> Optional[frozenset]:
+        """The tab's row keys from the generators; None if they can't be
+        worked out, in which case rows are not compared (the header still is)."""
+        if tab.kind == LOCKED_TAB:
+            return None
+        from .sheet_spec import expected_row_keys
+        try:
+            return expected_row_keys(identity.lang_id, identity.class_name, tab, CODED_DATA)
+        except Exception:  # noqa: BLE001 - the command's own build of these rows would fail too
+            return None
+
     # -- replacing (rule 1) -------------------------------------------------
     def _before_replacing(self, tab: "CheckedWorksheet", reason: str,
                           kept: Optional[Iterable[Sequence[str]]], allow_drop: bool) -> None:
@@ -847,8 +972,16 @@ class CheckedDoorway:
         self._created[file_id] = identity
         self._labels[file_id] = dict(identity.labels())
 
-    def create_spreadsheet(self, title: str, *, identity: Identity):
+    def create_spreadsheet(self, title: str, *, identity: Identity,
+                           replaces: Optional[str] = None):
+        """Make a spreadsheet labelled ``identity``. ``replaces``: the id of
+        the sheet this one takes over from (restructure-sheets), whose tab
+        list rule 6 takes as the "before", and whose pair and keyed rows the
+        new sheet carries over rather than generates (see _shape_problems)."""
         self._check(f"create spreadsheet {title!r}")
+        old_layout = None
+        if replaces is not None and self._checks_shape_of(identity):
+            old_layout = self._sheet_layout(self.open_spreadsheet(replaces))
         inner = self._create(lambda: self._inner.create_spreadsheet(title), title,
                              _SPREADSHEET_MIME, None, self._inner.open_spreadsheet)
         # Sheets can't be given Drive properties when made; label straight after.
@@ -857,6 +990,10 @@ class CheckedDoorway:
         self._wrote_file(inner.id, title, "create_spreadsheet")
         ss = CheckedSpreadsheet(self, inner)
         self._wrote_sheet(ss)
+        self._before_shape_write(ss)   # a new sheet: all of its shape is this command's
+        if replaces is not None and self._checks_shape(ss):
+            self._before_sheets[ss.id] = old_layout
+            self._replacements[ss.id] = replaces
         return ss
 
     def create_file(self, name: str, parents: Optional[Sequence[str]] = None,
@@ -975,6 +1112,90 @@ def _quote(text: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Rule 6: how a class sheet differs from its spec, as a set of mismatches
+# ---------------------------------------------------------------------------
+# Each mismatch is (what, tab, detail). Sets, so that a command is blamed
+# only for mismatches that were not there before it wrote.
+
+def _layout_mismatches(spec, layout: List[Dict[str, Any]]) -> set:
+    """Tabs missing, extra, out of order, or protected when they shouldn't be
+    (or not when they should)."""
+    titles = spec.tab_titles
+    names = [t["name"] for t in layout]
+    out = {("tab missing", t, "") for t in titles if t not in names}
+    out |= {("tab the class does not have", t["title"], "") for t in layout
+            if t["name"] not in titles}
+    present = tuple(n for n in names if n in titles)
+    if present != tuple(t for t in titles if t in names):
+        out.add(("tabs out of order", "", " | ".join(present)))
+    for t in layout:
+        if t["name"] in titles:
+            wanted = spec.tab(t["name"]).protected
+            if t["protected"] != wanted:
+                out.add(("not protected" if wanted else "protected, but only locked tabs are",
+                         t["name"], ""))
+    return out
+
+
+def _tab_mismatches(class_name: str, tab, grid: List[List[Any]],
+                    expected: Optional[frozenset]) -> set:
+    """A locked tab's content, or a construction or Status tab's columns and
+    row keys (when ``expected`` is known), against the spec."""
+    rows = _trimmed([[_text(v) for v in r] for r in grid])
+    if tab.kind == LOCKED_TAB:
+        want = _trimmed([[_text(v) for v in r] for r in tab.rows or ()])
+        return set() if rows == want else {("content differs from what its builder makes",
+                                            tab.title, "")}
+    from .sheet_spec import counts_as_generated, parked_operation
+    header = rows[0] if rows else []
+    out = {("column missing", tab.title, c) for c in tab.header if c not in header}
+    out |= {("column the spec does not have", tab.title, c) for c in header
+            if c and c not in tab.header and not parked_operation(c)}
+    common = tuple(c for c in header if c in tab.header)
+    if common != tuple(c for c in tab.header if c in header):
+        out.add(("columns out of order", tab.title, " | ".join(common)))
+    if expected is None or any(k not in header for k in tab.row_key):
+        return out
+    want = {tuple(v.strip() for v in key) for key in expected}
+    seen: set = set()
+    for raw in rows[1:]:
+        if not any(v.strip() for v in raw):
+            continue
+        record = dict(zip(header, raw))
+        if not counts_as_generated(class_name, tab.title, record):
+            continue
+        key = tuple(record.get(k, "").strip() for k in tab.row_key)
+        if key in seen:
+            out.add(("row twice", tab.title, _key_text(tab.row_key, key)))
+        seen.add(key)
+    out |= {("row missing", tab.title, _key_text(tab.row_key, k)) for k in want - seen}
+    out |= {("row the spec does not have", tab.title, _key_text(tab.row_key, k))
+            for k in seen - want}
+    return out
+
+
+def _key_text(columns: Sequence[str], key: Sequence[str]) -> str:
+    return ", ".join(f"{c} {v!r}" for c, v in zip(columns, key))
+
+
+def _describe_mismatches(where: str, mismatches: set, shown: int = 3) -> List[str]:
+    """One line per kind of mismatch per tab, with a count and the first few."""
+    groups: Dict[Tuple[str, str], List[str]] = {}
+    for what, tab, detail in sorted(mismatches):
+        groups.setdefault((what, tab), []).append(detail)
+    lines = []
+    for (what, tab), details in groups.items():
+        place = f"{where}/{tab}" if tab else where
+        count = f" ({len(details)})" if len(details) > 1 else ""
+        named = [d for d in details if d]
+        listed = ("; ".join(named[:shown])
+                  + (f"; and {len(named) - shown} more" if len(named) > shown else ""))
+        lines.append(f"{place}: {what}{count}" + (f": {listed}" if listed else "")
+                     + " (new with this command)")
+    return lines
+
+
+# ---------------------------------------------------------------------------
 # Spreadsheet and tab handles
 # ---------------------------------------------------------------------------
 
@@ -1019,32 +1240,44 @@ class CheckedSpreadsheet:
         return _retry(lambda: self._inner.list_protected_ranges(sheetid))
 
     def _tab_by_sheet_id(self, sheet_id: int) -> Optional["CheckedWorksheet"]:
-        for ws in self.worksheets():
-            if ws.id == sheet_id:
-                return ws
-        return None
+        """The tab a request names. The door keeps each spreadsheet's tabs for
+        the command and re-reads them only for an id it hasn't seen: one read
+        per request would exhaust Google's per-minute read quota when a
+        command sends one request per highlighted cell (#306)."""
+        tabs = self._door._tabs.get(self.id)
+        if tabs is None or sheet_id not in tabs:
+            tabs = {ws.id: ws for ws in _retry(self._inner.worksheets)}
+            self._door._tabs[self.id] = tabs
+        inner = tabs.get(sheet_id)
+        return self._wrap(inner) if inner is not None else None
 
     # -- tab writes ----------------------------------------------------------
     def add_worksheet(self, title: str, rows: int, cols: int,
                       index: Optional[int] = None) -> "CheckedWorksheet":
         self._door._check(f"add tab {title!r} to {self.title!r}")
+        self._door._before_shape_write(self)
         ws = self._wrap(_create_tab(self, title, rows, cols, index))
+        if self._door._checks_shape(self):
+            self._door._before_tabs.setdefault(ws._key, None)
         self._door._forget(ws._key)
         ws._note("add_worksheet")
         return ws
 
     def del_worksheet(self, worksheet: "CheckedWorksheet") -> Any:
         tab = _unwrap_tab(worksheet)
+        self._door._before_shape_write(self, worksheet)
         problems = worksheet._annotation_loss_problems("delete the tab", all_cells=True)
         self._door._check(f"delete tab {worksheet.title!r} of {self.title!r}", problems)
         result = _retry(lambda: self._inner.del_worksheet(tab))
         self._door._forget(worksheet._key)
         self._door._tab_labels.get(self.id, {}).pop(worksheet.id, None)
+        self._door._tabs.get(self.id, {}).pop(worksheet.id, None)
         worksheet._note("del_worksheet")
         return result
 
     def reorder_worksheets(self, worksheets_in_desired_order: Sequence["CheckedWorksheet"]) -> Any:
         self._door._check(f"reorder the tabs of {self.title!r}")
+        self._door._before_shape_write(self)
         tabs = [_unwrap_tab(w) for w in worksheets_in_desired_order]
         result = _retry(lambda: self._inner.reorder_worksheets(tabs))
         self._door._wrote(self.id, self.title, None, "reorder_worksheets",
@@ -1075,13 +1308,19 @@ class CheckedSpreadsheet:
     def values_batch_update(self, body: Mapping[str, Any]) -> Any:
         problems: List[str] = []
         writes: List[Tuple["CheckedWorksheet", Dict[Tuple[int, int], str]]] = []
+        tabs: Dict[Optional[str], CheckedWorksheet] = {}   # one lookup per tab, not per cell
         for entry in body.get("data", []):
             rng = entry["range"]
-            prefix = rng.rsplit("!", 1)[0].strip("'") if "!" in rng else None
-            ws = self.worksheet(prefix) if prefix else self.sheet1
+            prefix = (rng.rsplit("!", 1)[0].strip("'").replace("''", "'")
+                      if "!" in rng else None)
+            if prefix not in tabs:
+                # A bare range goes to the first tab, as the values API sends it.
+                tabs[prefix] = self.worksheet(prefix) if prefix else self.sheet1
+            ws = tabs[prefix]
             r0, c0 = _anchor(rng)
             changes = {(r0 + i, c0 + j): _text(v)
                        for i, row in enumerate(entry["values"]) for j, v in enumerate(row)}
+            self._door._before_shape_write(self, ws)
             problems.extend(ws._value_problems(changes))
             writes.append((ws, changes))
         self._door._check(f"write values in {self.title!r}", problems)
@@ -1112,21 +1351,27 @@ class CheckedSpreadsheet:
         if kind == "setDataValidation":
             return ws._dropdown_problems(payload)
         if kind == "addProtectedRange":
+            self._door._before_shape_write(self)
             return ws._protection_problems()
         if kind == "deleteDimension":
+            self._door._before_shape_write(self, ws)
             touched.append(ws._key)
             rng = payload["range"]
             return ws._dimension_loss_problems(rng["dimension"], rng["startIndex"], rng["endIndex"])
         if kind == "insertDimension":
+            self._door._before_shape_write(self, ws)
             touched.append(ws._key)
             return []
         if kind == "updateSheetProperties":
+            if any(f in payload.get("fields", "*") for f in ("*", "title", "index")):
+                self._door._before_shape_write(self)  # a rename or a move, not freezing rows
             touched.append(ws._key)
             return []
         if kind == "updateCells":
             fields = payload.get("fields", "*")
             if "*" not in fields and "userEnteredValue" not in fields:
                 return []
+            self._door._before_shape_write(self, ws)
             touched.append(ws._key)
             rng = payload["range"]
             r0, c0 = rng.get("startRowIndex", 0), rng.get("startColumnIndex", 0)
@@ -1464,6 +1709,7 @@ class CheckedWorksheet:
         r0, c0 = _anchor(range_name)
         changes = {(r0 + i, c0 + j): _text(v)
                    for i, row in enumerate(values) for j, v in enumerate(row)}
+        self._door._before_shape_write(self._ss, self)
         self._door._check(f"write {self.title!r} of {self._ss.title!r}",
                           self._value_problems(changes))
         result = _retry(lambda: self._inner.update(values, range_name, raw=raw))
@@ -1473,6 +1719,7 @@ class CheckedWorksheet:
 
     def update_cell(self, row: int, col: int, value: Any) -> Any:
         changes = {(row - 1, col - 1): _text(value)}
+        self._door._before_shape_write(self._ss, self)
         self._door._check(f"write a cell of {self.title!r} in {self._ss.title!r}",
                           self._value_problems(changes))
         result = _retry(lambda: self._inner.update_cell(row, col, value))
@@ -1481,6 +1728,7 @@ class CheckedWorksheet:
         return result
 
     def insert_cols(self, values: Sequence[Sequence[Any]], col: int = 1) -> Any:
+        self._door._before_shape_write(self._ss, self)
         self._door._check(f"insert columns into {self.title!r} of {self._ss.title!r}")
         result = _retry(lambda: self._inner.insert_cols(values, col))
         self._door._forget(self._key)
@@ -1490,6 +1738,7 @@ class CheckedWorksheet:
     def append_rows(self, values: Sequence[Sequence[Any]],
                     value_input_option: str = "RAW") -> Any:
         problems: List[str] = []
+        self._door._before_shape_write(self._ss, self)
         kind, spec = self._kind()
         if kind == LOCKED_TAB:
             start = len(self._door._grid(self))
@@ -1503,6 +1752,7 @@ class CheckedWorksheet:
         return result
 
     def clear(self) -> Any:
+        self._door._before_shape_write(self._ss, self)
         self._door._check(f"clear {self.title!r} of {self._ss.title!r}",
                           self._annotation_loss_problems("clear", all_cells=True))
         result = _retry(self._inner.clear)
@@ -1511,6 +1761,7 @@ class CheckedWorksheet:
         return result
 
     def resize(self, rows: Optional[int] = None, cols: Optional[int] = None) -> Any:
+        self._door._before_shape_write(self._ss, self)
         self._door._check(f"resize {self.title!r} of {self._ss.title!r}",
                           self._annotation_loss_problems("shrink", rows_from=rows,
                                                          cols_from=cols))
@@ -1520,6 +1771,7 @@ class CheckedWorksheet:
         return result
 
     def update_title(self, title: str) -> Any:
+        self._door._before_shape_write(self._ss, self)
         self._door._check(f"rename tab {self.title!r} of {self._ss.title!r} to {title!r}")
         self._door._drop_tab_labels(self)
         result = _retry(lambda: self._inner.update_title(title))

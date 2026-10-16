@@ -54,7 +54,7 @@ from coding import drive as drive_module
 from coding import drive_doorway
 from coding import validate_coding as vc
 from command_runner import run_command
-from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID
+from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID, point_coded_data_at
 from render_mutations import render
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -81,7 +81,7 @@ def env(monkeypatch, tmp_path):
     for lang in LANGS:
         shutil.copytree(FROZEN_CODED_DATA / lang, coded / lang)
 
-    monkeypatch.setattr(vc, "CODED_DATA", coded)
+    point_coded_data_at(monkeypatch, coded)
     monkeypatch.setattr(drive_module, "_load_drive_config", FakeDriveDoorway.drive_config)
     drive_doorway.set_doorway(doorway)
 

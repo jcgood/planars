@@ -240,7 +240,8 @@ class SpreadsheetHandle(Protocol):
         """``spreadsheets.values.batchUpdate`` — cell *values* by A1 range.
 
         Body is ``{"valueInputOption": ..., "data": [{"range", "values"}, ...]}``.
-        One caller: ``restructure_sheets._cascade_rename_pair_tab``.
+        One caller: ``restructure_sheets._cascade_rename_pair_tab``, which
+        names the tab in every range (a bare range goes to the first tab).
 
         **Not** the same endpoint as ``batch_update``.
         """

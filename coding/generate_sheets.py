@@ -479,6 +479,7 @@ def _abort_if_criterion_diverges_by_position(
     title_label: str,
     regen_command: str,
     context_note: str,
+    file_issue: bool = True,
 ) -> None:
     """Abort and file/update a `diagnostics` GitHub issue if any element has
     divergent `criterion` values across positions in `df` — e.g. `n` at one
@@ -492,6 +493,7 @@ def _abort_if_criterion_diverges_by_position(
     `referential` (issue #285) — #228 had assumed coreference was unaffected,
     which turned out to be wrong. Shared here, used by both filters below, so
     the two can't independently drift the way #285 found they already had.
+    ``file_issue=False`` aborts without filing (see ``pair_rows``).
     """
     divergent = []
     for elem, group in df.groupby("Element"):
@@ -506,6 +508,9 @@ def _abort_if_criterion_diverges_by_position(
 
     if not divergent:
         return
+    if not file_issue:
+        raise SystemExit(f"  {source_label} for {lang_id} has elements with divergent "
+                         f"{criterion} values across positions.")
 
     lines = [
         f"[{lang_id}] `{source_label}` has element(s) with divergent `{criterion}` values "
@@ -546,7 +551,7 @@ def _abort_if_criterion_diverges_by_position(
 
 
 def _filter_nonperm_pairs_by_prescreening(
-    pairs: List[List[str]], lang_id: str
+    pairs: List[List[str]], lang_id: str, *, file_issue: bool = True,
 ) -> List[List[str]]:
     """Filter candidate pairs by removing elements with scopal=n in element_prescreening.tsv.
 
@@ -574,6 +579,7 @@ def _filter_nonperm_pairs_by_prescreening(
         regen_command=f"python -m coding generate-sheets --lang {lang_id} "
                        "--regen-construction nonpermutability:general",
         context_note="See issue #228 for context.",
+        file_issue=file_issue,
     )
 
     excluded = {
@@ -646,7 +652,8 @@ def _build_reflex_pairs(
 
 
 def _filter_reflex_pairs_by_prescreening(
-    pairs: List[List[str]], lang_id: str, construction_name: str = "<construction>"
+    pairs: List[List[str]], lang_id: str, construction_name: str = "<construction>",
+    *, file_issue: bool = True,
 ) -> List[List[str]]:
     """Filter candidate pairs using prescreening annotations.
 
@@ -684,6 +691,7 @@ def _filter_reflex_pairs_by_prescreening(
                        f"--regen-construction coreference:{construction_name}",
         context_note="See issue #228 (the original nonpermutability case) and issue "
                       "#285 for context.",
+        file_issue=file_issue,
     )
 
     excluded_elements: set = {
@@ -905,6 +913,33 @@ def _build_phrasal_accent_pairs(
           f"{_phrasal_accent_obligatory_core(lang_id, keystone_pos)}")
     print(f"    [adjacency] {len(pairs)} candidate pairs")
     return pairs
+
+
+def pair_rows(lang_id: str, class_name: str, construction: str, *,
+              planar_path: Optional[Path] = None, file_issue: bool = True) -> List[List[str]]:
+    """The rows a pair tab should have, from the planar and the prescreening
+    tab's imported TSV: the one builder that making, extending and
+    regenerating a sheet all use, and that the Drive door's end-of-command
+    check compares the tab with. Reads ``CODED_DATA``.
+
+    ``file_issue=False``: when an element's prescreening value differs by
+    position, raise SystemExit without filing the `diagnostics` issue (the
+    door's check reads; it doesn't report linguistics questions)."""
+    planar_path = planar_path or CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
+    element_index = build_element_index(planar_path.name, planar_path.parent)
+    ka = resolve_keystone_active(lang_id, class_name, construction,
+                                 data_dir=planar_path.parent) or False
+    pos_type = _read_position_types(planar_path, lang_id)
+    if class_name == "coreference":
+        pairs = _build_reflex_pairs(element_index, lang_id, pos_type, keystone_active=ka)
+        return _filter_reflex_pairs_by_prescreening(pairs, lang_id, construction,
+                                                    file_issue=file_issue)
+    if class_name == "phrasal_accent":
+        return _build_phrasal_accent_pairs(element_index, lang_id, pos_type, keystone_active=ka)
+    if class_name == "nonpermutability":
+        pairs = _build_nonperm_pairs(element_index, lang_id, pos_type, keystone_active=ka)
+        return _filter_nonperm_pairs_by_prescreening(pairs, lang_id, file_issue=file_issue)
+    raise ValueError(f"{class_name}/{construction} is not a pair tab this builder knows")
 
 
 def _populate_tab_pairs(
@@ -1504,12 +1539,7 @@ def _create_analysis_sheet(
             print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
         elif class_name == "nonpermutability":
             # Step 2: candidate pair sheet (general), filtered if prescreening.tsv exists.
-            ka = resolve_keystone_active(lang_id, class_name, construction,
-                                         data_dir=planar_path.parent) or False
-            pos_type = _read_position_types(planar_path, lang_id)
-            pairs = _build_nonperm_pairs(element_index, lang_id, pos_type,
-                                         keystone_active=ka)
-            pairs = _filter_nonperm_pairs_by_prescreening(pairs, lang_id)
+            pairs = pair_rows(lang_id, class_name, construction, planar_path=planar_path)
             _populate_tab_pairs(spreadsheet, construction, param_names, param_values, pairs)
             tab_names.append(construction)
             print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
@@ -1523,11 +1553,7 @@ def _create_analysis_sheet(
             print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
         elif class_name == "coreference":
             # Stage 2: pair sheet filtered by prescreening.
-            ka = resolve_keystone_active(lang_id, class_name, construction,
-                                         data_dir=planar_path.parent) or False
-            pos_type = _read_position_types(planar_path, lang_id)
-            pairs = _build_reflex_pairs(element_index, lang_id, pos_type, keystone_active=ka)
-            pairs = _filter_reflex_pairs_by_prescreening(pairs, lang_id, construction)
+            pairs = pair_rows(lang_id, class_name, construction, planar_path=planar_path)
             _populate_tab_reflex_pairs(spreadsheet, construction, param_names, param_values, pairs)
             tab_names.append(construction)
             print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
@@ -1543,11 +1569,7 @@ def _create_analysis_sheet(
             # Stage 2: pair sheet restricted to accent-eligible x accent-eligible
             # elements, adjacency-filtered via the two-tier obligatory-core
             # compromise (issue #237).
-            ka = resolve_keystone_active(lang_id, class_name, construction,
-                                         data_dir=planar_path.parent) or False
-            pos_type = _read_position_types(planar_path, lang_id)
-            pairs = _build_phrasal_accent_pairs(element_index, lang_id, pos_type,
-                                                keystone_active=ka)
+            pairs = pair_rows(lang_id, class_name, construction, planar_path=planar_path)
             _populate_tab_pairs(spreadsheet, construction, param_names, param_values, pairs)
             tab_names.append(construction)
             print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
@@ -1777,20 +1799,7 @@ def _regen_construction(
     except WorksheetNotFound:
         pass
 
-    # Generate new filtered pair list.
-    planar_path   = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
-    element_index = build_element_index(f"planar_{lang_id}.tsv", planar_path.parent)
-    ka            = resolve_keystone_active(lang_id, class_name, construction_name,
-                                            data_dir=planar_path.parent) or False
-    pos_type = _read_position_types(planar_path, lang_id)
-    if class_name == "coreference":
-        pairs = _build_reflex_pairs(element_index, lang_id, pos_type, keystone_active=ka)
-        pairs = _filter_reflex_pairs_by_prescreening(pairs, lang_id, construction_name)
-    elif class_name == "phrasal_accent":
-        pairs = _build_phrasal_accent_pairs(element_index, lang_id, pos_type, keystone_active=ka)
-    else:
-        pairs = _build_nonperm_pairs(element_index, lang_id, pos_type, keystone_active=ka)
-        pairs = _filter_nonperm_pairs_by_prescreening(pairs, lang_id)
+    pairs = pair_rows(lang_id, class_name, construction_name)
 
     # For coreference pair tabs, remap old annotation keys when position numbers
     # have shifted (e.g. after a planar insertion/deletion). key_map takes each
@@ -1855,7 +1864,6 @@ def _add_constructions_to_existing_sheet(
     # Same per-tab criteria rule as _create_analysis_sheet (coding.schemas.criteria_for).
     new_constructions = apply_schema_criteria(class_name, new_constructions, lang_id)
 
-    pos_type = _read_position_types(planar_path, lang_id)
     construction_params: Dict = {}
 
     for construction, param_names, param_values in new_constructions:
@@ -1866,8 +1874,7 @@ def _add_constructions_to_existing_sheet(
             _populate_tab(ss, construction, param_names, param_values, rows)
             print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
         elif class_name == "nonpermutability":
-            pairs = _build_nonperm_pairs(element_index, lang_id, pos_type, keystone_active=ka)
-            pairs = _filter_nonperm_pairs_by_prescreening(pairs, lang_id)
+            pairs = pair_rows(lang_id, class_name, construction, planar_path=planar_path)
             _populate_tab_pairs(ss, construction, param_names, param_values, pairs)
             print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
         elif class_name == "coreference" and construction == "prescreening":
@@ -1875,8 +1882,7 @@ def _add_constructions_to_existing_sheet(
             _populate_tab(ss, construction, param_names, param_values, rows)
             print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
         elif class_name == "coreference":
-            pairs = _build_reflex_pairs(element_index, lang_id, pos_type, keystone_active=ka)
-            pairs = _filter_reflex_pairs_by_prescreening(pairs, lang_id, construction)
+            pairs = pair_rows(lang_id, class_name, construction, planar_path=planar_path)
             _populate_tab_reflex_pairs(ss, construction, param_names, param_values, pairs)
             print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
         elif class_name == "phrasal_accent" and construction == "prescreening":
@@ -1884,8 +1890,7 @@ def _add_constructions_to_existing_sheet(
             _populate_tab(ss, construction, param_names, param_values, rows)
             print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
         elif class_name == "phrasal_accent":
-            pairs = _build_phrasal_accent_pairs(element_index, lang_id, pos_type,
-                                                keystone_active=ka)
+            pairs = pair_rows(lang_id, class_name, construction, planar_path=planar_path)
             _populate_tab_pairs(ss, construction, param_names, param_values, pairs)
             print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
         elif class_name == _br.CLASS_NAME:

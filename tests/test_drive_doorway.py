@@ -332,12 +332,12 @@ def test_values_batch_update_writes_ranges(doorway):
 def test_unprefixed_values_range_resolves_against_the_first_sheet(doorway):
     """Faithful reproduction of a live oddity, not a convenience.
 
-    restructure_sheets._cascade_rename_pair_tab builds bare ranges like "D5"
-    and sends them via ws.spreadsheet.values_batch_update. The Sheets values
-    API resolves an unprefixed range against the FIRST sheet, so the write
-    lands on sheet1 even when the caller was holding another tab. Recorded
-    here so the behaviour is visible; not fixed (plan Phase 0b/1 non-goal:
-    record current behaviour, including behaviour that looks wrong).
+    The Sheets values API resolves an unprefixed range against the FIRST
+    sheet, so the write lands on sheet1 even when the caller was holding
+    another tab. restructure_sheets._cascade_rename_pair_tab sent bare ranges
+    like "D5" until 2026-10-15 (recorded, not fixed, in Phase 0b); it now
+    names the tab, and the fake keeps Google's behaviour so a bare range
+    still lands where it would live.
     """
     ss = doorway.create_spreadsheet("s")
     other = ss.add_worksheet("pairs", 10, 4)

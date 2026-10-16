@@ -323,13 +323,18 @@ def carry_over(
         if key in new_keys:
             continue
         rec = existing[key]
-        if str(rec.get("Origin", "")).strip() not in GENERATED_ORIGINS:
+        if not is_generated(rec):
             hand.append({**rec, "Origin": HAND_ADDED})
 
     counts = {"retained": len(new_keys & set(order)),
               "added": len(new_keys - set(order)),
-              "removed": sum(1 for k in order if k not in new_keys
-                             and str(existing[k].get("Origin", "")).strip() in GENERATED_ORIGINS),
+              "removed": sum(1 for k in order if k not in new_keys and is_generated(existing[k])),
               "hand_added": len(hand)}
     return out + hand, counts
+
+
+def is_generated(record: Dict[str, str]) -> bool:
+    """Whether a keyed tab's row was generated (its Origin says how), as
+    opposed to added by hand (no Origin, or hand-added)."""
+    return str(record.get("Origin", "")).strip() in GENERATED_ORIGINS
 

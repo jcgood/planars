@@ -200,7 +200,6 @@ def test_the_daily_import_brings_the_keyed_tabs_down_intact(created, monkeypatch
 
     from coding import drive as drive_module
     from coding import import_sheets as is_
-    from coding import validate_coding as vc
     from fake_drive import FakeDriveDoorway
 
     env, _ = created
@@ -222,7 +221,6 @@ def test_the_daily_import_brings_the_keyed_tabs_down_intact(created, monkeypatch
     monkeypatch.setattr(is_, "_load_drive_config", FakeDriveDoorway.drive_config)
     monkeypatch.setattr(is_, "_save_drive_config", lambda cfg: None)
     monkeypatch.setattr(drive_module, "_load_drive_config", FakeDriveDoorway.drive_config)
-    monkeypatch.setattr(vc, "CODED_DATA", env.coded)
     monkeypatch.setattr(sys, "argv", ["import-sheets", "--lang", LANG, "--apply",
                                       "--overwrite-existing"])
     buf = io.StringIO()
@@ -260,7 +258,6 @@ def test_update_sheets_adds_only_in_scope_elements_and_leaves_keyed_tabs_alone(
     planar.loc[i, "Elements"] += ", dare, NP{O}"
     planar.to_csv(planar_path, sep="\t", index=False)
 
-    monkeypatch.setattr(us, "CODED_DATA", env.coded)
     monkeypatch.setattr(us, "_load_drive_config", FakeDriveDoorway.drive_config)
     monkeypatch.setattr(sys, "argv", ["update-sheets", "--apply"])
     buf = io.StringIO()
@@ -307,7 +304,6 @@ def test_restructure_carries_keyed_answers_across_an_element_rename(created, mon
     planar.to_csv(planar_path, sep="\t", index=False)
 
     tmp = env.tmp_root
-    monkeypatch.setattr(rs, "CODED_DATA", env.coded)
     monkeypatch.setattr(rs, "MANIFEST_PATH", tmp / "sheets_manifest.json")
     monkeypatch.setattr(rj, "JOURNAL_PATH", tmp / "restructure_journal.json")
     monkeypatch.setattr(rs, "_load_drive_config", FakeDriveDoorway.drive_config)

@@ -1,7 +1,7 @@
 # The Drive door: design (Phase 10 unit 5)
 
 **Status: accepted by Jeff 2026-10-13 (§ 7 records his answers). 5a, 5b
-and 5c built, and 5d's labels (§ 8); next, rule 6 and the labelling
+and 5c built, and 5d's labels and rule 6 (§ 8); next, the labelling
 migration.** Unit 5 of Phase 10 ([implementation plan](data-layer-implementation-plan.md),
 Phase 10 table) was a design pause; this file is the design record. Progress
 is tracked in [data-layer-progress.md](data-layer-progress.md), and the
@@ -422,3 +422,66 @@ What changed in the saved test outputs: every create now shows its label,
 and every command that writes a class sheet labels its tabs once, because
 the recorded sheets have none yet. That goes away when the migration has run
 and the test data is refrozen.
+
+**5d, rule 6 (2026-10-14), the same file.** The end-of-command shape check,
+as § 2.4 describes, with the 2026-10-14 decision that it reports only what
+the command made wrong (`data-layer-progress.md` decisions log). Choices:
+
+- **What counts as changing a sheet's shape:** writing values, adding or
+  removing rows, columns or tabs, renaming or reordering tabs, and
+  protecting. Formatting, dropdowns, highlights and frozen rows do not, so
+  import-sheets' daily highlighting costs no extra read.
+- **Before:** the first time a command makes such a write to a class sheet,
+  the door reads the sheet's tab list (names, order, protection: one
+  metadata read) and keeps the tab's content as it already holds it (the
+  command's own read where there was one). A sheet or tab the command made
+  has no "before": all of its shape is the command's.
+- **After:** when a command that succeeded, and was allowed to write, ends,
+  the door re-reads the tab list and each tab it wrote (one read each, Q6),
+  and compares both states with the spec as sets of mismatches: tabs
+  missing, extra, out of order, protected or not; per tab, columns missing,
+  extra or out of order, rows missing, extra or present twice (by row key),
+  and a locked tab's content. Only the mismatches that are new are
+  reported, as the door's other violations are (raise in enforce, the
+  `door-violation` issue in watch). Archived sheets are not checked.
+- **Rows of pair and keyed tabs** come from the generators:
+  `generate_sheets.pair_rows`, which creating, extending and regenerating a
+  sheet now all call (it had three copies), and `biuniqueness_rows.keyed_rows`;
+  a keyed tab's hand-added rows (`biuniqueness_rows.is_generated`) are left
+  out. When the rows can't be worked out (a source tab not imported yet, an
+  element whose prescreening value differs by position), rows are not
+  compared, and nothing is filed: `pair_rows(file_issue=False)`.
+- **A replacement sheet** (restructure-sheets archives a class sheet and
+  makes a new one) is made with `create_spreadsheet(..., replaces=old_id)`:
+  the old sheet's tab list is the "before", and the new sheet's pair and
+  keyed tabs are not compared row by row, because restructure carries their
+  rows over (renames applied) rather than generating them; their staleness
+  against the generator stays the dependent-stale check's. Everything else
+  on the new sheet is compared in full.
+- **Holding columns.** `sync-params --split/--merge` parks an old criterion
+  as `_split_<name>`/`_merged_<name>` until the coordinator deletes it by
+  hand; the spec allows these (`sheet_spec.PARKED_COLUMN_PREFIXES`, now also
+  what sync-params and integrity-check read, which each had their own copy).
+- **Q3's confirmation** that carried-over answers landed is covered: a row
+  the rebuild meant to keep but did not write shows as a missing row.
+
+What rule 6 found on its first run of the test suite: `sync-params
+--split`/`--merge` put new criterion columns after the existing ones rather
+than where the language's diagnostics file lists them (now `_insert_at`);
+`restructure-sheets --rename-class` made the new sheet with no Status tab;
+restructure left a tab with no header at all when the old sheet lacked a
+pair tab (now it writes the header); and most command tests pointed only
+the command's own module at their copy of the language folders, so the
+door, and its specs, had been reading the real `coded_data/` in those tests
+since 5b (`fake_drive.point_coded_data_at` now points every module).
+
+**Reads the door adds (2026-10-15, #306).** The door found the tab a
+`batch_update` request names by re-reading the spreadsheet's tab list, once
+per request. import-sheets paints one request per invalid cell, so the
+daily refresh of 2026-10-15 made hundreds of reads, ran out of Google's
+per-minute read quota, and crashed (the status-sheet build after it failed
+on the same quota, #308). The door now keeps each spreadsheet's tab list for
+the command and re-reads it only for a tab id it hasn't seen, and
+`values_batch_update` looks each tab up once per call, not once per cell.
+Q6's "at most one read per tab written" now holds for these paths too
+(`test_many_requests_to_one_tab_read_its_tab_list_once`).

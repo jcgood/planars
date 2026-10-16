@@ -46,6 +46,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
+from .sheet_spec import parked_operation
 from .validate import ValidationIssue
 from .validate_planar import validate_planar_df
 from .validate_diagnostics import validate_diagnostics_df
@@ -483,13 +484,11 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
                 actual   = [c for c in header if c not in _skip and c not in _TRAILING]
 
                 # Warn on stale lifecycle columns left from --split or --merge operations.
-                stale = [c for c in actual if c.startswith("_split_") or c.startswith("_merged_")]
+                stale = [c for c in actual if parked_operation(c)]
                 if stale:
                     print(_warn(label))
                     for col in stale:
-                        prefix = "_split_" if col.startswith("_split_") else "_merged_"
-                        op = "split" if prefix == "_split_" else "merge"
-                        print(_sub(f"stale {op} column '{col}'"))
+                        print(_sub(f"stale {parked_operation(col)} column '{col}'"))
                     print(_sub(f"→ Remap any cell values from the stale column(s) to the current"))
                     print(_sub(f"  criterion column(s) in the Google Sheet, then delete the stale"))
                     print(_sub(f"  column(s) manually, then re-run"))

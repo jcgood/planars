@@ -115,7 +115,7 @@ from planars.schema_values import (
     PAIR_ROW_SHAPES,
     TRAILING_COLUMNS as _TRAILING_COLS,
     is_keystone as _is_keystone,
-    row_columns_of, row_key_of, row_type_of,
+    row_columns, row_columns_of, row_key_of, row_type_of,
 )
 from .drive import (
     _autocommit_data, _load_drive_config, _save_drive_config,
@@ -768,13 +768,16 @@ def _cascade_rename_pair_tab(
         return 0
 
     updates: List[Dict] = []
+    # Each range names the tab: the values API sends a bare "D5" to the
+    # spreadsheet's first tab, not to this one (it did until 2026-10-15).
+    tab = "'" + ws.title.replace("'", "''") + "'"
     for row_idx, row in enumerate(all_values[1:], start=2):
         for col_name, col_idx in col_indices.items():
             cell_val = row[col_idx] if col_idx < len(row) else ""
             new_val, changed = _apply_rename_to_position_cell(cell_val, rename_map)
             if changed:
                 col_letter = gspread.utils.rowcol_to_a1(1, col_idx + 1)[:-1]
-                updates.append({"range": f"{col_letter}{row_idx}", "values": [[new_val]]})
+                updates.append({"range": f"{tab}!{col_letter}{row_idx}", "values": [[new_val]]})
 
     if updates:
         ws.spreadsheet.values_batch_update({
@@ -793,6 +796,8 @@ def _copy_pair_tab_with_rename(
     param_values: Dict[str, List[str]],
     split_element_map: Dict[str, List[str]] = {},
     criterion_col: Optional[str] = None,
+    *,
+    class_name: str,
 ) -> Tuple[int, int, int, int]:
     """Copy a pair tab from old_ss to new_ss with rename_map applied to position cells
     and split_element_map applied to Element_A/Element_B cells (see
@@ -800,6 +805,9 @@ def _copy_pair_tab_with_rename(
 
     Used when a class sheet is being archived+recreated and the class has pair
     constructions that should be preserved (not regenerated from the planar structure).
+    An old tab that is missing or empty gives a new tab with just its header
+    (the schema's row columns, the criteria, the trailing columns), ready for
+    --regen-construction to fill.
     Returns (rows_copied, cells_renamed, rows_split, rows_needing_manual_review).
     """
     try:
@@ -809,7 +817,9 @@ def _copy_pair_tab_with_rename(
         all_values = []
 
     if not all_values:
-        new_ss.add_worksheet(title=tab_name, rows=10, cols=len(param_names) + 6)
+        header = row_columns(class_name, tab_name) + list(param_names) + list(_TRAILING_COLS)
+        ws = new_ss.add_worksheet(title=tab_name, rows=10, cols=len(header))
+        ws.update([header], "A1")
         return 0, 0, 0, 0
 
     header = all_values[0]
@@ -1182,7 +1192,7 @@ def _rename_class_for_language(
     # Create new sheet
     sheet_title = f"{new_class}_{lang_id}"
     new_ss = doorway.create_spreadsheet(
-        sheet_title, identity=drive_door.class_sheet(lang_id, new_class))
+        sheet_title, identity=drive_door.class_sheet(lang_id, new_class), replaces=ss.id)
     if folder_id:
         doorway.move_file(new_ss.id, folder_id)
         email = _annotator_email(lang_id)
@@ -1213,9 +1223,10 @@ def _rename_class_for_language(
     if default_ws.title not in tab_names:
         new_ss.del_worksheet(default_ws)
 
+    _create_status_tab(new_ss, tab_names)   # the main restructure path's Status, as on every class sheet
     if planar_path:
         _refresh_locked_tabs(new_ss, new_class, lang_id, planar_path)
-        reorder_tabs(new_ss)
+    reorder_tabs(new_ss)
 
     # Checkpoint here, before the local dir rename / manifest update below --
     # a real replacement sheet with real carried-over data exists as of this
@@ -1726,7 +1737,8 @@ def main(args: argparse.Namespace | None = None) -> None:
             # Step 4: Create new sheet and populate with carry-over
             sheet_title = f"{class_name}_{lang_id}"
             new_ss = doorway.create_spreadsheet(
-                sheet_title, identity=drive_door.class_sheet(lang_id, class_name))
+                sheet_title, identity=drive_door.class_sheet(lang_id, class_name),
+                replaces=ss.id)
             if folder_id:
                 doorway.move_file(new_ss.id, folder_id)
                 email = _annotator_email(lang_id)
@@ -1760,6 +1772,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                     rows_copied, cells_renamed, rows_split, rows_manual = _copy_pair_tab_with_rename(
                         ss, new_ss, construction, rename_map, param_names, param_values,
                         split_element_map=split_element_map, criterion_col=criterion_col,
+                        class_name=class_name,
                     )
                     tab_names.append(construction)
                     new_construction_params[construction] = {

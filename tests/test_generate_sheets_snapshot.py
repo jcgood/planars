@@ -66,7 +66,7 @@ from coding import drive_doorway
 from coding import generate_notebooks as gn
 from coding import generate_sheets as gs
 from command_runner import run_command
-from fake_drive import (FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID,
+from fake_drive import (FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID, point_coded_data_at,
                         ROOT_FOLDER_ID, api_error)
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
@@ -161,7 +161,7 @@ def env(monkeypatch, tmp_path):
     saved_configs: List[dict] = []
     notebook_calls: List[bool] = []
 
-    monkeypatch.setattr(gs, "CODED_DATA", coded)
+    point_coded_data_at(monkeypatch, coded)
     monkeypatch.setattr(gs, "ROOT", tmp_path)
     monkeypatch.setattr(gs, "MANIFEST_PATH", tmp_path / "sheets_manifest.json")
     monkeypatch.setattr(gs, "_load_drive_config", FakeDriveDoorway.drive_config)

@@ -7,6 +7,7 @@ test is about watch mode, and checks the door refused or allowed it.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 
 import pytest
@@ -43,6 +44,16 @@ def _tab(door, sheet_id, title):
 
 def _col(ws, name):
     return ws.get_all_values()[0].index(name)
+
+
+@contextlib.contextmanager
+def _running_out_of_shape(command="update-sheets"):
+    """Run as ``command`` writes no real command makes (blanking a tab,
+    renaming an element to nonsense), testing some other rule. They leave the
+    sheet out of shape, which rule 6 reports when the command ends."""
+    with pytest.raises(DoorViolation, match="shape at the end of the command"):
+        with drive_door.running(command, APPLY):
+            yield
 
 
 # -- may this command write at all --------------------------------------------
@@ -124,7 +135,10 @@ def test_the_tooling_may_change_its_own_columns(env):
     _, door, sheet_id, _ = env
     with drive_door.running("update-sheets", APPLY):
         ws = _tab(door, sheet_id, "general")
-        ws.update_cell(2, _col(ws, "Element") + 1, "renamed")
+        c = _col(ws, "Element")
+        was = ws.get_all_values()[1][c]
+        ws.update_cell(2, c + 1, "renamed")
+        ws.update_cell(2, c + 1, was)     # back again, or rule 6 reports the shape
 
 
 def test_clearing_or_cutting_an_annotated_tab_is_refused(env):
@@ -145,7 +159,7 @@ def test_clearing_or_cutting_an_annotated_tab_is_refused(env):
 
 def test_replacing_says_the_loss_is_meant(env):
     fake, door, sheet_id, _ = env
-    with drive_door.running("update-sheets", APPLY):
+    with _running_out_of_shape():
         ws = _tab(door, sheet_id, "general")
         with drive_door.replacing(ws, "a test that means it"):
             ws.clear()
@@ -225,7 +239,7 @@ def test_a_class_sheet_is_shared_only_with_its_annotator_by_name(env):
 def test_a_busy_drive_is_retried(env):
     fake, door, sheet_id, _ = env
     fake.fail_after("update_cell", 1, exc=api_error(429, "rate limited"))
-    with drive_door.running("update-sheets", APPLY):
+    with _running_out_of_shape():
         ws = _tab(door, sheet_id, "general")
         ws.update_cell(2, _col(ws, "Element") + 1, "renamed")
     assert fake.spreadsheet(sheet_id).worksheet("general").get_all_values()[1][0] == "renamed"
@@ -288,7 +302,7 @@ def _answered_row(ws):
 
 def test_replacing_saves_the_tab_first(env):
     _, door, sheet_id, _ = env
-    with drive_door.running("update-sheets", APPLY):
+    with _running_out_of_shape():
         ws = _tab(door, sheet_id, "general")
         before = ws.get_all_values()
         with drive_door.replacing(ws, "a test that means it"):
@@ -356,7 +370,7 @@ def _log():
 
 def test_each_tab_written_gets_one_provenance_line(env):
     _, door, sheet_id, _ = env
-    with drive_door.running("update-sheets", APPLY):
+    with _running_out_of_shape():
         ws = _tab(door, sheet_id, "general")
         c = _col(ws, "Element")
         ws.update_cell(2, c + 1, "renamed")
@@ -409,7 +423,7 @@ def test_labels_round_trip():
 def test_every_create_writes_its_label_and_the_label_places_the_file(env):
     fake, door, _, _ = env
     identity = drive_door.class_sheet(LANG, "noninterruption")
-    with drive_door.running("update-sheets", APPLY):
+    with _running_out_of_shape():                       # made, never filled in
         ss = door.create_spreadsheet("noninterruption_stan1293", identity=identity)
         folder_id = door.get_or_create_folder("_archived", "fake_root_folder",
                                               identity=drive_door.folder("archive", LANG))
@@ -542,7 +556,103 @@ def test_renaming_a_tab_through_the_door_drops_its_labels(env):
     fake, door, sheet_id, _ = env
     with drive_door.running("update-sheets", APPLY):
         _touch(door, sheet_id)
-    with drive_door.running("update-sheets", APPLY):
+    with _running_out_of_shape():
         _tab(door, sheet_id, "general").update_title("renamed")
-    # Not a tab the spec lists, so it is left unlabelled for rule 6 to report.
+    # Not a tab the spec lists, so it is left unlabelled, and rule 6 reports it.
     assert _tab_labels(fake, sheet_id)["renamed"] == {}
+
+
+# -- rule 6: shape at the end of the command (unit 5d) -----------------------------
+
+def _drop_rows_by_hand(fake, sheet_id, start, end):
+    """Delete rows of the recorded general tab outside the door, as drift
+    that was there before any command ran."""
+    ss = fake.spreadsheet(sheet_id)
+    ss.batch_update({"requests": [{"deleteDimension": {"range": {
+        "sheetId": ss.worksheet("general").id, "dimension": "ROWS",
+        "startIndex": start, "endIndex": end}}}]})
+
+
+def test_a_row_the_spec_does_not_have_is_reported(env):
+    _, door, sheet_id, _ = env
+    with pytest.raises(DoorViolation, match="row the spec does not have: Element 'stray'"):
+        with drive_door.running("update-sheets", APPLY):
+            ws = _tab(door, sheet_id, "general")
+            header = ws.get_all_values()[0]
+            stray = {"Element": "stray", "Position_Name": "v:test", "Position_Number": "99"}
+            ws.append_rows([[stray.get(c, "") for c in header]])
+
+
+def test_tabs_put_out_of_order_are_reported(env):
+    _, door, sheet_id, _ = env
+    with pytest.raises(DoorViolation, match="tabs out of order"):
+        with drive_door.running("update-sheets", APPLY):
+            ss = door.open_spreadsheet(sheet_id)
+            ss.reorder_worksheets(list(reversed(ss.worksheets())))
+
+
+def test_a_class_sheet_made_and_left_empty_is_reported(env):
+    _, door, _, _ = env
+    with pytest.raises(DoorViolation, match="noninterruption_stan1293/general: tab missing"):
+        with drive_door.running("update-sheets", APPLY):
+            door.create_spreadsheet("noninterruption_stan1293",
+                                    identity=drive_door.class_sheet(LANG, "noninterruption"))
+
+
+def test_drift_already_there_is_not_blamed_on_the_command(env):
+    fake, door, sheet_id, _ = env
+    rows = fake.spreadsheet(sheet_id).worksheet("general").get_all_values()
+    _drop_rows_by_hand(fake, sheet_id, 1, 3)               # two rows already missing
+    with drive_door.running("update-sheets", APPLY):       # an unrelated write
+        ws = _tab(door, sheet_id, "general")
+        c = _col(ws, "Comments")
+        empty = next(i for i, r in enumerate(ws.get_all_values()) if i and r[c] == "")
+        ws.update_cell(empty + 1, c + 1, "a note")
+    with drive_door.running("update-sheets", APPLY):       # puts one of the two back
+        _tab(door, sheet_id, "general").append_rows([rows[1]])
+
+
+def test_a_dry_run_is_not_held_to_the_shape(env):
+    _, door, sheet_id, _ = env
+    with drive_door.running("import-sheets", DRY):
+        ss = door.open_spreadsheet(sheet_id)
+        with drive_door.always_on("highlighting"):
+            ss.batch_update({"requests": [{"repeatCell": {
+                "range": {"sheetId": ss.worksheet("general").id}, "cell": {},
+                "fields": "userEnteredFormat.backgroundColor"}}]})
+    # Ends without a violation: a dry run's highlights change no shape, so
+    # the sheet's metadata is not even read.
+
+
+def test_in_watch_mode_shape_problems_go_into_the_issue(env, github):
+    fake, _, sheet_id, _ = env
+    drive_doorway.set_doorway(CheckedDoorway(fake, mode=drive_door.WATCH))
+    door = drive_doorway.get_doorway()
+    with drive_door.running("update-sheets", APPLY):
+        ss = door.open_spreadsheet(sheet_id)
+        ss.reorder_worksheets(list(reversed(ss.worksheets())))
+    filed = github.list_issues(drive_door.VIOLATION_LABEL)
+    assert len(filed) == 1
+    assert "tabs out of order" in github.issue(filed[0]["number"])["body"]
+
+
+# -- reads the door adds (Q6) ------------------------------------------------------
+
+def test_many_requests_to_one_tab_read_its_tab_list_once(env, monkeypatch):
+    """import-sheets paints one request per invalid cell; finding each one's
+    tab by re-reading the tab list exhausted Google's read quota (#306)."""
+    fake, door, sheet_id, _ = env
+    inner = fake.spreadsheet(sheet_id)
+    reads = []
+    real = inner.worksheets
+    monkeypatch.setattr(inner, "worksheets", lambda: reads.append(1) or real())
+    with drive_door.running("import-sheets", DRY):
+        ss = door.open_spreadsheet(sheet_id)
+        tab = ss.worksheet("general").id
+        with drive_door.always_on("highlighting"):
+            ss.batch_update({"requests": [{"updateCells": {
+                "range": {"sheetId": tab, "startRowIndex": r, "endRowIndex": r + 1,
+                          "startColumnIndex": 3, "endColumnIndex": 4},
+                "rows": [{"values": [{"userEnteredFormat": {}}]}],
+                "fields": "userEnteredFormat.backgroundColor"}} for r in range(1, 60)]})
+    assert len(reads) == 1

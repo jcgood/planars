@@ -85,7 +85,9 @@ def _construction_entry(class_name: str, construction: str) -> dict:
     raise KeyError(f"diagnostic_classes.yaml has no class {class_name!r}")
 
 
-ROW_TYPES = (ELEMENT_ROWS, "pair_rows", "keyed_rows")
+PAIR_ROWS = "pair_rows"
+KEYED_ROWS = "keyed_rows"
+ROW_TYPES = (ELEMENT_ROWS, PAIR_ROWS, KEYED_ROWS)
 
 
 # The rules, applied to one construction's entry in diagnostic_classes.yaml

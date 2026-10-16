@@ -112,21 +112,30 @@ def use_frozen_coded_data(monkeypatch, tmp_path: Path) -> Path:
     can never alter the saved data. Every module is imported first, so one the
     command only imports later is redirected too. Returns the copy's path.
     """
-    import importlib
-    import pkgutil
     import shutil
-
-    import coding
 
     coded = tmp_path / "coded_data"
     shutil.copytree(FROZEN_CODED_DATA, coded)
+    point_coded_data_at(monkeypatch, coded)
+    return coded
+
+
+def point_coded_data_at(monkeypatch, coded: Path) -> None:
+    """Point the ``CODED_DATA`` setting of every ``coding/`` module at
+    ``coded``. Every module, not only the command's: the Drive door builds
+    its specs from the same folder the command reads, and a test that
+    redirects one module leaves the others reading the real coded_data/."""
+    import importlib
+    import pkgutil
+
+    import coding
+
     for info in pkgutil.iter_modules(coding.__path__):
         if info.name.startswith("__"):
             continue
         module = importlib.import_module(f"coding.{info.name}")
         if hasattr(module, "CODED_DATA"):
             monkeypatch.setattr(module, "CODED_DATA", coded)
-    return coded
 
 
 # ---------------------------------------------------------------------------
@@ -190,9 +199,10 @@ def _sheet_prefix(range_name: str) -> Optional[str]:
 
     Unprefixed matters: the Sheets values API resolves a bare ``"D5"`` against
     the **first sheet** of the spreadsheet, not against whichever tab the
-    caller had in hand. ``restructure_sheets._cascade_rename_pair_tab`` builds
-    exactly such bare ranges, so the fake reproduces that resolution rather
-    than helpfully routing the write to the tab the caller meant.
+    caller had in hand. ``restructure_sheets._cascade_rename_pair_tab`` built
+    exactly such bare ranges until 2026-10-15, so the fake reproduces that
+    resolution rather than helpfully routing the write to the tab the caller
+    meant.
     """
     if "!" not in range_name:
         return None
@@ -488,13 +498,21 @@ class FakeSpreadsheet:
         return [dict(p) for p in self._protected_ranges if p["range"].get("sheetId") == sheetid]
 
     def fetch_sheet_metadata(self, params: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
-        """Each tab's properties and developer metadata. The field mask is not
-        interpreted: the only caller (the Drive door) asks for exactly this."""
-        return {"spreadsheetId": self.id, "sheets": [
-            {"properties": {"sheetId": ws.id, "title": ws.title, "index": i},
-             "developerMetadata": [dict(m) for m in self._developer_metadata
-                                   if m["location"].get("sheetId") == ws.id]}
-            for i, ws in enumerate(self._worksheets)]}
+        """Each tab's properties, developer metadata and protected ranges. The
+        field mask is not interpreted: the only caller (the Drive door) asks
+        for no more than this. Like Google, a key with nothing in it is left out."""
+        sheets = []
+        for i, ws in enumerate(self._worksheets):
+            sheet: Dict[str, Any] = {
+                "properties": {"sheetId": ws.id, "title": ws.title, "index": i},
+                "developerMetadata": [dict(m) for m in self._developer_metadata
+                                      if m["location"].get("sheetId") == ws.id]}
+            protected = [dict(p) for p in self._protected_ranges
+                         if p["range"].get("sheetId") == ws.id]
+            if protected:
+                sheet["protectedRanges"] = protected
+            sheets.append(sheet)
+        return {"spreadsheetId": self.id, "sheets": sheets}
 
     def _worksheet_by_sheet_id(self, sheet_id: int) -> FakeWorksheet:
         for ws in self._worksheets:

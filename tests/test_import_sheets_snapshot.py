@@ -118,7 +118,7 @@ from coding import drive_doorway
 from coding import import_sheets as is_
 from coding import validate_coding as vc
 from command_runner import run_command
-from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID
+from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID, point_coded_data_at
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -257,8 +257,9 @@ def env(monkeypatch, tmp_path):
     # imported copy alone leaves them looking at the real drive_config.json.
     monkeypatch.setattr(drive_module, "_load_drive_config", FakeDriveDoorway.drive_config)
     # revalidate_sheets() reads local TSVs from validate_coding's own
-    # CODED_DATA constant, not this file's ROOT.
-    monkeypatch.setattr(vc, "CODED_DATA", coded)
+    # CODED_DATA constant, not this file's ROOT; the Drive door reads its
+    # own too. Every module's is pointed at the private tree.
+    point_coded_data_at(monkeypatch, coded)
     drive_doorway.set_doorway(doorway)
 
     def run(argv: List[str]) -> Tuple[str, Optional[int]]:

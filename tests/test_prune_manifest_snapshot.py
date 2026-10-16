@@ -38,7 +38,7 @@ import pytest
 from coding import drive as drive_module
 from coding import drive_doorway, prune_manifest
 from command_runner import run_command
-from fake_drive import (FROZEN_CODED_DATA, MANIFEST_FILE_ID, ROOT_FOLDER_ID,
+from fake_drive import (FROZEN_CODED_DATA, MANIFEST_FILE_ID, ROOT_FOLDER_ID, point_coded_data_at,
                         FakeDriveDoorway, api_error)
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -95,7 +95,7 @@ def env(monkeypatch, tmp_path):
             FROZEN_CODED_DATA / lang / "lang_setup" / f"diagnostics_{lang}.yaml",
             setup / f"diagnostics_{lang}.yaml")
 
-    monkeypatch.setattr(prune_manifest, "CODED_DATA", coded)
+    point_coded_data_at(monkeypatch, coded)
     monkeypatch.setattr(prune_manifest, "MANIFEST_ARCHIVES", tmp_path / "manifest_archives")
     monkeypatch.setattr(prune_manifest, "ROOT", tmp_path)
     # The real drive_config.json holds live IDs; a test must never write it.

@@ -53,10 +53,9 @@ import pytest
 from coding import drive as drive_module
 from coding import drive_doorway
 from coding import generate_notebooks as gn
-from coding import generate_sheets as gs
 from coding import sync_params as sp
 from command_runner import run_command
-from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID
+from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID, point_coded_data_at
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
 
@@ -158,8 +157,7 @@ def env(monkeypatch, tmp_path):
     saved_configs: List[dict] = []
     notebook_calls: List[bool] = []
 
-    monkeypatch.setattr(sp, "CODED_DATA", coded)
-    monkeypatch.setattr(gs, "CODED_DATA", coded)
+    point_coded_data_at(monkeypatch, coded)
     monkeypatch.setattr(sp, "_load_drive_config", FakeDriveDoorway.drive_config)
     monkeypatch.setattr(drive_module, "_load_drive_config",
                         FakeDriveDoorway.drive_config)
