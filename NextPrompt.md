@@ -35,8 +35,8 @@ answers in its § 7, what was built in its § 8. 5a (the sheet spec), 5b
 class sheets stay in watch mode until the design doc's § 4 rule is met (at
 least a week of clean daily refreshes); meanwhile the rest of unit 3 and
 unit 8 (design doc § 5, item 5), and #309 (annotators never hear about
-invalid values on ready-for-review tabs; it needs Jeff's call on how to
-reach a collaborator with no GitHub account). Then 5f (enforce for class sheets, then
+invalid values on ready-for-review tabs; plan agreed, in the issue body;
+one live step, a test Drive comment, needs Jeff's approval). Then 5f (enforce for class sheets, then
 the other kinds).
 Check for an open `door-violation` issue first: each line is a command bug
 or a spec gap to fix.
