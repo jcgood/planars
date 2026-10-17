@@ -38,10 +38,12 @@ because until unit 20's fix no live command reported anything). Units 3,
 19 and 9's first half finished during it (2026-10-17; `coding/CLAUDE.md`
 waits for unit 6). Unit 8 is done and ran live cleanly (2026-10-17): the
 workflow now only sets up and runs `python -m coding daily-refresh --apply`
-(`coding/daily_refresh.py`). Still to do
-meanwhile: #309 (annotators never hear about invalid values on
-ready-for-review tabs; plan agreed, in the issue body; one live step, a test
-Drive comment, needs Jeff's approval).
+(`coding/daily_refresh.py`). #309 is built and committed locally,
+**not pushed** (state: the Phase 10 row of the progress doc). Waiting on
+Jeff for two live steps: `update-sheets --apply` to add the Needs fixing
+column to the live Status tabs (then `capture-drive-state --apply`,
+regenerate saved outputs, full suite, push), and one test Drive comment.
+Until the refreeze, `tests/test_sheet_spec.py` and the saved outputs fail.
 Then 5f (enforce for class sheets, then the other kinds).
 Check for an open `door-violation` issue first: each line is a command bug
 or a spec gap to fix.
