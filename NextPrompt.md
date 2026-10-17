@@ -38,13 +38,12 @@ because until unit 20's fix no live command reported anything). Units 3,
 19 and 9's first half finished during it (2026-10-17; `coding/CLAUDE.md`
 waits for unit 6). Unit 8 is done and ran live cleanly (2026-10-17): the
 workflow now only sets up and runs `python -m coding daily-refresh --apply`
-(`coding/daily_refresh.py`). #309 is built and committed locally,
-**not pushed** (state: the Phase 10 row of the progress doc). Waiting on
-Jeff for two live steps: `update-sheets --apply` to add the Needs fixing
-column to the live Status tabs (then `capture-drive-state --apply`,
-regenerate saved outputs, full suite, push), and one test Drive comment.
-Until the refreeze, `tests/test_sheet_spec.py` and the saved outputs fail.
-Then 5f (enforce for class sheets, then the other kinds).
+(`coding/daily_refresh.py`). #309 is live (2026-10-17). **Next:** after
+the first `sheet-validation` run, check that English's metrical sheet's
+Status tab lists the keystone value under Needs fixing and that a
+`needs-fixing` issue mentions Adam; then close #309 (what to look for: the
+Phase 10 row of the progress doc). Then 5f (enforce for class sheets, then
+the other kinds).
 Check for an open `door-violation` issue first: each line is a command bug
 or a spec gap to fix.
 Live step to name to Jeff for approval first: 5f's one-notebook sharing test.

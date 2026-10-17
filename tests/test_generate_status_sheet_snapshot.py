@@ -330,10 +330,14 @@ def test_a_pair_row_construction_gets_a_real_percentage(env):
     run(["gen", "--lang", "stan1293", "--apply"])
     ss = the_sheet(doorway, "status_stan1293")
     ws = ss.worksheet("Status")
-    row = status_row_index(ss, "nonpermutability", "general")
-    # The fixture's general tab is 23/135 filled -- not complete, so yellow.
+    # coreference/reflexivization is partly filled in the recording (and has
+    # stayed so across refreezes; nonpermutability/general, used until
+    # 2026-10-17, was finished by its annotator) -- so a real count, yellow.
+    row = status_row_index(ss, "coreference", "reflexivization")
+    text = ws.get_all_values()[row][2]
+    m = re.fullmatch(r"(\d+)/(\d+) filled \(\d+%\)", text)
+    assert m and 0 < int(m.group(1)) < int(m.group(2)), text
     assert ws._cell(row, 2).background == gen._YELLOW
-    assert ws.get_all_values()[row][2] == "23/135 filled (17%)"
 
 
 def test_green_for_a_fully_complete_pair_row_construction(env):

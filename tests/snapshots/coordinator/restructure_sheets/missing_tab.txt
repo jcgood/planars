@@ -58,7 +58,7 @@ Language: stan1293
     [general] (pair tab) no position renames needed
     Archived to _archived/nonpermutability_stan1293_v2
     [element_prescreening] wrote: carried 142, new blank 0, dropped 0
-    [general] (pair tab) copied 135 rows, 0 cell(s) renamed
+    [general] (pair tab) copied 23 rows, 0 cell(s) renamed
     Locked tab Instructions: create
     Locked tab Instructions: protect
     Locked tab Planar Structure: create

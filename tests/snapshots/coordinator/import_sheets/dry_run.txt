@@ -55,7 +55,7 @@ Language: stan1293
     [flapping] No changes → coded_data/stan1293/segmental/flapping.tsv
 
   metrical
-    WARNING: [WARNING] stress_domain row 125 'KEYSTONE': unexpected value 'n' in 'independence' for keystone row (expected 'na')
+    [ERROR] stress_domain row 125 'KEYSTONE': unexpected value 'n' in 'independence' for keystone row (expected 'na')
     [stress_domain] No changes → coded_data/stan1293/metrical/stress_domain.tsv
 
   free_occurrence
@@ -166,5 +166,3 @@ Language: synth0001
     [general] [backup] No changes → coded_data/synth0001/phrasal_accent/general.tsv
 
 Done. 0 file(s) written, 1 warning(s).
-
-1 blocking warning(s) found — see WARNING lines above.

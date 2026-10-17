@@ -16,10 +16,10 @@ stan1293
     [WARNING] general row 131 'her': unexpected value '\y' in 'free' (allowed: ['?', 'n', 'na', 'y'])
     (60 blank cell(s) — annotation in progress; use --verbose to list)
   [metrical/stress_domain] 1 issue(s):
-    [WARNING] stress_domain row 125 'KEYSTONE': unexpected value 'n' in 'independence' for keystone row (expected 'na')
+    [ERROR] stress_domain row 125 'KEYSTONE': unexpected value 'n' in 'independence' for keystone row (expected 'na')
   [noninterruption/general] no issues
   [nonpermutability/element_prescreening] no issues
-  [nonpermutability/general] 112 blank cell(s) — annotation in progress
+  [nonpermutability/general] no issues
   [phrasal_accent/prescreening] 142 blank cell(s) — annotation in progress
   [phrasal_accent/general] no issues
   [proform/do_so_substitution] 15 blank cell(s) — annotation in progress
@@ -32,5 +32,5 @@ stan1293
   [subspanrepetition/asyndeticPart] no issues
 
 ──────────────────────────────────────────────────
-Validated 23 sheet(s).  Data coding issues: 2
-Cell highlighting updated in Google Sheets.
+Validated 23 sheet(s).  Errors: 1
+Cell highlighting and each sheet's Status tab updated in Google Sheets.

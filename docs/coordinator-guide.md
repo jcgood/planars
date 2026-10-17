@@ -121,6 +121,14 @@ git pull
      annotation_status: planned   # planned | in-progress | complete
      notes: ""
    ```
+   If the annotator is new, add them to `coded_data/people.yaml` (private planars-data), keyed by the name exactly as `languages.yaml` writes it: their `email` (the sheets are shared with it), and their `github` username if they have one. Commit and push it in `coded_data/`.
+   ```yaml
+   Annotator Name:
+     email: annotator@example.org
+     github: their-username   # leave out if they have none
+   ```
+   With a GitHub username, they hear about values to fix by an @-mention on a `needs-fixing` issue. Without one, they hear by a comment on their spreadsheet that names their address, which makes Google email them (`coding/annotator_notices.py`, issue #309). **That second route has not yet been tried live**: for the first annotator without GitHub, check with them that the email arrives the first time they have something to fix.
+
    Commit `schemas/languages.yaml` to the `planars` repo before running `generate-sheets` — this ensures display names appear correctly in notebooks and charts:
    ```bash
    git add schemas/languages.yaml

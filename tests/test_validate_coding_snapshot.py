@@ -241,11 +241,21 @@ def set_status(doorway, lang: str, class_name: str, construction: str, value: st
 
 
 def add_problems_column(doorway, lang: str, class_name: str) -> None:
-    """Give the fake's Status tab the column update-sheets adds (the recorded
-    sheets predate it)."""
+    """Make sure the fake's Status tab has the column update-sheets adds
+    (recordings made before 2026-10-17 lack it)."""
     ws = doorway.spreadsheet(sheet_id(doorway, lang, class_name)).worksheet(vc.STATUS_TAB)
-    width = len(ws.get_all_values()[0])
-    ws.update([[vc.STATUS_PROBLEMS_COLUMN]], vc.rowcol_to_a1(1, width + 1))
+    header = ws.get_all_values()[0]
+    if vc.STATUS_PROBLEMS_COLUMN not in header:
+        ws.update([[vc.STATUS_PROBLEMS_COLUMN]], vc.rowcol_to_a1(1, len(header) + 1))
+
+
+def remove_problems_column(doorway, lang: str, class_name: str) -> None:
+    """Make the fake's Status tab look like one made before the column existed."""
+    ws = doorway.spreadsheet(sheet_id(doorway, lang, class_name)).worksheet(vc.STATUS_TAB)
+    rows = ws.get_all_values()
+    drop = rows[0].index(vc.STATUS_PROBLEMS_COLUMN)
+    ws.clear()
+    ws.update([r[:drop] + r[drop + 1:] for r in rows], "A1")
 
 
 def problems_cell(doorway, lang: str, class_name: str, construction: str) -> str:
@@ -298,6 +308,7 @@ def test_an_invalid_value_on_a_ready_tab_is_an_error_listed_in_the_status_tab(en
 
 def test_a_status_tab_without_the_problems_column_is_reported_not_written(env):
     doorway, coded, run_main = env
+    remove_problems_column(doorway, "arao1248", "ciscategorial")
     set_status(doorway, "arao1248", "ciscategorial", "general", vc.STATUS_READY)
     set_cell(coded, "arao1248", "ciscategorial", "general",
             "Element", "ADVERBIALS", "V-combines", "maybe")

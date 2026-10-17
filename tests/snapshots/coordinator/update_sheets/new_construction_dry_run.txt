@@ -5,6 +5,7 @@ DRY RUN — Languages: ['arao1248', 'stan1293', 'synth0001']
   ciscategorial
     [general] up to date
     [second_frame] Would add new tab (4 criterion/criteria)
+    would Status tab: add row(s) for ['second_frame']
 
   noninterruption
     [general] up to date

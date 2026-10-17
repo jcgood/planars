@@ -1,6 +1,6 @@
 SUMMARY
     48  add_worksheet
-   359  batch_request
+   370  batch_request
      1  create_file
     22  create_permission
     11  create_spreadsheet
@@ -11,7 +11,7 @@ SUMMARY
     34  update_file
     14    └─ addProtectedRange
     96    └─ createDeveloperMetadata
-   144    └─ repeatCell
+   155    └─ repeatCell
     57    └─ setDataValidation
     11    └─ updateDimensionProperties
     37    └─ updateSheetProperties
@@ -147,14 +147,15 @@ SHEET OPERATIONS
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 2}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
   fake_ss_0003  tab=Status
-    add_worksheet: rows=3, cols=2, index=None, sheet_id=3
-    update: anchor A1 raw=True 2x2
-      | ['Construction', 'Status']
-      | ['general', 'in-progress']
+    add_worksheet: rows=3, cols=3, index=None, sheet_id=3
+    update: anchor A1 raw=True 2x3
+      | ['Construction', 'Status', 'Needs fixing']
+      | ['general', 'in-progress', '']
 
   fake_ss_0003  tab=sheetId=3
     updateSheetProperties: (whole sheet)
-    repeatCell: rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 2 (BEYOND HEADER) rows 1-None
     setDataValidation: col 1 (BEYOND HEADER) rows 1-2 -> ['in-progress', 'ready-for-review'] (strict=True)
 
   fake_ss_0006  tab=-
@@ -265,16 +266,17 @@ SHEET OPERATIONS
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 5}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
   fake_ss_0006  tab=Status
-    add_worksheet: rows=6, cols=2, index=None, sheet_id=6
-    update: anchor A1 raw=True 5x2
-      | ['Construction', 'Status']
-      | ['andCoordination', 'in-progress']
-      | ['control', 'in-progress']
+    add_worksheet: rows=6, cols=3, index=None, sheet_id=6
+    update: anchor A1 raw=True 5x3
+      | ['Construction', 'Status', 'Needs fixing']
+      | ['andCoordination', 'in-progress', '']
+      | ['control', 'in-progress', '']
       | ...
 
   fake_ss_0006  tab=sheetId=6
     updateSheetProperties: (whole sheet)
-    repeatCell: rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 2 (BEYOND HEADER) rows 1-None
     setDataValidation: col 1 (BEYOND HEADER) rows 1-5 -> ['in-progress', 'ready-for-review'] (strict=True)
 
   fake_ss_0009  tab=-
@@ -323,14 +325,15 @@ SHEET OPERATIONS
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 2}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
   fake_ss_0009  tab=Status
-    add_worksheet: rows=3, cols=2, index=None, sheet_id=3
-    update: anchor A1 raw=True 2x2
-      | ['Construction', 'Status']
-      | ['general', 'in-progress']
+    add_worksheet: rows=3, cols=3, index=None, sheet_id=3
+    update: anchor A1 raw=True 2x3
+      | ['Construction', 'Status', 'Needs fixing']
+      | ['general', 'in-progress', '']
 
   fake_ss_0009  tab=sheetId=3
     updateSheetProperties: (whole sheet)
-    repeatCell: rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 2 (BEYOND HEADER) rows 1-None
     setDataValidation: col 1 (BEYOND HEADER) rows 1-2 -> ['in-progress', 'ready-for-review'] (strict=True)
 
   fake_ss_0012  tab=-
@@ -385,14 +388,15 @@ SHEET OPERATIONS
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 2}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
   fake_ss_0012  tab=Status
-    add_worksheet: rows=3, cols=2, index=None, sheet_id=3
-    update: anchor A1 raw=True 2x2
-      | ['Construction', 'Status']
-      | ['stress_domain', 'in-progress']
+    add_worksheet: rows=3, cols=3, index=None, sheet_id=3
+    update: anchor A1 raw=True 2x3
+      | ['Construction', 'Status', 'Needs fixing']
+      | ['stress_domain', 'in-progress', '']
 
   fake_ss_0012  tab=sheetId=3
     updateSheetProperties: (whole sheet)
-    repeatCell: rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 2 (BEYOND HEADER) rows 1-None
     setDataValidation: col 1 (BEYOND HEADER) rows 1-2 -> ['in-progress', 'ready-for-review'] (strict=True)
 
   fake_ss_0015  tab=-
@@ -424,8 +428,8 @@ SHEET OPERATIONS
     repeatCell: col 3 (BEYOND HEADER) rows 0-1
 
   fake_ss_0015  tab=general
-    add_worksheet: rows=146, cols=7, index=None, sheet_id=2
-    update: anchor A1 raw=True 144x5
+    add_worksheet: rows=26, cols=7, index=None, sheet_id=2
+    update: anchor A1 raw=True 24x5
       | ['Element_A', 'Element_B', 'scopal', 'Source', 'Comments']
       | ['AD-S', 'AD-VP', 'n', '', '']
       | ['AD-S', 'KEYSTONE', 'n', '', '']
@@ -434,7 +438,7 @@ SHEET OPERATIONS
   fake_ss_0015  tab=sheetId=2
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
-    setDataValidation: col 2 (BEYOND HEADER) rows 1-144 -> ['y', 'n', 'both'] (strict=False)
+    setDataValidation: col 2 (BEYOND HEADER) rows 1-24 -> ['y', 'n', 'both'] (strict=False)
 
   fake_ss_0015  tab=Sheet1
     del_worksheet: 
@@ -473,15 +477,16 @@ SHEET OPERATIONS
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 4}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
   fake_ss_0015  tab=Status
-    add_worksheet: rows=4, cols=2, index=None, sheet_id=5
-    update: anchor A1 raw=True 3x2
-      | ['Construction', 'Status']
-      | ['element_prescreening', 'in-progress']
-      | ['general', 'in-progress']
+    add_worksheet: rows=4, cols=3, index=None, sheet_id=5
+    update: anchor A1 raw=True 3x3
+      | ['Construction', 'Status', 'Needs fixing']
+      | ['element_prescreening', 'in-progress', '']
+      | ['general', 'in-progress', '']
 
   fake_ss_0015  tab=sheetId=5
     updateSheetProperties: (whole sheet)
-    repeatCell: rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 2 (BEYOND HEADER) rows 1-None
     setDataValidation: col 1 (BEYOND HEADER) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)
 
   fake_ss_0018  tab=-
@@ -548,15 +553,16 @@ SHEET OPERATIONS
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 3}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
   fake_ss_0018  tab=Status
-    add_worksheet: rows=4, cols=2, index=None, sheet_id=4
-    update: anchor A1 raw=True 3x2
-      | ['Construction', 'Status']
-      | ['aspiration_prominence', 'in-progress']
-      | ['flapping', 'in-progress']
+    add_worksheet: rows=4, cols=3, index=None, sheet_id=4
+    update: anchor A1 raw=True 3x3
+      | ['Construction', 'Status', 'Needs fixing']
+      | ['aspiration_prominence', 'in-progress', '']
+      | ['flapping', 'in-progress', '']
 
   fake_ss_0018  tab=sheetId=4
     updateSheetProperties: (whole sheet)
-    repeatCell: rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 2 (BEYOND HEADER) rows 1-None
     setDataValidation: col 1 (BEYOND HEADER) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)
 
   fake_ss_0021  tab=-
@@ -611,14 +617,15 @@ SHEET OPERATIONS
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 2}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
   fake_ss_0021  tab=Status
-    add_worksheet: rows=3, cols=2, index=None, sheet_id=3
-    update: anchor A1 raw=True 2x2
-      | ['Construction', 'Status']
-      | ['general', 'in-progress']
+    add_worksheet: rows=3, cols=3, index=None, sheet_id=3
+    update: anchor A1 raw=True 2x3
+      | ['Construction', 'Status', 'Needs fixing']
+      | ['general', 'in-progress', '']
 
   fake_ss_0021  tab=sheetId=3
     updateSheetProperties: (whole sheet)
-    repeatCell: rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 2 (BEYOND HEADER) rows 1-None
     setDataValidation: col 1 (BEYOND HEADER) rows 1-2 -> ['in-progress', 'ready-for-review'] (strict=True)
 
   fake_ss_0024  tab=-
@@ -731,16 +738,17 @@ SHEET OPERATIONS
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 6}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
   fake_ss_0024  tab=Status
-    add_worksheet: rows=6, cols=2, index=None, sheet_id=7
-    update: anchor A1 raw=True 5x2
-      | ['Construction', 'Status']
-      | ['prescreening', 'in-progress']
-      | ['reflexivization', 'in-progress']
+    add_worksheet: rows=6, cols=3, index=None, sheet_id=7
+    update: anchor A1 raw=True 5x3
+      | ['Construction', 'Status', 'Needs fixing']
+      | ['prescreening', 'in-progress', '']
+      | ['reflexivization', 'in-progress', '']
       | ...
 
   fake_ss_0024  tab=sheetId=7
     updateSheetProperties: (whole sheet)
-    repeatCell: rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 2 (BEYOND HEADER) rows 1-None
     setDataValidation: col 1 (BEYOND HEADER) rows 1-5 -> ['in-progress', 'ready-for-review'] (strict=True)
 
   fake_ss_0027  tab=-
@@ -803,15 +811,16 @@ SHEET OPERATIONS
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 3}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
   fake_ss_0027  tab=Status
-    add_worksheet: rows=4, cols=2, index=None, sheet_id=4
-    update: anchor A1 raw=True 3x2
-      | ['Construction', 'Status']
-      | ['do_so_substitution', 'in-progress']
-      | ['vp_ellipsis', 'in-progress']
+    add_worksheet: rows=4, cols=3, index=None, sheet_id=4
+    update: anchor A1 raw=True 3x3
+      | ['Construction', 'Status', 'Needs fixing']
+      | ['do_so_substitution', 'in-progress', '']
+      | ['vp_ellipsis', 'in-progress', '']
 
   fake_ss_0027  tab=sheetId=4
     updateSheetProperties: (whole sheet)
-    repeatCell: rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 2 (BEYOND HEADER) rows 1-None
     setDataValidation: col 1 (BEYOND HEADER) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)
 
   fake_ss_0030  tab=-
@@ -874,15 +883,16 @@ SHEET OPERATIONS
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 3}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
   fake_ss_0030  tab=Status
-    add_worksheet: rows=4, cols=2, index=None, sheet_id=4
-    update: anchor A1 raw=True 3x2
-      | ['Construction', 'Status']
-      | ['prescreening', 'in-progress']
-      | ['general', 'in-progress']
+    add_worksheet: rows=4, cols=3, index=None, sheet_id=4
+    update: anchor A1 raw=True 3x3
+      | ['Construction', 'Status', 'Needs fixing']
+      | ['prescreening', 'in-progress', '']
+      | ['general', 'in-progress', '']
 
   fake_ss_0030  tab=sheetId=4
     updateSheetProperties: (whole sheet)
-    repeatCell: rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 2 (BEYOND HEADER) rows 1-None
     setDataValidation: col 1 (BEYOND HEADER) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)
 
   fake_ss_0033  tab=-
@@ -982,14 +992,15 @@ SHEET OPERATIONS
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 5}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
   fake_ss_0033  tab=Status
-    add_worksheet: rows=5, cols=2, index=None, sheet_id=6
-    update: anchor A1 raw=True 4x2
-      | ['Construction', 'Status']
-      | ['elements', 'in-progress']
-      | ['morphemes', 'in-progress']
+    add_worksheet: rows=5, cols=3, index=None, sheet_id=6
+    update: anchor A1 raw=True 4x3
+      | ['Construction', 'Status', 'Needs fixing']
+      | ['elements', 'in-progress', '']
+      | ['morphemes', 'in-progress', '']
       | ...
 
   fake_ss_0033  tab=sheetId=6
     updateSheetProperties: (whole sheet)
-    repeatCell: rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 2 (BEYOND HEADER) rows 1-None
     setDataValidation: col 1 (BEYOND HEADER) rows 1-4 -> ['in-progress', 'ready-for-review'] (strict=True)

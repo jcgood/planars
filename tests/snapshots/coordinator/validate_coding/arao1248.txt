@@ -12,5 +12,5 @@ arao1248
   [subspanrepetition/tso_clause_linkage] no issues
 
 ──────────────────────────────────────────────────
-Validated 7 sheet(s).  Data coding issues: 0
-All data coding issues cleared. (Pink highlighting for blank cells preserved.)
+Validated 7 sheet(s).  Errors: 0
+No errors. (Pink highlighting for blank cells, and for invalid values on in-progress tabs, preserved.)

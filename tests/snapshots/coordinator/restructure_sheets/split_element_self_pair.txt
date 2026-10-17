@@ -65,7 +65,7 @@ Language: stan1293
     [element_prescreening] split: her -> heracc, herdat (2 new, breadcrumbed to archived sheet)
     Archived to _archived/nonpermutability_stan1293_v2
     [element_prescreening] wrote: carried 140, new blank 3, dropped 2
-    [general] (pair tab) copied 144 rows, 0 cell(s) renamed, 16 row(s) split (blank, old judgment quoted in Comments), 1 self-pair row(s) on a split element — NEEDS MANUAL REVIEW, not auto-handled
+    [general] (pair tab) copied 24 rows, 0 cell(s) renamed, 1 self-pair row(s) on a split element — NEEDS MANUAL REVIEW, not auto-handled
     Locked tab Instructions: create
     Locked tab Instructions: protect
     Locked tab Planar Structure: create
