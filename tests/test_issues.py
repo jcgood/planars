@@ -63,6 +63,17 @@ def test_file_creates_when_nothing_is_open(github):
     assert created and github.issue(number)["labels"] == ["import-error"]
 
 
+def test_filing_under_a_label_github_lacks_creates_it_from_the_registry(github):
+    # A newly registered label reaches GitHub only at the next daily sync;
+    # filing must not wait for it (#310).
+    entry = next(e for e in issues.load_labels() if e["name"] == "needs-fixing")
+    issues.create("needs-fixing", "Values to fix", "body")
+    assert github.labels == [{"name": "needs-fixing", "color": str(entry["color"]),
+                              "description": entry["description"]}]
+    issues.create("needs-fixing", "Values to fix again", "body")
+    assert len(github.calls_of("create_label")) == 1
+
+
 def test_file_comments_on_the_open_issue_by_default(github):
     open_number = github.seed_issue("Import error (yesterday)", "import-error")
     assert issues.file_issue("import-error", "Import error (today)", "new") == (open_number, False)

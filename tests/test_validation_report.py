@@ -169,11 +169,19 @@ def test_structural_errors_get_structural_advice(  ):
     assert "Do not fix this by editing cells" in body
 
 
-def test_crash_body_says_no_data_needs_correcting():
+def test_crash_body_with_no_errors_says_later_sheets_went_unchecked():
     body = build_issue_body(parse_report(CRASH_LOG), "2026-08-02")
     assert "infrastructure error" in body
-    assert "_No annotation data needs to be corrected._" in body
+    assert "No errors were found before the crash" in body
     assert "exceeds grid limits" in body
+
+
+def test_crash_body_lists_errors_found_before_the_crash():
+    """#310 said no data needed correcting while the log held two errors."""
+    body = build_issue_body(parse_report(CRASH_LOG + ERROR_LOG), "2026-10-17")
+    assert "## Errors found before the crash" in body
+    assert "missing structural column 'Element_A'" in body
+    assert "No annotation data needs to be corrected" not in body
 
 
 def test_full_log_is_always_included():

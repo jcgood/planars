@@ -220,7 +220,17 @@ def build_issue_body(report: ValidationReport, date: str) -> str:
         out.append("The validation script crashed with an unhandled exception — "
                    "this is an infrastructure error, not a data coding problem.\n")
         out.append(f"```\n{report.crash}\n```\n")
-        out.append("_No annotation data needs to be corrected._\n")
+        if report.errors:
+            # The crash stopped the run, not the checking before it: these
+            # still need fixing, and sheets after the crash went unchecked.
+            out.append("\n## Errors found before the crash\n")
+            for count, issue in _collapse(report.errors):
+                out.append(_format_group(count, issue))
+            out.append("\n_The run stopped early, so sheets after the crash "
+                       "were not checked._\n")
+        else:
+            out.append("_No errors were found before the crash, but the sheets "
+                       "after it were not checked._\n")
         out.append("\n## What to do\n")
         out.append("If this is a transient API error it will clear on the next "
                    "scheduled run, and the issue closes automatically. If it "

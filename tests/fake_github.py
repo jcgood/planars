@@ -50,6 +50,10 @@ class FakeGitHub:
         return dict(issue) if issue else None
 
     def create_issue(self, title: str, label: str, body: str) -> int:
+        # Like GitHub: an issue can't be filed under a label the repository lacks.
+        if label not in {l["name"] for l in self.labels}:
+            raise RuntimeError(f"`gh issue create` failed: could not add label: "
+                               f"'{label}' not found")
         number = self.seed_issue(title, label, body,
                                  created_at="2026-10-13T00:00:00Z")
         self.calls.append(("create", number, title, label, body))

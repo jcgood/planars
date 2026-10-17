@@ -19,7 +19,8 @@ What lives here:
 
 - **The label registry**, `schemas/issue_labels.yaml`, is read on every call.
   Every function that takes a label refuses one not listed there
-  (`UnknownLabel`). `--sync-labels --apply` brings GitHub's own labels into
+  (`UnknownLabel`), and `create` makes a registered label GitHub doesn't
+  have yet (`ensure_label`). `--sync-labels --apply` brings GitHub's own labels into
   line with it (the daily refresh's first step), and `--write-label-table`
   rewrites the Labels table in CLAUDE.md from it (run by the pre-commit hook
   whenever the registry is committed). So the registry is the one place a
@@ -265,8 +266,24 @@ def body_of(number: int) -> str:
     return (issue or {}).get("body") or ""
 
 
+def ensure_label(label: str) -> None:
+    """Create `label` on GitHub from its registry entry if GitHub lacks it.
+
+    A label newly added to the registry exists on GitHub only after the next
+    daily `--sync-labels --apply`; until then GitHub refuses any issue filed
+    under it (sheet-validation's first `needs-fixing` issue crashed that way,
+    2026-10-17, #310). Creating it here means filing never waits on the sync.
+    """
+    gh = get_github()
+    if any(l["name"] == label for l in gh.list_labels()):
+        return
+    entry = next(e for e in load_labels() if e["name"] == label)
+    gh.create_label(label, str(entry["color"]), entry["description"])
+
+
 def create(label: str, title: str, body: str) -> int:
-    return get_github().create_issue(title, check_label(label), body)
+    ensure_label(check_label(label))
+    return get_github().create_issue(title, label, body)
 
 
 def comment(number: int, body: str) -> None:
