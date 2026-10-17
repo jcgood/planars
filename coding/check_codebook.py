@@ -63,6 +63,34 @@ def _codebook_criteria(codebook: dict) -> dict[str, set[str]]:
     }
 
 
+def _check_reads_from(diag_classes: dict) -> List[str]:
+    """Every reads_from entry names a real class, one of its tabs, and criteria
+    that class has (hidden-facts R2: these cross-class reads were typed paths)."""
+    errors = []
+    for name, cls in diag_classes.items():
+        for use, src in (cls.get("reads_from") or {}).items():
+            where = f"[{name}] reads_from.{use}"
+            if not isinstance(src, dict) or not {"class", "construction", "criteria"} <= set(src):
+                errors.append(f"{where}: must give class, construction and criteria")
+                continue
+            other = diag_classes.get(src["class"])
+            if other is None:
+                errors.append(f"{where}: no class {src['class']!r}")
+                continue
+            tabs = [c["name"] for c in other.get("constructions") or [] if isinstance(c, dict)]
+            if not tabs and other.get("specificity") == "general":
+                tabs = ["general"]
+            if src["construction"] not in tabs:
+                errors.append(f"{where}: {src['class']} has no tab {src['construction']!r} "
+                              f"(it has {tabs or 'per-language tabs only'})")
+            known = (set(other.get("required_criteria") or []) | set(other.get("optional_criteria") or [])
+                     | {c.get("criterion") for c in other.get("constructions") or [] if isinstance(c, dict)})
+            unknown = [c for c in src["criteria"] if c not in known]
+            if unknown:
+                errors.append(f"{where}: {src['class']} has no criteria {unknown}")
+    return errors
+
+
 def _check_placeholders_declared(codebook: dict) -> List[str]:
     """Every criterion value written <like_this> in diagnostic_criteria.yaml is
     declared under value_placeholders (the code implements only those)."""
@@ -823,6 +851,9 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     print("7d. Checking every <placeholder> value is declared ...")
     all_errors.extend(_check_placeholders_declared(codebook))
+
+    print("7e. Checking every reads_from names a real class, tab and criteria ...")
+    all_errors.extend(_check_reads_from(diag_classes))
 
     coverage = _collect_coverage()
     lang_ids = sorted({l for langs in coverage.values() for l in langs})

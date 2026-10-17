@@ -111,6 +111,21 @@ def _construction_entry(class_name: str, construction: str) -> dict:
     return {}
 
 
+def source_construction(class_name: str) -> str:
+    """The one tab a class's other tabs are generated from: the target of its
+    constructions' ``depends_on`` (e.g. nonpermutability's
+    element_prescreening). Raises unless exactly one tab is depended on —
+    biuniqueness_deviations' chain has two, and its code reads its own chain
+    (planars.biuniqueness_deviations._tab_chain). Hidden-facts R4: the
+    prescreening TSV's name was typed into each pair builder."""
+    targets = {c["depends_on"] for c in _class_entry(class_name).get("constructions") or []
+               if isinstance(c, dict) and c.get("depends_on")}
+    if len(targets) != 1:
+        raise ValueError(f"diagnostic_classes.yaml class {class_name!r}: expected one tab that "
+                         f"others depend_on, found {sorted(targets)}")
+    return targets.pop()
+
+
 def required_criteria(class_name: str) -> frozenset:
     """The class's ``required_criteria`` in diagnostic_classes.yaml: the
     criterion columns an analysis module's loader insists on (hidden-facts

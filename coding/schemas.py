@@ -115,6 +115,21 @@ def criterion_values(criterion_name: str) -> List[str] | None:
     return None
 
 
+def reads_from(class_name: str, use: str) -> Dict:
+    """The other class's tab ``class_name``'s ``reads_from.<use>`` names in
+    diagnostic_classes.yaml: {"class", "construction", "criteria"}. Raises if
+    it is not declared (hidden-facts R2: these reads were typed paths with
+    nothing recording the dependency). The TSV is
+    ``coded_data/{lang}/{class}/{construction}.tsv``."""
+    for cls in load_diagnostic_classes().get("classes", []):
+        if cls.get("name") == class_name:
+            entry = (cls.get("reads_from") or {}).get(use)
+            if not entry:
+                raise KeyError(f"diagnostic_classes.yaml class {class_name!r} has no reads_from.{use}")
+            return entry
+    raise KeyError(f"diagnostic_classes.yaml has no class {class_name!r}")
+
+
 def _value_placeholders() -> Dict[str, Dict]:
     """diagnostic_criteria.yaml's value_placeholders: {kind: {value, free_entry, meaning}}."""
     declared = load_diagnostic_criteria().get("value_placeholders")

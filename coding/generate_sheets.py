@@ -89,9 +89,10 @@ from planars.languages import get_display_name as _get_display_name
 from planars.schema_values import (
     ELEMENT_ROW_COLUMNS, KEYSTONE_NAME, PAIR_ROW_KEYS, PAIR_ROW_SHAPES, STATUS_COLUMNS,
     STATUS_IN_PROGRESS, STATUS_READY, STATUS_TAB, STATUS_VALUES, ZONE,
+    ELEMENT_ROWS, PAIR_ROWS,
     TRAILING_COLUMNS as _TRAILING_COLS,
-    is_keystone as _is_keystone,
-    row_columns, row_key,
+    header_shape, is_keystone as _is_keystone,
+    row_columns, row_key, row_type, source_construction,
 )
 from planars.free_occurrence import _parse_pos_ref
 from planars.nonpermutability import is_pair_candidate
@@ -110,6 +111,7 @@ def _annotator_email(lang_id: str) -> Optional[str]:
     return _people.annotator_email(lang_id)
 from .schemas import (
     apply_schema_criteria, is_free_entry, load_diagnostic_classes, load_diagnostic_criteria,
+    reads_from,
 )
 from .locked_tabs import rebuild_locked_tabs, reorder_tabs, system_tab_titles
 from .make_forms import (
@@ -301,7 +303,9 @@ def _prefill_free_occurrence_rows(
 ) -> List[List[object]]:
     """Pre-fill free_occurrence rows from the noninterruption TSV.
 
-    Reads noninterruption/general.tsv and sets 'free' for each element. Then
+    Reads the tab free_occurrence's reads_from.prefill_free names in
+    diagnostic_classes.yaml (noninterruption/general.tsv) and sets 'free' for
+    each element. Then
     applies conditional na values so annotators only fill in the columns that
     are relevant to each element:
       - free=y rows: ALL annotation columns → 'na' (free elements filtered out)
@@ -311,33 +315,36 @@ def _prefill_free_occurrence_rows(
 
     Warns if the noninterruption TSV is missing or elements are absent from it.
     """
-    ni_path = CODED_DATA / lang_id / "noninterruption" / "general.tsv"
+    src = reads_from("free_occurrence", "prefill_free")
+    (crit,) = src["criteria"]
+    ni_label = f"{src['class']}/{src['construction']}.tsv"
+    ni_path = CODED_DATA / lang_id / src["class"] / f"{src['construction']}.tsv"
 
     free_map: Dict[str, str] = {}
     if ni_path.exists():
         try:
             ni_df = pd.read_csv(ni_path, sep="\t", dtype=str, keep_default_na=False)
-            if "free" in ni_df.columns and "Element" in ni_df.columns:
+            if crit in ni_df.columns and "Element" in ni_df.columns:
                 free_map = {
-                    row["Element"]: row["free"]
+                    row["Element"]: row[crit]
                     for _, row in ni_df.iterrows()
-                    if row.get("free", "") not in ("", "NA")
+                    if row.get(crit, "") not in ("", "NA")
                 }
                 if not free_map:
-                    print("    [WARNING] noninterruption/general.tsv exists but 'free' column is blank.")
-                    print("              Annotate noninterruption first, then regenerate this sheet.")
+                    print(f"    [WARNING] {ni_label} exists but '{crit}' column is blank.")
+                    print(f"              Annotate {src['class']} first, then regenerate this sheet.")
             else:
-                print("    [WARNING] noninterruption/general.tsv is missing 'free' or 'Element' column.")
-                print("              free column will be left blank for manual entry.")
+                print(f"    [WARNING] {ni_label} is missing '{crit}' or 'Element' column.")
+                print(f"              {crit} column will be left blank for manual entry.")
         except Exception as exc:
-            print(f"    [WARNING] Could not read noninterruption/general.tsv: {exc}")
-            print("              free column will be left blank for manual entry.")
+            print(f"    [WARNING] Could not read {ni_label}: {exc}")
+            print(f"              {crit} column will be left blank for manual entry.")
     else:
-        print("    [WARNING] noninterruption/general.tsv not found.")
-        print("              Annotate noninterruption first, then regenerate this sheet.")
-        print("              free column will be left blank for manual entry.")
+        print(f"    [WARNING] {ni_label} not found.")
+        print(f"              Annotate {src['class']} first, then regenerate this sheet.")
+        print(f"              {crit} column will be left blank for manual entry.")
 
-    base = 3  # Element, Position_Name, Position_Number
+    base = len(ELEMENT_ROW_COLUMNS)  # the row columns come before the criteria
 
     def _col(name: str):
         return base + param_names.index(name) if name in param_names else None
@@ -536,7 +543,8 @@ def _filter_nonperm_pairs_by_prescreening(
     positions — e.g. scopal=n at one position and scopal=y at another. This is an
     unresolved linguistics question; see issue #228.
     """
-    prescreening_path = CODED_DATA / lang_id / "nonpermutability" / "element_prescreening.tsv"
+    prescreening_path = (CODED_DATA / lang_id / "nonpermutability"
+                         / f"{source_construction('nonpermutability')}.tsv")
     if not prescreening_path.exists():
         print("    [NOTE] element_prescreening.tsv not found — generating unfiltered pair list.")
         print("          Annotate element_prescreening first, then re-run")
@@ -647,7 +655,8 @@ def _filter_reflex_pairs_by_prescreening(
     `--regen-construction` target in that issue's body, defaulting to a placeholder for
     any caller that doesn't have it handy.
     """
-    prescreening_path = CODED_DATA / lang_id / "coreference" / "prescreening.tsv"
+    prescreening_path = (CODED_DATA / lang_id / "coreference"
+                         / f"{source_construction('coreference')}.tsv")
     if not prescreening_path.exists():
         print("    [NOTE] prescreening.tsv not found — pair tab left blank.")
         print("          Annotate prescreening first, then re-run:")
@@ -728,7 +737,8 @@ def _phrasal_accent_obligatory_core(lang_id: str, keystone_pos: int) -> Tuple[in
     in all of these cases tier 2 (the language's obligatory_positions) does all
     the obligatory-position work outside the keystone itself.
     """
-    fo_path = CODED_DATA / lang_id / "free_occurrence" / "general.tsv"
+    src = reads_from("phrasal_accent", "obligatory_core")
+    fo_path = CODED_DATA / lang_id / src["class"] / f"{src['construction']}.tsv"
     if not fo_path.exists():
         return (keystone_pos, keystone_pos)
 
@@ -829,7 +839,8 @@ def _build_phrasal_accent_pairs(
     """
     _keystone = KEYSTONE_NAME
 
-    prescreening_path = CODED_DATA / lang_id / "phrasal_accent" / "prescreening.tsv"
+    prescreening_path = (CODED_DATA / lang_id / "phrasal_accent"
+                         / f"{source_construction('phrasal_accent')}.tsv")
     if not prescreening_path.exists():
         print("    [NOTE] phrasal_accent/prescreening.tsv not found — pair tab left blank.")
         print("          Annotate prescreening first, then re-run:")
@@ -918,6 +929,42 @@ def pair_rows(lang_id: str, class_name: str, construction: str, *,
         pairs = _build_nonperm_pairs(element_index, lang_id, pos_type, keystone_active=ka)
         return _filter_nonperm_pairs_by_prescreening(pairs, lang_id, file_issue=file_issue)
     raise ValueError(f"{class_name}/{construction} is not a pair tab this builder knows")
+
+
+def _fill_new_tab(ss, lang_id: str, class_name: str, construction: str,
+                  param_names: List[str], param_values: Dict[str, List[str]],
+                  element_index, planar_path: Path) -> str:
+    """Write a new construction tab's rows; return a summary for the log.
+
+    Decided by the construction's row shape in diagnostic_classes.yaml, never
+    by naming classes (hidden-facts R5; creating a sheet and adding a tab to
+    one each had a 45-line chain of class names): element rows from the
+    planar, pair rows from pair_rows() written by the writer for their pair
+    shape, and biuniqueness_deviations' three tabs by its own builder.
+    """
+    if class_name == _br.CLASS_NAME:
+        # elements (in-scope elements) -> morphemes -> morphs (#254).
+        n = _biuniq_populate(ss, lang_id, construction, param_names, param_values, planar_path)
+        return f"{n} rows, {len(param_names)} params"
+    kind = row_type(class_name, construction)
+    if kind == PAIR_ROWS:
+        pairs = pair_rows(lang_id, class_name, construction, planar_path=planar_path)
+        shape = header_shape(row_columns(class_name, construction))
+        writers = {"element_pairs": _populate_tab_pairs,
+                   "position_pairs": _populate_tab_reflex_pairs}
+        if shape not in writers:
+            raise ValueError(f"{class_name}/{construction}: no writer for pair shape {shape!r}")
+        writers[shape](ss, construction, param_names, param_values, pairs)
+        return f"{len(pairs)} candidate pairs"
+    if kind != ELEMENT_ROWS:
+        raise ValueError(f"{class_name}/{construction}: no writer for row_type {kind!r}")
+    ka = resolve_keystone_active(lang_id, class_name, construction,
+                                 data_dir=planar_path.parent) or False
+    rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
+    if class_name == "free_occurrence":
+        rows = _prefill_free_occurrence_rows(rows, param_names, lang_id)
+    _populate_tab(ss, construction, param_names, param_values, rows)
+    return f"{len(rows)} rows, {len(param_names)} params"
 
 
 def _populate_tab_pairs(
@@ -1507,65 +1554,10 @@ def _create_analysis_sheet(
     constructions = apply_schema_criteria(class_name, constructions, lang_id)
 
     for construction, param_names, param_values in constructions:
-        if class_name == "nonpermutability" and construction == "element_prescreening":
-            # Step 1: element-level pre-filter sheet.
-            ka = resolve_keystone_active(lang_id, class_name, construction,
-                                         data_dir=planar_path.parent) or False
-            rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
-            _populate_tab(spreadsheet, construction, param_names, param_values, rows)
-            tab_names.append(construction)
-            print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
-        elif class_name == "nonpermutability":
-            # Step 2: candidate pair sheet (general), filtered if prescreening.tsv exists.
-            pairs = pair_rows(lang_id, class_name, construction, planar_path=planar_path)
-            _populate_tab_pairs(spreadsheet, construction, param_names, param_values, pairs)
-            tab_names.append(construction)
-            print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
-        elif class_name == "coreference" and construction == "prescreening":
-            # Stage 1: element-level prescreening sheet.
-            ka = resolve_keystone_active(lang_id, class_name, construction,
-                                         data_dir=planar_path.parent) or False
-            rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
-            _populate_tab(spreadsheet, construction, param_names, param_values, rows)
-            tab_names.append(construction)
-            print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
-        elif class_name == "coreference":
-            # Stage 2: pair sheet filtered by prescreening.
-            pairs = pair_rows(lang_id, class_name, construction, planar_path=planar_path)
-            _populate_tab_reflex_pairs(spreadsheet, construction, param_names, param_values, pairs)
-            tab_names.append(construction)
-            print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
-        elif class_name == "phrasal_accent" and construction == "prescreening":
-            # Stage 1: element-level prescreening sheet (reuses metrical's `accented`).
-            ka = resolve_keystone_active(lang_id, class_name, construction,
-                                         data_dir=planar_path.parent) or False
-            rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
-            _populate_tab(spreadsheet, construction, param_names, param_values, rows)
-            tab_names.append(construction)
-            print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
-        elif class_name == "phrasal_accent":
-            # Stage 2: pair sheet restricted to accent-eligible x accent-eligible
-            # elements, adjacency-filtered via the two-tier obligatory-core
-            # compromise (issue #237).
-            pairs = pair_rows(lang_id, class_name, construction, planar_path=planar_path)
-            _populate_tab_pairs(spreadsheet, construction, param_names, param_values, pairs)
-            tab_names.append(construction)
-            print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
-        elif class_name == _br.CLASS_NAME:
-            # elements (in-scope elements) -> morphemes -> morphs (#254).
-            n = _biuniq_populate(spreadsheet, lang_id, construction, param_names,
-                                 param_values, planar_path)
-            tab_names.append(construction)
-            print(f"    Tab: {construction} ({n} rows, {len(param_names)} params)")
-        else:
-            ka = resolve_keystone_active(lang_id, class_name, construction,
-                                         data_dir=planar_path.parent) or False
-            rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
-            if class_name == "free_occurrence":
-                rows = _prefill_free_occurrence_rows(rows, param_names, lang_id)
-            _populate_tab(spreadsheet, construction, param_names, param_values, rows)
-            tab_names.append(construction)
-            print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
+        what = _fill_new_tab(spreadsheet, lang_id, class_name, construction, param_names,
+                             param_values, element_index, planar_path)
+        tab_names.append(construction)
+        print(f"    Tab: {construction} ({what})")
 
     # Remove the default empty sheet if it wasn't one of our tabs
     if default_ws.title not in tab_names:
@@ -1845,42 +1837,9 @@ def _add_constructions_to_existing_sheet(
     construction_params: Dict = {}
 
     for construction, param_names, param_values in new_constructions:
-        ka = resolve_keystone_active(lang_id, class_name, construction,
-                                     data_dir=planar_path.parent) or False
-        if class_name == "nonpermutability" and construction == "element_prescreening":
-            rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
-            _populate_tab(ss, construction, param_names, param_values, rows)
-            print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
-        elif class_name == "nonpermutability":
-            pairs = pair_rows(lang_id, class_name, construction, planar_path=planar_path)
-            _populate_tab_pairs(ss, construction, param_names, param_values, pairs)
-            print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
-        elif class_name == "coreference" and construction == "prescreening":
-            rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
-            _populate_tab(ss, construction, param_names, param_values, rows)
-            print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
-        elif class_name == "coreference":
-            pairs = pair_rows(lang_id, class_name, construction, planar_path=planar_path)
-            _populate_tab_reflex_pairs(ss, construction, param_names, param_values, pairs)
-            print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
-        elif class_name == "phrasal_accent" and construction == "prescreening":
-            rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
-            _populate_tab(ss, construction, param_names, param_values, rows)
-            print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
-        elif class_name == "phrasal_accent":
-            pairs = pair_rows(lang_id, class_name, construction, planar_path=planar_path)
-            _populate_tab_pairs(ss, construction, param_names, param_values, pairs)
-            print(f"    Tab: {construction} ({len(pairs)} candidate pairs)")
-        elif class_name == _br.CLASS_NAME:
-            n = _biuniq_populate(ss, lang_id, construction, param_names, param_values,
-                                 planar_path)
-            print(f"    Tab: {construction} ({n} rows, {len(param_names)} params)")
-        else:
-            rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
-            if class_name == "free_occurrence":
-                rows = _prefill_free_occurrence_rows(rows, param_names, lang_id)
-            _populate_tab(ss, construction, param_names, param_values, rows)
-            print(f"    Tab: {construction} ({len(rows)} rows, {len(param_names)} params)")
+        what = _fill_new_tab(ss, lang_id, class_name, construction, param_names,
+                             param_values, element_index, planar_path)
+        print(f"    Tab: {construction} ({what})")
 
         construction_params[construction] = {
             "param_names": param_names,

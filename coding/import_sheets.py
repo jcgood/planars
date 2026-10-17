@@ -52,7 +52,7 @@ from .make_forms import (
 )
 
 ERROR_DIR    = ROOT / "import_errors"
-PENDING_PATH = ROOT / "pending_changes.json"
+from .apply_pending import PENDING_PATH  # noqa: E402
 
 # The share of an in-progress tab's filled cells (in rows present before and
 # after) that may disappear in one import before it files a collaborator-check

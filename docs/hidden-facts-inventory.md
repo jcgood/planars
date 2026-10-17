@@ -1,6 +1,10 @@
 # Hidden-facts inventory
 
 **Status:** complete (Phase 2 of [data-layer-implementation-plan.md](data-layer-implementation-plan.md)). Written 2026-08-01.
+**Finished 2026-10-17 (Phase 10 unit 3):** every entry below is marked closed,
+declared, or (R4's path convention) handed to unit 6. New typed copies are
+caught by `tests/test_no_hidden_facts.py`'s detectors, not by updating this
+file, which is now a historical record.
 **Rationale:** [data-layer-design.md](data-layer-design.md).
 
 Every file in `coding/` and `planars/` was read or grepped for the fact
@@ -602,6 +606,12 @@ field naming which criterion the prescreening stage uses.
 construction entry, matching the pattern already used one level down.
 
 ### R2. Two undocumented cross-class dependencies mirror the one pattern `facts.yaml` tracks, but aren't in it
+*Closed 2026-10-17 (Phase 10 unit 3): declared where the code runs from them,
+not in a descriptive registry: `reads_from` on free_occurrence (`prefill_free`,
+and `free_agreement` for integrity-check's cross-sheet check, a third reader
+the entry missed) and phrasal_accent (`obligatory_core`) in
+`diagnostic_classes.yaml`, read by `coding.schemas.reads_from`; check-codebook
+7e fails if one names a class, tab or criterion that doesn't exist.*
 **What:** `data_dependency_schema/facts.yaml`'s `dependent_construction_element_scope`
 record documents the "prescreening → pair construction" dependency shape
 (nonpermutability, coreference) but two more cross-*class* dependencies of the
@@ -661,6 +671,12 @@ small "sheet workflow" schema) alongside `trailing_columns` and
 facts.
 
 ### R5. Per-class pair-row dispatch table hardcoded as a 3-way `if class_name == ...` chain
+*Closed 2026-10-17 (Phase 10 unit 3): creating a sheet and adding a tab each
+had a 45-line chain of class names; both call `generate_sheets._fill_new_tab`,
+which decides by the schema's row_type and pair_shape (biuniqueness keeps its
+own builder). Which function builds a class's pairs stays a class-keyed choice
+in `pair_rows`, since each builder is that class's own rule, and an unknown
+class raises. The shape half closed with D4 (2026-10-13).*
 **What:** `_regen_construction` (and its helpers `_format_annotated_drop`,
 `_populate_tab_pairs`/`_populate_tab_reflex_pairs` selection,
 `_remap_coreference_prefill` gating) determines, purely from `class_name ==
@@ -697,6 +713,14 @@ that finer distinction is exactly what's hardcoded here.
 these call sites could dispatch generically instead of naming classes.
 
 ### R4. Hardcoded pair-row prescreening file paths (`{lang}/{class}/{construction}.tsv`)
+*Typed names closed 2026-10-17 (Phase 10 unit 3): no path types a construction
+name any more. The prescreening tabs come from the schema's `depends_on`
+(`planars.schema_values.source_construction`), the cross-class ones from
+`reads_from` (R2). Handed to unit 6: the convention itself,
+`CODED_DATA / lang / class / f"{construction}.tsv"`, is still written out
+wherever a file is read or written. Unit 6's local-file door is the one place
+it belongs, and building a path helper first would be a second home for the
+same thing.*
 **What:** Each two-stage class's prescreening TSV path is built as a raw
 f-string/`Path` join rather than through any shared path-builder:
 `CODED_DATA / lang_id / "nonpermutability" / "element_prescreening.tsv"`,
@@ -853,6 +877,10 @@ section (e.g. a `lexicon_screening` shape), not a fix to shoehorn into
 `diagnostic_classes.yaml`.
 
 ### M2. `pending_changes.json` path and semantics
+*Declared 2026-10-17 (Phase 10 unit 3): one `apply_pending.PENDING_PATH`,
+imported by import-sheets and the dispatcher (four typed copies). The
+validate-coding copy printed the same reminder the dispatcher prints before
+every command, so it is deleted. Unit 12 moves the file into planars-data.*
 **What:** `ROOT / "pending_changes.json"` — the repo-root state file that
 `import-sheets` writes destructive changes to and `apply-pending` reads —
 is a hardcoded path/filename. Its shape (what counts as "destructive," what

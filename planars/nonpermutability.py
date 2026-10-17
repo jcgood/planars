@@ -9,7 +9,8 @@ from planars.spans import fmt_span, strict_span
 
 from planars.elements import split_elements, wrap_element
 from planars.schema_values import KEYSTONE_NAME as _KEYSTONE_NAME
-from planars.schema_values import PAIR_ROW_SHAPES, SLOT, TRAILING_COLUMNS, ZONE, is_keystone
+from planars.schema_values import (PAIR_ROW_SHAPES, SLOT, TRAILING_COLUMNS, ZONE, is_keystone,
+                                   source_construction)
 _TRAILING_COLS = set(TRAILING_COLUMNS)
 
 # Only the pair-row (general) construction can be derived by this module;
@@ -240,8 +241,10 @@ def derive_nonpermutability_domains(
             _load_planar(planar_path, lang_id)
         pair_df = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
 
-        # Staleness check: compare element sets against element_prescreening.tsv.
-        prescreening_path = tsv_path.parent / "element_prescreening.tsv"
+        # Staleness check: compare element sets against the prescreening tab
+        # this tab depends on (diagnostic_classes.yaml depends_on).
+        source = source_construction("nonpermutability")
+        prescreening_path = tsv_path.parent / f"{source}.tsv"
         if prescreening_path.exists():
             pre_df = pd.read_csv(prescreening_path, sep="\t", dtype=str, keep_default_na=False)
             if "Element" in pre_df.columns and "scopal" in pre_df.columns:
@@ -267,9 +270,9 @@ def derive_nonpermutability_domains(
                 } & structurally_expected
                 if dep_set and source_set != dep_set:
                     stale_dependent = (
-                        "general.tsv is out of sync with element_prescreening.tsv — "
+                        f"{tsv_path.name} is out of sync with {source}.tsv — "
                         "run python -m coding generate-sheets --lang " + lang_id
-                        + " --regen-construction nonpermutability:general"
+                        + f" --regen-construction nonpermutability:{tsv_path.stem}"
                     )
 
     all_positions = set(pos_to_name.keys())

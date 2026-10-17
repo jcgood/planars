@@ -118,6 +118,13 @@
 #                            Only needed for general-specificity classes with multi-stage
 #                            workflows. construction_specific classes define constructions
 #                            per-language in diagnostics_{lang}.yaml.
+#   reads_from               Tabs of OTHER classes this class's sheets are built from,
+#                            keyed by what the reading is for (a name the code asks for):
+#                              {use: {class, construction, criteria: [...]}}
+#                            The tooling builds the path from it (coding.schemas.reads_from)
+#                            and check-codebook checks that each class, construction and
+#                            criterion exists. A general class with no constructions list
+#                            has one tab, named "general".
 #
 # Process/tracking fields that used to live on these same records — status,
 # criterion_set_status, collection_required, qualification_rule_hash,
@@ -388,7 +395,12 @@ classes:
       straddles morphosyntactic and phonological criteria (Tallman et al. 2024, ch. 1).
     specificity: general
     required_criteria: [free, left-edge-of-free-form, right-edge-of-free-form, dependent-on-left, dependent-on-right]
-    # free is pre-filled from noninterruption/general.tsv at sheet generation time.
+    # free is pre-filled from noninterruption's general tab at sheet generation
+    # time (reads_from.prefill_free); integrity-check also compares the two
+    # tabs' free values (reads_from.free_agreement).
+    reads_from:
+      prefill_free: {class: noninterruption, construction: general, criteria: [free]}
+      free_agreement: {class: noninterruption, construction: general, criteria: [free]}
     # All annotation columns (left-edge-of-free-form, right-edge-of-free-form,
     # dependent-on-left, dependent-on-right) apply to bound elements (free=n) only;
     # free elements (free=y) receive na in all annotation columns. See issue #99.
@@ -676,6 +688,11 @@ classes:
       # row by check-codebook, which would incorrectly flag prescreening rows as
       # missing joint_accent (and vice versa) if either were required here.
     optional_criteria: [accented, joint_accent]
+    # The pair tab's obligatory core near the keystone comes from free_occurrence's
+    # keystone row: the positions a bound keystone depends on (issue #237, tier 1).
+    reads_from:
+      obligatory_core: {class: free_occurrence, construction: general,
+                        criteria: [free, dependent-on-left, dependent-on-right]}
     qualification_rule: >
       [DEFERRED — issue #237] Domain/span derivation from joint_accent pairwise data
       has not been decided yet; the coordinator wants the coding scheme validated

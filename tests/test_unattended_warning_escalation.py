@@ -146,15 +146,16 @@ _KNOWN_SITES: Dict[Site, str] = {
         "invocation (plain `sync-params --apply`)",
     ("sync_params.py", 'print(f"WARNING: --merge requires old1:old2:new, got: {args[i + 1]!r}")', 1):
         "only reachable via --merge, same reasoning as --split above",
-    ("generate_sheets.py", 'print("    [WARNING] noninterruption/general.tsv exists but \'free\' column is blank.")', 1):
-        "inside _prefill_free_occurrence_rows -- only reachable via the "
+    ("generate_sheets.py", 'print(f"    [WARNING] {ni_label} exists but \'{crit}\' column is blank.")', 1):
+        "inside _prefill_free_occurrence_rows (the noninterruption tab its "
+        "reads_from.prefill_free names) -- only reachable via the "
         "interactive --apply sheet-creation path, not --regen-dependents (the "
         "only generate-sheets invocation the workflow runs)",
-    ("generate_sheets.py", 'print("    [WARNING] noninterruption/general.tsv is missing \'free\' or \'Element\' column.")', 1):
+    ("generate_sheets.py", 'print(f"    [WARNING] {ni_label} is missing \'{crit}\' or \'Element\' column.")', 1):
         "same function/reasoning as the 'free column is blank' warning",
-    ("generate_sheets.py", 'print(f"    [WARNING] Could not read noninterruption/general.tsv: {exc}")', 1):
+    ("generate_sheets.py", 'print(f"    [WARNING] Could not read {ni_label}: {exc}")', 1):
         "same function/reasoning as the 'free column is blank' warning",
-    ("generate_sheets.py", 'print("    [WARNING] noninterruption/general.tsv not found.")', 1):
+    ("generate_sheets.py", 'print(f"    [WARNING] {ni_label} not found.")', 1):
         "same function/reasoning as the 'free column is blank' warning",
     ("generate_sheets.py", 'print(f"    [WARNING] Elements not found in noninterruption TSV: {missing}")', 1):
         "same reasoning as the 'free column is blank' warning (same "
@@ -180,9 +181,6 @@ _KNOWN_SITES: Dict[Site, str] = {
         "advisory warning under sheet-validation.yml, whose documented "
         "convention (CLAUDE.md's sheet-validation label entry) is that advisory "
         "warnings are context only, never file/hold an issue",
-    ("validate_coding.py", 'print("WARNING: Pending destructive changes require coordinator approval.")', 1):
-        "redundant with the pending-changes issue import-sheets already files "
-        "for the same underlying fact",
     ("update_sheets.py", 'print(f"    [{construction}] WARNING: planar structure has changed:")', 1):
         "correctly escalated: sets any_drift, which drives exit 1, which the "
         "sheet-drift issue mechanism dumps in full -- not a gap",

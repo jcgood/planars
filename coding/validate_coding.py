@@ -962,11 +962,8 @@ def main(args: argparse.Namespace | None = None) -> None:
     lang_filter = args.lang
     verbose = args.verbose
 
-    pending = ROOT / "pending_changes.json"
-    if pending.exists() and pending.stat().st_size > 2:
-        print("WARNING: Pending destructive changes require coordinator approval.")
-        print("         Run: python -m coding apply-pending\n")
-
+    # (The pending-changes reminder is printed by the dispatcher before every
+    # command; this used to print it a second time.)
     print("Connecting to Google APIs...")
     lang_ids = [lang_filter] if lang_filter else None
     blocking = revalidate_sheets(lang_ids=lang_ids, verbose=verbose)

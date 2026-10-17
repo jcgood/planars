@@ -407,6 +407,31 @@ def test_an_unmarked_feeder_is_an_error():
     assert "produces_spans: false" in errors[0]
 
 
+# ---------------------------------------------------------------------------
+# 7e: reads_from names real tabs (hidden-facts R2)
+# ---------------------------------------------------------------------------
+
+def test_reads_from_check_passes_on_the_real_schema():
+    assert check_codebook._check_reads_from(check_codebook._load_diagnostic_classes()) == []
+
+
+def test_a_reads_from_naming_a_missing_tab_or_criterion_is_an_error():
+    classes = {
+        "source": {"specificity": "general", "required_criteria": ["free"]},
+        "reader": {"reads_from": {
+            "ok": {"class": "source", "construction": "general", "criteria": ["free"]},
+            "bad_tab": {"class": "source", "construction": "prescreening", "criteria": ["free"]},
+            "bad_crit": {"class": "source", "construction": "general", "criteria": ["fre"]},
+            "bad_class": {"class": "nowhere", "construction": "general", "criteria": ["free"]},
+        }},
+    }
+    errors = check_codebook._check_reads_from(classes)
+    assert len(errors) == 3
+    assert any("bad_tab" in e and "'prescreening'" in e for e in errors)
+    assert any("bad_crit" in e and "'fre'" in e for e in errors)
+    assert any("bad_class" in e and "'nowhere'" in e for e in errors)
+
+
 def test_span_constructions_reads_the_schema():
     from planars.reports import span_constructions
     assert span_constructions("nonpermutability") == frozenset({"general"})

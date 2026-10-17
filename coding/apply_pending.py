@@ -24,6 +24,9 @@ from typing import Dict, List, Tuple
 from . import issues
 
 ROOT = Path(__file__).resolve().parent.parent
+# The one statement of where destructive changes wait for review: import-sheets
+# writes it, this command reads it, the dispatcher warns when it is non-empty
+# (hidden-facts M2). Unit 12 moves it into planars-data.
 PENDING_PATH = ROOT / "pending_changes.json"
 
 
