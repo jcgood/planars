@@ -25,23 +25,10 @@ planars/                        Core library
   spans.py                      Span computation functions
   <class_name>.py               One analysis module per class in schemas/diagnostic_classes.yaml
   charts.py                     Span collection and domain chart
-  cli.py                        Command-line entry point
+                                (every file: planars/CLAUDE.md)
 coding/                         Google Sheets workflow tools (python -m coding <command>)
-  make_forms.py                 Planar structure and diagnostics utilities
-  generate_sheets.py            Create annotation forms in Google Drive
-  update_sheets.py              Add missing rows to existing sheets
-  sync_params.py                Sync param columns when diagnostics_{lang_id}.tsv changes
-  restructure_sheets.py         Archive and regenerate sheets after structural changes
-  import_sheets.py              Download filled sheets to TSVs; sync planar/diagnostics Sheets
-  apply_pending.py              Review and apply pending destructive changes
-  validate.py                   Shared validation type (ValidationIssue)
-  validate_planar.py            Planar structure TSV validation
-  validate_diagnostics.py       diagnostics_{lang_id}.tsv validation
-  validate_coding.py            Annotation sheet validation + validate-coding command
-  generate_notebooks.py         Generate and upload Colab notebooks
-  check_codebook.py             Consistency check: diagnostic_criteria.yaml ↔ modules ↔ diagnostics_{lang_id}.tsv
-  populate_sheets.py            Upload legacy TSV data (one-time utility)
-  setup_root_folder.py          One-time Drive folder setup
+                                (every command: python -m coding registry;
+                                every file: coding/CLAUDE.md)
 coded_data/{lang_id}/           Annotation data per language (in planars-data repo)
   lang_setup/                 Planar structure TSV + diagnostics_{lang_id}.tsv
   {class_name}/                 Filled TSVs per analysis class

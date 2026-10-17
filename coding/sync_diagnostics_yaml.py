@@ -59,9 +59,7 @@ CODED_DATA = ROOT / "coded_data"
 
 
 from .make_forms import (
-    _resolve_diagnostics_yaml_path,
     _yaml_to_tsv_df,
-    _tsv_df_to_yaml,
     _dump_diagnostics_yaml,
     _diff_diagnostics_tsv_yaml,
     _apply_yaml_diff,

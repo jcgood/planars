@@ -33,8 +33,6 @@ from planars.reports import (
     language_spans,
     project_completeness,
     project_spans,
-    collect_all_spans,
-    collect_all_spans_from_sheets,
 )
 
 _SPAN_COLS = {"Language", "Test_Labels", "Analysis", "Left_Edge", "Right_Edge", "Size"}
@@ -250,7 +248,7 @@ class TestLayer1Completeness:
         lang_setup = lang_dir / "lang_setup"
         lang_setup.mkdir(parents=True)
 
-        import csv, io
+        import csv
         rows = diagnostics_rows
         if rows:
             diag_path = lang_setup / f"diagnostics_{lang_id}.tsv"
@@ -294,7 +292,7 @@ class TestLayer1Completeness:
 
     def test_missing_construction_appears_in_completeness(self, tmp_path):
         # diagnostics declares two constructions; only one has a TSV
-        lang_dir = self._make_lang_dir(
+        self._make_lang_dir(
             tmp_path,
             [{"Class": "ciscategorial", "Constructions": "general, other_construction"}],
             tsv_files={("ciscategorial", "general"): self._minimal_tsv()},
@@ -310,7 +308,7 @@ class TestLayer1Completeness:
         assert result["ciscategorial"]["other_construction"]["total"] == 0
 
     def test_all_constructions_present_no_missing_flag(self, tmp_path):
-        lang_dir = self._make_lang_dir(
+        self._make_lang_dir(
             tmp_path,
             [{"Class": "ciscategorial", "Constructions": "general"}],
             tsv_files={("ciscategorial", "general"): self._minimal_tsv()},
@@ -320,7 +318,7 @@ class TestLayer1Completeness:
 
     def test_extra_tsv_not_in_diagnostics_still_included(self, tmp_path):
         # TSV exists but class isn't in diagnostics — should appear without missing flag
-        lang_dir = self._make_lang_dir(
+        self._make_lang_dir(
             tmp_path,
             [],  # no diagnostics rows
             tsv_files={("ciscategorial", "general"): self._minimal_tsv()},
@@ -331,7 +329,7 @@ class TestLayer1Completeness:
 
     def test_missing_construction_ordering(self, tmp_path):
         # Diagnostics order should be preserved: expected constructions come first
-        lang_dir = self._make_lang_dir(
+        self._make_lang_dir(
             tmp_path,
             [{"Class": "ciscategorial", "Constructions": "alpha, beta, gamma"}],
             tsv_files={("ciscategorial", "beta"): self._minimal_tsv()},
@@ -342,7 +340,7 @@ class TestLayer1Completeness:
 
     def test_whole_class_missing(self, tmp_path):
         # diagnostics declares a class but no TSVs exist at all for it
-        lang_dir = self._make_lang_dir(tmp_path, [
+        self._make_lang_dir(tmp_path, [
             {"Class": "ciscategorial", "Constructions": "general"},
         ])
         result = language_completeness("test1234", source="local", repo_root=tmp_path)
@@ -431,19 +429,3 @@ class TestLanguageReportData:
         data = language_report_data("arao1248", source="local", repo_root=ROOT)
         assert data["lang_id"] == "arao1248"
         assert isinstance(data["completeness"], dict)
-
-
-# ---------------------------------------------------------------------------
-# Backward-compat aliases
-# ---------------------------------------------------------------------------
-
-class TestBackwardCompatAliases:
-    def test_collect_all_spans_delegates_to_project_spans(self):
-        df_alias, meta_alias = collect_all_spans(ROOT)
-        df_new,   meta_new   = project_spans(source="local", repo_root=ROOT)
-        assert df_alias.reset_index(drop=True).equals(df_new.reset_index(drop=True))
-        assert meta_alias == meta_new
-
-    def test_collect_all_spans_from_sheets_exists(self):
-        # Just verify the alias is importable and callable (no live Sheets needed).
-        assert callable(collect_all_spans_from_sheets)

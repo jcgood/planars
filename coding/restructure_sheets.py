@@ -1554,7 +1554,6 @@ def main(args: argparse.Namespace | None = None) -> None:
     if not planar_files:
         raise SystemExit("No planar_*.tsv found in coded_data/*/lang_setup/")
 
-    any_changes = False
     written_tsvs: List[Path] = []
     pair_row_constructions = _get_pair_row_constructions()
     keyed_row_constructions = _get_keyed_row_constructions()
@@ -1580,13 +1579,11 @@ def main(args: argparse.Namespace | None = None) -> None:
             folder_id = _folder_id_from_url(folder_url) if folder_url else None
             for old_class, new_class in rename_class_map.items():
                 planar_path = planar_file.parent / f"planar_{lang_id}.tsv"
-                changed = _rename_class_for_language(
+                _rename_class_for_language(
                     doorway, manifest, lang_id, old_class, new_class,
                     element_index, specs, apply, folder_id, planar_path,
                     sheet_links=sheet_links, journal_units=renamed_classes,
                 )
-                if changed:
-                    any_changes = True
 
         if not apply:
             print("\nRun with --apply to make these changes.")
@@ -1667,7 +1664,6 @@ def main(args: argparse.Namespace | None = None) -> None:
                             msg += (f", {n_flagged} row(s) on a split element — "
                                     f"NEEDS MANUAL REVIEW, flagged in Comments")
                         print(msg)
-                        any_changes = True
                         class_needs_restructure = True
                     continue
                 if construction in pair_row_constructions.get(class_name, set()):
@@ -1676,7 +1672,6 @@ def main(args: argparse.Namespace | None = None) -> None:
                         n_cells = _count_pair_rename_impacts(tsv_path, rename_map)
                         if n_cells:
                             print(f"    [{construction}] (pair tab) rename {n_cells} position cell(s)")
-                            any_changes = True
                             class_needs_restructure = True
                         else:
                             print(f"    [{construction}] (pair tab) no position renames needed")
@@ -1691,7 +1686,6 @@ def main(args: argparse.Namespace | None = None) -> None:
                             if n_manual:
                                 msg += f", {n_manual} self-pair row(s) need manual review"
                             print(msg)
-                            any_changes = True
                             class_needs_restructure = True
                     continue
                 rows = _element_rows_for(class_name, construction, element_index, lang_id,
@@ -1710,7 +1704,6 @@ def main(args: argparse.Namespace | None = None) -> None:
                     print(f"    [{construction}] {split_line}")
                 if renamed or new_count or dropped:
                     class_needs_restructure = True
-                    any_changes = True
 
             if not class_needs_restructure:
                 print(f"    (no changes — skipping)")

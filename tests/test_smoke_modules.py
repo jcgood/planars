@@ -13,13 +13,11 @@ Each test passes a minimal synthetic _data tuple (no file I/O) and verifies:
   3. format_result() returns a non-empty string.
   4. Span tuples have left_edge <= right_edge.
 
-The 5 modules that already have coded data (ciscategorial, subspanrepetition,
-noninterruption, stress, aspiration) are covered by the snapshot tests.
+Modules that already have coded data are covered by the snapshot tests.
 """
 from __future__ import annotations
 
 import importlib
-from typing import Any
 
 import pandas as pd
 import pytest
@@ -125,10 +123,6 @@ _MODULES = [
 ]
 
 _IDS = [m[0].split(".")[-1] for m in _MODULES]
-
-
-def _span_keys(spec: tuple) -> set[str]:
-    return spec[3]
 
 
 # ---------------------------------------------------------------------------

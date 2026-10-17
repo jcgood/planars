@@ -212,7 +212,6 @@ def morph_rows(morphemes: pd.DataFrame, elements: pd.DataFrame,
     """
     pos_of = positions_of(planar_df, lang_id)
     at = elements_at(planar_df, lang_id)
-    order = position_order(planar_df, lang_id)
 
     variants: Dict[str, List[str]] = {}
     co_source: Dict[str, Tuple[str, str, List[str]]] = {}

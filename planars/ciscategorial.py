@@ -3,8 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
-import pandas as pd
-
 from planars.io import load_filled_tsv, _TRAILING_COLS
 from planars.spans import fmt_span, strict_span, loose_span
 

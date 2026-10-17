@@ -39,7 +39,7 @@ positions are dropped:
     of them does, even if that specific pairing was never itself tested.
 
 The result is a fully valid dataset with a different planar structure, useful
-for testing multi-language code paths in collect_all_spans etc.
+for testing multi-language code paths in project_spans etc.
 
 Usage:
     python tests/make_synthetic_lang.py               # dry run
@@ -60,7 +60,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-import io
 import random
 import re
 import shutil

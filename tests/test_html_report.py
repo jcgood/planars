@@ -4,7 +4,6 @@ from __future__ import annotations
 import datetime
 from pathlib import Path
 
-import pandas as pd
 import pytest
 
 from planars.html_report import render_language_report
@@ -155,7 +154,7 @@ class TestRenderPDF:
     """Tests for render_language_report_pdf (requires weasyprint + kaleido)."""
 
     def _render(self, bundle):
-        weasyprint = pytest.importorskip("weasyprint")  # noqa: F841
+        pytest.importorskip("weasyprint")
         from planars.html_report import render_language_report_pdf
         try:
             return render_language_report_pdf(bundle)

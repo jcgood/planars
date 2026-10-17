@@ -398,8 +398,10 @@ the manifest. Choices where § 2.3 left a gap or turned out wrong:
 - **Every create on the door requires `identity=`** and writes the label
   (a spreadsheet in a second call straight after, since Sheets can't take
   Drive properties when it makes one). `get_or_create_folder` checks that a
-  folder it finds isn't labelled as something else. `set_identity` labels an
-  existing file and refuses, in every mode, to relabel one.
+  folder it finds isn't labelled as something else. `set_identity` labelled
+  an existing file and refused, in every mode, to relabel one (deleted
+  2026-10-17, unit 19, with the public `label_tabs`: only the labelling
+  migration below used them).
 - **The door places a file** from what this command made, then its label
   (read once per command). Until the migration below, a class sheet not yet
   labelled was placed from the manifest; that step was deleted on

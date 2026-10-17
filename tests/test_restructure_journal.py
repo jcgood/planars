@@ -79,17 +79,6 @@ def test_clear_unit_on_untracked_unit_is_a_no_op(tmp_path):
     assert rj.load_journal(p) == {}
 
 
-def test_get_unit_returns_none_when_not_mid_flight(tmp_path):
-    assert rj.get_unit("stan1293", "ciscategorial", journal_path=_path(tmp_path)) is None
-
-
-def test_get_unit_returns_the_entry(tmp_path):
-    p = _path(tmp_path)
-    rj.record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED, journal_path=p)
-    entry = rj.get_unit("stan1293", "ciscategorial", journal_path=p)
-    assert entry["checkpoint"] == rj.OLD_SHEET_ARCHIVED
-
-
 # ---------------------------------------------------------------------------
 # is_rollback_safe: only OLD_SHEET_ARCHIVED with nothing later
 # ---------------------------------------------------------------------------

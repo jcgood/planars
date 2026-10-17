@@ -6,7 +6,6 @@ Keystone is at position 5 throughout unless otherwise noted.
 from __future__ import annotations
 
 import pandas as pd
-import pytest
 
 from planars.spans import (
     blocked_span,

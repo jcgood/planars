@@ -1,9 +1,7 @@
 """Tests for coding/sync_diagnostics_yaml.py — _sync_to_tsv and _sync_from_tsv."""
 from __future__ import annotations
 
-import json
 import textwrap
-from pathlib import Path
 
 import pandas as pd
 import pytest

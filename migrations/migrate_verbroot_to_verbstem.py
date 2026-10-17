@@ -5,6 +5,11 @@ Motivation: keystone position was renamed from v:verbroot to v:verbstem to
 better reflect its role in the analysis.
 Run: early 2026 (before commit 465e5a4).
 
+No longer runs as written: `coding.drive._load_manifest_from_drive`, the
+pre-doorway manifest reader it imports, was deleted 2026-10-17 (Phase 10
+unit 19, issue #271). Kept as the record of what was done; a re-run would
+read the manifest with `load_manifest(get_doorway())` instead.
+
 Usage:
     python migrations/migrate_verbroot_to_verbstem.py           # dry run (lists affected sheets)
     python migrations/migrate_verbroot_to_verbstem.py --apply   # apply changes

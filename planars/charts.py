@@ -1,31 +1,13 @@
 """Domain chart functions for span visualization.
 
-Span collection (collect_all_spans, collect_all_spans_from_sheets, project_spans,
-language_spans, _CLASS_HANDLERS) lives in planars.reports, which is the data layer.
+Span collection (project_spans, language_spans, _CLASS_HANDLERS) and the span
+label constants live in planars.reports, which is the data layer.
 This module imports from reports and adds chart rendering on top.
-
-Span label constants (_CISC_SPANS, _NONINT_SPANS, etc.) are re-exported here for
-backward compatibility with callers such as coding/check_codebook.py.
 """
 
-import pandas as pd
 import plotly.graph_objects as go
 
-from planars.reports import (
-    # Span collection — canonical home is reports.py
-    _CLASS_HANDLERS,
-    collect_all_spans,
-    collect_all_spans_from_sheets,
-    # Span label constants — re-exported for backward compat
-    _CISC_SPANS,
-    _SUBSPAN_CATS,
-    _SUBSPAN_VARIANTS,
-    _NONINT_SPANS,
-    _METRICAL_BLOCKED_SPANS,
-    _SIMPLE_SPANS,
-    _NONPERM_SPANS,
-    _FREEOC_SPANS,
-)
+from planars.reports import _CLASS_HANDLERS
 
 
 # --- Colors (one per analysis type) ---

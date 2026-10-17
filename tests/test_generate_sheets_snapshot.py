@@ -56,7 +56,7 @@ import sys
 import yaml as _yaml
 from contextlib import redirect_stdout
 from pathlib import Path
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List
 
 import pandas as pd
 import pytest

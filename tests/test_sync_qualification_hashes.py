@@ -7,10 +7,6 @@ script reads the rule from one file and stamps the hash into the other.
 """
 from __future__ import annotations
 
-import hashlib
-from pathlib import Path
-
-import pytest
 import yaml
 
 from coding.sync_qualification_hashes import (
@@ -18,7 +14,6 @@ from coding.sync_qualification_hashes import (
     _compute_hash,
     _collect_wanted,
     _current_hashes,
-    _apply_hashes,
 )
 
 # ---------------------------------------------------------------------------

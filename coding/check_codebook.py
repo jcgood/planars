@@ -266,9 +266,8 @@ def _check_chart_keys() -> List[str]:
         segmental, tonal, tonosegmental, intonational,
         pausing, proform, play_language, idiom,
     )
-    from planars.reports import _BIUNIQ_VARIANTS
-    from planars.charts import (
-        _CISC_SPANS, _NONINT_SPANS, _METRICAL_BLOCKED_SPANS,
+    from planars.reports import (
+        _BIUNIQ_VARIANTS, _CISC_SPANS, _NONINT_SPANS, _METRICAL_BLOCKED_SPANS,
         _SUBSPAN_CATS, _SUBSPAN_VARIANTS, _SIMPLE_SPANS, _NONPERM_SPANS, _FREEOC_SPANS,
     )
     from planars.io import load_filled_tsv

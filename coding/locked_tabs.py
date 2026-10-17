@@ -22,13 +22,13 @@ content is new. An unknown builder name, place or include rule hard-fails.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Tuple
 
 import pandas as pd
 
 from planars.schema_values import STATUS_TAB
 
-from .drive_doorway import SpreadsheetHandle, WorksheetNotFound
+from .drive_doorway import SpreadsheetHandle
 from .schemas import load_diagnostic_classes, load_planar_schema
 
 # Shown to anyone who tries to edit a locked tab, and how a rebuild recognises

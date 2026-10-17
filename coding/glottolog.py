@@ -9,7 +9,7 @@ Usage — command line:
     python -m coding lookup-lang --all              # list all cached languages
 
 Usage — programmatic:
-    from coding.glottolog import get_metadata, validate_glottocode
+    from coding.glottolog import get_metadata
     meta = get_metadata("arao1248")   # returns cached entry; fetches if needed
     print(meta["name"])               # "Araona"
 
@@ -185,24 +185,6 @@ def get_metadata(glottocode: str, *, refresh: bool = False) -> dict:
     _save_cache(cache)
     _update_languages_yaml(glottocode, meta)
     return meta
-
-
-def validate_glottocode(glottocode: str) -> tuple[bool, Optional[str]]:
-    """Validate a Glottocode: check format and existence in Glottolog.
-
-    Does NOT raise — returns (is_valid, error_message_or_None).
-    Side effect: caches metadata on successful lookup.
-    """
-    if not is_valid_format(glottocode):
-        return False, (
-            f"'{glottocode}' is not a valid Glottocode format "
-            f"(expected 4 lowercase letters + 4 digits)"
-        )
-    try:
-        get_metadata(glottocode)
-        return True, None
-    except RuntimeError as e:
-        return False, str(e)
 
 
 def cached_entry(glottocode: str) -> Optional[dict]:

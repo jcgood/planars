@@ -53,7 +53,7 @@ from .make_forms import (
     _dump_diagnostics_yaml,
     _resolve_diagnostics_yaml_path,
 )
-from .schemas import criteria_for, criterion_values, load_diagnostic_classes as _load_dc
+from .schemas import criteria_for, criterion_values
 from planars.schema_values import is_keystone
 from .drive import (
     _load_drive_config, _save_drive_config,

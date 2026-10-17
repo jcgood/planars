@@ -1,8 +1,6 @@
 """Tests for validate_diagnostics_yaml() in coding/validate_diagnostics.py."""
 from __future__ import annotations
 
-import pytest
-
 from coding.validate_diagnostics import validate_diagnostics_yaml
 
 

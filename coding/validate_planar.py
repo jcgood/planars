@@ -10,7 +10,6 @@ import re
 from typing import Dict, List
 
 from .validate import ValidationIssue
-from .schemas import load_planar_schema
 from .make_forms import classify_element
 from planars.elements import split_elements as _tokenize_elements
 from planars.schema_values import (CLASS_TYPES, KEYSTONE_NAME, PLANAR_REQUIRED_COLUMNS,

@@ -30,7 +30,7 @@ visibly, and that stays per-command on purpose.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 
 from coding.generate_sheets import _TRAILING_COLS
 

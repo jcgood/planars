@@ -9,7 +9,6 @@ deleted 2026-10-13; the classifications are computed, never stored.)
 from __future__ import annotations
 
 import pandas as pd
-import pytest
 
 from coding.validate_planar import validate_planar_df, _is_all_caps_token
 

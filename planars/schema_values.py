@@ -61,7 +61,6 @@ def _key_within(where: str, key, columns: list) -> list:
 
 # The planar file's own columns (planar_{lang_id}.tsv) and the fixed values
 # of Position_Type and Class_Type (hidden-facts M0).
-PLANAR_COLUMNS: list = [c["name"] for c in _require("planar_columns")]
 PLANAR_REQUIRED_COLUMNS: list = [c["name"] for c in _require("planar_columns") if c.get("required")]
 
 

@@ -116,7 +116,6 @@ import pytest
 from coding import drive as drive_module
 from coding import drive_doorway
 from coding import import_sheets as is_
-from coding import validate_coding as vc
 from command_runner import run_command
 from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID, point_coded_data_at
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
@@ -211,9 +210,6 @@ class Env:
     def archives(self, lang: str, cls: str) -> List[Path]:
         return sorted((self.coded / lang / "archive" / cls).glob("*.tsv")) \
             if (self.coded / lang / "archive" / cls).exists() else []
-
-    def planar_tsv(self, lang: str) -> Path:
-        return self.coded / lang / "lang_setup" / f"planar_{lang}.tsv"
 
 
 @pytest.fixture()

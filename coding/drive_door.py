@@ -55,7 +55,6 @@ carries its identity as Drive properties (``planars_kind``, ``planars_lang``,
 archived): public properties, which any coordinator's client can read. The
 kinds are ``KINDS``, and an ``Identity`` that doesn't fit one can't be made.
 Every create on the door takes ``identity=`` and writes the label;
-``set_identity`` labels an existing file and refuses to relabel one;
 ``mark_archived`` is called where a class sheet is archived (and undone on
 rollback). The door places a file from what this command made, else its
 label (read once per command); the files made before labels existed were
@@ -635,20 +634,6 @@ class CheckedDoorway:
                 labels[key] = value
         self._wrote_file(file_id, "", "label")
 
-    def set_identity(self, file_id: str, identity: Identity) -> bool:
-        """Label an existing file. Refuses, in every mode, to change a label
-        that says the file is something else. True if a label was written."""
-        current = self._read_labels(file_id)
-        existing = Identity.from_labels(current)
-        if existing == identity:
-            return False
-        if existing is not None or _LABEL["kind"] in current:
-            raise DoorViolation(
-                f"{file_id} is labelled {existing.describe() if existing else current!r}; "
-                f"the door will not relabel it as {identity.describe()}")
-        self._write_labels(file_id, identity.labels(), f"label {file_id} as {identity.describe()}")
-        return True
-
     def mark_archived(self, file_id: str, archived: bool = True) -> None:
         """Label a file archived (or, undoing that, live). Called where a
         class sheet is archived, before its annotator's grant is lowered, so
@@ -699,11 +684,6 @@ class CheckedDoorway:
         kinds = {t.title: t.kind for t in spec.tabs}
         return [(ws, kinds[ws.title]) for ws in _retry(ss._inner.worksheets)
                 if not labels.get(ws.id) and ws.title in kinds]
-
-    def label_tabs(self, ss: "CheckedSpreadsheet") -> int:
-        """Label a class sheet's unlabelled tabs now (``_label_tabs``), for a
-        migration labelling sheets no command is writing. How many it labelled."""
-        return self._label_tabs(ss)
 
     def _label_tabs(self, ss: "CheckedSpreadsheet") -> int:
         """Label each tab of a class sheet that has no label yet with what its

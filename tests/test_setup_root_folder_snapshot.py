@@ -25,7 +25,6 @@ from pathlib import Path
 
 import pytest
 
-from coding import drive as drive_module
 from coding import drive_doorway, setup_root_folder
 from command_runner import run_command
 from fake_drive import FIXTURE_DIR, MANIFEST_FILE_ID, FakeDriveDoorway, api_error

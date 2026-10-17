@@ -78,7 +78,6 @@ from . import drive_door
 from .drive import (
     _load_drive_config,
     _save_drive_config,
-    load_manifest,
     upload_manifest,
     create_notes_doc,
     ensure_user_permission,
@@ -1596,17 +1595,6 @@ def _parse_pos_cell(cell: str) -> Optional[Tuple[int, str]]:
     if m:
         return int(m.group(1)), m.group(2)
     return None
-
-
-def _remap_coreference_prefill(
-    existing: Dict[Tuple[str, str, str], Dict[str, str]],
-    pos_num_remap: Dict[int, int],
-    new_pairs: List[List[str]],
-) -> Dict[Tuple[str, str, str], Dict[str, str]]:
-    """Remap old coreference annotation keys to new keys after position
-    renumbering: ``existing`` re-keyed by ``_coreference_key_map``."""
-    key_map = _coreference_key_map(existing, pos_num_remap, new_pairs)
-    return {key_map[k]: v for k, v in existing.items()}
 
 
 def _coreference_key_map(

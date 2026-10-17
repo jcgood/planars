@@ -21,7 +21,7 @@ CODED_DATA = ROOT / "coded_data"
 from .drive import load_manifest, upload_manifest, _load_drive_config, _save_drive_config
 from .drive_doorway import get_doorway
 from .make_forms import _read_diagnostics_for_language
-from .schemas import criteria_for, load_diagnostic_classes
+from .schemas import criteria_for
 from planars.schema_values import STATUS_TAB
 from .generate_sheets import _format_and_validate
 from planars.schema_values import TRAILING_COLUMNS as _TRAILING_COLS
@@ -152,11 +152,9 @@ def main(args: argparse.Namespace | None = None) -> None:
 
         # Read fresh diagnostics for this language
         lang_setup_dir = CODED_DATA / lang_id / "lang_setup"
-        planar_files = list(lang_setup_dir.glob("planar_*.tsv"))
-        if not planar_files:
+        if not list(lang_setup_dir.glob("planar_*.tsv")):
             print(f"\n[{lang_id}] No planar file found — skipping")
             continue
-        planar_filename = planar_files[0].name
 
         try:
             diag_rows = _read_diagnostics_for_language(lang_id, lang_setup_dir)
@@ -192,8 +190,6 @@ def main(args: argparse.Namespace | None = None) -> None:
                 except Exception as e:
                     print(f"    Could not open spreadsheet: {e}")
                     continue
-
-            manifest_updated = False
 
             for construction in constructions:
                 if construction == STATUS_TAB:
@@ -237,8 +233,8 @@ def main(args: argparse.Namespace | None = None) -> None:
                     print(f"    {construction}: refreshed {written}")
 
                     # Update manifest's stored param_values
-                    sheet_info["construction_params"][construction]["param_values"] = fresh
-                    manifest_updated = True
+                    sheet_info.setdefault("construction_params", {}).setdefault(
+                        construction, {})["param_values"] = fresh
 
     if not apply:
         if any_changes:

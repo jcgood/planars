@@ -436,7 +436,6 @@ def main(args: argparse.Namespace | None = None) -> None:
             print(f"\n  {class_name}")
             ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
 
-            construction_params = sheet_info.get("construction_params", {})
             constructions = sheet_info["constructions"]
 
             for construction in constructions:

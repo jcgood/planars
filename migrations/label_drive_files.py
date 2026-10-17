@@ -30,6 +30,12 @@ tabs, 51 archived class sheets, 9 folders, and each language's other files);
 left unlabelled only synth0001's retired allomorphy screening sheet. A second
 dry run found every file labelled.
 
+The door's public `set_identity` and `label_tabs`, which this script called,
+were deleted 2026-10-17 (Phase 10 unit 19): nothing else used them, since
+every create labels its file and every writing command labels the tabs of
+the class sheets it wrote when it ends. A re-run's dry run still works; its
+--apply would stop at the first label.
+
 Usage:
     python migrations/label_drive_files.py           # dry run: reads only
     python migrations/label_drive_files.py --apply

@@ -36,7 +36,7 @@ from .drive import (
     _load_drive_config, _save_drive_config,
 )
 from .drive_doorway import get_doorway, WorksheetNotFound
-from .generate_sheets import _STATUS_TAB, _STATUS_VALUES
+from .generate_sheets import _STATUS_TAB
 from planars.schema_values import STATUS_IN_PROGRESS, STATUS_READY, is_keystone
 from .restructure_sheets import _get_keyed_row_constructions, _get_pair_row_constructions
 from . import issues

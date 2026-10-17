@@ -57,7 +57,7 @@ from planars import proform as _proform
 from planars import play_language as _play
 from planars import idiom as _idiom
 from planars.elements import wrap_element
-from planars.io import load_filled_tsv, load_filled_sheet
+from planars.io import load_filled_sheet
 from planars.languages import get_display_name
 from planars.schema_values import (
     ELEMENT_ROWS, TRAILING_COLUMNS, header_shape, is_keystone, row_columns, row_type,
@@ -476,26 +476,6 @@ def _collect_spans_sheets(gc, manifest, lang_id: Optional[str] = None):
                     }
 
     return pd.DataFrame(rows), lang_meta
-
-
-# Backward-compatible aliases matching the names previously exported by charts.py.
-# New code should prefer project_spans() / language_spans().
-def collect_all_spans(repo_root) -> Tuple[pd.DataFrame, dict]:
-    """Run all analyses over coded_data/ and return (DataFrame, lang_meta).
-
-    Deprecated alias for project_spans(source="local", repo_root=repo_root).
-    Kept for backward compatibility with notebooks and check_codebook.py.
-    """
-    return project_spans(source="local", repo_root=repo_root)
-
-
-def collect_all_spans_from_sheets(gc, manifest) -> Tuple[pd.DataFrame, dict]:
-    """Run all analyses directly from Google Sheets and return (DataFrame, lang_meta).
-
-    Deprecated alias for project_spans(source="sheets", gc=gc, manifest=manifest).
-    Kept for backward compatibility with notebooks and Colab workflows.
-    """
-    return project_spans(source="sheets", gc=gc, manifest=manifest)
 
 
 # ---------------------------------------------------------------------------

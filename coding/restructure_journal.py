@@ -137,11 +137,6 @@ def clear_unit(lang_id: str, class_name: str, journal_path: Optional[Path] = Non
     _save_journal(journal, path)
 
 
-def get_unit(lang_id: str, class_name: str, journal_path: Optional[Path] = None) -> Optional[dict]:
-    """Return this unit's journal entry, or None if it isn't mid-flight."""
-    return load_journal(journal_path).get(_unit_key(lang_id, class_name))
-
-
 def is_rollback_safe(entry: dict) -> bool:
     """True if this unit's last checkpoint is OLD_SHEET_ARCHIVED and no
     later checkpoint was reached -- the only window undoing is safe in

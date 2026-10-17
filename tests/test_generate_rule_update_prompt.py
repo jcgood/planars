@@ -1,20 +1,11 @@
 """Tests for coding/generate_rule_update_prompt.py."""
 from __future__ import annotations
 
-import hashlib
-
-import pytest
 
 from coding.generate_rule_update_prompt import (
-    _normalize,
-    _compute_hash,
     _stale_classes,
     _generate_prompt,
 )
-
-
-def _make_hash(text: str) -> str:
-    return hashlib.sha256(" ".join(text.split()).encode()).hexdigest()[:8]
 
 
 # ---------------------------------------------------------------------------

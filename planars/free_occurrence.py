@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
-
-import pandas as pd
+from typing import Dict, Optional, Set, Tuple
 
 from planars.io import load_filled_tsv
 from planars.spans import fmt_span

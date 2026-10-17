@@ -1,6 +1,8 @@
 """Tests for rename-map and rename-class logic in restructure_sheets.py."""
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from coding.restructure_sheets import (

@@ -28,6 +28,7 @@ from coding.generate_sheets import (
     _build_nonperm_pairs,
     _build_phrasal_accent_pairs,
     _check_force_against_existing_sheets,
+    _coreference_key_map,
     _filter_nonperm_pairs_by_prescreening,
     _filter_reflex_pairs_by_prescreening,
     _parse_pos_cell,
@@ -36,7 +37,6 @@ from coding.generate_sheets import (
     _plan_language_creation,
     _prefill_free_occurrence_rows,
     _regen_dependents_simple,
-    _remap_coreference_prefill,
 )
 
 
@@ -622,12 +622,18 @@ class TestParsePosCell:
 
 
 # ---------------------------------------------------------------------------
-# _remap_coreference_prefill
+# _coreference_key_map
 # ---------------------------------------------------------------------------
 
 def _make_pairs(*rows):
     """Build a new_pairs list from (elem_a, pos_a_str, pos_b_str, direction) tuples."""
     return [list(r) for r in rows]
+
+
+def _remap_coreference_prefill(existing, pos_num_remap, new_pairs):
+    """``existing`` re-keyed the way --regen-construction carries answers over."""
+    key_map = _coreference_key_map(existing, pos_num_remap, new_pairs)
+    return {key_map[k]: v for k, v in existing.items()}
 
 
 class TestRemapCoreferencePreFill:

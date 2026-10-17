@@ -21,7 +21,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 
 import gspread
 from googleapiclient.discovery import build as google_build
-from googleapiclient.http import MediaIoBaseDownload, MediaIoBaseUpload
+from googleapiclient.http import MediaIoBaseDownload
 
 from . import drive_door
 
@@ -125,52 +125,11 @@ def _ordered_manifest_bytes(full_config: Dict) -> bytes:
     return json.dumps(ordered, indent=2).encode("utf-8")
 
 
-def _upload_planars_config(
-    drive, full_config: Dict, root_folder_id: str, existing_file_id: str = None
-) -> str:
-    """Upload the merged manifest.json to Drive. Returns the file ID.
-
-    The merged config has the structure::
-
-        {lang_id: {folder_id, folder_url, sheets: {...}, ...}, ...}
-
-    This replaces the old per-language ``manifest_{lang_id}.json`` files with a
-    single file that notebooks and all sheet scripts read.
-
-    Args:
-        drive: Drive API service.
-        full_config: complete merged config dict covering all languages.
-        root_folder_id: Drive folder for first-time file creation.
-        existing_file_id: ID of an existing manifest.json to update in place.
-
-    Returns:
-        The Drive file ID of manifest.json.
-    """
-    content = _ordered_manifest_bytes(full_config)
-
-    def update(file_id: str) -> None:
-        media = MediaIoBaseUpload(io.BytesIO(content), mimetype="application/json")
-        drive.files().update(fileId=file_id, media_body=media).execute()
-
-    def create() -> str:
-        media = MediaIoBaseUpload(io.BytesIO(content), mimetype="application/json")
-        return drive.files().create(
-            body={"name": "manifest.json", "parents": [root_folder_id]},
-            media_body=media,
-            fields="id",
-        ).execute()["id"]
-
-    return _upload_manifest_with(update, create, existing_file_id)
-
-
 def upload_manifest(doorway, full_config: Dict, root_folder_id: str,
                     existing_file_id: str = None) -> str:
-    """``_upload_planars_config`` through a ``drive_doorway.DriveDoorway``.
-
-    Same key reordering and same update-then-create fallback; both share one
-    body, so the manifest-writing rules exist in exactly one place. (There are
-    still three *other* independent manifest writers elsewhere in the codebase
-    — that is issue #276, not this.)
+    """Write the merged manifest.json (``{lang_id: {folder_id, sheets, ...}}``)
+    to Drive through the doorway, updating it in place if ``existing_file_id``
+    is known and creating it otherwise. Returns the file ID.
 
     Checks ``full_config`` against ``manifest_contract.check()`` first and
     prints a warning if it finds anything — but writes regardless. Phase 6
@@ -211,16 +170,6 @@ def _upload_manifest_with(update, create, existing_file_id: str = None) -> str:
         except Exception as e:
             print(f"  WARNING: could not update existing manifest.json ({e}); creating new file.")
     return create()
-
-
-def _load_manifest_from_drive(drive) -> Dict:
-    """Load the full manifest (all languages) from Drive.
-
-    Kept for callers that still hold a raw Drive service. Files migrated to
-    the doorway call ``load_manifest(doorway)`` instead; both share one body, so
-    the manifest-loading rules exist in exactly one place.
-    """
-    return _load_manifest_with(lambda file_id: _download_file_json(drive, file_id))
 
 
 def load_manifest(doorway) -> Dict:

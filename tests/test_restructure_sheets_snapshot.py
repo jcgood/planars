@@ -976,7 +976,6 @@ def test_real_crash_before_final_manifest_upload_then_resume_recovers(env, monke
     journal = rj.load_journal()
     assert journal  # at least one class reached NEW_SHEET_CREATED before the crash
     assert all(e["checkpoint"] == rj.NEW_SHEET_CREATED for e in journal.values())
-    stuck = [(e["lang_id"], e["class_name"]) for e in journal.values()]
 
     monkeypatch.setattr(rs, "upload_manifest", real_upload_manifest)
     out = env.run(["--resume", "--apply", "--lang", "stan1293",

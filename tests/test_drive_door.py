@@ -469,25 +469,6 @@ def test_a_found_folder_labelled_as_something_else_is_reported(env):
                                   identity=drive_door.folder("archive", "arao1248"))
 
 
-def test_set_identity_labels_once_and_never_relabels(env):
-    fake, door, sheet_id, _ = env
-    fake.file(sheet_id).properties.clear()              # a file made before labels
-    identity = drive_door.class_sheet(LANG, CLASS)
-    with drive_door.running("update-sheets", APPLY):
-        assert door.set_identity(sheet_id, identity) is True
-        assert door.set_identity(sheet_id, identity) is False
-        with pytest.raises(DoorViolation, match="will not relabel"):
-            door.set_identity(sheet_id, drive_door.class_sheet(LANG, "metrical"))
-    assert fake.file(sheet_id).properties == identity.labels()
-
-
-def test_a_dry_run_cannot_label(env):
-    fake, door, sheet_id, _ = env
-    fake.file(sheet_id).properties.clear()
-    with drive_door.running("update-sheets", DRY), pytest.raises(DoorViolation, match="dry run"):
-        door.set_identity(sheet_id, drive_door.class_sheet(LANG, CLASS))
-
-
 # -- rule 5 and the archived label: writer while live, reader once archived -----------
 
 ANNOTATOR = "annotator@example.org"

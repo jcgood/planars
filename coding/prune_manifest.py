@@ -30,10 +30,9 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-import shutil
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import yaml as _yaml
 

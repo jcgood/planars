@@ -10,7 +10,6 @@ problem it was named for had been fixed.
 from __future__ import annotations
 
 from coding.validation_report import (
-    ValidationReport,
     act_on_report,
     build_issue_body,
     issue_title,

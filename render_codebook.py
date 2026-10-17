@@ -82,7 +82,6 @@ def render(
                 pname = p["name"]
                 vals = ", ".join(f"`{v}`" for v in p.get("values", []))
                 pdesc = p.get("description", "").strip()
-                needs_review = "[NEEDS REVIEW]" in pdesc or "[PLACEHOLDER]" in pdesc
                 tag = " _(needs review)_" if "[NEEDS REVIEW]" in pdesc else (" _(placeholder)_" if "[PLACEHOLDER]" in pdesc else "")
                 pdesc = pdesc.replace("[NEEDS REVIEW]", "").replace("[PLACEHOLDER]", "").strip()
                 lines.append(f"- **`{pname}`** ({vals}){tag}  \n  {_wrap(pdesc, indent=2).lstrip()}\n")

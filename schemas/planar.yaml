@@ -49,8 +49,8 @@ element_row_key: [Element, Position_Number]
 # the values of the two that take a fixed set (hidden-facts M0: these lived
 # only in code). `required: true` columns are the ones validate_planar refuses
 # a planar without; each other reader checks for the columns it reads.
-# planars.schema_values reads this (PLANAR_COLUMNS, PLANAR_REQUIRED_COLUMNS,
-# ZONE, SLOT, CLASS_TYPES).
+# planars.schema_values reads this (PLANAR_REQUIRED_COLUMNS, ZONE, SLOT,
+# CLASS_TYPES).
 planar_columns:
   - name: Language_ID
   - name: Planar_Type

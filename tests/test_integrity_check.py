@@ -10,7 +10,6 @@ referencing v:obj-part/v:rec by pre-v:obj-R-insertion position numbers.
 from __future__ import annotations
 
 import pandas as pd
-import pytest
 
 from coding.integrity_check import (
     _find_stale_position_cells,

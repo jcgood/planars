@@ -42,10 +42,8 @@ from .validate_planar import validate_planar_df
 from .validate_diagnostics import validate_diagnostics_df
 from .schemas import (
     criteria_for,
-    criterion_values,
     free_entry_kind,
     load_diagnostic_criteria,
-    load_diagnostic_classes,
     placeholder,
 )
 
