@@ -109,13 +109,24 @@ def _update_languages_yaml(glottocode: str, meta: dict) -> None:
 # Public API
 # ---------------------------------------------------------------------------
 
+# Language IDs with this prefix are synthetic test languages (CLAUDE.md): exempt
+# from the Glottocode format and Glottolog verification. The one statement of
+# the prefix; ask is_synthetic() rather than testing it (hidden-facts R-2).
+SYNTHETIC_PREFIX = "synth"
+
+
+def is_synthetic(lang_id: str) -> bool:
+    """True for a synthetic test language's ID (not a real Glottocode)."""
+    return lang_id.startswith(SYNTHETIC_PREFIX)
+
+
 def is_valid_format(glottocode: str) -> bool:
     """Return True if glottocode matches the 4-letter + 4-digit Glottocode format.
 
-    IDs starting with 'synth' are reserved for synthetic test languages and are
-    considered valid even though they don't match the standard Glottocode pattern.
+    Synthetic test language IDs (is_synthetic) are considered valid even though
+    they don't match the standard Glottocode pattern.
     """
-    if glottocode.startswith("synth"):
+    if is_synthetic(glottocode):
         return True
     return bool(_GLOTTOCODE_RE.match(glottocode))
 

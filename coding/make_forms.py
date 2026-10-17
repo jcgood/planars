@@ -12,17 +12,14 @@ from pandera.errors import SchemaError
 
 from .contracts import VALID_CLASS_TYPES, class_type_schema, position_integer_schema, position_is_integer
 from .schemas import load_planar_schema
-from planars.schema_values import KEYSTONE_NAME
+from planars.schema_values import is_keystone
 
 _BRACE_SUFFIX_RE = re.compile(r'\{[^}]*\}$')
 
 
-def wrap_element(element: str) -> str:
-    """An element as every sheet shows it: stripped, and bracketed if it
-    starts or ends with a hyphen (planar.yaml's Element convention; Sheets
-    would otherwise read '-ing' as a formula). The one copy of this rule."""
-    element = str(element).strip()
-    return f"[{element}]" if (element.startswith("-") or element.endswith("-")) else element
+# The one copy of each rule lives in planars/elements.py, shared with the
+# analysis modules; re-exported here for the coding/ callers.
+from planars.elements import split_elements as _split_elements, wrap_element  # noqa: E402,F401
 
 
 def element_rows(element_index, lang_id: str) -> List[Tuple[str, str, int]]:
@@ -177,31 +174,6 @@ def _infer_language_id_from_planar_filename(planar_filename: str) -> str:
 ElementIndex = Dict[str, Tuple[int, str, str, str]]
 
 
-def _split_elements(elements_raw: str) -> List[str]:
-    """Split a comma-separated elements string, ignoring commas inside braces.
-
-    E.g. 'QWORDS, NP{S,A,P}' -> ['QWORDS', 'NP{S,A,P}']
-    """
-    parts: List[str] = []
-    current: List[str] = []
-    depth = 0
-    for ch in elements_raw:
-        if ch == "{":
-            depth += 1
-            current.append(ch)
-        elif ch == "}":
-            depth -= 1
-            current.append(ch)
-        elif ch == "," and depth == 0:
-            parts.append("".join(current).strip())
-            current = []
-        else:
-            current.append(ch)
-    if current:
-        parts.append("".join(current).strip())
-    return [p for p in parts if p]
-
-
 def build_element_index(planar_filename: str, data_dir: Path | str) -> ElementIndex:
     """Build a mapping with unique keys per element occurrence in a planar TSV.
 
@@ -307,19 +279,14 @@ def planar_to_manifest_dict(planar_path: Path, lang_id: str) -> dict:
     """
     df = pd.read_csv(planar_path, sep="\t", dtype=str, keep_default_na=False)
     df = df[df["Language_ID"] == lang_id]
-    keystone_name = KEYSTONE_NAME
     keystone_pos: int | None = None
     positions = []
     for _, row in df.iterrows():
         pos = int(row["Position"])
         pname = row["Position_Name"].strip()
         ptype = row["Position_Type"].strip()
-        raw_elems = _split_elements(row.get("Elements", "") or "")
-        elements = [
-            f"[{e}]" if (e.startswith("-") or e.endswith("-")) else e
-            for e in raw_elems
-        ]
-        if pname.lower() == keystone_name:
+        elements = [wrap_element(e) for e in _split_elements(row.get("Elements", "") or "")]
+        if is_keystone(pname):
             keystone_pos = pos
             continue
         positions.append({"pos": pos, "name": pname, "type": ptype, "elements": elements})
@@ -371,6 +338,29 @@ def _dump_diagnostics_yaml(data: dict) -> str:
 # ---------------------------------------------------------------------------
 # keystone_active resolution
 # ---------------------------------------------------------------------------
+
+def resolve_obligatory_positions(lang_id: str, data_dir: Path | str) -> List[str]:
+    """phrasal_accent's tier-2 obligatory positions for a language: the
+    Position_Names its diagnostics YAML lists under
+    ``classes.phrasal_accent.obligatory_positions`` (positions treated as
+    always present when deciding which accent-eligible elements can become
+    adjacent; issue #237). A linguistic judgment about one language, so it
+    lives in that language's file (hidden-facts M1: it was one global constant
+    naming an English position). Absent means none beyond the obligatory core.
+    """
+    yaml_path = _resolve_diagnostics_yaml_path(lang_id, data_dir)
+    if not yaml_path.exists():
+        return []
+    with open(yaml_path, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+    listed = ((data.get("classes") or {}).get("phrasal_accent") or {}).get("obligatory_positions")
+    if listed is None:
+        return []
+    if not isinstance(listed, list) or not all(isinstance(p, str) for p in listed):
+        raise ValueError(f"diagnostics_{lang_id}.yaml: phrasal_accent.obligatory_positions "
+                         f"must be a list of position names; got {listed!r}")
+    return [p.strip() for p in listed]
+
 
 def resolve_keystone_active(
     lang_id: str,
@@ -467,10 +457,23 @@ def _encode_criteria_dict(criteria_dict: Dict[str, List[str]]) -> List[str]:
     return parts
 
 
+# The datestamp in an archived file's name (planar_stan1293_20260209_101500.tsv),
+# always taken in UTC: datetime.now(timezone.utc).strftime(ARCHIVE_STAMP_FORMAT).
+# One statement for every command that archives a file (hidden-facts M-misc;
+# until 2026-10-16 three files typed it, one of them on local time).
+ARCHIVE_STAMP_FORMAT = "%Y%m%d_%H%M%S"
+
+
+# The columns of diagnostics_{lang_id}.tsv, in order. The TSV is generated from
+# the YAML by _yaml_to_tsv_df below, so this, its writer, is the one statement
+# of its shape; readers and validators import it (hidden-facts R0).
+DIAGNOSTICS_TSV_COLUMNS = ["Class", "Language", "Constructions", "Criteria"]
+
+
 def _yaml_to_tsv_df(yaml_data: dict, lang_id: str) -> pd.DataFrame:
     """Convert a diagnostics YAML dict to a TSV-format DataFrame.
 
-    The returned DataFrame has columns: Class, Language, Constructions, Criteria.
+    The returned DataFrame has the DIAGNOSTICS_TSV_COLUMNS.
     Every criterion is encoded with its values in brace syntax (e.g.
     ``accented{y/n/both}``, ``free{y/n}``).
 
@@ -506,7 +509,7 @@ def _yaml_to_tsv_df(yaml_data: dict, lang_id: str) -> pd.DataFrame:
                 "Constructions": ", ".join(constructions),
                 "Criteria": ", ".join(_encode_criteria_dict(criteria_dict)),
             })
-    return pd.DataFrame(rows, columns=["Class", "Language", "Constructions", "Criteria"])
+    return pd.DataFrame(rows, columns=DIAGNOSTICS_TSV_COLUMNS)
 
 
 def _tsv_df_to_yaml(df: pd.DataFrame, lang_id: str) -> dict:
@@ -622,8 +625,7 @@ def _read_diagnostics_for_language(
         diag_path = _resolve_diagnostics_path(language_id, data_dir)
         df = pd.read_csv(diag_path, sep="\t", header=0, dtype=str, keep_default_na=False)
 
-    required = {"Class", "Language", "Constructions", "Criteria"}
-    missing = required - set(df.columns)
+    missing = set(DIAGNOSTICS_TSV_COLUMNS) - set(df.columns)
     if missing:
         raise ValueError(f"Diagnostics file missing required columns: {sorted(missing)}")
 

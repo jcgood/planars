@@ -16,7 +16,10 @@ from planars.spans import fmt_span, strict_span, loose_span, position_sets_from_
 # Known construction → criteria mappings:
 #   aspiration_prominence : aspirated
 #   flapping              : flapping_left, flapping_internal, flapping_right
-_REQUIRED_CRITERIA: set = set()
+# (diagnostic_classes.yaml's required_criteria for the class is empty.)
+from planars.schema_values import required_criteria
+
+_REQUIRED_CRITERIA = required_criteria("segmental")
 
 # Values that count as qualifying (element is within the segmental domain).
 # 'both' indicates variable application and is treated as qualifying; the

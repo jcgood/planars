@@ -88,12 +88,13 @@ from .glottolog import cached_entry as _cached_glottolog, get_metadata as _fetch
 from planars.languages import get_display_name as _get_display_name
 from planars.schema_values import (
     ELEMENT_ROW_COLUMNS, KEYSTONE_NAME, PAIR_ROW_KEYS, PAIR_ROW_SHAPES, STATUS_COLUMNS,
-    STATUS_IN_PROGRESS, STATUS_READY, STATUS_TAB, STATUS_VALUES,
+    STATUS_IN_PROGRESS, STATUS_READY, STATUS_TAB, STATUS_VALUES, ZONE,
     TRAILING_COLUMNS as _TRAILING_COLS,
     is_keystone as _is_keystone,
     row_columns, row_key,
 )
 from planars.free_occurrence import _parse_pos_ref
+from planars.nonpermutability import is_pair_candidate
 
 
 def _annotator_email(lang_id: str) -> Optional[str]:
@@ -118,6 +119,7 @@ from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
     resolve_keystone_active,
+    resolve_obligatory_positions,
     planar_to_manifest_dict,
 )
 
@@ -421,17 +423,11 @@ def _build_nonperm_pairs(  # noqa: too-many-branches
     variable ordering relative to other elements (e.g. verb–adverb permutation)
     can be annotated.
 
-    Inclusion rules:
-    - INCLUDE if A and B share a Zone position (within-zone permutation).
-    - EXCLUDE if all of A's positions are strictly before all of B's, or vice versa.
-    - EXCLUDE if A and B occupy exactly the same Slot position(s) only (same slot,
-      fixed co-occurrence order by convention).
-    - INCLUDE otherwise (A's positions straddle B's, or B's straddle A's).
+    Which pairs are candidates is planars.nonpermutability.is_pair_candidate,
+    the one statement of the rule (integrity-check's staleness check uses it too).
 
     Returns sorted [[Element_A, Element_B], ...] rows (no scopal — annotators fill that in).
     """
-    _keystone = KEYSTONE_NAME
-
     # Build element → set of positions. Skip keystone unless keystone_active.
     # Apply the same bracket-wrapping used when writing element_prescreening rows
     # (make_forms.wrap_element, imported as _wrap) so that pair element names are
@@ -440,35 +436,13 @@ def _build_nonperm_pairs(  # noqa: too-many-branches
     for _, (pos, pos_name, lang, element) in element_index.items():
         if lang != lang_id:
             continue
-        if pos_name.strip().lower() == _keystone and not keystone_active:
+        if _is_keystone(pos_name) and not keystone_active:
             continue
         elem_positions.setdefault(_wrap(element), set()).add(pos)
 
     elements = sorted(elem_positions.keys())
-    pairs = []
-    for i, a in enumerate(elements):
-        for b in elements[i + 1:]:
-            pos_a = elem_positions[a]
-            pos_b = elem_positions[b]
-            shared = pos_a & pos_b
-
-            # Shared Zone: variable ordering within the zone
-            if any(pos_type.get(p) == "Zone" for p in shared):
-                pairs.append([a, b])
-                continue
-
-            # Fixed order: all of A strictly before all of B (or vice versa)
-            if max(pos_a) < min(pos_b) or max(pos_b) < min(pos_a):
-                continue
-
-            # Same Slot(s) only, no Zone, no straddling: fixed by convention
-            if pos_a == pos_b and all(pos_type.get(p) == "Slot" for p in pos_a):
-                continue
-
-            # Straddling or complex overlap: variable order is structurally possible
-            pairs.append([a, b])
-
-    return pairs
+    return [[a, b] for i, a in enumerate(elements) for b in elements[i + 1:]
+            if is_pair_candidate(elem_positions[a], elem_positions[b], pos_type)]
 
 
 def _abort_if_criterion_diverges_by_position(
@@ -638,7 +612,7 @@ def _build_reflex_pairs(
             pos_b_str  = _pos_str(pos_b_num, pos_b_name)
 
             if pos_a_num == pos_b_num:
-                if pos_type.get(pos_a_num) == "Zone":
+                if pos_type.get(pos_a_num) == ZONE:
                     rows.append([elem_a, pos_a_str, pos_b_str, "same", 0])
                 # Same Slot position: skip (elements cannot co-occur).
                 continue
@@ -725,22 +699,15 @@ def _filter_reflex_pairs_by_prescreening(
 # Phrasal accent pair generation (issue #237 — two-tier obligatory-core compromise)
 # ---------------------------------------------------------------------------
 
-# Coordinator-confirmed "obligatory positions" list — issue #237's tier-2 fallback,
-# used for any position that falls OUTSIDE the free_occurrence-derived obligatory
-# core (see _phrasal_accent_obligatory_core). Every other non-keystone Slot is
-# treated as potentially absent when deciding whether two accent-eligible elements
-# can become linearly adjacent.
-#
-# THIS IS A FIRST GUESS, NOT A VALIDATED COORDINATOR DECISION. It is lifted
-# directly from issue #237's original tentative example set ("verbstem, subject,
-# maybe verb inflection") and is expected to need per-language correction as real
-# phrasal_accent data comes back. Edit freely — this constant is deliberately kept
-# separate from the adjacency logic below so it can be adjusted without needing to
-# understand the rest of the algorithm. v:verbstem is included trivially (the
-# keystone is always present by definition); v:npsubj1 (subject) is the other
-# member of the original tentative list.
-_OBLIGATORY_POSITIONS_DEFAULT = {KEYSTONE_NAME, "v:npsubj1"}
-_OBLIGATORY_POSITIONS_DEFAULT_NORM = {p.strip().lower() for p in _OBLIGATORY_POSITIONS_DEFAULT}
+# Issue #237's tier-2 "obligatory positions" — positions outside the
+# free_occurrence-derived obligatory core (see _phrasal_accent_obligatory_core)
+# treated as always present when deciding whether two accent-eligible elements
+# can become linearly adjacent — are listed per language in its diagnostics
+# YAML (classes.phrasal_accent.obligatory_positions; make_forms.
+# resolve_obligatory_positions). Every other non-keystone Slot is treated as
+# potentially absent. The keystone needs no listing: it is always in the core.
+# Until 2026-10-16 this was one global constant, {v:verbstem, v:npsubj1}, a
+# first guess from #237 that named an English position for every language.
 
 
 def _phrasal_accent_obligatory_core(lang_id: str, keystone_pos: int) -> Tuple[int, int]:
@@ -758,8 +725,8 @@ def _phrasal_accent_obligatory_core(lang_id: str, keystone_pos: int) -> Tuple[in
     Falls back to the keystone position alone (a trivial single-position "core")
     when free_occurrence/general.tsv doesn't exist yet, the keystone row is
     missing, or the keystone is free (free=y, i.e. no structural dependents) —
-    in all of these cases tier 2 (_OBLIGATORY_POSITIONS_DEFAULT) does all the
-    obligatory-position work outside the keystone itself.
+    in all of these cases tier 2 (the language's obligatory_positions) does all
+    the obligatory-position work outside the keystone itself.
     """
     fo_path = CODED_DATA / lang_id / "free_occurrence" / "general.tsv"
     if not fo_path.exists():
@@ -793,25 +760,34 @@ def _phrasal_accent_obligatory_core(lang_id: str, keystone_pos: int) -> Tuple[in
 
 def _phrasal_accent_obligatory_positions(
     lang_id: str, keystone_pos: int, all_positions: Dict[int, str],
+    data_dir: Optional[Path] = None,
 ) -> Set[int]:
-    """Union tier-1 (obligatory core) and tier-2 (coordinator list) obligatory positions.
+    """Union tier-1 (obligatory core) and tier-2 (the language's list) obligatory positions.
 
     A position is obligatory (can never be dropped, so it always blocks adjacency
     between elements on either side of it) if EITHER:
       - it falls inside the free_occurrence-derived obligatory core, or
-      - its Position_Name is in _OBLIGATORY_POSITIONS_DEFAULT.
+      - its Position_Name is in the language's obligatory_positions.
+    A listed name the planar does not have raises: it is a typo or a renamed
+    position, and silently ignoring it would change which pairs exist.
+    ``data_dir`` holds the diagnostics YAML (default: the language's lang_setup).
     """
+    data_dir = data_dir or CODED_DATA / lang_id / "lang_setup"
     core_lo, core_hi = _phrasal_accent_obligatory_core(lang_id, keystone_pos)
     obligatory = {p for p in all_positions if core_lo <= p <= core_hi}
-    for pos_num, pos_name in all_positions.items():
-        if pos_name.strip().lower() in _OBLIGATORY_POSITIONS_DEFAULT_NORM:
-            obligatory.add(pos_num)
+    by_name = {name.strip().lower(): num for num, name in all_positions.items()}
+    for listed in resolve_obligatory_positions(lang_id, data_dir):
+        if listed.lower() not in by_name:
+            raise ValueError(
+                f"diagnostics_{lang_id}.yaml: phrasal_accent.obligatory_positions names "
+                f"{listed!r}, which is not a position in planar_{lang_id}.tsv")
+        obligatory.add(by_name[listed.lower()])
     return obligatory
 
 
 def _build_phrasal_accent_pairs(
     element_index, lang_id: str, pos_type: Dict[int, str],
-    keystone_active: bool = False,
+    keystone_active: bool = False, *, data_dir: Optional[Path] = None,
 ) -> List[List[str]]:
     """Generate candidate joint_accent element pairs for phrasal_accent's `general` tab.
 
@@ -826,8 +802,8 @@ def _build_phrasal_accent_pairs(
         Position_Number range the keystone structurally requires in order to be
         uttered at all. Every position inside that range is obligatory.
 
-      Tier 2 (outside the core): _OBLIGATORY_POSITIONS_DEFAULT, a
-        coordinator-confirmed starting list of positions treated as always
+      Tier 2 (outside the core): the positions the language's diagnostics
+        YAML lists as phrasal_accent.obligatory_positions, treated as always
         present. Every other non-keystone Slot is treated as potentially absent.
 
     Two elements are a candidate pair if no obligatory position (by either tier)
@@ -893,11 +869,12 @@ def _build_phrasal_accent_pairs(
               "cannot compute the obligatory core.")
         return []
 
-    obligatory = _phrasal_accent_obligatory_positions(lang_id, keystone_pos, all_positions)
+    obligatory = _phrasal_accent_obligatory_positions(lang_id, keystone_pos, all_positions,
+                                                      data_dir)
 
     def _adjacent(pos_a: int, pos_b: int) -> bool:
         if pos_a == pos_b:
-            return pos_type.get(pos_a) == "Zone"
+            return pos_type.get(pos_a) == ZONE
         lo, hi = min(pos_a, pos_b), max(pos_a, pos_b)
         return not any(lo < p < hi for p in obligatory)
 
@@ -935,7 +912,8 @@ def pair_rows(lang_id: str, class_name: str, construction: str, *,
         return _filter_reflex_pairs_by_prescreening(pairs, lang_id, construction,
                                                     file_issue=file_issue)
     if class_name == "phrasal_accent":
-        return _build_phrasal_accent_pairs(element_index, lang_id, pos_type, keystone_active=ka)
+        return _build_phrasal_accent_pairs(element_index, lang_id, pos_type, keystone_active=ka,
+                                           data_dir=planar_path.parent)
     if class_name == "nonpermutability":
         pairs = _build_nonperm_pairs(element_index, lang_id, pos_type, keystone_active=ka)
         return _filter_nonperm_pairs_by_prescreening(pairs, lang_id, file_issue=file_issue)

@@ -15,12 +15,9 @@ from planars.contracts import (
 )
 from planars.spans import fmt_span, loose_span, strict_span
 
-from planars.schema_values import KEYSTONE_NAME as _KEYSTONE_NAME
-from planars.schema_values import PAIR_ROW_SHAPES, TRAILING_COLUMNS
+from planars.elements import split_elements, wrap_element
+from planars.schema_values import PAIR_ROW_SHAPES, TRAILING_COLUMNS, is_keystone
 _TRAILING_COLS = set(TRAILING_COLUMNS)
-_REQUIRED_CRITERIA: Set[str] = {"reflexive_allowed"}
-
-_PAIR_CRITERIA = {"reflexive_allowed", "pronoun_allowed", "np_allowed"}
 
 # Which criterion each pair construction is about. Source of truth is
 # schemas/diagnostic_classes.yaml's per-construction `criterion` field; this
@@ -29,7 +26,9 @@ _CONSTRUCTION_CRITERION: Dict[str, str] = {}
 
 
 def _construction_criterion_map() -> Dict[str, str]:
-    """{construction_name: criterion} for coreference, from the schema."""
+    """{construction_name: criterion} for coreference's pair-row
+    constructions, from the schema (the prescreening tab's `referential` is
+    left out: it is not a pair criterion)."""
     global _CONSTRUCTION_CRITERION
     if not _CONSTRUCTION_CRITERION:
         text = (_res_files("schemas")
@@ -39,6 +38,7 @@ def _construction_criterion_map() -> Dict[str, str]:
             con["name"]: con["criterion"]
             for con in (classes.get("coreference", {}).get("constructions") or [])
             if isinstance(con, dict) and "criterion" in con
+            and con.get("row_type") == "pair_rows"
         }
     return _CONSTRUCTION_CRITERION
 
@@ -52,7 +52,7 @@ def _criterion_column(tsv_path: Path, pair_cols: Set[str]) -> str:
     ``{construction}.tsv`` convention) resolved through
     ``diagnostic_classes.yaml``.
 
-    This used to be ``next(c for c in _PAIR_CRITERIA if c in pair_cols)`` —
+    This used to be ``next(c for c in <the three pair criteria> if c in pair_cols)`` —
     pick whichever of the three criterion columns is present. That is correct
     only while a tab carries exactly one of them. When a tab carries all three
     (as synth0001's coreference tabs did after 2026-08-02's import), ``next()``
@@ -61,45 +61,23 @@ def _criterion_column(tsv_path: Path, pair_cols: Set[str]) -> str:
     answers, silently. Two of the three snapshots failed on any given run, and
     *which* two changed between runs.
 
-    Falls back to the single criterion column present (the one-criterion-per-tab
-    layout), then to ``reflexive_allowed``, so a tab whose name is not a known
-    construction still behaves as before.
+    A tab whose name is not a known construction falls back to the single
+    pair criterion column present (the one-criterion-per-tab layout); with
+    none or several present it cannot be placed, and raises rather than guess.
     """
     construction = tsv_path.stem
-    declared = _construction_criterion_map().get(construction)
-    if declared and declared in pair_cols:
-        return declared
-    present = sorted(_PAIR_CRITERIA & pair_cols)
-    if len(present) == 1:
-        return present[0]
+    criteria = _construction_criterion_map()
+    declared = criteria.get(construction)
     if declared:
         return declared
-    # Sorted, so that an ambiguous tab is at least deterministic rather than
-    # randomised — a wrong-but-stable answer is debuggable; a wrong-and-shifting
-    # one is what made this bug invisible for as long as it was.
-    return present[0] if present else "reflexive_allowed"
-
-
-def _split_elements(raw: str) -> List[str]:
-    """Split comma-separated elements string, ignoring commas inside braces."""
-    parts: List[str] = []
-    current: List[str] = []
-    depth = 0
-    for ch in raw:
-        if ch == "{":
-            depth += 1
-            current.append(ch)
-        elif ch == "}":
-            depth -= 1
-            current.append(ch)
-        elif ch == "," and depth == 0:
-            parts.append("".join(current).strip())
-            current = []
-        else:
-            current.append(ch)
-    if current:
-        parts.append("".join(current).strip())
-    return [p for p in parts if p]
+    present = sorted(set(criteria.values()) & pair_cols)
+    if len(present) == 1:
+        return present[0]
+    raise ValueError(
+        f"{tsv_path.name}: not a coreference pair construction in "
+        f"diagnostic_classes.yaml ({sorted(criteria)}), and its columns name "
+        f"{'none' if not present else 'several'} of their criteria "
+        f"({present or sorted(set(criteria.values()))}); cannot tell which to read.")
 
 
 def _load_planar_for_coreference(
@@ -137,17 +115,14 @@ def _load_planar_for_coreference(
     elem_to_positions: Dict[str, Set[int]] = {}
     keystone_pos: Optional[int] = None
 
-    def _wrap(e: str) -> str:
-        return f"[{e}]" if (e.startswith("-") or e.endswith("-")) else e
-
     for _, row in df.iterrows():
         pos = int(row["Position"])
         pname = row["Position_Name"]
         pos_to_name[pos] = pname
-        if pname.lower() == _KEYSTONE_NAME:
+        if is_keystone(pname):
             keystone_pos = pos
-        for elem_plain in _split_elements(row["Elements"]):
-            elem_to_positions.setdefault(_wrap(elem_plain), set()).add(pos)
+        for elem_plain in split_elements(row["Elements"]):
+            elem_to_positions.setdefault(wrap_element(elem_plain), set()).add(pos)
 
     return keystone_pos, pos_to_name, elem_to_positions
 

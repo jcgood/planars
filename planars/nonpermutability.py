@@ -7,9 +7,9 @@ import pandas as pd
 
 from planars.spans import fmt_span, strict_span
 
-_REQUIRED_CRITERIA = {"scopal"}
+from planars.elements import split_elements, wrap_element
 from planars.schema_values import KEYSTONE_NAME as _KEYSTONE_NAME
-from planars.schema_values import PAIR_ROW_SHAPES, TRAILING_COLUMNS
+from planars.schema_values import PAIR_ROW_SHAPES, SLOT, TRAILING_COLUMNS, ZONE, is_keystone
 _TRAILING_COLS = set(TRAILING_COLUMNS)
 
 # Only the pair-row (general) construction can be derived by this module;
@@ -21,26 +21,39 @@ _TRAILING_COLS = set(TRAILING_COLUMNS)
 # Planar helpers
 # ---------------------------------------------------------------------------
 
-def _split_elements(raw: str) -> List[str]:
-    """Brace-aware comma split for element strings."""
-    parts: List[str] = []
-    current: List[str] = []
-    depth = 0
-    for ch in raw:
-        if ch == "{":
-            depth += 1
-            current.append(ch)
-        elif ch == "}":
-            depth -= 1
-            current.append(ch)
-        elif ch == "," and depth == 0:
-            parts.append("".join(current).strip())
-            current = []
-        else:
-            current.append(ch)
-    if current:
-        parts.append("".join(current).strip())
-    return [p for p in parts if p]
+def is_pair_candidate(positions_a: Set[int], positions_b: Set[int],
+                      pos_type: Dict[int, str]) -> bool:
+    """True if the planar lets two elements (given every position each
+    occupies) be variably ordered, so the pair goes on the general tab.
+
+    The one statement of the rule (hidden-facts D2b: generate-sheets' pair
+    builder and this module's staleness checks each had their own copy):
+    - yes if they share a Zone position (within-zone permutation);
+    - no if all of one's positions are strictly before all of the other's;
+    - no if both occupy exactly the same Slot position(s) only (same slot,
+      fixed co-occurrence order by convention);
+    - yes otherwise (one straddles the other).
+    """
+    shared = positions_a & positions_b
+    if any(pos_type.get(p) == ZONE for p in shared):
+        return True
+    if max(positions_a) < min(positions_b) or max(positions_b) < min(positions_a):
+        return False
+    if positions_a == positions_b and all(pos_type.get(p) == SLOT for p in positions_a):
+        return False
+    return True
+
+
+def pair_candidate_elements(elem_to_positions: Dict[str, Set[int]],
+                            pos_type: Dict[int, str]) -> Set[str]:
+    """Elements that appear in at least one candidate pair."""
+    elems = list(elem_to_positions)
+    found: Set[str] = set()
+    for i, ea in enumerate(elems):
+        for eb in elems[i + 1:]:
+            if is_pair_candidate(elem_to_positions[ea], elem_to_positions[eb], pos_type):
+                found.update((ea, eb))
+    return found
 
 
 def _load_planar(planar_path: Path, lang_id: str, keystone_active: bool = False):
@@ -70,15 +83,11 @@ def _load_planar(planar_path: Path, lang_id: str, keystone_active: bool = False)
         pos_to_name[pos] = pname
         pos_type[pos] = ptype
 
-        raw_elements = _split_elements(row.get("Elements", "") or "")
-        # Apply the same bracket-wrapping used in Google Sheets to match
-        # element names in imported TSVs (element_prescreening, general).
-        elements = [
-            f"[{e}]" if (e.startswith("-") or e.endswith("-")) else e
-            for e in raw_elements
-        ]
+        # Bracket-wrapped as in the sheets, to match element names in imported
+        # TSVs (element_prescreening, general).
+        elements = [wrap_element(e) for e in split_elements(row.get("Elements", "") or "")]
 
-        if pname.lower() == _KEYSTONE_NAME:
+        if is_keystone(pname):
             keystone_pos = pos
             if not keystone_active:
                 continue
@@ -98,30 +107,15 @@ def structurally_expected_pair_elements(
 ) -> Set[str]:
     """Return elements that can appear in at least one nonpermutability pair.
 
-    An element is expected if it would be included in at least one pair by
-    _build_nonperm_pairs (i.e., it is not excluded because it shares only a
-    same Slot position with every other element or has fixed structural order
-    with all others). Uses bracket-wrapped names to match imported TSV format.
+    An element is expected if is_pair_candidate puts it in at least one pair
+    (the rule generate-sheets' _build_nonperm_pairs uses too). Uses
+    bracket-wrapped names to match imported TSV format.
 
     When keystone_active is True, keystone elements are included in the
     candidate set (same behaviour as _build_nonperm_pairs with keystone_active=True).
     """
     _, _, pos_type, _, elem_to_positions = _load_planar(planar_path, lang_id, keystone_active)
-    all_elems = list(elem_to_positions.keys())
-    expected: Set[str] = set()
-    for i, ea in enumerate(all_elems):
-        for eb in all_elems[i + 1:]:
-            pa, pb = elem_to_positions[ea], elem_to_positions[eb]
-            shared = pa & pb
-            if any(pos_type.get(p) == "Zone" for p in shared):
-                expected.add(ea); expected.add(eb)
-            elif max(pa) < min(pb) or max(pb) < min(pa):
-                continue
-            elif pa == pb and all(pos_type.get(p) == "Slot" for p in pa):
-                continue
-            else:
-                expected.add(ea); expected.add(eb)
-    return expected
+    return pair_candidate_elements(elem_to_positions, pos_type)
 
 
 # ---------------------------------------------------------------------------
@@ -253,22 +247,7 @@ def derive_nonpermutability_domains(
             if "Element" in pre_df.columns and "scopal" in pre_df.columns:
                 # Elements expected in pairs: structurally reachable by the
                 # pair algorithm (i.e., not excluded for being same-Slot only).
-                structurally_expected: Set[str] = set()
-                all_elems = list(elem_to_positions.keys())
-                for i, ea in enumerate(all_elems):
-                    for eb in all_elems[i + 1:]:
-                        pa, pb = elem_to_positions[ea], elem_to_positions[eb]
-                        shared = pa & pb
-                        if any(pos_type.get(p) == "Zone" for p in shared):
-                            structurally_expected.add(ea)
-                            structurally_expected.add(eb)
-                        elif max(pa) < min(pb) or max(pb) < min(pa):
-                            continue
-                        elif pa == pb and all(pos_type.get(p) == "Slot" for p in pa):
-                            continue
-                        else:
-                            structurally_expected.add(ea)
-                            structurally_expected.add(eb)
+                structurally_expected = pair_candidate_elements(elem_to_positions, pos_type)
 
                 dep_set = set()
                 for col in PAIR_ROW_SHAPES["element_pairs"]:
@@ -342,7 +321,7 @@ def derive_nonpermutability_domains(
     # Condition 1: Slot. Condition 2: all elements appear in exactly one position.
     strict_positions: Set[int] = {
         pos for pos in non_keystone_positions
-        if pos_type.get(pos) == "Slot"
+        if pos_type.get(pos) == SLOT
         and all(len(elem_to_positions.get(e, set())) == 1 for e in pos_to_elements.get(pos, []))
     }
 

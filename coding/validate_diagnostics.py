@@ -25,7 +25,8 @@ from pathlib import Path
 from typing import Dict, List, Set
 
 from .validate import ValidationIssue
-from .glottolog import is_valid_format as _is_valid_glottocode, cached_entry as _cached_glottocode
+from .glottolog import (is_valid_format as _is_valid_glottocode, cached_entry as _cached_glottocode,
+                        is_synthetic as _is_synthetic)
 
 ROOT = Path(__file__).resolve().parent.parent
 _LANGUAGES_YAML = ROOT / "schemas" / "languages.yaml"
@@ -49,15 +50,34 @@ def _is_glottolog_verified(lang_id: str) -> bool:
         if isinstance(entry, dict) and entry.get("glottolog", {}).get("name"):
             return True
     return False
-from .schemas import load_diagnostic_classes, load_diagnostic_criteria
 
-ROOT = Path(__file__).resolve().parent.parent
+
+def _glottocode_issues(lang_id: str, location: str) -> List[ValidationIssue]:
+    """The Glottocode format warning or the Glottolog-verification advisory,
+    for both the YAML and TSV forms. Synthetic test languages are exempt."""
+    if _is_synthetic(lang_id):
+        return []
+    if not _is_valid_glottocode(lang_id):
+        return [ValidationIssue(
+            "warning", location,
+            f"Language ID '{lang_id}' does not match Glottocode format "
+            f"(expected 4 lowercase letters + 4 digits, e.g. 'arao1248')")]
+    if not _is_glottolog_verified(lang_id):
+        return [ValidationIssue(
+            "warning", location,
+            f"Language ID '{lang_id}' has not been verified against Glottolog. "
+            f"Run: python -m coding lookup-lang {lang_id}")]
+    return []
+
+
+from .schemas import load_diagnostic_classes, load_diagnostic_criteria  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-_REQUIRED_COLS = {"Class", "Language", "Constructions", "Criteria"}
+from .make_forms import DIAGNOSTICS_TSV_COLUMNS  # noqa: E402
+_REQUIRED_COLS = set(DIAGNOSTICS_TSV_COLUMNS)
 
 
 def _known_analysis_classes() -> Set[str]:
@@ -340,23 +360,9 @@ def validate_diagnostics_yaml(data: dict, lang_id: str) -> List[ValidationIssue]
                 ))
 
     # ------------------------------------------------------------------
-    # 6. Glottocode format + cache advisory
-    # IDs starting with 'synth' are reserved for synthetic test languages
-    # and are exempt from Glottocode format and Glottolog verification checks.
+    # 6. Glottocode format + cache advisory (synthetic languages exempt)
     # ------------------------------------------------------------------
-    if not lang_id.startswith("synth"):
-        if not _is_valid_glottocode(lang_id):
-            issues.append(ValidationIssue(
-                "warning", filename,
-                f"Language ID '{lang_id}' does not match Glottocode format "
-                f"(expected 4 lowercase letters + 4 digits, e.g. 'arao1248')"
-            ))
-        elif not _is_glottolog_verified(lang_id):
-            issues.append(ValidationIssue(
-                "warning", filename,
-                f"Language ID '{lang_id}' has not been verified against Glottolog. "
-                f"Run: python -m coding lookup-lang {lang_id}"
-            ))
+    issues.extend(_glottocode_issues(lang_id, filename))
 
     # ------------------------------------------------------------------
     # 7. Required classes must be present
@@ -502,22 +508,9 @@ def validate_diagnostics_df(df, lang_id: str) -> List[ValidationIssue]:
                 seen[name] = j
 
     # ------------------------------------------------------------------
-    # 6. Glottocode format + cache advisory
-    # IDs starting with 'synth' are reserved for synthetic test languages
-    # and are exempt from Glottocode format and Glottolog verification checks.
+    # 6. Glottocode format + cache advisory (synthetic languages exempt)
     # ------------------------------------------------------------------
-    if not lang_id.startswith("synth") and not _is_valid_glottocode(lang_id):
-        issues.append(ValidationIssue(
-            "warning", f"diagnostics_{lang_id}.tsv",
-            f"Language ID '{lang_id}' does not match Glottocode format "
-            f"(expected 4 lowercase letters + 4 digits, e.g. 'arao1248')"
-        ))
-    elif not lang_id.startswith("synth") and not _is_glottolog_verified(lang_id):
-        issues.append(ValidationIssue(
-            "warning", f"diagnostics_{lang_id}.tsv",
-            f"Language ID '{lang_id}' has not been verified against Glottolog. "
-            f"Run: python -m coding lookup-lang {lang_id}"
-        ))
+    issues.extend(_glottocode_issues(lang_id, f"diagnostics_{lang_id}.tsv"))
 
     # ------------------------------------------------------------------
     # 7. Schema conformance — params must be in the allowed set for class

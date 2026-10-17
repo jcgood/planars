@@ -109,7 +109,7 @@ from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
 )
-from .schemas import apply_schema_criteria, load_diagnostic_classes
+from .schemas import apply_schema_criteria, free_entry_kind, load_diagnostic_classes
 from planars.schema_values import (
     ELEMENT_ROW_COLUMNS,
     PAIR_ROW_SHAPES,
@@ -943,7 +943,8 @@ def _transform_keyed_rows(
 
 
 def _position_param_cols(param_values: Dict[str, List[str]]) -> Set[str]:
-    return {p for p, vals in (param_values or {}).items() if "<position_names>" in (vals or [])}
+    return {p for p, vals in (param_values or {}).items()
+            if free_entry_kind(vals) == "position_names"}
 
 
 def _element_rows_for(class_name: str, construction: str, element_index, lang_id: str,

@@ -1,10 +1,11 @@
-"""Values owned by schemas/planar.yaml, read in one place.
+"""Values owned by schemas/planar.yaml (and a few from diagnostic_classes.yaml),
+read in one place.
 
 Every module in planars/ and coding/ that needs the keystone's name, the
-Status tab's title and values, or the columns that identify a row on each
-kind of annotation tab (and the trailing columns after the criteria) imports
-them from here instead of typing them (Phase 10, issue #271; hidden-facts
-entries D0, R3, D3, D4, D5).
+Status tab's title and values, the columns that identify a row on each
+kind of annotation tab (and the trailing columns after the criteria), or a
+class's required criteria imports them from here instead of typing them
+(Phase 10, issue #271; hidden-facts entries D0, R3, D3, D4, D5, D-1).
 tests/test_no_hidden_facts.py fails if one of these values is typed anywhere
 else in the code.
 
@@ -56,6 +57,27 @@ def _key_within(where: str, key, columns: list) -> list:
     return list(key)
 
 
+# The planar file's own columns (planar_{lang_id}.tsv) and the fixed values
+# of Position_Type and Class_Type (hidden-facts M0).
+PLANAR_COLUMNS: list = [c["name"] for c in _require("planar_columns")]
+PLANAR_REQUIRED_COLUMNS: list = [c["name"] for c in _require("planar_columns") if c.get("required")]
+
+
+def _planar_column_values(name: str) -> dict:
+    for col in _require("planar_columns"):
+        if col["name"] == name:
+            if not col.get("values"):
+                raise KeyError(f"schemas/planar.yaml planar_columns.{name} has no values")
+            return dict(col["values"])
+    raise KeyError(f"schemas/planar.yaml planar_columns has no {name}")
+
+
+_POSITION_TYPES = _planar_column_values("Position_Type")
+ZONE: str = _POSITION_TYPES["zone"]
+SLOT: str = _POSITION_TYPES["slot"]
+POSITION_TYPES: list = list(_POSITION_TYPES.values())
+CLASS_TYPES: list = list(_planar_column_values("Class_Type").values())
+
 ELEMENT_ROW_COLUMNS: list = [c["name"] for c in _require("structural_columns")]
 ELEMENT_ROW_KEY: list = _key_within("element_row_key", _require("element_row_key"),
                                     ELEMENT_ROW_COLUMNS)
@@ -73,16 +95,31 @@ ROW_IDENTITY_COLUMNS = frozenset(ELEMENT_ROW_COLUMNS).union(*PAIR_ROW_SHAPES.val
 ELEMENT_ROWS = "element"
 
 
-def _construction_entry(class_name: str, construction: str) -> dict:
+def _class_entry(class_name: str) -> dict:
     classes = yaml.safe_load(
         _res_files("schemas").joinpath("diagnostic_classes.yaml").read_text(encoding="utf-8")) or {}
     for cls in classes.get("classes", []):
         if cls.get("name") == class_name:
-            for con in cls.get("constructions") or []:
-                if isinstance(con, dict) and con.get("name") == construction:
-                    return con
-            return {}
+            return cls
     raise KeyError(f"diagnostic_classes.yaml has no class {class_name!r}")
+
+
+def _construction_entry(class_name: str, construction: str) -> dict:
+    for con in _class_entry(class_name).get("constructions") or []:
+        if isinstance(con, dict) and con.get("name") == construction:
+            return con
+    return {}
+
+
+def required_criteria(class_name: str) -> frozenset:
+    """The class's ``required_criteria`` in diagnostic_classes.yaml: the
+    criterion columns an analysis module's loader insists on (hidden-facts
+    D-1; each module used to type its own copy). Raises if the class has no
+    ``required_criteria`` field (an empty list is a real answer)."""
+    cls = _class_entry(class_name)
+    if "required_criteria" not in cls:
+        raise KeyError(f"diagnostic_classes.yaml class {class_name!r} has no required_criteria")
+    return frozenset(cls["required_criteria"] or [])
 
 
 PAIR_ROWS = "pair_rows"

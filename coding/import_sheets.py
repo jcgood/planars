@@ -23,7 +23,7 @@ import csv
 import json
 import shutil
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -44,6 +44,7 @@ from . import validate_coding as _val
 from .validate_planar import validate_planar_df as _validate_planar_df
 from .validate_diagnostics import validate_diagnostics_df as _validate_diagnostics_df
 from .make_forms import (
+    ARCHIVE_STAMP_FORMAT,
     _diff_diagnostics_tsv_yaml,
     resolve_keystone_active,
     resolve_keystone_na_criteria,
@@ -52,6 +53,12 @@ from .make_forms import (
 
 ERROR_DIR    = ROOT / "import_errors"
 PENDING_PATH = ROOT / "pending_changes.json"
+
+# The share of an in-progress tab's filled cells (in rows present before and
+# after) that may disappear in one import before it files a collaborator-check
+# issue. A policy setting, not a linguistic fact; the one place it is stated
+# (hidden-facts M4). schemas/issue_labels.yaml's prose says ">10%".
+COLLABORATOR_CHECK_DECREASE = 0.10
 
 # Re-export constants so external code that imported them directly still works.
 _STRUCTURAL_COLS      = _val._STRUCTURAL_COLS
@@ -601,10 +608,10 @@ def _detect_collaborator_anomalies(
             )
             if old_annotated > 0:
                 decrease = (old_annotated - new_annotated) / old_annotated
-                if decrease > 0.10:
+                if decrease > COLLABORATOR_CHECK_DECREASE:
                     anomalies.append(
                         f"Annotated-cell decrease: {old_annotated} → {new_annotated} "
-                        f"({decrease:.0%} decrease, threshold 10%)"
+                        f"({decrease:.0%} decrease, threshold {COLLABORATOR_CHECK_DECREASE:.0%})"
                     )
 
     return anomalies
@@ -858,7 +865,7 @@ def main(args: argparse.Namespace | None = None) -> None:
     force = args.force
     ignore_status = args.ignore_status
     lang_filter = args.lang
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(timezone.utc).strftime(ARCHIVE_STAMP_FORMAT)
 
     if not apply:
         print("DRY RUN — pass --apply to write TSVs.\n")

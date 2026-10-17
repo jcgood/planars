@@ -45,6 +45,37 @@ structural_columns:
 # over by these when a tab is rebuilt).
 element_row_key: [Element, Position_Number]
 
+# The columns of planar_{lang_id}.tsv (one row per position), in order, and
+# the values of the two that take a fixed set (hidden-facts M0: these lived
+# only in code). `required: true` columns are the ones validate_planar refuses
+# a planar without; each other reader checks for the columns it reads.
+# planars.schema_values reads this (PLANAR_COLUMNS, PLANAR_REQUIRED_COLUMNS,
+# ZONE, SLOT, CLASS_TYPES).
+planar_columns:
+  - name: Language_ID
+  - name: Planar_Type
+  - name: Position
+    required: true
+  - name: Position_Type
+    required: true
+    # Load-bearing for nonpermutability: Zones are never strictly
+    # non-permutable, and elements sharing a Zone are pair candidates.
+    values:
+      zone: Zone   # elements within it may be variably ordered
+      slot: Slot   # a fixed place in the order
+  - name: Position_Name
+    required: true
+  - name: Elements
+    required: true
+  - name: Class_Type
+    required: true
+    values:
+      open: open     # an open category, written as ALL CAPS labels
+      list: list     # an exhaustively listed closed set
+      mixed: mixed   # both in one row (#270)
+  - name: Example
+  - name: Notes
+
 # The columns before the criteria on a pair-row tab (`columns`, in order) and
 # the ones among them that identify a row (`key`). Each `row_type: pair_rows`
 # construction in diagnostic_classes.yaml names a shape with `pair_shape`.

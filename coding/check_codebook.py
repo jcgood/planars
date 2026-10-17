@@ -1,7 +1,8 @@
 """Check consistency between diagnostic_criteria.yaml, diagnostic_classes.yaml, analysis modules, and charts.py.
 
 Checks:
-  1. Every criterion in each module's _REQUIRED_CRITERIA is defined in diagnostic_criteria.yaml
+  1. Every class's required_criteria, and every criterion a module's _REQUIRED_CRITERIA
+     names, is defined in diagnostic_criteria.yaml
   2. Criterion names in diagnostics_{lang_id}.tsv are defined in diagnostic_criteria.yaml
   3. Chart span label keys match the keys returned by each derive function
   4. diagnostics_{lang_id}.tsv class names and required criteria match diagnostic_classes.yaml
@@ -32,7 +33,8 @@ from typing import List
 import pandas as pd
 
 from .schemas import load_diagnostic_classes as _load_dc, load_diagnostic_criteria as _load_crit
-from planars.schema_values import ELEMENT_ROW_COLUMNS, KEYSTONE_NAME, TRAILING_COLUMNS, row_key_of
+from planars.schema_values import (ELEMENT_ROW_COLUMNS, KEYSTONE_NAME, SLOT, TRAILING_COLUMNS,
+                                   required_criteria, row_key_of)
 
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
@@ -61,26 +63,42 @@ def _codebook_criteria(codebook: dict) -> dict[str, set[str]]:
     }
 
 
+def _check_placeholders_declared(codebook: dict) -> List[str]:
+    """Every criterion value written <like_this> in diagnostic_criteria.yaml is
+    declared under value_placeholders (the code implements only those)."""
+    from .schemas import placeholder_kind
+    errors = []
+    for analysis in codebook.get("analyses", []):
+        for crit in analysis.get("diagnostic_criteria", []) or []:
+            for v in crit.get("values") or []:
+                try:
+                    placeholder_kind(v)
+                except ValueError as e:
+                    errors.append(f"[{analysis['name']}/{crit['name']}] {e}")
+    return errors
+
+
 def _check_required_criteria(codebook: dict) -> List[str]:
-    """Check that every required criterion in each module is defined in diagnostic_criteria.yaml."""
+    """Check that every class's required criteria (diagnostic_classes.yaml),
+    and every criterion an analysis module says it reads (its
+    _REQUIRED_CRITERIA), are defined in diagnostic_criteria.yaml.
+
+    Most modules read _REQUIRED_CRITERIA from the schema; biuniqueness_deviations
+    lists the columns of its morphs/morphemes tabs its rules read, since the
+    class-level field is empty for it."""
     import importlib
 
     cb = _codebook_criteria(codebook)
-    # ciscategorial uses inline required_criteria rather than a module-level constant.
-    # All other modules expose _REQUIRED_CRITERIA at module level.
-    module_params: dict[str, set] = {
-        "ciscategorial": {"V-combines", "N-combines", "A-combines"},
-    }
-    for name in [
-        "subspanrepetition", "noninterruption", "metrical",
-        "nonpermutability", "free_occurrence", "biuniqueness_deviations", "repair",
-        "segmental", "tonal", "tonosegmental", "intonational",
-        "pausing", "proform", "play_language", "idiom",
-    ]:
-        mod = importlib.import_module(f"planars.{name}")
-        params = getattr(mod, "_REQUIRED_CRITERIA", None)
-        if params is not None:
-            module_params[name] = set(params)
+    module_params: dict[str, set] = {}
+    for cls in _load_dc().get("classes", []):
+        name = cls["name"]
+        params = set(cls.get("required_criteria") or [])
+        try:
+            mod = importlib.import_module(f"planars.{name}")
+        except ModuleNotFoundError:
+            mod = None  # a class with no module yet (phrasal_accent)
+        params |= set(getattr(mod, "_REQUIRED_CRITERIA", None) or [])
+        module_params[name] = params
 
     errors = []
     for name, mod_params in module_params.items():
@@ -243,22 +261,23 @@ def _check_chart_keys() -> List[str]:
 
     simple_keys = [k for k, _ in _SIMPLE_SPANS]
 
-    # ciscategorial (no module-level _REQUIRED_CRITERIA — uses inline required_criteria)
+    # ciscategorial (no module-level _REQUIRED_CRITERIA; its loader insists only
+    # on V-combines, the column its rule reads by name)
     cisc_keys = [k for k, _ in _CISC_SPANS]
     _check("ciscategorial", ciscategorial.derive_v_ciscategorial_fractures, cisc_keys,
-           _make_minimal_tsv(["V-combines", "N-combines", "A-combines"]),
+           _make_minimal_tsv(sorted(required_criteria("ciscategorial"))),
            {"V-combines"})
 
     # noninterruption
     nonint_keys = [k for k, _ in _NONINT_SPANS]
     _check("noninterruption", noninterruption.derive_noninterruption_domains, nonint_keys,
-           _make_minimal_tsv(["free", "multiple"]),
+           _make_minimal_tsv(sorted(noninterruption._REQUIRED_CRITERIA)),
            noninterruption._REQUIRED_CRITERIA)
 
     # metrical (blocked-span: accented/obligatory/independence)
     metr_keys = [k for k, _ in _METRICAL_BLOCKED_SPANS]
     _check("metrical", metrical.derive_metrical_domains, metr_keys,
-           _make_minimal_tsv(["accented", "obligatory", "independence"]),
+           _make_minimal_tsv(sorted(metrical._REQUIRED_CRITERIA)),
            metrical._REQUIRED_CRITERIA)
 
     # subspanrepetition
@@ -268,7 +287,7 @@ def _check_chart_keys() -> List[str]:
         for variant, _ in _SUBSPAN_VARIANTS
     ]
     _check("subspanrepetition", subspanrepetition.derive_subspanrepetition_spans, subspan_keys,
-           _make_minimal_tsv(["widescope_left", "widescope_right", "fillable_botheither_conjunct"]),
+           _make_minimal_tsv(sorted(subspanrepetition._REQUIRED_CRITERIA)),
            subspanrepetition._REQUIRED_CRITERIA)
 
     # nonpermutability: pair-row model; synthetic _data 6-tuple instead of element TSV.
@@ -280,7 +299,7 @@ def _check_chart_keys() -> List[str]:
         _nonperm_pair_df,
         5,                          # keystone_pos
         {4: "v:left1", 5: KEYSTONE_NAME, 6: "v:right1"},  # pos_to_name
-        {4: "Slot", 6: "Slot"},     # pos_type
+        {4: SLOT, 6: SLOT},         # pos_type
         {4: ["a"], 6: ["b"]},       # pos_to_elements
         {"a": {4}, "b": {6}},       # elem_to_positions
     )
@@ -801,6 +820,9 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     print("7c. Checking every construction declares its row shape ...")
     all_errors.extend(_check_row_shapes(diag_classes))
+
+    print("7d. Checking every <placeholder> value is declared ...")
+    all_errors.extend(_check_placeholders_declared(codebook))
 
     coverage = _collect_coverage()
     lang_ids = sorted({l for langs in coverage.values() for l in langs})

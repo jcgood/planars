@@ -8,7 +8,9 @@ import pandas as pd
 from planars.io import load_filled_tsv
 from planars.spans import blocked_span, fmt_span, position_sets_from_element_mask
 
-_REQUIRED_CRITERIA = {"accented", "obligatory", "independence"}
+from planars.schema_values import required_criteria
+
+_REQUIRED_CRITERIA = required_criteria("metrical")
 
 
 def derive_metrical_domains(

@@ -4,65 +4,39 @@
 Usage:
     python -m planars <analysis> <tsv_file>
 
-Where <analysis> is one of:
-    ciscategorial
-    subspanrepetition
-    noninterruption
-    stress
-    aspiration
-    nonpermutability
-    free_occurrence
-    biuniqueness_deviations   (give the class's morphs.tsv)
-    repair
-    segmental
-    suprasegmental
-    pausing
-    proform
-    play_language
-    idiom
+Where <analysis> is any class in schemas/diagnostic_classes.yaml whose module
+in planars/ has ``derive`` and ``format_result`` (run with no arguments for
+the list). For biuniqueness_deviations, give the class's morphs.tsv.
 
 Examples:
     python -m planars ciscategorial coded_data/stan1293/ciscategorial/general.tsv
-    python -m planars stress coded_data/stan1293/stress/general.tsv
+    python -m planars metrical coded_data/stan1293/metrical/stress_domain.tsv
 """
 from __future__ import annotations
 
+import importlib
 import sys
+from importlib.resources import files as _res_files
 from pathlib import Path
 
-from planars import ciscategorial as _cisc
-from planars import subspanrepetition as _subspan
-from planars import noninterruption as _nonint
-from planars import stress as _stress
-from planars import aspiration as _aspiration
-from planars import nonpermutability as _nonperm
-from planars import free_occurrence as _freeoc
-from planars import biuniqueness_deviations as _biuniq
-from planars import repair as _repair
-from planars import segmental as _segmental
-from planars import suprasegmental as _supra
-from planars import pausing as _pausing
-from planars import proform as _proform
-from planars import play_language as _play
-from planars import idiom as _idiom
+import yaml
 
-_ANALYSES = {
-    "ciscategorial":     (_cisc.derive_v_ciscategorial_fractures,  _cisc.format_result),
-    "subspanrepetition": (_subspan.derive_subspanrepetition_spans, _subspan.format_result),
-    "noninterruption":   (_nonint.derive_noninterruption_domains,  _nonint.format_result),
-    "stress":            (_stress.derive_stress_domains,           _stress.format_result),
-    "aspiration":        (_aspiration.derive_aspiration_domains,   _aspiration.format_result),
-    "nonpermutability":  (_nonperm.derive,   _nonperm.format_result),
-    "free_occurrence":   (_freeoc.derive,    _freeoc.format_result),
-    "biuniqueness_deviations": (_biuniq.derive, _biuniq.format_result),
-    "repair":            (_repair.derive,    _repair.format_result),
-    "segmental":         (_segmental.derive, _segmental.format_result),
-    "suprasegmental":    (_supra.derive,     _supra.format_result),
-    "pausing":           (_pausing.derive,   _pausing.format_result),
-    "proform":           (_proform.derive,   _proform.format_result),
-    "play_language":     (_play.derive,      _play.format_result),
-    "idiom":             (_idiom.derive,     _idiom.format_result),
-}
+
+def _analyses() -> dict:
+    """{class_name: (derive, format_result)} for every class in the schema
+    whose module has both. Derived, so it cannot fall behind (hidden-facts
+    R-1: the typed list it replaced was missing four modules and named three
+    retired ones whose import raises, which broke every invocation)."""
+    text = _res_files("schemas").joinpath("diagnostic_classes.yaml").read_text(encoding="utf-8")
+    found = {}
+    for cls in (yaml.safe_load(text) or {}).get("classes", []):
+        try:
+            mod = importlib.import_module(f"planars.{cls['name']}")
+        except ModuleNotFoundError:
+            continue  # a class with no module yet
+        if hasattr(mod, "derive") and hasattr(mod, "format_result"):
+            found[cls["name"]] = (mod.derive, mod.format_result)
+    return found
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -74,14 +48,15 @@ def main(argv: list[str] | None = None) -> None:
     Exits with status 1 if the analysis name is unrecognised or arguments are missing.
     """
     args = argv if argv is not None else sys.argv[1:]
+    analyses = _analyses()
 
-    if len(args) != 2 or args[0] not in _ANALYSES:
+    if len(args) != 2 or args[0] not in analyses:
         print("Usage: python -m planars <analysis> <tsv_file>", file=sys.stderr)
-        print(f"Analyses: {', '.join(_ANALYSES)}", file=sys.stderr)
+        print(f"Analyses: {', '.join(analyses)}", file=sys.stderr)
         sys.exit(1)
 
     analysis, tsv_file = args
-    derive_fn, fmt_fn = _ANALYSES[analysis]
+    derive_fn, fmt_fn = analyses[analysis]
     print(fmt_fn(derive_fn(Path(tsv_file).resolve())))
 
 

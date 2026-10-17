@@ -105,7 +105,7 @@ import os
 import shutil
 import sys
 from contextlib import redirect_stdout
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Callable, Dict, List, Optional, Tuple
@@ -130,7 +130,7 @@ AUTO_APPLY_MODULES = ["coding.update_sheets", "coding.sync_params", "coding.gene
 
 # The archive filename embeds datetime.now(), computed once at the top of
 # main() -- frozen so two runs a second apart don't disagree on nothing else.
-FROZEN = datetime(2026, 8, 4, 12, 0, 0)
+FROZEN = datetime(2026, 8, 4, 12, 0, 0, tzinfo=timezone.utc)
 
 
 class _FrozenDatetime(datetime):

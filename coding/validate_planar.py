@@ -12,14 +12,16 @@ from typing import Dict, List
 from .validate import ValidationIssue
 from .schemas import load_planar_schema
 from .make_forms import classify_element
-from planars.schema_values import KEYSTONE_NAME
+from planars.elements import split_elements as _tokenize_elements
+from planars.schema_values import (CLASS_TYPES, KEYSTONE_NAME, PLANAR_REQUIRED_COLUMNS,
+                                   POSITION_TYPES, is_keystone)
 
 # ---------------------------------------------------------------------------
-# Constants
+# Constants (schemas/planar.yaml planar_columns)
 # ---------------------------------------------------------------------------
 
-_VALID_POSITION_TYPES = {"Zone", "Slot"}
-_VALID_CLASS_TYPES    = {"open", "list", "mixed"}
+_VALID_POSITION_TYPES = set(POSITION_TYPES)
+_VALID_CLASS_TYPES    = set(CLASS_TYPES)
 _KEYSTONE_NAME        = KEYSTONE_NAME
 
 _BRACE_SUFFIX_RE = re.compile(r'\{[^}]*\}$')
@@ -34,31 +36,6 @@ def _is_all_caps_token(token: str) -> bool:
     return bool(stripped) and stripped.isupper()
 
 
-def _tokenize_elements(s: str) -> List[str]:
-    """Split element string by comma, but not commas inside brace notation (e.g. NP{S,A,P})."""
-    tokens = []
-    depth = 0
-    current: List[str] = []
-    for ch in s:
-        if ch == "{":
-            depth += 1
-            current.append(ch)
-        elif ch == "}":
-            depth -= 1
-            current.append(ch)
-        elif ch == "," and depth == 0:
-            token = "".join(current).strip()
-            if token:
-                tokens.append(token)
-            current = []
-        else:
-            current.append(ch)
-    token = "".join(current).strip()
-    if token:
-        tokens.append(token)
-    return tokens
-
-
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -70,8 +47,8 @@ def validate_planar_df(df) -> List[ValidationIssue]:
     - Position values are sequential integers 1..N
     - Position_Name values are unique
     - Exactly one v:verbstem (keystone) row exists
-    - Position_Type is Zone or Slot for every row
-    - Class_Type is open, list, or mixed for every row
+    - Position_Type is one of planar.yaml's values (Zone, Slot) for every row
+    - Class_Type is one of planar.yaml's values (open, list, mixed) for every row
     - Element convention consistency:
         list  → warn if ALL elements are ALL CAPS (probably should be open)
         open  → warn if ANY element is not ALL CAPS; distinguish between
@@ -82,8 +59,7 @@ def validate_planar_df(df) -> List[ValidationIssue]:
     """
     issues: List[ValidationIssue] = []
 
-    required = {"Position", "Position_Name", "Position_Type", "Elements", "Class_Type"}
-    missing = required - set(df.columns)
+    missing = set(PLANAR_REQUIRED_COLUMNS) - set(df.columns)
     if missing:
         issues.append(ValidationIssue(
             "error", "planar structure",
@@ -122,7 +98,7 @@ def validate_planar_df(df) -> List[ValidationIssue]:
     # Exactly one v:verbstem
     keystone_rows = [
         i for i, n in enumerate(df["Position_Name"])
-        if str(n).strip().lower() == _KEYSTONE_NAME
+        if is_keystone(n)
     ]
     if len(keystone_rows) == 0:
         issues.append(ValidationIssue(
@@ -140,7 +116,7 @@ def validate_planar_df(df) -> List[ValidationIssue]:
     caps_positions: Dict[str, List[str]] = {}  # ALL-CAPS label → [pos_names]
     for _, row in df.iterrows():
         pn = str(row.get("Position_Name", "")).strip()
-        if pn.lower() == _KEYSTONE_NAME:
+        if is_keystone(pn):
             continue
         for t in _tokenize_elements(str(row.get("Elements", "")).strip()):
             if _is_all_caps_token(t):
@@ -148,7 +124,7 @@ def validate_planar_df(df) -> List[ValidationIssue]:
 
     for i, row in df.iterrows():
         pos_name = str(row.get("Position_Name", "")).strip()
-        is_keystone = pos_name.lower() == _KEYSTONE_NAME
+        keystone_row = is_keystone(pos_name)
 
         # Position_Type
         pt = str(row.get("Position_Type", "")).strip()
@@ -162,7 +138,7 @@ def validate_planar_df(df) -> List[ValidationIssue]:
         ct = str(row.get("Class_Type", "")).strip().lower()
         elements_str = str(row.get("Elements", "")).strip()
 
-        if is_keystone:
+        if keystone_row:
             continue  # KEYSTONE element is a special reserved value
 
         if ct not in _VALID_CLASS_TYPES:

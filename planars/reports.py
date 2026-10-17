@@ -56,6 +56,7 @@ from planars import pausing as _pausing
 from planars import proform as _proform
 from planars import play_language as _play
 from planars import idiom as _idiom
+from planars.elements import wrap_element
 from planars.io import load_filled_tsv, load_filled_sheet
 from planars.languages import get_display_name
 from planars.schema_values import (
@@ -418,14 +419,10 @@ def _collect_spans_sheets(gc, manifest, lang_id: Optional[str] = None):
                             planar = lang_data["planar"]
                             keystone_pos = planar["keystone_pos"]
                             pos_to_name = {p["pos"]: p["name"] for p in planar["positions"]}
-
-                            def _wrap(e):
-                                return f"[{e}]" if (e.startswith("-") or e.endswith("-")) else e
-
                             elem_to_positions: dict = {}
                             for p in planar["positions"]:
                                 for elem in p.get("elements", []):
-                                    elem_to_positions.setdefault(_wrap(elem), set()).add(p["pos"])
+                                    elem_to_positions.setdefault(wrap_element(elem), set()).add(p["pos"])
                             _data = (pair_df, keystone_pos, pos_to_name, elem_to_positions)
                             result = derive_fn(_data=_data, strict=False)
                             rows.extend(row_fn(result, lid))

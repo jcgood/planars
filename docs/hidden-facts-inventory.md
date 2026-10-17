@@ -86,6 +86,15 @@ four-file criterion-value-list duplication with a live missing-value bug).
 ## Duplications (authoritative source exists elsewhere; code holds a second copy)
 
 ### D-1. Every `planars/` analysis module hardcodes its own `_REQUIRED_CRITERIA`, independently duplicating `diagnostic_classes.yaml`'s `required_criteria` field, class by class
+*Closed 2026-10-16 (Phase 10 unit 3): each module's `_REQUIRED_CRITERIA` is
+`planars.schema_values.required_criteria(class)`; nonpermutability's and
+coreference's unused copies are deleted; check-codebook check 1 walks the
+schema's classes instead of a typed module list. Two module-owned lists stay
+on purpose, because they name the columns the module's own rule reads, not a
+copy of the schema: ciscategorial's `{"V-combines"}` and
+biuniqueness_deviations' morphs/morphemes columns (its class-level field is
+empty). `tests/test_no_hidden_facts.py`'s criteria detector fails on a new
+typed copy (it found four more, in check-codebook's self-test).*
 **What:** Fourteen of the eighteen standard-pattern analysis modules each
 declare a module-level `_REQUIRED_CRITERIA` set/dict, byte-for-byte
 duplicating that class's `required_criteria:` list in
@@ -153,9 +162,15 @@ for the snapshot-scoping fact)
 gone. Feeder tabs say `produces_spans: false` in `diagnostic_classes.yaml`
 and `planars.reports.span_constructions()` is the one reader (a third copy,
 biuniqueness's, had been added the same morning). `_PAIR_CRITERIA` remains,
-for item 3's D-1 work.*
+for item 3's D-1 work.* *Closed 2026-10-16 (Phase 10 unit 3): `_PAIR_CRITERIA`
+is deleted; coreference reads each pair construction's `criterion:` from the
+schema, and a tab it cannot place raises instead of defaulting to
+`reflexive_allowed`.*
 
 ### D-1c. `_STRUCTURAL_COLS`/`_TRAILING_COLS`/`_STATUS_TAB`/`_KEYSTONE_NAME` re-declared again in `planars/reports.py` and `planars/coreference.py`/`nonpermutability.py` — no schema read at all, unlike the `coding/` copies
+*Closed (with D0, D3, D5 and R3, 2026-10-12/13, Phase 10 units 7 and 5a):
+all four names are now read from `planars.schema_values`; confirmed
+2026-10-16.*
 **What:** Unlike the `coding/` copies catalogued in D0/D3/D5 (which at least
 attempt `load_planar_schema().get(...)` with a fallback), the `planars/`
 copies are bare literals with no schema read whatsoever:
@@ -218,6 +233,13 @@ for `coding/`, and via `planars/io.py`'s existing schema-loading machinery
 for `planars/`) instead of restating the literal.
 
 ### D2b. Nonpermutability's Zone/Slot pair-candidacy algorithm is implemented twice, in two packages
+*Closed 2026-10-16 (Phase 10 unit 3): one function,
+`planars.nonpermutability.is_pair_candidate` (with `pair_candidate_elements`),
+called by generate-sheets' `_build_nonperm_pairs`,
+`structurally_expected_pair_elements` and the derive function's own staleness
+check, which turned out to be a third copy. Closing it also found the
+brace-aware Elements split typed in four files and the bracket rule in five;
+both now live once in `planars/elements.py`.*
 **What:** Unlike the rest of this inventory (a data *value* duplicated),
 this is the same *algorithm* implemented independently twice: "two elements
 are nonpermutability pair candidates if they share a Zone position, or are
@@ -402,6 +424,13 @@ is missing) rather than silently re-asserting the current value as a second
 copy.
 
 ### D6. `_POSITION_NUMBER_PLACEHOLDER` string literal must match a value embedded in `diagnostic_criteria.yaml`
+*Closed 2026-10-16 (Phase 10 unit 3): `diagnostic_criteria.yaml` declares
+`value_placeholders` (position_number, free_text, position_names, each with
+`free_entry`); `coding.schemas.placeholder()` / `placeholder_kind()` /
+`free_entry_kind()` read it, and an undeclared `<...>` value raises.
+check-codebook 7d checks every criterion's values. The same pass found two
+different free-entry rules (validate-coding asked "is any value a
+placeholder", everyone else "are all of them"); there is one now.*
 **What:** `_POSITION_NUMBER_PLACEHOLDER = "<position_number>"` is a Python
 string that must stay byte-identical to the placeholder value used inside
 `diagnostic_criteria.yaml`'s `dependent-on-left`/`dependent-on-right` `values:
@@ -452,6 +481,10 @@ doesn't exist in `languages.yaml` today. Worth a schema field (e.g. a
 top-level `default_reviewer_email`) rather than two more hardcoded copies.
 
 ### D8. `_CLASS_DISPLAY_NAMES` re-encodes `diagnostic_classes.yaml`'s `display_name` field, already stale for two classes
+*Closed 2026-10-16 (Phase 10 unit 3): the dict is deleted; notebook headers
+read `display_name` from the schema and raise if a class has none (no
+title-case fallback). The coordinator notebook's phrasal_accent header now
+reads "Phrasal (Pitch) Accent Grouping".*
 **What:** `generate_notebooks.py` hardcodes a 15-entry `{class_name:
 display_name}` dict for notebook section headers, with a comment stating it
 "Covers all classes in diagnostic_classes.yaml." It does not: `coreference`
@@ -475,6 +508,12 @@ as the true last-resort fallback for a class that somehow has no
 ## Derivable (no authoritative source yet, but one could plausibly own this fact)
 
 ### R-1. `planars/cli.py`'s `_ANALYSES` registry is hand-maintained and already stale — two fully-wired modules are unreachable via the CLI
+*Closed 2026-10-16 (Phase 10 unit 3): the list is derived from the schema's
+classes (every module with `derive` and `format_result`). By then it was
+worse than stale: it imported the retired `stress`, `aspiration` and
+`suprasegmental` modules, which raise on import, so `python -m planars` failed
+for every analysis. `tests/test_planars_cli.py` holds it equal to the reports'
+analyses.*
 **What:** `_ANALYSES` hardcodes fifteen `{name: (derive_fn, format_result)}`
 entries. `planars/coreference.py` and `planars/metrical.py` both follow the
 project's own documented convention exactly (a `derive = derive_X_domains`
@@ -497,6 +536,9 @@ already-broken instance of the general problem Phase 5 is designed to solve,
 not a new category of fact.
 
 ### R-2. The `synth` reserved-prefix convention is hardcoded as a literal four times, with no schema declaration
+*Closed 2026-10-16 (Phase 10 unit 3): `coding.glottolog.SYNTHETIC_PREFIX` and
+`is_synthetic()`; validate_diagnostics' two identical Glottocode blocks (YAML
+and TSV forms) are one helper, `_glottocode_issues`.*
 **What:** `CLAUDE.md` documents that "Language IDs starting with `synth` are
 a reserved prefix for synthetic test languages: they are exempt from
 Glottocode format validation and Glottolog verification checks throughout
@@ -511,6 +553,10 @@ whether it further belongs in `schemas/languages.yaml` as a declared prefix
 is a smaller question than simply not re-typing the string four times).
 
 ### R0. `diagnostics_{lang_id}.tsv`'s own required-column vocabulary is hardcoded, not schema-derived
+*Closed 2026-10-16 (Phase 10 unit 3): the TSV is generated from the YAML, so
+its writer owns its shape: `coding.make_forms.DIAGNOSTICS_TSV_COLUMNS`, read by
+`_yaml_to_tsv_df`, `_read_diagnostics_for_language` and validate_diagnostics
+(three typed copies before). The row-shape detector guards it.*
 **What:** `_REQUIRED_COLS = {"Class", "Language", "Constructions", "Criteria"}`
 in `validate_diagnostics.py` declares the column shape of the derived
 `diagnostics_{lang_id}.tsv` artifact. Nothing in `schemas/` declares this —
@@ -681,6 +727,12 @@ let every call site derive the path instead of restating the convention.
 ## Must-declare (genuinely not derivable from any plausible schema source)
 
 ### M1. `_OBLIGATORY_POSITIONS_DEFAULT` — a linguistic judgment call hardcoded as a global constant
+*Closed 2026-10-16 (Phase 10 unit 3): each language lists its own in its
+diagnostics YAML, `classes.phrasal_accent.obligatory_positions` (read by
+`make_forms.resolve_obligatory_positions`; the keystone needs no listing, it
+is always in the core). English and synth0001 list `v:npsubj1`, so their pairs
+are unchanged; a listed name the planar lacks raises. Still #237's first
+guess, now recorded where Adam can see and change it.*
 **What:** `_OBLIGATORY_POSITIONS_DEFAULT = {"v:verbstem", "v:npsubj1"}` is
 "tier 2" of phrasal_accent's obligatory-position algorithm: positions treated
 as always-present (never elidable) when deciding candidate accent pairs. The
@@ -699,6 +751,9 @@ the clearest candidate in this inventory for "authority nobody has assigned
 yet," on par with the incidents in `data-layer-design.md`'s table.
 
 ### M-misc. Archive timestamp format hardcoded identically (and inconsistently) in three files
+*Closed 2026-10-16 (Phase 10 unit 3): `coding.make_forms.ARCHIVE_STAMP_FORMAT`,
+always taken in UTC (import-sheets used local time). Unit 15 decides the one
+date format for the version history; this is the one place to change it.*
 **What:** The archive-filename timestamp format `"%Y%m%d_%H%M%S"` is a
 hardcoded literal independently repeated in three files, each also calling a
 *different* time source: `datetime.now(timezone.utc)` (aware UTC),
@@ -714,6 +769,12 @@ helper function," which is a lighter-weight fix than a schema field —
 flagged for Phase 3/5's attention rather than treated as a schema gap).
 
 ### M0. `Position_Type` (`Zone`/`Slot`) is a load-bearing structural column entirely absent from `planar.yaml`'s own `structural_columns`
+*Closed 2026-10-16 (Phase 10 unit 3): `planar.yaml` declares `planar_columns`
+(the planar file's columns, which validate_planar requires, and the values of
+Position_Type and Class_Type); `planars.schema_values` gives `ZONE`, `SLOT`,
+`POSITION_TYPES`, `CLASS_TYPES`, `PLANAR_COLUMNS`, `PLANAR_REQUIRED_COLUMNS`.
+validate_planar, contracts and every Zone/Slot test read them; the literal
+detector fails on a typed "Zone"/"Slot".*
 **What:** Every filled planar TSV carries a `Position_Type` column whose only
 valid values are `Zone`/`Slot` (`_VALID_POSITION_TYPES = {"Zone", "Slot"}` in
 `validate_planar.py`). This column is not a minor detail — it is directly
@@ -743,6 +804,9 @@ at least has *somewhere* to point a fixer at; this one requires writing the
 schema fact for the first time.
 
 ### M4. `import-sheets`' 10%-decrease `collaborator-check` threshold
+*Declared 2026-10-16 (Phase 10 unit 3): a named constant,
+`import_sheets.COLLABORATOR_CHECK_DECREASE`, which the message also prints. A
+policy setting, so it stays in code, as the entry recommends.*
 **What:** `decrease > 0.10` is the hardcoded threshold at which an
 in-progress tab's annotated-cell decrease triggers a `collaborator-check`
 GitHub issue rather than being silently accepted. Documented in prose (the

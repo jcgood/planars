@@ -6,7 +6,9 @@ from typing import Dict, Optional, Tuple
 from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, loose_span, position_sets_from_element_mask
 
-_REQUIRED_CRITERIA = {"idiomatic"}
+from planars.schema_values import required_criteria
+
+_REQUIRED_CRITERIA = required_criteria("idiom")
 
 
 def derive_idiom_domains(

@@ -48,6 +48,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from .make_forms import ARCHIVE_STAMP_FORMAT
+
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
@@ -176,7 +178,7 @@ def import_planar(lang_ids: list[str] | None = None, apply: bool = False) -> lis
     from .drive_doorway import get_doorway
 
     cfg = _load_drive_config()
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(timezone.utc).strftime(ARCHIVE_STAMP_FORMAT)
 
     all_changes: dict[str, dict] = {}
     written_files: list[Path] = []

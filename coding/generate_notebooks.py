@@ -53,27 +53,7 @@ from .make_forms import (
 from .drive import _load_drive_config, _save_drive_config, create_or_update_shared_file
 from .drive_doorway import get_doorway
 from . import drive_door
-
-# Human-readable display names for notebook section headers.
-# Covers all classes in diagnostic_classes.yaml; unknown classes fall back to
-# title-casing the machine name (e.g. "free_occurrence" → "Free Occurrence").
-_CLASS_DISPLAY_NAMES = {
-    "ciscategorial":     "Ciscategorial",
-    "subspanrepetition": "Subspan Repetition",
-    "noninterruption":   "Noninterruption",
-    "nonpermutability":  "Nonpermutability",
-    "free_occurrence":   "Free Occurrence",
-    "proform":           "Proform",
-    "idiom":             "Idiom",
-    "biuniqueness_deviations": "Biuniqueness deviations",
-    "repair":            "Repair",
-    "stress":            "Stress",
-    "aspiration":        "Aspiration",
-    "segmental":         "Segmental",
-    "suprasegmental":    "Suprasegmental",
-    "pausing":           "Pausing",
-    "play_language":     "Play Language",
-}
+from .schemas import load_diagnostic_classes
 
 # Marker placed in all_languages_boilerplate.ipynb to indicate where
 # generated per-class cells should be inserted.
@@ -134,8 +114,14 @@ def _lang_display(lang_id: str) -> str:
 # ---------------------------------------------------------------------------
 
 def _display_name(class_name: str) -> str:
-    """Return the human-readable display name for an analysis class."""
-    return _CLASS_DISPLAY_NAMES.get(class_name, class_name.replace("_", " ").title())
+    """Return the class's ``display_name`` from diagnostic_classes.yaml, for
+    notebook section headers. Raises if the class is missing or has none."""
+    for cls in load_diagnostic_classes().get("classes", []):
+        if cls.get("name") == class_name:
+            if not cls.get("display_name"):
+                raise ValueError(f"diagnostic_classes.yaml class {class_name!r} has no display_name")
+            return cls["display_name"]
+    raise ValueError(f"diagnostic_classes.yaml has no class {class_name!r}")
 
 
 def _make_code_cell(source: str) -> dict:

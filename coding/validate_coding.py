@@ -43,8 +43,10 @@ from .validate_diagnostics import validate_diagnostics_df
 from .schemas import (
     criteria_for,
     criterion_values,
+    free_entry_kind,
     load_diagnostic_criteria,
     load_diagnostic_classes,
+    placeholder,
 )
 
 # ---------------------------------------------------------------------------
@@ -70,17 +72,12 @@ _ALWAYS_ALLOWED = set(load_diagnostic_criteria()["always_allowed_values"])
 # pair tab to its own criterion. (A coreference-only copy,
 # _COREFERENCE_CONSTRUCTION_PARAMS, lived here until 2026-10-12.)
 
-# Placeholder used in diagnostic_criteria.yaml for criteria that accept any
-# non-negative integer (e.g. dependent-on-left, dependent-on-right).
-_POSITION_NUMBER_PLACEHOLDER = "<position_number>"
-
-# Placeholders for criteria that take free entry rather than a fixed value
-# set (biuniqueness_deviations, #254). Such a value is kept exactly as typed
-# (never lowercased -- "'ll" and "tense=past" are data), and may be blank.
-#   <free_text>       anything
-#   <position_names>  comma-separated position names from the planar
-_FREE_TEXT = "<free_text>"
-_POSITION_NAMES = "<position_names>"
+# Placeholder values (diagnostic_criteria.yaml value_placeholders): a
+# criterion that accepts any position number (e.g. dependent-on-left) lists
+# <position_number> among its values. Criteria that take free entry
+# (biuniqueness_deviations, #254) keep a value exactly as typed (never
+# lowercased -- "'ll" and "tense=past" are data), and it may be blank.
+_POSITION_NUMBER_PLACEHOLDER = placeholder("position_number")
 
 
 def _columns_without_values(param_cols, param_values, tab_name: str,
@@ -100,15 +97,7 @@ def _columns_without_values(param_cols, param_values, tab_name: str,
     return unknown
 
 
-def _free_entry_kind(values) -> Optional[str]:
-    """'free_text' / 'position_names' if a criterion's declared values make it
-    free entry, else None (an ordinary fixed value set)."""
-    vals = {str(v) for v in (values or [])}
-    if _POSITION_NAMES in vals:
-        return "position_names"
-    if _FREE_TEXT in vals:
-        return "free_text"
-    return None
+_free_entry_kind = free_entry_kind
 
 
 _POSITION_NAME_CACHE: Dict[str, set] = {}

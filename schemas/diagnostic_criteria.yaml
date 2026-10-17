@@ -626,6 +626,27 @@ analyses:
 # (removed 2026-10-12, Phase 10).
 always_allowed_values: [na, "?"]
 
+# Placeholder values. A criterion value written <like_this> stands for a kind
+# of entry rather than a literal choice. Every placeholder a criterion uses
+# must be declared here; check-codebook fails on an undeclared one, and the
+# code that implements each kind reads its spelling from here
+# (coding.schemas.placeholder). free_entry: true means the cell takes free
+# entry (no dropdown, kept exactly as typed, may be blank) when a criterion's
+# values are only placeholders.
+value_placeholders:
+  position_number:
+    value: "<position_number>"
+    free_entry: false
+    meaning: a position number from the planar (any non-negative integer)
+  free_text:
+    value: "<free_text>"
+    free_entry: true
+    meaning: anything, kept exactly as typed
+  position_names:
+    value: "<position_names>"
+    free_entry: true
+    meaning: comma-separated position names, checked against the planar
+
 shared_values:
 
   - value: "y"

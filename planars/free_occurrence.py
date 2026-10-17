@@ -8,13 +8,9 @@ import pandas as pd
 from planars.io import load_filled_tsv
 from planars.spans import fmt_span
 
-_REQUIRED_CRITERIA = {
-    "free",
-    "left-edge-of-free-form",
-    "right-edge-of-free-form",
-    "dependent-on-left",
-    "dependent-on-right",
-}
+from planars.schema_values import required_criteria
+
+_REQUIRED_CRITERIA = required_criteria("free_occurrence")
 
 
 def _parse_pos_ref(val: str) -> Optional[int]:

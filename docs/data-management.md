@@ -23,21 +23,7 @@ Code and data are always committed and pushed separately — they go to differen
 planars/                        Core library
   io.py                         Shared TSV/Sheets loader
   spans.py                      Span computation functions
-  ciscategorial.py              }
-  subspanrepetition.py          }
-  noninterruption.py            }
-  stress.py                     } Analysis modules
-  aspiration.py                 }
-  nonpermutability.py           }
-  free_occurrence.py            }
-  biuniqueness_deviations.py    }
-  repair.py                     }
-  segmental.py                  }
-  suprasegmental.py             }
-  pausing.py                    }
-  proform.py                    }
-  play_language.py              }
-  idiom.py                      }
+  <class_name>.py               One analysis module per class in schemas/diagnostic_classes.yaml
   charts.py                     Span collection and domain chart
   cli.py                        Command-line entry point
 coding/                         Google Sheets workflow tools (python -m coding <command>)

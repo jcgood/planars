@@ -10,8 +10,8 @@ Covers:
     absent, or when empty and its source tab is marked ready-for-review
   - _phrasal_accent_obligatory_core / _phrasal_accent_obligatory_positions /
     _build_phrasal_accent_pairs: issue #237's two-tier obligatory-core adjacency
-    algorithm (free_occurrence-derived core near the keystone, coordinator-confirmed
-    fallback list outside it)
+    algorithm (free_occurrence-derived core near the keystone, the language's own
+    obligatory_positions list outside it)
   - _plan_language_creation: generate-sheets' dry-run planning core -- what would
     be created/updated for one language, from manifest data only, no Drive calls
 """
@@ -21,10 +21,10 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+import yaml
 
 import coding.generate_sheets as _gs
 from coding.generate_sheets import (
-    _OBLIGATORY_POSITIONS_DEFAULT,
     _build_nonperm_pairs,
     _build_phrasal_accent_pairs,
     _check_force_against_existing_sheets,
@@ -715,11 +715,35 @@ def _write_phrasal_prescreening(tmp_path: Path, lang_id: str, rows: list[dict]) 
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-class TestObligatoryPositionsDefault:
-    def test_contains_keystone_and_subject(self):
-        # Starting list per issue #237's tentative example set — a first guess,
-        # not a validated coordinator decision (see the constant's docstring).
-        assert _OBLIGATORY_POSITIONS_DEFAULT == {"v:verbstem", "v:npsubj1"}
+def _write_obligatory_positions(tmp_path: Path, lang_id: str, names: list) -> None:
+    """The language's phrasal_accent.obligatory_positions (tier 2), in its YAML."""
+    d = tmp_path / lang_id / "lang_setup"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f"diagnostics_{lang_id}.yaml").write_text(
+        yaml.safe_dump({"language": lang_id, "classes": {"phrasal_accent": {
+            "constructions": ["prescreening", "general"],
+            "obligatory_positions": names}}}), encoding="utf-8")
+
+
+class TestObligatoryPositionsFromTheLanguage:
+    def test_english_lists_its_subject(self):
+        # The list moved from one global constant into each language's YAML
+        # (hidden-facts M1); English keeps #237's first guess.
+        from coding.make_forms import resolve_obligatory_positions
+        lang_setup = Path(__file__).resolve().parent.parent / "coded_data" / "stan1293" / "lang_setup"
+        if not lang_setup.exists():
+            pytest.skip("coded_data/ not present")
+        assert resolve_obligatory_positions("stan1293", lang_setup) == ["v:npsubj1"]
+
+    def test_a_language_that_lists_none_has_none(self, tmp_path):
+        from coding.make_forms import resolve_obligatory_positions
+        assert resolve_obligatory_positions("lang0001", tmp_path) == []
+
+    def test_a_name_the_planar_lacks_is_refused(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        _write_obligatory_positions(tmp_path, "lang0001", ["v:npsubj9"])
+        with pytest.raises(ValueError, match="v:npsubj9"):
+            _phrasal_accent_obligatory_positions("lang0001", 3, {3: "v:verbstem"})
 
 
 class TestPhrasalAccentObligatoryCore:
@@ -782,11 +806,12 @@ class TestPhrasalAccentObligatoryPositions:
         result = _phrasal_accent_obligatory_positions("lang0001", 3, all_positions)
         assert result == {2, 3, 4}
 
-    def test_default_list_adds_positions_outside_core(self, tmp_path, monkeypatch):
+    def test_listed_positions_are_added_outside_core(self, tmp_path, monkeypatch):
         # No free_occurrence data -> core is just the keystone (pos 3). Position 2
-        # is named v:npsubj1, which is in the tier-2 default list, so it's still
+        # is named v:npsubj1, which the language lists (tier 2), so it's still
         # obligatory even though it falls outside the (trivial) core.
         monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        _write_obligatory_positions(tmp_path, "lang0001", ["v:npsubj1"])
         all_positions = {1: "p1", 2: "v:npsubj1", 3: "v:verbstem", 4: "p4"}
         result = _phrasal_accent_obligatory_positions("lang0001", 3, all_positions)
         assert result == {2, 3}
@@ -900,11 +925,12 @@ class TestBuildPhrasalAccentPairs:
         pairs = _build_phrasal_accent_pairs(ei, "lang0001", pos_type)
         assert ["a", "c"] in pairs
 
-    def test_tier2_default_list_blocks_adjacency_outside_core(self, tmp_path, monkeypatch):
+    def test_tier2_listed_position_blocks_adjacency_outside_core(self, tmp_path, monkeypatch):
         # No free_occurrence data -> core is just the keystone. Position 2 is
-        # named v:npsubj1 (tier-2 default list) and sits between a (pos 1) and
-        # c (pos 4), so it blocks adjacency even though it's outside the core.
+        # named v:npsubj1 (listed by the language, tier 2) and sits between a
+        # (pos 1) and c (pos 4), so it blocks adjacency outside the core.
         monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
+        _write_obligatory_positions(tmp_path, "lang0001", ["v:npsubj1"])
         _write_phrasal_prescreening(tmp_path, "lang0001", [
             {"Element": "a", "accented": "y"},
             {"Element": "c", "accented": "y"},

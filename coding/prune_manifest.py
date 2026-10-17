@@ -51,6 +51,7 @@ from .drive import (
 from .drive_doorway import get_doorway
 from . import drive_door
 from .import_sheets import _archive_tsv
+from .make_forms import ARCHIVE_STAMP_FORMAT
 
 
 _RECENCY_DAYS = 14  # warn if sheet was modified within this many days
@@ -281,7 +282,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         print("Run with --apply to make these changes.")
         return
 
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(timezone.utc).strftime(ARCHIVE_STAMP_FORMAT)
 
     # Archive manifest before any mutation
     snapshot_path = _archive_manifest(manifest, timestamp)

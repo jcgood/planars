@@ -48,7 +48,9 @@ import pandera.pandas as pa
 CHECK_POSITION_INTEGER = "position_integer"
 CHECK_CLASS_TYPE_VALID = "class_type_valid"
 
-VALID_CLASS_TYPES = ("open", "list", "mixed")
+from planars.schema_values import CLASS_TYPES  # noqa: E402
+
+VALID_CLASS_TYPES = tuple(CLASS_TYPES)  # schemas/planar.yaml planar_columns.Class_Type
 
 
 def position_is_integer(s: pd.Series) -> pd.Series:

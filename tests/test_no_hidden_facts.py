@@ -7,7 +7,8 @@ maintain by hand.
 
 1. Literal detector: no string in coding/, planars/, generate_snapshots.py or
    the notebook templates' code may equal a value schemas/planar.yaml owns —
-   the keystone's name, the Status tab's values, the locked tabs' titles.
+   the keystone's name, the Status tab's values, the locked tabs' titles,
+   the Position_Type values (Zone, Slot).
    Read them from planars/schema_values.py or coding/locked_tabs.py instead. Deliberately narrow to start (2026-10-12):
    many schema values are ordinary words ("general", "free", "y"), and a noisy
    check breeds exceptions, which become a new hidden list. Widen it only
@@ -41,6 +42,8 @@ OWNED_VALUES = {
     schema_values.KEYSTONE_NAME: "planars.schema_values.KEYSTONE_NAME (or is_keystone)",
     schema_values.STATUS_IN_PROGRESS: "planars.schema_values.STATUS_IN_PROGRESS",
     schema_values.STATUS_READY: "planars.schema_values.STATUS_READY",
+    schema_values.ZONE: "planars.schema_values.ZONE",
+    schema_values.SLOT: "planars.schema_values.SLOT",
 }
 # The locked tabs' titles (schemas/planar.yaml locked_tabs, Phase 10 unit 2).
 from coding.locked_tabs import locked_tab_titles  # noqa: E402
@@ -94,11 +97,13 @@ def test_no_schema_owned_value_is_typed_into_code():
 def _declared_column_groups() -> List[Tuple[str, frozenset]]:
     """Each group of columns the schemas declare together, with where to read it."""
     from coding.schemas import load_diagnostic_classes
+    from coding.make_forms import DIAGNOSTICS_TSV_COLUMNS
     groups = [
         ("planars.schema_values.ELEMENT_ROW_COLUMNS (or row_columns)",
          frozenset(schema_values.ELEMENT_ROW_COLUMNS)),
         ("planars.schema_values.TRAILING_COLUMNS", frozenset(schema_values.TRAILING_COLUMNS)),
         ("planars.schema_values.STATUS_COLUMNS", frozenset(schema_values.STATUS_COLUMNS)),
+        ("coding.make_forms.DIAGNOSTICS_TSV_COLUMNS", frozenset(DIAGNOSTICS_TSV_COLUMNS)),
     ]
     groups += [(f"planars.schema_values.PAIR_ROW_SHAPES[{name!r}] (or row_columns/row_key)",
                 frozenset(cols)) for name, cols in schema_values.PAIR_ROW_SHAPES.items()]
@@ -127,12 +132,56 @@ def test_no_row_shape_is_restated_in_code():
             strings = {e.value for e in node.elts
                        if isinstance(e, ast.Constant) and isinstance(e.value, str)}
             for read_from, cols in groups:
+                if where == "coding/make_forms.py" and read_from.startswith("coding.make_forms."):
+                    continue  # the declaration itself
                 if len(strings & cols) >= 2:
                     hits.append(f"{where}:{node.lineno}: {sorted(strings & cols)} → use {read_from}")
                     break
     assert not hits, (
         "These literals restate columns the schemas declare together. Read them "
         "instead:\n  " + "\n  ".join(hits))
+
+
+def _declared_criterion_groups() -> List[Tuple[str, frozenset]]:
+    """Each class's required_criteria, and each class's per-construction
+    criteria taken together, from diagnostic_classes.yaml."""
+    from coding.schemas import load_diagnostic_classes
+    groups = []
+    for cls in load_diagnostic_classes().get("classes", []):
+        required = frozenset(cls.get("required_criteria") or [])
+        if required:
+            groups.append((f"planars.schema_values.required_criteria({cls['name']!r})", required))
+        per_construction = frozenset(con["criterion"] for con in cls.get("constructions") or []
+                                     if isinstance(con, dict) and con.get("criterion"))
+        if len(per_construction) >= 2:
+            groups.append((f"the `criterion:` of {cls['name']}'s constructions in "
+                           f"diagnostic_classes.yaml (coding.schemas.criteria_for)", per_construction))
+    return groups
+
+
+def test_no_class_criteria_are_restated_in_code():
+    """4. Criteria detector: a list, set or tuple literal holding all of a
+    class's required criteria, or all of its constructions' criteria, is a
+    copy of the schema (hidden-facts D-1, D-1b: every analysis module once
+    typed its own)."""
+    groups = _declared_criterion_groups()
+    hits: List[str] = []
+    for where, src in _python_sources():
+        if where == "planars/schema_values.py":
+            continue
+        tree = ast.parse(src)
+        for node in ast.walk(tree):
+            if not isinstance(node, (ast.List, ast.Set, ast.Tuple)):
+                continue
+            strings = frozenset(e.value for e in node.elts
+                                if isinstance(e, ast.Constant) and isinstance(e.value, str))
+            for read_from, criteria in groups:
+                if strings and criteria <= strings:
+                    hits.append(f"{where}:{node.lineno}: {sorted(strings)} → use {read_from}")
+                    break
+    assert not hits, (
+        "These literals restate a class's criteria from diagnostic_classes.yaml. "
+        "Read them instead:\n  " + "\n  ".join(hits))
 
 
 _COMMAND_STRING = re.compile(r"python -m coding ([a-z][a-z0-9-]*)((?:[ \t]+[^\s`'\"|;)]+)*)")

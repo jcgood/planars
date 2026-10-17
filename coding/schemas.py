@@ -115,13 +115,55 @@ def criterion_values(criterion_name: str) -> List[str] | None:
     return None
 
 
+def _value_placeholders() -> Dict[str, Dict]:
+    """diagnostic_criteria.yaml's value_placeholders: {kind: {value, free_entry, meaning}}."""
+    declared = load_diagnostic_criteria().get("value_placeholders")
+    if not declared:
+        raise KeyError("schemas/diagnostic_criteria.yaml is missing value_placeholders")
+    return declared
+
+
+def placeholder(kind: str) -> str:
+    """The spelling of a declared placeholder value, e.g. placeholder("position_number")
+    is "<position_number>" (hidden-facts D6: code used to type it)."""
+    declared = _value_placeholders()
+    if kind not in declared:
+        raise KeyError(f"diagnostic_criteria.yaml value_placeholders has no {kind!r}")
+    return declared[kind]["value"]
+
+
+def placeholder_kind(value) -> "str | None":
+    """The declared kind of a placeholder value, None for an ordinary value.
+    A value written <like_this> that is not declared raises."""
+    text = str(value)
+    if not (text.startswith("<") and text.endswith(">")):
+        return None
+    for kind, entry in _value_placeholders().items():
+        if entry["value"] == text:
+            return kind
+    raise ValueError(f"{text} is not declared in diagnostic_criteria.yaml value_placeholders")
+
+
+def free_entry_kind(values) -> "str | None":
+    """The free-entry kind (e.g. "free_text", "position_names") if a
+    criterion's declared values are only free-entry placeholders, else None
+    (an ordinary fixed value set, possibly with a placeholder such as
+    <position_number> among its choices)."""
+    if not values:
+        return None
+    kinds = {placeholder_kind(v) for v in values}
+    if len(kinds) != 1 or None in kinds:
+        return None
+    (kind,) = kinds
+    return kind if _value_placeholders()[kind].get("free_entry") else None
+
+
 def is_free_entry(values) -> bool:
-    """True if a criterion's declared values are only placeholders
-    (<free_text>, <position_names>): it takes free entry, so it gets no
-    dropdown -- a dropdown would just offer the placeholder itself as a choice.
-    Every writer of dropdown validation, and the sheet spec, asks this."""
-    return bool(values) and all(str(v).startswith("<") and str(v).endswith(">")
-                                for v in values)
+    """True if a criterion's declared values are only free-entry placeholders
+    (free_entry_kind): it takes free entry, so it gets no dropdown -- a
+    dropdown would just offer the placeholder itself as a choice. Every
+    writer of dropdown validation, the sheet spec, and validate-coding ask this."""
+    return free_entry_kind(values) is not None
 
 
 def criteria_for(class_name: str, construction: str, names: List[str],

@@ -6,7 +6,9 @@ from typing import Dict, Optional, Tuple
 from planars.io import load_filled_tsv
 from planars.spans import fmt_span, strict_span, loose_span, position_sets_from_element_mask
 
-_REQUIRED_CRITERIA = {"widescope_left", "widescope_right", "fillable_botheither_conjunct"}
+from planars.schema_values import required_criteria
+
+_REQUIRED_CRITERIA = required_criteria("subspanrepetition")
 
 # Maps each span category name to the boolean flag column computed on data_df.
 # The flag column names are added to the DataFrame inside derive_subspanrepetition_spans.
