@@ -36,12 +36,9 @@ class sheets stay in watch mode until the design doc's § 4 rule is met (at
 least a week of clean daily refreshes; the week restarted 2026-10-18,
 because until unit 20's fix no live command reported anything). Units 3,
 19 and 9's first half finished during it (2026-10-17; `coding/CLAUDE.md`
-waits for unit 6). **Unit 8 is built** (`coding/daily_refresh.py`; the
-workflow only sets up and runs `daily-refresh --apply`). If it is not yet
-pushed, it is waiting on Jeff's OK, because pushing changes what the next
-live refresh runs; once pushed, trigger `gh workflow run data-refresh.yml`
-and check the run's summary page and the issues it filed against the day
-before. Still to do
+waits for unit 6). Unit 8 is done and ran live cleanly (2026-10-17): the
+workflow now only sets up and runs `python -m coding daily-refresh --apply`
+(`coding/daily_refresh.py`). Still to do
 meanwhile: #309 (annotators never hear about invalid values on
 ready-for-review tabs; plan agreed, in the issue body; one live step, a test
 Drive comment, needs Jeff's approval).
