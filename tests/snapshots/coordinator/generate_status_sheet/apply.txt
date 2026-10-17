@@ -14,3 +14,4 @@ Annotation Status folder: https://drive.google.com/drive/folders/NEW_FOLDER_ID
 
 Done.
 Manifest updated on Drive (status_sheet_url).
+Drive door (enforce): checked 10 write(s) to 4 tab(s) or file(s); 0 broke a rule.

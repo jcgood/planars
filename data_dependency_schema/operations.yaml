@@ -927,6 +927,7 @@
   side_effects:
     - "runs import-planar, import-sheets, check-notes, sync-diagnostics-yaml (both directions), sync-params, generate-sheets --regen-dependents, update-sheets and generate-status-sheet with --apply, each with its own side effects"
     - "files, updates or closes the daily issues (planar-changed, import-error, diagnostics-yaml-error, regen-dependents-error, dependent-stale, diagnostics-drift, codebook-error, stale-manifest, integrity-error, data-overwrite, sheet-drift, status-sheet-error) and comments on stale pending-changes issues"
+    - "files an audit issue when none is open and none has closed in 30 days"
     - "commits and pushes coded_data/ (planars-data) after the import, the diagnostics sync, the checks and the status sheets"
     - "regenerates tests/snapshots/ and commits and pushes it to planars"
     - "deletes diagnostics_drift.json and /tmp/planar_changes.json before the steps that write them"

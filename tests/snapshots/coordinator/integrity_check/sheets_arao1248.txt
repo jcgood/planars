@@ -35,13 +35,15 @@
   ✓  Araona [arao1248] · subspanrepetition · tso_clause_linkage
 
 ── NEEDS REVIEW / PLACEHOLDERS ─────────────────────────────────────────
-  ⚠  10 entry(ies) marked [NEEDS REVIEW] or [PLACEHOLDER]:
+  ⚠  12 entry(ies) waiting on review or a coordinator decision:
        diagnostic_criteria.yaml [subspanrepetition/fillable_botheither_conjunct]: description
        diagnostic_criteria.yaml [phrasal_accent]: description
        diagnostic_criteria.yaml [phrasal_accent/joint_accent]: description
        diagnostic_criteria.yaml [proform]: description
+       diagnostic_classes_status.yaml [coreference]: collection_required — coordinator decision needed (set to 'y' or 'n')
        diagnostic_classes_status.yaml [proform]: status
        diagnostic_classes_status.yaml [idiom]: status
+       diagnostic_classes_status.yaml [biuniqueness_deviations]: collection_required — coordinator decision needed (set to 'y' or 'n')
        diagnostic_classes_status.yaml [repair]: status
        diagnostic_classes_status.yaml [phrasal_accent]: status
        diagnostic_classes_status.yaml [pausing]: status

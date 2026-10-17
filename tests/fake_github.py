@@ -21,11 +21,13 @@ class FakeGitHub:
     # --- helpers for tests -------------------------------------------------
 
     def seed_issue(self, title: str, label: str, body: str = "", state: str = "OPEN",
-                   created_at: str = "2026-01-01T00:00:00Z") -> int:
+                   created_at: str = "2026-01-01T00:00:00Z",
+                   closed_at: Optional[str] = None) -> int:
         number = self._next
         self._next += 1
         self.issues.append({"number": number, "title": title, "labels": [label],
-                            "state": state, "body": body, "createdAt": created_at})
+                            "state": state, "body": body, "createdAt": created_at,
+                            "closedAt": closed_at})
         return number
 
     def issue(self, number: int) -> Optional[Dict]:
@@ -73,7 +75,7 @@ class FakeGitHub:
 
     def close_issue(self, number: int) -> None:
         self.calls.append(("close", number))
-        self.issue(number)["state"] = "CLOSED"
+        self.issue(number).update(state="CLOSED", closedAt="2026-10-13T00:00:00Z")
 
     def list_labels(self) -> List[Dict]:
         return [dict(l) for l in self.labels]

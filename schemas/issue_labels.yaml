@@ -268,6 +268,16 @@ labels:
       Auto-closed when every label in use is registered.
     filed_by: issue --sync-labels --apply (data-refresh.yml)
 
+  - name: audit
+    color: "fbca04"
+    description: "A project audit: due, or in progress"
+    meaning: >-
+      Filed when no audit issue has been closed for 30 days. The issue is the
+      instruction: Claude runs the steps in `docs/coordinator-guide.md` §
+      "Audit procedure", comments the findings and what was done about each,
+      and closes it; the closing date is the date of the last audit.
+    filed_by: daily-refresh --apply (data-refresh.yml)
+
   - name: door-violation
     color: "d93f0b"
     description: "A command's Drive write broke one of the Drive door's rules while the door was only watching"

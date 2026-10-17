@@ -14,3 +14,4 @@ arao1248
 ──────────────────────────────────────────────────
 Validated 7 sheet(s).  Errors: 0
 No errors. (Pink highlighting for blank cells, and for invalid values on in-progress tabs, preserved.)
+Drive door (enforce): checked 12 write(s) to 7 tab(s) or file(s); 0 broke a rule.

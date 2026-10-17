@@ -451,8 +451,9 @@ def _check_qualification_rule_drift(diag_classes: dict) -> List[str]:
     """Check qualification rule bidirectional correspondence, hash sentinel, and docstring.
 
     Bidirectional correspondence (dynamic — no hardcoded module list):
-      - YAML class with qualification_rule but no corresponding module: WARNING
-        (expected during development; does not exit 1)
+      - YAML class with qualification_rule but no corresponding module: WARNING,
+        unless the class declares module_pending (diagnostic_classes_status.yaml);
+        module_pending on a class whose module exists: HARD ERROR
       - Python module with no YAML class: HARD ERROR (always a mistake; exits 1)
 
     Hash sentinel (hash lives in YAML as qualification_rule_hash):
@@ -479,12 +480,19 @@ def _check_qualification_rule_drift(diag_classes: dict) -> List[str]:
                 f"diagnostic_classes.yaml — add the class definition or remove the module"
             )
 
-    # YAML class with rule but no module → warning only
+    # YAML class with rule but no module → warning, unless declared
+    # module_pending in diagnostic_classes_status.yaml; a declaration that
+    # outlives the module is an error, so it can't go stale.
+    for name in sorted(n for n, c in diag_classes.items() if c.get("module_pending")):
+        if name in analysis_modules:
+            errors.append(
+                f"[{name}] planars/{name}.py now has `derive`, but "
+                f"diagnostic_classes_status.yaml still says module_pending — remove that line")
     for name in sorted(yaml_classes_with_rule):
-        if name not in analysis_modules:
+        if name not in analysis_modules and not diag_classes[name].get("module_pending"):
             print(f"  \u26a0  [{name}] diagnostic_classes.yaml has a qualification_rule "
-                  f"but planars/{name}.py has no `derive` attribute "
-                  f"(expected during development)")
+                  f"but planars/{name}.py has no `derive` attribute; if that is expected, "
+                  f"declare module_pending in diagnostic_classes_status.yaml")
 
     # Hash sentinel and docstring mirror for classes that have both YAML and module
     for name in sorted(yaml_classes_with_rule & analysis_modules):
@@ -649,8 +657,13 @@ def _report_keystone_active_unresolved(
     return len(unresolved)
 
 
-def _report_needs_review(codebook: dict, diag_classes: dict) -> int:
-    """Print a summary of [NEEDS REVIEW] and [PLACEHOLDER] entries. Returns count."""
+def needs_review_entries(codebook: dict, diag_classes: dict) -> list[str]:
+    """Every schema entry waiting on review or a coordinator decision.
+
+    The one list of [NEEDS REVIEW], [PLACEHOLDER] and [NEEDS COORDINATOR
+    INPUT] entries; check-codebook and integrity-check both print it (until
+    2026-10-17 integrity-check kept its own copy, which missed the last kind).
+    """
     flagged = []
     for analysis in codebook.get("analyses", []):
         name = analysis["name"]
@@ -675,6 +688,12 @@ def _report_needs_review(codebook: dict, diag_classes: dict) -> int:
                 f"diagnostic_classes_status.yaml [{cls['name']}]: collection_required — "
                 f"coordinator decision needed (set to 'y' or 'n')"
             )
+    return flagged
+
+
+def _report_needs_review(codebook: dict, diag_classes: dict) -> int:
+    """Print the needs-review list (`needs_review_entries`). Returns count."""
+    flagged = needs_review_entries(codebook, diag_classes)
     if flagged:
         print(f"\u26a0  {len(flagged)} entry(ies) marked [NEEDS REVIEW], [PLACEHOLDER], or [NEEDS COORDINATOR INPUT]:")
         for entry in flagged:

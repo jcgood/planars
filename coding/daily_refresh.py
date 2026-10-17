@@ -632,6 +632,38 @@ def status_sheets(r: Refresh) -> None:
              lambda: status_sheet_error_body(result.output), "Annotation Status sheets rebuilt")
 
 
+AUDIT_EVERY_DAYS = 30
+
+
+def audit_due_body(last: Optional[datetime]) -> str:
+    since = (f"The last audit issue was closed on {last:%Y-%m-%d}; look at what changed "
+             f"since then (`git log --since={last:%Y-%m-%d}`)."
+             if last else "No audit issue has been closed before.")
+    return (
+        f"An audit is due: no `audit` issue has been closed in the last "
+        f"{AUDIT_EVERY_DAYS} days. {since}\n\n"
+        "## What to do\n\n"
+        "Open Claude Code in the planars repository and say: **\"Run the audit in "
+        "this issue.\"** The steps are in `docs/coordinator-guide.md` § \"Audit "
+        "procedure\". Put the findings and what was done about each in a comment "
+        "here, then close this issue; the next audit falls due "
+        f"{AUDIT_EVERY_DAYS} days after that.\n")
+
+
+def audit_due(r: Refresh) -> None:
+    """File an `audit` issue when none is open and none closed recently, so
+    nobody has to remember when the last audit was (2026-10-17)."""
+    if issues.find_open("audit") is not None:
+        print("An audit issue is already open.")
+        return
+    last = issues.last_closed("audit")
+    if last and (datetime.now(timezone.utc) - last).days < AUDIT_EVERY_DAYS:
+        print(f"Last audit closed {last:%Y-%m-%d}; not due yet.")
+        return
+    number = issues.create("audit", f"Audit due ({today()})", audit_due_body(last))
+    print(f"Filed issue #{number} (audit).")
+
+
 def scope_summary(r: Refresh) -> None:
     langs = [p for p in CODED_DATA.iterdir() if p.is_dir() and not p.name.startswith(".")]
     yamls = list(CODED_DATA.glob("*/lang_setup/diagnostics_*.yaml"))
@@ -681,6 +713,8 @@ STEPS: List[Step] = [
     Step("sheet updates", "update-sheets --apply → sheet-drift", update_sheets),
     Step("status sheets", "generate-status-sheet --apply, commit planars-data → status-sheet-error",
          status_sheets),
+    Step("audit", f"file an audit issue if none closed in {AUDIT_EVERY_DAYS} days → audit",
+         audit_due),
     Step("scope", "count languages, diagnostics files and filled TSVs", scope_summary, always=True),
 ]
 

@@ -16,3 +16,4 @@ Using manifest.json (id: fake_manifest_file)
 Uploaded all_languages.ipynb (viewer)
 
 Done. drive_config.json updated.
+Drive door (enforce): checked 20 write(s) to 10 tab(s) or file(s); 0 broke a rule.

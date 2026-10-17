@@ -67,3 +67,4 @@ Mode:     apply
 
 Manifest updated on Drive.
 
+Drive door (enforce): checked 6 write(s) to 3 tab(s) or file(s); 0 broke a rule.

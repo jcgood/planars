@@ -33,8 +33,6 @@ Language: arao1248
 
 Language: stan1293
   [planar] No changes → planar_stan1293.tsv
-  [diagnostics] WARNING: [WARNING] row 12: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
-  [diagnostics] WARNING: [WARNING] row 13: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
   [diagnostics] No changes → diagnostics_stan1293.tsv
 
   ciscategorial
@@ -101,8 +99,6 @@ Language: stan1293
 
 Language: synth0001
   [planar] No changes → planar_synth0001.tsv
-  [diagnostics] WARNING: [WARNING] row 12: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
-  [diagnostics] WARNING: [WARNING] row 13: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
   [diagnostics] No changes → diagnostics_synth0001.tsv
 
   ciscategorial
@@ -166,3 +162,4 @@ Language: synth0001
     [general] [backup] No changes → coded_data/synth0001/phrasal_accent/general.tsv
 
 Done. 0 file(s) written, 1 warning(s).
+Drive door (enforce): checked 34 write(s) to 34 tab(s) or file(s); 0 broke a rule.

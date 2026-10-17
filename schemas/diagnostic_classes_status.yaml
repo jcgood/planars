@@ -53,6 +53,10 @@
 #                               locked_tabs). Written for annotators (John-level).
 #                               If absent, only generic dependency-order
 #                               instructions are shown.
+#   module_pending              Optional; the issue tracking a class collected before
+#                               its planars/ module exists (e.g. "#237"). Silences the
+#                               daily "no analysis module" warning; check-codebook
+#                               errors once the module exists and this is still set.
 #   include_planar_reference_tab  Optional; true adds the locked Planar Structure
 #                               reference tab to the class's spreadsheet (named as
 #                               its opt_in_field in schemas/planar.yaml locked_tabs;
@@ -257,6 +261,7 @@ classes:
       # annotation. Requires Adam's sign-off per the module-review workflow before any
       # promotion. See issue #237.
     collection_required: "n"
+    module_pending: "#237"  # annotation collected; span derivation not built yet
 
 
   - name: segmental

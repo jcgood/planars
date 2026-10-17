@@ -24,8 +24,8 @@ diagnostic_classes.yaml
 
 diagnostic_classes_status.yaml
     Process/tracking state for the same classes: status, criterion_set_status,
-    collection_required, qualification_rule_hash, sheet_instructions, and
-    include_planar_reference_tab. Split out from diagnostic_classes.yaml in
+    collection_required, qualification_rule_hash, sheet_instructions,
+    module_pending and include_planar_reference_tab. Split out from diagnostic_classes.yaml in
     Phase 3 of the data layer redesign (issue #271) because the two move at
     different rates. coding/schemas.py's load_diagnostic_classes() merges
     both files by class name at read time. ``status`` values are listed in

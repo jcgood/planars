@@ -57,18 +57,12 @@ manifest.json updated on Drive (id: fake_manifest_file)
 
 Language:    stan1293
 Planar file: planar_stan1293.tsv
-  Diagnostics validation (2 issue(s)):
-    [WARNING] row 12: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
-    [WARNING] row 13: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
 Classes:     ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent', 'biuniqueness_deviations']
   All classes already have sheets. Skipping stan1293.
   (use --force to regenerate)
 
 Language:    synth0001
 Planar file: planar_synth0001.tsv
-  Diagnostics validation (2 issue(s)):
-    [WARNING] row 12: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
-    [WARNING] row 13: Class 'phrasal_accent' has no corresponding planars/ analysis module (known: ['biuniqueness_deviations', 'ciscategorial', 'coreference', 'free_occurrence', 'idiom', 'intonational', 'metrical', 'noninterruption', 'nonpermutability', 'pausing', 'play_language', 'proform', 'repair', 'segmental', 'subspanrepetition', 'tonal', 'tonosegmental'])
 Classes:     ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent']
   All classes already have sheets. Skipping synth0001.
   (use --force to regenerate)
@@ -78,3 +72,4 @@ Local manifest written to: sheets_manifest.json
 drive_config.json written.
 
 Share each language folder with your specialist (see folder URLs above).
+Drive door (enforce): checked 105 write(s) to 35 tab(s) or file(s); 0 broke a rule.

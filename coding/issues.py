@@ -33,7 +33,7 @@ What lives here:
 
 - **The operations callers use**: `find_open`, `file_issue` (comment on the
   open issue, or replace its title and body, or create one), `create`,
-  `comment`, `close_open`, `remind_stale`, `is_open`, `body_of`.
+  `comment`, `close_open`, `remind_stale`, `last_closed`, `is_open`, `body_of`.
 
 Choosing *which* issue a caller means stays with the caller, because it is a
 fact about that caller: `check-notes` keeps one issue per annotator by stored
@@ -170,7 +170,7 @@ class GhCli:
 
     def list_issues(self, label: str, state: str = "open") -> List[Dict]:
         out = self._run(["issue", "list", "--label", label, "--state", state,
-                         "--limit", "1000", "--json", "number,title,state,createdAt"])
+                         "--limit", "1000", "--json", "number,title,state,createdAt,closedAt"])
         return json.loads(out or "[]")
 
     def get_issue(self, number: int) -> Optional[Dict]:
@@ -324,6 +324,14 @@ def close(number: int, message: Optional[str] = None) -> None:
     if message:
         comment(number, message)
     get_github().close_issue(number)
+
+
+def last_closed(label: str) -> Optional[datetime]:
+    """When the most recently closed issue under `label` was closed, or None."""
+    check_label(label)
+    times = [datetime.fromisoformat(i["closedAt"].replace("Z", "+00:00"))
+             for i in get_github().list_issues(label, state="closed") if i.get("closedAt")]
+    return max(times, default=None)
 
 
 def remind_stale(label: str, older_than_days: int, message: str,

@@ -24,7 +24,8 @@ Runs eight sections of checks and prints a structured report:
                                     violation here means something structurally broken, not merely
                                     an unrecognized field -- safe to let drive a real error, unlike
                                     upload_manifest()'s own non-blocking version of the same check.
-  NEEDS REVIEW                   — surfaces [NEEDS REVIEW] / [PLACEHOLDER] markers
+  NEEDS REVIEW                   — surfaces [NEEDS REVIEW] / [PLACEHOLDER] / [NEEDS COORDINATOR
+                                    INPUT] markers (check_codebook.needs_review_entries)
 
 Exit code 0 if no errors; 1 if any errors (warnings do not fail).
 
@@ -56,6 +57,7 @@ from .check_codebook import (
     _check_required_criteria,
     _check_diagnostics_vs_classes,
     _check_chart_keys,
+    needs_review_entries,
 )
 from planars.schema_values import (
     ELEMENT_ROW_COLUMNS, PAIR_ROW_SHAPES, STATUS_READY, STATUS_TAB, TRAILING_COLUMNS,
@@ -914,28 +916,9 @@ def _section_manifest_shape() -> Tuple[int, int]:
 def _section_needs_review(codebook: dict, diag_classes: dict) -> None:
     print(_section("NEEDS REVIEW / PLACEHOLDERS"))
 
-    flagged = []
-    for analysis in codebook.get("analyses", []):
-        name = analysis["name"]
-        for field in ("description", "qualification_rule"):
-            text = analysis.get(field, "")
-            if "[NEEDS REVIEW]" in text or "[PLACEHOLDER]" in text:
-                flagged.append(f"diagnostic_criteria.yaml [{name}]: {field}")
-                break
-        for crit in analysis.get("diagnostic_criteria", []):
-            for field in ("description",):
-                text = crit.get(field, "")
-                if "[NEEDS REVIEW]" in text or "[PLACEHOLDER]" in text:
-                    flagged.append(f"diagnostic_criteria.yaml [{name}/{crit['name']}]: {field}")
-                    break
-
-    for cls in diag_classes.values():
-        status = str(cls.get("status", ""))
-        if "[NEEDS REVIEW]" in status or "[PLACEHOLDER]" in status:
-            flagged.append(f"diagnostic_classes_status.yaml [{cls['name']}]: status")
-
+    flagged = needs_review_entries(codebook, diag_classes)
     if flagged:
-        print(_warn(f"{len(flagged)} entry(ies) marked [NEEDS REVIEW] or [PLACEHOLDER]:"))
+        print(_warn(f"{len(flagged)} entry(ies) waiting on review or a coordinator decision:"))
         for entry in flagged:
             print(_sub(entry))
         print(_sub("→ Edit the relevant schema file to resolve each entry."))

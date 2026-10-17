@@ -6,3 +6,4 @@ synth0001/coreference/reflexivization
     [prescreening] 4055 → 1176 pairs after filtering
     reflexivization: 569 retained, 607 added, 38 removed
     Removed pairs will surface via import-sheets --apply → apply-pending.
+Drive door (enforce): checked 4 write(s) to 1 tab(s) or file(s); 0 broke a rule.

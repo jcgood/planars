@@ -538,23 +538,59 @@ The spreadsheets live in a freestanding top-level "Annotation Status" Drive fold
 
 #### Audit procedure
 
-Run this sequence after any major change or after a gap between sessions:
+An audit is due when the daily refresh files an `audit` issue (it does when
+none has been closed for 30 days, `daily_refresh.AUDIT_EVERY_DAYS`), and after
+any change that cuts across the project, when the coordinator opens one by
+hand. Either way the audit lives in that issue: Claude works through the
+steps below, comments what it found and what was done about each finding, and
+closes the issue. The closing date is the date of the last audit.
 
-1. **Trigger the data refresh** — this is the most complete health check because it exercises the full Sheet-reading pipeline, not just local files:
+The daily refresh already runs every check and files an issue for each
+failure, so an audit does not re-run checks for their own sake. It does the
+three things the refresh can't: it looks at **warnings**, which never file an
+issue; it confirms the checks are **actually running**, since a check that
+stopped reporting looks exactly like a clean one (no live command was checked
+for four days before unit 20's fix, and every refresh looked clean); and it
+reads what changed since the last audit.
+
+1. **Run the refresh and wait for it** (about 20 minutes):
    ```bash
    gh workflow run data-refresh.yml
    ```
-   Wait for the run to complete (usually 2–3 minutes), then check the Issues tab for any newly filed labels (`integrity-error`, `dependent-stale`, `diagnostics-drift`, `import-error`, `sheet-validation`). Claude can trigger this and interpret the results for you.
+   Then pull planars-data (`git -C coded_data pull`) so local checks see what it imported.
 
-2. **Run local health checks:**
+2. **Every open issue the tooling filed.** Each label in `schemas/issue_labels.yaml`
+   whose `filed_by` is not "by hand" belongs to the tooling; list its open
+   issues (`gh issue list --label LABEL`). For each one, either it is being
+   handled (say by whom) or it is fixed now. An issue a later run should have
+   closed but didn't is a bug.
+
+3. **The checks ran.** In the refresh's log (`gh run view RUN_ID --log`):
+   every step reached "done"; each writing command ends with a `Drive door
+   (...): checked N write(s)` line (a writing step with no such line means the
+   door didn't run); and the steps with no issue of their own (labels,
+   collaborator notes, criterion columns, snapshots) succeeded. CI on the
+   latest `main` commit is green (`gh run list --workflow ci.yml --limit 1`).
+
+4. **Every warning.** Run
    ```bash
    python -m coding integrity-check
    python -m coding check-codebook
    ```
+   and sort each warning into one of three: **fix it** (it's a bug, or the
+   data is wrong — file or fix); **declare it** (it's expected; record the
+   exception where the check reads it, so it stops printing); or **ask** (a
+   linguistic question for Adam — find the issue that asks it, or file one).
+   A warning that appears in every audit with no decision is the failure this
+   step exists to catch.
 
-3. **Review inline comments and docstrings** in any recently changed analysis modules to confirm they still describe current behavior.
-
-Triggering the data refresh catches issues that local `integrity-check` misses: cascading validation errors that only surface during YAML sync, Sheet→YAML drift that hasn't been committed, and `continue-on-error` step failures (like API rate limit hits) that don't file issues but leave things partially unprocessed.
+5. **What changed since the last audit.**
+   `git log --since=DATE --stat -- coding planars schemas` (DATE: when the
+   last `audit` issue closed). For each module changed, read its docstring
+   against what the code now does; a stale one is a bug, fixed in the same
+   change. The tests already check commands named in text, files nothing
+   reaches and typed copies of schema values (`tests/test_no_hidden_facts.py`,
+   `tests/test_no_leftovers.py`), so this step is about described behaviour.
 
 #### Running the checks
 
@@ -564,7 +600,7 @@ python -m coding integrity-check --lang arao1248      # one language only
 python -m coding integrity-check --sheets             # also validate live Google Sheets structure
 ```
 
-`integrity-check` runs six sections: PLANAR STRUCTURE, DIAGNOSTICS, CODEBOOK CONSISTENCY, ANALYSIS CONSISTENCY, ANNOTATION SHEETS (with `--sheets`), and NEEDS REVIEW. Run it after triggering the data refresh (see Audit procedure above) to get the full picture — the data refresh catches Sheet-level issues that `integrity-check` alone misses.
+`integrity-check` runs six sections: PLANAR STRUCTURE, DIAGNOSTICS, CODEBOOK CONSISTENCY, ANALYSIS CONSISTENCY, ANNOTATION SHEETS (with `--sheets`), and NEEDS REVIEW. The daily refresh runs it and files `integrity-error` on an error; its warnings file nothing and are read during an audit (see Audit procedure above).
 
 ```bash
 python -m coding check-codebook
@@ -585,7 +621,7 @@ Each checker has a defined scope. New validation belongs in one of these tools, 
 
 | Tool | Role | When to reach for it |
 |------|------|----------------------|
-| `integrity-check` | Full project health report across all layers | After any major change; start of an audit session |
+| `integrity-check` | Full project health report across all layers | After any major change; an audit's warnings step |
 | `check-codebook` | Schema/module/diagnostics consistency + schema stubs + coverage matrix | When adding a class or criterion; for detailed codebook diagnostics |
 | `validate-coding` | Validates local TSVs + updates pink cell highlights and each Status tab's Needs fixing column in Sheets | Before a review cycle; runs automatically via `sheet-validation.yml`. Requires local TSVs — run `import-sheets` first if missing. |
 | `check-snapshots` | Snapshot regression against current analysis output | Runs automatically via pre-push hook and CI |

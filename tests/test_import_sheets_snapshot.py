@@ -634,7 +634,7 @@ def test_a_bad_id_reached_on_a_dry_run_warns_and_previews_every_other_language(e
     """Finding 13, fixed: a dry run used to have no guard at all -- reaching a
     bad manifest spreadsheet ID crashed the entire run with an unhandled
     exception, stopping every language, not just the one naming it. Now the
-    bad ID is reported as a per-class warning and the run continues,
+    bad ID is reported as a per-class ERROR line and the run continues,
     previewing every other class and every other language exactly as if the
     bad ID were never there. Since issue #283, a spreadsheet-open failure is
     also one of the warnings serious enough to make the command exit
@@ -648,9 +648,10 @@ def test_a_bad_id_reached_on_a_dry_run_warns_and_previews_every_other_language(e
     out, exit_code = env.run(["import-sheets"])
 
     assert exit_code == 1
-    assert "WARNING" in out
-    assert "ciscategorial" in out
-    assert "stan1293" in out
+    # The failure itself, not just any warning: until 2026-10-17 this read
+    # `"WARNING" in out` and passed on an unrelated daily notice.
+    assert ("ERROR: [ciscategorial] could not open spreadsheet 'does_not_exist_xyz' "
+            "for stan1293") in out
     # Every language still gets previewed -- the run did not stop at stan1293.
     assert "Language: arao1248" in out
     assert "Language: stan1293" in out

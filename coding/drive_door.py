@@ -560,6 +560,13 @@ class CheckedDoorway:
                 shape_problems += self._shape_problems(ss)
             self._before_sheets, self._before_tabs, self._replacements = {}, {}, {}
         if self._written:
+            # One line in the command's output, so a run log shows the door
+            # was at work: a silent door looks the same as a broken one, which
+            # is how unit 20's bug (no live command checked) hid for four days.
+            calls = sum(e["writes"] for e in self._written.values())
+            broken = len(self.violations) + len(shape_problems)
+            print(f"Drive door ({self.mode}): checked {calls} write(s) to "
+                  f"{len(self._written)} tab(s) or file(s); {broken} broke a rule.")
             from . import provenance
             arguments = vars(args) if args is not None else {}
             provenance.append_writes([

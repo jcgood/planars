@@ -4,3 +4,4 @@ synth0001/nonpermutability/general
     [element_prescreening] 66 element(s) with scopal=n excluded
     [element_prescreening] 838 → 231 pairs after filtering
     general: 231 retained, 0 added, 0 removed
+Drive door (enforce): checked 4 write(s) to 1 tab(s) or file(s); 0 broke a rule.

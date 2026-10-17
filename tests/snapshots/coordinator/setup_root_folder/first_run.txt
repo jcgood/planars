@@ -21,3 +21,4 @@ Next steps:
     (link sharing is off by policy).
   - Run python -m coding generate-notebooks --apply to regenerate notebooks
     (confirms manifest.json points to the correct location).
+Drive door (enforce): checked 9 write(s) to 6 tab(s) or file(s); 0 broke a rule.

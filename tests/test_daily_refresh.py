@@ -252,6 +252,34 @@ def test_codebook_failure_attaches_the_rule_update_prompts(refresh_env, github):
     assert issue["body"].rstrip().endswith("PROMPT TEXT")
 
 
+def test_an_audit_is_filed_when_none_was_ever_closed(refresh_env, github):
+    dr.refresh()
+    [issue] = _open(github, "audit")
+    assert issue["title"].startswith("Audit due (")
+    assert "No audit issue has been closed before" in issue["body"]
+    assert '§ "Audit procedure"' in issue["body"]
+
+
+def test_an_audit_is_filed_when_the_last_closed_over_a_month_ago(refresh_env, github):
+    github.seed_issue("Audit due (2026-01-01)", "audit", state="CLOSED",
+                      closed_at="2026-01-05T00:00:00Z")
+    dr.refresh()
+    [issue] = _open(github, "audit")
+    assert "closed on 2026-01-05" in issue["body"]
+    assert "git log --since=2026-01-05" in issue["body"]
+
+
+def test_no_audit_is_filed_when_one_is_open_or_closed_recently(refresh_env, github):
+    from datetime import datetime, timedelta, timezone
+    recent = (datetime.now(timezone.utc) - timedelta(days=3)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    github.seed_issue("Audit due (recent)", "audit", state="CLOSED", closed_at=recent)
+    dr.refresh()
+    assert _open(github, "audit") == []
+    github.seed_issue("Audit due (in progress)", "audit")
+    dr.refresh()
+    assert [i["title"] for i in _open(github, "audit")] == ["Audit due (in progress)"]
+
+
 def test_the_summary_page_gets_each_report_and_the_step_table(refresh_env):
     *_, tmp = refresh_env
     dr.refresh()

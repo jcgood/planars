@@ -81,19 +81,31 @@ _REQUIRED_COLS = set(DIAGNOSTICS_TSV_COLUMNS)
 
 
 def _known_analysis_classes() -> Set[str]:
-    """Return the set of valid class names by inspecting planars/ modules."""
+    """Return the set of valid class names by inspecting planars/ modules.
+
+    A module that fails to import raises: until 2026-10-17 it was skipped
+    silently, so a broken analysis module showed up only as a misleading
+    "has no corresponding module" warning.
+    """
     classes = set()
     planars_dir = ROOT / "planars"
     for path in planars_dir.glob("*.py"):
         if path.stem.startswith("_"):
             continue
-        try:
-            mod = importlib.import_module(f"planars.{path.stem}")
-            if hasattr(mod, "derive"):
-                classes.add(path.stem)
-        except Exception:
-            pass
+        mod = importlib.import_module(f"planars.{path.stem}")
+        if hasattr(mod, "derive"):
+            classes.add(path.stem)
+    # A class collected before its module exists declares so in
+    # diagnostic_classes_status.yaml (module_pending: "#issue"); check-codebook
+    # errors if the declaration outlives the module's arrival.
+    classes.update(module_pending_classes())
     return classes
+
+
+def module_pending_classes() -> Set[str]:
+    """Classes declared `module_pending` in diagnostic_classes_status.yaml."""
+    return {cls["name"] for cls in load_diagnostic_classes().get("classes", [])
+            if cls.get("name") and cls.get("module_pending")}
 
 
 def _schema_defined_constructions() -> Dict[str, Set[str]]:

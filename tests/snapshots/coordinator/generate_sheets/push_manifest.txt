@@ -1,3 +1,4 @@
 Connecting to Google APIs...
 manifest.json uploaded (id: fake_manifest_file)
 drive_config.json written.
+Drive door (enforce): checked 1 write(s) to 1 tab(s) or file(s); 0 broke a rule.

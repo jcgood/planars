@@ -259,10 +259,11 @@ python generate_snapshots.py            # regenerate span snapshots; review with
 - Notebooks run in Colab, not locally; Colab installs the package from GitHub,
   so a library change needs a version bump (the pre-commit hook does it for
   `planars/` changes; bump by hand for a `schemas/` change Colab reads).
-- **Audit sessions** start by triggering the daily refresh
-  (`gh workflow run data-refresh.yml`), then reviewing the issues it files,
-  then `integrity-check` and `check-codebook` — coordinator guide § "Audit
-  procedure". Due after a gap and after any cross-cutting change.
+- **Audits** happen in an `audit` issue: the daily refresh files one when
+  none has closed in 30 days; open one by hand after a cross-cutting change.
+  Steps: coordinator guide § "Audit procedure". The refresh already runs the
+  checks; an audit reads warnings, confirms the checks ran, and reads what
+  changed — comment findings on the issue, then close it.
 
 ## Commits
 
@@ -349,6 +350,7 @@ least one label from the table below (`gh issue create --label …`).
 | `collaborator-notes` | check-notes --apply (data-refresh.yml) | A collaborator's notes Doc has new content (one issue per annotator). Resolve: paste the Claude prompt from the issue body, review proposed issues, file warranted ones, then close this issue. |
 | `collaborator-check` | import-sheets | An in-progress sheet has structural anomalies (missing rows, missing columns, >10% annotated-cell decrease). Not a blocking error — verify the change was intentional with the collaborator. |
 | `label-drift` | issue --sync-labels --apply (data-refresh.yml) | A label someone created on GitHub by hand is on issues but not in `schemas/issue_labels.yaml`, so the tooling can't keep it in line. Resolve: add it to the registry (or take it off those issues). Auto-closed when every label in use is registered. |
+| `audit` | daily-refresh --apply (data-refresh.yml) | Filed when no audit issue has been closed for 30 days. The issue is the instruction: Claude runs the steps in `docs/coordinator-guide.md` § "Audit procedure", comments the findings and what was done about each, and closes it; the closing date is the date of the last audit. |
 | `door-violation` | the Drive door, at the end of any watched command | While the Drive door (`coding/drive_door.py`) is in watch mode, a write that breaks one of its rules still goes ahead, and the command files or updates this issue listing what broke. Each line is a bug in the command or a gap in the sheet spec. Resolve: fix whichever it is, then close. |
 | `sheet-updates` | restructure-sheets --apply | One long-lived issue per language ("Sheet updates — {lang_id}"); `restructure-sheets --apply` comments on it whenever that language's sheets get new URLs. Annotators subscribe to it. Never closed. |
 <!-- label-table:end -->
