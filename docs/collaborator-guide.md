@@ -29,6 +29,18 @@ A few rules:
 - **Source column**: Use this for page or section references that justify your annotation for that row (e.g. `§4.3`, `p. 217`, `Table 6.2`). Free text, never validated. Filling this in creates an audit trail so anyone can verify a decision later.
 - **Comments column**: Use this for anything you want to flag — uncertainty, alternative analyses, questions for the coordinator. It is passed through unchanged and is never used in computation.
 
+### When a construction is finished
+
+Every sheet has a **Status** tab (the last tab), with one row per construction. When you have finished a construction, set its **Status** to `ready-for-review`.
+
+A day later, look at that row's **Needs fixing** column. It lists every value on that tab that isn't allowed, one per line, for example:
+
+> row 125 (KEYSTONE), independence: 'n' — should be 'na'
+
+Correct each one on the construction's tab (the cell is also pink there). The line disappears within a day of the fix, and the column is blank when nothing needs fixing. You do not need to change the Status back while you fix things.
+
+While a construction is still `in-progress`, nothing is listed there: wrong values are only highlighted pink.
+
 ### Viewing your results
 
 Once your coordinator has imported your filled sheet, results appear in your contributor Colab notebook. Open the notebook link from the same Drive folder as your sheet and choose **Runtime → Run all**. Sign in with your Google account when prompted.

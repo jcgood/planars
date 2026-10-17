@@ -124,26 +124,12 @@ _KNOWN_SITES: Dict[Site, str] = {
         "advisory-only ([diagnostics] validation issue -- e.g. a "
         "Glottolog-verification reminder); same reasoning and same 2026-08-19 "
         "decision as the [planar] warning above.",
-    ("import_sheets.py", 'print(f"    WARNING: {msg}")', 1):
-        "fixed 2026-08-19 (issue #283): a spreadsheet that can't be opened at "
-        "all now counts toward total_blocking_warnings, making the command exit "
-        "non-zero and reach the existing import-error issue -- previously "
-        "accumulated into lang_warning_lines/import_errors/*.txt (a gitignored "
-        "file, never read in CI) with no effect on exit code",
-    ("import_sheets.py", 'print(f"    WARNING: {msg}")', 2):
-        "fixed 2026-08-19 (issue #283), same mechanism as the first occurrence "
-        "of this line: a missing tab now counts toward total_blocking_warnings too",
     ("import_sheets.py", 'print(f"    WARNING: could not highlight cells: {e}")', 1):
         "the one warning in this group NOT accumulated into "
         "lang_warning_lines/total_warnings at all (a failed pink-highlight "
         "attempt after the underlying data write already succeeded) -- stays "
         "advisory-only and out of scope for issue #283's exit-code fix: purely "
         "cosmetic, no data loss if missed.",
-    ("import_sheets.py", 'print(f"    WARNING: {w}")', 1):
-        "fixed 2026-08-19 (issue #283): this is blocking_warnings, an "
-        "invalid-value/structural problem on a ready-for-review tab -- already "
-        "named 'blocking' in the code, now actually gates the exit code and "
-        "reaches the existing import-error issue",
     ("sync_diagnostics_yaml.py", 'print(f"  [{lang_id}] WARNING {w.location}: {w.message}")', 1):
         "advisory-only (non-blocking WARNING-level validate_diagnostics_yaml "
         "issue); fixed 2026-08-19 alongside issue #283's worse ERROR-level gap "
@@ -222,13 +208,6 @@ _KNOWN_SITES: Dict[Site, str] = {
     ("import_sheets.py", 'print(f"\\nDone. {total_files} file(s) written{backup_part}, {total_warnings} warning(s).")', 1):
         "summary count ('N warning(s)'), not an independent site -- reflects "
         "warnings already tracked above",
-    ("import_sheets.py", 'print(f"\\n{total_blocking_warnings} blocking warning(s) found — see WARNING lines above.")', 1):
-        "the exit-non-zero summary line added by issue #283's own fix "
-        "(2026-08-19) -- reflects total_blocking_warnings, itself reflecting "
-        "warnings already tracked above. Printed right before sys.exit(1), so "
-        "unlike the 'Done.' summary it's the thing that actually makes this "
-        "run's outcome reach the import-error issue, not just a count for a "
-        "human reading the log.",
     ("integrity_check.py", 'print(f"  ✗  {total_e} error(s)  ·  {total_w} warning(s)")', 1):
         "footer summary line; its leading ✗ is exactly what the integrity-error "
         "issue-filing step scans for -- part of the escalation mechanism, not a gap",

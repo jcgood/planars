@@ -63,9 +63,13 @@ jobs:
           printf '%s' "$OAUTH_CREDS" > ~/.config/planars/oauth_credentials.json
           printf '%s' "$OAUTH_TOKEN" > ~/.config/gspread/authorized_user.json
 
+      # --notify tells each annotator about values to fix on tabs they marked
+      # ready-for-review (coding/annotator_notices.py, issue #309).
       - name: Run validate-coding
         id: validate
-        run: python -m coding validate-coding > /tmp/report.txt 2>&1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python -m coding validate-coding --notify > /tmp/report.txt 2>&1
         continue-on-error: true
 
       - name: Write job summary

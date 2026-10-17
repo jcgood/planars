@@ -278,6 +278,28 @@
       to a day. A failed run leaves the previous day's numbers in place.
     caught_by: "a failed rebuild files or updates the status-sheet-error issue (daily refresh)."
 
+- id: status_tab_problems
+  description: which values on a ready-for-review tab are invalid, as listed for the annotator in the class sheet's Status tab (issue #309)
+  locations:
+    - {entity: construction_tsv, detail: "the imported cell values, checked by validate_coding against the diagnostics YAML's allowed values and graded by validate_coding.needs_fixing with the tab's Status"}
+    - {entity: annotation_sheet, detail: "the Status tab's problems column (schemas/planar.yaml status_tab, role: problems), one line per invalid cell"}
+  authoritative: construction_tsv
+  cascade:
+    direction: automatic
+    mechanism: >-
+      validate-coding recomputes every checked tab's lines on each run and
+      writes only cells that differ (validate_coding.write_problems): daily
+      in sheet-validation.yml, and at the end of import-sheets --apply when
+      it wrote a TSV. A sheet whose Status tab lacks the column gets it from
+      the daily update-sheets --apply.
+  drift_risk:
+    possible: true
+    note: >-
+      The lines lag the sheet by up to a day (they come from the imported
+      TSVs). A tab validate-coding could not check (no local TSV) keeps
+      its last lines; the run says which tabs it skipped.
+    caught_by: "validate-coding prints a line for each sheet with no Status tab or no problems column."
+
 - id: manifest_class_registration
   description: which analysis classes have a registered annotation spreadsheet for a language
   locations:

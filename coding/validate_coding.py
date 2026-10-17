@@ -5,30 +5,45 @@ Validates filled annotation sheets against their expected criterion columns
 and allowed values. Updates pink cell highlighting so collaborators can find
 and fix errors without coordinator help.
 
+How serious a problem is depends on the tab's Status (`needs_fixing`, the
+one rule; issue #309): an invalid value on a ready-for-review tab is an
+error, listed in that sheet's Status tab ("Needs fixing" column, one line
+per cell, rewritten every run and blank when clean) and counted in the exit
+code, so the sheet-validation workflow files an issue for it. On an
+in-progress tab it is a warning and a pink cell only. Blank cells are never
+errors.
+
 Run from the repo root:
     python -m coding validate-coding                   # all languages
     python -m coding validate-coding --lang arao1248   # one language
+    python -m coding validate-coding --notify          # and tell annotators
+
+With --notify (daily, sheet-validation.yml), each language's annotator is
+told about values to fix: coding/annotator_notices.py.
 
 Reads cell values from local TSVs (written by import-sheets) rather than
 re-fetching them from Google Sheets, then writes pink highlights back to
 Sheets only where invalid cells are found. Local TSVs must exist — if any
-are missing, run `python -m coding import-sheets` first.
+are missing, run `python -m coding import-sheets` first. Each tab's Status
+is read live from the sheet.
 """
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
+from gspread.utils import rowcol_to_a1
 
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
 from . import drive_door
 from .drive import load_manifest
-from .drive_doorway import get_doorway
+from .drive_doorway import WorksheetNotFound, get_doorway
 from .locked_tabs import system_tab_titles
 from .restructure_sheets import _get_keyed_row_constructions, _get_pair_row_constructions
 from .make_forms import (
@@ -127,10 +142,115 @@ def _check_free_entry(kind: str, value: str, lang_id: Optional[str]) -> Optional
         return f"not a position in the planar: {', '.join(unknown)}"
     return None
 
+
+# ---------------------------------------------------------------------------
+# Cell problems, and how serious each is (issue #309)
+# ---------------------------------------------------------------------------
+
+# ValidationIssue.kind for a problem in one cell.
+BLANK, INVALID = "blank", "invalid"
+
+
+def needs_fixing(issue: ValidationIssue, tab_status: str) -> bool:
+    """The one rule for how serious a cell problem is.
+
+    An invalid value on a tab its annotator has marked ready-for-review is an
+    error: it is reported (a `sheet-validation` issue) and listed in the
+    sheet's Status tab. On an in-progress tab it is only highlighted pink,
+    since the annotator is still working there. A blank cell is never an
+    error. import-sheets and validate-coding both decide through here
+    (until #309 import-sheets decided for itself and the two disagreed)."""
+    return issue.kind == INVALID and tab_status == STATUS_READY
+
+
+def grade(issues: List[ValidationIssue], tab_status: str) -> List[ValidationIssue]:
+    """``issues`` with every one that `needs_fixing` raised to an error."""
+    return [dataclasses.replace(i, level="error") if needs_fixing(i, tab_status) else i
+            for i in issues]
+
+
+def _blank(where: str, param: str, cell: Tuple[int, int],
+           message: Optional[str] = None) -> ValidationIssue:
+    return ValidationIssue("warning", where, message or f"blank value in '{param}'",
+                           cell=cell, kind=BLANK)
+
+
+def _invalid(where: str, row_num: int, label: str, param: str, value: str,
+             should: str, cell: Tuple[int, int], message: str) -> ValidationIssue:
+    """An invalid cell; ``should`` says what it should be, for the line the
+    annotator reads in the Status tab."""
+    return ValidationIssue("warning", where, message, cell=cell, kind=INVALID,
+                           fix=f"row {row_num} ({label}), {param}: '{value}' — {should}")
+
+
+# ---------------------------------------------------------------------------
+# The Status tab: each tab's status, and the problems listed beside it (#309)
+# ---------------------------------------------------------------------------
+
+# More lines than this in one Status cell are summarised; the pink cells show
+# the rest.
+_MAX_PROBLEM_LINES = 20
+
+
+def read_status_tab(ss) -> Tuple[Optional[object], List[List[str]]]:
+    """(the Status worksheet, its cells), or (None, []) if the sheet has none.
+    ``planars.schema_values.status_map`` turns the cells into each tab's status."""
+    try:
+        ws = ss.worksheet(STATUS_TAB)
+    except WorksheetNotFound:
+        return None, []
+    return ws, ws.get_all_values()
+
+
+def tab_statuses(ss) -> Dict[str, str]:
+    """{construction: status} from the sheet's Status tab ({} if it has none)."""
+    return status_map(read_status_tab(ss)[1])
+
+
+def problems_text(issues: List[ValidationIssue]) -> str:
+    """What the Status tab says needs fixing on one tab: one line per error
+    an annotator can fix, blank when there are none."""
+    lines = [i.fix for i in issues if i.level == "error" and i.fix]
+    if len(lines) > _MAX_PROBLEM_LINES:
+        rest = len(lines) - _MAX_PROBLEM_LINES
+        lines = lines[:_MAX_PROBLEM_LINES] + [f"…and {rest} more (the pink cells on the tab)"]
+    return "\n".join(lines)
+
+
+def write_problems(ws, rows: List[List[str]], problems: Dict[str, str]) -> Optional[str]:
+    """Rewrite the Status tab's problems column for each construction in
+    ``problems``, only where it differs. A construction not in ``problems``
+    (its tab was not checked) is left alone. Returns a note if the tab has no
+    such column yet, else None."""
+    header = [h.strip() for h in rows[0]] if rows else []
+    if STATUS_PROBLEMS_COLUMN not in header or STATUS_CONSTRUCTION_COLUMN not in header:
+        return (f"its {STATUS_TAB} tab has no '{STATUS_PROBLEMS_COLUMN}' column yet, so "
+                f"nothing was listed for the annotator — python -m coding update-sheets "
+                f"--apply adds it")
+    ci = header.index(STATUS_CONSTRUCTION_COLUMN)
+    pi = header.index(STATUS_PROBLEMS_COLUMN)
+    for r, row in enumerate(rows[1:], start=2):
+        name = row[ci].strip() if ci < len(row) else ""
+        current = row[pi] if pi < len(row) else ""
+        if name in problems and current != problems[name]:
+            ws.update([[problems[name]]], rowcol_to_a1(r, pi + 1))
+    return None
+
+
+def _one_of(allowed) -> str:
+    values = sorted(v for v in allowed if v != _POSITION_NUMBER_PLACEHOLDER)
+    if _POSITION_NUMBER_PLACEHOLDER in allowed:
+        values.append("a position number")
+    return "should be one of: " + ", ".join(values)
+
 _PINK  = {"red": 1.0, "green": 0.8, "blue": 0.8}
 _WHITE = {"red": 1.0, "green": 1.0, "blue": 1.0}
 
 from planars.schema_values import KEYSTONE_NAME as _KEYSTONE_NAME  # noqa: E402
+from planars.schema_values import (  # noqa: E402
+    STATUS_CONSTRUCTION_COLUMN, STATUS_IN_PROGRESS, STATUS_PROBLEMS_COLUMN, STATUS_READY,
+    STATUS_TAB, status_map,
+)
 
 # ---------------------------------------------------------------------------
 # Cell highlighting
@@ -277,8 +397,11 @@ def validate_annotation_rows(
         record   = {col: row[col_index[col]] for col in header if col in col_index}
         pos_name = record.get("Position_Name", "").strip()
         is_keystone = pos_name.lower() == _KEYSTONE_NAME
+        label = record.get('Element', '?')
+        where = f"{tab_name} row {row_num} '{label}'"
 
         for param in param_cols:
+            cell = (row_num - 1, col_index[param])
             if param in unknown:
                 record[param] = record.get(param, "").strip().lower()
                 continue
@@ -289,12 +412,9 @@ def validate_annotation_rows(
                 record[param] = raw
                 problem = _check_free_entry(free_kind, raw, lang_id)
                 if problem:
-                    issues.append(ValidationIssue(
-                        "warning",
-                        f"{tab_name} row {row_num} '{record.get('Element', '?')}'",
-                        f"unexpected value '{raw}' in '{param}' ({problem})",
-                        cell=(row_num - 1, col_index[param]),
-                    ))
+                    issues.append(_invalid(
+                        where, row_num, label, param, raw, problem, cell,
+                        f"unexpected value '{raw}' in '{param}' ({problem})"))
                 continue
 
             val = record.get(param, "").strip().lower()
@@ -308,53 +428,35 @@ def validate_annotation_rows(
                 if keystone_active and param not in _na_criteria:
                     # Keystone participates in this analysis — treat like any row.
                     if val == "":
-                        issues.append(ValidationIssue(
-                            "warning",
-                            f"{tab_name} row {row_num} '{record.get('Element', '?')}'",
-                            f"blank value in '{param}' (keystone is active for this construction)",
-                            cell=(row_num - 1, col_index[param]),
-                        ))
+                        issues.append(_blank(
+                            where, param, cell,
+                            f"blank value in '{param}' (keystone is active for this construction)"))
                     elif val == "na":
-                        issues.append(ValidationIssue(
-                            "warning",
-                            f"{tab_name} row {row_num} '{record.get('Element', '?')}'",
-                            f"'na' in '{param}' but keystone is active — expected a real annotation value",
-                            cell=(row_num - 1, col_index[param]),
-                        ))
+                        issues.append(_invalid(
+                            where, row_num, label, param, val,
+                            "should be a real answer, not 'na' (the keystone takes part "
+                            "in this construction)", cell,
+                            f"'na' in '{param}' but keystone is active — expected a real annotation value"))
                     elif val not in allowed and not (accepts_pos_num and val.isdigit()):
-                        issues.append(ValidationIssue(
-                            "warning",
-                            f"{tab_name} row {row_num} '{record.get('Element', '?')}'",
-                            f"unexpected value '{val}' in '{param}' (allowed: {sorted(allowed)})",
-                            cell=(row_num - 1, col_index[param]),
-                        ))
+                        issues.append(_invalid(
+                            where, row_num, label, param, val, _one_of(allowed), cell,
+                            f"unexpected value '{val}' in '{param}' (allowed: {sorted(allowed)})"))
                 else:
                     # Keystone does not participate (or criterion is self-referential
                     # on the keystone) — should always be 'na'.
                     if val == "":
                         record[param] = "na"
                     elif val != "na":
-                        issues.append(ValidationIssue(
-                            "warning",
-                            f"{tab_name} row {row_num} '{record.get('Element', '?')}'",
-                            f"unexpected value '{val}' in '{param}' for keystone row (expected 'na')",
-                            cell=(row_num - 1, col_index[param]),
-                        ))
+                        issues.append(_invalid(
+                            where, row_num, label, param, val, "should be 'na'", cell,
+                            f"unexpected value '{val}' in '{param}' for keystone row (expected 'na')"))
             else:
                 if val == "":
-                    issues.append(ValidationIssue(
-                        "warning",
-                        f"{tab_name} row {row_num} '{record.get('Element', '?')}'",
-                        f"blank value in '{param}'",
-                        cell=(row_num - 1, col_index[param]),
-                    ))
+                    issues.append(_blank(where, param, cell))
                 elif val not in allowed and not (accepts_pos_num and val.isdigit()):
-                    issues.append(ValidationIssue(
-                        "warning",
-                        f"{tab_name} row {row_num} '{record.get('Element', '?')}'",
-                        f"unexpected value '{val}' in '{param}' (allowed: {sorted(allowed)})",
-                        cell=(row_num - 1, col_index[param]),
-                    ))
+                    issues.append(_invalid(
+                        where, row_num, label, param, val, _one_of(allowed), cell,
+                        f"unexpected value '{val}' in '{param}' (allowed: {sorted(allowed)})"))
 
         records.append(record)
 
@@ -584,21 +686,14 @@ def validate_pair_rows(
                 continue
 
             allowed = {v.lower() for v in param_values[param]} | _ALWAYS_ALLOWED
+            where, cell = f"{tab_name} row {row_num} '{label}'", (row_num - 1, col_index[param])
 
             if val == "":
-                issues.append(ValidationIssue(
-                    "warning",
-                    f"{tab_name} row {row_num} '{label}'",
-                    f"blank value in '{param}'",
-                    cell=(row_num - 1, col_index[param]),
-                ))
+                issues.append(_blank(where, param, cell))
             elif val not in allowed:
-                issues.append(ValidationIssue(
-                    "warning",
-                    f"{tab_name} row {row_num} '{label}'",
-                    f"unexpected value '{val}' in '{param}' (allowed: {sorted(allowed)})",
-                    cell=(row_num - 1, col_index[param]),
-                ))
+                issues.append(_invalid(
+                    where, row_num, label, param, val, _one_of(allowed), cell,
+                    f"unexpected value '{val}' in '{param}' (allowed: {sorted(allowed)})"))
 
         records.append(record)
 
@@ -685,29 +780,26 @@ def validate_keyed_rows(
                 continue
             values = (param_values or {}).get(param)
             free_kind = _free_entry_kind(values)
+            where, cell = f"{tab_name} row {row_num} '{label}'", (row_num - 1, col_index[param])
             if free_kind:
                 raw = record.get(param, "").strip()
                 record[param] = raw
                 problem = _check_free_entry(free_kind, raw, lang_id)
                 if problem:
-                    issues.append(ValidationIssue(
-                        "warning", f"{tab_name} row {row_num} '{label}'",
-                        f"unexpected value '{raw}' in '{param}' ({problem})",
-                        cell=(row_num - 1, col_index[param])))
+                    issues.append(_invalid(
+                        where, row_num, label, param, raw, problem, cell,
+                        f"unexpected value '{raw}' in '{param}' ({problem})"))
                 continue
             val = lowered[param]
             record[param] = val
             allowed = {v.lower() for v in values} | _ALWAYS_ALLOWED
             if val == "":
                 if not blank_ok:
-                    issues.append(ValidationIssue(
-                        "warning", f"{tab_name} row {row_num} '{label}'",
-                        f"blank value in '{param}'", cell=(row_num - 1, col_index[param])))
+                    issues.append(_blank(where, param, cell))
             elif val not in allowed:
-                issues.append(ValidationIssue(
-                    "warning", f"{tab_name} row {row_num} '{label}'",
-                    f"unexpected value '{val}' in '{param}' (allowed: {sorted(allowed)})",
-                    cell=(row_num - 1, col_index[param])))
+                issues.append(_invalid(
+                    where, row_num, label, param, val, _one_of(allowed), cell,
+                    f"unexpected value '{val}' in '{param}' (allowed: {sorted(allowed)})"))
         records.append(record)
     return records, issues
 
@@ -787,13 +879,20 @@ def _load_param_map(lang_id: str) -> Dict[str, Dict[str, dict]]:
 def revalidate_sheets(
     lang_ids: list[str] | None = None,
     verbose: bool = False,
+    notices: Optional[Dict[str, Optional[list]]] = None,
 ) -> int:
     """Revalidate annotation sheets for the given languages (all if None).
 
-    Returns the number of blocking issues found.  Updates pink highlighting
-    in Sheets as a side effect.  Called by restructure_sheets after --apply
-    to refresh highlighting on newly created sheets.
+    Returns the number of errors found. Updates pink highlighting and each
+    Status tab's problems column in Sheets as a side effect. Called by
+    import-sheets and restructure-sheets after --apply, to refresh both.
+
+    ``notices``, if given, is filled with {lang_id: [SheetProblems, ...]}
+    for `annotator_notices.notify` — or None for a language not checked
+    completely (a sheet that couldn't be opened, a tab with no local TSV),
+    whose notice must not be judged from part of its sheets.
     """
+    from .annotator_notices import SheetProblems
     doorway = get_doorway()
     manifest = load_manifest(doorway)
     if not manifest:
@@ -844,6 +943,7 @@ def revalidate_sheets(
                     for issue in diag_issues:
                         print(f"    {issue}")
 
+        lang_notices: Optional[list] = []
         for class_name, sheet_info in sorted(lang_data.get("sheets", {}).items()):
             sid = sheet_info.get("spreadsheet_id") or sheet_info.get("id")
             if not sid:
@@ -852,8 +952,13 @@ def revalidate_sheets(
                 ss = doorway.open_spreadsheet(sid)
             except Exception as e:
                 print(f"  [{class_name}] could not open spreadsheet: {e}")
+                lang_notices = None
                 continue
 
+            status_ws, status_rows = read_status_tab(ss)
+            statuses = status_map(status_rows)
+            problems: Dict[str, str] = {}
+            notice_lines: List[str] = []
             system_tabs = set(system_tab_titles())
             for ws in ss.worksheets():
                 construction = ws.title
@@ -900,20 +1005,27 @@ def revalidate_sheets(
                 except FileNotFoundError as e:
                     print(f"  [{class_name}/{construction}] ERROR: {e}")
                     total_missing += 1
+                    lang_notices = None
                     continue
                 total_sheets += 1
+                issues = grade(issues, statuses.get(construction, STATUS_IN_PROGRESS))
+                problems[construction] = problems_text(issues)
+                notice_lines += [f"{construction}: {i.fix}" for i in issues
+                                 if i.level == "error" and i.fix]
 
-                # Separate actionable issues from blank-cell completeness noise.
+                # Separate reportable issues from blank-cell completeness noise.
                 # Blank cells are expected during annotation and highlighted pink
-                # in the Sheet for annotators, but should not trigger exit(1) or
-                # clutter the report. Use --verbose to see them individually.
-                blocking = [i for i in issues if "blank value" not in i.message]
-                blank_count = len(issues) - len(blocking)
-                total_blocking += len(blocking)
+                # in the Sheet for annotators, but are not listed in the report.
+                # Use --verbose to see them individually. Only errors (an
+                # invalid value on a ready-for-review tab, a tab of the wrong
+                # shape) count toward the exit code; see needs_fixing().
+                shown = [i for i in issues if i.kind != BLANK]
+                blank_count = len(issues) - len(shown)
+                total_blocking += sum(1 for i in shown if i.level == "error")
 
-                if blocking:
-                    print(f"  [{class_name}/{construction}] {len(blocking)} issue(s):")
-                    for issue in blocking:
+                if shown:
+                    print(f"  [{class_name}/{construction}] {len(shown)} issue(s):")
+                    for issue in shown:
                         print(f"    {issue}")
                     if blank_count and not verbose:
                         print(f"    ({blank_count} blank cell(s) — annotation in progress; use --verbose to list)")
@@ -924,17 +1036,31 @@ def revalidate_sheets(
 
                 if verbose and blank_count:
                     for issue in issues:
-                        if "blank value" in issue.message:
+                        if issue.kind == BLANK:
                             print(f"    {issue}")
 
+            if status_ws is None:
+                print(f"  [{class_name}] no {STATUS_TAB} tab, so nothing was listed for the "
+                      f"annotator — python -m coding update-sheets --apply adds it")
+            else:
+                note = write_problems(status_ws, status_rows, problems)
+                if note:
+                    print(f"  [{class_name}] {note}")
+            if lang_notices is not None and notice_lines:
+                lang_notices.append(SheetProblems(class_name, sid, ss.url, tuple(notice_lines)))
+
+        if notices is not None:
+            notices[lang_id] = lang_notices
+
     print(f"\n{'─' * 50}")
-    print(f"Validated {total_sheets} sheet(s).  Data coding issues: {total_blocking}")
+    print(f"Validated {total_sheets} sheet(s).  Errors: {total_blocking}")
     if total_missing:
         print(f"{total_missing} construction(s) skipped — no local TSV. Run `python -m coding import-sheets` first.")
     if total_blocking:
-        print("Cell highlighting updated in Google Sheets.")
+        print("Cell highlighting and each sheet's Status tab updated in Google Sheets.")
     else:
-        print("All data coding issues cleared. (Pink highlighting for blank cells preserved.)")
+        print("No errors. (Pink highlighting for blank cells, and for invalid values on "
+              "in-progress tabs, preserved.)")
     return total_blocking
 
 
@@ -951,6 +1077,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--verbose", action="store_true",
         help="print each blank-cell issue individually",
     )
+    ap.add_argument(
+        "--notify", action="store_true",
+        help="tell each language's annotator about values to fix on ready-for-review "
+             "tabs (the needs-fixing issue; coding/annotator_notices.py)",
+    )
     return ap
 
 
@@ -964,7 +1095,17 @@ def main(args: argparse.Namespace | None = None) -> None:
     # command; this used to print it a second time.)
     print("Connecting to Google APIs...")
     lang_ids = [lang_filter] if lang_filter else None
-    blocking = revalidate_sheets(lang_ids=lang_ids, verbose=verbose)
+    notices: Optional[Dict[str, Optional[list]]] = {} if args.notify else None
+    blocking = revalidate_sheets(lang_ids=lang_ids, verbose=verbose, notices=notices)
+    if notices is not None:
+        from .annotator_notices import notify
+        print("\nNotices to annotators:")
+        for lang_id, sheets in sorted(notices.items()):
+            if sheets is None:
+                print(f"  {lang_id}: not every sheet could be checked, so no notice "
+                      f"was sent or closed (see the lines above)")
+            else:
+                print(f"  {lang_id}: {notify(lang_id, sheets)}")
     if blocking:
         sys.exit(1)
 

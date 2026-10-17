@@ -240,6 +240,42 @@ def test_a_class_sheet_is_shared_only_with_its_annotator_by_name(env):
                                    email="someone.else@example.org")
 
 
+# -- rule 7: comments ---------------------------------------------------------------
+
+NOTIFY = argparse.Namespace(lang=None, verbose=False, notify=True)
+
+
+def test_a_comment_may_mention_only_the_sheets_annotator(env):
+    fake, door, sheet_id, _ = env
+    with drive_door.running("validate-coding", NOTIFY):
+        door.create_comment(sheet_id, "+annotator@example.org 1 cell needs fixing.")
+        with pytest.raises(DoorViolation, match="only stan1293's annotator"):
+            door.create_comment(sheet_id, "+someone.else@example.org look at this")
+    assert [c["content"] for c in fake.list_comments(sheet_id)] == [
+        "+annotator@example.org 1 cell needs fixing."]
+
+
+def test_a_comment_goes_only_on_a_class_sheet(env):
+    fake, door, _, _ = env
+    manifest_id = next(fid for fid, f in fake._files.items() if f.name == "manifest.json")
+    with drive_door.running("validate-coding", NOTIFY):
+        with pytest.raises(DoorViolation, match="only on class sheets"):
+            door.create_comment(manifest_id, "hello")
+
+
+def test_a_comment_that_landed_before_the_error_is_not_posted_twice(env):
+    fake, door, sheet_id, _ = env
+    original = fake.create_comment
+
+    def lands_then_fails(file_id, content):
+        original(file_id, content)
+        raise api_error(503, "unavailable")
+    fake.create_comment = lands_then_fails
+    with drive_door.running("validate-coding", NOTIFY):
+        door.create_comment(sheet_id, "+annotator@example.org 2 cells need fixing.")
+    assert len(fake.list_comments(sheet_id)) == 1
+
+
 # -- retry ------------------------------------------------------------------------
 
 def test_a_busy_drive_is_retried(env):

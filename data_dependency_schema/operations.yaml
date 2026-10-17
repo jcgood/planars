@@ -360,10 +360,12 @@
     Adds missing rows/trailing columns to existing sheets and creates tabs
     for constructions newly added to the diagnostics YAML; rebuilds and
     protects every sheet's locked tabs (schemas/planar.yaml locked_tabs) where
-    they differ from their sources; ensures the Status tab exists and is last.
+    they differ from their sources; ensures the Status tab exists, has every
+    column schemas/planar.yaml status_tab.columns lists, and is last.
     Run daily with --apply by the data refresh.
   side_effects:
     - "appends rows/columns to live annotation tabs"
+    - "appends missing columns (at the right) and construction rows to a Status tab"
     - "creates new construction tabs for constructions not yet in the manifest"
     - "rewrites a locked tab (Instructions, Planar Structure) whose content differs from its source, and protects any not yet protected"
     - "updates sheets_manifest.json"
@@ -393,6 +395,7 @@
     - "overwrites coded_data/{lang}/{class}/{construction}.tsv from the live sheet, incrementally per tab"
     - "writes pending_changes.json for ready-for-review tabs' destructive changes"
     - "paints pink highlighting on invalid cells (all tabs, any status)"
+    - "with --apply, when it wrote any TSV, runs validate-coding's revalidation (pink cells and the Status tab's problems column)"
     - >-
       does NOT auto-commit coded_data/ -- prints the git add/commit/push
       commands for the coordinator to run by hand (only import_planar.py and
@@ -432,22 +435,44 @@
   writes_to_drive: true
   description: >-
     Re-validates annotation sheets against the diagnostics YAML's allowed
-    values and updates pink cell highlighting; exits non-zero on errors
-    (used by the sheet-validation workflow).
+    values, updates pink cell highlighting, and lists each ready-for-review
+    tab's invalid values in its sheet's Status tab (issue #309); exits
+    non-zero on errors (used by the sheet-validation workflow).
   side_effects:
     - "updates highlight_cells/clear_highlights on live tabs to reflect current validation state"
+    - "rewrites the Status tab's problems column (planar.yaml status_tab, role: problems) where it differs"
   idempotent: true
   idempotency_note: >-
-    Highlighting is recomputed from current sheet content and the current
-    diagnostics YAML every run, not accumulated -- a repeat run with nothing
-    changed re-paints the same cells the same colours.
+    Highlighting and the Status tab's problems column are recomputed from
+    current sheet content, each tab's Status and the current diagnostics
+    YAML every run, not accumulated -- a repeat run with nothing changed
+    re-paints the same cells and writes nothing to the Status tab.
   apply_gate: null
   preconditions: []
   facts_touched:
     - {fact: pair_row_construction_set, role: reads}
     - {fact: diagnostics_scope, role: reads}
+    - {fact: status_tab_problems, role: writes}
   cascades_triggered: []
-  modes: []
+  modes:
+    - name: "--notify"
+      description: >-
+        Tells each language's annotator about values to fix on
+        ready-for-review tabs (coding/annotator_notices.py; issue #309).
+      side_effects:
+        - "files, updates or closes the language's needs-fixing GitHub issue"
+        - "mentions the annotator on it (GitHub username in people.yaml), or else comments on each affected spreadsheet mentioning their address (Google emails them)"
+      idempotent: true
+      idempotency_note: >-
+        The issue body records a code for each problem the annotator has
+        been told about; a repeat run with the same problems edits the body
+        to the same text and tells nobody again. A language not checked
+        completely is left alone.
+      apply_gate: "--notify"
+      preconditions: []
+      writes_to_drive: true
+      facts_touched:
+        - {fact: status_tab_problems, role: reads}
 
 - id: validation_report
   cli_command: validation-report

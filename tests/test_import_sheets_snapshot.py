@@ -308,12 +308,10 @@ def drop_last_planar_position(rows: List[List[str]]) -> List[List[str]]:
 
 
 def assert_finished(out: str, exit_code: Optional[int]) -> None:
-    """The run finished: cleanly, or stopping only on a problem in the recorded
-    annotation that it reported. The recording is real annotators' work, and a
-    refreeze can bring in a coding error on a ready-for-review tab; that is the
-    command doing its job, not a failure of the change under test (whose
-    output the snapshot pins)."""
-    assert exit_code is None or (exit_code == 1 and "blocking warning(s) found" in out), out
+    """The run finished cleanly. A coding error in the recorded annotation
+    (real annotators' work, brought in by a refreeze) no longer stops it
+    (#309): validate-coding reports those."""
+    assert exit_code is None, out
 
 
 # ---------------------------------------------------------------------------
@@ -566,11 +564,11 @@ def test_an_invalid_cell_is_pink_highlighted(env):
     assert hits, "expected a pink-highlight write for the invalid cell"
     assert hits[0]["payload"]["rows"][0]["values"][0]["userEnteredFormat"]["backgroundColor"] \
         == {"red": 1.0, "green": 0.8, "blue": 0.8}
-    # Issue #283: an invalid (non-blank) value on a ready-for-review tab is
-    # one of blocking_warnings -- serious enough to make the command exit
-    # non-zero, so it reaches the daily automation's existing import-error
-    # issue instead of only ever appearing in a log nobody reads.
-    assert exit_code == 1
+    # Since #309 an invalid value is not an import failure: it is printed,
+    # graded by the tab's real Status (this tab is in-progress, so a warning),
+    # and reported by validate-coding, never through import-error.
+    assert exit_code is None
+    assert "[WARNING] general row 2" in out and "unexpected value 'maybe123'" in out
 
 
 # ---------------------------------------------------------------------------

@@ -79,7 +79,7 @@ from .validate_coding import (
 )
 from .schemas import criteria_for
 from planars.languages import get_display_name
-from planars.schema_values import STATUS_COLUMNS
+from planars.schema_values import STATUS_CONSTRUCTION_COLUMN, STATUS_STATUS_COLUMN
 
 _STATUS_FOLDER_NAME = "Annotation Status"
 
@@ -89,8 +89,9 @@ _GREEN  = {"red": 0.72, "green": 0.88, "blue": 0.72}
 _YELLOW = {"red": 1.00, "green": 0.95, "blue": 0.60}
 _GRAY   = {"red": 0.90, "green": 0.90, "blue": 0.90}
 
-# Each row restates one Status-tab row (planar.yaml status_tab.columns) with its class.
-_HEADER = ["Class"] + STATUS_COLUMNS
+# Each row restates one Status-tab row (planar.yaml status_tab.columns) with
+# its class; the Status column holds the completeness percentage here.
+_HEADER = ["Class", STATUS_CONSTRUCTION_COLUMN, STATUS_STATUS_COLUMN]
 
 
 # ---------------------------------------------------------------------------

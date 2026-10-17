@@ -243,12 +243,13 @@ def planar_changed_body(changes: dict) -> str:
 
 
 def import_error_body(text: str) -> str:
-    """What went wrong in import-sheets, crash first (#306), then ERROR: lines,
-    then WARNING: lines (#283: a blocking warning has no ERROR: line), else
-    the end of the output."""
+    """What went wrong in import-sheets, crash first (#306), then its ERROR:
+    lines (an unreadable sheet or tab), else the end of the output. Warnings
+    are not listed: since #309 the import fails only when it broke, and an
+    invalid value goes to the sheet-validation issue instead, so a warning
+    printed beside a failure is never its cause."""
     lines = text.splitlines()
-    errors = [l.strip() for l in lines if l.startswith("ERROR:")]
-    warnings = [l.strip() for l in lines if "WARNING:" in l]
+    errors = [l.strip() for l in lines if l.strip().startswith("ERROR:")]
     crash = []
     if "Traceback (most recent call last)" in text:
         start = max(i for i, l in enumerate(lines) if "Traceback (most recent call last)" in l)
@@ -262,13 +263,11 @@ def import_error_body(text: str) -> str:
     out = ["## What's wrong\n\n"]
     if crash:
         out.append("\n".join(f"- {c}" for c in crash) + "\n")
-        if errors or warnings:
+        if errors:
             out.append("\nAlso printed before the crash (not its cause):\n\n")
-            out.append("\n".join(f"- {e}" for e in (errors or warnings)) + "\n")
+            out.append("\n".join(f"- {e}" for e in errors) + "\n")
     elif errors:
         out.append("\n".join(f"- {e}" for e in errors) + "\n")
-    elif warnings:
-        out.append("\n".join(f"- {w}" for w in warnings) + "\n")
     else:
         tail = lines[-25:] if len(lines) > 25 else lines
         out.append("_(No `ERROR:` lines found — showing end of output where the failure likely appears.)_\n\n")
@@ -276,9 +275,12 @@ def import_error_body(text: str) -> str:
     out.append("\n## What to do\n\n")
     out.append("Common causes:\n")
     out.append('- **OAuth token expired** — re-authorize credentials (see `docs/coordinator-guide.md § "OAuth setup"`)\n')
-    out.append("- **Sheet structure changed** — run `python -m coding update-sheets --apply`\n")
+    out.append("- **A sheet can't be opened** — check it still exists and is shared with the tooling's account\n")
+    out.append("- **A tab is missing from a sheet** — run `python -m coding update-sheets --apply`\n")
     out.append("- **Uncommitted `coded_data/` changes** — commit or discard them locally, then re-trigger this workflow\n")
     out.append("- **API quota exhausted** — transient; the issue will close automatically when the next run succeeds\n")
+    out.append("\nInvalid values in the sheets are not reported here: they are listed in each "
+               "sheet's Status tab and in the `sheet-validation` issue.\n")
     out.append("\nThe issue closes automatically when the next import run succeeds.\n")
     out.append("\n## Full log\n\n")
     out.append(_details("Show full import output", text))

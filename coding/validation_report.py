@@ -53,6 +53,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+from planars.schema_values import STATUS_PROBLEMS_COLUMN, STATUS_TAB
+
 from . import issues
 
 _LANG_RE = re.compile(r"^[a-z]+\d{4}$")
@@ -263,10 +265,12 @@ def _what_to_do(report: ValidationReport) -> List[str]:
             "`diagnostic_classes.yaml` declares for that construction (`row_type`). "
             "Either the sheet needs regenerating for that construction, or the "
             "schema's `row_type` is wrong. Do not fix this by editing cells.\n")
-    if any("unexpected value" in m for m in messages):
+    if any("unexpected value" in m or "keystone is active" in m for m in messages):
         steps.append(
-            "**Invalid cell values:** open the affected sheet, find the pink "
-            "cells, and correct them to one of the allowed options listed above.\n")
+            "**Invalid cell values** on tabs marked ready-for-review: the "
+            f"annotator corrects them. Each one is listed in that sheet's "
+            f"{STATUS_TAB} tab, '{STATUS_PROBLEMS_COLUMN}' column, and its cell "
+            "is pink.\n")
     if not steps:
         steps.append("Review the errors above against the full log.\n")
     steps.append("This issue closes automatically when the next validation run "

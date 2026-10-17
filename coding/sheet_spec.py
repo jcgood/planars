@@ -14,7 +14,8 @@ diagnostics file, and Status, in the order `locked_tabs.reorder_tabs` puts
 them. Each column has an owner:
 
   tooling    the columns that identify a row (`planars.schema_values.row_columns`)
-             and the Status tab's Construction column. Written by the tooling.
+             and the Status tab's columns `planar.yaml` gives to the tooling
+             (Construction, and the problems column validate-coding rewrites).
   annotator  criterion columns, the trailing columns (Source, Comments) and
              Status. The tooling may fill an empty one (a new row, a pre-fill)
              but never changes one an annotator has filled, unless the command
@@ -39,7 +40,10 @@ from planars.schema_values import (
     KEYED_ROWS,
     PAIR_ROWS,
     STATUS_COLUMNS,
+    STATUS_CONSTRUCTION_COLUMN,
+    STATUS_STATUS_COLUMN,
     STATUS_TAB,
+    STATUS_TOOLING_COLUMNS,
     STATUS_VALUES,
     TRAILING_COLUMNS,
     row_columns,
@@ -239,10 +243,12 @@ def class_sheet_spec(lang_id: str, class_name: str, data_dir: Path) -> ClassShee
     middle = [_construction_tab(lang_id, class_name, con, names, values, planar_path)
               for con, names, values in constructions]
 
-    key_col, status_col = STATUS_COLUMNS
+    key_col = STATUS_CONSTRUCTION_COLUMN
     status = TabSpec(
         STATUS_TAB, STATUS,
-        (ColumnSpec(key_col, TOOLING, None), ColumnSpec(status_col, ANNOTATOR, tuple(STATUS_VALUES))),
+        tuple(ColumnSpec(c, TOOLING if c in STATUS_TOOLING_COLUMNS else ANNOTATOR,
+                         tuple(STATUS_VALUES) if c == STATUS_STATUS_COLUMN else None)
+              for c in STATUS_COLUMNS),
         (key_col,), (key_col,),
         tuple((con,) for con, _, _ in constructions),
     )

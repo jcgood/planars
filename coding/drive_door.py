@@ -38,6 +38,9 @@ tests). Reads pass straight through. Every write is checked first:
      before the command first wrote to it are reported: older drift has its
      own issues. Formatting, dropdowns and highlights change no shape and
      cost no extra read.
+  7. a comment goes only on a class sheet, and may mention (``+address``,
+     which makes Google email that person) only the sheet's annotator
+     (issue #309: how an annotator without GitHub hears about problems).
 
 Every call is retried on Google's "try again" answers (429, 500, 503), here
 and nowhere else. A call that creates something is retried only after
@@ -117,6 +120,8 @@ _RETRYABLE = (429, 500, 503)
 _SPREADSHEET_MIME = "application/vnd.google-apps.spreadsheet"
 _FOLDER_MIME = "application/vnd.google-apps.folder"
 _DOC_MIME = "application/vnd.google-apps.document"
+# A mention in a Drive comment: "+" and an email address (rule 7).
+_MENTION = re.compile(r"\+([\w.+-]+@[\w-]+(?:\.[\w-]+)+)")
 
 
 class DoorViolation(RuntimeError):
@@ -909,6 +914,9 @@ class CheckedDoorway:
     def get_doc_text(self, doc_id: str) -> str:
         return _retry(lambda: self._inner.get_doc_text(doc_id))
 
+    def list_comments(self, file_id: str) -> List[Dict]:
+        return _retry(lambda: self._inner.list_comments(file_id))
+
     # -- creating -----------------------------------------------------------
     def _same_named(self, name: str, mimetype: Optional[str],
                     parents: Optional[Sequence[str]]) -> set:
@@ -1070,6 +1078,36 @@ class CheckedDoorway:
         self._check(f"change a grant on {file_id} to {role}", problems)
         _retry(lambda: self._inner.update_permission(file_id, permission_id, role))
         self._wrote_file(file_id, "", "update_permission")
+
+    # -- comments (rule 7) ---------------------------------------------------
+    def _comment_problems(self, file_id: str, content: str) -> List[str]:
+        """A comment goes only on a class sheet, and may mention (``+address``,
+        which makes Google email that person) only the sheet's own annotator."""
+        identity = self._identify(file_id)
+        if identity is None or identity.kind != CLASS_SHEET:
+            return [f"comments go only on class sheets; {file_id} is not one the door "
+                    "can place"]
+        from .people import annotator_email
+        expected = annotator_email(identity.lang_id)
+        others = sorted({m for m in _MENTION.findall(content) if m != expected})
+        if others:
+            return [f"a comment on {identity.describe()} may mention only "
+                    f"{identity.lang_id}'s annotator (languages.yaml), not "
+                    f"{len(others)} other address(es)"]
+        return []
+
+    def create_comment(self, file_id: str, content: str) -> str:
+        self._check(f"comment on {file_id}", self._comment_problems(file_id, content))
+
+        def landed():
+            for c in self.list_comments(file_id):
+                if c.get("content") == content:
+                    return c["id"]
+            return None
+
+        comment_id = _retry(lambda: self._inner.create_comment(file_id, content), landed=landed)
+        self._wrote_file(file_id, "", "create_comment")
+        return comment_id
 
 
 def _quote(text: str) -> str:
@@ -1445,8 +1483,8 @@ class CheckedWorksheet:
         identity = self._ss.identity
         kind, _ = self._kind()
         if kind == STATUS_TAB_KIND:
-            from planars.schema_values import STATUS_COLUMNS
-            return {STATUS_COLUMNS[0]}
+            from planars.schema_values import STATUS_TOOLING_COLUMNS
+            return set(STATUS_TOOLING_COLUMNS)
         from planars.schema_values import row_columns
         try:
             return set(row_columns(identity.class_name, self._name()))
@@ -1632,8 +1670,8 @@ class CheckedWorksheet:
         """The column's allowed values, None for a column that has no dropdown,
         or a message saying why it cannot be checked."""
         if kind == STATUS_TAB_KIND:
-            from planars.schema_values import STATUS_COLUMNS, STATUS_VALUES
-            return tuple(STATUS_VALUES) if name == STATUS_COLUMNS[1] else None
+            from planars.schema_values import STATUS_STATUS_COLUMN, STATUS_VALUES
+            return tuple(STATUS_VALUES) if name == STATUS_STATUS_COLUMN else None
         identity = self._ss.identity
         spec = self._door._spec(identity)
         if isinstance(spec, Exception):

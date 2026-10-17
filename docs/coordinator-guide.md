@@ -201,6 +201,8 @@ The `NA`/`untestable` distinction also matters: `NA` means the criterion is inap
 
 When a construction is complete, the collaborator sets its row in the **Status tab** to `ready-for-review`. This signals to the coordinator that the construction is ready to import.
 
+From then on, an invalid value on that tab is an error, not just a pink cell (issue #309; the rule is `validate_coding.needs_fixing`). `validate-coding` (daily, `sheet-validation.yml`, and at the end of `import-sheets --apply`) lists each one in the Status tab's **Needs fixing** column, one line per cell naming the row, element, column, value and what it should be, and blanks the cell once the tab is clean; the `sheet-validation` issue reports them to the coordinator. `update-sheets --apply` adds the column to a sheet that predates it. An invalid value is never an `import-error`: that issue means the import itself broke.
+
 #### 2b. Collaborator notes
 
 Each language has a **Notes Google Doc** in its Drive folder (created automatically by `generate-sheets`). Collaborators write freeform observations, questions, and concerns there — anything they'd want to flag to the coordinator but wouldn't know how to file as a GitHub issue.
@@ -577,7 +579,7 @@ Each checker has a defined scope. New validation belongs in one of these tools, 
 |------|------|----------------------|
 | `integrity-check` | Full project health report across all layers | After any major change; start of an audit session |
 | `check-codebook` | Schema/module/diagnostics consistency + schema stubs + coverage matrix | When adding a class or criterion; for detailed codebook diagnostics |
-| `validate-coding` | Validates local TSVs + updates pink cell highlights in Sheets | Before a review cycle; runs automatically via `sheet-validation.yml`. Requires local TSVs — run `import-sheets` first if missing. |
+| `validate-coding` | Validates local TSVs + updates pink cell highlights and each Status tab's Needs fixing column in Sheets | Before a review cycle; runs automatically via `sheet-validation.yml`. Requires local TSVs — run `import-sheets` first if missing. |
 | `check-snapshots` | Snapshot regression against current analysis output | Runs automatically via pre-push hook and CI |
 
 ---

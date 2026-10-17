@@ -54,6 +54,7 @@ from coding import drive as drive_module
 from coding import drive_doorway
 from coding import validate_coding as vc
 from command_runner import run_command
+from planars.schema_values import STATUS_STATUS_COLUMN
 from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID, point_coded_data_at
 from render_mutations import render
 
@@ -227,22 +228,192 @@ def test_blank_cells_alone_do_not_block(env):
     assert "blank cell(s)" in out
     assert "issue(s):" not in out
     assert exit_code is None
-    assert "All data coding issues cleared." in out
+    assert "No errors." in out
 
 
-def test_an_invalid_value_blocks_and_is_reported_separately_from_blanks(env):
+def set_status(doorway, lang: str, class_name: str, construction: str, value: str) -> None:
+    """Set one construction's Status on the fake's Status tab."""
+    ws = doorway.spreadsheet(sheet_id(doorway, lang, class_name)).worksheet(vc.STATUS_TAB)
+    rows = ws.get_all_values()
+    col = rows[0].index(STATUS_STATUS_COLUMN)
+    row = next(i for i, r in enumerate(rows) if r and r[0] == construction)
+    ws._cell(row, col).value = value
+
+
+def add_problems_column(doorway, lang: str, class_name: str) -> None:
+    """Give the fake's Status tab the column update-sheets adds (the recorded
+    sheets predate it)."""
+    ws = doorway.spreadsheet(sheet_id(doorway, lang, class_name)).worksheet(vc.STATUS_TAB)
+    width = len(ws.get_all_values()[0])
+    ws.update([[vc.STATUS_PROBLEMS_COLUMN]], vc.rowcol_to_a1(1, width + 1))
+
+
+def problems_cell(doorway, lang: str, class_name: str, construction: str) -> str:
+    rows = doorway.spreadsheet(sheet_id(doorway, lang, class_name)).worksheet(
+        vc.STATUS_TAB).get_all_values()
+    col = rows[0].index(vc.STATUS_PROBLEMS_COLUMN)
+    row = next(r for r in rows if r and r[0] == construction)
+    return row[col] if col < len(row) else ""
+
+
+def test_an_invalid_value_on_an_in_progress_tab_is_only_a_warning(env):
+    """#309: the annotator is still working on the tab, so a bad value is
+    pink and listed as a warning, not an error, and nothing is exited on."""
     doorway, coded, run_main = env
     set_cell(coded, "arao1248", "ciscategorial", "general",
             "Element", "ADVERBIALS", "V-combines", "maybe")
 
     out, exit_code = run_main(["validate-coding", "--lang", "arao1248"])
-    assert exit_code == 1
+    assert exit_code is None
     assert "1 issue(s):" in out
-    assert "unexpected value 'maybe' in 'V-combines'" in out
+    assert "[WARNING] general row" in out and "unexpected value 'maybe' in 'V-combines'" in out
     # The blank cells on the rest of the tab are still counted, but noted
-    # separately from the blocking issue rather than folded into it.
+    # separately from the issue rather than folded into it.
     assert "blank cell(s) — annotation in progress; use --verbose to list" in out
-    assert "Cell highlighting updated in Google Sheets." in out
+
+
+def test_an_invalid_value_on_a_ready_tab_is_an_error_listed_in_the_status_tab(env):
+    """#309: on a tab marked ready-for-review the same value is an error (the
+    sheet-validation workflow files an issue), and the Status tab's problems
+    column names it for the annotator; fixing it blanks the cell again."""
+    doorway, coded, run_main = env
+    set_status(doorway, "arao1248", "ciscategorial", "general", vc.STATUS_READY)
+    add_problems_column(doorway, "arao1248", "ciscategorial")
+    set_cell(coded, "arao1248", "ciscategorial", "general",
+            "Element", "ADVERBIALS", "V-combines", "maybe")
+
+    out, exit_code = run_main(["validate-coding", "--lang", "arao1248"])
+    assert exit_code == 1
+    assert "[ERROR] general row" in out and "unexpected value 'maybe' in 'V-combines'" in out
+    text = problems_cell(doorway, "arao1248", "ciscategorial", "general")
+    assert text.startswith("row ") and "(ADVERBIALS), V-combines: 'maybe' — should be one of:" in text
+    assert "\n" not in text
+
+    set_cell(coded, "arao1248", "ciscategorial", "general",
+            "Element", "ADVERBIALS", "V-combines", "y")
+    out, exit_code = run_main(["validate-coding", "--lang", "arao1248"])
+    assert exit_code is None
+    assert problems_cell(doorway, "arao1248", "ciscategorial", "general") == ""
+
+
+def test_a_status_tab_without_the_problems_column_is_reported_not_written(env):
+    doorway, coded, run_main = env
+    set_status(doorway, "arao1248", "ciscategorial", "general", vc.STATUS_READY)
+    set_cell(coded, "arao1248", "ciscategorial", "general",
+            "Element", "ADVERBIALS", "V-combines", "maybe")
+    out, _ = run_main(["validate-coding", "--lang", "arao1248"])
+    assert (f"[ciscategorial] its Status tab has no '{vc.STATUS_PROBLEMS_COLUMN}' column yet"
+            in out)
+    assert "update-sheets --apply adds it" in out
+
+
+# ---------------------------------------------------------------------------
+# --notify: the annotator hears about it (#309 step 3)
+# ---------------------------------------------------------------------------
+
+def _break_a_ready_tab(doorway, coded, value="maybe"):
+    set_status(doorway, "arao1248", "ciscategorial", "general", vc.STATUS_READY)
+    add_problems_column(doorway, "arao1248", "ciscategorial")
+    set_cell(coded, "arao1248", "ciscategorial", "general",
+            "Element", "ADVERBIALS", "V-combines", value)
+
+
+def _with_github(monkeypatch, username):
+    import coding.people
+    monkeypatch.setattr(coding.people, "_load_people", lambda: {
+        "Adam Tallman": {"email": "annotator@example.org", "github": username}})
+
+
+def test_notify_mentions_an_annotator_with_github_once_per_new_problem(env, github, monkeypatch):
+    doorway, coded, run_main = env
+    _with_github(monkeypatch, "annotator-gh")
+    _break_a_ready_tab(doorway, coded)
+
+    out, _ = run_main(["validate-coding", "--lang", "arao1248", "--notify"])
+    [issue] = [i for i in github.issues if "needs-fixing" in i["labels"]]
+    assert issue["title"] == "Values to fix in the Araona [arao1248] sheets"
+    assert "@annotator-gh" in issue["body"]
+    assert "**ciscategorial**: 1 cell" in issue["body"]
+    assert "Status tab" in issue["body"]
+    assert f"arao1248: filed #{issue['number']}" in out
+    assert not doorway.list_comments(sheet_id(doorway, "arao1248", "ciscategorial"))
+
+    # The same problem the next day: nobody is told again.
+    out, _ = run_main(["validate-coding", "--lang", "arao1248", "--notify"])
+    assert "nothing new to tell the annotator" in out
+    assert not github.comments.get(issue["number"])
+
+    # A different bad value is a new problem: a comment mentions them.
+    set_cell(coded, "arao1248", "ciscategorial", "general",
+            "Element", "ADVERBIALS", "V-combines", "perhaps")
+    run_main(["validate-coding", "--lang", "arao1248", "--notify"])
+    [comment] = github.comments[issue["number"]]
+    assert comment.startswith("@annotator-gh something new needs fixing")
+
+    # Fixed: the issue closes.
+    set_cell(coded, "arao1248", "ciscategorial", "general",
+            "Element", "ADVERBIALS", "V-combines", "y")
+    out, _ = run_main(["validate-coding", "--lang", "arao1248", "--notify"])
+    assert github.issue(issue["number"])["state"] == "CLOSED"
+    assert f"arao1248: closed #{issue['number']}" in out
+
+
+def test_notify_comments_on_the_sheet_for_an_annotator_without_github(env, github):
+    doorway, coded, run_main = env
+    _break_a_ready_tab(doorway, coded)
+
+    run_main(["validate-coding", "--lang", "arao1248", "--notify"])
+    sid = sheet_id(doorway, "arao1248", "ciscategorial")
+    [comment] = doorway.list_comments(sid)
+    assert comment["content"].startswith("+annotator@example.org 1 cell on tabs marked "
+                                         "ready-for-review needs fixing.")
+    [issue] = [i for i in github.issues if "needs-fixing" in i["labels"]]
+    assert "has no GitHub username on file" in issue["body"]
+
+    run_main(["validate-coding", "--lang", "arao1248", "--notify"])
+    assert len(doorway.list_comments(sid)) == 1
+
+
+def test_notify_leaves_a_language_alone_when_a_sheet_could_not_be_checked(env, github):
+    import json
+    doorway, coded, run_main = env
+    _break_a_ready_tab(doorway, coded)
+    manifest = doorway.download_file_json(MANIFEST_FILE_ID)
+    manifest["arao1248"]["sheets"]["noninterruption"]["spreadsheet_id"] = "nonexistent_ss_xyz"
+    doorway.file(MANIFEST_FILE_ID).content = json.dumps(manifest).encode("utf-8")
+
+    out, _ = run_main(["validate-coding", "--lang", "arao1248", "--notify"])
+    assert "arao1248: not every sheet could be checked" in out
+    assert not [i for i in github.issues if "needs-fixing" in i["labels"]]
+
+
+def test_without_notify_nobody_is_told(env, github):
+    doorway, coded, run_main = env
+    _break_a_ready_tab(doorway, coded)
+    run_main(["validate-coding", "--lang", "arao1248"])
+    assert not [i for i in github.issues if "needs-fixing" in i["labels"]]
+    assert not doorway.list_comments(sheet_id(doorway, "arao1248", "ciscategorial"))
+
+
+def test_needs_fixing_is_the_one_rule():
+    invalid = vc._invalid("t row 2 'x'", 2, "x", "c", "q", "should be one of: n, y",
+                          (1, 3), "unexpected value 'q' in 'c'")
+    blank = vc._blank("t row 2 'x'", "c", (1, 3))
+    assert vc.needs_fixing(invalid, vc.STATUS_READY)
+    assert not vc.needs_fixing(invalid, vc.STATUS_IN_PROGRESS)
+    assert not vc.needs_fixing(blank, vc.STATUS_READY)
+    graded = vc.grade([invalid, blank], vc.STATUS_READY)
+    assert [i.level for i in graded] == ["error", "warning"]
+    assert vc.problems_text(graded) == "row 2 (x), c: 'q' — should be one of: n, y"
+
+
+def test_a_long_list_of_problems_is_cut_short():
+    issues = [vc.dataclasses.replace(
+        vc._invalid("w", n, "x", "c", "q", "should be 'na'", (n, 1), "m"), level="error")
+        for n in range(2, 40)]
+    lines = vc.problems_text(issues).split("\n")
+    assert len(lines) == vc._MAX_PROBLEM_LINES + 1
+    assert lines[-1] == "…and 18 more (the pink cells on the tab)"
 
 
 # ---------------------------------------------------------------------------

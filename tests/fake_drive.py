@@ -812,6 +812,7 @@ class FakeDriveDoorway:
         self._spreadsheets: Dict[str, FakeSpreadsheet] = {}
         self._files: Dict[str, _DriveFile] = {}
         self._permissions: Dict[str, List[Dict[str, Any]]] = {}
+        self._comments: Dict[str, List[Dict[str, Any]]] = {}
         self._docs: Dict[str, str] = {}
         self._counter = 0
         self._fail_after: Dict[str, int] = {}
@@ -1129,6 +1130,18 @@ class FakeDriveDoorway:
                 p["role"] = role
         self._record("update_permission", file_id=file_id, permission_id=permission_id,
                      role=role)
+
+    # -- comments -----------------------------------------------------------
+    def list_comments(self, file_id: str) -> List[Dict[str, Any]]:
+        self._require_file(file_id)
+        return [dict(c) for c in self._comments.get(file_id, [])]
+
+    def create_comment(self, file_id: str, content: str) -> str:
+        self._require_file(file_id)
+        comment_id = self._new_id("comment")
+        self._comments.setdefault(file_id, []).append({"id": comment_id, "content": content})
+        self._record("create_comment", file_id=file_id, content=content)
+        return comment_id
 
     # -- docs ---------------------------------------------------------------
     def create_doc(self, name: str, parent_id: str,

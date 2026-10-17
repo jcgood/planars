@@ -505,3 +505,12 @@ the command and re-reads it only for a tab id it hasn't seen, and
 `values_batch_update` looks each tab up once per call, not once per cell.
 Q6's "at most one read per tab written" now holds for these paths too
 (`test_many_requests_to_one_tab_read_its_tab_list_once`).
+
+**Rule 7, comments (2026-10-17, #309).** The door now carries comments
+(`list_comments`, `create_comment`), so an annotator without GitHub can be
+told about values to fix: a comment that mentions their address makes
+Google email them. A comment goes only on a class sheet, and may mention
+only that language's annotator; a create is retried only after checking it
+didn't land, as for files and grants. The Status tab also gained a third,
+tooling-owned column (`planar.yaml` `status_tab.columns`, now each with a
+role and an owner), which rule 1 treats like the Construction column.

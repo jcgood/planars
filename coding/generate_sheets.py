@@ -68,6 +68,7 @@ from typing import Callable, Dict, Iterable, List, Optional, Sequence, Set, Tupl
 ROOT = Path(__file__).resolve().parent.parent
 
 import pandas as pd
+from gspread.utils import rowcol_to_a1
 
 from . import validate_planar as _val_planar
 from . import validate_diagnostics as _val_diag
@@ -87,7 +88,8 @@ from .glottolog import cached_entry as _cached_glottolog, get_metadata as _fetch
 from planars.languages import get_display_name as _get_display_name
 from planars.schema_values import (
     ELEMENT_ROW_COLUMNS, KEYSTONE_NAME, PAIR_ROW_KEYS, PAIR_ROW_SHAPES, STATUS_COLUMNS,
-    STATUS_IN_PROGRESS, STATUS_READY, STATUS_TAB, STATUS_VALUES, ZONE,
+    STATUS_CONSTRUCTION_COLUMN, STATUS_PROBLEMS_COLUMN, STATUS_STATUS_COLUMN,
+    STATUS_IN_PROGRESS, STATUS_READY, STATUS_TAB, STATUS_VALUES, ZONE, status_map,
     ELEMENT_ROWS, PAIR_ROWS,
     TRAILING_COLUMNS as _TRAILING_COLS,
     header_shape, is_keystone as _is_keystone,
@@ -1229,53 +1231,99 @@ def _move_status_tab_to_end(spreadsheet: SpreadsheetHandle) -> None:
     spreadsheet.reorder_worksheets(ordered)
 
 
+def _status_row(construction: str, header: List[str]) -> List[str]:
+    """A new Status-tab row for ``header``: the construction, in-progress,
+    every other column blank."""
+    values = {STATUS_CONSTRUCTION_COLUMN: construction, STATUS_STATUS_COLUMN: STATUS_IN_PROGRESS}
+    return [values.get(h, "") for h in header]
+
+
+def _status_column_format(sheet_id: int, start: int, end: int) -> List[dict]:
+    """Bold header cells and wrapped problem text for Status-tab columns
+    ``start``..``end`` (0-based, end exclusive)."""
+    requests = [{"repeatCell": {
+        "range": {"sheetId": sheet_id, "startRowIndex": 0, "endRowIndex": 1,
+                  "startColumnIndex": start, "endColumnIndex": end},
+        "cell": {"userEnteredFormat": {"textFormat": {"bold": True}}},
+        "fields": "userEnteredFormat.textFormat.bold",
+    }}]
+    problems = STATUS_COLUMNS.index(STATUS_PROBLEMS_COLUMN)
+    if start <= problems < end:
+        requests.append({"repeatCell": {
+            "range": {"sheetId": sheet_id, "startRowIndex": 1,
+                      "startColumnIndex": problems, "endColumnIndex": problems + 1},
+            "cell": {"userEnteredFormat": {"wrapStrategy": "WRAP"}},
+            "fields": "userEnteredFormat.wrapStrategy",
+        }})
+    return requests
+
+
 def _create_status_tab(
     spreadsheet: SpreadsheetHandle,
     construction_names: List[str],
-) -> None:
-    """Add a Status tab to a spreadsheet, or update an existing one.
+    apply: bool = True,
+) -> List[str]:
+    """Add a Status tab to a spreadsheet, or bring an existing one up to date.
 
-    The tab has two columns: Construction and Status. Each construction gets
-    one row with an 'in-progress' default and a dropdown for Status.
-    If the tab already exists, adds any missing construction rows and moves
-    the tab to the last position.
+    The tab's columns are `planar.yaml`'s `status_tab.columns`. Each
+    construction gets one row with an 'in-progress' default and a dropdown
+    for Status. If the tab already exists, adds any columns it lacks (at the
+    right, in the schema's order) and any missing construction rows, and
+    moves the tab to the last position. Returns what it changed (or, with
+    apply=False, would change) on an existing tab; nothing is written then.
     """
     existing = {ws.title: ws for ws in spreadsheet.worksheets()}
 
     if _STATUS_TAB in existing:
         ws = existing[_STATUS_TAB]
         rows = ws.get_all_values()
-        current_constructions = {r[0] for r in rows[1:] if r} if len(rows) > 1 else set()
-        missing = [c for c in construction_names if c not in current_constructions]
+        header = [h.strip() for h in rows[0]] if rows else []
+        changes = []
+        new_cols = [c for c in STATUS_COLUMNS if c not in header]
+        if new_cols and header:
+            changes.append(f"Status tab: add column(s) {new_cols}")
+            if apply:
+                start = len(header)
+                if ws.col_count < start + len(new_cols):
+                    ws.resize(cols=start + len(new_cols))
+                ws.update([new_cols], rowcol_to_a1(1, start + 1))
+                spreadsheet.batch_update({"requests": _status_column_format(
+                    ws.id, start, start + len(new_cols))})
+            header = header + new_cols
+        current = set(status_map([header] + rows[1:]))
+        missing = [c for c in construction_names if c not in current]
         if missing:
-            ws.append_rows([[c, STATUS_IN_PROGRESS] for c in missing], value_input_option="RAW")
-        _move_status_tab_to_end(spreadsheet)
-        return
+            changes.append(f"Status tab: add row(s) for {missing}")
+            if apply:
+                ws.append_rows([_status_row(c, header) for c in missing],
+                               value_input_option="RAW")
+        if apply:
+            _move_status_tab_to_end(spreadsheet)
+        return changes
 
-    ws = spreadsheet.add_worksheet(title=_STATUS_TAB, rows=len(construction_names) + 2, cols=2)
-    header = [STATUS_COLUMNS]
-    data = [[c, STATUS_IN_PROGRESS] for c in construction_names]
-    ws.update(header + data, "A1")
+    if not apply:
+        return [f"create the Status tab ({len(construction_names)} construction(s))"]
+    ws = spreadsheet.add_worksheet(title=_STATUS_TAB, rows=len(construction_names) + 2,
+                                   cols=len(STATUS_COLUMNS))
+    data = [_status_row(c, STATUS_COLUMNS) for c in construction_names]
+    ws.update([STATUS_COLUMNS] + data, "A1")
 
     sheet_id = ws.id
     num_rows = len(construction_names)
+    status_col = STATUS_COLUMNS.index(STATUS_STATUS_COLUMN)
     spreadsheet.batch_update({"requests": [
-        # Freeze + bold header
+        # Freeze the header
         {"updateSheetProperties": {
             "properties": {"sheetId": sheet_id, "gridProperties": {"frozenRowCount": 1}},
             "fields": "gridProperties.frozenRowCount",
         }},
-        {"repeatCell": {
-            "range": {"sheetId": sheet_id, "startRowIndex": 0, "endRowIndex": 1},
-            "cell": {"userEnteredFormat": {"textFormat": {"bold": True}}},
-            "fields": "userEnteredFormat.textFormat.bold",
-        }},
-        # Dropdown on Status column (col B = index 1)
+        *_status_column_format(sheet_id, 0, len(STATUS_COLUMNS)),
+        # Dropdown on the Status column
         {"setDataValidation": {
             "range": {
                 "sheetId": sheet_id,
                 "startRowIndex": 1, "endRowIndex": 1 + num_rows,
-                "startColumnIndex": 1, "endColumnIndex": 2,
+                "startColumnIndex": status_col, "endColumnIndex": status_col + 1,
             },
             "rule": {
                 "condition": {
@@ -1289,6 +1337,7 @@ def _create_status_tab(
     ]})
     _move_status_tab_to_end(spreadsheet)
     print(f"    Status tab created ({len(construction_names)} construction(s))")
+    return []
 
 
 # ---------------------------------------------------------------------------
@@ -1854,10 +1903,10 @@ def _tsv_has_rows(path: Path) -> bool:
 
 def _source_tab_status(doorway, cls_info: dict, source_name: str) -> str:
     """The source tab's status in its sheet's Status tab ('' if unreadable)."""
-    from .import_sheets import _read_status_tab
+    from .validate_coding import tab_statuses
     try:
         ss = doorway.open_spreadsheet(cls_info["spreadsheet_id"])
-        status = _read_status_tab(ss).get(source_name, "")
+        status = tab_statuses(ss).get(source_name, "")
     except Exception as exc:
         print(f"    (could not read the Status tab: {exc})")
         return ""

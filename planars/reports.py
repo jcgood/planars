@@ -514,6 +514,7 @@ _TRAILING_COLS = set(TRAILING_COLUMNS)
 
 # Name of the per-spreadsheet tab that records construction review status.
 from planars.schema_values import STATUS_TAB as _STATUS_TAB  # noqa: E402
+from planars.schema_values import status_map as _status_map  # noqa: E402
 
 
 def _criterion_cols_only(criterion_cols: list) -> list:
@@ -732,10 +733,9 @@ def language_status(lang_id: str, gc, manifest: dict) -> Dict[str, Dict[str, str
         {class_name: {construction: status_string}}
         e.g. {"ciscategorial": {"general": "ready-for-review"}}
 
-    Note: coding/import_sheets.py has _read_status_tab() which does the same
-    per-spreadsheet read. That function can't be imported here because planars/
-    must not depend on coding/ (Colab installs only planars/). The logic is
-    simple enough to inline; keep the two in sync if the Status tab format changes.
+    The tab's cells are read by planars.schema_values.status_map, the same
+    reader coding/ uses (it lives in planars/ because Colab installs only
+    planars/).
     """
     lang_data = manifest.get(lang_id, {})
     result: Dict[str, Dict[str, str]] = {}
@@ -748,14 +748,9 @@ def language_status(lang_id: str, gc, manifest: dict) -> Dict[str, Dict[str, str
             ws = ss.worksheet(_STATUS_TAB)
         except Exception:
             continue
-        rows = ws.get_all_values()
-        if len(rows) < 2:
-            continue
-        result[class_name] = {
-            row[0].strip(): row[1].strip()
-            for row in rows[1:]
-            if len(row) >= 2 and row[0].strip()
-        }
+        statuses = _status_map(ws.get_all_values())
+        if statuses:
+            result[class_name] = statuses
     return result
 
 

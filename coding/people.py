@@ -1,6 +1,6 @@
-"""Who to share a language's Drive files with, by name.
+"""Who to share a language's Drive files with, and tell about problems, by name.
 
-The one place an email address is looked up. Names come from the public
+The one place an email address or GitHub username is looked up. Names come from the public
 `schemas/languages.yaml` (`meta.annotator`); email addresses come from
 `coded_data/people.yaml` in the private planars-data repo, because planars
 itself is public (Phase 10 unit 14, 2026-10-12: data is shared with named
@@ -42,10 +42,22 @@ def email_for(name: str) -> str:
     return email
 
 
+def annotator_name(lang_id: str) -> Optional[str]:
+    """The annotator languages.yaml names for lang_id, or None."""
+    entry = get_entry(lang_id) or {}
+    return (entry.get("meta", {}).get("annotator") or "").strip() or None
+
+
 def annotator_email(lang_id: str) -> Optional[str]:
     """The annotator's email for lang_id, or None if languages.yaml names no annotator."""
-    entry = get_entry(lang_id) or {}
-    name = (entry.get("meta", {}).get("annotator") or "").strip()
-    if not name:
-        return None
-    return email_for(name)
+    name = annotator_name(lang_id)
+    return email_for(name) if name else None
+
+
+def github_for(name: str) -> Optional[str]:
+    """The GitHub username of the person called `name`, or None if they have
+    none on file (`github:` in people.yaml). Not everyone has one: an
+    annotator without one is told about problems by a comment on the
+    spreadsheet instead (issue #309)."""
+    entry = _load_people().get(name) or {}
+    return (entry.get("github") or "").strip().lstrip("@") or None

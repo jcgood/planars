@@ -339,6 +339,15 @@ class DriveDoorway(Protocol):
 
     def update_permission(self, file_id: str, permission_id: str, role: str) -> None: ...
 
+    # -- Comments (telling an annotator about problems, #309) ----------------
+    def list_comments(self, file_id: str) -> List[Dict]:
+        """The file's comments, each ``{"id", "content"}``, oldest first."""
+
+    def create_comment(self, file_id: str, content: str) -> str:
+        """Add a comment to the file (not anchored to a cell); returns its id.
+        A ``+address`` in ``content`` mentions that person, and Google emails
+        them — the way an annotator without GitHub hears about problems."""
+
     # -- Google Docs (collaborator notes) -----------------------------------
     def create_doc(self, name: str, parent_id: str,
                    properties: Optional[Mapping[str, str]] = None) -> str: ...
@@ -484,6 +493,25 @@ class GspreadDoorway:
         # for them from its folder (checked live 2026-10-13).
         self.drive.permissions().update(
             fileId=file_id, permissionId=permission_id, body={"role": role}).execute()
+
+    # -- comments -----------------------------------------------------------
+    def list_comments(self, file_id: str) -> List[Dict]:
+        comments: List[Dict] = []
+        token = None
+        while True:
+            kwargs: Dict[str, Any] = {"fileId": file_id,
+                                      "fields": "nextPageToken,comments(id,content)"}
+            if token:
+                kwargs["pageToken"] = token
+            page = self.drive.comments().list(**kwargs).execute()
+            comments += page.get("comments", [])
+            token = page.get("nextPageToken")
+            if not token:
+                return comments
+
+    def create_comment(self, file_id: str, content: str) -> str:
+        return self.drive.comments().create(
+            fileId=file_id, body={"content": content}, fields="id").execute()["id"]
 
     # -- docs ---------------------------------------------------------------
     def create_doc(self, name: str, parent_id: str,

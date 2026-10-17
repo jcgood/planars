@@ -489,6 +489,29 @@ def test_the_status_tab_stays_last(env):
     assert [ws.title for ws in ss.worksheets()][-1] == "Status"
 
 
+def test_the_status_tab_gets_the_problems_column_and_keeps_its_answers(env):
+    """#309: the recorded sheets predate the problems column; update-sheets
+    adds it at the right, after saying so on a dry run, and every annotator's
+    Status answer stays where it was."""
+    from planars.schema_values import STATUS_COLUMNS, STATUS_PROBLEMS_COLUMN
+    ss = env.doorway.spreadsheet(env.sheet_id("stan1293", "metrical"))
+    before = ss.worksheet("Status").get_all_values()
+    assert STATUS_PROBLEMS_COLUMN not in before[0]
+
+    out = env.run(["update-sheets"])
+    assert f"would Status tab: add column(s) ['{STATUS_PROBLEMS_COLUMN}']" in out
+    assert ss.worksheet("Status").get_all_values() == before
+
+    out = env.run(["update-sheets", "--apply"])
+    after = ss.worksheet("Status").get_all_values()
+    assert after[0] == STATUS_COLUMNS
+    assert [r[:len(before[0])] for r in after] == before
+    assert all(r[len(before[0]):] == [""] for r in after[1:])
+
+    out = env.run(["update-sheets"])
+    assert "Status tab: add" not in out
+
+
 # ---------------------------------------------------------------------------
 # Trailing columns
 # ---------------------------------------------------------------------------

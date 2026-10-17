@@ -10,9 +10,11 @@ Operations performed per tab:
   2. Add missing rows for elements present in the current planar structure
      but absent from the sheet tab
 
-And per sheet: add tabs for constructions new in the diagnostics YAML, and
+And per sheet: add tabs for constructions new in the diagnostics YAML;
 rebuild and protect the locked tabs (coding/locked_tabs.py) wherever they
-differ from their sources. The daily refresh runs this with --apply.
+differ from their sources; and give the Status tab any column
+`planar.yaml`'s `status_tab.columns` lists that it lacks, and a row for
+every construction. The daily refresh runs this with --apply.
 
 Does NOT renumber positions or restructure existing content — use
 python -m coding restructure-sheets for that (archives old sheet, regenerates with carry-over).
@@ -599,11 +601,14 @@ def main(args: argparse.Namespace | None = None) -> None:
                 any_changes = True
                 print(f"    [locked tab] {'' if apply else 'would '}{change}")
 
-            # Ensure the Status tab exists and every tab is in its place
+            # Ensure the Status tab exists with every column planar.yaml gives
+            # it and a row per construction, and every tab is in its place
             # (reflects any new tabs added above).
+            all_constructions = list(constructions) + new_construction_names if new_construction_names else constructions
+            for change in _create_status_tab(ss, all_constructions, apply=apply):
+                any_changes = True
+                print(f"    {'' if apply else 'would '}{change}")
             if apply:
-                all_constructions = list(constructions) + new_construction_names if new_construction_names else constructions
-                _create_status_tab(ss, all_constructions)
                 reorder_tabs(ss)
 
     if manifest_modified:

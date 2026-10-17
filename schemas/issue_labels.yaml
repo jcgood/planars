@@ -107,6 +107,18 @@ labels:
       errors remain.
     filed_by: validation-report --apply (sheet-validation.yml)
 
+  - name: needs-fixing
+    color: "f9d0c4"
+    description: "An annotator has values to fix on tabs marked ready-for-review"
+    meaning: >-
+      One issue per language, for its annotator (issue #309): how many cells
+      need fixing in which sheet, pointing to each sheet's Status tab, where
+      they are listed. Mentions the annotator when people.yaml has their
+      GitHub username; otherwise a comment on the spreadsheet emails them.
+      A new notice is posted only when the set of problems changes, not
+      daily. Auto-closed when nothing needs fixing.
+    filed_by: validate-coding --notify (sheet-validation.yml)
+
   - name: sheet-drift
     color: "e4e669"
     description: "Google Sheets out of sync with data model — run update-sheets --apply"

@@ -27,6 +27,11 @@ class ValidationIssue:
                                           # that simply hasn't been drafted yet is not
                                           # a reason to withhold syncing the classes
                                           # that are already valid)
+    kind: Optional[str] = None           # for a cell problem: "blank" or "invalid"
+                                          # (validate_coding.BLANK / INVALID)
+    fix: Optional[str] = None            # for an invalid cell: one line an annotator
+                                          # can act on (row, element, column, value,
+                                          # what it should be), shown in the Status tab
 
     def __str__(self) -> str:
         return f"[{self.level.upper()}] {self.location}: {self.message}"

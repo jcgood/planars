@@ -113,13 +113,24 @@ keystone_position_name: "v:verbstem"
 # integrity_check.py, and planars/io.py.
 trailing_columns: [Source, Comments]
 
-# The Status tab every annotation sheet carries, its two columns, and the two
+# The Status tab every annotation sheet carries, its columns, and the two
 # values an annotator sets on each construction's row there. Code reads these
 # through planars.schema_values and never types the values
-# (tests/test_no_hidden_facts.py checks).
+# (tests/test_no_hidden_facts.py checks). One row per construction tab.
+# Each column has a role, which is how code finds it (every role below must
+# appear exactly once), and an owner:
+#   construction  the tab the row is about (tooling)
+#   status        set by the annotator: in-progress or ready-for-review
+#   problems      rewritten by validate-coding: the invalid values on a
+#                 ready-for-review tab, one per line; blank when there are
+#                 none (issue #309). Added to existing sheets by
+#                 update-sheets --apply.
 status_tab:
   title: Status
-  columns: [Construction, Status]   # one row per construction tab
+  columns:
+    - {name: Construction, role: construction, owner: tooling}
+    - {name: Status, role: status, owner: annotator}
+    - {name: Needs fixing, role: problems, owner: tooling}
   values:
     in_progress: in-progress
     ready: ready-for-review

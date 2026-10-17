@@ -15,8 +15,15 @@ archived first (coded_data/{lang_id}/archive/{class_name}/), then
 overwritten. Refuses to run with --apply while coded_data/ has uncommitted
 changes (precondition coded_data_clean_tree, checked by the dispatcher).
 
+Exits non-zero only when the import itself broke: a class's spreadsheet
+could not be opened, or a tab is missing from it. Invalid values are not an
+import failure (issue #309): they are printed here, graded by
+validate_coding.needs_fixing, and reported by validate-coding (run at the
+end of an --apply that wrote anything, and daily by sheet-validation.yml),
+which lists them in each sheet's Status tab.
+
 What happens depends on each tab's Status:
-  ready-for-review  imported in full; warnings reported; destructive changes
+  ready-for-review  imported in full; problems printed; destructive changes
                     go to pending_changes.json (and a pending-changes issue)
                     for apply-pending, not straight into the TSV.
   in-progress       imported as a backup with warnings suppressed; missing
@@ -56,11 +63,11 @@ from .drive import (
     _load_drive_config, _save_drive_config,
 )
 from .drive_doorway import get_doorway, WorksheetNotFound
-from .generate_sheets import _STATUS_TAB
 from planars.schema_values import STATUS_IN_PROGRESS, STATUS_READY, is_keystone
 from .restructure_sheets import _get_keyed_row_constructions, _get_pair_row_constructions
 from . import issues
 from . import validate_coding as _val
+from .validate import ValidationIssue
 from .validate_planar import validate_planar_df as _validate_planar_df
 from .validate_diagnostics import validate_diagnostics_df as _validate_diagnostics_df
 from .make_forms import (
@@ -102,7 +109,7 @@ def _get_output_path(lang_id: str, class_name: str, construction: str) -> Path:
 # ---------------------------------------------------------------------------
 
 def _highlight_invalid_cells(ws, bad_cells: List[Tuple[int, int]]) -> None:
-    """Delegate to validate.highlight_cells (kept for backwards compatibility)."""
+    """Delegate to validate_coding.highlight_cells."""
     _val.highlight_cells(ws, bad_cells)
 
 
@@ -115,10 +122,10 @@ def _validate_tab(
     keystone_na_criteria: List[str] = None,
     class_name: str = None,
     lang_id: str = None,
-) -> Tuple[List[Dict], List[str], List[Tuple[int, int]]]:
-    """Delegate to validate.validate_annotation_rows (kept for backwards compatibility).
+) -> Tuple[List[Dict], List[ValidationIssue], List[Tuple[int, int]]]:
+    """Delegate to validate_coding.validate_annotation_rows.
 
-    Returns (records, warnings, bad_cells) in the original format.
+    Returns (records, issues, bad_cells).
     """
     records, issues = _val.validate_annotation_rows(
         rows, expected_params, tab_name, param_values,
@@ -126,9 +133,8 @@ def _validate_tab(
         keystone_na_criteria=keystone_na_criteria,
         class_name=class_name, lang_id=lang_id,
     )
-    warnings  = [str(i) for i in issues]
     bad_cells = [i.cell for i in issues if i.cell is not None]
-    return records, warnings, bad_cells
+    return records, issues, bad_cells
 
 
 def _validate_pair_tab(
@@ -138,16 +144,15 @@ def _validate_pair_tab(
     param_values: Dict[str, List[str]] = None,
     class_name: str = None,
     lang_id: str = None,
-) -> Tuple[List[Dict], List[str], List[Tuple[int, int]]]:
-    """Delegate to validate.validate_pair_rows for nonpermutability pair-row sheets.
+) -> Tuple[List[Dict], List[ValidationIssue], List[Tuple[int, int]]]:
+    """Delegate to validate_coding.validate_pair_rows for pair-row tabs.
 
-    Returns (records, warnings, bad_cells) in the same format as _validate_tab.
+    Returns (records, issues, bad_cells) in the same format as _validate_tab.
     """
     records, issues = _val.validate_pair_rows(rows, expected_params, tab_name, param_values,
                                               class_name=class_name, lang_id=lang_id)
-    warnings  = [str(i) for i in issues]
     bad_cells = [i.cell for i in issues if i.cell is not None]
-    return records, warnings, bad_cells
+    return records, issues, bad_cells
 
 
 def _validate_keyed_tab(
@@ -157,17 +162,16 @@ def _validate_keyed_tab(
     param_values: Dict[str, List[str]] = None,
     class_name: str = None,
     lang_id: str = None,
-) -> Tuple[List[Dict], List[str], List[Tuple[int, int]]]:
-    """Delegate to validate.validate_keyed_rows for keyed-row tabs
+) -> Tuple[List[Dict], List[ValidationIssue], List[Tuple[int, int]]]:
+    """Delegate to validate_coding.validate_keyed_rows for keyed-row tabs
     (biuniqueness_deviations' morphemes/morphs). Same return format as _validate_tab."""
     header = rows[0] if rows else []
     expected_params = [c for c in header[len(keyed["columns"]):] if c not in _TRAILING_COLS]
     records, issues = _val.validate_keyed_rows(
         rows, keyed["columns"], expected_params, tab_name, param_values,
         keyed.get("blank_ok_when"), class_name=class_name, lang_id=lang_id)
-    warnings  = [str(i) for i in issues]
     bad_cells = [i.cell for i in issues if i.cell is not None]
-    return records, warnings, bad_cells
+    return records, issues, bad_cells
 
 
 # ---------------------------------------------------------------------------
@@ -469,18 +473,6 @@ def _check_yaml_drift(lang_id: str, tsv_df: pd.DataFrame) -> List[Dict]:
         yaml_data = _yaml.safe_load(f)
     _det, ambiguous = _diff_diagnostics_tsv_yaml(tsv_df, yaml_data, lang_id)
     return ambiguous
-
-
-def _read_status_tab(ss) -> Dict[str, str]:
-    """Return {construction: status} from the Status tab, or {} if absent."""
-    try:
-        ws = ss.worksheet(_STATUS_TAB)
-    except WorksheetNotFound:
-        return {}
-    rows = ws.get_all_values()
-    if len(rows) < 2:
-        return {}
-    return {row[0].strip(): row[1].strip() for row in rows[1:] if len(row) >= 2 and row[0].strip()}
 
 
 def _append_pending_changes(new_entries: List[Dict]) -> None:
@@ -902,14 +894,13 @@ def main(args: argparse.Namespace | None = None) -> None:
     total_files = 0
     in_progress_files = 0
     total_warnings = 0
-    # Subset of total_warnings serious enough to make this command exit
-    # non-zero (issue #283): a class's spreadsheet couldn't be opened at
-    # all, a tab is missing from a sheet, or a ready-for-review tab has an
-    # invalid-value/structural problem (blocking_warnings below -- already
-    # named that in the code, just never actually gated anything before
-    # this fix). Routine "blank value" warnings and the highlight-cell
-    # best-effort failure stay advisory-only and don't count here.
-    total_blocking_warnings = 0
+    # Problems that mean the import itself broke, and make this command exit
+    # non-zero so the daily refresh files an import-error issue (#283): a
+    # class's spreadsheet couldn't be opened, or a tab is missing from a
+    # sheet. Problems in the data (an invalid value on a ready-for-review tab)
+    # are not counted here since #309: validate-coding reports them, to the
+    # annotator (the sheet's Status tab) and in a sheet-validation issue.
+    total_import_errors = 0
     all_safe_cmds: Set[str] = set()
     all_pending: List[Dict] = []
     all_drift: List[Dict] = []
@@ -944,13 +935,12 @@ def main(args: argparse.Namespace | None = None) -> None:
                 ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
             except Exception as e:
                 msg = f"[{class_name}] could not open spreadsheet {sheet_info['spreadsheet_id']!r} for {lang_id}: {e}"
-                print(f"    WARNING: {msg}")
-                lang_warning_lines.append(f"WARNING: {msg}")
-                total_warnings += 1
-                total_blocking_warnings += 1
+                print(f"    ERROR: {msg}")
+                lang_warning_lines.append(f"ERROR: {msg}")
+                total_import_errors += 1
                 continue
 
-            status_map = _read_status_tab(ss)
+            status_map = _val.tab_statuses(ss)
             if not status_map and not ignore_status:
                 print(f"    (no Status tab found — importing all constructions)")
 
@@ -959,10 +949,9 @@ def main(args: argparse.Namespace | None = None) -> None:
                     ws = ss.worksheet(construction)
                 except WorksheetNotFound:
                     msg = f"[{class_name}/{construction}] tab not found in sheet, skipping"
-                    print(f"    WARNING: {msg}")
-                    lang_warning_lines.append(f"WARNING: {msg}")
-                    total_warnings += 1
-                    total_blocking_warnings += 1
+                    print(f"    ERROR: {msg}")
+                    lang_warning_lines.append(f"ERROR: {msg}")
+                    total_import_errors += 1
                     continue
 
                 # Determine tab status. In-progress sheets are imported for backup
@@ -995,7 +984,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                 if keyed:
                     expected_params = [c for c in header[len(keyed["columns"]):]
                                        if c not in _TRAILING_COLS]
-                    records, warnings, bad_cells = _validate_keyed_tab(
+                    records, found, bad_cells =_validate_keyed_tab(
                         rows, keyed, construction, param_values,
                         class_name=class_name, lang_id=lang_id,
                     )
@@ -1003,7 +992,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                     expected_params = (
                         [c for c in header if c not in _PAIR_STRUCTURAL_COLS and c not in _TRAILING_COLS]
                     )
-                    records, warnings, bad_cells = _validate_pair_tab(
+                    records, found, bad_cells =_validate_pair_tab(
                         rows, expected_params, construction, param_values,
                         class_name=class_name, lang_id=lang_id,
                     )
@@ -1016,7 +1005,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                         data_dir=ROOT / "coded_data" / lang_id / "lang_setup",
                     )
                     kna = resolve_keystone_na_criteria(class_name)
-                    records, warnings, bad_cells = _validate_tab(
+                    records, found, bad_cells =_validate_tab(
                         rows, expected_params, construction, param_values,
                         keystone_active=bool(ka),
                         keystone_na_criteria=kna,
@@ -1029,16 +1018,19 @@ def main(args: argparse.Namespace | None = None) -> None:
                     except Exception as e:
                         print(f"    WARNING: could not highlight cells: {e}")
 
-                # For ready-for-review tabs, surface blocking warnings (structural
-                # and invalid-value). For in-progress tabs, suppress all warnings —
-                # partial or invalid annotation is expected and not yet actionable.
+                # For ready-for-review tabs, show what is wrong (structural and
+                # invalid-value), graded by validate_coding's one rule against
+                # the tab's real Status (--ignore-status changes what is
+                # imported, not how serious a value is). For in-progress tabs,
+                # say nothing — partial or invalid annotation is expected there.
+                # None of it stops the import (#309).
                 if not in_progress:
-                    blocking_warnings = [w for w in warnings if "blank value" not in w]
-                    for w in blocking_warnings:
-                        print(f"    WARNING: {w}")
-                        lang_warning_lines.append(f"[{class_name}/{construction}] {w}")
-                    total_warnings += len(blocking_warnings)
-                    total_blocking_warnings += len(blocking_warnings)
+                    shown = [i for i in _val.grade(found, status_map.get(construction, STATUS_IN_PROGRESS))
+                             if i.kind != _val.BLANK]
+                    for i in shown:
+                        print(f"    {i}")
+                        lang_warning_lines.append(f"[{class_name}/{construction}] {i}")
+                    total_warnings += len(shown)
                 else:
                     print(f"    [{construction}] status: {tab_status!r} — importing for backup")
 
@@ -1217,14 +1209,13 @@ def main(args: argparse.Namespace | None = None) -> None:
         lang_ids = [lang_filter] if lang_filter else None
         revalidate_sheets(lang_ids=lang_ids)
 
-    if total_blocking_warnings:
-        # Issue #283: these warnings used to never affect the exit code, so
-        # the daily automation's existing import-error issue (already wired
-        # up, already attaches the full log) never fired for them -- only a
-        # hard crash did. Checked last, after every other step above, so a
-        # blocking warning doesn't cut short pending-changes/notification/
+    if total_import_errors:
+        # Issue #283: these used to never affect the exit code, so the daily
+        # refresh's import-error issue never fired for them -- only a hard
+        # crash did. Checked last, after every other step above, so one
+        # unreadable sheet doesn't cut short pending-changes/notification/
         # revalidation work this run should still do regardless.
-        print(f"\n{total_blocking_warnings} blocking warning(s) found — see WARNING lines above.")
+        print(f"\n{total_import_errors} sheet(s) or tab(s) could not be read — see ERROR lines above.")
         sys.exit(1)
 
 

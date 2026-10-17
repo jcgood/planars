@@ -36,10 +36,55 @@ def _require(*keys: str):
 KEYSTONE_NAME: str = _require("keystone_position_name")
 
 STATUS_TAB: str = _require("status_tab", "title")
-STATUS_COLUMNS: list = list(_require("status_tab", "columns"))
 STATUS_IN_PROGRESS: str = _require("status_tab", "values", "in_progress")
 STATUS_READY: str = _require("status_tab", "values", "ready")
 STATUS_VALUES = [STATUS_IN_PROGRESS, STATUS_READY]
+
+_STATUS_ROLES = ("construction", "status", "problems")
+_STATUS_OWNERS = ("tooling", "annotator")
+
+
+def _status_columns() -> list:
+    cols = _require("status_tab", "columns")
+    roles = [c.get("role") for c in cols]
+    if sorted(roles) != sorted(_STATUS_ROLES):
+        raise KeyError(f"schemas/planar.yaml status_tab.columns must have each role in "
+                       f"{list(_STATUS_ROLES)} exactly once; found {roles}")
+    for c in cols:
+        if not c.get("name") or c.get("owner") not in _STATUS_OWNERS:
+            raise KeyError(f"schemas/planar.yaml status_tab.columns entry {c} needs a name "
+                           f"and an owner in {list(_STATUS_OWNERS)}")
+    return [dict(c) for c in cols]
+
+
+_STATUS_COLUMN_SPECS = _status_columns()
+STATUS_COLUMNS: list = [c["name"] for c in _STATUS_COLUMN_SPECS]   # in sheet order
+_status_by_role = {c["role"]: c["name"] for c in _STATUS_COLUMN_SPECS}
+STATUS_CONSTRUCTION_COLUMN: str = _status_by_role["construction"]
+STATUS_STATUS_COLUMN: str = _status_by_role["status"]
+STATUS_PROBLEMS_COLUMN: str = _status_by_role["problems"]
+STATUS_TOOLING_COLUMNS = frozenset(c["name"] for c in _STATUS_COLUMN_SPECS
+                                   if c["owner"] == "tooling")
+
+
+def status_map(rows) -> dict:
+    """{construction: status} from a Status tab's cells (header row first),
+    found by header name, so a column added or moved doesn't misread it. {}
+    for a tab with no rows or without both columns. The one reader of the
+    tab's contents: coding/ and planars/reports.py both call it."""
+    rows = [list(r) for r in rows or []]
+    if len(rows) < 2:
+        return {}
+    header = [h.strip() for h in rows[0]]
+    if STATUS_CONSTRUCTION_COLUMN not in header or STATUS_STATUS_COLUMN not in header:
+        return {}
+    ci, si = header.index(STATUS_CONSTRUCTION_COLUMN), header.index(STATUS_STATUS_COLUMN)
+    out = {}
+    for row in rows[1:]:
+        name = row[ci].strip() if ci < len(row) else ""
+        if name:
+            out[name] = row[si].strip() if si < len(row) else ""
+    return out
 
 
 def is_keystone(position_name) -> bool:
