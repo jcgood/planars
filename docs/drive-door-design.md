@@ -234,6 +234,10 @@ Each step leaves a complete, working system.
    not from a second copy.
 5. **5e** Live in watch mode for class sheets (on since 5b, § 8), until the
    § 4 rule is met (at least a week). Meanwhile: the rest of unit 3, and unit 8.
+   **The week restarted 2026-10-18:** until then the end-of-command half of
+   the door (rule 6, labels, provenance, the `door-violation` issue) never
+   ran live, because `running()` found no door yet (fixed in Phase 10 unit
+   20), so the quiet days before it proved nothing.
 6. **5f** Enforce for class sheets. Then the other kinds, in the plan's
    order for building their spec sections: sharing → planar → diagnostics
    → status sheets → notes Docs → files (`manifest.json`, notebooks, PDFs,

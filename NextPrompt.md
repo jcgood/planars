@@ -25,7 +25,7 @@ Three live threads. Read whichever matches what you're picking up.
 row); the spec, ground rules, units and order are the Phase 10 section of
 `docs/data-layer-implementation-plan.md`. Planned with Jeff 2026-10-12 and
 approved to run unattended **except at the pauses the spec names** (unit 5
-design; units 6+15+11 design). Units 14 (but one by-hand step), 4, 7, 3's
+design; units 6+15+11 design). Units 14, 4, 7, 3's
 first group, 1, 2 and 10 are done. **Unit 5 (the Drive door knows the
 topology) is designed and accepted** — `docs/drive-door-design.md`, Jeff's
 answers in its § 7, what was built in its § 8. 5a (the sheet spec), 5b
@@ -33,11 +33,14 @@ answers in its § 7, what was built in its § 8. 5a (the sheet spec), 5b
 (snapshots, per-write provenance, mid-run-edit check) and 5d (labels, rule
 6, the labelling migration, manifest fallback deleted) are done. **Now 5e:**
 class sheets stay in watch mode until the design doc's § 4 rule is met (at
-least a week of clean daily refreshes). Unit 3 finished during it
+least a week of clean daily refreshes; the week restarted 2026-10-18,
+because until unit 20's fix no live command reported anything). Unit 3 finished during it
 (2026-10-17; the hidden-facts inventory is marked finished). Still to do
-meanwhile: unit 8 (the daily refresh as one command) and #309 (annotators
-never hear about invalid values on ready-for-review tabs; plan agreed, in
-the issue body; one live step, a test Drive comment, needs Jeff's approval).
+meanwhile, in this order (agreed with Jeff 2026-10-17): unit 19 (leftovers), unit 9's first half (root and
+planars/ CLAUDE.md cut to rules and pointers; `coding/CLAUDE.md` waits
+for unit 6), unit 8 (the daily refresh as one command) and #309 (annotators never hear about invalid values on
+ready-for-review tabs; plan agreed, in the issue body; one live step, a test
+Drive comment, needs Jeff's approval).
 Then 5f (enforce for class sheets, then the other kinds).
 Check for an open `door-violation` issue first: each line is a command bug
 or a spec gap to fix.
@@ -124,11 +127,10 @@ A bug with one obviously right fix is not a question: fix it and report it.
 - **`R CMD INSTALL` runs once per check**, so the full suite is ~9 minutes and
   the renderer test alone ~2.5. The renderer test compares all 137 charts in
   one pass, so it is usually the one worth running.
-- **The Python suite takes about an hour** (1,589 tests, 2026-10-17); the
-  command tests that run update-sheets or generate-sheets against the fake
-  Drive take one to two minutes each. A run that seems stuck usually isn't:
-  run it in the background with `--timeout=900`, and run the files you
-  touched first.
+- **If the Python suite slows down sharply, profile one slow test first**
+  (`python -m cProfile -o out.prof -m pytest <one test>`). On 2026-10-17 it
+  had gone from ten minutes to an hour because one schema file was parsed a
+  thousand times per test; one cache fixed it (unit 20).
 - **Run the *full* suite before pushing, not one test file.** Saved command
   outputs and the warning-print check catch changes far from the file you
   edited.

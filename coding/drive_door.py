@@ -300,9 +300,14 @@ def running(command: str, args: Optional[argparse.Namespace] = None, *,
                              "pass may_write to say whether it writes to Drive")
         may_write = writes_to_drive(op_id, args if args is not None else argparse.Namespace())
     always = frozenset((record or {}).get("always_on_writes", []))
+    # get_doorway, not "the door if one exists": live, the command makes its
+    # door only at its first Drive call, after this point, so until 2026-10-17
+    # no live command was logged, shape-checked or reported. Making the door
+    # costs nothing; it signs in to Google only when first used. Made before
+    # _context is set, so a failure here leaves no command marked running.
+    from .drive_doorway import get_doorway
+    door = get_doorway()
     previous, _context = _context, _Context(command, may_write, always)
-    from .drive_doorway import current_doorway
-    door = current_doorway()
     if isinstance(door, CheckedDoorway):
         door.begin_command()
     succeeded = False

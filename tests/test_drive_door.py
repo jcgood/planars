@@ -278,6 +278,24 @@ def test_watch_mode_lets_the_write_through_and_files_one_issue(env, github):
     assert "update-sheets" in github.issue(filed[0]["number"])["body"]
 
 
+def test_a_live_command_whose_door_is_made_inside_it_still_logs_and_reports(
+        env, github, monkeypatch):
+    # Live, no door exists when the dispatcher's running() starts: the command
+    # makes one with its first get_doorway(). Until 2026-10-17 running() only
+    # looked for an existing door, so live runs never logged their writes,
+    # never checked their sheets' shape at the end and never filed a
+    # door-violation issue (every test installs its door first, so none saw it).
+    fake, _, sheet_id, _ = env
+    drive_doorway.reset_doorway()
+    monkeypatch.setattr(drive_doorway, "GspreadDoorway", lambda: fake)
+    with drive_door.running("update-sheets", APPLY):
+        door = drive_doorway.get_doorway()
+        assert door.mode == drive_door.LIVE_MODE
+        _tab(door, sheet_id, "general").clear()
+    assert {l["tab"] for l in _log()} >= {"general"}
+    assert len(github.list_issues(drive_door.VIOLATION_LABEL)) == 1
+
+
 def test_a_sheet_the_door_cannot_place_is_not_held_to_class_sheet_rules(env):
     fake, door, _, _ = env
     scratch = fake.create_spreadsheet("scratch")      # made by hand: no label

@@ -14,6 +14,8 @@ planar.yaml lacks one of these keys, importing this module fails, naming it.
 """
 from __future__ import annotations
 
+import copy
+import functools
 from importlib.resources import files as _res_files
 
 import yaml
@@ -95,12 +97,20 @@ ROW_IDENTITY_COLUMNS = frozenset(ELEMENT_ROW_COLUMNS).union(*PAIR_ROW_SHAPES.val
 ELEMENT_ROWS = "element"
 
 
+@functools.lru_cache(maxsize=4)
+def _parse_classes(text: str) -> dict:
+    return yaml.safe_load(text) or {}
+
+
 def _class_entry(class_name: str) -> dict:
-    classes = yaml.safe_load(
-        _res_files("schemas").joinpath("diagnostic_classes.yaml").read_text(encoding="utf-8")) or {}
-    for cls in classes.get("classes", []):
+    # The file is read every call, so an edit is always seen, but parsed only
+    # when its text changes: parsing it on every lookup made one command test
+    # take 70 seconds (2026-10-17, Phase 10 unit 20). A copy, so a caller
+    # changing what it gets back can't change the next caller's answer.
+    text = _res_files("schemas").joinpath("diagnostic_classes.yaml").read_text(encoding="utf-8")
+    for cls in _parse_classes(text).get("classes", []):
         if cls.get("name") == class_name:
-            return cls
+            return copy.deepcopy(cls)
     raise KeyError(f"diagnostic_classes.yaml has no class {class_name!r}")
 
 

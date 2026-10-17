@@ -539,11 +539,6 @@ def get_doorway() -> DriveDoorway:
     return _doorway
 
 
-def current_doorway() -> Optional[DriveDoorway]:
-    """The installed doorway, or None if none has been made yet (never builds one)."""
-    return _doorway
-
-
 def set_doorway(doorway: Optional[DriveDoorway]) -> None:
     """Install a doorway (or ``None`` to reset to the real one). Tests only.
 

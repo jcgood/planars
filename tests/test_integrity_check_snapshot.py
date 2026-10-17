@@ -386,10 +386,12 @@ def test_check_manifest_warns_and_continues_when_drive_is_unavailable(env, monke
     misleading stale-manifest issue just because Drive was briefly unreachable."""
     doorway, run_main = env
 
-    def _boom():
+    # The outage shows at the first Drive read. Making the door never fails:
+    # it doesn't reach Drive until used.
+    def _boom(*args, **kwargs):
         raise ConnectionError("simulated Drive outage")
 
-    monkeypatch.setattr(drive_doorway, "get_doorway", _boom)
+    monkeypatch.setattr(drive_module, "load_manifest", _boom)
     out, exit_code = run_main(["integrity-check", "--check-manifest"])
     assert "WARNING: Could not load manifest" in out
     assert "simulated Drive outage" in out
