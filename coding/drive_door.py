@@ -564,8 +564,11 @@ class CheckedDoorway:
         try:
             self._act("shape at the end of the command", shape_problems)
         finally:
-            if self.mode == WATCH and self.violations:
-                _report_violations(command, self.violations)
+            # Reported once, under the command that made them: daily-refresh
+            # runs commands inside its own, and must not report them again.
+            violations, self.violations = self.violations, []
+            if self.mode == WATCH and violations:
+                _report_violations(command, violations)
 
     # -- provenance ---------------------------------------------------------
     def _wrote(self, file_id: str, title: str, tab: Optional[str], action: str,

@@ -14,9 +14,9 @@ Once set up, the following run without coordinator action:
 |---------|-----------|--------------|
 | Every commit to `planars/*.py` | pre-commit hook | Regenerates affected snapshots and stages them |
 | Every push | pre-push hook | Verifies all snapshots are current; blocks push if stale |
-| Daily at 06:00 UTC | `data-refresh.yml` | Imports latest sheets → syncs diagnostics YAML → regenerates snapshots → commits; opens GitHub issues for import failures (`import-error`), sheet drift (`sheet-drift`), pending destructive changes (`pending-changes`), ambiguous diagnostics YAML drift (`diagnostics-drift`), schema inconsistencies (`codebook-error`), stale manifest entries (`stale-manifest`), or overwritten coordinator commits (`data-overwrite`) |
-| Daily at 06:00 UTC | `sheet-validation.yml` | Runs `validate-coding`; opens a `sheet-validation` issue if problems found; closes it when clean |
-| Daily at 06:00 UTC | `generate-reports.yml` | Generates and uploads PDF reports to Drive |
+| Daily, scheduled 06:00 UTC (GitHub often starts it hours later) | `data-refresh.yml` → `python -m coding daily-refresh --apply` | Imports the latest sheets, syncs, checks, rebuilds status sheets and snapshots, commits; files or closes one issue per kind of problem (see [What each workflow does](#what-each-workflow-does)) |
+| Daily, scheduled 09:00 UTC | `sheet-validation.yml` | Runs `validate-coding`; opens a `sheet-validation` issue if problems found; closes it when clean |
+| After each data refresh | `generate-reports.yml` | Generates and uploads PDF reports to Drive |
 
 The hooks require a one-time install per machine — see [Regression testing and hooks](#regression-testing-and-hooks). The GitHub Actions require secrets configured in the repo — see [Automated workflows](#automated-workflows).
 
@@ -673,7 +673,7 @@ CI also runs `check_snapshots.py` as a dedicated step, so stale snapshots will f
 
 ### Automated workflows
 
-Three daily GitHub Actions workflows run at 06:00 UTC. All three use the same four secrets.
+Three GitHub Actions workflows run daily (times in the table at the top of this guide). All three use the same secrets.
 
 #### Secrets setup
 
@@ -689,24 +689,13 @@ Note: `drive_config.json` lives in **planars-data** (`coded_data/drive_config.js
 
 #### What each workflow does
 
-**`data-refresh.yml`** — the main daily automation pipeline. Runs at 06:00 UTC and does the following in order:
+**`data-refresh.yml`** — the main daily automation pipeline. It sets up the machine and runs one command, `python -m coding daily-refresh --apply`, which imports the planars and annotation sheets, syncs the diagnostics files, adds new criterion columns and rows, checks everything, rebuilds the status sheets and snapshots, commits to planars-data, and files or closes one issue per kind of problem. To see every step in order, run it without `--apply`:
 
-1. Records planars-data HEAD and any human-committed files (for overwrite detection later).
-2. Imports latest annotation data from Google Sheets into planars-data (`import-sheets --apply`).
-3. Regenerates all diagnostics TSVs from their YAML source of truth (`sync-diagnostics-yaml --apply`).
-4. Pushes YAML content back to the diagnostics Google Sheets (`sync-diagnostics-yaml --to-sheet --apply`), keeping Sheets in sync after any class or criterion renames.
-5. Adds missing criterion columns and updates dropdown validation in annotation sheets (`sync-params --apply`). Additive only — destructive operations remain manual.
-6. Checks for ambiguous TSV→YAML drift and files a `diagnostics-drift` issue if found.
-7. Runs `check-codebook` and files a `codebook-error` issue if schema inconsistencies are found.
-8. Runs `integrity-check --check-manifest` and files a `stale-manifest` issue if retired classes remain in the Drive manifest.
-9. Runs `integrity-check` (non-sheets) and files an `integrity-error` issue if planar structure or analysis module errors are found.
-10. Regenerates snapshot baselines and commits them (`if: always()` — runs even if earlier steps failed).
-11. Commits and pushes planars-data changes.
-12. Detects whether the import overwrote any human commits to planars-data and files a `data-overwrite` issue if so.
-13. Applies additive sheet updates (`update-sheets --apply`) and files a `sheet-drift` issue for any remaining non-additive drift.
-14. Writes an annotation scope summary (language/class/construction counts) to the run's step summary.
+```bash
+python -m coding daily-refresh
+```
 
-All issue types are auto-closed on the next clean run. You can trigger the workflow manually from the Actions tab after a large annotation session to sync immediately.
+Each issue closes by itself on the next clean run. The run's summary page on GitHub (Actions → the run) shows each command's output and a table of the steps. You can trigger the workflow manually from the Actions tab after a large annotation session to sync immediately (`gh workflow run data-refresh.yml`).
 
 **`sheet-validation.yml`** — runs `validate-coding` against all live Google Sheets and opens a GitHub issue labeled `sheet-validation` if problems are found. Closes the issue automatically when the next run comes back clean.
 

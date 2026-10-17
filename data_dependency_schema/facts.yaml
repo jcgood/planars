@@ -110,7 +110,7 @@
       regeneration (tests/make_synthetic_lang.py --clean --apply) deleted
       synth0001's YAML and the script never regenerated one (see #254).
     caught_by: >-
-      data-refresh.yml's "Regenerate diagnostics TSVs from YAML" step catches
+      the daily refresh's sync-diagnostics-yaml --apply step catches
       the first case; sync-diagnostics-yaml --from-tsv's ambiguous-drift
       detection (filed as diagnostics-drift) partially catches the second --
       only for changes it can't auto-resolve. The third case (missing YAML)
@@ -276,7 +276,7 @@
     note: >-
       Between daily runs the status sheet lags the annotators' edits by up
       to a day. A failed run leaves the previous day's numbers in place.
-    caught_by: "the data-refresh.yml step log only; a failed rebuild files no issue."
+    caught_by: "a failed rebuild files or updates the status-sheet-error issue (daily refresh)."
 
 - id: manifest_class_registration
   description: which analysis classes have a registered annotation spreadsheet for a language

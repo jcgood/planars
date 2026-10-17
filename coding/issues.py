@@ -9,7 +9,8 @@
 Phase 10 unit 10 (issue #271). Before this, seven Python functions and a
 shell script each had their own copy of "is gh signed in, is an issue with
 this label open, comment on it or create one", and two workflows had more
-inline. They had drifted: some commented on the open issue, some replaced its
+inline. (The daily refresh's issue steps, which then called this module from
+the workflow file, are in coding/daily_refresh.py since unit 8.) They had drifted: some commented on the open issue, some replaced its
 body; one asked gh for the repository, the rest assumed it; one created issues
 with no label at all. And nothing checked a label against anything, so a
 misspelt one would quietly create a new label on GitHub.
@@ -19,7 +20,7 @@ What lives here:
 - **The label registry**, `schemas/issue_labels.yaml`, is read on every call.
   Every function that takes a label refuses one not listed there
   (`UnknownLabel`). `--sync-labels --apply` brings GitHub's own labels into
-  line with it (run daily by data-refresh.yml), and `--write-label-table`
+  line with it (the daily refresh's first step), and `--write-label-table`
   rewrites the Labels table in CLAUDE.md from it (run by the pre-commit hook
   whenever the registry is committed). So the registry is the one place a
   label is defined; GitHub's copy and CLAUDE.md's copy are rebuilt from it.

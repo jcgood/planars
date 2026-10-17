@@ -2,7 +2,8 @@
 tracked against a maintained allowlist so a new one can't silently join the
 pile issue #283 found.
 
-The pattern issue #283 traced: `.github/workflows/*.yml` only escalates a
+The pattern issue #283 traced: the daily refresh (then `.github/workflows/*.yml`,
+since 2026-10-17 `coding/daily_refresh.py`) only escalates a
 problem to a GitHub issue by checking a command's **exit code** (and, for a
 few commands, matching specific line prefixes like `ERROR:`/`✗` out of its
 output) — never by looking for the literal word "WARNING". A
@@ -52,11 +53,20 @@ _INVOCATION = re.compile(r"python -m coding ([a-z][a-z-]*)")
 Site = Tuple[str, str, int]  # (module, print line text, occurrence of that text)
 
 
+# The commands daily-refresh runs, as its steps call them: run("import-sheets", ...).
+_DAILY_REFRESH_RUN = re.compile(r'\brun\(\s*"([a-z][a-z-]*)"')
+
+
 def _unattended_commands() -> Set[str]:
     commands: Set[str] = set()
     for wf in sorted(WORKFLOWS.glob("*.yml")):
         text = _HEREDOC_BLOCK.sub("", wf.read_text(encoding="utf-8"))
         commands |= set(_INVOCATION.findall(text))
+    # Since 2026-10-17 data-refresh.yml runs one command, daily-refresh, which
+    # runs the rest itself (coding/daily_refresh.py).
+    if "daily-refresh" in commands:
+        source = (CODING / "daily_refresh.py").read_text(encoding="utf-8")
+        commands |= set(_DAILY_REFRESH_RUN.findall(source))
     return commands
 
 
@@ -184,12 +194,6 @@ _KNOWN_SITES: Dict[Site, str] = {
     ("update_sheets.py", 'print(f"    [{construction}] WARNING: planar structure has changed:")', 1):
         "correctly escalated: sets any_drift, which drives exit 1, which the "
         "sheet-drift issue mechanism dumps in full -- not a gap",
-    ("apply_pending.py", 'print(f"    WARNING: --force archives ALL existing annotations for \'{cls}\'")', 1):
-        "apply-pending is coordinator-only, never actually run unattended -- "
-        "it's in _unattended_commands() only because the workflow recommends it "
-        "inside a `gh issue comment --body` string, which the heredoc stripper "
-        "doesn't catch since it isn't a Python heredoc. Harmless "
-        "over-inclusion, kept classified for honesty.",
     ("__main__.py", 'print("WARNING: Pending destructive changes require coordinator approval.")', 1):
         "redundant with the pending-changes issue import-sheets already files "
         "for the same underlying fact",

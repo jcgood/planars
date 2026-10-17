@@ -2,7 +2,8 @@
 #
 # Everything else is a copy made from this file:
 #   - the labels on GitHub itself (name, colour, short description), brought
-#     into line daily by `python -m coding issue labels --apply` in data-refresh.yml;
+#     into line daily by `python -m coding issue --sync-labels --apply`, the
+#     daily refresh's first step (coding/daily_refresh.py);
 #   - the Labels table in CLAUDE.md, rewritten by the pre-commit hook whenever
 #     this file is committed (tests/test_issues.py fails if it is out of date).
 #

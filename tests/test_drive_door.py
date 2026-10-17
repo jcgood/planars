@@ -278,6 +278,22 @@ def test_watch_mode_lets_the_write_through_and_files_one_issue(env, github):
     assert "update-sheets" in github.issue(filed[0]["number"])["body"]
 
 
+def test_a_command_run_inside_another_has_its_violations_reported_once(env, github):
+    # daily-refresh runs each command inside its own running(); the inner
+    # command reports what it broke, and the outer one must not report it again.
+    fake, _, sheet_id, _ = env
+    drive_doorway.set_doorway(CheckedDoorway(fake, mode=drive_door.WATCH))
+    door = drive_doorway.get_doorway()
+    with drive_door.running("daily-refresh", argparse.Namespace(apply=True)):
+        with drive_door.running("update-sheets", APPLY):
+            ws = _tab(door, sheet_id, "general")
+            ws.clear()
+            ws.clear()
+    [issue] = github.list_issues(drive_door.VIOLATION_LABEL)
+    assert "update-sheets" in github.issue(issue["number"])["body"]
+    assert len(github.calls_of("create")) == 1 and not github.calls_of("comment")
+
+
 def test_a_live_command_whose_door_is_made_inside_it_still_logs_and_reports(
         env, github, monkeypatch):
     # Live, no door exists when the dispatcher's running() starts: the command

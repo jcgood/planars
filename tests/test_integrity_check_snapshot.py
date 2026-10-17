@@ -32,10 +32,9 @@ stdout, exit codes, and the mutation logs (empty throughout) came back
 byte-identical in all ten -- except one deliberate, documented case: line
 ~439's `ss = _with_retry(lambda: gc.open_by_key(...))` becomes
 `doorway.open_spreadsheet(...)` with the outer retry wrapper *removed*, not
-preserved, because `drive_doorway.DriveDoorway.open_spreadsheet` retries
-internally via the exact same `_with_retry(lambda: gc.open_by_key(...))`
-`coding/drive.py`'s `_open_spreadsheet` already used -- the doorway's own
-docstring names this idiom as the one case it deliberately unifies. Confirmed
+preserved, because the doorway retried the open itself (at the time via the
+same `_with_retry` `coding/drive.py`'s `_open_spreadsheet` used; since Phase
+10 unit 5b the Drive door retries every call and `_with_retry` is gone). Confirmed
 behaviourally equivalent (not just documented as such): the fake raises
 `SpreadsheetNotFound` for an unknown ID either way, and both the unmigrated and
 migrated `bad_spreadsheet_id` scenario report the identical "could not open

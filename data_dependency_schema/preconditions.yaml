@@ -16,6 +16,7 @@
     - "restructure_sheets.py (restructure-sheets --apply)"
     - "prune_manifest.py (prune-manifest --apply)"
     - "sync_diagnostics_yaml.py (sync-diagnostics-yaml --apply, all three directions)"
+    - "daily_refresh.py (daily-refresh --apply, before its first step)"
   enforced_by: >-
     drive._check_coded_data_clean() -- called at the top of each apply path
     above; raises SystemExit(1) if coded_data/ has uncommitted changes
@@ -77,6 +78,9 @@
     (no --rename/--split/--merge), so it was not given the same treatment
     -- but is worth re-checking if this pattern surfaces a third time.
 
+    Since 2026-10-17 (Phase 10 unit 8) these commits are steps of
+    coding/daily_refresh.py (commit_data), in the same places.
+
 - id: coded_data_git_identity_configured
   description: >-
     coded_data/'s git user.name/user.email are set before any code path
@@ -86,8 +90,9 @@
     - "restructure_sheets.py (--apply, via _autocommit_data)"
   enforced_by: >-
     Two layers: (1) .github/workflows/data-refresh.yml's "Configure git
-    identity for coded_data" step runs immediately after credentials are
-    written, before any command touches coded_data/, so the identity is
+    identity" step (global, so it covers coded_data/ and planars) runs
+    immediately after credentials are written, before daily-refresh touches
+    coded_data/, so the identity is
     normally already present by the time _autocommit_data runs in CI. (2)
     drive._autocommit_data() itself now raises SystemExit on a failed
     `git add`/`git commit` (added 2026-07-29) instead of printing a WARNING

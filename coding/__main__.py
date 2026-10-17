@@ -9,7 +9,7 @@ file's _COMMANDS table, every command's own argparse flags, and
 data_dependency_schema/operations.yaml, rather than restated here where it
 would inevitably drift (Phase 5 unit C, issue #271). Add `--command NAME`
 to that for one command's full detail: flags, side effects, idempotency,
-preconditions, and ordering relative to other commands. Use --help on any
+preconditions and modes. Use --help on any
 individual command for just its flags, or see CLAUDE.md.
 """
 import json
@@ -41,6 +41,7 @@ _COMMANDS = {
     "generate-status-sheet":       "coding.generate_status_sheet",
     "registry":                    "coding.registry",
     "issue":                       "coding.issues",
+    "daily-refresh":               "coding.daily_refresh",
 }
 
 
@@ -65,26 +66,35 @@ def main() -> None:
         print(f"Available commands: {', '.join(sorted(_COMMANDS))}")
         sys.exit(1)
 
-    # Remove the subcommand so the module's own parser -- and, for
-    # restructure_sheets.py/sync_params.py, their hand-rolled colon/comma
-    # helpers that read sys.argv directly -- see only its own flags.
-    sys.argv = [sys.argv[0]] + sys.argv[2:]
+    dispatch(cmd, sys.argv[2:])
 
-    import importlib
-    mod = importlib.import_module(_COMMANDS[cmd])
-    args = mod.build_parser().parse_args()
-    # Parsed once, here, rather than inside mod.main() -- this is the
-    # dispatch chokepoint precondition enforcement and the Drive door hook
-    # into, keyed by `cmd` and `args`.
-    op_id = cmd.replace("-", "_")
-    from . import preconditions
-    preconditions.enforce(op_id, args)
-    # The Drive door learns which command is running here, so it knows
-    # whether this invocation may write (docs/drive-door-design.md § 2.2),
-    # and logs what it wrote when it ends (coding/provenance.py).
-    from . import drive_door
-    with drive_door.running(cmd, args):
-        mod.main(args)
+
+def dispatch(cmd: str, argv: list) -> None:
+    """Run one command with its own flags, the one way every command runs:
+    from the command line (main above) and from daily-refresh, which calls
+    this once per step."""
+    # The module's own parser -- and, for restructure_sheets.py/sync_params.py,
+    # their hand-rolled colon/comma helpers that read sys.argv directly --
+    # see only its own flags.
+    saved, sys.argv = sys.argv, [sys.argv[0] if sys.argv else "coding"] + list(argv)
+    try:
+        import importlib
+        mod = importlib.import_module(_COMMANDS[cmd])
+        args = mod.build_parser().parse_args()
+        # Parsed once, here, rather than inside mod.main() -- this is the
+        # dispatch chokepoint precondition enforcement and the Drive door hook
+        # into, keyed by `cmd` and `args`.
+        op_id = cmd.replace("-", "_")
+        from . import preconditions
+        preconditions.enforce(op_id, args)
+        # The Drive door learns which command is running here, so it knows
+        # whether this invocation may write (docs/drive-door-design.md § 2.2),
+        # and logs what it wrote when it ends (coding/provenance.py).
+        from . import drive_door
+        with drive_door.running(cmd, args):
+            mod.main(args)
+    finally:
+        sys.argv = saved
 
 
 if __name__ == "__main__":

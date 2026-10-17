@@ -889,3 +889,30 @@
   cascades_triggered: []
   modes: []
 
+- id: daily_refresh
+  cli_command: daily-refresh
+  writes_to_drive: false
+  description: >-
+    The daily refresh, run by .github/workflows/data-refresh.yml: runs the
+    import, sync and check commands in order through the dispatcher, files or
+    closes each step's GitHub issue, and commits planars-data (and
+    regenerated snapshots to planars) between steps. Without --apply, lists
+    the steps. Writes nothing to Drive itself; each command it runs is
+    checked by the Drive door under its own record.
+  side_effects:
+    - "runs import-planar, import-sheets, check-notes, sync-diagnostics-yaml (both directions), sync-params, generate-sheets --regen-dependents, update-sheets and generate-status-sheet with --apply, each with its own side effects"
+    - "files, updates or closes the daily issues (planar-changed, import-error, diagnostics-yaml-error, regen-dependents-error, dependent-stale, diagnostics-drift, codebook-error, stale-manifest, integrity-error, data-overwrite, sheet-drift, status-sheet-error) and comments on stale pending-changes issues"
+    - "commits and pushes coded_data/ (planars-data) after the import, the diagnostics sync, the checks and the status sheets"
+    - "regenerates tests/snapshots/ and commits and pushes it to planars"
+    - "deletes diagnostics_drift.json and /tmp/planar_changes.json before the steps that write them"
+  idempotent: false
+  idempotency_note: >-
+    A second run with nothing changed in Drive imports nothing new, commits
+    nothing and leaves each issue as it was (replaced with the same body, or
+    nothing open to close), but adds another reminder comment to a stale
+    pending-changes issue, as the workflow always did.
+  apply_gate: "--apply"
+  preconditions: [coded_data_clean_tree]
+  facts_touched: []
+  cascades_triggered: []
+  modes: []
