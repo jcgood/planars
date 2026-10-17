@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Generate text snapshots of all analysis results for regression testing.
 
-Discovers every planars analysis module that exposes both `derive` and
-`format_result`, then runs each against every matching filled TSV in
-coded_data/. The resulting .txt files in tests/snapshots/ serve as the
-baseline for pytest snapshot tests (tests/test_snapshots.py).
+Runs every analysis in planars.reports' registry against every matching
+filled TSV in coded_data/. The resulting .txt files in tests/snapshots/ serve
+as the baseline for pytest snapshot tests (tests/test_snapshots.py). A
+snapshot whose tab no longer exists (a retired class or construction) is
+deleted, so the folder holds exactly one file per tab.
 
 Run from the repo root:
     python generate_snapshots.py
@@ -19,7 +20,7 @@ import re
 from pathlib import Path
 
 from planars.languages import get_entry
-from planars.reports import span_constructions
+from planars.reports import _CLASS_HANDLERS as _REPORT_HANDLERS, span_constructions
 
 ROOT = Path(__file__).resolve().parent
 SNAPSHOTS_DIR = ROOT / "tests" / "snapshots"
@@ -29,24 +30,15 @@ _LEGACY_RE  = re.compile(r"_(fill(?:ed)?|full|test)\.tsv$", re.IGNORECASE)
 _SUFFIX_RE  = re.compile(r"_(filled?|full|test|blank)$", re.IGNORECASE)
 _CAMEL_RE   = re.compile(r"(?<=[a-z])(?=[A-Z])")
 
-# Auto-discover all analysis modules: any planars/*.py that exposes both
-# `derive` (primary derive function alias) and `format_result`.
-_ANALYSIS_SKIP = {"charts", "cli", "io", "spans"}
-
-
+# The analyses are the reports' registry, the one list of them. Until
+# 2026-10-17 this script imported every planars/*.py and skipped any that
+# failed to import, so a broken analysis module silently lost its snapshots.
 def _build_handlers() -> list[tuple[str, object, object, frozenset | None]]:
     handlers = []
-    planars_dir = ROOT / "planars"
-    for path in sorted(planars_dir.glob("*.py")):
-        if path.stem.startswith("_") or path.stem in _ANALYSIS_SKIP:
-            continue
-        try:
-            mod = importlib.import_module(f"planars.{path.stem}")
-            if hasattr(mod, "derive") and hasattr(mod, "format_result"):
-                snap = span_constructions(path.stem)
-                handlers.append((path.stem, mod.derive, mod.format_result, snap))
-        except Exception:
-            pass
+    for class_name in sorted(_REPORT_HANDLERS):
+        mod = importlib.import_module(f"planars.{class_name}")
+        handlers.append((class_name, mod.derive, mod.format_result,
+                         span_constructions(class_name)))
     return handlers
 
 
@@ -89,8 +81,17 @@ def tsv_to_title(tsv_path: Path) -> str:
     return (name.lower() + stem).title()
 
 
+def stale_snapshots() -> list[Path]:
+    """Snapshot files that no task writes: their tab has gone."""
+    wanted = {snapshot_stem(t[0]) + ".txt" for t in TASKS}
+    return sorted(p for p in SNAPSHOTS_DIR.glob("*.txt") if p.name not in wanted)
+
+
 def main() -> None:
     SNAPSHOTS_DIR.mkdir(parents=True, exist_ok=True)
+    for stale in stale_snapshots():
+        stale.unlink()
+        print(f"Removed (no such tab): {stale.relative_to(ROOT)}")
     for tsv_path, derive_fn, fmt_fn in TASKS:
         title  = tsv_to_title(tsv_path)
         result = derive_fn(tsv_path, strict=False)

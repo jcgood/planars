@@ -384,13 +384,22 @@ phase finishes that, and applies the same rule everywhere a fact can live.
 | 16 | Nothing only in Google or GitHub: Status values, notes Doc text and last-edited-by imported into plain files; a `diagnostics` issue closes only by recording its decision in a file | — |
 | 17 | The hand-edit door: a change log for `schemas/` and per-language sources; pre-commit hook (and CI) refuses a source change without a change-log line | — |
 | 18 | Every exported result carries the package version and each language's change-log position | results reproducible from their record |
+| 19 | **Leftovers: nothing kept that no starting point reaches.** Added 2026-10-17 (Jeff), after `python -m planars` turned out to have been broken since March with nothing using it, and five snapshots of retired classes were still in `tests/snapshots/`. The starting points are the `coding` commands, the workflows, the notebook templates, the reports' list of analyses and the root scripts. One sweep (`vulture` plus a check of which files nothing imports), each hit reviewed and deleted or explained; then a test that fails when a file in `coding/` or `planars/` is reached from no starting point. Not a log of calls: that needs someone to read it and calls rarely-run code dead | sweep's list handled; the test in the suite |
+| 20 | **The suite back to minutes.** CI took 8–13 minutes until 2026-10-14 and 75–100 since c6da07d (unit 5d's rule 6, the end-of-command sheet check); command tests that run update-sheets or generate-sheets went to 1–2 minutes each. The live daily refresh did not slow (about 20 minutes, as before), so the cost is in how the check runs against the fake. Time one slow test, fix what it spends the time on, without weakening the check. **Also, found 2026-10-17:** no live command has written a provenance line since 2026-10-13, when the door took over the log — today's `--regen-construction` for #307 wrote a tab and left none. Find why and fix it, with a test that a live-mode write leaves its line | full suite and CI back near their 2026-10-14 times; every live write logged |
 | — | Optional, Jeff decides: a second Drive owner or shared drive; narrow the refresh token's Sheets and Docs scopes (Drive is already `drive.file` — only files the tooling created — found 2026-10-12 when Google refused a sharing change; `spreadsheets` and `documents` still reach all of Jeff's files) | — |
 
 **Order:** memories and this transcription → 14 (sharing, live) → 4 → 7 →
 3's first group → 1 → 2 → 10 → **pause: unit 5 design** → 5 for class
-sheets (watch ≥1 week; meanwhile rest of 3 and 8) → 5's other kinds →
+sheets (watch ≥1 week; meanwhile rest of 3, then 20, 19, 9's first half
+and 8, added 2026-10-17; 20 first because a slow suite taxes every other
+unit) → 5's other kinds →
 **pause: units 6 + 15 + 11's proposal sheets, designed together** → 12 →
-6 B–D → proposal sheets → rest of 11 → 16–18 → 9 last. A third pause: the
+6 B–D → 9's second half → proposal sheets → rest of 11 → 16–18. **Unit 9
+split (Jeff, 2026-10-17):** the root CLAUDE.md (and planars/CLAUDE.md) is
+cut to rules and pointers right after 19, because a long file full of
+history buries its working rules (the "a bug is never a question" rule
+kept slipping); `coding/CLAUDE.md` waits until after unit 6, which changes
+the modules it describes. A third pause: the
 transcript diff from removing `[y, n]` is shown to Jeff before it lands.
 
 ---

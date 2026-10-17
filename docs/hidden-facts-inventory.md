@@ -516,8 +516,9 @@ as the true last-resort fallback for a class that somehow has no
 classes (every module with `derive` and `format_result`). By then it was
 worse than stale: it imported the retired `stress`, `aspiration` and
 `suprasegmental` modules, which raise on import, so `python -m planars` failed
-for every analysis. `tests/test_planars_cli.py` holds it equal to the reports'
-analyses.*
+for every analysis. `tests/test_planars_cli.py` held it equal to the reports'
+analyses. Superseded 2026-10-17: the command itself was deleted, since nothing
+used it (snapshots, reports and notebooks show the same spans).*
 **What:** `_ANALYSES` hardcodes fifteen `{name: (derive_fn, format_result)}`
 entries. `planars/coreference.py` and `planars/metrical.py` both follow the
 project's own documented convention exactly (a `derive = derive_X_domains`

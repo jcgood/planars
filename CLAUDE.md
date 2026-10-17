@@ -77,7 +77,6 @@ python -m coding lookup-lang arao1248     # fetch + cache Glottolog metadata (--
 python -m coding setup-root-folder        # one-time Drive folder setup
 python -m coding generate-status-sheet    # locked read-only per-language status sheets (--apply, --lang)
 python -m coding issue --sync-labels      # GitHub labels vs schemas/issue_labels.yaml (--apply; also --file/--close/--remind, used by workflows)
-python -m planars <module> <tsv>          # run a single analysis
 
 # Testing
 pytest                                    # all tests (io, restructure, snapshots)
@@ -382,6 +381,11 @@ see `docs/data-layer-implementation-plan.md` Phase 10).
   writing "documented limitation" — a deferred item has nobody to remember
   it. Defer only *features* with no current use. When a gap is structural,
   recommend the structural fix, not the smallest piece that attaches to it.
+- **A bug you find is never a question.** Fix it, or add it to the plan,
+  and report what you did. Ask only what only the person can decide: a live
+  write to Drive or GitHub, a linguistic call, something that can't be
+  undone. A report that ends "Shall I…?" about a bug is the warning sign:
+  if "no" would be a strange answer, the question shouldn't have been asked.
 - **Before saying "that's everything", enumerate the kinds of place** a fact
   can live or a write can happen (code, schemas, docs, tests, workflows,
   Drive, GitHub, local state, memory, hand edits) and check each, rather than

@@ -16,9 +16,20 @@ from pathlib import Path
 
 import pytest
 
-from generate_snapshots import TASKS, SNAPSHOTS_DIR, snapshot_stem, tsv_to_title
+from generate_snapshots import TASKS, SNAPSHOTS_DIR, snapshot_stem, stale_snapshots, tsv_to_title
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+def test_no_stale_snapshots():
+    # A snapshot for a tab that no longer exists is checked by nothing and
+    # reads as if the class were still live (stress, aspiration and
+    # reflexivization ones sat here for months after those classes retired).
+    stale = [p.name for p in stale_snapshots()]
+    assert not stale, (
+        f"Snapshots for tabs that no longer exist: {stale}\n"
+        f"Run: python generate_snapshots.py"
+    )
 
 
 @pytest.mark.parametrize(
