@@ -296,8 +296,8 @@ def test_stale_merged_column_uses_the_merge_wording(env):
 
 def test_stale_param_values_reports_a_real_mismatch_without_crashing(env):
     """synth0001's coreference pair tabs are a real, already-known instance
-    of stale param_values (see coding/CLAUDE.md's "Held until Phase 9" list,
-    and CLAUDE.md's matching note): each manifest entry still lists all three
+    of stale param_values (see docs/data-layer-progress.md's "Held until
+    Phase 9" list): each manifest entry still lists all three
     pair criteria (reflexive_allowed, pronoun_allowed, np_allowed) while the
     diagnostics YAML gives each construction just the one it actually uses.
     No manifest mutation needed to exercise this -- the mismatch already
@@ -311,7 +311,7 @@ def test_stale_param_values_reports_a_real_mismatch_without_crashing(env):
     # Not asserting main()'s overall exit code here: synth0001's fixture data
     # also carries real, already-known DEPENDENT CONSTRUCTION STALENESS errors
     # (coreference/prescreening -> its three pair constructions -- see
-    # coding/CLAUDE.md's "Held until Phase 9" list) that force exit_code == 1
+    # docs/data-layer-progress.md's "Held until Phase 9" list) that force exit_code == 1
     # regardless of this test's target. A param_values mismatch is a warning
     # on its own within this section -- confirmed directly instead.
     with redirect_stdout(io.StringIO()):

@@ -34,11 +34,10 @@ answers in its § 7, what was built in its § 8. 5a (the sheet spec), 5b
 6, the labelling migration, manifest fallback deleted) are done. **Now 5e:**
 class sheets stay in watch mode until the design doc's § 4 rule is met (at
 least a week of clean daily refreshes; the week restarted 2026-10-18,
-because until unit 20's fix no live command reported anything). Units 3 and
-19 finished during it (2026-10-17). Still to do
-meanwhile, in this order (agreed with Jeff 2026-10-17): unit 9's first half (root and
-planars/ CLAUDE.md cut to rules and pointers; `coding/CLAUDE.md` waits
-for unit 6), unit 8 (the daily refresh as one command) and #309 (annotators never hear about invalid values on
+because until unit 20's fix no live command reported anything). Units 3,
+19 and 9's first half finished during it (2026-10-17; `coding/CLAUDE.md`
+waits for unit 6). Still to do
+meanwhile, in this order (agreed with Jeff 2026-10-17): unit 8 (the daily refresh as one command) and #309 (annotators never hear about invalid values on
 ready-for-review tabs; plan agreed, in the issue body; one live step, a test
 Drive comment, needs Jeff's approval).
 Then 5f (enforce for class sheets, then the other kinds).

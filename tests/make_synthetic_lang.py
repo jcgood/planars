@@ -41,6 +41,11 @@ positions are dropped:
 The result is a fully valid dataset with a different planar structure, useful
 for testing multi-language code paths in project_spans etc.
 
+The committed synth0001 is a --full-copy mirror (no positions dropped),
+chosen to keep position-drop noise out while the biuniqueness work was
+validated (issue #254). Language IDs starting with ``synth`` are reserved for
+synthetic languages and skip Glottocode checks (coding.glottolog.is_synthetic).
+
 Usage:
     python tests/make_synthetic_lang.py               # dry run
     python tests/make_synthetic_lang.py --apply        # write files

@@ -73,8 +73,8 @@ class LanguageManifestEntry(BaseModel):
 
     Fields beyond these are accepted and passed through unvalidated
     (`extra="allow"`) -- the manifest schema evolves per language-onboarding
-    and feature work (see CLAUDE.md's Work phases: "a research project...
-    schemas are themselves outputs of the research process"), so a strict
+    and feature work (see CLAUDE.md's "What this project is": the schemas
+    are outputs of the research, not fixed inputs), so a strict
     model would go stale within weeks. `sheets`/`planar` stay untyped dicts
     rather than fully modeled -- their shape is deep and construction-
     specific (`construction_params`, `param_values`, ...) in a way that

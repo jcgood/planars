@@ -10,9 +10,29 @@ Reads the manifest from Drive (via drive_config.json), downloads each sheet
 tab, validates values, and writes {construction}.tsv to
 coded_data/{lang_id}/{class_name}/.
 
+A TSV whose downloaded content is unchanged is skipped; a changed one is
+archived first (coded_data/{lang_id}/archive/{class_name}/), then
+overwritten. Refuses to run with --apply while coded_data/ has uncommitted
+changes (precondition coded_data_clean_tree, checked by the dispatcher).
+
+What happens depends on each tab's Status:
+  ready-for-review  imported in full; warnings reported; destructive changes
+                    go to pending_changes.json (and a pending-changes issue)
+                    for apply-pending, not straight into the TSV.
+  in-progress       imported as a backup with warnings suppressed; missing
+                    rows or columns, or a large drop in filled cells, file a
+                    collaborator-check issue instead. --ignore-status treats
+                    every tab as ready-for-review.
+
+A changed diagnostics TSV is diffed against the language's YAML
+(sync_diagnostics_yaml's --from-tsv logic); ambiguous differences go to
+diagnostics_drift.json, which the daily refresh turns into a
+diagnostics-drift issue.
+
 Side effect: invalid cells are highlighted pink in the Google Sheet during
-import (same behaviour as validate-coding). This write-back happens even
-without --apply and even when the local TSV is skipped.
+import (same behaviour as validate-coding), on every tab whatever its Status.
+This write-back happens even without --apply and even when the local TSV is
+skipped.
 
 Authentication: same OAuth2 setup as generate_sheets.py.
 """

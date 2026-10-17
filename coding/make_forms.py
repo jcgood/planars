@@ -1,3 +1,23 @@
+"""Reading a language's planar and diagnostics files, for the other commands.
+
+``build_element_index`` reads ``planar_{lang_id}.tsv`` (Position and
+Class_Type checks are the pandera schemas in ``coding/contracts.py``; a
+``SchemaError`` is re-raised as ``ValueError``). The language ID comes from
+the filename, with or without an archive datestamp (``planar_stan1293.tsv``,
+``planar_stan1293_20260209.tsv``).
+
+``_read_diagnostics_for_language`` reads ``diagnostics_{lang_id}.yaml``, and
+falls back to the TSV only for a language that has no YAML yet. Every
+criterion lists its values (``free{y/n}`` in the TSV); one written without
+values is an error, never a default. A class using ``construction_criteria``
+gives one row per construction, so each tab shows only its own criteria.
+``_yaml_to_tsv_df`` / ``_tsv_df_to_yaml`` / ``_diff_diagnostics_tsv_yaml``
+are the conversions ``sync-diagnostics-yaml`` uses.
+
+Also ``resolve_keystone_active`` / ``resolve_keystone_na_criteria`` /
+``resolve_obligatory_positions`` (per-language settings read from the YAML)
+and ``ARCHIVE_STAMP_FORMAT``, the one archive datestamp format.
+"""
 from __future__ import annotations
 
 import copy

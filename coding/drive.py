@@ -1,8 +1,15 @@
 """Google Drive and Sheets client helpers shared across coding/ modules.
 
-All OAuth2 authentication, Drive config I/O, manifest upload/download, and
-rate-limit retry logic lives here so that individual command modules stay
-focused on their own logic.
+All OAuth2 authentication, Drive config I/O and manifest upload/download
+live here so that individual command modules stay focused on their own
+logic. Retrying on a rate limit is the Drive door's (coding/drive_door.py),
+not this module's.
+
+Drive config: coded_data/drive_config.json (private planars-data) bootstraps
+every Drive lookup — the root folder (_root_folder_id), the manifest file
+(_planars_config_file_id), and each language's folder and sheet IDs. The
+manifest itself (manifest.json) lives on Drive; per-language entries carry
+notes_doc_id once a notes Doc exists.
 
 Authentication (OAuth2):
     Credentials JSON at PLANARS_OAUTH_CREDENTIALS env var, or

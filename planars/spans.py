@@ -1,3 +1,11 @@
+"""Span arithmetic shared by every analysis module.
+
+``strict_span`` (contiguous from the keystone, no gaps), ``loose_span`` (to
+the farthest qualifying position on each side), ``blocked_span`` (up to the
+first blocking position), ``position_sets_from_element_mask`` (partial and
+complete positions from a per-element yes/no) and ``fmt_span`` (a span as
+text). The terms themselves are defined in ``schemas/terms.yaml``.
+"""
 from __future__ import annotations
 
 from typing import Dict, Set, Tuple

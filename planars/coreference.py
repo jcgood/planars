@@ -1,3 +1,17 @@
+"""Coreference domains, from pair-row tabs rather than element rows.
+
+Unlike the standard analysis module, this reads one pair-row TSV per
+construction (``reflexivization``, ``pronominalization``, ``np_reference``)
+and derives binder/bindee domains instead of complete/partial position sets.
+The class's ``prescreening`` tab (criterion ``referential``) only decides
+which elements those pair tabs get; it produces no spans itself.
+
+Column presence for the planar and pair TSVs, and the planar's
+``Position``-is-an-integer and keystone-exists checks, are enforced
+(``planars/contracts.py`` section 2). Per-row leniency is deliberate: an
+unrecognised element or an unreadable ``Position_B`` is collected into the
+result's ``missing_data`` rather than failing the run.
+"""
 from __future__ import annotations
 
 from pathlib import Path

@@ -1,3 +1,20 @@
+"""Loading a filled element-row annotation tab for the analysis modules.
+
+``load_filled_tsv(path, required_criteria)`` reads a local TSV;
+``load_filled_sheet(ws, required_criteria)`` reads the same shape from a
+gspread worksheet (Colab). Both go through ``_parse_filled_df`` and return
+``(data_df, keystone_pos, pos_to_name, criterion_cols, keystone_df)``.
+
+The keystone row is never in ``data_df``: it comes back separately as
+``keystone_df``, so an analysis that checks a blocking condition against the
+keystone (stress, aspiration) can read it without the keystone joining the
+positions a span expands over.
+
+Structural checks (Position_Name and Position_Number agree, exactly one
+keystone, no blank required criterion) are the pandera schemas in
+``planars/contracts.py``; a ``SchemaError`` is re-raised as ``ValueError`` so
+callers see the exception type they always have.
+"""
 from __future__ import annotations
 
 from pathlib import Path

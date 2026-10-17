@@ -34,7 +34,7 @@
 #   status                      stable | "[NEEDS REVIEW]" | "[PLACEHOLDER]" |
 #                               "[AUTO-DERIVED]" (only a coordinator may promote a
 #                               class out of "[AUTO-DERIVED]" or "[NEEDS REVIEW]" to
-#                               stable — see CLAUDE.md § Analysis status convention)
+#                               stable — see CLAUDE.md § Conventions, "Analysis status")
 #   criterion_set_status        stable | "[PROVISIONAL]" (expected to grow as more
 #                               languages are analyzed; note explains known gaps or
 #                               open questions)

@@ -1,5 +1,10 @@
 """How a planar's Elements cell is read, for both planars/ and coding/.
 
+``split_elements`` splits the cell on commas, ignoring commas inside braces;
+``wrap_element`` brackets an element with a leading or trailing hyphen
+(``-s`` -> ``[-s]``) so spreadsheets don't read it as a formula.
+``coding.make_forms`` re-exports both.
+
 Until 2026-10-16 the brace-aware split was written out in four files and the
 bracket rule in five (found closing hidden-facts D2b/M0); a change to either
 convention had to be made everywhere at once or the sheets and the analyses
