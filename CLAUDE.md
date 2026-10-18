@@ -90,6 +90,9 @@ see `docs/data-layer-implementation-plan.md` Phase 10).
   write to Drive or GitHub, a linguistic call, something that can't be
   undone. A report that ends "Shall I…?" about a bug is the warning sign:
   if "no" would be a strange answer, the question shouldn't have been asked.
+  The same goes for code that breaks a rule already written here (e.g.
+  sync-params editing the diagnostics TSV, against "edit sources, never
+  their copies", #315): the rule is the decision, so bring the code into line.
 - **Before saying "that's everything", enumerate the kinds of place** a fact
   can live or a write can happen (code, schemas, docs, tests, workflows,
   Drive, GitHub, local state, memory, hand edits) and check each, rather than

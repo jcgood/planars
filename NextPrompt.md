@@ -17,8 +17,14 @@ this project is trying to remove.
 
 ## Now
 
-Three live threads. Read whichever matches what you're picking up. (Audit
+Four live threads. Read whichever matches what you're picking up. (Audit
 #313 is closed, 2026-10-18; its comments hold the findings.)
+
+### Thread: sync-params edits the YAML, not the TSV (#315) — do this first
+
+**Decided by Jeff 2026-10-18; don't re-ask.** #315's body has the decision
+and what "done" means. Make the change, regenerate and review the
+sync-params outputs, run the full suite, commit with `Closes #315`, push.
 
 ### Thread: data layer Phase 10 — ownership and chokepoints (`coding/`, `schemas/`, #271)
 
