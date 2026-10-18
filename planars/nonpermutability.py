@@ -218,8 +218,9 @@ def derive_nonpermutability_domains(
         strict:      If True, raise on missing scopal values; otherwise leave blanks.
         planar_path: Optional explicit path to planar TSV. If None, derived from
                      tsv_path: coded_data/{lang_id}/lang_setup/planar_{lang_id}.tsv.
-        _data:       Not yet supported for this module (pair-row sheets require a
-                     separate loading path). Will raise NotImplementedError.
+        _data:       (pair_df, keystone_pos, pos_to_name, pos_type,
+                     pos_to_elements, elem_to_positions), already loaded: how
+                     planars/reports.py passes a Google Sheet tab (Colab).
 
     Returns dict with:
         keystone_position, position_number_to_name, pair_table, missing_data,
@@ -229,9 +230,6 @@ def derive_nonpermutability_domains(
     stale_dependent: Optional[str] = None
 
     if _data is not None:
-        # _data = (pair_df, keystone_pos, pos_to_name, pos_type,
-        #          pos_to_elements, elem_to_positions)
-        # Used for synthetic testing; live-sheet loading is not yet supported.
         pair_df, keystone_pos, pos_to_name, pos_type, pos_to_elements, elem_to_positions = _data
     else:
         lang_id = tsv_path.parent.parent.name

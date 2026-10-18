@@ -270,7 +270,7 @@ def _section_analysis(codebook: dict) -> Tuple[int, int]:
         for e in errs_keys:
             print(_sub(e))
         print(_sub("→ Fix the mismatched key in the module's derive_*() return dict or in"))
-        print(_sub("  planars/charts.py, then run: pytest"))
+        print(_sub("  schemas/terms.yaml (span_label_map), then run: pytest"))
     else:
         print(_ok("All chart span keys match derive function result dicts"))
 

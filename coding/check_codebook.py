@@ -28,7 +28,7 @@ import importlib.util
 import io
 import sys
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import pandas as pd
 
@@ -663,7 +663,12 @@ def needs_review_entries(codebook: dict, diag_classes: dict) -> list[str]:
     The one list of [NEEDS REVIEW], [PLACEHOLDER] and [NEEDS COORDINATOR
     INPUT] entries; check-codebook and integrity-check both print it (until
     2026-10-17 integrity-check kept its own copy, which missed the last kind).
+    Also lists a language's class whose ``notes`` in diagnostics_{lang_id}.yaml
+    starts with [NEEDS REVIEW] (a stub added so a required class is present,
+    such as Araona's proform, #279).
     """
+    import yaml as _yaml
+
     flagged = []
     for analysis in codebook.get("analyses", []):
         name = analysis["name"]
@@ -688,6 +693,11 @@ def needs_review_entries(codebook: dict, diag_classes: dict) -> list[str]:
                 f"diagnostic_classes_status.yaml [{cls['name']}]: collection_required — "
                 f"coordinator decision needed (set to 'y' or 'n')"
             )
+    for yaml_path in sorted(CODED_DATA.glob("*/lang_setup/diagnostics_*.yaml")):
+        lang_data = _yaml.safe_load(yaml_path.read_text(encoding="utf-8")) or {}
+        for class_name, entry in (lang_data.get("classes") or {}).items():
+            if str((entry or {}).get("notes", "")).startswith("[NEEDS REVIEW]"):
+                flagged.append(f"{yaml_path.name} [{class_name}]: notes")
     return flagged
 
 
@@ -718,12 +728,17 @@ def _collect_coverage(root: Path = ROOT) -> dict[str, list[str]]:
     return coverage
 
 
-def _report_schema_stubs(diag_classes: dict, coverage: dict[str, list[str]]) -> int:
+def _report_schema_stubs(
+    diag_classes: dict, coverage: dict[str, list[str]], codebook: Optional[dict] = None,
+) -> int:
     """Print schema stubs for classes in diagnostic_classes.yaml with no language coverage.
 
-    A schema stub is the ready-to-paste diagnostics_{lang_id}.tsv row derived from the
-    schema definition — the minimal instantiation before language-specific choices are made.
-    Distinct from 'planar template', which refers to the planar structure.
+    A schema stub is the ready-to-paste diagnostics_{lang_id}.yaml entry derived from the
+    schema definition (constructions, required criteria and their values from
+    diagnostic_criteria.yaml) — the minimal instantiation before language-specific
+    choices are made. Until 2026-10-18 it printed a TSV row, though the TSV is
+    generated from the YAML and never edited. Distinct from 'planar template',
+    which refers to the planar structure.
 
     Returns the count of uncovered classes (informational, not an error).
     """
@@ -732,19 +747,29 @@ def _report_schema_stubs(diag_classes: dict, coverage: dict[str, list[str]]) -> 
         print("  All schema classes have at least one language.")
         return 0
 
+    implicit = {"na", "?"}   # always allowed; diagnostics YAMLs don't list them
+    values = {
+        (analysis["name"], crit["name"]): [
+            str(v) for v in crit.get("values") or [] if str(v) not in implicit]
+        for analysis in (codebook or {}).get("analyses", [])
+        for crit in analysis.get("diagnostic_criteria", [])
+    }
+
     print(f"  {len(uncovered)} class(es) with no language coverage.")
-    print("  Paste into diagnostics_{{lang_id}}.tsv and adjust constructions/criteria as needed:\n")
+    print("  Paste under `classes:` in diagnostics_{lang_id}.yaml, adjust, then run")
+    print("  python -m coding sync-diagnostics-yaml --lang {lang_id} --apply:\n")
     for name in uncovered:
         cls = diag_classes[name]
-        specificity = cls.get("specificity", "general")
-        required = cls.get("required_criteria", [])
-        if specificity == "general":
+        if cls.get("specificity", "general") == "general":
             constructions = "general"
         else:
-            known = cls.get("known_constructions", [])
-            constructions = ", ".join(known) if known else "CONSTRUCTION_NAME"
-        criteria = ", ".join(required) if required else "CRITERION"
-        print(f"  {name}\t{{lang_id}}\t{constructions}\t{criteria}")
+            constructions = ", ".join(cls.get("known_constructions") or ["CONSTRUCTION_NAME"])
+        print(f"  {name}:")
+        print(f"    constructions: [{constructions}]")
+        print("    criteria:")
+        for crit in cls.get("required_criteria") or ["CRITERION"]:
+            vals = values.get((name, crit)) or ["VALUES"]
+            print(f"      {crit}: [{', '.join(vals)}]")
     return len(uncovered)
 
 
@@ -895,11 +920,11 @@ def main(args: argparse.Namespace | None = None) -> None:
         for name in pending_defaults:
             print(f"    [{name}] add keystone_active: true/false to diagnostics_{{lang_id}}.yaml at onboarding")
     else:
-        print("  All classes with [NEEDS REVIEW] keystone_active_default already have active instances (see section 7).")
+        print("  All classes with [NEEDS REVIEW] keystone_active_default already have active instances (see section 8).")
 
     print()
     print("9. Schema stubs (classes with no language coverage):")
-    _report_schema_stubs(diag_classes, coverage)
+    _report_schema_stubs(diag_classes, coverage, codebook)
 
     print()
     print("10. Coverage matrix:")

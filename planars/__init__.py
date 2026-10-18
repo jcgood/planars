@@ -12,8 +12,9 @@ exposes:
 
 ``tests/test_smoke_modules.py`` fails on a module missing any of them. Path
 resolution happens at the call site, never inside the library. Where a
-module departs from this shape (``coreference``, ``biuniqueness_deviations``,
-``proform``), its own docstring says how.
+module departs from this shape (``nonpermutability``, ``coreference``,
+``biuniqueness_deviations``: pair rows or two tabs, and their own result
+keys), its own docstring says how.
 
 Shared pieces: ``io`` (loading a filled tab), ``spans`` (span arithmetic),
 ``elements`` (reading a planar's Elements cell), ``schema_values`` (values the

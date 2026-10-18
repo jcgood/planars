@@ -81,3 +81,31 @@ class TestDeriveCoreferenceDomainsMissingColumns:
                 tsv_path=Path("reflexivization.tsv"),
                 _data=(pair_df, 5, {5: "v:verbstem"}, {"FOO": {1}}),
             )
+
+
+class TestDeriveCoreferenceFromASheet:
+    """reports.py reads a Sheet tab: _data and the tab name, no file path.
+
+    Until 2026-10-18 the construction came only from tsv_path's filename, so
+    this path raised AttributeError, which reports.py caught and printed as a
+    warning: every coreference span read from Google Sheets was dropped.
+    """
+
+    _DATA = (
+        pd.DataFrame({
+            "Element_A": ["FOO"], "Position_A": ["1"], "Position_B": ["9"],
+            "Direction": ["A→B"], "reflexive_allowed": ["y"],
+        }),
+        5, {1: "v:left", 5: "v:verbstem", 9: "v:right"}, {"FOO": {1}},
+    )
+
+    def test_the_construction_name_stands_in_for_the_filename(self):
+        from_sheet = derive_coreference_domains(
+            construction="reflexivization", _data=self._DATA, strict=False)
+        from_file = derive_coreference_domains(
+            tsv_path=Path("reflexivization.tsv"), _data=self._DATA, strict=False)
+        assert from_sheet == from_file
+
+    def test_no_construction_and_no_file_is_a_plain_error(self):
+        with pytest.raises(ValueError, match="pass construction="):
+            derive_coreference_domains(_data=self._DATA, strict=False)

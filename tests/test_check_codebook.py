@@ -161,6 +161,19 @@ def test_report_schema_stubs_construction_specific(capsys):
     assert "verb-particle idiom" in out
 
 
+def test_report_schema_stubs_are_yaml_with_the_criterion_values(capsys):
+    """The stub goes into diagnostics_{lang_id}.yaml (the TSV is generated), values included."""
+    diag_classes = _minimal_diag_classes("repair")
+    codebook = {"analyses": [{"name": "repair", "diagnostic_criteria": [
+        {"name": crit, "values": ["y", "n", "na", "?"]}
+        for crit in diag_classes["repair"].get("required_criteria", [])]}]}
+    _report_schema_stubs(diag_classes, {}, codebook)
+    out = capsys.readouterr().out
+    assert "diagnostics_{lang_id}.yaml" in out and ".tsv" not in out
+    assert "  repair:\n    constructions: [" in out
+    assert ": [y, n]" in out   # na and ? are implicit, not listed
+
+
 # ---------------------------------------------------------------------------
 # _discover_analysis_modules
 # ---------------------------------------------------------------------------
@@ -439,3 +452,27 @@ def test_span_constructions_reads_the_schema():
         {"reflexivization", "pronominalization", "np_reference"})
     assert span_constructions("biuniqueness_deviations") == frozenset({"morphs"})
     assert span_constructions("ciscategorial") is None   # no feeder tabs
+
+
+def test_a_language_class_noted_needs_review_is_listed(tmp_path, monkeypatch):
+    """A stub class (e.g. Araona's proform, #279) is listed until someone reviews it."""
+    setup = tmp_path / "xxxx1234" / "lang_setup"
+    setup.mkdir(parents=True)
+    (setup / "diagnostics_xxxx1234.yaml").write_text(
+        "language: xxxx1234\n"
+        "classes:\n"
+        "  proform:\n"
+        "    constructions: [general]\n"
+        "    criteria:\n"
+        "      shareable_proform_replace: [y, n]\n"
+        "    notes: \"[NEEDS REVIEW] Stub.\"\n"
+        "  ciscategorial:\n"
+        "    constructions: [general]\n"
+        "    criteria:\n"
+        "      V-combines: [y, n]\n"
+        "    notes: \"Reviewed.\"\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(check_codebook, "CODED_DATA", tmp_path)
+    flagged = check_codebook.needs_review_entries({}, {})
+    assert flagged == ["diagnostics_xxxx1234.yaml [proform]: notes"]

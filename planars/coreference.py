@@ -57,14 +57,14 @@ def _construction_criterion_map() -> Dict[str, str]:
     return _CONSTRUCTION_CRITERION
 
 
-def _criterion_column(tsv_path: Path, pair_cols: Set[str]) -> str:
+def _criterion_column(construction: str, pair_cols: Set[str]) -> str:
     """Return the criterion column this construction's judgments live in.
 
     The construction is what decides: ``reflexivization.tsv`` is about
-    ``reflexive_allowed`` whatever else the sheet happens to carry. Identity
-    comes from the filename (which encodes the construction, per the project's
-    ``{construction}.tsv`` convention) resolved through
-    ``diagnostic_classes.yaml``.
+    ``reflexive_allowed`` whatever else the sheet happens to carry. The
+    construction name (the TSV's filename, per the project's
+    ``{construction}.tsv`` convention, or the tab name when reading a Sheet)
+    is resolved through ``diagnostic_classes.yaml``.
 
     This used to be ``next(c for c in <the three pair criteria> if c in pair_cols)`` —
     pick whichever of the three criterion columns is present. That is correct
@@ -79,7 +79,6 @@ def _criterion_column(tsv_path: Path, pair_cols: Set[str]) -> str:
     pair criterion column present (the one-criterion-per-tab layout); with
     none or several present it cannot be placed, and raises rather than guess.
     """
-    construction = tsv_path.stem
     criteria = _construction_criterion_map()
     declared = criteria.get(construction)
     if declared:
@@ -88,7 +87,7 @@ def _criterion_column(tsv_path: Path, pair_cols: Set[str]) -> str:
     if len(present) == 1:
         return present[0]
     raise ValueError(
-        f"{tsv_path.name}: not a coreference pair construction in "
+        f"{construction}: not a coreference pair construction in "
         f"diagnostic_classes.yaml ({sorted(criteria)}), and its columns name "
         f"{'none' if not present else 'several'} of their criteria "
         f"({present or sorted(set(criteria.values()))}); cannot tell which to read.")
@@ -146,6 +145,7 @@ def derive_coreference_domains(
     strict: bool = True,
     *,
     planar_path: Optional[Path] = None,
+    construction: Optional[str] = None,
     _data=None,
 ) -> Dict[str, object]:
     """Derive binding domain spans from a filled coreference pair TSV.
@@ -188,6 +188,8 @@ def derive_coreference_domains(
         tsv_path:    Path to pair TSV (Element_A, ..., reflexive_allowed, ...).
         strict:      If True, raise on unknown elements.
         planar_path: Optional explicit path to planar TSV. If None, derived from tsv_path.
+        construction: The construction (which criterion column to read). Taken
+                     from tsv_path's filename when not given; required with _data.
         _data:       (pair_df, keystone_pos, pos_to_name, elem_to_positions) for Colab.
 
     Returns dict with:
@@ -214,7 +216,12 @@ def derive_coreference_domains(
     bad_rows: List[str] = []
 
     pair_cols = set(pair_df.columns) if hasattr(pair_df, "columns") else set()
-    criterion_col = _criterion_column(tsv_path, pair_cols)
+    if construction is None:
+        if tsv_path is None:
+            raise ValueError("derive_coreference_domains: pass construction= with _data "
+                             "(there is no filename to take it from)")
+        construction = tsv_path.stem
+    criterion_col = _criterion_column(construction, pair_cols)
 
     # Column presence stays a plain check, ahead of the loop below -- without
     # it, a missing column doesn't crash, it silently makes every row look

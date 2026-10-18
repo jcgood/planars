@@ -65,9 +65,9 @@ from planars.schema_values import (
 
 # ---------------------------------------------------------------------------
 # Span label constants
-# Loaded from schemas/terms.yaml (span_label_map section).
-# Re-exported by planars.charts for backward compatibility with callers
-# such as coding/check_codebook.py.
+# Loaded from schemas/terms.yaml (span_label_map section). check-codebook
+# (coding/check_codebook.py) imports them from here to check every key
+# against the derive functions' result dicts.
 # ---------------------------------------------------------------------------
 
 def _load_span_label_map() -> dict:
@@ -424,7 +424,8 @@ def _collect_spans_sheets(gc, manifest, lang_id: Optional[str] = None):
                                 for elem in p.get("elements", []):
                                     elem_to_positions.setdefault(wrap_element(elem), set()).add(p["pos"])
                             _data = (pair_df, keystone_pos, pos_to_name, elem_to_positions)
-                            result = derive_fn(_data=_data, strict=False)
+                            result = derive_fn(_data=_data, strict=False,
+                                               construction=construction)
                             rows.extend(row_fn(result, lid))
                             if lid not in lang_meta:
                                 lang_meta[lid] = {

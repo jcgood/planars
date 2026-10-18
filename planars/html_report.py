@@ -135,7 +135,7 @@ def _completeness_table(completeness: dict, status: Optional[dict]) -> str:
         if isinstance(constructions, dict) and "_error" in constructions:
             rows.append(
                 f"<tr><td>{_html.escape(class_name)}</td><td>—</td>"
-                f"<td colspan='3' class='error'>Error: {_html.escape(str(constructions['_error']))}</td></tr>"
+                f"<td colspan='2' class='error'>Error:{_html.escape(str(constructions['_error']))}</td></tr>"
             )
             continue
         for construction in sorted(constructions):
@@ -153,7 +153,7 @@ def _completeness_table(completeness: dict, status: Optional[dict]) -> str:
             elif "error" in stats:
                 rows.append(
                     f"<tr><td>{label_class}</td><td>{label_con}</td>"
-                    f"<td colspan='2' class='error'>Error: {_html.escape(str(stats['error']))}</td>"
+                    f"<td class='error'>Error: {_html.escape(str(stats['error']))}</td>"
                     f"<td>{_badge(con_status)}</td></tr>"
                 )
             else:

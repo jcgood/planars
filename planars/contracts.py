@@ -31,8 +31,11 @@ Column *presence* (the "Missing required column(s)" check) and blank
 itself, ahead of these two schemas — both preconditions the normalization
 step needs to hold before it can run at all, so validating them via a
 schema built from columns that might not exist yet would be circular.
-Fifteen `planars/*.py` analysis modules, `integrity-check`, and
-`check-codebook` all depend on `_parse_filled_df` transitively.
+Every analysis module that reads its tab through `planars.io`'s
+`load_filled_tsv`/`load_filled_sheet` (all but the pair-row and two-tab
+ones: `nonpermutability`, `coreference`, `biuniqueness_deviations`), plus
+`reports`, `integrity-check` and `check-codebook`, depend on
+`_parse_filled_df` transitively.
 
 Section 2 — planars/coreference.py's pair-row boundary (boundary 3).
 Thinner than section 1's: `coreference.py` deliberately treats most bad
@@ -127,14 +130,16 @@ def raw_shape_schema(required_criteria: Set[str]) -> pa.DataFrameSchema:
                 name=CHECK_NAME_TO_NUMBER,
                 error="Inconsistent Position_Name <-> Position_Number mapping "
                 "(sheet may be out of sync with the planar structure — "
-                "run restructure_sheets.py).",
+                "run python -m coding restructure-sheets; its options: "
+                "python -m coding registry --command restructure-sheets).",
             ),
             pa.Check(
                 _number_to_name_consistent,
                 name=CHECK_NUMBER_TO_NAME,
                 error="Inconsistent Position_Name <-> Position_Number mapping "
                 "(sheet may be out of sync with the planar structure — "
-                "run restructure_sheets.py).",
+                "run python -m coding restructure-sheets; its options: "
+                "python -m coding registry --command restructure-sheets).",
             ),
             pa.Check(
                 _has_keystone,
