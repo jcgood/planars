@@ -7,6 +7,7 @@ where update_sheets.py (which only appends) is insufficient.
 Run from the repo root:
     python -m coding restructure-sheets           # dry run — show what would change
     python -m coding restructure-sheets --apply   # archive old sheets and regenerate
+    python -m coding restructure-sheets --lang LANG_ID   # restrict to one language
 
     # Map renamed positions so their annotations are carried over instead of dropped:
     python -m coding restructure-sheets --rename-map v:npsubj1:v:subj1
@@ -1024,9 +1025,11 @@ def _preflight_rename_class(
     """Abort if any language fails the --rename-class pre-flight checks.
 
     For each rename pair (old_class -> new_class), every language that has
-    old_class in the manifest must also have new_class in its diagnostics.tsv
-    (and must NOT have old_class in diagnostics.tsv).  This enforces the
-    required ordering: edit diagnostics_{lang_id}.tsv first, then rename.
+    old_class in the manifest must also have new_class in its diagnostics file
+    (and must NOT have old_class in it).  This enforces the required
+    ordering: edit diagnostics_{lang_id}.yaml first (and run
+    sync-diagnostics-yaml --apply), then rename.  The file is read the way
+    every command reads it: the YAML, or the TSV only if there is no YAML.
     """
     errors = []
     for planar_file in planar_files:
@@ -1042,17 +1045,19 @@ def _preflight_rename_class(
             # Language doesn't involve this rename at all — skip.
             if old_class not in manifest_classes and new_class not in active_classes:
                 continue
-            # Old class still in diagnostics.tsv — coordinator must remove it first.
+            # Old class still in the diagnostics file — coordinator must remove it first.
             if old_class in active_classes:
                 errors.append(
-                    f"  {lang_id}: {old_class!r} is still in diagnostics_{lang_id}.tsv.\n"
-                    f"    Replace it with {new_class!r} before running --rename-class."
+                    f"  {lang_id}: {old_class!r} is still in diagnostics_{lang_id}.yaml.\n"
+                    f"    Replace it with {new_class!r} there, run "
+                    f"`python -m coding sync-diagnostics-yaml --apply`, then re-run --rename-class."
                 )
-            # Old class in manifest but new class absent from diagnostics.tsv.
+            # Old class in manifest but new class absent from the diagnostics file.
             if old_class in manifest_classes and new_class not in active_classes:
                 errors.append(
-                    f"  {lang_id}: {new_class!r} is not in diagnostics_{lang_id}.tsv.\n"
-                    f"    Add it before running --rename-class."
+                    f"  {lang_id}: {new_class!r} is not in diagnostics_{lang_id}.yaml.\n"
+                    f"    Add it there, run "
+                    f"`python -m coding sync-diagnostics-yaml --apply`, then re-run --rename-class."
                 )
 
     if errors:
@@ -1382,9 +1387,9 @@ def build_parser() -> argparse.ArgumentParser:
     """Build the argument parser for `python -m coding restructure-sheets`.
 
     Declares every flag so `--help` and unknown-flag detection work, but the
-    hand-rolled colon/comma helpers below (`_parse_flag_map`,
-    `_parse_split_flag_map`) still do the actual value extraction from
-    `sys.argv` — they have their own tested parsing and error messages
+    hand-rolled colon/comma helpers above (`_parse_flag_map`,
+    `_parse_position_rename_map`, `_parse_split_flag_map`) still do the actual
+    value extraction from `sys.argv` — they have their own tested parsing and error messages
     (`tests/test_restructure.py`), not reimplemented here.
     """
     ap = argparse.ArgumentParser(
@@ -1442,7 +1447,7 @@ def main(args: argparse.Namespace | None = None) -> None:
     With --rename-class old:new, renames the class across all languages: archives
     the old sheet, creates a new one under the new name with all annotations
     carried over, renames coded_data/{lang}/{old}/ to coded_data/{lang}/{new}/,
-    and updates the manifest.  diagnostics_{lang_id}.tsv must be updated to use
+    and updates the manifest.  diagnostics_{lang_id}.yaml must be updated to use
     the new name BEFORE running this command (enforced by pre-flight checks).
 
     With --split-element old:new1,new2,..., retires one element in favor of several

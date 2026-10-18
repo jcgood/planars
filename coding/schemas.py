@@ -1,8 +1,11 @@
 """Cached loaders for the planars YAML schema files.
 
-Provides module-level cached access to diagnostic_classes.yaml and
-diagnostic_criteria.yaml so multiple callers in the same process share a
-single file read rather than each opening the file independently.
+Provides module-level cached access to diagnostic_classes.yaml (merged with
+diagnostic_classes_status.yaml), diagnostic_criteria.yaml and planar.yaml so
+multiple callers in the same process share a single file read rather than each
+opening the file independently. Also holds the readers built on them
+(``criterion_values``, ``reads_from``, the value-placeholder helpers,
+``criteria_for``).
 
 languages.yaml is intentionally excluded: it is written to by ``lookup-lang``
 mid-session and read at specific workflow points where freshness matters.

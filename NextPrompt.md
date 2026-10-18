@@ -17,17 +17,8 @@ this project is trying to remove.
 
 ## Now
 
-Four live threads. Read whichever matches what you're picking up.
-
-### Thread: audit #313 (open)
-
-The findings and what was done are in #313's comment. Left: read the
-docstrings of the `coding/` modules listed there as not reviewed against
-the code (coordinator guide § "Audit procedure", step 5); fix each stale
-one, then close #313. Do it in this session or with agents told never to
-use `cd` (Jeff's ask rule on it blocked the last batch). Don't redo the
-Araona proform stub (#279, Jeff 2026-10-18) or the coreference-from-Sheets
-fix.
+Three live threads. Read whichever matches what you're picking up. (Audit
+#313 is closed, 2026-10-18; its comments hold the findings.)
 
 ### Thread: data layer Phase 10 — ownership and chokepoints (`coding/`, `schemas/`, #271)
 

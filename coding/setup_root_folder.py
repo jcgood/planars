@@ -20,8 +20,8 @@ Moving a folder in Drive does not break existing shares — contributor links re
 valid after the move. After running this, new language folders created by generate-sheets
 will also be placed inside the root folder automatically.
 
-Re-running is safe: if _root_folder_id is already set, the script reports the
-existing folder and exits without making changes.
+Re-running is safe: each step checks the current Drive state and skips anything
+already in order, so a repeat run reports what it found and changes nothing.
 
 Authentication: same OAuth2 setup as generate_sheets.py.
 """
@@ -174,7 +174,7 @@ def main(args: argparse.Namespace | None = None) -> None:
             print(f"Moved manifest.json (id: {planars_config_id}) to root folder.")
     else:
         print("No manifest.json found in drive_config.json — skipping.")
-        print("  (Run python -m coding generate-notebooks --apply to create it.)")
+        print("  (Run python -m coding generate-sheets --apply to create it.)")
 
     # Step 5b: Move all_languages.ipynb to root folder (if it exists)
     all_langs_id = config.get("_all_languages_notebook_file_id")

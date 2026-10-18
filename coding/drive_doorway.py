@@ -23,8 +23,9 @@ handle that callers hold across many operations; a worksheet handle exposes
 handle in one sequence and would otherwise have to re-thread IDs they hold.
 
 **Mutations must be visible to the next read on the same handle.**
-``update_sheets.py`` writes then immediately re-reads (``:391`` → ``:393``)
-specifically to see its own write. Any implementation must honour that without
+``update_sheets.py`` writes (``_add_trailing_columns``) then immediately
+re-reads the tab (``ws.get_all_values()``) specifically to see its own write.
+Any implementation must honour that without
 requiring a fresh ``open_spreadsheet``.
 
 **Handle method names mirror gspread exactly.** This is a deliberate deviation
@@ -134,8 +135,8 @@ class WorksheetHandle(Protocol):
         """Write ``values`` with their top-left corner at ``range_name``.
 
         Writes only the cells covered by ``values`` — it does not clear the
-        rest of the sheet. Every call site but one uses ``"A1"`` (whole-body
-        replace); ``sync_params.py:258`` uses a computed anchor to write just
+        rest of the sheet. Most call sites use ``"A1"`` (whole-body replace);
+        ``sync_params.py`` uses a computed anchor (``start_cell``) to write just
         the columns it inserted.
 
         ``raw=False`` (``generate_status_sheet.py``) makes Sheets *parse* the
@@ -234,7 +235,9 @@ class SpreadsheetHandle(Protocol):
     def fetch_sheet_metadata(self, params: Optional[Mapping[str, Any]] = None) -> Mapping[str, Any]:
         """``spreadsheets.get`` without cell data. The Drive door asks for
         ``sheets(properties(sheetId,title),developerMetadata)`` to read each
-        tab's identity labels (written with ``createDeveloperMetadata``)."""
+        tab's identity labels (written with ``createDeveloperMetadata``), and
+        for each tab's index and protected ranges besides, to check a class
+        sheet's shape at the end of a command (rule 6)."""
 
     def values_batch_update(self, body: Mapping[str, Any]) -> Any:
         """``spreadsheets.values.batchUpdate`` — cell *values* by A1 range.
@@ -304,13 +307,12 @@ class DriveDoorway(Protocol):
         """Update content and/or rename and/or set Drive properties
         (merged into the file's own; a key set to None is removed).
 
-        ``name`` is deliberately independent of ``content``: the four existing
-        "create-or-update a Drive file" implementations disagree on whether an
-        update renames (``_upload_planars_config`` does not; the notebook and
-        report uploaders do), and ``restructure_sheets`` renames without
-        touching content at all. The doorway lets each caller choose rather than
-        picking one as canonical — collapsing those four is deferred until
-        after the migration, when snapshots exist to prove the collapse is safe.
+        ``name`` is deliberately independent of ``content``: callers differ on
+        whether an update renames (the manifest upload does not;
+        ``drive.create_or_update_shared_file``, for notebooks and reports,
+        does), and ``restructure_sheets`` renames without touching content at
+        all. The doorway lets each caller choose rather than picking one as
+        canonical.
         """
 
     def move_file(self, file_id: str, new_parent_id: str) -> None:

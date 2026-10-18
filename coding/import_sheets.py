@@ -41,7 +41,7 @@ import (same behaviour as validate-coding), on every tab whatever its Status.
 This write-back happens even without --apply and even when the local TSV is
 skipped.
 
-Authentication: same OAuth2 setup as generate_sheets.py.
+Authentication: same OAuth2 setup as generate_sheets.py (see drive.py).
 """
 from __future__ import annotations
 
@@ -978,7 +978,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                 # phrasal_accent/general — which validate-coding, reading the
                 # schema, treated as pair rows all along. Two places deciding
                 # the same thing and disagreeing is the defect this project
-                # keeps hitting; validate_coding.py:547 is the pattern copied.
+                # keeps hitting; validate_coding.revalidate_sheets is the pattern copied.
                 is_pair_tab = construction in pair_row_constructions.get(class_name, set())
                 keyed = keyed_row_constructions.get(class_name, {}).get(construction)
                 if keyed:

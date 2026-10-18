@@ -23,7 +23,7 @@ unrecognized key is never a violation), and nested structures the manifest
 grows over time (`sheets`, `planar`, `meta`, `glottolog`) are typed as loose
 `dict`s rather than fully modeled — the fields listed are current
 documentation of what a language entry usually carries (from the same
-fixture), not a claim about what it must carry. `Language_Manifest.check()`
+fixture), not a claim about what it must carry. `check()`
 returns problems as a list of strings rather than raising; callers decide
 what to do with them:
 

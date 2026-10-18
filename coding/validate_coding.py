@@ -380,7 +380,7 @@ def validate_annotation_rows(
     if actual_params != expected_params:
         issues.append(ValidationIssue(
             "warning", tab_name,
-            f"criterion columns differ from manifest — "
+            f"criterion columns differ from the diagnostics file — "
             f"expected {expected_params}, got {actual_params}"
         ))
 
@@ -660,7 +660,7 @@ def validate_pair_rows(
     if actual_params != expected_params:
         issues.append(ValidationIssue(
             "warning", tab_name,
-            f"criterion columns differ from manifest — "
+            f"criterion columns differ from the diagnostics file — "
             f"expected {expected_params}, got {actual_params}"
         ))
 
@@ -760,7 +760,7 @@ def validate_keyed_rows(
     if param_cols != expected_params:
         issues.append(ValidationIssue(
             "warning", tab_name,
-            f"criterion columns differ from manifest — "
+            f"criterion columns differ from the diagnostics file — "
             f"expected {expected_params}, got {param_cols}"))
 
     col_index = {name: i for i, name in enumerate(header)}

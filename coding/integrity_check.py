@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Project-wide integrity check for the planars annotation pipeline.
 
-Runs eight sections of checks and prints a structured report:
+Runs nine sections of checks and prints a structured report:
 
   PLANAR STRUCTURE               — validates planar_*.tsv for each language
   DIAGNOSTICS                    — validates diagnostics_*.tsv for each language
@@ -24,7 +24,7 @@ Runs eight sections of checks and prints a structured report:
                                     violation here means something structurally broken, not merely
                                     an unrecognized field -- safe to let drive a real error, unlike
                                     upload_manifest()'s own non-blocking version of the same check.
-  NEEDS REVIEW                   — surfaces [NEEDS REVIEW] / [PLACEHOLDER] / [NEEDS COORDINATOR
+  NEEDS REVIEW / PLACEHOLDERS    — surfaces [NEEDS REVIEW] / [PLACEHOLDER] / [NEEDS COORDINATOR
                                     INPUT] markers (check_codebook.needs_review_entries)
 
 Exit code 0 if no errors; 1 if any errors (warnings do not fail).
@@ -33,6 +33,10 @@ Usage:
     python -m coding integrity-check
     python -m coding integrity-check --lang arao1248
     python -m coding integrity-check --sheets
+
+Two fast standalone modes run one check only (used by the daily refresh):
+    python -m coding integrity-check --check-manifest    # manifest classes absent from diagnostics
+    python -m coding integrity-check --check-dependents  # stale dependent constructions
 """
 from __future__ import annotations
 
@@ -675,9 +679,11 @@ def _section_dependent_construction_staleness(
     lang_ids: List[str],
     diag_classes: dict,
 ) -> Tuple[int, int]:
-    """Check for stale dependent constructions using element-set comparison.
+    """Check for stale dependent constructions.
 
-    For each class with constructions[].depends_on and staleness_check=element_set:
+    First, keyed_source dependents (biuniqueness_deviations' morphemes/morphs)
+    are compared by row key (_keyed_staleness). Then, by element-set comparison:
+    for each class with constructions[].depends_on and staleness_check=element_set:
     compare the in-scope element set from the source TSV against the element set
     in the dependent (pair-row) TSV. Any difference means the dependent needs
     to be regenerated — either because an element was promoted (n→y) or demoted
@@ -894,7 +900,7 @@ def _section_manifest_shape() -> Tuple[int, int]:
         manifest = load_manifest(get_doorway())
     except Exception as exc:
         # Drive unavailable -- skip silently, same reasoning as
-        # --check-manifest above: import-sheets files an import-error issue
+        # --check-manifest in main(): import-sheets files an import-error issue
         # if Drive is genuinely down, so this section doesn't need to also.
         print(f"  (could not load manifest: {exc} — skipping)")
         return 0, 0

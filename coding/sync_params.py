@@ -15,7 +15,10 @@ Usage:
 This script propagates diagnostic criterion changes across all downstream layers:
 
   diagnostics_{lang_id}.yaml — per-language criterion source of truth (edit this)
-  diagnostics_{lang_id}.tsv  — derived artifact (regenerated to match YAML after each run)
+  diagnostics_{lang_id}.tsv  — derived artifact. --rename/--split/--merge --apply edit its
+                               Criteria cells and then rewrite the YAML from it (keeping the
+                               YAML's notes); otherwise it is regenerated from the YAML by
+                               sync-diagnostics-yaml --apply
   Google Sheets              — annotation form column headers (always updated)
 
 Imported TSVs in coded_data/ are downstream of Sheets; after any lifecycle operation run
@@ -559,8 +562,9 @@ def build_parser() -> argparse.ArgumentParser:
 def main(args: argparse.Namespace | None = None) -> None:
     """Entry point for `python -m coding sync-params`.
 
-    Compares expected param columns (from diagnostics_{lang_id}.tsv) against actual sheet
-    headers, inserts new columns before Comments, optionally removes stale columns,
+    Compares expected param columns (from diagnostics_{lang_id}.yaml, or the TSV if there
+    is no YAML) against actual sheet headers, inserts new columns in the diagnostics
+    file's order (_insert_at), optionally removes stale columns,
     applies dropdown validation, and updates the Drive manifest if anything changed.
     In dry-run mode (no --apply) only prints what would change.
     """
@@ -656,7 +660,7 @@ def main(args: argparse.Namespace | None = None) -> None:
 
         for class_name, sheet_info in sheets.items():
             if class_name not in expected:
-                print(f"[{class_name}] Not in diagnostics_{lang_id}.tsv — skipping")
+                print(f"[{class_name}] Not in diagnostics_{lang_id}.yaml — skipping")
                 continue
 
             ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])

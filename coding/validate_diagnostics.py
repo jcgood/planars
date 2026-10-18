@@ -1,21 +1,28 @@
 #!/usr/bin/env python3
-"""Validation for diagnostics_{lang_id}.tsv files.
+"""Validation for diagnostics_{lang_id}.yaml (the source) and its TSV copy.
 
-Called by generate-sheets and validate-coding to flag issues before sheets
-are created or revalidated.
+`validate_diagnostics_yaml` is called by sync-diagnostics-yaml;
+`validate_diagnostics_df` (the TSV) by generate-sheets, import-sheets,
+validate-coding and integrity-check, to flag issues before sheets are created
+or revalidated.
 
-Checks:
-  1. Structural     — required columns present; Language matches lang_id
-  2. Brace syntax   — criterion specs like stressed{y/n/both} are well-formed
-  3. Criterion names — base criterion names are defined in diagnostic_criteria.yaml
-  4. Class names    — class corresponds to a planars/ analysis module
-  5. Constructions  — 'general' must be alone; no duplicates within a class
-  6. keystone_active — if present, must be bool or {construction: bool} dict
-  7. Glottocode     — lang_id matches Glottocode format; advisory if not cached
-  8. Schema conform — every criterion is in the allowed set for its class
+Checks (both forms unless noted):
+  - Structural      — TSV: required columns present, Language matches lang_id;
+                      YAML: 'language' matches lang_id, 'classes' is a mapping
+  - Brace syntax    — TSV only: criterion specs like stressed{y/n/both} are
+                      well-formed (the YAML lists values for each criterion)
+  - Criterion names — base criterion names are defined in diagnostic_criteria.yaml
+  - Class names     — class corresponds to a planars/ analysis module
+  - Constructions   — 'general' must be alone (unless the class defines its
+                      constructions in the schema); no duplicates within a class
+  - keystone_active — YAML only: if present, must be bool or a
+                      {construction: bool} dict
+  - Glottocode      — lang_id matches Glottocode format; advisory if not
+                      verified (in the local cache or schemas/languages.yaml)
+  - Schema conform  — every criterion is in the allowed set for its class
                       (required_criteria ∪ optional_criteria in
                       diagnostic_classes.yaml)
-  9. Required classes — every class with collection_required: "y" in
+  - Required classes — every class with collection_required: "y" in
                       diagnostic_classes_status.yaml must be present
 """
 from __future__ import annotations

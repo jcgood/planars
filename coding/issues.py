@@ -33,7 +33,8 @@ What lives here:
 
 - **The operations callers use**: `find_open`, `file_issue` (comment on the
   open issue, or replace its title and body, or create one), `create`,
-  `comment`, `close_open`, `remind_stale`, `last_closed`, `is_open`, `body_of`.
+  `comment`, `close`, `close_open`, `remind_stale`, `last_closed`, `is_open`,
+  `body_of`.
 
 Choosing *which* issue a caller means stays with the caller, because it is a
 fact about that caller: `check-notes` keeps one issue per annotator by stored

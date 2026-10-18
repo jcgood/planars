@@ -87,7 +87,7 @@ def _included(spec: Dict, class_entry: Dict) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Builders: (class_entry, lang_id, planar_path) -> (rows, format(sheet_id))
+# Builders: (class_entry, lang_id, planar_path) -> (rows, format(sheet_id, rows))
 # ---------------------------------------------------------------------------
 
 _INSTRUCTIONS_HEADINGS = ("DETAILS", "WHAT THIS TESTS", "HOW TO ANNOTATE")

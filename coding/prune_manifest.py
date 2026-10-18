@@ -11,7 +11,8 @@ Run from the repo root:
     python -m coding prune-manifest --apply   # archive TSVs, move Drive sheet, remove manifest entry
     python -m coding prune-manifest --apply --all  # skip per-class confirmation prompts
 
-For each stale class (in manifest but not in diagnostics.tsv), --apply will:
+For each stale class (in manifest but not in diagnostics_{lang_id}.yaml, or its TSV if
+there is no YAML), --apply will:
   1. Write a timestamped manifest snapshot to manifest_archives/ (gitignored)
   2. Archive each active *.tsv in coded_data/{lang}/{class}/ to its archive/ subdirectory
   3. Remove the now-archived active TSV files

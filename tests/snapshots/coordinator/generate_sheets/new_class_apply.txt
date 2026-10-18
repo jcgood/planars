@@ -37,5 +37,5 @@ manifest.json uploaded (id: fake_manifest_file)
 Local manifest written to: sheets_manifest.json
 drive_config.json written.
 
-Share each language folder with your specialist (see folder URLs above).
+Each language's folder and sheets are shared with the annotator named in people.yaml; for a language with none listed, add one there and re-run with --apply.
 Drive door (enforce): checked 19 write(s) to 7 tab(s) or file(s); 0 broke a rule.

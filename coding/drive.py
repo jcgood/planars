@@ -239,7 +239,7 @@ def _load_manifest_with(download_json: Callable[[str], Dict]) -> Dict:
 
 def _open_spreadsheet(gc: gspread.Client, spreadsheet_id: str) -> gspread.Spreadsheet:
     """Open a spreadsheet by ID, retrying on 429 quota errors with backoff."""
-    from .drive_door import _retry  # lazy: drive_door imports from this package
+    from .drive_door import _retry
     return _retry(lambda: gc.open_by_key(spreadsheet_id))
 
 

@@ -13,12 +13,13 @@ Design (settled by discussion, not re-litigated here):
     how everything else in this project is scoped (per-language folders,
     per-language diagnostics files, etc.).
   - Created once, reused indefinitely (find-or-create). Never recreated.
-  - The issue number lives in sheets_manifest.json as
+  - The issue number lives in the manifest (manifest.json on Drive;
+    sheets_manifest.json is the local copy) as
     manifest[lang_id]["notification_issue"] -- NOT in schemas/languages.yaml.
     languages.yaml is hand-edited coordinator metadata (source, author,
     annotator -- things a human types); the notification issue number is
     system-managed (auto-created and referenced by automation), which is
-    exactly the kind of thing sheets_manifest.json already holds per
+    exactly the kind of thing the manifest already holds per
     language (folder_url, spreadsheet_ids, etc.).
   - Triggered after `restructure-sheets --apply`, once per language that had
     actual changes: post a comment to that language's tracking issue

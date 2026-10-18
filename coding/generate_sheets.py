@@ -10,8 +10,8 @@ Dry-run by default, like every other mutating command in this project (see
 docs/tooling-design.md) — no Drive writes happen without --apply. On the first run
 (with --apply), creates one Google Sheet per analysis class with one tab per
 construction. On subsequent runs, only creates sheets for classes not yet in the
-Drive manifest (e.g. a newly added aspiration class). Existing sheets are left
-untouched.
+Drive manifest (e.g. a newly added aspiration class), and adds tabs for constructions
+newly added to an existing class. Existing tabs are left untouched.
 
 To sync param column changes to existing sheets: python -m coding sync-params --apply
 
@@ -148,8 +148,8 @@ def _create_or_update_tsv_sheet(
 
     If existing_id is given, clears and rewrites that sheet; otherwise creates a new one
     (labelled ``kind``: ``planar_sheet`` or ``diagnostics_sheet``),
-    moves it to folder_id, and shares it with the language's annotator (if one is on
-    file in languages.yaml) as a named editor.
+    moves it to folder_id, and shares it with the language's annotator (if
+    languages.yaml names one; see coding/people.py) as a named editor.
 
     Returns (spreadsheet_id, url).
     """
@@ -203,9 +203,11 @@ def _upload_lang_setup_as_sheets(
 ) -> Dict:
     """Upload planar_*.tsv and diagnostics_{lang_id}.tsv as editable Google Sheets.
 
-    Google Sheets is the source of truth for planar structure and diagnostics; local TSVs
-    are downstream copies produced by import-sheets. This function pushes the current local
-    TSV state to Sheets on initial setup, or on --force to propagate intentional edits.
+    The planar Sheet is the source of truth for planar structure (import-planar copies it
+    down to the local TSV). The diagnostics Sheet is a copy of diagnostics_{lang_id}.yaml,
+    which is the source (sync-diagnostics-yaml keeps the two in line). This function pushes
+    the current local TSV state to Sheets on initial setup, or on --force to propagate
+    intentional edits.
 
     Skips a file if its sheet ID is already in existing_lang_data and force=False.
 
@@ -724,7 +726,8 @@ def _phrasal_accent_obligatory_core(lang_id: str, keystone_pos: int) -> Tuple[in
     """Return the (left, right) Position_Number range of the obligatory core.
 
     Tier 1 of issue #237's adjacency algorithm: reuses free_occurrence's minimal
-    free-occurrence span logic (planars/free_occurrence.py lines ~114-140) rather
+    free-occurrence span logic (the "Minimal span" block of planars/free_occurrence.py's
+    derive_free_occurrence_spans) rather
     than reimplementing it. For a bound keystone (free=n), the positions it
     structurally depends on (dependent-on-left/dependent-on-right) are exactly the
     positions that must be present whenever the keystone is realized — i.e. they
@@ -987,7 +990,7 @@ def _populate_tab_pairs(
         tab_name:     worksheet title to create or clear.
         param_names:  ordered list of criterion column names (e.g. ["scopal"]).
         param_values: dict mapping criterion name to list of allowed values.
-        pairs:        candidate pair rows from _build_nonperm_pairs (no header).
+        pairs:        candidate pair rows from pair_rows() (no header).
         prefill:      optional {(Element_A, Element_B): {col: val}} dict; when
                       provided, retained pairs are pre-filled with existing values.
 
@@ -1408,7 +1411,7 @@ def _format_and_validate(
     Sends a single batch_update to the Sheets API containing:
     - a freeze request for the header row
     - a bold request for the header row
-    - one dropdown validation rule per param column
+    - one dropdown validation rule per param column (none for a free-entry column)
     - one header-cell note per param column (if param_notes is provided)
 
     Validation is non-strict (showCustomUi=True, strict=False) so annotators
@@ -2135,8 +2138,9 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     With --apply, iterates over all planar_*.tsv files in coded_data/*/lang_setup/
     and for each language:
-    - Creates planar_*.tsv and diagnostics_{lang_id}.tsv as editable Google Sheets (source of
-      truth). Skips files whose sheet IDs are already in the manifest unless --force.
+    - Creates planar_*.tsv and diagnostics_{lang_id}.tsv as editable Google Sheets (the planar
+      Sheet is the source for planar structure; the diagnostics Sheet copies the YAML).
+      Skips files whose sheet IDs are already in the manifest unless --force.
     - Creates one annotation Google Sheet per analysis class (skipping existing ones unless
       --force). Each sheet has one tab per construction with dropdown validation.
     - Uploads the merged manifest.json manifest to Drive after each language.
@@ -2481,7 +2485,8 @@ def main(args: argparse.Namespace | None = None) -> None:
                         "longitude": glotto["longitude"],
                     }
 
-        # Upload planar and diagnostics as editable Google Sheets (source of truth).
+        # Upload planar and diagnostics as editable Google Sheets (see
+        # _upload_lang_setup_as_sheets for which is the source).
         # Skips files whose sheet IDs are already in the manifest unless --force.
         input_sheet_info = _upload_lang_setup_as_sheets(
             doorway, planar_dir, lang_id, folder_id, existing_lang_data, force=force
@@ -2609,7 +2614,8 @@ def main(args: argparse.Namespace | None = None) -> None:
     print(f"\nLocal manifest written to: {MANIFEST_PATH.name}")
     print(f"drive_config.json written.")
 
-    print(f"\nShare each language folder with your specialist (see folder URLs above).")
+    print("\nEach language's folder and sheets are shared with the annotator named in "
+          "people.yaml; for a language with none listed, add one there and re-run with --apply.")
 
     from .generate_notebooks import regenerate_notebooks
     regenerate_notebooks()

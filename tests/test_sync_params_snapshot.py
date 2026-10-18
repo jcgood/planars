@@ -371,7 +371,7 @@ def test_removing_a_column_does_not_mask_a_sibling_criterions_stale_dropdown(env
 def test_a_class_not_in_diagnostics_is_named(env):
     env.edit_yaml("stan1293", lambda d: d["classes"].pop("proform"))
     out = env.run(["sync-params"])
-    assert "[proform] Not in diagnostics_stan1293.tsv — skipping" in out
+    assert "[proform] Not in diagnostics_stan1293.yaml — skipping" in out
 
 
 def test_a_missing_tab_is_named_and_skipped(env):

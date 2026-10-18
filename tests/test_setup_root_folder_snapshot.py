@@ -256,5 +256,7 @@ def test_absent_manifest_and_notebook_are_reported_with_the_fix(env, monkeypatch
     out = run(monkeypatch)
     assert "No manifest.json found" in out
     assert "No all_languages.ipynb found" in out
-    # Twice for the two missing files, plus once in the closing next-steps list.
-    assert out.count("generate-notebooks --apply") == 3
+    # The manifest is made by generate-sheets (generate-notebooks only reads
+    # it); the notebook by generate-notebooks, also named in the closing list.
+    assert out.count("generate-sheets --apply to create it") == 1
+    assert out.count("generate-notebooks --apply") == 2
