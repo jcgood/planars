@@ -11,8 +11,8 @@ import yaml
 from coding.make_forms import (
     _read_diagnostics_for_language,
     _yaml_to_tsv_df,
-    _tsv_df_to_yaml,
     _dump_diagnostics_yaml,
+    _load_diagnostics_yaml_for_edit,
     _diff_diagnostics_tsv_yaml,
     _apply_yaml_diff,
     build_element_index,
@@ -124,37 +124,7 @@ def test_yaml_to_tsv_df_non_default_values():
 
 
 # ---------------------------------------------------------------------------
-# _tsv_df_to_yaml
-# ---------------------------------------------------------------------------
-
-def test_tsv_df_to_yaml_round_trip():
-    """TSV → YAML → TSV round-trip preserves class/construction/criteria.
-
-    Classes with construction_criteria emit one row per construction in both
-    df and df2, so we compare by (Class, Constructions) rather than Class alone.
-    """
-    df = pd.read_csv(
-        Path(__file__).parent.parent / "coded_data" / "stan1293" / "lang_setup" / "diagnostics_stan1293.tsv",
-        sep="\t", dtype=str, keep_default_na=False,
-    )
-    yaml_data = _tsv_df_to_yaml(df, "stan1293")
-    df2 = _yaml_to_tsv_df(yaml_data, "stan1293")
-
-    assert set(df["Class"]) == set(df2["Class"])
-    # Index df2 by (Class, Constructions) for O(1) lookup; construction-criteria
-    # classes have one row per construction so this key is unique.
-    df2_index = {
-        (r["Class"], r["Constructions"]): r
-        for _, r in df2.iterrows()
-    }
-    for _, row in df.iterrows():
-        key = (row["Class"], row["Constructions"])
-        assert key in df2_index, f"Row {key} missing from round-tripped DataFrame"
-        assert row["Criteria"] == df2_index[key]["Criteria"]
-
-
-# ---------------------------------------------------------------------------
-# _dump_diagnostics_yaml
+# _dump_diagnostics_yaml / _load_diagnostics_yaml_for_edit
 # ---------------------------------------------------------------------------
 
 def test_dump_diagnostics_yaml_inline_lists():
@@ -163,6 +133,19 @@ def test_dump_diagnostics_yaml_inline_lists():
     output = _dump_diagnostics_yaml(data)
     assert "[y, n]" in output
     assert "[y, n, both]" in output
+
+
+_LANGUAGE_YAMLS = sorted(
+    (Path(__file__).parent.parent / "coded_data").glob("*/lang_setup/diagnostics_*.yaml"))
+
+
+@pytest.mark.skipif(not _LANGUAGE_YAMLS, reason="coded_data/ (planars-data) is not checked out")
+@pytest.mark.parametrize("path", _LANGUAGE_YAMLS, ids=lambda p: p.stem)
+def test_every_language_yaml_survives_load_and_dump_unchanged(path):
+    """A command that edits a diagnostics YAML writes back everything it did
+    not change exactly as it was: comments, quoting, line layout (#315)."""
+    text = path.read_text(encoding="utf-8")
+    assert _dump_diagnostics_yaml(_load_diagnostics_yaml_for_edit(path)) == text
 
 
 # ---------------------------------------------------------------------------

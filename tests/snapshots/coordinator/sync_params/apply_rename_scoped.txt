@@ -1,22 +1,32 @@
 Connecting to Google APIs...
-  [noninterruption] diagnostics Criteria: 'free{y/n}, multiple{y/n}' -> 'free_form{y/n}, multiple{y/n}'
+  [noninterruption] diagnostics criteria: 'free{y/n}, multiple{y/n}' -> 'free_form{y/n}, multiple{y/n}'
   [arao1248] YAML updated → diagnostics_arao1248.yaml
+  [arao1248] WARNING diagnostics_arao1248.yaml [noninterruption]: Diagnostic criterion 'free_form' is not defined in diagnostic_criteria.yaml
+  [arao1248] WARNING diagnostics_arao1248.yaml [noninterruption]: Diagnostic criterion 'free_form' is not in the allowed set for class 'noninterruption' in diagnostic_classes.yaml (allowed: ['free', 'multiple'])
+  [arao1248] ERROR diagnostics_arao1248.yaml: Required class 'proform' (collection_required: "y") is missing
+  [arao1248] Updated → diagnostics_arao1248.tsv
 
 Language: arao1248
 Mode:     apply
 Renames:  ['noninterruption:free:free_form']
   [noninterruption/general] Rename: free → free_form
     Renamed.
-  [noninterruption] diagnostics Criteria: 'free{y/n}, multiple{y/n}' -> 'free_form{y/n}, multiple{y/n}'
+  [noninterruption] diagnostics criteria: 'free{y/n}, multiple{y/n}' -> 'free_form{y/n}, multiple{y/n}'
   [stan1293] YAML updated → diagnostics_stan1293.yaml
+  [stan1293] WARNING diagnostics_stan1293.yaml [noninterruption]: Diagnostic criterion 'free_form' is not defined in diagnostic_criteria.yaml
+  [stan1293] WARNING diagnostics_stan1293.yaml [noninterruption]: Diagnostic criterion 'free_form' is not in the allowed set for class 'noninterruption' in diagnostic_classes.yaml (allowed: ['free', 'multiple'])
+  [stan1293] Updated → diagnostics_stan1293.tsv
 
 Language: stan1293
 Mode:     apply
 Renames:  ['noninterruption:free:free_form']
   [noninterruption/general] Rename: free → free_form
     Renamed.
-  [noninterruption] diagnostics Criteria: 'free{y/n}, multiple{y/n}' -> 'free_form{y/n}, multiple{y/n}'
+  [noninterruption] diagnostics criteria: 'free{y/n}, multiple{y/n}' -> 'free_form{y/n}, multiple{y/n}'
   [synth0001] YAML updated → diagnostics_synth0001.yaml
+  [synth0001] WARNING diagnostics_synth0001.yaml [noninterruption]: Diagnostic criterion 'free_form' is not defined in diagnostic_criteria.yaml
+  [synth0001] WARNING diagnostics_synth0001.yaml [noninterruption]: Diagnostic criterion 'free_form' is not in the allowed set for class 'noninterruption' in diagnostic_classes.yaml (allowed: ['free', 'multiple'])
+  [synth0001] Updated → diagnostics_synth0001.tsv
 
 Language: synth0001
 Mode:     apply

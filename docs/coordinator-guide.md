@@ -430,7 +430,7 @@ python -m coding sync-params --apply --merge old1:old2:new     # merge two crite
 python -m coding sync-params --apply --remove                  # also remove stale columns
 ```
 
-Preserves existing annotations while inserting new columns before Comments. Rename updates headers and validation in place. Split/merge rename the old column(s) to `_split_`/`_merged_` prefixes and add the new column(s) — coordinator remaps values then removes stale columns manually. `integrity-check --sheets` warns on any stale prefixed columns. Automatically regenerates and uploads notebooks afterward.
+Preserves existing annotations while inserting each new column where `diagnostics_{lang_id}.yaml` lists it among the tab's criteria. Rename, split and merge also make the same change to the criteria in `diagnostics_{lang_id}.yaml` (only those lines change; comments are kept) and regenerate `diagnostics_{lang_id}.tsv` from it, so there is no need to edit the YAML by hand first; commit and push both files inside `coded_data/` afterwards. Rename updates headers and validation in place. Split/merge rename the old column(s) to `_split_`/`_merged_` prefixes and add the new column(s) — coordinator remaps values then removes stale columns manually. `integrity-check --sheets` warns on any stale prefixed columns. Automatically regenerates and uploads notebooks afterward.
 
 #### Renaming an analysis class
 

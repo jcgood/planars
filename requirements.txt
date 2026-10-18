@@ -193,6 +193,8 @@ rpds-py==2026.6.3
     # via
     #   jsonschema
     #   referencing
+ruamel-yaml==0.19.1
+    # via -r requirements.in
 scipy==1.18.1
     # via -r requirements.in
 simplejson==3.20.2

@@ -37,7 +37,8 @@ TSV → YAML (--from-tsv):
     - Ambiguous (flagged for review): unknown classes or criteria not in the
       schema; class removals (may be intentional retirements).
     Deterministic changes are applied to the YAML automatically when --apply
-    is given. Ambiguous changes are printed and written to
+    is given, to the file as loaded (make_forms._load_diagnostics_yaml_for_edit),
+    so its comments and layout are kept. Ambiguous changes are printed and written to
     diagnostics_drift.json for coordinator review.
 
 Each language must have a diagnostics_{lang_id}.yaml in its lang_setup/
@@ -61,6 +62,7 @@ CODED_DATA = ROOT / "coded_data"
 from .make_forms import (
     _yaml_to_tsv_df,
     _dump_diagnostics_yaml,
+    _load_diagnostics_yaml_for_edit,
     _diff_diagnostics_tsv_yaml,
     _apply_yaml_diff,
 )
@@ -160,7 +162,9 @@ def _sync_from_tsv(lang_id: str, apply: bool, drift_entries: List[Dict]) -> bool
         kinds = [c["kind"] for c in deterministic]
         print(f"  [{lang_id}] Deterministic changes ({len(deterministic)}): {', '.join(kinds)}")
         if apply:
-            new_yaml = _apply_yaml_diff(yaml_data, deterministic)
+            # Applied to the YAML as loaded for editing, so its comments
+            # and layout survive the write.
+            new_yaml = _apply_yaml_diff(_load_diagnostics_yaml_for_edit(yaml_path), deterministic)
             yaml_path.write_text(_dump_diagnostics_yaml(new_yaml), encoding="utf-8")
             print(f"  [{lang_id}] YAML updated.")
         else:

@@ -1,29 +1,27 @@
 """Tests for coding/sync_params.py — criterion column sync logic.
 
-Covers the pure/testable functions: Criteria-cell token manipulation
-(rename/split/merge), diagnostics TSV updates, CLI flag parsing, and sheet
-header introspection against a minimal fake Worksheet. Live-Sheet-mutating
-orchestration in main() (batch_update calls, column insertion/deletion) is
-not covered here, matching the existing pattern for restructure_sheets.py
-and update_sheets.py's own helper-function tests.
+Covers the pure/testable functions: criterion edits in the diagnostics YAML
+(rename/split/merge), CLI flag parsing, and sheet header introspection
+against a minimal fake Worksheet. main() as a whole is run against the
+offline Drive in test_sync_params_snapshot.py.
 """
 from __future__ import annotations
 
-import pandas as pd
+import textwrap
+
 import pytest
 
+from coding.make_forms import _dump_diagnostics_yaml, _load_diagnostics_yaml_for_edit
 from coding.sync_params import (
     _build_dropdown_refresh_requests,
-    _criterion_name_from_spec,
     _get_current_params,
-    _merge_criteria_in_cell,
+    _merge_in_yaml,
     _parse_merges,
     _parse_rename_pair,
     _parse_renames,
     _parse_splits,
-    _rename_criterion_in_cell,
-    _split_criterion_in_cell,
-    _update_diagnostics_tsv,
+    _rename_in_yaml,
+    _split_in_yaml,
 )
 
 
@@ -41,41 +39,7 @@ class _FakeWorksheet:
 
 
 # ---------------------------------------------------------------------------
-# _criterion_name_from_spec
-# ---------------------------------------------------------------------------
-
-class TestCriterionNameFromSpec:
-    def test_plain_name(self):
-        assert _criterion_name_from_spec("free") == "free"
-
-    def test_strips_brace_values(self):
-        assert _criterion_name_from_spec("stressed{y/n/both}") == "stressed"
-
-    def test_strips_whitespace(self):
-        assert _criterion_name_from_spec("  free  ") == "free"
-
-
-# ---------------------------------------------------------------------------
-# _rename_criterion_in_cell
-# ---------------------------------------------------------------------------
-
-class TestRenameCriterionInCell:
-    def test_renames_matching_token(self):
-        assert _rename_criterion_in_cell("free, obligatory", "free", "shareable") == "shareable, obligatory"
-
-    def test_preserves_brace_values(self):
-        result = _rename_criterion_in_cell("stressed{y/n/both}, free", "stressed", "accented")
-        assert result == "accented{y/n/both}, free"
-
-    def test_no_match_leaves_cell_unchanged(self):
-        assert _rename_criterion_in_cell("free, obligatory", "missing", "new") == "free, obligatory"
-
-    def test_empty_cell(self):
-        assert _rename_criterion_in_cell("", "free", "new") == ""
-
-
-# ---------------------------------------------------------------------------
-# _split_criterion_in_cell
+# Criterion edits in diagnostics_{lang_id}.yaml (rename/split/merge, #315)
 # ---------------------------------------------------------------------------
 
 # Criteria a split or merge creates must be defined in the schema with values
@@ -92,95 +56,113 @@ def _test_criteria(monkeypatch):
     monkeypatch.setattr(sp, "criterion_values", lambda n: _TEST_CRITERIA.get(n) or real(n))
 
 
-class TestSplitCriterionInCell:
-    def test_splits_matching_token_into_two(self):
-        result = _split_criterion_in_cell("free, obligatory", "free", "free_left", "free_right")
-        assert result == "free_left{y/n}, free_right{y/n/both}, obligatory"
+YAML_TEXT = textwrap.dedent("""\
+    language: lang0001
+    classes:
+      noninterruption:
+        constructions: [general]
+        criteria:
+          a: [y, n]
+          # why free is here
+          free: [y, n, both]
+          b: [y, n]
+        notes: "kept as written"
+      metrical:
+        constructions: [stress_domain, other]
+        construction_criteria:
+          stress_domain:
+            left: [y, n]
+            mid: [y, n]
+            # why right is here
+            right: [y, n]
+          other:
+            free: [y, n]
+        obligatory_positions: [v:npsubj1]
+""")
 
-    def test_no_match_leaves_cell_unchanged(self):
-        assert _split_criterion_in_cell("free, obligatory", "missing", "a", "b") == "free, obligatory"
 
-    def test_preserves_position_of_split(self):
-        result = _split_criterion_in_cell("a, free, b", "free", "x", "y")
-        assert result == "a, x{y/n}, y{a/b}, b"
+@pytest.fixture()
+def yaml_data(tmp_path):
+    path = tmp_path / "diagnostics_lang0001.yaml"
+    path.write_text(YAML_TEXT, encoding="utf-8")
+    return _load_diagnostics_yaml_for_edit(path)
 
-    def test_a_new_criterion_with_no_schema_values_stops_the_command(self):
+
+def _crit(data, cls, construction=None):
+    c = data["classes"][cls]
+    return c["construction_criteria"][construction] if construction else c["criteria"]
+
+
+class TestYamlRoundTrip:
+    def test_an_unedited_yaml_is_written_back_byte_for_byte(self, yaml_data):
+        assert _dump_diagnostics_yaml(yaml_data) == YAML_TEXT
+
+
+class TestRenameInYaml:
+    def test_renames_in_place_keeping_values(self, yaml_data):
+        changes = _rename_in_yaml(yaml_data, "free", "shareable", None)
+        assert list(_crit(yaml_data, "noninterruption")) == ["a", "shareable", "b"]
+        assert list(_crit(yaml_data, "noninterruption")["shareable"]) == ["y", "n", "both"]
+        assert list(_crit(yaml_data, "metrical", "other")) == ["shareable"]
+        assert len(changes) == 2
+
+    def test_only_the_renamed_line_changes(self, yaml_data):
+        _rename_in_yaml(yaml_data, "free", "shareable", "noninterruption")
+        assert _dump_diagnostics_yaml(yaml_data) == YAML_TEXT.replace(
+            "      free: [y, n, both]", "      shareable: [y, n, both]")
+
+    def test_class_filter_restricts_the_rename(self, yaml_data):
+        changes = _rename_in_yaml(yaml_data, "free", "shareable", "metrical")
+        assert "free" in _crit(yaml_data, "noninterruption")
+        assert changes and all("[metrical/other]" in c for c in changes)
+
+    def test_absent_criterion_changes_nothing(self, yaml_data):
+        assert _rename_in_yaml(yaml_data, "missing", "new", None) == []
+        assert _dump_diagnostics_yaml(yaml_data) == YAML_TEXT
+
+    def test_renaming_onto_an_existing_criterion_stops_the_command(self, yaml_data):
+        with pytest.raises(SystemExit, match="already listed"):
+            _rename_in_yaml(yaml_data, "free", "b", "noninterruption")
+
+
+class TestSplitInYaml:
+    def test_splits_in_place_with_schema_values(self, yaml_data):
+        _split_in_yaml(yaml_data, "free", "free_left", "free_right")
+        crit = _crit(yaml_data, "noninterruption")
+        assert list(crit) == ["a", "free_left", "free_right", "b"]
+        assert list(crit["free_right"]) == ["y", "n", "both"]
+        out = _dump_diagnostics_yaml(yaml_data)
+        assert "      # why free is here\n      free_left: [y, n]\n      free_right: [y, n, both]\n" in out
+
+    def test_a_new_criterion_with_no_schema_values_stops_the_command(self, yaml_data):
         with pytest.raises(SystemExit, match="not defined"):
-            _split_criterion_in_cell("free", "free", "undefined_one", "undefined_two")
+            _split_in_yaml(yaml_data, "free", "undefined_one", "undefined_two")
 
 
-# ---------------------------------------------------------------------------
-# _merge_criteria_in_cell
-# ---------------------------------------------------------------------------
+class TestMergeInYaml:
+    def test_merges_at_the_first_ones_place(self, yaml_data):
+        _merge_in_yaml(yaml_data, "left", "right", "combined")
+        assert list(_crit(yaml_data, "metrical", "stress_domain")) == ["combined", "mid"]
 
-class TestMergeCriteriaInCell:
-    def test_merges_both_present(self):
-        result = _merge_criteria_in_cell("left, right, other", "left", "right", "combined")
-        assert result == "combined{y/n}, other"
+    def test_a_merged_away_criterions_comment_is_kept(self, yaml_data):
+        _merge_in_yaml(yaml_data, "left", "right", "combined")
+        out = _dump_diagnostics_yaml(yaml_data)
+        assert "# why right is here\n        combined: [y, n]\n        mid: [y, n]\n" in out
 
-    def test_merges_only_one_present(self):
-        result = _merge_criteria_in_cell("left, other", "left", "right", "combined")
-        assert result == "combined{y/n}, other"
+    def test_merges_when_only_one_is_present(self, yaml_data):
+        _merge_in_yaml(yaml_data, "free", "nothere", "combined")
+        assert list(_crit(yaml_data, "noninterruption")) == ["a", "combined", "b"]
 
-    def test_new_token_inserted_at_first_match_position(self):
-        result = _merge_criteria_in_cell("a, left, b, right, c", "left", "right", "combined")
-        assert result == "a, combined{y/n}, b, c"
-
-    def test_neither_present_leaves_cell_unchanged(self):
-        assert _merge_criteria_in_cell("free, obligatory", "left", "right", "combined") == "free, obligatory"
+    def test_neither_present_changes_nothing(self, yaml_data):
+        assert _merge_in_yaml(yaml_data, "p", "q", "combined") == []
 
 
-# ---------------------------------------------------------------------------
-# _update_diagnostics_tsv
-# ---------------------------------------------------------------------------
-
-class TestUpdateDiagnosticsTsv:
-    def _write_tsv(self, path, rows):
-        pd.DataFrame(rows).to_csv(path, sep="\t", index=False)
-
-    def test_dry_run_reports_changes_without_writing(self, tmp_path):
-        diag = tmp_path / "diagnostics_stan1293.tsv"
-        self._write_tsv(diag, [{"Class": "metrical", "Criteria": "free, obligatory"}])
-        changes = _update_diagnostics_tsv(
-            diag, lambda c: _rename_criterion_in_cell(c, "free", "shareable"),
-            class_filter=None, dry_run=True,
-        )
-        assert len(changes) == 1
-        assert "free" in changes[0] and "shareable" in changes[0]
-        df = pd.read_csv(diag, sep="\t", dtype=str)
-        assert df.at[0, "Criteria"] == "free, obligatory"  # unchanged on disk
-
-    def test_apply_writes_changes(self, tmp_path):
-        diag = tmp_path / "diagnostics_stan1293.tsv"
-        self._write_tsv(diag, [{"Class": "metrical", "Criteria": "free, obligatory"}])
-        _update_diagnostics_tsv(
-            diag, lambda c: _rename_criterion_in_cell(c, "free", "shareable"),
-            class_filter=None, dry_run=False,
-        )
-        df = pd.read_csv(diag, sep="\t", dtype=str)
-        assert df.at[0, "Criteria"] == "shareable, obligatory"
-
-    def test_class_filter_restricts_rows(self, tmp_path):
-        diag = tmp_path / "diagnostics_stan1293.tsv"
-        self._write_tsv(diag, [
-            {"Class": "metrical", "Criteria": "free"},
-            {"Class": "segmental", "Criteria": "free"},
-        ])
-        changes = _update_diagnostics_tsv(
-            diag, lambda c: _rename_criterion_in_cell(c, "free", "shareable"),
-            class_filter="metrical", dry_run=True,
-        )
-        assert len(changes) == 1
-        assert "[metrical]" in changes[0]
-
-    def test_no_changes_when_criterion_absent(self, tmp_path):
-        diag = tmp_path / "diagnostics_stan1293.tsv"
-        self._write_tsv(diag, [{"Class": "metrical", "Criteria": "obligatory"}])
-        changes = _update_diagnostics_tsv(
-            diag, lambda c: _rename_criterion_in_cell(c, "free", "shareable"),
-            class_filter=None, dry_run=True,
-        )
-        assert changes == []
+def test_other_fields_survive_an_edit(yaml_data):
+    """The old TSV round trip kept only notes; obligatory_positions was lost."""
+    _rename_in_yaml(yaml_data, "free", "shareable", None)
+    out = _dump_diagnostics_yaml(yaml_data)
+    assert "obligatory_positions: [v:npsubj1]" in out
+    assert 'notes: "kept as written"' in out
 
 
 # ---------------------------------------------------------------------------

@@ -12,8 +12,11 @@ criterion lists its values (``free{y/n}`` in the TSV); one written without
 values is an error, never a default. A class using ``construction_criteria``
 gives one row per construction, so each tab shows only its own criteria.
 ``_yaml_to_tsv_df`` / ``_diff_diagnostics_tsv_yaml`` / ``_apply_yaml_diff``
-are the conversions ``sync-diagnostics-yaml`` uses; ``_tsv_df_to_yaml`` is
-the one ``sync-params`` uses to regenerate the YAML.
+are the conversions ``sync-diagnostics-yaml`` uses. Nothing rebuilds the
+YAML from the TSV (``--from-tsv`` applies the differences it finds to the
+YAML as loaded): a command that changes the YAML loads it with
+``_load_diagnostics_yaml_for_edit``, edits it and writes it back with
+``_dump_diagnostics_yaml``, which keep its comments and layout.
 
 Also ``resolve_keystone_active`` / ``resolve_keystone_na_criteria`` /
 ``resolve_obligatory_positions`` (per-language settings read from the YAML)
@@ -22,6 +25,7 @@ and ``ARCHIVE_STAMP_FORMAT``, the one archive datestamp format.
 from __future__ import annotations
 
 import copy
+import io
 import re
 from difflib import get_close_matches
 from pathlib import Path
@@ -30,6 +34,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
 import yaml
 from pandera.errors import SchemaError
+from ruamel.yaml import YAML as RoundTripYAML
+from ruamel.yaml.comments import CommentedSeq
 
 from .contracts import VALID_CLASS_TYPES, class_type_schema, position_integer_schema, position_is_integer
 from .schemas import load_planar_schema
@@ -331,29 +337,57 @@ def _resolve_diagnostics_yaml_path(lang_id: str, data_dir: Path | str) -> Path:
 
 
 # ---------------------------------------------------------------------------
-# Compact YAML dumper — writes lists as inline [y, n] style
+# Editing diagnostics_{lang_id}.yaml in place
 # ---------------------------------------------------------------------------
+# The YAML is a hand-edited source with comments, so a command that changes it
+# loads it with ruamel.yaml and writes back only what it changed: comments,
+# quoting and line layout survive (#315; PyYAML's dump dropped the comments,
+# re-quoted strings and re-wrapped long lines). Loading and dumping an
+# unchanged file gives back the same bytes, for every language in
+# coded_data/ (tests/test_make_forms.py checks).
 
-class _CompactDumper(yaml.Dumper):
-    pass
+def _diagnostics_yaml_rt() -> RoundTripYAML:
+    rt = RoundTripYAML()
+    rt.preserve_quotes = True
+    rt.width = 4096          # never re-wrap a long line
+    rt.indent(mapping=2, sequence=4, offset=2)
+    return rt
 
 
-def _inline_list_representer(dumper: yaml.Dumper, data: list) -> Any:
-    return dumper.represent_sequence("tag:yaml.org,2002:seq", data, flow_style=True)
+def _load_diagnostics_yaml_for_edit(path: Path | str) -> Any:
+    """Load diagnostics_{lang_id}.yaml keeping its comments and layout.
+
+    Returns ruamel's mappings (dict subclasses); write it back with
+    ``_dump_diagnostics_yaml``.
+    """
+    return _diagnostics_yaml_rt().load(Path(path).read_text(encoding="utf-8"))
 
 
-_CompactDumper.add_representer(list, _inline_list_representer)
+def _flow_lists(node: Any) -> Any:
+    """Write every list that has no layout of its own inline ([y, n])."""
+    if isinstance(node, dict):
+        for k in list(node):
+            node[k] = _flow_lists(node[k])
+        return node
+    if isinstance(node, list):
+        if not isinstance(node, CommentedSeq):
+            node = CommentedSeq(node)
+            node.fa.set_flow_style()
+        for i, v in enumerate(node):
+            node[i] = _flow_lists(v)
+        return node
+    return node
 
 
-def _dump_diagnostics_yaml(data: dict) -> str:
-    """Serialize a diagnostics YAML dict to a string with inline value lists."""
-    return yaml.dump(
-        data,
-        Dumper=_CompactDumper,
-        default_flow_style=False,
-        allow_unicode=True,
-        sort_keys=False,
-    )
+def _dump_diagnostics_yaml(data: Any) -> str:
+    """Serialize a diagnostics YAML to a string, value lists inline.
+
+    Given what ``_load_diagnostics_yaml_for_edit`` returned, everything the
+    caller did not change comes back exactly as it was read.
+    """
+    buf = io.StringIO()
+    _diagnostics_yaml_rt().dump(_flow_lists(data), buf)
+    return buf.getvalue()
 
 
 # ---------------------------------------------------------------------------
@@ -531,54 +565,6 @@ def _yaml_to_tsv_df(yaml_data: dict, lang_id: str) -> pd.DataFrame:
                 "Criteria": ", ".join(_encode_criteria_dict(criteria_dict)),
             })
     return pd.DataFrame(rows, columns=DIAGNOSTICS_TSV_COLUMNS)
-
-
-def _tsv_df_to_yaml(df: pd.DataFrame, lang_id: str) -> dict:
-    """Convert a diagnostics TSV DataFrame to a YAML-format dict.
-
-    Used for migrating existing TSVs to YAML and for round-tripping TSV
-    changes back into YAML.  Each TSV row (one per class) becomes a class
-    entry; constructions are expanded into a list; criteria brace syntax is
-    decoded into explicit value lists.
-
-    When multiple rows share the same Class (produced by ``_yaml_to_tsv_df``
-    for classes with ``construction_criteria``), the rows are merged back into
-    a ``construction_criteria`` dict so the round-trip is lossless.
-    """
-    classes: Dict[str, Any] = {}
-    for _, row in df.iterrows():
-        lang = str(row.get("Language", "")).strip()
-        if lang != lang_id:
-            continue
-
-        class_name = str(row.get("Class", "")).strip()
-        constructions = _parse_csv_list(str(row.get("Constructions", "")))
-        criterion_names, criterion_values = _parse_criterion_specs(str(row.get("Criteria", "")))
-        crit_dict = {name: criterion_values[name] for name in criterion_names}
-
-        if class_name not in classes:
-            classes[class_name] = {
-                "constructions": list(constructions),
-                "criteria": crit_dict,
-            }
-        else:
-            # Second (or later) row for the same class: convert to construction_criteria.
-            existing = classes[class_name]
-            if "construction_criteria" not in existing:
-                # Promote the first row's entry to construction_criteria format.
-                prev_constructions = existing.get("constructions", [])
-                prev_criteria = existing.get("criteria", {})
-                existing["construction_criteria"] = {
-                    c: dict(prev_criteria) for c in prev_constructions
-                }
-                existing.pop("criteria", None)
-            # Append this row's construction(s) with their per-construction criteria.
-            for c in constructions:
-                existing["construction_criteria"][c] = crit_dict
-                if c not in existing["constructions"]:
-                    existing["constructions"].append(c)
-
-    return {"language": lang_id, "classes": classes}
 
 
 def _parse_csv_list(value: str) -> List[str]:

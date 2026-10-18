@@ -232,10 +232,12 @@
   description: >-
     Syncs a construction's criterion columns on its live sheet when
     diagnostics_{lang_id}.yaml changes (rename, split, merge, remove);
-    regenerates the diagnostics YAML afterward.
+    --rename/--split/--merge first edit the criteria in the diagnostics
+    YAML itself, then regenerate the diagnostics TSV from it.
   side_effects:
     - "inserts/deletes/renames criterion columns on live annotation tabs"
     - "updates sheets_manifest.json's per-construction param_names and param_values"
+    - "--rename/--split/--merge: edits the named criteria in diagnostics_{lang_id}.yaml (the rest of the file, comments included, is kept) and regenerates diagnostics_{lang_id}.tsv from it"
   idempotent: true
   idempotency_note: >-
     Retry-safe: every sheet edit is driven by a real diff between the tab's
@@ -257,9 +259,10 @@
   preconditions: [coded_data_clean_tree]
   facts_touched:
     - {fact: construction_criterion_columns, role: writes}
+    - {fact: diagnostics_scope, role: writes}
   cascades_triggered:
     - "regenerate_notebooks() runs automatically after --apply"
-    - "regenerates diagnostics_{lang_id}.yaml to match the change"
+    - "regenerates diagnostics_{lang_id}.tsv from the edited YAML (--rename/--split/--merge)"
   modes:
     - name: "--refresh-dropdowns"
       description: >-

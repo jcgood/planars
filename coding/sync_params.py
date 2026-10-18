@@ -14,11 +14,14 @@ Usage:
 
 This script propagates diagnostic criterion changes across all downstream layers:
 
-  diagnostics_{lang_id}.yaml — per-language criterion source of truth (edit this)
-  diagnostics_{lang_id}.tsv  — derived artifact. --rename/--split/--merge --apply edit its
-                               Criteria cells and then rewrite the YAML from it (keeping the
-                               YAML's notes); otherwise it is regenerated from the YAML by
-                               sync-diagnostics-yaml --apply
+  diagnostics_{lang_id}.yaml — per-language criterion source of truth (edit this).
+                               --rename/--split/--merge --apply edit it directly
+                               (_edit_diagnostics_yaml): only the criteria named change,
+                               and its comments and layout are kept
+  diagnostics_{lang_id}.tsv  — a copy generated from the YAML; after those edits it is
+                               regenerated the way sync-diagnostics-yaml --apply does it
+                               (#315: until 2026-10-18 the TSV was edited and the YAML
+                               rebuilt from it, losing every field but notes)
   Google Sheets              — annotation form column headers (always updated)
 
 Imported TSVs in coded_data/ are downstream of Sheets; after any lifecycle operation run
@@ -44,18 +47,18 @@ from typing import Dict, List, Optional, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 
-import pandas as pd
 import gspread
-
-import yaml as _yaml
 
 from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
-    _tsv_df_to_yaml,
     _dump_diagnostics_yaml,
+    _encode_criteria_dict,
+    _load_diagnostics_yaml_for_edit,
     _resolve_diagnostics_yaml_path,
 )
+from .sync_diagnostics_yaml import _sync_to_tsv
+from .validate_diagnostics import validate_diagnostics_yaml
 from .schemas import criteria_for, criterion_values
 from planars.schema_values import is_keystone
 from .drive import (
@@ -126,33 +129,167 @@ def _rename_column(ws: WorksheetHandle, old_name: str, new_name: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Criterion token manipulation (diagnostics_{lang_id}.tsv — Criteria cell)
+# Criterion edits (diagnostics_{lang_id}.yaml — a class's criteria mappings)
 # ---------------------------------------------------------------------------
+# Each edit replaces some criteria of one mapping ({name: [values]}) with new
+# ones at the first old one's place. Only the criteria named change: the rest
+# of the file, comments included, is written back as it was read.
 
-def _criterion_name_from_spec(spec: str) -> str:
-    """Extract criterion name from a spec, stripping brace-syntax values.
+def _replace_criteria(crit: Dict, olds: List[str], news: List[Tuple[str, List[str]]]) -> bool:
+    """Replace the criteria `olds` present in `crit` with `news`, in place.
 
-    'free'               -> 'free'
-    'stressed{y/n/both}' -> 'stressed'
+    The new criteria go where the first old one was. A comment written above
+    or beside a replaced criterion moves to the first new one, so no comment
+    is lost. Returns False (and changes nothing) if none of `olds` is there.
     """
-    return spec.split("{")[0].strip()
+    present = [o for o in olds if o in crit]
+    if not present:
+        return False
+    for name, _ in news:
+        if name in crit and name not in olds:
+            raise SystemExit(
+                f"ERROR: criterion '{name}' is already listed beside "
+                f"{', '.join(present)}; renaming, splitting or merging onto an "
+                f"existing criterion would merge two columns' answers. "
+                f"Choose another name.")
+    keys = list(crit)
+    at = min(keys.index(o) for o in present)
+    comments = getattr(crit, "ca", None)
+    moved = [comments.items.pop(o) for o in present
+             if comments is not None and o in comments.items]
+    for o in present:
+        del crit[o]
+    for i, (name, values) in enumerate(news):
+        crit.insert(at + i, name, values)
+    if moved:
+        comments.items[news[0][0]] = _merge_comment_slots(moved)
+    return True
 
 
-def _rename_criterion_in_cell(cell: str, old: str, new: str) -> str:
-    """Rename criterion token 'old' to 'new' in a comma-separated Criteria cell.
+def _merge_comment_slots(slots: List[list]) -> list:
+    """Combine ruamel comment entries of several criteria into one.
 
-    Preserves brace-syntax value lists on the renamed criterion.
+    Slot 1 holds the comment lines written above a key; those are joined.
+    Any other slot (a comment at the end of the line) can hold only one, so
+    two of them stop the command rather than drop one.
     """
-    specs = [s.strip() for s in cell.split(",") if s.strip()]
-    result = []
-    for spec in specs:
-        name = _criterion_name_from_spec(spec)
-        if name == old:
-            brace_part = spec[len(name):]   # e.g. '{y/n/both}' or ''
-            result.append(new + brace_part)
-        else:
-            result.append(spec)
-    return ", ".join(result)
+    merged = [None, None, None, None]
+    for slot in slots:
+        for i, part in enumerate(slot):
+            if part is None:
+                continue
+            if i == 1:
+                merged[1] = (merged[1] or []) + list(part)
+            elif merged[i] is None:
+                merged[i] = part
+            else:
+                raise SystemExit(
+                    "ERROR: two of the criteria being merged each have a comment "
+                    "at the end of their line in the diagnostics YAML. Move one "
+                    "of them above its line by hand, then re-run.")
+    return merged
+
+
+def _criteria_mappings(class_data: Dict) -> List[Tuple[Optional[str], Dict]]:
+    """A class's criteria mappings: (None, criteria) and
+    (construction, its criteria) for each entry of construction_criteria."""
+    out: List[Tuple[Optional[str], Dict]] = []
+    if class_data.get("criteria"):
+        out.append((None, class_data["criteria"]))
+    for construction, crit in (class_data.get("construction_criteria") or {}).items():
+        if crit:
+            out.append((construction, crit))
+    return out
+
+
+def _edit_yaml_criteria(
+    yaml_data: Dict,
+    olds: List[str],
+    news_fn,
+    class_filter: Optional[str],
+) -> List[str]:
+    """Replace criteria `olds` with `news_fn(crit)` in every matching class.
+
+    news_fn: (criteria mapping) -> [(name, values), ...] — the replacements.
+    class_filter: restrict to this class (None = every class).
+    Edits yaml_data in place; returns one description per mapping changed.
+    """
+    changes = []
+    for cls, class_data in (yaml_data.get("classes") or {}).items():
+        if class_filter and cls != class_filter:
+            continue
+        for construction, crit in _criteria_mappings(class_data):
+            if not any(o in crit for o in olds):
+                continue
+            before = ", ".join(_encode_criteria_dict(crit))
+            _replace_criteria(crit, olds, news_fn(crit))
+            where = f"{cls}/{construction}" if construction else cls
+            changes.append(
+                f"  [{where}] diagnostics criteria: {before!r} -> "
+                f"{', '.join(_encode_criteria_dict(crit))!r}")
+    return changes
+
+
+def _rename_in_yaml(yaml_data: Dict, old: str, new: str,
+                    class_filter: Optional[str]) -> List[str]:
+    """Rename criterion `old` to `new`, keeping its values."""
+    return _edit_yaml_criteria(
+        yaml_data, [old], lambda crit: [(new, crit[old])], class_filter)
+
+
+def _split_in_yaml(yaml_data: Dict, old: str, new1: str, new2: str) -> List[str]:
+    """Replace criterion `old` with `new1, new2`, each with its schema values."""
+    return _edit_yaml_criteria(
+        yaml_data, [old],
+        lambda crit: [(new1, _schema_values(new1)), (new2, _schema_values(new2))],
+        None)
+
+
+def _merge_in_yaml(yaml_data: Dict, old1: str, old2: str, new: str) -> List[str]:
+    """Replace criteria `old1` and `old2` with `new` (its schema values), at
+    the place of whichever of the two comes first."""
+    return _edit_yaml_criteria(
+        yaml_data, [old1, old2], lambda crit: [(new, _schema_values(new))], None)
+
+
+def _edit_diagnostics_yaml(lang_id: str, planar_dir: Path, renames, splits, merges,
+                           apply: bool) -> None:
+    """Apply --rename/--split/--merge to diagnostics_{lang_id}.yaml.
+
+    Prints each criteria change. With apply, writes the YAML (only the
+    criteria named change; comments and layout are kept) and regenerates
+    diagnostics_{lang_id}.tsv from it, as sync-diagnostics-yaml --apply does.
+    An edit that would leave the YAML failing validation writes nothing.
+    """
+    yaml_path = _resolve_diagnostics_yaml_path(lang_id, planar_dir)
+    if not yaml_path.exists():
+        raise SystemExit(
+            f"ERROR: {yaml_path} does not exist. --rename/--split/--merge edit "
+            f"the diagnostics YAML; create it first, then re-run.")
+    data = _load_diagnostics_yaml_for_edit(yaml_path)
+    changes: List[str] = []
+    for cls_filter, old, new in renames:
+        changes += _rename_in_yaml(data, old, new, cls_filter)
+    for old, new1, new2 in splits:
+        changes += _split_in_yaml(data, old, new1, new2)
+    for old1, old2, new in merges:
+        changes += _merge_in_yaml(data, old1, old2, new)
+    for change in changes:
+        print(change)
+    if not (apply and changes):
+        return
+
+    blocking = [i for i in validate_diagnostics_yaml(data, lang_id)
+                if i.level == "error" and i.blocking]
+    if blocking:
+        for e in blocking:
+            print(f"  [{lang_id}] ERROR {e.location}: {e.message}")
+        raise SystemExit(
+            f"ERROR: the edited diagnostics_{lang_id}.yaml would not pass "
+            f"validation (above); nothing was written.")
+    yaml_path.write_text(_dump_diagnostics_yaml(data), encoding="utf-8")
+    print(f"  [{lang_id}] YAML updated → {yaml_path.name}")
+    _sync_to_tsv(lang_id, apply=True, error_langs=[])
 
 
 def _schema_values(name: str) -> List[str]:
@@ -169,78 +306,6 @@ def _schema_values(name: str) -> List[str]:
             f"ERROR: criterion '{name}' is not defined (with values) in "
             f"schemas/diagnostic_criteria.yaml. Add it there first, then re-run.")
     return vals
-
-
-def _new_spec(name: str) -> str:
-    """`name{v1/v2/...}` for a criterion a split or merge creates."""
-    return f"{name}{{{'/'.join(_schema_values(name))}}}"
-
-
-def _split_criterion_in_cell(cell: str, old: str, new1: str, new2: str) -> str:
-    """Replace criterion 'old' with 'new1, new2' (with their schema values) in a Criteria cell."""
-    specs = [s.strip() for s in cell.split(",") if s.strip()]
-    result = []
-    for spec in specs:
-        if _criterion_name_from_spec(spec) == old:
-            result.extend([_new_spec(new1), _new_spec(new2)])
-        else:
-            result.append(spec)
-    return ", ".join(result)
-
-
-def _merge_criteria_in_cell(cell: str, old1: str, old2: str, new: str) -> str:
-    """Replace criterion tokens 'old1' and 'old2' with 'new' in a Criteria cell.
-
-    The new token is inserted at the position of the first matched old token.
-    """
-    specs = [s.strip() for s in cell.split(",") if s.strip()]
-    result = []
-    inserted = False
-    for spec in specs:
-        name = _criterion_name_from_spec(spec)
-        if name in (old1, old2):
-            if not inserted:
-                result.append(_new_spec(new))
-                inserted = True
-        else:
-            result.append(spec)
-    return ", ".join(result)
-
-
-def _update_diagnostics_tsv(
-    diag_path: "Path",
-    transform_fn,
-    class_filter: Optional[str],
-    dry_run: bool,
-) -> List[str]:
-    """Apply transform_fn to the Criteria cell of each matching row.
-
-    transform_fn: (cell: str) -> str
-    class_filter: restrict to this Class value (None = all rows)
-    dry_run: if True, return descriptions without writing
-
-    Returns list of human-readable change descriptions.
-    """
-    df = pd.read_csv(diag_path, sep="\t", dtype=str, keep_default_na=False)
-    changes = []
-
-    for i, row in df.iterrows():
-        if class_filter and row.get("Class", "") != class_filter:
-            continue
-        old_val = row.get("Criteria", "")
-        new_val = transform_fn(old_val)
-        if new_val != old_val:
-            cls = row.get("Class", "?")
-            changes.append(
-                f"  [{cls}] diagnostics Criteria: {old_val!r} -> {new_val!r}"
-            )
-            if not dry_run:
-                df.at[i, "Criteria"] = new_val
-
-    if not dry_run and changes:
-        df.to_csv(diag_path, sep="\t", index=False)
-
-    return changes
 
 
 # ---------------------------------------------------------------------------
@@ -599,37 +664,11 @@ def main(args: argparse.Namespace | None = None) -> None:
         planar_dir = planar_file.parent
         lang_id = _infer_language_id_from_planar_filename(planar_file.name)
 
-        # Update diagnostics_{lang_id}.tsv before re-reading so sheet operations
-        # see the already-updated criterion list.
-        diag_path = planar_dir / f"diagnostics_{lang_id}.tsv"
-        if diag_path.exists():
-            for cls_filter, old, new in renames:
-                fn = lambda cell, o=old, n=new: _rename_criterion_in_cell(cell, o, n)
-                for change in _update_diagnostics_tsv(diag_path, fn, cls_filter, dry_run=not apply):
-                    print(change)
-            for old, new1, new2 in splits:
-                fn = lambda cell, o=old, n1=new1, n2=new2: _split_criterion_in_cell(cell, o, n1, n2)
-                for change in _update_diagnostics_tsv(diag_path, fn, None, dry_run=not apply):
-                    print(change)
-            for old1, old2, new in merges:
-                fn = lambda cell, o1=old1, o2=old2, n=new: _merge_criteria_in_cell(cell, o1, o2, n)
-                for change in _update_diagnostics_tsv(diag_path, fn, None, dry_run=not apply):
-                    print(change)
-
-            # After TSV mutations, regenerate the YAML if one exists.
-            yaml_path = _resolve_diagnostics_yaml_path(lang_id, planar_dir)
-            if apply and yaml_path.exists() and (renames or splits or merges):
-                tsv_df = pd.read_csv(diag_path, sep="\t", dtype=str, keep_default_na=False)
-                # Preserve fields not in the TSV (e.g. notes) by loading existing YAML first.
-                with open(yaml_path, encoding="utf-8") as _f:
-                    existing_yaml = _yaml.safe_load(_f)
-                new_yaml = _tsv_df_to_yaml(tsv_df, lang_id)
-                # Merge: carry over notes from existing YAML into regenerated structure.
-                for cls, cls_data in (existing_yaml.get("classes") or {}).items():
-                    if cls in new_yaml.get("classes", {}) and "notes" in cls_data:
-                        new_yaml["classes"][cls]["notes"] = cls_data["notes"]
-                yaml_path.write_text(_dump_diagnostics_yaml(new_yaml), encoding="utf-8")
-                print(f"  [{lang_id}] YAML updated → {yaml_path.name}")
+        # Rename/split/merge edit diagnostics_{lang_id}.yaml, the source,
+        # before it is read below, so the sheet operations see the new
+        # criteria; the TSV is then regenerated from it (#315).
+        if renames or splits or merges:
+            _edit_diagnostics_yaml(lang_id, planar_dir, renames, splits, merges, apply)
 
         specs = _read_diagnostics_for_language(lang_id, planar_dir)
 

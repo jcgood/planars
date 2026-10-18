@@ -1,7 +1,13 @@
 Connecting to Google APIs...
-  [noninterruption] diagnostics Criteria: 'free{y/n}, multiple{y/n}' -> 'free_form{y/n}, multiple{y/n}'
-  [free_occurrence] diagnostics Criteria: 'free{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}' -> 'free_form{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}'
+  [noninterruption] diagnostics criteria: 'free{y/n}, multiple{y/n}' -> 'free_form{y/n}, multiple{y/n}'
+  [free_occurrence] diagnostics criteria: 'free{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}' -> 'free_form{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}'
   [arao1248] YAML updated → diagnostics_arao1248.yaml
+  [arao1248] WARNING diagnostics_arao1248.yaml [noninterruption]: Diagnostic criterion 'free_form' is not defined in diagnostic_criteria.yaml
+  [arao1248] WARNING diagnostics_arao1248.yaml [noninterruption]: Diagnostic criterion 'free_form' is not in the allowed set for class 'noninterruption' in diagnostic_classes.yaml (allowed: ['free', 'multiple'])
+  [arao1248] WARNING diagnostics_arao1248.yaml [free_occurrence]: Diagnostic criterion 'free_form' is not defined in diagnostic_criteria.yaml
+  [arao1248] WARNING diagnostics_arao1248.yaml [free_occurrence]: Diagnostic criterion 'free_form' is not in the allowed set for class 'free_occurrence' in diagnostic_classes.yaml (allowed: ['dependent-on-left', 'dependent-on-right', 'free', 'left-edge-of-free-form', 'right-edge-of-free-form'])
+  [arao1248] ERROR diagnostics_arao1248.yaml: Required class 'proform' (collection_required: "y") is missing
+  [arao1248] Updated → diagnostics_arao1248.tsv
 
 Language: arao1248
 Mode:     apply
@@ -15,9 +21,14 @@ Renames:  ['free:free_form']
   [nonpermutability/general] Rename: free not found — skipping
   [free_occurrence/general] Rename: free → free_form
     Renamed.
-  [noninterruption] diagnostics Criteria: 'free{y/n}, multiple{y/n}' -> 'free_form{y/n}, multiple{y/n}'
-  [free_occurrence] diagnostics Criteria: 'free{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}' -> 'free_form{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}'
+  [noninterruption] diagnostics criteria: 'free{y/n}, multiple{y/n}' -> 'free_form{y/n}, multiple{y/n}'
+  [free_occurrence] diagnostics criteria: 'free{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}' -> 'free_form{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}'
   [stan1293] YAML updated → diagnostics_stan1293.yaml
+  [stan1293] WARNING diagnostics_stan1293.yaml [noninterruption]: Diagnostic criterion 'free_form' is not defined in diagnostic_criteria.yaml
+  [stan1293] WARNING diagnostics_stan1293.yaml [noninterruption]: Diagnostic criterion 'free_form' is not in the allowed set for class 'noninterruption' in diagnostic_classes.yaml (allowed: ['free', 'multiple'])
+  [stan1293] WARNING diagnostics_stan1293.yaml [free_occurrence]: Diagnostic criterion 'free_form' is not defined in diagnostic_criteria.yaml
+  [stan1293] WARNING diagnostics_stan1293.yaml [free_occurrence]: Diagnostic criterion 'free_form' is not in the allowed set for class 'free_occurrence' in diagnostic_classes.yaml (allowed: ['dependent-on-left', 'dependent-on-right', 'free', 'left-edge-of-free-form', 'right-edge-of-free-form'])
+  [stan1293] Updated → diagnostics_stan1293.tsv
 
 Language: stan1293
 Mode:     apply
@@ -47,9 +58,14 @@ Renames:  ['free:free_form']
   [biuniqueness_deviations/elements] Rename: free not found — skipping
   [biuniqueness_deviations/morphemes] Rename: free not found — skipping
   [biuniqueness_deviations/morphs] Rename: free not found — skipping
-  [noninterruption] diagnostics Criteria: 'free{y/n}, multiple{y/n}' -> 'free_form{y/n}, multiple{y/n}'
-  [free_occurrence] diagnostics Criteria: 'free{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}' -> 'free_form{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}'
+  [noninterruption] diagnostics criteria: 'free{y/n}, multiple{y/n}' -> 'free_form{y/n}, multiple{y/n}'
+  [free_occurrence] diagnostics criteria: 'free{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}' -> 'free_form{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}'
   [synth0001] YAML updated → diagnostics_synth0001.yaml
+  [synth0001] WARNING diagnostics_synth0001.yaml [noninterruption]: Diagnostic criterion 'free_form' is not defined in diagnostic_criteria.yaml
+  [synth0001] WARNING diagnostics_synth0001.yaml [noninterruption]: Diagnostic criterion 'free_form' is not in the allowed set for class 'noninterruption' in diagnostic_classes.yaml (allowed: ['free', 'multiple'])
+  [synth0001] WARNING diagnostics_synth0001.yaml [free_occurrence]: Diagnostic criterion 'free_form' is not defined in diagnostic_criteria.yaml
+  [synth0001] WARNING diagnostics_synth0001.yaml [free_occurrence]: Diagnostic criterion 'free_form' is not in the allowed set for class 'free_occurrence' in diagnostic_classes.yaml (allowed: ['dependent-on-left', 'dependent-on-right', 'free', 'left-edge-of-free-form', 'right-edge-of-free-form'])
+  [synth0001] Updated → diagnostics_synth0001.tsv
 
 Language: synth0001
 Mode:     apply

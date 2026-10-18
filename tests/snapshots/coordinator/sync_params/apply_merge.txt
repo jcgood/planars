@@ -1,6 +1,10 @@
 Connecting to Google APIs...
-  [subspanrepetition] diagnostics Criteria: 'widescope_right{y/n}, widescope_left{y/n}, fillable_botheither_conjunct{y/n}' -> 'widescope_either{y/n}, fillable_botheither_conjunct{y/n}'
+  [subspanrepetition] diagnostics criteria: 'widescope_right{y/n}, widescope_left{y/n}, fillable_botheither_conjunct{y/n}' -> 'widescope_either{y/n}, fillable_botheither_conjunct{y/n}'
   [arao1248] YAML updated → diagnostics_arao1248.yaml
+  [arao1248] WARNING diagnostics_arao1248.yaml [subspanrepetition]: Diagnostic criterion 'widescope_either' is not defined in diagnostic_criteria.yaml
+  [arao1248] WARNING diagnostics_arao1248.yaml [subspanrepetition]: Diagnostic criterion 'widescope_either' is not in the allowed set for class 'subspanrepetition' in diagnostic_classes.yaml (allowed: ['fillable_botheither_conjunct', 'widescope_left', 'widescope_right'])
+  [arao1248] ERROR diagnostics_arao1248.yaml: Required class 'proform' (collection_required: "y") is missing
+  [arao1248] Updated → diagnostics_arao1248.tsv
 
 Language: arao1248
 Mode:     apply
@@ -16,8 +20,11 @@ Merges:   ['widescope_right:widescope_left:widescope_either']
   [nonpermutability/element_prescreening] Merge: neither widescope_right nor widescope_left found — skipping
   [nonpermutability/general] Merge: neither widescope_right nor widescope_left found — skipping
   [free_occurrence/general] Merge: neither widescope_right nor widescope_left found — skipping
-  [subspanrepetition] diagnostics Criteria: 'widescope_right{y/n}, widescope_left{y/n}, fillable_botheither_conjunct{y/n}' -> 'widescope_either{y/n}, fillable_botheither_conjunct{y/n}'
+  [subspanrepetition] diagnostics criteria: 'widescope_right{y/n}, widescope_left{y/n}, fillable_botheither_conjunct{y/n}' -> 'widescope_either{y/n}, fillable_botheither_conjunct{y/n}'
   [stan1293] YAML updated → diagnostics_stan1293.yaml
+  [stan1293] WARNING diagnostics_stan1293.yaml [subspanrepetition]: Diagnostic criterion 'widescope_either' is not defined in diagnostic_criteria.yaml
+  [stan1293] WARNING diagnostics_stan1293.yaml [subspanrepetition]: Diagnostic criterion 'widescope_either' is not in the allowed set for class 'subspanrepetition' in diagnostic_classes.yaml (allowed: ['fillable_botheither_conjunct', 'widescope_left', 'widescope_right'])
+  [stan1293] Updated → diagnostics_stan1293.tsv
 
 Language: stan1293
 Mode:     apply
@@ -53,8 +60,11 @@ Merges:   ['widescope_right:widescope_left:widescope_either']
   [biuniqueness_deviations/elements] Merge: neither widescope_right nor widescope_left found — skipping
   [biuniqueness_deviations/morphemes] Merge: neither widescope_right nor widescope_left found — skipping
   [biuniqueness_deviations/morphs] Merge: neither widescope_right nor widescope_left found — skipping
-  [subspanrepetition] diagnostics Criteria: 'widescope_right{y/n}, widescope_left{y/n}, fillable_botheither_conjunct{y/n}' -> 'widescope_either{y/n}, fillable_botheither_conjunct{y/n}'
+  [subspanrepetition] diagnostics criteria: 'widescope_right{y/n}, widescope_left{y/n}, fillable_botheither_conjunct{y/n}' -> 'widescope_either{y/n}, fillable_botheither_conjunct{y/n}'
   [synth0001] YAML updated → diagnostics_synth0001.yaml
+  [synth0001] WARNING diagnostics_synth0001.yaml [subspanrepetition]: Diagnostic criterion 'widescope_either' is not defined in diagnostic_criteria.yaml
+  [synth0001] WARNING diagnostics_synth0001.yaml [subspanrepetition]: Diagnostic criterion 'widescope_either' is not in the allowed set for class 'subspanrepetition' in diagnostic_classes.yaml (allowed: ['fillable_botheither_conjunct', 'widescope_left', 'widescope_right'])
+  [synth0001] Updated → diagnostics_synth0001.tsv
 
 Language: synth0001
 Mode:     apply

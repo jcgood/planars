@@ -532,18 +532,54 @@ def test_manifest_is_never_touched_by_a_dry_run(env):
 
 
 # ---------------------------------------------------------------------------
-# diagnostics_{lang_id}.tsv / .yaml are rewritten by rename/split/merge
+# rename/split/merge edit diagnostics_{lang_id}.yaml, then regenerate the TSV
+# from it (#315)
 # ---------------------------------------------------------------------------
 
-def test_rename_rewrites_the_diagnostics_tsv_and_yaml(env):
+def _changed_lines(before: str, after: str) -> List[str]:
+    import difflib
+    return [line for line in difflib.unified_diff(
+        before.splitlines(), after.splitlines(), lineterm="", n=0)
+        if line[:1] in "+-" and not line.startswith(("+++", "---"))]
+
+
+def test_rename_changes_only_the_renamed_criterion_in_the_yaml(env):
+    before = env.yaml_path("stan1293").read_text(encoding="utf-8")
+    env.run(["sync-params", "--apply", "--rename", "noninterruption:free:free_form"])
+    after = env.yaml_path("stan1293").read_text(encoding="utf-8")
+
+    assert _changed_lines(before, after) == [
+        "-      free: [y, n]", "+      free_form: [y, n]"]
+
+
+def test_split_and_merge_change_only_their_criteria_in_the_yaml(env):
+    before = env.yaml_path("stan1293").read_text(encoding="utf-8")
+    env.run(["sync-params", "--apply", "--split", "free:free_left:free_right"])
+    env.run(["sync-params", "--apply", "--merge",
+            "widescope_right:widescope_left:widescope_either"])
+    after = env.yaml_path("stan1293").read_text(encoding="utf-8")
+
+    changed = _changed_lines(before, after)
+    assert sorted(changed) == sorted(
+        ["-      free: [y, n]", "+      free_left: [y, n]", "+      free_right: [y, n]"] * 2
+        + ["-      widescope_right: [y, n]", "-      widescope_left: [y, n]",
+           "+      widescope_either: [y, n]"])
+    assert "# Positions treated as always present" in after
+
+
+def test_the_tsv_is_regenerated_from_the_edited_yaml(env):
     env.run(["sync-params", "--apply", "--rename", "noninterruption:free:free_form"])
 
-    tsv_text = env.tsv_path("stan1293").read_text(encoding="utf-8")
-    assert "free_form" in tsv_text
+    from coding.make_forms import _yaml_to_tsv_df
     yaml_data = _yaml.safe_load(env.yaml_path("stan1293").read_text(encoding="utf-8"))
-    assert "free_form" in yaml_data["classes"]["noninterruption"]["criteria"]
-    assert "notes" in yaml_data["classes"]["metrical"], (
-        "existing notes must be carried over into the regenerated YAML")
+    assert env.tsv_path("stan1293").read_text(encoding="utf-8") == \
+        _yaml_to_tsv_df(yaml_data, "stan1293").to_csv(sep="\t", index=False)
+
+
+def test_a_dry_run_does_not_rewrite_the_diagnostics_yaml(env):
+    before = env.yaml_path("stan1293").read_text(encoding="utf-8")
+    env.run(["sync-params", "--rename", "noninterruption:free:free_form"])
+    assert env.yaml_path("stan1293").read_text(encoding="utf-8") == before
 
 
 def test_a_dry_run_does_not_rewrite_the_diagnostics_tsv(env):
