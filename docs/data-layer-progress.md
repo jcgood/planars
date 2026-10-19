@@ -13,6 +13,43 @@ of this state would be exactly the defect this project is trying to remove.
 - **Work queue:** [`data-layer-implementation-plan.md`](data-layer-implementation-plan.md) — phase specs
 - **Tracker:** issue #271
 
+## The big picture
+
+A map for a reader who has lost the thread. It describes the shape of the
+work, which changes only when a phase does; where things stand right now is
+the *Status by unit* table below, and the order of what is left is the
+implementation plan's Phase 10 "Order" paragraph.
+
+**Where it started (2026-08-01).** Every serious failure had been one fact
+kept in two places with no owner (design doc, "The diagnosis"). The Sheets
+must stay the annotators' interface, so this is not a database problem but a
+replication one: two copies (Sheets and TSVs) kept in step by a daily sync,
+which needs to know which copy wins, in what order things run, and how a
+half-finished operation recovers. Options are ranked by how hard they are to
+understand, not to build.
+
+**Phases 0–9 (August): make Drive writes safe to change.** One doorway for
+every Drive call, with an offline fake and frozen real data for tests; a list
+of facts hidden in code; one record per command of what it writes and needs
+(`operations.yaml`, `registry`); checks on the shape of loaded files; crash
+recovery for `restructure-sheets`, proven by deliberately crashing it; then
+every command moved onto the doorway in production. What remained: the
+doorway passed writes along without checking any of them.
+
+**Phase 10 (from 2026-10-12): one owner per fact, and a door on every
+write.** One editable home per fact, every other copy locked and rebuilt;
+every write checked by a door that runs from the schemas. In order of kind of
+place: Drive (unit 5: each file labelled with what it is, each kind given a
+spec, watched, then enforced), local files and the version history in plain
+files (units 6, 15, 12), the planar and diagnostics Sheets as locked copies
+with one proposal sheet per language (unit 11), and hand edits to sources
+(unit 17). Alongside: hidden facts removed and guarded by tests, one path for
+GitHub issues, the daily refresh as one command, dead code removed.
+
+**After Phase 10.** Phase 11, deferred and not yet designed: the research
+logic (qualification rules, span computation) written as a spec the code
+runs from, so it outlives Python.
+
 ## Update rules
 
 - Update this file **at every unit boundary**, in the same commit as the work.
