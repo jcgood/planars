@@ -136,7 +136,7 @@ git pull
    ```
 
 2. In `coded_data/`, create:
-   - `{lang_id}/lang_setup/planar_{lang_id}-{date}.tsv` — planar structure
+   - `{lang_id}/lang_setup/planar_{lang_id}.tsv` — planar structure
    - `{lang_id}/lang_setup/diagnostics_{lang_id}.yaml` — analysis classes and diagnostic criteria (YAML is the source of truth; the TSV is generated from it)
 
    Minimal YAML example:
@@ -479,12 +479,15 @@ For changes to the planar structure itself — positions added, dropped, or rena
 
 #### Adding elements to the planar structure
 
-When new elements are added to `lang_setup/planar_{lang_id}-{date}.tsv`:
+Either add the elements in the language's planar Google Sheet (the daily refresh imports them and adds the rows), or, if you add them to `lang_setup/planar_{lang_id}.tsv` directly, push the file to the Sheet first. Otherwise the next daily `import-planar --apply` copies the Sheet back over your edit:
 
 ```bash
+python -m coding import-planar --to-sheet --lang LANG_ID --apply   # local edit → planar Sheet
 python -m coding update-sheets           # dry run — show what would change
 python -m coding update-sheets --apply   # add missing rows to existing sheets
 ```
+
+Commit and push the planar TSV inside `coded_data/` straight away (the daily refresh runs from what is on GitHub).
 
 If you see `(quota exceeded — waiting Xs before retry)` messages, the command is handling Google Sheets API rate limits automatically — just let it run.
 
