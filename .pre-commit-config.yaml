@@ -25,6 +25,19 @@ repos:
         always_run: true
         stages: [pre-push]
 
+      # The hidden-facts detectors, including the check that every
+      # `python -m coding ...` written in a doc or message names a real
+      # command and flags. A docs-only push is the case most likely to skip
+      # the full suite, and on 2026-10-18 one broke CI this way (a planned
+      # command written as runnable). About 3 seconds, so on every push.
+      - id: no-hidden-facts
+        name: Check written commands and schema-owned values
+        entry: .venv/bin/python -m pytest tests/test_no_hidden_facts.py -q
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
+
       # The planarsviz package's NAMESPACE and man/ pages are generated from
       # the #' comments in its R/ files. Edit a comment without re-running
       # roxygen2 and they quietly fall out of step: the package still loads,
