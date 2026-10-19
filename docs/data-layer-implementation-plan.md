@@ -393,7 +393,10 @@ phase finishes that, and applies the same rule everywhere a fact can live.
 sheets (watch ≥1 week; meanwhile rest of 3, then 20, 19, 9's first half
 and 8, added 2026-10-17; 20 first because a slow suite taxes every other
 unit) → 5's other kinds →
-**pause: units 6 + 15 + 11's proposal sheets, designed together** → 12 →
+**pause: units 6 + 15 + 11's proposal sheets, designed together**
+(moved forward by Jeff 2026-10-18 to run during 5e's wait; draft in
+[ownership-design.md](ownership-design.md), which also renames 6's steps
+6a–6c and 11's 11a–11d) → 12 →
 6 B–D → 9's second half → proposal sheets → rest of 11 → 16–18. **Unit 9
 split (Jeff, 2026-10-17):** the root CLAUDE.md (and planars/CLAUDE.md) is
 cut to rules and pointers right after 19, because a long file full of
