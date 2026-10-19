@@ -1,8 +1,8 @@
 # The Drive door: design (Phase 10 unit 5)
 
-**Status: accepted by Jeff 2026-10-13 (§ 7 records his answers). 5a, 5b
-and 5c built, and 5d's labels and rule 6 (§ 8); next, the labelling
-migration.** Unit 5 of Phase 10 ([implementation plan](data-layer-implementation-plan.md),
+**Status: accepted by Jeff 2026-10-13 (§ 7 records his answers). 5a–5d
+built; 5e (class sheets in watch) running; 5f under way, sharing first
+(§ 8).** Unit 5 of Phase 10 ([implementation plan](data-layer-implementation-plan.md),
 Phase 10 table) was a design pause; this file is the design record. Progress
 is tracked in [data-layer-progress.md](data-layer-progress.md), and the
 decisions are logged there too.
@@ -514,3 +514,26 @@ only that language's annotator; a create is retried only after checking it
 didn't land, as for files and grants. The Status tab also gained a third,
 tooling-owned column (`planar.yaml` `status_tab.columns`, now each with a
 role and an owner), which rule 1 treats like the Construction column.
+
+**5f, sharing (2026-10-18).** Sharing is the first kind specified for every
+file, not only class sheets: `sheet_spec.sharing_spec(identity, archived)`
+says who a file is shared with and at what role, and whether a link share is
+allowed, from one table per kind (folders by which folder). Every kind in
+`KINDS` has an entry, and a kind without one raises. The rules: class,
+planar and diagnostics sheets and the notes Doc, the language's annotator as
+writer; the status sheet and the language folder, the annotator as reader;
+the Annotation Status folder, every annotator as reader; the root and
+archive folders and the manifest, nobody; notebooks and PDF reports, a
+reader link share and nobody by name, until Q4's test. An archived file is
+read-only for everyone on it, with no link share. Rule 5 now checks this on
+every file the door can place, for all three grant writes: a grant made or
+changed has to match the spec, and a grant the spec calls for can't be
+removed (removing one it doesn't call for, like a link share added by hand,
+is allowed). The full suite found no command breaking it.
+
+A read-only comparison of the live grants with the spec (2026-10-18; a
+file's own grants only, since inherited ones come from its folder) found two
+differences, both made by hand: the root folder gives Adam writer, which
+every file under it inherits, so he can edit the manifest and every
+archived class sheet whatever their own grants say; and synth0001's archived
+biuniqueness sheet keeps Adam as reader, though synth0001 names no annotator.

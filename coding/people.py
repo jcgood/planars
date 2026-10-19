@@ -13,11 +13,11 @@ skip: otherwise a sheet would quietly be shared with nobody.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import yaml
 
-from planars.languages import get_entry
+from planars.languages import get_entry, load_languages
 
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
@@ -52,6 +52,14 @@ def annotator_email(lang_id: str) -> Optional[str]:
     """The annotator's email for lang_id, or None if languages.yaml names no annotator."""
     name = annotator_name(lang_id)
     return email_for(name) if name else None
+
+
+def every_annotator_email() -> List[str]:
+    """The address of every annotator languages.yaml names, for a file shared
+    with all of them (the Annotation Status folder)."""
+    return sorted({annotator_email(lang_id)
+                   for lang_id, entry in load_languages().items()
+                   if isinstance(entry, dict) and annotator_name(lang_id)})
 
 
 def github_for(name: str) -> Optional[str]:

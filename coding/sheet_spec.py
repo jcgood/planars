@@ -6,8 +6,10 @@ each call reads the schemas and the language's own sources (planar TSV,
 diagnostics YAML) afresh, so a spec cannot drift from them. A wrong spec shows
 up as a wrong check, not as a quietly stale table.
 
-So far: class sheets (`class_sheet_spec`). The other kinds of Drive file get
-their sections as unit 5 reaches them (design § 5).
+So far: class sheets (`class_sheet_spec`), and sharing for every kind of
+Drive file (`sharing_spec`: who gets which role, and whether a link share is
+allowed). The other kinds' contents get their sections as unit 5 reaches them
+(design § 5).
 
 A class sheet is its locked tabs, one tab per construction in the language's
 diagnostics file, and Status, in the order `locked_tabs.reorder_tabs` puts
@@ -253,3 +255,80 @@ def class_sheet_spec(lang_id: str, class_name: str, data_dir: Path) -> ClassShee
         tuple((con,) for con, _, _ in constructions),
     )
     return ClassSheetSpec(lang_id, class_name, tuple(first + middle + last + [status]))
+
+
+# ---------------------------------------------------------------------------
+# Sharing: who may have access to each kind of Drive file
+# ---------------------------------------------------------------------------
+
+READER, WRITER = "reader", "writer"
+# Who a kind of file is shared with, besides its owner (the tooling's account):
+#   annotator      the language's annotator, by name
+#   all_annotators every annotator languages.yaml names, by name
+#   nobody         no one; anything inside it is shared on its own
+# and the role they get. ``link`` is the role "anyone with the link" gets, or
+# None (named people only: Phase 10 unit 14). Every kind in the door's KINDS
+# has an entry; a kind missing here is an error, not a default.
+_ANNOTATOR, _ALL_ANNOTATORS, _NOBODY = "annotator", "all_annotators", "nobody"
+_SHARING: Dict[str, Dict[str, Optional[str]]] = {
+    "class_sheet":       {"who": _ANNOTATOR, "role": WRITER, "link": None},
+    "planar_sheet":      {"who": _ANNOTATOR, "role": WRITER, "link": None},
+    "diagnostics_sheet": {"who": _ANNOTATOR, "role": WRITER, "link": None},
+    # Built by the tooling, read by the annotator (generate-status-sheet).
+    "status_sheet":      {"who": _ANNOTATOR, "role": READER, "link": None},
+    # Where the annotator writes notes to the coordinator.
+    "notes_doc":         {"who": _ANNOTATOR, "role": WRITER, "link": None},
+    # Notebooks and PDF reports keep link sharing until a notebook shared by
+    # name is shown to open in Colab for a signed-in annotator (design § 7,
+    # Q4). Then they become {"who": _ANNOTATOR, "role": READER, "link": None}.
+    "report":            {"who": _NOBODY, "role": None, "link": READER},
+    "notebook":          {"who": _NOBODY, "role": None, "link": READER},
+    "manifest":          {"who": _NOBODY, "role": None, "link": None},
+}
+# Folders differ by which folder: a language folder lets its annotator see
+# their files; the Annotation Status folder holds every language's status
+# sheet; the root and archive folders grant nothing of their own.
+_FOLDER_SHARING: Dict[str, Dict[str, Optional[str]]] = {
+    "language": {"who": _ANNOTATOR, "role": READER, "link": None},
+    "status":   {"who": _ALL_ANNOTATORS, "role": READER, "link": None},
+    "root":     {"who": _NOBODY, "role": None, "link": None},
+    "archive":  {"who": _NOBODY, "role": None, "link": None},
+}
+
+
+@dataclass(frozen=True)
+class SharingSpec:
+    """The grants a file should carry: each named person's role (addresses
+    in lower case), and the role of a link share, or None for none."""
+    people: Tuple[Tuple[str, str], ...]
+    link: Optional[str]
+
+    def role_for(self, email: Optional[str]) -> Optional[str]:
+        """The role the spec gives this address, or None if it gives none."""
+        return dict(self.people).get((email or "").lower())
+
+
+def sharing_spec(identity, archived: bool = False) -> SharingSpec:
+    """Who may have access to the file ``identity`` (a ``drive_door.Identity``)
+    names, and how. An archived file is read-only: everyone listed is a reader,
+    and nobody gets a link share."""
+    from .people import annotator_email, every_annotator_email
+
+    table = _FOLDER_SHARING if identity.kind == "folder" else _SHARING
+    key = identity.name if identity.kind == "folder" else identity.kind
+    if key not in table:
+        raise ValueError(f"no sharing rule for a {identity.kind} {key!r} "
+                         "(coding/sheet_spec.py, _SHARING)")
+    rule = table[key]
+    if rule["who"] == _ANNOTATOR:
+        email = annotator_email(identity.lang_id)
+        emails = [email] if email else []
+    elif rule["who"] == _ALL_ANNOTATORS:
+        emails = every_annotator_email()
+    elif rule["who"] == _NOBODY:
+        emails = []
+    else:
+        raise ValueError(f"unknown sharing rule {rule['who']!r}")
+    role = READER if archived else rule["role"]
+    link = None if archived else rule["link"]
+    return SharingSpec(tuple(sorted((e.lower(), role) for e in emails)), link)

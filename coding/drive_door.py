@@ -27,9 +27,12 @@ tests). Reads pass straight through. Every write is checked first:
   3. dropdowns only on criterion columns (and Status), with exactly the
      spec's values;
   4. protection only on locked tabs;
-  5. sharing only with the language's annotator, by name, as a writer while
-     the sheet is live and a reader once it is labelled archived; never
-     "anyone";
+  5. (every kind of file, not only class sheets) a grant is made, changed or
+     removed only as the file's sharing spec says (``sheet_spec.sharing_spec``):
+     named people at their role (a class sheet's annotator is a writer while
+     the sheet is live, a reader once it is labelled archived), a link share
+     only where the spec allows one (notebooks and reports, until design § 7
+     Q4's test), and a grant the spec calls for is never removed;
   6. at the end of a command that succeeded and was allowed to write, each
      class sheet whose shape it changed is re-read and compared with its spec:
      tab names, order and protection, and for each tab it wrote, the columns
@@ -1030,25 +1033,57 @@ class CheckedDoorway:
         self._wrote_file(doc_id, "", "append_doc_text")
 
     # -- sharing (rule 5) ----------------------------------------------------
+    def _sharing(self, file_id: str):
+        """The file's identity and sharing spec, or (None, None) if the door
+        can't place it."""
+        identity = self._identify(file_id)
+        if identity is None:
+            return None, None
+        from .sheet_spec import sharing_spec
+        return identity, sharing_spec(identity, archived=self.is_archived(file_id))
+
     def _sharing_problems(self, file_id: str, type: str, email: Optional[str],
                           role: str) -> List[str]:
-        identity = self._identify(file_id)
-        if identity is None or identity.kind != CLASS_SHEET:
+        """What is wrong with ``file_id`` holding this grant (rule 5)."""
+        identity, spec = self._sharing(file_id)
+        if spec is None:
+            return []
+        state = "archived" if self.is_archived(file_id) else "live"
+        what = f"{identity.describe()} ({state})"
+        if type == "anyone":
+            if spec.link is None:
+                return [f"{what} is shared with named people only, not by link"]
+            if role != spec.link:
+                return [f"a link to {what} gives {spec.link}, not {role}"]
             return []
         if type != "user":
-            return [f"{identity.describe()} is shared with named people only, "
-                    f"not {type!r}"]
-        from .people import annotator_email
-        expected = annotator_email(identity.lang_id)
-        if email != expected:
-            return [f"{identity.describe()} is shared only with {identity.lang_id}'s "
-                    "annotator (languages.yaml), not with this address"]
-        archived = self.is_archived(file_id)
-        wanted = "reader" if archived else "writer"
+            return [f"{what} is shared with named people only, not {type!r}"]
+        wanted = spec.role_for(email)
+        if wanted is None:
+            return [f"{what} is not shared with this address: the sharing spec "
+                    "(coding/sheet_spec.py) names "
+                    + (f"{len(spec.people)} person(s), from people.yaml" if spec.people
+                       else "nobody")]
         if role != wanted:
-            state = "archived" if archived else "live"
-            return [f"the annotator of {identity.describe()} ({state}) is a {wanted}, "
-                    f"not a {role}"]
+            return [f"{what}: this person is a {wanted}, not a {role}"]
+        return []
+
+    def _removal_problems(self, file_id: str, permission_id: str) -> List[str]:
+        """What is wrong with removing this grant: the spec calls for it."""
+        identity, spec = self._sharing(file_id)
+        if spec is None:
+            return []
+        grant = next((p for p in self.list_permissions(
+            file_id, fields="permissions(id,type,emailAddress)")
+            if p.get("id") == permission_id), None)
+        if grant is None:
+            return []
+        if grant.get("type") == "anyone" and spec.link is not None:
+            return [f"{identity.describe()}'s link share is in its sharing spec; "
+                    "removing it is not"]
+        if grant.get("type") == "user" and spec.role_for(grant.get("emailAddress")):
+            return [f"{identity.describe()} is shared with this person by its sharing "
+                    "spec; removing the grant is not"]
         return []
 
     def create_permission(self, file_id: str, type: str, role: str,
@@ -1068,14 +1103,14 @@ class CheckedDoorway:
         return permission_id
 
     def delete_permission(self, file_id: str, permission_id: str) -> None:
-        self._check(f"remove a grant on {file_id}")
+        self._check(f"remove a grant on {file_id}",
+                    self._removal_problems(file_id, permission_id))
         _retry(lambda: self._inner.delete_permission(file_id, permission_id))
         self._wrote_file(file_id, "", "delete_permission")
 
     def update_permission(self, file_id: str, permission_id: str, role: str) -> None:
         problems: List[str] = []
-        identity = self._identify(file_id)
-        if identity is not None and identity.kind == CLASS_SHEET:
+        if self._identify(file_id) is not None:
             grant = next((p for p in self.list_permissions(
                 file_id, fields="permissions(id,type,emailAddress)")
                 if p.get("id") == permission_id), None)

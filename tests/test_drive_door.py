@@ -235,9 +235,89 @@ def test_a_class_sheet_is_shared_only_with_its_annotator_by_name(env):
                                email="annotator@example.org")
         with pytest.raises(DoorViolation, match="named people only"):
             door.create_permission(sheet_id, type="anyone", role="reader")
-        with pytest.raises(DoorViolation, match="annotator"):
+        with pytest.raises(DoorViolation, match="not shared with this address"):
             door.create_permission(sheet_id, type="user", role="writer",
                                    email="someone.else@example.org")
+
+
+def _labelled_file(fake, identity):
+    """A file carrying ``identity``'s label, as the tooling would have made it."""
+    return fake.create_file("a file", [], properties=identity.labels())
+
+
+@pytest.mark.parametrize("identity, role", [
+    (drive_door.lang_file("planar_sheet", LANG), "writer"),
+    (drive_door.lang_file("diagnostics_sheet", LANG), "writer"),
+    (drive_door.lang_file("notes_doc", LANG), "writer"),
+    (drive_door.lang_file("status_sheet", LANG), "reader"),
+    (drive_door.folder("language", LANG), "reader"),
+    (drive_door.folder("status"), "reader"),
+])
+def test_every_kind_is_shared_with_its_annotator_at_its_role_and_never_by_link(
+        env, identity, role):
+    fake, door, _, _ = env
+    file_id = _labelled_file(fake, identity)
+    other = "writer" if role == "reader" else "reader"
+    with drive_door.running("update-sheets", APPLY):
+        door.create_permission(file_id, type="user", role=role, email=ANNOTATOR)
+        with pytest.raises(DoorViolation, match=f"is a {role}, not a {other}"):
+            door.create_permission(file_id, type="user", role=other, email=ANNOTATOR)
+        with pytest.raises(DoorViolation, match="not by link"):
+            door.create_permission(file_id, type="anyone", role="reader")
+        with pytest.raises(DoorViolation, match="removing the grant is not"):
+            door.delete_permission(file_id, _grant(fake, file_id))
+
+
+@pytest.mark.parametrize("identity", [
+    drive_door.manifest(), drive_door.folder("root"), drive_door.folder("archive", LANG),
+])
+def test_files_shared_with_nobody_take_no_grant(env, identity):
+    fake, door, _, _ = env
+    file_id = _labelled_file(fake, identity)
+    with drive_door.running("update-sheets", APPLY):
+        with pytest.raises(DoorViolation, match="names nobody"):
+            door.create_permission(file_id, type="user", role="reader", email=ANNOTATOR)
+
+
+@pytest.mark.parametrize("identity", [
+    drive_door.lang_file("report", LANG), drive_door.notebook("domains", LANG),
+])
+def test_notebooks_and_reports_keep_their_link_share_until_q4(env, identity):
+    fake, door, _, _ = env
+    file_id = _labelled_file(fake, identity)
+    with drive_door.running("generate-notebooks", APPLY):
+        with pytest.raises(DoorViolation, match="gives reader, not writer"):
+            door.create_permission(file_id, type="anyone", role="writer")
+        door.create_permission(file_id, type="anyone", role="reader")
+        link = next(p["id"] for p in fake.list_permissions(file_id, fields="permissions(id,type)")
+                    if p["type"] == "anyone")
+        with pytest.raises(DoorViolation, match="link share is in its sharing spec"):
+            door.delete_permission(file_id, link)
+
+
+def test_removing_a_grant_the_spec_does_not_call_for_is_allowed(env):
+    fake, door, sheet_id, _ = env
+    with drive_door.running("update-sheets", APPLY):
+        door.create_permission(sheet_id, type="user", role="writer", email=ANNOTATOR)
+    fake.create_permission(sheet_id, type="anyone", role="reader")     # added by hand
+    link = next(p["id"] for p in fake.list_permissions(sheet_id, fields="permissions(id,type)")
+                if p["type"] == "anyone")
+    with drive_door.running("update-sheets", APPLY):
+        door.delete_permission(sheet_id, link)
+
+
+def test_every_kind_has_a_sharing_rule():
+    from coding.sheet_spec import sharing_spec
+    for kind, rule in drive_door.KINDS.items():
+        names = sorted(rule["name"]) if rule["name"] else [None]
+        for name in names:
+            lang = None
+            if kind == "folder":
+                lang = LANG if name in ("language", "archive") else None
+            elif rule["lang"] == "required" or (kind == "notebook" and name != "all_languages"):
+                lang = LANG
+            sharing_spec(drive_door.Identity(kind, lang, CLASS if kind == "class_sheet" else None,
+                                             name))
 
 
 # -- rule 7: comments ---------------------------------------------------------------
@@ -536,12 +616,12 @@ def test_the_annotators_role_follows_the_archived_label(env):
     with drive_door.running("update-sheets", APPLY):
         door.create_permission(sheet_id, type="user", role="writer", email=ANNOTATOR)
         grant = _grant(fake, sheet_id)
-        with pytest.raises(DoorViolation, match=r"\(live\) is a writer"):
+        with pytest.raises(DoorViolation, match=r"\(live\): this person is a writer"):
             door.update_permission(sheet_id, grant, "reader")
         door.mark_archived(sheet_id)
         assert fake.file(sheet_id).properties[drive_door.STATE_LABEL] == drive_door.ARCHIVED
         door.update_permission(sheet_id, grant, "reader")
-        with pytest.raises(DoorViolation, match=r"\(archived\) is a reader"):
+        with pytest.raises(DoorViolation, match=r"\(archived\): this person is a reader"):
             door.update_permission(sheet_id, grant, "writer")
         door.mark_archived(sheet_id, archived=False)            # rolled back
         assert drive_door.STATE_LABEL not in fake.file(sheet_id).properties
