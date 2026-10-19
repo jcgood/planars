@@ -115,8 +115,8 @@ filled state, the issue closes.
 
 ### 3.3 Accepting a proposal
 
-`python -m coding accept-proposal --lang LANG_ID` (run by the coordinator's
-Claude, from the issue):
+A new command, `accept-proposal` with `--lang LANG_ID` (not built yet; run
+by the coordinator's Claude, from the issue):
 
 1. Lists each change and asks accept or reject. A rejection needs a reason.
 2. Applies the accepted ones to the source through the local-file door (§ 4),
