@@ -434,7 +434,15 @@ def test_a_create_that_landed_before_the_error_is_not_made_twice(env):
 
 # -- watch mode --------------------------------------------------------------------
 
-def test_watch_mode_lets_the_write_through_and_files_one_issue(env, github):
+@pytest.fixture()
+def watch_all(monkeypatch):
+    """Watch mode for every kind, class sheets included: for the tests of how
+    watch mode reports, which write to the recorded class sheet. Live, class
+    sheets are enforced (LIVE_ENFORCED_KINDS)."""
+    monkeypatch.setattr(drive_door, "LIVE_ENFORCED_KINDS", frozenset())
+
+
+def test_watch_mode_lets_the_write_through_and_files_one_issue(env, github, watch_all):
     fake, _, sheet_id, _ = env
     drive_doorway.set_doorway(CheckedDoorway(fake, mode=drive_door.WATCH))
     door = drive_doorway.get_doorway()
@@ -448,7 +456,7 @@ def test_watch_mode_lets_the_write_through_and_files_one_issue(env, github):
     assert "update-sheets" in github.issue(filed[0]["number"])["body"]
 
 
-def test_a_command_run_inside_another_has_its_violations_reported_once(env, github):
+def test_a_command_run_inside_another_has_its_violations_reported_once(env, github, watch_all):
     # daily-refresh runs each command inside its own running(); the inner
     # command reports what it broke, and the outer one must not report it again.
     fake, _, sheet_id, _ = env
@@ -474,11 +482,34 @@ def test_a_live_command_whose_door_is_made_inside_it_still_logs_and_reports(
     fake, _, sheet_id, _ = env
     drive_doorway.reset_doorway()
     monkeypatch.setattr(drive_doorway, "GspreadDoorway", lambda: fake)
+    notes = fake.create_file("notes", [], properties=drive_door.lang_file("notes_doc", LANG).labels())
     with drive_door.running("update-sheets", APPLY):
         door = drive_doorway.get_doorway()
         assert door.mode == drive_door.LIVE_MODE
-        _tab(door, sheet_id, "general").clear()
+        ws = _tab(door, sheet_id, "general")
+        ws.update([[ws.get_all_values()[1][0]]], "A2")    # its own value: within the rules
+        door.create_permission(notes, type="anyone", role="reader")  # breaks rule 5
     assert {l["tab"] for l in _log()} >= {"general"}
+    assert len(github.list_issues(drive_door.VIOLATION_LABEL)) == 1
+
+
+def test_live_a_class_sheet_is_enforced_and_other_kinds_are_watched(
+        env, github, monkeypatch):
+    """Class sheets went to enforce on 2026-10-19 (Jeff): live, a write that
+    breaks a rule on one is refused and nothing is written; on a kind still in
+    watch it goes ahead and is reported."""
+    fake, _, sheet_id, _ = env
+    drive_doorway.reset_doorway()
+    monkeypatch.setattr(drive_doorway, "GspreadDoorway", lambda: fake)
+    notes = fake.create_file("notes", [], properties=drive_door.lang_file("notes_doc", LANG).labels())
+    with pytest.raises(DoorViolation, match="named people only"):
+        with drive_door.running("update-sheets", APPLY):
+            drive_doorway.get_doorway().create_permission(sheet_id, type="anyone",
+                                                          role="reader")
+    assert not any(p["type"] == "anyone" for p in fake.list_permissions(sheet_id))
+    with drive_door.running("update-sheets", APPLY):
+        drive_doorway.get_doorway().create_permission(notes, type="anyone", role="reader")
+    assert any(p["type"] == "anyone" for p in fake.list_permissions(notes))
     assert len(github.list_issues(drive_door.VIOLATION_LABEL)) == 1
 
 
@@ -524,7 +555,7 @@ def test_replacing_saves_the_tab_first(env):
     assert saved["command"] == "update-sheets"
 
 
-def test_replacing_refuses_to_drop_an_answered_row_in_any_mode(env):
+def test_replacing_refuses_to_drop_an_answered_row_in_any_mode(env, watch_all):
     fake, _, sheet_id, _ = env
     drive_doorway.set_doorway(CheckedDoorway(fake, mode=drive_door.WATCH))
     door = drive_doorway.get_doorway()
@@ -822,7 +853,7 @@ def test_a_dry_run_is_not_held_to_the_shape(env):
     # the sheet's metadata is not even read.
 
 
-def test_in_watch_mode_shape_problems_go_into_the_issue(env, github):
+def test_in_watch_mode_shape_problems_go_into_the_issue(env, github, watch_all):
     fake, _, sheet_id, _ = env
     drive_doorway.set_doorway(CheckedDoorway(fake, mode=drive_door.WATCH))
     door = drive_doorway.get_doorway()

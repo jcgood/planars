@@ -78,7 +78,10 @@ identity; renaming a tab through the door drops its labels.
 **Watch and enforce.** Enforce: a broken rule raises ``DoorViolation`` and
 nothing is written. Watch: the write goes ahead, and at the end of the
 command the door files or updates one ``door-violation`` GitHub issue (the
-terminal reaches no one). Live runs use ``LIVE_MODE``; tests use enforce.
+terminal reaches no one). Tests use enforce for everything. Live runs use
+``LIVE_MODE`` (watch), except that a broken rule on a file whose kind is in
+``LIVE_ENFORCED_KINDS`` (class sheets, since 2026-10-19) raises: each check
+is told which file it is for, and its kind decides.
 """
 from __future__ import annotations
 
@@ -104,10 +107,15 @@ SNAPSHOT_DIR = ROOT / "regen_snapshots"
 ENFORCE = "enforce"
 WATCH = "watch"
 
-# The one place the live mode is set (design § 4). Class sheets move to
-# enforce once the door has seen real writes to them go through cleanly and
-# every reported violation is resolved (Q7).
+# The one place the live mode is set (design § 4). A kind of file moves to
+# enforce once the door has seen real writes to it go through cleanly and
+# every reported violation is resolved (Q7): it is then listed in
+# LIVE_ENFORCED_KINDS, and a broken rule on a file of that kind raises live
+# too. Class sheets since 2026-10-19 (Jeff dropped the one-week minimum).
+# Everything else stays in LIVE_MODE, watch.
 LIVE_MODE = WATCH
+CLASS_SHEET = "class_sheet"
+LIVE_ENFORCED_KINDS: FrozenSet[str] = frozenset({CLASS_SHEET})
 
 # Every batch_update request type the tooling sends, each checked below.
 # A new one is added here, with its check, before any command can use it.
@@ -117,7 +125,6 @@ REQUEST_TYPES = frozenset({
     "addProtectedRange",
 })
 
-CLASS_SHEET = "class_sheet"
 VIOLATION_LABEL = "door-violation"
 _RETRYABLE = (429, 500, 503)
 _SPREADSHEET_MIME = "application/vnd.google-apps.spreadsheet"
@@ -556,11 +563,14 @@ class CheckedDoorway:
         ended, log what it wrote, and act on what broke a rule: raise
         (enforce) or report it in one issue (watch)."""
         shape_problems: List[str] = []
+        shape_target: Optional[str] = None
         if succeeded and _context is not None and _context.may_write:
             for ss in list(self._sheets_written.values()):
                 self._label_tabs(ss)
             for ss in list(self._sheets_written.values()):
-                shape_problems += self._shape_problems(ss)
+                found = self._shape_problems(ss)
+                shape_problems += found
+                shape_target = shape_target or (ss.id if found else None)
             self._before_sheets, self._before_tabs, self._replacements = {}, {}, {}
         if self._written:
             # One line in the command's output, so a run log shows the door
@@ -568,7 +578,7 @@ class CheckedDoorway:
             # is how unit 20's bug (no live command checked) hid for four days.
             calls = sum(e["writes"] for e in self._written.values())
             broken = len(self.violations) + len(shape_problems)
-            print(f"Drive door ({self.mode}): checked {calls} write(s) to "
+            print(f"Drive door ({self._mode_label()}): checked {calls} write(s) to "
                   f"{len(self._written)} tab(s) or file(s); {broken} broke a rule.")
             from . import provenance
             arguments = vars(args) if args is not None else {}
@@ -577,7 +587,9 @@ class CheckedDoorway:
                 for entry in self._written.values()])
             self._written = {}
         try:
-            self._act("shape at the end of the command", shape_problems)
+            # Rule 6 checks only class sheets, so every shape problem is a
+            # class sheet's: one target stands for them all.
+            self._act("shape at the end of the command", shape_problems, shape_target)
         finally:
             # Reported once, under the command that made them: daily-refresh
             # runs commands inside its own, and must not report them again.
@@ -642,7 +654,7 @@ class CheckedDoorway:
                       what: str) -> None:
         """Set a file's labels (a None value removes one). A write like any
         other: the command must be allowed to write."""
-        self._check(what)
+        self._check(what, target=file_id)
         _retry(lambda: self._inner.update_file(file_id, properties=dict(properties)))
         labels = self._labels.setdefault(file_id, {})
         for key, value in properties.items():
@@ -670,7 +682,7 @@ class CheckedDoorway:
         existing = Identity.from_labels(self._read_labels(file_id))
         if existing is not None and existing != identity:
             self._act(what, [f"found {existing.describe()} where {identity.describe()} "
-                             "was expected"])
+                             "was expected"], file_id)
 
     # -- tab labels -----------------------------------------------------------
     def _tab_labels_of(self, ss: "CheckedSpreadsheet") -> Dict[int, Dict[str, str]]:
@@ -717,7 +729,7 @@ class CheckedDoorway:
                     "location": {"sheetId": ws.id}, "visibility": "DOCUMENT"}}})
         if not requests:
             return 0
-        self._check(f"label the tabs of {ss.title!r}")
+        self._check(f"label the tabs of {ss.title!r}", target=ss.id)
         _retry(lambda: ss._inner.batch_update({"requests": requests}))
         self._tab_labels.pop(ss.id, None)
         self._wrote(ss.id, ss.title, None, "label_tabs", identity=ss.identity)
@@ -842,7 +854,8 @@ class CheckedDoorway:
         if earlier is not None:
             edited = tab._edits_since(earlier, fresh)
             if edited:
-                self._check(f"replace {tab.title!r} of {tab._ss.title!r}", [edited])
+                self._check(f"replace {tab.title!r} of {tab._ss.title!r}", [edited],
+                            target=tab._ss.id)
         self._grids[key] = fresh
         _save_snapshot(tab, fresh, reason)
         if kept is None:
@@ -852,9 +865,12 @@ class CheckedDoorway:
             raise AnswersWouldBeDropped(tab.title, lines)
 
     # -- checking -----------------------------------------------------------
-    def _check(self, what: str, problems: Sequence[str] = ()) -> None:
+    def _check(self, what: str, problems: Sequence[str] = (),
+               target: "Optional[str | Identity]" = None) -> None:
         """Run the always-true checks, plus ``problems`` from the rules, and
-        act on them by mode. ``what`` names the write for the message."""
+        act on them by mode. ``what`` names the write for the message;
+        ``target`` is the file written (its id, or the identity of one being
+        made), which decides the mode (``_enforces``)."""
         found = list(problems)
         ctx = _context
         if ctx is None:
@@ -865,15 +881,31 @@ class CheckedDoorway:
             if not allowed:
                 found.insert(0, f"`{ctx.command}` was run without the flag that lets "
                                 "it write to Drive (a dry run), but tried to write")
-        self._act(what, found)
+        self._act(what, found, target)
 
-    def _act(self, what: str, problems: Sequence[str]) -> None:
+    def _mode_label(self) -> str:
+        """The mode, for the one line a command prints about the door."""
+        if self.mode == ENFORCE or not LIVE_ENFORCED_KINDS:
+            return self.mode
+        return f"{self.mode}; enforce for {', '.join(sorted(LIVE_ENFORCED_KINDS))}"
+
+    def _enforces(self, target: "Optional[str | Identity]") -> bool:
+        """Whether a broken rule on ``target`` raises: always in enforce mode
+        (tests), and live for a kind in LIVE_ENFORCED_KINDS."""
+        if self.mode == ENFORCE:
+            return True
+        identity = target if isinstance(target, Identity) else (
+            self._identify(target) if target else None)
+        return identity is not None and identity.kind in LIVE_ENFORCED_KINDS
+
+    def _act(self, what: str, problems: Sequence[str],
+             target: "Optional[str | Identity]" = None) -> None:
         """Act on broken rules by mode: raise (enforce) or remember (watch)."""
         if not problems:
             return
         command = _context.command if _context else "(no command)"
         messages = [f"{command}: {what}: {p}" for p in problems]
-        if self.mode == ENFORCE:
+        if self._enforces(target):
             raise DoorViolation("The Drive door refused a write.\n  " + "\n  ".join(messages))
         self.violations.extend(messages)
 
@@ -961,7 +993,7 @@ class CheckedDoorway:
         the sheet this one takes over from (restructure-sheets), whose tab
         list rule 6 takes as the "before", and whose pair and keyed rows the
         new sheet carries over rather than generates (see _shape_problems)."""
-        self._check(f"create spreadsheet {title!r}")
+        self._check(f"create spreadsheet {title!r}", target=identity)
         old_layout = None
         if replaces is not None and self._checks_shape_of(identity):
             old_layout = self._sheet_layout(self.open_spreadsheet(replaces))
@@ -982,7 +1014,7 @@ class CheckedDoorway:
     def create_file(self, name: str, parents: Optional[Sequence[str]] = None,
                     content: Optional[bytes] = None,
                     mimetype: Optional[str] = None, *, identity: Identity) -> str:
-        self._check(f"create file {name!r}")
+        self._check(f"create file {name!r}", target=identity)
         file_id = self._create(
             lambda: self._inner.create_file(name, parents=parents, content=content,
                                             mimetype=mimetype, properties=identity.labels()),
@@ -1005,7 +1037,7 @@ class CheckedDoorway:
                                 identity=identity)
 
     def create_doc(self, name: str, parent_id: str, *, identity: Identity) -> str:
-        self._check(f"create doc {name!r}")
+        self._check(f"create doc {name!r}", target=identity)
         doc_id = self._create(
             lambda: self._inner.create_doc(name, parent_id, properties=identity.labels()),
             name, _DOC_MIME, [parent_id], lambda fid: fid)
@@ -1017,18 +1049,18 @@ class CheckedDoorway:
     def update_file(self, file_id: str, name: Optional[str] = None,
                     content: Optional[bytes] = None,
                     mimetype: Optional[str] = None) -> None:
-        self._check(f"update file {file_id}")
+        self._check(f"update file {file_id}", target=file_id)
         _retry(lambda: self._inner.update_file(file_id, name=name, content=content,
                                                mimetype=mimetype))
         self._wrote_file(file_id, name or "", "update_file")
 
     def move_file(self, file_id: str, new_parent_id: str) -> None:
-        self._check(f"move file {file_id}")
+        self._check(f"move file {file_id}", target=file_id)
         _retry(lambda: self._inner.move_file(file_id, new_parent_id))
         self._wrote_file(file_id, "", "move_file")
 
     def append_doc_text(self, doc_id: str, text: str) -> None:
-        self._check(f"append to doc {doc_id}")
+        self._check(f"append to doc {doc_id}", target=doc_id)
         _retry(lambda: self._inner.append_doc_text(doc_id, text))
         self._wrote_file(doc_id, "", "append_doc_text")
 
@@ -1089,7 +1121,7 @@ class CheckedDoorway:
     def create_permission(self, file_id: str, type: str, role: str,
                           email: Optional[str] = None, notify: bool = False) -> str:
         self._check(f"share {file_id} ({type}, {role})",
-                    self._sharing_problems(file_id, type, email, role))
+                    self._sharing_problems(file_id, type, email, role), target=file_id)
 
         def landed():
             for p in self.list_permissions(file_id, fields="permissions(id,type,emailAddress)"):
@@ -1104,7 +1136,7 @@ class CheckedDoorway:
 
     def delete_permission(self, file_id: str, permission_id: str) -> None:
         self._check(f"remove a grant on {file_id}",
-                    self._removal_problems(file_id, permission_id))
+                    self._removal_problems(file_id, permission_id), target=file_id)
         _retry(lambda: self._inner.delete_permission(file_id, permission_id))
         self._wrote_file(file_id, "", "delete_permission")
 
@@ -1117,7 +1149,7 @@ class CheckedDoorway:
             if grant is not None:
                 problems = self._sharing_problems(file_id, grant.get("type", ""),
                                                   grant.get("emailAddress"), role)
-        self._check(f"change a grant on {file_id} to {role}", problems)
+        self._check(f"change a grant on {file_id} to {role}", problems, target=file_id)
         _retry(lambda: self._inner.update_permission(file_id, permission_id, role))
         self._wrote_file(file_id, "", "update_permission")
 
@@ -1134,12 +1166,13 @@ class CheckedDoorway:
         others = sorted({m for m in _MENTION.findall(content) if m != expected})
         if others:
             return [f"a comment on {identity.describe()} may mention only "
-                    f"{identity.lang_id}'s annotator (languages.yaml), not "
+                    f"{identity.lang_id}'s annotator (languages.yaml, people.yaml), not "
                     f"{len(others)} other address(es)"]
         return []
 
     def create_comment(self, file_id: str, content: str) -> str:
-        self._check(f"comment on {file_id}", self._comment_problems(file_id, content))
+        self._check(f"comment on {file_id}", self._comment_problems(file_id, content),
+                    target=file_id)
 
         def landed():
             for c in self.list_comments(file_id):
@@ -1299,7 +1332,7 @@ class CheckedSpreadsheet:
     # -- tab writes ----------------------------------------------------------
     def add_worksheet(self, title: str, rows: int, cols: int,
                       index: Optional[int] = None) -> "CheckedWorksheet":
-        self._door._check(f"add tab {title!r} to {self.title!r}")
+        self._door._check(f"add tab {title!r} to {self.title!r}", target=self.id)
         self._door._before_shape_write(self)
         ws = self._wrap(_create_tab(self, title, rows, cols, index))
         if self._door._checks_shape(self):
@@ -1312,7 +1345,8 @@ class CheckedSpreadsheet:
         tab = _unwrap_tab(worksheet)
         self._door._before_shape_write(self, worksheet)
         problems = worksheet._annotation_loss_problems("delete the tab", all_cells=True)
-        self._door._check(f"delete tab {worksheet.title!r} of {self.title!r}", problems)
+        self._door._check(f"delete tab {worksheet.title!r} of {self.title!r}", problems,
+                          target=self.id)
         result = _retry(lambda: self._inner.del_worksheet(tab))
         self._door._forget(worksheet._key)
         self._door._tab_labels.get(self.id, {}).pop(worksheet.id, None)
@@ -1321,7 +1355,7 @@ class CheckedSpreadsheet:
         return result
 
     def reorder_worksheets(self, worksheets_in_desired_order: Sequence["CheckedWorksheet"]) -> Any:
-        self._door._check(f"reorder the tabs of {self.title!r}")
+        self._door._check(f"reorder the tabs of {self.title!r}", target=self.id)
         self._door._before_shape_write(self)
         tabs = [_unwrap_tab(w) for w in worksheets_in_desired_order]
         result = _retry(lambda: self._inner.reorder_worksheets(tabs))
@@ -1337,7 +1371,7 @@ class CheckedSpreadsheet:
         hit: Dict[Optional[int], Tuple[Optional["CheckedWorksheet"], int]] = {}
         for request in body.get("requests", []):
             problems.extend(self._request_problems(request, touched, hit))
-        self._door._check(f"batch update of {self.title!r}", problems)
+        self._door._check(f"batch update of {self.title!r}", problems, target=self.id)
         result = _retry(lambda: self._inner.batch_update(body))
         for key in touched:
             self._door._forget(key)
@@ -1368,7 +1402,7 @@ class CheckedSpreadsheet:
             self._door._before_shape_write(self, ws)
             problems.extend(ws._value_problems(changes))
             writes.append((ws, changes))
-        self._door._check(f"write values in {self.title!r}", problems)
+        self._door._check(f"write values in {self.title!r}", problems, target=self.id)
         result = _retry(lambda: self._inner.values_batch_update(body))
         for ws, changes in writes:
             ws._apply(changes)
@@ -1756,7 +1790,7 @@ class CheckedWorksheet:
                    for i, row in enumerate(values) for j, v in enumerate(row)}
         self._door._before_shape_write(self._ss, self)
         self._door._check(f"write {self.title!r} of {self._ss.title!r}",
-                          self._value_problems(changes))
+                          self._value_problems(changes), target=self._ss.id)
         result = _retry(lambda: self._inner.update(values, range_name, raw=raw))
         self._apply(changes)
         self._note("update", len(changes))
@@ -1766,7 +1800,7 @@ class CheckedWorksheet:
         changes = {(row - 1, col - 1): _text(value)}
         self._door._before_shape_write(self._ss, self)
         self._door._check(f"write a cell of {self.title!r} in {self._ss.title!r}",
-                          self._value_problems(changes))
+                          self._value_problems(changes), target=self._ss.id)
         result = _retry(lambda: self._inner.update_cell(row, col, value))
         self._apply(changes)
         self._note("update_cell", 1)
@@ -1774,7 +1808,8 @@ class CheckedWorksheet:
 
     def insert_cols(self, values: Sequence[Sequence[Any]], col: int = 1) -> Any:
         self._door._before_shape_write(self._ss, self)
-        self._door._check(f"insert columns into {self.title!r} of {self._ss.title!r}")
+        self._door._check(f"insert columns into {self.title!r} of {self._ss.title!r}",
+                          target=self._ss.id)
         result = _retry(lambda: self._inner.insert_cols(values, col))
         self._door._forget(self._key)
         self._note("insert_cols", sum(len(c) for c in values))
@@ -1790,7 +1825,8 @@ class CheckedWorksheet:
             changes = {(start + i, j): _text(v)
                        for i, row in enumerate(values) for j, v in enumerate(row)}
             problems = self._locked_problems(spec, changes)
-        self._door._check(f"add rows to {self.title!r} of {self._ss.title!r}", problems)
+        self._door._check(f"add rows to {self.title!r} of {self._ss.title!r}", problems,
+                          target=self._ss.id)
         result = _retry(lambda: self._inner.append_rows(values, value_input_option=value_input_option))
         self._door._forget(self._key)
         self._note("append_rows", sum(len(r) for r in values))
@@ -1799,7 +1835,8 @@ class CheckedWorksheet:
     def clear(self) -> Any:
         self._door._before_shape_write(self._ss, self)
         self._door._check(f"clear {self.title!r} of {self._ss.title!r}",
-                          self._annotation_loss_problems("clear", all_cells=True))
+                          self._annotation_loss_problems("clear", all_cells=True),
+                          target=self._ss.id)
         result = _retry(self._inner.clear)
         self._door._grids[self._key] = []
         self._note("clear")
@@ -1809,7 +1846,8 @@ class CheckedWorksheet:
         self._door._before_shape_write(self._ss, self)
         self._door._check(f"resize {self.title!r} of {self._ss.title!r}",
                           self._annotation_loss_problems("shrink", rows_from=rows,
-                                                         cols_from=cols))
+                                                         cols_from=cols),
+                          target=self._ss.id)
         result = _retry(lambda: self._inner.resize(rows=rows, cols=cols))
         self._door._forget(self._key)
         self._note("resize")
@@ -1817,7 +1855,8 @@ class CheckedWorksheet:
 
     def update_title(self, title: str) -> Any:
         self._door._before_shape_write(self._ss, self)
-        self._door._check(f"rename tab {self.title!r} of {self._ss.title!r} to {title!r}")
+        self._door._check(f"rename tab {self.title!r} of {self._ss.title!r} to {title!r}",
+                          target=self._ss.id)
         self._door._drop_tab_labels(self)
         result = _retry(lambda: self._inner.update_title(title))
         self._note("update_title")

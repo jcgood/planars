@@ -29,14 +29,12 @@ row); the spec, ground rules, units and order are the Phase 10 section of
 `docs/ownership-design.md` (both answered by Jeff in their § 7 — don't
 re-ask).
 
-**Where it stands:** class sheets are in the Drive door's watch mode (5e);
-the evidence so far is at the end of the progress doc's Phase 10 row.
-**Open question for Jeff:** drop the one-week minimum and enforce class
-sheets now? Claude recommended yes (a quiet week proves nothing; enforce
-refuses and writes nothing, the safe failure). Until he answers, keep it.
+**Where it stands:** class sheets are enforced live (2026-10-19, Jeff;
+`drive_door.LIVE_ENFORCED_KINDS`); every other kind is in watch. After the
+first daily refresh since then, check that it ran green: a write the door
+now refuses shows as a failed step and its issue, not a `door-violation`.
 
-**Next action, while the week runs — only switching to enforce needs
-watching; the building doesn't:**
+**Next action:**
 
 1. **5f, the other kinds into watch:** write each kind's section of the
    sheet spec and put it under the door's checks, one at a time, in the
@@ -51,8 +49,8 @@ watching; the building doesn't:**
    the per-language change log (unit 15) built in (`ownership-design.md`
    § 4–6).
 
-**Waits on watching:** enforce for class sheets (the week), for each other
-kind (its own first clean real write), for 6c, and refusing unlabelled
+**Waits on watching:** enforce for each other kind (its own first clean
+real write, then added to `LIVE_ENFORCED_KINDS`), for 6c, and refusing unlabelled
 targets (last). **Waits on building:** 11a needs 6a; 9's second half needs
 6; then 11b–d, 16–18.
 

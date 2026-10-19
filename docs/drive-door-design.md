@@ -1,8 +1,8 @@
 # The Drive door: design (Phase 10 unit 5)
 
 **Status: accepted by Jeff 2026-10-13 (§ 7 records his answers). 5a–5d
-built; 5e (class sheets in watch) running; 5f under way, sharing first
-(§ 8).** Unit 5 of Phase 10 ([implementation plan](data-layer-implementation-plan.md),
+built; 5e done; 5f under way: class sheets enforced live since 2026-10-19,
+sharing specified for every kind (§ 8).** Unit 5 of Phase 10 ([implementation plan](data-layer-implementation-plan.md),
 Phase 10 table) was a design pause; this file is the design record. Progress
 is tracked in [data-layer-progress.md](data-layer-progress.md), and the
 decisions are logged there too.
@@ -553,3 +553,13 @@ by person name, and the fake gives the name its people.yaml address (the
 placeholder, in tests); the test data was refrozen. Found on the way:
 the live doorway's `list_files` read only Drive's first page of 100 results,
 which a listing by label would soon have outgrown; it now reads every page.
+
+**5f, class sheets enforced (2026-10-19).** Jeff dropped the one-week
+minimum (§ 4, Q7): the first refresh that reported anything (2026-10-18)
+made 80 writes with no violation, which met his rule. The mode is now chosen
+per write by the kind of file written: every check is told its target (the
+file id, or the identity of a file being made), and a kind in
+`LIVE_ENFORCED_KINDS` raises live, while every other kind stays in watch.
+The end-of-command shape check (rule 6) covers only class sheets, so it is
+enforced too. A write to a file the door can't place stays in watch. Tests
+that are about watch mode's reporting turn the list off (`watch_all`).
