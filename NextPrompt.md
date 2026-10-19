@@ -42,10 +42,9 @@ workflow now only sets up and runs `python -m coding daily-refresh --apply`
 (`coding/daily_refresh.py`). #309 is live, confirmed and closed
 (2026-10-17). **Next:** 5f (enforce for class sheets, then the other
 kinds), once 5e's week of clean daily refreshes is met.
-**Meanwhile (Jeff, 2026-10-18):** the units 6 + 15 + 11 design pause runs
-during the wait. Draft: `docs/ownership-design.md`, waiting on Jeff's
-answers to its § 7; record them there as unit 5's doc did. Nothing in it is
-built before 5f and unit 12.
+**The units 6 + 15 + 11 design is done** (2026-10-18, during the wait):
+`docs/ownership-design.md`, Jeff's answers in its § 7 — don't re-ask them.
+Nothing in it is built before 5f and unit 12; its § 6 is the order.
 Check for an open `door-violation` issue first: each line is a command bug
 or a spec gap to fix.
 Live step to name to Jeff for approval first: 5f's one-notebook sharing test.

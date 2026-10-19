@@ -1,14 +1,15 @@
 # One home per fact: design (Phase 10 units 6, 15 and 11)
 
-**Status: draft for Jeff, 2026-10-18. Not accepted; nothing here is built.**
+**Status: Jeff answered its eight questions on 2026-10-18 (§ 7); nothing here
+is built.**
 This is the second design pause of Phase 10
 ([implementation plan](data-layer-implementation-plan.md), Phase 10 table and
 "Order"). The plan has units 6, 15 and 11 designed together because each needs
 the others: proposal sheets (11) need a checked way to write the sources (6)
 and a record of what changed and why (15). Jeff moved this pause forward on
 2026-10-18 so it happens during unit 5e's week of watching, instead of after
-5f. Building still waits for 5f and unit 12. § 7 lists the questions only Jeff
-can answer; the rest is a recommendation he can overrule.
+5f. Building still waits for 5f and unit 12. § 7 records Jeff's answers to the
+questions only he could settle.
 
 ## 1. The problem
 
@@ -73,7 +74,7 @@ writes a line in the change log.
 | a language's classes, constructions, criteria | `diagnostics_{lang}.yaml` | coordinator; annotators propose |
 | annotations | the class sheets (Google) | annotators; imported daily into TSVs, which are the record |
 | notes | the notes Doc | annotators |
-| where each Drive file is | one file in planars-data (§ 4.3, Q7) | the tooling only |
+| where each Drive file is | one file in planars-data (§ 4.3); Colab finds files by their labels (Q7) | the tooling only |
 
 Annotations are the one fact whose source stays in Google. Annotators can only
 work there. The imported TSVs are the record that outlives Google: they are
@@ -92,8 +93,8 @@ labelled since 5d) says what each should hold, built from the source.
 
 ### 3.2 One proposal sheet per language
 
-Each language gets one **proposal sheet**, editable by that language's
-annotator by name. It has two tabs, each filled with the current source plus
+Each language gets one **proposal sheet**, editable by name by that
+language's annotator and by the project's coordinators (Q2). It has two tabs, each filled with the current source plus
 one extra column, **What changed?**:
 
 - **Planar**: the planar's own rows (Position, Position_Name, Elements, …).
@@ -163,8 +164,8 @@ In the same units, nothing left half-moved:
 - `sync-diagnostics-yaml --from-tsv` and `diagnostics_drift.json`.
 - The `planar-changed` and `diagnostics-drift` labels, and pending-changes
   entries of the planar and diagnostics kinds. `proposal` replaces them.
-- `diagnostics_{lang}.tsv`, if Q5 says so: its readers read the YAML through
-  one function instead.
+- `diagnostics_{lang}.tsv` (Q5): its readers read the YAML through one
+  function instead.
 
 `import-planar --to-sheet` and `sync-diagnostics-yaml --to-sheet` become the
 daily rebuild of the locked copies; restructure-sheets' push of the planar
@@ -172,11 +173,11 @@ becomes a call to the same rebuild.
 
 ### 3.6 The manifest, Colab and notebooks
 
-- **The manifest shrinks to IDs.** `construction_params` and `planar` go. The
-  commands already read a tab's criteria from its header and the YAML;
-  Colab's reports do the same through **one package function** that opens a
-  language's sheets and reads the planar from its locked copy. Colab then
-  reads real Sheets, never a cached description of them.
+- **The manifest goes (Q7).** Colab finds a language's files by their 5d
+  labels, through **one package function** that opens the sheets, reads each
+  tab's criteria from its header and the YAML (as the commands already do)
+  and the planar from its locked copy. Colab then reads real Sheets, never a
+  cached description of them.
 - **Notebooks hold no class lists** that can go stale: the class cells are
   built when the notebook runs, from the language's sheets. They are then
   rebuilt by the daily refresh like the status sheets, so a template change
@@ -232,10 +233,9 @@ transport and the backup. Nothing reads its history (§ 5.3).
 Today IDs live in `drive_config.json`, in the manifest on Drive, and in
 `sheets_manifest.json`, a local copy nobody reads. The design: one file in
 planars-data lists every Drive file's ID (written only by the door, when a
-command creates a file). The manifest on Drive becomes a copy built from it
-for Colab. Or, if Colab can find files by their 5d labels (a Drive query on
-`planars_lang`), there is no manifest at all (Q7). `sheets_manifest.json`
-and `manifest_backup.json` are deleted.
+command creates a file), and the commands read IDs from it. Colab finds files
+by their 5d labels instead (Q7), so the manifest on Drive,
+`sheets_manifest.json` and `manifest_backup.json` are all deleted.
 
 ### 4.4 What doesn't pass the door
 
@@ -299,59 +299,59 @@ the same commit.
    archive copies and the change log (unit 15's §§ 5.1–5.2 are built
    inside it). The two `_archive_tsv` copies and `_autocommit_data` are
    deleted.
-3. **6b — the state files and the ID file** (§ 4.3, as Q7 decides).
+3. **6b — the state files and the ID file** (§ 4.3).
 4. **6c — enforce,** by the § 4 rule; `data-overwrite` moves to the log (§ 5.3).
-5. **11a — proposal sheets:** the `proposal_sheet` kind in both doors,
-   creation (**a live write, named for Jeff's approval**), the daily
-   comparison and issue, `accept-proposal`. The old intakes keep running
-   alongside until 11b.
-6. **11b — lock the planar and diagnostics Sheets and retire the intakes**
-   (§ 3.5; **a live write**: protecting the Sheets). Announced to annotators
-   first on each language's `sheet-updates` issue.
-7. **11c — the manifest to IDs, Colab through one function, notebooks
-   rebuilt daily** (needs 5f's sharing test for notebooks).
+5. **11a — proposal sheets:** the coordinators list (Q2), the
+   `proposal_sheet` kind in both doors, creation (**a live write, named for
+   Jeff's approval**), the daily comparison and issue, `accept-proposal`. The
+   old intakes keep running alongside until 11b. Jeff tells Adam, and an
+   issue mentioning him says what changes (Q8).
+6. **11b — lock the planar and diagnostics Sheets, retire the intakes and
+   delete the diagnostics TSV** (§ 3.5, Q5; **a live write**: protecting the
+   Sheets), once Adam has used a proposal sheet.
+7. **11c — Colab by labels, the manifest deleted, notebooks rebuilt daily**
+   (needs 5f's sharing test for notebooks, and Q7's label test).
 8. **11d — the Instructions sentences into the schema.**
 
-## 7. Questions for Jeff
+## 7. Decisions (Jeff, 2026-10-18)
 
-**Q1. What a proposal sheet looks like.** *Recommended:* a full editable copy
-of the planar and diagnostics with a What changed? column (§ 3.2). The
-alternative, a blank form where the annotator describes a change in words,
-is easier to build but leaves the coordinator to work out the edit, which is
-the judgment the proposal should already contain.
+**Q1. What a proposal sheet looks like: a full editable copy** of the
+planar and diagnostics, with a What changed? column (§ 3.2), not a blank
+request form. The proposal then already holds the edit, and the tooling can
+list and apply it exactly.
 
-**Q2. Who may edit a proposal sheet.** *Recommended:* the language's annotator
-by name, as for class sheets. The coordinator edits the source directly.
-Should Adam, as a coordinator for languages he doesn't annotate, also get a
-proposal sheet, or edit sources?
+**Q2. Who may edit a proposal sheet: Jeff, Adam, and the language's
+annotator** (who also writes that language's chapter). Jeff and Adam can
+edit every language's proposal sheet, so planars-data's `people.yaml` gains
+a project-level list of coordinators beside each language's annotator, and
+the sharing spec reads both. The coordinators still edit the sources
+directly; the proposal sheet is open to them as well.
 
-**Q3. The three-way comparison (§ 3.4).** *Recommended:* yes. Without it,
-every source edit made while a proposal is open shows up as a false
-proposal to undo it.
+**Q3. Compare with the base: yes** (§ 3.4). The proposal is the difference
+between the sheet and what it was filled from. Rows only the source changed
+are refreshed, and rows both changed are a conflict shown in `accept-proposal`.
 
-**Q4. Changes that need judgment downstream.** When an accepted planar
-change renumbers positions or splits an element, `accept-proposal` runs
-`restructure-sheets` as today, dry run first, and stops for the
-coordinator's go-ahead before the live run. *Recommended:* yes; it never
-runs a restructure unattended.
+**Q4. A restructure stops after its dry run.** `accept-proposal` edits the
+source, runs `restructure-sheets` as a dry run, and waits for the
+coordinator's go-ahead before the live run. Changes that only add rows or
+columns (new elements, new criteria) run without stopping.
 
-**Q5. Delete `diagnostics_{lang}.tsv`.** After unit 11 nobody edits or imports
-it; it's a third copy of the YAML that can lag (validate-coding's `proform`
-error on 2026-10-18 came from it). *Recommended:* delete it, and its readers
-read the YAML through one function.
+**Q5. Delete `diagnostics_{lang}.tsv`.** Its readers (validate-coding,
+integrity-check, check-codebook, the import) read the YAML through one
+function. The locked diagnostics Sheet and the proposal sheet are the grid
+views.
 
-**Q6. The change log's form.** *Recommended:* one TSV per language in
-planars-data (§ 5.2), one line per file changed, and Drive writes kept in the
-provenance log beside it rather than mixed in.
+**Q6. One change log per language, a TSV** (§ 5.2). Drive writes stay in
+their own log beside it.
 
-**Q7. Where Colab finds the sheets.** *Recommended:* first, the manifest on
-Drive becomes a generated copy of the ID file (§ 4.3). Then, once a Colab
-test shows an annotator's notebook can find files by their labels, the
-manifest is deleted. The test is the same kind as 5f's notebook-sharing test,
-and could run with it.
+**Q7. Colab finds files by their labels straight away;** no shrunk manifest
+in between. The manifest on Drive is deleted in 11c, together with
+`sheets_manifest.json` and `manifest_backup.json`. Before notebooks switch,
+a test with an annotator's account has to show a notebook can find a
+language's sheets by label. If it can't, the step waits until it can; it
+doesn't fall back to a manifest.
 
-**Q8. The annotators' side.** Moving from "edit the planar Sheet" to "propose
-on the proposal sheet" changes what an annotator who
-edits a planar Sheet today does (Adam, if anyone). *Recommended:* tell him on #243 when 11a is
-ready, and keep the old intake running until he has used the proposal sheet
-once (§ 6, step 5).
+**Q8. The switch for annotators: Jeff tells Adam himself, and an issue
+mentioning him** says what changes and when (filed through `coding/issues.py`
+when 11a is ready). The old Sheet intake keeps running until Adam has used a
+proposal sheet once, then 11b locks the Sheets.
