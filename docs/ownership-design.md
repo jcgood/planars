@@ -8,7 +8,7 @@ This is the second design pause of Phase 10
 the others: proposal sheets (11) need a checked way to write the sources (6)
 and a record of what changed and why (15). Jeff moved this pause forward on
 2026-10-18 so it happens during unit 5e's week of watching, instead of after
-5f. Building still waits for 5f and unit 12. § 7 records Jeff's answers to the
+5f. Building starts after unit 12 (§ 6). § 7 records Jeff's answers to the
 questions only he could settle.
 
 ## 1. The problem
@@ -294,7 +294,9 @@ the change-log position is unit 18.
 Each step leaves a complete, working system, and removes what it replaces in
 the same commit.
 
-1. **(Before this, as planned: 5f, then unit 12.)**
+1. **(Before this: unit 12.** 6a doesn't need 5f's switches to enforce,
+   only the watch-mode door, so it can be built while 5f's kinds are being
+   watched.)
 2. **6a — the door for annotation TSVs and set-up files,** in watch mode, with
    archive copies and the change log (unit 15's §§ 5.1–5.2 are built
    inside it). The two `_archive_tsv` copies and `_autocommit_data` are

@@ -24,30 +24,45 @@ Three live threads. Read whichever matches what you're picking up. (Audit
 
 **State lives in `docs/data-layer-progress.md`** (Status by unit, Phase 10
 row); the spec, ground rules, units and order are the Phase 10 section of
-`docs/data-layer-implementation-plan.md`. Planned with Jeff 2026-10-12 and
-approved to run unattended **except at the pauses the spec names** (unit 5
-design; units 6+15+11 design). Units 14, 4, 7, 3's
-first group, 1, 2 and 10 are done. **Unit 5 (the Drive door knows the
-topology) is designed and accepted** — `docs/drive-door-design.md`, Jeff's
-answers in its § 7, what was built in its § 8. 5a (the sheet spec), 5b
-(the checking layer, `coding/drive_door.py`, live in watch mode) and 5c
-(snapshots, per-write provenance, mid-run-edit check) and 5d (labels, rule
-6, the labelling migration, manifest fallback deleted) are done. **Now 5e:**
-class sheets stay in watch mode until the design doc's § 4 rule is met (at
-least a week of clean daily refreshes; the week restarted 2026-10-18,
-because until unit 20's fix no live command reported anything). Units 3,
-19 and 9's first half finished during it (2026-10-17; `coding/CLAUDE.md`
-waits for unit 6). Unit 8 is done and ran live cleanly (2026-10-17): the
-workflow now only sets up and runs `python -m coding daily-refresh --apply`
-(`coding/daily_refresh.py`). #309 is live, confirmed and closed
-(2026-10-17). **Next:** 5f (enforce for class sheets, then the other
-kinds), once 5e's week of clean daily refreshes is met.
-**The units 6 + 15 + 11 design is done** (2026-10-18, during the wait):
-`docs/ownership-design.md`, Jeff's answers in its § 7 — don't re-ask them.
-Nothing in it is built before 5f and unit 12; its § 6 is the order.
+`docs/data-layer-implementation-plan.md`. Approved to run unattended
+**except at the pauses and live steps the spec names.** Designs: unit 5 in `docs/drive-door-design.md`, units 6 + 15 + 11 in
+`docs/ownership-design.md` (both answered by Jeff in their § 7 — don't
+re-ask).
+
+**Where it stands:** class sheets are in the Drive door's watch mode (5e);
+the evidence so far is at the end of the progress doc's Phase 10 row.
+**Open question for Jeff:** drop the one-week minimum and enforce class
+sheets now? Claude recommended yes (a quiet week proves nothing; enforce
+refuses and writes nothing, the safe failure). Until he answers, keep it.
+
+**Next action, while the week runs — only switching to enforce needs
+watching; the building doesn't:**
+
+1. **5f, the other kinds into watch:** write each kind's section of the
+   sheet spec and put it under the door's checks, one at a time, in the
+   design doc's order: sharing → planar Sheet → diagnostics Sheet → status
+   sheets → notes Docs → files (notebooks, reports, folders). Each kind's
+   own clock starts only when it is watched, so this is the work that
+   shortens the wait. Start with sharing.
+2. **Unit 12:** pending changes, the provenance log and regen snapshots
+   kept in planars-data.
+3. **Unit 6a:** the local-file door in watch mode, with archive copies and
+   the per-language change log (unit 15) built in (`ownership-design.md`
+   § 4–6).
+
+**Waits on watching:** enforce for class sheets (the week), for each other
+kind (its own first clean real write), for 6c, and refusing unlabelled
+targets (last). **Waits on building:** 11a needs 6a; 9's second half needs
+6; then 11b–d, 16–18.
+
+**Live steps — name each to Jeff for approval first:** 5f's one-notebook
+sharing test and Q7's Colab label-search test (both need an annotator's
+account, so Adam takes part; they can run together); later, creating
+proposal sheets (11a) and locking the planar/diagnostics Sheets (11b), with
+Jeff telling Adam and an issue mentioning him (Q8).
+
 Check for an open `door-violation` issue first: each line is a command bug
 or a spec gap to fix.
-Live step to name to Jeff for approval first: 5f's one-notebook sharing test.
 
 **Don't re-litigate (decided 2026-10-12):** light maintenance beats speed; a
 registry only if the code runs from it; no `[y, n]` default; close the
