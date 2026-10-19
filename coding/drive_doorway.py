@@ -265,7 +265,8 @@ class DriveDoorway(Protocol):
     # -- Drive files --------------------------------------------------------
     def list_files(self, q: str, fields: str = "files(id, name)",
                    page_size: Optional[int] = None) -> List[Dict]:
-        """Raw Drive query. Returns the ``files`` list.
+        """Raw Drive query. Returns the ``files`` list: every match, read page
+        by page, unless ``page_size`` asks for one page of that size.
 
         ``q`` is passed through unescaped, as today. Current callers build it
         by f-string interpolation of names and IDs; that is injection-shaped
@@ -411,10 +412,23 @@ class GspreadDoorway:
     # -- Drive files --------------------------------------------------------
     def list_files(self, q: str, fields: str = "files(id, name)",
                    page_size: Optional[int] = None) -> List[Dict]:
-        kwargs: Dict[str, Any] = {"q": q, "fields": fields}
         if page_size is not None:
-            kwargs["pageSize"] = page_size
-        return self.drive.files().list(**kwargs).execute().get("files", [])
+            return self.drive.files().list(q=q, fields=fields, pageSize=page_size
+                                           ).execute().get("files", [])
+        # Every page: Drive returns at most 100 files a page by default, and a
+        # listing that stopped there would look complete.
+        files: List[Dict] = []
+        token = None
+        while True:
+            kwargs: Dict[str, Any] = {"q": q, "fields": f"nextPageToken, {fields}",
+                                      "pageSize": 1000}
+            if token:
+                kwargs["pageToken"] = token
+            response = self.drive.files().list(**kwargs).execute()
+            files += response.get("files", [])
+            token = response.get("nextPageToken")
+            if not token:
+                return files
 
     def get_file(self, file_id: str, fields: str = "id",
                  supports_all_drives: bool = False) -> Dict:

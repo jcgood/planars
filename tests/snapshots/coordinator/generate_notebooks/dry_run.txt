@@ -1,9 +1,9 @@
 DRY RUN — Notebook generation
 Languages:              ['arao1248', 'stan1293', 'synth0001']
-Classes (all langs):    ['ciscategorial', 'noninterruption', 'nonpermutability', 'free_occurrence', 'subspanrepetition', 'metrical', 'segmental', 'coreference', 'proform', 'phrasal_accent', 'biuniqueness_deviations']
+Classes (all langs):    ['ciscategorial', 'noninterruption', 'nonpermutability', 'free_occurrence', 'subspanrepetition', 'proform', 'metrical', 'segmental', 'coreference', 'phrasal_accent', 'biuniqueness_deviations']
 
 Contributor notebooks (one per language, includes per-class report sections):
-  domains_arao1248.ipynb — ['ciscategorial', 'noninterruption', 'nonpermutability', 'free_occurrence', 'subspanrepetition']
+  domains_arao1248.ipynb — ['ciscategorial', 'noninterruption', 'nonpermutability', 'free_occurrence', 'subspanrepetition', 'proform']
   domains_stan1293.ipynb — ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent', 'biuniqueness_deviations']
   domains_synth0001.ipynb — ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent']
 
@@ -18,6 +18,6 @@ Report notebooks (one per language — generates shareable HTML for collaborator
   report_synth0001.ipynb
 
 Coordinator notebook (all languages):
-  all_languages.ipynb — ['ciscategorial', 'noninterruption', 'nonpermutability', 'free_occurrence', 'subspanrepetition', 'metrical', 'segmental', 'coreference', 'proform', 'phrasal_accent', 'biuniqueness_deviations']
+  all_languages.ipynb — ['ciscategorial', 'noninterruption', 'nonpermutability', 'free_occurrence', 'subspanrepetition', 'proform', 'metrical', 'segmental', 'coreference', 'phrasal_accent', 'biuniqueness_deviations']
 
 Run with --apply to generate and upload.

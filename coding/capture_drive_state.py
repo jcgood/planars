@@ -46,6 +46,12 @@ confidence. See docs/drive-protocol-surface.md § "Subtleties most likely to be
 guessed wrong". If you are tempted to clean up a fixture, don't -- the mess is
 the signal.
 
+Each sheet's own grants are recorded too (not its owner's, not those it
+inherits from its folder), so the fake starts shared as the live sheet is.
+A person is recorded by the name people.yaml gives them, never by address;
+the fake gives that name the address people.yaml has, which in tests is the
+placeholder.
+
 Tab order is likewise recorded as returned, not sorted: several code paths in
 ``generate_sheets.py`` detect ordering drift, and their failure mode when fed a
 wrongly-ordered fake is silent.
@@ -132,7 +138,29 @@ def _capture_spreadsheet(gc, drive, spreadsheet_id: str, role: str) -> Dict:
         # from the same protections the live sheet has.
         "protected_ranges": [p for ws in worksheets
                              for p in _retry(lambda: ss.list_protected_ranges(ws.id))],
+        # Who the sheet itself is shared with (the owner and grants inherited
+        # from its folder left out), so the fake starts from the same sharing.
+        "permissions": _own_grants(drive, spreadsheet_id),
     }
+
+
+def _own_grants(drive, file_id: str) -> List[Dict]:
+    """A file's own grants, each person recorded by the name people.yaml
+    gives them (None if it has none), never by address."""
+    from .people import name_for_email
+    from .sheet_spec import is_own_grant
+    perms = _retry(lambda: drive.permissions().list(
+        fileId=file_id,
+        fields="permissions(id,type,role,emailAddress,permissionDetails)").execute())
+    grants = []
+    for p in perms.get("permissions", []):
+        if not is_own_grant(p):
+            continue
+        grant = {"id": p["id"], "type": p["type"], "role": p["role"]}
+        if p["type"] == "user":
+            grant["person"] = name_for_email(p.get("emailAddress"))
+        grants.append(grant)
+    return grants
 
 
 def _plan(manifest: Dict, langs: List[str]) -> List[tuple]:

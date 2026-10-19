@@ -31,4 +31,4 @@ stan1293
 ──────────────────────────────────────────────────
 Validated 23 sheet(s).  Errors: 1
 Cell highlighting and each sheet's Status tab updated in Google Sheets.
-Drive door (enforce): checked 34 write(s) to 24 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 33 write(s) to 23 tab(s) or file(s); 0 broke a rule.

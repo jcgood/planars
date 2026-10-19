@@ -238,24 +238,33 @@ def resolve_referential_divergence_for_test(env: Env, lang: str) -> None:
 # ---------------------------------------------------------------------------
 
 def test_dry_run_baseline_transcript(env):
-    """Real fixture data as committed: every language already has a sheet for
-    every class it lists (since the 2026-10-13 refreeze; arao1248's
-    nonpermutability and free_occurrence sheets, #271 Finding 19, exist now).
+    """Real fixture data as committed: what a run would create is whatever
+    classes a language lists with no sheet yet (since the 2026-10-19
+    refreeze, arao1248's proform stub, #279).
     """
     check_snapshot("dry_run_baseline.txt", env.run(["generate-sheets"]))
 
 
 def test_apply_noop_baseline_transcript(env):
-    """Every language is a true no-op: no spreadsheet is created or moved. The
-    apply still re-uploads the merged manifest once at the end regardless
-    (unlike sync-params, generate-sheets has no "anything changed" gate on that
-    final upload) -- so one update_file mutation here is real, existing
-    behaviour, not a sign anything else was recreated.
+    """Real data as committed: a sheet is made for each class a language lists
+    with no sheet yet, and for nothing else. Which classes those are comes from
+    the data, not from this test: since the 2026-10-19 refreeze, arao1248's
+    proform stub (#279) has none. The apply also re-uploads the merged
+    manifest once at the end regardless (unlike sync-params, generate-sheets
+    has no "anything changed" gate on that final upload).
     """
+    manifest = env.manifest()
+    missing = sorted(
+        f"{cls}_{lang}"
+        for lang, entry in manifest.items() if isinstance(entry, dict) and "sheets" in entry
+        for cls in (_yaml.safe_load(env.yaml_path(lang).read_text(encoding="utf-8"))
+                    .get("classes") or {})
+        if cls not in entry["sheets"])
     out = env.run(["generate-sheets", "--apply"])
     check_snapshot("apply_noop_baseline.txt", out)
-    assert env.doorway.mutations_of("create_spreadsheet") == []
-    assert env.doorway.mutations_of("move_file") == []
+    made = sorted(m["title"] for m in env.doorway.mutations_of("create_spreadsheet"))
+    assert made == missing
+    assert len(env.doorway.mutations_of("move_file")) == len(missing)
 
 
 def test_brand_new_language_dry_run_transcript(env):

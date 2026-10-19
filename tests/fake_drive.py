@@ -754,6 +754,26 @@ _NAME_RE = re.compile(r"^name\s*=\s*'(?P<v>.*)'$")
 _MIME_RE = re.compile(r"^mimeType\s*=\s*'(?P<v>.*)'$")
 _TRASHED_RE = re.compile(r"^trashed\s*=\s*(?P<v>true|false)$")
 _PARENT_RE = re.compile(r"^'(?P<v>[^']*)'\s+in\s+parents$")
+# A label query: properties has { key='planars_kind' and value='class_sheet' }
+_PROPERTY_RE = re.compile(
+    r"^properties\s+has\s+\{\s*key\s*=\s*'(?P<k>[^']*)'\s+and\s+value\s*=\s*'(?P<v>[^']*)'\s*\}$")
+
+
+def _clauses(q: str) -> List[str]:
+    """Split a query on its top-level ``and``s, not the one inside a
+    ``properties has { ... }`` clause."""
+    out, depth, start = [], 0, 0
+    for match in re.finditer(r"[{}]| and ", q):
+        token = match.group()
+        if token == "{":
+            depth += 1
+        elif token == "}":
+            depth -= 1
+        elif depth == 0:
+            out.append(q[start:match.start()].strip())
+            start = match.end()
+    out.append(q[start:].strip())
+    return out
 
 
 def _parse_query(q: str) -> Dict[str, Any]:
@@ -764,8 +784,12 @@ def _parse_query(q: str) -> Dict[str, Any]:
     silently returns "no match" for a query it did not understand.
     """
     parsed: Dict[str, Any] = {}
-    for clause in [c.strip() for c in q.split(" and ")]:
+    for clause in _clauses(q):
         if not clause:
+            continue
+        prop = _PROPERTY_RE.match(clause)
+        if prop:
+            parsed.setdefault("properties", {})[prop.group("k")] = prop.group("v")
             continue
         for key, pattern in (("name", _NAME_RE), ("mimeType", _MIME_RE),
                              ("trashed", _TRASHED_RE), ("parent", _PARENT_RE)):
@@ -883,6 +907,16 @@ class FakeDriveDoorway:
         self._spreadsheets[ss.id] = ss
         self._files[ss.id] = _DriveFile(ss.id, ss.title, _SPREADSHEET_MIME,
                                         properties=dict(data.get("properties", {})))
+        # The sheet's own grants, recorded by person name (addresses stay out
+        # of the recording), given the address people.yaml has for that name —
+        # in tests, the placeholder. Recordings before 2026-10-19 have none.
+        for grant in data.get("permissions", []):
+            perm = {"id": grant["id"], "type": grant["type"], "role": grant["role"]}
+            if grant["type"] == "user":
+                from coding.people import email_for
+                perm["emailAddress"] = (email_for(grant["person"]) if grant.get("person")
+                                        else "someone-not-in-people-yaml@example.invalid")
+            self._permissions.setdefault(ss.id, []).append(perm)
         return ss
 
     def seed_file(self, name: str, mimetype: str, parents: Sequence[str] = (),
@@ -998,7 +1032,12 @@ class FakeDriveDoorway:
                 continue
             if "parent" in parsed and parsed["parent"] not in f.parents:
                 continue
-            matches.append({"id": f.id, "name": f.name})
+            if any(f.properties.get(k) != v for k, v in parsed.get("properties", {}).items()):
+                continue
+            match = {"id": f.id, "name": f.name}
+            if f.properties and "properties" in fields:
+                match["properties"] = dict(f.properties)
+            matches.append(match)
         return matches[:page_size] if page_size else matches
 
     def get_file(self, file_id: str, fields: str = "id",

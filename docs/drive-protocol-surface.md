@@ -788,7 +788,8 @@ Grouped by the object they operate on. **[R]**/**[W]** marks read/write;
 - `list_files(query: str, fields: str, page_size: Optional[int] = None) -> List[dict]`
   **[R]** — covers every `drive.files().list(...)` call site (5+ independent
   implementations of "find file(s) by name/parent/mimetype", see the
-  duplication subsection below). `query` is passed through as a raw Drive
+  duplication subsection below). Without `page_size` it reads every page
+  (since 2026-10-19; before, only Drive's first page of 100). `query` is passed through as a raw Drive
   query string; **the current code builds these with f-string interpolation
   of names/IDs with no escaping** (flagged under `generate_sheets.py`) — not
   a live bug today (names are internally generated) but worth the protocol

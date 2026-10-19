@@ -4,7 +4,6 @@ Connecting to Google...
 
 Language: arao1248
   [planar] No changes → planar_arao1248.tsv
-  [diagnostics] ERROR (non-blocking): [ERROR] diagnostics_arao1248.tsv: Required class 'proform' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
   [diagnostics] No changes → diagnostics_arao1248.tsv
 
   ciscategorial

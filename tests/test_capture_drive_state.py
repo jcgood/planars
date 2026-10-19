@@ -49,23 +49,52 @@ def _seeded_doorway() -> FakeDriveDoorway:
             "values": [["Element", "accented", "Comments"], ["and", "y", ""]],
             "developer_metadata": _TAB_LABELS,
         }],
+        "permissions": _GRANTS,
     })
     return doorway
 
 
+# Recorded by name, never address; one person people.yaml doesn't know.
+_GRANTS = [
+    {"id": "g1", "type": "user", "role": "writer", "person": "Adam Tallman"},
+    {"id": "g2", "type": "user", "role": "reader", "person": None},
+    {"id": "g3", "type": "anyone", "role": "reader"},
+]
+
+
 class _DriveV3:
-    """The one Drive v3 call capture makes (``files().get(...).execute()``),
-    answered from the stand-in Drive."""
+    """The two Drive v3 calls capture makes (``files().get(...)`` and
+    ``permissions().list(...)``, each ``.execute()``d), answered from the
+    stand-in Drive."""
 
     def __init__(self, doorway: FakeDriveDoorway) -> None:
         self._doorway = doorway
 
     def files(self):
-        return self
+        return _Files(self._doorway)
+
+    def permissions(self):
+        return _Permissions(self._doorway)
+
+
+def _request(result):
+    return type("_Request", (), {"execute": lambda _self: result})()
+
+
+class _Files:
+    def __init__(self, doorway: FakeDriveDoorway) -> None:
+        self._doorway = doorway
 
     def get(self, fileId, fields):
-        meta = self._doorway.get_file(fileId, fields=fields)
-        return type("_Request", (), {"execute": lambda _self: meta})()
+        return _request(self._doorway.get_file(fileId, fields=fields))
+
+
+class _Permissions:
+    def __init__(self, doorway: FakeDriveDoorway) -> None:
+        self._doorway = doorway
+
+    def list(self, fileId, fields):
+        return _request({"permissions": self._doorway.list_permissions(fileId, fields=fields)})
 
 
 # ---------------------------------------------------------------------------
@@ -103,14 +132,17 @@ def test_capturing_the_same_spreadsheet_twice_is_byte_identical():
 
 
 def test_capture_records_the_labels_and_the_fake_replays_them():
-    """The sheet's identity label and its tabs' labels are recorded, and a
-    recording seeded into the stand-in Drive is captured back unchanged, so
-    the door in tests places recorded sheets by label as it does live."""
+    """The sheet's identity label, its tabs' labels and its grants are
+    recorded, and a recording seeded into the stand-in Drive is captured back
+    unchanged, so the door in tests places recorded sheets by label, and
+    finds them shared, as it does live."""
     doorway = _seeded_doorway()
     data = _capture_spreadsheet(_GCFor(doorway), _DriveV3(doorway), "probe_sheet",
                                 role="stan1293:class:metrical")
     assert data["properties"] == _SHEET_LABELS
     assert data["worksheets"][0]["developer_metadata"] == _TAB_LABELS
+    assert data["permissions"] == _GRANTS
+    assert "@" not in json.dumps(data["permissions"])
 
     replayed = FakeDriveDoorway.from_fixtures()
     replayed.seed_spreadsheet(data)

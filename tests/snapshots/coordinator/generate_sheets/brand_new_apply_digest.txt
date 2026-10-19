@@ -1,20 +1,20 @@
 SUMMARY
-    18  add_worksheet
-   148  batch_request
+    21  add_worksheet
+   168  batch_request
      1  create_file
-     9  create_permission
-     7  create_spreadsheet
-     5  del_worksheet
-     7  move_file
-     5  reorder_worksheets
-    20  update
-     9  update_file
-     6    └─ addProtectedRange
-    36    └─ createDeveloperMetadata
-    62    └─ repeatCell
-    24    └─ setDataValidation
-     5    └─ updateDimensionProperties
-    15    └─ updateSheetProperties
+    10  create_permission
+     8  create_spreadsheet
+     6  del_worksheet
+     8  move_file
+     6  reorder_worksheets
+    23  update
+    10  update_file
+     7    └─ addProtectedRange
+    42    └─ createDeveloperMetadata
+    70    └─ repeatCell
+    26    └─ setDataValidation
+     6    └─ updateDimensionProperties
+    17    └─ updateSheetProperties
 
 DRIVE OPERATIONS
   create_permission: file_id='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU', type='user', role='reader', email='annotator@example.org', notify=False
@@ -41,8 +41,11 @@ DRIVE OPERATIONS
   update_file: file_id='fake_ss_0016', properties={'planars_kind': 'class_sheet', 'planars_lang': 'arao1248', 'planars_class': 'subspanrepetition'}
   move_file: file_id='fake_ss_0016', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
   create_permission: file_id='fake_ss_0016', type='user', role='writer', email='annotator@example.org', notify=False
-  update_file: file_id='fake_manifest_file', bytes=53833
-  update_file: file_id='fake_manifest_file', bytes=53833
+  update_file: file_id='fake_ss_0018', properties={'planars_kind': 'class_sheet', 'planars_lang': 'arao1248', 'planars_class': 'proform'}
+  move_file: file_id='fake_ss_0018', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
+  create_permission: file_id='fake_ss_0018', type='user', role='writer', email='annotator@example.org', notify=False
+  update_file: file_id='fake_manifest_file', bytes=54392
+  update_file: file_id='fake_manifest_file', bytes=54392
 
 SHEET OPERATIONS
 
@@ -64,7 +67,7 @@ SHEET OPERATIONS
     create_spreadsheet: title='diagnostics_arao1248'
 
   fake_ss_0006  tab=Sheet1
-    update: anchor A1 raw=True 6x4
+    update: anchor A1 raw=True 7x4
       | ['Class', 'Language', 'Constructions', 'Criteria']
       | ['ciscategorial', 'arao1248', 'general', 'V-combines{y/n}, N-combines{y/n}, A-combines{y/n}, PRED-combines{y/n}']
       | ['noninterruption', 'arao1248', 'general', 'free{y/n}, multiple{y/n}']
@@ -424,3 +427,58 @@ SHEET OPERATIONS
     repeatCell: col 0 (BEYOND HEADER) rows 0-1
     repeatCell: col 2 (BEYOND HEADER) rows 1-None
     setDataValidation: col 1 (BEYOND HEADER) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  fake_ss_0018  tab=-
+    create_spreadsheet: title='proform_arao1248'
+    reorder_worksheets: order=['Instructions', 'general', 'Status']
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "general", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
+
+  fake_ss_0018  tab=general
+    add_worksheet: rows=75, cols=6, index=None, sheet_id=1
+    update: anchor A1 raw=True 74x6
+      | ['Element', 'Position_Name', 'Position_Number', 'shareable_proform_replace', 'Source', 'Comments']
+      | ['ADVERBIALS', 'v:leftXP', '1', '', '', '']
+      | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '']
+      | ...
+
+  fake_ss_0018  tab=sheetId=1
+    updateSheetProperties: (whole sheet)
+    repeatCell: rows 0-1
+    setDataValidation: col 3 (BEYOND HEADER) rows 1-74 -> ['y', 'n', 'both', 'unclear'] (strict=False)
+    repeatCell: col 3 (BEYOND HEADER) rows 0-1
+
+  fake_ss_0018  tab=Sheet1
+    del_worksheet: 
+
+  fake_ss_0018  tab=Instructions
+    add_worksheet: rows=11, cols=2, index=None, sheet_id=2
+    update: anchor A1 raw=True 9x1
+      | ['PROFORM — ANNOTATION INSTRUCTIONS']
+      | ['']
+      | ['WHAT THIS TESTS']
+      | ...
+
+  fake_ss_0018  tab=sheetId=2
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 0 (BEYOND HEADER) rows 2-3
+    repeatCell: col 0 (BEYOND HEADER) rows 5-6
+    repeatCell: (whole sheet)
+    updateDimensionProperties: (whole sheet)
+    addProtectedRange: {"protectedRange": {"range": {"sheetId": 2}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
+
+  fake_ss_0018  tab=Status
+    add_worksheet: rows=3, cols=3, index=None, sheet_id=3
+    update: anchor A1 raw=True 2x3
+      | ['Construction', 'Status', 'Needs fixing']
+      | ['general', 'in-progress', '']
+
+  fake_ss_0018  tab=sheetId=3
+    updateSheetProperties: (whole sheet)
+    repeatCell: col 0 (BEYOND HEADER) rows 0-1
+    repeatCell: col 2 (BEYOND HEADER) rows 1-None
+    setDataValidation: col 1 (BEYOND HEADER) rows 1-2 -> ['in-progress', 'ready-for-review'] (strict=True)

@@ -17,7 +17,7 @@ Class renames:
     Status tab created (2 construction(s))
     Locked tab Instructions: create
     Locked tab Instructions: protect
-    Manifest: proform -> proform_renamed (v3): https://docs.google.com/spreadsheets/d/fake_ss_0003
+    Manifest: proform -> proform_renamed (v3): https://docs.google.com/spreadsheets/d/fake_ss_0002
 
 Language: stan1293
 
@@ -109,7 +109,7 @@ Done.
   [stan1293] https://drive.google.com/drive/folders/1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3
 
 --- Affected sheets (new URLs — old bookmarks to these classes are stale) ---
-  [stan1293] proform_renamed: https://docs.google.com/spreadsheets/d/fake_ss_0003
+  [stan1293] proform_renamed: https://docs.google.com/spreadsheets/d/fake_ss_0002
 
 --- Notifying language tracking issues ---
   [stan1293] commented on issue #999

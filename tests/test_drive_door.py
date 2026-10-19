@@ -306,6 +306,60 @@ def test_removing_a_grant_the_spec_does_not_call_for_is_allowed(env):
         door.delete_permission(sheet_id, link)
 
 
+def test_coordinators_are_writers_on_the_root_folder(env, monkeypatch):
+    import coding.people
+    fake, door, _, _ = env
+    monkeypatch.setattr(coding.people, "_load_people", lambda: {
+        "Adam Tallman": {"email": ANNOTATOR},
+        "A Coordinator": {"email": "coordinator@example.org", "coordinator": True}})
+    root = _labelled_file(fake, drive_door.folder("root"))
+    with drive_door.running("update-sheets", APPLY):
+        door.create_permission(root, type="user", role="writer",
+                               email="coordinator@example.org")
+        with pytest.raises(DoorViolation, match="not shared with this address"):
+            door.create_permission(root, type="user", role="writer", email=ANNOTATOR)
+
+
+def test_a_coordinator_flag_that_is_not_true_or_false_is_refused(monkeypatch):
+    import coding.people
+    monkeypatch.setattr(coding.people, "_load_people", lambda: {
+        "Adam Tallman": {"email": ANNOTATOR, "coordinator": "yes"}})
+    with pytest.raises(ValueError, match="write true or false"):
+        coding.people.coordinator_emails()
+
+
+# -- standing grants: integrity-check's SHARING section ----------------------------
+
+def test_standing_grants_are_compared_with_the_rule_by_name_not_address():
+    from coding.sheet_spec import sharing_differences, sharing_spec
+    spec = sharing_spec(drive_door.class_sheet(LANG, CLASS))
+    assert sharing_differences(spec, [
+        {"type": "user", "role": "writer", "emailAddress": ANNOTATOR}]) == []
+    differences = sharing_differences(spec, [
+        {"type": "user", "role": "reader", "emailAddress": ANNOTATOR},
+        {"type": "user", "role": "writer", "emailAddress": "stranger@example.org"},
+        {"type": "anyone", "role": "reader"},
+        {"type": "user", "role": "writer", "emailAddress": "x@example.org",     # inherited
+         "permissionDetails": [{"inherited": True}]},
+        {"type": "user", "role": "owner", "emailAddress": "owner@example.org"},
+    ])
+    assert differences == [
+        "Adam Tallman is a reader, not a writer",
+        "someone not in people.yaml has writer access the sharing rule doesn't give them",
+        "shared by link (reader); it should be named people only",
+    ]
+    assert sharing_differences(spec, []) == ["Adam Tallman should be a writer and has no access"]
+
+
+def test_integrity_check_reports_a_grant_made_by_hand(env, capsys):
+    from coding import integrity_check
+    fake, _, sheet_id, _ = env
+    assert integrity_check._section_sharing() == (0, 0)       # the recording matches
+    fake.create_permission(sheet_id, type="anyone", role="reader")  # in the Drive window
+    assert integrity_check._section_sharing() == (1, 0)
+    assert "ciscategorial_stan1293): shared by link" in capsys.readouterr().out
+
+
 def test_every_kind_has_a_sharing_rule():
     from coding.sheet_spec import sharing_spec
     for kind, rule in drive_door.KINDS.items():

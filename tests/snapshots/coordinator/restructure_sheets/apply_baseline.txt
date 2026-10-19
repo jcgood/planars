@@ -29,6 +29,8 @@ Language: arao1248
     [tso_clause_linkage] carry over 73; new blank 0
     (no changes — skipping)
 
+  proform: not in manifest, skipping (run python -m coding generate-sheets --apply first)
+
 Language: stan1293
 
   ciscategorial (current v2)

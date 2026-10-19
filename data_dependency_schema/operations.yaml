@@ -606,9 +606,10 @@
   cli_command: integrity-check
   writes_to_drive: false
   description: >-
-    Full project-wide health report across all languages and schemas;
-    --sheets adds live Sheet structural validation; --lang restricts to one
-    language.
+    Full project-wide health report across all languages and schemas,
+    including every labelled Drive file's grants against its sharing rule
+    (SHARING, read live); --sheets adds live Sheet structural validation;
+    --lang restricts the per-language sections to one language.
   side_effects: ["none (read-only; --sheets still only reads, never writes)"]
   idempotent: true
   idempotency_note: "Pure read-and-report across every section; no writes anywhere in the file."

@@ -62,6 +62,29 @@ def every_annotator_email() -> List[str]:
                    if isinstance(entry, dict) and annotator_name(lang_id)})
 
 
+def coordinator_emails() -> List[str]:
+    """The address of every coordinator besides the Drive files' owner
+    (``coordinator: true`` in people.yaml), who gets writer on the root folder."""
+    emails = []
+    for name, entry in _load_people().items():
+        flag = (entry or {}).get("coordinator", False)
+        if not isinstance(flag, bool):
+            raise ValueError(f"coordinator: for {name!r} in coded_data/people.yaml is "
+                             f"{flag!r}; write true or false.")
+        if flag:
+            emails.append(email_for(name))
+    return sorted(emails)
+
+
+def name_for_email(email: Optional[str]) -> Optional[str]:
+    """The name people.yaml files this address under, or None. For reports
+    that go where addresses must not (GitHub issues: planars is public)."""
+    for name, entry in _load_people().items():
+        if (entry or {}).get("email", "").strip().lower() == (email or "").strip().lower():
+            return name
+    return None
+
+
 def github_for(name: str) -> Optional[str]:
     """The GitHub username of the person called `name`, or None if they have
     none on file (`github:` in people.yaml). Not everyone has one: an

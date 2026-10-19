@@ -4,7 +4,6 @@ Language: arao1248
   [planar] New positions: ['x:newpos-test'] — queuing update-sheets
   [planar] Archived existing → archive/planar_arao1248_20260804_120000.tsv
   [planar] Downloaded → planar_arao1248.tsv
-  [diagnostics] ERROR (non-blocking): [ERROR] diagnostics_arao1248.tsv: Required class 'proform' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
   [diagnostics] No changes → diagnostics_arao1248.tsv
 
   ciscategorial
@@ -180,8 +179,6 @@ Auto-applying 1 safe downstream command(s):
 --- Revalidating sheets ---
 
 arao1248
-  Diagnostics validation (1 issue(s)):
-    [ERROR] diagnostics_arao1248.tsv: Required class 'proform' (collection_required: "y" in diagnostic_classes_status.yaml) is missing
   [ciscategorial/general] 288 blank cell(s) — annotation in progress
   [free_occurrence/general] 361 blank cell(s) — annotation in progress
   [noninterruption/general] 144 blank cell(s) — annotation in progress
@@ -243,4 +240,4 @@ synth0001
 ──────────────────────────────────────────────────
 Validated 50 sheet(s).  Errors: 1
 Cell highlighting and each sheet's Status tab updated in Google Sheets.
-Drive door (enforce): checked 120 write(s) to 52 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 119 write(s) to 51 tab(s) or file(s); 0 broke a rule.

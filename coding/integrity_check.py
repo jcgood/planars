@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Project-wide integrity check for the planars annotation pipeline.
 
-Runs nine sections of checks and prints a structured report:
+Runs ten sections of checks and prints a structured report:
 
   PLANAR STRUCTURE               — validates planar_*.tsv for each language
   DIAGNOSTICS                    — validates diagnostics_*.tsv for each language
@@ -24,6 +24,9 @@ Runs nine sections of checks and prints a structured report:
                                     violation here means something structurally broken, not merely
                                     an unrecognized field -- safe to let drive a real error, unlike
                                     upload_manifest()'s own non-blocking version of the same check.
+  SHARING                        — every labelled Drive file's own grants against its sharing
+                                    rule (sheet_spec.sharing_spec): catches access changed by hand
+                                    in the Drive window, which the Drive door never sees.
   NEEDS REVIEW / PLACEHOLDERS    — surfaces [NEEDS REVIEW] / [PLACEHOLDER] / [NEEDS COORDINATOR
                                     INPUT] markers (check_codebook.needs_review_entries)
 
@@ -919,6 +922,57 @@ def _section_manifest_shape() -> Tuple[int, int]:
     return len(problems), 0
 
 
+def _section_sharing() -> Tuple[int, int]:
+    """Compare the live grants of every file the tooling made (found by its
+    identity label) with its sharing rule (`sheet_spec.sharing_spec`).
+
+    The Drive door checks every grant the tooling makes; this catches the
+    ones made by hand in the Drive window, which pass no door. Each
+    difference is an error: someone has access the rule doesn't give them,
+    or lacks access it does. People are named, never shown by address.
+    """
+    print(_section("SHARING"))
+
+    from .drive_door import ARCHIVED, KINDS, STATE_LABEL, Identity
+    from .drive_doorway import get_doorway
+    from .sheet_spec import sharing_differences, sharing_spec
+
+    try:
+        doorway = get_doorway()
+        files = []
+        for kind in KINDS:
+            files += doorway.list_files(
+                q=f"properties has {{ key='planars_kind' and value='{kind}' }} "
+                  "and trashed=false",
+                fields="files(id,name,properties)")
+    except Exception as exc:
+        # Drive unavailable: same reasoning as MANIFEST SHAPE above.
+        print(f"  (could not list Drive files: {exc} — skipping)")
+        return 0, 0
+
+    errors = 0
+    for f in sorted(files, key=lambda f: f["name"]):
+        props = f.get("properties") or {}
+        identity = Identity.from_labels(props)
+        if identity is None:
+            errors += 1
+            print(_fail(f"{f['name']!r} carries a label that names no kind of file: {props}"))
+            continue
+        spec = sharing_spec(identity, archived=props.get(STATE_LABEL) == ARCHIVED)
+        grants = doorway.list_permissions(
+            f["id"], fields="permissions(id,type,role,emailAddress,permissionDetails)")
+        differences = sharing_differences(spec, grants)
+        if differences:
+            errors += 1
+            print(_fail(f"{f['name']} ({identity.describe()}): " + "; ".join(differences)))
+    if errors:
+        print(_sub("→ Change the sharing in the Drive window (Share), or, if the "
+                   "access is right, change the rule in coding/sheet_spec.py (_SHARING)."))
+    else:
+        print(_ok(f"{len(files)} file(s) shared as their sharing rule says"))
+    return errors, 0
+
+
 def _section_needs_review(codebook: dict, diag_classes: dict) -> None:
     print(_section("NEEDS REVIEW / PLACEHOLDERS"))
 
@@ -1044,6 +1098,9 @@ def main(args: argparse.Namespace | None = None) -> None:
     total_e += e; total_w += w
 
     e, w = _section_manifest_shape()
+    total_e += e; total_w += w
+
+    e, w = _section_sharing()
     total_e += e; total_w += w
 
     if args.sheets:

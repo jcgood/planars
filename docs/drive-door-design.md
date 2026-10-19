@@ -537,3 +537,19 @@ differences, both made by hand: the root folder gives Adam writer, which
 every file under it inherits, so he can edit the manifest and every
 archived class sheet whatever their own grants say; and synth0001's archived
 biuniqueness sheet keeps Adam as reader, though synth0001 names no annotator.
+Jeff's answers (2026-10-18): coordinators are writers on the root, so a
+second coordinator's own account can run the tooling (`coordinator: true`
+in people.yaml, read by `people.coordinator_emails`; archived sheets stay
+editable for coordinators only, through the root); and the synth0001 grant
+goes (`migrations/remove_synth0001_archived_grant.py`, run 2026-10-19).
+
+**Standing grants (2026-10-19).** The door sees only the grants the tooling
+makes, so integrity-check gained a SHARING section, in the daily report:
+it finds every file by its label and compares its own grants with the spec
+(`sheet_spec.sharing_differences`), naming people from people.yaml, never by
+address, since the report goes into a public issue. For the tests to start
+from real sharing, `capture-drive-state` now records each sheet's own grants
+by person name, and the fake gives the name its people.yaml address (the
+placeholder, in tests); the test data was refrozen. Found on the way:
+the live doorway's `list_files` read only Drive's first page of 100 results,
+which a listing by label would soon have outgrown; it now reads every page.

@@ -265,11 +265,14 @@ READER, WRITER = "reader", "writer"
 # Who a kind of file is shared with, besides its owner (the tooling's account):
 #   annotator      the language's annotator, by name
 #   all_annotators every annotator languages.yaml names, by name
+#   coordinators   every coordinator besides the owner (people.yaml), so their
+#                  own account can run the tooling (Jeff, 2026-10-18)
 #   nobody         no one; anything inside it is shared on its own
 # and the role they get. ``link`` is the role "anyone with the link" gets, or
 # None (named people only: Phase 10 unit 14). Every kind in the door's KINDS
 # has an entry; a kind missing here is an error, not a default.
-_ANNOTATOR, _ALL_ANNOTATORS, _NOBODY = "annotator", "all_annotators", "nobody"
+_ANNOTATOR, _ALL_ANNOTATORS, _COORDINATORS, _NOBODY = (
+    "annotator", "all_annotators", "coordinators", "nobody")
 _SHARING: Dict[str, Dict[str, Optional[str]]] = {
     "class_sheet":       {"who": _ANNOTATOR, "role": WRITER, "link": None},
     "planar_sheet":      {"who": _ANNOTATOR, "role": WRITER, "link": None},
@@ -287,11 +290,12 @@ _SHARING: Dict[str, Dict[str, Optional[str]]] = {
 }
 # Folders differ by which folder: a language folder lets its annotator see
 # their files; the Annotation Status folder holds every language's status
-# sheet; the root and archive folders grant nothing of their own.
+# sheet; the root gives coordinators writer, which everything under it
+# inherits; archive folders grant nothing of their own.
 _FOLDER_SHARING: Dict[str, Dict[str, Optional[str]]] = {
     "language": {"who": _ANNOTATOR, "role": READER, "link": None},
     "status":   {"who": _ALL_ANNOTATORS, "role": READER, "link": None},
-    "root":     {"who": _NOBODY, "role": None, "link": None},
+    "root":     {"who": _COORDINATORS, "role": WRITER, "link": None},
     "archive":  {"who": _NOBODY, "role": None, "link": None},
 }
 
@@ -312,7 +316,7 @@ def sharing_spec(identity, archived: bool = False) -> SharingSpec:
     """Who may have access to the file ``identity`` (a ``drive_door.Identity``)
     names, and how. An archived file is read-only: everyone listed is a reader,
     and nobody gets a link share."""
-    from .people import annotator_email, every_annotator_email
+    from .people import annotator_email, coordinator_emails, every_annotator_email
 
     table = _FOLDER_SHARING if identity.kind == "folder" else _SHARING
     key = identity.name if identity.kind == "folder" else identity.kind
@@ -325,6 +329,8 @@ def sharing_spec(identity, archived: bool = False) -> SharingSpec:
         emails = [email] if email else []
     elif rule["who"] == _ALL_ANNOTATORS:
         emails = every_annotator_email()
+    elif rule["who"] == _COORDINATORS:
+        emails = coordinator_emails()
     elif rule["who"] == _NOBODY:
         emails = []
     else:
@@ -332,3 +338,50 @@ def sharing_spec(identity, archived: bool = False) -> SharingSpec:
     role = READER if archived else rule["role"]
     link = None if archived else rule["link"]
     return SharingSpec(tuple(sorted((e.lower(), role) for e in emails)), link)
+
+
+def is_own_grant(grant: Dict) -> bool:
+    """A grant made on the file itself, not inherited from its folder (Drive
+    marks those in ``permissionDetails``) and not its owner's."""
+    if grant.get("role") == "owner":
+        return False
+    details = grant.get("permissionDetails") or []
+    return not (details and all(d.get("inherited") for d in details))
+
+
+def sharing_differences(spec: SharingSpec, grants: List[Dict]) -> List[str]:
+    """How a file's grants (as Drive lists them: type, role, emailAddress,
+    permissionDetails) differ from ``spec``. Only the file's own grants count:
+    an inherited one is its folder's, checked on the folder. People are named
+    as people.yaml names them, never by address, since this goes into GitHub
+    issues and planars is public."""
+    from .people import name_for_email
+
+    def who(email):
+        return name_for_email(email) or "someone not in people.yaml"
+
+    out = []
+    own = [g for g in grants if is_own_grant(g)]
+    for g in own:
+        if g.get("type") == "anyone":
+            if spec.link is None:
+                out.append(f"shared by link ({g.get('role')}); it should be named people only")
+            elif g.get("role") != spec.link:
+                out.append(f"its link share gives {g.get('role')}, not {spec.link}")
+        elif g.get("type") == "user":
+            wanted = spec.role_for(g.get("emailAddress"))
+            if wanted is None:
+                out.append(f"{who(g.get('emailAddress'))} has {g.get('role')} access "
+                           "the sharing rule doesn't give them")
+            elif g.get("role") != wanted:
+                out.append(f"{who(g.get('emailAddress'))} is a {g.get('role')}, not a {wanted}")
+        else:
+            out.append(f"shared with a {g.get('type')} ({g.get('role')}); it should be "
+                       "named people only")
+    held = {(g.get("emailAddress") or "").lower() for g in grants if g.get("type") == "user"}
+    for email, role in spec.people:
+        if email not in held:
+            out.append(f"{who(email)} should be a {role} and has no access")
+    if spec.link and not any(g.get("type") == "anyone" for g in grants):
+        out.append(f"its {spec.link} link share is missing")
+    return out
