@@ -885,3 +885,93 @@ def test_many_requests_to_one_tab_read_its_tab_list_once(env, monkeypatch):
                 "rows": [{"values": [{"userEnteredFormat": {}}]}],
                 "fields": "userEnteredFormat.backgroundColor"}} for r in range(1, 60)]})
     assert len(reads) == 1
+
+
+# -- the planar Sheet (5f) ------------------------------------------------------------
+
+TO_SHEET = argparse.Namespace(apply=True, to_sheet=True, langs=[LANG])
+
+
+def _planar_id(door):
+    return drive_module.load_manifest(door)[LANG]["planar_spreadsheet_id"]
+
+
+def _planar(door):
+    return door.open_spreadsheet(_planar_id(door))
+
+
+def _edit_planar_file(coded, column, value):
+    """Set ``column`` of the planar file's first row to ``value``; its index."""
+    path = coded / LANG / "lang_setup" / f"planar_{LANG}.tsv"
+    lines = path.read_text(encoding="utf-8").splitlines()
+    c = lines[0].split("\t").index(column)
+    first = lines[1].split("\t")
+    first[c] = value
+    path.write_text("\n".join([lines[0], "\t".join(first)] + lines[2:]) + "\n",
+                    encoding="utf-8")
+    return c
+
+
+def test_the_recorded_planar_sheet_matches_its_spec(env):
+    from coding.sheet_spec import planar_sheet_spec
+    _, door, _, coded = env
+    spec = planar_sheet_spec(LANG, coded)
+    rows = _planar(door).sheet1.get_all_values()
+    assert drive_door._planar_tab_mismatches(spec.tab, rows) == set()
+
+
+def test_overwriting_or_clearing_the_planar_sheet_says_so(env):
+    # Until unit 11 locks it, the annotator edits the planar Sheet; a write
+    # that replaces their cells must go through replacing(), which saves them.
+    _, door, _, _ = env
+    with drive_door.running("import-planar", TO_SHEET):
+        ws = _planar(door).sheet1
+        with pytest.raises(DoorViolation, match="filled annotation"):
+            ws.update_cell(2, 1, "changed")
+        with pytest.raises(DoorViolation, match="would clear"):
+            ws.clear()
+
+
+def test_no_dropdowns_or_protection_on_the_planar_sheet(env):
+    _, door, _, _ = env
+    with drive_door.running("import-planar", TO_SHEET):
+        ss = _planar(door)
+        ws = ss.sheet1
+        with pytest.raises(DoorViolation, match="no dropdowns on the planar Sheet"):
+            ss.batch_update(_dropdown(ws, 0, ["a", "b"]))
+        with pytest.raises(DoorViolation, match="only locked tabs"):
+            ss.batch_update({"requests": [{"addProtectedRange": {"protectedRange": {
+                "range": {"sheetId": ws.id}, "warningOnly": False}}}]})
+
+
+def test_pushing_the_planar_file_saves_the_sheet_and_leaves_it_equal(env):
+    from coding import import_planar
+    fake, door, _, coded = env
+    notes = _edit_planar_file(coded, "Notes", "a note added in the file")
+    with drive_door.running("import-planar", TO_SHEET):
+        assert import_planar.push_planar_to_sheet(LANG, drive_module.load_manifest(door), True)
+    assert fake.spreadsheet(_planar_id(door)).sheet1.get_all_values()[1][notes] == "a note added in the file"
+    [saved] = drive_door.SNAPSHOT_DIR.glob(f"{LANG}_planar_sheet_*.json")
+    assert json.loads(saved.read_text())["rows"][1][notes] != "a note added in the file"
+
+
+def test_a_planar_sheet_left_unlike_the_file_is_reported(env):
+    _, door, _, _ = env
+    with pytest.raises(DoorViolation, match="row of the planar file missing"):
+        with drive_door.running("import-planar", TO_SHEET):
+            ws = _planar(door).sheet1
+            rows = ws.get_all_values()
+            with drive_door.replacing(ws, "a test that drops a row"):
+                ws.clear()
+                ws.update(rows[:-1], "A1")
+
+
+def test_a_literal_na_in_the_planar_file_is_pushed_as_written(env):
+    # pandas reads NA, null and None as missing unless told not to; the push
+    # used to write them to the Sheet as blanks.
+    from coding import import_planar
+    fake, door, _, coded = env
+    notes = _edit_planar_file(coded, "Notes", "NA")
+    with drive_door.running("import-planar", TO_SHEET):
+        import_planar.push_planar_to_sheet(LANG, drive_module.load_manifest(door), True)
+    assert fake.spreadsheet(_planar_id(door)).sheet1.get_all_values()[1][notes] == "NA"

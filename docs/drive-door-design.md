@@ -560,6 +560,31 @@ made 80 writes with no violation, which met his rule. The mode is now chosen
 per write by the kind of file written: every check is told its target (the
 file id, or the identity of a file being made), and a kind in
 `LIVE_ENFORCED_KINDS` raises live, while every other kind stays in watch.
-The end-of-command shape check (rule 6) covers only class sheets, so it is
-enforced too. A write to a file the door can't place stays in watch. Tests
-that are about watch mode's reporting turn the list off (`watch_all`).
+The end-of-command shape check (rule 6) is enforced for class sheets too;
+since the planar Sheet joined it (below), each sheet's own kind decides, and
+watched sheets' problems are reported before an enforced one raises. A write
+to a file the door can't place stays in watch. Tests that are about watch
+mode's reporting turn the list off (`watch_all`).
+
+**5f, the planar Sheet (2026-10-19).** The second kind with a spec of its
+contents (`sheet_spec.planar_sheet_spec`; the door's `SPECIFIED_KINDS`):
+one tab holding exactly `planar_{lang}.tsv`, its header and then its rows.
+Until unit 11 locks it (`ownership-design.md` § 3.1), the annotator edits
+the Sheet and the daily `import-planar --apply` carries the edits into the
+file, so every cell counts as the annotator's: rule 1 covers them all, and
+there are no tooling columns, no dropdowns (rule 3) and no protection (rule
+4). Rule 6 checks the Sheet has one unprotected tab equal to the file, rows
+read by column name and compared in order, as import-planar compares them.
+All three recorded planar Sheets match.
+
+The finding: every push of the file to the Sheet (`import-planar
+--to-sheet`, which restructure-sheets calls, and `generate-sheets --force`)
+clears and rewrites it, so an annotator's edit made since the last import
+was lost with no trace. The door cannot tell that edit from the
+coordinator's change being pushed without the base unit 11 brings (§ 3.4
+there), so the push is not refused: it now runs inside `replacing()`, which
+saves the Sheet to `regen_snapshots/` first, notices an edit made mid-run,
+and puts the reason in provenance. Found on the way: the push read the file
+with pandas' default missing values, so a cell holding `NA`, `null` or
+`None` went to the Sheet blank (two reads in import-sheets had the same
+fault; all now `keep_default_na=False`).

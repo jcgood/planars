@@ -702,7 +702,7 @@ def _download_lang_setup_sheets(
                 existing = sorted(planar_dir.glob("planar_*.tsv")) if planar_dir.exists() else []
                 old_file = existing[-1] if existing else None
                 if old_file:
-                    old_df = pd.read_csv(old_file, sep="\t", dtype=str).fillna("")
+                    old_df = pd.read_csv(old_file, sep="\t", dtype=str, keep_default_na=False)
                     s, p = _detect_planar_changes(old_df, new_df, lang_id)
                     safe_cmds |= s
                     pending   += p
@@ -765,7 +765,7 @@ def _download_lang_setup_sheets(
 
                 diag_path = planar_dir / f"diagnostics_{lang_id}.tsv"
                 if diag_path.exists():
-                    old_df = pd.read_csv(diag_path, sep="\t", dtype=str).fillna("")
+                    old_df = pd.read_csv(diag_path, sep="\t", dtype=str, keep_default_na=False)
                     s, p = _detect_diagnostics_changes(old_df, new_df, lang_id, lang_data.get("sheets", {}))
                     safe_cmds |= s
                     pending   += p

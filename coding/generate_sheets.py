@@ -159,7 +159,11 @@ def _create_or_update_tsv_sheet(
     if existing_id:
         ss = doorway.open_spreadsheet(existing_id)
         ws = ss.sheet1
-        ws.clear()
+        # --force: the annotator may have edited the Sheet since its last
+        # import, so the door saves it first and logs the reason.
+        with drive_door.replacing(ws, f"{tsv_path.name} rewritten onto its Sheet (--force)"):
+            ws.clear()
+            ws.update(all_rows, "A1")
     else:
         ss = doorway.create_spreadsheet(name, identity=drive_door.lang_file(kind, lang_id))
         doorway.move_file(ss.id, folder_id)
@@ -167,8 +171,7 @@ def _create_or_update_tsv_sheet(
         if email:
             doorway.create_permission(ss.id, type="user", role="writer", email=email)
         ws = ss.sheet1
-
-    ws.update(all_rows, "A1")
+        ws.update(all_rows, "A1")
 
     # Bold and freeze the header row.
     ss.batch_update({"requests": [

@@ -38,11 +38,13 @@ now refuses shows as a failed step and its issue, not a `door-violation`.
 
 1. **5f, the other kinds into watch:** write each kind's section of the
    sheet spec and put it under the door's checks, one at a time, in the
-   design doc's order: sharing (**done 2026-10-19**, design doc § 8) →
-   planar Sheet → diagnostics Sheet → status sheets → notes Docs → files
+   design doc's order: sharing and the planar Sheet (**done 2026-10-19**,
+   design doc § 8) → diagnostics Sheet → status sheets → notes Docs → files
    (notebooks, reports, folders). Each kind's own clock starts only when it
    is watched, so this is the work that shortens the wait. **Next: the
-   planar Sheet.**
+   diagnostics Sheet** (`sync-diagnostics-yaml --to-sheet` and
+   `generate-sheets --force` write it; the latter already goes through
+   `replacing()`).
 2. **Unit 12:** pending changes, the provenance log and regen snapshots
    kept in planars-data.
 3. **Unit 6a:** the local-file door in watch mode, with archive copies and

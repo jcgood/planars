@@ -35,7 +35,10 @@ TSV -> Sheet (--to-sheet):
     next scheduled import-planar --apply (see issue #248 — that's exactly what
     happened to the #236 pronoun split). restructure-sheets --apply calls this
     automatically; run it by hand only if you edited the planar TSV some other
-    way.
+    way. The push replaces the whole Sheet, including any edit the annotator
+    made since the last import, so it goes through the Drive door's
+    ``replacing()``: the Sheet is saved to ``regen_snapshots/`` first and the
+    reason logged.
 """
 from __future__ import annotations
 
@@ -75,6 +78,13 @@ def _archive_tsv(path: Path, timestamp: str) -> Path:
 # ---------------------------------------------------------------------------
 # Sheet reading
 # ---------------------------------------------------------------------------
+
+def _read_tsv(path: Path) -> pd.DataFrame:
+    """The planar file as text. Without ``keep_default_na=False`` pandas reads
+    a cell holding ``NA``, ``null`` or ``None`` as missing, and the push
+    would write it to the Sheet as a blank."""
+    return pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False)
+
 
 def _read_sheet_df(ws) -> pd.DataFrame:
     """The planar sheet as a frame, with the columns the Sheet itself has.
@@ -208,7 +218,7 @@ def import_planar(lang_ids: list[str] | None = None, apply: bool = False) -> lis
         try:
             ss = get_doorway().open_spreadsheet(sheet_id)
             ws = ss.sheet1
-            old_df = pd.read_csv(tsv_path, sep="\t", dtype=str).fillna("")
+            old_df = _read_tsv(tsv_path)
             new_df = _read_sheet_df(ws)
         except Exception as exc:
             print(f"  ERROR reading planar sheet: {exc}")
@@ -307,7 +317,7 @@ def push_planar_to_sheet(lang_id: str, cfg: dict, apply: bool) -> bool:
         print(f"  [{lang_id}] No local planar TSV — skipping")
         return False
 
-    local_df = pd.read_csv(tsv_path, sep="\t", dtype=str).fillna("")
+    local_df = _read_tsv(tsv_path)
 
     try:
         ss = get_doorway().open_spreadsheet(sheet_id)
@@ -340,9 +350,14 @@ def push_planar_to_sheet(lang_id: str, cfg: dict, apply: bool) -> bool:
         print(f"  [{lang_id}]   (content-only changes)")
 
     if apply:
+        from . import drive_door
         new_rows = [list(local_df.columns)] + [list(row) for _, row in local_df.iterrows()]
-        ws.clear()
-        ws.update(new_rows, "A1")
+        # The Sheet is the annotator's to edit until unit 11 locks it, so this
+        # replaces whatever they changed since the last import too: the door
+        # saves the Sheet first (regen_snapshots/) and logs the reason.
+        with drive_door.replacing(ws, f"planar_{lang_id}.tsv pushed to the planar Sheet"):
+            ws.clear()
+            ws.update(new_rows, "A1")
         print(f"  [{lang_id}] Updated -> planar Sheet")
     else:
         print(f"  [{lang_id}] Would update -> planar Sheet (use --apply to write)")

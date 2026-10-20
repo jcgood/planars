@@ -6,10 +6,19 @@ each call reads the schemas and the language's own sources (planar TSV,
 diagnostics YAML) afresh, so a spec cannot drift from them. A wrong spec shows
 up as a wrong check, not as a quietly stale table.
 
-So far: class sheets (`class_sheet_spec`), and sharing for every kind of
-Drive file (`sharing_spec`: who gets which role, and whether a link share is
-allowed). The other kinds' contents get their sections as unit 5 reaches them
+So far: class sheets (`class_sheet_spec`), the planar Sheet
+(`planar_sheet_spec`), and sharing for every kind of Drive file
+(`sharing_spec`: who gets which role, and whether a link share is allowed).
+The other kinds' contents get their sections as unit 5 reaches them
 (design § 5).
+
+The planar Sheet is one tab holding exactly ``planar_{lang_id}.tsv``, the
+source: its header, then its rows. Until unit 11 locks it
+(docs/ownership-design.md § 3.1), the annotator edits it and the daily
+``import-planar --apply`` carries their edits down into the file, so every
+cell is the annotator's: no tooling columns, no dropdowns, no protection. A
+push of the file up to the Sheet therefore replaces whatever is there,
+including an edit not yet imported, and says so through the door.
 
 A class sheet is its locked tabs, one tab per construction in the language's
 diagnostics file, and Status, in the order `locked_tabs.reorder_tabs` puts
@@ -57,6 +66,7 @@ from .biuniqueness_rows import CLASS_NAME as BIUNIQUENESS_CLASS
 # A tab's kind is also its identity label on Drive, so the door owns the names.
 from .drive_door import CONSTRUCTION_TAB as CONSTRUCTION
 from .drive_door import LOCKED_TAB as LOCKED
+from .drive_door import PLANAR_TAB as PLANAR
 from .drive_door import STATUS_TAB_KIND as STATUS
 from .biuniqueness_rows import ELEMENTS as BIUNIQUENESS_ELEMENTS_TAB
 from .biuniqueness_rows import element_rows as biuniqueness_element_rows
@@ -95,7 +105,7 @@ class ColumnSpec:
 @dataclass(frozen=True)
 class TabSpec:
     title: str
-    kind: str                                   # LOCKED, CONSTRUCTION or STATUS
+    kind: str                                   # LOCKED, CONSTRUCTION, STATUS or PLANAR
     columns: Tuple[ColumnSpec, ...] = ()        # empty for a locked tab
     row_columns: Tuple[str, ...] = ()           # the tooling's columns, before the criteria
     row_key: Tuple[str, ...] = ()               # those of them that identify a row
@@ -255,6 +265,28 @@ def class_sheet_spec(lang_id: str, class_name: str, data_dir: Path) -> ClassShee
         tuple((con,) for con, _, _ in constructions),
     )
     return ClassSheetSpec(lang_id, class_name, tuple(first + middle + last + [status]))
+
+
+# ---------------------------------------------------------------------------
+# The planar Sheet: a copy of planar_{lang_id}.tsv
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class PlanarSheetSpec:
+    """One tab, ``tab``: the planar file's header as its columns (every one
+    the annotator's, none with a dropdown) and its rows, stripped, in order."""
+    lang_id: str
+    tab: TabSpec
+
+
+def planar_sheet_spec(lang_id: str, data_dir: Path) -> PlanarSheetSpec:
+    """The spec for one language's planar Sheet, from its planar file."""
+    import pandas as pd
+    path = data_dir / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
+    df = pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False)
+    columns = tuple(ColumnSpec(str(c), ANNOTATOR, None) for c in df.columns)
+    rows = tuple(tuple(str(v).strip() for v in row) for row in df.itertuples(index=False))
+    return PlanarSheetSpec(lang_id, TabSpec(f"planar_{lang_id}", PLANAR, columns, rows=rows))
 
 
 # ---------------------------------------------------------------------------
