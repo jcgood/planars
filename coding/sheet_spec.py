@@ -6,12 +6,18 @@ each call reads the schemas and the language's own sources (planar TSV,
 diagnostics YAML) afresh, so a spec cannot drift from them. A wrong spec shows
 up as a wrong check, not as a quietly stale table.
 
-So far: class sheets (`class_sheet_spec`), the planar and diagnostics
-Sheets (`copy_sheet_spec`), the status sheets (`status_sheet_spec`: one
-`Status` tab listing every construction, all the tooling's), and sharing for every kind of Drive file
+Every kind of Drive file has a spec: class sheets (`class_sheet_spec`),
+the planar and diagnostics Sheets (`copy_sheet_spec`), the status sheets
+(`status_sheet_spec`: one `Status` tab listing every construction, all the
+tooling's), and the files that are not spreadsheets — notes Docs, the
+manifest, notebooks, PDF reports and folders (`file_spec`: name, folder,
+type, what may be written into it, `content_problems`,
+`appended_text_problems`). Sharing is specified for every kind
 (`sharing_spec`: who gets which role, and whether a link share is allowed).
-The other kinds' contents get their sections as unit 5 reaches them
-(design § 5).
+
+A notes Doc is the annotator's: its text is never replaced, and the only
+thing the tooling adds is one acknowledgment line at a time (check-notes),
+in the form check-notes strips before looking for new notes.
 
 The planar Sheet is one tab holding exactly ``planar_{lang_id}.tsv``, the
 source: its header, then its rows. The diagnostics Sheet is one tab holding
@@ -336,6 +342,121 @@ def status_sheet_spec(lang_id: str, data_dir: Path) -> StatusSheetSpec:
     columns = tuple(ColumnSpec(c, TOOLING, None) for c in STATUS_SHEET_COLUMNS)
     rows = tuple((class_name, construction) for class_name, construction, _, _ in specs)
     return StatusSheetSpec(lang_id, TabSpec(STATUS_TAB, STATUS_PAGE, columns, rows=rows))
+
+
+# ---------------------------------------------------------------------------
+# Files that are not spreadsheets: notes Docs, the manifest, notebooks,
+# PDF reports and folders
+# ---------------------------------------------------------------------------
+
+# What may be written into a file of each kind (``content_problems``).
+NO_CONTENT = "nothing"                    # a folder
+ACKNOWLEDGMENTS = "acknowledgment lines"  # the notes Doc: the annotator's text
+MANIFEST_JSON = "the manifest"            # JSON the manifest contract accepts
+NOTEBOOK_JSON = "a notebook"              # a Jupyter notebook's JSON
+PDF = "a PDF"
+
+_DOC_MIME = "application/vnd.google-apps.document"
+_FOLDER_MIME = "application/vnd.google-apps.folder"
+_JSON_MIME = "application/json"
+_PDF_MIME = "application/pdf"
+
+# The folders the project's top-level folders are called (the language
+# folder is called by its Glottocode). Only names given here are made.
+ROOT_FOLDER_NAME = "ConstituencyTypology"
+ARCHIVE_FOLDER_NAME = "_archived"
+STATUS_FOLDER_NAME = "Annotation Status"
+
+
+@dataclass(frozen=True)
+class FileSpec:
+    """A Drive file that is not a spreadsheet: what it is called, the folder
+    it sits in (None: outside every project folder, at the top of the owner's
+    Drive), its type, what may be written into it, and whether only one live
+    file may carry its identity."""
+    name: str
+    folder: Optional[object]     # a drive_door.Identity, or None
+    mimetype: str
+    content: str
+    one_only: bool
+
+
+def file_spec(identity) -> FileSpec:
+    """The spec for a notes Doc, report, notebook, the manifest or a folder
+    (``identity`` is a ``drive_door.Identity``). The one place each is named:
+    the commands that make these files call this for the name."""
+    from planars.languages import get_display_name
+    from .drive_door import folder
+
+    kind, lang = identity.kind, identity.lang_id
+    if kind == "notes_doc":
+        # The annotator writes here, so it sits beside their sheets.
+        return FileSpec(f"{get_display_name(lang)} — Annotation Notes",
+                        folder("language", lang), _DOC_MIME, ACKNOWLEDGMENTS, True)
+    if kind == "report":
+        return FileSpec(f"report_{lang}.pdf", folder("language", lang), _PDF_MIME, PDF, True)
+    if kind == "notebook":
+        if identity.name == "all_languages":
+            return FileSpec("all_languages.ipynb", folder("root"), _JSON_MIME,
+                            NOTEBOOK_JSON, True)
+        return FileSpec(f"{identity.name}_{lang}.ipynb", folder("language", lang),
+                        _JSON_MIME, NOTEBOOK_JSON, True)
+    if kind == "manifest":
+        return FileSpec("manifest.json", folder("root"), _JSON_MIME, MANIFEST_JSON, True)
+    if kind == "folder" and identity.name == "root":
+        return FileSpec(ROOT_FOLDER_NAME, None, _FOLDER_MIME, NO_CONTENT, True)
+    if kind == "folder" and identity.name == "status":
+        return FileSpec(STATUS_FOLDER_NAME, None, _FOLDER_MIME, NO_CONTENT, True)
+    if kind == "folder" and identity.name == "language":
+        return FileSpec(lang, folder("root"), _FOLDER_MIME, NO_CONTENT, True)
+    if kind == "folder" and identity.name == "archive":
+        # Not the only one of its language: before restructure-sheets put
+        # _v{N} on an archived sheet's name, it made _archived/v{N}/ folders,
+        # which are labelled archive folders too.
+        return FileSpec(ARCHIVE_FOLDER_NAME, folder("language", lang), _FOLDER_MIME,
+                        NO_CONTENT, False)
+    raise ValueError(f"a {kind} is a spreadsheet, not a file with a file spec")
+
+
+def content_problems(spec: FileSpec, content: bytes) -> List[str]:
+    """What is wrong with writing ``content`` as the whole of a file of this
+    spec."""
+    if spec.content == NO_CONTENT:
+        return ["a folder holds no content"]
+    if spec.content == ACKNOWLEDGMENTS:
+        return ["the notes Doc's text is the annotator's: the tooling only appends "
+                "acknowledgment lines to it (check-notes), never replaces it"]
+    if spec.content == PDF:
+        return [] if content.startswith(b"%PDF-") else ["what is sent is not a PDF"]
+    import json
+    try:
+        data = json.loads(content.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError) as exc:
+        return [f"what is sent is not JSON ({exc})"]
+    if spec.content == MANIFEST_JSON:
+        from . import manifest_contract
+        return [f"the manifest does not match its contract: {p}"
+                for p in manifest_contract.check(data)]
+    if spec.content == NOTEBOOK_JSON:
+        if not (isinstance(data, dict) and isinstance(data.get("cells"), list)
+                and isinstance(data.get("nbformat"), int)):
+            return ["what is sent is not a notebook (no cells list or nbformat number)"]
+        return []
+    raise ValueError(f"unknown kind of content {spec.content!r}")
+
+
+def appended_text_problems(spec: FileSpec, text: str) -> List[str]:
+    """What is wrong with appending ``text`` to a file of this spec: only a
+    notes Doc takes appended text, and only one acknowledgment line, in the
+    form check-notes strips before it looks for new notes (or the next run
+    would read the tooling's own line as the annotator's)."""
+    from .drive import is_acknowledgment_line
+    if spec.content != ACKNOWLEDGMENTS:
+        return [f"text is appended only to notes Docs, not to {spec.content}"]
+    if "\n" in text or not is_acknowledgment_line(text):
+        return ["only an acknowledgment line is appended to a notes Doc "
+                "(drive.acknowledgment_line), not other text"]
+    return []
 
 
 # ---------------------------------------------------------------------------

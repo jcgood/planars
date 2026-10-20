@@ -183,17 +183,11 @@ _KNOWN_SITES: Dict[Site, str] = {
     ("__main__.py", 'print("WARNING: Pending destructive changes require coordinator approval.")', 1):
         "redundant with the pending-changes issue import-sheets already files "
         "for the same underlying fact",
-    ("drive.py", 'print(f"  WARNING: manifest being written doesn\'t match the expected shape ({len(problems)} issue(s)):")', 1):
-        "Phase 6 boundary 4 (issue #271) -- upload_manifest()'s own "
-        "non-blocking manifest_contract.check() warning. Deliberately never "
-        "blocks the write (see manifest_contract.py's module docstring); real "
-        "tracking happens separately via integrity-check's MANIFEST SHAPE "
-        "section, which does drive a trackable integrity-error -- this print is "
-        "only the in-the-moment signal, by design, not a gap",
-    ("drive.py", 'print(f"  WARNING: could not update existing manifest.json ({e}); creating new file.")', 1):
-        "self-healing -- every upload_manifest() caller updates "
-        "drive_config.json's _planars_config_file_id to the new file. Leaves the "
-        "old manifest.json orphaned in Drive; low severity, not addressed",
+    ("drive.py", 'print(f"  WARNING: could not update manifest.json {existing_file_id} ({e}); "', 1):
+        "self-healing -- upload_manifest() then updates the manifest Drive "
+        "holds (found by its label), and every caller saves the id it returns "
+        "to drive_config.json; a second manifest is never made while one "
+        "exists (the Drive door refuses it)",
     ("drive.py", 'print(f"  Warning: could not load merged config ({exc}), falling back.")', 1):
         "found by this test's own regex, not the original manual sweep (issue "
         "#283 predates this entry) -- load_manifest()'s merged-config parse "

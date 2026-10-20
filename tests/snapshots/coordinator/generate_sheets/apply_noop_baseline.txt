@@ -15,7 +15,7 @@ New:         ['proform']
     Locked tab Instructions: create
     Locked tab Instructions: protect
     Status tab created (1 construction(s))
-    URL: https://docs.google.com/spreadsheets/d/fake_ss_0002
+    URL: https://docs.google.com/spreadsheets/d/fake_ss_0001
 
 manifest.json updated on Drive (id: fake_manifest_file)
 
@@ -36,4 +36,4 @@ Local manifest written to: sheets_manifest.json
 drive_config.json written.
 
 Each language's folder and sheets are shared with the annotator named in people.yaml; for a language with none listed, add one there and re-run with --apply.
-Drive door (enforce): checked 19 write(s) to 7 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 18 write(s) to 6 tab(s) or file(s); 0 broke a rule.

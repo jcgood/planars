@@ -30,24 +30,19 @@ row); the spec, ground rules, units and order are the Phase 10 section of
 re-ask).
 
 **Where it stands:** class sheets are enforced live (2026-10-19, Jeff;
-`drive_door.LIVE_ENFORCED_KINDS`); every other kind is in watch. The
-2026-10-19 refresh (11:59 UTC) ran before that, so the **2026-10-20 refresh
-is the first to check**: green, and a write the door now refuses shows as a
-failed step and its issue, not a `door-violation`.
+`drive_door.LIVE_ENFORCED_KINDS`); every other kind now has its spec and is
+in watch (5f's last two steps, notes Docs and files, done 2026-10-19;
+design doc § 8). The 2026-10-19 refresh (11:59 UTC) ran before all of
+that, so the **2026-10-20 refresh is the first to check**: green, and a
+write the door now refuses shows as a failed step and its issue, not a
+`door-violation`. A `door-violation` from it on a watched kind (the new
+rule 8 especially) is a command bug or a spec gap to fix.
 
 **Next action:**
 
-1. **5f, the other kinds into watch:** write each kind's section of the
-   sheet spec and put it under the door's checks, one at a time, in the
-   design doc's order: sharing, the planar, diagnostics and status sheets
-   (**done 2026-10-19**, design doc § 8) → notes Docs → files (notebooks,
-   reports, folders). Each kind's own clock starts only when it is watched,
-   so this is the work that shortens the wait. **Next: the notes Docs**
-   (`check-notes --apply` appends an acknowledgment line; `generate-sheets`
-   creates them).
-2. **Unit 12:** pending changes, the provenance log and regen snapshots
+1. **Unit 12:** pending changes, the provenance log and regen snapshots
    kept in planars-data.
-3. **Unit 6a:** the local-file door in watch mode, with archive copies and
+2. **Unit 6a:** the local-file door in watch mode, with archive copies and
    the per-language change log (unit 15) built in (`ownership-design.md`
    § 4–6).
 

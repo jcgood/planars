@@ -2,7 +2,7 @@ SUMMARY
     21  add_worksheet
    168  batch_request
      1  create_file
-    10  create_permission
+     9  create_permission
      8  create_spreadsheet
      6  del_worksheet
      8  move_file
@@ -17,67 +17,66 @@ SUMMARY
     17    └─ updateSheetProperties
 
 DRIVE OPERATIONS
-  create_permission: file_id='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU', type='user', role='reader', email='annotator@example.org', notify=False
-  create_file: file_id='fake_file_0002', name='Araona [arao1248] — Annotation Notes', parents=['1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'], mimetype='application/vnd.google-apps.document', properties={'planars_kind': 'notes_doc', 'planars_lang': 'arao1248'}
-  create_permission: file_id='fake_file_0002', type='user', role='writer', email='annotator@example.org', notify=False
-  update_file: file_id='fake_ss_0004', properties={'planars_kind': 'planar_sheet', 'planars_lang': 'arao1248'}
-  move_file: file_id='fake_ss_0004', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
-  create_permission: file_id='fake_ss_0004', type='user', role='writer', email='annotator@example.org', notify=False
-  update_file: file_id='fake_ss_0006', properties={'planars_kind': 'diagnostics_sheet', 'planars_lang': 'arao1248'}
-  move_file: file_id='fake_ss_0006', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
-  create_permission: file_id='fake_ss_0006', type='user', role='writer', email='annotator@example.org', notify=False
-  update_file: file_id='fake_ss_0008', properties={'planars_kind': 'class_sheet', 'planars_lang': 'arao1248', 'planars_class': 'ciscategorial'}
-  move_file: file_id='fake_ss_0008', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
-  create_permission: file_id='fake_ss_0008', type='user', role='writer', email='annotator@example.org', notify=False
-  update_file: file_id='fake_ss_0010', properties={'planars_kind': 'class_sheet', 'planars_lang': 'arao1248', 'planars_class': 'noninterruption'}
-  move_file: file_id='fake_ss_0010', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
-  create_permission: file_id='fake_ss_0010', type='user', role='writer', email='annotator@example.org', notify=False
-  update_file: file_id='fake_ss_0012', properties={'planars_kind': 'class_sheet', 'planars_lang': 'arao1248', 'planars_class': 'nonpermutability'}
-  move_file: file_id='fake_ss_0012', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
-  create_permission: file_id='fake_ss_0012', type='user', role='writer', email='annotator@example.org', notify=False
-  update_file: file_id='fake_ss_0014', properties={'planars_kind': 'class_sheet', 'planars_lang': 'arao1248', 'planars_class': 'free_occurrence'}
-  move_file: file_id='fake_ss_0014', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
-  create_permission: file_id='fake_ss_0014', type='user', role='writer', email='annotator@example.org', notify=False
-  update_file: file_id='fake_ss_0016', properties={'planars_kind': 'class_sheet', 'planars_lang': 'arao1248', 'planars_class': 'subspanrepetition'}
-  move_file: file_id='fake_ss_0016', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
-  create_permission: file_id='fake_ss_0016', type='user', role='writer', email='annotator@example.org', notify=False
-  update_file: file_id='fake_ss_0018', properties={'planars_kind': 'class_sheet', 'planars_lang': 'arao1248', 'planars_class': 'proform'}
-  move_file: file_id='fake_ss_0018', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
-  create_permission: file_id='fake_ss_0018', type='user', role='writer', email='annotator@example.org', notify=False
+  create_file: file_id='fake_file_0001', name='Araona [arao1248] — Annotation Notes', parents=['1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'], mimetype='application/vnd.google-apps.document', properties={'planars_kind': 'notes_doc', 'planars_lang': 'arao1248'}
+  create_permission: file_id='fake_file_0001', type='user', role='writer', email='annotator@example.org', notify=False
+  update_file: file_id='fake_ss_0003', properties={'planars_kind': 'planar_sheet', 'planars_lang': 'arao1248'}
+  move_file: file_id='fake_ss_0003', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
+  create_permission: file_id='fake_ss_0003', type='user', role='writer', email='annotator@example.org', notify=False
+  update_file: file_id='fake_ss_0005', properties={'planars_kind': 'diagnostics_sheet', 'planars_lang': 'arao1248'}
+  move_file: file_id='fake_ss_0005', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
+  create_permission: file_id='fake_ss_0005', type='user', role='writer', email='annotator@example.org', notify=False
+  update_file: file_id='fake_ss_0007', properties={'planars_kind': 'class_sheet', 'planars_lang': 'arao1248', 'planars_class': 'ciscategorial'}
+  move_file: file_id='fake_ss_0007', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
+  create_permission: file_id='fake_ss_0007', type='user', role='writer', email='annotator@example.org', notify=False
+  update_file: file_id='fake_ss_0009', properties={'planars_kind': 'class_sheet', 'planars_lang': 'arao1248', 'planars_class': 'noninterruption'}
+  move_file: file_id='fake_ss_0009', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
+  create_permission: file_id='fake_ss_0009', type='user', role='writer', email='annotator@example.org', notify=False
+  update_file: file_id='fake_ss_0011', properties={'planars_kind': 'class_sheet', 'planars_lang': 'arao1248', 'planars_class': 'nonpermutability'}
+  move_file: file_id='fake_ss_0011', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
+  create_permission: file_id='fake_ss_0011', type='user', role='writer', email='annotator@example.org', notify=False
+  update_file: file_id='fake_ss_0013', properties={'planars_kind': 'class_sheet', 'planars_lang': 'arao1248', 'planars_class': 'free_occurrence'}
+  move_file: file_id='fake_ss_0013', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
+  create_permission: file_id='fake_ss_0013', type='user', role='writer', email='annotator@example.org', notify=False
+  update_file: file_id='fake_ss_0015', properties={'planars_kind': 'class_sheet', 'planars_lang': 'arao1248', 'planars_class': 'subspanrepetition'}
+  move_file: file_id='fake_ss_0015', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
+  create_permission: file_id='fake_ss_0015', type='user', role='writer', email='annotator@example.org', notify=False
+  update_file: file_id='fake_ss_0017', properties={'planars_kind': 'class_sheet', 'planars_lang': 'arao1248', 'planars_class': 'proform'}
+  move_file: file_id='fake_ss_0017', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
+  create_permission: file_id='fake_ss_0017', type='user', role='writer', email='annotator@example.org', notify=False
   update_file: file_id='fake_manifest_file', bytes=54392
   update_file: file_id='fake_manifest_file', bytes=54392
 
 SHEET OPERATIONS
 
-  fake_ss_0004  tab=-
+  fake_ss_0003  tab=-
     create_spreadsheet: title='planar_arao1248'
 
-  fake_ss_0004  tab=Sheet1
+  fake_ss_0003  tab=Sheet1
     update: anchor A1 raw=True 19x9
       | ['Language_ID', 'Planar_Type', 'Position', 'Position_Type', 'Position_Name', 'Elements', 'Class_Type', 'Example', 'Notes']
       | ['arao1248', 'verbal', '1', 'Zone', 'v:leftXP', 'NP{NP,PP,S}, ADVERBIALS, INTERROGATIVES', 'open', '[jico] tso pa neti bewewe', 'Constituent interrogatives, focused NPs, subordinated/coordinated clauses; motivates P2 zone (position 2) as elements after first XP']
       | ['arao1248', 'verbal', '2', 'Zone', 'v:P2', 'po, pojo, tso, pa, tokwe, dipa, sha', 'list', 'pona tsidi-a [tokwe] [pa] wada todi-lipi laba ti -ta -iki', 'Wackernagel-like particles occurring after first XP; no fixed ordering among themselves; free forms']
       | ...
 
-  fake_ss_0004  tab=sheetId=0
+  fake_ss_0003  tab=sheetId=0
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
 
-  fake_ss_0006  tab=-
+  fake_ss_0005  tab=-
     create_spreadsheet: title='diagnostics_arao1248'
 
-  fake_ss_0006  tab=Sheet1
+  fake_ss_0005  tab=Sheet1
     update: anchor A1 raw=True 7x4
       | ['Class', 'Language', 'Constructions', 'Criteria']
       | ['ciscategorial', 'arao1248', 'general', 'V-combines{y/n}, N-combines{y/n}, A-combines{y/n}, PRED-combines{y/n}']
       | ['noninterruption', 'arao1248', 'general', 'free{y/n}, multiple{y/n}']
       | ...
 
-  fake_ss_0006  tab=sheetId=0
+  fake_ss_0005  tab=sheetId=0
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
 
-  fake_ss_0008  tab=-
+  fake_ss_0007  tab=-
     create_spreadsheet: title='ciscategorial_arao1248'
     reorder_worksheets: order=['Instructions', 'general', 'Status']
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
@@ -87,7 +86,7 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
 
-  fake_ss_0008  tab=general
+  fake_ss_0007  tab=general
     add_worksheet: rows=75, cols=9, index=None, sheet_id=1
     update: anchor A1 raw=True 74x9
       | ['Element', 'Position_Name', 'Position_Number', 'V-combines', 'N-combines', 'A-combines', 'PRED-combines', 'Source', 'Comments']
@@ -95,7 +94,7 @@ SHEET OPERATIONS
       | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '', '', '', '']
       | ...
 
-  fake_ss_0008  tab=sheetId=1
+  fake_ss_0007  tab=sheetId=1
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
     setDataValidation: col 3 (BEYOND HEADER) rows 1-74 -> ['y', 'n'] (strict=False)
@@ -107,10 +106,10 @@ SHEET OPERATIONS
     repeatCell: col 5 (BEYOND HEADER) rows 0-1
     repeatCell: col 6 (BEYOND HEADER) rows 0-1
 
-  fake_ss_0008  tab=Sheet1
+  fake_ss_0007  tab=Sheet1
     del_worksheet: 
 
-  fake_ss_0008  tab=Instructions
+  fake_ss_0007  tab=Instructions
     add_worksheet: rows=12, cols=2, index=None, sheet_id=2
     update: anchor A1 raw=True 10x1
       | ['CISCATEGORIAL — ANNOTATION INSTRUCTIONS']
@@ -118,7 +117,7 @@ SHEET OPERATIONS
       | ['WHAT THIS TESTS']
       | ...
 
-  fake_ss_0008  tab=sheetId=2
+  fake_ss_0007  tab=sheetId=2
     repeatCell: col 0 (BEYOND HEADER) rows 0-1
     repeatCell: col 0 (BEYOND HEADER) rows 2-3
     repeatCell: col 0 (BEYOND HEADER) rows 5-6
@@ -126,19 +125,19 @@ SHEET OPERATIONS
     updateDimensionProperties: (whole sheet)
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 2}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
-  fake_ss_0008  tab=Status
+  fake_ss_0007  tab=Status
     add_worksheet: rows=3, cols=3, index=None, sheet_id=3
     update: anchor A1 raw=True 2x3
       | ['Construction', 'Status', 'Needs fixing']
       | ['general', 'in-progress', '']
 
-  fake_ss_0008  tab=sheetId=3
+  fake_ss_0007  tab=sheetId=3
     updateSheetProperties: (whole sheet)
     repeatCell: col 0 (BEYOND HEADER) rows 0-1
     repeatCell: col 2 (BEYOND HEADER) rows 1-None
     setDataValidation: col 1 (BEYOND HEADER) rows 1-2 -> ['in-progress', 'ready-for-review'] (strict=True)
 
-  fake_ss_0010  tab=-
+  fake_ss_0009  tab=-
     create_spreadsheet: title='noninterruption_arao1248'
     reorder_worksheets: order=['Instructions', 'general', 'Status']
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
@@ -148,7 +147,7 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
 
-  fake_ss_0010  tab=general
+  fake_ss_0009  tab=general
     add_worksheet: rows=75, cols=7, index=None, sheet_id=1
     update: anchor A1 raw=True 74x7
       | ['Element', 'Position_Name', 'Position_Number', 'free', 'multiple', 'Source', 'Comments']
@@ -156,7 +155,7 @@ SHEET OPERATIONS
       | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '', '']
       | ...
 
-  fake_ss_0010  tab=sheetId=1
+  fake_ss_0009  tab=sheetId=1
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
     setDataValidation: col 3 (BEYOND HEADER) rows 1-74 -> ['y', 'n'] (strict=False)
@@ -164,10 +163,10 @@ SHEET OPERATIONS
     repeatCell: col 3 (BEYOND HEADER) rows 0-1
     repeatCell: col 4 (BEYOND HEADER) rows 0-1
 
-  fake_ss_0010  tab=Sheet1
+  fake_ss_0009  tab=Sheet1
     del_worksheet: 
 
-  fake_ss_0010  tab=Instructions
+  fake_ss_0009  tab=Instructions
     add_worksheet: rows=11, cols=2, index=None, sheet_id=2
     update: anchor A1 raw=True 9x1
       | ['NONINTERRUPTION — ANNOTATION INSTRUCTIONS']
@@ -175,7 +174,7 @@ SHEET OPERATIONS
       | ['WHAT THIS TESTS']
       | ...
 
-  fake_ss_0010  tab=sheetId=2
+  fake_ss_0009  tab=sheetId=2
     repeatCell: col 0 (BEYOND HEADER) rows 0-1
     repeatCell: col 0 (BEYOND HEADER) rows 2-3
     repeatCell: col 0 (BEYOND HEADER) rows 5-6
@@ -183,19 +182,19 @@ SHEET OPERATIONS
     updateDimensionProperties: (whole sheet)
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 2}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
-  fake_ss_0010  tab=Status
+  fake_ss_0009  tab=Status
     add_worksheet: rows=3, cols=3, index=None, sheet_id=3
     update: anchor A1 raw=True 2x3
       | ['Construction', 'Status', 'Needs fixing']
       | ['general', 'in-progress', '']
 
-  fake_ss_0010  tab=sheetId=3
+  fake_ss_0009  tab=sheetId=3
     updateSheetProperties: (whole sheet)
     repeatCell: col 0 (BEYOND HEADER) rows 0-1
     repeatCell: col 2 (BEYOND HEADER) rows 1-None
     setDataValidation: col 1 (BEYOND HEADER) rows 1-2 -> ['in-progress', 'ready-for-review'] (strict=True)
 
-  fake_ss_0012  tab=-
+  fake_ss_0011  tab=-
     create_spreadsheet: title='nonpermutability_arao1248'
     reorder_worksheets: order=['Instructions', 'element_prescreening', 'general', 'Planar Structure', 'Status']
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
@@ -209,7 +208,7 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 5}, "visibility": "DOCUMENT"}}
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 5}, "visibility": "DOCUMENT"}}
 
-  fake_ss_0012  tab=element_prescreening
+  fake_ss_0011  tab=element_prescreening
     add_worksheet: rows=75, cols=6, index=None, sheet_id=1
     update: anchor A1 raw=True 74x6
       | ['Element', 'Position_Name', 'Position_Number', 'scopal', 'Source', 'Comments']
@@ -217,13 +216,13 @@ SHEET OPERATIONS
       | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '']
       | ...
 
-  fake_ss_0012  tab=sheetId=1
+  fake_ss_0011  tab=sheetId=1
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
     setDataValidation: col 3 (BEYOND HEADER) rows 1-74 -> ['y', 'n', 'both'] (strict=False)
     repeatCell: col 3 (BEYOND HEADER) rows 0-1
 
-  fake_ss_0012  tab=general
+  fake_ss_0011  tab=general
     add_worksheet: rows=255, cols=5, index=None, sheet_id=2
     update: anchor A1 raw=True 254x5
       | ['Element_A', 'Element_B', 'scopal', 'Source', 'Comments']
@@ -231,15 +230,15 @@ SHEET OPERATIONS
       | ['ADVERBIALS', 'NP{NP,PP,S}', '', '', '']
       | ...
 
-  fake_ss_0012  tab=sheetId=2
+  fake_ss_0011  tab=sheetId=2
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
     setDataValidation: col 2 (BEYOND HEADER) rows 1-254 -> ['y', 'n', 'both'] (strict=False)
 
-  fake_ss_0012  tab=Sheet1
+  fake_ss_0011  tab=Sheet1
     del_worksheet: 
 
-  fake_ss_0012  tab=Instructions
+  fake_ss_0011  tab=Instructions
     add_worksheet: rows=29, cols=2, index=None, sheet_id=3
     update: anchor A1 raw=True 27x1
       | ['NONPERMUTABILITY — ANNOTATION INSTRUCTIONS']
@@ -247,7 +246,7 @@ SHEET OPERATIONS
       | ['WHAT THIS TESTS']
       | ...
 
-  fake_ss_0012  tab=sheetId=3
+  fake_ss_0011  tab=sheetId=3
     repeatCell: col 0 (BEYOND HEADER) rows 0-1
     repeatCell: col 0 (BEYOND HEADER) rows 2-3
     repeatCell: col 0 (BEYOND HEADER) rows 5-6
@@ -259,7 +258,7 @@ SHEET OPERATIONS
     updateDimensionProperties: (whole sheet)
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 3}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
-  fake_ss_0012  tab=Planar Structure
+  fake_ss_0011  tab=Planar Structure
     add_worksheet: rows=21, cols=5, index=None, sheet_id=4
     update: anchor A1 raw=True 19x4
       | ['Position', 'Position_Name', 'Position_Type', 'Elements']
@@ -267,25 +266,25 @@ SHEET OPERATIONS
       | ['2', 'v:P2', 'Zone', 'po, pojo, tso, pa, tokwe, dipa, sha']
       | ...
 
-  fake_ss_0012  tab=sheetId=4
+  fake_ss_0011  tab=sheetId=4
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 4}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
-  fake_ss_0012  tab=Status
+  fake_ss_0011  tab=Status
     add_worksheet: rows=4, cols=3, index=None, sheet_id=5
     update: anchor A1 raw=True 3x3
       | ['Construction', 'Status', 'Needs fixing']
       | ['element_prescreening', 'in-progress', '']
       | ['general', 'in-progress', '']
 
-  fake_ss_0012  tab=sheetId=5
+  fake_ss_0011  tab=sheetId=5
     updateSheetProperties: (whole sheet)
     repeatCell: col 0 (BEYOND HEADER) rows 0-1
     repeatCell: col 2 (BEYOND HEADER) rows 1-None
     setDataValidation: col 1 (BEYOND HEADER) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)
 
-  fake_ss_0014  tab=-
+  fake_ss_0013  tab=-
     create_spreadsheet: title='free_occurrence_arao1248'
     reorder_worksheets: order=['Instructions', 'general', 'Status']
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
@@ -295,7 +294,7 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
 
-  fake_ss_0014  tab=general
+  fake_ss_0013  tab=general
     add_worksheet: rows=75, cols=10, index=None, sheet_id=1
     update: anchor A1 raw=True 74x10
       | ['Element', 'Position_Name', 'Position_Number', 'free', 'left-edge-of-free-form', 'right-edge-of-free-form', 'dependent-on-left', 'dependent-on-right', 'Source', 'Comments']
@@ -303,7 +302,7 @@ SHEET OPERATIONS
       | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '', '', '', '', '']
       | ...
 
-  fake_ss_0014  tab=sheetId=1
+  fake_ss_0013  tab=sheetId=1
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
     setDataValidation: col 3 (BEYOND HEADER) rows 1-74 -> ['y', 'n'] (strict=False)
@@ -317,10 +316,10 @@ SHEET OPERATIONS
     repeatCell: col 6 (BEYOND HEADER) rows 0-1
     repeatCell: col 7 (BEYOND HEADER) rows 0-1
 
-  fake_ss_0014  tab=Sheet1
+  fake_ss_0013  tab=Sheet1
     del_worksheet: 
 
-  fake_ss_0014  tab=Instructions
+  fake_ss_0013  tab=Instructions
     add_worksheet: rows=11, cols=2, index=None, sheet_id=2
     update: anchor A1 raw=True 9x1
       | ['FREE OCCURRENCE — ANNOTATION INSTRUCTIONS']
@@ -328,7 +327,7 @@ SHEET OPERATIONS
       | ['WHAT THIS TESTS']
       | ...
 
-  fake_ss_0014  tab=sheetId=2
+  fake_ss_0013  tab=sheetId=2
     repeatCell: col 0 (BEYOND HEADER) rows 0-1
     repeatCell: col 0 (BEYOND HEADER) rows 2-3
     repeatCell: col 0 (BEYOND HEADER) rows 5-6
@@ -336,19 +335,19 @@ SHEET OPERATIONS
     updateDimensionProperties: (whole sheet)
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 2}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
-  fake_ss_0014  tab=Status
+  fake_ss_0013  tab=Status
     add_worksheet: rows=3, cols=3, index=None, sheet_id=3
     update: anchor A1 raw=True 2x3
       | ['Construction', 'Status', 'Needs fixing']
       | ['general', 'in-progress', '']
 
-  fake_ss_0014  tab=sheetId=3
+  fake_ss_0013  tab=sheetId=3
     updateSheetProperties: (whole sheet)
     repeatCell: col 0 (BEYOND HEADER) rows 0-1
     repeatCell: col 2 (BEYOND HEADER) rows 1-None
     setDataValidation: col 1 (BEYOND HEADER) rows 1-2 -> ['in-progress', 'ready-for-review'] (strict=True)
 
-  fake_ss_0016  tab=-
+  fake_ss_0015  tab=-
     create_spreadsheet: title='subspanrepetition_arao1248'
     reorder_worksheets: order=['Instructions', 'auxiliary_construction', 'tso_clause_linkage', 'Status']
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
@@ -360,7 +359,7 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
 
-  fake_ss_0016  tab=auxiliary_construction
+  fake_ss_0015  tab=auxiliary_construction
     add_worksheet: rows=75, cols=8, index=None, sheet_id=1
     update: anchor A1 raw=True 74x8
       | ['Element', 'Position_Name', 'Position_Number', 'widescope_right', 'widescope_left', 'fillable_botheither_conjunct', 'Source', 'Comments']
@@ -368,7 +367,7 @@ SHEET OPERATIONS
       | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '', '', '']
       | ...
 
-  fake_ss_0016  tab=sheetId=1
+  fake_ss_0015  tab=sheetId=1
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
     setDataValidation: col 3 (BEYOND HEADER) rows 1-74 -> ['y', 'n'] (strict=False)
@@ -378,7 +377,7 @@ SHEET OPERATIONS
     repeatCell: col 4 (BEYOND HEADER) rows 0-1
     repeatCell: col 5 (BEYOND HEADER) rows 0-1
 
-  fake_ss_0016  tab=tso_clause_linkage
+  fake_ss_0015  tab=tso_clause_linkage
     add_worksheet: rows=75, cols=8, index=None, sheet_id=2
     update: anchor A1 raw=True 74x8
       | ['Element', 'Position_Name', 'Position_Number', 'widescope_right', 'widescope_left', 'fillable_botheither_conjunct', 'Source', 'Comments']
@@ -386,7 +385,7 @@ SHEET OPERATIONS
       | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '', '', '']
       | ...
 
-  fake_ss_0016  tab=sheetId=2
+  fake_ss_0015  tab=sheetId=2
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
     setDataValidation: col 3 (BEYOND HEADER) rows 1-74 -> ['y', 'n'] (strict=False)
@@ -396,10 +395,10 @@ SHEET OPERATIONS
     repeatCell: col 4 (BEYOND HEADER) rows 0-1
     repeatCell: col 5 (BEYOND HEADER) rows 0-1
 
-  fake_ss_0016  tab=Sheet1
+  fake_ss_0015  tab=Sheet1
     del_worksheet: 
 
-  fake_ss_0016  tab=Instructions
+  fake_ss_0015  tab=Instructions
     add_worksheet: rows=11, cols=2, index=None, sheet_id=3
     update: anchor A1 raw=True 9x1
       | ['SUBSPAN REPETITION — ANNOTATION INSTRUCTIONS']
@@ -407,7 +406,7 @@ SHEET OPERATIONS
       | ['WHAT THIS TESTS']
       | ...
 
-  fake_ss_0016  tab=sheetId=3
+  fake_ss_0015  tab=sheetId=3
     repeatCell: col 0 (BEYOND HEADER) rows 0-1
     repeatCell: col 0 (BEYOND HEADER) rows 2-3
     repeatCell: col 0 (BEYOND HEADER) rows 5-6
@@ -415,20 +414,20 @@ SHEET OPERATIONS
     updateDimensionProperties: (whole sheet)
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 3}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
-  fake_ss_0016  tab=Status
+  fake_ss_0015  tab=Status
     add_worksheet: rows=4, cols=3, index=None, sheet_id=4
     update: anchor A1 raw=True 3x3
       | ['Construction', 'Status', 'Needs fixing']
       | ['auxiliary_construction', 'in-progress', '']
       | ['tso_clause_linkage', 'in-progress', '']
 
-  fake_ss_0016  tab=sheetId=4
+  fake_ss_0015  tab=sheetId=4
     updateSheetProperties: (whole sheet)
     repeatCell: col 0 (BEYOND HEADER) rows 0-1
     repeatCell: col 2 (BEYOND HEADER) rows 1-None
     setDataValidation: col 1 (BEYOND HEADER) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)
 
-  fake_ss_0018  tab=-
+  fake_ss_0017  tab=-
     create_spreadsheet: title='proform_arao1248'
     reorder_worksheets: order=['Instructions', 'general', 'Status']
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
@@ -438,7 +437,7 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
 
-  fake_ss_0018  tab=general
+  fake_ss_0017  tab=general
     add_worksheet: rows=75, cols=6, index=None, sheet_id=1
     update: anchor A1 raw=True 74x6
       | ['Element', 'Position_Name', 'Position_Number', 'shareable_proform_replace', 'Source', 'Comments']
@@ -446,16 +445,16 @@ SHEET OPERATIONS
       | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '']
       | ...
 
-  fake_ss_0018  tab=sheetId=1
+  fake_ss_0017  tab=sheetId=1
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
     setDataValidation: col 3 (BEYOND HEADER) rows 1-74 -> ['y', 'n', 'both', 'unclear'] (strict=False)
     repeatCell: col 3 (BEYOND HEADER) rows 0-1
 
-  fake_ss_0018  tab=Sheet1
+  fake_ss_0017  tab=Sheet1
     del_worksheet: 
 
-  fake_ss_0018  tab=Instructions
+  fake_ss_0017  tab=Instructions
     add_worksheet: rows=11, cols=2, index=None, sheet_id=2
     update: anchor A1 raw=True 9x1
       | ['PROFORM — ANNOTATION INSTRUCTIONS']
@@ -463,7 +462,7 @@ SHEET OPERATIONS
       | ['WHAT THIS TESTS']
       | ...
 
-  fake_ss_0018  tab=sheetId=2
+  fake_ss_0017  tab=sheetId=2
     repeatCell: col 0 (BEYOND HEADER) rows 0-1
     repeatCell: col 0 (BEYOND HEADER) rows 2-3
     repeatCell: col 0 (BEYOND HEADER) rows 5-6
@@ -471,13 +470,13 @@ SHEET OPERATIONS
     updateDimensionProperties: (whole sheet)
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 2}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
-  fake_ss_0018  tab=Status
+  fake_ss_0017  tab=Status
     add_worksheet: rows=3, cols=3, index=None, sheet_id=3
     update: anchor A1 raw=True 2x3
       | ['Construction', 'Status', 'Needs fixing']
       | ['general', 'in-progress', '']
 
-  fake_ss_0018  tab=sheetId=3
+  fake_ss_0017  tab=sheetId=3
     updateSheetProperties: (whole sheet)
     repeatCell: col 0 (BEYOND HEADER) rows 0-1
     repeatCell: col 2 (BEYOND HEADER) rows 1-None

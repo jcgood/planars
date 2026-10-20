@@ -234,10 +234,11 @@ def test_apply_writes_the_manifest_through_the_shared_upload_manifest_helper(fak
     assert calls == [(ROOT_FOLDER_ID, MANIFEST_FILE_ID)]
 
 
-def test_manifest_upload_falls_back_to_create_when_no_id_is_recorded(fake, monkeypatch):
+def test_manifest_upload_with_no_id_recorded_updates_the_one_drive_holds(fake, monkeypatch):
     """Before #276: a lost _planars_config_file_id meant this command gave up
-    with a [WARNING] instead of creating a fresh manifest.json, unlike every
-    other manifest writer. Now it falls back to create like the rest.
+    with a [WARNING], unlike every other manifest writer. Until 2026-10-19 the
+    writers then made a second manifest.json; now they find the one Drive
+    holds by its label, update it, and record its id again.
     """
     saved: dict = {}
     monkeypatch.setattr(refresh_dropdowns, "_save_drive_config", saved.update)
@@ -247,6 +248,20 @@ def test_manifest_upload_falls_back_to_create_when_no_id_is_recorded(fake, monke
     out = run(["refresh-dropdowns", "--apply"], monkeypatch)
 
     assert "[WARNING]" not in out
+    assert fake.mutations_of("create_file") == []
+    assert [u["file_id"] for u in fake.mutations_of("update_file")] == [MANIFEST_FILE_ID]
+    assert saved.get("_planars_config_file_id") == MANIFEST_FILE_ID
+
+
+def test_manifest_upload_creates_one_only_when_drive_holds_none(fake, monkeypatch):
+    saved: dict = {}
+    monkeypatch.setattr(refresh_dropdowns, "_save_drive_config", saved.update)
+    without_id = {"_root_folder_id": ROOT_FOLDER_ID}
+    monkeypatch.setattr(refresh_dropdowns, "_load_drive_config", lambda: without_id)
+    fake.file(MANIFEST_FILE_ID).trashed = True     # still downloadable, as a stand-in
+
+    run(["refresh-dropdowns", "--apply"], monkeypatch)
+
     creates = fake.mutations_of("create_file")
     assert [c["name"] for c in creates] == ["manifest.json"]
     assert creates[0]["parents"] == [ROOT_FOLDER_ID]

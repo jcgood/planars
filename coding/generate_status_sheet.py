@@ -81,11 +81,10 @@ from .validate_coding import (
     annotation_status, keyed_annotation_status, pair_annotation_status,
 )
 from .schemas import criteria_for
+from .sheet_spec import STATUS_FOLDER_NAME as _STATUS_FOLDER_NAME
 from .sheet_spec import STATUS_SHEET_COLUMNS
 from planars.languages import get_display_name
 from planars.schema_values import STATUS_TAB
-
-_STATUS_FOLDER_NAME = "Annotation Status"
 
 # Pastel palette matching the pink/white highlighting convention already used
 # by validate_coding.py's pink-cell error highlighting.

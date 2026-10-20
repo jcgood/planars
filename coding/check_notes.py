@@ -167,7 +167,7 @@ def main(args: argparse.Namespace | None = None) -> None:
     from .drive import (
         load_manifest, _strip_acknowledgment_lines,
         upload_manifest, _load_drive_config, _save_drive_config,
-        _ACK_PREFIX,
+        acknowledgment_line,
     )
     from .drive_doorway import get_doorway
     from planars.languages import get_display_name, get_entry
@@ -207,8 +207,7 @@ def main(args: argparse.Namespace | None = None) -> None:
             if apply:
                 from .drive import create_notes_doc
                 try:
-                    doc_id = create_notes_doc(doorway, lang_id, folder_id,
-                                              get_display_name(lang_id))
+                    doc_id = create_notes_doc(doorway, lang_id, folder_id)
                     lang_data["notes_doc_id"] = doc_id
                     manifest[lang_id]["notes_doc_id"] = doc_id
                     config.setdefault(lang_id, {})["notes_doc_id"] = doc_id
@@ -276,7 +275,7 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     # Write-back acknowledgments and update state.
     if to_acknowledge:
-        ack_text = f"[{today}] {_ACK_PREFIX}. Please consult with them for an update."
+        ack_text = acknowledgment_line(today)
         for lang_id, doc_id, new_hash in to_acknowledge:
             if apply:
                 try:

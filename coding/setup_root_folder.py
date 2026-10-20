@@ -35,8 +35,8 @@ ROOT = Path(__file__).resolve().parent.parent
 from .drive import _load_drive_config, _save_drive_config, remove_anyone_permission
 from .drive_doorway import get_doorway
 from . import drive_door
+from .sheet_spec import ROOT_FOLDER_NAME as _ROOT_FOLDER_NAME
 
-_ROOT_FOLDER_NAME = "ConstituencyTypology"
 _FOLDER_MIME = "application/vnd.google-apps.folder"
 
 

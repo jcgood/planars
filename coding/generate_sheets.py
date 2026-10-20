@@ -85,7 +85,6 @@ from .drive import (
 )
 from .drive_doorway import SpreadsheetHandle, WorksheetHandle, WorksheetNotFound, get_doorway
 from .glottolog import cached_entry as _cached_glottolog, get_metadata as _fetch_glottolog
-from planars.languages import get_display_name as _get_display_name
 from planars.schema_values import (
     ELEMENT_ROW_COLUMNS, KEYSTONE_NAME, PAIR_ROW_KEYS, PAIR_ROW_SHAPES, STATUS_COLUMNS,
     STATUS_CONSTRUCTION_COLUMN, STATUS_PROBLEMS_COLUMN, STATUS_STATUS_COLUMN,
@@ -2393,13 +2392,14 @@ def main(args: argparse.Namespace | None = None) -> None:
         folder_url = f"https://drive.google.com/drive/folders/{folder_id}"
         print(f"Folder:      {folder_url}")
 
-        # Create collaborator notes doc if not already in the manifest.
-        # _get_display_name reads glottolog_cache.json — run `lookup-lang <lang_id>`
-        # first if the cache is empty (doc will fall back to notes_{lang_id} otherwise).
+        # Create collaborator notes doc if not already in the manifest. Its
+        # name (sheet_spec.file_spec) uses the language's name from
+        # languages.yaml — run `lookup-lang <lang_id>` first, or the doc is
+        # named by the bare Glottocode.
         existing_notes_doc_id = existing_lang_data.get("notes_doc_id") or config.get(lang_id, {}).get("notes_doc_id")
         if not existing_notes_doc_id:
             try:
-                existing_notes_doc_id = create_notes_doc(doorway, lang_id, folder_id, _get_display_name(lang_id))
+                existing_notes_doc_id = create_notes_doc(doorway, lang_id, folder_id)
                 print(f"Notes doc:   https://docs.google.com/document/d/{existing_notes_doc_id}")
             except Exception as _notes_err:
                 print(f"  [WARNING] Could not create notes doc for {lang_id}: {_notes_err}")

@@ -91,6 +91,9 @@ _STUB_TEMPLATES = {
         ],
     },
 }
+# Each a notebook as the real templates are (the Drive door checks it is one).
+for _template in _STUB_TEMPLATES.values():
+    _template["nbformat"] = 4
 
 
 @pytest.fixture()
@@ -456,19 +459,13 @@ def test_no_manifest_file_id_recorded_stops_with_the_command_to_run(env, monkeyp
     assert doorway.mutations == []
 
 
-def test_the_global_folder_falls_back_to_the_first_language_folder(env, monkeypatch):
-    """Recorded, not endorsed: pre-`setup-root-folder` behaviour is still live.
-
-    With no `_root_folder_id` and no `_global_folder_id`, the coordinator
-    notebook lands in whichever language folder sorts first rather than at the
-    project root.
-    """
+def test_with_no_root_folder_recorded_it_stops_and_says_what_to_run(env, monkeypatch):
+    """The all-languages notebook sits in the root folder (sheet_spec.file_spec);
+    it used to fall back to the first language folder instead."""
     doorway, config, _ = env
     without = json.loads(json.dumps(config))
     without.pop("_root_folder_id")
     use_config(monkeypatch, without)
-    run(["generate-notebooks", "--apply"], monkeypatch)
-
-    coord = [c for c in doorway.mutations_of("create_file")
-             if c["name"] == "all_languages.ipynb"]
-    assert coord[0]["parents"] == [config["arao1248"]["folder_id"]]
+    with pytest.raises(SystemExit, match="Run setup-root-folder first"):
+        run(["generate-notebooks", "--apply"], monkeypatch)
+    assert doorway.mutations == []

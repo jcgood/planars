@@ -273,16 +273,20 @@ class TestMakeReadOnly:
 
 class TestCreateOrUpdateSharedFile:
     NOTEBOOK = drive_door.notebook("domains", "stan1293")
+    NOTEBOOK_JSON = b'{"cells": [], "nbformat": 4}'
+
+    @staticmethod
+    def _language_folder(doorway):
+        return doorway.seed_folder("stan1293", identity=drive_door.folder("language", "stan1293"))
 
     def test_creates_labels_and_shares_when_no_existing_id(self):
         doorway = FakeDriveDoorway()
-        folder_id = doorway.seed_folder("lang")
+        folder_id = self._language_folder(doorway)
         with _through_door(doorway) as door:
             file_id = create_or_update_shared_file(
-                door, b"content", "notebook.ipynb", "application/json", folder_id,
-                identity=self.NOTEBOOK)
+                door, self.NOTEBOOK_JSON, folder_id, identity=self.NOTEBOOK)
         creates = doorway.mutations_of("create_file")
-        assert [c["name"] for c in creates] == ["notebook.ipynb"]
+        assert [c["name"] for c in creates] == ["domains_stan1293.ipynb"]
         assert creates[0]["parents"] == [folder_id]
         assert doorway.file(file_id).properties == self.NOTEBOOK.labels()
         assert doorway.mutations_of("update_file") == []
@@ -291,31 +295,31 @@ class TestCreateOrUpdateSharedFile:
 
     def test_updates_in_place_and_renames_when_existing_id_given(self):
         doorway = FakeDriveDoorway()
-        folder_id = doorway.seed_folder("lang")
-        existing = doorway.seed_file("old_name.ipynb", "application/json", [folder_id])
+        folder_id = self._language_folder(doorway)
+        existing = doorway.seed_file("old_name.ipynb", "application/json", [folder_id],
+                                     identity=self.NOTEBOOK)
         with _through_door(doorway) as door:
             file_id = create_or_update_shared_file(
-                door, b"new content", "new_name.ipynb", "application/json",
-                folder_id, existing_file_id=existing, identity=self.NOTEBOOK)
+                door, self.NOTEBOOK_JSON, folder_id, existing_file_id=existing,
+                identity=self.NOTEBOOK)
         assert file_id == existing
         assert doorway.mutations_of("create_file") == []
         updates = doorway.mutations_of("update_file")
-        assert len(updates) == 1 and updates[0]["name"] == "new_name.ipynb"
+        assert len(updates) == 1 and updates[0]["name"] == "domains_stan1293.ipynb"
 
     def test_update_path_also_shares_reasserting_but_not_duplicating(self):
         """The behavioural change issue #276 makes: update reshares every run,
         but ensure_anyone_permission means a second run adds no duplicate."""
         doorway = FakeDriveDoorway()
-        folder_id = doorway.seed_folder("lang")
+        folder_id = self._language_folder(doorway)
         report = drive_door.lang_file("report", "stan1293")
         with _through_door(doorway) as door:
             file_id = create_or_update_shared_file(
-                door, b"v1", "report.pdf", "application/pdf", folder_id, identity=report)
+                door, b"%PDF-1.4 v1", folder_id, identity=report)
         doorway.clear_mutations()
         with _through_door(doorway) as door:
             create_or_update_shared_file(
-                door, b"v2", "report.pdf", "application/pdf", folder_id,
-                existing_file_id=file_id, identity=report)
+                door, b"%PDF-1.4 v2", folder_id, existing_file_id=file_id, identity=report)
         assert doorway.mutations_of("update_file")
         assert doorway.mutations_of("create_permission") == []  # already shared
 
@@ -325,26 +329,24 @@ class TestCreateOrUpdateSharedFile:
 # ---------------------------------------------------------------------------
 
 class TestUploadManifestShapeCheck:
-    """The shape check is deliberately non-blocking -- see
-    manifest_contract.py's module docstring. These tests pin that promise:
-    a malformed manifest still gets written, just with a warning printed."""
+    """The Drive door checks every manifest write against the contract
+    (sheet_spec.content_problems); tests run the door in enforce mode."""
 
-    def test_well_shaped_manifest_writes_with_no_warning(self, capsys):
+    def test_well_shaped_manifest_writes(self):
         doorway = FakeDriveDoorway()
-        folder_id = doorway.seed_folder("root")
+        folder_id = doorway.seed_folder("root", identity=drive_door.folder("root"))
         with _through_door(doorway) as door:
             upload_manifest(door, {"lang0001": {"folder_id": "abc"}}, folder_id)
         created, = doorway.mutations_of("create_file")
         assert created["properties"] == drive_door.manifest().labels()
-        assert "WARNING" not in capsys.readouterr().out
 
-    def test_malformed_manifest_still_writes_but_warns(self, capsys):
+    def test_malformed_manifest_is_refused(self):
         doorway = FakeDriveDoorway()
-        folder_id = doorway.seed_folder("root")
-        with _through_door(doorway) as door:
+        folder_id = doorway.seed_folder("root", identity=drive_door.folder("root"))
+        with _through_door(doorway) as door, \
+                pytest.raises(drive_door.DoorViolation, match="does not match its contract"):
             upload_manifest(door, {"lang0001": "not-a-dict"}, folder_id)
-        assert doorway.mutations_of("create_file")  # write happened regardless
-        assert "WARNING" in capsys.readouterr().out
+        assert not doorway.mutations_of("create_file")
 
 
 # ---------------------------------------------------------------------------

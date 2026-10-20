@@ -142,6 +142,7 @@ from .notify import (
 )
 from . import restructure_journal
 from . import drive_door
+from .sheet_spec import ARCHIVE_FOLDER_NAME
 
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
 CODED_DATA = ROOT / "coded_data"
@@ -1185,7 +1186,8 @@ def _rename_class_for_language(
     # Drive door, coding/drive_door.py.)
     if folder_id:
         archive_id = doorway.get_or_create_folder(
-            "_archived", parent_id=folder_id, identity=drive_door.folder("archive", lang_id))
+            ARCHIVE_FOLDER_NAME, parent_id=folder_id,
+            identity=drive_door.folder("archive", lang_id))
         doorway.update_file(ss.id, name=f"{old_class}_{lang_id}_v{version}")
         doorway.move_file(ss.id, archive_id)
         _lock_archived_sheet(doorway, ss.id, lang_id)
@@ -1722,7 +1724,7 @@ def main(args: argparse.Namespace | None = None) -> None:
             new_version = version + 1
             if folder_id:
                 archive_id = doorway.get_or_create_folder(
-                    "_archived", parent_id=folder_id,
+                    ARCHIVE_FOLDER_NAME, parent_id=folder_id,
                     identity=drive_door.folder("archive", lang_id))
                 doorway.update_file(ss.id, name=f"{class_name}_{lang_id}_v{version}")
                 doorway.move_file(ss.id, archive_id)

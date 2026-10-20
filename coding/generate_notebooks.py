@@ -57,6 +57,7 @@ from .drive import _load_drive_config, _save_drive_config, create_or_update_shar
 from .drive_doorway import get_doorway
 from . import drive_door
 from .schemas import load_diagnostic_classes
+from .sheet_spec import file_spec
 
 # Marker placed in all_languages_boilerplate.ipynb to indicate where
 # generated per-class cells should be inserted.
@@ -209,26 +210,17 @@ def _insert_class_cells(nb: dict, class_cells: List[dict]) -> dict:
 
 
 def _get_global_folder_id(drive_config: dict) -> Optional[str]:
-    """Return the folder ID for global files (manifest.json, all_languages.ipynb).
+    """Return the folder ID for global files (all_languages.ipynb): the root
+    folder, ``_root_folder_id``, set by ``python -m coding setup-root-folder``.
 
-    Lookup order:
-    1. ``_root_folder_id`` — set by ``python -m coding setup-root-folder``; the
-       ConstituencyTypology folder that houses all coordinator-level files.
-    2. ``_global_folder_id`` — legacy fallback key (kept for backward compatibility).
-    3. First language folder alphabetically — original default before the root
-       folder was introduced; used only when neither key above is present.
+    Until 2026-10-19 this fell back to a legacy ``_global_folder_id`` key and
+    then to the first language folder, which put the all-languages notebook
+    in one language's folder; the Drive door's file spec (it sits in the root
+    folder) refused that. No config has used either since the root folder
+    was introduced, so the command now stops and says to run
+    setup-root-folder instead.
     """
-    if "_root_folder_id" in drive_config:
-        return drive_config["_root_folder_id"]
-    if "_global_folder_id" in drive_config:
-        return drive_config["_global_folder_id"]
-    for lang_id in sorted(drive_config):
-        if lang_id.startswith("_"):
-            continue
-        data = drive_config.get(lang_id, {})
-        if isinstance(data, dict) and data.get("folder_id"):
-            return data["folder_id"]
-    return None
+    return drive_config.get("_root_folder_id")
 
 
 # ---------------------------------------------------------------------------
@@ -306,16 +298,17 @@ def _run_generation(apply: bool) -> None:
 
     if not apply:
         print("\nContributor notebooks (one per language, includes per-class report sections):")
+        named = lambda name, lang=None: file_spec(drive_door.notebook(name, lang)).name
         for lang_id, classes in uploadable.items():
-            print(f"  domains_{lang_id}.ipynb — {classes}")
+            print(f"  {named('domains', lang_id)} — {classes}")
         print("\nValidation notebooks (one per language):")
         for lang_id in uploadable:
-            print(f"  validation_{lang_id}.ipynb")
+            print(f"  {named('validation', lang_id)}")
         print("\nReport notebooks (one per language — generates shareable HTML for collaborators):")
         for lang_id in uploadable:
-            print(f"  report_{lang_id}.ipynb")
+            print(f"  {named('report', lang_id)}")
         print(f"\nCoordinator notebook (all languages):")
-        print(f"  all_languages.ipynb — {all_classes}")
+        print(f"  {named('all_languages')} — {all_classes}")
         print("\nRun with --apply to generate and upload.")
         return
 
@@ -333,11 +326,12 @@ def _run_generation(apply: bool) -> None:
         })
         nb = _insert_class_cells(nb, _generate_class_cells(classes))
         nb_bytes = json.dumps(nb, indent=1).encode()
-        filename = f"domains_{lang_id}.ipynb"
+        identity = drive_door.notebook("domains", lang_id)
+        filename = file_spec(identity).name
         file_id = create_or_update_shared_file(
-            doorway, nb_bytes, filename, "application/json", folder_id,
+            doorway, nb_bytes, folder_id,
             drive_config.get(lang_id, {}).get("domains_notebook_file_id"),
-            identity=drive_door.notebook("domains", lang_id),
+            identity=identity,
         )
         drive_config.setdefault(lang_id, {})["domains_notebook_file_id"] = file_id
         # Save after every upload, not once at the end -- a crash partway
@@ -357,11 +351,12 @@ def _run_generation(apply: bool) -> None:
             "CONFIG_FILE_ID": config_file_id,
         })
         nb_bytes = json.dumps(nb, indent=1).encode()
-        filename = f"validation_{lang_id}.ipynb"
+        identity = drive_door.notebook("validation", lang_id)
+        filename = file_spec(identity).name
         file_id = create_or_update_shared_file(
-            doorway, nb_bytes, filename, "application/json", folder_id,
+            doorway, nb_bytes, folder_id,
             drive_config.get(lang_id, {}).get("validation_notebook_file_id"),
-            identity=drive_door.notebook("validation", lang_id),
+            identity=identity,
         )
         drive_config.setdefault(lang_id, {})["validation_notebook_file_id"] = file_id
         _save_drive_config(drive_config)
@@ -378,11 +373,12 @@ def _run_generation(apply: bool) -> None:
             "FOLDER_ID":      folder_id,
         })
         nb_bytes = json.dumps(nb, indent=1).encode()
-        filename = f"report_{lang_id}.ipynb"
+        identity = drive_door.notebook("report", lang_id)
+        filename = file_spec(identity).name
         file_id = create_or_update_shared_file(
-            doorway, nb_bytes, filename, "application/json", folder_id,
+            doorway, nb_bytes, folder_id,
             drive_config.get(lang_id, {}).get("report_notebook_file_id"),
-            identity=drive_door.notebook("report", lang_id),
+            identity=identity,
         )
         drive_config.setdefault(lang_id, {})["report_notebook_file_id"] = file_id
         _save_drive_config(drive_config)
@@ -393,13 +389,14 @@ def _run_generation(apply: bool) -> None:
     nb = _substitute_tokens(coordinator_template, {"CONFIG_FILE_ID": config_file_id})
     nb = _insert_class_cells(nb, _generate_class_cells(all_classes))
     nb_bytes = json.dumps(nb, indent=1).encode()
+    identity = drive_door.notebook("all_languages")
     coord_file_id = create_or_update_shared_file(
-        doorway, nb_bytes, "all_languages.ipynb", "application/json", global_folder_id,
+        doorway, nb_bytes, global_folder_id,
         drive_config.get("_all_languages_notebook_file_id"),
-        identity=drive_door.notebook("all_languages"),
+        identity=identity,
     )
     drive_config["_all_languages_notebook_file_id"] = coord_file_id
-    print(f"\nUploaded all_languages.ipynb (viewer)")
+    print(f"\nUploaded {file_spec(identity).name} (viewer)")
 
     _save_drive_config(drive_config)
     print("\nDone. drive_config.json updated.")

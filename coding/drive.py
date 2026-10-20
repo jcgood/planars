@@ -136,46 +136,57 @@ def upload_manifest(doorway, full_config: Dict, root_folder_id: str,
                     existing_file_id: str = None) -> str:
     """Write the merged manifest.json (``{lang_id: {folder_id, sheets, ...}}``)
     to Drive through the doorway, updating it in place if ``existing_file_id``
-    is known and creating it otherwise. Returns the file ID.
+    is known, else the manifest Drive holds (found by its identity label),
+    and creating one only when Drive holds none. Returns the file ID, which
+    callers save to ``drive_config.json``.
 
-    Checks ``full_config`` against ``manifest_contract.check()`` first and
-    prints a warning if it finds anything — but writes regardless. Phase 6
-    boundary 4 (issue #271); see ``manifest_contract.py``'s module docstring
-    for why this is deliberately non-blocking. ``integrity-check`` runs the
-    same check against the currently-loaded manifest and *does* let it drive
-    a trackable issue — this local warning is only the in-the-moment signal.
+    The Drive door checks what is sent against ``manifest_contract.check()``
+    (``sheet_spec.content_problems``), as it checks every manifest write:
+    reported in the ``door-violation`` issue while the manifest is in watch
+    mode. ``integrity-check`` runs the same check on the manifest as it is.
     """
-    from . import manifest_contract
-    problems = manifest_contract.check(full_config)
-    if problems:
-        print(f"  WARNING: manifest being written doesn't match the expected shape ({len(problems)} issue(s)):")
-        for p in problems[:5]:
-            print(f"    {p}")
-
+    from .sheet_spec import file_spec
+    identity = drive_door.manifest()
+    spec = file_spec(identity)
     content = _ordered_manifest_bytes(full_config)
+
+    def labelled() -> Optional[str]:
+        found = doorway.list_files(
+            "properties has { key='planars_kind' and value='manifest' } and trashed=false")
+        return found[0]["id"] if found else None
+
     return _upload_manifest_with(
         lambda file_id: doorway.update_file(file_id, content=content,
-                                            mimetype="application/json"),
-        lambda: doorway.create_file("manifest.json", [root_folder_id],
-                                    content=content, mimetype="application/json",
-                                    identity=drive_door.manifest()),
-        existing_file_id,
+                                            mimetype=spec.mimetype),
+        lambda: doorway.create_file(spec.name, [root_folder_id],
+                                    content=content, mimetype=spec.mimetype,
+                                    identity=identity),
+        existing_file_id, labelled,
     )
 
 
-def _upload_manifest_with(update, create, existing_file_id: str = None) -> str:
-    """Update manifest.json in place if we know its ID, else create it.
+def _upload_manifest_with(update, create, existing_file_id: str = None,
+                          find=lambda: None) -> str:
+    """Update manifest.json in place if we know its ID; else update the one
+    ``find`` finds on Drive; else create it.
 
     The fallback matters: a failed update used to mean the manifest silently
-    stopped being written. Creating a second one is not ideal either, but it is
-    visible.
+    stopped being written. Until 2026-10-19 the fallback was always to create
+    a second manifest, leaving the first, which other copies of
+    drive_config.json still named, unused; the Drive door now refuses a
+    second one, so the one Drive holds is found by its label first.
     """
     if existing_file_id:
         try:
             update(existing_file_id)
             return existing_file_id
         except Exception as e:
-            print(f"  WARNING: could not update existing manifest.json ({e}); creating new file.")
+            print(f"  WARNING: could not update manifest.json {existing_file_id} ({e}); "
+                  "looking for the one Drive holds.")
+    found = find()
+    if found and found != existing_file_id:
+        update(found)
+        return found
     return create()
 
 
@@ -392,8 +403,6 @@ def make_read_only(doorway, file_id: str) -> List[str]:
 def create_or_update_shared_file(
     doorway,
     content: bytes,
-    filename: str,
-    mimetype: str,
     folder_id: str,
     existing_file_id: Optional[str] = None,
     role: str = "reader",
@@ -402,20 +411,23 @@ def create_or_update_shared_file(
 ) -> str:
     """Create-or-update a Drive file, renaming on update, reasserting an
     'anyone' share every run via ensure_anyone_permission. Returns the file ID.
-    ``identity`` (a ``drive_door.Identity``) labels the file when it is created.
+    ``identity`` (a ``drive_door.Identity``) labels the file when it is
+    created, and gives its name and type (``sheet_spec.file_spec``).
 
     Shared by generate_notebooks.py's notebook uploads and generate_reports.py's
     PDF uploads — both are rename-on-update, create-if-missing, and (per issue
     #276) reshare on every run, so their per-file duplicate implementations
     collapse into this one function once the sharing timing is unified.
     """
+    from .sheet_spec import file_spec
+    spec = file_spec(identity)
     if existing_file_id:
-        doorway.update_file(existing_file_id, name=filename,
-                            content=content, mimetype=mimetype)
+        doorway.update_file(existing_file_id, name=spec.name,
+                            content=content, mimetype=spec.mimetype)
         file_id = existing_file_id
     else:
-        file_id = doorway.create_file(filename, parents=[folder_id],
-                                      content=content, mimetype=mimetype, identity=identity)
+        file_id = doorway.create_file(spec.name, parents=[folder_id], content=content,
+                                      mimetype=spec.mimetype, identity=identity)
     ensure_anyone_permission(doorway, file_id, role=role)
     return file_id
 
@@ -464,18 +476,18 @@ def _move_to_folder(drive, file_id: str, folder_id: str) -> None:
 _ACK_PREFIX = "Notes transferred to coordinator"
 
 
-def _notes_doc_name(lang_id: str, display_name: str = "") -> str:
-    """What a language's notes doc is called on Drive."""
-    return f"{display_name} — Annotation Notes" if display_name else f"notes_{lang_id}"
+def acknowledgment_line(day: str) -> str:
+    """The line check-notes appends to a notes Doc once it has passed the
+    notes on (``day`` as YYYY-MM-DD). The only text the tooling ever adds to
+    a notes Doc (the Drive door's rule, ``sheet_spec.appended_text_problems``)."""
+    return f"[{day}] {_ACK_PREFIX}. Please consult with them for an update."
 
 
-def create_notes_doc(doorway, lang_id: str, folder_id: str,
-                     display_name: str = "") -> str:
+def create_notes_doc(doorway, lang_id: str, folder_id: str) -> str:
     """Create a Google Doc for collaborator notes in the language folder.
 
-    The doc is named "{display_name} — Annotation Notes" (e.g. "Araona
-    [arao1248] — Annotation Notes"), falling back to "notes_{lang_id}" if
-    display_name is not provided. The language's annotator (from
+    The doc is named as ``sheet_spec.file_spec`` says (e.g. "Araona
+    [arao1248] — Annotation Notes"). The language's annotator (from
     `languages.yaml`) gets **edit** access by name, since the doc is where
     they write notes to the coordinator; nobody gets link access. Until
     2026-10-12 this granted "anyone with the link" edit access instead, in
@@ -488,8 +500,9 @@ def create_notes_doc(doorway, lang_id: str, folder_id: str,
     Returns the new document's file ID.
     """
     from .people import annotator_email
-    doc_id = doorway.create_doc(_notes_doc_name(lang_id, display_name), folder_id,
-                                identity=drive_door.lang_file("notes_doc", lang_id))
+    from .sheet_spec import file_spec
+    identity = drive_door.lang_file("notes_doc", lang_id)
+    doc_id = doorway.create_doc(file_spec(identity).name, folder_id, identity=identity)
     email = annotator_email(lang_id)
     if email:
         ensure_user_permission(doorway, doc_id, email, "writer")
@@ -511,6 +524,11 @@ def _read_notes_doc_text(docs, doc_id: str) -> str:
 _ACK_LINE_RE = re.compile(r"^\[\d{4}-\d{2}-\d{2}\] " + re.escape(_ACK_PREFIX))
 
 
+def is_acknowledgment_line(line: str) -> bool:
+    """Whether ``line`` is one the tooling wrote (``acknowledgment_line``)."""
+    return bool(_ACK_LINE_RE.match(line))
+
+
 def _strip_acknowledgment_lines(text: str) -> str:
     """Strip system-written acknowledgment lines before hashing.
 
@@ -523,7 +541,7 @@ def _strip_acknowledgment_lines(text: str) -> str:
     """
     return "\n".join(
         line for line in text.splitlines()
-        if not _ACK_LINE_RE.match(line)
+        if not is_acknowledgment_line(line)
     )
 
 

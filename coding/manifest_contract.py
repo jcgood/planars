@@ -5,8 +5,8 @@ the manifest is a dict/JSON structure, not a DataFrame, so this uses
 pydantic rather than the pandera used in `planars/contracts.py` and
 `coding/contracts.py`.
 
-**Deliberately far more permissive than the other three boundaries, and
-never blocks.** `load_manifest()` (`coding/drive.py`) is called near the
+**Deliberately far more permissive than the other three boundaries.**
+`load_manifest()` (`coding/drive.py`) is called near the
 start of nearly every `coding/` command — the single highest-blast-radius
 function in the project. A schema built from one static fixture
 (`coded_data/.test_fixtures/drive_state/manifest.json`, three languages, captured
@@ -27,12 +27,17 @@ fixture), not a claim about what it must carry. `check()`
 returns problems as a list of strings rather than raising; callers decide
 what to do with them:
 
-- `upload_manifest()` (`coding/drive.py`) — checks the config about to be
-  written, prints a warning if `check()` finds anything, but writes
-  regardless. Non-blocking by design (see above).
+- the Drive door (`coding/drive_door.py`, through
+  `sheet_spec.content_problems`) — checks every manifest write before it is
+  made (Phase 10 unit 5f, 2026-10-19; until then `upload_manifest()`
+  printed a warning nobody saw). While the manifest is in watch mode a
+  violation is written anyway and reported in the `door-violation` issue;
+  it is refused only once the manifest moves to enforce, which happens only
+  after real writes have passed the check (design § 4), so the risk above
+  is tested on live data first.
 - `integrity-check` (`coding/integrity_check.py`) — checks the manifest as
-  currently loaded, and *does* let it drive a real, trackable
-  `integrity-error` GitHub issue (unlike the local warning above) — safe to
+  currently loaded, and lets it drive a real, trackable
+  `integrity-error` GitHub issue — safe to
   do because the model's permissiveness means a violation here means
   something structurally broken (the top level isn't a dict of dicts, a
   language entry isn't a dict at all), not merely "a field this session

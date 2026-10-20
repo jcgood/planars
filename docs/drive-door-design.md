@@ -2,8 +2,8 @@
 
 **Status: accepted by Jeff 2026-10-13 (§ 7 records his answers). 5a–5d
 built; 5e done; 5f under way: class sheets enforced live since 2026-10-19,
-sharing specified for every kind, the planar, diagnostics and status
-sheets in watch (§ 8).** Unit 5 of Phase 10 ([implementation plan](data-layer-implementation-plan.md),
+and every other kind specified and in watch since the same day (§ 8);
+what is left is moving each to enforce, then refusing unlabelled targets.** Unit 5 of Phase 10 ([implementation plan](data-layer-implementation-plan.md),
 Phase 10 table) was a design pause; this file is the design record. Progress
 is tracked in [data-layer-progress.md](data-layer-progress.md), and the
 decisions are logged there too.
@@ -626,3 +626,77 @@ Found and fixed: the command resized the tab to its new length plus two,
 so when a language lost constructions, up to two rows of the old ones (with
 their status colour) stayed on the page. It now cuts the tab to the new
 rows first.
+
+**5f, the notes Docs and the files (2026-10-19).** The last two steps of
+§ 5's order, done together: the notes Docs, then the files (the manifest,
+notebooks, PDF reports, folders). Every kind is now either a spreadsheet,
+whose tabs and cells rules 1–4 and 6 check (`drive_door.SHEET_KINDS`), or
+a file that is not one (`FILE_KINDS`), and a test holds the two together to
+`KINDS`. A file's spec, `sheet_spec.file_spec`, is what it is called, the
+folder it sits in, its type, what may be written into it, and whether only
+one live file may carry its identity:
+
+| Kind | Name | Folder | Content |
+|---|---|---|---|
+| notes Doc | `{Name [glottocode]} — Annotation Notes` | the language folder | the annotator's; the tooling only appends acknowledgment lines |
+| report | `report_{lang}.pdf` | the language folder | a PDF |
+| notebook | `{domains, validation, report}_{lang}.ipynb`; `all_languages.ipynb` | the language folder; the root | a notebook |
+| manifest | `manifest.json` | the root | JSON the manifest contract accepts |
+| folders | `ConstituencyTypology`, `Annotation Status` (outside every project folder); `{lang}` (the root); `_archived` (the language folder) | | nothing |
+
+Only one of each may exist, except archive folders: the `_archived/v{N}/`
+folders restructure-sheets made before it put `_v{N}` on archived names
+are labelled archive folders too (5d, above).
+
+**Rule 8** checks each create, rename, move and upload against the spec:
+the name, folder and type it sends must be the spec's, and so must the kind
+of content (the manifest through `manifest_contract.check`, a notebook by
+its cells list and nbformat number, a PDF by its first bytes); a notes
+Doc's text is never replaced, and only one acknowledgment line at a time,
+in the form check-notes strips before it looks for new notes
+(`drive.acknowledgment_line`), is appended to it; and a create of a kind
+only one of which may exist is refused when a live one is already labelled
+with that identity, since the commands keep the first one's id and a second
+would be found by no one (for a notes Doc, the annotator's notes would be
+split between two). The checks run on what each write sends, so a file
+that was already off its spec (an older name, say) is not blamed on a
+command that did not touch that part of it, and no end-of-command re-read
+is needed: unlike a sheet, no file passes through an in-between shape.
+
+Choices where the design left a gap:
+
+- **The spec is the one place each file is named.** The names were typed
+  in the commands that make the files (generate-notebooks four times,
+  generate-reports, the folder names in four commands, the manifest's in
+  `upload_manifest`); they now read `file_spec` or its folder-name
+  constants, and `create_or_update_shared_file` takes its name and type
+  from the identity. The labelling migration keeps its own copy of the
+  status folder's name, as a record of a run that is finished.
+- **The manifest check moved into the door.** `upload_manifest` printed a
+  warning for a manifest that broke its contract and wrote it anyway; the
+  print reached no one. The door reports it in watch mode and refuses it
+  once the manifest is enforced, which happens only after real writes have
+  passed (§ 4), so the contract's caution about unmodelled live data is
+  tested first.
+- **The offline Drive models the labelled folders.** Its root folder,
+  manifest and language folders now carry their labels and the grants their
+  sharing rule gives, as the live ones have since the 5d migration
+  (integrity-check's SHARING section confirms the grants daily).
+
+Found and fixed, both by the new rule on the test suite's first run:
+
+- With no root folder in `drive_config.json`, generate-notebooks fell back
+  to a legacy key and then to the first language folder, putting the
+  all-languages notebook among one language's files. Neither fallback was
+  in use (the live config has the root folder); both are deleted, and the
+  command stops with its existing "run setup-root-folder" message.
+- With no manifest id in `drive_config.json`, or an update that failed,
+  `upload_manifest` made a second `manifest.json` beside the first, which
+  every other copy of the config still named. It now finds the manifest
+  Drive holds by its label and updates that, and creates one only when
+  Drive holds none.
+
+Each kind's § 4 clock starts with its first real write: the notes Docs
+when check-notes next acknowledges notes, the notebooks and reports at the
+next generate-notebooks and generate-reports runs, the manifest and
+folders at the next command that saves or makes one.

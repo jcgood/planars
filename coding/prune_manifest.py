@@ -50,6 +50,7 @@ from .drive import (
 )
 from .drive_doorway import get_doorway
 from . import drive_door
+from .sheet_spec import ARCHIVE_FOLDER_NAME
 from .import_sheets import _archive_tsv
 from .make_forms import ARCHIVE_STAMP_FORMAT
 
@@ -142,7 +143,7 @@ def _archive_drive_sheet(
 
     try:
         archived_folder_id = doorway.get_or_create_folder(
-            "_archived", folder_id, identity=drive_door.folder("archive", lang_id))
+            ARCHIVE_FOLDER_NAME, folder_id, identity=drive_door.folder("archive", lang_id))
         doorway.move_file(spreadsheet_id, archived_folder_id)
         print(f"    archived Drive sheet: '{sheet_name}' → _archived/")
         # Labelled archived before the annotator is lowered to reader, which

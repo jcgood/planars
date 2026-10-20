@@ -15,14 +15,14 @@ New:         ['proform', 'metrical']
     Locked tab Instructions: create
     Locked tab Instructions: protect
     Status tab created (1 construction(s))
-    URL: https://docs.google.com/spreadsheets/d/fake_ss_0002
+    URL: https://docs.google.com/spreadsheets/d/fake_ss_0001
 
   Creating: metrical_arao1248
     Tab: stress_domain (73 rows, 2 params)
     Locked tab Instructions: create
     Locked tab Instructions: protect
     Status tab created (1 construction(s))
-    URL: https://docs.google.com/spreadsheets/d/fake_ss_0004
+    URL: https://docs.google.com/spreadsheets/d/fake_ss_0003
 
 manifest.json updated on Drive (id: fake_manifest_file)
 
@@ -43,4 +43,4 @@ Local manifest written to: sheets_manifest.json
 drive_config.json written.
 
 Each language's folder and sheets are shared with the annotator named in people.yaml; for a language with none listed, add one there and re-run with --apply.
-Drive door (enforce): checked 35 write(s) to 12 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 34 write(s) to 11 tab(s) or file(s); 0 broke a rule.

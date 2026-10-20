@@ -55,6 +55,14 @@ tests). Reads pass straight through. Every write is checked first:
   dropdowns; no protection (annotators are readers by sharing); and rule 6
   checks it has one tab, ``Status``, whose rows under the header name every
   construction of the diagnostics file, in order, each with a status.
+- **Rule 8, the files that are not spreadsheets** (``FILE_KINDS``: notes
+  Docs, reports, notebooks, the manifest, folders; design § 8, "5f";
+  ``sheet_spec.file_spec``): a create, rename, move or upload sends only the
+  spec's name, folder, type and kind of content (the manifest's checked
+  against ``manifest_contract``, a notebook's and a PDF's by their form); a
+  notes Doc's text is never replaced, and only an acknowledgment line is
+  appended to it; and a file only one of which may exist (all but archive
+  folders) is not made a second time.
 
 Every call is retried on Google's "try again" answers (429, 500, 503), here
 and nowhere else. A call that creates something is retried only after
@@ -75,10 +83,10 @@ Every create on the door takes ``identity=`` and writes the label;
 ``mark_archived`` is called where a class sheet is archived (and undone on
 rollback). The door places a file from what this command made, else its
 label (read once per command); the files made before labels existed were
-labelled by ``migrations/label_drive_files.py``. A write to a file it cannot
-place, or of a kind with no spec yet (``SPECIFIED_KINDS``), passes unchecked
-by rules 1-4 and 6 for now; once every kind of Drive file has its spec, such
-a write is refused (design § 5).
+labelled by ``migrations/label_drive_files.py``. Every kind has a spec
+(``SHEET_KINDS``, ``FILE_KINDS``). A write to a file the door cannot place
+passes unchecked by rules 1-4, 6 and 8 for now; before the last kind is
+enforced, such a write is refused (design § 5).
 
 Each tab of a class sheet is labelled too, with Sheets developer metadata:
 its kind (locked, construction, status) and its name. When a command that
@@ -137,10 +145,14 @@ COPY_SHEETS: Dict[str, Tuple[str, str]] = {
     PLANAR_SHEET: ("the planar file", "the planar Sheet"),
     DIAGNOSTICS_SHEET: ("the diagnostics file", "the diagnostics Sheet"),
 }
-# The kinds of file whose contents the door checks against a spec (rules
-# 1-4 and 6); every kind's sharing is checked (rule 5). The rest get theirs
-# in design § 5's order.
-SPECIFIED_KINDS: FrozenSet[str] = frozenset({CLASS_SHEET, *COPY_SHEETS, STATUS_SHEET})
+# The spreadsheets, whose tabs and cells the door checks against a spec
+# (rules 1-4 and 6), and the files that are not spreadsheets, whose name,
+# folder, type and content it checks (rule 8, sheet_spec.file_spec). Every
+# kind in KINDS is one or the other (tests/test_drive_door.py checks), and
+# every kind's sharing is checked (rule 5).
+NOTES_DOC = "notes_doc"
+SHEET_KINDS: FrozenSet[str] = frozenset({CLASS_SHEET, *COPY_SHEETS, STATUS_SHEET})
+FILE_KINDS: FrozenSet[str] = frozenset({NOTES_DOC, "report", "manifest", "notebook", "folder"})
 
 # Every batch_update request type the tooling sends, each checked below.
 # A new one is added here, with its check, before any command can use it.
@@ -187,7 +199,7 @@ KINDS: Dict[str, Dict[str, Any]] = {
     PLANAR_SHEET:        {"lang": _LANG, "class": None, "name": None},
     DIAGNOSTICS_SHEET:   {"lang": _LANG, "class": None, "name": None},
     STATUS_SHEET:        {"lang": _LANG, "class": None, "name": None},
-    "notes_doc":         {"lang": _LANG, "class": None, "name": None},
+    NOTES_DOC:           {"lang": _LANG, "class": None, "name": None},
     "report":            {"lang": _LANG, "class": None, "name": None},
     "manifest":          {"lang": None, "class": None, "name": None},
     # These two depend on the name: see Identity.__post_init__.
@@ -794,7 +806,7 @@ class CheckedDoorway:
     def _checks_shape_of(identity: Optional[Identity]) -> bool:
         if _context is None or not _context.may_write:
             return False
-        return identity is not None and identity.kind in SPECIFIED_KINDS
+        return identity is not None and identity.kind in SHEET_KINDS
 
     def _before_shape_write(self, ss: "CheckedSpreadsheet",
                             ws: Optional["CheckedWorksheet"] = None) -> None:
@@ -1094,7 +1106,10 @@ class CheckedDoorway:
     def create_file(self, name: str, parents: Optional[Sequence[str]] = None,
                     content: Optional[bytes] = None,
                     mimetype: Optional[str] = None, *, identity: Identity) -> str:
-        self._check(f"create file {name!r}", target=identity)
+        self._check(f"create file {name!r}",
+                    self._file_problems(identity, name=name, parents=parents or [],
+                                        mimetype=mimetype, content=content, creating=True),
+                    target=identity)
         file_id = self._create(
             lambda: self._inner.create_file(name, parents=parents, content=content,
                                             mimetype=mimetype, properties=identity.labels()),
@@ -1117,7 +1132,10 @@ class CheckedDoorway:
                                 identity=identity)
 
     def create_doc(self, name: str, parent_id: str, *, identity: Identity) -> str:
-        self._check(f"create doc {name!r}", target=identity)
+        self._check(f"create doc {name!r}",
+                    self._file_problems(identity, name=name, parents=[parent_id],
+                                        mimetype=_DOC_MIME, creating=True),
+                    target=identity)
         doc_id = self._create(
             lambda: self._inner.create_doc(name, parent_id, properties=identity.labels()),
             name, _DOC_MIME, [parent_id], lambda fid: fid)
@@ -1129,20 +1147,94 @@ class CheckedDoorway:
     def update_file(self, file_id: str, name: Optional[str] = None,
                     content: Optional[bytes] = None,
                     mimetype: Optional[str] = None) -> None:
-        self._check(f"update file {file_id}", target=file_id)
+        self._check(f"update file {file_id}",
+                    self._file_problems(self._identify(file_id), name=name,
+                                        mimetype=mimetype, content=content),
+                    target=file_id)
         _retry(lambda: self._inner.update_file(file_id, name=name, content=content,
                                                mimetype=mimetype))
         self._wrote_file(file_id, name or "", "update_file")
 
     def move_file(self, file_id: str, new_parent_id: str) -> None:
-        self._check(f"move file {file_id}", target=file_id)
+        self._check(f"move file {file_id}",
+                    self._file_problems(self._identify(file_id), parents=[new_parent_id]),
+                    target=file_id)
         _retry(lambda: self._inner.move_file(file_id, new_parent_id))
         self._wrote_file(file_id, "", "move_file")
 
     def append_doc_text(self, doc_id: str, text: str) -> None:
-        self._check(f"append to doc {doc_id}", target=doc_id)
+        self._check(f"append to doc {doc_id}", self._appended_text_problems(doc_id, text),
+                    target=doc_id)
         _retry(lambda: self._inner.append_doc_text(doc_id, text))
         self._wrote_file(doc_id, "", "append_doc_text")
+
+    # -- files that are not spreadsheets (rule 8) -----------------------------
+    def _file_problems(self, identity: Optional[Identity], *, name: Optional[str] = None,
+                       parents: Optional[Sequence[str]] = None,
+                       mimetype: Optional[str] = None, content: Optional[bytes] = None,
+                       creating: bool = False) -> List[str]:
+        """What is wrong with a write to a notes Doc, report, notebook, the
+        manifest or a folder, from its spec (``sheet_spec.file_spec``): each
+        part the write sends (name, folder, type, content) must be the
+        spec's, and a file only one of which may exist is not made twice.
+        Nothing for a spreadsheet, or a file the door can't place."""
+        if identity is None or identity.kind not in FILE_KINDS:
+            return []
+        from .sheet_spec import content_problems, file_spec
+        spec = file_spec(identity)
+        what = identity.describe()
+        out = []
+        if name is not None and name != spec.name:
+            out.append(f"{what} is called {spec.name!r}, not {name!r}")
+        if mimetype is not None and mimetype != spec.mimetype:
+            out.append(f"{what} is a {spec.mimetype} file, not {mimetype}")
+        if content is not None:
+            out += [f"{what}: {p}" for p in content_problems(spec, content)]
+        if parents is not None:
+            out += self._folder_problems(what, spec.folder, parents)
+        if creating and spec.one_only:
+            out += self._duplicate_problems(identity)
+        return out
+
+    def _folder_problems(self, what: str, wanted: Optional[Identity],
+                         parents: Sequence[str]) -> List[str]:
+        """A file sits in the folder its spec names (``wanted``), or, for
+        None, in none of the project's folders."""
+        found = [self._identify(p) for p in parents]
+        if wanted is None:
+            inside = [f for f in found if f is not None]
+            return [f"{what} sits outside the project's folders, not in "
+                    f"{inside[0].describe()}"] if inside else []
+        if found != [wanted]:
+            shown = ", ".join(f.describe() if f else "a folder with no label"
+                              for f in found) or "no folder"
+            return [f"{what} sits in {wanted.describe()}, not {shown}"]
+        return []
+
+    def _duplicate_problems(self, identity: Identity) -> List[str]:
+        """A second live file with this identity: the commands keep the first
+        one's id (manifest, drive_config.json), so a second would be found by
+        no one, and a notes Doc's notes would be split between the two."""
+        clauses = [f"properties has {{ key='{k}' and value='{_quote(v)}' }}"
+                   for k, v in identity.labels().items()] + ["trashed=false"]
+        for f in self.list_files(" and ".join(clauses), fields="files(id, name, properties)"):
+            labels = f.get("properties") or {}
+            if labels.get(STATE_LABEL) != ARCHIVED and Identity.from_labels(labels) == identity:
+                return [f"{identity.describe()} already exists ({f['id']}); "
+                        "making a second one would leave one of them unused"]
+        return []
+
+    def _appended_text_problems(self, doc_id: str, text: str) -> List[str]:
+        """Only a notes Doc takes appended text, and only an acknowledgment
+        line (``sheet_spec.appended_text_problems``)."""
+        identity = self._identify(doc_id)
+        if identity is None:
+            return []
+        if identity.kind not in FILE_KINDS:
+            return [f"text is appended only to notes Docs, not to {identity.describe()}"]
+        from .sheet_spec import appended_text_problems, file_spec
+        return [f"{identity.describe()}: {p}"
+                for p in appended_text_problems(file_spec(identity), text)]
 
     # -- sharing (rule 5) ----------------------------------------------------
     def _sharing(self, file_id: str):

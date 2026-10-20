@@ -854,14 +854,17 @@ class FakeDriveDoorway:
         Loads the recorded spreadsheets, the recorded ``manifest.json`` (as a
         downloadable Drive file under a root folder), and a folder per language
         at the ``folder_id`` the manifest names — enough Drive shape for a
-        command to bootstrap exactly as it does live.
+        command to bootstrap exactly as it does live. The root folder, the
+        manifest and the language folders carry their identity labels, as
+        the live ones do.
         """
         if not (fixture_dir / "index.json").exists():
             import pytest
             pytest.skip(f"{fixture_dir} not found -- the saved test data lives in "
                         "planars-data, which is not checked out at coded_data/")
+        from coding import drive_door
         doorway = cls()
-        doorway.seed_folder("planars", file_id=ROOT_FOLDER_ID)
+        doorway.seed_folder("planars", file_id=ROOT_FOLDER_ID, identity=drive_door.folder("root"))
         index = json.loads((fixture_dir / "index.json").read_text(encoding="utf-8"))
         for entry in index["spreadsheets"]:
             if langs is not None and entry["lang_id"] not in langs:
@@ -875,11 +878,11 @@ class FakeDriveDoorway:
             if langs is not None:
                 manifest = {k: v for k, v in manifest.items() if k in langs}
             doorway.seed_json_file("manifest.json", manifest, [ROOT_FOLDER_ID],
-                                   file_id=MANIFEST_FILE_ID)
+                                   file_id=MANIFEST_FILE_ID, identity=drive_door.manifest())
             for lang_id, entry in manifest.items():
                 if isinstance(entry, dict) and entry.get("folder_id"):
-                    doorway.seed_folder(lang_id, ROOT_FOLDER_ID,
-                                        file_id=entry["folder_id"])
+                    doorway.seed_folder(lang_id, ROOT_FOLDER_ID, file_id=entry["folder_id"],
+                                        identity=drive_door.folder("language", lang_id))
         return doorway
 
     @staticmethod
@@ -919,29 +922,46 @@ class FakeDriveDoorway:
             self._permissions.setdefault(ss.id, []).append(perm)
         return ss
 
+    # ``identity`` (a drive_door.Identity): the label the file carries, as
+    # every live file the tooling made does since the 2026-10-15 migration.
     def seed_file(self, name: str, mimetype: str, parents: Sequence[str] = (),
                   content: Optional[bytes] = None,
                   file_id: Optional[str] = None,
-                  modified_time: Optional[str] = None) -> str:
+                  modified_time: Optional[str] = None, identity=None) -> str:
         file_id = file_id or self._new_id("file")
-        self._files[file_id] = _DriveFile(file_id, name, mimetype, list(parents),
-                                          content, modified_time=modified_time)
+        self._files[file_id] = _DriveFile(
+            file_id, name, mimetype, list(parents), content, modified_time=modified_time,
+            properties=dict(identity.labels()) if identity is not None else {})
+        if identity is not None:
+            # And the grants its sharing rule gives, which the live files
+            # hold (integrity-check's SHARING section compares them daily);
+            # the recording has only the spreadsheets' own grants.
+            # Ids of their own, so seeding shifts no id a command's run makes.
+            from coding.sheet_spec import sharing_spec
+            spec = sharing_spec(identity)
+            grants = [{"type": "user", "role": role, "emailAddress": email}
+                      for email, role in spec.people]
+            if spec.link:
+                grants.append({"type": "anyone", "role": spec.link})
+            for n, grant in enumerate(grants, 1):
+                self._permissions.setdefault(file_id, []).append(
+                    {"id": f"seeded_perm_{file_id}_{n}", **grant})
         return file_id
 
     def seed_folder(self, name: str, parent_id: Optional[str] = None,
-                    file_id: Optional[str] = None) -> str:
-        return self.seed_file(name, _FOLDER_MIME,
-                              [parent_id] if parent_id else [], file_id=file_id)
+                    file_id: Optional[str] = None, identity=None) -> str:
+        return self.seed_file(name, _FOLDER_MIME, [parent_id] if parent_id else [],
+                              file_id=file_id, identity=identity)
 
     def seed_json_file(self, name: str, data: Any, parents: Sequence[str] = (),
-                       file_id: Optional[str] = None) -> str:
+                       file_id: Optional[str] = None, identity=None) -> str:
         return self.seed_file(name, "application/json", parents,
-                              json.dumps(data).encode("utf-8"), file_id)
+                              json.dumps(data).encode("utf-8"), file_id, identity=identity)
 
     def seed_doc(self, name: str, text: str = "", parent_id: Optional[str] = None,
-                 file_id: Optional[str] = None) -> str:
-        doc_id = self.seed_file(name, _DOC_MIME,
-                                [parent_id] if parent_id else [], file_id=file_id)
+                 file_id: Optional[str] = None, identity=None) -> str:
+        doc_id = self.seed_file(name, _DOC_MIME, [parent_id] if parent_id else [],
+                                file_id=file_id, identity=identity)
         self._docs[doc_id] = text
         return doc_id
 

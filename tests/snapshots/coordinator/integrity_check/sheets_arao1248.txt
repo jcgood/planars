@@ -25,7 +25,7 @@
   ✓  manifest matches the expected shape
 
 ── SHARING ─────────────────────────────────────────────────────────────
-  ✓  32 file(s) shared as their sharing rule says
+  ✓  37 file(s) shared as their sharing rule says
 
 ── ANNOTATION SHEETS ───────────────────────────────────────────────────
   ✓  Araona [arao1248] · ciscategorial · general

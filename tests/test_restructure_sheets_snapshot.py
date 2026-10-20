@@ -951,8 +951,8 @@ def test_real_crash_before_final_manifest_upload_then_resume_recovers(env, monke
 
     Injected by making the real upload_manifest call raise once, not via
     fail_after on a doorway op: _upload_manifest_with (coding/drive.py)
-    catches a failed doorway.update_file itself and falls back to creating
-    a fresh manifest file, so a doorway-level fault here self-heals inside
+    catches a failed doorway.update_file itself and falls back to the
+    manifest Drive holds, so a doorway-level fault here self-heals inside
     upload_manifest rather than propagating as a crash. A genuine "the
     whole run dies here" failure needs to be simulated one level up, at the
     call restructure_sheets.py itself makes.

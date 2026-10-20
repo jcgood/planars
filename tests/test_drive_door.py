@@ -360,18 +360,137 @@ def test_integrity_check_reports_a_grant_made_by_hand(env, capsys):
     assert "ciscategorial_stan1293): shared by link" in capsys.readouterr().out
 
 
+def _every_identity():
+    """One identity of every kind (and every name a kind takes)."""
+    for kind, rule in drive_door.KINDS.items():
+        for name in (sorted(rule["name"]) if rule["name"] else [None]):
+            needs_lang = (name in ("language", "archive") if kind == "folder"
+                          else name != "all_languages" if kind == "notebook"
+                          else rule["lang"] == "required")
+            yield drive_door.Identity(kind, LANG if needs_lang else None,
+                                      CLASS if kind == drive_door.CLASS_SHEET else None, name)
+
+
 def test_every_kind_has_a_sharing_rule():
     from coding.sheet_spec import sharing_spec
-    for kind, rule in drive_door.KINDS.items():
-        names = sorted(rule["name"]) if rule["name"] else [None]
-        for name in names:
-            lang = None
-            if kind == "folder":
-                lang = LANG if name in ("language", "archive") else None
-            elif rule["lang"] == "required" or (kind == "notebook" and name != "all_languages"):
-                lang = LANG
-            sharing_spec(drive_door.Identity(kind, lang, CLASS if kind == "class_sheet" else None,
-                                             name))
+    for identity in _every_identity():
+        sharing_spec(identity)
+
+
+# -- rule 8: files that are not spreadsheets ---------------------------------------
+
+def test_every_kind_is_a_spreadsheet_or_a_file_with_a_spec():
+    from coding.sheet_spec import file_spec
+    assert drive_door.SHEET_KINDS | drive_door.FILE_KINDS == set(drive_door.KINDS)
+    assert not drive_door.SHEET_KINDS & drive_door.FILE_KINDS
+    for identity in _every_identity():
+        if identity.kind in drive_door.FILE_KINDS:
+            file_spec(identity)
+
+
+NOTES = drive_door.lang_file("notes_doc", LANG)
+
+
+def _notes_doc(fake, door, text="My notes."):
+    from coding.sheet_spec import file_spec
+    return fake.seed_doc(file_spec(NOTES).name, text, _language_folder(door), identity=NOTES)
+
+
+def test_a_notes_doc_takes_only_an_acknowledgment_line(env):
+    fake, door, _, _ = env
+    doc = _notes_doc(fake, door)
+    with drive_door.running("check-notes", APPLY):
+        door.append_doc_text(doc, drive_module.acknowledgment_line("2026-10-19"))
+        with pytest.raises(DoorViolation, match="only an acknowledgment line"):
+            door.append_doc_text(doc, "Something the tooling made up.")
+        with pytest.raises(DoorViolation, match="only an acknowledgment line"):
+            door.append_doc_text(doc, drive_module.acknowledgment_line("2026-10-19") + "\nmore")
+        with pytest.raises(DoorViolation, match="never replaces it"):
+            door.update_file(doc, content=b"overwritten")
+    assert fake.get_doc_text(doc).startswith("My notes.")
+
+
+def test_text_is_appended_only_to_notes_docs(env):
+    fake, door, sheet_id, _ = env
+    report = fake.seed_file("report_stan1293.pdf", "application/pdf", [_language_folder(door)],
+                            identity=drive_door.lang_file("report", LANG))
+    with drive_door.running("check-notes", APPLY):
+        for target in (report, sheet_id):
+            with pytest.raises(DoorViolation, match="appended only to notes Docs"):
+                door.append_doc_text(target, drive_module.acknowledgment_line("2026-10-19"))
+
+
+def test_a_notes_doc_is_made_once_with_its_name_in_its_language_folder(env):
+    from coding.sheet_spec import file_spec
+    fake, door, _, _ = env
+    folder = _language_folder(door)
+    with drive_door.running("check-notes", APPLY):
+        with pytest.raises(DoorViolation, match="is called"):
+            door.create_doc("notes", folder, identity=NOTES)
+        with pytest.raises(DoorViolation, match="sits in folder language stan1293, not folder root"):
+            door.create_doc(file_spec(NOTES).name, "fake_root_folder", identity=NOTES)
+        doc = drive_module.create_notes_doc(door, LANG, folder)
+        with pytest.raises(DoorViolation, match="already exists"):
+            drive_module.create_notes_doc(door, LANG, folder)
+    assert fake.file(doc).name.endswith("[stan1293] — Annotation Notes")
+
+
+@pytest.mark.parametrize("identity, good, bad, message", [
+    (drive_door.manifest(), b'{"stan1293": {"folder_id": "f"}}', b'{"stan1293": "x"}',
+     "does not match its contract"),
+    (drive_door.notebook("domains", LANG), b'{"cells": [], "nbformat": 4}', b'{"cells": 1}',
+     "not a notebook"),
+    (drive_door.lang_file("report", LANG), b"%PDF-1.7 ...", b"<html></html>", "not a PDF"),
+])
+def test_an_upload_sends_the_kind_of_content_its_spec_names(env, identity, good, bad, message):
+    from coding.sheet_spec import file_spec
+    fake, door, _, _ = env
+    spec = file_spec(identity)
+    file_id = fake.seed_file(spec.name, spec.mimetype, identity=identity)
+    with drive_door.running("update-sheets", APPLY):
+        door.update_file(file_id, name=spec.name, content=good, mimetype=spec.mimetype)
+        with pytest.raises(DoorViolation, match=message):
+            door.update_file(file_id, content=bad, mimetype=spec.mimetype)
+        with pytest.raises(DoorViolation, match="is called"):
+            door.update_file(file_id, name="renamed")
+        with pytest.raises(DoorViolation, match=f"is a {spec.mimetype} file"):
+            door.update_file(file_id, content=good, mimetype="text/plain")
+
+
+def test_a_file_is_moved_only_into_the_folder_its_spec_names(env):
+    fake, door, _, _ = env
+    folder_id = _language_folder(door)
+    other_language = fake.seed_folder("arao1248", "fake_root_folder",
+                                      identity=drive_door.folder("language", "arao1248"))
+    with drive_door.running("setup-root-folder", APPLY):
+        door.move_file(folder_id, "fake_root_folder")
+        with pytest.raises(DoorViolation, match="sits in folder root, not folder language"):
+            door.move_file(folder_id, other_language)
+        with pytest.raises(DoorViolation, match="not a folder with no label"):
+            door.move_file(folder_id, fake.seed_folder("scratch"))
+
+
+def test_folders_hold_no_content_and_top_folders_sit_outside_the_project(env):
+    fake, door, _, _ = env
+    with drive_door.running("generate-status-sheet", APPLY):
+        with pytest.raises(DoorViolation, match="outside the project's folders"):
+            door.get_or_create_folder("Annotation Status", "fake_root_folder",
+                                      identity=drive_door.folder("status"))
+        status = door.get_or_create_folder("Annotation Status",
+                                           identity=drive_door.folder("status"))
+        with pytest.raises(DoorViolation, match="holds no content"):
+            door.update_file(status, content=b"x")
+
+
+def test_an_archive_folder_may_be_one_of_several(env):
+    fake, door, _, _ = env
+    identity = drive_door.folder("archive", LANG)
+    folder = _language_folder(door)
+    with drive_door.running("restructure-sheets", APPLY):
+        door.create_file("_archived", [folder], mimetype="application/vnd.google-apps.folder",
+                         identity=identity)
+        door.create_file("_archived", [folder], mimetype="application/vnd.google-apps.folder",
+                         identity=identity)
 
 
 # -- rule 7: comments ---------------------------------------------------------------
@@ -424,12 +543,12 @@ def test_a_busy_drive_is_retried(env):
 def test_a_create_that_landed_before_the_error_is_not_made_twice(env):
     fake, door, sheet_id, _ = env
     fake.fail_after("create_file", 1, exc=api_error(503, "unavailable"))
-    with drive_door.running("update-sheets", APPLY):
-        file_id = door.create_file("manifest.json", parents=["fake_root_folder"],
-                                   content=b"{}", mimetype="application/json",
-                                   identity=drive_door.manifest())
+    with drive_door.running("generate-status-sheet", APPLY):
+        file_id = door.create_file("Annotation Status", parents=[],
+                                   mimetype="application/vnd.google-apps.folder",
+                                   identity=drive_door.folder("status"))
     assert len(fake.mutations_of("create_file")) == 1
-    assert fake.file(file_id).name == "manifest.json"
+    assert fake.file(file_id).name == "Annotation Status"
 
 
 # -- watch mode --------------------------------------------------------------------
@@ -667,7 +786,7 @@ def test_every_create_writes_its_label_and_the_label_places_the_file(env):
     identity = drive_door.class_sheet(LANG, "noninterruption")
     with _running_out_of_shape():                       # made, never filled in
         ss = door.create_spreadsheet("noninterruption_stan1293", identity=identity)
-        folder_id = door.get_or_create_folder("_archived", "fake_root_folder",
+        folder_id = door.get_or_create_folder("_archived", _language_folder(door),
                                               identity=drive_door.folder("archive", LANG))
     assert fake.file(ss.id).properties == identity.labels()
     assert fake.file(folder_id).properties == drive_door.folder("archive", LANG).labels()
@@ -675,14 +794,18 @@ def test_every_create_writes_its_label_and_the_label_places_the_file(env):
         assert door.open_spreadsheet(ss.id).identity == identity
 
 
+def _language_folder(door, lang=LANG):
+    return drive_module.load_manifest(door)[lang]["folder_id"]
+
+
 def test_a_found_folder_labelled_as_something_else_is_reported(env):
     fake, door, _, _ = env
     with drive_door.running("update-sheets", APPLY):
-        door.get_or_create_folder("_archived", "fake_root_folder",
+        door.get_or_create_folder("_archived", _language_folder(door),
                                   identity=drive_door.folder("archive", LANG))
     with drive_door.running("update-sheets", APPLY), \
             pytest.raises(DoorViolation, match="was expected"):
-        door.get_or_create_folder("_archived", "fake_root_folder",
+        door.get_or_create_folder("_archived", _language_folder(door),
                                   identity=drive_door.folder("archive", "arao1248"))
 
 
