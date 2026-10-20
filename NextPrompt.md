@@ -30,21 +30,20 @@ row); the spec, ground rules, units and order are the Phase 10 section of
 re-ask).
 
 **Where it stands:** class sheets are enforced live (2026-10-19, Jeff;
-`drive_door.LIVE_ENFORCED_KINDS`); every other kind is in watch. After the
-first daily refresh since then, check that it ran green: a write the door
-now refuses shows as a failed step and its issue, not a `door-violation`.
+`drive_door.LIVE_ENFORCED_KINDS`); every other kind is in watch. The
+2026-10-19 refresh (11:59 UTC) ran before that, so the **2026-10-20 refresh
+is the first to check**: green, and a write the door now refuses shows as a
+failed step and its issue, not a `door-violation`.
 
 **Next action:**
 
 1. **5f, the other kinds into watch:** write each kind's section of the
    sheet spec and put it under the door's checks, one at a time, in the
-   design doc's order: sharing and the planar Sheet (**done 2026-10-19**,
-   design doc § 8) → diagnostics Sheet → status sheets → notes Docs → files
-   (notebooks, reports, folders). Each kind's own clock starts only when it
-   is watched, so this is the work that shortens the wait. **Next: the
-   diagnostics Sheet** (`sync-diagnostics-yaml --to-sheet` and
-   `generate-sheets --force` write it; the latter already goes through
-   `replacing()`).
+   design doc's order: sharing, the planar Sheet and the diagnostics Sheet
+   (**done 2026-10-19**, design doc § 8) → status sheets → notes Docs →
+   files (notebooks, reports, folders). Each kind's own clock starts only
+   when it is watched, so this is the work that shortens the wait. **Next:
+   the status sheets** (`generate-status-sheet --apply`, daily).
 2. **Unit 12:** pending changes, the provenance log and regen snapshots
    kept in planars-data.
 3. **Unit 6a:** the local-file door in watch mode, with archive copies and

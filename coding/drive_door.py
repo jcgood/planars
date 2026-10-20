@@ -44,12 +44,12 @@ tests). Reads pass straight through. Every write is checked first:
   7. a comment goes only on a class sheet, and may mention (``+address``,
      which makes Google email that person) only the sheet's annotator
      (issue #309: how an annotator without GitHub hears about problems).
-- **The rules for the planar Sheet** (design § 8, "5f, the planar Sheet"),
-  from ``sheet_spec.planar_sheet_spec``: every cell is the annotator's until
-  unit 11 locks the Sheet, so rule 1 holds for all of them (a push of the
-  planar file goes through ``replacing()``, which saves the Sheet first); no
-  dropdowns; no protection; and rule 6 checks that the Sheet has one tab
-  holding exactly the planar file.
+- **The rules for the planar and diagnostics Sheets** (design § 8, "5f"),
+  each a one-tab copy of one file (``COPY_SHEETS``; ``sheet_spec.copy_sheet_spec``):
+  every cell is the annotator's until unit 11 locks the Sheet, so rule 1
+  holds for all of them (a push of the file goes through ``replacing()``,
+  which saves the Sheet first); no dropdowns; no protection; and rule 6
+  checks that the Sheet has one tab holding exactly the file.
 
 Every call is retried on Google's "try again" answers (429, 500, 503), here
 and nowhere else. A call that creates something is retried only after
@@ -123,11 +123,18 @@ WATCH = "watch"
 LIVE_MODE = WATCH
 CLASS_SHEET = "class_sheet"
 PLANAR_SHEET = "planar_sheet"
+DIAGNOSTICS_SHEET = "diagnostics_sheet"
 LIVE_ENFORCED_KINDS: FrozenSet[str] = frozenset({CLASS_SHEET})
+# The Sheets that are a one-tab copy of one file, and what the door calls
+# that file and the Sheet in what it reports (sheet_spec.copy_sheet_spec).
+COPY_SHEETS: Dict[str, Tuple[str, str]] = {
+    PLANAR_SHEET: ("the planar file", "the planar Sheet"),
+    DIAGNOSTICS_SHEET: ("the diagnostics file", "the diagnostics Sheet"),
+}
 # The kinds of file whose contents the door checks against a spec (rules
 # 1-4 and 6); every kind's sharing is checked (rule 5). The rest get theirs
 # in design § 5's order.
-SPECIFIED_KINDS: FrozenSet[str] = frozenset({CLASS_SHEET, PLANAR_SHEET})
+SPECIFIED_KINDS: FrozenSet[str] = frozenset({CLASS_SHEET, *COPY_SHEETS})
 
 # Every batch_update request type the tooling sends, each checked below.
 # A new one is added here, with its check, before any command can use it.
@@ -172,8 +179,8 @@ _LANG, _BY_NAME = "required", "by name"
 KINDS: Dict[str, Dict[str, Any]] = {
     CLASS_SHEET:         {"lang": _LANG, "class": _LANG, "name": None},
     PLANAR_SHEET:        {"lang": _LANG, "class": None, "name": None},
-    "diagnostics_sheet": {"lang": _LANG, "class": None, "name": None},
-    "status_sheet":      {"lang": _LANG, "class": None, "name": None},
+    DIAGNOSTICS_SHEET:   {"lang": _LANG, "class": None, "name": None},
+    "status_sheet":     {"lang": _LANG, "class": None, "name": None},
     "notes_doc":         {"lang": _LANG, "class": None, "name": None},
     "report":            {"lang": _LANG, "class": None, "name": None},
     "manifest":          {"lang": None, "class": None, "name": None},
@@ -204,11 +211,12 @@ LOCKED_TAB = "locked"
 STATUS_TAB_KIND = "status"
 CONSTRUCTION_TAB = "construction"
 TAB_KINDS = (LOCKED_TAB, CONSTRUCTION_TAB, STATUS_TAB_KIND)
-# The planar Sheet's one tab: every cell the annotator's until unit 11 locks
-# it (sheet_spec.planar_sheet_spec). Not a label: the Sheet has only one tab.
-PLANAR_TAB = "planar"
+# The one tab of a planar or diagnostics Sheet: every cell the annotator's
+# until unit 11 locks it (sheet_spec.copy_sheet_spec). Not a label: the
+# Sheet has only one tab.
+COPY_TAB = "copy"
 # The tabs whose filled cells are annotators' answers (rule 1).
-_ANSWER_TABS = (CONSTRUCTION_TAB, STATUS_TAB_KIND, PLANAR_TAB)
+_ANSWER_TABS = (CONSTRUCTION_TAB, STATUS_TAB_KIND, COPY_TAB)
 
 
 @dataclass(frozen=True)
@@ -769,7 +777,7 @@ class CheckedDoorway:
     # -- rule 6: shape at the end of the command -------------------------------
     def _checks_shape(self, ss: "CheckedSpreadsheet") -> bool:
         """Whether rule 6 looks after this spreadsheet in this command: a class
-        sheet or planar Sheet, written by a command allowed to write (a dry
+        sheet or a planar or diagnostics Sheet, written by a command allowed to write (a dry
         run's highlights change no shape)."""
         return self._checks_shape_of(ss.identity)
 
@@ -825,8 +833,8 @@ class CheckedDoorway:
         spec = self._spec(identity)
         if isinstance(spec, Exception):
             return [f"cannot check the shape of {where}: its spec could not be built ({spec})"]
-        if identity.kind == PLANAR_SHEET:
-            return self._planar_shape_problems(ss, spec, where)
+        if identity.kind in COPY_SHEETS:
+            return self._copy_shape_problems(ss, spec, where)
         after = self._sheet_layout(ss)
         before = self._before_sheets[ss.id]
         new = _layout_mismatches(spec, after) - (
@@ -854,20 +862,22 @@ class CheckedDoorway:
                 if earlier is not None else set())
         return _describe_mismatches(where, new)
 
-    def _planar_shape_problems(self, ss: "CheckedSpreadsheet", spec, where: str) -> List[str]:
-        """Rule 6 for the planar Sheet: one unprotected tab, holding exactly
-        the planar file. As for class sheets, only what is new is reported."""
+    def _copy_shape_problems(self, ss: "CheckedSpreadsheet", spec, where: str) -> List[str]:
+        """Rule 6 for a planar or diagnostics Sheet: one unprotected tab,
+        holding exactly its file. As for class sheets, only what is new is
+        reported."""
+        source, sheet = COPY_SHEETS[spec.kind]
         after = self._sheet_layout(ss)
         before = self._before_sheets[ss.id]
-        new = _planar_layout_mismatches(after) - (
-            _planar_layout_mismatches(before) if before is not None else set())
+        new = _copy_layout_mismatches(sheet, after) - (
+            _copy_layout_mismatches(sheet, before) if before is not None else set())
         first = after[0]["id"] if after else None
         for (sheet_id, tab_id), earlier in self._before_tabs.items():
             if sheet_id != ss.id or tab_id != first:
                 continue
             now = _retry(lambda: ss._inner.worksheet(after[0]["title"]).get_all_values())
-            new |= _planar_tab_mismatches(spec.tab, now) - (
-                _planar_tab_mismatches(spec.tab, earlier) if earlier is not None else set())
+            new |= _copy_tab_mismatches(source, spec.tab, now) - (
+                _copy_tab_mismatches(source, spec.tab, earlier) if earlier is not None else set())
         return _describe_mismatches(where, new)
 
     def _expected_row_keys(self, identity: Identity, tab) -> Optional[frozenset]:
@@ -948,16 +958,16 @@ class CheckedDoorway:
         self.violations.extend(messages)
 
     def _spec(self, identity: Identity):
-        """The spec of a class sheet or planar Sheet, or the error that
-        stopped it being built."""
+        """The spec of a class sheet or a planar or diagnostics Sheet, or the
+        error that stopped it being built."""
         key = (identity.kind, identity.lang_id, identity.class_name)
         if key not in self._specs:
-            from .sheet_spec import class_sheet_spec, planar_sheet_spec
+            from .sheet_spec import class_sheet_spec, copy_sheet_spec
             try:
                 if identity.kind == CLASS_SHEET:
                     spec = class_sheet_spec(identity.lang_id, identity.class_name, CODED_DATA)
-                elif identity.kind == PLANAR_SHEET:
-                    spec = planar_sheet_spec(identity.lang_id, CODED_DATA)
+                elif identity.kind in COPY_SHEETS:
+                    spec = copy_sheet_spec(identity.kind, identity.lang_id, CODED_DATA)
                 else:
                     raise ValueError(f"no spec for a {identity.kind} yet")
                 self._specs[key] = spec
@@ -1304,19 +1314,20 @@ def _column_mismatches(tab, header: Sequence[str],
     return out
 
 
-def _planar_layout_mismatches(layout: List[Dict[str, Any]]) -> set:
-    """The planar Sheet has one tab, and nothing on it is protected (until
-    unit 11 locks it)."""
-    out = {("tab the planar Sheet does not have", t["title"], "") for t in layout[1:]}
-    out |= {("protected, but the planar Sheet is not locked yet", t["title"], "")
+def _copy_layout_mismatches(sheet: str, layout: List[Dict[str, Any]]) -> set:
+    """A planar or diagnostics Sheet (``sheet`` names it) has one tab, and
+    nothing on it is protected (until unit 11 locks it)."""
+    out = {(f"tab {sheet} does not have", t["title"], "") for t in layout[1:]}
+    out |= {(f"protected, but {sheet} is not locked yet", t["title"], "")
             for t in layout if t["protected"]}
     return out
 
 
-def _planar_tab_mismatches(tab, grid: List[List[Any]]) -> set:
-    """The planar Sheet's tab against the planar file: its columns, then its
-    rows, read by column name (a column moved in the Sheet moves its values
-    with it), compared stripped and in order, as import-planar compares them."""
+def _copy_tab_mismatches(source: str, tab, grid: List[List[Any]]) -> set:
+    """A planar or diagnostics Sheet's tab against its file (``source`` names
+    it): its columns, then its rows, read by column name (a column moved in
+    the Sheet moves its values with it), compared stripped and in order, as
+    the imports compare them."""
     rows = _trimmed([[_text(v) for v in r] for r in grid])
     header = rows[0] if rows else []
     out = {(what, "", detail) for what, _, detail in _column_mismatches(tab, header)}
@@ -1328,12 +1339,14 @@ def _planar_tab_mismatches(tab, grid: List[List[Any]]) -> set:
         rec = dict(zip(tab.header, row))
         if "Position" in rec:
             return f"position {rec['Position']} ({rec.get('Position_Name', '')})"
+        if "Class" in rec:
+            return f"class {rec['Class']} ({rec.get('Constructions', '')})"
         return " | ".join(row)
 
     missing = [r for r in want if r not in have]
     extra = [r for r in have if r not in want]
-    out |= {("row of the planar file missing", "", describe(r)) for r in missing}
-    out |= {("row the planar file does not have", "", describe(r)) for r in extra}
+    out |= {(f"row of {source} missing", "", describe(r)) for r in missing}
+    out |= {(f"row {source} does not have", "", describe(r)) for r in extra}
     if not missing and not extra and have != want:
         out.add(("rows out of order or repeated", "", ""))
     return out
@@ -1623,11 +1636,12 @@ class CheckedWorksheet:
 
     def _kind(self) -> Tuple[Optional[str], Any]:
         """(tab kind, spec-or-error) for a tab of a class sheet (from the
-        tab's label, else its title) or of the planar Sheet; (None, None) for
-        a tab of a spreadsheet whose contents have no spec yet."""
+        tab's label, else its title) or of a planar or diagnostics Sheet;
+        (None, None) for a tab of a spreadsheet whose contents have no spec
+        yet."""
         identity = self._ss.identity
-        if identity is not None and identity.kind == PLANAR_SHEET:
-            return PLANAR_TAB, None
+        if identity is not None and identity.kind in COPY_SHEETS:
+            return COPY_TAB, None
         if identity is None or identity.kind != CLASS_SHEET:
             return None, None
         kind = self._label().get(TAB_KIND_LABEL)
@@ -1647,7 +1661,7 @@ class CheckedWorksheet:
         """Columns of this tab that the tooling owns (by header name)."""
         identity = self._ss.identity
         kind, _ = self._kind()
-        if kind == PLANAR_TAB:
+        if kind == COPY_TAB:
             return set()     # every column the annotator's, until unit 11
         if kind == STATUS_TAB_KIND:
             from planars.schema_values import STATUS_TOOLING_COLUMNS
@@ -1811,8 +1825,9 @@ class CheckedWorksheet:
             return []  # clearing a dropdown is always allowed
         if kind == LOCKED_TAB:
             return [f"no dropdowns on locked tab {self.title!r}"]
-        if kind == PLANAR_TAB:
-            return [f"no dropdowns on the planar Sheet {self._ss.title!r}"]
+        if kind == COPY_TAB:
+            return [f"no dropdowns on {COPY_SHEETS[self._ss.identity.kind][1]} "
+                    f"{self._ss.title!r}"]
         grid = self._door._grid(self)
         header = grid[0] if grid else []
         rng = payload["range"]

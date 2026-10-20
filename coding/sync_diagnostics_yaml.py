@@ -27,7 +27,10 @@ YAML → Sheet (--to-sheet):
     Reads the YAML, generates the TSV representation, and uploads it to the
     diagnostics Google Sheet (overwriting stale content). Requires Drive access.
     Run this after renaming classes or criteria in the YAML so the Sheet stays
-    in sync and import-sheets no longer detects false drift.
+    in sync and import-sheets no longer detects false drift. The push replaces
+    the whole Sheet, including any edit the annotator made since the last
+    import, so it goes through the Drive door's ``replacing()``: the Sheet is
+    saved to ``regen_snapshots/`` first and the reason logged.
 
 TSV → YAML (--from-tsv):
     Diffs the TSV against the YAML and categorises changes:
@@ -312,10 +315,15 @@ def _sync_to_sheet(lang_id: str, manifest: dict, apply: bool, error_langs: List[
         print(f"  [{lang_id}]   (sheet is empty — will populate from YAML)")
 
     if apply:
+        from . import drive_door
         new_rows = [list(new_df.columns)] + [list(row) for _, row in new_df.iterrows()]
         ws = ss.sheet1
-        ws.clear()
-        ws.update(new_rows, "A1")
+        # The Sheet is the annotator's to edit until unit 11 locks it, so this
+        # replaces whatever they changed since the last import too: the door
+        # saves the Sheet first (regen_snapshots/) and logs the reason.
+        with drive_door.replacing(ws, f"diagnostics_{lang_id}.yaml pushed to the diagnostics Sheet"):
+            ws.clear()
+            ws.update(new_rows, "A1")
         print(f"  [{lang_id}] Updated → diagnostics Sheet")
     else:
         print(f"  [{lang_id}] Would update → diagnostics Sheet")

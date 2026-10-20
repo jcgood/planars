@@ -310,7 +310,15 @@ the same commit.
    issue mentioning him says what changes (Q8).
 6. **11b — lock the planar and diagnostics Sheets, retire the intakes and
    delete the diagnostics TSV** (§ 3.5, Q5; **a live write**: protecting the
-   Sheets), once Adam has used a proposal sheet.
+   Sheets), once Adam has used a proposal sheet. Until then the diagnostics
+   Sheet's intake loses an annotator's edit (found 2026-10-19, drive-door
+   design § 8, "5f, the diagnostics Sheet"): the same refresh that imports it
+   regenerates the TSV from the YAML and pushes the YAML back over the Sheet,
+   so a changed value list is undone without any issue, and an ambiguous
+   change's `diagnostics-drift` issue closes the next day because the Sheet
+   no longer shows it. The edit survives only in planars-data's history and
+   `regen_snapshots/`. No annotator has edited a diagnostics Sheet so far
+   (its history shows none), so 11b is the fix, not an interim one.
 7. **11c — Colab by labels, the manifest deleted, notebooks rebuilt daily**
    (needs 5f's sharing test for notebooks, and Q7's label test).
 8. **11d — the Instructions sentences into the schema.**

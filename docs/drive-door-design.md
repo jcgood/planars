@@ -2,7 +2,8 @@
 
 **Status: accepted by Jeff 2026-10-13 (§ 7 records his answers). 5a–5d
 built; 5e done; 5f under way: class sheets enforced live since 2026-10-19,
-sharing specified for every kind (§ 8).** Unit 5 of Phase 10 ([implementation plan](data-layer-implementation-plan.md),
+sharing specified for every kind, the planar and diagnostics Sheets in
+watch (§ 8).** Unit 5 of Phase 10 ([implementation plan](data-layer-implementation-plan.md),
 Phase 10 table) was a design pause; this file is the design record. Progress
 is tracked in [data-layer-progress.md](data-layer-progress.md), and the
 decisions are logged there too.
@@ -588,3 +589,21 @@ and puts the reason in provenance. Found on the way: the push read the file
 with pandas' default missing values, so a cell holding `NA`, `null` or
 `None` went to the Sheet blank (two reads in import-sheets had the same
 fault; all now `keep_default_na=False`).
+
+**5f, the diagnostics Sheet (2026-10-19).** The third kind with a spec of
+its contents, built the same way: the planar and diagnostics Sheets are now
+both "copy sheets" (`drive_door.COPY_SHEETS`, `sheet_spec.copy_sheet_spec`),
+one tab holding exactly one file, every cell the annotator's until unit 11.
+The diagnostics Sheet's file is what `diagnostics_{lang}.yaml`, the source,
+renders to (`make_forms._yaml_to_tsv_df`, which writes the TSV copy and is
+what the push sends). All three recorded diagnostics Sheets match. The push
+(`sync-diagnostics-yaml --to-sheet`, daily) now runs inside `replacing()`,
+as `generate-sheets --force` already did.
+
+The finding, recorded against unit 11b (`ownership-design.md` § 6): the
+daily refresh imports the diagnostics Sheet, then regenerates the TSV from
+the YAML and pushes the YAML back over the Sheet, so an annotator's edit
+there is undone the same day. A changed value list reaches no issue at all;
+an ambiguous change's `diagnostics-drift` issue closes the next day, since
+the Sheet no longer shows it. Nobody has edited a diagnostics Sheet yet, and
+11b retires that intake, so no interim fix.

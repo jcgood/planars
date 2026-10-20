@@ -6,19 +6,24 @@ each call reads the schemas and the language's own sources (planar TSV,
 diagnostics YAML) afresh, so a spec cannot drift from them. A wrong spec shows
 up as a wrong check, not as a quietly stale table.
 
-So far: class sheets (`class_sheet_spec`), the planar Sheet
-(`planar_sheet_spec`), and sharing for every kind of Drive file
+So far: class sheets (`class_sheet_spec`), the planar and diagnostics
+Sheets (`copy_sheet_spec`), and sharing for every kind of Drive file
 (`sharing_spec`: who gets which role, and whether a link share is allowed).
 The other kinds' contents get their sections as unit 5 reaches them
 (design § 5).
 
 The planar Sheet is one tab holding exactly ``planar_{lang_id}.tsv``, the
-source: its header, then its rows. Until unit 11 locks it
-(docs/ownership-design.md § 3.1), the annotator edits it and the daily
-``import-planar --apply`` carries their edits down into the file, so every
-cell is the annotator's: no tooling columns, no dropdowns, no protection. A
-push of the file up to the Sheet therefore replaces whatever is there,
-including an edit not yet imported, and says so through the door.
+source: its header, then its rows. The diagnostics Sheet is one tab holding
+exactly what ``diagnostics_{lang_id}.yaml``, its source, renders to
+(``make_forms._yaml_to_tsv_df``, which also writes the TSV copy and is what
+``sync-diagnostics-yaml --to-sheet`` pushes). Until unit 11 locks them
+(docs/ownership-design.md § 3.1), the annotator edits both, and the daily
+import carries their edits down (``import-planar`` into the planar file;
+``import-sheets`` into the diagnostics TSV, whose differences from the YAML
+go to pending changes or the drift issue), so every cell is the
+annotator's: no tooling columns, no dropdowns, no protection. A push up to
+either Sheet therefore replaces whatever is there, including an edit not
+yet imported, and says so through the door.
 
 A class sheet is its locked tabs, one tab per construction in the language's
 diagnostics file, and Status, in the order `locked_tabs.reorder_tabs` puts
@@ -66,7 +71,8 @@ from .biuniqueness_rows import CLASS_NAME as BIUNIQUENESS_CLASS
 # A tab's kind is also its identity label on Drive, so the door owns the names.
 from .drive_door import CONSTRUCTION_TAB as CONSTRUCTION
 from .drive_door import LOCKED_TAB as LOCKED
-from .drive_door import PLANAR_TAB as PLANAR
+from .drive_door import COPY_TAB as COPY
+from .drive_door import DIAGNOSTICS_SHEET, PLANAR_SHEET
 from .drive_door import STATUS_TAB_KIND as STATUS
 from .biuniqueness_rows import ELEMENTS as BIUNIQUENESS_ELEMENTS_TAB
 from .biuniqueness_rows import element_rows as biuniqueness_element_rows
@@ -105,7 +111,7 @@ class ColumnSpec:
 @dataclass(frozen=True)
 class TabSpec:
     title: str
-    kind: str                                   # LOCKED, CONSTRUCTION, STATUS or PLANAR
+    kind: str                                   # LOCKED, CONSTRUCTION, STATUS or COPY
     columns: Tuple[ColumnSpec, ...] = ()        # empty for a locked tab
     row_columns: Tuple[str, ...] = ()           # the tooling's columns, before the criteria
     row_key: Tuple[str, ...] = ()               # those of them that identify a row
@@ -268,25 +274,38 @@ def class_sheet_spec(lang_id: str, class_name: str, data_dir: Path) -> ClassShee
 
 
 # ---------------------------------------------------------------------------
-# The planar Sheet: a copy of planar_{lang_id}.tsv
+# The planar and diagnostics Sheets: copies of one file each
 # ---------------------------------------------------------------------------
 
 @dataclass(frozen=True)
-class PlanarSheetSpec:
-    """One tab, ``tab``: the planar file's header as its columns (every one
-    the annotator's, none with a dropdown) and its rows, stripped, in order."""
+class CopySheetSpec:
+    """One tab, ``tab``: the file's header as its columns (every one the
+    annotator's, none with a dropdown) and its rows, stripped, in order.
+    ``kind`` is the Sheet's (planar_sheet or diagnostics_sheet)."""
+    kind: str
     lang_id: str
     tab: TabSpec
 
 
-def planar_sheet_spec(lang_id: str, data_dir: Path) -> PlanarSheetSpec:
-    """The spec for one language's planar Sheet, from its planar file."""
+def copy_sheet_spec(kind: str, lang_id: str, data_dir: Path) -> CopySheetSpec:
+    """The spec for one language's planar or diagnostics Sheet, from its
+    source: the planar file, or the diagnostics YAML as it renders to rows."""
     import pandas as pd
-    path = data_dir / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
-    df = pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False)
+    lang_setup = data_dir / lang_id / "lang_setup"
+    if kind == PLANAR_SHEET:
+        df = pd.read_csv(lang_setup / f"planar_{lang_id}.tsv", sep="\t", dtype=str,
+                         keep_default_na=False)
+    elif kind == DIAGNOSTICS_SHEET:
+        import yaml
+        from .make_forms import _yaml_to_tsv_df
+        with open(lang_setup / f"diagnostics_{lang_id}.yaml", encoding="utf-8") as f:
+            df = _yaml_to_tsv_df(yaml.safe_load(f), lang_id)
+    else:
+        raise ValueError(f"a {kind} is not a copy of one file")
     columns = tuple(ColumnSpec(str(c), ANNOTATOR, None) for c in df.columns)
     rows = tuple(tuple(str(v).strip() for v in row) for row in df.itertuples(index=False))
-    return PlanarSheetSpec(lang_id, TabSpec(f"planar_{lang_id}", PLANAR, columns, rows=rows))
+    title = f"{kind.removesuffix('_sheet')}_{lang_id}"
+    return CopySheetSpec(kind, lang_id, TabSpec(title, COPY, columns, rows=rows))
 
 
 # ---------------------------------------------------------------------------

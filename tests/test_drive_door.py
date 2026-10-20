@@ -913,11 +913,11 @@ def _edit_planar_file(coded, column, value):
 
 
 def test_the_recorded_planar_sheet_matches_its_spec(env):
-    from coding.sheet_spec import planar_sheet_spec
+    from coding.sheet_spec import copy_sheet_spec
     _, door, _, coded = env
-    spec = planar_sheet_spec(LANG, coded)
+    spec = copy_sheet_spec(drive_door.PLANAR_SHEET, LANG, coded)
     rows = _planar(door).sheet1.get_all_values()
-    assert drive_door._planar_tab_mismatches(spec.tab, rows) == set()
+    assert drive_door._copy_tab_mismatches("the planar file", spec.tab, rows) == set()
 
 
 def test_overwriting_or_clearing_the_planar_sheet_says_so(env):
@@ -975,3 +975,64 @@ def test_a_literal_na_in_the_planar_file_is_pushed_as_written(env):
     with drive_door.running("import-planar", TO_SHEET):
         import_planar.push_planar_to_sheet(LANG, drive_module.load_manifest(door), True)
     assert fake.spreadsheet(_planar_id(door)).sheet1.get_all_values()[1][notes] == "NA"
+
+
+# -- the diagnostics Sheet (5f) -------------------------------------------------------
+
+DIAG_TO_SHEET = argparse.Namespace(apply=True, to_sheet=True, from_tsv=False, lang=LANG)
+
+
+def _diagnostics_id(door):
+    return drive_module.load_manifest(door)[LANG]["diagnostics_spreadsheet_id"]
+
+
+def _diagnostics(door):
+    return door.open_spreadsheet(_diagnostics_id(door))
+
+
+def test_the_recorded_diagnostics_sheet_matches_its_spec(env):
+    from coding.sheet_spec import copy_sheet_spec
+    _, door, _, coded = env
+    spec = copy_sheet_spec(drive_door.DIAGNOSTICS_SHEET, LANG, coded)
+    rows = _diagnostics(door).sheet1.get_all_values()
+    assert drive_door._copy_tab_mismatches("the diagnostics file", spec.tab, rows) == set()
+
+
+def test_overwriting_the_diagnostics_sheet_or_adding_a_dropdown_says_so(env):
+    _, door, _, _ = env
+    with drive_door.running("sync-diagnostics-yaml", DIAG_TO_SHEET):
+        ss = _diagnostics(door)
+        ws = ss.sheet1
+        with pytest.raises(DoorViolation, match="filled annotation"):
+            ws.update_cell(2, 4, "changed")
+        with pytest.raises(DoorViolation, match="would clear"):
+            ws.clear()
+        with pytest.raises(DoorViolation, match="no dropdowns on the diagnostics Sheet"):
+            ss.batch_update(_dropdown(ws, 0, ["a", "b"]))
+
+
+def test_pushing_the_yaml_saves_the_annotators_edit_and_leaves_the_sheet_equal(env):
+    # An edit an annotator made on the Sheet since the last import is replaced
+    # by the push, but saved first.
+    from coding import sync_diagnostics_yaml
+    fake, door, _, _ = env
+    raw = fake.spreadsheet(_diagnostics_id(door)).sheet1
+    before = raw.get_all_values()
+    raw.update_cell(2, 4, "an annotator's edit")
+    with drive_door.running("sync-diagnostics-yaml", DIAG_TO_SHEET):
+        assert sync_diagnostics_yaml._sync_to_sheet(
+            LANG, drive_module.load_manifest(door), True, [])
+    assert raw.get_all_values() == before
+    [saved] = drive_door.SNAPSHOT_DIR.glob(f"{LANG}_diagnostics_sheet_*.json")
+    assert json.loads(saved.read_text())["rows"][1][3] == "an annotator's edit"
+
+
+def test_a_diagnostics_sheet_left_unlike_the_yaml_is_reported(env):
+    _, door, _, _ = env
+    with pytest.raises(DoorViolation, match="row of the diagnostics file missing: class "):
+        with drive_door.running("sync-diagnostics-yaml", DIAG_TO_SHEET):
+            ws = _diagnostics(door).sheet1
+            rows = ws.get_all_values()
+            with drive_door.replacing(ws, "a test that drops a row"):
+                ws.clear()
+                ws.update(rows[:-1], "A1")
