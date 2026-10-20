@@ -7,7 +7,8 @@ diagnostics YAML) afresh, so a spec cannot drift from them. A wrong spec shows
 up as a wrong check, not as a quietly stale table.
 
 So far: class sheets (`class_sheet_spec`), the planar and diagnostics
-Sheets (`copy_sheet_spec`), and sharing for every kind of Drive file
+Sheets (`copy_sheet_spec`), the status sheets (`status_sheet_spec`: one
+`Status` tab listing every construction, all the tooling's), and sharing for every kind of Drive file
 (`sharing_spec`: who gets which role, and whether a link share is allowed).
 The other kinds' contents get their sections as unit 5 reaches them
 (design § 5).
@@ -73,6 +74,7 @@ from .drive_door import CONSTRUCTION_TAB as CONSTRUCTION
 from .drive_door import LOCKED_TAB as LOCKED
 from .drive_door import COPY_TAB as COPY
 from .drive_door import DIAGNOSTICS_SHEET, PLANAR_SHEET
+from .drive_door import STATUS_PAGE_TAB as STATUS_PAGE
 from .drive_door import STATUS_TAB_KIND as STATUS
 from .biuniqueness_rows import ELEMENTS as BIUNIQUENESS_ELEMENTS_TAB
 from .biuniqueness_rows import element_rows as biuniqueness_element_rows
@@ -306,6 +308,34 @@ def copy_sheet_spec(kind: str, lang_id: str, data_dir: Path) -> CopySheetSpec:
     rows = tuple(tuple(str(v).strip() for v in row) for row in df.itertuples(index=False))
     title = f"{kind.removesuffix('_sheet')}_{lang_id}"
     return CopySheetSpec(kind, lang_id, TabSpec(title, COPY, columns, rows=rows))
+
+
+# ---------------------------------------------------------------------------
+# The status sheet: a read-only page per language, rebuilt each run
+# ---------------------------------------------------------------------------
+
+# Its columns: each row restates one Status-tab row (planar.yaml
+# status_tab.columns) with its class; the Status column holds the
+# completeness percentage. generate-status-sheet writes these.
+STATUS_SHEET_COLUMNS = ("Class", STATUS_CONSTRUCTION_COLUMN, STATUS_STATUS_COLUMN)
+
+
+@dataclass(frozen=True)
+class StatusSheetSpec:
+    """One tab, ``tab`` (``Status``): a banner, then a header of
+    STATUS_SHEET_COLUMNS, then one row per (class, construction) of the
+    diagnostics file, in its order. Every cell is the tooling's; the status
+    text comes from the live class sheets, so only its presence is specified."""
+    lang_id: str
+    tab: TabSpec
+
+
+def status_sheet_spec(lang_id: str, data_dir: Path) -> StatusSheetSpec:
+    """The spec for one language's status sheet, from its diagnostics file."""
+    specs = _read_diagnostics_for_language(lang_id, data_dir / lang_id / "lang_setup")
+    columns = tuple(ColumnSpec(c, TOOLING, None) for c in STATUS_SHEET_COLUMNS)
+    rows = tuple((class_name, construction) for class_name, construction, _, _ in specs)
+    return StatusSheetSpec(lang_id, TabSpec(STATUS_TAB, STATUS_PAGE, columns, rows=rows))
 
 
 # ---------------------------------------------------------------------------

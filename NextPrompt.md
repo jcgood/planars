@@ -39,11 +39,12 @@ failed step and its issue, not a `door-violation`.
 
 1. **5f, the other kinds into watch:** write each kind's section of the
    sheet spec and put it under the door's checks, one at a time, in the
-   design doc's order: sharing, the planar Sheet and the diagnostics Sheet
-   (**done 2026-10-19**, design doc § 8) → status sheets → notes Docs →
-   files (notebooks, reports, folders). Each kind's own clock starts only
-   when it is watched, so this is the work that shortens the wait. **Next:
-   the status sheets** (`generate-status-sheet --apply`, daily).
+   design doc's order: sharing, the planar, diagnostics and status sheets
+   (**done 2026-10-19**, design doc § 8) → notes Docs → files (notebooks,
+   reports, folders). Each kind's own clock starts only when it is watched,
+   so this is the work that shortens the wait. **Next: the notes Docs**
+   (`check-notes --apply` appends an acknowledgment line; `generate-sheets`
+   creates them).
 2. **Unit 12:** pending changes, the provenance log and regen snapshots
    kept in planars-data.
 3. **Unit 6a:** the local-file door in watch mode, with archive copies and

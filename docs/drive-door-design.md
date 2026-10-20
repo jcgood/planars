@@ -2,8 +2,8 @@
 
 **Status: accepted by Jeff 2026-10-13 (§ 7 records his answers). 5a–5d
 built; 5e done; 5f under way: class sheets enforced live since 2026-10-19,
-sharing specified for every kind, the planar and diagnostics Sheets in
-watch (§ 8).** Unit 5 of Phase 10 ([implementation plan](data-layer-implementation-plan.md),
+sharing specified for every kind, the planar, diagnostics and status
+sheets in watch (§ 8).** Unit 5 of Phase 10 ([implementation plan](data-layer-implementation-plan.md),
 Phase 10 table) was a design pause; this file is the design record. Progress
 is tracked in [data-layer-progress.md](data-layer-progress.md), and the
 decisions are logged there too.
@@ -606,4 +606,23 @@ the YAML and pushes the YAML back over the Sheet, so an annotator's edit
 there is undone the same day. A changed value list reaches no issue at all;
 an ambiguous change's `diagnostics-drift` issue closes the next day, since
 the Sheet no longer shows it. Nobody has edited a diagnostics Sheet yet, and
-11b retires that intake, so no interim fix.
+11b retires that intake, so no interim fix (Jeff, 2026-10-19: fix later).
+
+**5f, the status sheets (2026-10-19).** `sheet_spec.status_sheet_spec`:
+one tab, `Status`, every cell the tooling's (`STATUS_SHEET_COLUMNS`, now
+the one statement of its header, which generate-status-sheet reads); a
+banner, the header, then one row per class and construction of the
+diagnostics file, in order, each with a status. Rule 1 has no annotator
+cells to look after; rule 3 allows no dropdowns; rule 4 no protection (the
+sheet is read-only to annotators by sharing, rule 5's job). Rule 6 checks
+the tab's name and its rows, reading a construction cell's link label (a
+live read returns the label; the offline Drive, the `=HYPERLINK` formula).
+The sheet is rebuilt whole every run, so rule 6 reports everything wrong
+with it afterwards, not only what is new. Status sheets are not in the
+recorded test data (they are found by name in their own folder), so the
+tests check sheets the command writes.
+
+Found and fixed: the command resized the tab to its new length plus two,
+so when a language lost constructions, up to two rows of the old ones (with
+their status colour) stayed on the page. It now cuts the tab to the new
+rows first.

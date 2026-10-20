@@ -478,3 +478,69 @@ def test_a_transient_429_creating_the_status_folder_is_retried_not_a_crash(env, 
     assert folder.parents == []
     folder_creates = [m for m in doorway.mutations_of("create_file") if m["name"] == FOLDER_NAME]
     assert len(folder_creates) == 1
+
+
+# ---------------------------------------------------------------------------
+# The Drive door's checks (Phase 10 unit 5f): one Status tab listing every
+# construction, nothing protected, no dropdowns. Every --apply in this file
+# already runs under the door's end-of-command check (tests enforce).
+# ---------------------------------------------------------------------------
+
+def test_a_written_status_sheet_matches_its_spec(env):
+    from coding import drive_door
+    from coding.sheet_spec import status_sheet_spec
+    from fake_drive import FROZEN_CODED_DATA
+    doorway, run, _ = env
+    run(["gen", "--lang", "arao1248", "--apply"])
+    rows = the_sheet(doorway, "status_arao1248").worksheet("Status").get_all_values()
+    spec = status_sheet_spec("arao1248", FROZEN_CODED_DATA)
+    assert drive_door._status_page_tab_mismatches(spec.tab, rows) == set()
+
+
+def test_a_construction_left_off_the_status_sheet_is_reported(env, monkeypatch):
+    from coding.drive_door import DoorViolation
+    _, run, _ = env
+    real = gen._gather_status_rows
+    monkeypatch.setattr(gen, "_gather_status_rows", lambda *a, **kw: real(*a, **kw)[:-1])
+    with pytest.raises(DoorViolation, match="construction missing"):
+        run(["gen", "--lang", "arao1248", "--apply"])
+
+
+def test_a_shorter_rerun_leaves_no_rows_from_the_longer_one(env, monkeypatch):
+    # The tab used to be resized to the new length + 2, keeping up to two
+    # rows (and their status colour) of constructions the language no longer had.
+    from coding import sheet_spec
+    doorway, run, _ = env
+    run(["gen", "--lang", "arao1248", "--apply"])
+    ws = the_sheet(doorway, "status_arao1248").worksheet("Status")
+    before = len(ws.get_all_values())
+    real = gen._read_diagnostics_for_language
+    for module in (gen, sheet_spec):
+        monkeypatch.setattr(module, "_read_diagnostics_for_language",
+                            lambda *a, **kw: real(*a, **kw)[:-3])
+    run(["gen", "--lang", "arao1248", "--apply"])
+    after = len(ws.get_all_values())
+    assert after == before - 3
+    for (r, _c), cell in ws._cells.items():
+        if r >= after:
+            assert not cell.value and not cell.background, (r, _c)
+
+
+def test_no_dropdowns_or_protection_on_a_status_sheet(env):
+    from coding import drive_door
+    from coding.drive_door import DoorViolation
+    doorway, run, _ = env
+    run(["gen", "--lang", "arao1248", "--apply"])
+    sid = the_sheet(doorway, "status_arao1248").id
+    door = drive_doorway.get_doorway()
+    with drive_door.running("generate-status-sheet", gen.build_parser().parse_args(["--apply"])):
+        ss = door.open_spreadsheet(sid)
+        ws = ss.sheet1
+        with pytest.raises(DoorViolation, match="no dropdowns on status sheet"):
+            ss.batch_update({"requests": [{"setDataValidation": {
+                "range": {"sheetId": ws.id, "startColumnIndex": 2, "endColumnIndex": 3},
+                "rule": {"condition": {"type": "ONE_OF_LIST",
+                                       "values": [{"userEnteredValue": "a"}]}}}}]})
+        with pytest.raises(DoorViolation, match="only locked tabs"):
+            ss.batch_update({"requests": [{"addProtectedRange": {"protectedRange": {
+                "range": {"sheetId": ws.id}, "warningOnly": False}}}]})

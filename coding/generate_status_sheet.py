@@ -34,7 +34,10 @@ OAuth identity owns every file as creator and needs no explicit permission.
 Re-running with --apply overwrites the existing status_{lang_id} spreadsheet
 in place (found by name within the folder) rather than minting a new URL —
 unlike restructure-sheets, there is no annotation history to preserve here,
-so a stable bookmarkable link is preferable.
+so a stable bookmarkable link is preferable. What the finished sheet must
+hold (one `Status` tab, every construction of the diagnostics file in order,
+nothing protected) is `sheet_spec.status_sheet_spec`, which the Drive door
+checks at the end of the run.
 
 A class spreadsheet that cannot be opened, or a diagnostics file that cannot
 be read, leaves that language's status sheet wrong. The run finishes the
@@ -78,8 +81,9 @@ from .validate_coding import (
     annotation_status, keyed_annotation_status, pair_annotation_status,
 )
 from .schemas import criteria_for
+from .sheet_spec import STATUS_SHEET_COLUMNS
 from planars.languages import get_display_name
-from planars.schema_values import STATUS_CONSTRUCTION_COLUMN, STATUS_STATUS_COLUMN
+from planars.schema_values import STATUS_TAB
 
 _STATUS_FOLDER_NAME = "Annotation Status"
 
@@ -89,9 +93,9 @@ _GREEN  = {"red": 0.72, "green": 0.88, "blue": 0.72}
 _YELLOW = {"red": 1.00, "green": 0.95, "blue": 0.60}
 _GRAY   = {"red": 0.90, "green": 0.90, "blue": 0.90}
 
-# Each row restates one Status-tab row (planar.yaml status_tab.columns) with
-# its class; the Status column holds the completeness percentage here.
-_HEADER = ["Class", STATUS_CONSTRUCTION_COLUMN, STATUS_STATUS_COLUMN]
+# The columns are the sheet spec's (sheet_spec.STATUS_SHEET_COLUMNS), which
+# the Drive door checks the written sheet against.
+_HEADER = list(STATUS_SHEET_COLUMNS)
 
 
 # ---------------------------------------------------------------------------
@@ -340,8 +344,8 @@ def _write_status_sheet(
 ):
     """Write banner + header + data rows to ss's single worksheet, with formatting."""
     ws = ss.sheet1
-    if ws.title != "Status":
-        ws.update_title("Status")
+    if ws.title != STATUS_TAB:
+        ws.update_title(STATUS_TAB)
 
     banner = _banner_rows(lang_id, folder_url)
     header_row_idx = len(banner)  # 0-based index of the header row, after banner+blank spacer
@@ -360,7 +364,12 @@ def _write_status_sheet(
 
     all_rows = banner + [_HEADER] + data_rows
     n_cols = len(_HEADER)
-    ws.resize(rows=max(len(all_rows) + 2, 10), cols=n_cols)
+    # Cut the tab to exactly this run's rows first, so no row (or status
+    # colour) from a longer earlier run survives below them, then add a few
+    # empty rows back. Resizing straight to len + 2 used to leave up to two
+    # rows of a construction the language no longer has.
+    ws.resize(rows=len(all_rows), cols=n_cols)
+    ws.resize(rows=max(len(all_rows) + 2, 10))
     ws.update(all_rows, "A1", raw=False)
 
     requests = [
