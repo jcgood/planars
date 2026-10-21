@@ -3,18 +3,21 @@
 .github/workflows/data-refresh.yml only sets up the machine (checks out both
 repositories, installs Python, writes the Google credentials, gives
 coded_data/ a git identity) and runs this. Everything the refresh does is in
-STEPS below, in order: which command runs, which GitHub issue it files or
-closes, and when coded_data/ is committed. ``daily-refresh`` without
-``--apply`` prints that list and runs nothing.
+STEPS below, in order: which command runs and which GitHub issue it files
+or closes. ``daily-refresh`` without ``--apply`` prints that list and runs
+nothing.
 
 Each command runs through the same dispatcher as on the command line
-(``coding.__main__.dispatch``), so its preconditions are checked and the
-Drive door knows which command is writing. A command that fails is not the
+(``coding.__main__.dispatch``), so its preconditions are checked, both doors
+know which command is writing, and when it ends the local-file door commits
+and pushes what it wrote in planars-data (since Phase 10 unit 6b the refresh
+has no commit steps of its own there). A command that fails is not the
 refresh failing: its step files (or updates) the step's issue, and the next
 step runs. The refresh itself has failed only when something it must do
-breaks — a git commit or push, or filing an issue. Then the remaining steps
-are skipped, except the ones marked ``always`` (snapshots, the overwrite
-check, the final commits), as the workflow's ``if: always()`` steps were.
+breaks — committing the snapshots, or filing an issue. Then the remaining
+steps are skipped, except the ones marked ``always`` (snapshots, the
+overwrite check, committing the snapshots), as the workflow's
+``if: always()`` steps were.
 
 Exit status: 1 if the refresh itself failed, or if a step with no issue of
 its own failed (label sync, collaborator notes, criterion columns,
@@ -50,15 +53,15 @@ ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
 # Files in planars-data that the refresh itself rewrites, so a refresh
-# changing them is not an overwrite of a coordinator's work: the notes state
-# (check-notes), diagnostics TSVs (generated from the YAML), planar TSVs
-# (imported from the planar Sheet, their source of truth), the tooling's
-# state files (coding/state_files.py), which every command writes wherever it
-# runs, and what the local-file door adds to on every write wherever it runs:
-# each language's change log and archive copies, which only ever grow.
-_REFRESH_OWNED_EXACT = ("notes_state.json",)
+# changing them is not an overwrite of a coordinator's work: diagnostics TSVs
+# (generated from the YAML), planar TSVs (imported from the planar Sheet,
+# their source of truth), the tooling's own files (coding/state_files.py: the
+# state files, the notes state among them, and the ID file), which every
+# command writes wherever it runs, and what the local-file door adds to on
+# every write wherever it runs: each language's change log and archive
+# copies, which only ever grow.
 _REFRESH_OWNED_PARTS = ("lang_setup/diagnostics_", "lang_setup/planar_",
-                        f"{state_files.STATE_DIR.name}/",
+                        f"{state_files.STATE_DIR.name}/", state_files.ID_FILE.name,
                         f"/{file_door.CHANGE_LOG_NAME}", f"/{file_door.ARCHIVE_FOLDER}/")
 _BOT = "github-actions[bot]"
 
@@ -208,9 +211,7 @@ def at_risk_files(git: Git) -> List[str]:
     refresh last committed, excluding the files the refresh owns."""
     last = git.last_commit_by(_BOT)
     files = git.changed_between(last, "HEAD") if last else git.tracked_files()
-    return [f for f in files
-            if f not in _REFRESH_OWNED_EXACT
-            and not any(part in f for part in _REFRESH_OWNED_PARTS)]
+    return [f for f in files if not any(part in f for part in _REFRESH_OWNED_PARTS)]
 
 
 # ---------------------------------------------------------------------------
@@ -517,18 +518,6 @@ def check_notes(r: Refresh) -> None:
     r.unreported("collaborator notes", run("check-notes", "--apply"))
 
 
-def commit_data(message: str) -> Callable[[Refresh], None]:
-    """Commit coded_data/ before the next command checks it is clean (#245,
-    #283/#289/#290: a command finding its own sibling's output uncommitted
-    stopped, every time)."""
-    def step(r: Refresh) -> None:
-        if data_git().commit(f"{message} {today()}"):
-            print(f"Committed planars-data: {message}.")
-        else:
-            print("No planars-data changes.")
-    return step
-
-
 def diagnostics_to_tsv(r: Refresh) -> None:
     r.diag_tsv = run("sync-diagnostics-yaml", "--apply")
 
@@ -629,10 +618,8 @@ def update_sheets(r: Refresh) -> None:
 
 
 def status_sheets(r: Refresh) -> None:
-    """After update-sheets, so rows added today are counted. A language's
-    first status sheet writes its ID to drive_config.json, committed here."""
+    """After update-sheets, so rows added today are counted."""
     result = run("generate-status-sheet", "--apply")
-    commit_data("data: status sheet IDs")(r)
     r.report("status-sheet-error", not result.ok, "Annotation Status sheets not rebuilt",
              lambda: status_sheet_error_body(result.output), "Annotation Status sheets rebuilt")
 
@@ -696,10 +683,7 @@ STEPS: List[Step] = [
     Step("import", "import-sheets --apply --ignore-status → import-error", import_sheets),
     Step("pending reminder", "remind on a pending-changes issue open over 7 days", remind_pending),
     Step("notes", "check-notes --apply (files its own collaborator-notes issues)", check_notes),
-    Step("commit import", "commit planars-data", commit_data("data: daily import refresh")),
     Step("diagnostics tsv", "sync-diagnostics-yaml --apply", diagnostics_to_tsv),
-    Step("commit diagnostics", "commit planars-data",
-         commit_data("data: daily diagnostics sync refresh")),
     Step("diagnostics sheet", "sync-diagnostics-yaml --to-sheet --apply → diagnostics-yaml-error",
          diagnostics_to_sheet),
     Step("criterion columns", "sync-params --apply", sync_params),
@@ -711,12 +695,11 @@ STEPS: List[Step] = [
     Step("manifest", "integrity-check --check-manifest → stale-manifest", stale_manifest),
     Step("integrity", "integrity-check → integrity-error", integrity),
     Step("snapshots", "generate_snapshots.py", snapshots, always=True),
-    Step("commit data", "commit planars-data", commit_data("data: daily annotation refresh")),
     Step("overwrite", "compare with the files people committed → data-overwrite",
          overwrite_check, always=True),
     Step("commit snapshots", "commit tests/snapshots/ to planars", commit_snapshots, always=True),
     Step("sheet updates", "update-sheets --apply → sheet-drift", update_sheets),
-    Step("status sheets", "generate-status-sheet --apply, commit planars-data → status-sheet-error",
+    Step("status sheets", "generate-status-sheet --apply → status-sheet-error",
          status_sheets),
     Step("audit", f"file an audit issue if none closed in {AUDIT_EVERY_DAYS} days → audit",
          audit_due),

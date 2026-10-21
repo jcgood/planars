@@ -57,10 +57,9 @@ at that checkpoint.
 from __future__ import annotations
 
 import json
-from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict
 
-from . import state_files
+from . import file_door, state_files
 
 OLD_SHEET_ARCHIVED = "old_sheet_archived"
 NEW_SHEET_CREATED = "new_sheet_created"
@@ -72,15 +71,15 @@ def _unit_key(lang_id: str, class_name: str) -> str:
     return f"{lang_id}:{class_name}"
 
 
-def load_journal(journal_path: Optional[Path] = None) -> Dict[str, dict]:
+def load_journal() -> Dict[str, dict]:
     """Return the current journal, ``{}`` if none exists or it's empty.
 
-    `journal_path` defaults to `state_files.JOURNAL_PATH` (in planars-data
-    since Phase 10 unit 12, so a run interrupted on one machine is seen from
-    another), read at call time so tests can move it; a test may also pass a
-    `tmp_path` file (same convention as `coding/provenance.py`'s `log_path`).
+    The journal is `state_files.JOURNAL_PATH` (in planars-data since Phase
+    10 unit 12, so a run interrupted on one machine is seen from another),
+    read at call time so tests can move it, and written through the
+    local-file door (unit 6b), which commits it when the command ends.
     """
-    path = journal_path or state_files.JOURNAL_PATH
+    path = state_files.JOURNAL_PATH
     if not path.exists():
         return {}
     text = path.read_text(encoding="utf-8").strip()
@@ -89,20 +88,16 @@ def load_journal(journal_path: Optional[Path] = None) -> Dict[str, dict]:
     return json.loads(text)
 
 
-def _save_journal(journal: Dict[str, dict], journal_path: Path) -> None:
+def _save_journal(journal: Dict[str, dict]) -> None:
     if journal:
-        journal_path.parent.mkdir(parents=True, exist_ok=True)
-        journal_path.write_text(json.dumps(journal, indent=2), encoding="utf-8")
-    elif journal_path.exists():
+        file_door.write_state(file_door.restructure_journal(), json.dumps(journal, indent=2))
+    else:
         # Nothing left to track -- remove the file rather than leave an empty
         # "{}" behind, so "journal file exists" alone is a reliable signal.
-        journal_path.unlink()
+        file_door.remove_state(file_door.restructure_journal())
 
 
-def record_checkpoint(
-    lang_id: str, class_name: str, checkpoint: str,
-    journal_path: Optional[Path] = None, **detail,
-) -> None:
+def record_checkpoint(lang_id: str, class_name: str, checkpoint: str, **detail) -> None:
     """Record that `checkpoint` was just reached for (lang_id, class_name).
 
     Call this immediately after the Drive mutation for that checkpoint
@@ -113,25 +108,23 @@ def record_checkpoint(
     construction params) -- see the callers in restructure_sheets.py for
     exactly what each checkpoint stores.
     """
-    path = journal_path or state_files.JOURNAL_PATH
-    journal = load_journal(path)
+    journal = load_journal()
     journal[_unit_key(lang_id, class_name)] = {
         "lang_id": lang_id,
         "class_name": class_name,
         "checkpoint": checkpoint,
         "detail": detail,
     }
-    _save_journal(journal, path)
+    _save_journal(journal)
 
 
-def clear_unit(lang_id: str, class_name: str, journal_path: Optional[Path] = None) -> None:
+def clear_unit(lang_id: str, class_name: str) -> None:
     """Remove a unit's entry -- call once it reaches the terminal state
     (manifest updated locally AND uploaded to Drive) or has been rolled back.
     """
-    path = journal_path or state_files.JOURNAL_PATH
-    journal = load_journal(path)
+    journal = load_journal()
     journal.pop(_unit_key(lang_id, class_name), None)
-    _save_journal(journal, path)
+    _save_journal(journal)
 
 
 def is_rollback_safe(entry: dict) -> bool:

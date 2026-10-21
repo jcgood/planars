@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -117,10 +118,33 @@ def main() -> None:
     if not apply:
         print("\nDry run: nothing moved. Re-run with --apply.")
         return
-    if state_files.commit_changed("migration move_state_into_planars_data"):
+    if _commit_state_folder():
         print("\nCommitted and pushed to planars-data.")
     if not ok:
         raise SystemExit(1)
+
+
+def _commit_state_folder() -> bool:
+    """Commit and push .state/ in planars-data, and nothing else. (The
+    commands commit what they write through the local-file door; this
+    migration moves files outside it.)"""
+    repo = state_files.CODED_DATA
+    rel = str(state_files.STATE_DIR.relative_to(repo))
+
+    def git(*args: str) -> subprocess.CompletedProcess:
+        return subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True)
+
+    if not git("status", "--porcelain", "--", rel).stdout.strip():
+        return False
+    for step in (["add", "-A", "--", rel],
+                 ["commit", "-m", "state: migration move_state_into_planars_data", "--", rel]):
+        done = git(*step)
+        if done.returncode != 0:
+            raise SystemExit(f"git {step[0]} failed in planars-data: {done.stderr.strip()}. "
+                             f"Commit {rel}/ there by hand and push.")
+    if git("push").returncode != 0:
+        print("WARNING: committed but could not push. Run: git -C coded_data push")
+    return True
 
 
 if __name__ == "__main__":

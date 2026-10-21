@@ -233,11 +233,15 @@ def env(monkeypatch, tmp_path):
                         FakeDriveDoorway.drive_config)
     monkeypatch.setattr(rs, "_save_drive_config", saved_configs.append)
     # What the local-file door would commit when the command ends, in place
-    # of git (the copy is no repository).
-    monkeypatch.setattr(file_door, "_commit",
-                        lambda run: autocommit_calls.append(
-                            (sorted({str(p.relative_to(coded)) for p in run.written}),
-                             run.lines)))
+    # of git (the copy is no repository). The state files are in tmp_path,
+    # outside the copy, and the real commit leaves those out too (and makes
+    # no commit when nothing is left).
+    def commit(run) -> None:
+        paths = sorted({str(p.relative_to(coded)) for p in run.written
+                        if p.is_relative_to(coded)})
+        if paths:
+            autocommit_calls.append((paths, run.lines))
+    monkeypatch.setattr(file_door, "_commit", commit)
     monkeypatch.setattr(gn, "regenerate_notebooks",
                         lambda: notebook_calls.append(True))
     monkeypatch.setattr(vc, "revalidate_sheets",
@@ -663,6 +667,13 @@ def test_downstream_commands_fire_after_a_real_apply(env):
 # restructure_journal.py's module docstring promises.
 # ---------------------------------------------------------------------------
 
+def _record_checkpoint(*args, **detail) -> None:
+    """The journal entry the interrupted run wrote, through the local-file
+    door inside that run, as restructure-sheets writes it."""
+    with drive_door.running("restructure-sheets", may_write=True):
+        rj.record_checkpoint(*args, **detail)
+
+
 def _archive_ciscategorial(env) -> tuple:
     """Replicate restructure_sheets.py's own archive step (Step 3) by hand,
     for stan1293/ciscategorial, and return (spreadsheet_id, folder_id) --
@@ -673,7 +684,7 @@ def _archive_ciscategorial(env) -> tuple:
 
 def test_plain_run_refuses_to_start_while_a_unit_is_mid_flight(env):
     ss_id, folder_id = _archive_ciscategorial(env)
-    rj.record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED,
+    _record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED,
                           archived_spreadsheet_id=ss_id, folder_id=folder_id)
     out = env.run(["--apply"])
     assert "[SystemExit:" in out
@@ -696,7 +707,7 @@ def test_rollback_restores_the_archived_sheet_and_stops(env):
     ss_id, folder_id = _archive_ciscategorial(env)
     labels = env.doorway.file(ss_id).properties
     assert labels[drive_door.STATE_LABEL] == drive_door.ARCHIVED
-    rj.record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED,
+    _record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED,
                           archived_spreadsheet_id=ss_id, folder_id=folder_id)
     before_manifest = env.manifest()
     out = env.run(["--rollback", "--apply"])
@@ -732,7 +743,7 @@ def test_rollback_preserves_a_pre_existing_co_annotator_permission(env):
         ss_id, type="user", role="writer", email="co-annotator@example.test")
 
     _archive_ciscategorial(env)
-    rj.record_checkpoint(lang_id, class_name, rj.OLD_SHEET_ARCHIVED,
+    _record_checkpoint(lang_id, class_name, rj.OLD_SHEET_ARCHIVED,
                           archived_spreadsheet_id=ss_id, folder_id=None)
     env.run(["--rollback", "--apply"])
 
@@ -742,9 +753,9 @@ def test_rollback_preserves_a_pre_existing_co_annotator_permission(env):
 
 def test_rollback_refuses_when_any_unit_is_past_recreate(env):
     ss_id, folder_id = _archive_ciscategorial(env)
-    rj.record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED,
+    _record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED,
                           archived_spreadsheet_id=ss_id, folder_id=folder_id)
-    rj.record_checkpoint("stan1293", "noninterruption", rj.NEW_SHEET_CREATED,
+    _record_checkpoint("stan1293", "noninterruption", rj.NEW_SHEET_CREATED,
                           spreadsheet_id="fake_new_id", url="https://example.test/fake",
                           constructions=["general"], construction_params={}, version=3)
     out = env.run(["--rollback", "--apply"])
@@ -769,7 +780,7 @@ def test_resume_finishes_a_new_sheet_created_unit_then_continues(env):
     folder_id = manifest[lang_id]["folder_url"].rstrip("/").rsplit("/", 1)[-1]
     new_ss = env.doorway.create_spreadsheet(f"{class_name}_{lang_id}")
     env.doorway.move_file(new_ss.id, folder_id)
-    rj.record_checkpoint(
+    _record_checkpoint(
         lang_id, class_name, rj.NEW_SHEET_CREATED,
         spreadsheet_id=new_ss.id, url=new_ss.url,
         constructions=["general"],
@@ -829,7 +840,7 @@ def _archive_for_rename(env, lang_id="stan1293", old_class="ciscategorial") -> t
 
 def test_rename_class_stuck_unit_also_blocks_a_plain_run(env):
     ss_id, folder_id = _archive_for_rename(env)
-    rj.record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED,
+    _record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED,
                           archived_spreadsheet_id=ss_id, folder_id=folder_id,
                           new_class_name="ciscategorial_renamed")
     out = env.run(["--apply"])
@@ -841,7 +852,7 @@ def test_rename_class_stuck_unit_also_blocks_a_plain_run(env):
 
 def test_rename_class_rollback_restores_the_old_name_and_stops(env):
     ss_id, folder_id = _archive_for_rename(env)
-    rj.record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED,
+    _record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED,
                           archived_spreadsheet_id=ss_id, folder_id=folder_id,
                           new_class_name="ciscategorial_renamed")
     before_manifest = env.manifest()
@@ -866,7 +877,7 @@ def test_rename_class_resume_finishes_manifest_swap_and_local_dir_rename(env):
 
     new_ss = env.doorway.create_spreadsheet(f"{new_class}_{lang_id}")
     env.doorway.move_file(new_ss.id, folder_id)
-    rj.record_checkpoint(
+    _record_checkpoint(
         lang_id, old_class, rj.NEW_SHEET_CREATED,
         spreadsheet_id=new_ss.id, url=new_ss.url,
         constructions=["general"],
@@ -888,7 +899,7 @@ def test_rename_class_resume_finishes_manifest_swap_and_local_dir_rename(env):
 
 def test_rename_class_rollback_refuses_when_past_recreate(env):
     ss_id, folder_id = _archive_for_rename(env)
-    rj.record_checkpoint("stan1293", "ciscategorial", rj.NEW_SHEET_CREATED,
+    _record_checkpoint("stan1293", "ciscategorial", rj.NEW_SHEET_CREATED,
                           spreadsheet_id="fake_new_id", url="https://example.test/fake",
                           constructions=["general"], construction_params={}, version=3,
                           new_class_name="ciscategorial_renamed")

@@ -23,16 +23,16 @@ pink highlighting; design Q5), and the door allows and logs it.
 Retention: append-forever (Jeff's decision on the unit E open question) --
 no rotation logic. The log is ``state_files.PROVENANCE_LOG``, in planars-data
 since Phase 10 unit 12 (it had stayed on the machine that ran the command, so
-every daily refresh's lines were lost with its GitHub machine).
+every daily refresh's lines were lost with its GitHub machine), and written
+through the local-file door since unit 6b, which commits it with the rest of
+what the command wrote.
 """
 from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
-from . import state_files
 from .gating import active_parts
 from .registry import _load_operations
 
@@ -52,12 +52,9 @@ def writes_to_drive(op_id: str, args: argparse.Namespace) -> bool:
     return any(part["writes_to_drive"] for part in active_parts(record, args))
 
 
-def append_writes(entries: List[Dict], log_path: Optional[Path] = None) -> None:
-    """Append one line per entry (one tab or Drive file a command wrote)."""
-    if not entries:
-        return
-    path = log_path or state_files.PROVENANCE_LOG
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "a", encoding="utf-8") as f:
-        for entry in entries:
-            f.write(json.dumps(entry, default=str) + "\n")
+def append_writes(entries: List[Dict]) -> None:
+    """Append one line per entry (one tab or Drive file a command wrote),
+    through the local-file door."""
+    from . import file_door
+    file_door.append_state(file_door.provenance_log(),
+                           "".join(json.dumps(e, default=str) + "\n" for e in entries))

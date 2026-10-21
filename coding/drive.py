@@ -5,7 +5,8 @@ live here so that individual command modules stay focused on their own
 logic. Retrying on a rate limit is the Drive door's (coding/drive_door.py),
 not this module's.
 
-Drive config: coded_data/drive_config.json (private planars-data) bootstraps
+Drive config: coded_data/drive_config.json (private planars-data; the ID
+file, ``state_files.ID_FILE``, written only through the local-file door) bootstraps
 every Drive lookup — the root folder (_root_folder_id), the manifest file
 (_planars_config_file_id), and each language's folder and sheet IDs. The
 manifest itself (manifest.json) lives on Drive; per-language entries carry
@@ -32,11 +33,7 @@ from googleapiclient.http import MediaIoBaseDownload
 
 from . import drive_door
 
-ROOT =Path(__file__).resolve().parent.parent
-# In private planars-data, not the public planars repo (moved 2026-10-12,
-# Phase 10 unit 14): it lists every folder and sheet ID. Living in coded_data/
-# also means the daily refresh's commit there keeps IDs that CI runs record.
-DRIVE_CONFIG_PATH = ROOT / "coded_data" / "drive_config.json"
+ROOT = Path(__file__).resolve().parent.parent
 _DEFAULT_OAUTH_PATH = Path.home() / ".config" / "planars" / "oauth_credentials.json"
 
 # Retry on 429/500/503 happens in the Drive door (coding/drive_door.py), which
@@ -81,15 +78,20 @@ def _get_docs_client(gc):
 # ---------------------------------------------------------------------------
 
 def _load_drive_config() -> Dict:
-    """Load drive_config.json if it exists, otherwise return empty dict."""
-    if DRIVE_CONFIG_PATH.exists():
-        return json.loads(DRIVE_CONFIG_PATH.read_text(encoding="utf-8"))
+    """Load drive_config.json (``state_files.ID_FILE``, in private
+    planars-data since Phase 10 unit 14) if it exists, otherwise return an
+    empty dict."""
+    from .state_files import ID_FILE    # read now: tests move it
+    if ID_FILE.exists():
+        return json.loads(ID_FILE.read_text(encoding="utf-8"))
     return {}
 
 
 def _save_drive_config(config: Dict) -> None:
-    """Write drive_config.json with updated folder/file IDs."""
-    DRIVE_CONFIG_PATH.write_text(json.dumps(config, indent=2), encoding="utf-8")
+    """Write drive_config.json with updated folder/file IDs, through the
+    local-file door, which commits it when the command ends."""
+    from . import file_door
+    file_door.write_state(file_door.id_file(), json.dumps(config, indent=2))
 
 
 # ---------------------------------------------------------------------------

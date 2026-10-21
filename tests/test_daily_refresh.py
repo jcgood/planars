@@ -2,8 +2,7 @@
 
 Two kinds of test. The first group replaces each command with a stand-in
 that returns a chosen exit status and output, and checks what the refresh
-does with it: which issue it files or closes, what it commits, where it
-stops. The last test runs every real command, in order, against the offline
+does with it: which issue it files or closes, where it stops. The last test runs every real command, in order, against the offline
 Drive (`fake_drive.FakeDriveDoorway`), the in-memory GitHub and a scratch git
 repository, and checks the run finishes without breaking and leaves the real
 repositories untouched.
@@ -122,9 +121,9 @@ def test_a_clean_run_runs_every_command_in_order_and_closes_every_issue(refresh_
     ]
     for label in ("import-error", "integrity-error", "sheet-drift", "data-overwrite"):
         assert _open(github, label) == []
-    assert [m.split(" 20")[0] for m, _ in data.commits] == [
-        "data: daily import refresh", "data: daily diagnostics sync refresh",
-        "data: daily annotation refresh", "data: status sheet IDs"]
+    # planars-data is committed by each command's local-file door, never by
+    # the refresh itself (unit 6b).
+    assert data.commits == []
     assert code.commits[0][1] == ("tests/snapshots/",)
 
 
@@ -156,12 +155,16 @@ def test_a_second_failing_day_replaces_the_open_issue_rather_than_filing_another
     assert "- planar_stan1293.tsv: bad row" in issue["body"]
 
 
-def test_a_failed_commit_stops_the_run_but_the_always_steps_still_run(refresh_env, github):
+def test_a_step_that_breaks_stops_the_run_but_the_always_steps_still_run(
+        refresh_env, github, monkeypatch):
     results, calls, data, code, _ = refresh_env
-    data.fail_on = "daily import refresh"
+
+    def cannot_file(*a, **k):
+        raise RuntimeError("GitHub refused")
+    monkeypatch.setattr(dr.issues, "remind_stale", cannot_file)
     r = dr.refresh()
-    assert r.halted and "commit import" in r.halted
-    assert "sync-diagnostics-yaml --apply" not in calls       # skipped
+    assert r.halted and "pending reminder" in r.halted
+    assert "check-notes --apply" not in calls                 # skipped
     assert code.commits                                       # snapshots still committed
     outcomes = dict(r.outcomes)
     assert outcomes["snapshots"] == "done" and outcomes["scope"] == "done"
@@ -228,6 +231,14 @@ def test_a_file_a_person_committed_and_the_refresh_changed_files_data_overwrite(
     data = FakeGit(at_risk=("stan1293/ciscategorial/general.tsv", "stan1293/notes.md"),
                    changed=("stan1293/ciscategorial/general.tsv",))
     monkeypatch.setattr(dr, "data_git", lambda: data)
+    results, *_ = refresh_env
+    real_run = dr.run
+
+    def import_commits(cmd, *argv):
+        if cmd == "import-sheets":
+            data.sha += 1          # the command's door committed what it wrote
+        return real_run(cmd, *argv)
+    monkeypatch.setattr(dr, "run", import_commits)
     dr.refresh()
     [issue] = _open(github, "data-overwrite")
     assert "stan1293/ciscategorial/general.tsv" in issue["body"]
@@ -235,7 +246,8 @@ def test_a_file_a_person_committed_and_the_refresh_changed_files_data_overwrite(
 
 
 def test_files_the_refresh_owns_are_never_at_risk():
-    git = FakeGit(at_risk=("notes_state.json", "stan1293/lang_setup/planar_stan1293.tsv",
+    git = FakeGit(at_risk=(".state/notes_state.json", "drive_config.json",
+                           "stan1293/lang_setup/planar_stan1293.tsv",
                            "stan1293/lang_setup/diagnostics_stan1293.tsv",
                            "stan1293/lang_setup/diagnostics_stan1293.yaml",
                            "stan1293/changes.tsv",
@@ -379,23 +391,16 @@ def test_the_whole_refresh_runs_against_the_offline_drive(monkeypatch, tmp_path,
             monkeypatch.setattr(module, "_save_drive_config", saved_configs.append)
         if hasattr(module, "MANIFEST_PATH"):
             monkeypatch.setattr(module, "MANIFEST_PATH", tmp_path / "sheets_manifest.json")
-    from coding import (check_notes, generate_notebooks, glottolog,
-                        import_planar, import_sheets, state_files)
+    from coding import generate_notebooks, glottolog, import_planar, import_sheets, state_files
+    from conftest import point_state_files_at
     monkeypatch.setattr(import_sheets, "ROOT", tmp_path)
     monkeypatch.setattr(import_sheets, "ERROR_DIR", tmp_path / "import_errors")
     monkeypatch.setattr(import_sheets, "DRIFT_PATH", tmp_path / "diagnostics_drift.json")
     monkeypatch.setattr(import_planar, "PLANAR_CHANGES_PATH", tmp_path / "planar_changes.json")
-    monkeypatch.setattr(check_notes, "NOTES_STATE_PATH", coded / "notes_state.json")
     monkeypatch.setattr(glottolog, "CACHE_PATH", tmp_path / "glottolog_cache.json")
     # The state files live in the scratch planars-data, as they do live, so
     # the test sees whether they reach its remote.
-    state = coded / ".state"
-    monkeypatch.setattr(state_files, "STATE_DIR", state)
-    monkeypatch.setattr(state_files, "PENDING_PATH", state / "pending_changes.json")
-    monkeypatch.setattr(state_files, "PROVENANCE_LOG", state / "provenance_log.jsonl")
-    monkeypatch.setattr(state_files, "SNAPSHOT_DIR", state / "regen_snapshots")
-    monkeypatch.setattr(state_files, "JOURNAL_PATH", state / "restructure_journal.json")
-    monkeypatch.setattr(drive_module, "DRIVE_CONFIG_PATH", tmp_path / "drive_config.json")
+    point_state_files_at(monkeypatch, coded)
     monkeypatch.setattr(generate_notebooks, "regenerate_notebooks", lambda *a, **k: None)
     monkeypatch.setattr("coding.drive_door.time.sleep", lambda *a, **kw: None)
     monkeypatch.delenv("GITHUB_STEP_SUMMARY", raising=False)

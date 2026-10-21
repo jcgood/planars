@@ -33,7 +33,7 @@ from typing import Dict, List
 
 import pytest
 
-from coding import check_notes, drive_doorway
+from coding import check_notes, drive_doorway, state_files
 from coding import drive as drive_module
 from coding.drive import _ACK_PREFIX, _strip_acknowledgment_lines
 from command_runner import run_command
@@ -74,9 +74,11 @@ def env(monkeypatch, tmp_path, github):
         manifest[LANG].pop("notes_doc_id", None)
         doorway.file(MANIFEST_FILE_ID).content = json.dumps(manifest).encode()
 
-    state_path = tmp_path / "notes_state.json"
+    # In tmp_path (tests/conftest.py); written outside the door here, as
+    # what is already on disk.
+    state_path = state_files.NOTES_STATE_PATH
+    state_path.parent.mkdir(parents=True, exist_ok=True)
     state_path.write_text("{}", encoding="utf-8")
-    monkeypatch.setattr(check_notes, "NOTES_STATE_PATH", state_path)
 
     config = {"_planars_config_file_id": MANIFEST_FILE_ID,
               "_root_folder_id": ROOT_FOLDER_ID}

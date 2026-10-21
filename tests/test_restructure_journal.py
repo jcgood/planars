@@ -1,32 +1,37 @@
 """Tests for coding/restructure_journal.py (Phase 7 of the data layer
 redesign, issue #271 -- restructure-sheets crash recovery).
 
-Every function takes an explicit `journal_path` (default the real repo-root
-file), so these tests point at a `tmp_path` file rather than monkeypatching a
-module global -- same convention as tests/test_provenance.py's `log_path`.
+The journal is state_files.JOURNAL_PATH, which tests/conftest.py points at
+each test's tmp_path. It is written through the local-file door, so the
+writing tests run inside restructure-sheets (`_running`), as the command
+does.
 """
 from __future__ import annotations
 
+import pytest
+
+from coding import drive_door, state_files
 from coding import restructure_journal as rj
 
 
-def _path(tmp_path):
-    return tmp_path / "restructure_journal.json"
+@pytest.fixture()
+def _running():
+    with drive_door.running("restructure-sheets", may_write=True):
+        yield
 
 
 # ---------------------------------------------------------------------------
 # load_journal / record_checkpoint / clear_unit: basic read/write behaviour
 # ---------------------------------------------------------------------------
 
-def test_load_journal_missing_file_is_empty(tmp_path):
-    assert rj.load_journal(_path(tmp_path)) == {}
+def test_load_journal_missing_file_is_empty():
+    assert rj.load_journal() == {}
 
 
-def test_record_checkpoint_then_load_round_trips(tmp_path):
-    p = _path(tmp_path)
+def test_record_checkpoint_then_load_round_trips(_running):
     rj.record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED,
-                          journal_path=p, archived_spreadsheet_id="abc123", folder_id="folder1")
-    journal = rj.load_journal(p)
+                          archived_spreadsheet_id="abc123", folder_id="folder1")
+    journal = rj.load_journal()
     assert set(journal) == {"stan1293:ciscategorial"}
     entry = journal["stan1293:ciscategorial"]
     assert entry["lang_id"] == "stan1293"
@@ -35,48 +40,43 @@ def test_record_checkpoint_then_load_round_trips(tmp_path):
     assert entry["detail"] == {"archived_spreadsheet_id": "abc123", "folder_id": "folder1"}
 
 
-def test_record_checkpoint_overwrites_same_unit(tmp_path):
+def test_record_checkpoint_overwrites_same_unit(_running):
     """A unit's second checkpoint replaces its first -- one entry per unit,
     not a history of every checkpoint it ever passed through."""
-    p = _path(tmp_path)
-    rj.record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED, journal_path=p)
+    rj.record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED)
     rj.record_checkpoint("stan1293", "ciscategorial", rj.NEW_SHEET_CREATED,
-                          journal_path=p, spreadsheet_id="new1")
-    journal = rj.load_journal(p)
+                          spreadsheet_id="new1")
+    journal = rj.load_journal()
     assert len(journal) == 1
     assert journal["stan1293:ciscategorial"]["checkpoint"] == rj.NEW_SHEET_CREATED
 
 
-def test_record_checkpoint_tracks_multiple_units_independently(tmp_path):
-    p = _path(tmp_path)
-    rj.record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED, journal_path=p)
-    rj.record_checkpoint("arao1248", "noninterruption", rj.NEW_SHEET_CREATED, journal_path=p)
-    journal = rj.load_journal(p)
+def test_record_checkpoint_tracks_multiple_units_independently(_running):
+    rj.record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED)
+    rj.record_checkpoint("arao1248", "noninterruption", rj.NEW_SHEET_CREATED)
+    journal = rj.load_journal()
     assert set(journal) == {"stan1293:ciscategorial", "arao1248:noninterruption"}
 
 
-def test_clear_unit_removes_only_that_unit(tmp_path):
-    p = _path(tmp_path)
-    rj.record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED, journal_path=p)
-    rj.record_checkpoint("arao1248", "noninterruption", rj.NEW_SHEET_CREATED, journal_path=p)
-    rj.clear_unit("stan1293", "ciscategorial", journal_path=p)
-    journal = rj.load_journal(p)
+def test_clear_unit_removes_only_that_unit(_running):
+    rj.record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED)
+    rj.record_checkpoint("arao1248", "noninterruption", rj.NEW_SHEET_CREATED)
+    rj.clear_unit("stan1293", "ciscategorial")
+    journal = rj.load_journal()
     assert set(journal) == {"arao1248:noninterruption"}
 
 
-def test_clear_unit_last_entry_removes_the_file(tmp_path):
+def test_clear_unit_last_entry_removes_the_file(_running):
     """The journal file itself should not exist once every unit is clear --
     'file exists' is the signal a run checks, not 'file exists and is {}'."""
-    p = _path(tmp_path)
-    rj.record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED, journal_path=p)
-    rj.clear_unit("stan1293", "ciscategorial", journal_path=p)
-    assert not p.exists()
+    rj.record_checkpoint("stan1293", "ciscategorial", rj.OLD_SHEET_ARCHIVED)
+    rj.clear_unit("stan1293", "ciscategorial")
+    assert not state_files.JOURNAL_PATH.exists()
 
 
-def test_clear_unit_on_untracked_unit_is_a_no_op(tmp_path):
-    p = _path(tmp_path)
-    rj.clear_unit("stan1293", "ciscategorial", journal_path=p)  # must not raise
-    assert rj.load_journal(p) == {}
+def test_clear_unit_on_untracked_unit_is_a_no_op(_running):
+    rj.clear_unit("stan1293", "ciscategorial")  # must not raise
+    assert rj.load_journal() == {}
 
 
 # ---------------------------------------------------------------------------

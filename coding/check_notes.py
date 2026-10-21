@@ -19,24 +19,20 @@ import argparse
 import hashlib
 import json
 from datetime import date
-from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from . import issues
-
-ROOT = Path(__file__).resolve().parent.parent
-CODED_DATA = ROOT / "coded_data"
-NOTES_STATE_PATH = CODED_DATA / "notes_state.json"
+from . import file_door, issues, state_files
 
 
 def _load_notes_state() -> Dict:
-    if NOTES_STATE_PATH.exists():
-        return json.loads(NOTES_STATE_PATH.read_text(encoding="utf-8"))
+    path = state_files.NOTES_STATE_PATH
+    if path.exists():
+        return json.loads(path.read_text(encoding="utf-8"))
     return {}
 
 
 def _save_notes_state(state: Dict) -> None:
-    NOTES_STATE_PATH.write_text(json.dumps(state, indent=2), encoding="utf-8")
+    file_door.write_state(file_door.notes_state(), json.dumps(state, indent=2))
 
 
 def _hash_text(text: str) -> str:

@@ -43,15 +43,16 @@ rule 8 especially) is a command bug or a spec gap to fix.
 0. **Check the 2026-10-21 refresh:** its sync-params step made no 429
    retries (reads cut 2026-10-20); it committed `coded_data/.state/`
    (unit 12, the first refresh to keep its provenance log and pending
-   changes); and it is the first run with the local-file door (unit 6a,
+   changes; since unit 6b in each command's own `data: <command> changed
+   N file(s)` commit); and it is the first run with the local-file door (unit 6a,
    watch): the commands that wrote files committed them themselves, with
    a `changes.tsv` line per file, and no `door-violation` issue titled
    "Local-file door" was filed (if one was, each line is a command bug or
-   a gap in the door's rules: fix it). All at the end of the Phase 10 row.
-1. **Unit 6b:** the state files and the ID file through the door
-   (`ownership-design.md` § 4.3; the list is `NOT_THROUGH_THE_DOOR` in
-   `tests/test_file_door_coverage.py`), and then the daily refresh's own
-   commit steps go.
+   a gap in the door's rules: fix it). It is also the first run with unit
+   6b (built 2026-10-21): what to check is at the end of the Phase 10 row.
+1. **Unit 6c — enforce** the local-file door (`ownership-design.md` § 6
+   step 4), once the refresh's real writes have gone through cleanly in
+   watch; `data-overwrite` moves to the change log (§ 5.3).
 
 **Waits on watching:** enforce for each other kind (its own first clean
 real write, then added to `LIVE_ENFORCED_KINDS`), for 6c, and refusing unlabelled

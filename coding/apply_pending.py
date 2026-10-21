@@ -24,7 +24,7 @@ import subprocess
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-from . import issues, state_files
+from . import file_door, issues, state_files
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -40,8 +40,7 @@ def _load_pending() -> List[Dict]:
 
 
 def _save_pending(entries: List[Dict]) -> None:
-    state_files.PENDING_PATH.parent.mkdir(parents=True, exist_ok=True)
-    state_files.PENDING_PATH.write_text(json.dumps(entries, indent=2), encoding="utf-8")
+    file_door.write_state(file_door.pending_changes(), json.dumps(entries, indent=2))
 
 
 def _run_command(cmd: str) -> int:

@@ -6,8 +6,8 @@ the door itself and finds each call that writes, moves or deletes a file
 (write_text, to_csv to a path, open for writing, json/yaml dump to a file,
 shutil copy/move/rmtree, unlink, rename, rmdir). Each one must be in
 ``NOT_THROUGH_THE_DOOR`` with the reason it is not the door's: a file outside
-planars-data, or one of the writes unit 6b moves into the door (the state
-files and the ID file). A new write anywhere else fails here, so it goes
+planars-data, or test data (since unit 6b the state files and the ID file go
+through the door too). A new write anywhere else fails here, so it goes
 through the door instead; a listed write that no longer exists fails too,
 so the list can't go stale.
 
@@ -29,19 +29,10 @@ _METHODS = {"write_text", "write_bytes", "unlink", "rename", "replace", "rmdir",
 _SHUTIL = {"copy", "copy2", "copyfile", "copytree", "move", "rmtree"}
 _OS = {"remove", "rename", "replace", "unlink", "rmdir"}
 
-# Unit 6b's work list, and the writes that are not planars-data's at all.
-_6B = "in planars-data, not through the door yet: unit 6b moves it in"
+# The writes that are not planars-data's at all, and its test data.
 _ROOT_MANIFEST = ("not in planars-data: sheets_manifest.json (and manifest_backup.json) "
                   "at the repo root, deleted in unit 11c")
 NOT_THROUGH_THE_DOOR: Dict[Site, str] = {
-    # Unit 6b: the state files and the ID file.
-    ("apply_pending.py", "_save_pending", "write_text"): _6B + " (pending changes)",
-    ("check_notes.py", "_save_notes_state", "write_text"): _6B + " (notes_state.json)",
-    ("drive.py", "_save_drive_config", "write_text"): _6B + " (drive_config.json, the ID file)",
-    ("drive_door.py", "_save_snapshot", "write_text"): _6B + " (regen snapshots)",
-    ("provenance.py", "append_writes", "open"): _6B + " (the provenance log)",
-    ("restructure_journal.py", "_save_journal", "write_text"): _6B + " (restructure journal)",
-    ("restructure_journal.py", "_save_journal", "unlink"): _6B + " (restructure journal)",
     # Test data: capture-drive-state is its one writer (ownership-design § 4.4).
     ("capture_drive_state.py", "main", "shutil.copytree"): "test data under .test_fixtures/",
     ("capture_drive_state.py", "main", "shutil.rmtree"): "test data under .test_fixtures/",

@@ -504,7 +504,10 @@ def test_to_sheet_apply_writes_nothing_locally(env):
 
     assert {lang: env.tsv_rows(lang) for lang in LANGS} == before
     assert env.archives(LANG) == []
-    assert env.autocommits == []
+    # Only the Drive door's records of the push (the Sheet's snapshot and
+    # the provenance log) are committed, never a language's file.
+    for commit in env.autocommits:
+        assert "changed 0 file(s)" in commit["message"]
 
 
 def test_to_sheet_names_the_columns_it_is_about_to_add_and_remove(env):

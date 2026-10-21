@@ -28,20 +28,26 @@ def _placeholder_people(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def _state_files_stay_in_tmp(monkeypatch, tmp_path):
-    """The tooling's state files (coding/state_files.py: pending changes, the
-    provenance log, tab snapshots, the restructure journal) go to the test's
-    tmp_path, never planars-data's coded_data/.state/. planars-data itself is
-    pointed there too, so no test fetches from GitHub (coded_data_up_to_date)
-    or commits (the dispatcher's commit_changed): tmp_path is no git
-    repository."""
+    """The tooling's own files (coding/state_files.py: pending changes, the
+    provenance log, tab snapshots, the restructure journal, the notes state
+    and the ID file) go to the test's tmp_path, never planars-data.
+    planars-data itself is pointed there too, so no test fetches from GitHub
+    (coded_data_up_to_date): tmp_path is no git repository."""
+    point_state_files_at(monkeypatch, tmp_path)
+
+
+def point_state_files_at(monkeypatch, coded) -> None:
+    """Every state_files path, under ``coded`` as if it were planars-data."""
     from coding import state_files
-    state = tmp_path / "state"
-    monkeypatch.setattr(state_files, "CODED_DATA", tmp_path)
+    state = coded / ".state"
+    monkeypatch.setattr(state_files, "CODED_DATA", coded)
     monkeypatch.setattr(state_files, "STATE_DIR", state)
     monkeypatch.setattr(state_files, "PENDING_PATH", state / "pending_changes.json")
     monkeypatch.setattr(state_files, "PROVENANCE_LOG", state / "provenance_log.jsonl")
     monkeypatch.setattr(state_files, "SNAPSHOT_DIR", state / "regen_snapshots")
     monkeypatch.setattr(state_files, "JOURNAL_PATH", state / "restructure_journal.json")
+    monkeypatch.setattr(state_files, "NOTES_STATE_PATH", state / "notes_state.json")
+    monkeypatch.setattr(state_files, "ID_FILE", coded / "drive_config.json")
 
 
 @pytest.fixture(autouse=True)

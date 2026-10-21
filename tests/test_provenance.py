@@ -87,17 +87,22 @@ def test_unknown_op_id_does_not_write_to_drive():
 # append_writes(): actually appends
 # ---------------------------------------------------------------------------
 
-def test_append_writes_adds_one_line_per_entry_across_calls(tmp_path):
-    log_path = tmp_path / "provenance_log.jsonl"
-    provenance.append_writes([{"command": "update-sheets", "tab": "general"},
-                              {"command": "update-sheets", "tab": "Status"}], log_path=log_path)
-    provenance.append_writes([{"command": "prune-manifest", "tab": None}], log_path=log_path)
-    lines = [json.loads(l) for l in log_path.read_text(encoding="utf-8").splitlines()]
+def test_append_writes_adds_one_line_per_entry_across_calls():
+    """Through the local-file door, so inside a command (the log is
+    state_files.PROVENANCE_LOG, in tmp_path: tests/conftest.py)."""
+    from coding import drive_door, state_files
+    with drive_door.running("update-sheets", may_write=True):
+        provenance.append_writes([{"command": "update-sheets", "tab": "general"},
+                                  {"command": "update-sheets", "tab": "Status"}])
+        provenance.append_writes([{"command": "prune-manifest", "tab": None}])
+    lines = [json.loads(l) for l in
+             state_files.PROVENANCE_LOG.read_text(encoding="utf-8").splitlines()]
     assert [(l["command"], l["tab"]) for l in lines] == [
         ("update-sheets", "general"), ("update-sheets", "Status"), ("prune-manifest", None)]
 
 
-def test_append_writes_with_nothing_writes_nothing(tmp_path):
-    log_path = tmp_path / "provenance_log.jsonl"
-    provenance.append_writes([], log_path=log_path)
-    assert not log_path.exists()
+def test_append_writes_with_nothing_writes_nothing():
+    from coding import drive_door, state_files
+    with drive_door.running("update-sheets", may_write=True):
+        provenance.append_writes([])
+    assert not state_files.PROVENANCE_LOG.exists()

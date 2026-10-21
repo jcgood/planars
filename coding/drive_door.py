@@ -548,10 +548,9 @@ def _save_snapshot(tab: "CheckedWorksheet", rows: List[List[str]], reason: str) 
         stem = f"{identity.lang_id}_{identity.kind}_{tab.title}"
     else:
         stem = f"{tab._ss.id}_{tab.title}"
-    from .state_files import SNAPSHOT_DIR    # read now: tests move it
-    path = SNAPSHOT_DIR / (re.sub(r"[^\w.-]", "_", stem) + ".json")
-    SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({
+    from . import file_door
+    target = file_door.regen_snapshot(re.sub(r"[^\w.-]", "_", stem))
+    file_door.write_state(target, json.dumps({
         "spreadsheet_id": tab._ss.id,
         "spreadsheet": tab._ss.title,
         "lang_id": identity.lang_id if identity else None,
@@ -561,8 +560,8 @@ def _save_snapshot(tab: "CheckedWorksheet", rows: List[List[str]], reason: str) 
         "reason": reason,
         "saved_at": _now(),
         "rows": rows,
-    }, indent=2, ensure_ascii=False), encoding="utf-8")
-    return path
+    }, indent=2, ensure_ascii=False))
+    return target.path
 
 
 # ---------------------------------------------------------------------------

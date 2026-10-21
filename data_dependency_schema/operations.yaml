@@ -696,7 +696,9 @@
 - id: apply_pending
   cli_command: apply-pending
   writes_to_drive: false
-  writes_locally: false
+  # It rewrites pending_changes.json after every entry (through the
+  # local-file door, which commits it when the command ends).
+  writes_locally: true
   description: >-
     Interactive review and application of destructive changes recorded by
     import-sheets in pending_changes.json (coded_data/.state/, so the daily
@@ -720,7 +722,7 @@
     unrelated to this fix, which is about not re-attempting an
     already-succeeded one.)
   apply_gate: "interactive (per-entry approval, not a single --apply flag)"
-  preconditions: [coded_data_up_to_date]
+  preconditions: [coded_data_up_to_date, coded_data_git_identity_configured]
   facts_touched: []
   cascades_triggered: []
   modes: []
@@ -773,7 +775,7 @@
   side_effects:
     - "creates or comments on GitHub issues summarizing new notes content"
     - "appends an acknowledgment to the collaborator's notes doc"
-    - "writes coded_data/notes_state.json (content-hash change-detection state, and, since 2026-08-16, per-annotator issue-ID tracking)"
+    - "writes coded_data/.state/notes_state.json, through the local-file door (content-hash change-detection state, and, since 2026-08-16, per-annotator issue-ID tracking)"
   idempotent: true
   idempotency_note: >-
     Fixed 2026-08-11 (issue #280): _save_notes_state(state) now runs

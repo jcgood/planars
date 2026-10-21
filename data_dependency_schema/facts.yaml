@@ -222,7 +222,7 @@
     whether a language's collaborator notes doc content has already been
     surfaced (filed or commented on an open GitHub issue) for its annotator
   locations:
-    - {entity: filename_convention, detail: "coded_data/notes_state.json's per-language notes_hash/last_changed/last_checked fields -- tracks what content has already been seen, per language; also a top-level _annotator_issues[annotator] -> issue_number map, added 2026-08-16"}
+    - {entity: filename_convention, detail: "coded_data/.state/notes_state.json's per-language notes_hash/last_changed/last_checked fields -- tracks what content has already been seen, per language; also a top-level _annotator_issues[annotator] -> issue_number map, added 2026-08-16"}
     - {entity: github_issue, detail: "the open 'Collaborator notes -- {annotator} ({date})' issue, labeled collaborator-notes -- looked up by the stored _annotator_issues ID first (added 2026-08-16), falling back to a title substring match on the annotator's name (_get_open_notes_issue) only when no ID is stored yet"}
   authoritative: github_issue
   cascade:

@@ -307,7 +307,20 @@ the same commit.
    after a renumbering the door can't match them by the schema's key); and
    the daily refresh keeps its commit steps until 6b, for the files the door
    does not cover yet (notes state, the ID file).
-3. **6b — the state files and the ID file** (§ 4.3).
+3. **6b — the state files and the ID file** (§ 4.3). *Built 2026-10-21.* As
+   built: the door has a second family of kinds, the tooling's own files
+   (`file_door.STATE_KINDS`: pending changes, provenance log, regen
+   snapshots, restructure journal, notes state, the ID file), written with
+   `write_state`/`append_state`/`remove_state`. They get rule 1 (a dry run
+   writes none, except the Drive door's own records of the writes it let
+   through: the provenance log and snapshots) and the commit, but no archive
+   copy or change-log line: they are the tooling's bookkeeping, not research
+   data, and git keeps their history. Where each lives stays in
+   `coding/state_files.py`; `notes_state.json` moved into `.state/` with the
+   rest. The door's commit is now the only one the tooling makes in
+   planars-data: the dispatcher's state commit and the daily refresh's four
+   commit steps are gone. The rest of § 4.3 (commands read every ID from
+   the ID file; the manifest copies deleted) is 11c's.
 4. **6c — enforce,** by the § 4 rule; `data-overwrite` moves to the log (§ 5.3).
 5. **11a — proposal sheets:** the coordinators list (Q2), the
    `proposal_sheet` kind in both doors, creation (**a live write, named for

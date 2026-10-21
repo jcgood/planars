@@ -22,7 +22,9 @@ table can't be named.
 - when the command ends, however it ends, commits and pushes exactly the
   files it wrote (with their archive copies and change-log lines), with a
   message made from the change-log lines. Nothing else in planars-data is
-  staged. Skipped when ``coded_data/`` is not a git repository (tests).
+  staged. Skipped when ``coded_data/`` is not a git repository (tests). This
+  is the only place the tooling commits to planars-data (the daily
+  refresh's own commit steps went in unit 6b).
 
 **Checks, before anything is written** (problems are acted on by ``MODE``:
 raise ``DoorViolation`` in enforce, report in watch):
@@ -45,13 +47,23 @@ raise ``DoorViolation`` in enforce, report in watch):
    the caller says why with ``drops=`` (the Drive door's ``replacing``).
    ``remove`` drops a whole file on purpose: it needs only its reason.
 
+**The tooling's own files** (unit 6b; ``STATE_KINDS``): the state files in
+``.state/`` (pending changes, the provenance log, regen snapshots, the
+restructure journal, check-notes' notes state) and the ID file,
+``drive_config.json``. Where each lives is ``coding/state_files.py``'s. They
+are written with ``write_state``, ``append_state`` (the provenance log) and
+``remove_state``, which check rule 1 (a dry run writes none, except the
+Drive door's own records, ``DRIVE_RECORDS``, which log the Drive writes it
+let through), write only what differs and commit with the rest. They are
+not research data, so they get no archive copy or change-log line: git
+keeps their history.
+
 **Watch, then enforce** (design § 4.1, the Drive door's § 4 rule): live runs
 use ``LIVE_MODE`` (watch: the write goes ahead and the command files or
 updates one ``door-violation`` issue at the end); tests use enforce from the
 start (``tests/conftest.py``). ``tests/test_file_door_coverage.py`` fails if
 code under ``coding/`` writes a file any other way, apart from the listed
-writes the door does not cover yet (unit 6b: the state files and the ID
-file; and the files outside planars-data).
+writes outside planars-data.
 
 Not here: test data under ``.test_fixtures/`` (``capture-drive-state`` is
 its one writer) and hand edits (unit 17).
@@ -67,7 +79,9 @@ import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, FrozenSet, List, Optional, Sequence, Tuple
+from typing import Dict, FrozenSet, List, Optional, Sequence, Tuple, Union
+
+from . import state_files
 
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
@@ -186,6 +200,93 @@ def change_log(lang_id: str) -> Path:
     return CODED_DATA / lang_id / CHANGE_LOG_NAME
 
 
+# ---------------------------------------------------------------------------
+# The tooling's own files (unit 6b): state files and the ID file
+# ---------------------------------------------------------------------------
+
+PENDING_CHANGES = "pending_changes"
+PROVENANCE_LOG = "provenance_log"
+REGEN_SNAPSHOT = "regen_snapshot"
+RESTRUCTURE_JOURNAL = "restructure_journal"
+NOTES_STATE = "notes_state"
+ID_FILE = "id_file"
+
+# Where each lives is coding/state_files.py's (read at call time: tests move
+# them). A regen snapshot is one file per tab, named by ``name``.
+STATE_KINDS: Dict[str, Dict[str, object]] = {
+    PENDING_CHANGES:     {"path": lambda f: state_files.PENDING_PATH,
+                          "what": "destructive changes waiting for apply-pending"},
+    PROVENANCE_LOG:      {"path": lambda f: state_files.PROVENANCE_LOG,
+                          "what": "the log of what each command wrote to Drive"},
+    REGEN_SNAPSHOT:      {"path": lambda f: state_files.SNAPSHOT_DIR / f"{f.name}.json",
+                          "what": "a tab as it was before its answers were replaced"},
+    RESTRUCTURE_JOURNAL: {"path": lambda f: state_files.JOURNAL_PATH,
+                          "what": "restructure-sheets' record of an interrupted run"},
+    NOTES_STATE:         {"path": lambda f: state_files.NOTES_STATE_PATH,
+                          "what": "what check-notes last saw in each notes Doc"},
+    ID_FILE:             {"path": lambda f: state_files.ID_FILE,
+                          "what": "the Drive IDs of the files the tooling made"},
+}
+# The Drive door's records of writes it let through. They are written
+# whenever a command is running, a dry run included: a dry run's one Drive
+# write (import-sheets' highlighting, ``always_on_writes``) is still logged.
+DRIVE_RECORDS: FrozenSet[str] = frozenset({PROVENANCE_LOG, REGEN_SNAPSHOT})
+
+
+@dataclass(frozen=True)
+class StateFile:
+    """One of the tooling's own files, named by what it is. Not a language's
+    research data, so the door keeps no archive copy or change-log line for
+    it (git keeps its history); it checks, writes only what differs, and
+    commits."""
+    kind: str
+    name: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        if self.kind not in STATE_KINDS:
+            raise ValueError(f"unknown kind of state file {self.kind!r}; "
+                             f"known: {sorted(STATE_KINDS)}")
+        needed = self.kind == REGEN_SNAPSHOT
+        if bool(self.name) != needed:
+            raise ValueError(f"a {self.kind} file {'needs' if needed else 'has no'} name")
+
+    @property
+    def path(self) -> Path:
+        return STATE_KINDS[self.kind]["path"](self)
+
+    @property
+    def relpath(self) -> str:
+        """Within planars-data: ``.state/pending_changes.json``."""
+        try:
+            return str(self.path.relative_to(state_files.CODED_DATA))
+        except ValueError:
+            return self.path.name
+
+
+def pending_changes() -> StateFile:
+    return StateFile(PENDING_CHANGES)
+
+
+def provenance_log() -> StateFile:
+    return StateFile(PROVENANCE_LOG)
+
+
+def regen_snapshot(name: str) -> StateFile:
+    return StateFile(REGEN_SNAPSHOT, name)
+
+
+def restructure_journal() -> StateFile:
+    return StateFile(RESTRUCTURE_JOURNAL)
+
+
+def notes_state() -> StateFile:
+    return StateFile(NOTES_STATE)
+
+
+def id_file() -> StateFile:
+    return StateFile(ID_FILE)
+
+
 def stamp() -> str:
     """Now, in the archive date format (UTC)."""
     return datetime.now(timezone.utc).strftime(ARCHIVE_STAMP_FORMAT)
@@ -243,8 +344,10 @@ class _Run:
     command: str
     may_write: bool
     sources: FrozenSet[str]
+    may_write_drive: bool = False
     written: List[Path] = field(default_factory=list)   # to commit, in order
     lines: List[str] = field(default_factory=list)      # for the commit message
+    state: Dict[str, str] = field(default_factory=dict)  # state file -> what was done
     violations: List[str] = field(default_factory=list)
     specs: Dict[Tuple[str, str, str], object] = field(default_factory=dict)
 
@@ -278,13 +381,18 @@ def begin(command: str, args: Optional[argparse.Namespace] = None, *,
     ``may_write`` (code with no operations.yaml record: a migration) the
     answer is given, and every source may be written."""
     args = args if args is not None else argparse.Namespace()
-    record, writes, sources = _declared(command.replace("-", "_"), args)
+    op_id = command.replace("-", "_")
+    record, writes, sources = _declared(op_id, args)
     if may_write is not None:
         writes, sources = may_write, (sources if record is not None else SOURCES)
+        drive = may_write
     elif record is None:
         raise ValueError(f"{command!r} has no operations.yaml record; "
                          "pass may_write to say whether it writes")
-    _runs.append(_Run(command, writes, sources))
+    else:
+        from .provenance import writes_to_drive
+        drive = writes_to_drive(op_id, args)
+    _runs.append(_Run(command, writes, sources, may_write_drive=drive))
 
 
 def finish(succeeded: bool) -> None:
@@ -296,9 +404,10 @@ def finish(succeeded: bool) -> None:
         if MODE == WATCH and run.violations:
             _report_violations(run.command, run.violations)
     finally:
-        if run.written:
+        if run.lines:
             print(f"Local-file door ({MODE}): changed {len(run.lines)} file(s), previous "
                   f"versions archived and logged; {len(run.violations)} broke a rule.")
+        if run.written:
             try:
                 _commit(run)
             except RuntimeError as exc:
@@ -382,16 +491,65 @@ def move_class(lang_id: str, old_class: str, new_class: str, *, why: str) -> int
     return moved
 
 
+def write_state(target: StateFile, text: str) -> bool:
+    """Write one of the tooling's own files if ``text`` differs from what is
+    there. True if written."""
+    path = target.path
+    if _read(path) == text:
+        return False
+    run = _runs[-1] if _runs else None
+    _act(run, target, _state_problems(run, target, "write"))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        f.write(text)
+    _note_state(run, target, path, "written")
+    return True
+
+
+def append_state(target: StateFile, text: str) -> None:
+    """Add ``text`` to the end of one of the tooling's own files (the
+    provenance log, which only grows)."""
+    if not text:
+        return
+    run = _runs[-1] if _runs else None
+    _act(run, target, _state_problems(run, target, "append to"))
+    path = target.path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "a", encoding="utf-8", newline="") as f:
+        f.write(text)
+    _note_state(run, target, path, "appended to")
+
+
+def remove_state(target: StateFile) -> bool:
+    """Delete one of the tooling's own files (a restructure journal with
+    nothing left in it). True if there was one."""
+    path = target.path
+    if not path.exists():
+        return False
+    run = _runs[-1] if _runs else None
+    _act(run, target, _state_problems(run, target, "remove"))
+    path.unlink()
+    _note_state(run, target, path, "removed")
+    return True
+
+
+def _note_state(run: Optional[_Run], target: StateFile, path: Path, action: str) -> None:
+    if run is not None:
+        run.written.append(path)
+        run.state[target.relpath] = action
+
+
 # ---------------------------------------------------------------------------
 # Checks
 # ---------------------------------------------------------------------------
 
-def _act(run: Optional[_Run], target: LocalFile, problems: List[str]) -> None:
+def _act(run: Optional[_Run], target: Union[LocalFile, StateFile], problems: List[str]) -> None:
     """Raise (enforce) or remember for the issue (watch)."""
     if not problems:
         return
     command = run.command if run else "(no command)"
-    messages = [f"{command}: {target.lang_id}/{target.relpath}: {p}" for p in problems]
+    where = target.relpath if isinstance(target, StateFile) else f"{target.lang_id}/{target.relpath}"
+    messages = [f"{command}: {where}: {p}" for p in problems]
     if MODE == ENFORCE or run is None:
         raise DoorViolation("The local-file door refused a write.\n  " + "\n  ".join(messages))
     run.violations.extend(messages)
@@ -410,6 +568,19 @@ def _permission_problems(run: Optional[_Run], target: LocalFile, action: str) ->
                    f"`{run.command}`'s operations.yaml record does not list it under "
                    f"edits_sources")
     return out
+
+
+def _state_problems(run: Optional[_Run], target: StateFile, action: str) -> List[str]:
+    """Rule 1 for the tooling's own files: a command is running, and this
+    invocation writes somewhere (they record its Drive or local work), unless
+    the file is one of the Drive door's records (``DRIVE_RECORDS``)."""
+    if run is None:
+        return ["no command is running, so the door cannot tell whether it may write "
+                "(run it through `python -m coding`)"]
+    if target.kind in DRIVE_RECORDS or run.may_write or run.may_write_drive:
+        return []
+    return [f"`{run.command}` was run without the flag that lets it write (a dry run), "
+            f"but tried to {action} {STATE_KINDS[target.kind]['what']}"]
 
 
 def _tab_spec(run: Optional[_Run], target: LocalFile):
@@ -597,12 +768,17 @@ def _commit(run: _Run) -> None:
     rel = []
     for p in dict.fromkeys(run.written):
         try:
-            rel.append(str(p.resolve().relative_to(repo.resolve())))
+            r = str(p.resolve().relative_to(repo.resolve()))
         except ValueError:
             continue
+        # A file made and removed in the same run (a restructure journal
+        # cleared once the run finished) is nothing to git.
+        if p.exists() or _git(repo, "ls-files", "--", r).stdout.strip():
+            rel.append(r)
     if not rel:
         return
-    message = f"data: {run.command} changed {len(run.lines)} file(s)\n\n" + "\n".join(run.lines)
+    lines = run.lines + [f"{path}: {action}" for path, action in run.state.items()]
+    message = f"data: {run.command} changed {len(lines)} file(s)\n\n" + "\n".join(lines)
     for step in (["add", "-A", "--", *rel], ["commit", "-m", message, "--", *rel]):
         done = _git(repo, *step)
         if done.returncode != 0:
