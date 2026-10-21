@@ -24,7 +24,8 @@ missing construction tab hit on both the download step and the
 `_copy_pair_tab_with_rename` step (deleting a coreference pair tab from the
 fixture before a rename-map apply that restructures every class in that
 language); `--lang` restricting to one language while two others are seeded;
-and a class absent from the manifest. `_autocommit_data`, `generate_notebooks.
+and a class absent from the manifest. The commit of coded_data/ (then
+`_autocommit_data`, since Phase 10 unit 6a the local-file door's `_commit`), `generate_notebooks.
 regenerate_notebooks`, `validate_coding.revalidate_sheets`, and `import_planar.
 push_planars_to_sheets` were stubbed identically on both sides (file 15's
 precedent -- what this harness diffs is restructure_sheets.py's own Drive
@@ -57,7 +58,7 @@ import pandas as pd
 import pytest
 
 from coding import drive as drive_module
-from coding import drive_door, drive_doorway
+from coding import drive_door, drive_doorway, file_door
 from coding import generate_notebooks as gn
 from coding import import_planar as ip
 from coding import restructure_journal as rj
@@ -231,9 +232,12 @@ def env(monkeypatch, tmp_path):
     monkeypatch.setattr(drive_module, "_load_drive_config",
                         FakeDriveDoorway.drive_config)
     monkeypatch.setattr(rs, "_save_drive_config", saved_configs.append)
-    monkeypatch.setattr(rs, "_autocommit_data",
-                        lambda paths, message: autocommit_calls.append(
-                            (sorted(str(p.relative_to(coded)) for p in paths), message)))
+    # What the local-file door would commit when the command ends, in place
+    # of git (the copy is no repository).
+    monkeypatch.setattr(file_door, "_commit",
+                        lambda run: autocommit_calls.append(
+                            (sorted({str(p.relative_to(coded)) for p in run.written}),
+                             run.lines)))
     monkeypatch.setattr(gn, "regenerate_notebooks",
                         lambda: notebook_calls.append(True))
     monkeypatch.setattr(vc, "revalidate_sheets",
@@ -787,7 +791,10 @@ def test_resume_finishes_a_new_sheet_created_unit_then_continues(env):
     # upload every normal run already does -- confirm it actually fired.
     assert env.saved_configs
     assert "Manifest updated on Drive." in out
-    assert env.autocommit_calls, "written TSVs must be committed to coded_data/"
+    # Resuming is bookkeeping on Drive: no local file changes, so the
+    # local-file door has nothing to commit (tests/test_file_door.py covers
+    # that it commits whatever a run does write).
+    assert env.autocommit_calls == []
 
 
 # ---------------------------------------------------------------------------

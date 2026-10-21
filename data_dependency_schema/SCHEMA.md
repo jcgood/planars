@@ -201,6 +201,7 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
   apply_gate: "--apply"
   preconditions: [coded_data_clean_tree, coded_data_git_identity_configured]
   writes_to_drive: true
+  writes_locally: true
   facts_touched:
     - {fact: planar_sheet_structure, role: writes}
   cascades_triggered:
@@ -244,6 +245,17 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
   per the same "full override" rule as every other mode field. `false` for a
   command with no live-write concept at all (pure read-only) and for one
   whose writes are entirely local, never Drive itself.
+- **`writes_locally`** — the same question for the files the local-file door
+  keeps (`coding/file_door.py`'s `KINDS`: annotation TSVs and each language's
+  set-up files; Phase 10 unit 6a). The door refuses every local write on a
+  run where it is `false` for the gates actually satisfied, so a dry run
+  writes nothing. Required on every record and mode, like `writes_to_drive`.
+- **`edits_sources`** (optional) — the sources (`file_door.SOURCES`: the
+  planar, the diagnostics YAML — files a person edits) the command may
+  write. The door refuses a write to any other source, and stops on a name
+  that is not a source. Only the two Sheet intakes (`import-planar`,
+  `import-sheets`, until unit 11b) and the commands that edit the YAML
+  (`sync-params`, `sync-diagnostics-yaml --from-tsv`) list any.
 - **`facts_touched`** — `{fact, role}` pairs, `fact` an id from `facts.yaml`
   and `role` one of `reads`/`writes`/`both`. Reuses the existing registry the
   same way `preconditions` does — a reader who wants to know "who's

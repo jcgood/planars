@@ -43,7 +43,7 @@ import pandas as pd
 import pytest
 
 from coding import drive as drive_module
-from coding import drive_doorway
+from coding import drive_doorway, file_door
 from coding import import_planar as ip
 from command_runner import run_command
 from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway
@@ -142,13 +142,17 @@ def env(monkeypatch, tmp_path):
 
     monkeypatch.setattr(ip, "CODED_DATA", coded)
     monkeypatch.setattr(ip, "PLANAR_CHANGES_PATH", changes_path)
-    monkeypatch.setattr(ip, "datetime", _FrozenDatetime)
+    # The archive stamp and the change log's time are the local-file door's.
+    monkeypatch.setattr(file_door, "datetime", _FrozenDatetime)
     monkeypatch.setattr(drive_module, "_load_drive_config",
                         lambda: json.loads(json.dumps(config)))
+    # What the door would commit, in place of git (the copy is no repository).
     monkeypatch.setattr(
-        drive_module, "_autocommit_data",
-        lambda paths, message: autocommits.append(
-            {"paths": [p.name for p in paths], "message": message}))
+        file_door, "_commit",
+        lambda run: autocommits.append(
+            {"paths": [p.name for p in dict.fromkeys(run.written)],
+             "message": f"data: {run.command} changed {len(run.lines)} file(s)\n\n"
+                        + "\n".join(run.lines)}))
     drive_doorway.set_doorway(doorway)
 
     def run(argv: List[str]) -> str:
@@ -378,12 +382,15 @@ def test_the_recorded_changes_name_every_language_that_moved(env):
     assert changes["arao1248"]["diff"]["added"] == {"19": "x:newpos"}
     assert changes[LANG]["diff"]["deleted"] == {"38": "v:rightedge"}
     assert changes["synth0001"]["recommendation"].startswith("(content-only")
-    assert env.autocommits == [{
-        "paths": [f"planar_{lang}{suffix}.tsv" for lang in LANGS
-                  for suffix in ("", "_20260802_112233")],
-        "message": ("data: import planar for arao1248, stan1293, synth0001 "
-                    "from Google Sheets 2026-08-02"),
-    }]
+    # The door commits each planar, its archived predecessor and the
+    # language's change log, with one line per planar in the message.
+    [commit] = env.autocommits
+    assert commit["paths"] == [name for lang in LANGS for name in
+                               (f"planar_{lang}.tsv", "changes.tsv",
+                                f"planar_{lang}_20260802_112233.tsv")]
+    assert commit["message"].startswith("data: import-planar changed 3 file(s)\n\n")
+    for lang in LANGS:
+        assert f"{lang}/lang_setup/planar_{lang}.tsv: " in commit["message"]
 
 
 def test_one_language_at_a_time_leaves_the_others_untouched(env):

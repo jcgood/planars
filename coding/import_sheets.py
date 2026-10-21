@@ -4,16 +4,19 @@
 Run from the repo root:
     python -m coding import-sheets              # dry run: report what would be written
     python -m coding import-sheets --apply      # write TSVs when content has changed
-    python -m coding import-sheets --apply --overwrite-existing  # force overwrite even if unchanged
+    python -m coding import-sheets --apply --overwrite-existing  # rewrite even if the cells match
 
 Reads the manifest from Drive (via drive_config.json), downloads each sheet
 tab, validates values, and writes {construction}.tsv to
 coded_data/{lang_id}/{class_name}/.
 
-A TSV whose downloaded content is unchanged is skipped; a changed one is
-archived first (coded_data/{lang_id}/archive/{class_name}/), then
-overwritten. Refuses to run with --apply while coded_data/ has uncommitted
-changes (precondition coded_data_clean_tree, checked by the dispatcher).
+Every file is written through the local-file door (coding/file_door.py): a
+TSV whose downloaded content is unchanged is skipped; a changed one's
+previous version goes to coded_data/{lang_id}/archive/{class_name}/, the
+change goes in the language's changes.tsv, and the files written are
+committed and pushed in planars-data when the command ends. Refuses to run
+with --apply while coded_data/ has uncommitted changes (precondition
+coded_data_clean_tree, checked by the dispatcher).
 
 Exits non-zero only when the import itself broke: a class's spreadsheet
 could not be opened, or a tab is missing from it. Invalid values are not an
@@ -46,11 +49,8 @@ Authentication: same OAuth2 setup as generate_sheets.py (see drive.py).
 from __future__ import annotations
 
 import argparse
-import csv
 import json
-import shutil
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -65,13 +65,12 @@ from .drive import (
 from .drive_doorway import get_doorway, WorksheetNotFound
 from planars.schema_values import STATUS_IN_PROGRESS, STATUS_READY, is_keystone
 from .restructure_sheets import _get_keyed_row_constructions, _get_pair_row_constructions
-from . import issues
+from . import file_door, issues
 from . import validate_coding as _val
 from .validate import ValidationIssue
 from .validate_planar import validate_planar_df as _validate_planar_df
 from .validate_diagnostics import validate_diagnostics_df as _validate_diagnostics_df
 from .make_forms import (
-    ARCHIVE_STAMP_FORMAT,
     _diff_diagnostics_tsv_yaml,
     resolve_keystone_active,
     resolve_keystone_na_criteria,
@@ -98,10 +97,8 @@ _TRAILING_COLS        = _val._TRAILING_COLS
 # ---------------------------------------------------------------------------
 
 def _get_output_path(lang_id: str, class_name: str, construction: str) -> Path:
-    """Return the output TSV path under coded_data/, creating directories as needed."""
-    folder = ROOT / "coded_data" / lang_id / class_name
-    folder.mkdir(parents=True, exist_ok=True)
-    return folder / f"{construction}.tsv"
+    """The construction's annotation TSV under coded_data/ (the local-file door's path)."""
+    return file_door.annotation(lang_id, class_name, construction).path
 
 
 # ---------------------------------------------------------------------------
@@ -178,20 +175,6 @@ def _validate_keyed_tab(
 # TSV writing
 # ---------------------------------------------------------------------------
 
-def _archive_tsv(path: Path, timestamp: str) -> Path:
-    """Copy path to the per-language archive directory with a timestamp suffix.
-
-    Archives to coded_data/{lang}/archive/{class}/{stem}_{timestamp}.tsv so that
-    retired class directories can be removed cleanly after pruning.
-    Creates intermediate directories if absent. Returns the archive path.
-    """
-    archive_dir = path.parent.parent / "archive" / path.parent.name
-    archive_dir.mkdir(parents=True, exist_ok=True)
-    archive_path = archive_dir / f"{path.stem}_{timestamp}{path.suffix}"
-    shutil.copy2(path, archive_path)
-    return archive_path
-
-
 def _tsv_content_changed(path: Path, header: List[str], records: List[Dict]) -> bool:
     """Return True if the new header+records differ from the existing file at path.
 
@@ -219,21 +202,6 @@ def _tsv_content_changed(path: Path, header: List[str], records: List[Dict]) -> 
     # columns but builds from an empty record list as float columns -- so an
     # empty tab always looked "changed" and was re-archived on every import.
     return existing.astype(str).values.tolist() != new_df.astype(str).values.tolist()
-
-
-def _write_tsv(path: Path, header: List[str], records: List[Dict]) -> None:
-    """Write records to a tab-separated file with the given header order.
-
-    Extra keys in records beyond the header are silently ignored
-    (extrasaction='ignore').
-    """
-    with path.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(
-            f, fieldnames=header, delimiter="\t",
-            extrasaction="ignore", quoting=csv.QUOTE_MINIMAL,
-        )
-        writer.writeheader()
-        writer.writerows(records)
 
 
 # ---------------------------------------------------------------------------
@@ -466,7 +434,7 @@ def _check_yaml_drift(lang_id: str, tsv_df: pd.DataFrame) -> List[Dict]:
     Returns an empty list if no YAML exists for this language or no ambiguous drift found.
     """
     import yaml as _yaml
-    yaml_path = ROOT / "coded_data" / lang_id / "lang_setup" / f"diagnostics_{lang_id}.yaml"
+    yaml_path = file_door.diagnostics_yaml(lang_id).path
     if not yaml_path.exists():
         return []
     with open(yaml_path, encoding="utf-8") as f:
@@ -662,13 +630,13 @@ def _download_lang_setup_sheets(
     doorway,
     lang_id: str,
     lang_data: Dict,
-    timestamp: str = "",
     apply: bool = True,
 ) -> Tuple[Set[str], List[Dict], List[Dict]]:
     """Download planar and diagnostics Sheets for one language to local TSVs.
 
     Validates the downloaded data before writing. Detects structural changes
     and classifies them as safe (auto-applicable) or destructive (pending).
+    Writes go through the local-file door, which keeps the previous version.
 
     Returns (safe_commands, pending_entries, drift_entries).
     drift_entries contains ambiguous TSV→YAML differences for coordinator review.
@@ -676,8 +644,6 @@ def _download_lang_setup_sheets(
     safe_cmds: Set[str] = set()
     pending: List[Dict] = []
     drift_entries: List[Dict] = []
-
-    planar_dir = ROOT / "coded_data" / lang_id / "lang_setup"
 
     # --- Planar sheet ---
     planar_id = lang_data.get("planar_spreadsheet_id")
@@ -694,43 +660,27 @@ def _download_lang_setup_sheets(
                 for i in issues:
                     print(f"  [planar] WARNING: {i}")
 
-                out_path = planar_dir / f"planar_{lang_id}.tsv"
-                existing = sorted(planar_dir.glob("planar_*.tsv")) if planar_dir.exists() else []
-                old_file = existing[-1] if existing else None
-                if old_file:
-                    old_df = pd.read_csv(old_file, sep="\t", dtype=str, keep_default_na=False)
+                target = file_door.planar(lang_id)
+                out_path = target.path
+                if out_path.exists():
+                    old_df = pd.read_csv(out_path, sep="\t", dtype=str, keep_default_na=False)
                     s, p = _detect_planar_changes(old_df, new_df, lang_id)
                     safe_cmds |= s
                     pending   += p
                     content_changed = not old_df.reset_index(drop=True).equals(
                         new_df.reset_index(drop=True)
                     )
-                    if apply:
-                        if content_changed:
-                            if timestamp:
-                                archived = _archive_tsv(old_file, timestamp)
-                                print(f"  [planar] Archived existing → archive/{archived.name}")
-                            if old_file != out_path:
-                                old_file.unlink()
-                            planar_dir.mkdir(parents=True, exist_ok=True)
-                            new_df.to_csv(out_path, sep="\t", index=False)
-                            print(f"  [planar] Downloaded → {out_path.name}")
-                        else:
-                            if old_file != out_path:
-                                old_file.rename(out_path)
-                                print(f"  [planar] Renamed → {out_path.name}")
-                            else:
-                                print(f"  [planar] No changes → {out_path.name}")
-                    else:
-                        action = "Would overwrite (changed)" if content_changed else "No changes"
-                        print(f"  [planar] {action} → {out_path.name}")
                 else:
-                    if apply:
-                        planar_dir.mkdir(parents=True, exist_ok=True)
-                        new_df.to_csv(out_path, sep="\t", index=False)
-                        print(f"  [planar] Downloaded → {out_path.name}")
-                    else:
-                        print(f"  [planar] Would create → {out_path.name}")
+                    content_changed = True
+                if not content_changed:
+                    print(f"  [planar] No changes → {out_path.name}")
+                elif apply:
+                    file_door.write(target, file_door.frame_text(new_df),
+                                    why="downloaded from the planar Sheet")
+                    print(f"  [planar] Downloaded → {out_path.name}")
+                else:
+                    action = "Would overwrite (changed)" if out_path.exists() else "Would create"
+                    print(f"  [planar] {action} → {out_path.name}")
 
     # --- Diagnostics sheet ---
     diag_id = lang_data.get("diagnostics_spreadsheet_id")
@@ -759,7 +709,8 @@ def _download_lang_setup_sheets(
                     else:
                         print(f"  [diagnostics] WARNING: {i}")
 
-                diag_path = planar_dir / f"diagnostics_{lang_id}.tsv"
+                target = file_door.diagnostics_tsv(lang_id)
+                diag_path = target.path
                 if diag_path.exists():
                     old_df = pd.read_csv(diag_path, sep="\t", dtype=str, keep_default_na=False)
                     s, p = _detect_diagnostics_changes(old_df, new_df, lang_id, lang_data.get("sheets", {}))
@@ -768,25 +719,17 @@ def _download_lang_setup_sheets(
                     content_changed = not old_df.reset_index(drop=True).equals(
                         new_df.reset_index(drop=True)
                     )
-                    if apply:
-                        if content_changed:
-                            if timestamp:
-                                archived = _archive_tsv(diag_path, timestamp)
-                                print(f"  [diagnostics] Archived existing → archive/{archived.name}")
-                            planar_dir.mkdir(parents=True, exist_ok=True)
-                            new_df.to_csv(diag_path, sep="\t", index=False)
-                            print(f"  [diagnostics] Downloaded → {diag_path.name}")
-                        else:
-                            print(f"  [diagnostics] No changes → {diag_path.name}")
-                    else:
-                        action = "Would overwrite (changed)" if content_changed else "No changes"
-                        print(f"  [diagnostics] {action} → {diag_path.name}")
+                else:
+                    content_changed = True
+                if not content_changed:
+                    print(f"  [diagnostics] No changes → {diag_path.name}")
                 elif apply:
-                    planar_dir.mkdir(parents=True, exist_ok=True)
-                    new_df.to_csv(diag_path, sep="\t", index=False)
+                    file_door.write(target, file_door.frame_text(new_df),
+                                    why="downloaded from the diagnostics Sheet")
                     print(f"  [diagnostics] Downloaded → {diag_path.name}")
                 else:
-                    print(f"  [diagnostics] Would create → {diag_path.name}")
+                    action = "Would overwrite (changed)" if diag_path.exists() else "Would create"
+                    print(f"  [diagnostics] {action} → {diag_path.name}")
 
                 # --- YAML drift check ---
                 # Compare the freshly-downloaded TSV against the YAML (if one exists).
@@ -843,7 +786,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ap.add_argument(
         "--overwrite-existing", action="store_true", dest="force",
-        help="force overwrite even when downloaded content is unchanged",
+        help="rewrite a TSV even when its cells match the sheet (e.g. to bring its "
+             "formatting in line); a file whose bytes are already identical is "
+             "never rewritten",
     )
     ap.add_argument(
         "--ignore-status", action="store_true",
@@ -862,9 +807,10 @@ def main(args: argparse.Namespace | None = None) -> None:
     Dry-run by default — pass --apply to write any TSVs. Loads the manifest
     from Drive, downloads each construction tab, validates values, and writes
     filled TSVs under coded_data/{lang_id}/{class_name}/. Compares downloaded
-    content to the existing file: if changed, archives the old file and writes
-    the new one; if unchanged, skips with "No changes". Pass --overwrite-existing
-    to force overwrite even when content is identical.
+    content to the existing file: if changed, writes the new one through the
+    local-file door (which archives the old); if unchanged, skips with "No
+    changes". --overwrite-existing rewrites a file whose cells match but whose
+    text differs; the door never rewrites identical bytes.
     Writes an error report to import_errors/ if any warnings are generated.
     """
     if args is None:
@@ -873,7 +819,7 @@ def main(args: argparse.Namespace | None = None) -> None:
     force = args.force
     ignore_status = args.ignore_status
     lang_filter = args.lang
-    timestamp = datetime.now(timezone.utc).strftime(ARCHIVE_STAMP_FORMAT)
+    timestamp = file_door.stamp()
 
     if not apply:
         print("DRY RUN — pass --apply to write TSVs.\n")
@@ -912,7 +858,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         lang_param_map = _val._load_param_map(lang_id)
 
         # Download planar and diagnostics Sheets to local TSVs; detect changes.
-        s, p, d = _download_lang_setup_sheets(doorway, lang_id, lang_data, timestamp, apply)
+        s, p, d = _download_lang_setup_sheets(doorway, lang_id, lang_data, apply)
         all_safe_cmds |= s
         all_pending   += p
         all_drift     += d
@@ -998,7 +944,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                     )
                     ka = resolve_keystone_active(
                         lang_id, class_name, construction,
-                        data_dir=ROOT / "coded_data" / lang_id / "lang_setup",
+                        data_dir=file_door.planar(lang_id).path.parent,
                     )
                     kna = resolve_keystone_na_criteria(class_name)
                     records, found, bad_cells =_validate_tab(
@@ -1064,10 +1010,11 @@ def main(args: argparse.Namespace | None = None) -> None:
                             for a in anomalies:
                                 print(f"    [{construction}] ANOMALY: {a}")
 
-                    archived = _archive_tsv(out_path, timestamp)
-                    print(f"    [{construction}] Archived existing → coded_data/{lang_id}/archive/{class_name}/{archived.name}")
-
-                _write_tsv(out_path, header, records)
+                # The door keeps the previous version in archive/{class}/ and
+                # logs the change in the language's changes.tsv.
+                file_door.write(file_door.annotation(lang_id, class_name, construction),
+                                file_door.tsv_text(header, records),
+                                why=f"imported from the annotator's sheet ({tab_status})")
 
                 # Count rows with at least one blank param cell (for status line).
                 # Pair-row and keyed-row sheets have no keystone; element-row
@@ -1098,11 +1045,6 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     backup_part = f", {in_progress_files} in-progress backup(s)" if in_progress_files else ""
     print(f"\nDone. {total_files} file(s) written{backup_part}, {total_warnings} warning(s).")
-    if apply and (total_files > 0 or in_progress_files > 0):
-        print("\nNext: commit and push coded_data/ before pushing planars:")
-        print("  git -C coded_data add -A")
-        print("  git -C coded_data commit -m 'data(...): ...'")
-        print("  git -C coded_data push")
 
     # Sync glottolog + meta from languages.yaml into the Drive manifest.
     # Read fresh each run — not via coding.schemas cached loader — because
@@ -1126,7 +1068,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                 entry["meta"] = lang_entry.get("meta", {})
                 manifest_changed = True
         # Refresh planar structure so Colab source='sheets' can derive nonpermutability spans.
-        planar_file = ROOT / "coded_data" / lid / "lang_setup" / f"planar_{lid}.tsv"
+        planar_file = file_door.planar(lid).path
         if planar_file.exists():
             new_planar = planar_to_manifest_dict(planar_file, lid)
             if entry.get("planar") != new_planar:

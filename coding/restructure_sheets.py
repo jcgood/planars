@@ -70,6 +70,11 @@ What this does per spreadsheet:
   5. Leaves unmatched rows blank for re-annotation
   6. Updates sheets_manifest.json to point to the new spreadsheets
 
+Each tab's local annotation TSV is rewritten to match, through the local-file
+door (coding/file_door.py): the previous version goes to
+coded_data/{lang}/archive/{class}/, the change to the language's changes.tsv,
+and the files are committed and pushed in planars-data when the command ends.
+
 Recoverability (Phase 7 of the data layer redesign, issue #271): each class's
 progress through steps 2-6 is journaled to restructure_journal.json (in
 planars-data, `state_files.JOURNAL_PATH`) before each Drive-mutating step, so
@@ -85,8 +90,9 @@ stuck, since they share one journal. See restructure_journal.py's module
 docstring for the full reasoning and #248 for the incident this closes.
 
 For --rename-class, step 3 creates a spreadsheet under the new class name, and
-local TSV directories are renamed in-place (coded_data/{lang}/{old}/ ->
-coded_data/{lang}/{new}/) preserving git history.
+the class's local TSVs move from coded_data/{lang}/{old}/ to
+coded_data/{lang}/{new}/ (file_door.move_class: each written under the new
+name and removed from the old, whose last versions stay in archive/{old}/).
 
 Authentication: same OAuth2 setup as generate_sheets.py.
 """
@@ -96,7 +102,6 @@ import argparse
 import json
 import re
 import sys
-from datetime import date
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -120,7 +125,7 @@ from planars.schema_values import (
     row_columns, row_columns_of, row_key_of, row_type_of,
 )
 from .drive import (
-    _autocommit_data, _load_drive_config, _save_drive_config,
+    _load_drive_config, _save_drive_config,
     load_manifest, remove_anyone_permission, set_user_role, upload_manifest,
 )
 from .drive_doorway import SpreadsheetHandle, WorksheetHandle, WorksheetNotFound, get_doorway
@@ -142,7 +147,7 @@ from .notify import (
     post_notification_comment,
 )
 from . import restructure_journal
-from . import drive_door
+from . import drive_door, file_door
 from .sheet_spec import ARCHIVE_FOLDER_NAME
 
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
@@ -336,12 +341,14 @@ def _finish_new_sheet_created_unit(manifest, entry: dict) -> Tuple[str, str, str
     detail = entry["detail"]
     new_class_name = detail.get("new_class_name") or class_name
     if new_class_name != class_name:
-        old_dir = CODED_DATA / lang_id / class_name
-        new_dir = CODED_DATA / lang_id / new_class_name
+        old_dir = file_door.class_folder(lang_id, class_name)
+        new_dir = file_door.class_folder(lang_id, new_class_name)
         if old_dir.exists() and not new_dir.exists():
-            old_dir.rename(new_dir)
+            file_door.move_class(lang_id, class_name, new_class_name,
+                                 why=f"class renamed {class_name} -> {new_class_name} "
+                                     f"(restructure-sheets --resume)")
             print(f"    [{lang_id}] {class_name} -> {new_class_name}: "
-                  f"renamed local TSV directory.")
+                  f"moved local TSVs.")
         manifest.get(lang_id, {}).get("sheets", {}).pop(class_name, None)
     manifest.setdefault(lang_id, {}).setdefault("sheets", {})[new_class_name] = {
         "spreadsheet_id": detail["spreadsheet_id"],
@@ -384,10 +391,13 @@ def _write_tab_with_carryover(
     existing: Dict[Tuple[str, str], Dict[str, str]],
     rename_map: Dict[str, str],
     element_rename_map: Dict[str, str] = {},
-    tsv_path: Optional[Path] = None,
+    tsv_target: Optional[file_door.LocalFile] = None,
     split_element_map: Dict[str, List[str]] = {},
 ) -> Tuple[int, int, int]:
     """Create/clear a tab and populate it, carrying over matching annotations.
+
+    ``tsv_target``: the tab's annotation TSV, rewritten to match through the
+    local-file door (which keeps the previous version).
 
     Matching is by (Element, Position_Name), with optional rename_map (old→new
     position renames) and element_rename_map (old→new element label renames).
@@ -445,10 +455,14 @@ def _write_tab_with_carryover(
     # These correspond to positions/elements that were removed from the planar file.
     dropped = sum(1 for k in existing if k not in reachable_old_keys)
 
-    if tsv_path is not None:
-        tsv_path.parent.mkdir(parents=True, exist_ok=True)
+    if tsv_target is not None:
         header = all_rows[0]
-        pd.DataFrame(all_rows[1:], columns=header).to_csv(tsv_path, sep="\t", index=False)
+        file_door.write(
+            tsv_target, file_door.frame_text(pd.DataFrame(all_rows[1:], columns=header)),
+            why="rebuilt for the new planar structure by restructure-sheets",
+            drops=(f"restructure-sheets carried {carried} row(s) over by element and "
+                   f"position name and dropped {dropped} for positions or elements "
+                   f"no longer in the planar"))
 
     try:
         ws = spreadsheet.worksheet(tab_name)
@@ -732,15 +746,16 @@ def _count_pair_split_impacts(
     return fanned, manual
 
 
-def _cascade_rename_pair_tsv(tsv_path: Path, rename_map: Dict[str, str]) -> int:
-    """Update position name components in Position_A/Position_B cells of a local TSV.
+def _cascade_rename_pair_tsv(target: file_door.LocalFile, rename_map: Dict[str, str]) -> int:
+    """Update position name components in Position_A/Position_B cells of a local TSV,
+    through the local-file door.
 
     Parses each combined 'N (name)' cell and replaces the name component when it
     appears in rename_map.  Returns the count of cell values changed.
     """
-    if not tsv_path.exists():
+    if not target.path.exists():
         return 0
-    df = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
+    df = pd.read_csv(target.path, sep="\t", dtype=str, keep_default_na=False)
     changed = 0
     for col in _PAIR_POS_COLS:
         if col not in df.columns:
@@ -751,7 +766,12 @@ def _cascade_rename_pair_tsv(tsv_path: Path, rename_map: Dict[str, str]) -> int:
                 df.at[i, col] = new_val
                 changed += 1
     if changed:
-        df.to_csv(tsv_path, sep="\t", index=False)
+        # A row keyed by its position cell ("N (name)") gets a new key when
+        # the name changes, though it is the same row with the same answers.
+        renamed = ", ".join(f"{o} -> {n}" for o, n in rename_map.items())
+        file_door.write(target, file_door.frame_text(df),
+                        why=f"position renamed ({renamed})",
+                        drops=f"rows keep their answers under the renamed position ({renamed})")
     return changed
 
 
@@ -1253,12 +1273,15 @@ def _rename_class_for_language(
     if journal_units is not None:
         journal_units.add((lang_id, old_class))
 
-    # Rename local TSV directory in-place (preserves git history)
+    # Move the local TSVs to the new class's folder, through the local-file
+    # door (each old file's last version stays in archive/{old_class}/).
     if old_dir.exists():
         if new_dir.exists():
             print(f"    WARNING: {new_dir.relative_to(ROOT)} already exists — local rename skipped")
         else:
-            old_dir.rename(new_dir)
+            file_door.move_class(lang_id, old_class, new_class,
+                                 why=f"class renamed {old_class} -> {new_class} "
+                                     f"(restructure-sheets --rename-class)")
             print(f"    Renamed: {old_dir.relative_to(ROOT)} -> {new_dir.relative_to(ROOT)}")
 
     # Update manifest in-place
@@ -1562,7 +1585,6 @@ def main(args: argparse.Namespace | None = None) -> None:
     if not planar_files:
         raise SystemExit("No planar_*.tsv found in coded_data/*/lang_setup/")
 
-    written_tsvs: List[Path] = []
     pair_row_constructions = _get_pair_row_constructions()
     keyed_row_constructions = _get_keyed_row_constructions()
     restructured_classes: Set[Tuple[str, str]] = set()
@@ -1793,13 +1815,12 @@ def main(args: argparse.Namespace | None = None) -> None:
                 existing = all_annotations.get(construction, {})
                 if class_name == _br.CLASS_NAME:
                     existing = _rename_positions_in_annotations(existing, param_values, rename_map)
-                tsv_path = CODED_DATA / lang_id / class_name / f"{construction}.tsv"
                 carried, new_count, dropped_count = _write_tab_with_carryover(
                     new_ss, construction, param_names, param_values, rows, existing,
-                    rename_map, element_rename_map, tsv_path=tsv_path,
+                    rename_map, element_rename_map,
+                    tsv_target=file_door.annotation(lang_id, class_name, construction),
                     split_element_map=split_element_map,
                 )
-                written_tsvs.append(tsv_path)
                 tab_names.append(construction)
                 new_construction_params[construction] = {
                     "param_names": param_names,
@@ -1847,11 +1868,10 @@ def main(args: argparse.Namespace | None = None) -> None:
             for class_name, pair_cons in pair_row_constructions.items():
                 sheet_info = lang_data.get("sheets", {}).get(class_name)
                 for construction in sorted(pair_cons):
-                    tsv_path = CODED_DATA / lang_id / class_name / f"{construction}.tsv"
                     if apply:
-                        tsv_changed = _cascade_rename_pair_tsv(tsv_path, rename_map)
+                        tsv_changed = _cascade_rename_pair_tsv(
+                            file_door.annotation(lang_id, class_name, construction), rename_map)
                         if tsv_changed:
-                            written_tsvs.append(tsv_path)
                             print(
                                 f"\n  [{lang_id} {class_name}/{construction}]"
                                 f" local TSV: updated {tsv_changed} position cell(s)"
@@ -1908,11 +1928,8 @@ def main(args: argparse.Namespace | None = None) -> None:
         print("\n--- Revalidating sheets ---")
         from .validate_coding import revalidate_sheets
         revalidate_sheets(lang_ids=processed_lang_ids)
-        langs = ", ".join(sorted(set(processed_lang_ids)))
-        _autocommit_data(
-            written_tsvs,
-            f"data: restructure {langs} TSVs after planar changes {date.today().isoformat()}",
-        )
+        # The TSVs written above are committed by the local-file door when the
+        # command ends.
 
         # restructure-sheets reads planar_{lang_id}.tsv as its source of truth but
         # never writes it — so if it was edited locally (directly, or by a future

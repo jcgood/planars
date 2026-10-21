@@ -77,11 +77,13 @@ def _unattended_modules() -> Set[str]:
         for cmd in _unattended_commands()
         if cmd in _COMMANDS
     }
-    # drive.py (manifest upload, autocommit, load_manifest) and __main__.py's
-    # _warn_pending (runs on every single invocation) are both common code
-    # every command above passes through, but neither is itself a value in
-    # _COMMANDS, so they'd otherwise never be scanned.
+    # drive.py (manifest upload, load_manifest), file_door.py (every local
+    # write and its commit) and __main__.py's _warn_pending (runs on every
+    # single invocation) are common code every command above passes
+    # through, but none is itself a value in _COMMANDS, so they'd otherwise
+    # never be scanned.
     modules.add("drive.py")
+    modules.add("file_door.py")
     modules.add("__main__.py")
     return modules
 
@@ -195,10 +197,14 @@ _KNOWN_SITES: Dict[Site, str] = {
         "affects exit code, no capture in the workflow. Arguably the most "
         "consequential site in this whole file, since load_manifest() runs first "
         "in nearly every command -- filed as a follow-up to #283",
-    ("drive.py", 'print(f"  WARNING: git push failed: {push.stderr.strip()}")', 1):
-        "deliberately non-raising by design -- see the code comment on "
-        "_autocommit_data: the commit already succeeded locally, only the "
-        "remote lags until a manual `git push` retry",
+    ("file_door.py", 'print(f"WARNING: committed {run.command}\'s files in planars-data but could not "', 1):
+        "deliberately non-raising by design -- see file_door._commit's "
+        "docstring: the commit already succeeded locally, only the remote lags "
+        "until the next push (the next command's commit pushes it too)",
+    ("file_door.py", 'print(f"WARNING: could not file the {VIOLATION_LABEL} issue: {exc}")', 1):
+        "the watch-mode report itself failed (GitHub unreachable); the body is "
+        "printed right after, and a finished run is never failed over the "
+        "report -- the same rule as the Drive door's own report",
     ("import_sheets.py", 'print(f"\\nDone. {total_files} file(s) written{backup_part}, {total_warnings} warning(s).")', 1):
         "summary count ('N warning(s)'), not an independent site -- reflects "
         "warnings already tracked above",

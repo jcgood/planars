@@ -238,6 +238,8 @@ def test_files_the_refresh_owns_are_never_at_risk():
     git = FakeGit(at_risk=("notes_state.json", "stan1293/lang_setup/planar_stan1293.tsv",
                            "stan1293/lang_setup/diagnostics_stan1293.tsv",
                            "stan1293/lang_setup/diagnostics_stan1293.yaml",
+                           "stan1293/changes.tsv",
+                           "stan1293/archive/metrical/stress_domain_20261020_120000.tsv",
                            "stan1293/metrical/stress_domain.tsv"))
     assert dr.at_risk_files(git) == ["stan1293/metrical/stress_domain.tsv"]
 

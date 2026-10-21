@@ -182,17 +182,31 @@ def _element_rows(lang_id: str, class_name: str, construction: str,
 
 def _construction_tab(lang_id: str, class_name: str, construction: str,
                       names: List[str], values: Dict[str, List[str]],
-                      planar_path: Path) -> TabSpec:
+                      planar_path: Optional[Path]) -> TabSpec:
+    """A construction tab's spec; with no ``planar_path``, its columns only
+    (``rows`` None)."""
     key_cols = row_columns(class_name, construction)
     columns = [ColumnSpec(c, TOOLING, None) for c in key_cols]
     columns += [ColumnSpec(n, ANNOTATOR, None if is_free_entry(values[n]) else tuple(values[n]))
                 for n in names]
     columns += [ColumnSpec(c, ANNOTATOR, None) for c in TRAILING_COLUMNS]
     rows = None
-    if row_type(class_name, construction) == ELEMENT_ROWS:
+    if planar_path is not None and row_type(class_name, construction) == ELEMENT_ROWS:
         rows = _element_rows(lang_id, class_name, construction, planar_path)
     return TabSpec(construction, CONSTRUCTION, tuple(columns), tuple(key_cols),
                    tuple(row_key(class_name, construction)), rows)
+
+
+def construction_columns(lang_id: str, class_name: str, construction: str,
+                         data_dir: Path) -> TabSpec:
+    """One construction tab's columns and row key, without its rows: what an
+    imported annotation TSV holds (the local-file door's check). Raises
+    KeyError if the diagnostics file has no such class or construction."""
+    for con, names, values in _class_constructions(lang_id, class_name, data_dir):
+        if con == construction:
+            return _construction_tab(lang_id, class_name, con, names, values, None)
+    raise KeyError(f"diagnostics_{lang_id}.yaml has no construction {construction!r} "
+                   f"in class {class_name!r}")
 
 
 def expected_row_keys(lang_id: str, class_name: str, tab: TabSpec,

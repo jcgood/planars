@@ -44,7 +44,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, List, Optional, Sequence
 
-from . import issues, state_files
+from . import file_door, issues, state_files
 
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
@@ -52,12 +52,14 @@ CODED_DATA = ROOT / "coded_data"
 # Files in planars-data that the refresh itself rewrites, so a refresh
 # changing them is not an overwrite of a coordinator's work: the notes state
 # (check-notes), diagnostics TSVs (generated from the YAML), planar TSVs
-# (imported from the planar Sheet, their source of truth) and the tooling's
+# (imported from the planar Sheet, their source of truth), the tooling's
 # state files (coding/state_files.py), which every command writes wherever it
-# runs.
+# runs, and what the local-file door adds to on every write wherever it runs:
+# each language's change log and archive copies, which only ever grow.
 _REFRESH_OWNED_EXACT = ("notes_state.json",)
 _REFRESH_OWNED_PARTS = ("lang_setup/diagnostics_", "lang_setup/planar_",
-                        f"{state_files.STATE_DIR.name}/")
+                        f"{state_files.STATE_DIR.name}/",
+                        f"/{file_door.CHANGE_LOG_NAME}", f"/{file_door.ARCHIVE_FOLDER}/")
 _BOT = "github-actions[bot]"
 
 

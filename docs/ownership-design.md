@@ -1,7 +1,8 @@
 # One home per fact: design (Phase 10 units 6, 15 and 11)
 
-**Status: Jeff answered its eight questions on 2026-10-18 (§ 7); nothing here
-is built.**
+**Status: Jeff answered its eight questions on 2026-10-18 (§ 7). Step 6a
+(§ 6) is built, in watch mode: `coding/file_door.py`; what is done and next
+is the Phase 10 row of `docs/data-layer-progress.md`.**
 This is the second design pause of Phase 10
 ([implementation plan](data-layer-implementation-plan.md), Phase 10 table and
 "Order"). The plan has units 6, 15 and 11 designed together because each needs
@@ -300,7 +301,12 @@ the same commit.
 2. **6a — the door for annotation TSVs and set-up files,** in watch mode, with
    archive copies and the change log (unit 15's §§ 5.1–5.2 are built
    inside it). The two `_archive_tsv` copies and `_autocommit_data` are
-   deleted.
+   deleted. *Built 2026-10-20.* As built: a write that drops answered rows
+   says why with `write(..., drops=reason)` rather than a `replacing()`
+   block (restructure-sheets matches rows by element and position name, so
+   after a renumbering the door can't match them by the schema's key); and
+   the daily refresh keeps its commit steps until 6b, for the files the door
+   does not cover yet (notes state, the ID file).
 3. **6b — the state files and the ID file** (§ 4.3).
 4. **6c — enforce,** by the § 4 rule; `data-overwrite` moves to the log (§ 5.3).
 5. **11a — proposal sheets:** the coordinators list (Q2), the

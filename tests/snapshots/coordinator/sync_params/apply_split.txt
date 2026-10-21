@@ -113,3 +113,4 @@ Splits:   ['free:free_left:free_right']
 Manifest updated on Drive.
 
 Drive door (enforce): checked 43 write(s) to 7 tab(s) or file(s); 0 broke a rule.
+Local-file door (enforce): changed 6 file(s), previous versions archived and logged; 0 broke a rule.

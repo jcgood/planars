@@ -107,6 +107,16 @@ command commits and pushes those files itself when it ends, so you never
 commit them by hand, and the daily refresh's copies reach you with a pull
 (`coding/state_files.py`).
 
+The same goes for a language's files that a command writes: annotation
+TSVs, the planar file, the diagnostics YAML and TSV. Every such write goes
+through the local-file door (`coding/file_door.py`), which keeps the
+previous version in the language's `archive/` folder, adds a line to the
+language's `changes.tsv` (when, which file, what changed, which command,
+why, where the previous version went), and commits and pushes the files
+when the command ends. `changes.tsv` opens in a spreadsheet: it is the
+place to look for what changed in a file and why, without git. Only your
+own hand edits (to the YAML or the planar) still need committing by hand.
+
 ---
 
 ## Workflows
@@ -240,10 +250,10 @@ python -m coding check-notes --apply  # file/update issues, acknowledge in doc, 
 python -m coding import-sheets                               # dry run: show what would be written
 python -m coding import-sheets --apply                       # import ready-for-review constructions only
 python -m coding import-sheets --apply --ignore-status       # import all constructions regardless of status
-python -m coding import-sheets --apply --overwrite-existing  # re-download and overwrite existing TSVs (auto-archives first)
+python -m coding import-sheets --apply --overwrite-existing  # also rewrite TSVs whose cells match but whose text differs
 ```
 
-Dry-run by default — pass `--apply` to write any TSVs. Skips existing annotation TSVs unless `--overwrite-existing` is also passed; when overwriting, the existing TSV is automatically archived to `archive/` first. On each run, `import-sheets` also:
+Dry-run by default — pass `--apply` to write any TSVs. A TSV whose cells match the sheet is skipped; a changed one is rewritten, its previous version kept in `coded_data/{lang_id}/archive/{class}/` and the change logged in `coded_data/{lang_id}/changes.tsv` (the local-file door, below). On each run, `import-sheets` also:
 
 - **Downloads and validates** the planar structure and diagnostics Sheets for each language, writing them to `coded_data/{lang_id}/lang_setup/`.
 - **Auto-applies safe downstream commands** (`update-sheets --apply`, `sync-params --apply`, `generate-sheets --apply`) when additive changes are detected (new positions, new criteria, new construction tabs).
@@ -473,7 +483,7 @@ python -m coding prune-manifest --apply --all    # same, skipping per-class conf
 
 For each retired class, `--apply`:
 1. Writes a timestamped manifest snapshot to `manifest_archives/` (local audit trail, gitignored)
-2. Archives each active TSV in `coded_data/{lang}/{class}/` to its `archive/` subdirectory
+2. Removes each TSV in `coded_data/{lang}/{class}/`, keeping its last version in `coded_data/{lang}/archive/{class}/` and logging it in the language's `changes.tsv` (committed and pushed when the command ends)
 3. Moves the Drive spreadsheet into an `_archived/` subfolder inside the language's Drive folder
 4. Removes the class entry from the Drive manifest
 

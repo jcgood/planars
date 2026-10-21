@@ -78,11 +78,17 @@ YAML_CONTENT_ALL_REQUIRED = textwrap.dedent("""\
 
 @pytest.fixture()
 def lang_dir(tmp_path, monkeypatch):
-    """Set up a coded_data/lang0001/lang_setup/ tree and patch CODED_DATA."""
+    """Set up a coded_data/lang0001/lang_setup/ tree and point CODED_DATA (the
+    command's and the local-file door's) at it. The tests call the sync
+    functions directly, so they run inside a command run, as the dispatcher's
+    would be, for the door's sake."""
+    from coding import drive_door, file_door
     d = tmp_path / "coded_data" / "lang0001" / "lang_setup"
     d.mkdir(parents=True)
     monkeypatch.setattr(_sdy, "CODED_DATA", tmp_path / "coded_data")
-    return d
+    monkeypatch.setattr(file_door, "CODED_DATA", tmp_path / "coded_data")
+    with drive_door.running("sync-diagnostics-yaml-test", may_write=True):
+        yield d
 
 
 # ---------------------------------------------------------------------------

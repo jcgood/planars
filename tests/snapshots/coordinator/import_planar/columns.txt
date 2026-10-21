@@ -2,7 +2,6 @@
 arao1248
   + column Test_New_Column
   → (new planar column — no sheet structural updates needed)
-  archived → archive/lang_setup/planar_arao1248_20260802_112233.tsv
   wrote planar_arao1248.tsv
 
 stan1293
@@ -11,3 +10,4 @@ stan1293
 
 synth0001
   up to date
+Local-file door (enforce): changed 1 file(s), previous versions archived and logged; 0 broke a rule.

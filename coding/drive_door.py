@@ -11,7 +11,8 @@ tests). Reads pass straight through. Every write is checked first:
   every write is refused. A write the record declares as always made, even on
   a dry run (``always_on_writes``: import-sheets' pink highlighting), is
   allowed inside ``with always_on(name)``. A door with no command running
-  refuses writes rather than guessing.
+  refuses writes rather than guessing. ``running`` tells the local-file door
+  (``coding/file_door.py``) too, so one call covers both.
 - **Only writes the door understands.** The handles have only the protocol's
   methods (no passing unknown names through to gspread), and a
   ``batch_update`` request type not in ``REQUEST_TYPES`` is refused.
@@ -338,7 +339,8 @@ def _record_for(op_id: str) -> Optional[dict]:
 @contextlib.contextmanager
 def running(command: str, args: Optional[argparse.Namespace] = None, *,
             may_write: Optional[bool] = None) -> Iterator[None]:
-    """Tell the door which command is running, for the length of the block.
+    """Tell both doors which command is running, for the length of the block:
+    this one and the local-file door (``file_door.begin``/``finish``).
 
     ``command`` is the hyphenated command (``update-sheets``). Whether it may
     write comes from its ``operations.yaml`` record and ``args``, the same
@@ -346,8 +348,27 @@ def running(command: str, args: Optional[argparse.Namespace] = None, *,
     outside the dispatcher and has no record (a migration). At the end, if
     the command succeeded, the door labels the tabs it wrote; then, however
     it ended, it logs what it wrote and, in watch mode, reports any
-    violations in one GitHub issue.
+    violations in one GitHub issue. The local-file door then reports its own
+    and commits the files the command wrote.
     """
+    from . import file_door
+    file_door.begin(command, args, may_write=may_write)
+    succeeded = False
+    try:
+        with _drive_running(command, args, may_write=may_write):
+            yield
+        succeeded = True
+    except SystemExit as exc:
+        succeeded = exc.code in (0, None)
+        raise
+    finally:
+        file_door.finish(succeeded)
+
+
+@contextlib.contextmanager
+def _drive_running(command: str, args: Optional[argparse.Namespace], *,
+                   may_write: Optional[bool]) -> Iterator[None]:
+    """This door's part of ``running``."""
     global _context
     from .provenance import writes_to_drive
     op_id = command.replace("-", "_")
@@ -2174,7 +2195,8 @@ def _report_violations(command: str, violations: List[str]) -> None:
     )
     title = "Drive door: writes that broke a rule"
     try:
-        issues.file_issue(VIOLATION_LABEL, title, body)
+        # By title: the local-file door files under the same label, as its own issue.
+        issues.file_issue(VIOLATION_LABEL, title, body, match_title=True)
     except Exception as exc:  # noqa: BLE001 - never fail a finished run over the report
         print(f"WARNING: could not file the {VIOLATION_LABEL} issue: {exc}")
         print(body)

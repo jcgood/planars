@@ -114,7 +114,7 @@ import pandas as pd
 import pytest
 
 from coding import drive as drive_module
-from coding import drive_doorway
+from coding import drive_doorway, file_door
 from coding import import_sheets as is_
 from coding import state_files
 from command_runner import run_command
@@ -128,8 +128,8 @@ UPDATING = os.environ.get("PLANARS_UPDATE_SNAPSHOTS") == "1"
 LANGS = ["arao1248", "stan1293", "synth0001"]
 AUTO_APPLY_MODULES = ["coding.update_sheets", "coding.sync_params", "coding.generate_sheets"]
 
-# The archive filename embeds datetime.now(), computed once at the top of
-# main() -- frozen so two runs a second apart don't disagree on nothing else.
+# The archive filename and the change log embed the time the local-file door
+# wrote -- frozen so two runs a second apart don't disagree on nothing else.
 FROZEN = datetime(2026, 8, 4, 12, 0, 0, tzinfo=timezone.utc)
 
 
@@ -249,7 +249,8 @@ def env(monkeypatch, tmp_path):
     monkeypatch.setattr(is_, "ROOT", tmp_path)
     monkeypatch.setattr(is_, "ERROR_DIR", tmp_path / "import_errors")
     monkeypatch.setattr(is_, "DRIFT_PATH", tmp_path / "diagnostics_drift.json")
-    monkeypatch.setattr(is_, "datetime", _FrozenDatetime)
+    # Archive names and change-log times are the local-file door's.
+    monkeypatch.setattr(file_door, "datetime", _FrozenDatetime)
     monkeypatch.setattr(is_, "_notify_pending_changes", notified_pending.append)
     monkeypatch.setattr(is_, "_notify_collaborator_check", notified_collaborator.append)
     monkeypatch.setattr(is_, "_load_drive_config", FakeDriveDoorway.drive_config)
@@ -372,14 +373,23 @@ def test_a_noop_apply_writes_no_new_tsvs_or_archives(env):
     assert len(env.archives("arao1248", "ciscategorial")) == n_archives_before
 
 
-def test_overwrite_existing_forces_a_rewrite_despite_unchanged_content(env):
+def test_overwrite_existing_rewrites_matching_cells_but_never_identical_bytes(env):
     env.run(["import-sheets", "--lang", "arao1248", "--apply"])  # materialize
+    tsv = env.output_tsv("arao1248", "ciscategorial", "general")
     n_archives_before = len(env.archives("arao1248", "ciscategorial"))
 
-    out, _ = env.run(["import-sheets", "--lang", "arao1248", "--apply",
-                      "--overwrite-existing"])
+    # Identical bytes: the local-file door has nothing to write.
+    env.run(["import-sheets", "--lang", "arao1248", "--apply", "--overwrite-existing"])
+    assert len(env.archives("arao1248", "ciscategorial")) == n_archives_before
 
-    assert "Archived existing" in out
+    # Same cells, different line ends: a plain import sees no change, the
+    # flag rewrites it (and the door archives the old text).
+    written = tsv.read_bytes()
+    tsv.write_bytes(written.replace(b"\r\n", b"\n"))
+    out, _ = env.run(["import-sheets", "--lang", "arao1248", "--apply"])
+    assert "No changes → coded_data/arao1248/ciscategorial/general.tsv" in out
+    env.run(["import-sheets", "--lang", "arao1248", "--apply", "--overwrite-existing"])
+    assert tsv.read_bytes() == written
     assert len(env.archives("arao1248", "ciscategorial")) == n_archives_before + 1
 
 
@@ -394,7 +404,6 @@ def test_content_change_archives_before_overwriting(env):
 
     out, _ = env.run(["import-sheets", "--lang", "arao1248", "--apply"])
 
-    assert "Archived existing" in out
     added = set(env.archives("arao1248", "ciscategorial")) - archives_before
     assert len(added) == 1
     assert added.pop().read_text() == before

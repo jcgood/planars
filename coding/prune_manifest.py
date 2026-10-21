@@ -14,8 +14,11 @@ Run from the repo root:
 For each stale class (in manifest but not in diagnostics_{lang_id}.yaml, or its TSV if
 there is no YAML), --apply will:
   1. Write a timestamped manifest snapshot to manifest_archives/ (gitignored)
-  2. Archive each active *.tsv in coded_data/{lang}/{class}/ to its archive/ subdirectory
-  3. Remove the now-archived active TSV files
+  2. Remove each *.tsv in coded_data/{lang}/{class}/ through the local-file door
+     (coding/file_door.py), which keeps its last version in
+     coded_data/{lang}/archive/{class}/, logs it in the language's changes.tsv,
+     removes the emptied class folder, and commits and pushes the change in
+     planars-data when the command ends
   4. Move the Drive spreadsheet into an _archived/ subfolder in the language's Drive folder,
      and make it read-only for everyone but its owner (drive.make_read_only)
   5. Remove the class entry from the Drive manifest and re-upload it
@@ -51,8 +54,7 @@ from .drive import (
 from .drive_doorway import get_doorway
 from . import drive_door
 from .sheet_spec import ARCHIVE_FOLDER_NAME
-from .import_sheets import _archive_tsv
-from .make_forms import ARCHIVE_STAMP_FORMAT
+from . import file_door
 
 
 _RECENCY_DAYS = 14  # warn if sheet was modified within this many days
@@ -195,14 +197,6 @@ def _find_stale(manifest: dict) -> Dict[str, List[str]]:
     return result
 
 
-def _tsv_paths(lang_id: str, class_name: str) -> List[Path]:
-    """Return all active *.tsv files in coded_data/{lang_id}/{class_name}/."""
-    class_dir = CODED_DATA / lang_id / class_name
-    if not class_dir.exists():
-        return []
-    return sorted(class_dir.glob("*.tsv"))
-
-
 # ---------------------------------------------------------------------------
 # Manifest archiving
 # ---------------------------------------------------------------------------
@@ -263,10 +257,10 @@ def main(args: argparse.Namespace | None = None) -> None:
         print(f"  {lang_id}:")
         print(f"    stale classes: {', '.join(stale_classes)}")
         for class_name in stale_classes:
-            tsvs = _tsv_paths(lang_id, class_name)
+            tsvs = file_door.annotation_files(lang_id, class_name)
             if tsvs:
                 for tsv in tsvs:
-                    print(f"    would archive: {tsv.relative_to(ROOT)}")
+                    print(f"    would archive: {tsv.path.relative_to(ROOT)}")
                 print(
                     f"    WARNING: {class_name}/ contains annotation data.\n"
                     f"    If this class was renamed rather than retired, use:\n"
@@ -283,7 +277,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         print("Run with --apply to make these changes.")
         return
 
-    timestamp = datetime.now(timezone.utc).strftime(ARCHIVE_STAMP_FORMAT)
+    timestamp = file_door.stamp()
 
     # Archive manifest before any mutation
     snapshot_path = _archive_manifest(manifest, timestamp)
@@ -301,20 +295,16 @@ def main(args: argparse.Namespace | None = None) -> None:
                     print(f"    Skipped {class_name}.")
                     continue
 
-            # Archive and remove active TSVs, then remove the empty class directory.
-            tsvs = _tsv_paths(lang_id, class_name)
+            # Remove the class's TSVs through the local-file door, which keeps
+            # each one's last version in archive/{class}/, logs it, removes the
+            # emptied class folder, and commits when the command ends.
+            tsvs = file_door.annotation_files(lang_id, class_name)
             for tsv in tsvs:
-                archived = _archive_tsv(tsv, timestamp)
-                tsv.unlink()
-                print(f"    archived: {tsv.name} → archive/{class_name}/{archived.name}")
+                file_door.remove(tsv, why=f"class {class_name} retired (prune-manifest)")
+                print(f"    archived: {tsv.name} → archive/{class_name}/")
 
             if not tsvs:
                 print(f"    no local TSVs to archive for {class_name}/")
-
-            class_dir = CODED_DATA / lang_id / class_name
-            if class_dir.exists() and not any(class_dir.iterdir()):
-                class_dir.rmdir()
-                print(f"    removed empty directory: coded_data/{lang_id}/{class_name}/")
 
             # Move Drive sheet to _archived/ subfolder
             _archive_drive_sheet(doorway, lang_id, class_name, manifest, apply=True)

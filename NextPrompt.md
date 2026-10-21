@@ -41,16 +41,21 @@ rule 8 especially) is a command bug or a spec gap to fix.
 **Next action:**
 
 0. **Check the 2026-10-21 refresh:** its sync-params step made no 429
-   retries (reads cut 2026-10-20), and it committed `coded_data/.state/`
+   retries (reads cut 2026-10-20); it committed `coded_data/.state/`
    (unit 12, the first refresh to keep its provenance log and pending
-   changes). Both at the end of the Phase 10 row.
-1. **Unit 6a:** the local-file door in watch mode, with archive copies and
-   the per-language change log (unit 15) built in (`ownership-design.md`
-   § 4–6).
+   changes); and it is the first run with the local-file door (unit 6a,
+   watch): the commands that wrote files committed them themselves, with
+   a `changes.tsv` line per file, and no `door-violation` issue titled
+   "Local-file door" was filed (if one was, each line is a command bug or
+   a gap in the door's rules: fix it). All at the end of the Phase 10 row.
+1. **Unit 6b:** the state files and the ID file through the door
+   (`ownership-design.md` § 4.3; the list is `NOT_THROUGH_THE_DOOR` in
+   `tests/test_file_door_coverage.py`), and then the daily refresh's own
+   commit steps go.
 
 **Waits on watching:** enforce for each other kind (its own first clean
 real write, then added to `LIVE_ENFORCED_KINDS`), for 6c, and refusing unlabelled
-targets (last). **Waits on building:** 11a needs 6a; 9's second half needs
+targets (last). **Waits on building:** 11a (needs 6a: built); 9's second half needs
 6; then 11b–d, 16–18.
 
 **Live steps — name each to Jeff for approval first:** 5f's one-notebook

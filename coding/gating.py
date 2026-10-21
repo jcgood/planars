@@ -1,16 +1,17 @@
-"""Shared gate-matching logic for coding/preconditions.py and
+"""Shared gate-matching logic for coding/preconditions.py,
 coding/provenance.py's writes_to_drive (Phase 5 units D and E, issue #271),
-which the Drive door asks whether an invocation may write at all.
+which the Drive door asks whether an invocation may write at all, and
+coding/file_door.py's writes_locally and edits_sources (Phase 10 unit 6a).
 
-Both answer the same underlying question against the same
+All answer the same underlying question against the same
 operations.yaml shape -- "is this record's (or mode's) apply_gate satisfied
 by the actual args of a real invocation" -- so the matching logic lives
-here once rather than twice.
+here once. ``active_parts`` is that question asked of a whole record.
 """
 from __future__ import annotations
 
 import argparse
-from typing import Optional
+from typing import List, Optional
 
 
 def flag_dest(flag: str) -> str:
@@ -49,3 +50,14 @@ def gate_satisfied(apply_gate: Optional[str], mode_name: Optional[str],
     if not all(f.startswith("--") for f in flags):
         return True
     return all(getattr(args, flag_dest(f), False) for f in flags)
+
+
+def active_parts(record: dict, args: argparse.Namespace) -> List[dict]:
+    """The parts of an operations.yaml record this invocation runs: the
+    record itself if its own apply_gate is satisfied, and every mode whose
+    gate is. More than one can be active at once (`sync-params --apply
+    --refresh-dropdowns` satisfies the base gate and the mode's), so callers
+    take the union of what the parts declare."""
+    parts = [record] if gate_satisfied(record["apply_gate"], None, args) else []
+    return parts + [m for m in record.get("modes", [])
+                    if gate_satisfied(m["apply_gate"], m["name"], args)]

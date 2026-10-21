@@ -1,8 +1,9 @@
 """Tests for coding/import_sheets.py — data-protection helpers.
 
-Covers two of the safety functions added to prevent annotation data loss:
-  - _archive_tsv: copies a TSV to archive/ before overwriting
-  - _verify_manifest_sheet_ids: aborts when any manifest sheet ID is inaccessible
+Covers _verify_manifest_sheet_ids (aborts when any manifest sheet ID is
+inaccessible), the YAML drift check and the change detection. Archiving a
+TSV before it is overwritten is the local-file door's since Phase 10 unit
+6a: tests/test_file_door.py.
 
 _check_coded_data_clean now lives in coding/drive.py (shared by import-sheets,
 update-sheets, sync-params, and generate-sheets --regen-dependents) — its
@@ -18,88 +19,14 @@ import textwrap
 
 import pandas as pd
 
+from coding import file_door
 from coding.import_sheets import (
-    _archive_tsv,
     _detect_diagnostics_changes,
     _detect_planar_changes,
     _tsv_content_changed,
     _verify_manifest_sheet_ids,
     _check_yaml_drift,
 )
-import coding.import_sheets as _is
-
-
-# ---------------------------------------------------------------------------
-# _archive_tsv
-# ---------------------------------------------------------------------------
-
-class TestArchiveTsv:
-    # _archive_tsv expects path to be {lang}/{class}/file.tsv and archives to
-    # {lang}/archive/{class}/file_timestamp.tsv — tests use lang/class/file structure.
-
-    def test_creates_archive_dir(self, tmp_path):
-        class_dir = tmp_path / "ciscategorial"
-        class_dir.mkdir()
-        tsv = class_dir / "general.tsv"
-        tsv.write_text("Position\tval\n1\ty\n", encoding="utf-8")
-        _archive_tsv(tsv, "20260325_120000")
-        assert (tmp_path / "archive" / "ciscategorial").is_dir()
-
-    def test_archive_file_has_timestamp_suffix(self, tmp_path):
-        class_dir = tmp_path / "ciscategorial"
-        class_dir.mkdir()
-        tsv = class_dir / "general.tsv"
-        tsv.write_text("a\tb\n", encoding="utf-8")
-        archived = _archive_tsv(tsv, "20260325_120000")
-        assert archived.name == "general_20260325_120000.tsv"
-
-    def test_archive_content_matches_original(self, tmp_path):
-        content = "Position\tcriterion\n1\ty\n2\tn\n"
-        class_dir = tmp_path / "ciscategorial"
-        class_dir.mkdir()
-        tsv = class_dir / "general.tsv"
-        tsv.write_text(content, encoding="utf-8")
-        archived = _archive_tsv(tsv, "20260325_120000")
-        assert archived.read_text(encoding="utf-8") == content
-
-    def test_original_file_unchanged(self, tmp_path):
-        content = "Position\tval\n"
-        class_dir = tmp_path / "ciscategorial"
-        class_dir.mkdir()
-        tsv = class_dir / "general.tsv"
-        tsv.write_text(content, encoding="utf-8")
-        _archive_tsv(tsv, "20260325_120000")
-        assert tsv.read_text(encoding="utf-8") == content
-
-    def test_archive_dir_created_if_missing(self, tmp_path):
-        class_dir = tmp_path / "ciscategorial"
-        class_dir.mkdir()
-        tsv = class_dir / "general.tsv"
-        tsv.write_text("x\n", encoding="utf-8")
-        assert not (tmp_path / "archive").exists()
-        _archive_tsv(tsv, "ts")
-        assert (tmp_path / "archive" / "ciscategorial").is_dir()
-
-    def test_multiple_archives_distinct(self, tmp_path):
-        class_dir = tmp_path / "ciscategorial"
-        class_dir.mkdir()
-        tsv = class_dir / "general.tsv"
-        tsv.write_text("v1\n", encoding="utf-8")
-        a1 = _archive_tsv(tsv, "20260325_100000")
-        tsv.write_text("v2\n", encoding="utf-8")
-        a2 = _archive_tsv(tsv, "20260325_110000")
-        assert a1 != a2
-        assert a1.read_text(encoding="utf-8") == "v1\n"
-        assert a2.read_text(encoding="utf-8") == "v2\n"
-
-    def test_returns_archive_path(self, tmp_path):
-        class_dir = tmp_path / "ciscategorial"
-        class_dir.mkdir()
-        tsv = class_dir / "general.tsv"
-        tsv.write_text("x\n", encoding="utf-8")
-        result = _archive_tsv(tsv, "ts")
-        assert isinstance(result, Path)
-        assert result.exists()
 
 
 # ---------------------------------------------------------------------------
@@ -194,14 +121,14 @@ class TestCheckYamlDrift:
 
     def test_returns_empty_when_no_yaml(self, tmp_path, monkeypatch):
         """No YAML → no drift."""
-        monkeypatch.setattr(_is, "ROOT", tmp_path)
+        monkeypatch.setattr(file_door, "CODED_DATA", tmp_path / "coded_data")
         tsv_df = self._tsv_df()
         result = _check_yaml_drift("lang0001", tsv_df)
         assert result == []
 
     def test_returns_empty_when_in_sync(self, tmp_path, monkeypatch):
         """TSV matches YAML → no ambiguous drift."""
-        monkeypatch.setattr(_is, "ROOT", tmp_path)
+        monkeypatch.setattr(file_door, "CODED_DATA", tmp_path / "coded_data")
         yaml_dir = tmp_path / "coded_data" / "lang0001" / "lang_setup"
         yaml_dir.mkdir(parents=True)
         (yaml_dir / "diagnostics_lang0001.yaml").write_text(_YAML_CONTENT)
@@ -210,7 +137,7 @@ class TestCheckYamlDrift:
 
     def test_returns_ambiguous_for_unknown_criterion(self, tmp_path, monkeypatch):
         """Unknown criterion in TSV surfaces as ambiguous drift entry."""
-        monkeypatch.setattr(_is, "ROOT", tmp_path)
+        monkeypatch.setattr(file_door, "CODED_DATA", tmp_path / "coded_data")
         yaml_dir = tmp_path / "coded_data" / "lang0001" / "lang_setup"
         yaml_dir.mkdir(parents=True)
         (yaml_dir / "diagnostics_lang0001.yaml").write_text(_YAML_CONTENT)
@@ -422,6 +349,7 @@ def test_import_sheets_reads_the_pair_row_list_from_the_schema():
     """
     import inspect
 
+    import coding.import_sheets as _is
     from coding.restructure_sheets import _get_pair_row_constructions
 
     source = inspect.getsource(_is.main)

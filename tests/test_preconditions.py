@@ -55,11 +55,14 @@ def test_generate_sheets_regen_construction_has_no_precondition():
 # must dedupe to one entry, not two.
 # ---------------------------------------------------------------------------
 
+# Every command that writes local files commits them (the local-file door),
+# so it also declares coded_data_git_identity_configured.
+_WRITES = ["coded_data_clean_tree", "coded_data_git_identity_configured"]
+
+
 def test_sync_params_apply_requires_clean_tree():
     args = _ns(apply=True, refresh_dropdowns=False)
-    assert preconditions.active_preconditions("sync_params", args) == [
-        "coded_data_clean_tree"
-    ]
+    assert preconditions.active_preconditions("sync_params", args) == _WRITES
 
 
 def test_sync_params_dry_run_has_no_precondition():
@@ -69,9 +72,7 @@ def test_sync_params_dry_run_has_no_precondition():
 
 def test_sync_params_apply_and_refresh_dropdowns_dedupes_to_one_entry():
     args = _ns(apply=True, refresh_dropdowns=True)
-    assert preconditions.active_preconditions("sync_params", args) == [
-        "coded_data_clean_tree"
-    ]
+    assert preconditions.active_preconditions("sync_params", args) == _WRITES
 
 
 # ---------------------------------------------------------------------------
@@ -88,9 +89,8 @@ def test_sync_params_apply_and_refresh_dropdowns_dedupes_to_one_entry():
     dict(apply=True, to_sheet=False, from_tsv=True),
 ])
 def test_sync_diagnostics_yaml_every_direction_requires_clean_tree(kwargs):
-    assert preconditions.active_preconditions("sync_diagnostics_yaml", _ns(**kwargs)) == [
-        "coded_data_clean_tree"
-    ]
+    # --to-sheet --apply also meets the base record's --apply gate.
+    assert preconditions.active_preconditions("sync_diagnostics_yaml", _ns(**kwargs)) == _WRITES
 
 
 def test_sync_diagnostics_yaml_dry_run_has_no_precondition():
@@ -100,16 +100,18 @@ def test_sync_diagnostics_yaml_dry_run_has_no_precondition():
 
 # ---------------------------------------------------------------------------
 # import-sheets / prune-manifest / update-sheets: a plain --apply gate, no
-# modes, coded_data_clean_tree the only declared precondition.
-# restructure-sheets also declares coded_data_git_identity_configured
-# (checked separately below, since it has no central enforcer either).
+# modes. update-sheets writes no local file, so coded_data_clean_tree is its
+# only declared precondition; the two that write also declare
+# coded_data_git_identity_configured, as restructure-sheets does (no central
+# enforcer: the door's commit raises if it fails).
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("op_id", ["import_sheets", "prune_manifest", "update_sheets"])
-def test_apply_only_commands_require_clean_tree_on_apply(op_id):
-    assert preconditions.active_preconditions(op_id, _ns(apply=True)) == [
-        "coded_data_clean_tree"
-    ]
+@pytest.mark.parametrize("op_id, expected", [
+    ("import_sheets", _WRITES), ("prune_manifest", _WRITES),
+    ("update_sheets", ["coded_data_clean_tree"]),
+])
+def test_apply_only_commands_require_clean_tree_on_apply(op_id, expected):
+    assert preconditions.active_preconditions(op_id, _ns(apply=True)) == expected
 
 
 @pytest.mark.parametrize("op_id", ["import_sheets", "prune_manifest", "update_sheets"])

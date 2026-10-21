@@ -15,11 +15,11 @@ Manifest snapshot written to manifest_archives/manifest_TIMESTAMP.json
 
   stan1293:
     Prune 'stress' from stan1293? [y/N] y
-    archived: general.tsv → archive/stress/general_TIMESTAMP.tsv
-    archived: stress_domain.tsv → archive/stress/stress_domain_TIMESTAMP.tsv
-    removed empty directory: coded_data/stan1293/stress/
+    archived: general.tsv → archive/stress/
+    archived: stress_domain.tsv → archive/stress/
     archived Drive sheet: 'stress_stan1293' → _archived/
     removed from manifest: stan1293/stress
 
 Drive manifest updated.
 Drive door (enforce): checked 4 write(s) to 3 tab(s) or file(s); 0 broke a rule.
+Local-file door (enforce): changed 2 file(s), previous versions archived and logged; 0 broke a rule.

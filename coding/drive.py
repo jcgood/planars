@@ -576,9 +576,10 @@ def _check_coded_data_clean(coded_data_dir: Optional[Path] = None, extensions: t
     """Abort if the coded_data/ git repo has uncommitted changes to matching files.
 
     Protects any command that reads coded_data/ as its source of truth from
-    acting on a partially-written or reverted state — e.g. import-planar's
-    inline auto-commit (_autocommit_data, below) silently failing partway
-    through a run and leaving a stale planar_{lang_id}.tsv on disk for later
+    acting on a partially-written or reverted state — e.g. a commit of what
+    an earlier command wrote (since Phase 10 unit 6a, the local-file door's,
+    file_door.finish) failing partway through a run and leaving a stale
+    planar_{lang_id}.tsv on disk for later
     steps to read (see issue #248 and the stray-row cleanup that followed it:
     update-sheets --apply ran against exactly such a leftover reverted planar
     and wrote bogus rows to 16 live sheets because it had no such guard).
@@ -611,56 +612,3 @@ def _check_coded_data_clean(coded_data_dir: Optional[Path] = None, extensions: t
         raise SystemExit(1)
 
 
-def _autocommit_data(paths: List[Path], message: str) -> None:
-    """Stage the given paths in coded_data/, commit, and push to planars-data.
-
-    Called by import-planar and restructure-sheets after writing local TSVs
-    so that planars-data stays in sync and the pre-push hook on planars passes.
-
-    Raises SystemExit if `add` or `commit` fails (excluding the harmless
-    "nothing to commit" case) — a write that reached disk but not git leaves
-    coded_data/ exactly as dirty as a partial revert, which is what let
-    update-sheets write bogus rows to 16 live sheets on 2026-07-29 (issue
-    #248's stray-row incident): this function's commit silently failed
-    (git identity wasn't configured yet in that run), printed a WARNING
-    nobody was watching, and returned as if nothing had gone wrong. A push
-    failure, by contrast, does NOT raise — the commit already succeeded
-    locally, so coded_data/ is clean by every check that matters (git status
-    doesn't care about ahead/behind vs. the remote); only the remote lags
-    until someone retries `git push` by hand.
-    """
-    if not paths:
-        return
-    rel_paths = [str(p.relative_to(CODED_DATA)) for p in paths]
-    print(f"\n--- Committing {len(paths)} file(s) to planars-data ---")
-
-    add = subprocess.run(
-        ["git", "-C", str(CODED_DATA), "add"] + rel_paths,
-        capture_output=True, text=True,
-    )
-    if add.returncode != 0:
-        print(f"ERROR: git add failed in coded_data/: {add.stderr.strip()}")
-        print("Local files were written to disk but NOT staged for commit.")
-        raise SystemExit(1)
-
-    commit = subprocess.run(
-        ["git", "-C", str(CODED_DATA), "commit", "-m", message],
-        capture_output=True, text=True,
-    )
-    if commit.returncode != 0:
-        if "nothing to commit" in commit.stdout:
-            print("  files unchanged — nothing to commit.")
-            return
-        print(f"ERROR: git commit failed in coded_data/: {commit.stderr.strip()}")
-        print("Local files were written to disk but NOT committed — coded_data/ is now dirty.")
-        raise SystemExit(1)
-    print(f"  {commit.stdout.splitlines()[0]}")
-
-    push = subprocess.run(
-        ["git", "-C", str(CODED_DATA), "push"],
-        capture_output=True, text=True,
-    )
-    if push.returncode != 0:
-        print(f"  WARNING: git push failed: {push.stderr.strip()}")
-    else:
-        print("  pushed planars-data")

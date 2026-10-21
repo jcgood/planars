@@ -46,6 +46,11 @@ TSV → YAML (--from-tsv):
 
 Each language must have a diagnostics_{lang_id}.yaml in its lang_setup/
 folder to participate. Languages without YAML are skipped.
+
+Both local directions write through the local-file door (coding/file_door.py),
+which keeps the previous version in archive/lang_setup/, logs the change in
+the language's changes.tsv, and commits it in planars-data when the command
+ends.
 """
 from __future__ import annotations
 
@@ -70,6 +75,7 @@ from .make_forms import (
     _apply_yaml_diff,
 )
 from .validate_diagnostics import validate_diagnostics_yaml
+from . import file_door
 
 
 def _discover_languages() -> List[str]:
@@ -89,9 +95,8 @@ def _sync_to_tsv(lang_id: str, apply: bool, error_langs: List[str]) -> bool:
     non-empty, so a blocking error here reaches the daily automation's exit
     code instead of only ever appearing in a log nobody reads (issue #283).
     """
-    planar_dir = CODED_DATA / lang_id / "lang_setup"
-    yaml_path  = planar_dir / f"diagnostics_{lang_id}.yaml"
-    tsv_path   = planar_dir / f"diagnostics_{lang_id}.tsv"
+    yaml_path  = file_door.diagnostics_yaml(lang_id).path
+    tsv_path   = file_door.diagnostics_tsv(lang_id).path
 
     if not yaml_path.exists():
         print(f"  [{lang_id}] No YAML found — skipping")
@@ -128,7 +133,8 @@ def _sync_to_tsv(lang_id: str, apply: bool, error_langs: List[str]) -> bool:
 
     print(f"  [{lang_id}] {action} → {tsv_path.name}")
     if apply:
-        tsv_path.write_text(new_content, encoding="utf-8")
+        file_door.write(file_door.diagnostics_tsv(lang_id), new_content,
+                        why="regenerated from the diagnostics file")
     return True
 
 
@@ -138,9 +144,8 @@ def _sync_from_tsv(lang_id: str, apply: bool, drift_entries: List[Dict]) -> bool
     Deterministic changes are auto-applied; ambiguous changes are appended to
     drift_entries for the caller to write to diagnostics_drift.json.
     """
-    planar_dir = CODED_DATA / lang_id / "lang_setup"
-    yaml_path  = planar_dir / f"diagnostics_{lang_id}.yaml"
-    tsv_path   = planar_dir / f"diagnostics_{lang_id}.tsv"
+    yaml_path  = file_door.diagnostics_yaml(lang_id).path
+    tsv_path   = file_door.diagnostics_tsv(lang_id).path
 
     if not yaml_path.exists():
         print(f"  [{lang_id}] No YAML found — skipping (cannot propose to non-existent YAML)")
@@ -168,7 +173,8 @@ def _sync_from_tsv(lang_id: str, apply: bool, drift_entries: List[Dict]) -> bool
             # Applied to the YAML as loaded for editing, so its comments
             # and layout survive the write.
             new_yaml = _apply_yaml_diff(_load_diagnostics_yaml_for_edit(yaml_path), deterministic)
-            yaml_path.write_text(_dump_diagnostics_yaml(new_yaml), encoding="utf-8")
+            file_door.write(file_door.diagnostics_yaml(lang_id), _dump_diagnostics_yaml(new_yaml),
+                            why=f"edits made on the diagnostics Sheet: {', '.join(kinds)}")
             print(f"  [{lang_id}] YAML updated.")
         else:
             print(f"  [{lang_id}] (dry run — YAML not written)")

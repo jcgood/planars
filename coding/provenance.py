@@ -33,7 +33,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from . import state_files
-from .gating import gate_satisfied
+from .gating import active_parts
 from .registry import _load_operations
 
 
@@ -49,12 +49,7 @@ def writes_to_drive(op_id: str, args: argparse.Namespace) -> bool:
     record = _load_operations().get(op_id)
     if record is None:
         return False
-    if record["writes_to_drive"] and gate_satisfied(record["apply_gate"], None, args):
-        return True
-    for mode in record.get("modes", []):
-        if mode["writes_to_drive"] and gate_satisfied(mode["apply_gate"], mode["name"], args):
-            return True
-    return False
+    return any(part["writes_to_drive"] for part in active_parts(record, args))
 
 
 def append_writes(entries: List[Dict], log_path: Optional[Path] = None) -> None:

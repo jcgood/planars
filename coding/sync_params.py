@@ -17,7 +17,9 @@ This script propagates diagnostic criterion changes across all downstream layers
   diagnostics_{lang_id}.yaml — per-language criterion source of truth (edit this).
                                --rename/--split/--merge --apply edit it directly
                                (_edit_diagnostics_yaml): only the criteria named change,
-                               and its comments and layout are kept
+                               and its comments and layout are kept; written through
+                               the local-file door (previous version archived, change
+                               logged, committed when the command ends)
   diagnostics_{lang_id}.tsv  — a copy generated from the YAML; after those edits it is
                                regenerated the way sync-diagnostics-yaml --apply does it
                                (#315: until 2026-10-18 the TSV was edited and the YAML
@@ -60,7 +62,6 @@ from .make_forms import (
     _dump_diagnostics_yaml,
     _encode_criteria_dict,
     _load_diagnostics_yaml_for_edit,
-    _resolve_diagnostics_yaml_path,
 )
 from .sync_diagnostics_yaml import _sync_to_tsv
 from .validate_diagnostics import validate_diagnostics_yaml
@@ -75,7 +76,7 @@ from .generate_sheets import CODED_DATA
 from .schemas import is_free_entry
 from .sheet_spec import MERGED_PREFIX, SPLIT_PREFIX, parked_operation
 from . import biuniqueness_rows as _br
-from . import drive_door
+from . import drive_door, file_door
 from planars.schema_values import (
     ELEMENT_ROWS,
     ROW_IDENTITY_COLUMNS,
@@ -274,16 +275,16 @@ def _merge_in_yaml(yaml_data: Dict, old1: str, old2: str, new: str) -> List[str]
         yaml_data, [old1, old2], lambda crit: [(new, _schema_values(new))], None)
 
 
-def _edit_diagnostics_yaml(lang_id: str, planar_dir: Path, renames, splits, merges,
-                           apply: bool) -> None:
+def _edit_diagnostics_yaml(lang_id: str, renames, splits, merges, apply: bool) -> None:
     """Apply --rename/--split/--merge to diagnostics_{lang_id}.yaml.
 
-    Prints each criteria change. With apply, writes the YAML (only the
-    criteria named change; comments and layout are kept) and regenerates
+    Prints each criteria change. With apply, writes the YAML through the
+    local-file door (only the criteria named change; comments and layout are
+    kept; the previous version is archived) and regenerates
     diagnostics_{lang_id}.tsv from it, as sync-diagnostics-yaml --apply does.
     An edit that would leave the YAML failing validation writes nothing.
     """
-    yaml_path = _resolve_diagnostics_yaml_path(lang_id, planar_dir)
+    yaml_path = file_door.diagnostics_yaml(lang_id).path
     if not yaml_path.exists():
         raise SystemExit(
             f"ERROR: {yaml_path} does not exist. --rename/--split/--merge edit "
@@ -309,7 +310,8 @@ def _edit_diagnostics_yaml(lang_id: str, planar_dir: Path, renames, splits, merg
         raise SystemExit(
             f"ERROR: the edited diagnostics_{lang_id}.yaml would not pass "
             f"validation (above); nothing was written.")
-    yaml_path.write_text(_dump_diagnostics_yaml(data), encoding="utf-8")
+    file_door.write(file_door.diagnostics_yaml(lang_id), _dump_diagnostics_yaml(data),
+                    why="sync-params: " + "; ".join(c.strip() for c in changes))
     print(f"  [{lang_id}] YAML updated → {yaml_path.name}")
     _sync_to_tsv(lang_id, apply=True, error_langs=[])
 
@@ -692,7 +694,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         # before it is read below, so the sheet operations see the new
         # criteria; the TSV is then regenerated from it (#315).
         if renames or splits or merges:
-            _edit_diagnostics_yaml(lang_id, planar_dir, renames, splits, merges, apply)
+            _edit_diagnostics_yaml(lang_id, renames, splits, merges, apply)
 
         specs = _read_diagnostics_for_language(lang_id, planar_dir)
 

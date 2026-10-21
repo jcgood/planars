@@ -23,9 +23,9 @@ actually a scattered manual _check_coded_data_clean() call per file — and
 coded_data_up_to_date (Phase 10 unit 12: a command acting on state another
 machine wrote into planars-data runs only on an up-to-date copy). The
 other two registered preconditions are deliberately left where they were:
-coded_data_git_identity_configured is enforced downstream, inside
-drive._autocommit_data() itself (it raises on a failed git commit,
-regardless of cause — see preconditions.yaml), and
+coded_data_git_identity_configured is enforced downstream, where the
+local-file door commits what a command wrote (file_door.finish; it raises on
+a failed git commit, regardless of cause — see preconditions.yaml), and
 check_notes_documents_scope_authorized has no automated check at all today
 (a one-time manual OAuth re-authorization step). Neither was a
 "_check_coded_data_clean()-style call, scattered per command" — the shape
@@ -39,7 +39,7 @@ import argparse
 from typing import Dict, List
 
 from .drive import _check_coded_data_clean
-from .gating import gate_satisfied
+from .gating import active_parts
 from .registry import _load_operations
 
 # coded_data_clean_tree defaults to checking only *.tsv (preconditions.yaml's
@@ -100,12 +100,7 @@ def active_preconditions(op_id: str, args: argparse.Namespace) -> List[str]:
     record = _load_operations().get(op_id)
     if record is None:
         return []
-    active: List[str] = []
-    if gate_satisfied(record["apply_gate"], None, args):
-        active.extend(record["preconditions"])
-    for mode in record.get("modes", []):
-        if gate_satisfied(mode["apply_gate"], mode["name"], args):
-            active.extend(mode["preconditions"])
+    active = [p for part in active_parts(record, args) for p in part["preconditions"]]
     seen = set()
     return [p for p in active if not (p in seen or seen.add(p))]
 

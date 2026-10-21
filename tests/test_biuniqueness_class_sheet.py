@@ -309,7 +309,6 @@ def test_restructure_carries_keyed_answers_across_an_element_rename(created, mon
     monkeypatch.setattr(rs, "_load_drive_config", FakeDriveDoorway.drive_config)
     monkeypatch.setattr(drive_module, "_load_drive_config", FakeDriveDoorway.drive_config)
     monkeypatch.setattr(rs, "_save_drive_config", lambda cfg: None)
-    monkeypatch.setattr(rs, "_autocommit_data", lambda paths, message: None)
     monkeypatch.setattr(gn, "regenerate_notebooks", lambda: None)
     monkeypatch.setattr(vc, "revalidate_sheets", lambda lang_ids=None: 0)
     monkeypatch.setattr(ip, "push_planars_to_sheets", lambda lang_ids=None, apply=False: [])

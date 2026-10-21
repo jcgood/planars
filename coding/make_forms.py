@@ -19,8 +19,9 @@ YAML as loaded): a command that changes the YAML loads it with
 ``_dump_diagnostics_yaml``, which keep its comments and layout.
 
 Also ``resolve_keystone_active`` / ``resolve_keystone_na_criteria`` /
-``resolve_obligatory_positions`` (per-language settings read from the YAML)
-and ``ARCHIVE_STAMP_FORMAT``, the one archive datestamp format.
+``resolve_obligatory_positions`` (per-language settings read from the YAML).
+(The archive datestamp format, here until 2026-10-20, is the local-file
+door's: ``file_door.ARCHIVE_STAMP_FORMAT``.)
 """
 from __future__ import annotations
 
@@ -510,13 +511,6 @@ def _encode_criteria_dict(criteria_dict: Dict[str, List[str]]) -> List[str]:
             raise ValueError(f"Criterion '{crit_name}' has no allowed values to write.")
         parts.append(f"{crit_name}{{{'/'.join(crit_values)}}}")
     return parts
-
-
-# The datestamp in an archived file's name (planar_stan1293_20260209_101500.tsv),
-# always taken in UTC: datetime.now(timezone.utc).strftime(ARCHIVE_STAMP_FORMAT).
-# One statement for every command that archives a file (hidden-facts M-misc;
-# until 2026-10-16 three files typed it, one of them on local time).
-ARCHIVE_STAMP_FORMAT = "%Y%m%d_%H%M%S"
 
 
 # The columns of diagnostics_{lang_id}.tsv, in order. The TSV is generated from

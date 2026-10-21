@@ -14,8 +14,10 @@ Run from the repo root:
 Sheet -> TSV (default):
     Reads the planar spreadsheet for each language (identified by
     planar_spreadsheet_id in drive_config.json), compares to the local
-    planar_{lang_id}.tsv, and writes updated TSVs when content has changed.
-    Archives the old file before overwriting.
+    planar_{lang_id}.tsv, and writes updated TSVs when content has changed,
+    through the local-file door (coding/file_door.py): the old file is
+    archived, the change logged in the language's changes.tsv, and the file
+    committed and pushed in planars-data when the command ends.
 
     The Sheet is the source of truth here, so a column added in the Sheet is
     carried down into the TSV. A column the Sheet no longer has is the one
@@ -44,14 +46,12 @@ from __future__ import annotations
 
 import argparse
 import json
-import shutil
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
 
-from .make_forms import ARCHIVE_STAMP_FORMAT
+from . import file_door
 
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
@@ -61,18 +61,6 @@ CODED_DATA = ROOT / "coded_data"
 # than written inline so a test can point it somewhere harmless — a test suite
 # that clobbers the real file would hand the workflow a diff nobody made.
 PLANAR_CHANGES_PATH = Path("/tmp/planar_changes.json")
-
-
-# ---------------------------------------------------------------------------
-# Archive helper (same pattern as import_sheets._archive_tsv)
-# ---------------------------------------------------------------------------
-
-def _archive_tsv(path: Path, timestamp: str) -> Path:
-    archive_dir = path.parent.parent / "archive" / path.parent.name
-    archive_dir.mkdir(parents=True, exist_ok=True)
-    dest = archive_dir / f"{path.stem}_{timestamp}{path.suffix}"
-    shutil.copy2(path, dest)
-    return dest
 
 
 # ---------------------------------------------------------------------------
@@ -188,10 +176,8 @@ def import_planar(lang_ids: list[str] | None = None, apply: bool = False) -> lis
     from .drive_doorway import get_doorway
 
     cfg = _load_drive_config()
-    timestamp = datetime.now(timezone.utc).strftime(ARCHIVE_STAMP_FORMAT)
 
     all_changes: dict[str, dict] = {}
-    written_files: list[Path] = []
 
     for lang_id, lang_cfg in cfg.items():
         if lang_id.startswith("_"):
@@ -208,7 +194,7 @@ def import_planar(lang_ids: list[str] | None = None, apply: bool = False) -> lis
                   " — skipping")
             continue
 
-        tsv_path = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
+        tsv_path = file_door.planar(lang_id).path
         if not tsv_path.exists():
             print(f"\n{lang_id}: no local planar TSV — skipping")
             continue
@@ -273,20 +259,14 @@ def import_planar(lang_ids: list[str] | None = None, apply: bool = False) -> lis
         all_changes[lang_id] = {"diff": diff, "recommendation": rec}
 
         if apply:
-            archived = _archive_tsv(tsv_path, timestamp)
-            print(f"  archived → archive/lang_setup/{archived.name}")
-            new_df.to_csv(tsv_path, sep="\t", index=False)
+            # The door keeps the previous version in archive/lang_setup/,
+            # logs the change, and commits it when the command ends.
+            file_door.write(file_door.planar(lang_id), file_door.frame_text(new_df),
+                            why=f"imported from the planar Sheet; next: {rec}")
             print(f"  wrote planar_{lang_id}.tsv")
-            written_files.extend([tsv_path, archived])
 
     if apply and all_changes:
         PLANAR_CHANGES_PATH.write_text(json.dumps(all_changes, indent=2))
-        from .drive import _autocommit_data
-        langs = ", ".join(sorted(all_changes.keys()))
-        _autocommit_data(
-            written_files,
-            f"data: import planar for {langs} from Google Sheets {datetime.now(timezone.utc).date().isoformat()}",
-        )
     elif not apply and all_changes:
         print("\nDry run — rerun with --apply to write changes.")
 
@@ -312,7 +292,7 @@ def push_planar_to_sheet(lang_id: str, cfg: dict, apply: bool) -> bool:
         print(f"  [{lang_id}] No planar_spreadsheet_id in drive_config.json — skipping")
         return False
 
-    tsv_path = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
+    tsv_path = file_door.planar(lang_id).path
     if not tsv_path.exists():
         print(f"  [{lang_id}] No local planar TSV — skipping")
         return False

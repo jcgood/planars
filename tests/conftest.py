@@ -6,7 +6,8 @@ so sharing behaviour is still exercised and no real address is written into
 the saved test outputs, which are in this public repo.
 
 The tooling's state files (pending changes, provenance log, tab snapshots,
-restructure journal) go to each test's tmp_path.
+restructure journal) go to each test's tmp_path, and so does everything the
+local-file door writes; the door enforces its rules in every test.
 
 Every test also gets an in-memory GitHub (`tests/fake_github.py`) in place of
 the real one, so no test can file, comment on or close a real issue. A test
@@ -41,6 +42,19 @@ def _state_files_stay_in_tmp(monkeypatch, tmp_path):
     monkeypatch.setattr(state_files, "PROVENANCE_LOG", state / "provenance_log.jsonl")
     monkeypatch.setattr(state_files, "SNAPSHOT_DIR", state / "regen_snapshots")
     monkeypatch.setattr(state_files, "JOURNAL_PATH", state / "restructure_journal.json")
+
+
+@pytest.fixture(autouse=True)
+def _file_door_enforces_in_tmp(monkeypatch, tmp_path):
+    """The local-file door (coding/file_door.py) enforces its rules in every
+    test, and writes under an empty folder in tmp_path unless the test
+    points it at its own copy of the data (fake_drive.point_coded_data_at,
+    or the command module's CODED_DATA through command_runner). So no test
+    writes, archives into or commits the real planars-data."""
+    from coding import file_door
+    monkeypatch.setattr(file_door, "MODE", file_door.ENFORCE)
+    monkeypatch.setattr(file_door, "CODED_DATA", tmp_path / "file_door_coded_data")
+    monkeypatch.setattr(file_door, "_runs", [])
 
 
 @pytest.fixture(autouse=True)

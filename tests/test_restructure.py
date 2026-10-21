@@ -8,7 +8,6 @@ import pytest
 from coding.restructure_sheets import (
     _apply_rename_to_position_cell,
     _apply_split_to_pair_rows,
-    _cascade_rename_pair_tsv,
     _compute_stats,
     _count_pair_rename_impacts,
     _describe_split_impacts,
@@ -406,12 +405,25 @@ def test_apply_rename_unparseable_unchanged():
 # ---------------------------------------------------------------------------
 
 def _make_pair_tsv(tmp_path, rows):
-    """Write a minimal pair TSV and return its path."""
+    """Write a minimal pair TSV where the local-file door looks for
+    lang0001's coreference/reflexivization and return its path."""
     import pandas as pd
-    p = tmp_path / "reflexivization.tsv"
+    from coding import file_door
+    file_door.CODED_DATA = tmp_path   # put back after the test by conftest's monkeypatch
+    p = file_door.annotation("lang0001", "coreference", "reflexivization").path
+    p.parent.mkdir(parents=True, exist_ok=True)
     df = pd.DataFrame(rows)
     df.to_csv(p, sep="\t", index=False)
     return p
+
+
+def _cascade_rename_pair_tsv(path, rename_map):
+    """Run restructure's cascade on the door file at ``path``, as a command would."""
+    from coding import drive_door, file_door
+    from coding.restructure_sheets import _cascade_rename_pair_tsv as cascade
+    file_door.CODED_DATA = path.parent.parent.parent
+    with drive_door.running("restructure-sheets-test", may_write=True):
+        return cascade(file_door.annotation("lang0001", "coreference", path.stem), rename_map)
 
 
 def test_cascade_rename_pair_tsv_updates_position_a(tmp_path):
@@ -460,7 +472,7 @@ def test_cascade_rename_pair_tsv_no_match(tmp_path):
 
 
 def test_cascade_rename_pair_tsv_missing_file(tmp_path):
-    missing = tmp_path / "nonexistent.tsv"
+    missing = tmp_path / "lang0001" / "coreference" / "nonexistent.tsv"
     assert _cascade_rename_pair_tsv(missing, {"v:old": "v:new"}) == 0
 
 

@@ -79,26 +79,30 @@
     -- but is worth re-checking if this pattern surfaces a third time.
 
     Since 2026-10-17 (Phase 10 unit 8) these commits are steps of
-    coding/daily_refresh.py (commit_data), in the same places.
+    coding/daily_refresh.py (commit_data), in the same places. Since Phase
+    10 unit 6a (2026-10-20) every command that writes a language's files
+    also commits them itself when it ends (the local-file door,
+    coding/file_door.py), so those steps now only pick up the files the door
+    does not cover yet (the notes state and the ID file, unit 6b).
 
 - id: coded_data_git_identity_configured
   description: >-
-    coded_data/'s git user.name/user.email are set before any code path
-    calls drive._autocommit_data() against it.
+    coded_data/'s git user.name/user.email are set before any command
+    commits what it wrote there (the local-file door, file_door.finish;
+    until Phase 10 unit 6a, drive._autocommit_data()).
   required_by:
-    - "import_planar.py (import-planar --apply, via _autocommit_data)"
-    - "restructure_sheets.py (--apply, via _autocommit_data)"
+    - "every command whose operations.yaml record has writes_locally: true (the local-file door commits its files when it ends)"
   enforced_by: >-
     Two layers: (1) .github/workflows/data-refresh.yml's "Configure git
     identity" step (global, so it covers coded_data/ and planars) runs
     immediately after credentials are written, before daily-refresh touches
-    coded_data/, so the identity is
-    normally already present by the time _autocommit_data runs in CI. (2)
-    drive._autocommit_data() itself now raises SystemExit on a failed
-    `git add`/`git commit` (added 2026-07-29) instead of printing a WARNING
-    and returning, so any cause of a failed commit -- not just a missing
-    identity -- is caught at its actual source rather than relying on a
-    downstream command to notice the resulting dirty tree.
+    coded_data/, so the identity is normally already present by the time a
+    command commits in CI. (2) The commit itself (file_door._commit; before
+    unit 6a drive._autocommit_data(), since 2026-07-29) raises on a failed
+    `git add`/`git commit` instead of printing a WARNING and returning, so
+    any cause of a failed commit -- not just a missing identity -- is caught
+    at its actual source rather than relying on a downstream command to
+    notice the resulting dirty tree.
   failure_symptom: >-
     Before the 2026-07-29 fix: git commit failed with "please tell me who
     you are"; _autocommit_data printed a WARNING and returned silently,
