@@ -37,6 +37,11 @@ Every added column goes where the diagnostics file lists it among the tab's crit
 
 integrity-check --sheets warns on any _split_ or _merged_ prefixed column headers
 (sheet_spec.PARKED_COLUMN_PREFIXES).
+
+Reads: one open, one tab list and one batch of header rows per spreadsheet
+(_read_headers), however many tabs it has; a tab is re-read only after this run
+writes to it. Reading tab by tab took two reads per tab and brought the
+2026-10-20 daily refresh within one retry of Google's per-minute read limit.
 """
 from __future__ import annotations
 
@@ -65,7 +70,7 @@ from .drive import (
     _load_drive_config, _save_drive_config,
     load_manifest, upload_manifest,
 )
-from .drive_doorway import WorksheetHandle, WorksheetNotFound, get_doorway
+from .drive_doorway import WorksheetHandle, get_doorway
 from .generate_sheets import CODED_DATA
 from .schemas import is_free_entry
 from .sheet_spec import MERGED_PREFIX, SPLIT_PREFIX, parked_operation
@@ -92,8 +97,26 @@ _STRUCTURAL_SET = (ROW_IDENTITY_COLUMNS
 # Sheet introspection
 # ---------------------------------------------------------------------------
 
-def _get_current_params(ws: WorksheetHandle) -> Tuple[List[str], int]:
-    """Return (param_names, comments_col_0based) from the header row.
+def _read_headers(ss, titles: List[str]) -> Dict[str, List[str]]:
+    """Each named tab's header row, in one read for the whole spreadsheet.
+
+    Reading tab by tab cost two reads per tab (finding it, then its header);
+    the daily refresh's run came within one retry of Google's per-minute read
+    limit on 2026-10-20. Every tab in ``titles`` must exist.
+    """
+    if not titles:
+        return {}
+    ranges = [gspread.utils.absolute_range_name(t, "1:1") for t in titles]
+    got = ss.values_batch_get(ranges).get("valueRanges", [])
+    if len(got) != len(titles):
+        raise RuntimeError(
+            f"Asked {ss.title!r} for {len(titles)} header rows and got "
+            f"{len(got)} back; nothing was changed.")
+    return {t: list((vr.get("values") or [[]])[0]) for t, vr in zip(titles, got)}
+
+
+def _get_current_params(header: List[str]) -> Tuple[List[str], int]:
+    """Return (param_names, comments_col_0based) from a tab's header row.
 
     Param columns are those that are neither structural nor trailing — identified
     by exclusion rather than by a fixed positional offset. This handles both
@@ -101,7 +124,6 @@ def _get_current_params(ws: WorksheetHandle) -> Tuple[List[str], int]:
     coreference pair sheets (Element_A, Position_A, Position_B, Direction — 4
     fixed cols) without needing to distinguish between them.
     """
-    header = ws.row_values(1)
     params = []
     comments_col = len(header)  # default: insert at end if Comments not found
     for i, col in enumerate(header):
@@ -332,9 +354,10 @@ def _insert_param_columns(
 ) -> None:
     """Insert new criterion columns, each where ``order`` puts it (_insert_at)."""
     for param in new_params:
-        _, trailing_at = _get_current_params(ws)
+        header = ws.row_values(1)
+        _, trailing_at = _get_current_params(header)
         _insert_param_column(ws, param, param_values_map,
-                             _insert_at(ws.row_values(1), param, order, trailing_at))
+                             _insert_at(header, param, order, trailing_at))
 
 
 def _insert_param_column(
@@ -480,16 +503,17 @@ def _apply_merge_to_sheet(
 
 def _build_dropdown_refresh_requests(
     ws: WorksheetHandle,
+    header: List[str],
     stale_params: List[str],
     exp_values: Dict[str, List[str]],
 ) -> List[dict]:
     """Build setDataValidation requests for params with stale allowed values.
 
-    Uses ws.row_count as the end row so validation covers all current data rows.
+    ``header`` is the tab's current header row. Uses ws.row_count as the end
+    row so validation covers all current data rows.
     """
     if not stale_params:
         return []
-    header = ws.row_values(1)
     num_rows = ws.row_count
     requests = []
     for param in stale_params:
@@ -703,24 +727,29 @@ def main(args: argparse.Namespace | None = None) -> None:
                 continue
 
             ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
+            # One read for the tab list and one for every header row, per
+            # spreadsheet; a tab is re-read only after this run writes to it.
+            tabs = {ws.title: ws for ws in ss.worksheets()}
+            headers = _read_headers(ss, [c for c in expected[class_name] if c in tabs])
 
             for construction, (exp_params, exp_values) in expected[class_name].items():
-                try:
-                    ws = ss.worksheet(construction)
-                except WorksheetNotFound:
+                ws = tabs.get(construction)
+                if ws is None:
                     print(f"  [{class_name}/{construction}] Tab not found — skipping")
                     continue
+                header = headers[construction]
 
                 # Apply renames first so add/remove detection sees the updated headers
                 if renames:
                     for cls_filter, old_name, new_name in renames:
                         if cls_filter is not None and cls_filter != class_name:
                             continue
-                        found = old_name in ws.row_values(1)
+                        found = old_name in header
                         if found:
                             print(f"  [{class_name}/{construction}] Rename: {old_name} → {new_name}")
                             if apply:
                                 _rename_column(ws, old_name, new_name)
+                                header = ws.row_values(1)
                                 any_changes = True
                                 # Update manifest construction_params
                                 cp = sheet_info.setdefault("construction_params", {})
@@ -737,10 +766,11 @@ def main(args: argparse.Namespace | None = None) -> None:
                 # Apply splits to this sheet tab
                 for old, new1, new2 in splits:
                     default_vals = {n: _schema_values(n) for n in (new1, new2)}
-                    if old in ws.row_values(1):
+                    if old in header:
                         print(f"  [{class_name}/{construction}] Split: {old} -> {new1}, {new2}")
                         if apply:
                             _apply_split_to_sheet(ws, old, new1, new2, default_vals, exp_params)
+                            header = ws.row_values(1)
                             cp = sheet_info.setdefault("construction_params", {})
                             cp.setdefault(construction, {})
                             pnames = [p for p in cp[construction].get("param_names", []) if p != old]
@@ -757,13 +787,13 @@ def main(args: argparse.Namespace | None = None) -> None:
                 # Apply merges to this sheet tab
                 for old1, old2, new in merges:
                     default_vals = {new: _schema_values(new)}
-                    header_now = ws.row_values(1)
-                    o1_found = old1 in header_now
-                    o2_found = old2 in header_now
+                    o1_found = old1 in header
+                    o2_found = old2 in header
                     if o1_found or o2_found:
                         print(f"  [{class_name}/{construction}] Merge: {old1}, {old2} -> {new}")
                         if apply:
                             _apply_merge_to_sheet(ws, old1, old2, new, default_vals, exp_params)
+                            header = ws.row_values(1)
                             cp = sheet_info.setdefault("construction_params", {})
                             cp.setdefault(construction, {})
                             pnames = [p for p in cp[construction].get("param_names", [])
@@ -777,7 +807,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                     else:
                         print(f"  [{class_name}/{construction}] Merge: neither {old1} nor {old2} found — skipping")
 
-                current_params, _ = _get_current_params(ws)
+                current_params, _ = _get_current_params(header)
                 current_set = set(current_params)
                 expected_set = set(exp_params)
 
@@ -830,7 +860,8 @@ def main(args: argparse.Namespace | None = None) -> None:
                                 old = stored_values.get(p, "?")
                                 print(f"    {p}: {old} → {exp_values.get(p)}")
                             if apply:
-                                requests = _build_dropdown_refresh_requests(ws, stale, exp_values)
+                                requests = _build_dropdown_refresh_requests(
+                                    ws, header, stale, exp_values)
                                 if requests:
                                     ws.spreadsheet.batch_update({"requests": requests})
                                     cp = sheet_info.setdefault("construction_params", {})
@@ -867,7 +898,8 @@ def main(args: argparse.Namespace | None = None) -> None:
                     if remove and apply:
                         print(f"  [{class_name}/{construction}] Removing params: {removed_params}")
                         # Re-read header after any insertions above so indices are current.
-                        header = ws.row_values(1)
+                        if new_params:
+                            header = ws.row_values(1)
                         # Delete columns right-to-left to preserve indices during deletion.
                         # --remove is the coordinator saying these answers go.
                         reason = (f"sync-params --remove: {', '.join(removed_params)} "
@@ -923,7 +955,9 @@ def main(args: argparse.Namespace | None = None) -> None:
                             old = stored_values2.get(p, "?")
                             print(f"    {p}: {old} → {exp_values.get(p)}")
                         if apply:
-                            requests = _build_dropdown_refresh_requests(ws, stale2, exp_values)
+                            # Columns were just inserted or deleted: read the header afresh.
+                            requests = _build_dropdown_refresh_requests(
+                                ws, ws.row_values(1), stale2, exp_values)
                             if requests:
                                 ws.spreadsheet.batch_update({"requests": requests})
                                 cp = sheet_info.setdefault("construction_params", {})

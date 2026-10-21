@@ -8,7 +8,7 @@ tab's own header (correct) or from the manifest's `construction_params`
 (wrong, because the manifest is bookkeeping and goes stale). Read closely for
 this migration, `_get_current_params`, `_insert_param_columns`, and
 `_build_dropdown_refresh_requests` all already derive columns from the tab's
-own header — `ws.row_values(1)` — never from the manifest. The manifest is
+own header row — never from the manifest. The manifest is
 only ever a *record* of what was last pushed, read back to decide whether a
 dropdown refresh is stale. `assert_no_criterion_writes_onto_trailing_columns`
 below passes cleanly for every scenario, confirming this rather than assuming
@@ -480,6 +480,36 @@ def test_a_second_identical_apply_is_a_no_op(env):
     env.run(["sync-params", "--apply"])
 
     assert env.doorway.mutations == []
+
+
+def test_an_unchanged_apply_reads_each_spreadsheet_three_times(env, monkeypatch):
+    """The daily run: one open, one tab list and one batch of header rows per
+    spreadsheet, however many tabs it has. Reading tab by tab (a lookup and a
+    header each) brought the 2026-10-20 refresh within one retry of Google's
+    per-minute read limit."""
+    import fake_drive as fd
+    reads: Dict[str, int] = {}
+
+    def counted(cls, name):
+        real = getattr(cls, name)
+
+        def wrapper(self, *a, **kw):
+            reads[name] = reads.get(name, 0) + 1
+            return real(self, *a, **kw)
+        monkeypatch.setattr(cls, name, wrapper)
+
+    counted(fd.FakeDriveDoorway, "open_spreadsheet")
+    for name in ("worksheets", "worksheet", "values_batch_get"):
+        counted(fd.FakeSpreadsheet, name)
+    for name in ("row_values", "get_all_values"):
+        counted(fd.FakeWorksheet, name)
+
+    env.run(["sync-params", "--apply"])
+
+    sheets = reads["open_spreadsheet"]
+    assert sheets > 0
+    assert reads == {"open_spreadsheet": sheets, "worksheets": sheets,
+                     "values_batch_get": sheets}
 
 
 def test_a_second_identical_refresh_dropdowns_apply_is_a_no_op(env):

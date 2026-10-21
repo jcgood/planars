@@ -253,23 +253,23 @@ class TestParseMerges:
 class TestGetCurrentParams:
     def test_excludes_structural_and_trailing_columns(self):
         ws = _FakeWorksheet(["Element", "Position_Name", "Position_Number", "free", "obligatory", "Source", "Comments"])
-        params, comments_col = _get_current_params(ws)
+        params, comments_col = _get_current_params(ws.row_values(1))
         assert params == ["free", "obligatory"]
         assert comments_col == 5  # index of "Source", the first trailing col
 
     def test_pair_row_structural_columns_excluded(self):
         ws = _FakeWorksheet(["Element_A", "Element_B", "scopal", "Source", "Comments"])
-        params, comments_col = _get_current_params(ws)
+        params, comments_col = _get_current_params(ws.row_values(1))
         assert params == ["scopal"]
 
     def test_coreference_pair_structural_columns_excluded(self):
         ws = _FakeWorksheet(["Element_A", "Position_A", "Position_B", "Direction", "forward", "Source", "Comments"])
-        params, _ = _get_current_params(ws)
+        params, _ = _get_current_params(ws.row_values(1))
         assert params == ["forward"]
 
     def test_no_trailing_columns_present(self):
         ws = _FakeWorksheet(["Element", "Position_Name", "Position_Number", "free"])
-        params, comments_col = _get_current_params(ws)
+        params, comments_col = _get_current_params(ws.row_values(1))
         assert params == ["free"]
         assert comments_col == 4  # default: end of header
 
@@ -281,12 +281,12 @@ class TestGetCurrentParams:
 class TestBuildDropdownRefreshRequests:
     def test_empty_stale_params_returns_no_requests(self):
         ws = _FakeWorksheet(["Element", "free"])
-        assert _build_dropdown_refresh_requests(ws, [], {}) == []
+        assert _build_dropdown_refresh_requests(ws, ws.row_values(1), [], {}) == []
 
     def test_builds_one_request_per_stale_param(self):
         ws = _FakeWorksheet(["Element", "free", "obligatory"], row_count=10, sheet_id=42)
         requests = _build_dropdown_refresh_requests(
-            ws, ["free"], {"free": ["y", "n", "both"]},
+            ws, ws.row_values(1), ["free"], {"free": ["y", "n", "both"]},
         )
         assert len(requests) == 1
         rule = requests[0]["setDataValidation"]
@@ -301,9 +301,9 @@ class TestBuildDropdownRefreshRequests:
         default was removed 2026-10-12; criteria_for always supplies values)."""
         ws = _FakeWorksheet(["Element", "free"], row_count=5)
         with pytest.raises(KeyError):
-            _build_dropdown_refresh_requests(ws, ["free"], {})
+            _build_dropdown_refresh_requests(ws, ws.row_values(1), ["free"], {})
 
     def test_skips_param_not_in_header(self):
         ws = _FakeWorksheet(["Element", "free"], row_count=5)
-        requests = _build_dropdown_refresh_requests(ws, ["nonexistent"], {})
+        requests = _build_dropdown_refresh_requests(ws, ws.row_values(1), ["nonexistent"], {})
         assert requests == []

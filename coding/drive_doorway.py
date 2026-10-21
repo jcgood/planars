@@ -239,6 +239,19 @@ class SpreadsheetHandle(Protocol):
         for each tab's index and protected ranges besides, to check a class
         sheet's shape at the end of a command (rule 6)."""
 
+    def values_batch_get(self, ranges: List[str],
+                         params: Optional[Mapping[str, Any]] = None) -> Mapping[str, Any]:
+        """``spreadsheets.values.batchGet`` — several A1 ranges in one read.
+
+        Returns ``{"valueRanges": [{"range", "values"?}, ...]}`` in the order
+        asked; a range with no values has no ``"values"`` key, and each row is
+        trimmed at its last non-empty cell. Name the tab in every range
+        (``gspread.utils.absolute_range_name``): a bare range reads the first
+        tab. ``sync_params.py`` reads every tab's header row this way, one read
+        per spreadsheet instead of one per tab (Google allows about 60 reads a
+        minute).
+        """
+
     def values_batch_update(self, body: Mapping[str, Any]) -> Any:
         """``spreadsheets.values.batchUpdate`` — cell *values* by A1 range.
 

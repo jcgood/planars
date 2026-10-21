@@ -207,7 +207,9 @@ def _sheet_prefix(range_name: str) -> Optional[str]:
     if "!" not in range_name:
         return None
     prefix = range_name.rsplit("!", 1)[0]
-    return prefix.strip("'")
+    if prefix.startswith("'") and prefix.endswith("'"):
+        return prefix[1:-1].replace("''", "'")
+    return prefix
 
 
 # ---------------------------------------------------------------------------
@@ -532,6 +534,44 @@ class FakeSpreadsheet:
         for request in body["requests"]:
             self._apply_request(request)
         return {"replies": [{} for _ in body["requests"]]}
+
+    def values_batch_get(self, ranges: List[str],
+                         params: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
+        """``spreadsheets.values.batchGet`` — several ranges in one read.
+
+        As Google answers: each row trimmed at its last non-empty cell,
+        trailing empty rows dropped, no ``"values"`` key for an empty range,
+        and an unprefixed range read from the first tab. A missing tab fails
+        the whole call, as it does live.
+        """
+        value_ranges = []
+        for range_name in ranges:
+            prefix = _sheet_prefix(range_name)
+            if prefix is None:
+                ws = self.sheet1
+            else:
+                ws = next((w for w in self._worksheets if w.title == prefix), None)
+                if ws is None:
+                    raise api_error(400, f"Unable to parse range: {range_name}")
+            grid = gspread.utils.a1_range_to_grid_range(range_name.split("!")[-1])
+            used_rows, used_cols = ws._used_range()
+            r0 = grid.get("startRowIndex", 0)
+            r1 = min(grid.get("endRowIndex", used_rows), used_rows)
+            c0 = grid.get("startColumnIndex", 0)
+            c1 = min(grid.get("endColumnIndex", used_cols), used_cols)
+            rows = []
+            for r in range(r0, r1):
+                row = [ws._value(r, c) for c in range(c0, c1)]
+                while row and row[-1] == "":
+                    row.pop()
+                rows.append(row)
+            while rows and not rows[-1]:
+                rows.pop()
+            entry: Dict[str, Any] = {"range": range_name}
+            if rows:
+                entry["values"] = rows
+            value_ranges.append(entry)
+        return {"spreadsheetId": self.id, "valueRanges": value_ranges}
 
     def values_batch_update(self, body: Mapping[str, Any]) -> Dict[str, Any]:
         """``spreadsheets.values.batchUpdate`` — cell values by A1 range."""

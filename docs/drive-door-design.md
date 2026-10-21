@@ -505,7 +505,10 @@ on the same quota, #308). The door now keeps each spreadsheet's tab list for
 the command and re-reads it only for a tab id it hasn't seen, and
 `values_batch_update` looks each tab up once per call, not once per cell.
 Q6's "at most one read per tab written" now holds for these paths too
-(`test_many_requests_to_one_tab_read_its_tab_list_once`).
+(`test_many_requests_to_one_tab_read_its_tab_list_once`). The same limit
+nearly failed the 2026-10-20 refresh's sync-params step, from the command's
+own reads (a tab lookup and a header read per tab); it now reads a sheet's
+header rows in one `values_batch_get` call, three reads per sheet.
 
 **Rule 7, comments (2026-10-17, #309).** The door now carries comments
 (`list_comments`, `create_comment`), so an annotator without GitHub can be

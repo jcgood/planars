@@ -1578,6 +1578,10 @@ class CheckedSpreadsheet:
     def list_protected_ranges(self, sheetid: int) -> List[Dict[str, Any]]:
         return _retry(lambda: self._inner.list_protected_ranges(sheetid))
 
+    def values_batch_get(self, ranges: List[str],
+                         params: Optional[Mapping[str, Any]] = None) -> Mapping[str, Any]:
+        return _retry(lambda: self._inner.values_batch_get(ranges, params=params))
+
     def _tab_by_sheet_id(self, sheet_id: int) -> Optional["CheckedWorksheet"]:
         """The tab a request names. The door keeps each spreadsheet's tabs for
         the command and re-reads them only for an id it hasn't seen: one read
