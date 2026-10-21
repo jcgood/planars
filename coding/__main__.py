@@ -12,7 +12,6 @@ to that for one command's full detail: flags, side effects, idempotency,
 preconditions and modes. Use --help on any
 individual command for just its flags, or see CLAUDE.md.
 """
-import json
 import sys
 
 _COMMANDS = {
@@ -47,8 +46,8 @@ _COMMANDS = {
 
 def _warn_pending() -> None:
     """Print a reminder if pending_changes.json has unreviewed destructive changes."""
-    from coding.apply_pending import PENDING_PATH as pending
-    if pending.exists() and json.loads(pending.read_text(encoding="utf-8") or "[]"):
+    from coding.apply_pending import _load_pending
+    if _load_pending():
         print("WARNING: Pending destructive changes require coordinator approval.")
         print("         Run: python -m coding apply-pending\n")
 
@@ -91,10 +90,32 @@ def dispatch(cmd: str, argv: list) -> None:
         # whether this invocation may write (docs/drive-door-design.md § 2.2),
         # and logs what it wrote when it ends (coding/provenance.py).
         from . import drive_door
-        with drive_door.running(cmd, args):
-            mod.main(args)
+        try:
+            with drive_door.running(cmd, args):
+                mod.main(args)
+        except SystemExit as exc:
+            _commit_state(cmd, failed=exc.code not in (0, None))
+            raise
+        except BaseException:
+            _commit_state(cmd, failed=True)
+            raise
+        _commit_state(cmd, failed=False)
     finally:
         sys.argv = saved
+
+
+def _commit_state(cmd: str, failed: bool) -> None:
+    """Send the state files the command (or its door) wrote to planars-data,
+    however it ended, so nothing stays behind on this machine
+    (coding/state_files.py). After a failed command, a commit failure is
+    printed rather than raised, so it can't hide the command's own error."""
+    from . import state_files
+    try:
+        state_files.commit_changed(cmd)
+    except RuntimeError as exc:
+        if not failed:
+            raise
+        print(f"ERROR: {exc}")
 
 
 if __name__ == "__main__":

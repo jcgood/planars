@@ -376,17 +376,22 @@ def test_the_whole_refresh_runs_against_the_offline_drive(monkeypatch, tmp_path,
             monkeypatch.setattr(module, "_save_drive_config", saved_configs.append)
         if hasattr(module, "MANIFEST_PATH"):
             monkeypatch.setattr(module, "MANIFEST_PATH", tmp_path / "sheets_manifest.json")
-    from coding import (apply_pending, check_notes, generate_notebooks, glottolog,
-                        import_planar, import_sheets, restructure_journal)
+    from coding import (check_notes, generate_notebooks, glottolog,
+                        import_planar, import_sheets, state_files)
     monkeypatch.setattr(import_sheets, "ROOT", tmp_path)
     monkeypatch.setattr(import_sheets, "ERROR_DIR", tmp_path / "import_errors")
-    monkeypatch.setattr(import_sheets, "PENDING_PATH", tmp_path / "pending_changes.json")
-    monkeypatch.setattr(apply_pending, "PENDING_PATH", tmp_path / "pending_changes.json")
     monkeypatch.setattr(import_sheets, "DRIFT_PATH", tmp_path / "diagnostics_drift.json")
     monkeypatch.setattr(import_planar, "PLANAR_CHANGES_PATH", tmp_path / "planar_changes.json")
     monkeypatch.setattr(check_notes, "NOTES_STATE_PATH", coded / "notes_state.json")
     monkeypatch.setattr(glottolog, "CACHE_PATH", tmp_path / "glottolog_cache.json")
-    monkeypatch.setattr(restructure_journal, "JOURNAL_PATH", tmp_path / "journal.json")
+    # The state files live in the scratch planars-data, as they do live, so
+    # the test sees whether they reach its remote.
+    state = coded / ".state"
+    monkeypatch.setattr(state_files, "STATE_DIR", state)
+    monkeypatch.setattr(state_files, "PENDING_PATH", state / "pending_changes.json")
+    monkeypatch.setattr(state_files, "PROVENANCE_LOG", state / "provenance_log.jsonl")
+    monkeypatch.setattr(state_files, "SNAPSHOT_DIR", state / "regen_snapshots")
+    monkeypatch.setattr(state_files, "JOURNAL_PATH", state / "restructure_journal.json")
     monkeypatch.setattr(drive_module, "DRIVE_CONFIG_PATH", tmp_path / "drive_config.json")
     monkeypatch.setattr(generate_notebooks, "regenerate_notebooks", lambda *a, **k: None)
     monkeypatch.setattr("coding.drive_door.time.sleep", lambda *a, **kw: None)
@@ -404,6 +409,15 @@ def test_the_whole_refresh_runs_against_the_offline_drive(monkeypatch, tmp_path,
     # The tree is committed at the end, so nothing is left for a later
     # command's clean-tree check to trip on.
     assert _status(coded) == ""
+    # The state files reached GitHub's copy (unit 12): what the refresh wrote
+    # to Drive is logged there, and any pending changes are what a
+    # coordinator's apply-pending will read after a pull.
+    remote = tmp_path / "remote.git"
+    on_remote = subprocess.run(["git", "-C", str(remote), "ls-tree", "-r", "--name-only", "main"],
+                               capture_output=True, text=True, check=True).stdout.split()
+    assert ".state/provenance_log.jsonl" in on_remote, report
+    if state_files.PENDING_PATH.exists():
+        assert ".state/pending_changes.json" in on_remote
     # Nothing outside the scratch copies changed.
     assert _status(ROOT) == repo_before
     assert _status(real_data) == data_before

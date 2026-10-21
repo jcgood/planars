@@ -13,7 +13,7 @@ import sys
 import pytest
 
 from coding import __main__ as coding_main
-from coding import drive_door, preconditions, provenance, update_sheets
+from coding import drive_door, preconditions, state_files, update_sheets
 
 
 def test_precondition_failure_aborts_before_the_command_runs(monkeypatch):
@@ -76,4 +76,4 @@ def test_a_run_that_writes_nothing_is_not_logged(monkeypatch):
     monkeypatch.setattr(preconditions, "_check_coded_data_clean", lambda **kw: None)
     monkeypatch.setattr(sys, "argv", ["coding", "update-sheets", "--apply"])
     coding_main.main()
-    assert not provenance.LOG_PATH.exists()
+    assert not state_files.PROVENANCE_LOG.exists()

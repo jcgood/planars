@@ -18,8 +18,10 @@ the declaration IS what runs. Wired into coding/__main__.py's dispatch,
 after the parser builds args and before mod.main(args) runs, keyed by the
 command name.
 
-Only coded_data_clean_tree is enforced here — the one precondition that was
-actually a scattered manual _check_coded_data_clean() call per file. The
+Two are enforced here: coded_data_clean_tree — the one precondition that was
+actually a scattered manual _check_coded_data_clean() call per file — and
+coded_data_up_to_date (Phase 10 unit 12: a command acting on state another
+machine wrote into planars-data runs only on an up-to-date copy). The
 other two registered preconditions are deliberately left where they were:
 coded_data_git_identity_configured is enforced downstream, inside
 drive._autocommit_data() itself (it raises on a failed git commit,
@@ -53,10 +55,33 @@ _CODED_DATA_CLEAN_EXTENSIONS: Dict[str, tuple] = {
     "sync_diagnostics_yaml": (".yaml", ".tsv"),
 }
 
+def _check_coded_data_up_to_date(op_id: str) -> None:
+    """Stop unless coded_data/ has every commit GitHub's planars-data has
+    (preconditions.yaml: coded_data_up_to_date). Skipped when coded_data/ is
+    not a git repository."""
+    from . import state_files
+    if not (state_files.CODED_DATA / ".git").exists():
+        return
+    behind = state_files.behind_remote()
+    command = op_id.replace("_", "-")
+    if behind is None:
+        raise SystemExit(
+            f"ERROR: could not check that coded_data/ is up to date with GitHub "
+            f"(no network, or the clone has no upstream branch). {command} acts "
+            f"on state the daily refresh writes there, so it does not run on a "
+            f"copy it can't check. Fix the connection, then re-run.")
+    if behind:
+        raise SystemExit(
+            f"ERROR: coded_data/ is {behind} commit(s) behind GitHub, which may "
+            f"hold the daily refresh's pending changes or another machine's "
+            f"state. Run:\n\n    git -C coded_data pull\n\nthen re-run {command}.")
+
+
 _ENFORCERS = {
     "coded_data_clean_tree": lambda op_id: _check_coded_data_clean(
         extensions=_CODED_DATA_CLEAN_EXTENSIONS.get(op_id, (".tsv",))
     ),
+    "coded_data_up_to_date": _check_coded_data_up_to_date,
 }
 
 
@@ -89,8 +114,8 @@ def enforce(op_id: str, args: argparse.Namespace) -> None:
     """Run every centrally-enforceable precondition active for this invocation.
 
     Silently skips any active precondition id with no registered enforcer
-    in _ENFORCERS — by design, only coded_data_clean_tree is centrally
-    enforced today (see module docstring).
+    in _ENFORCERS — by design, only coded_data_clean_tree and
+    coded_data_up_to_date are centrally enforced today (see module docstring).
     """
     for precondition_id in active_preconditions(op_id, args):
         enforcer = _ENFORCERS.get(precondition_id)

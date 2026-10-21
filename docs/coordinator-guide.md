@@ -100,6 +100,13 @@ git pull
 
 `git pull` in `planars/` never touches `coded_data/`, and vice versa.
 
+The tooling keeps its own record of its work in `coded_data/.state/`: pending
+changes, the log of every Drive write, each tab as it was before a rebuild
+replaced it, and the journal of an interrupted `restructure-sheets`. Every
+command commits and pushes those files itself when it ends, so you never
+commit them by hand, and the daily refresh's copies reach you with a pull
+(`coding/state_files.py`).
+
 ---
 
 ## Workflows
@@ -240,11 +247,12 @@ Dry-run by default — pass `--apply` to write any TSVs. Skips existing annotati
 
 - **Downloads and validates** the planar structure and diagnostics Sheets for each language, writing them to `coded_data/{lang_id}/lang_setup/`.
 - **Auto-applies safe downstream commands** (`update-sheets --apply`, `sync-params --apply`, `generate-sheets --apply`) when additive changes are detected (new positions, new criteria, new construction tabs).
-- **Writes destructive changes** (planar deletions/reorders, criterion renames/removals, new constructions within existing classes) to `pending_changes.json` for coordinator review rather than applying them immediately.
+- **Writes destructive changes** (planar deletions/reorders, criterion renames/removals, new constructions within existing classes) to `coded_data/.state/pending_changes.json` for coordinator review rather than applying them immediately. It is in planars-data, so the daily refresh's pending changes reach your machine with a pull; `apply-pending` refuses to run on a copy older than GitHub's and says to pull.
 
 After import, review and apply any pending changes:
 
 ```bash
+git -C coded_data pull                   # the daily refresh's changes
 python -m coding apply-pending           # prompt for each change
 python -m coding apply-pending --all     # apply all without prompting
 ```

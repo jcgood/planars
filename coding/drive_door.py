@@ -20,7 +20,8 @@ tests). Reads pass straight through. Every write is checked first:
      annotations is never cleared, deleted or shrunk, except inside
      ``with replacing(tab, reason)``. That block first re-reads the tab: if it
      differs from what the command read earlier in the run, an annotator
-     edited it mid-run. It then saves the tab to ``SNAPSHOT_DIR``, and, given
+     edited it mid-run. It then saves the tab to ``state_files.SNAPSHOT_DIR``
+     (in planars-data), and, given
      the row keys the rebuilt tab keeps (``kept``), refuses to drop any
      answered row unless told the drop is meant (``allow_drop``);
   2. a locked tab only ever receives its builder's content;
@@ -69,7 +70,7 @@ and nowhere else. A call that creates something is retried only after
 checking the first attempt didn't land, so a retry never makes a duplicate.
 
 **Provenance.** At the end of the command the door appends one line per tab
-or Drive file it wrote to ``provenance.LOG_PATH``: the command and its
+or Drive file it wrote to ``state_files.PROVENANCE_LOG``: the command and its
 arguments, what was written, which sheet it is, how many calls and cells,
 and the ``replacing`` reason if there was one. A command that wrote nothing
 leaves no line.
@@ -120,9 +121,6 @@ import gspread
 
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
-# Where replacing() saves a tab before its answers are replaced (gitignored;
-# one file per tab, the latest only). Moves into planars-data with unit 12.
-SNAPSHOT_DIR = ROOT / "regen_snapshots"
 
 ENFORCE = "enforce"
 WATCH = "watch"
@@ -405,7 +403,8 @@ def replacing(tab: "CheckedWorksheet", reason: str, *,
 
     Before the block runs, the door re-reads the tab. If it differs from what
     the command read earlier in this run, an annotator edited it mid-run, and
-    the door says so (by mode). It saves what it read to ``SNAPSHOT_DIR``.
+    the door says so (by mode). It saves what it read to
+    ``state_files.SNAPSHOT_DIR``.
 
     ``kept``: for a tab being rebuilt row by row, the row keys (the schema's
     ``row_key`` columns, as the tab holds them now) whose answers the rebuilt
@@ -528,6 +527,7 @@ def _save_snapshot(tab: "CheckedWorksheet", rows: List[List[str]], reason: str) 
         stem = f"{identity.lang_id}_{identity.kind}_{tab.title}"
     else:
         stem = f"{tab._ss.id}_{tab.title}"
+    from .state_files import SNAPSHOT_DIR    # read now: tests move it
     path = SNAPSHOT_DIR / (re.sub(r"[^\w.-]", "_", stem) + ".json")
     SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps({

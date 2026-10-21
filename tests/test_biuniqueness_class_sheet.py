@@ -214,7 +214,6 @@ def test_the_daily_import_brings_the_keyed_tabs_down_intact(created, monkeypatch
         monkeypatch.setitem(sys.modules, name, SimpleNamespace(main=lambda: None))
     monkeypatch.setattr(is_, "ROOT", tmp)
     monkeypatch.setattr(is_, "ERROR_DIR", tmp / "import_errors")
-    monkeypatch.setattr(is_, "PENDING_PATH", tmp / "pending_changes.json")
     monkeypatch.setattr(is_, "DRIFT_PATH", tmp / "diagnostics_drift.json")
     monkeypatch.setattr(is_, "_notify_pending_changes", lambda *a: None)
     monkeypatch.setattr(is_, "_notify_collaborator_check", lambda *a: None)
@@ -287,7 +286,6 @@ def test_restructure_carries_keyed_answers_across_an_element_rename(created, mon
     from coding import drive as drive_module
     from coding import generate_notebooks as gn
     from coding import import_planar as ip
-    from coding import restructure_journal as rj
     from coding import restructure_sheets as rs
     from coding import validate_coding as vc
     from fake_drive import FakeDriveDoorway
@@ -308,7 +306,6 @@ def test_restructure_carries_keyed_answers_across_an_element_rename(created, mon
 
     tmp = env.tmp_root
     monkeypatch.setattr(rs, "MANIFEST_PATH", tmp / "sheets_manifest.json")
-    monkeypatch.setattr(rj, "JOURNAL_PATH", tmp / "restructure_journal.json")
     monkeypatch.setattr(rs, "_load_drive_config", FakeDriveDoorway.drive_config)
     monkeypatch.setattr(drive_module, "_load_drive_config", FakeDriveDoorway.drive_config)
     monkeypatch.setattr(rs, "_save_drive_config", lambda cfg: None)

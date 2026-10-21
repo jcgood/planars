@@ -79,7 +79,7 @@ from .make_forms import (
 )
 
 ERROR_DIR    = ROOT / "import_errors"
-from .apply_pending import PENDING_PATH  # noqa: E402
+from .apply_pending import _load_pending, _save_pending  # noqa: E402
 
 # The share of an in-progress tab's filled cells (in rows present before and
 # after) that may disappear in one import before it files a collaborator-check
@@ -476,18 +476,14 @@ def _check_yaml_drift(lang_id: str, tsv_df: pd.DataFrame) -> List[Dict]:
 
 
 def _append_pending_changes(new_entries: List[Dict]) -> None:
-    """Append new_entries to pending_changes.json, preserving existing entries."""
+    """Append new_entries to pending_changes.json, preserving existing entries.
+
+    A file that can't be read stops the import rather than being written
+    over: until 2026-10-20 it was silently replaced, losing every entry
+    waiting for review."""
     if not new_entries:
         return
-    existing: List[Dict] = []
-    if PENDING_PATH.exists():
-        try:
-            existing = json.loads(PENDING_PATH.read_text(encoding="utf-8"))
-        except Exception:
-            pass
-    PENDING_PATH.write_text(
-        json.dumps(existing + new_entries, indent=2), encoding="utf-8"
-    )
+    _save_pending(_load_pending() + new_entries)
 
 
 def _notify_pending_changes(entries: List[Dict]) -> None:

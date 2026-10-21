@@ -116,6 +116,7 @@ import pytest
 from coding import drive as drive_module
 from coding import drive_doorway
 from coding import import_sheets as is_
+from coding import state_files
 from command_runner import run_command
 from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID, point_coded_data_at
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
@@ -247,7 +248,6 @@ def env(monkeypatch, tmp_path):
 
     monkeypatch.setattr(is_, "ROOT", tmp_path)
     monkeypatch.setattr(is_, "ERROR_DIR", tmp_path / "import_errors")
-    monkeypatch.setattr(is_, "PENDING_PATH", tmp_path / "pending_changes.json")
     monkeypatch.setattr(is_, "DRIFT_PATH", tmp_path / "diagnostics_drift.json")
     monkeypatch.setattr(is_, "datetime", _FrozenDatetime)
     monkeypatch.setattr(is_, "_notify_pending_changes", notified_pending.append)
@@ -418,14 +418,14 @@ def test_planar_pure_addition_queues_update_sheets_and_auto_applies_it(env):
     out, _ = env.run(["import-sheets", "--lang", "synth0001", "--apply"])
     assert "queuing update-sheets" in out
     assert ("coding.update_sheets", ["update-sheets", "--apply"]) in env.auto_apply_calls
-    assert not is_.PENDING_PATH.exists()
+    assert not state_files.PENDING_PATH.exists()
 
 
 def test_planar_deletion_produces_a_pending_entry_not_an_auto_apply(env):
     env.edit_sheet_rows(env.planar_sheet("stan1293"), drop_last_planar_position)
     out, _ = env.run(["import-sheets", "--apply"])
-    assert is_.PENDING_PATH.exists()
-    entries = json.loads(is_.PENDING_PATH.read_text())
+    assert state_files.PENDING_PATH.exists()
+    entries = json.loads(state_files.PENDING_PATH.read_text())
     assert any(e["change_type"] == "planar_deletion_or_reorder"
               and e["lang_id"] == "stan1293" for e in entries)
     assert env.auto_apply_calls == []
@@ -451,7 +451,7 @@ def test_planar_reorder_is_also_destructive(env):
         return out
     env.edit_sheet_rows(env.planar_sheet("synth0001"), reorder)
     out, _ = env.run(["import-sheets", "--apply"])
-    entries = json.loads(is_.PENDING_PATH.read_text())
+    entries = json.loads(state_files.PENDING_PATH.read_text())
     assert any(e["change_type"] == "planar_deletion_or_reorder"
               and e["lang_id"] == "synth0001" for e in entries)
     # entries[0] isn't necessarily this test's entry -- since issue #283's
@@ -592,8 +592,8 @@ def test_a_missing_row_on_an_in_progress_tab_is_a_collaborator_check_not_pending
     # diagnostics_class_removed pending entry every run. What this test
     # actually checks is that the missing-row anomaly itself never becomes
     # a pending entry -- it's a collaborator-check instead.
-    if is_.PENDING_PATH.exists():
-        entries = json.loads(is_.PENDING_PATH.read_text())
+    if state_files.PENDING_PATH.exists():
+        entries = json.loads(state_files.PENDING_PATH.read_text())
         assert all(e["change_type"].startswith("diagnostics_") for e in entries)
     assert env.notified_collaborator
     assert env.notified_collaborator[0][0]["class_name"] == "ciscategorial"

@@ -71,9 +71,10 @@ What this does per spreadsheet:
   6. Updates sheets_manifest.json to point to the new spreadsheets
 
 Recoverability (Phase 7 of the data layer redesign, issue #271): each class's
-progress through steps 2-6 is journaled to restructure_journal.json before
-each Drive-mutating step, so a crash partway through is detected by the next
-run rather than silently re-attempted or left unexplained. Undoing is only
+progress through steps 2-6 is journaled to restructure_journal.json (in
+planars-data, `state_files.JOURNAL_PATH`) before each Drive-mutating step, so
+a crash partway through is detected by the next run, on any machine (the
+command refuses a copy of planars-data older than GitHub's), rather than silently re-attempted or left unexplained. Undoing is only
 offered where it's actually safe -- step 2 alone, before step 3 has created
 anything -- since a step-3 replacement sheet already holds real carried-over
 annotation data that undoing would destroy; past that point recovery always

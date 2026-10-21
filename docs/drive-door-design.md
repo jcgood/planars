@@ -361,7 +361,8 @@ choices:
   earlier in the run. A difference is a violation by mode (new, so watch
   first). This re-read is also the snapshot, so it costs one read per
   replaced tab, as § 3 and Q6 allow.
-- **The snapshot is the re-read**, saved to `regen_snapshots/` (one file per
+- **The snapshot is the re-read**, saved to `regen_snapshots/` (in
+  planars-data's `.state/` since unit 12, 2026-10-20; one file per
   tab, overwritten, as before) with the command and reason. Since every
   answer read earlier is then on the sheet or in the snapshot, Q3's
   end-of-command confirmation adds nothing until rule 6 (5d) re-reads the

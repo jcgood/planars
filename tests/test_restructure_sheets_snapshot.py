@@ -226,11 +226,7 @@ def env(monkeypatch, tmp_path):
 
     point_coded_data_at(monkeypatch, coded)
     monkeypatch.setattr(rs, "MANIFEST_PATH", tmp_path / "sheets_manifest.json")
-    # restructure_journal's JOURNAL_PATH default is resolved fresh per call
-    # (never bound into a default parameter -- see that module's docstring),
-    # so patching the module attribute here reaches every call
-    # restructure_sheets.py makes without needing rs's own copy patched too.
-    monkeypatch.setattr(rj, "JOURNAL_PATH", tmp_path / "restructure_journal.json")
+    # The restructure journal is in tmp_path already (tests/conftest.py).
     monkeypatch.setattr(rs, "_load_drive_config", FakeDriveDoorway.drive_config)
     monkeypatch.setattr(drive_module, "_load_drive_config",
                         FakeDriveDoorway.drive_config)

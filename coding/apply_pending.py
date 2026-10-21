@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Review and apply pending destructive changes from pending_changes.json.
+"""Review and apply pending destructive changes from pending_changes.json
+(``state_files.PENDING_PATH``, in planars-data: the daily refresh's import
+writes it on GitHub's machine, so this command refuses to run on a copy of
+planars-data older than GitHub's — precondition ``coded_data_up_to_date``).
 
 Run from the repo root:
     python -m coding apply-pending           # prompt for each change
@@ -21,26 +24,24 @@ import subprocess
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-from . import issues
+from . import issues, state_files
 
 ROOT = Path(__file__).resolve().parent.parent
-# The one statement of where destructive changes wait for review: import-sheets
-# writes it, this command reads it, the dispatcher warns when it is non-empty
-# (hidden-facts M2). Unit 12 moves it into planars-data.
-PENDING_PATH = ROOT / "pending_changes.json"
 
 
 def _load_pending() -> List[Dict]:
-    if not PENDING_PATH.exists():
+    path = state_files.PENDING_PATH
+    if not path.exists():
         return []
-    text = PENDING_PATH.read_text(encoding="utf-8").strip()
+    text = path.read_text(encoding="utf-8").strip()
     if not text or text in ("[]", ""):
         return []
     return json.loads(text)
 
 
 def _save_pending(entries: List[Dict]) -> None:
-    PENDING_PATH.write_text(json.dumps(entries, indent=2), encoding="utf-8")
+    state_files.PENDING_PATH.parent.mkdir(parents=True, exist_ok=True)
+    state_files.PENDING_PATH.write_text(json.dumps(entries, indent=2), encoding="utf-8")
 
 
 def _run_command(cmd: str) -> int:

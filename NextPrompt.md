@@ -40,11 +40,11 @@ rule 8 especially) is a command bug or a spec gap to fix.
 
 **Next action:**
 
-0. **Check the 2026-10-21 refresh's sync-params step** made no 429 retries
-   (its reads were cut 2026-10-20, end of the Phase 10 row).
-1. **Unit 12:** pending changes, the provenance log and regen snapshots
-   kept in planars-data.
-2. **Unit 6a:** the local-file door in watch mode, with archive copies and
+0. **Check the 2026-10-21 refresh:** its sync-params step made no 429
+   retries (reads cut 2026-10-20), and it committed `coded_data/.state/`
+   (unit 12, the first refresh to keep its provenance log and pending
+   changes). Both at the end of the Phase 10 row.
+1. **Unit 6a:** the local-file door in watch mode, with archive copies and
    the per-language change log (unit 15) built in (`ownership-design.md`
    § 4–6).
 
@@ -150,6 +150,11 @@ A bug with one obviously right fix is not a question: fix it and report it.
 - **Run the *full* suite before pushing, not one test file.** Saved command
   outputs and the warning-print check catch changes far from the file you
   edited.
+- **The tooling's state files are in `coded_data/.state/`** and every
+  command commits and pushes them itself. A machine that ran the tooling
+  before 2026-10-20 has old copies at the repo root (untracked in
+  `git status`): run `python migrations/move_state_into_planars_data.py --apply`
+  once there.
 - **Tests use a placeholder annotator email** (`tests/conftest.py`); real
   addresses live only in planars-data's `people.yaml`.
 - **Jeff runs parallel sessions.** Anything uncommitted you did not write may

@@ -106,7 +106,7 @@
         - >-
           issue #271 (Phase 7 follow-up, 2026-08-17; the Drive door's since
           Phase 10 unit 5c): the tab's current live content is saved to
-          regen_snapshots/{lang}_{class}_{construction}.json by
+          coded_data/.state/regen_snapshots/{lang}_{class}_{construction}.json by
           coding/drive_door.py's replacing() immediately before the tab is
           cleared and rewritten -- the clear-then-rewrite is two separate Drive calls, not
           atomic, and this tab read exists specifically because it may hold
@@ -527,7 +527,8 @@
       Phase 7, issue #271 (2026-08-17, units 1 and 2 both done): journals
       each class's progress through archive/create/manifest-sync to
       restructure_journal.json (coding/restructure_journal.py) before each
-      Drive-mutating step -- both the main per-class loop (unit 1) and
+      Drive-mutating step (in coded_data/.state/ since Phase 10 unit 12, so
+      another machine sees an interrupted run) -- both the main per-class loop (unit 1) and
       --rename-class's separate archive sequence (unit 2,
       _rename_class_for_language), sharing one journal. Any run -- with or
       without --resume/--rollback, and regardless of which unit left a
@@ -549,7 +550,7 @@
     archives-and-recreates again, since nothing here treats "sheet already
     matches the target structure" as a no-op the way sync-params does.
   apply_gate: "--apply"
-  preconditions: [coded_data_clean_tree, coded_data_git_identity_configured]
+  preconditions: [coded_data_clean_tree, coded_data_git_identity_configured, coded_data_up_to_date]
   facts_touched:
     - {fact: planar_sheet_structure, role: writes}
     - {fact: sheet_change_notification_state, role: writes}
@@ -672,8 +673,9 @@
   writes_to_drive: false
   description: >-
     Interactive review and application of destructive changes recorded by
-    import-sheets in pending_changes.json; closes the pending-changes issue
-    when cleared.
+    import-sheets in pending_changes.json (coded_data/.state/, so the daily
+    refresh's entries reach the coordinator through planars-data); closes the
+    pending-changes issue when cleared.
   side_effects:
     - "applies coordinator-approved destructive changes to coded_data/ and/or the manifest; clears entries from pending_changes.json"
   idempotent: true
@@ -692,7 +694,7 @@
     unrelated to this fix, which is about not re-attempting an
     already-succeeded one.)
   apply_gate: "interactive (per-entry approval, not a single --apply flag)"
-  preconditions: []
+  preconditions: [coded_data_up_to_date]
   facts_touched: []
   cascades_triggered: []
   modes: []

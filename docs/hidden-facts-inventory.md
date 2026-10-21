@@ -881,7 +881,9 @@ section (e.g. a `lexicon_screening` shape), not a fix to shoehorn into
 *Declared 2026-10-17 (Phase 10 unit 3): one `apply_pending.PENDING_PATH`,
 imported by import-sheets and the dispatcher (four typed copies). The
 validate-coding copy printed the same reminder the dispatcher prints before
-every command, so it is deleted. Unit 12 moves the file into planars-data.*
+every command, so it is deleted. Unit 12 (2026-10-20) moved the file into
+planars-data: its one statement is now `coding/state_files.PENDING_PATH`,
+with the other state files.*
 **What:** `ROOT / "pending_changes.json"` — the repo-root state file that
 `import-sheets` writes destructive changes to and `apply-pending` reads —
 is a hardcoded path/filename. Its shape (what counts as "destructive," what

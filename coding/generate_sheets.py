@@ -38,7 +38,7 @@ intentional (e.g. a prescreening scope change, not a rename/split), add --confir
         --confirm-drop
 
 Before --regen-construction overwrites a tab, the Drive door saves its current content to
-regen_snapshots/ (gitignored) -- a safety net in case anything not yet downloaded via
+coded_data/.state/regen_snapshots/ (state_files.SNAPSHOT_DIR) -- a safety net in case anything not yet downloaded via
 import-sheets was lost to an interrupted run (issue #271); not something you need to act on
 unless a run is actually interrupted.
 
@@ -1154,7 +1154,7 @@ def _rebuild_tab(spreadsheet: SpreadsheetHandle, lang_id: str, class_name: str,
                  construction_name: str, kept, confirm_drop: bool, if_dropped: str,
                  populate: Callable[[], None]) -> None:
     """Run ``populate`` (the rewrite of one tab) inside the Drive door's
-    replacing(): the door saves the tab to regen_snapshots/ first, and refuses
+    replacing(): the door saves the tab to state_files.SNAPSHOT_DIR first, and refuses
     (unless --confirm-drop) if an answered row's key is not in ``kept``, the
     rows whose answers the rebuild carries over (#241). ``if_dropped`` is the
     advice that ends the refusal message."""
@@ -1802,7 +1802,7 @@ def _regen_construction(
                     f"{hdr}, not the {shape_cols} the schema gives this tab, so its "
                     f"answers can't be matched to the rebuilt rows. Nothing was written. "
                     f"If the old rows can go, re-run with --confirm-drop (the tab is "
-                    f"saved to regen_snapshots/ before it is rewritten).")
+                    f"saved to coded_data/.state/regen_snapshots/ before it is rewritten).")
             for row in rows[1:]:
                 record = dict(zip(hdr, row))
                 key = tuple(record.get(k, "") for k in key_cols)

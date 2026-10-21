@@ -37,7 +37,7 @@ TSV -> Sheet (--to-sheet):
     automatically; run it by hand only if you edited the planar TSV some other
     way. The push replaces the whole Sheet, including any edit the annotator
     made since the last import, so it goes through the Drive door's
-    ``replacing()``: the Sheet is saved to ``regen_snapshots/`` first and the
+    ``replacing()``: the Sheet is saved to ``state_files.SNAPSHOT_DIR`` first and the
     reason logged.
 """
 from __future__ import annotations
@@ -354,7 +354,7 @@ def push_planar_to_sheet(lang_id: str, cfg: dict, apply: bool) -> bool:
         new_rows = [list(local_df.columns)] + [list(row) for _, row in local_df.iterrows()]
         # The Sheet is the annotator's to edit until unit 11 locks it, so this
         # replaces whatever they changed since the last import too: the door
-        # saves the Sheet first (regen_snapshots/) and logs the reason.
+        # saves the Sheet first (state_files.SNAPSHOT_DIR) and logs the reason.
         with drive_door.replacing(ws, f"planar_{lang_id}.tsv pushed to the planar Sheet"):
             ws.clear()
             ws.update(new_rows, "A1")

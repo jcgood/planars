@@ -13,7 +13,7 @@ import json
 import pytest
 
 from coding import drive as drive_module
-from coding import drive_door, drive_doorway
+from coding import drive_door, drive_doorway, state_files
 from coding.drive_door import CheckedDoorway, DoorViolation
 from coding.sheet_spec import class_sheet_spec
 from fake_drive import FakeDriveDoorway, api_error, use_frozen_coded_data
@@ -667,7 +667,7 @@ def test_replacing_saves_the_tab_first(env):
         before = ws.get_all_values()
         with drive_door.replacing(ws, "a test that means it"):
             ws.clear()
-    saved = json.loads((drive_door.SNAPSHOT_DIR / f"{LANG}_{CLASS}_general.json")
+    saved = json.loads((state_files.SNAPSHOT_DIR / f"{LANG}_{CLASS}_general.json")
                        .read_text(encoding="utf-8"))
     assert saved["rows"] == before
     assert saved["reason"] == "a test that means it"
@@ -722,10 +722,9 @@ def test_replacing_notices_an_annotator_editing_mid_run(env):
 # -- provenance: one line per tab written (unit 5c) ---------------------------------
 
 def _log():
-    from coding import provenance
-    if not provenance.LOG_PATH.exists():
+    if not state_files.PROVENANCE_LOG.exists():
         return []
-    return [json.loads(l) for l in provenance.LOG_PATH.read_text(encoding="utf-8").splitlines()]
+    return [json.loads(l) for l in state_files.PROVENANCE_LOG.read_text(encoding="utf-8").splitlines()]
 
 
 def test_each_tab_written_gets_one_provenance_line(env):
@@ -1074,7 +1073,7 @@ def test_pushing_the_planar_file_saves_the_sheet_and_leaves_it_equal(env):
     with drive_door.running("import-planar", TO_SHEET):
         assert import_planar.push_planar_to_sheet(LANG, drive_module.load_manifest(door), True)
     assert fake.spreadsheet(_planar_id(door)).sheet1.get_all_values()[1][notes] == "a note added in the file"
-    [saved] = drive_door.SNAPSHOT_DIR.glob(f"{LANG}_planar_sheet_*.json")
+    [saved] = state_files.SNAPSHOT_DIR.glob(f"{LANG}_planar_sheet_*.json")
     assert json.loads(saved.read_text())["rows"][1][notes] != "a note added in the file"
 
 
@@ -1146,7 +1145,7 @@ def test_pushing_the_yaml_saves_the_annotators_edit_and_leaves_the_sheet_equal(e
         assert sync_diagnostics_yaml._sync_to_sheet(
             LANG, drive_module.load_manifest(door), True, [])
     assert raw.get_all_values() == before
-    [saved] = drive_door.SNAPSHOT_DIR.glob(f"{LANG}_diagnostics_sheet_*.json")
+    [saved] = state_files.SNAPSHOT_DIR.glob(f"{LANG}_diagnostics_sheet_*.json")
     assert json.loads(saved.read_text())["rows"][1][3] == "an annotator's edit"
 
 

@@ -117,6 +117,29 @@
     leaving it as a known-but-undocumented weak point -- exactly the outcome
     this registry exists to produce.
 
+- id: coded_data_up_to_date
+  description: >-
+    coded_data/ has every commit GitHub's planars-data has, before a command
+    acts on state another machine may have written: the daily refresh's
+    pending changes (written on GitHub's machine), or a restructure journal
+    left by an interrupted run elsewhere (coding/state_files.py).
+  required_by:
+    - "apply_pending.py (apply-pending)"
+    - "restructure_sheets.py (restructure-sheets --apply)"
+  enforced_by: >-
+    preconditions.py, from each command's operations.yaml record:
+    state_files.behind_remote() fetches and counts the commits coded_data/
+    lacks; one or more stops the command with the pull to run. If it can't
+    tell (no network, no upstream branch) it stops too, and says why. Skipped
+    when coded_data/ is not a git repository.
+  failure_symptom: >-
+    apply-pending reports "no pending changes" while the pending-changes
+    issue says there are some; or restructure-sheets starts new work over an
+    interrupted run it can't see.
+  established: >-
+    2026-10-20, Phase 10 unit 12, when the state files moved from the repo
+    root of whichever machine ran the command into planars-data.
+
 - id: check_notes_documents_scope_authorized
   description: >-
     the cached OAuth token at ~/.config/gspread/authorized_user.json (or the

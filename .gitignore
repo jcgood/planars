@@ -22,11 +22,7 @@ coded_data/
 /drive_config.json
 dist/
 glottolog_cache.json
-pending_changes.json
 diagnostics_drift.json
-provenance_log.jsonl
-restructure_journal.json
-regen_snapshots/
 manifest_archives/
 book_proposal/
 # A planarsviz bundle's plots/ is a working area: the renderer's default

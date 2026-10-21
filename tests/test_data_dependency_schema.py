@@ -141,6 +141,7 @@ def test_preconditions_have_expected_ids():
     assert ids == {
         "coded_data_clean_tree",
         "coded_data_git_identity_configured",
+        "coded_data_up_to_date",
         "check_notes_documents_scope_authorized",
     }
 

@@ -65,6 +65,7 @@ from coding import drive as drive_module
 from coding import drive_doorway
 from coding import generate_notebooks as gn
 from coding import generate_sheets as gs
+from coding import state_files
 from command_runner import run_command
 from fake_drive import (FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID, point_coded_data_at,
                         ROOT_FOLDER_ID, api_error)
@@ -376,7 +377,7 @@ def test_regen_construction_snapshots_the_live_tab_before_overwriting_it(env):
     before = env.tab("synth0001", "nonpermutability", "general").get_all_values()
     env.run(["generate-sheets", "--lang", "synth0001",
              "--regen-construction", "nonpermutability:general"])
-    snapshot_path = env.tmp_root / "regen_snapshots" / "synth0001_nonpermutability_general.json"
+    snapshot_path = state_files.SNAPSHOT_DIR / "synth0001_nonpermutability_general.json"
     assert snapshot_path.exists()
     saved = json.loads(snapshot_path.read_text(encoding="utf-8"))
     assert saved["lang_id"] == "synth0001"
@@ -395,7 +396,7 @@ def test_regen_construction_snapshot_is_overwritten_not_appended(env):
              "--regen-construction", "nonpermutability:general"])
     env.run(["generate-sheets", "--lang", "synth0001",
              "--regen-construction", "nonpermutability:general", "--confirm-drop"])
-    snapshot_path = env.tmp_root / "regen_snapshots" / "synth0001_nonpermutability_general.json"
+    snapshot_path = state_files.SNAPSHOT_DIR / "synth0001_nonpermutability_general.json"
     saved = json.loads(snapshot_path.read_text(encoding="utf-8"))
     # The second run's snapshot is of the FIRST run's already-regenerated
     # tab, not a copy of both runs concatenated together.

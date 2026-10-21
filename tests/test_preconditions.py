@@ -117,9 +117,9 @@ def test_apply_only_commands_have_no_precondition_on_dry_run(op_id):
     assert preconditions.active_preconditions(op_id, _ns(apply=False)) == []
 
 
-def test_restructure_sheets_apply_requires_clean_tree_and_git_identity():
+def test_restructure_sheets_apply_requires_clean_tree_git_identity_and_an_up_to_date_copy():
     assert preconditions.active_preconditions("restructure_sheets", _ns(apply=True)) == [
-        "coded_data_clean_tree", "coded_data_git_identity_configured",
+        "coded_data_clean_tree", "coded_data_git_identity_configured", "coded_data_up_to_date",
     ]
 
 

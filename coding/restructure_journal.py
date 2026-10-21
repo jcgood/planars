@@ -60,8 +60,7 @@ import json
 from pathlib import Path
 from typing import Dict, Optional
 
-ROOT = Path(__file__).resolve().parent.parent
-JOURNAL_PATH = ROOT / "restructure_journal.json"
+from . import state_files
 
 OLD_SHEET_ARCHIVED = "old_sheet_archived"
 NEW_SHEET_CREATED = "new_sheet_created"
@@ -76,15 +75,12 @@ def _unit_key(lang_id: str, class_name: str) -> str:
 def load_journal(journal_path: Optional[Path] = None) -> Dict[str, dict]:
     """Return the current journal, ``{}`` if none exists or it's empty.
 
-    `journal_path` defaults to the real, repo-root journal every caller in
-    restructure_sheets.py uses; tests pass a `tmp_path` file instead of
-    monkeypatching the module global (same convention as
-    `coding/provenance.py`'s `log_path` parameter -- and for the same reason:
-    a `Path = JOURNAL_PATH` default is bound once, at import time, so
-    monkeypatching the `JOURNAL_PATH` attribute afterward wouldn't reach a
-    caller that never explicitly passes it).
+    `journal_path` defaults to `state_files.JOURNAL_PATH` (in planars-data
+    since Phase 10 unit 12, so a run interrupted on one machine is seen from
+    another), read at call time so tests can move it; a test may also pass a
+    `tmp_path` file (same convention as `coding/provenance.py`'s `log_path`).
     """
-    path = journal_path or JOURNAL_PATH
+    path = journal_path or state_files.JOURNAL_PATH
     if not path.exists():
         return {}
     text = path.read_text(encoding="utf-8").strip()
@@ -95,6 +91,7 @@ def load_journal(journal_path: Optional[Path] = None) -> Dict[str, dict]:
 
 def _save_journal(journal: Dict[str, dict], journal_path: Path) -> None:
     if journal:
+        journal_path.parent.mkdir(parents=True, exist_ok=True)
         journal_path.write_text(json.dumps(journal, indent=2), encoding="utf-8")
     elif journal_path.exists():
         # Nothing left to track -- remove the file rather than leave an empty
@@ -116,7 +113,7 @@ def record_checkpoint(
     construction params) -- see the callers in restructure_sheets.py for
     exactly what each checkpoint stores.
     """
-    path = journal_path or JOURNAL_PATH
+    path = journal_path or state_files.JOURNAL_PATH
     journal = load_journal(path)
     journal[_unit_key(lang_id, class_name)] = {
         "lang_id": lang_id,
@@ -131,7 +128,7 @@ def clear_unit(lang_id: str, class_name: str, journal_path: Optional[Path] = Non
     """Remove a unit's entry -- call once it reaches the terminal state
     (manifest updated locally AND uploaded to Drive) or has been rolled back.
     """
-    path = journal_path or JOURNAL_PATH
+    path = journal_path or state_files.JOURNAL_PATH
     journal = load_journal(path)
     journal.pop(_unit_key(lang_id, class_name), None)
     _save_journal(journal, path)

@@ -27,7 +27,7 @@ from typing import Dict, List
 
 import pytest
 
-from coding import apply_pending, drive_doorway
+from coding import apply_pending, drive_doorway, state_files
 from command_runner import run_command
 from fake_drive import FakeDriveDoorway
 
@@ -91,7 +91,7 @@ def env(monkeypatch, tmp_path):
     doorway = FakeDriveDoorway.from_fixtures()
     drive_doorway.set_doorway(doorway)
     pending_path = tmp_path / "pending_changes.json"
-    monkeypatch.setattr(apply_pending, "PENDING_PATH", pending_path)
+    monkeypatch.setattr(state_files, "PENDING_PATH", pending_path)
 
     def run(entries: List[Dict], answers: List[str] = (),
             all_flag: bool = False, command_exit_code: int = 0) -> Session:
@@ -454,7 +454,7 @@ def test_a_crash_after_one_entry_succeeds_does_not_leave_it_listed(monkeypatch, 
     entry_a = dict(planar_entry(), description="first change")
     entry_b = dict(planar_entry(), description="second change")
     pending_path.write_text(json.dumps([entry_a, entry_b], indent=2), encoding="utf-8")
-    monkeypatch.setattr(apply_pending, "PENDING_PATH", pending_path)
+    monkeypatch.setattr(state_files, "PENDING_PATH", pending_path)
 
     calls = {"n": 0}
 
