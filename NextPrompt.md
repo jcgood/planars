@@ -40,6 +40,9 @@ rule 8 especially) is a command bug or a spec gap to fix.
 
 **Next action:**
 
+0. **sync-params' read-quota near miss** in the 2026-10-20 refresh (see
+   the end of the Phase 10 row in `docs/data-layer-progress.md`): fix it
+   first.
 1. **Unit 12:** pending changes, the provenance log and regen snapshots
    kept in planars-data.
 2. **Unit 6a:** the local-file door in watch mode, with archive copies and
