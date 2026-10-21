@@ -28,7 +28,10 @@ def _identity(repo: Path) -> None:
 def data(tmp_path, monkeypatch):
     """A scratch planars-data with a remote, and the state files inside it."""
     remote = tmp_path / "remote.git"
-    _git(tmp_path, "init", "-q", "--bare", str(remote))
+    # The branch is named, not left to the machine's default (main here,
+    # master on GitHub's runners, where the clone below then checked out
+    # nothing and its push never reached main).
+    _git(tmp_path, "init", "-q", "--bare", "-b", "main", str(remote))
     repo = tmp_path / "coded_data"
     repo.mkdir()
     _git(repo, "init", "-q", "-b", "main")
@@ -110,7 +113,7 @@ def test_not_a_git_repository_is_skipped(tmp_path, monkeypatch):
 def _advance_remote(tmp_path: Path, remote: Path) -> None:
     """Another machine (the daily refresh) pushes a commit."""
     other = tmp_path / "other"
-    _git(tmp_path, "clone", "-q", str(remote), str(other))
+    _git(tmp_path, "clone", "-q", "-b", "main", str(remote), str(other))
     _identity(other)
     (other / ".state").mkdir()
     (other / ".state" / "pending_changes.json").write_text('[{"type": "x"}]')

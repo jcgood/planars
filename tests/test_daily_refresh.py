@@ -336,7 +336,8 @@ def _status(repo: Path) -> str:
 def _scratch_repo(tmp_path: Path, source: Path) -> Path:
     """A git copy of `source` with a bare remote it can push to."""
     remote = tmp_path / "remote.git"
-    subprocess.run(["git", "init", "-q", "--bare", str(remote)], check=True)
+    # Branch named, not the machine's default (main here, master on CI).
+    subprocess.run(["git", "init", "-q", "--bare", "-b", "main", str(remote)], check=True)
     repo = tmp_path / "coded_data"
     shutil.copytree(source, repo, ignore=shutil.ignore_patterns(".git"))
     for args in (["init", "-q", "-b", "main"],
