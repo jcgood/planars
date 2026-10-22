@@ -38,7 +38,19 @@ a live step for Jeff to approve);
 point 10 is that `vp_ellipsis` doesn't say its proform is Ø). The text
 for `vp_ellipsis` is Jeff's call; what the ellipsis tests should be
 (point 11, frames A/B, renaming; generic ellipsis; an English V-bar
-deletion test) is #319.
+deletion test) is #319;
+(f) Comments cells reach nobody: the collaborator guide invites
+questions there, import-sheets copies them, nothing reports them (and the
+guide never mentions the notes Doc, the channel check-notes watches).
+Jeff wants them read by Claude (2026-10-22). Shape to propose, like
+check-notes: the refresh finds new or changed Comments (the file door's
+change log already records each change) and files one issue per language
+with a generated prompt holding each comment and its row (element,
+position, tab, the row's answers); Claude, run from the issue, sorts them
+(question for the coordinator, doubt about a value, a workaround for
+something the schema can't say, a note) and drafts replies/issues.
+Also open, linguistic: displacement, the one standard constituency test
+with no class (#56; English is its data, Adam to write the frames).
 Not now: 8 (drop impossible pairs), 10–12 (proform frames, the
 host-only inflection); 13 is Jeff's to answer. (Audit
 #313 and #315, sync-params editing the YAML, are closed, 2026-10-18.)
