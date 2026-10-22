@@ -17,7 +17,25 @@ this project is trying to remove.
 
 ## Now
 
-Three live threads. Read whichever matches what you're picking up. (Audit
+Four live threads. Read whichever matches what you're picking up.
+
+### Thread: Adam's English coding requests (#318)
+
+**State lives in #318** (his 13 points, and the comment with Jeff's
+decisions, 2026-10-22). Approved, in order:
+(a) shorten the text the tooling writes for annotators (needs-fixing,
+proposal issue, Last review; the CLAUDE.md rule);
+(b) dependent-on-left/right take a `|`-separated list meaning "any one of
+these" (his § 3 gives the semantics and every place in the code; a
+qualification-rule change, so schema-work care, the module docstring and
+snapshots);
+(c) pre-fill referential=y for `NP{…}` rows in coreference prescreening
+(not pronouns);
+(d) rename the coreference constructions to `reflexive_coreference`,
+`pronoun_coreference`, `np_coreference`, in one pass (sheet links change:
+a live step for Jeff to approve).
+Not now: 8 (drop impossible pairs), 10–12 (proform frames, the
+host-only inflection); 13 is Jeff's to answer. (Audit
 #313 and #315, sync-params editing the YAML, are closed, 2026-10-18.)
 
 ### Thread: data layer Phase 10 — ownership and chokepoints (`coding/`, `schemas/`, #271)

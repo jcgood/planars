@@ -175,6 +175,11 @@ should make sense to someone who has never written a test.
   sheets, columns, annotators, positions, elements — not with how it was found.
 - **Say what you need.** End with a specific question (with a recommendation)
   or an explicit "nothing needed".
+- **Keep anything an annotator reads short** (Adam, #318, 2026-10-22):
+  replies, issue bodies and comments, sheet text, notes. Answer in a few
+  lines, give the one next step, and don't recap their points; the time
+  spent reading comes out of annotation time. This includes text the
+  tooling writes for them.
 - **Cut narration of your own process.** Report findings and decisions, not
   method. This is about register, not depth: the coordinator engages closely
   with substance stated plainly.
