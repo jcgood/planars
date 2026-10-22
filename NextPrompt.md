@@ -33,7 +33,11 @@ snapshots);
 (not pronouns);
 (d) rename the coreference constructions to `reflexive_coreference`,
 `pronoun_coreference`, `np_coreference`, in one pass (sheet links change:
-a live step for Jeff to approve).
+a live step for Jeff to approve);
+(e) a description per construction, shown on its sheet (none exist; Adam's
+point 10 is that `vp_ellipsis` doesn't say its proform is Ø). The text
+for `vp_ellipsis` is Jeff's call; what the ellipsis tests should be
+(point 11, frames A/B, renaming) belongs in #226.
 Not now: 8 (drop impossible pairs), 10–12 (proform frames, the
 host-only inflection); 13 is Jeff's to answer. (Audit
 #313 and #315, sync-params editing the YAML, are closed, 2026-10-18.)
