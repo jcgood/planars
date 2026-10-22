@@ -57,6 +57,12 @@ tests). Reads pass straight through. Every write is checked first:
   dropdowns; no protection (annotators are readers by sharing); and rule 6
   checks it has one tab, ``Status``, whose rows under the header name every
   construction of the diagnostics file, in order, each with a status.
+- **The rules for a proposal sheet** (unit 11a; ``sheet_spec.proposal_sheet_spec``):
+  its Planar and Diagnostics tabs are the annotator's proposal, every cell
+  theirs, so rule 1 holds for all of them (a refill goes through
+  ``replacing()``); Last review is the tooling's; no dropdowns; no
+  protection; and rule 6 checks its three tabs and their order, and that
+  each proposal tab written has its source's columns and What changed?.
 - **Rule 8, the files that are not spreadsheets** (``FILE_KINDS``: notes
   Docs, reports, notebooks, the manifest, folders; design § 8, "5f";
   ``sheet_spec.file_spec``): a create, rename, move or upload sends only the
@@ -140,6 +146,9 @@ CLASS_SHEET = "class_sheet"
 PLANAR_SHEET = "planar_sheet"
 DIAGNOSTICS_SHEET = "diagnostics_sheet"
 STATUS_SHEET = "status_sheet"
+# A language's proposal sheet (unit 11a; ownership-design § 3.2): where its
+# annotator proposes changes to the planar and the diagnostics file.
+PROPOSAL_SHEET = "proposal_sheet"
 LIVE_ENFORCED_KINDS: FrozenSet[str] = frozenset({CLASS_SHEET, STATUS_SHEET, DIAGNOSTICS_SHEET})
 # The Sheets that are a one-tab copy of one file, and what the door calls
 # that file and the Sheet in what it reports (sheet_spec.copy_sheet_spec).
@@ -153,7 +162,8 @@ COPY_SHEETS: Dict[str, Tuple[str, str]] = {
 # kind in KINDS is one or the other (tests/test_drive_door.py checks), and
 # every kind's sharing is checked (rule 5).
 NOTES_DOC = "notes_doc"
-SHEET_KINDS: FrozenSet[str] = frozenset({CLASS_SHEET, *COPY_SHEETS, STATUS_SHEET})
+SHEET_KINDS: FrozenSet[str] = frozenset({CLASS_SHEET, *COPY_SHEETS, STATUS_SHEET,
+                                         PROPOSAL_SHEET})
 FILE_KINDS: FrozenSet[str] = frozenset({NOTES_DOC, "report", "manifest", "notebook", "folder"})
 
 # Every batch_update request type the tooling sends, each checked below.
@@ -201,7 +211,8 @@ KINDS: Dict[str, Dict[str, Any]] = {
     PLANAR_SHEET:        {"lang": _LANG, "class": None, "name": None},
     DIAGNOSTICS_SHEET:   {"lang": _LANG, "class": None, "name": None},
     STATUS_SHEET:        {"lang": _LANG, "class": None, "name": None},
-    NOTES_DOC:           {"lang": _LANG, "class": None, "name": None},
+    PROPOSAL_SHEET:      {"lang": _LANG, "class": None, "name": None},
+    NOTES_DOC:          {"lang": _LANG, "class": None, "name": None},
     "report":            {"lang": _LANG, "class": None, "name": None},
     "manifest":          {"lang": None, "class": None, "name": None},
     # These two depend on the name: see Identity.__post_init__.
@@ -238,8 +249,13 @@ COPY_TAB = "copy"
 # The one tab of a language's status sheet: every cell the tooling's, rebuilt
 # on every run (sheet_spec.status_sheet_spec). Not a label either.
 STATUS_PAGE_TAB = "status page"
+# A proposal sheet's tabs (sheet_spec.proposal_sheet_spec), told apart by
+# title: Last review is the tooling's, rewritten after each review; the
+# Planar and Diagnostics tabs are the annotator's proposal, every cell theirs.
+REVIEW_TAB = "review"
+PROPOSAL_TAB = "proposal"
 # The tabs whose filled cells are annotators' answers (rule 1).
-_ANSWER_TABS = (CONSTRUCTION_TAB, STATUS_TAB_KIND, COPY_TAB)
+_ANSWER_TABS = (CONSTRUCTION_TAB, STATUS_TAB_KIND, COPY_TAB, PROPOSAL_TAB)
 
 
 @dataclass(frozen=True)
@@ -889,6 +905,8 @@ class CheckedDoorway:
             return self._copy_shape_problems(ss, spec, where)
         if identity.kind == STATUS_SHEET:
             return self._status_page_shape_problems(ss, spec, where)
+        if identity.kind == PROPOSAL_SHEET:
+            return self._proposal_shape_problems(ss, spec, where)
         after = self._sheet_layout(ss)
         before = self._before_sheets[ss.id]
         new = _layout_mismatches(spec, after) - (
@@ -945,6 +963,33 @@ class CheckedDoorway:
         if after and ss.id in {sheet_id for sheet_id, _ in self._before_tabs}:
             now = _retry(lambda: ss._inner.worksheet(after[0]["title"]).get_all_values())
             new |= _status_page_tab_mismatches(spec.tab, now)
+        return _describe_mismatches(where, new)
+
+    def _proposal_shape_problems(self, ss: "CheckedSpreadsheet", spec,
+                                 where: str) -> List[str]:
+        """Rule 6 for a proposal sheet: its three tabs in order, none
+        protected, and each proposal tab the command wrote has its source's
+        columns and What changed?. Its rows are the annotator's proposal, so
+        they are not compared. Only what is new is reported."""
+        after = self._sheet_layout(ss)
+        before = self._before_sheets[ss.id]
+        new = _layout_mismatches(spec, after) - (
+            _layout_mismatches(spec, before) if before is not None else set())
+        by_id = {t["id"]: t for t in after}
+        for (sheet_id, tab_id), earlier in self._before_tabs.items():
+            if sheet_id != ss.id or tab_id not in by_id:
+                continue
+            try:
+                tab = spec.tab(by_id[tab_id]["name"])
+            except KeyError:
+                continue  # not one of its tabs: the layout reports it
+            if tab.kind != PROPOSAL_TAB:
+                continue
+            title = by_id[tab_id]["title"]
+            now = _retry(lambda: ss._inner.worksheet(title).get_all_values())
+            new |= _column_mismatches(tab, _header_of(now))
+            if earlier is not None:
+                new -= _column_mismatches(tab, _header_of(earlier))
         return _describe_mismatches(where, new)
 
     def _expected_row_keys(self, identity: Identity, tab) -> Optional[frozenset]:
@@ -1025,11 +1070,12 @@ class CheckedDoorway:
         self.violations.extend(messages)
 
     def _spec(self, identity: Identity):
-        """The spec of a class sheet, a planar or diagnostics Sheet, or a
-        status sheet, or the error that stopped it being built."""
+        """The spec of a class sheet, a planar or diagnostics Sheet, a status
+        sheet or a proposal sheet, or the error that stopped it being built."""
         key = (identity.kind, identity.lang_id, identity.class_name)
         if key not in self._specs:
-            from .sheet_spec import class_sheet_spec, copy_sheet_spec, status_sheet_spec
+            from .sheet_spec import (class_sheet_spec, copy_sheet_spec, proposal_sheet_spec,
+                                     status_sheet_spec)
             try:
                 if identity.kind == CLASS_SHEET:
                     spec = class_sheet_spec(identity.lang_id, identity.class_name, CODED_DATA)
@@ -1037,6 +1083,8 @@ class CheckedDoorway:
                     spec = copy_sheet_spec(identity.kind, identity.lang_id, CODED_DATA)
                 elif identity.kind == STATUS_SHEET:
                     spec = status_sheet_spec(identity.lang_id, CODED_DATA)
+                elif identity.kind == PROPOSAL_SHEET:
+                    spec = proposal_sheet_spec(identity.lang_id, CODED_DATA)
                 else:
                     raise ValueError(f"no spec for a {identity.kind} yet")
                 self._specs[key] = spec
@@ -1463,6 +1511,11 @@ def _column_mismatches(tab, header: Sequence[str],
     return out
 
 
+def _header_of(grid: List[List[Any]]) -> List[str]:
+    rows = _trimmed([[_text(v) for v in r] for r in grid])
+    return rows[0] if rows else []
+
+
 def _copy_layout_mismatches(sheet: str, layout: List[Dict[str, Any]]) -> set:
     """A planar or diagnostics Sheet (``sheet`` names it) has one tab, and
     nothing on it is protected (until unit 11 locks it)."""
@@ -1832,14 +1885,17 @@ class CheckedWorksheet:
 
     def _kind(self) -> Tuple[Optional[str], Any]:
         """(tab kind, spec-or-error) for a tab of a class sheet (from the
-        tab's label, else its title), of a planar or diagnostics Sheet, or of
-        a status sheet; (None, None) for a tab of a spreadsheet whose contents
-        have no spec yet."""
+        tab's label, else its title), of a planar or diagnostics Sheet, of a
+        status sheet, or of a proposal sheet (by title); (None, None) for a
+        tab of a spreadsheet whose contents have no spec yet."""
         identity = self._ss.identity
         if identity is not None and identity.kind in COPY_SHEETS:
             return COPY_TAB, None
         if identity is not None and identity.kind == STATUS_SHEET:
             return STATUS_PAGE_TAB, None
+        if identity is not None and identity.kind == PROPOSAL_SHEET:
+            from .sheet_spec import REVIEW_TAB_TITLE
+            return (REVIEW_TAB if self.title == REVIEW_TAB_TITLE else PROPOSAL_TAB), None
         if identity is None or identity.kind != CLASS_SHEET:
             return None, None
         kind = self._label().get(TAB_KIND_LABEL)
@@ -1859,8 +1915,8 @@ class CheckedWorksheet:
         """Columns of this tab that the tooling owns (by header name)."""
         identity = self._ss.identity
         kind, _ = self._kind()
-        if kind == COPY_TAB:
-            return set()     # every column the annotator's, until unit 11
+        if kind in (COPY_TAB, PROPOSAL_TAB):
+            return set()     # every column the annotator's (a copy: until unit 11)
         if kind == STATUS_TAB_KIND:
             from planars.schema_values import STATUS_TOOLING_COLUMNS
             return set(STATUS_TOOLING_COLUMNS)
@@ -2028,6 +2084,8 @@ class CheckedWorksheet:
                     f"{self._ss.title!r}"]
         if kind == STATUS_PAGE_TAB:
             return [f"no dropdowns on status sheet {self._ss.title!r}"]
+        if kind in (REVIEW_TAB, PROPOSAL_TAB):
+            return [f"no dropdowns on proposal sheet {self._ss.title!r}"]
         grid = self._door._grid(self)
         header = grid[0] if grid else []
         rng = payload["range"]

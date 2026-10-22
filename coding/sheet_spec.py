@@ -9,7 +9,9 @@ up as a wrong check, not as a quietly stale table.
 Every kind of Drive file has a spec: class sheets (`class_sheet_spec`),
 the planar and diagnostics Sheets (`copy_sheet_spec`), the status sheets
 (`status_sheet_spec`: one `Status` tab listing every construction, all the
-tooling's), and the files that are not spreadsheets — notes Docs, the
+tooling's), the proposal sheets (`proposal_sheet_spec`: Last review, the
+tooling's, then Planar and Diagnostics, copies of the two sources plus a
+What changed? column, every cell the annotator's), and the files that are not spreadsheets — notes Docs, the
 manifest, notebooks, PDF reports and folders (`file_spec`: name, folder,
 type, what may be written into it, `content_problems`,
 `appended_text_problems`). Sharing is specified for every kind
@@ -80,6 +82,8 @@ from .drive_door import CONSTRUCTION_TAB as CONSTRUCTION
 from .drive_door import LOCKED_TAB as LOCKED
 from .drive_door import COPY_TAB as COPY
 from .drive_door import DIAGNOSTICS_SHEET, PLANAR_SHEET
+from .drive_door import PROPOSAL_TAB as PROPOSAL
+from .drive_door import REVIEW_TAB as REVIEW
 from .drive_door import STATUS_PAGE_TAB as STATUS_PAGE
 from .drive_door import STATUS_TAB_KIND as STATUS
 from .biuniqueness_rows import ELEMENTS as BIUNIQUENESS_ELEMENTS_TAB
@@ -331,6 +335,56 @@ def copy_sheet_spec(kind: str, lang_id: str, data_dir: Path) -> CopySheetSpec:
 
 
 # ---------------------------------------------------------------------------
+# The proposal sheet: where an annotator proposes changes to the sources
+# ---------------------------------------------------------------------------
+
+# Its tabs, in order (ownership-design § 3.2). Last review is the tooling's:
+# what the last review accepted and rejected (accept-proposal writes it). The
+# other two are copies of the planar and of the diagnostics file as the
+# diagnostics Sheet shows it, plus a column for the annotator's reason.
+REVIEW_TAB_TITLE = "Last review"
+PROPOSAL_PLANAR_TAB = "Planar"
+PROPOSAL_DIAGNOSTICS_TAB = "Diagnostics"
+WHAT_CHANGED_COLUMN = "What changed?"
+# Each proposal tab and the source it copies (copy_sheet_spec's kind).
+PROPOSAL_TABS: Tuple[Tuple[str, str], ...] = (
+    (PROPOSAL_PLANAR_TAB, PLANAR_SHEET),
+    (PROPOSAL_DIAGNOSTICS_TAB, DIAGNOSTICS_SHEET),
+)
+
+
+@dataclass(frozen=True)
+class ProposalSheetSpec:
+    """Last review, then the Planar and Diagnostics tabs: each the source's
+    columns and rows (``copy_sheet_spec``) plus WHAT_CHANGED_COLUMN, every
+    cell the annotator's. Nothing is protected: Last review is rewritten
+    after each review, so an edit to it is simply replaced."""
+    lang_id: str
+    tabs: Tuple[TabSpec, ...]
+
+    @property
+    def tab_titles(self) -> List[str]:
+        return [t.title for t in self.tabs]
+
+    def tab(self, title: str) -> TabSpec:
+        for t in self.tabs:
+            if t.title == title:
+                return t
+        raise KeyError(f"proposal_{self.lang_id} has no tab {title!r}")
+
+
+def proposal_sheet_spec(lang_id: str, data_dir: Path) -> ProposalSheetSpec:
+    """The spec for one language's proposal sheet, from its two sources."""
+    tabs = [TabSpec(REVIEW_TAB_TITLE, REVIEW, (ColumnSpec(REVIEW_TAB_TITLE, TOOLING, None),))]
+    for title, kind in PROPOSAL_TABS:
+        copy = copy_sheet_spec(kind, lang_id, data_dir).tab
+        columns = copy.columns + (ColumnSpec(WHAT_CHANGED_COLUMN, ANNOTATOR, None),)
+        rows = tuple(row + ("",) for row in copy.rows or ())
+        tabs.append(TabSpec(title, PROPOSAL, columns, rows=rows))
+    return ProposalSheetSpec(lang_id, tuple(tabs))
+
+
+# ---------------------------------------------------------------------------
 # The status sheet: a read-only page per language, rebuilt each run
 # ---------------------------------------------------------------------------
 
@@ -495,6 +549,10 @@ _SHARING: Dict[str, Dict[str, Optional[str]]] = {
     "diagnostics_sheet": {"who": _ANNOTATOR, "role": WRITER, "link": None},
     # Built by the tooling, read by the annotator (generate-status-sheet).
     "status_sheet":      {"who": _ANNOTATOR, "role": READER, "link": None},
+    # Where the annotator proposes changes to the sources (unit 11a). The
+    # coordinators edit it too (ownership-design Q2), as writers inherited
+    # from the root folder.
+    "proposal_sheet":    {"who": _ANNOTATOR, "role": WRITER, "link": None},
     # Where the annotator writes notes to the coordinator.
     "notes_doc":         {"who": _ANNOTATOR, "role": WRITER, "link": None},
     # Notebooks and PDF reports keep link sharing until a notebook shared by

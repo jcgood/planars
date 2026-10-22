@@ -326,7 +326,22 @@ the same commit.
    `proposal_sheet` kind in both doors, creation (**a live write, named for
    Jeff's approval**), the daily comparison and issue, `accept-proposal`. The
    old intakes keep running alongside until 11b. Jeff tells Adam, and an
-   issue mentioning him says what changes (Q8).
+   issue mentioning him says what changes (Q8). *First part built
+   2026-10-21:* the `proposal_sheet` kind in the Drive door (its Planar and
+   Diagnostics tabs every cell the annotator's, Last review the tooling's;
+   rule 6 checks the three tabs and each written tab's columns, not its
+   rows), `sheet_spec.proposal_sheet_spec` (the two proposal tabs are
+   `copy_sheet_spec`'s copies plus What changed?, so the sources render to
+   the grid in one place), its sharing (annotator writer by name; Q2's
+   coordinators are writers already, inherited from the root), the
+   `proposal_base` kind in the local-file door, and `proposal-sheets`, which
+   makes each sheet and refills a tab still holding its base. Choices where
+   the design left a gap: the Last review note is the sheet's first tab
+   (what the annotator sees on opening it); the sheet's ID goes in the ID
+   file beside the planar Sheet's; a tab holding a proposal is left whole
+   until the daily comparison (next) refreshes its untouched rows. Its
+   instruction sentences are a constant in `proposal_sheets.py` until 11d
+   moves them, with the locked tabs', into the schema.
 6. **11b — lock the planar and diagnostics Sheets, retire the intakes and
    delete the diagnostics TSV** (§ 3.5, Q5; **a live write**: protecting the
    Sheets), once Adam has used a proposal sheet. Until then the diagnostics

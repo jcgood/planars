@@ -106,6 +106,7 @@ ANNOTATION = "annotation"
 PLANAR = "planar"
 DIAGNOSTICS_YAML = "diagnostics_yaml"
 DIAGNOSTICS_TSV = "diagnostics_tsv"
+PROPOSAL_BASE = "proposal_base"
 
 # Every kind a command can write, the parts that name one, and its file name
 # within its folder. The folder is the class for an annotation TSV and
@@ -122,6 +123,10 @@ KINDS: Dict[str, Dict[str, object]] = {
     # Built from the YAML; deleted in unit 11b (ownership-design Q5).
     DIAGNOSTICS_TSV:  {"parts": (), "name": lambda f: f"diagnostics_{f.lang_id}.tsv",
                        "what": "the diagnostics TSV (a copy of the diagnostics file)"},
+    # What the proposal sheet was last filled with (unit 11a; ownership-design
+    # § 3.4): an annotator's proposal is the sheet's difference from it.
+    PROPOSAL_BASE:    {"parts": (), "name": lambda f: f"proposal_base_{f.lang_id}.json",
+                       "what": "what the proposal sheet was last filled with"},
 }
 # The files a person edits; every other kind is built from something else.
 SOURCES: FrozenSet[str] = frozenset({PLANAR, DIAGNOSTICS_YAML})
@@ -182,6 +187,10 @@ def diagnostics_yaml(lang_id: str) -> LocalFile:
 
 def diagnostics_tsv(lang_id: str) -> LocalFile:
     return LocalFile(DIAGNOSTICS_TSV, lang_id)
+
+
+def proposal_base(lang_id: str) -> LocalFile:
+    return LocalFile(PROPOSAL_BASE, lang_id)
 
 
 def class_folder(lang_id: str, class_name: str) -> Path:
@@ -661,7 +670,7 @@ def _loss_problems(target: LocalFile, old: Optional[str], new: str) -> List[str]
 
 def _describe(target: LocalFile, old: Optional[str], new: str) -> str:
     """The change in a few words, for the change log."""
-    if target.kind == DIAGNOSTICS_YAML:
+    if target.kind in (DIAGNOSTICS_YAML, PROPOSAL_BASE):
         if old is None:
             return "created"
         diff = [l for l in difflib.ndiff(old.splitlines(), new.splitlines())

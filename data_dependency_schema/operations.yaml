@@ -901,6 +901,34 @@
   cascades_triggered: []
   modes: []
 
+- id: proposal_sheets
+  cli_command: proposal-sheets
+  writes_to_drive: true
+  writes_locally: true
+  description: >-
+    Makes each language's proposal sheet (Last review, Planar, Diagnostics;
+    unit 11a), where its annotator proposes changes to the planar and the
+    diagnostics file, and refills the tabs that hold no proposal when a
+    source has changed.
+  side_effects:
+    - "creates proposal_{lang_id} in the language's folder, shared with its annotator as writer"
+    - "refills a proposal tab still holding what it was last filled with (the Drive door saves it first)"
+    - >-
+      writes the language's proposal base (lang_setup/proposal_base_{lang_id}.json)
+      through the local-file door, and the new sheet's ID to drive_config.json
+    - "commits and pushes the files it wrote in planars-data when it ends (the local-file door)"
+  idempotent: true
+  idempotency_note: >-
+    A sheet is made only when drive_config.json records none and the folder
+    holds none of that name; a tab is refilled only when it still equals the
+    base and the sources differ from it, so a second run with nothing changed
+    writes nothing.
+  apply_gate: "--apply"
+  preconditions: [coded_data_clean_tree, coded_data_git_identity_configured]
+  facts_touched: []
+  cascades_triggered: []
+  modes: []
+
 - id: registry
   cli_command: registry
   writes_to_drive: false

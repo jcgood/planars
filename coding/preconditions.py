@@ -43,16 +43,17 @@ from .gating import active_parts
 from .registry import _load_operations
 
 # coded_data_clean_tree defaults to checking only *.tsv (preconditions.yaml's
-# documented default). sync_diagnostics_yaml is the one command that reads
-# AND writes coded_data/*.yaml as well as *.tsv across all three of its
-# directions, so it needs both extensions checked — the same (".yaml",
-# ".tsv") tuple its own manual call passed before centralization.
-# operations.yaml's preconditions field is a plain list of ids with no
-# per-command parameters (see operation_record.schema.json) — deliberately,
-# so a schema change isn't warranted for a single documented exception; this
-# lookup lives here instead. Revisit if a second exception ever shows up.
+# documented default). The exceptions: sync_diagnostics_yaml reads AND
+# writes coded_data/*.yaml as well as *.tsv across all three of its
+# directions (the same tuple its own manual call passed before
+# centralization); proposal_sheets reads the diagnostics YAML and the planar
+# and writes the proposal base (*.json, unit 11a). operations.yaml's
+# preconditions field is a plain list of ids with no per-command parameters
+# (see operation_record.schema.json); two exceptions still don't warrant a
+# schema change, so the lookup stays here.
 _CODED_DATA_CLEAN_EXTENSIONS: Dict[str, tuple] = {
     "sync_diagnostics_yaml": (".yaml", ".tsv"),
+    "proposal_sheets": (".yaml", ".tsv", ".json"),
 }
 
 def _check_coded_data_up_to_date(op_id: str) -> None:
