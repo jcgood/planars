@@ -17,7 +17,20 @@ this project is trying to remove.
 
 ## Now
 
-Four live threads. Read whichever matches what you're picking up.
+Five live threads. Read whichever matches what you're picking up.
+
+### Thread: reviewing the qualification rules with Adam (parked 2026-10-22)
+
+Changing a rule has a procedure (coordinator guide § "Updating a
+qualification rule"); getting Adam's sign-off has none, and
+`diagnostic_classes_status.yaml`'s "module-review workflow" (phrasal_accent)
+points at nothing. Proposed to Jeff, not yet approved: one short issue per
+class for Adam, giving the rule in plain words, the spans it produces from
+his English answers, and what to confirm. Start with free_occurrence and
+segmental to settle the format. **Next action:** ask Jeff whether to write
+that procedure into the coordinator guide, fix the dangling reference and
+draft the first issue. Classes awaiting review: the `status` values in
+`schemas/diagnostic_classes_status.yaml`.
 
 ### Thread: Adam's English coding requests (#318)
 
