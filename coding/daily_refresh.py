@@ -196,7 +196,9 @@ class Git:
         if quiet.returncode == 0:
             return False
         self._git("commit", "-m", message)
-        self._git("push")
+        pushed = file_door.push(self.repo)
+        if pushed.returncode != 0:
+            raise GitError(f"git push failed in {self.repo}: {pushed.stderr.strip()}")
         return True
 
 

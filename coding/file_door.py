@@ -771,6 +771,21 @@ def _git(repo: Path, *args: str) -> subprocess.CompletedProcess:
     return subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True)
 
 
+def push(repo: Path) -> subprocess.CompletedProcess:
+    """Push; if GitHub refuses because someone else pushed meanwhile (a
+    person during a daily refresh, 2026-10-22), replay this repository's
+    commits on top of theirs and push again. A replay that conflicts is
+    undone, and the refused push's result returned, so the local commit
+    stays as it was."""
+    first = _git(repo, "push")
+    if first.returncode == 0:
+        return first
+    if _git(repo, "pull", "--rebase").returncode != 0:
+        _git(repo, "rebase", "--abort")
+        return first
+    return _git(repo, "push")
+
+
 def _commit(run: _Run) -> None:
     """Commit and push the run's files. Raises if ``git add`` or ``git
     commit`` fails (a write that reached disk but not git leaves planars-data
@@ -802,10 +817,10 @@ def _commit(run: _Run) -> None:
                 f"(git {step[0]}): {done.stderr.strip() or done.stdout.strip()}. "
                 f"The files are written but not committed; commit them in coded_data/ "
                 f"by hand and push.")
-    push = _git(repo, "push")
-    if push.returncode != 0:
+    pushed = push(repo)
+    if pushed.returncode != 0:
         print(f"WARNING: committed {run.command}'s files in planars-data but could not "
-              f"push: {push.stderr.strip()}. Run: git -C coded_data push")
+              f"push: {pushed.stderr.strip()}. Run: git -C coded_data push")
 
 
 def _report_violations(command: str, violations: List[str]) -> None:
