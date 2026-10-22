@@ -55,6 +55,13 @@ Applied 0 of 1 change(s). 1 still pending.
   Class 'subspanrepetition': new construction(s)
 
   Checking Google Sheet for tab(s): ['auxiliary_construction'] ...
+    (connection dropped — waiting 15s before retry 2/8)
+    (connection dropped — waiting 30s before retry 3/8)
+    (connection dropped — waiting 45s before retry 4/8)
+    (connection dropped — waiting 60s before retry 5/8)
+    (connection dropped — waiting 60s before retry 6/8)
+    (connection dropped — waiting 60s before retry 7/8)
+    (connection dropped — waiting 60s before retry 8/8)
   Could not reach Drive to check (no network, or sign-in failed).
   Nothing is wrong with the entry itself — running
   python -m coding apply-pending again later will check properly.

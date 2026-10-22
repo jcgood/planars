@@ -1203,7 +1203,7 @@ def _rename_class_for_language(
 
     # --- apply ---
 
-    # Archive old sheet. (Retry on a transient 429/500/503 happens in the
+    # Archive old sheet. (Retry on a transient Google error happens in the
     # Drive door, coding/drive_door.py.)
     if folder_id:
         archive_id = doorway.get_or_create_folder(
@@ -1743,7 +1743,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                 continue
 
             # Step 3: Archive existing sheet. (Retry on a transient
-            # 429/500/503 happens in the Drive door, coding/drive_door.py.)
+            # Google error happens in the Drive door, coding/drive_door.py.)
             new_version = version + 1
             if folder_id:
                 archive_id = doorway.get_or_create_folder(

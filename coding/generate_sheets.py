@@ -1766,7 +1766,7 @@ def _regen_construction(
     Note: before the #271 migration this opened the spreadsheet with no retry
     at all, unlike every other spreadsheet open in this file. The doorway's
     open call always retries (see its own module docstring), so this call site
-    now gets the same 429/500/503 backoff as the rest of the file -- see
+    now gets the same backoff as the rest of the file -- see
     docs/data-layer-progress.md's decisions log for the full rationale.
     Opening is an idempotent read, so the added retry changes nothing about
     what gets written.

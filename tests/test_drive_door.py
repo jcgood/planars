@@ -540,6 +540,19 @@ def test_a_busy_drive_is_retried(env):
     assert fake.spreadsheet(sheet_id).worksheet("general").get_all_values()[1][0] == "renamed"
 
 
+@pytest.mark.parametrize("exc", [api_error(502, "bad gateway"),
+                                 ConnectionResetError(104, "Connection reset by peer")],
+                         ids=["502", "connection-reset"])
+def test_a_server_error_or_dropped_connection_is_retried(env, exc):
+    # Both stopped steps of the daily refresh on 2026-10-22.
+    fake, door, sheet_id, _ = env
+    fake.fail_after("update_cell", 1, exc=exc)
+    with _running_out_of_shape():
+        ws = _tab(door, sheet_id, "general")
+        ws.update_cell(2, _col(ws, "Element") + 1, "renamed")
+    assert fake.spreadsheet(sheet_id).worksheet("general").get_all_values()[1][0] == "renamed"
+
+
 def test_a_create_that_landed_before_the_error_is_not_made_twice(env):
     fake, door, sheet_id, _ = env
     fake.fail_after("create_file", 1, exc=api_error(503, "unavailable"))

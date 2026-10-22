@@ -191,6 +191,8 @@ def test_transcript_of_the_four_ways_a_check_can_fail(env, monkeypatch):
     monkeypatch.setattr(doorway, "open_spreadsheet", unreachable(PermissionError()))
     parts.append(run([entry], ["n"]).output)
 
+    # A dropped connection is retried first (the door's waits), then reported.
+    monkeypatch.setattr("coding.drive_door.time.sleep", lambda *a, **kw: None)
     monkeypatch.setattr(doorway, "open_spreadsheet",
                         unreachable(ConnectionError("network is down")))
     parts.append(run([entry], ["n"]).output)
@@ -347,10 +349,12 @@ def test_a_sheet_not_shared_with_this_account_says_what_to_ask_for(env, monkeypa
 def test_a_dropped_connection_says_the_entry_is_fine(env, monkeypatch):
     """The one case where nothing is wrong and trying again later is the fix."""
     doorway, run = env
+    monkeypatch.setattr("coding.drive_door.time.sleep", lambda *a, **kw: None)
     monkeypatch.setattr(doorway, "open_spreadsheet",
                         unreachable(ConnectionError("network is down")))
     entry = construction_entry(True, SUBSPAN, ["auxiliary_construction"])
     out = run([entry], ["n"]).output
+    assert "(connection dropped — waiting" in out   # retried before it is reported
     assert "Could not reach Drive to check" in out
     assert "Nothing is wrong with the entry itself" in out
     # The question admits what it is asking for.

@@ -72,8 +72,8 @@ tests). Reads pass straight through. Every write is checked first:
   appended to it; and a file only one of which may exist (all but archive
   folders) is not made a second time.
 
-Every call is retried on Google's "try again" answers (429, 500, 503), here
-and nowhere else. A call that creates something is retried only after
+Every call is retried on Google's "try again" answers (``_RETRYABLE``) and
+on a dropped connection, here and nowhere else. A call that creates something is retried only after
 checking the first attempt didn't land, so a retry never makes a duplicate.
 
 **Provenance.** At the end of the command the door appends one line per tab
@@ -175,7 +175,9 @@ REQUEST_TYPES = frozenset({
 })
 
 VIOLATION_LABEL = "door-violation"
-_RETRYABLE = (429, 500, 503)
+# Google's answers that mean "try again shortly". 502 and 504 were added on
+# 2026-10-22, when a 502 stopped sync-params in the daily refresh.
+_RETRYABLE = (429, 500, 502, 503, 504)
 _SPREADSHEET_MIME = "application/vnd.google-apps.spreadsheet"
 _FOLDER_MIME = "application/vnd.google-apps.folder"
 _DOC_MIME = "application/vnd.google-apps.document"
@@ -489,8 +491,18 @@ def _status_of(exc: Exception) -> Optional[int]:
 _WAITS = (15, 30, 45, 60, 60, 60, 60)
 
 
+def _dropped_connection(exc: Exception) -> bool:
+    """The connection to Google broke or timed out before an answer came
+    (the status-sheet step, 2026-10-22: "Connection reset by peer")."""
+    import requests  # gspread's transport; imported here, as only this needs it
+    return isinstance(exc, (ConnectionError, TimeoutError,
+                            requests.exceptions.ConnectionError,
+                            requests.exceptions.Timeout))
+
+
 def _retry(fn: Callable[[], Any], landed: Optional[Callable[[], Any]] = None) -> Any:
-    """Call ``fn``, waiting (``_WAITS``) and trying again on 429/500/503.
+    """Call ``fn``, waiting (``_WAITS``) and trying again on a status in
+    ``_RETRYABLE`` or a dropped connection.
 
     ``landed``, for a call that creates something: asked before each retry
     whether the failed attempt went through anyway. If it returns something,
@@ -502,10 +514,12 @@ def _retry(fn: Callable[[], Any], landed: Optional[Callable[[], Any]] = None) ->
             return fn()
         except Exception as exc:  # noqa: BLE001 - re-raised unless retryable
             status = _status_of(exc)
-            if status not in _RETRYABLE or attempt == retries - 1:
+            dropped = _dropped_connection(exc)
+            if (status not in _RETRYABLE and not dropped) or attempt == retries - 1:
                 raise
             wait = _WAITS[attempt]
-            print(f"    (API error {status} — waiting {wait}s before retry {attempt + 2}/{retries})")
+            what = "connection dropped" if dropped else f"API error {status}"
+            print(f"    ({what} — waiting {wait}s before retry {attempt + 2}/{retries})")
             time.sleep(wait)
             if landed is not None:
                 found = landed()

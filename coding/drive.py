@@ -36,7 +36,7 @@ from . import drive_door
 ROOT = Path(__file__).resolve().parent.parent
 _DEFAULT_OAUTH_PATH = Path.home() / ".config" / "planars" / "oauth_credentials.json"
 
-# Retry on 429/500/503 happens in the Drive door (coding/drive_door.py), which
+# Retry on a transient Google error happens in the Drive door (coding/drive_door.py), which
 # wraps every doorway call.
 
 
