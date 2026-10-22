@@ -106,7 +106,7 @@ oauthlib==4.0.0
     # via requests-oauthlib
 orjson==3.11.8
     # via kaleido
-packaging==26.0
+packaging==26.3
     # via
     #   kaleido
     #   matplotlib
@@ -122,7 +122,7 @@ pandera==0.32.1
     # via
     #   -r requirements.in
     #   planars
-pillow==12.3.0
+pillow==13.0.0
     # via
     #   -r requirements.in
     #   matplotlib
@@ -225,7 +225,7 @@ uritemplate==4.2.0
     # via google-api-python-client
 urllib3==2.8.0
     # via requests
-virtualenv==21.14.2
+virtualenv==21.14.13
     # via pre-commit
 weasyprint==70.0
     # via -r requirements.in
