@@ -40,19 +40,17 @@ rule 8 especially) is a command bug or a spec gap to fix.
 
 **Next action:**
 
-0. **Check the 2026-10-21 refresh:** its sync-params step made no 429
-   retries (reads cut 2026-10-20); it committed `coded_data/.state/`
-   (unit 12, the first refresh to keep its provenance log and pending
-   changes; since unit 6b in each command's own `data: <command> changed
-   N file(s)` commit); and it is the first run with the local-file door (unit 6a,
-   watch): the commands that wrote files committed them themselves, with
-   a `changes.tsv` line per file, and no `door-violation` issue titled
-   "Local-file door" was filed (if one was, each line is a command bug or
-   a gap in the door's rules: fix it). It is also the first run with unit
-   6b (built 2026-10-21): what to check is at the end of the Phase 10 row.
+0. **Watch for the local-file door's first real data-file write.** The
+   2026-10-21 refresh passed every 6a/6b check (end of the Phase 10 row)
+   but changed no annotation or set-up file. On each refresh, look in
+   planars-data's log for a `data: <command> changed N file(s)` commit
+   touching a TSV/YAML (not only `.state/`): it should carry a
+   `{lang}/changes.tsv` line and an archive copy per file, and file no
+   "Local-file door" `door-violation` issue. Also confirm no step used
+   the Drive door's last retry (`retry 8/8`; waits lengthened 2026-10-21).
 1. **Unit 6c — enforce** the local-file door (`ownership-design.md` § 6
-   step 4), once the refresh's real writes have gone through cleanly in
-   watch; `data-overwrite` moves to the change log (§ 5.3).
+   step 4), once that first data-file write has gone through cleanly;
+   `data-overwrite` moves to the change log (§ 5.3).
 
 **Waits on watching:** enforce for each other kind (its own first clean
 real write, then added to `LIVE_ENFORCED_KINDS`), for 6c, and refusing unlabelled

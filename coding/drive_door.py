@@ -462,14 +462,22 @@ def _status_of(exc: Exception) -> Optional[int]:
         return None
 
 
-def _retry(fn: Callable[[], Any], landed: Optional[Callable[[], Any]] = None,
-           retries: int = 5) -> Any:
-    """Call ``fn``, waiting and trying again on 429/500/503.
+# Seconds to wait before each retry. Google's read limit is not a plain
+# per-minute window: on 2026-10-21 the status-sheet step was still refused
+# after 90s of silence and got through only on the fourth wait, the last the
+# old schedule (15, 30, 45, 60) allowed. The longer tail costs nothing when
+# Google answers sooner.
+_WAITS = (15, 30, 45, 60, 60, 60, 60)
+
+
+def _retry(fn: Callable[[], Any], landed: Optional[Callable[[], Any]] = None) -> Any:
+    """Call ``fn``, waiting (``_WAITS``) and trying again on 429/500/503.
 
     ``landed``, for a call that creates something: asked before each retry
     whether the failed attempt went through anyway. If it returns something,
     that is the result and nothing is created a second time.
     """
+    retries = len(_WAITS) + 1
     for attempt in range(retries):
         try:
             return fn()
@@ -477,7 +485,7 @@ def _retry(fn: Callable[[], Any], landed: Optional[Callable[[], Any]] = None,
             status = _status_of(exc)
             if status not in _RETRYABLE or attempt == retries - 1:
                 raise
-            wait = 15 * (attempt + 1)
+            wait = _WAITS[attempt]
             print(f"    (API error {status} — waiting {wait}s before retry {attempt + 2}/{retries})")
             time.sleep(wait)
             if landed is not None:

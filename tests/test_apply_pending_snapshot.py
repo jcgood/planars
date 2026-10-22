@@ -401,7 +401,8 @@ def test_a_busy_drive_is_retried_first_and_only_then_reported(env, monkeypatch):
 
     entry = construction_entry(True, SUBSPAN, ["auxiliary_construction"])
     out = run([entry], ["n"]).output
-    assert len(waits) == 4                       # five attempts, four waits
+    from coding.drive_door import _WAITS
+    assert waits == list(_WAITS)                 # every wait used, then reported
     assert "Could not reach Drive to check" in out
 
 
