@@ -184,7 +184,8 @@ A bug with one obviously right fix is not a question: fix it and report it.
   be another one's work in flight: do not commit it and do not revert it, stage
   your own files by name, and ask whose it is.
 - **During live Drive work, push each `coded_data/` commit at once.** The
-  daily refresh (scheduled ~13:28 UTC) runs from what is on GitHub; on
+  daily refresh (cron 06:00 UTC; GitHub's delay means it starts ~10–12 UTC)
+  runs from what is on GitHub; on
   2026-10-13 it ran mid-session against unpushed YAML edits, pushed the old
   YAMLs back onto two diagnostics Sheets, and filed four false issues (one,
   #305, would have had `prune-manifest` archive a brand-new sheet).
