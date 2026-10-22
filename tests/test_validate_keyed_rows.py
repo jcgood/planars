@@ -21,7 +21,8 @@ HEADER = KEYED + PARAMS + ["Source", "Comments"]
 @pytest.fixture(autouse=True)
 def known_positions(monkeypatch):
     monkeypatch.setattr(vc, "_planar_position_names",
-                        lambda lang: {"v:npsubj1", "v:modal1", "v:neg1", "v:verbinflection"})
+                        lambda lang: {"5": "v:npsubj1", "8": "v:modal1", "9": "v:neg1",
+                                      "31": "v:verbinflection"})
 
 
 def row(morpheme, pos, form, *vals):
@@ -50,6 +51,13 @@ def test_conditioned_by_must_name_real_positions():
     _, issues = validate(
         row("will", "v:modal1", "'ll", "y", "prosodic", "host", "v:npsubj1, v:nowhere", "y"))
     assert any("not a position in the planar: v:nowhere" in m for m in messages(issues))
+
+
+def test_a_position_number_is_answered_with_its_name():
+    _, issues = validate(
+        row("will", "v:modal1", "'ll", "y", "prosodic", "host", "5, 31", "y"))
+    assert any("write position names, not numbers (5 is v:npsubj1, 31 is v:verbinflection)"
+               in m for m in messages(issues))
 
 
 def test_a_form_that_does_not_occur_needs_nothing_else():

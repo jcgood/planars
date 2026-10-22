@@ -113,12 +113,13 @@ def _columns_without_values(param_cols, param_values, tab_name: str,
 _free_entry_kind = free_entry_kind
 
 
-_POSITION_NAME_CACHE: Dict[str, set] = {}
+_POSITION_NAME_CACHE: Dict[str, Dict[str, str]] = {}
 
 
-def _planar_position_names(lang_id: Optional[str]) -> Optional[set]:
-    """Position names in the language's planar, or None if unknown (no
-    lang_id, no planar) -- then position-name values are not checked."""
+def _planar_position_names(lang_id: Optional[str]) -> Optional[Dict[str, str]]:
+    """The language's planar as {position number: position name}, or None if
+    unknown (no lang_id, no planar) -- then position-name values are not
+    checked."""
     if not lang_id:
         return None
     if lang_id not in _POSITION_NAME_CACHE:
@@ -126,21 +127,29 @@ def _planar_position_names(lang_id: Optional[str]) -> Optional[set]:
         if not path.exists():
             return None
         df = pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False)
-        _POSITION_NAME_CACHE[lang_id] = {n.strip() for n in df["Position_Name"]}
+        _POSITION_NAME_CACHE[lang_id] = {
+            num.strip(): name.strip()
+            for num, name in zip(df["Position"], df["Position_Name"])}
     return _POSITION_NAME_CACHE[lang_id]
 
 
 def _check_free_entry(kind: str, value: str, lang_id: Optional[str]) -> Optional[str]:
-    """None if a free-entry value is acceptable, else what is wrong with it."""
+    """None if a free-entry value is acceptable, else what is wrong with it.
+    A position number is named as the position name to write instead."""
     if kind != "position_names" or not value:
         return None
-    known = _planar_position_names(lang_id)
-    if known is None:
+    by_number = _planar_position_names(lang_id)
+    if by_number is None:
         return None
+    known = set(by_number.values())
     unknown = [p.strip() for p in value.split(",") if p.strip() and p.strip() not in known]
-    if unknown:
-        return f"not a position in the planar: {', '.join(unknown)}"
-    return None
+    if not unknown:
+        return None
+    numbers = [p for p in unknown if p in by_number]
+    if numbers:
+        names = ", ".join(f"{n} is {by_number[n]}" for n in numbers)
+        return f"write position names, not numbers ({names})"
+    return f"not a position in the planar: {', '.join(unknown)}"
 
 
 # ---------------------------------------------------------------------------
