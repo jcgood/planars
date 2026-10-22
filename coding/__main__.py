@@ -39,6 +39,7 @@ _COMMANDS = {
     "import-planar":               "coding.import_planar",
     "generate-status-sheet":       "coding.generate_status_sheet",
     "proposal-sheets":             "coding.proposal_sheets",
+    "accept-proposal":             "coding.accept_proposal",
     "registry":                    "coding.registry",
     "issue":                       "coding.issues",
     "daily-refresh":               "coding.daily_refresh",

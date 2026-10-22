@@ -46,14 +46,16 @@ from .registry import _load_operations
 # documented default). The exceptions: sync_diagnostics_yaml reads AND
 # writes coded_data/*.yaml as well as *.tsv across all three of its
 # directions (the same tuple its own manual call passed before
-# centralization); proposal_sheets reads the diagnostics YAML and the planar
-# and writes the proposal base (*.json, unit 11a). operations.yaml's
-# preconditions field is a plain list of ids with no per-command parameters
-# (see operation_record.schema.json); two exceptions still don't warrant a
-# schema change, so the lookup stays here.
+# centralization); proposal_sheets and accept_proposal read and write the
+# diagnostics YAML, the planar and the proposal base (*.json, unit 11a).
+# operations.yaml's preconditions field is a plain list of ids with no
+# per-command parameters (see operation_record.schema.json); three
+# exceptions sharing two tuples still don't warrant a schema change, so the
+# lookup stays here.
 _CODED_DATA_CLEAN_EXTENSIONS: Dict[str, tuple] = {
     "sync_diagnostics_yaml": (".yaml", ".tsv"),
     "proposal_sheets": (".yaml", ".tsv", ".json"),
+    "accept_proposal": (".yaml", ".tsv", ".json"),
 }
 
 def _check_coded_data_up_to_date(op_id: str) -> None:

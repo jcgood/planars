@@ -350,6 +350,15 @@ the same commit.
    source counts as agreed, and a reason alone is not a change. Until
    `accept-proposal` exists the issue says how to accept a change by hand
    (make it in the source), which the comparison then sees as agreed.
+   *Third part, same day:* `accept-proposal` (§ 3.3). As built: both new
+   sources are worked out and validated before either is written; the
+   diagnostics changes go through the existing TSV-to-YAML diff on the
+   round-trip YAML, and what it calls ambiguous (an unknown class or
+   criterion, a class removed), or a criterion change in a class with
+   per-construction criteria, is listed for the coordinator rather than
+   guessed at; step 3 names the commands (a restructure as its dry run,
+   Q4) rather than running them, since the daily refresh already carries
+   additions in and a restructure needs the coordinator's check anyway.
 6. **11b — lock the planar and diagnostics Sheets, retire the intakes and
    delete the diagnostics TSV** (§ 3.5, Q5; **a live write**: protecting the
    Sheets), once Adam has used a proposal sheet. Until then the diagnostics

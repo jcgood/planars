@@ -36,8 +36,8 @@ Dry run by default; ``--apply`` writes. A sheet with no base, or a language
 whose sources can't be read, is reported and the run exits non-zero after
 the other languages.
 
-Not here yet (the rest of 11a): ``accept-proposal``, which reviews each
-change, applies the accepted ones to the source and writes Last review.
+The review itself is ``accept-proposal`` (``coding/accept_proposal.py``),
+which the issue names.
 """
 from __future__ import annotations
 
@@ -206,9 +206,9 @@ def _what_it_proposes(merge) -> Dict[str, List[str]]:
     changes = [line for h in merge.changes
                for line in describe(header, merge.base, h, WHAT_CHANGED_COLUMN)]
     conflicts = []
-    for ours, theirs in merge.conflicts:
-        sheet_says = describe(header, merge.old_base, ours, WHAT_CHANGED_COLUMN)
-        source_says = describe(header, merge.old_base, theirs, WHAT_CHANGED_COLUMN)
+    for c in merge.conflicts:
+        sheet_says = describe(header, merge.old_base, c.ours, WHAT_CHANGED_COLUMN)
+        source_says = describe(header, merge.old_base, c.theirs, WHAT_CHANGED_COLUMN)
         conflicts.append("the proposal: " + "; ".join(sheet_says)
                          + " — but the source now: " + "; ".join(source_says))
     return {"changes": changes, "conflicts": conflicts}
@@ -236,11 +236,12 @@ def _issue_body(lang_id: str, url: str, found: Dict[str, Dict[str, List[str]]]) 
             lines += [f"- {c}" for c in found[title]["conflicts"]]
         lines.append("")
     lines += ["## What to do",
-              "The coordinator decides on each change. To accept one now, make it in the "
-              "source (`planar_{0}.tsv` or `diagnostics_{0}.yaml`): once the source agrees "
-              "with the sheet, the change drops off this list. The review command that "
-              "does this and records each decision is being built (Phase 10 unit 11a). "
-              "This issue closes when the sheet holds no proposal.".format(lang_id)]
+              "The coordinator decides on each change, with their Claude: "
+              f"`python -m coding accept-proposal --lang {lang_id} --apply` asks about each "
+              "one, applies the accepted ones to the sources, tells the annotator the outcome "
+              "on the sheet's Last review tab, and closes this issue. (Without `--apply` it "
+              "only lists them.) A change the coordinator makes in the source by hand drops "
+              "off this list by itself."]
     return "\n".join(lines)
 
 

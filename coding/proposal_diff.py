@@ -48,12 +48,27 @@ class Hunk:
     rows: Tuple[Row, ...]
 
 
+@dataclass(frozen=True)
+class Conflict:
+    """A stretch both sides changed differently. ``ours`` (the sheet's) and
+    ``theirs`` (the source's) are against the old base; in the new base the
+    stretch still holds the old rows, from row ``at``."""
+    ours: Hunk
+    theirs: Hunk
+    at: int
+
+    @property
+    def span(self) -> Tuple[int, int]:
+        """Where the stretch sits in the new base."""
+        return self.at, self.at + (self.ours.hi - self.ours.lo)
+
+
 @dataclass
 class Merge:
     sheet: List[Row]                 # the sheet, with the source's own changes taken in
     base: List[Row]                  # the base, with the same changes taken in
     proposal: List[Hunk] = field(default_factory=list)   # against the new base
-    conflicts: List[Tuple[Hunk, Hunk]] = field(default_factory=list)  # (sheet's, source's)
+    conflicts: List[Conflict] = field(default_factory=list)
     source_changes: int = 0          # stretches taken in from the source
 
     @property
@@ -113,9 +128,10 @@ def three_way(base: Sequence[Row], sheet: Sequence[Row], source: Sequence[Row]) 
             new_base.extend(theirs)
             merge.source_changes += 1
         else:                                   # both, differently
+            merge.conflicts.append(Conflict(Hunk(lo, hi, ours), Hunk(lo, hi, theirs),
+                                            len(new_base)))
             new_sheet.extend(ours)
             new_base.extend(old)
-            merge.conflicts.append((Hunk(lo, hi, ours), Hunk(lo, hi, theirs)))
         at = hi
     new_sheet.extend(base[at:])
     new_base.extend(base[at:])
@@ -129,8 +145,9 @@ class Comparison:
     """A proposal tab compared (``compare``)."""
     sheet: List[Row]                 # what the tab should now hold (reasons kept)
     base: List[Row]                  # what to save as its base
-    changes: List[Hunk]              # the proposal, against ``base`` (reason-only rows left out)
-    conflicts: List[Tuple[Hunk, Hunk]]   # (the sheet's, the source's), against ``old_base``
+    changes: List[Hunk]              # the proposal, against ``base``: reason-only rows
+                                     # and the conflicts' stretches left out
+    conflicts: List[Conflict]
     refreshed: bool                  # the source's changes were taken in
     old_base: List[Row]              # the base compared against, reasons set aside
 
@@ -150,9 +167,26 @@ def compare(base: Sequence[Sequence[str]], sheet: Sequence[Sequence[str]],
     sheet_bare, old_base = bare(sheet_full), bare(base_rows)
     merge = three_way(old_base, sheet_bare, bare(source_rows))
     merged = _with_reasons(merge.sheet, sheet_bare, sheet_full, header, note_column)
+    spans = [c.span for c in merge.conflicts]
     changes = [h for h in hunks(merge.base, merged)
-               if not note_only(header, merge.base, h, note_column)]
+               if not note_only(header, merge.base, h, note_column)
+               and not any(h.lo <= end and start <= h.hi for start, end in spans)]
     return Comparison(merged, merge.base, changes, merge.conflicts, merge.refreshed, old_base)
+
+
+def apply(base: Sequence[Row], edits: Sequence[Tuple[int, int, Sequence[Row]]]) -> List[Row]:
+    """``base`` with each edit ``(lo, hi, rows)`` replacing base[lo:hi].
+    The edits must not overlap."""
+    out: List[Row] = []
+    at = 0
+    for lo, hi, rows in sorted(edits, key=lambda e: (e[0], e[1])):
+        if lo < at:
+            raise ValueError(f"edits overlap at row {lo + 1}")
+        out.extend(base[at:lo])
+        out.extend(tuple(r) for r in rows)
+        at = hi
+    out.extend(base[at:])
+    return out
 
 
 def _with_reasons(merged: Sequence[Row], sheet_bare: Sequence[Row], sheet_full: Sequence[Row],

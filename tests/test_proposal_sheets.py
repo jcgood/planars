@@ -59,8 +59,24 @@ def env(monkeypatch, tmp_path):
         drive_doorway.reset_doorway()
 
 
+def accept(monkeypatch, answers: List[str], *flags: str):
+    """Play accept-proposal, answering its questions in order; returns
+    (output, exit code)."""
+    from coding import accept_proposal
+    replies = iter(answers)
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(replies))
+    monkeypatch.setattr(sys, "argv", ["accept-proposal", "--lang", LANG, *flags])
+    buf, code = io.StringIO(), 0
+    try:
+        with redirect_stdout(buf):
+            run_command(accept_proposal, "accept-proposal")
+    except SystemExit as exc:
+        code = exc.code
+    return buf.getvalue(), code
+
+
 def the_sheet(doorway):
-    found = [ss for ss in doorway._spreadsheets.values() if ss.title == f"proposal_{LANG}"]
+    found =[ss for ss in doorway._spreadsheets.values() if ss.title == f"proposal_{LANG}"]
     assert len(found) == 1, f"{len(found)} proposal sheets"
     return found[0]
 
@@ -290,3 +306,122 @@ def test_the_door_refuses_a_dropdown_on_a_proposal_tab(env):
                           "endColumnIndex": 1},
                 "rule": {"condition": {"type": "ONE_OF_LIST",
                                        "values": [{"userEnteredValue": "y"}]}}}}]})
+
+
+# --- accept-proposal -------------------------------------------------------------
+
+NEW_ELEMENTS = "and, also, then, so, CONJUNCT"
+
+
+def propose_so(doorway, run):
+    """The annotator proposes adding `so` at position 1; the daily run files the issue."""
+    run("--apply")
+    annotate(doorway, 2, "Elements", NEW_ELEMENTS)
+    annotate(doorway, 2, WHAT_CHANGED_COLUMN, "so is a conjunct too")
+    run("--apply")
+
+
+def planar_cell(coded, column: str, row: int = 1) -> str:
+    grid = planar_grid(coded)
+    return grid[row][grid[0].index(column)]
+
+
+def review_text(doorway) -> str:
+    return "\n".join(r[0] for r in
+                     the_sheet(doorway).worksheet(REVIEW_TAB_TITLE).get_all_values() if r)
+
+
+def test_accept_proposal_without_apply_lists_the_changes_and_writes_nothing(env, monkeypatch):
+    doorway, run, coded = env
+    propose_so(doorway, run)
+    doorway.clear_mutations()
+    out, code = accept(monkeypatch, [])
+    assert code == 0, out
+    assert "1 change(s) to decide" in out and "position 1 `v:leftedge`: Elements" in out
+    assert doorway.mutations == []
+    assert planar_cell(coded, "Elements") == "and, also, then, CONJUNCT"
+
+
+def test_an_accepted_change_reaches_the_planar_and_the_annotator_is_told(env, monkeypatch, github):
+    doorway, run, coded = env
+    propose_so(doorway, run)
+    [issue] = open_proposals(github)
+    out, code = accept(monkeypatch, ["y"], "--apply")
+    assert code == 0, out
+    assert planar_cell(coded, "Elements") == NEW_ELEMENTS
+    # The change log names the issue and the annotator's reason.
+    log = file_door.change_log(LANG).read_text(encoding="utf-8")
+    assert f"accepted from #{issue['number']}" in log and "so is a conjunct too" in log
+    # The sheet is refilled from the new planar, reasons cleared, and says what happened.
+    grid = the_sheet(doorway).worksheet(PROPOSAL_PLANAR_TAB).get_all_values()
+    assert grid[1][grid[0].index("Elements")] == NEW_ELEMENTS
+    assert grid[1][grid[0].index(WHAT_CHANGED_COLUMN)] == ""
+    assert "Accepted:" in review_text(doorway)
+    assert open_proposals(github) == []
+    assert "**Accepted:**" in github.comments[issue["number"]][-1]
+    # Nothing left to decide; the daily run agrees.
+    assert "holds no proposal" in accept(monkeypatch, [])[0]
+    out, _ = run("--apply")
+    assert out.count("up to date") == 2
+
+
+def test_a_rejected_change_goes_back_to_the_source_with_the_reason(env, monkeypatch, github):
+    doorway, run, coded = env
+    propose_so(doorway, run)
+    out, code = accept(monkeypatch, ["n", "so is an adverb here"], "--apply")
+    assert code == 0, out
+    assert planar_cell(coded, "Elements") == "and, also, then, CONJUNCT"
+    grid = the_sheet(doorway).worksheet(PROPOSAL_PLANAR_TAB).get_all_values()
+    assert grid[1][grid[0].index("Elements")] == "and, also, then, CONJUNCT"
+    assert "Not accepted:" in review_text(doorway)
+    assert "so is an adverb here" in review_text(doorway)
+    assert open_proposals(github) == []
+
+
+def test_a_conflict_kept_as_the_source_has_it(env, monkeypatch, github):
+    doorway, run, coded = env
+    run("--apply")
+    annotate(doorway, 2, "Elements", NEW_ELEMENTS)
+    edit_planar_file(coded, "and, also, then, CONJUNCT", "and, then, CONJUNCT")
+    run("--apply")
+    out, code = accept(monkeypatch, ["n", "also was dropped on purpose"], "--apply")
+    assert code == 0, out
+    assert "CONFLICT" in out
+    assert planar_cell(coded, "Elements") == "and, then, CONJUNCT"
+    grid = the_sheet(doorway).worksheet(PROPOSAL_PLANAR_TAB).get_all_values()
+    assert grid[1][grid[0].index("Elements")] == "and, then, CONJUNCT"
+
+
+def test_a_change_that_breaks_the_planar_writes_nothing(env, monkeypatch):
+    doorway, run, coded = env
+    run("--apply")
+    annotate(doorway, 2, "Position", "first")
+    run("--apply")
+    before = planar_grid(coded)
+    doorway.clear_mutations()
+    out, code = accept(monkeypatch, ["y"], "--apply")
+    assert code == 1
+    assert "nothing was written" in out
+    assert planar_grid(coded) == before
+    assert doorway.mutations == []
+
+
+def test_an_accepted_diagnostics_change_reaches_the_yaml(env, monkeypatch):
+    doorway, run, coded = env
+    run("--apply")
+    ws = the_sheet(doorway).worksheet(PROPOSAL_DIAGNOSTICS_TAB)
+    grid = ws.get_all_values()
+    col = grid[0].index("Criteria")
+    row = next(i for i, r in enumerate(grid) if r[0] == "ciscategorial")
+    assert "A-combines{y/n}" in grid[row][col]
+    ws.update_cell(row + 1, col + 1, "V-combines{y/n}, N-combines{y/n}")
+    run("--apply")
+    out, code = accept(monkeypatch, ["y"], "--apply")
+    assert code == 0, out
+    import yaml
+    data = yaml.safe_load(file_door.diagnostics_yaml(LANG).path.read_text(encoding="utf-8"))
+    criteria = data["classes"]["ciscategorial"]["criteria"]
+    assert "A-combines" not in criteria and "V-combines" in criteria
+    # The TSV copy is rebuilt from it.
+    tsv = file_door.diagnostics_tsv(LANG).path.read_text(encoding="utf-8")
+    assert "A-combines" not in tsv.split("ciscategorial")[1].splitlines()[0]

@@ -931,6 +931,36 @@
   cascades_triggered: []
   modes: []
 
+- id: accept_proposal
+  cli_command: accept-proposal
+  writes_to_drive: true
+  writes_locally: true
+  # The proposal route into the two sources (unit 11a).
+  edits_sources: [planar, diagnostics_yaml]
+  description: >-
+    Reviews a language's proposal sheet: lists each proposed change and
+    conflict (dry run), or with --apply asks the coordinator to accept or
+    reject each one, applies the accepted ones to the planar and the
+    diagnostics YAML, refills the sheet, writes its Last review tab and
+    closes the proposal issue.
+  side_effects:
+    - >-
+      writes planar_{lang_id}.tsv and diagnostics_{lang_id}.yaml (then
+      rebuilds diagnostics_{lang_id}.tsv) through the local-file door, each
+      validated first; writes the new proposal base
+    - "refills the proposal sheet's Planar and Diagnostics tabs and rewrites Last review"
+    - "comments on and closes the language's proposal issue, naming the next steps"
+    - "commits and pushes the files it wrote in planars-data when it ends (the local-file door)"
+  idempotent: true
+  idempotency_note: >-
+    After a review the sheet holds no proposal, so a second run finds
+    nothing to decide and writes nothing.
+  apply_gate: "--apply"
+  preconditions: [coded_data_clean_tree, coded_data_up_to_date, coded_data_git_identity_configured]
+  facts_touched: []
+  cascades_triggered: []
+  modes: []
+
 - id: registry
   cli_command: registry
   writes_to_drive: false

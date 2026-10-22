@@ -56,11 +56,9 @@ rule 8 especially) is a command bug or a spec gap to fix.
 Sheet, notes Docs, notebooks, reports, manifest, folders: its own first
 clean real write, then added to `LIVE_ENFORCED_KINDS`; class sheets,
 status sheets and the diagnostics Sheet are enforced), for 6c, and
-refusing unlabelled targets (last). **Being built:** 11a (from
-2026-10-21; the sheet, `proposal-sheets`, the three-way comparison and
-the `proposal` issue done; next `accept-proposal`; where it stands is the
-end of the Phase 10 row). 9's second half needs 6; then
-11b–d, 16–18.
+refusing unlabelled targets (last). **11a's code is built** (2026-10-21:
+`proposal-sheets`, `accept-proposal`); its four live steps are listed at
+the end of the Phase 10 row. 9's second half needs 6; then 11b–d, 16–18.
 
 **Live steps — name each to Jeff for approval first:** 5f's one-notebook
 sharing test and Q7's Colab label-search test (both need an annotator's
