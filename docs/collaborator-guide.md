@@ -41,6 +41,8 @@ Correct each one on the construction's tab (the cell is also pink there). The li
 
 While a construction is still `in-progress`, nothing is listed there: wrong values are only highlighted pink.
 
+Your language's read-only status page (`status_{lang_id}`, in the "Annotation Status" folder shared with you) shows how much of each construction is filled in. It is rebuilt once a day, and its second line says when, so edits you made after that time aren't counted yet.
+
 ### Proposing a change to the planar structure or the diagnostics
 
 Your language's folder has one more sheet, `proposal_{lang_id}`, where you propose changes to the planar structure (the positions and their elements) or to the diagnostics (which classes, constructions and criteria apply). It has three tabs:

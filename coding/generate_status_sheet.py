@@ -51,7 +51,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import date
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -317,7 +317,7 @@ def _lock_read_only(doorway, file_id: str, lang_ids: List[str]) -> None:
 # ---------------------------------------------------------------------------
 
 def _banner_rows(lang_id: str, folder_url: str) -> List[List[str]]:
-    """Locked notice + last-regenerated date + a link to the live annotation folder.
+    """Locked notice + when the counts were taken (UTC) + a link to the live annotation folder.
 
     The link's visible text is a short label (display name only, via the
     project's "Name [glottocode]" convention), not the raw URL -- showing the
@@ -327,12 +327,16 @@ def _banner_rows(lang_id: str, folder_url: str) -> List[List[str]]:
     auto-detecting and adding its own preview affordance to.
     """
     display = get_display_name(lang_id)
-    today = date.today().isoformat()
+    # The time, not just the date: the sheet is rebuilt once a day (and
+    # sometimes by hand), so an annotator needs to know which of their own
+    # edits the counts include.
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     folder_link_text = f"📁 Annotation folder for {display}"
     return [
         [f"LOCKED — read-only status page for {display}. Do not edit; this sheet is "
          f"regenerated automatically and any edits here will be overwritten."],
-        [f"Last regenerated: {today}"],
+        [f"Counts as of {stamp}. Rebuilt once a day, so edits made since then "
+         f"aren't counted yet."],
         [f'=HYPERLINK("{folder_url}", "{folder_link_text}")'] if folder_url else [folder_link_text],
         [""],
     ]
