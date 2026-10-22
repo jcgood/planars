@@ -126,7 +126,12 @@ and synth0001's copy is archived read-only.
 rules (#254 design comment; the class stays `[AUTO-DERIVED]` until he does);
 (2) finishing the elements tab and marking it ready-for-review; the daily
 refresh then fills the empty morphemes tab by itself (and morphs, once
-morphemes is marked) — check it did; (3) #298 (what `-n` at
+morphemes is marked) — check it did. Jeff may instead have it built now:
+`generate-sheets --lang stan1293 --regen-construction biuniqueness_deviations:morphemes`
+(a live write; the tab is empty). Positions may be typed as numbers since
+2026-10-22 (`planars/position_cells.py`; import-planar renumbers them when
+the planar's numbers shift), so Adam's numeric co_exponents are valid and
+the 18 rows come out with named labels; (3) #298 (what `-n` at
 `v:frontedauxiliaryinflection` is — fronted *won't* waits on it).
 
 **Don't re-litigate (settled 2026-10-11, see #254):** contractions count as

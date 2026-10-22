@@ -176,6 +176,24 @@ def free_entry_kind(values) -> "str | None":
     return kind if _value_placeholders()[kind].get("free_entry") else None
 
 
+POSITION_PLACEHOLDER_KINDS = ("position_number", "position_names")
+
+
+def position_criteria() -> set:
+    """The criteria whose answers are positions: those whose declared values
+    in diagnostic_criteria.yaml include a position placeholder
+    (POSITION_PLACEHOLDER_KINDS). Their cells may hold position numbers, which
+    import-planar renumbers when the planar's numbers shift."""
+    out = set()
+    for analysis in load_diagnostic_criteria().get("analyses", []) or []:
+        for crit in analysis.get("diagnostic_criteria", []) or []:
+            if isinstance(crit, dict) and any(
+                    placeholder_kind(v) in POSITION_PLACEHOLDER_KINDS
+                    for v in crit.get("values") or []):
+                out.add(crit["name"])
+    return out
+
+
 def is_free_entry(values) -> bool:
     """True if a criterion's declared values are only free-entry placeholders
     (free_entry_kind): it takes free entry, so it gets no dropdown -- a

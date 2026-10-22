@@ -6,6 +6,10 @@ arao1248
 stan1293
   - position 38 (v:rightedge)
   → python -m coding restructure-sheets --lang stan1293 --apply
+  Warning: could not load merged config (APIError: [404]: File not found: manifest.), falling back.
+  Note: loading per-language manifests (pre-#30 format).
+  Run python -m coding generate-sheets --apply to upgrade to merged manifest.json.
+  no class sheets to renumber (No manifest data found in drive_config.json. Run python -m coding generate-sheets --apply first.)
 
 synth0001
   (content-only changes)

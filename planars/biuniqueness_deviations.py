@@ -52,6 +52,7 @@ import pandas as pd
 import yaml
 
 from planars.coreference import _load_planar_for_coreference
+from planars.position_cells import as_names
 from planars.spans import fmt_span, loose_span
 
 CLASS_NAME = "biuniqueness_deviations"
@@ -101,10 +102,6 @@ DERIVED_TYPES = ("extended_exponence", "allomorphy", "cumulative_exponence", "ze
 
 ELSEWHERE = "elsewhere"
 _PHONOLOGICAL = "phonological"
-
-
-def _split_positions(cell: str) -> List[str]:
-    return [p.strip() for p in str(cell).split(",") if p.strip()]
 
 
 def classify_form(row: Dict[str, str], forms_relation: str,
@@ -225,12 +222,11 @@ def derive_biuniqueness_deviations_domains(
         types.append(dtype or "")
         if dtype is None:
             continue
-        triggers = set()
-        for t in _split_positions(row.get("conditioned_by", "")):
-            if t not in name_to_pos:
-                problem(f"{where}: conditioned_by names {t!r}, which is not in the planar")
-                continue
-            triggers.add(name_to_pos[t])
+        # conditioned_by takes position numbers or names (planars.position_cells).
+        names, unknown = as_names(row.get("conditioned_by", ""), pos_to_name)
+        for t in unknown:
+            problem(f"{where}: conditioned_by names {t!r}, which is not in the planar")
+        triggers = {name_to_pos[t] for t in names}
         key = (morpheme, None if dtype == "extended_exponence" else pos_name, dtype)
         domain_positions.setdefault(key, set()).update({name_to_pos[pos_name]} | triggers)
 

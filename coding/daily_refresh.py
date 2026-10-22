@@ -226,12 +226,20 @@ def _details(summary: str, text: str) -> str:
     return f"<details><summary>{summary}</summary>\n\n```\n{text}\n```\n\n</details>\n"
 
 
-def planar_changed_body(changes: dict) -> str:
+def planar_changed_body(changes: dict, failure: Optional[str] = None) -> str:
     lines = [
         "## Planar structure changed\n\n",
         "One or more language planars were updated from Google Sheets. "
         "Annotation sheets need to be updated to match.\n",
     ]
+    if failure is not None:
+        lines.append(
+            "\n**A planar could not be taken in.** Its positions moved, and the "
+            "position numbers in its class sheets could not all be carried over "
+            "to the new numbering, so its planar file was left as it was. The "
+            "next refresh tries again; if this persists, run "
+            "`python -m coding import-planar` to see why.\n\n")
+        lines.append(_details("import-planar output", failure.strip()[-6000:]))
     for lang_id, info in changes.items():
         lines.append(f"\n### {lang_id}\n\n")
         diff = info["diff"]
@@ -241,11 +249,24 @@ def planar_changed_body(changes: dict) -> str:
             lines.append(f"- `-` position {n} (`{name}`) — removed\n")
         for n, pair in diff.get("renamed", {}).items():
             lines.append(f"- `~` position {n}: `{pair[0]}` → `{pair[1]}`\n")
+        for old, new in diff.get("remaps", []):
+            lines.append(f"- `↷` position {old} is now position {new}\n")
         for col in diff.get("columns_added", []):
             lines.append(f"- `+` column `{col}` — added\n")
-        if not any([diff.get("added"), diff.get("deleted"),
-                    diff.get("renamed"), diff.get("columns_added")]):
+        if not any([diff.get("added"), diff.get("deleted"), diff.get("renamed"),
+                    diff.get("remaps"), diff.get("columns_added")]):
             lines.append("- (content-only changes — elements, examples, or notes)\n")
+        cells = info.get("position_cells") or {}
+        if cells.get("changed"):
+            lines.append(_details(
+                f"Position numbers in answers renumbered ({len(cells['changed'])})",
+                "\n".join(cells["changed"])))
+        if cells.get("unresolved"):
+            lines.append(
+                "\n**Check these answers:** they name a position number whose "
+                "position is no longer in the planar. They were left as typed; "
+                "ask the annotator which position they mean.\n\n")
+            lines += [f"- {line}\n" for line in cells["unresolved"]]
         lines.append(f"\n**Command to run:**\n```\n{info['recommendation']}\n```\n")
     lines.append("\nClose this issue after running the recommended command "
                  "and verifying annotation sheets are up to date.\n")
@@ -494,11 +515,15 @@ def import_planar(r: Refresh) -> None:
     result = run("import-planar", "--apply")
     changes = (json.loads(PLANAR_CHANGES_PATH.read_text(encoding="utf-8"))
                if PLANAR_CHANGES_PATH.exists() else {})
-    if changes:
+    if changes or not result.ok:
+        # A failed run is a changed planar that could not be taken in (its
+        # class sheets could not be renumbered): the file is left as it was,
+        # so the next run tries again, and the issue says why.
         r.report("planar-changed", True,
                  "Planar structure changed — annotation sheets need updating",
-                 lambda: planar_changed_body(changes), "")
-    elif result.ok:
+                 lambda: planar_changed_body(
+                     changes, failure=None if result.ok else result.output), "")
+    else:
         r.report("planar-changed", False, "", str, "No planar changes detected")
 
 

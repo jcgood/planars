@@ -47,6 +47,7 @@ def point_state_files_at(monkeypatch, coded) -> None:
     monkeypatch.setattr(state_files, "SNAPSHOT_DIR", state / "regen_snapshots")
     monkeypatch.setattr(state_files, "JOURNAL_PATH", state / "restructure_journal.json")
     monkeypatch.setattr(state_files, "NOTES_STATE_PATH", state / "notes_state.json")
+    monkeypatch.setattr(state_files, "RENUMBERING_PATH", state / "renumbering.json")
     monkeypatch.setattr(state_files, "ID_FILE", coded / "drive_config.json")
 
 

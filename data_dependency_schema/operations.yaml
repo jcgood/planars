@@ -837,7 +837,9 @@
 
 - id: import_planar
   cli_command: import-planar
-  writes_to_drive: false
+  # Only when the planar's numbers shift: the position numbers in the class
+  # sheets' answers are carried to the new numbering (inside replacing()).
+  writes_to_drive: true
   writes_locally: true
   # The Sheet -> file intake, until unit 11b retires it.
   edits_sources: [planar]
@@ -851,12 +853,20 @@
       overwrites planar_{lang_id}.tsv from the Sheet through the local-file
       door (previous version archived, change-log line), writes
       PLANAR_CHANGES_PATH for the planar-changed issue body
+    - >-
+      when positions moved, were removed or renamed: first rewrites the
+      position numbers in every class sheet's position cells
+      (coding.schemas.position_criteria) to the new numbering, one write per
+      spreadsheet, recording each sheet done in the renumbering state file;
+      if that fails, leaves the planar file alone and exits non-zero
     - "commits and pushes the files it wrote in planars-data when it ends (the local-file door)"
   idempotent: true
   idempotency_note: >-
     Only writes when the content genuinely differs from what's on disk ("up
     to date" short-circuits otherwise) -- a second run with nothing changed
-    performs no write.
+    performs no write. A run stopped partway through renumbering starts each
+    sheet from the numbering the renumbering state file records for it, so no
+    sheet is renumbered twice.
   apply_gate: "--apply"
   preconditions: [coded_data_git_identity_configured]
   facts_touched:

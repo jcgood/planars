@@ -343,7 +343,8 @@ analyses:
         description: >
           Prescreening: other position(s) whose element expresses the same meaning
           at the same time as this one (be at v:progressive with -ing at
-          v:verbinflection). Comma-separated position names; blank if none.
+          v:verbinflection). Comma-separated position numbers or names
+          (31 or v:verbinflection); blank if none.
       - name: morpheme_class
         values: ["<free_text>"]
         description: >
@@ -376,8 +377,8 @@ analyses:
         values: ["<position_names>"]
         description: >
           Morphs tab: the position(s) whose content selects this form,
-          comma-separated. May name a position left empty when this form appears
-          (went: v:verbinflection).
+          comma-separated, by number or name. May name a position left empty
+          when this form appears (went: v:verbinflection).
       - name: trigger_filled
         values: [y, n]
         description: >
@@ -642,10 +643,17 @@ value_placeholders:
     value: "<free_text>"
     free_entry: true
     meaning: anything, kept exactly as typed
+  # Spelled "names" for history: it also takes numbers (2026-10-22). Renaming
+  # the spelling would change every language's diagnostics file and manifest.
+  # import-planar renumbers the numbers in these cells, and in
+  # <position_number> cells, when the planar's numbers shift
+  # (planars/position_cells.py).
   position_names:
     value: "<position_names>"
     free_entry: true
-    meaning: comma-separated position names, checked against the planar
+    meaning: >-
+      comma-separated positions, each written as its number or its name,
+      checked against the planar
 
 shared_values:
 

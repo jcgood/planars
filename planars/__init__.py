@@ -17,7 +17,8 @@ module departs from this shape (``nonpermutability``, ``coreference``,
 keys), its own docstring says how.
 
 Shared pieces: ``io`` (loading a filled tab), ``spans`` (span arithmetic),
-``elements`` (reading a planar's Elements cell), ``schema_values`` (values the
+``elements`` (reading a planar's Elements cell), ``position_cells`` (answers
+that name positions, by number or name, and their renumbering), ``schema_values`` (values the
 schemas own), ``contracts`` (DataFrame checks), ``reports`` (collecting spans
 and completeness for every language), ``charts`` and ``html_report``
 (rendering).

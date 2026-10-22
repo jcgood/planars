@@ -66,6 +66,7 @@ from .schemas import (
 # Constants
 # ---------------------------------------------------------------------------
 
+from planars.position_cells import as_names  # noqa: E402
 from planars.schema_values import (  # noqa: E402
     ELEMENT_ROW_COLUMNS, PAIR_ROW_SHAPES, TRAILING_COLUMNS,
 )
@@ -135,20 +136,16 @@ def _planar_position_names(lang_id: Optional[str]) -> Optional[Dict[str, str]]:
 
 def _check_free_entry(kind: str, value: str, lang_id: Optional[str]) -> Optional[str]:
     """None if a free-entry value is acceptable, else what is wrong with it.
-    A position number is named as the position name to write instead."""
+    Positions may be written as numbers or names (planars.position_cells)."""
     if kind != "position_names" or not value:
         return None
     by_number = _planar_position_names(lang_id)
     if by_number is None:
         return None
-    known = set(by_number.values())
-    unknown = [p.strip() for p in value.split(",") if p.strip() and p.strip() not in known]
+    _, unknown = as_names(value, {int(n): name for n, name in by_number.items()
+                                  if n.isdigit()})
     if not unknown:
         return None
-    numbers = [p for p in unknown if p in by_number]
-    if numbers:
-        names = ", ".join(f"{n} is {by_number[n]}" for n in numbers)
-        return f"write position names, not numbers ({names})"
     return f"not a position in the planar: {', '.join(unknown)}"
 
 

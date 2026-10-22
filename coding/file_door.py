@@ -218,6 +218,7 @@ PROVENANCE_LOG = "provenance_log"
 REGEN_SNAPSHOT = "regen_snapshot"
 RESTRUCTURE_JOURNAL = "restructure_journal"
 NOTES_STATE = "notes_state"
+RENUMBERING = "renumbering"
 ID_FILE = "id_file"
 
 # Where each lives is coding/state_files.py's (read at call time: tests move
@@ -233,7 +234,10 @@ STATE_KINDS: Dict[str, Dict[str, object]] = {
                           "what": "restructure-sheets' record of an interrupted run"},
     NOTES_STATE:         {"path": lambda f: state_files.NOTES_STATE_PATH,
                           "what": "what check-notes last saw in each notes Doc"},
-    ID_FILE:             {"path": lambda f: state_files.ID_FILE,
+    RENUMBERING:         {"path": lambda f: state_files.RENUMBERING_PATH,
+                          "what": "import-planar's record of class sheets renumbered "
+                                  "ahead of a new planar"},
+    ID_FILE:            {"path": lambda f: state_files.ID_FILE,
                           "what": "the Drive IDs of the files the tooling made"},
 }
 # The Drive door's records of writes it let through. They are written
@@ -290,6 +294,10 @@ def restructure_journal() -> StateFile:
 
 def notes_state() -> StateFile:
     return StateFile(NOTES_STATE)
+
+
+def renumbering() -> StateFile:
+    return StateFile(RENUMBERING)
 
 
 def id_file() -> StateFile:

@@ -27,7 +27,17 @@ Sheet -> TSV (default):
 
     When --apply is used and changes are found, writes PLANAR_CHANGES_PATH
     with structured diff information used by the data-refresh workflow to build
-    the planar-changed issue body.
+    the planar-changed issue body. Positions are compared by name
+    (_diff_positions).
+
+    Annotators may answer some criteria with position numbers
+    (planars/position_cells.py). When positions move, are removed or are
+    renamed, those numbers would silently point at other positions, so before
+    the planar file is written every class sheet's position cells are
+    rewritten to the new numbering (_renumber_class_sheets), and each change,
+    and each number whose position is gone, goes into the planar-changed
+    issue. If that fails the planar file is not written and the command exits
+    non-zero, so the next run tries again.
 
 TSV -> Sheet (--to-sheet):
     The mirror direction, for when planar_{lang_id}.tsv is edited locally (e.g.
@@ -104,34 +114,31 @@ def _normalize(df: pd.DataFrame) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 
 def _diff_positions(old_df: pd.DataFrame, new_df: pd.DataFrame) -> dict:
-    """Compare position numbers and names between old and new planars."""
-    def pos_map(df):
-        result = {}
-        for _, row in df.iterrows():
-            raw = str(row.get("Position", "")).strip()
-            if raw.isdigit():
-                result[int(raw)] = str(row.get("Position_Name", "")).strip()
-        return result
+    """Compare the positions of two planars, by name.
 
-    old = pos_map(old_df)
-    new = pos_map(new_df)
-
-    added = {n: new[n] for n in sorted(set(new) - set(old))}
-    deleted = {n: old[n] for n in sorted(set(old) - set(new))}
-    renamed = {
-        n: (old[n], new[n])
-        for n in sorted(set(old) & set(new))
-        if old[n] != new[n]
-    }
-
-    # Infer pos-remap pairs by matching position names across numberings
+    renamed: a number whose name changed where neither name is anywhere in
+    the other planar (probably one position renamed). added / deleted: the
+    other names only one planar has. remaps: (old number, new number) for a
+    name whose number changed. Until 2026-10-22 added, deleted and renamed
+    compared numbers, so a position inserted in the middle was reported as
+    the last position added and every later position renamed.
+    """
+    old = _numbering(old_df)
+    new = _numbering(new_df)
     old_by_name = {v: k for k, v in old.items()}
     new_by_name = {v: k for k, v in new.items()}
-    remaps = sorted(
-        (old_by_name[name], new_by_name[name])
-        for name in old_by_name
-        if name in new_by_name and old_by_name[name] != new_by_name[name]
-    )
+
+    renamed = {n: (old[n], new[n]) for n in sorted(set(old) & set(new))
+               if old[n] != new[n] and old[n] not in new_by_name
+               and new[n] not in old_by_name}
+    renamed_old = {o for o, _ in renamed.values()}
+    renamed_new = {n for _, n in renamed.values()}
+    added = {n: name for n, name in sorted(new.items())
+             if name not in old_by_name and name not in renamed_new}
+    deleted = {n: name for n, name in sorted(old.items())
+               if name not in new_by_name and name not in renamed_old}
+    remaps = sorted((old_by_name[name], new_by_name[name]) for name in old_by_name
+                    if name in new_by_name and old_by_name[name] != new_by_name[name])
 
     return {
         "added": {str(k): v for k, v in added.items()},
@@ -142,16 +149,28 @@ def _diff_positions(old_df: pd.DataFrame, new_df: pd.DataFrame) -> dict:
     }
 
 
+def _numbering(df: pd.DataFrame) -> dict:
+    """{position number: position name} for a planar frame."""
+    result = {}
+    for _, row in df.iterrows():
+        raw = str(row.get("Position", "")).strip()
+        if raw.isdigit():
+            result[int(raw)] = str(row.get("Position_Name", "")).strip()
+    return result
+
+
 def _recommend(diff: dict, lang_id: str) -> str:
     if diff["deleted"] or diff["renamed"] or diff["remaps"]:
-        flags = " ".join(f"--rename-map {o}:{n}" for o, n in diff["remaps"])
-        note = "  # verify remap flags before running" if diff["remaps"] else ""
+        # Positions that only changed number need no flag: restructure-sheets
+        # carries answers over by position name. Until 2026-10-22 this
+        # suggested `--rename-map OLD_NUMBER:NEW_NUMBER`, which takes names
+        # and so did nothing. A renamed position does need one.
+        renames = list(diff["renamed"].values())
         cmd = f"python -m coding restructure-sheets --lang {lang_id}"
-        if flags:
-            cmd += f" {flags}"
+        cmd += "".join(f" --rename-map {o}:{n}" for o, n in renames)
         cmd += " --apply"
-        if note:
-            cmd += note
+        if renames:
+            cmd += "  # check each --rename-map is the same position renamed"
         return cmd
     elif diff["added"]:
         return "python -m coding update-sheets --apply"
@@ -161,6 +180,197 @@ def _recommend(diff: dict, lang_id: str) -> str:
         return "(new planar column — no sheet structural updates needed)"
     else:
         return "(content-only changes — no sheet structural updates needed)"
+
+
+# ---------------------------------------------------------------------------
+# Renumbering the position cells of the class sheets
+# ---------------------------------------------------------------------------
+
+def _renumbering_needed(diff: dict) -> bool:
+    """A number in a position cell can change meaning: a position moved to
+    another number, or the position a number named is gone or renamed."""
+    return bool(diff["remaps"] or diff["deleted"] or diff["renamed"])
+
+
+def _load_renumbering() -> dict:
+    path = file_door.renumbering().path
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+
+
+def _save_renumbering(record: dict) -> None:
+    if record:
+        file_door.write_state(file_door.renumbering(),
+                              json.dumps(record, indent=2, sort_keys=True) + "\n")
+    else:
+        file_door.remove_state(file_door.renumbering())
+
+
+def _row_label(row: list, first_criterion: int) -> str:
+    """Which row, in the sheet's own words: its cells before the first
+    position criterion (the row columns, e.g. Element / Position_Name)."""
+    parts = [v for v in row[:min(first_criterion, 3)] if str(v).strip()]
+    return " / ".join(parts) if parts else "?"
+
+
+def _renumber_class_sheets(lang_id: str, old_df: pd.DataFrame, new_df: pd.DataFrame,
+                           apply: bool) -> dict:
+    """Carry a new planar's numbering into every position cell of the
+    language's class sheets (planars.position_cells; the cells are the
+    criteria coding.schemas.position_criteria names). Returns
+    {"changed": [...], "unresolved": [...]}, one line per cell, for the
+    planar-changed issue.
+
+    Must finish before planar_{lang_id}.tsv is written: the old numbering is
+    read from that file. Each spreadsheet is rewritten in one write. The
+    state file (file_door.renumbering) records, per sheet, the numbering its
+    cells use once done, and, just before its write, the cells about to
+    change; a later run finds out from the cells whether an interrupted write
+    landed. So a run that stops anywhere starts each sheet from the numbering
+    it really has and never renumbers one twice. Raises if a sheet cannot be
+    read or written, or if an interrupted write's cells were edited since;
+    the caller then leaves the planar file alone, and the next run tries
+    again.
+    """
+    from contextlib import ExitStack
+
+    from gspread.utils import rowcol_to_a1
+
+    from . import drive_door
+    from .drive import load_manifest
+    from .drive_doorway import get_doorway
+    from .locked_tabs import system_tab_titles
+    from .schemas import position_criteria
+    from planars.position_cells import renumber
+
+    old_numbering = _numbering(old_df)
+    new_numbering = _numbering(new_df)
+    new_by_name = {name: n for n, name in new_numbering.items()}
+    criteria = position_criteria()
+    system_tabs = set(system_tab_titles())
+
+    doorway = get_doorway()
+    try:
+        manifest = load_manifest(doorway)
+    except SystemExit as exc:   # no manifest at all: no class sheets made yet
+        print(f"  no class sheets to renumber ({exc})")
+        manifest = {}
+    sheets = (manifest or {}).get(lang_id, {}).get("sheets", {})
+    record = _load_renumbering()
+    done = record.get(lang_id, {})
+    changed, unresolved = [], []
+
+    def as_numbering(d: dict) -> dict:
+        return {int(k): v for k, v in d.items()}
+
+    def save(sid: str, entry: dict) -> None:
+        done[sid] = entry
+        record[lang_id] = done
+        _save_renumbering(record)
+
+    for class_name, info in sorted(sheets.items()):
+        sid = info.get("spreadsheet_id") or info.get("id")
+        if not sid:
+            continue
+        entry = done.get(sid, {})
+        ss = doorway.open_spreadsheet(sid)
+        if apply and "pending" in entry:
+            # A run stopped around this sheet's write: see whether it landed.
+            pending = entry["pending"]
+            landed = _pending_landed(ss, pending["cells"])
+            if landed is None:
+                raise RuntimeError(
+                    f"{class_name}: a renumbering write was interrupted and its cells "
+                    f"now hold neither the old nor the new numbers; check them by hand "
+                    f"against {file_door.renumbering().relpath}, then remove its "
+                    f"{lang_id} entry")
+            entry = ({"numbering": pending["numbering"]} if landed
+                     else {k: v for k, v in entry.items() if k != "pending"})
+            save(sid, entry)
+        source = (as_numbering(entry["numbering"]) if "numbering" in entry
+                  else old_numbering)
+        if source == new_numbering:
+            continue
+        writes = []   # (tab, range, new value)
+        for ws in ss.worksheets():
+            if ws.title in system_tabs:
+                continue
+            rows = ws.get_all_values()
+            if not rows:
+                continue
+            header = rows[0]
+            cols = [i for i, h in enumerate(header) if h in criteria]
+            for r, row in enumerate(rows[1:], start=2):
+                for c in cols:
+                    value = row[c] if c < len(row) else ""
+                    if not value.strip():
+                        continue
+                    new_value, lost = renumber(value, source, new_by_name)
+                    where = (f"{class_name} / {ws.title}, row {r} "
+                             f"({_row_label(row, cols[0])}), {header[c]}")
+                    if new_value != value:
+                        writes.append((ws, rowcol_to_a1(r, c + 1), value, new_value))
+                        changed.append(f"{where}: {value} → {new_value}")
+                    for n in lost:
+                        gone = source.get(n)
+                        unresolved.append(
+                            f"{where}: {n} — "
+                            + (f"position {n} ({gone}) is not in the new planar"
+                               if gone else f"there was no position {n}")
+                            + "; left as typed")
+
+        if not apply:
+            continue
+        new_entry = {"numbering": {str(n): name for n, name in new_numbering.items()}}
+        if writes:
+            # Recorded before the write, so a run stopped around it can tell
+            # afterwards whether it landed (above) instead of renumbering twice.
+            save(sid, dict(entry, pending=dict(
+                new_entry, cells=[[ws.title, a1, old, new] for ws, a1, old, new in writes])))
+            reason = (f"planar_{lang_id} renumbered: position numbers in "
+                      f"{class_name} answers carried over to the new numbering")
+            with ExitStack() as stack:
+                for ws in {ws.title: ws for ws, _, _, _ in writes}.values():
+                    stack.enter_context(drive_door.replacing(ws, reason))
+                ss.values_batch_update({
+                    "valueInputOption": "RAW",
+                    "data": [{"range": f"{_quoted(ws.title)}!{a1}", "values": [[new]]}
+                             for ws, a1, _, new in writes]})
+        save(sid, new_entry)
+
+    return {"changed": changed, "unresolved": unresolved}
+
+
+def _quoted(title: str) -> str:
+    return "'" + title.replace("'", "''") + "'"
+
+
+def _pending_landed(ss, cells: list):
+    """True if every cell of an interrupted renumbering write holds its new
+    value, False if every one still holds its old value, None otherwise
+    (someone has edited them since; a person must look)."""
+    values = {}
+    for title in {t for t, _, _, _ in cells}:
+        values[title] = ss.worksheet(title).get_all_values()
+    from gspread.utils import a1_to_rowcol
+    now = []
+    for title, a1, old, new in cells:
+        r, c = a1_to_rowcol(a1)
+        rows = values[title]
+        cur = rows[r - 1][c - 1] if r - 1 < len(rows) and c - 1 < len(rows[r - 1]) else ""
+        now.append((cur, old, new))
+    if all(cur == new for cur, _, new in now):
+        return True
+    if all(cur == old for cur, old, _ in now):
+        return False
+    return None
+
+
+def _finish_renumbering(lang_id: str) -> None:
+    """The planar file now holds the new numbering, so every sheet agrees
+    with it: the record of sheets done is no longer needed."""
+    record = _load_renumbering()
+    if record.pop(lang_id, None) is not None:
+        _save_renumbering(record)
 
 
 # ---------------------------------------------------------------------------
@@ -178,6 +388,7 @@ def import_planar(lang_ids: list[str] | None = None, apply: bool = False) -> lis
     cfg = _load_drive_config()
 
     all_changes: dict[str, dict] = {}
+    failed: list[str] = []
 
     for lang_id, lang_cfg in cfg.items():
         if lang_id.startswith("_"):
@@ -249,14 +460,33 @@ def import_planar(lang_ids: list[str] | None = None, apply: bool = False) -> lis
             print(f"  - position {n} ({name})")
         for n, (old_name, new_name) in diff["renamed"].items():
             print(f"  ~ position {n}: {old_name} → {new_name}")
+        for o, n in diff["remaps"]:
+            print(f"  ↷ position {o} is now {n}")
         for col in diff["columns_added"]:
             print(f"  + column {col}")
         if not any([diff["added"], diff["deleted"], diff["renamed"],
-                    diff["columns_added"]]):
+                    diff["remaps"], diff["columns_added"]]):
             print("  (content-only changes)")
         print(f"  → {rec}")
 
         all_changes[lang_id] = {"diff": diff, "recommendation": rec}
+
+        if _renumbering_needed(diff):
+            # Before the planar file is written: it holds the old numbering.
+            try:
+                cells = _renumber_class_sheets(lang_id, old_df, new_df, apply)
+            except Exception as exc:
+                print(f"  ERROR renumbering the position cells of the class sheets: {exc}")
+                print("  planar file left as it was, so the next run tries again")
+                failed.append(lang_id)
+                del all_changes[lang_id]
+                continue
+            all_changes[lang_id]["position_cells"] = cells
+            verb = "renumbered" if apply else "would renumber"
+            for line in cells["changed"]:
+                print(f"  {verb}: {line}")
+            for line in cells["unresolved"]:
+                print(f"  CHECK: {line}")
 
         if apply:
             # The door keeps the previous version in archive/lang_setup/,
@@ -264,12 +494,16 @@ def import_planar(lang_ids: list[str] | None = None, apply: bool = False) -> lis
             file_door.write(file_door.planar(lang_id), file_door.frame_text(new_df),
                             why=f"imported from the planar Sheet; next: {rec}")
             print(f"  wrote planar_{lang_id}.tsv")
+            _finish_renumbering(lang_id)
 
     if apply and all_changes:
         PLANAR_CHANGES_PATH.write_text(json.dumps(all_changes, indent=2))
     elif not apply and all_changes:
         print("\nDry run — rerun with --apply to write changes.")
 
+    if failed:
+        raise SystemExit(f"import-planar: could not renumber the class sheets of "
+                         f"{', '.join(failed)}; see ERROR above")
     return list(all_changes.keys())
 
 

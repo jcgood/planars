@@ -51,9 +51,11 @@ def test_sync_diagnostics_yaml_from_tsv_does_not_write_to_drive():
     assert provenance.writes_to_drive("sync_diagnostics_yaml", args) is False
 
 
-def test_import_planar_default_direction_does_not_write_to_drive():
-    args = _ns(apply=True, to_sheet=False)
-    assert provenance.writes_to_drive("import_planar", args) is False
+def test_import_planar_default_direction_writes_to_drive_only_with_apply():
+    """With --apply it may renumber the class sheets' position cells when the
+    planar's numbers shift (2026-10-22); a dry run never writes."""
+    assert provenance.writes_to_drive("import_planar", _ns(apply=True, to_sheet=False)) is True
+    assert provenance.writes_to_drive("import_planar", _ns(apply=False, to_sheet=False)) is False
 
 
 def test_import_planar_to_sheet_writes_to_drive():

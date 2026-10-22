@@ -53,11 +53,13 @@ def test_conditioned_by_must_name_real_positions():
     assert any("not a position in the planar: v:nowhere" in m for m in messages(issues))
 
 
-def test_a_position_number_is_answered_with_its_name():
+def test_positions_may_be_written_as_numbers_or_names():
     _, issues = validate(
-        row("will", "v:modal1", "'ll", "y", "prosodic", "host", "5, 31", "y"))
-    assert any("write position names, not numbers (5 is v:npsubj1, 31 is v:verbinflection)"
-               in m for m in messages(issues))
+        row("will", "v:modal1", "'ll", "y", "prosodic", "host", "5, v:verbinflection", "y"))
+    assert issues == []
+    _, issues = validate(
+        row("will", "v:modal1", "'ll", "y", "prosodic", "host", "5, 77", "y"))
+    assert any("not a position in the planar: 77" in m for m in messages(issues))
 
 
 def test_a_form_that_does_not_occur_needs_nothing_else():

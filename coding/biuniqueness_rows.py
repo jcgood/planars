@@ -14,7 +14,8 @@ never typed, so renaming a tab is a schema edit only:
   morphemes     keyed rows, one per morpheme found in the elements tab:
                 a filled element marked has_allomorphs=y, a listed member of
                 an open category, or an element with co_exponents (a label
-                "{element} + {positions}" whose forms co-occur).
+                "{element} + {positions}" whose forms co-occur; positions
+                by name even where the annotator typed numbers).
   morphs        keyed rows, one per (morpheme, position, form): every planar
                 position the morpheme sits at, crossed with its forms.
 
@@ -36,6 +37,7 @@ from planars.biuniqueness_deviations import CLASS_NAME  # noqa: F401  (re-export
 from planars.biuniqueness_deviations import ELEMENTS_TAB as ELEMENTS
 from planars.biuniqueness_deviations import MORPHEMES_TAB as MORPHEMES
 from planars.biuniqueness_deviations import MORPHS_TAB as MORPHS
+from planars.position_cells import as_names
 from planars.schema_values import row_columns, row_key
 
 from .make_forms import wrap_element as wrap  # bracket a hyphenated element, as every sheet does
@@ -126,6 +128,16 @@ def position_order(planar_df: pd.DataFrame, lang_id: str) -> Dict[str, int]:
     return {str(r["Position_Name"]).strip(): int(r["Position"]) for _, r in df.iterrows()}
 
 
+def co_positions(cell, planar_df: pd.DataFrame, lang_id: str) -> List[str]:
+    """A co_exponents answer as position names: annotators may write numbers
+    (planars.position_cells), but a morpheme label and the morphs rows name
+    positions, so no renumbering changes a row's key. An item that is no
+    position is kept as typed; validate-coding reports it."""
+    by_number = {n: name for name, n in position_order(planar_df, lang_id).items()}
+    names, unknown = as_names(cell, by_number)
+    return names + unknown
+
+
 # ---------------------------------------------------------------------------
 # Tab 1: elements
 # ---------------------------------------------------------------------------
@@ -179,7 +191,7 @@ def morpheme_rows(elements: pd.DataFrame, planar_df: pd.DataFrame,
         elif has == "na":
             for member in _split_list(r.get("members", "")):
                 add(wrap(member), OPEN_CATEGORY, pos)
-        co = _split_list(r.get("co_exponents", ""))
+        co = co_positions(r.get("co_exponents", ""), planar_df, lang_id)
         if co:
             add(_co_label(element, co), CO_EXPONENT, pos, {"forms_relation": "co-occur"})
 
@@ -219,7 +231,7 @@ def morph_rows(morphemes: pd.DataFrame, elements: pd.DataFrame,
         element, pos = str(r["Element"]).strip(), str(r["Position_Name"]).strip()
         if str(r.get("has_allomorphs", "")).strip().lower() == "y":
             variants.setdefault(element, []).extend(wrap(m) for m in _split_list(r.get("members", "")))
-        co = _split_list(r.get("co_exponents", ""))
+        co = co_positions(r.get("co_exponents", ""), planar_df, lang_id)
         if co:
             co_source[_co_label(element, co)] = (element, pos, co)
 
