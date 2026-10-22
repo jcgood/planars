@@ -21,18 +21,23 @@ For each language with a folder in the ID file:
 
 - no proposal sheet yet: make it, fill it from the sources, save the base,
   record its ID in the ID file (``proposal_spreadsheet_id``);
-- a tab still holding exactly the base: refilled from the sources when they
-  have changed (inside the Drive door's ``replacing()``, which saves the tab
-  first), and the base updated;
-- a tab that differs from the base holds a proposal and is left as it is.
+- otherwise compare each proposal tab three ways, base, sheet and source
+  (``proposal_diff.compare``): rows only the source changed are taken into
+  the sheet (inside the Drive door's ``replacing()``, which saves the tab
+  first) and into the base; rows the annotator changed are the proposal and
+  are kept, with their reasons; a row both changed differently is a
+  conflict, kept as the annotator left it;
+- then file or update the language's ``proposal`` issue, which lists each
+  change and conflict in plain words, or close it once the sheet holds no
+  proposal (a change the coordinator has made in the source as well counts
+  as agreed and drops off).
 
 Dry run by default; ``--apply`` writes. A sheet with no base, or a language
 whose sources can't be read, is reported and the run exits non-zero after
 the other languages.
 
-Not here yet (the rest of 11a): the daily comparison that turns a proposal
-into a ``proposal`` issue, refreshing the untouched rows of a tab that holds
-one, and ``accept-proposal``.
+Not here yet (the rest of 11a): ``accept-proposal``, which reviews each
+change, applies the accepted ones to the source and writes Last review.
 """
 from __future__ import annotations
 
@@ -44,10 +49,13 @@ from typing import Dict, List, Optional
 from . import drive_door, file_door
 from .drive import _load_drive_config, _save_drive_config, ensure_user_permission
 from .drive_doorway import get_doorway
-from .sheet_spec import PROPOSAL_TABS, REVIEW_TAB_TITLE, proposal_sheet_spec
+from .proposal_diff import compare, describe
+from .sheet_spec import (PROPOSAL_TABS, REVIEW_TAB_TITLE, WHAT_CHANGED_COLUMN,
+                         proposal_sheet_spec)
 
 CODED_DATA = drive_door.CODED_DATA
 ID_KEY = "proposal_spreadsheet_id"
+LABEL = "proposal"      # schemas/issue_labels.yaml
 
 # What Last review says before any proposal has been reviewed. Moves into
 # the schema with the other sentences annotators read (unit 11d).
@@ -69,16 +77,6 @@ def sheet_name(lang_id: str) -> str:
 def _grid_of(tab) -> List[List[str]]:
     """A proposal tab's spec as the grid written to the sheet."""
     return [list(tab.header)] + [list(r) for r in tab.rows or ()]
-
-
-def _normal(grid: List[List[str]]) -> List[List[str]]:
-    """``grid`` as compared: cells stripped, trailing blanks and blank rows
-    dropped, as Sheets returns a grid."""
-    rows = [[str(v).strip() for v in r] for r in grid]
-    rows = [r[:max((i + 1 for i, v in enumerate(r) if v), default=0)] for r in rows]
-    while rows and not rows[-1]:
-        rows.pop()
-    return rows
 
 
 def _read_base(lang_id: str) -> Optional[Dict[str, List[List[str]]]]:
@@ -178,22 +176,94 @@ def _one_language(doorway, lang_id: str, config: Dict, apply: bool,
         return
     ss = doorway.open_spreadsheet(sheet_id)
     new_base = dict(base)
+    found: Dict[str, Dict[str, List[str]]] = {}
     for title, _ in PROPOSAL_TABS:
-        now = ss.worksheet(title).get_all_values()
-        if _normal(now) != _normal(base.get(title, [])):
-            print(f"  [{lang_id}] {title}: holds a proposal; left as it is")
-            continue
-        if _normal(fills[title]) == _normal(base.get(title, [])):
-            print(f"  [{lang_id}] {title}: up to date")
+        merge = compare(base.get(title, []), ss.worksheet(title).get_all_values(),
+                        fills[title], WHAT_CHANGED_COLUMN)
+        found[title] = _what_it_proposes(merge)
+        if found[title]["changes"] or found[title]["conflicts"]:
+            print(f"  [{lang_id}] {title}: holds a proposal "
+                  f"({len(found[title]['changes'])} change(s), "
+                  f"{len(found[title]['conflicts'])} conflict(s))")
+        if not merge.refreshed:
+            if not (found[title]["changes"] or found[title]["conflicts"]):
+                print(f"  [{lang_id}] {title}: up to date")
             continue
         if not apply:
-            print(f"  [{lang_id}] {title}: would refill from the changed source")
+            print(f"  [{lang_id}] {title}: would take in the source's changes")
             continue
-        _refill(ss, title, fills[title], lang_id)
-        new_base[title] = fills[title]
-        print(f"  [{lang_id}] {title}: refilled from the changed source")
+        _refill(ss, title, [list(r) for r in merge.sheet], lang_id)
+        new_base[title] = [list(r) for r in merge.base]
+        print(f"  [{lang_id}] {title}: took in the source's changes")
     if apply and new_base != base:
-        _write_base(lang_id, new_base, "proposal sheet refilled from the changed sources")
+        _write_base(lang_id, new_base, "the sources' changes taken into the proposal sheet")
+    _report(lang_id, ss.url, found, apply)
+
+
+def _what_it_proposes(merge) -> Dict[str, List[str]]:
+    """The proposal's changes and conflicts in plain words."""
+    header = list(merge.base[0]) if merge.base else []
+    changes = [line for h in merge.changes
+               for line in describe(header, merge.base, h, WHAT_CHANGED_COLUMN)]
+    conflicts = []
+    for ours, theirs in merge.conflicts:
+        sheet_says = describe(header, merge.old_base, ours, WHAT_CHANGED_COLUMN)
+        source_says = describe(header, merge.old_base, theirs, WHAT_CHANGED_COLUMN)
+        conflicts.append("the proposal: " + "; ".join(sheet_says)
+                         + " — but the source now: " + "; ".join(source_says))
+    return {"changes": changes, "conflicts": conflicts}
+
+
+def issue_title(lang_id: str) -> str:
+    from planars.languages import get_display_name
+    return f"Proposal — {get_display_name(lang_id)}"
+
+
+def _issue_body(lang_id: str, url: str, found: Dict[str, Dict[str, List[str]]]) -> str:
+    from .people import annotator_name
+    who = annotator_name(lang_id) or "The annotator"
+    lines = [f"{who} has proposed changes in [{sheet_name(lang_id)}]({url}). Each change "
+             "is the sheet's difference from what it was last filled with; the reason, "
+             "where given, is in italics.", ""]
+    for title, _ in PROPOSAL_TABS:
+        if not (found[title]["changes"] or found[title]["conflicts"]):
+            continue
+        lines.append(f"## {title}")
+        lines += [f"- {c}" for c in found[title]["changes"]]
+        if found[title]["conflicts"]:
+            lines += ["", "**Changed by both** (the coordinator has edited the source "
+                          "since the sheet was filled):"]
+            lines += [f"- {c}" for c in found[title]["conflicts"]]
+        lines.append("")
+    lines += ["## What to do",
+              "The coordinator decides on each change. To accept one now, make it in the "
+              "source (`planar_{0}.tsv` or `diagnostics_{0}.yaml`): once the source agrees "
+              "with the sheet, the change drops off this list. The review command that "
+              "does this and records each decision is being built (Phase 10 unit 11a). "
+              "This issue closes when the sheet holds no proposal.".format(lang_id)]
+    return "\n".join(lines)
+
+
+def _report(lang_id: str, url: str, found: Dict[str, Dict[str, List[str]]],
+            apply: bool) -> None:
+    """File or update the language's proposal issue, or close it."""
+    from . import issues
+    pending = any(f["changes"] or f["conflicts"] for f in found.values())
+    title = issue_title(lang_id)
+    if not apply:
+        if pending:
+            print(f"  [{lang_id}] would file or update {title!r}")
+        return
+    if pending:
+        number, created = issues.file_issue(LABEL, title, _issue_body(lang_id, url, found),
+                                            replace=True, match_title=True)
+        print(f"  [{lang_id}] {'filed' if created else 'updated'} #{number}")
+        return
+    number = issues.find_open(LABEL, title=title)
+    if number is not None:
+        issues.close(number, "The proposal sheet holds no proposal now: every change "
+                             "is in the source or was undone on the sheet.")
+        print(f"  [{lang_id}] closed #{number}")
 
 
 def build_parser() -> argparse.ArgumentParser:

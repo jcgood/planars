@@ -338,10 +338,18 @@ the same commit.
    makes each sheet and refills a tab still holding its base. Choices where
    the design left a gap: the Last review note is the sheet's first tab
    (what the annotator sees on opening it); the sheet's ID goes in the ID
-   file beside the planar Sheet's; a tab holding a proposal is left whole
-   until the daily comparison (next) refreshes its untouched rows. Its
-   instruction sentences are a constant in `proposal_sheets.py` until 11d
-   moves them, with the locked tabs', into the schema.
+   file beside the planar Sheet's. Its instruction sentences are a constant
+   in `proposal_sheets.py` until 11d moves them, with the locked tabs', into
+   the schema. *Second part, same day:* the three-way comparison
+   (`coding/proposal_diff.py`) and the `proposal` issue, both run by
+   `proposal-sheets`. Rows are matched in order, as `diff` matches lines,
+   not by position number (an added position renumbers the rest); changes
+   that touch form one stretch, as in diff3 and git, so neighbouring edits
+   by the two sides are read together; the What changed? reasons are set
+   aside while comparing, so a change the coordinator also makes in the
+   source counts as agreed, and a reason alone is not a change. Until
+   `accept-proposal` exists the issue says how to accept a change by hand
+   (make it in the source), which the comparison then sees as agreed.
 6. **11b — lock the planar and diagnostics Sheets, retire the intakes and
    delete the diagnostics TSV** (§ 3.5, Q5; **a live write**: protecting the
    Sheets), once Adam has used a proposal sheet. Until then the diagnostics

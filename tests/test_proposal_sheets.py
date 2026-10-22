@@ -20,6 +20,7 @@ from coding import drive_door, drive_doorway, file_door, state_files
 from coding import proposal_sheets as cmd
 from coding.sheet_spec import (PROPOSAL_DIAGNOSTICS_TAB, PROPOSAL_PLANAR_TAB, REVIEW_TAB_TITLE,
                                WHAT_CHANGED_COLUMN)
+from coding.proposal_diff import compare, normal, three_way
 from command_runner import run_command
 from fake_drive import FIXTURE_DIR, FakeDriveDoorway, use_frozen_coded_data
 
@@ -71,7 +72,18 @@ def planar_grid(coded) -> List[List[str]]:
 
 
 def trimmed(grid):
-    return cmd._normal(grid)
+    return [list(r) for r in normal(grid)]
+
+
+def open_proposals(github):
+    return [i for i in github.issues if "proposal" in i["labels"] and i["state"] == "OPEN"]
+
+
+def annotate(doorway, row: int, column: str, value: str) -> None:
+    """The annotator edits one cell of the Planar tab (row 1 is the header)."""
+    ws = the_sheet(doorway).worksheet(PROPOSAL_PLANAR_TAB)
+    header = ws.get_all_values()[0]
+    ws.update_cell(row, header.index(column) + 1, value)
 
 
 def edit_planar_file(coded, old: str, new: str) -> None:
@@ -133,25 +145,113 @@ def test_a_tab_holding_no_proposal_is_refilled_when_its_source_changes(env):
     edit_planar_file(coded, first_name, first_name + "X")
     out, code = run("--apply")
     assert code == 0, out
-    assert f"{PROPOSAL_PLANAR_TAB}: refilled" in out
+    assert f"{PROPOSAL_PLANAR_TAB}: took in the source's changes" in out
     planar = the_sheet(doorway).worksheet(PROPOSAL_PLANAR_TAB).get_all_values()
     assert planar[1][1] == first_name + "X"
     base = json.loads(file_door.proposal_base(LANG).path.read_text(encoding="utf-8"))
     assert base[PROPOSAL_PLANAR_TAB][1][1] == first_name + "X"
 
 
-def test_a_tab_holding_a_proposal_is_left_alone(env):
+def test_a_proposal_files_an_issue_naming_each_change_and_its_reason(env, github):
     doorway, run, coded = env
     run("--apply")
-    ws = the_sheet(doorway).worksheet(PROPOSAL_PLANAR_TAB)
-    ws.update_cell(2, len(ws.get_all_values()[0]), "a clitic form")   # the annotator
-    first_name = planar_grid(coded)[1][1]
-    edit_planar_file(coded, first_name, first_name + "X")              # the coordinator
-    before = ws.get_all_values()
+    annotate(doorway, 2, "Elements", "and, also, then, so, CONJUNCT")
+    annotate(doorway, 2, WHAT_CHANGED_COLUMN, "so is a conjunct too")
     out, code = run("--apply")
     assert code == 0, out
-    assert f"{PROPOSAL_PLANAR_TAB}: holds a proposal; left as it is" in out
-    assert ws.get_all_values() == before
+    [issue] = open_proposals(github)
+    assert issue["title"] == cmd.issue_title(LANG)
+    assert "position 1 `v:leftedge`: Elements" in issue["body"], issue["body"]
+    assert "*so is a conjunct too*" in issue["body"]
+    assert "## Diagnostics" not in issue["body"]
+    # Run again with nothing new: the same one issue, brought up to date.
+    run("--apply")
+    assert len(open_proposals(github)) == 1
+
+
+def test_the_sources_changes_are_taken_in_around_a_proposal(env, github):
+    doorway, run, coded = env
+    run("--apply")
+    annotate(doorway, 2, "Elements", "and, also, then, so, CONJUNCT")   # the annotator
+    last = planar_grid(coded)[-1]
+    edit_planar_file(coded, last[4], last[4] + "X")                     # the coordinator
+    out, code = run("--apply")
+    assert code == 0, out
+    grid = the_sheet(doorway).worksheet(PROPOSAL_PLANAR_TAB).get_all_values()
+    header = grid[0]
+    assert grid[1][header.index("Elements")] == "and, also, then, so, CONJUNCT"
+    assert trimmed(grid)[-1][header.index("Position_Name")] == last[4] + "X"
+    [issue] = open_proposals(github)
+    assert "Changed by both" not in issue["body"]
+
+
+def test_a_change_the_coordinator_also_makes_in_the_source_closes_the_issue(env, github):
+    doorway, run, coded = env
+    run("--apply")
+    annotate(doorway, 2, "Elements", "and, also, then, so, CONJUNCT")
+    annotate(doorway, 2, WHAT_CHANGED_COLUMN, "so is a conjunct too")
+    run("--apply")
+    assert len(open_proposals(github)) == 1
+    edit_planar_file(coded, "and, also, then, CONJUNCT", "and, also, then, so, CONJUNCT")
+    out, code = run("--apply")
+    assert code == 0, out
+    assert open_proposals(github) == []
+    # The reason stays on the sheet: it is the annotator's.
+    grid = the_sheet(doorway).worksheet(PROPOSAL_PLANAR_TAB).get_all_values()
+    assert grid[1][grid[0].index(WHAT_CHANGED_COLUMN)] == "so is a conjunct too"
+
+
+def test_a_row_both_changed_differently_is_a_conflict_kept_as_the_annotator_left_it(env, github):
+    doorway, run, coded = env
+    run("--apply")
+    annotate(doorway, 2, "Elements", "and, also, then, so, CONJUNCT")
+    edit_planar_file(coded, "and, also, then, CONJUNCT", "and, then, CONJUNCT")
+    out, code = run("--apply")
+    assert code == 0, out
+    [issue] = open_proposals(github)
+    assert "Changed by both" in issue["body"]
+    grid = the_sheet(doorway).worksheet(PROPOSAL_PLANAR_TAB).get_all_values()
+    assert grid[1][grid[0].index("Elements")] == "and, also, then, so, CONJUNCT"
+
+
+def test_a_dry_run_files_no_issue_and_writes_nothing(env, github):
+    doorway, run, coded = env
+    run("--apply")
+    annotate(doorway, 2, "Elements", "and, also, then, so, CONJUNCT")
+    edit_planar_file(coded, planar_grid(coded)[-1][4], planar_grid(coded)[-1][4] + "X")
+    doorway.clear_mutations()
+    out, code = run()
+    assert code == 0, out
+    assert "would file or update" in out and "would take in the source's changes" in out
+    assert open_proposals(github) == []
+    assert doorway.mutations == []
+
+
+# --- the three-way comparison on its own ---------------------------------------
+
+H = ("Position", "Position_Name", "Elements", WHAT_CHANGED_COLUMN)
+
+
+def rows(*items):
+    return [H] + [tuple(i) for i in items]
+
+
+def test_an_inserted_position_is_one_change_not_a_renumbering_of_every_row():
+    base = rows(("1", "a", "x"), ("2", "b", "y"), ("3", "c", "z"))
+    sheet = rows(("1", "a", "x"), ("2", "new", "n", "a new slot"), ("3", "b", "y"),
+                 ("4", "c", "z"))
+    c = compare(base, sheet, base, WHAT_CHANGED_COLUMN)
+    assert len(c.changes) == 1 and not c.conflicts and not c.refreshed
+
+
+def test_separate_changes_by_each_side_are_both_kept():
+    base = rows(("1", "a", "x"), ("2", "b", "y"), ("3", "c", "z"), ("4", "d", "w"))
+    sheet = rows(("1", "a", "x2"), ("2", "b", "y"), ("3", "c", "z"), ("4", "d", "w"))
+    source = rows(("1", "a", "x"), ("2", "b", "y"), ("3", "c", "z"), ("4", "d", "w2"))
+    m = three_way(normal(base), normal(sheet), normal(source))
+    assert m.sheet[1][2] == "x2" and m.sheet[4][2] == "w2"
+    assert m.base[1][2] == "x" and m.base[4][2] == "w2"
+    assert not m.conflicts and len(m.proposal) == 1
 
 
 def test_a_sheet_with_no_base_is_reported_and_left_alone(env):
