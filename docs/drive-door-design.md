@@ -704,3 +704,11 @@ Each kind's § 4 clock starts with its first real write: the notes Docs
 when check-notes next acknowledges notes, the notebooks and reports at the
 next generate-notebooks and generate-reports runs, the manifest and
 folders at the next command that saves or makes one.
+
+**Status sheets and the diagnostics Sheet enforced (2026-10-21).** Both met
+Q7: generate-status-sheet rebuilt every status sheet on the 2026-10-20 and
+-21 refreshes, and sync-diagnostics-yaml pushed a diagnostics Sheet on
+2026-10-19, all through the door with no violation (no `door-violation`
+issue has ever been filed). Both kinds are added to `LIVE_ENFORCED_KINDS`.
+Still in watch, each waiting on its first real write: the planar Sheet,
+notes Docs, notebooks, reports, the manifest and folders.
