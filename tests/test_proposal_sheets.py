@@ -20,7 +20,7 @@ from coding import drive_door, drive_doorway, file_door, state_files
 from coding import proposal_sheets as cmd
 from coding.sheet_spec import (PROPOSAL_DIAGNOSTICS_TAB, PROPOSAL_PLANAR_TAB, REVIEW_TAB_TITLE,
                                WHAT_CHANGED_COLUMN)
-from coding.proposal_diff import compare, normal, three_way
+from coding.proposal_diff import compare, describe, normal, three_way
 from command_runner import run_command
 from fake_drive import FIXTURE_DIR, FakeDriveDoorway, use_frozen_coded_data
 
@@ -258,6 +258,20 @@ def test_an_inserted_position_is_one_change_not_a_renumbering_of_every_row():
                  ("4", "c", "z"))
     c = compare(base, sheet, base, WHAT_CHANGED_COLUMN)
     assert len(c.changes) == 1 and not c.conflicts and not c.refreshed
+    assert describe(H, c.base, c.changes[0], WHAT_CHANGED_COLUMN) == [
+        "row added after position 1 `a`: Position '2', Position_Name 'new', Elements 'n' — *a new slot*",
+        "positions renumbered: 2 → 3, 3 → 4"]
+
+
+@pytest.mark.parametrize("beside", [1, 3], ids=["row above", "row below"])
+def test_a_deleted_rows_reason_is_taken_from_the_row_beside_it(beside):
+    base = rows(("1", "a", "x"), ("2", "b", "y"), ("3", "c", "z"))
+    kept = [list(r) for r in base if r[0] != "2"]
+    kept[1 if beside == 1 else 2].append("b is part of a")
+    c = compare(base, kept, base, WHAT_CHANGED_COLUMN)
+    [change] = c.changes
+    assert describe(H, c.base, change, WHAT_CHANGED_COLUMN) == [
+        "position 2 `b` removed — *b is part of a*"]
 
 
 def test_separate_changes_by_each_side_are_both_kept():

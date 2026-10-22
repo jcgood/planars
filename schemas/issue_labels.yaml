@@ -307,5 +307,7 @@ labels:
       annotator's proposal sheet differs from what it was filled with, and the
       issue lists each change in plain words, and any row both they and the
       coordinator changed (a conflict). Kept current by `proposal-sheets
-      --apply`; closed when the sheet holds no proposal.
-    filed_by: proposal-sheets --apply
+      --apply` in the daily refresh. Resolve: `accept-proposal --lang LANG_ID
+      --apply`, which closes it with the decisions; it also closes by itself
+      when the sheet holds no proposal.
+    filed_by: proposal-sheets --apply (data-refresh.yml)

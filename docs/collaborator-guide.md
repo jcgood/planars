@@ -41,6 +41,23 @@ Correct each one on the construction's tab (the cell is also pink there). The li
 
 While a construction is still `in-progress`, nothing is listed there: wrong values are only highlighted pink.
 
+### Proposing a change to the planar structure or the diagnostics
+
+Your language's folder has one more sheet, `proposal_{lang_id}`, where you propose changes to the planar structure (the positions and their elements) or to the diagnostics (which classes, constructions and criteria apply). It has three tabs:
+
+- **Planar** and **Diagnostics**: copies of the two, with a **What changed?** column at the end.
+- **Last review**: the outcome of the last time the coordinator reviewed a proposal.
+
+To propose a change, edit the Planar or Diagnostics tab as you would like it to be: change a cell, add a row, or delete one. Then say why in that row's **What changed?** cell. A deleted row takes its cell with it, so give the reason for a deletion on the row just above it. For a new position, add its row where it belongs and renumber the positions after it. Give the reason on the new row; the renumbered rows don't need one.
+
+Nothing else changes while you edit: your annotation sheets stay as they are. Within a day a GitHub issue titled "Proposal — " and your language's name lists each change you made and your reasons. The coordinator then accepts or declines each one. Then:
+
+- The accepted changes go into the planar structure and diagnostics. The tabs are filled again from the new versions, so your edits disappear from them. A declined change goes back to how it was.
+- **Last review** lists what was accepted, what was not and why, and the issue closes.
+- If an accepted change affects your annotation sheets (a new position or a new class, say), the coordinator updates those sheets.
+
+If the coordinator edits the planar or diagnostics while your proposal is open, their change is copied into the tabs without touching yours. If you both changed the same row in different ways, the issue says so, and the coordinator decides which version to keep.
+
 ### Viewing your results
 
 Once your coordinator has imported your filled sheet, results appear in your contributor Colab notebook. Open the notebook link from the same Drive folder as your sheet and choose **Runtime → Run all**. Sign in with your Google account when prompted.

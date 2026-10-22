@@ -59,8 +59,10 @@ CODED_DATA = ROOT / "coded_data"
 # state files, the notes state among them, and the ID file), which every
 # command writes wherever it runs, and what the local-file door adds to on
 # every write wherever it runs: each language's change log and archive
-# copies, which only ever grow.
+# copies, which only ever grow; and the proposal sheets' saved bases, which
+# only proposal-sheets and accept-proposal write.
 _REFRESH_OWNED_PARTS = ("lang_setup/diagnostics_", "lang_setup/planar_",
+                        f"lang_setup/{file_door.PROPOSAL_BASE}_",
                         f"{state_files.STATE_DIR.name}/", state_files.ID_FILE.name,
                         f"/{file_door.CHANGE_LOG_NAME}", f"/{file_door.ARCHIVE_FOLDER}/")
 _BOT = "github-actions[bot]"
@@ -532,6 +534,13 @@ def diagnostics_to_sheet(r: Refresh) -> None:
              "Diagnostics YAML validation passed")
 
 
+def proposal_sheets(r: Refresh) -> None:
+    """After both sources are final for the day (the planar import, the
+    diagnostics Sheet push), so today's source changes reach each proposal
+    sheet and its `proposal` issue compares against them."""
+    r.unreported("proposal sheets", run("proposal-sheets", "--apply"))
+
+
 def sync_params(r: Refresh) -> None:
     r.unreported("criterion columns", run("sync-params", "--apply"))
 
@@ -686,6 +695,8 @@ STEPS: List[Step] = [
     Step("diagnostics tsv", "sync-diagnostics-yaml --apply", diagnostics_to_tsv),
     Step("diagnostics sheet", "sync-diagnostics-yaml --to-sheet --apply → diagnostics-yaml-error",
          diagnostics_to_sheet),
+    Step("proposal sheets", "proposal-sheets --apply (files its own proposal issues)",
+         proposal_sheets),
     Step("criterion columns", "sync-params --apply", sync_params),
     Step("regen dependents", "generate-sheets --regen-dependents → regen-dependents-error",
          regen_dependents),

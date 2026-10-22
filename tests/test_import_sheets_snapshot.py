@@ -374,7 +374,8 @@ def test_a_noop_apply_writes_no_new_tsvs_or_archives(env):
 
 
 def test_overwrite_existing_rewrites_matching_cells_but_never_identical_bytes(env):
-    env.run(["import-sheets", "--lang", "arao1248", "--apply"])  # materialize
+    # Materialize in today's form (the frozen copy may still have CRLF ends).
+    env.run(["import-sheets", "--lang", "arao1248", "--apply", "--overwrite-existing"])
     tsv = env.output_tsv("arao1248", "ciscategorial", "general")
     n_archives_before = len(env.archives("arao1248", "ciscategorial"))
 
@@ -385,7 +386,8 @@ def test_overwrite_existing_rewrites_matching_cells_but_never_identical_bytes(en
     # Same cells, different line ends: a plain import sees no change, the
     # flag rewrites it (and the door archives the old text).
     written = tsv.read_bytes()
-    tsv.write_bytes(written.replace(b"\r\n", b"\n"))
+    assert b"\r\n" not in written                 # LF, as every writer uses
+    tsv.write_bytes(written.replace(b"\n", b"\r\n"))
     out, _ = env.run(["import-sheets", "--lang", "arao1248", "--apply"])
     assert "No changes → coded_data/arao1248/ciscategorial/general.tsv" in out
     env.run(["import-sheets", "--lang", "arao1248", "--apply", "--overwrite-existing"])

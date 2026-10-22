@@ -40,31 +40,29 @@ rule 8 especially) is a command bug or a spec gap to fix.
 
 **Next action:**
 
-0. **Watch for the local-file door's first real data-file write.** The
-   2026-10-21 refresh passed every 6a/6b check (end of the Phase 10 row)
-   but changed no annotation or set-up file. On each refresh, look in
-   planars-data's log for a `data: <command> changed N file(s)` commit
-   touching a TSV/YAML (not only `.state/`): it should carry a
-   `{lang}/changes.tsv` line and an archive copy per file, and file no
-   "Local-file door" `door-violation` issue. Also confirm no step used
-   the Drive door's last retry (`retry 8/8`; waits lengthened 2026-10-21).
+0. **Check the 2026-10-23 refresh's new `proposal sheets` step** (the
+   first in the refresh): green, every tab "up to date" unless Adam edited
+   one, no `door-violation`.
 1. **Unit 6c — enforce** the local-file door (`ownership-design.md` § 6
-   step 4), once that first data-file write has gone through cleanly;
-   `data-overwrite` moves to the change log (§ 5.3).
+   step 4); unblocked, since its first real data-file write went through
+   cleanly on 2026-10-22 (end of the Phase 10 row); `data-overwrite`
+   moves to the change log (§ 5.3).
 
 **Waits on watching:** enforce for each kind still in watch (planar
 Sheet, notes Docs, notebooks, reports, manifest, folders: its own first
 clean real write, then added to `LIVE_ENFORCED_KINDS`; class sheets,
-status sheets and the diagnostics Sheet are enforced), for 6c, and
-refusing unlabelled targets (last). **11a's code is built** (2026-10-21:
-`proposal-sheets`, `accept-proposal`); its four live steps are listed at
-the end of the Phase 10 row. 9's second half needs 6; then 11b–d, 16–18.
+status sheets and the diagnostics Sheet are enforced), and refusing
+unlabelled targets (last). **11a is live** (2026-10-22: the three
+proposal sheets, the refresh step, the collaborator guide section, the
+issue to Adam); 11b (locking the planar/diagnostics Sheets) waits until
+Adam has used his proposal sheet once. 9's second half needs 6; then
+11b–d, 16–18.
 
 **Live steps — name each to Jeff for approval first:** 5f's one-notebook
 sharing test and Q7's Colab label-search test (both need an annotator's
-account, so Adam takes part; they can run together); later, creating
-proposal sheets (11a) and locking the planar/diagnostics Sheets (11b), with
-Jeff telling Adam and an issue mentioning him (Q8).
+account, so Adam takes part; they can run together); later, locking the
+planar/diagnostics Sheets (11b), with Jeff telling Adam and an issue
+mentioning him (Q8).
 
 Check for an open `door-violation` issue first: each line is a command bug
 or a spec gap to fix.

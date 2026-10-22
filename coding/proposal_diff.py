@@ -18,7 +18,9 @@ changed only in the source (taken into the sheet, so a refill never undoes a
 coordinator's edit and never loses a proposal); changed only in the sheet
 (the proposal); changed in both, the same way (taken) or differently (a
 **conflict**: the sheet keeps the annotator's version, the base the old one,
-and the review shows all three). ``describe`` puts a change in plain words.
+and the review shows all three). ``describe`` puts a change in plain words,
+each with its reason; a deleted row's reason is the one written on the row
+beside it, since the row itself is gone.
 """
 from __future__ import annotations
 
@@ -267,17 +269,42 @@ def describe(header: Sequence[str], base: Sequence[Row], hunk: Hunk,
                          + (" | ".join(new[0]) if new else "(removed)"))
         old, new = old[1:], new[1:]
         hunk = Hunk(1, hunk.hi, tuple(new))
-    for o, n in zip(old, new):
-        before, after = dict(cells(o)), dict(cells(n))
-        diffs = [f"{c} {before.get(c, '')!r} → {after.get(c, '')!r}"
-                 for c in dict.fromkeys(list(before) + list(after))
-                 if before.get(c, "") != after.get(c, "")]
-        lines.append(f"{label(header, o)}: " + ("; ".join(diffs) or "reason added") + why(n))
-    after_row = base[hunk.lo - 1] if hunk.lo > 0 else None
-    where = f"after {label(header, after_row)}" if after_row and hunk.lo > 1 else "at the top"
-    for n in new[len(old):]:
-        shown = ", ".join(f"{c} {v!r}" for c, v in cells(n) if v)
-        lines.append(f"row added {where}: {shown}{why(n)}")
-    for o in old[len(new):]:
-        lines.append(f"{label(header, o)} removed")
+    # Rows are matched on everything but their reason and position number,
+    # so a row that only moved down (an inserted position renumbers the rest)
+    # is one renumbering line, not a change of every cell, and a row that
+    # differs only in its reason is no change at all. A deleted row has no
+    # cell left for its reason, so the annotator writes it on the row beside
+    # it: such a reason goes with the stretch's other changes.
+    skip = {i for i, c in enumerate(header) if c == note_column or c == "Position"}
+
+    def key(row: Sequence[str]) -> tuple:
+        return tuple((i, v) for i, v in enumerate(row) if i not in skip and v)
+
+    sm = SequenceMatcher(None, [key(o) for o in old], [key(n) for n in new], autojunk=False)
+    opcodes = sm.get_opcodes()
+    lent = next((why(new[j]) for tag, _, _, j1, j2 in opcodes if tag == "equal"
+                 for j in range(j1, j2) if why(new[j])), "")
+    renumbered = []
+    for tag, i1, i2, j1, j2 in opcodes:
+        if tag == "equal":
+            renumbered += [f"{dict(cells(o)).get('Position', '')} → {dict(cells(n)).get('Position', '')}"
+                           for o, n in zip(old[i1:i2], new[j1:j2])
+                           if without(o, header, note_column) != without(n, header, note_column)]
+            continue
+        pairs = list(zip(old[i1:i2], new[j1:j2]))
+        for o, n in pairs:
+            before, after = dict(cells(o)), dict(cells(n))
+            diffs = [f"{c} {before.get(c, '')!r} → {after.get(c, '')!r}"
+                     for c in dict.fromkeys(list(before) + list(after))
+                     if before.get(c, "") != after.get(c, "")]
+            lines.append(f"{label(header, o)}: " + "; ".join(diffs) + (why(n) or lent))
+        at = hunk.lo + i1 + len(pairs)
+        where = f"after {label(header, base[at - 1])}" if at > 1 else "at the top"
+        for n in new[j1 + len(pairs):j2]:
+            shown = ", ".join(f"{c} {v!r}" for c, v in cells(n) if v)
+            lines.append(f"row added {where}: {shown}{why(n) or lent}")
+        for o in old[i1 + len(pairs):i2]:
+            lines.append(f"{label(header, o)} removed{lent}")
+    if renumbered:
+        lines.append("positions renumbered: " + ", ".join(renumbered))
     return lines

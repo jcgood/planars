@@ -189,7 +189,7 @@ def test_an_overwrite_archives_the_old_text_and_logs_what_changed(coded):
 
 
 def test_the_door_keeps_the_bytes_it_is_given(coded):
-    """CRLF line ends (import-sheets' csv writer) survive the write."""
+    """CRLF line ends (as many annotation TSVs still have) survive the write."""
     text = file_door.read(_target())
     assert "\r\n" in text
     rows = _rows(text)

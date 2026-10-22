@@ -306,12 +306,16 @@ def stamp() -> str:
 # ---------------------------------------------------------------------------
 
 def tsv_text(header: Sequence[str], records: Sequence[Dict]) -> str:
-    """An annotation TSV as import-sheets has always written it (csv
-    module, minimal quoting, CRLF line ends); keys not in ``header`` are
-    ignored."""
+    """An annotation TSV as import-sheets writes it (csv module, minimal
+    quoting); keys not in ``header`` are ignored. LF line ends, as every
+    other writer of these files uses (``frame_text``): until 2026-10-22 this
+    wrote CRLF, so a file alternated between the two with whichever command
+    wrote it last and its history showed every line changed. A file still
+    in CRLF takes LF at its next change of content."""
     buf = io.StringIO()
     writer = csv.DictWriter(buf, fieldnames=list(header), delimiter="\t",
-                            extrasaction="ignore", quoting=csv.QUOTE_MINIMAL)
+                            extrasaction="ignore", quoting=csv.QUOTE_MINIMAL,
+                            lineterminator="\n")
     writer.writeheader()
     writer.writerows(records)
     return buf.getvalue()
