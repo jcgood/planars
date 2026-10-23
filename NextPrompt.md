@@ -144,8 +144,7 @@ rules (#254 design comment; the class stays `[AUTO-DERIVED]` until he does);
 elements marked ready-for-review for him by
 `migrations/mark_biuniqueness_elements_ready_stan1293.py`) and marking it
 ready-for-review; the daily refresh then fills morphs by itself — check it
-did. Adam has not been told yet: a two-line note on #318 waits on Jeff's
-OK. Positions may be typed as numbers since 2026-10-22
+did. Adam was told on #318 (2026-10-22). Positions may be typed as numbers since 2026-10-22
 (`planars/position_cells.py`; import-planar renumbers them when the
 planar's numbers shift); (3) #298 (what `-n` at
 `v:frontedauxiliaryinflection` is — fronted *won't* waits on it).
