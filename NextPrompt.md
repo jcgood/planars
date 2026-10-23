@@ -25,8 +25,8 @@ Adam and his Claude agree each class's span rule. His Claude writes it into
 the YAML on a branch and opens a pull request. Our side then makes the code
 match, stamps the hash and merges. The procedure is coordinator guide
 § "Reviewing a span rule with the domain expert". The order, the checkboxes
-and the known questions for each class are in the tracking issue "Span rules
-to review with Adam (English)". **Next action:** review each `Span rule: {class}`
+and the known questions for each class are in the tracking issue #321. Jeff sent Adam the
+prompt for his Claude (2026-10-22). **Next action:** review each `Span rule: {class}`
 pull request as it arrives, following the 7-step workflow on its branch.
 Unblocking the later classes is #318 (b) for free_occurrence, and (c) and (d)
 for coreference.
