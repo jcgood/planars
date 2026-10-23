@@ -15,7 +15,7 @@ languages.yaml loads it directly at the point of use.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import yaml
 
@@ -194,12 +194,18 @@ def position_criteria() -> set:
     return out
 
 
-def is_free_entry(values) -> bool:
-    """True if a criterion's declared values are only free-entry placeholders
-    (free_entry_kind): it takes free entry, so it gets no dropdown -- a
-    dropdown would just offer the placeholder itself as a choice. Every
-    writer of dropdown validation, the sheet spec, and validate-coding ask this."""
-    return free_entry_kind(values) is not None
+def dropdown_values(values) -> "Tuple[str, ...] | None":
+    """The values a criterion column's dropdown offers, or None for no dropdown.
+
+    A column gets no dropdown when any of its declared values is a placeholder
+    (free_text, position_names, and also [na, <position_number>]): a dropdown
+    would offer the placeholder itself as a choice and mark every number typed
+    as invalid (Adam, #322, 2026-10-23). Every writer of dropdown validation
+    and the sheet spec ask this."""
+    values = list(values or [])
+    if not values or any(placeholder_kind(v) for v in values):
+        return None
+    return tuple(values)
 
 
 def criteria_for(class_name: str, construction: str, names: List[str],

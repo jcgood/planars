@@ -21,7 +21,7 @@ overwrite check, committing the snapshots), as the workflow's
 
 Exit status: 1 if the refresh itself failed, or if a step with no issue of
 its own failed (label sync, collaborator notes, criterion columns,
-snapshots), so the workflow run shows red; 0 otherwise. On GitHub Actions
+dropdowns, snapshots), so the workflow run shows red; 0 otherwise. On GitHub Actions
 each command's output also goes to the run's summary page
 (``GITHUB_STEP_SUMMARY``).
 
@@ -620,6 +620,12 @@ def update_sheets(r: Refresh) -> None:
              lambda: result.output, "Sheet drift resolved")
 
 
+def dropdowns(r: Refresh) -> None:
+    """After update-sheets, so rows added today get theirs. A sheet it
+    couldn't check shows the run red."""
+    r.unreported("dropdowns", run("refresh-dropdowns", "--apply"))
+
+
 def status_sheets(r: Refresh) -> None:
     """After update-sheets, so rows added today are counted."""
     result = run("generate-status-sheet", "--apply")
@@ -707,6 +713,7 @@ STEPS: List[Step] = [
          overwrite_check, always=True),
     Step("commit snapshots", "commit tests/snapshots/ to planars", commit_snapshots, always=True),
     Step("sheet updates", "update-sheets --apply → sheet-drift", update_sheets),
+    Step("dropdowns", "refresh-dropdowns --apply (dropdowns as the codebook says)", dropdowns),
     Step("status sheets", "generate-status-sheet --apply → status-sheet-error",
          status_sheets),
     Step("audit", f"file an audit issue if none closed in {AUDIT_EVERY_DAYS} days → audit",

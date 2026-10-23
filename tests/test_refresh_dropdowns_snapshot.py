@@ -13,12 +13,10 @@ output against the migrated code's. Both modes matched exactly, with one
 intended difference recorded in docs/data-layer-progress.md: opening a
 spreadsheet now retries, because `open_spreadsheet` always retries.
 
-**The `apply.txt` snapshot records a real bug, deliberately.** This command
-narrows the dropdown for every class that declares per-construction criteria
-(`segmental.flapping`, `phrasal_accent.general`), because it keeps only the
-first construction's criterion values per class. See
-docs/data-layer-progress.md § "Findings awaiting triage". Do not quietly
-correct the snapshot — when the bug is fixed, its diff is the evidence.
+**The recorded sheets carry no dropdowns** (capture-drive-state doesn't
+record them), so `--apply` here sets every criterion column's dropdown and
+the Status column's; the tests at the end seed a wrong one and check it is
+put right (#322).
 
 **Regenerating.** These snapshots read each language's setup files from the
 frozen copy (`fake_drive.FROZEN_CODED_DATA`), never the live `coded_data/`,
@@ -280,8 +278,7 @@ def test_per_construction_criteria_are_not_collapsed_to_the_first(fake, monkeypa
     one's values narrowed flapping's dropdowns from [y, n, both, na] to [y, n]
     and joint_accent's from [always, sometimes, never] to [y, n].
 
-    Those manifests were already correct, so with the bug fixed there is
-    nothing to change on those tabs at all — they must not be touched.
+    Each tab now gets its own construction's values.
     """
     from coding.refresh_dropdowns import _fresh_param_values
 
@@ -298,14 +295,9 @@ def test_per_construction_criteria_are_not_collapsed_to_the_first(fake, monkeypa
     assert accent == {"joint_accent": ["always", "sometimes", "never"]}
 
     run(["refresh-dropdowns", "--apply"], monkeypatch)
-    touched = {(m["spreadsheet"], m["payload"]["range"]["sheetId"])
-               for m in fake.mutations
-               if m["op"] == "batch_request" and m["request_type"] == "setDataValidation"}
     for lang in ("stan1293", "synth0001"):
-        for class_name, tab in (("segmental", "flapping"),
-                                ("phrasal_accent", "general")):
-            ss = fake.spreadsheet(_sheet_id(fake, lang, class_name))
-            assert (ss.id, ss.worksheet(tab).id) not in touched
+        ws = fake.spreadsheet(_sheet_id(fake, lang, "segmental")).worksheet("flapping")
+        assert _offered(ws, "flapping_left") == ("y", "n", "both", "na")
 
 
 def test_dropdowns_are_never_written_onto_source_or_comments(fake, monkeypatch):
@@ -362,4 +354,60 @@ def test_apply_is_idempotent(fake, monkeypatch):
 def test_dry_run_after_apply_reports_everything_up_to_date(fake, monkeypatch):
     run(["refresh-dropdowns", "--apply"], monkeypatch)
     out = run(["refresh-dropdowns"], monkeypatch)
-    assert "All dropdowns are up to date." in out
+    assert "All dropdowns match the codebook." in out
+
+
+# ---------------------------------------------------------------------------
+# #322 — the sheet's real dropdowns, not the manifest's record of them
+# ---------------------------------------------------------------------------
+
+def _offered(ws, column: str):
+    """The values column ``column``'s dropdown offers on row 2, None for none."""
+    rule = ws._cells.get((1, ws.row_values(1).index(column)))
+    rule = rule.validation if rule is not None else None
+    return None if rule is None else tuple(
+        v["userEnteredValue"] for v in rule["condition"]["values"])
+
+
+def _seed(ws, column: str, values) -> None:
+    """Give every data row of ``column`` a dropdown offering ``values``."""
+    c = ws.row_values(1).index(column)
+    for r in range(1, len(ws.get_all_values())):
+        ws._cell(r, c).validation = {
+            "condition": {"type": "ONE_OF_LIST",
+                          "values": [{"userEnteredValue": v} for v in values]},
+            "showCustomUi": True, "strict": False}
+
+
+def test_an_old_narrow_dropdown_is_widened_and_a_wrong_one_removed(fake, monkeypatch):
+    """What Adam met on the English sheets: the y/n list removed from the
+    codebook 2026-10-12 was still on the sheets, so both, na and unclear
+    weren't offered and a typed position number showed as invalid; and a
+    dropdown sat on Comments. The manifest's record was right all along,
+    so the old comparison saw nothing to do."""
+    run(["refresh-dropdowns", "--apply"], monkeypatch)
+    ss = fake.spreadsheet(_sheet_id(fake, "stan1293", "free_occurrence"))
+    ws = ss.worksheet("general")
+    _seed(ws, "left-edge-of-free-form", ["y", "n"])
+    _seed(ws, "dependent-on-left", ["y", "n"])
+    _seed(ws, "Comments", ["y", "n", "both"])
+
+    out = run(["refresh-dropdowns", "--lang", "stan1293"], monkeypatch)
+    assert "general 'left-edge-of-free-form': y, n → y, n, na" in out
+    assert "general 'dependent-on-left': y, n → no dropdown" in out
+    assert "general 'Comments': both, n, y → no dropdown" not in out  # one list, as offered
+    assert "general 'Comments': y, n, both → no dropdown" in out
+
+    run(["refresh-dropdowns", "--apply", "--lang", "stan1293"], monkeypatch)
+    assert _offered(ws, "left-edge-of-free-form") == ("y", "n", "na")
+    assert _offered(ws, "dependent-on-left") is None
+    assert _offered(ws, "Comments") is None
+    assert "dropdowns match" in run(["refresh-dropdowns", "--lang", "stan1293"], monkeypatch)
+
+
+def test_the_status_column_gets_its_strict_dropdown(fake, monkeypatch):
+    run(["refresh-dropdowns", "--apply"], monkeypatch)
+    ws = fake.spreadsheet(_sheet_id(fake, "stan1293", "metrical")).worksheet("Status")
+    rule = ws._cells[(1, ws.row_values(1).index("Status"))].validation
+    assert rule["strict"] is True
+    assert _offered(ws, "Needs fixing") is None

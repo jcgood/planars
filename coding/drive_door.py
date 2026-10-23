@@ -1680,6 +1680,9 @@ class CheckedSpreadsheet:
                          params: Optional[Mapping[str, Any]] = None) -> Mapping[str, Any]:
         return _retry(lambda: self._inner.values_batch_get(ranges, params=params))
 
+    def fetch_sheet_metadata(self, params: Optional[Mapping[str, Any]] = None) -> Mapping[str, Any]:
+        return _retry(lambda: self._inner.fetch_sheet_metadata(params=params))
+
     def _tab_by_sheet_id(self, sheet_id: int) -> Optional["CheckedWorksheet"]:
         """The tab a request names. The door keeps each spreadsheet's tabs for
         the command and re-reads them only for an id it hasn't seen: one read

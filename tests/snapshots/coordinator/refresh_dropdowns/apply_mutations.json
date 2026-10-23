@@ -1,36 +1,3341 @@
 [
   {
     "op": "batch_request",
-    "spreadsheet": "1kk_8HWJ38EbssJSFD84E2V3-Q_0rifCntD12mEIvmgc",
-    "request_type": "updateSheetProperties",
+    "spreadsheet": "1BTORcAYwVZGEf_rftRxXAsC4wMeVunozbhoiu_3Pnxc",
+    "request_type": "setDataValidation",
     "payload": {
-      "properties": {
-        "sheetId": 269706862,
-        "gridProperties": {
-          "frozenRowCount": 1
-        }
+      "range": {
+        "sheetId": 327005340,
+        "startRowIndex": 1,
+        "endRowIndex": 75,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
       },
-      "fields": "gridProperties.frozenRowCount"
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
     }
   },
   {
     "op": "batch_request",
-    "spreadsheet": "1kk_8HWJ38EbssJSFD84E2V3-Q_0rifCntD12mEIvmgc",
-    "request_type": "repeatCell",
+    "spreadsheet": "1BTORcAYwVZGEf_rftRxXAsC4wMeVunozbhoiu_3Pnxc",
+    "request_type": "setDataValidation",
     "payload": {
       "range": {
-        "sheetId": 269706862,
-        "startRowIndex": 0,
-        "endRowIndex": 1
+        "sheetId": 327005340,
+        "startRowIndex": 1,
+        "endRowIndex": 75,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
       },
-      "cell": {
-        "userEnteredFormat": {
-          "textFormat": {
-            "bold": true
-          }
-        }
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1BTORcAYwVZGEf_rftRxXAsC4wMeVunozbhoiu_3Pnxc",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 327005340,
+        "startRowIndex": 1,
+        "endRowIndex": 75,
+        "startColumnIndex": 5,
+        "endColumnIndex": 6
       },
-      "fields": "userEnteredFormat.textFormat.bold"
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1BTORcAYwVZGEf_rftRxXAsC4wMeVunozbhoiu_3Pnxc",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 327005340,
+        "startRowIndex": 1,
+        "endRowIndex": 75,
+        "startColumnIndex": 6,
+        "endColumnIndex": 7
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1BTORcAYwVZGEf_rftRxXAsC4wMeVunozbhoiu_3Pnxc",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 814145268,
+        "startRowIndex": 1,
+        "endRowIndex": 3,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "135LNV3BEF-g86pMZiZZjGY3IaMb-sZ7Jl0hh3LRbbBo",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 885419493,
+        "startRowIndex": 1,
+        "endRowIndex": 75,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "135LNV3BEF-g86pMZiZZjGY3IaMb-sZ7Jl0hh3LRbbBo",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 885419493,
+        "startRowIndex": 1,
+        "endRowIndex": 75,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "135LNV3BEF-g86pMZiZZjGY3IaMb-sZ7Jl0hh3LRbbBo",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1745544005,
+        "startRowIndex": 1,
+        "endRowIndex": 3,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12negOahPnlSq02aET6kuU_NCkC5T2u8XeJaxg1nJQ70",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1178800861,
+        "startRowIndex": 1,
+        "endRowIndex": 75,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12negOahPnlSq02aET6kuU_NCkC5T2u8XeJaxg1nJQ70",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1178800861,
+        "startRowIndex": 1,
+        "endRowIndex": 75,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12negOahPnlSq02aET6kuU_NCkC5T2u8XeJaxg1nJQ70",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1178800861,
+        "startRowIndex": 1,
+        "endRowIndex": 75,
+        "startColumnIndex": 5,
+        "endColumnIndex": 6
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12negOahPnlSq02aET6kuU_NCkC5T2u8XeJaxg1nJQ70",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1118920694,
+        "startRowIndex": 1,
+        "endRowIndex": 75,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12negOahPnlSq02aET6kuU_NCkC5T2u8XeJaxg1nJQ70",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1118920694,
+        "startRowIndex": 1,
+        "endRowIndex": 75,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12negOahPnlSq02aET6kuU_NCkC5T2u8XeJaxg1nJQ70",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1118920694,
+        "startRowIndex": 1,
+        "endRowIndex": 75,
+        "startColumnIndex": 5,
+        "endColumnIndex": 6
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12negOahPnlSq02aET6kuU_NCkC5T2u8XeJaxg1nJQ70",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 132102013,
+        "startRowIndex": 1,
+        "endRowIndex": 4,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1lXyxcCAHrXvLnn6SL2sdGfUPA4RZk_Mp9voPLFHsLmY",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 423938602,
+        "startRowIndex": 1,
+        "endRowIndex": 75,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "both"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1lXyxcCAHrXvLnn6SL2sdGfUPA4RZk_Mp9voPLFHsLmY",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 242077357,
+        "startRowIndex": 1,
+        "endRowIndex": 255,
+        "startColumnIndex": 2,
+        "endColumnIndex": 3
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "both"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1lXyxcCAHrXvLnn6SL2sdGfUPA4RZk_Mp9voPLFHsLmY",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1417443112,
+        "startRowIndex": 1,
+        "endRowIndex": 4,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1zpVT-Scs0Ga82HUbrYMltn2IVapFH4GahmE6FNgrmOo",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 174489109,
+        "startRowIndex": 1,
+        "endRowIndex": 75,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1zpVT-Scs0Ga82HUbrYMltn2IVapFH4GahmE6FNgrmOo",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 174489109,
+        "startRowIndex": 1,
+        "endRowIndex": 75,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "na"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1zpVT-Scs0Ga82HUbrYMltn2IVapFH4GahmE6FNgrmOo",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 174489109,
+        "startRowIndex": 1,
+        "endRowIndex": 75,
+        "startColumnIndex": 5,
+        "endColumnIndex": 6
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "na"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1zpVT-Scs0Ga82HUbrYMltn2IVapFH4GahmE6FNgrmOo",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1789022607,
+        "startRowIndex": 1,
+        "endRowIndex": 3,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1O3d4Bj4n28hkWWBQOl7RX95Bb4SkR27-RF6mSQ6-9rc",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 149484479,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1O3d4Bj4n28hkWWBQOl7RX95Bb4SkR27-RF6mSQ6-9rc",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 149484479,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1O3d4Bj4n28hkWWBQOl7RX95Bb4SkR27-RF6mSQ6-9rc",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 149484479,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 5,
+        "endColumnIndex": 6
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1O3d4Bj4n28hkWWBQOl7RX95Bb4SkR27-RF6mSQ6-9rc",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1176263671,
+        "startRowIndex": 1,
+        "endRowIndex": 3,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 708174683,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 708174683,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 708174683,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 5,
+        "endColumnIndex": 6
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1577150660,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1577150660,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1577150660,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 5,
+        "endColumnIndex": 6
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1940920804,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1940920804,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1940920804,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 5,
+        "endColumnIndex": 6
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 2090612503,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 2090612503,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 2090612503,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 5,
+        "endColumnIndex": 6
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1y8BqmgeeKxHyGYccMV0MrVpxOb-oqku-aUqWm7zJrr4",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1569629021,
+        "startRowIndex": 1,
+        "endRowIndex": 6,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1-rqDe52YRJsTrQjNe7HxPncDHky9FLm6CaJ9cBLZaX0",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1920795320,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1-rqDe52YRJsTrQjNe7HxPncDHky9FLm6CaJ9cBLZaX0",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1920795320,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1-rqDe52YRJsTrQjNe7HxPncDHky9FLm6CaJ9cBLZaX0",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 537420465,
+        "startRowIndex": 1,
+        "endRowIndex": 3,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "19uDRX9flfQFk-MSCsvFy_SG3zubz0Kxowo4y7pyJUOM",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 183423172,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "both"
+            },
+            {
+              "userEnteredValue": "na"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "19uDRX9flfQFk-MSCsvFy_SG3zubz0Kxowo4y7pyJUOM",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 517086933,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "both"
+            },
+            {
+              "userEnteredValue": "na"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "19uDRX9flfQFk-MSCsvFy_SG3zubz0Kxowo4y7pyJUOM",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 517086933,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "both"
+            },
+            {
+              "userEnteredValue": "na"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "19uDRX9flfQFk-MSCsvFy_SG3zubz0Kxowo4y7pyJUOM",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 517086933,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 5,
+        "endColumnIndex": 6
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "both"
+            },
+            {
+              "userEnteredValue": "na"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "19uDRX9flfQFk-MSCsvFy_SG3zubz0Kxowo4y7pyJUOM",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1708796553,
+        "startRowIndex": 1,
+        "endRowIndex": 4,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1yVggyBZ9whjWwihiQbc98aTMx9CRn9JQKfLEM8JZfTg",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1237814181,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "both"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1yVggyBZ9whjWwihiQbc98aTMx9CRn9JQKfLEM8JZfTg",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1237814181,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1yVggyBZ9whjWwihiQbc98aTMx9CRn9JQKfLEM8JZfTg",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1237814181,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 5,
+        "endColumnIndex": 6
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "na"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1yVggyBZ9whjWwihiQbc98aTMx9CRn9JQKfLEM8JZfTg",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1237814181,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 6,
+        "endColumnIndex": 7
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1yVggyBZ9whjWwihiQbc98aTMx9CRn9JQKfLEM8JZfTg",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1237814181,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 7,
+        "endColumnIndex": 8
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1yVggyBZ9whjWwihiQbc98aTMx9CRn9JQKfLEM8JZfTg",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 464072340,
+        "startRowIndex": 1,
+        "endRowIndex": 3,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1L3kfV-g278NMxbdqfu2sN343nmKp1r-29jq60fr9YsQ",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1939400443,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1L3kfV-g278NMxbdqfu2sN343nmKp1r-29jq60fr9YsQ",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1939400443,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "na"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1L3kfV-g278NMxbdqfu2sN343nmKp1r-29jq60fr9YsQ",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1939400443,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 5,
+        "endColumnIndex": 6
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "na"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1L3kfV-g278NMxbdqfu2sN343nmKp1r-29jq60fr9YsQ",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 334450626,
+        "startRowIndex": 1,
+        "endRowIndex": 3,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1sb0DJzFKY-j7sA1kjLqGUqtdsG2JJX0vW-rRALWV7Ic",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1100881133,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "both"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1sb0DJzFKY-j7sA1kjLqGUqtdsG2JJX0vW-rRALWV7Ic",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1492506467,
+        "startRowIndex": 1,
+        "endRowIndex": 24,
+        "startColumnIndex": 2,
+        "endColumnIndex": 3
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "both"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1sb0DJzFKY-j7sA1kjLqGUqtdsG2JJX0vW-rRALWV7Ic",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1847039684,
+        "startRowIndex": 1,
+        "endRowIndex": 4,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "131F4ZVngUR2Sgu3Zmtfb_1ff-JT4L8dT1mNOk12M0zA",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1109636608,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "131F4ZVngUR2Sgu3Zmtfb_1ff-JT4L8dT1mNOk12M0zA",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1231223567,
+        "startRowIndex": 1,
+        "endRowIndex": 164,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "untestable"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "131F4ZVngUR2Sgu3Zmtfb_1ff-JT4L8dT1mNOk12M0zA",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1756251763,
+        "startRowIndex": 1,
+        "endRowIndex": 164,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "untestable"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "131F4ZVngUR2Sgu3Zmtfb_1ff-JT4L8dT1mNOk12M0zA",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1749267875,
+        "startRowIndex": 1,
+        "endRowIndex": 164,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "untestable"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "131F4ZVngUR2Sgu3Zmtfb_1ff-JT4L8dT1mNOk12M0zA",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 419439021,
+        "startRowIndex": 1,
+        "endRowIndex": 6,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1LJjSOkoblAre6v257wW1ENUMM7SDC_JbfhlN3HMwQJY",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1573075479,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "both"
+            },
+            {
+              "userEnteredValue": "unclear"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1LJjSOkoblAre6v257wW1ENUMM7SDC_JbfhlN3HMwQJY",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 739024462,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "both"
+            },
+            {
+              "userEnteredValue": "unclear"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1LJjSOkoblAre6v257wW1ENUMM7SDC_JbfhlN3HMwQJY",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1780400655,
+        "startRowIndex": 1,
+        "endRowIndex": 4,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12f_cgmKuKNEnHWUJGQX5QiaHeAVCIxMyYMS3mFe-mVs",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 892700523,
+        "startRowIndex": 1,
+        "endRowIndex": 143,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "both"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12f_cgmKuKNEnHWUJGQX5QiaHeAVCIxMyYMS3mFe-mVs",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 601657411,
+        "startRowIndex": 1,
+        "endRowIndex": 4,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1Xz8_4aMFr4xfkNrlomiURODtbUuFFEmkMTr9WO6_5aI",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 572273114,
+        "startRowIndex": 1,
+        "endRowIndex": 137,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1Xz8_4aMFr4xfkNrlomiURODtbUuFFEmkMTr9WO6_5aI",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1995868384,
+        "startRowIndex": 1,
+        "endRowIndex": 19,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "alternate"
+            },
+            {
+              "userEnteredValue": "co-occur"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1Xz8_4aMFr4xfkNrlomiURODtbUuFFEmkMTr9WO6_5aI",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1430889300,
+        "startRowIndex": 1,
+        "endRowIndex": 5,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1u6QnuCcS0t4j04f7cFjyVOcEz8_vifBwFaDqTmTnRJU",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1095451425,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1u6QnuCcS0t4j04f7cFjyVOcEz8_vifBwFaDqTmTnRJU",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1095451425,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1u6QnuCcS0t4j04f7cFjyVOcEz8_vifBwFaDqTmTnRJU",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1095451425,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 5,
+        "endColumnIndex": 6
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1u6QnuCcS0t4j04f7cFjyVOcEz8_vifBwFaDqTmTnRJU",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1365570083,
+        "startRowIndex": 1,
+        "endRowIndex": 3,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12mNaEIfKP7Sf1RlnJ11CbG-lzGSOjovLel29AcZXvfg",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1304177242,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12mNaEIfKP7Sf1RlnJ11CbG-lzGSOjovLel29AcZXvfg",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1304177242,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12mNaEIfKP7Sf1RlnJ11CbG-lzGSOjovLel29AcZXvfg",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1304177242,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 5,
+        "endColumnIndex": 6
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12mNaEIfKP7Sf1RlnJ11CbG-lzGSOjovLel29AcZXvfg",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 622452855,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12mNaEIfKP7Sf1RlnJ11CbG-lzGSOjovLel29AcZXvfg",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 622452855,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12mNaEIfKP7Sf1RlnJ11CbG-lzGSOjovLel29AcZXvfg",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 622452855,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 5,
+        "endColumnIndex": 6
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12mNaEIfKP7Sf1RlnJ11CbG-lzGSOjovLel29AcZXvfg",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1434067782,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12mNaEIfKP7Sf1RlnJ11CbG-lzGSOjovLel29AcZXvfg",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1434067782,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12mNaEIfKP7Sf1RlnJ11CbG-lzGSOjovLel29AcZXvfg",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1434067782,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 5,
+        "endColumnIndex": 6
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12mNaEIfKP7Sf1RlnJ11CbG-lzGSOjovLel29AcZXvfg",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 468775082,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12mNaEIfKP7Sf1RlnJ11CbG-lzGSOjovLel29AcZXvfg",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 468775082,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12mNaEIfKP7Sf1RlnJ11CbG-lzGSOjovLel29AcZXvfg",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 468775082,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 5,
+        "endColumnIndex": 6
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12mNaEIfKP7Sf1RlnJ11CbG-lzGSOjovLel29AcZXvfg",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1416015439,
+        "startRowIndex": 1,
+        "endRowIndex": 6,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1p0vGD608hBKMhm1ekbJW1qY0FxMLd6QqSSsSAoJGwvY",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1384515214,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1p0vGD608hBKMhm1ekbJW1qY0FxMLd6QqSSsSAoJGwvY",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1384515214,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1p0vGD608hBKMhm1ekbJW1qY0FxMLd6QqSSsSAoJGwvY",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 736924920,
+        "startRowIndex": 1,
+        "endRowIndex": 3,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "11z4k-Fr9oJv__eaTYrJdN9t87SjYPT1v--ANz1De244",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1860405621,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "both"
+            },
+            {
+              "userEnteredValue": "na"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "11z4k-Fr9oJv__eaTYrJdN9t87SjYPT1v--ANz1De244",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1056708297,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "both"
+            },
+            {
+              "userEnteredValue": "na"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "11z4k-Fr9oJv__eaTYrJdN9t87SjYPT1v--ANz1De244",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1056708297,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "both"
+            },
+            {
+              "userEnteredValue": "na"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "11z4k-Fr9oJv__eaTYrJdN9t87SjYPT1v--ANz1De244",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1056708297,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 5,
+        "endColumnIndex": 6
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "both"
+            },
+            {
+              "userEnteredValue": "na"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "11z4k-Fr9oJv__eaTYrJdN9t87SjYPT1v--ANz1De244",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1001917944,
+        "startRowIndex": 1,
+        "endRowIndex": 4,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1AYWa7GeTmhZvN0Xmuy02hnQ-DeWNojcHuPXmwkcxREk",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 268965391,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "both"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1AYWa7GeTmhZvN0Xmuy02hnQ-DeWNojcHuPXmwkcxREk",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 268965391,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1AYWa7GeTmhZvN0Xmuy02hnQ-DeWNojcHuPXmwkcxREk",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 268965391,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 5,
+        "endColumnIndex": 6
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "na"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1AYWa7GeTmhZvN0Xmuy02hnQ-DeWNojcHuPXmwkcxREk",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 268965391,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 6,
+        "endColumnIndex": 7
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1AYWa7GeTmhZvN0Xmuy02hnQ-DeWNojcHuPXmwkcxREk",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 268965391,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 7,
+        "endColumnIndex": 8
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1AYWa7GeTmhZvN0Xmuy02hnQ-DeWNojcHuPXmwkcxREk",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 533870493,
+        "startRowIndex": 1,
+        "endRowIndex": 3,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1zqFkv9ekZqCMj_xzh7G3P6ZeP0xLnVKvQH4gcUdxfOo",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 283738130,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "both"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1zqFkv9ekZqCMj_xzh7G3P6ZeP0xLnVKvQH4gcUdxfOo",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 39613447,
+        "startRowIndex": 1,
+        "endRowIndex": 233,
+        "startColumnIndex": 2,
+        "endColumnIndex": 3
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "both"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1zqFkv9ekZqCMj_xzh7G3P6ZeP0xLnVKvQH4gcUdxfOo",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 726002716,
+        "startRowIndex": 1,
+        "endRowIndex": 4,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1k6SdfzR80JsiNSsvT1WWxc8B3yqJdVVWxujNgbtvgyw",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1008294780,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1k6SdfzR80JsiNSsvT1WWxc8B3yqJdVVWxujNgbtvgyw",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1008294780,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "na"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1k6SdfzR80JsiNSsvT1WWxc8B3yqJdVVWxujNgbtvgyw",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1008294780,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 5,
+        "endColumnIndex": 6
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "na"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1k6SdfzR80JsiNSsvT1WWxc8B3yqJdVVWxujNgbtvgyw",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1215802598,
+        "startRowIndex": 1,
+        "endRowIndex": 3,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
     }
   },
   {
@@ -59,6 +3364,291 @@
         },
         "showCustomUi": true,
         "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1kk_8HWJ38EbssJSFD84E2V3-Q_0rifCntD12mEIvmgc",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1789839085,
+        "startRowIndex": 1,
+        "endRowIndex": 608,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "untestable"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1kk_8HWJ38EbssJSFD84E2V3-Q_0rifCntD12mEIvmgc",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 581689344,
+        "startRowIndex": 1,
+        "endRowIndex": 608,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "untestable"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1kk_8HWJ38EbssJSFD84E2V3-Q_0rifCntD12mEIvmgc",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 597212094,
+        "startRowIndex": 1,
+        "endRowIndex": 608,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "untestable"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1kk_8HWJ38EbssJSFD84E2V3-Q_0rifCntD12mEIvmgc",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 392077751,
+        "startRowIndex": 1,
+        "endRowIndex": 6,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1PW32nQwWrNo0PhUiNTo_o_YzHr3BfxYBUyfpqPmGx8M",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1155486928,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "both"
+            },
+            {
+              "userEnteredValue": "unclear"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1PW32nQwWrNo0PhUiNTo_o_YzHr3BfxYBUyfpqPmGx8M",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1660507681,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "both"
+            },
+            {
+              "userEnteredValue": "unclear"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1PW32nQwWrNo0PhUiNTo_o_YzHr3BfxYBUyfpqPmGx8M",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1667486703,
+        "startRowIndex": 1,
+        "endRowIndex": 4,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12vQsG2qQOlsLCWHwD-6R-dNSfpBCZkPZ51PSnayqtTc",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1323073627,
+        "startRowIndex": 1,
+        "endRowIndex": 144,
+        "startColumnIndex": 3,
+        "endColumnIndex": 4
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            },
+            {
+              "userEnteredValue": "both"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12vQsG2qQOlsLCWHwD-6R-dNSfpBCZkPZ51PSnayqtTc",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1914288495,
+        "startRowIndex": 1,
+        "endRowIndex": 4,
+        "startColumnIndex": 1,
+        "endColumnIndex": 2
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "in-progress"
+            },
+            {
+              "userEnteredValue": "ready-for-review"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": true
       }
     }
   },

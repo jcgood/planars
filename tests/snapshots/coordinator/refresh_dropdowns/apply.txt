@@ -1,109 +1,179 @@
 Refreshing sheet dropdowns
 
   [arao1248] ciscategorial
-    general: {'V-combines': ['y', 'n'], 'N-combines': ['y', 'n'], 'A-combines': ['y', 'n'], 'PRED-combines': ['y', 'n']} up to date
+    general 'V-combines': no dropdown → y, n
+    general 'N-combines': no dropdown → y, n
+    general 'A-combines': no dropdown → y, n
+    general 'PRED-combines': no dropdown → y, n
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [arao1248] noninterruption
-    general: {'free': ['y', 'n'], 'multiple': ['y', 'n']} up to date
+    general 'free': no dropdown → y, n
+    general 'multiple': no dropdown → y, n
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [arao1248] subspanrepetition
-    auxiliary_construction: {'widescope_right': ['y', 'n'], 'widescope_left': ['y', 'n'], 'fillable_botheither_conjunct': ['y', 'n']} up to date
-    tso_clause_linkage: {'widescope_right': ['y', 'n'], 'widescope_left': ['y', 'n'], 'fillable_botheither_conjunct': ['y', 'n']} up to date
+    auxiliary_construction 'widescope_right': no dropdown → y, n
+    auxiliary_construction 'widescope_left': no dropdown → y, n
+    auxiliary_construction 'fillable_botheither_conjunct': no dropdown → y, n
+    tso_clause_linkage 'widescope_right': no dropdown → y, n
+    tso_clause_linkage 'widescope_left': no dropdown → y, n
+    tso_clause_linkage 'fillable_botheither_conjunct': no dropdown → y, n
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [arao1248] nonpermutability
-    element_prescreening: {'scopal': ['y', 'n', 'both']} up to date
-    general: {'scopal': ['y', 'n', 'both']} up to date
+    element_prescreening 'scopal': no dropdown → y, n, both
+    general 'scopal': no dropdown → y, n, both
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [arao1248] free_occurrence
-    general: {'free': ['y', 'n'], 'left-edge-of-free-form': ['y', 'n', 'na'], 'right-edge-of-free-form': ['y', 'n', 'na'], 'dependent-on-left': ['na', '<position_number>'], 'dependent-on-right': ['na', '<position_number>']} up to date
+    general 'free': no dropdown → y, n
+    general 'left-edge-of-free-form': no dropdown → y, n, na
+    general 'right-edge-of-free-form': no dropdown → y, n, na
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [stan1293] ciscategorial
-    general: {'V-combines': ['y', 'n'], 'N-combines': ['y', 'n'], 'A-combines': ['y', 'n']} up to date
+    general 'V-combines': no dropdown → y, n
+    general 'N-combines': no dropdown → y, n
+    general 'A-combines': no dropdown → y, n
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [stan1293] subspanrepetition
-    andCoordination: {'widescope_right': ['y', 'n'], 'widescope_left': ['y', 'n'], 'fillable_botheither_conjunct': ['y', 'n']} up to date
-    control: {'widescope_right': ['y', 'n'], 'widescope_left': ['y', 'n'], 'fillable_botheither_conjunct': ['y', 'n']} up to date
-    thatCOMP: {'widescope_right': ['y', 'n'], 'widescope_left': ['y', 'n'], 'fillable_botheither_conjunct': ['y', 'n']} up to date
-    asyndeticPart: {'widescope_right': ['y', 'n'], 'widescope_left': ['y', 'n'], 'fillable_botheither_conjunct': ['y', 'n']} up to date
+    andCoordination 'widescope_right': no dropdown → y, n
+    andCoordination 'widescope_left': no dropdown → y, n
+    andCoordination 'fillable_botheither_conjunct': no dropdown → y, n
+    control 'widescope_right': no dropdown → y, n
+    control 'widescope_left': no dropdown → y, n
+    control 'fillable_botheither_conjunct': no dropdown → y, n
+    thatCOMP 'widescope_right': no dropdown → y, n
+    thatCOMP 'widescope_left': no dropdown → y, n
+    thatCOMP 'fillable_botheither_conjunct': no dropdown → y, n
+    asyndeticPart 'widescope_right': no dropdown → y, n
+    asyndeticPart 'widescope_left': no dropdown → y, n
+    asyndeticPart 'fillable_botheither_conjunct': no dropdown → y, n
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [stan1293] noninterruption
-    general: {'free': ['y', 'n'], 'multiple': ['y', 'n']} up to date
+    general 'free': no dropdown → y, n
+    general 'multiple': no dropdown → y, n
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [stan1293] segmental
-    aspiration_prominence: {'aspirated': ['y', 'n', 'both', 'na']} up to date
-    flapping: {'flapping_left': ['y', 'n', 'both', 'na'], 'flapping_internal': ['y', 'n', 'both', 'na'], 'flapping_right': ['y', 'n', 'both', 'na']} up to date
+    aspiration_prominence 'aspirated': no dropdown → y, n, both, na
+    flapping 'flapping_left': no dropdown → y, n, both, na
+    flapping 'flapping_internal': no dropdown → y, n, both, na
+    flapping 'flapping_right': no dropdown → y, n, both, na
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [stan1293] metrical
-    stress_domain: {'accented': ['y', 'n', 'both'], 'obligatory': ['y', 'n'], 'independence': ['y', 'n', 'na'], 'left-interaction': ['y', 'n'], 'right-interaction': ['y', 'n']} up to date
+    stress_domain 'accented': no dropdown → y, n, both
+    stress_domain 'obligatory': no dropdown → y, n
+    stress_domain 'independence': no dropdown → y, n, na
+    stress_domain 'left-interaction': no dropdown → y, n
+    stress_domain 'right-interaction': no dropdown → y, n
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [stan1293] free_occurrence
-    general: {'free': ['y', 'n'], 'left-edge-of-free-form': ['y', 'n', 'na'], 'right-edge-of-free-form': ['y', 'n', 'na'], 'dependent-on-left': ['na', '<position_number>'], 'dependent-on-right': ['na', '<position_number>']} up to date
+    general 'free': no dropdown → y, n
+    general 'left-edge-of-free-form': no dropdown → y, n, na
+    general 'right-edge-of-free-form': no dropdown → y, n, na
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [stan1293] nonpermutability
-    element_prescreening: {'scopal': ['y', 'n', 'both']} up to date
-    general: {'scopal': ['y', 'n', 'both']} up to date
+    element_prescreening 'scopal': no dropdown → y, n, both
+    general 'scopal': no dropdown → y, n, both
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [stan1293] coreference
-    prescreening: {'referential': ['y', 'n']} up to date
-    reflexivization: {'reflexive_allowed': ['y', 'n', 'untestable']} up to date
-    pronominalization: {'pronoun_allowed': ['y', 'n', 'untestable']} up to date
-    np_reference: {'np_allowed': ['y', 'n', 'untestable']} up to date
+    prescreening 'referential': no dropdown → y, n
+    reflexivization 'reflexive_allowed': no dropdown → y, n, untestable
+    pronominalization 'pronoun_allowed': no dropdown → y, n, untestable
+    np_reference 'np_allowed': no dropdown → y, n, untestable
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [stan1293] proform
-    do_so_substitution: {'shareable_proform_replace': ['y', 'n', 'both', 'unclear']} up to date
-    vp_ellipsis: {'shareable_proform_replace': ['y', 'n', 'both', 'unclear']} up to date
+    do_so_substitution 'shareable_proform_replace': no dropdown → y, n, both, unclear
+    vp_ellipsis 'shareable_proform_replace': no dropdown → y, n, both, unclear
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [stan1293] phrasal_accent
-    prescreening: {'accented': ['y', 'n', 'both']} up to date
-    general: {'joint_accent': ['always', 'sometimes', 'never']} up to date
+    prescreening 'accented': no dropdown → y, n, both
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [stan1293] biuniqueness_deviations
-    elements: {'has_allomorphs': ['y', 'n'], 'members': ['<free_text>'], 'co_exponents': ['<position_names>']} up to date
-    morphemes: {'morpheme_class': ['<free_text>'], 'forms_relation': ['alternate', 'co-occur']} up to date
-    morphs: {'occurs_here': ['y', 'n'], 'conditioning_type': ['phonological', 'morphosyntactic', 'lexico-constructional', 'prosodic'], 'conditioning_features': ['<free_text>'], 'conditioned_by': ['<position_names>'], 'trigger_filled': ['y', 'n']} up to date
+    elements 'has_allomorphs': no dropdown → y, n
+    morphemes 'forms_relation': no dropdown → alternate, co-occur
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [synth0001] ciscategorial
-    general: {'V-combines': ['y', 'n'], 'N-combines': ['y', 'n'], 'A-combines': ['y', 'n']} up to date
+    general 'V-combines': no dropdown → y, n
+    general 'N-combines': no dropdown → y, n
+    general 'A-combines': no dropdown → y, n
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [synth0001] subspanrepetition
-    andCoordination: {'widescope_right': ['y', 'n'], 'widescope_left': ['y', 'n'], 'fillable_botheither_conjunct': ['y', 'n']} up to date
-    control: {'widescope_right': ['y', 'n'], 'widescope_left': ['y', 'n'], 'fillable_botheither_conjunct': ['y', 'n']} up to date
-    thatCOMP: {'widescope_right': ['y', 'n'], 'widescope_left': ['y', 'n'], 'fillable_botheither_conjunct': ['y', 'n']} up to date
-    asyndeticPart: {'widescope_right': ['y', 'n'], 'widescope_left': ['y', 'n'], 'fillable_botheither_conjunct': ['y', 'n']} up to date
+    andCoordination 'widescope_right': no dropdown → y, n
+    andCoordination 'widescope_left': no dropdown → y, n
+    andCoordination 'fillable_botheither_conjunct': no dropdown → y, n
+    control 'widescope_right': no dropdown → y, n
+    control 'widescope_left': no dropdown → y, n
+    control 'fillable_botheither_conjunct': no dropdown → y, n
+    thatCOMP 'widescope_right': no dropdown → y, n
+    thatCOMP 'widescope_left': no dropdown → y, n
+    thatCOMP 'fillable_botheither_conjunct': no dropdown → y, n
+    asyndeticPart 'widescope_right': no dropdown → y, n
+    asyndeticPart 'widescope_left': no dropdown → y, n
+    asyndeticPart 'fillable_botheither_conjunct': no dropdown → y, n
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [synth0001] noninterruption
-    general: {'free': ['y', 'n'], 'multiple': ['y', 'n']} up to date
+    general 'free': no dropdown → y, n
+    general 'multiple': no dropdown → y, n
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [synth0001] segmental
-    aspiration_prominence: {'aspirated': ['y', 'n', 'both', 'na']} up to date
-    flapping: {'flapping_left': ['y', 'n', 'both', 'na'], 'flapping_internal': ['y', 'n', 'both', 'na'], 'flapping_right': ['y', 'n', 'both', 'na']} up to date
+    aspiration_prominence 'aspirated': no dropdown → y, n, both, na
+    flapping 'flapping_left': no dropdown → y, n, both, na
+    flapping 'flapping_internal': no dropdown → y, n, both, na
+    flapping 'flapping_right': no dropdown → y, n, both, na
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [synth0001] metrical
-    stress_domain: {'accented': ['y', 'n', 'both'], 'obligatory': ['y', 'n'], 'independence': ['y', 'n', 'na'], 'left-interaction': ['y', 'n'], 'right-interaction': ['y', 'n']} up to date
+    stress_domain 'accented': no dropdown → y, n, both
+    stress_domain 'obligatory': no dropdown → y, n
+    stress_domain 'independence': no dropdown → y, n, na
+    stress_domain 'left-interaction': no dropdown → y, n
+    stress_domain 'right-interaction': no dropdown → y, n
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [synth0001] nonpermutability
-    element_prescreening: {'scopal': ['y', 'n', 'both']} up to date
-    general: {'scopal': ['y', 'n', 'both']} up to date
+    element_prescreening 'scopal': no dropdown → y, n, both
+    general 'scopal': no dropdown → y, n, both
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [synth0001] free_occurrence
-    general: {'free': ['y', 'n'], 'left-edge-of-free-form': ['y', 'n', 'na'], 'right-edge-of-free-form': ['y', 'n', 'na'], 'dependent-on-left': ['na', '<position_number>'], 'dependent-on-right': ['na', '<position_number>']} up to date
+    general 'free': no dropdown → y, n
+    general 'left-edge-of-free-form': no dropdown → y, n, na
+    general 'right-edge-of-free-form': no dropdown → y, n, na
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [synth0001] coreference
-    prescreening: {'reflexive_allowed': ['y', 'n', 'untestable'], 'pronoun_allowed': ['y', 'n', 'untestable'], 'np_allowed': ['y', 'n', 'untestable']} → {'referential': ['y', 'n']}
-    prescreening: refreshed ['referential']
-    reflexivization: {'reflexive_allowed': ['y', 'n', 'untestable']} up to date
-    pronominalization: {'pronoun_allowed': ['y', 'n', 'untestable']} up to date
-    np_reference: {'np_allowed': ['y', 'n', 'untestable']} up to date
+    prescreening 'referential': no dropdown → y, n
+    reflexivization 'reflexive_allowed': no dropdown → y, n, untestable
+    pronominalization 'pronoun_allowed': no dropdown → y, n, untestable
+    np_reference 'np_allowed': no dropdown → y, n, untestable
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [synth0001] proform
-    do_so_substitution: {'shareable_proform_replace': ['y', 'n', 'both', 'unclear']} up to date
-    vp_ellipsis: {'shareable_proform_replace': ['y', 'n', 'both', 'unclear']} up to date
+    do_so_substitution 'shareable_proform_replace': no dropdown → y, n, both, unclear
+    vp_ellipsis 'shareable_proform_replace': no dropdown → y, n, both, unclear
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
   [synth0001] phrasal_accent
-    prescreening: {'accented': ['y', 'n', 'both']} up to date
-    general: {'joint_accent': ['always', 'sometimes', 'never']} up to date
+    prescreening 'accented': no dropdown → y, n, both
+    Status 'Status': no dropdown → in-progress, ready-for-review
 
 Manifest updated on Drive.
 
 Done.
-Drive door (enforce): checked 2 write(s) to 2 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 74 write(s) to 74 tab(s) or file(s); 0 broke a rule.

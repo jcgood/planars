@@ -334,29 +334,27 @@
   locations:
     - {entity: diagnostics_yaml, detail: "each criterion's current allowed-value list (e.g. y/n vs y/n/both)"}
     - {entity: manifest, detail: "sheets_manifest.json's construction_params[construction].param_values -- a staleness reference, not a live copy of the Sheet's actual validation rule"}
+    - {entity: annotation_sheet, detail: "each criterion column's live dropdown"}
   authoritative: diagnostics_yaml
   cascade:
-    direction: manual
+    direction: automatic
     mechanism: >-
-      sync-params --refresh-dropdowns --apply pushes the current
-      YAML-derived allowed values to the live Sheet's dropdown validation
-      AND updates the manifest's stored param_values to match. Nothing runs
-      this automatically -- a criterion's value list can change in the YAML
-      with no corresponding sheet/manifest update until a coordinator
-      notices and runs it.
+      refresh-dropdowns --apply, daily in the refresh (since 2026-10-23),
+      reads each sheet's live dropdowns, rewrites or removes any that differ
+      from the sheet spec (built from the YAML), and updates the manifest's
+      stored param_values. Until then nothing ran it, and it compared only
+      the manifest with the YAML: the English sheets kept the y/n default
+      list removed 2026-10-12 while the manifest said otherwise (#322).
   drift_risk:
     possible: true
     note: >-
-      manifest_dropdown_values tracks the manifest's belief about the
-      Sheet, not the Sheet's actual live validation rule -- a coordinator
-      editing dropdown values directly in the Sheets UI (bypassing
-      sync-params entirely) would go undetected by this check, which only
-      compares the manifest against the YAML.
+      A dropdown edited in the Sheets window, or left by an older rule, is
+      wrong for at most a day.
     caught_by: >-
+      refresh-dropdowns in the daily refresh (the sheet itself);
       integrity-check's default per-language section
-      (_stale_manifest_param_values), run daily via data-refresh.yml,
-      surfaced as a generic integrity-error rather than a dedicated label
-      the way stale-manifest is.
+      (_stale_manifest_param_values) for the manifest's record, surfaced as
+      a generic integrity-error.
 
 - id: construction_criterion_columns
   description: >-

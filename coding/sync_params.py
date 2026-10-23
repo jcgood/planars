@@ -72,8 +72,7 @@ from .drive import (
     load_manifest, upload_manifest,
 )
 from .drive_doorway import WorksheetHandle, get_doorway
-from .generate_sheets import CODED_DATA
-from .schemas import is_free_entry
+from .generate_sheets import CODED_DATA, dropdown_request
 from .sheet_spec import MERGED_PREFIX, SPLIT_PREFIX, parked_operation
 from . import biuniqueness_rows as _br
 from . import drive_door, file_door
@@ -420,27 +419,7 @@ def _insert_param_column(
     for i, param_name in enumerate(new_params):
         col_idx = insert_at + i
         values = param_values_map[param_name]  # criteria_for guarantees every column has values
-        if is_free_entry(values):
-            continue
-        validation_requests.append({
-            "setDataValidation": {
-                "range": {
-                    "sheetId": sheet_id,
-                    "startRowIndex": 1,
-                    "endRowIndex": num_rows,
-                    "startColumnIndex": col_idx,
-                    "endColumnIndex": col_idx + 1,
-                },
-                "rule": {
-                    "condition": {
-                        "type": "ONE_OF_LIST",
-                        "values": [{"userEnteredValue": v} for v in values],
-                    },
-                    "showCustomUi": True,
-                    "strict": False,
-                },
-            }
-        })
+        validation_requests.append(dropdown_request(sheet_id, col_idx, num_rows, values))
     if validation_requests:
         spreadsheet.batch_update({"requests": validation_requests})
 
@@ -523,27 +502,7 @@ def _build_dropdown_refresh_requests(
             continue
         col_idx = header.index(param)  # 0-based
         values = exp_values[param]  # criteria_for guarantees every column has values
-        if is_free_entry(values):
-            continue
-        requests.append({
-            "setDataValidation": {
-                "range": {
-                    "sheetId": ws.id,
-                    "startRowIndex": 1,
-                    "endRowIndex": num_rows,
-                    "startColumnIndex": col_idx,
-                    "endColumnIndex": col_idx + 1,
-                },
-                "rule": {
-                    "condition": {
-                        "type": "ONE_OF_LIST",
-                        "values": [{"userEnteredValue": v} for v in values],
-                    },
-                    "showCustomUi": True,
-                    "strict": False,
-                },
-            }
-        })
+        requests.append(dropdown_request(ws.id, col_idx, num_rows, values))
     return requests
 
 

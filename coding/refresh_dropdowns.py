@@ -1,17 +1,28 @@
-"""Refresh dropdown validation on existing Google Sheets without touching data.
+"""Make every class sheet's dropdowns match the codebook, without touching data.
 
-Use this when criterion allowed-value lists change (e.g. a new value added to
-diagnostic_criteria.yaml) and existing sheets need their dropdowns updated.
-Safer than restructure-sheets: no archiving, no data changes, no new URLs.
+Reads each sheet's real dropdowns and compares each column with its spec
+(``sheet_spec.class_sheet_spec``: a criterion's allowed values from the
+diagnostics YAML, no dropdown on the row columns, Example/Source/Comments, or
+a criterion whose values include a placeholder such as <position_number>,
+``schemas.dropdown_values``; the Status column's values on the Status tab).
+A column whose dropdown differs on any data row is rewritten whole, or its
+dropdown removed. Runs daily in the refresh, so a sheet can't keep offering a
+list the codebook has moved past (#322: the English sheets still offered the
+y/n default list removed 2026-10-12, so annotators couldn't pick both, na or
+unclear, and a typed position number showed as invalid). Until 2026-10-23
+this command compared the manifest's record of the values with the YAML and
+never looked at the sheet; it still brings that record up to date
+(integrity-check reads it).
 
 Run from the repo root:
-    python -m coding refresh-dropdowns           # dry run
-    python -m coding refresh-dropdowns --apply   # push updated dropdowns
+    python -m coding refresh-dropdowns           # dry run: list what differs
+    python -m coding refresh-dropdowns --apply   # fix it
     python -m coding refresh-dropdowns --lang stan1293 --apply
 """
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -23,7 +34,8 @@ from .drive_doorway import get_doorway
 from .make_forms import _read_diagnostics_for_language
 from .schemas import criteria_for
 from planars.schema_values import STATUS_TAB
-from .generate_sheets import _format_and_validate
+from .generate_sheets import dropdown_request
+from .sheet_spec import STATUS, ClassSheetSpec, class_sheet_spec
 from planars.schema_values import TRAILING_COLUMNS as _TRAILING_COLS
 
 
@@ -112,6 +124,57 @@ def _resolve_criterion_columns(
     return col_start, per_col, None
 
 
+_DROPDOWN_FIELDS = ("sheets(properties(title,sheetId,gridProperties(rowCount)),"
+                    "data(rowData(values(formattedValue,dataValidation))))")
+
+
+def _offered(cell: dict) -> Optional[Tuple[str, ...]]:
+    """The values a cell's dropdown offers, None when it has none."""
+    rule = cell.get("dataValidation")
+    if not rule:
+        return None
+    return tuple(v.get("userEnteredValue", "")
+                 for v in rule.get("condition", {}).get("values", []))
+
+
+def _describe(values: Optional[Tuple[str, ...]]) -> str:
+    return ", ".join(values) if values else "no dropdown"
+
+
+def wrong_dropdowns(ss, spec: ClassSheetSpec) -> List[Tuple[str, dict]]:
+    """Each column of ``ss`` whose dropdown differs from ``spec`` on any row
+    with something in its first column: ``(message, request)``, the request
+    rewriting the whole column. One read per spreadsheet."""
+    meta = ss.fetch_sheet_metadata(params={"includeGridData": "true",
+                                           "fields": _DROPDOWN_FIELDS})
+    by_title = {t.title: t for t in spec.tabs if t.columns}
+    out = []
+    for sheet in meta.get("sheets", []):
+        props = sheet["properties"]
+        tab = by_title.get(props["title"])
+        if tab is None:
+            continue
+        rows = (sheet.get("data") or [{}])[0].get("rowData", [])
+        if len(rows) < 2:
+            continue
+        header = [c.get("formattedValue", "") for c in rows[0].get("values", [])]
+        data = [r.get("values", []) for r in rows[1:]
+                if r.get("values") and r["values"][0].get("formattedValue", "")]
+        end_row = props.get("gridProperties", {}).get("rowCount", len(rows))
+        for col in tab.columns:
+            if col.name not in header:
+                continue  # a missing or extra column is the door's and sheet-drift's to report
+            c = header.index(col.name)
+            seen = {_offered(r[c] if c < len(r) else {}) for r in data}
+            if not seen or seen == {col.allowed}:
+                continue
+            now = " / ".join(sorted(_describe(v) for v in seen))
+            request = dropdown_request(props["sheetId"], c, end_row, col.allowed,
+                                       strict=tab.kind == STATUS)
+            out.append((f"{tab.title} '{col.name}': {now} → {_describe(col.allowed)}", request))
+    return out
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the argument parser for `python -m coding refresh-dropdowns`."""
     ap = argparse.ArgumentParser(
@@ -143,6 +206,8 @@ def main(args: argparse.Namespace | None = None) -> None:
         print("(run with --apply to push changes)\n")
 
     any_changes = False
+    manifest_changed = False
+    failed: List[str] = []
 
     for lang_id, lang_data in manifest.items():
         if lang_filter and lang_id != lang_filter:
@@ -166,84 +231,57 @@ def main(args: argparse.Namespace | None = None) -> None:
         # Keying this by class alone and letting the first construction win was
         # half of issue #272; see _fresh_param_values.
         criteria_by_construction: Dict[Tuple[str, str], Dict[str, List[str]]] = {}
-        class_criteria_union: Dict[str, Dict[str, List[str]]] = {}
         for cls, con, _crit_names, crit_values in diag_rows:
             criteria_by_construction[(cls, con)] = crit_values
-            # The union is only a fallback, for naming the values of a criterion
-            # column that belongs to a sibling construction of the same class.
-            class_criteria_union.setdefault(cls, {}).update(crit_values)
 
         for class_name, sheet_info in lang_data["sheets"].items():
             spreadsheet_id = sheet_info.get("spreadsheet_id")
             if not spreadsheet_id:
                 continue
 
-            construction_params = sheet_info.get("construction_params", {})
-            constructions = sheet_info.get("constructions", [])
-            class_criteria = class_criteria_union.get(class_name, {})
-
             print(f"\n  [{lang_id}] {class_name}")
+            try:
+                spec = class_sheet_spec(lang_id, class_name, CODED_DATA)
+            except Exception as e:
+                print(f"    No spec for this sheet ({e})")
+                failed.append(f"{lang_id}/{class_name}")
+                continue
+            try:
+                ss = doorway.open_spreadsheet(spreadsheet_id)
+            except Exception as e:
+                print(f"    Could not open spreadsheet: {e}")
+                failed.append(f"{lang_id}/{class_name}")
+                continue
 
-            if apply:
-                try:
-                    ss = doorway.open_spreadsheet(spreadsheet_id)
-                except Exception as e:
-                    print(f"    Could not open spreadsheet: {e}")
-                    continue
+            fixes = wrong_dropdowns(ss, spec)
+            for message, _ in fixes:
+                print(f"    {message}")
+            if not fixes:
+                print("    dropdowns match")
+            any_changes = any_changes or bool(fixes)
+            if apply and fixes:
+                ss.batch_update({"requests": [request for _, request in fixes]})
 
-            for construction in constructions:
-                if construction == STATUS_TAB:
-                    continue
-
-                cp = construction_params.get(construction, {})
+            # The manifest's record of each construction's values, which
+            # integrity-check compares with the YAML.
+            for construction in sheet_info.get("constructions", []):
                 construction_criteria = criteria_by_construction.get(
                     (class_name, construction), {})
-                if not construction_criteria:
-                    print(f"    {construction}: not in the diagnostics YAML — skipping")
+                if construction == STATUS_TAB or not construction_criteria:
                     continue
-
                 fresh = _fresh_param_values(
-                    class_name, construction, construction_criteria, lang_id,
-                )
-                stored = cp.get("param_values", {})
-
-                changed = fresh != stored
-                status = "→ would update" if changed else "up to date"
-                print(f"    {construction}: {stored} {status if not changed else f'→ {fresh}'}")
-
-                if changed:
-                    any_changes = True
-
-                if apply and changed:
-                    try:
-                        ws = ss.worksheet(construction)
-                    except Exception:
-                        print(f"    [{construction}] tab not found — skipping")
-                        continue
-
-                    header = ws.row_values(1)
-                    col_start, per_col, error = _resolve_criterion_columns(
-                        header, fresh, class_criteria)
-                    if error:
-                        print(f"    {construction}: SKIPPED — {error}")
-                        continue
-                    num_rows = max(ws.row_count - 1, 1)
-                    _format_and_validate(ws, num_rows, per_col, col_start=col_start)
-                    written = header[col_start:col_start + len(per_col)]
-                    print(f"    {construction}: refreshed {written}")
-
-                    # Update manifest's stored param_values
-                    sheet_info.setdefault("construction_params", {}).setdefault(
-                        construction, {})["param_values"] = fresh
+                    class_name, construction, construction_criteria, lang_id)
+                cp = sheet_info.setdefault("construction_params", {}).setdefault(construction, {})
+                if cp.get("param_values") != fresh:
+                    manifest_changed = True
+                    cp["param_values"] = fresh
 
     if not apply:
         if any_changes:
-            print("\nRun with --apply to push the updated dropdowns.")
+            print("\nRun with --apply to fix these dropdowns.")
         else:
-            print("\nAll dropdowns are up to date.")
-        return
-
-    if any_changes:
+            print("\nAll dropdowns match the codebook.")
+    elif manifest_changed:
         # Upload updated manifest to Drive through the same shared writer
         # every other command uses (generate_sheets, sync_params,
         # update_sheets, import_sheets, restructure_sheets). Before this, this
@@ -258,4 +296,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         _save_drive_config(drive_config)
         print("\nManifest updated on Drive.")
 
+    if failed:
+        print(f"\nNot checked: {', '.join(failed)}")
+        sys.exit(1)
     print("\nDone.")

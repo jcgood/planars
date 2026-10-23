@@ -143,11 +143,13 @@ def _render_entry(m: Dict[str, Any], tabs) -> List[str]:
         payload = m["payload"]
         if kind == "setDataValidation":
             rng = payload["range"]
+            where = (f"{kind}: {_column(header, rng.get('startColumnIndex'))} "
+                     f"rows {rng.get('startRowIndex')}-{rng.get('endRowIndex')}")
+            if "rule" not in payload:
+                return [f"{where} -> no dropdown"]
             values = [v["userEnteredValue"]
                       for v in payload["rule"]["condition"]["values"]]
-            return [f"{kind}: {_column(header, rng.get('startColumnIndex'))} "
-                    f"rows {rng.get('startRowIndex')}-{rng.get('endRowIndex')} "
-                    f"-> {values} (strict={payload['rule'].get('strict')})"]
+            return [f"{where} -> {values} (strict={payload['rule'].get('strict')})"]
         if kind in _SUMMARY_ONLY:
             rng = _grid_range(payload) or {}
             span = ""

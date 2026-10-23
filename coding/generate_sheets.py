@@ -63,7 +63,7 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -110,7 +110,7 @@ def _annotator_email(lang_id: str) -> Optional[str]:
     """
     return _people.annotator_email(lang_id)
 from .schemas import (
-    apply_schema_criteria, is_free_entry, load_diagnostic_classes, load_diagnostic_criteria,
+    apply_schema_criteria, dropdown_values, load_diagnostic_classes, load_diagnostic_criteria,
     reads_from,
 )
 from .locked_tabs import rebuild_locked_tabs, reorder_tabs, system_tab_titles
@@ -1349,6 +1349,33 @@ def _create_status_tab(
 # Sheet formatting and validation
 # ---------------------------------------------------------------------------
 
+def dropdown_request(sheet_id: int, col_idx: int, end_row: int, values,
+                     strict: bool = False) -> dict:
+    """The setDataValidation request that gives one criterion column, rows 2 to
+    ``end_row``, the dropdown its declared ``values`` call for
+    (``schemas.dropdown_values``) -- or removes any dropdown there when they
+    call for none, so one left by an older rule doesn't linger.
+
+    Non-strict by default: annotators can still type a value the list lacks;
+    it is shown as invalid and caught by validate-coding (the Status column's
+    dropdown is strict). Every writer of a criterion dropdown builds it here.
+    """
+    request: Dict[str, Any] = {"range": {
+        "sheetId": sheet_id,
+        "startRowIndex": 1, "endRowIndex": end_row,
+        "startColumnIndex": col_idx, "endColumnIndex": col_idx + 1,
+    }}
+    offered = dropdown_values(values)
+    if offered is not None:
+        request["rule"] = {
+            "condition": {"type": "ONE_OF_LIST",
+                          "values": [{"userEnteredValue": v} for v in offered]},
+            "showCustomUi": True,
+            "strict": strict,
+        }
+    return {"setDataValidation": request}
+
+
 def _reset_worksheet(ws: WorksheetHandle, num_data_rows: int, num_cols: int) -> None:
     """Clear values, reset all cell formatting, and resize to exact dimensions.
 
@@ -1461,27 +1488,7 @@ def _format_and_validate(
     ]
     for col_offset, values in enumerate(param_values):
         col_idx = col_start + col_offset
-        if is_free_entry(values):
-            continue
-        requests.append({
-            "setDataValidation": {
-                "range": {
-                    "sheetId": sheet_id,
-                    "startRowIndex": 1,
-                    "endRowIndex": 1 + num_data_rows,
-                    "startColumnIndex": col_idx,
-                    "endColumnIndex": col_idx + 1,
-                },
-                "rule": {
-                    "condition": {
-                        "type": "ONE_OF_LIST",
-                        "values": [{"userEnteredValue": v} for v in values],
-                    },
-                    "showCustomUi": True,
-                    "strict": False,
-                },
-            }
-        })
+        requests.append(dropdown_request(sheet_id, col_idx, 1 + num_data_rows, values))
     if param_notes:
         for col_offset, note in enumerate(param_notes):
             if note:

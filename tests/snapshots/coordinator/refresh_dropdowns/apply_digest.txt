@@ -1,16 +1,276 @@
 SUMMARY
-     3  batch_request
+   121  batch_request
      1  update_file
-     1    └─ repeatCell
-     1    └─ setDataValidation
-     1    └─ updateSheetProperties
+   121    └─ setDataValidation
 
 DRIVE OPERATIONS
   update_file: file_id='fake_manifest_file', bytes=54211
 
 SHEET OPERATIONS
 
-  synth0001/class:coreference  tab=prescreening
-    updateSheetProperties: (whole sheet)
-    repeatCell: rows 0-1
+  arao1248/class:ciscategorial  tab=general
+    setDataValidation: col 3 (V-combines) rows 1-75 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (N-combines) rows 1-75 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (A-combines) rows 1-75 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 6 (PRED-combines) rows 1-75 -> ['y', 'n'] (strict=False)
+
+  arao1248/class:ciscategorial  tab=Status
+    setDataValidation: col 1 (Status) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  arao1248/class:noninterruption  tab=general
+    setDataValidation: col 3 (free) rows 1-75 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (multiple) rows 1-75 -> ['y', 'n'] (strict=False)
+
+  arao1248/class:noninterruption  tab=Status
+    setDataValidation: col 1 (Status) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  arao1248/class:subspanrepetition  tab=auxiliary_construction
+    setDataValidation: col 3 (widescope_right) rows 1-75 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (widescope_left) rows 1-75 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (fillable_botheither_conjunct) rows 1-75 -> ['y', 'n'] (strict=False)
+
+  arao1248/class:subspanrepetition  tab=tso_clause_linkage
+    setDataValidation: col 3 (widescope_right) rows 1-75 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (widescope_left) rows 1-75 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (fillable_botheither_conjunct) rows 1-75 -> ['y', 'n'] (strict=False)
+
+  arao1248/class:subspanrepetition  tab=Status
+    setDataValidation: col 1 (Status) rows 1-4 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  arao1248/class:nonpermutability  tab=element_prescreening
+    setDataValidation: col 3 (scopal) rows 1-75 -> ['y', 'n', 'both'] (strict=False)
+
+  arao1248/class:nonpermutability  tab=general
+    setDataValidation: col 2 (scopal) rows 1-255 -> ['y', 'n', 'both'] (strict=False)
+
+  arao1248/class:nonpermutability  tab=Status
+    setDataValidation: col 1 (Status) rows 1-4 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  arao1248/class:free_occurrence  tab=general
+    setDataValidation: col 3 (free) rows 1-75 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (left-edge-of-free-form) rows 1-75 -> ['y', 'n', 'na'] (strict=False)
+    setDataValidation: col 5 (right-edge-of-free-form) rows 1-75 -> ['y', 'n', 'na'] (strict=False)
+
+  arao1248/class:free_occurrence  tab=Status
+    setDataValidation: col 1 (Status) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  stan1293/class:ciscategorial  tab=general
+    setDataValidation: col 3 (V-combines) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (N-combines) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (A-combines) rows 1-143 -> ['y', 'n'] (strict=False)
+
+  stan1293/class:ciscategorial  tab=Status
+    setDataValidation: col 1 (Status) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  stan1293/class:subspanrepetition  tab=andCoordination
+    setDataValidation: col 3 (widescope_right) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (widescope_left) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (fillable_botheither_conjunct) rows 1-143 -> ['y', 'n'] (strict=False)
+
+  stan1293/class:subspanrepetition  tab=control
+    setDataValidation: col 3 (widescope_right) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (widescope_left) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (fillable_botheither_conjunct) rows 1-143 -> ['y', 'n'] (strict=False)
+
+  stan1293/class:subspanrepetition  tab=thatCOMP
+    setDataValidation: col 3 (widescope_right) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (widescope_left) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (fillable_botheither_conjunct) rows 1-143 -> ['y', 'n'] (strict=False)
+
+  stan1293/class:subspanrepetition  tab=asyndeticPart
+    setDataValidation: col 3 (widescope_right) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (widescope_left) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (fillable_botheither_conjunct) rows 1-143 -> ['y', 'n'] (strict=False)
+
+  stan1293/class:subspanrepetition  tab=Status
+    setDataValidation: col 1 (Status) rows 1-6 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  stan1293/class:noninterruption  tab=general
+    setDataValidation: col 3 (free) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (multiple) rows 1-143 -> ['y', 'n'] (strict=False)
+
+  stan1293/class:noninterruption  tab=Status
+    setDataValidation: col 1 (Status) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  stan1293/class:segmental  tab=aspiration_prominence
+    setDataValidation: col 3 (aspirated) rows 1-143 -> ['y', 'n', 'both', 'na'] (strict=False)
+
+  stan1293/class:segmental  tab=flapping
+    setDataValidation: col 3 (flapping_left) rows 1-143 -> ['y', 'n', 'both', 'na'] (strict=False)
+    setDataValidation: col 4 (flapping_internal) rows 1-143 -> ['y', 'n', 'both', 'na'] (strict=False)
+    setDataValidation: col 5 (flapping_right) rows 1-143 -> ['y', 'n', 'both', 'na'] (strict=False)
+
+  stan1293/class:segmental  tab=Status
+    setDataValidation: col 1 (Status) rows 1-4 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  stan1293/class:metrical  tab=stress_domain
+    setDataValidation: col 3 (accented) rows 1-143 -> ['y', 'n', 'both'] (strict=False)
+    setDataValidation: col 4 (obligatory) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (independence) rows 1-143 -> ['y', 'n', 'na'] (strict=False)
+    setDataValidation: col 6 (left-interaction) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 7 (right-interaction) rows 1-143 -> ['y', 'n'] (strict=False)
+
+  stan1293/class:metrical  tab=Status
+    setDataValidation: col 1 (Status) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  stan1293/class:free_occurrence  tab=general
+    setDataValidation: col 3 (free) rows 1-143 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (left-edge-of-free-form) rows 1-143 -> ['y', 'n', 'na'] (strict=False)
+    setDataValidation: col 5 (right-edge-of-free-form) rows 1-143 -> ['y', 'n', 'na'] (strict=False)
+
+  stan1293/class:free_occurrence  tab=Status
+    setDataValidation: col 1 (Status) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  stan1293/class:nonpermutability  tab=element_prescreening
+    setDataValidation: col 3 (scopal) rows 1-143 -> ['y', 'n', 'both'] (strict=False)
+
+  stan1293/class:nonpermutability  tab=general
+    setDataValidation: col 2 (scopal) rows 1-24 -> ['y', 'n', 'both'] (strict=False)
+
+  stan1293/class:nonpermutability  tab=Status
+    setDataValidation: col 1 (Status) rows 1-4 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  stan1293/class:coreference  tab=prescreening
     setDataValidation: col 3 (referential) rows 1-144 -> ['y', 'n'] (strict=False)
+
+  stan1293/class:coreference  tab=reflexivization
+    setDataValidation: col 4 (reflexive_allowed) rows 1-164 -> ['y', 'n', 'untestable'] (strict=False)
+
+  stan1293/class:coreference  tab=pronominalization
+    setDataValidation: col 4 (pronoun_allowed) rows 1-164 -> ['y', 'n', 'untestable'] (strict=False)
+
+  stan1293/class:coreference  tab=np_reference
+    setDataValidation: col 4 (np_allowed) rows 1-164 -> ['y', 'n', 'untestable'] (strict=False)
+
+  stan1293/class:coreference  tab=Status
+    setDataValidation: col 1 (Status) rows 1-6 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  stan1293/class:proform  tab=do_so_substitution
+    setDataValidation: col 3 (shareable_proform_replace) rows 1-143 -> ['y', 'n', 'both', 'unclear'] (strict=False)
+
+  stan1293/class:proform  tab=vp_ellipsis
+    setDataValidation: col 3 (shareable_proform_replace) rows 1-143 -> ['y', 'n', 'both', 'unclear'] (strict=False)
+
+  stan1293/class:proform  tab=Status
+    setDataValidation: col 1 (Status) rows 1-4 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  stan1293/class:phrasal_accent  tab=prescreening
+    setDataValidation: col 3 (accented) rows 1-143 -> ['y', 'n', 'both'] (strict=False)
+
+  stan1293/class:phrasal_accent  tab=Status
+    setDataValidation: col 1 (Status) rows 1-4 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  stan1293/class:biuniqueness_deviations  tab=elements
+    setDataValidation: col 3 (has_allomorphs) rows 1-137 -> ['y', 'n'] (strict=False)
+
+  stan1293/class:biuniqueness_deviations  tab=morphemes
+    setDataValidation: col 4 (forms_relation) rows 1-19 -> ['alternate', 'co-occur'] (strict=False)
+
+  stan1293/class:biuniqueness_deviations  tab=Status
+    setDataValidation: col 1 (Status) rows 1-5 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  synth0001/class:ciscategorial  tab=general
+    setDataValidation: col 3 (V-combines) rows 1-144 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (N-combines) rows 1-144 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (A-combines) rows 1-144 -> ['y', 'n'] (strict=False)
+
+  synth0001/class:ciscategorial  tab=Status
+    setDataValidation: col 1 (Status) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  synth0001/class:subspanrepetition  tab=andCoordination
+    setDataValidation: col 3 (widescope_right) rows 1-144 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (widescope_left) rows 1-144 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (fillable_botheither_conjunct) rows 1-144 -> ['y', 'n'] (strict=False)
+
+  synth0001/class:subspanrepetition  tab=control
+    setDataValidation: col 3 (widescope_right) rows 1-144 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (widescope_left) rows 1-144 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (fillable_botheither_conjunct) rows 1-144 -> ['y', 'n'] (strict=False)
+
+  synth0001/class:subspanrepetition  tab=thatCOMP
+    setDataValidation: col 3 (widescope_right) rows 1-144 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (widescope_left) rows 1-144 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (fillable_botheither_conjunct) rows 1-144 -> ['y', 'n'] (strict=False)
+
+  synth0001/class:subspanrepetition  tab=asyndeticPart
+    setDataValidation: col 3 (widescope_right) rows 1-144 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (widescope_left) rows 1-144 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (fillable_botheither_conjunct) rows 1-144 -> ['y', 'n'] (strict=False)
+
+  synth0001/class:subspanrepetition  tab=Status
+    setDataValidation: col 1 (Status) rows 1-6 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  synth0001/class:noninterruption  tab=general
+    setDataValidation: col 3 (free) rows 1-144 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (multiple) rows 1-144 -> ['y', 'n'] (strict=False)
+
+  synth0001/class:noninterruption  tab=Status
+    setDataValidation: col 1 (Status) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  synth0001/class:segmental  tab=aspiration_prominence
+    setDataValidation: col 3 (aspirated) rows 1-144 -> ['y', 'n', 'both', 'na'] (strict=False)
+
+  synth0001/class:segmental  tab=flapping
+    setDataValidation: col 3 (flapping_left) rows 1-144 -> ['y', 'n', 'both', 'na'] (strict=False)
+    setDataValidation: col 4 (flapping_internal) rows 1-144 -> ['y', 'n', 'both', 'na'] (strict=False)
+    setDataValidation: col 5 (flapping_right) rows 1-144 -> ['y', 'n', 'both', 'na'] (strict=False)
+
+  synth0001/class:segmental  tab=Status
+    setDataValidation: col 1 (Status) rows 1-4 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  synth0001/class:metrical  tab=stress_domain
+    setDataValidation: col 3 (accented) rows 1-144 -> ['y', 'n', 'both'] (strict=False)
+    setDataValidation: col 4 (obligatory) rows 1-144 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (independence) rows 1-144 -> ['y', 'n', 'na'] (strict=False)
+    setDataValidation: col 6 (left-interaction) rows 1-144 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 7 (right-interaction) rows 1-144 -> ['y', 'n'] (strict=False)
+
+  synth0001/class:metrical  tab=Status
+    setDataValidation: col 1 (Status) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  synth0001/class:nonpermutability  tab=element_prescreening
+    setDataValidation: col 3 (scopal) rows 1-144 -> ['y', 'n', 'both'] (strict=False)
+
+  synth0001/class:nonpermutability  tab=general
+    setDataValidation: col 2 (scopal) rows 1-233 -> ['y', 'n', 'both'] (strict=False)
+
+  synth0001/class:nonpermutability  tab=Status
+    setDataValidation: col 1 (Status) rows 1-4 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  synth0001/class:free_occurrence  tab=general
+    setDataValidation: col 3 (free) rows 1-144 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (left-edge-of-free-form) rows 1-144 -> ['y', 'n', 'na'] (strict=False)
+    setDataValidation: col 5 (right-edge-of-free-form) rows 1-144 -> ['y', 'n', 'na'] (strict=False)
+
+  synth0001/class:free_occurrence  tab=Status
+    setDataValidation: col 1 (Status) rows 1-3 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  synth0001/class:coreference  tab=prescreening
+    setDataValidation: col 3 (referential) rows 1-144 -> ['y', 'n'] (strict=False)
+
+  synth0001/class:coreference  tab=reflexivization
+    setDataValidation: col 4 (reflexive_allowed) rows 1-608 -> ['y', 'n', 'untestable'] (strict=False)
+
+  synth0001/class:coreference  tab=pronominalization
+    setDataValidation: col 4 (pronoun_allowed) rows 1-608 -> ['y', 'n', 'untestable'] (strict=False)
+
+  synth0001/class:coreference  tab=np_reference
+    setDataValidation: col 4 (np_allowed) rows 1-608 -> ['y', 'n', 'untestable'] (strict=False)
+
+  synth0001/class:coreference  tab=Status
+    setDataValidation: col 1 (Status) rows 1-6 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  synth0001/class:proform  tab=do_so_substitution
+    setDataValidation: col 3 (shareable_proform_replace) rows 1-144 -> ['y', 'n', 'both', 'unclear'] (strict=False)
+
+  synth0001/class:proform  tab=vp_ellipsis
+    setDataValidation: col 3 (shareable_proform_replace) rows 1-144 -> ['y', 'n', 'both', 'unclear'] (strict=False)
+
+  synth0001/class:proform  tab=Status
+    setDataValidation: col 1 (Status) rows 1-4 -> ['in-progress', 'ready-for-review'] (strict=True)
+
+  synth0001/class:phrasal_accent  tab=prescreening
+    setDataValidation: col 3 (accented) rows 1-144 -> ['y', 'n', 'both'] (strict=False)
+
+  synth0001/class:phrasal_accent  tab=Status
+    setDataValidation: col 1 (Status) rows 1-4 -> ['in-progress', 'ready-for-review'] (strict=True)

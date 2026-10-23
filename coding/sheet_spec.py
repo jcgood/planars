@@ -90,7 +90,7 @@ from .biuniqueness_rows import ELEMENTS as BIUNIQUENESS_ELEMENTS_TAB
 from .biuniqueness_rows import element_rows as biuniqueness_element_rows
 from .locked_tabs import locked_tab_contents, locked_tab_specs
 from .make_forms import _read_diagnostics_for_language, build_element_index, element_rows
-from .schemas import apply_schema_criteria, is_free_entry
+from .schemas import apply_schema_criteria, dropdown_values
 
 TOOLING = "tooling"
 ANNOTATOR = "annotator"
@@ -191,8 +191,7 @@ def _construction_tab(lang_id: str, class_name: str, construction: str,
     (``rows`` None)."""
     key_cols = row_columns(class_name, construction)
     columns = [ColumnSpec(c, TOOLING, None) for c in key_cols]
-    columns += [ColumnSpec(n, ANNOTATOR, None if is_free_entry(values[n]) else tuple(values[n]))
-                for n in names]
+    columns += [ColumnSpec(n, ANNOTATOR, dropdown_values(values[n])) for n in names]
     columns += [ColumnSpec(c, ANNOTATOR, None) for c in TRAILING_COLUMNS]
     rows = None
     if planar_path is not None and row_type(class_name, construction) == ELEMENT_ROWS:

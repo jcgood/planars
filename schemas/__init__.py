@@ -39,9 +39,10 @@ diagnostic_criteria.yaml
         own list (currently [na, ?]). There is no default list for a
         criterion with no values. ``untestable`` is accepted only where a
         language's diagnostics file lists it.
-      value_placeholders: allowed values that stand for free entry
-        (``<free_text>``, ``<position_names>``): no dropdown, may be blank,
-        read through ``coding/schemas.py`` (``is_free_entry``).
+      value_placeholders: allowed values that stand for an entry rather than
+        a choice (``<free_text>``, ``<position_names>`` free entry: may be
+        blank, kept as typed; ``<position_number>``). A criterion with one
+        gets no dropdown (``coding/schemas.py``, ``dropdown_values``).
 
 issue_labels.yaml
     The one definition of the project's GitHub issue labels (name, colour,

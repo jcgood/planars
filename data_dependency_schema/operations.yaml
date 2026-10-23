@@ -840,16 +840,15 @@
   writes_to_drive: true
   writes_locally: false
   description: >-
-    Refreshes criterion dropdown validation on existing sheets from the
-    current diagnostics YAML, without touching annotation data.
+    Makes every class sheet's dropdowns match the codebook (the sheet spec),
+    reading each sheet's real dropdowns, without touching annotation data.
+    Daily, in the refresh.
   side_effects:
-    - "updates dropdown validation rules on live tabs; updates sheets_manifest.json's param_values"
+    - "rewrites or removes the dropdown of each column whose live dropdown differs from the sheet spec; updates sheets_manifest.json's param_values"
   idempotent: true
   idempotency_note: >-
-    Criterion columns and their values are read fresh from the tab's own
-    header and the diagnostics YAML every run (issue #272's fix), never from
-    the manifest -- a second run with nothing changed reasserts the same
-    dropdown rules.
+    Compares the live dropdowns with the spec every run and writes only the
+    columns that differ -- a second run with nothing changed writes nothing.
   apply_gate: "--apply"
   preconditions: []
   facts_touched:

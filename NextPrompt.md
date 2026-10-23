@@ -63,9 +63,18 @@ Comments (restructure-sheets quotes a split element's old answers in a
 cell note); `check-comments` runs in the daily refresh and files one
 `collaborator-comments` issue per language with a Claude prompt; and
 `migrations/sort_comments_into_example.py` cleared the 284 tooling notes
-and moved 86 examples, leaving Adam's 32 questions and notes. **Next:**
-the first `collaborator-comments` issue (the 2026-10-23 refresh) is the
-backlog of 32: run its prompt and bring Jeff the drafts.
+and moved 86 examples, leaving Adam's 32 questions and notes. The first
+`collaborator-comments` issue is #322 (2026-10-23). Sorted that day:
+several comments came from the sheets' dropdowns still offering the y/n
+list removed 2026-10-12 (no both/na/unclear; a typed position number
+shown as invalid). Fixed in code the same day: `refresh-dropdowns` now
+compares each sheet's real dropdowns with the codebook and runs daily.
+**Next:** (1) the live fix (the next refresh, or `refresh-dropdowns
+--apply` at once, Jeff's call); (2) (b) above covers his dependent-on
+comment (he typed commas, the plan says `|`: settle which when building
+it); (3) one short reply to Adam for Jeff to approve; (4) definitions to
+tighten: vp_ellipsis's test (#319), flapping and `multiple` (#321);
+(5) QWORDS split, his OK on the new elements.
 Also open, linguistic: displacement, the one standard constituency test
 with no class (#56; English is its data, Adam to write the frames).
 Not now: 8 (drop impossible pairs), 10–12 (proform frames, the

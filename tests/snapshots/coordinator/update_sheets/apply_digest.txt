@@ -88,8 +88,8 @@ SHEET OPERATIONS
     setDataValidation: col 3 (free) rows 1-75 -> ['y', 'n'] (strict=False)
     setDataValidation: col 4 (left-edge-of-free-form) rows 1-75 -> ['y', 'n', 'na'] (strict=False)
     setDataValidation: col 5 (right-edge-of-free-form) rows 1-75 -> ['y', 'n', 'na'] (strict=False)
-    setDataValidation: col 6 (dependent-on-left) rows 1-75 -> ['na', '<position_number>'] (strict=False)
-    setDataValidation: col 7 (dependent-on-right) rows 1-75 -> ['na', '<position_number>'] (strict=False)
+    setDataValidation: col 6 (dependent-on-left) rows 1-75 -> no dropdown
+    setDataValidation: col 7 (dependent-on-right) rows 1-75 -> no dropdown
 
   stan1293/class:ciscategorial  tab=general
     repeatCell: col 3 (V-combines) rows 0-1

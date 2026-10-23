@@ -580,15 +580,13 @@ A position that only changed number needs no flag: answers are carried over by p
 
 #### Refreshing dropdowns after criterion value changes
 
-When a criterion's allowed-value list changes in `diagnostics_{lang_id}.yaml` (e.g. a new value like `untestable` is added), existing sheet dropdowns need updating. Use `refresh-dropdowns` — it touches only validation rules, not data or sheet structure:
+The daily refresh runs `refresh-dropdowns --apply`, which reads each sheet's real dropdowns and makes them match the codebook: a criterion's allowed values from `diagnostics_{lang_id}.yaml`, and no dropdown on Example/Source/Comments or on a criterion that takes position numbers. It touches only dropdowns, never data or sheet structure. To see or apply a change at once rather than wait a day:
 
 ```bash
-python -m coding refresh-dropdowns              # dry run — show which dropdowns differ
-python -m coding refresh-dropdowns --apply      # push updated dropdowns to Sheets
+python -m coding refresh-dropdowns              # dry run — list each column whose dropdown differs
+python -m coding refresh-dropdowns --apply      # fix them
 python -m coding refresh-dropdowns --lang stan1293 --apply   # one language only
 ```
-
-This is safer than `restructure-sheets` (no archiving, no data changes, no new URLs). After `--apply`, the Drive manifest is updated with the new allowed-value lists so future runs see the change.
 
 #### Collaborator status pages
 

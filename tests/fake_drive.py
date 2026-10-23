@@ -500,9 +500,12 @@ class FakeSpreadsheet:
         return [dict(p) for p in self._protected_ranges if p["range"].get("sheetId") == sheetid]
 
     def fetch_sheet_metadata(self, params: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
-        """Each tab's properties, developer metadata and protected ranges. The
-        field mask is not interpreted: the only caller (the Drive door) asks
-        for no more than this. Like Google, a key with nothing in it is left out."""
+        """Each tab's properties, developer metadata and protected ranges; and,
+        when the field mask asks for ``dataValidation``, each tab's cells (value
+        and dropdown) over its used rows, as refresh-dropdowns reads them. The
+        mask is not otherwise interpreted, nor ``ranges``. Like Google, a key
+        with nothing in it is left out."""
+        fields = str((params or {}).get("fields", ""))
         sheets = []
         for i, ws in enumerate(self._worksheets):
             sheet: Dict[str, Any] = {
@@ -513,6 +516,22 @@ class FakeSpreadsheet:
                          if p["range"].get("sheetId") == ws.id]
             if protected:
                 sheet["protectedRanges"] = protected
+            if "dataValidation" in fields:
+                sheet["properties"]["gridProperties"] = {"rowCount": ws.row_count}
+                rows, cols = ws._used_range()
+                row_data = []
+                for r in range(rows):
+                    values = []
+                    for c in range(cols):
+                        cell = ws._cells.get((r, c))
+                        out: Dict[str, Any] = {}
+                        if cell is not None and cell.value != "":
+                            out["formattedValue"] = cell.value
+                        if cell is not None and cell.validation is not None:
+                            out["dataValidation"] = cell.validation
+                        values.append(out)
+                    row_data.append({"values": values})
+                sheet["data"] = [{"rowData": row_data}]
             sheets.append(sheet)
         return {"spreadsheetId": self.id, "sheets": sheets}
 
